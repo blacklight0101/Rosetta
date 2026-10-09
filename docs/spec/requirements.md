@@ -135,8 +135,8 @@ the decision log.
 | Q-12 | Which model runs the build verifier? | Product owner | first P1 card | Claude Opus 5.5 for cards of difficulty 1-9 and Claude Fable for difficulty 10 (agents `verifier` and `verifier-fable`) | Answered (DEC-41) |
 | Q-13 | Which parts of the web UI are in the M1 milestone? | Product owner | P1 | Start a run from the browser, the live agent view, the live cost meter, the always-visible project totals, the event stream and the security rules (RF-1000..RF-1003, RF-1006, RF-1009, RF-1010); the verifier view, coverage map, provider calls and logs view, answers and history follow in P2 and P3 | Answered (DEC-51) |
 | Q-14 | Which front-end library builds the web UI and the report? | Product owner | P1 (web UI card) | Preact with Vite, shared by the live UI and the static report | Answered (DEC-52) |
-| Q-15 | In which currency are costs shown? | Product owner | P1 (cost card) | USD, as providers publish their prices; the shipped price table is in USD and there is no conversion in R1 | Default applies |
-| Q-16 | Should Rosetta offer a command to delete old snapshots and runs? | Product owner | P2 | No command in R1; the developer deletes folders under `rosetta-out/` by hand and the cost ledger keeps the project totals | Default applies |
+| Q-15 | In which currency are costs shown? | Product owner | P1 (cost card) | USD, as providers publish their prices; the shipped price table is in USD and there is no conversion in R1 | Answered (DEC-54) |
+| Q-16 | Should Rosetta offer a command to delete old snapshots and runs? | Product owner | P2 | No command in R1; the developer deletes folders under `rosetta-out/` by hand and the cost ledger keeps the project totals | Answered (DEC-55) |
 
 ## 5. Functional requirements (R1)
 
@@ -670,6 +670,13 @@ As a developer I want to watch the calls to the model providers and Rosetta's lo
 - Given the application log (RF-009), when I open the "Logs" panel, then recent entries stream live with a level filter.
 Verification: end-to-end test with recorded events.
 
+**RF-1012 Delete snapshots and runs from the page** - R1 (M1) - Should - Source DEC-51, DEC-55 - ADR-012
+As a developer I want to delete downloaded code and old runs from the page so that the output folder does not grow without limit.
+- Given the history or the snapshot list, when I press Delete on a run or a snapshot, then a confirmation names what will be deleted and the disk space it frees, and only after I confirm is the folder removed and an `info` entry written to the application log.
+- Given a snapshot used by a run in progress, or a run in progress, when I try to delete it, then the button is disabled with the reason.
+- Given any deletion, when it completes, then `cost-ledger.jsonl` is unchanged and the project totals (RF-1010) still include the deleted runs' calls.
+Verification: end-to-end test on a temporary project; integration test that the ledger is untouched.
+
 ## 6. Non-functional requirements
 
 | Id | Requirement | Verification |
@@ -716,6 +723,6 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-500..RF-506 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46 | ADR-002, ADR-005, ADR-012 | P3 (RF-504, RF-506: P1) | to be filled with the build plan |
 | RF-600..RF-603 | DEC-10 | ADR-005 | P3 | to be filled with the build plan |
 | RF-800..RF-802 | DEC-04 | ADR-002 | P1 | to be filled with the build plan |
-| RF-1000..RF-1011 | DEC-46, DEC-47, DEC-49, DEC-50 | ADR-012 | P1 (all, DEC-51; postponement order RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | to be filled with the build plan |
+| RF-1000..RF-1012 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55 | ADR-012 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | to be filled with the build plan |
 | RNF-001..RNF-013 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009 | all | to be filled with the build plan |
 | [Decision log](../decision-log.md) (all DEC ids) | - (product owner's decisions) | ADR-002..ADR-008 | all | - |

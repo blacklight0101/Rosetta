@@ -1,45 +1,50 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-09. Phase **P0 - documentation**. No code yet._
+_Last updated 2026-10-10. Phase **P0 - documentation**. No code yet. Work is on branch `docs/kickoff`, PR #1._
 
 ## Current state
 
 - `README.md`, `CLAUDE.md` (rules), this file.
 - `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Proposed**.
-- `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1011 and RNF-001..RNF-013, **Status: Proposed**;
+- `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1012 and RNF-001..RNF-013, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-012; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-52.
+- `docs/decision-log.md` - decisions DEC-01..DEC-55.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
   `orchestrator` still a scaffold.
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
-- `docs/data-model.md` - written 2026-10-10 (all file formats; Q-15, Q-16 open with defaults).
+- `docs/data-model.md` - written 2026-10-10 (all file formats); Q-15 and Q-16 answered (DEC-54, DEC-55).
 - Not yet filled: `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
   `docs/process-flows.md`, `docs/orchestration/`.
 
 ## Resume point
 
-State: kick-off interview done (rounds 1-3, DEC-01..DEC-38); README, CLAUDE.md, RFC-001, requirements, ADR-002..ADR-009
-and the first journal entry written. Remaining documents are scaffolded but not filled.
+State (2026-10-10, end of session): documentation P0 in progress on `docs/kickoff` (PR #1, not merged; the owner
+merges). Written: README, CLAUDE.md, RFC-001, requirements (RF-001..RF-1012), ADR-001..ADR-012, decision log
+DEC-01..DEC-55, architecture, data model, conventions, environments and delivery, builder and verifier agents,
+journal. Every open question Q-01..Q-16 is answered or runs on its default.
 
-Next, in this order:
-1. Ask the owner to create the public repository and open the first pull request (`docs/kickoff`) for review (G-03).
-3. Pre-build agenda: file formats (data-model.md), report design v1 (design-system.md), conventions and delivery.
-4. Roadmap, process flows and the build plan with difficulty-rated cards (DEC-32); run `check_docs.py`.
-5. Owner reviews the whole set; G-01 opens only then (DEC-33).
+Next, in this order (ask the owner before each):
+1. Design system v1 and the design brief, with mock-ups of the live web UI (agent panels, project cost bar, API
+   calls and logs panels, history with delete) and the report; owner approval at G-02.
+2. Roadmap (P0..P4 with exit criteria) and process flows.
+3. Build plan: `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
+   card, and the orchestrator agent.
+4. Run `check_docs.py --without legacy`, a light review, fix what is mechanical.
+5. Owner reviews the whole set and merges PR #1; G-01 opens only then (DEC-33).
 
-Blockers: the owner's go-ahead to create the public GitHub repository.
+Blockers: none.
 
 ## Agenda for the next session (ask the owner first)
 
 1. ~~Round 3 of questions~~ DONE 2026-10-09: DEC-24..DEC-37.
 2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; data-model.md written, awaiting owner review.
-3. Report design: brief, optional design round trip, or v1 only - lands in design-system.md and the brief.
-4. Other things to settle: Node version, package baseline, CI, versioning, naming, error codes - lands in
-   conventions.md and environments-and-delivery.md.
-5. Owner review of the whole documentation set, which opens G-01 (DEC-33) - lands in this file.
+3. ~~Conventions and delivery~~ DONE 2026-10-10: DEC-40, ADR-011.
+4. Design system v1 + brief with live web UI mock-ups - lands in design-system.md and the brief (G-02).
+5. Roadmap, process flows, build plan.
+6. Owner review of the whole documentation set, which opens G-01 (DEC-33).
 
 ## Gates
 
@@ -58,11 +63,13 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Decisions pending
 
-- Open questions Q-01..Q-11 run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
+- Open questions Q-01..Q-16 are answered or run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
 - Deferred ADRs and their triggers are listed in the [ADR index](docs/adr/README.md).
 
 ## Session log
 
+- **2026-10-10 (end of day)** - Q-15 answered: USD (DEC-54). Q-16 answered: delete button for snapshots and runs in
+  the web UI, cost ledger untouched (DEC-55, RF-1012). Resume point rewritten. Next: design system.
 - **2026-10-10 (data model)** - data-model.md written: folder map, every file format, event list, call log, cost
   ledger, schema versions. Q-10 answered (DEC-53, models on G:). Q-15 (currency) and Q-16 (clean-up command) open with
   defaults. Next: design system v1 and brief with live-page mock-ups.

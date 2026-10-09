@@ -26,7 +26,7 @@ infrastructure adapter (DEC-37), and this document gains its tables then.
 | Times | instants are ISO 8601 UTC strings with milliseconds and `Z` (`2026-10-10T14:03:22.415Z`), taken from the `Clock` port; durations are integer milliseconds with an `Ms` suffix |
 | Paths | relative to the **repository root** of the snapshot (not to the subpath), forward slashes, no leading `./`, case as in the repository (RF-124, RF-125) |
 | Citations | `path:startLine-endLine`, 1-based, inclusive, `startLine <= endLine` (ADR-005); stored as an object `{ path, startLine, endLine }` in JSON and as the string form in Markdown |
-| Money | cost is stored as an integer `costMicros` (millionths of the price-table currency) plus `currency` (ISO 4217); never a floating-point amount. Displays round to 4 decimals below 1 and to 2 above |
+| Money | cost is stored as an integer `costMicros` (millionths of the price-table currency, USD per DEC-54) plus `currency` (ISO 4217); never a floating-point amount. Displays round to 4 decimals below 1 and to 2 above |
 | Tokens | integers `inputTokens`, `outputTokens`, `cachedInputTokens`; `usageSource` is `reported` or `estimated` (RF-421) |
 | Determinism | files that must be byte-identical for the same input (`codemap.json`, `cards/index.json`) sort arrays by a stated key and objects by key, and contain no times (RF-106) |
 | Atomic writes | JSON and Markdown files are written to a temporary name in the same folder and renamed; JSON Lines files are appended one complete line per write. A reader ignores a truncated last line and logs a warning |
@@ -443,8 +443,8 @@ Not applicable as database grants. File access rules instead:
 |---|---|---|
 | Application logs | `logging.retentionDays` (14) | deleted at start-up |
 | `.partial-*` snapshot folders | until next start-up | deleted |
-| Snapshots, runs, exports | until the developer deletes them | none automatic (Q-16) |
-| Cost ledger | the life of the project | never purged by Rosetta: it is the project total |
+| Snapshots, runs, exports | until the developer deletes them | delete button in the web UI with confirmation (RF-1012, DEC-55); never automatic |
+| Cost ledger | the life of the project | never purged, also not when runs are deleted: it is the project total |
 
 ## 10. Seed data
 
@@ -462,7 +462,4 @@ Not applicable: Rosetta replaces no system.
 
 ## 12. Open points
 
-- Q-15: currency of costs. Default: the shipped price table is in USD, as providers publish it, and costs are
-  shown in USD; no conversion in R1.
-- Q-16: should Rosetta offer a command to delete old snapshots and runs? Default: no command in R1; the developer
-  deletes folders under `rosetta-out/` by hand, and the cost ledger keeps the totals.
+None. Q-15 was answered by DEC-54 (USD) and Q-16 by DEC-55 (delete button in the web UI).

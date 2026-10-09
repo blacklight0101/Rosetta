@@ -1,7 +1,7 @@
 ---
 type: journal
 date: 2026-10-10
-decisions: DEC-40..DEC-53
+decisions: DEC-40..DEC-55
 ---
 
 # 2026-10-10 - Toolchain, file formats, web UI and GitHub sources
@@ -36,4 +36,5 @@ Curated summary of the working session (DEC-38). No conversation is recorded her
 
 The file formats were written down in `docs/data-model.md`: one folder per run, JSON and JSON Lines with a schema
 version in every file, costs stored as integer millionths so totals never drift, and a project-wide cost ledger.
-New open questions: Q-15 (currency, default USD) and Q-16 (clean-up command, default none in R1).
+Q-15 was answered with USD (DEC-54). Q-16 was answered with a delete button in the web UI for downloaded code and
+old runs; deleting never changes the project cost totals (DEC-55, RF-1012).
