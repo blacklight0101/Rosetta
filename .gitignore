@@ -1,0 +1,26 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Secrets: API keys live only in the environment or a local .env (RNF-003)
+.env
+.env.*
+!.env.example
+
+# Rosetta run output and local analysis targets (never committed)
+rosetta-out/
+_legacy/
+
+# Editors and OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
