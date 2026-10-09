@@ -100,7 +100,7 @@ Snapshot; canonical entries are DEC-01..DEC-23 in [../decision-log.md](../decisi
 
 Sub-decisions with their own trade-off tables live in the ADRs: ADR-002 (language and form), ADR-003 (agent loop
 and providers), ADR-004 (scan layers), ADR-005 (cards and verifier), ADR-006 (read-only tools and data egress),
-ADR-007 (cost control), ADR-008 (testing), ADR-009 (Clean Architecture).
+ADR-007 (cost control), ADR-008 (testing), ADR-009 (Clean Architecture), ADR-010 (spec-driven and test-driven development).
 
 ## 4. Proposed design
 

@@ -107,8 +107,13 @@ applied, and fixing it is part of applying the decision.
 - **Database:** none in release 1. If one is ever needed it is PostgreSQL, behind an infrastructure adapter (DEC-37).
 - **Errors:** domain errors are typed results or typed error classes with a stable code (`RST-xxxx`, catalogue in
   `docs/conventions.md`); the CLI prints the code and a plain message, never a stack trace unless `--verbose`.
-- **Tests:** Vitest. Test-first for core logic. Levels unit / integration / end-to-end with the split in
-  `docs/conventions.md`. `npm run verify` (lint, type-check, tests) must pass before any card is reported done.
+- **Spec-driven (SDD, spec-anchored):** no card without the requirement ids it implements; behaviour the
+  specification does not describe stops the card and becomes a new `RF` or `Q-nn` first; any behaviour change edits
+  `docs/spec/requirements.md` in the same pull request ([ADR-010](docs/adr/ADR-010-spec-driven-and-test-driven-development.md)).
+- **Test-driven (TDD):** red, green, refactor on every card. Each Given/When/Then scenario becomes a Vitest test named
+  after its requirement id; a `test:` commit with failing tests comes before the `feat:`/`fix:` commit that makes them
+  pass. Levels unit / integration / end-to-end with the split in `docs/conventions.md`. `npm run verify` (lint,
+  type-check, dependency rule, tests) must pass before any card is reported done (ADR-008, ADR-010).
 - **Packages:** the baseline list in `docs/environments-and-delivery.md`; any new runtime dependency needs an ADR.
 <!-- STACK-RULES:END -->
 

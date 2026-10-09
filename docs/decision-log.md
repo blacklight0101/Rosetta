@@ -74,3 +74,9 @@ Rules:
 | DEC-36 | 2026-10-09 | Chosen: Rosetta follows Clean Architecture: domain, application (use cases and ports), infrastructure (adapters) and presentation (CLI), with dependencies pointing inward only. Instead of: an informal ports-and-adapters split. | Owner | ADR-009, CLAUDE.md stack rules, architecture.md |
 | DEC-37 | 2026-10-09 | Chosen: release 1 keeps no database (DEC-14 stands); if Rosetta ever needs a database, it is PostgreSQL. Instead of: SQLite or another engine. | Owner | ADR index deferred decisions, data-model.md |
 | DEC-38 | 2026-10-09 | Replaces part of DEC-33: the conversation journal (questions, options, the owner's answers in their words) is private and kept in the owner's notes vault, never in this repository or on GitHub; the repository keeps `docs/journal/` as a curated per-session summary of what was decided and why, without conversations or quotes. Instead of: publishing the conversation journal. | Owner | docs/journal/, CLAUDE.md documentation protocol, docs/README.md |
+
+### 2026-10-09 - development method
+
+| Id | Date | Decision | Answer to | Where applied |
+|---|---|---|---|---|
+| DEC-39 | 2026-10-09 | Chosen: Spec-Driven Development at the spec-anchored level and Test-Driven Development (red, green, refactor) on every card, as far as possible: no card without requirement ids; behaviour changes edit the specification in the same pull request; every Given/When/Then scenario becomes a test named after its id; failing tests are committed before the code; the verifier checks scenario coverage, commit order and a mutation check. Instead of: test-first for core logic only. | Owner | ADR-010, CLAUDE.md stack rules and documentation protocol, conventions.md (test names, commit types), orchestration/README.md (verifier) |

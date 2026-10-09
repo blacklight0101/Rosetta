@@ -56,6 +56,8 @@ takes the next free range. This table is the canonical list of ranges.
 Acceptance criteria are written Given / When / Then. `Must` requirements carry full scenarios (the happy path and
 every failure the requirement names), `Should` at least one scenario, `Could` a one-line criterion. Every
 requirement ends with a `Verification:` line that names the test level or manual check that proves it.
+Every scenario becomes at least one automated test named after the requirement id, written before the code
+(ADR-010).
 
 ## 2. Actors
 

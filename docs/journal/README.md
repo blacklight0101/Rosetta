@@ -22,4 +22,4 @@ Rules:
 
 | Date | Entry | Decisions |
 |---|---|---|
-| 2026-10-09 | [Kick-off](2026-10-09-kickoff.md) | DEC-01..DEC-38 |
+| 2026-10-09 | [Kick-off](2026-10-09-kickoff.md) | DEC-01..DEC-39 |
