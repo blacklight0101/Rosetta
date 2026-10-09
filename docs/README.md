@@ -10,7 +10,7 @@ here; they never hold a second copy of these documents.
 | [decision-log.md](decision-log.md) | The product owner's decisions (DEC-nn), what each answers and where it is applied | Living | 2026-10-09 |
 | [journal/](journal/) | Curated per-session summary of what was decided and why, with DEC and Q ids; no conversations | Living | 2026-10-09 |
 | [adr/README.md](adr/README.md) | Architecture decision records index, counts by status, deferred decisions | Living | 2026-10-09 |
-| [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model, services, ports, data ownership, background work, security, deployment, testing approach | Living | 2026-10-09 |
+| [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model and state lists, use cases, ports, agent loop, security, testing approach | Living | 2026-10-10 |
 | [data-model.md](data-model.md) | No database: the file formats Rosetta reads and writes (configuration, code map, run folder, cards, cost report, hand-off package) and their schema versions | Proposed | 2026-10-09 |
 | [conventions.md](conventions.md) | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits | Proposed | 2026-10-10 |
 | [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases | Proposed | 2026-10-10 |

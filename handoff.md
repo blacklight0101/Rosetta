@@ -14,7 +14,8 @@ _Last updated 2026-10-09. Phase **P0 - documentation**. No code yet._
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
   `orchestrator` still a scaffold.
-- Not yet filled: `docs/architecture.md`, `docs/data-model.md`, `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
+- `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
+- Not yet filled: `docs/data-model.md`, `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
   `docs/process-flows.md`, `docs/orchestration/`.
 
 ## Resume point
@@ -24,7 +25,6 @@ and the first journal entry written. Remaining documents are scaffolded but not 
 
 Next, in this order:
 1. Ask the owner to create the public repository and open the first pull request (`docs/kickoff`) for review (G-03).
-2. Write `docs/architecture.md` (Clean Architecture layers, layout, state lists, ports).
 3. Pre-build agenda: file formats (data-model.md), report design v1 (design-system.md), conventions and delivery.
 4. Roadmap, process flows and the build plan with difficulty-rated cards (DEC-32); run `check_docs.py`.
 5. Owner reviews the whole set; G-01 opens only then (DEC-33).
