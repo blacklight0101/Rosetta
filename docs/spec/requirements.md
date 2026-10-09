@@ -133,8 +133,8 @@ the decision log.
 | Q-10 | Where are Ollama and its models installed? | Product owner | P1 (spike card) | Ollama for Windows, models in `E:\Ollama\models` through the `OLLAMA_MODELS` environment variable (drive C: has 17 GB free) | Default applies |
 | Q-11 | How does the developer answer open questions? | Product owner | P2 | An `answers.md` file generated from the `OQ` cards, edited in any editor; an interactive `rosetta answer` prompt is a Should | Default applies |
 | Q-12 | Which model runs the build verifier? | Product owner | first P1 card | Claude Opus 5.5 for cards of difficulty 1-9 and Claude Fable for difficulty 10 (agents `verifier` and `verifier-fable`) | Answered (DEC-41) |
-| Q-13 | Which parts of the web UI are in the M1 milestone? | Product owner | P1 | Start a run from the browser, the live agent view, the live cost meter, the always-visible project totals, the event stream and the security rules (RF-1000..RF-1003, RF-1006, RF-1009, RF-1010); the verifier view, coverage map, provider calls and logs view, answers and history follow in P2 and P3 | Default applies |
-| Q-14 | Which front-end library builds the web UI and the report? | Product owner | P1 (web UI card) | Preact with Vite, shared by the live UI and the static report | Default applies |
+| Q-13 | Which parts of the web UI are in the M1 milestone? | Product owner | P1 | Start a run from the browser, the live agent view, the live cost meter, the always-visible project totals, the event stream and the security rules (RF-1000..RF-1003, RF-1006, RF-1009, RF-1010); the verifier view, coverage map, provider calls and logs view, answers and history follow in P2 and P3 | Answered (DEC-51) |
+| Q-14 | Which front-end library builds the web UI and the report? | Product owner | P1 (web UI card) | Preact with Vite, shared by the live UI and the static report | Answered (DEC-52) |
 
 ## 5. Functional requirements (R1)
 
@@ -622,12 +622,12 @@ As a developer I want the cost meter in the page so that I can stop a run that c
 - Given a running run, when calls complete, then the page shows tokens and cost per role and in total, the cap as a bar, and the estimate for comparison; a Stop button cancels the run cleanly (RF-422 semantics).
 Verification: end-to-end test with recorded events and the fake provider.
 
-**RF-1004 Live verification view** - R1 - Should - Source DEC-46 - ADR-005, ADR-012
+**RF-1004 Live verification view** - R1 (M1) - Should - Source DEC-51, DEC-46 - ADR-005, ADR-012
 As a developer I want to watch claims move through their statuses so that I see how reliable the result is.
 - Given verification running, when verdicts arrive, then each claim's status changes live with its reason and a link to the cited lines.
 Verification: end-to-end test with recorded events.
 
-**RF-1005 Live coverage map** - R1 - Should - Source DEC-46 - ADR-005, ADR-012
+**RF-1005 Live coverage map** - R1 (M1) - Should - Source DEC-51, DEC-46 - ADR-005, ADR-012
 As a developer I want a map of the repository coloured by what agents have read so that gaps are visible.
 - Given a running run, when files are read, then a tree or grid of the analysed files fills in by area and by read share.
 Verification: end-to-end test with recorded events.
@@ -638,12 +638,12 @@ As a developer I want every run event streamed to the page and stored so that th
 - Given a page that connects late or reconnects, when it subscribes, then it receives the events it missed from the stored log before live ones.
 Verification: integration tests of the event sink adapters.
 
-**RF-1007 Answer open questions in the page** - R1 - Should - Source DEC-15, DEC-46 - ADR-012
+**RF-1007 Answer open questions in the page** - R1 (M1) - Should - Source DEC-51, DEC-15, DEC-46 - ADR-012
 As a developer I want to answer `OQ` cards in the page so that the loop is visual.
 - Given open questions, when I answer one in the page, then `answers.md` is updated and the question is marked answered on the next re-run.
 Verification: end-to-end test.
 
-**RF-1008 Browse runs and download** - R1 - Should - Source DEC-24, DEC-46 - ADR-012
+**RF-1008 Browse runs and download** - R1 (M1) - Should - Source DEC-51, DEC-24, DEC-46 - ADR-012
 As a developer I want the page to list past runs and open their reports and zip downloads so that everything is in one place.
 - Given previous runs in the output folder, when I open the history, then each run shows its source, commit, stage, state, cost and links to its report and zip (RF-008).
 Verification: end-to-end test.
@@ -661,7 +661,7 @@ As a developer I want the tokens and price spent on the whole project in view at
 - Given no run in progress, when the page is opened after runs have finished, then the same totals are shown from the ledger; the report dashboard of each run also shows the project totals at the time it was generated.
 Verification: end-to-end test with recorded events and a fixture ledger.
 
-**RF-1011 Live provider calls and logs view** - R1 - Should - Source DEC-50 - ADR-012
+**RF-1011 Live provider calls and logs view** - R1 (M1) - Should - Source DEC-51, DEC-50 - ADR-012
 As a developer I want to watch the calls to the model providers and Rosetta's log in the page so that I can spot slow, failing or expensive calls while a run works.
 - Given a run, when calls are made, then an "API calls" panel lists each call live from the provider call log (RF-408) with provider, model, agent, latency, tokens, cost and status, filterable by provider, role, agent and status, with errors and retries highlighted and a link to the masked transcript.
 - Given the page, when it is open, then summary figures per provider show calls, errors, average and slowest latency, and tokens per second for Ollama.
@@ -714,6 +714,6 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-500..RF-506 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46 | ADR-002, ADR-005, ADR-012 | P3 (RF-504, RF-506: P1) | to be filled with the build plan |
 | RF-600..RF-603 | DEC-10 | ADR-005 | P3 | to be filled with the build plan |
 | RF-800..RF-802 | DEC-04 | ADR-002 | P1 | to be filled with the build plan |
-| RF-1000..RF-1011 | DEC-46, DEC-47, DEC-49, DEC-50 | ADR-012 | P1 (RF-1004, RF-1005, RF-1007, RF-1008, RF-1011: P2-P3, Q-13) | to be filled with the build plan |
+| RF-1000..RF-1011 | DEC-46, DEC-47, DEC-49, DEC-50 | ADR-012 | P1 (all, DEC-51; postponement order RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | to be filled with the build plan |
 | RNF-001..RNF-013 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009 | all | to be filled with the build plan |
 | [Decision log](../decision-log.md) (all DEC ids) | - (product owner's decisions) | ADR-002..ADR-008 | all | - |

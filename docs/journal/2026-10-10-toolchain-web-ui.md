@@ -1,7 +1,7 @@
 ---
 type: journal
 date: 2026-10-10
-decisions: DEC-40..DEC-50
+decisions: DEC-40..DEC-52
 ---
 
 # 2026-10-10 - Toolchain, file formats, web UI and GitHub sources
@@ -24,8 +24,9 @@ Curated summary of the working session (DEC-38). No conversation is recorded her
 | Project cost | Tokens and price for the whole project always visible in the web UI, live during runs and afterwards | Cost must never be out of sight | DEC-49 |
 | Observability | Every provider call (Ollama or cloud) recorded with timing, tokens, cost and status and shown live; structured application log | Diagnose slow, failing or costly calls and any problem after the fact | DEC-50 |
 
-## Open questions raised
+## Open questions raised and answered
 
-- Q-13 - which web UI parts are in the M1 milestone (default: start from browser, live agents, cost meter, project
-  totals, event stream, security).
-- Q-14 - front-end library for the web UI and report (default: Preact with Vite).
+| Question | Answer | Ids |
+|---|---|---|
+| Q-13 - which web UI parts are in the M1 milestone | All of them are aimed at M1; if the date is at risk, the least essential panels move to P2 in a fixed order, decided by the owner | DEC-51 |
+| Q-14 - front-end library | Preact with Vite; Playwright and axe for browser tests | DEC-52 |

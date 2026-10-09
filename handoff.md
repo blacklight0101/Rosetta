@@ -9,7 +9,7 @@ _Last updated 2026-10-09. Phase **P0 - documentation**. No code yet._
 - `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1011 and RNF-001..RNF-013, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-012; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-50.
+- `docs/decision-log.md` - decisions DEC-01..DEC-52.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
@@ -62,6 +62,8 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-10 (Q-13, Q-14)** - DEC-51: the whole web UI is aimed at M1, with a postponement order if the date is at
+  risk; DEC-52: Preact + Vite, Playwright + axe. Next: data-model.md.
 - **2026-10-10 (formats and web UI)** - DEC-43..DEC-50: file formats, report look, always English, a live local web UI
   showing spawned agents (ADR-012, RF-1000..RF-1009, RF-506), runs from CLI and browser, input only from public
   GitHub snapshots pinned to a commit (RF-120..RF-126); project tokens and cost always visible (RF-428, RF-1010); provider call observability and application log (RF-408, RF-009, RF-1011). ADR-002 amended. Q-13 (web UI in M1) and Q-14 (front-end

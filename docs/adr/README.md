@@ -40,7 +40,6 @@ loopback web server is added) and refines ADR-005 (GitHub permalinks) and ADR-00
 | Candidate | Trigger |
 |---|---|
 | Target-stack proposal in `plan` | Q-06 answered, before the first P3 card |
-| Front-end library for the web UI and report (Q-14) | Q-14 answered, before the first web UI card |
 | Claude Code plugin packaging | start of P4 (R2) |
 | A hosted public version of Rosetta | the owner decides to offer Rosetta as a service (would need hosting, key management and PostgreSQL, DEC-37) |
 | npm publishing and package name | Q-07 and Q-08 answered |

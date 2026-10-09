@@ -66,3 +66,9 @@ We choose option 1.
 - DEC-14 (amended), DEC-37, DEC-46, DEC-47, DEC-48; Q-13, Q-14.
 - RF-001, RF-120..RF-126, RF-506, RF-1000..RF-1009; RNF-004, RNF-010, RNF-011.
 - Amends ADR-002 (a loopback server is added); refines ADR-005 (permalinks) and ADR-006 (read-only snapshot).
+
+## Notes
+
+- 2026-10-10: Q-14 answered (DEC-52) - the front end is Preact with Vite, tested with Playwright and axe. Q-13
+  answered (DEC-51) - the whole web UI is aimed at M1, with a postponement order. DEC-49 and DEC-50 add the
+  always-visible project cost (RF-428, RF-1010) and the provider call and application logs (RF-408, RF-009, RF-1011).

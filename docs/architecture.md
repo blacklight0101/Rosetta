@@ -115,7 +115,7 @@ src/
     cli/                commands, progress rendering, exit codes
     web/                loopback HTTP server, session token, API routes, server-sent events
     composition-root.ts
-web/                    front-end source of the web UI and report components (library per Q-14)
+web/                    front-end source of the web UI and report components (Preact + Vite, DEC-52)
 prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/)
 tests/
   unit/                 mirrors src/

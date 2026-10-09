@@ -85,7 +85,7 @@ packages and GitHub Actions weekly, grouped by minor and patch.
 
 ## 7. Package and tool baseline
 
-Versions checked on the npm registry on 2026-10-09. Ranges are caret ranges on these versions; `package-lock.json` is
+Versions checked on the npm registry on 2026-10-09 (front-end rows on 2026-10-10). Ranges are caret ranges on these versions; `package-lock.json` is
 committed and installs use `npm ci`. Any runtime dependency not listed here needs an ADR (CLAUDE.md stack rules).
 
 **Runtime**
@@ -101,6 +101,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Ollama | Node.js `fetch` against the Ollama HTTP API | built in | no SDK needed; decided in the provider card |
 | Language packs | `web-tree-sitter` + `tree-sitter-c-sharp` (WebAssembly grammar) | 0.27 / 0.23 | WebAssembly avoids native builds on Windows (ADR-004) |
 | Zip export | `yazl` | 3.3 | streaming zip writer (RF-008) |
+| Web UI and report components | `preact` | 11.0 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52) |
 
 **Development**
 
@@ -118,6 +119,8 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Dead code | `knip` | 6.41 | unused files, exports, dependencies |
 | Commits | `@commitlint/cli`, `@commitlint/config-conventional` | 21.2 | `commit-msg` hook and CI on pull request titles |
 | Git hooks | `lefthook` | 2.2 | no install scripts in the hooks |
+| Front-end build | `vite`, `@preact/preset-vite` | 8.3 / 2.10 | builds `web/` into static assets (DEC-52); preset compatibility with Preact 11 confirmed in the first web UI card |
+| Browser tests | `@playwright/test`, `@axe-core/playwright` | 1.64 / 4.13 | the e2e project for the web UI and report; accessibility checks (RNF-010) |
 
 **Forbidden without an ADR**: any agent framework that owns the loop (ADR-003); provider SDKs outside
 infrastructure; native addons that need a C++ toolchain on Windows; `ts-node` (Node.js runs and type-strips

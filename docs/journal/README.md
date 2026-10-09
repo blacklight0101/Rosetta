@@ -23,4 +23,4 @@ Rules:
 | Date | Entry | Decisions |
 |---|---|---|
 | 2026-10-09 | [Kick-off](2026-10-09-kickoff.md) | DEC-01..DEC-39 |
-| 2026-10-10 | [Toolchain, formats, web UI and GitHub sources](2026-10-10-toolchain-web-ui.md) | DEC-40..DEC-50 |
+| 2026-10-10 | [Toolchain, formats, web UI and GitHub sources](2026-10-10-toolchain-web-ui.md) | DEC-40..DEC-52 |
