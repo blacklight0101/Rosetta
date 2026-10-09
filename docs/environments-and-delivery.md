@@ -44,7 +44,7 @@ There is no test or production server: users run released versions on their own 
 | Price table | defaults shipped with Rosetta, dated; overrides in the project configuration (RF-420) |
 
 Secret hygiene: `.env` and `.env.*` are git-ignored (except `.env.example`); GitHub secret scanning with push
-protection is enabled on the repository; gitleaks runs in CI; recordings under `tests/recordings/` are scrubbed of keys
+protection, Dependabot alerts and Dependabot security updates are enabled on the repository (DEC-42); gitleaks runs in CI; recordings under `tests/recordings/` are scrubbed of keys
 before commit (ADR-008).
 
 ## 5. Source control and branching

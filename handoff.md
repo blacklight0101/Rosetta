@@ -9,7 +9,7 @@ _Last updated 2026-10-09. Phase **P0 - documentation**. No code yet._
 - `docs/spec/requirements.md` - release 1 requirements RF-001..RF-802 and RNF-001..RNF-013, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-011; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-40.
+- `docs/decision-log.md` - decisions DEC-01..DEC-42.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
@@ -64,8 +64,8 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 - **2026-10-10 (toolchain)** - DEC-40 and ADR-011: researched current practice for the stack; TypeScript 6.0 (7.x waits
   for typescript-eslint), ESLint 10 strict type-checked, Prettier, dependency-cruiser, knip, Vitest 5 coverage, commitlint,
-  lefthook, hardened CI. Conventions and environments written; builder and verifier agents written. Q-12 (verifier
-  model) open with a default. Pushed to PR #1.
+  lefthook, hardened CI. Conventions and environments written; builder and verifier agents written. Q-12 answered by DEC-41
+  (Opus 5.5 verifier for 1-9, Fable for 10); DEC-42 secret scanning, push protection and Dependabot enabled. Pushed to PR #1.
 - **2026-10-09 (method)** - DEC-39 and ADR-010: spec-driven (spec-anchored) and test-driven development on every card,
   checked by the verifier. Public repository set up, PR #1 open. Ollama 0.40.2 installed in `E:\Ollama\app`, models kept in
   `G:\Ollama Models` (qwen3.5:9b, gemma4:e4b, llama3.1:8b added).
