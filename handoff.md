@@ -6,10 +6,10 @@ _Last updated 2026-10-09. Phase **P0 - documentation**. No code yet._
 
 - `README.md`, `CLAUDE.md` (rules), this file.
 - `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Proposed**.
-- `docs/spec/requirements.md` - release 1 requirements RF-001..RF-802 and RNF-001..RNF-013, **Status: Proposed**;
+- `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1011 and RNF-001..RNF-013, **Status: Proposed**;
   open questions in its section 4.
-- `docs/adr/` - ADR-001..ADR-011; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-42.
+- `docs/adr/` - ADR-001..ADR-012; counts by status in the [index](docs/adr/README.md).
+- `docs/decision-log.md` - decisions DEC-01..DEC-50.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
@@ -34,7 +34,7 @@ Blockers: the owner's go-ahead to create the public GitHub repository.
 ## Agenda for the next session (ask the owner first)
 
 1. ~~Round 3 of questions~~ DONE 2026-10-09: DEC-24..DEC-37.
-2. File formats walk-through (configuration, code map, card, run folder, cost report) - lands in data-model.md.
+2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; write data-model.md.
 3. Report design: brief, optional design round trip, or v1 only - lands in design-system.md and the brief.
 4. Other things to settle: Node version, package baseline, CI, versioning, naming, error codes - lands in
    conventions.md and environments-and-delivery.md.
@@ -62,6 +62,10 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-10 (formats and web UI)** - DEC-43..DEC-50: file formats, report look, always English, a live local web UI
+  showing spawned agents (ADR-012, RF-1000..RF-1009, RF-506), runs from CLI and browser, input only from public
+  GitHub snapshots pinned to a commit (RF-120..RF-126); project tokens and cost always visible (RF-428, RF-1010); provider call observability and application log (RF-408, RF-009, RF-1011). ADR-002 amended. Q-13 (web UI in M1) and Q-14 (front-end
+  library) open with defaults. Pushed to PR #1.
 - **2026-10-10 (toolchain)** - DEC-40 and ADR-011: researched current practice for the stack; TypeScript 6.0 (7.x waits
   for typescript-eslint), ESLint 10 strict type-checked, Prettier, dependency-cruiser, knip, Vitest 5 coverage, commitlint,
   lefthook, hardened CI. Conventions and environments written; builder and verifier agents written. Q-12 answered by DEC-41

@@ -7,11 +7,11 @@ Rules of the road for anyone (including Claude) working in this repository. The 
 
 Rosetta is a new open-source command-line tool (it replaces no system) that turns a legacy codebase into a verified
 functional specification and a tool-agnostic modernisation hand-off package:
-legacy repository -> `scan` (deterministic code map) -> `understand` (agents write evidence-cited cards, a verifier
+public GitHub repository URL (pinned to a commit) -> `scan` (deterministic code map) -> `understand` (agents write evidence-cited cards, a verifier
 checks them) -> owner answers open questions -> `report` (HTML) -> `plan` (architecture, ADRs, roadmap, task cards).
 Release 1 is the whole pipeline on one developer machine with cost control; the first milestone (2026-10-26) is a
 `scan` + `understand` slice on the demo app. Rebuilding the legacy system is never part of Rosetta. Audience:
-developers and tech leads; it runs locally as a CLI and talks to AI providers over their APIs. Phases are in
+developers and tech leads; it runs locally as a CLI with a live loopback web UI that shows every agent and the project's tokens and cost, and talks to AI providers over their APIs. Phases are in
 [docs/roadmap.md](docs/roadmap.md).
 
 ## Repository and deployment
@@ -23,9 +23,9 @@ developers and tech leads; it runs locally as a CLI and talks to AI providers ov
 | Product owner | BlackLigth (blacklight0101) |
 | Version control | git, branch `main`; remote `origin` = public GitHub `blacklight0101/Rosetta` (created at gate G-03); never push unless asked |
 | Branching | branch off `main` per change -> review -> fast-forward or squash merge -> linear history |
-| Hosting target | None: a CLI run on the user's machine ([ADR-002](docs/adr/ADR-002-typescript-node-cli.md)); the sample report is published as a static site on GitHub Pages |
+| Hosting target | None: a CLI plus a loopback-only web UI on the user's machine ([ADR-002](docs/adr/ADR-002-typescript-node-cli.md), [ADR-012](docs/adr/ADR-012-local-web-ui-and-github-sources.md)); the sample report is published as a static site on GitHub Pages |
 | Data store | No database. Files only: configuration and the run output folder ([docs/data-model.md](docs/data-model.md)) |
-| Read-only references | Any legacy repository being analysed, including the demo clone of `eShopModernizing` |
+| Read-only references | Snapshots of the public GitHub repositories being analysed, including `dotnet-architecture/eShopModernizing` |
 
 ## Sources of truth
 
@@ -71,8 +71,11 @@ applied, and fixing it is part of applying the decision.
 
 ## Hard rules specific to this system
 
-- **Never write to the analysed repository.** Agent tools are read-only; every output goes to the run output folder.
-  (DEC-17, [ADR-006](docs/adr/ADR-006-read-only-tools-and-data-egress.md), RF-005)
+- **Never write to a snapshot.** Legacy code comes only from public GitHub repositories, pinned to a commit and
+  cached read-only; agent tools are read-only; every output goes to the run output folder. (DEC-17, DEC-48,
+  [ADR-006](docs/adr/ADR-006-read-only-tools-and-data-egress.md), [ADR-012](docs/adr/ADR-012-local-web-ui-and-github-sources.md), RF-005, RF-122)
+- **The web server is loopback-only.** It binds `127.0.0.1`, requires the session token, checks `Host` and `Origin`
+  and never sends a secret to the browser. (DEC-46, ADR-012, RF-1009)
 - **Never send a file a run did not ask for, a path listed in `.rosettaignore`, or an unmasked secret to a
   provider.** All provider traffic goes through the egress guard. (DEC-16, ADR-006, RF-140..RF-149)
 - **Never call a provider SDK outside its adapter.** Agents, orchestrator and verifier talk only to the
@@ -123,10 +126,9 @@ applied, and fixing it is part of applying the decision.
 
 ## Read-only paths
 
-- The demo legacy application clone (for example `C:\BuildingFolder\_legacy\eShopModernizing`): input for runs and
-  tests only; never edit it and never copy its files into this repository except as small, cited excerpts in test
+- Snapshots under `rosetta-out/sources/` (for example of `dotnet-architecture/eShopModernizing`): input for runs
+  only; never edit them and never copy their files into this repository except as small, cited excerpts in test
   fixtures (MIT licence, attribution kept).
-- Any other legacy repository a run analyses.
 
 ## Commit policy and GitHub workflow (DEC-33, DEC-35)
 

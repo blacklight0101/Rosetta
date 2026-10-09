@@ -100,6 +100,9 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 | RST-1600..1699 | budget and cost |
 | RST-1700..1799 | report and export |
 | RST-1800..1899 | plan |
+| RST-1900..1999 | GitHub sources (URL, ref resolution, snapshot download, rate limits) |
+| RST-2000..2099 | local web UI and its server |
+| RST-2100..2199 | logging and observability |
 
 ## 7. Tests
 

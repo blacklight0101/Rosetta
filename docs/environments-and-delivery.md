@@ -7,8 +7,8 @@
 | **Owner** | BlackLigth (blacklight0101) |
 | **Related** | [Architecture](architecture.md) - [Conventions](conventions.md) - [ADR-002](adr/ADR-002-typescript-node-cli.md) - [ADR-011](adr/ADR-011-toolchain-and-quality-gates.md) - [Orchestration](orchestration/README.md) |
 
-Rosetta is a command-line tool that runs on the developer's machine; it has no servers, no database and no hosted
-environment (DEC-14). This document is the canonical home of the package and tool baseline (section 7).
+Rosetta is a command-line tool with a loopback-only web UI that runs on the developer's machine; it has no hosted
+environment and no database (DEC-14, DEC-46). This document is the canonical home of the package and tool baseline (section 7).
 
 ## 1. Environments
 
@@ -31,6 +31,7 @@ There is no test or production server: users run released versions on their own 
 
 | Identity | Used by | Kind | Notes |
 |---|---|---|---|
+| GitHub API (optional) | Rosetta fetching snapshots | read-only `GITHUB_TOKEN` in the environment | only raises rate limits; public repositories need no token (RF-123) |
 | Developer's provider accounts | the developer running Rosetta | API keys per provider | owned by each user; Rosetta never stores them |
 | GitHub Actions token | CI | `GITHUB_TOKEN` with `contents: read` by default | write scopes only in the Pages and release jobs |
 
@@ -152,8 +153,13 @@ The repository on GitHub is the backup of code and documents. Run output belongs
 
 ## 13. Observability
 
-- Every run writes its manifest, egress log and cost report (RF-003, RF-142, RF-426); this is the audit trail.
-- `--verbose` adds debug logs to standard error; logs never contain secrets or API keys (RNF-003).
+- Every run writes its manifest, egress log, cost report, run events and provider call log (RF-003, RF-142, RF-426,
+  RF-1006, RF-408); the project keeps a cost ledger (RF-428). This is the audit trail.
+- Every provider interaction (Ollama or cloud) is one record with timing, tokens, cost, retries and status, shown live
+  in the web UI (RF-408, RF-1011).
+- Rosetta's own log: structured JSON lines in `rosetta-out/logs/`, daily files kept 14 days, `debug` and above; the
+  terminal shows `info` (`--verbose` for `debug`, `--quiet` for `warn`) (RF-009).
+- Logs and records pass through the secret masking and never contain secrets or API keys (RNF-003).
 - No telemetry: Rosetta sends nothing anywhere except to the providers the user configures.
 
 ## 14. Runbooks

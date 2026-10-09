@@ -12,8 +12,8 @@
 
 ### 1.1 Scope
 
-Release 1 (R1) is a command-line tool that a developer runs on their own machine against a legacy repository in any
-language. It maps the repository (`scan`), has AI agents write evidence-cited cards that a verifier checks
+Release 1 (R1) is a command-line tool with a live local web UI that a developer runs on their own machine against a
+legacy codebase in any language, taken from a public GitHub repository (DEC-46, DEC-47, DEC-48). It maps the repository (`scan`), has AI agents write evidence-cited cards that a verifier checks
 (`understand`), collects the developer's answers to open questions, renders an HTML report (`report`) and writes a
 tool-agnostic modernisation hand-off package (`plan`), with cost control on every model call and a swappable AI
 provider (DEC-05, DEC-09, DEC-10, DEC-11, DEC-13). A subset of R1, marked **M1** below, is the milestone due
@@ -24,6 +24,7 @@ provider (DEC-05, DEC-09, DEC-10, DEC-11, DEC-13). A subset of R1, marked **M1**
 - `RF-nnn` functional requirement, `RNF-nnn` non-functional requirement, `Q-nn` open question (section 4),
   `DEC-nn` a decision by the product owner in [decision-log.md](../decision-log.md) (a requirement cites it as
   `Decision DEC-nn`), `ADR-nnn` an architecture decision record.
+- Functional ids have three digits up to RF-999 and four digits from RF-1000.
 - Ids are **never renumbered or reused**. A dropped requirement keeps its id and reads
   `Withdrawn YYYY-MM-DD - see <id>`.
 - **Release** says when it ships: `R1 (M1)` is part of the 2026-10-26 milestone, `R1` ships later in release 1.
@@ -48,6 +49,7 @@ takes the next free range. This table is the canonical list of ranges.
 | RF-600..RF-699 | Plan: the hand-off package | R1 |
 | RF-700..RF-799 | Claude Code plugin run mode | R2 (deferred) |
 | RF-800..RF-899 | Milestone hand-in artefacts | R1 (M1) |
+| RF-1000..RF-1099 | Local web UI (live agents, runs from the browser) | R1 |
 | RF-900..RF-999 | Multi-target evaluation and provider comparison | R2 (deferred) |
 | RNF-001..RNF-099 | Non-functional requirements, grouped in tens by quality (see section 6) | all |
 
@@ -65,7 +67,8 @@ Every scenario becomes at least one automated test named after the requirement i
 |---|---|---|
 | Developer | person | installs and configures Rosetta, runs every command, answers open questions, reads the report, hands the package on (RF-001..RF-699) |
 | Modernisation team | person | receives the hand-off package and builds the new system in its own way; never runs Rosetta (RF-600..RF-699) |
-| Legacy repository | system | the read-only input: a folder of source code in any language (RF-100..RF-149) |
+| GitHub | system | hosts the public legacy repositories; Rosetta resolves refs and downloads snapshots (RF-120..RF-126) |
+| Legacy repository | system | the read-only input: a snapshot of a public GitHub repository in any language (RF-100..RF-149) |
 | Ollama | system | local model server; zero-cost provider (RF-401) |
 | OpenAI API | system | cloud provider (RF-402) |
 | Anthropic API | system | cloud provider (RF-404) |
@@ -76,9 +79,13 @@ Every scenario becomes at least one automated test named after the requirement i
 
 | Term | Meaning |
 |---|---|
-| Legacy repository | The folder being analysed. Rosetta never writes inside it (RF-005). |
-| Project | One legacy repository plus its Rosetta configuration file and output folder. |
-| Output folder | The folder where every run writes; it must be outside the legacy repository. Layout in [data-model.md](../data-model.md). |
+| Legacy repository | The public GitHub repository being analysed (optionally one subpath of it). |
+| Snapshot | The legacy repository's files at one commit, downloaded and cached in `rosetta-out/sources/<owner>__<repo>@<sha>/`; read-only (RF-005). |
+| Permalink | A GitHub link to cited lines at the snapshot's commit: `https://github.com/<owner>/<repo>/blob/<sha>/<path>#L<a>-L<b>`. |
+| Run event | A typed event a run publishes (agent spawned, turn, tool call, card, verdict, usage, state); streamed to the web UI and stored in `events.jsonl`. |
+| Web UI | The local web page Rosetta serves on the loopback interface (RF-1000..RF-1009). |
+| Project | One legacy repository (GitHub URL, ref, optional subpath) plus its Rosetta configuration file and output folder. |
+| Output folder | The folder where every run writes (`rosetta-out/`), including the snapshot cache. Layout in [data-model.md](../data-model.md). |
 | Run | One execution of one stage (`scan`, `understand`, `verify`, `report`, `plan`), stored in its own run folder with a manifest. |
 | Code map | The deterministic result of `scan` (`codemap.json`): files, languages, sizes, token estimates, entry points, artefacts, symbols and references where a language pack exists, and areas. |
 | Map level | How rich the code map is for a file: `coarse` (universal layer only) or `symbols` (a language pack ran). |
@@ -97,6 +104,9 @@ Every scenario becomes at least one automated test named after the requirement i
 | Budget guard | The component that meters every model call and enforces caps (RF-421, RF-422). |
 | Price table | Per provider and model: price per million input tokens, output tokens and cached input tokens, and currency. |
 | Cost report | Tokens and cost of a run by role, agent task, provider and model (RF-426). |
+| Provider call log | `provider-calls.jsonl` in a run folder: one record per provider call attempt with timing, tokens, cost and status (RF-408). |
+| Application log | `rosetta-out/logs/rosetta-YYYY-MM-DD.jsonl`: Rosetta's own structured log (RF-009). |
+| Cost ledger | `rosetta-out/cost-ledger.jsonl`: one line per model call across every run of the project; the source of the project totals (RF-428). |
 | Hand-off package | The output of `plan`: specification, target architecture, ADRs, data mapping, roadmap and task cards (RF-600..RF-699). |
 | Golden set | Hand-checked findings for a demo repository used to score runs (RNF-006). |
 | Recorded response | A saved provider response replayed by the fake provider in tests (ADR-008). |
@@ -123,18 +133,20 @@ the decision log.
 | Q-10 | Where are Ollama and its models installed? | Product owner | P1 (spike card) | Ollama for Windows, models in `E:\Ollama\models` through the `OLLAMA_MODELS` environment variable (drive C: has 17 GB free) | Default applies |
 | Q-11 | How does the developer answer open questions? | Product owner | P2 | An `answers.md` file generated from the `OQ` cards, edited in any editor; an interactive `rosetta answer` prompt is a Should | Default applies |
 | Q-12 | Which model runs the build verifier? | Product owner | first P1 card | Claude Opus 5.5 for cards of difficulty 1-9 and Claude Fable for difficulty 10 (agents `verifier` and `verifier-fable`) | Answered (DEC-41) |
+| Q-13 | Which parts of the web UI are in the M1 milestone? | Product owner | P1 | Start a run from the browser, the live agent view, the live cost meter, the always-visible project totals, the event stream and the security rules (RF-1000..RF-1003, RF-1006, RF-1009, RF-1010); the verifier view, coverage map, provider calls and logs view, answers and history follow in P2 and P3 | Default applies |
+| Q-14 | Which front-end library builds the web UI and the report? | Product owner | P1 (web UI card) | Preact with Vite, shared by the live UI and the static report | Default applies |
 
 ## 5. Functional requirements (R1)
 
 ### 5.1 CLI, configuration and runs (RF-001..RF-099)
 
-**RF-001 Initialise a project** - R1 (M1) - Must - Source DEC-14 - ADR-002
-As a developer I want `rosetta init <legacy-path>` to create a configuration file, an output folder and a
-`.rosettaignore` template so that I can start analysing in one command.
-- Given an existing legacy folder, when I run `rosetta init <legacy-path>`, then `rosetta.config.yaml`, `.rosettaignore` and the output folder are created in the current folder with commented defaults.
+**RF-001 Initialise a project from a GitHub URL** - R1 (M1) - Must - Source DEC-14, DEC-48 - ADR-002, ADR-012
+As a developer I want `rosetta init <github-url>` to create a configuration file for that repository, an output
+folder and a `.rosettaignore` template so that I can start analysing in one command.
+- Given a public GitHub URL (`https://github.com/<owner>/<repo>`, optionally `/tree/<ref>/<subpath>`), when I run `rosetta init <url>`, then `rosetta.config.yaml` (with the URL, ref and subpath), `.rosettaignore` and `rosetta-out/` are created in the current folder with commented defaults.
 - Given a configuration file already exists, when I run `init` again, then nothing is overwritten and the CLI exits with an error code and a message naming the existing file.
-- Given a path that does not exist, when I run `init`, then the CLI exits with an error code and no file is created.
-Verification: integration tests on a temporary folder.
+- Given a local path or a URL that is not a GitHub repository URL, when I run `init`, then the CLI exits with an error code explaining that only public GitHub URLs are accepted, and no file is created.
+Verification: integration tests on a temporary folder with a fake GitHub client.
 
 **RF-002 Validate configuration** - R1 (M1) - Must - Source DEC-09, DEC-13 - ADR-003, ADR-007
 As a developer I want the configuration (providers, models per role, caps, price table, paths) validated before any
@@ -157,12 +169,12 @@ As a developer I want to see what the run is doing and what it costs while it ru
 - Given `--json`, when the run ends, then a machine-readable summary is printed to standard output and progress goes to standard error.
 Verification: end-to-end test capturing output; manual check in a terminal.
 
-**RF-005 Never modify the legacy repository** - R1 (M1) - Must - Source DEC-17 - ADR-006
-As a developer I want a guarantee that Rosetta never writes inside the analysed repository so that my code is safe.
+**RF-005 Never modify the snapshot** - R1 (M1) - Must - Source DEC-17, DEC-48 - ADR-006, ADR-012
+As a developer I want a guarantee that the downloaded snapshot is never changed so that every citation stays true.
 - Given any command, when it writes a file, then the path is inside the output folder; any write outside it fails with an error code.
-- Given an output folder configured inside the legacy repository, when a command starts, then it stops with an error code (RF-002).
+- Given a snapshot folder, when any command other than the fetch step writes, then the write is refused: the snapshot cache is written once, by the fetcher, and is read-only afterwards.
 - Given an agent, when it asks for a tool that writes, then no such tool exists: the agent tool set is read-only.
-Verification: unit tests on the file-system adapter; integration test comparing a hash of the legacy folder before and after a full run.
+Verification: unit tests on the file-system adapter; integration test comparing a hash of the snapshot before and after a full run.
 
 **RF-006 Resume a stopped run** - R1 - Should - Source DEC-13 - ADR-007
 As a developer I want to resume a run that stopped at a cap or failed so that finished work is not paid for twice.
@@ -174,6 +186,13 @@ As a developer I want predictable exit codes and error codes so that I can scrip
 - Given success, when a command ends, then it exits 0; given a usage or configuration error, it exits 2; given a run stopped by a cap, it exits 3; given any other failure, it exits 1.
 - Given any failure, when it is printed, then it shows an `RST-xxxx` code, a plain message and the next step; the stack trace appears only with `--verbose`.
 Verification: unit tests on the error mapper; integration tests per exit code.
+
+**RF-009 Application log** - R1 (M1) - Must - Source DEC-50 - ADR-009
+As a developer I want Rosetta to log what it does so that I can diagnose any problem after the fact.
+- Given any command, when it runs, then structured log entries (JSON lines with time, level, logger name, message, `RST` code when there is one, and the run, agent task and call ids that apply) are written to `rosetta-out/logs/rosetta-YYYY-MM-DD.jsonl`; files older than 14 days are deleted at start-up (configurable).
+- Given the terminal, when a command runs, then readable lines at `info` level appear; `--verbose` lowers the level to `debug` and `--quiet` raises it to `warn`; the file log always records `debug` and above.
+- Given any entry, when it is written, then it passes through the secret masking and never contains an API key or a token.
+Verification: unit tests on the log formatter and masking; integration test on rotation.
 
 **RF-008 Export a run as a zip file** - R1 (M1) - Must - Source DEC-24 - ADR-009
 As a developer I want to download a run, or a hand-off package, as one zip file with its full folder structure so
@@ -187,7 +206,7 @@ Verification: integration test that unzips the file and compares the tree with t
 
 **RF-100 Walk the repository** - R1 (M1) - Must - Source DEC-11 - ADR-004
 As a developer I want `rosetta scan` to list every relevant file so that later stages see the whole system.
-- Given a legacy repository, when I run `scan`, then every file is listed except default ignores (version-control folders, build output such as `bin/`, `obj/`, `node_modules/`, `packages/`, and binary files) and paths matching `.rosettaignore`.
+- Given a snapshot (and the configured subpath, if any), when I run `scan`, then every file is listed except default ignores (version-control folders, build output such as `bin/`, `obj/`, `node_modules/`, `packages/`, and binary files) and paths matching `.rosettaignore`.
 - Given a file larger than the configured limit, when scanning, then it is listed with a `skipped: too large` reason and never read by agents.
 Verification: integration tests on fixture repositories.
 
@@ -242,6 +261,44 @@ Verification: unit tests on fixtures taken from the demo app (cited, MIT).
 As a developer with an unusual stack I want Rosetta to work without a language pack so that no stack is excluded.
 - Given a repository in a language with no pack, when the full pipeline runs, then scan, understand and report complete, and the report states the map level per area.
 Verification: end-to-end test on a small fixture in a language without a pack.
+
+**RF-120 Accept public GitHub URLs only** - R1 (M1) - Must - Source DEC-48 - ADR-012
+As a developer I want to point Rosetta at a public GitHub repository so that the analysed code is the one anyone can check.
+- Given `https://github.com/<owner>/<repo>`, with optional `/tree/<ref>` and `/<subpath>`, when it is parsed, then owner, repo, ref (default branch when absent) and subpath are recorded.
+- Given a private, missing or non-GitHub repository, when it is fetched, then the command stops with an error code and the reason; nothing is analysed.
+Verification: unit tests on URL parsing; integration tests with a fake GitHub client.
+
+**RF-121 Pin the commit** - R1 (M1) - Must - Source DEC-48 - ADR-012
+As a developer I want every run tied to one commit so that results are reproducible.
+- Given a ref (branch, tag or SHA), when a run starts, then it is resolved to a full commit SHA through the GitHub REST API and recorded in the run manifest.
+Verification: integration test with a fake GitHub client.
+
+**RF-122 Download and cache the snapshot** - R1 (M1) - Must - Source DEC-48 - ADR-012
+As a developer I want the code downloaded once per commit so that repeated runs are fast and offline.
+- Given a commit SHA not yet cached, when a run starts, then the snapshot archive is downloaded and extracted into `rosetta-out/sources/<owner>__<repo>@<sha>/`, with archive paths checked so no file lands outside that folder.
+- Given the snapshot is already cached, when a run starts, then nothing is downloaded and the run works without network to GitHub.
+- Given a download that fails half way, when the run starts again, then the partial folder is discarded and the download restarts.
+Verification: integration tests with a fake archive, including a path-traversal entry.
+
+**RF-123 Respect GitHub limits** - R1 (M1) - Should - Source DEC-48 - ADR-012
+As a developer I want clear behaviour when GitHub limits requests so that I know what to do.
+- Given the anonymous API rate limit is reached, when Rosetta calls GitHub, then it stops with an error code, the reset time and the hint to set a read-only `GITHUB_TOKEN`; with the token set, it is used for API calls and never logged.
+Verification: integration test with a fake GitHub client returning a rate-limit response.
+
+**RF-124 Analyse a subpath** - R1 (M1) - Must - Source DEC-48 - ADR-012
+As a developer I want to analyse one folder of a repository so that the demo can target `eShopLegacyWebFormsSolution`.
+- Given a subpath, when scanning, then only files under it are listed, while citations keep paths relative to the repository root so permalinks work.
+Verification: integration test on a fixture snapshot.
+
+**RF-125 Link citations to GitHub** - R1 (M1) - Must - Source DEC-48 - ADR-005, ADR-012
+As a reader I want every citation to open the exact lines on GitHub so that anyone can check a claim.
+- Given a citation `path:a-b` in a run on commit `sha`, when it is rendered in any output, then it links to `https://github.com/<owner>/<repo>/blob/<sha>/<path>#L<a>-L<b>`.
+Verification: unit test on permalink building; snapshot test of rendered cards.
+
+**RF-126 Record the source** - R1 (M1) - Must - Source DEC-48 - ADR-012
+As a developer I want each run to state exactly what was analysed so that it can be repeated.
+- Given any run, when its manifest is written, then it holds the repository URL, ref, commit SHA, subpath and snapshot hash.
+Verification: integration test on the manifest.
 
 **RF-140 Ignore file** - R1 (M1) - Must - Source DEC-16 - ADR-006
 As a developer I want paths in `.rosettaignore` never scanned or read so that I control what leaves my machine.
@@ -362,6 +419,14 @@ Verification: integration test.
 
 ### 5.5 Providers and cost control (RF-400..RF-499)
 
+**RF-408 Provider call log** - R1 (M1) - Must - Source DEC-50 - ADR-003, ADR-006, ADR-012
+As a developer I want every interaction with a model provider recorded so that I can see what was asked, how long it took, what it cost and why it failed.
+- Given any provider call (Ollama, OpenAI, Anthropic, OpenAI-compatible), when it ends, then one record is appended to `provider-calls.jsonl` in the run folder with sequence number, run, agent task, role, provider, model, endpoint host, the provider's request id, start time, time to first token, total latency, tokens (input, output, cached), cost, attempt number, finish reason, status and `RST` error code, and a link to its masked transcript entry.
+- Given Ollama, when a call ends, then the record also holds Ollama's own load, prompt-evaluation and generation durations and tokens per second.
+- Given a retried call, when each attempt ends, then each attempt is a record, linked to the first by a call id.
+- Given any record, when it is written, then it contains no API key, header value or unmasked secret (RNF-003).
+Verification: integration tests with the fake provider and a fake Ollama server; output scan test.
+
 **RF-400 One provider port** - R1 (M1) - Must - Source DEC-09 - ADR-003
 As a maintainer I want all model access through one interface so that providers are swappable.
 - Given any agent, verifier or planner call, when it is made, then it goes through the `LlmProvider` port with a system prompt, messages and tool definitions, and returns text, tool calls and usage (input, output and cached input tokens) in one shape for every provider.
@@ -447,6 +512,13 @@ As a developer I want a warning when a paid model has no price so that the cap c
 - Given a non-local model missing from the price table, when the run starts, then it stops with an error code unless `--allow-unpriced` is given, in which case cost is shown as unknown and only the token cap applies.
 Verification: integration test.
 
+**RF-428 Project cost ledger** - R1 (M1) - Must - Source DEC-13, DEC-49 - ADR-007, ADR-012
+As a developer I want the tokens and cost of every run on a project added up so that I always know what analysing it has cost in total.
+- Given any model call, when it completes, then one line with run, stage, role, provider, model, tokens (input, output, cached) and cost is appended to `rosetta-out/cost-ledger.jsonl`, so the totals survive an interrupted or failed run.
+- Given the ledger, when `rosetta cost` runs, then it prints the project totals and a breakdown by run, stage, role, provider and model; local models show tokens with a cost of zero.
+- Given a price table change, when totals are shown, then each line keeps the cost computed at the time of the call and the price table version it used.
+Verification: unit tests on the ledger totals; integration test with an interrupted run.
+
 ### 5.6 Report (RF-500..RF-599)
 
 **RF-500 HTML report** - R1 - Must - Source DEC-05 - ADR-005
@@ -474,6 +546,11 @@ As a reader of a published report I want a "Download all" link so that I get eve
 folder structure without cloning anything.
 - Given a generated report, when it is written, then it includes a zip of the run (RF-008) and, when a hand-off package exists, a second zip of it, linked from the dashboard; the links work from disk and on GitHub Pages.
 Verification: end-to-end test that downloads and unzips both files.
+
+**RF-506 Replay the agents in the report** - R1 (M1) - Should - Source DEC-46 - ADR-012
+As a reader of a published report I want to watch how the agents worked so that the analysis is understandable and convincing.
+- Given a run with `events.jsonl`, when its report is generated, then a "Run replay" page shows the agents spawned, their timeline of turns and tool calls, the cards they produced, the verifier's verdicts and the cost over time, with play, pause and step controls; without JavaScript it shows the same timeline as a static list.
+Verification: end-to-end test with a headless browser on a recorded run; accessibility check.
 
 **RF-504 Markdown report for the milestone** - R1 (M1) - Must - Source DEC-04, DEC-18 - ADR-005
 As a developer I want a Markdown report before the HTML one exists so that the milestone has a readable output.
@@ -520,6 +597,77 @@ As the product owner I want slides and a video that present Rosetta so that the 
 - Given the milestone, when it is handed in, then the slides URL and the video URL are linked from the README; the format follows Q-02 and Q-03.
 Verification: manual check of both URLs.
 
+### 5.9 Local web UI (RF-1000..RF-1099)
+
+**RF-1000 Start the web UI** - R1 (M1) - Must - Source DEC-46, DEC-47 - ADR-012
+As a developer I want `rosetta ui` to open a local web page so that I can work visually.
+- Given the command, when it runs, then a server starts on `127.0.0.1` on a free port (or the configured one), the browser opens the page with a per-session token in the URL, and Ctrl+C stops the server cleanly.
+- Given a run command such as `rosetta understand <github-url>`, when it starts, then the same live page opens unless `--no-ui` is given.
+Verification: integration test of the server lifecycle; end-to-end test opening the page.
+
+**RF-1001 Start a run from the browser** - R1 (M1) - Must - Source DEC-47, DEC-48 - ADR-012
+As a developer I want to paste a GitHub URL and start a run from the page so that I never need the terminal for a demo.
+- Given the start form, when I paste a URL, choose the stage and areas and press Start, then the page shows the estimate (RF-425) and the cloud warning when it applies (RF-143) and starts the run only after I confirm.
+- Given an invalid or private URL, when I press Start, then the page shows the error code and message next to the field and starts nothing.
+Verification: end-to-end test with a fake GitHub client and the fake provider.
+
+**RF-1002 Live agent view** - R1 (M1) - Must - Source DEC-46 - ADR-012
+As a developer I want to see every agent the run spawns and what it is doing so that the process is transparent.
+- Given a running `understand`, when agents are spawned, then the page shows one panel per agent with its area, role, model, state, turn count, the tool call in progress (for example `read_file Catalog/Edit.aspx.cs:40-80`), files read, cards found so far, and tokens and cost, all updating live.
+- Given the orchestrator, when the run progresses, then an overview shows agents planned, running, finished and failed, and a verbose event log lists every event with its time.
+Verification: end-to-end test driven by recorded events; manual check during a real run.
+
+**RF-1003 Live cost and budget** - R1 (M1) - Must - Source DEC-13, DEC-46 - ADR-007, ADR-012
+As a developer I want the cost meter in the page so that I can stop a run that costs too much.
+- Given a running run, when calls complete, then the page shows tokens and cost per role and in total, the cap as a bar, and the estimate for comparison; a Stop button cancels the run cleanly (RF-422 semantics).
+Verification: end-to-end test with recorded events and the fake provider.
+
+**RF-1004 Live verification view** - R1 - Should - Source DEC-46 - ADR-005, ADR-012
+As a developer I want to watch claims move through their statuses so that I see how reliable the result is.
+- Given verification running, when verdicts arrive, then each claim's status changes live with its reason and a link to the cited lines.
+Verification: end-to-end test with recorded events.
+
+**RF-1005 Live coverage map** - R1 - Should - Source DEC-46 - ADR-005, ADR-012
+As a developer I want a map of the repository coloured by what agents have read so that gaps are visible.
+- Given a running run, when files are read, then a tree or grid of the analysed files fills in by area and by read share.
+Verification: end-to-end test with recorded events.
+
+**RF-1006 Publish and store run events** - R1 (M1) - Must - Source DEC-46 - ADR-012
+As a developer I want every run event streamed to the page and stored so that the page is live and the report can replay it.
+- Given any run, when an event occurs, then it is published to every connected page through server-sent events and appended to `events.jsonl` in the run folder, in order, with a sequence number and time.
+- Given a page that connects late or reconnects, when it subscribes, then it receives the events it missed from the stored log before live ones.
+Verification: integration tests of the event sink adapters.
+
+**RF-1007 Answer open questions in the page** - R1 - Should - Source DEC-15, DEC-46 - ADR-012
+As a developer I want to answer `OQ` cards in the page so that the loop is visual.
+- Given open questions, when I answer one in the page, then `answers.md` is updated and the question is marked answered on the next re-run.
+Verification: end-to-end test.
+
+**RF-1008 Browse runs and download** - R1 - Should - Source DEC-24, DEC-46 - ADR-012
+As a developer I want the page to list past runs and open their reports and zip downloads so that everything is in one place.
+- Given previous runs in the output folder, when I open the history, then each run shows its source, commit, stage, state, cost and links to its report and zip (RF-008).
+Verification: end-to-end test.
+
+**RF-1009 Keep the local server private** - R1 (M1) - Must - Source DEC-46 - ADR-006, ADR-012
+As a developer I want the local server reachable only by my browser session so that no other site or machine can drive Rosetta or read results.
+- Given the server, when it starts, then it listens only on the loopback interface; requests without the session token, with a foreign `Origin`, or with a `Host` other than the loopback address and port are refused.
+- Given any response, when it is sent, then it never contains an API key or other secret.
+Verification: integration tests for each refused request; output scan test.
+
+**RF-1010 Project tokens and cost always visible** - R1 (M1) - Must - Source DEC-49 - ADR-007, ADR-012
+As a developer I want the tokens and price spent on the whole project in view at all times so that I never lose track of what the analysis costs.
+- Given any page of the web UI, when it is open, then a header bar shows the project's total tokens (input, output, cached) and total cost from the cost ledger (RF-428), with a breakdown by run, stage, provider and model one click away.
+- Given a run in progress, when a model call completes, then the project totals in the header update live together with the run's own meter (RF-1003).
+- Given no run in progress, when the page is opened after runs have finished, then the same totals are shown from the ledger; the report dashboard of each run also shows the project totals at the time it was generated.
+Verification: end-to-end test with recorded events and a fixture ledger.
+
+**RF-1011 Live provider calls and logs view** - R1 - Should - Source DEC-50 - ADR-012
+As a developer I want to watch the calls to the model providers and Rosetta's log in the page so that I can spot slow, failing or expensive calls while a run works.
+- Given a run, when calls are made, then an "API calls" panel lists each call live from the provider call log (RF-408) with provider, model, agent, latency, tokens, cost and status, filterable by provider, role, agent and status, with errors and retries highlighted and a link to the masked transcript.
+- Given the page, when it is open, then summary figures per provider show calls, errors, average and slowest latency, and tokens per second for Ollama.
+- Given the application log (RF-009), when I open the "Logs" panel, then recent entries stream live with a level filter.
+Verification: end-to-end test with recorded events.
+
 ## 6. Non-functional requirements
 
 | Id | Requirement | Verification |
@@ -534,7 +682,7 @@ Verification: manual check of both URLs.
 | RNF-008 | **Usability**: every command has `--help` with an example; every error shows a code, a plain message and the next step. | review of help output; error-mapper tests |
 | RNF-009 | **Licensing**: Rosetta is MIT-licensed; any third-party code used as a fixture is a small excerpt with its source and licence cited. | review at each phase exit |
 | RNF-010 | **Report accessibility**: the HTML report meets WCAG 2.1 AA for contrast, keyboard navigation and headings, in light and dark themes. | automated accessibility check plus manual keyboard test |
-| RNF-011 | **Local-first**: the whole pipeline works with Ollama only and no internet connection. | end-to-end run with the network disabled and Ollama running |
+| RNF-011 | **Local-first**: once a snapshot is cached, the whole pipeline works with Ollama only and no internet connection. | end-to-end run with the network disabled, a cached snapshot and Ollama running |
 | RNF-012 | **Estimate accuracy**: the actual cost of an `understand` run falls within 30% of the likely estimate on the demo app. | comparison of `estimate` and `cost.json` over three runs |
 | RNF-013 | **Clean Architecture**: the domain and application layers import nothing from infrastructure or presentation; dependencies point inward only; checked automatically on every pull request. | dependency rule check in `npm run verify` (ADR-009) |
 
@@ -553,17 +701,19 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 
 | Requirement group | Source | ADR | Phase | Cards |
 |---|---|---|---|---|
-| RF-001..RF-008 | DEC-13, DEC-14, DEC-17, DEC-24 | ADR-002, ADR-006, ADR-007, ADR-009 | P1 (RF-006: P2) | to be filled with the build plan |
+| RF-001..RF-009 | DEC-13, DEC-14, DEC-17, DEC-24, DEC-50 | ADR-002, ADR-006, ADR-007, ADR-009 | P1 (RF-006: P2) | to be filled with the build plan |
 | RF-100..RF-112 | DEC-11, DEC-12 | ADR-004 | P1 | to be filled with the build plan |
+| RF-120..RF-126 | DEC-48 | ADR-012 | P1 | to be filled with the build plan |
 | RF-140..RF-144 | DEC-16 | ADR-006 | P1 (RF-144: P2) | to be filled with the build plan |
 | RF-200..RF-205 | DEC-15, DEC-18 | ADR-003, ADR-005 | P1 | to be filled with the build plan |
 | RF-230..RF-250 | DEC-15, DEC-18 | ADR-003, ADR-005 | P2 | to be filled with the build plan |
 | RF-300, RF-302 | DEC-19 | ADR-005 | P1 | to be filled with the build plan |
 | RF-301, RF-303, RF-304 | DEC-19 | ADR-005 | P2 | to be filled with the build plan |
-| RF-400..RF-407 | DEC-09, DEC-23 | ADR-003 | P1 (RF-403, RF-404: P2) | to be filled with the build plan |
-| RF-420..RF-427 | DEC-13 | ADR-007 | P1 (RF-423, RF-425, RF-427: P2) | to be filled with the build plan |
-| RF-500..RF-505 | DEC-04, DEC-05, DEC-24, DEC-26 | ADR-002, ADR-005 | P3 (RF-504: P1) | to be filled with the build plan |
+| RF-400..RF-408 | DEC-09, DEC-23, DEC-50 | ADR-003 | P1 (RF-403, RF-404: P2) | to be filled with the build plan |
+| RF-420..RF-428 | DEC-13, DEC-49 | ADR-007 | P1 (RF-423, RF-425, RF-427: P2) | to be filled with the build plan |
+| RF-500..RF-506 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46 | ADR-002, ADR-005, ADR-012 | P3 (RF-504, RF-506: P1) | to be filled with the build plan |
 | RF-600..RF-603 | DEC-10 | ADR-005 | P3 | to be filled with the build plan |
 | RF-800..RF-802 | DEC-04 | ADR-002 | P1 | to be filled with the build plan |
+| RF-1000..RF-1011 | DEC-46, DEC-47, DEC-49, DEC-50 | ADR-012 | P1 (RF-1004, RF-1005, RF-1007, RF-1008, RF-1011: P2-P3, Q-13) | to be filled with the build plan |
 | RNF-001..RNF-013 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009 | all | to be filled with the build plan |
 | [Decision log](../decision-log.md) (all DEC ids) | - (product owner's decisions) | ADR-002..ADR-008 | all | - |

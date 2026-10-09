@@ -18,32 +18,37 @@ structure. Decisions and their trade-offs are in the ADRs; rules for writing cod
 flowchart LR
   DEV[Developer]
   subgraph Machine["Developer's machine"]
-    RST[Rosetta CLI]
-    REPO[(Legacy repository<br/>read-only)]
-    OUT[(Output folder<br/>rosetta-out/)]
+    WEB[Browser<br/>live web UI]
+    RST[Rosetta CLI<br/>+ loopback server]
+    OUT[(rosetta-out/<br/>snapshots, runs)]
     OLL[Ollama]
   end
+  GH[GitHub<br/>public repositories]
   CLOUD[Cloud providers<br/>OpenAI, Anthropic,<br/>OpenAI-compatible]
   PAGES[GitHub Pages<br/>sample report]
-  DEV -- commands, answers --> RST
-  RST -- reads --> REPO
-  RST -- writes --> OUT
+  DEV -- commands --> RST
+  DEV -- GitHub URL, answers --> WEB
+  WEB -- HTTP + server-sent events, 127.0.0.1 --> RST
+  RST -- resolve ref, download snapshot --> GH
+  RST -- reads snapshot, writes runs --> OUT
   RST -- HTTP --> OLL
   RST -- HTTPS, masked excerpts --> CLOUD
   OUT -. published by the owner .-> PAGES
 ```
 
-Rosetta has one actor (the developer) and talks to the outside only through model provider APIs (RFC-001 section
-4.1). Everything it produces is a file in the output folder.
+Rosetta has one actor (the developer), reads legacy code only as commit-pinned snapshots of public GitHub
+repositories, talks to model providers over their APIs, and shows its work live in a local web page (ADR-012).
+Everything it produces is a file in the output folder.
 
 ## 2. Containers and components
 
-There is one container: a Node.js 24 process started per command. It has no server, no database, no background
-service (ADR-002). Inside it:
+There is one container: a Node.js 24 process started per command. While a run or `rosetta ui` is active it also
+serves the web UI on the loopback interface (ADR-012). No hosted service, no database. Inside it:
 
 | Component | Layer | Responsibility |
 |---|---|---|
 | CLI | presentation | parse commands, load and validate configuration, print progress and results, map errors to exit codes |
+| Web server and UI | presentation | loopback HTTP server, session token, server-sent events, the single-page app and its API (start runs, answers, history) |
 | Composition root | presentation | create every adapter and inject it into the use cases; the only place that knows concrete classes |
 | Use cases | application | `scan`, `understand`, `verify`, `answer`, `report`, `plan`, `estimate`, `export`, `providers test` |
 | Agent loop and orchestrator | application | plan agent tasks per area, run the tool-calling loop, collect cards |
@@ -51,7 +56,9 @@ service (ADR-002). Inside it:
 | Domain model | domain | code map, areas, cards, claims, citations, statuses, budgets, prices, runs |
 | Provider adapters | infrastructure | Ollama, OpenAI, OpenAI-compatible, Anthropic, fake (tests) |
 | Guards | infrastructure | egress guard (ADR-006), budget guard (ADR-007) as decorators of the provider port |
-| File system adapters | infrastructure | repository reader (read-only, ignore rules), output writer (only inside the output folder) |
+| GitHub source | infrastructure | parse URLs, resolve refs to SHAs, download and extract snapshots safely, build permalinks |
+| File system adapters | infrastructure | snapshot reader (read-only, ignore rules), output writer (only inside the output folder) |
+| Event sinks | infrastructure | terminal progress, server-sent events broadcaster, `events.jsonl` log |
 | Scanner and language packs | infrastructure | universal layer, tree-sitter packs (ADR-004) |
 | Writers | infrastructure | Markdown cards, JSON index, specification, HTML report, hand-off package, zip |
 
@@ -85,7 +92,8 @@ src/
     code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel
     cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids
     budget/             Money, TokenUsage, Price, PriceTable, Budget, Cap
-    runs/               Run, RunManifest, RunEndState, AgentTaskState
+    runs/               Run, RunManifest, RunEndState, AgentTaskState, RunEvent types
+    sources/            GitHubRepoRef, CommitSha, Permalink
     errors/             domain error codes and Result type
   application/
     ports/              port interfaces (section 7)
@@ -96,14 +104,18 @@ src/
   infrastructure/
     providers/          ollama/, openai/, openai-compatible/, anthropic/, fake/
     guards/             egress-guard, secret-masker, budget-guard
-    files/              repository-reader, ignore-rules, output-writer
+    github/             url parser, ref resolver, snapshot downloader and extractor
+    files/              snapshot-reader, ignore-rules, output-writer
+    events/             terminal-progress, sse-broadcaster, jsonl-event-log
     scan/               universal/, packs/csharp/
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             YAML loader and schema
     system/             clock, id generator, logger
   presentation/
     cli/                commands, progress rendering, exit codes
+    web/                loopback HTTP server, session token, API routes, server-sent events
     composition-root.ts
+web/                    front-end source of the web UI and report components (library per Q-14)
 prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/)
 tests/
   unit/                 mirrors src/
@@ -157,21 +169,23 @@ site/                   published sample report (RF-800)
 | `TestProviders` | `rosetta providers test` | RF-407 |
 
 Each use case is a class with one public `execute` method that takes a typed request and returns a typed `Result`.
-Use cases never print; they report progress through the `ProgressReporter` port.
+Use cases never print; they publish run events through the `RunEventSink` port.
 
 ## 7. Ports and adapters
 
 | Port | Purpose | Adapters |
 |---|---|---|
 | `LlmProvider` | chat with tools; returns text, tool calls, usage (ADR-003) | `OllamaProvider`, `OpenAiProvider`, `OpenAiCompatibleProvider`, `AnthropicProvider`, `FakeProvider` (recordings) |
-| `RepositoryReader` | list files, read line ranges, grep; read-only, ignore rules applied | `NodeRepositoryReader` |
+| `SourceFetcher` | resolve a GitHub URL and ref to a commit and provide its snapshot (ADR-012) | `GitHubSnapshotFetcher`, `FakeSourceFetcher` |
+| `RepositoryReader` | list files, read line ranges, grep in a snapshot; read-only, ignore rules applied | `NodeRepositoryReader` |
 | `OutputWriter` | write and read files inside the output folder only | `NodeOutputWriter` |
 | `LanguagePack` | symbols, references, routes for some extensions (ADR-004) | `CSharpPack` (tree-sitter) |
 | `ConfigSource` | load and validate the configuration | `YamlConfigSource` |
 | `Clock` | current time | `SystemClock`, `FixedClock` (tests) |
 | `IdGenerator` | run ids | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
-| `Logger` | diagnostic logs to standard error | `StderrLogger`, `MemoryLogger` (tests) |
-| `ProgressReporter` | progress events for the CLI and the live cost meter (RF-004, RF-424) | `TerminalProgress`, `JsonProgress`, `MemoryProgress` |
+| `Logger` | structured application log with levels and correlation ids (RF-009) | `TerminalLogger`, `JsonlFileLogger`, `FanOutLogger`, `MemoryLogger` (tests) |
+| `ProviderCallRecorder` | one record per provider call attempt (RF-408), written by an `ObservedProvider` decorator around every provider | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
+| `RunEventSink` | typed run events for the terminal, the web UI and the replay log (RF-004, RF-424, RF-1006) | `TerminalProgress`, `SseBroadcaster`, `JsonlEventLog`, `FanOutSink`, `MemorySink` |
 | `ArchiveWriter` | zip a folder (RF-008) | `YazlArchiveWriter` |
 | `UserPrompt` | yes/no confirmations (cloud warning, estimate threshold) | `TerminalPrompt`, `AutoAnswerPrompt` (`--yes`, tests) |
 
@@ -226,7 +240,10 @@ sequenceDiagram
 
 - No users or accounts (DEC-14). Provider keys come from environment variables named in the configuration; adapters
   read them at start-up and never log them (RNF-003).
-- The repository reader resolves every path against the repository root and refuses anything outside it or matched by
+- The web server listens only on `127.0.0.1`, requires the session token, checks `Host` and `Origin`, and never sends
+  secrets to the browser (RF-1009).
+- Snapshot extraction rejects archive entries that would land outside the snapshot folder (RF-122).
+- The repository reader resolves every path against the snapshot root and refuses anything outside it or matched by
   ignore rules (RF-140); the output writer does the same for the output folder (RF-005).
 - Model output is data: it is parsed with schemas, never executed, never used as a shell command or an unchecked path.
 - The egress guard masks secrets before any call and logs what was sent (RF-141, RF-142).
@@ -259,7 +276,11 @@ The run folder is the audit trail: `manifest.json`, `egress.log.jsonl`, `cost.js
 
 | Data | Owner (writer) | Readers |
 |---|---|---|
-| Legacy repository | the user; Rosetta never writes | scanner, tools, verifier |
+| Snapshots in `sources/` | `SourceFetcher`, once per commit; read-only afterwards | scanner, tools, verifier |
+| `events.jsonl` per run | `JsonlEventLog` | web UI (late subscribers), report replay |
+| `provider-calls.jsonl` per run | `ObservedProvider` decorator (RF-408) | web UI API calls panel (RF-1011), debugging |
+| `logs/rosetta-YYYY-MM-DD.jsonl` | `JsonlFileLogger` (RF-009) | the developer, web UI logs panel |
+| `cost-ledger.jsonl` per project | budget guard, one line per call (RF-428) | web UI header totals (RF-1010), `rosetta cost`, report dashboard |
 | `codemap.json` | `RunScan` | every later stage |
 | Run folders | the use case of that run | report, plan, export |
 | `answers.md` | the developer (generated skeleton by `RunUnderstand`) | `RunUnderstand --with-answers`, `BuildPlan` |
@@ -269,8 +290,8 @@ File formats: [data-model.md](data-model.md).
 
 ## 15. Deployment view
 
-One Node.js process on the developer's machine per command; Ollama runs locally as its own service; cloud providers
-over HTTPS. The sample report is static files on GitHub Pages. Details:
+One Node.js process on the developer's machine per command, serving the web UI on `127.0.0.1` while active; the
+browser connects with a session token; Ollama runs locally as its own service; GitHub and cloud providers over HTTPS. The sample report is static files on GitHub Pages. Details:
 [environments-and-delivery.md](environments-and-delivery.md).
 
 ## 16. Quality attributes
@@ -283,7 +304,7 @@ over HTTPS. The sample report is static files on GitHub Pages. Details:
 | RNF-004 reproducibility | manifest with versions, prompt versions, models, code map hash |
 | RNF-005 offline tests | fake provider, contract suites, network blocked in tests |
 | RNF-006 measured quality | `eval/` golden set and runner |
-| RNF-011 local-first | Ollama adapter; no step requires the internet |
+| RNF-011 local-first | Ollama adapter; snapshot cache; only the first fetch needs GitHub |
 | RNF-012 estimate accuracy | estimator calibrated from cost reports |
 | RNF-013 Clean Architecture | dependency-cruiser rules (section 3) |
 

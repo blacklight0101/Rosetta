@@ -58,11 +58,18 @@ a hand-off package a team can build from.
    roadmap, task cards) that any team can build from (DEC-10; RF-600..RF-699).
 8. Quality is measured, not asserted: a golden set of known findings scores each run, and recorded responses keep
    tests repeatable ([ADR-008](../adr/ADR-008-testing-with-recorded-responses.md); RNF-005, RNF-006).
+9. Progress is visible: a local web page shows every agent the run spawns and what it is doing, live, with the
+   tokens and cost of the whole project always in view; the published report replays the run
+   ([ADR-012](../adr/ADR-012-local-web-ui-and-github-sources.md); RF-1000..RF-1010, RF-506).
+10. Input is a public GitHub repository pinned to a commit, so anyone can follow a citation to the exact lines
+    (ADR-012; RF-120..RF-126).
 
 **Non-goals (explicitly out of release 1)**
 
 - Rebuilding or migrating the legacy system: Rosetta stops at the hand-off package (DEC-10).
-- A hosted web service, accounts or a database: Rosetta is a local CLI (DEC-14).
+- A hosted web service, accounts or a database: Rosetta runs on the developer's machine; its web UI is local
+  (DEC-14, DEC-46).
+- Local folders or private repositories as input: only public GitHub repositories (DEC-48).
 - Modifying, refactoring or running the legacy code: tools are read-only (DEC-17).
 - Analysing the owner's employer's code in this public project (DEC-03).
 - Training or fine-tuning models.
@@ -109,16 +116,16 @@ ADR-007 (cost control), ADR-008 (testing), ADR-009 (Clean Architecture), ADR-010
 ```mermaid
 flowchart LR
   DEV[Developer or tech lead]
-  RST["Rosetta CLI<br/>(on the developer's machine)"]
-  REPO[(Legacy repository<br/>read-only)]
+  RST["Rosetta CLI + local web UI<br/>(on the developer's machine)"]
+  GH[(GitHub<br/>public legacy repository)]
   OUT[(Run output folder<br/>cards, report, hand-off)]
   OLL[Ollama<br/>local models]
   OAI[OpenAI API]
   ANT[Anthropic API]
   OCP[OpenAI-compatible APIs<br/>OpenRouter, Groq, DeepSeek, Gemini]
   TEAM[Modernisation team]
-  DEV -- commands, answers to open questions --> RST
-  RST -- reads files --> REPO
+  DEV -- commands or browser, answers to open questions --> RST
+  RST -- downloads a commit snapshot --> GH
   RST -- writes --> OUT
   RST -- prompts with selected, masked excerpts --> OLL
   RST -- prompts --> OAI
@@ -132,7 +139,8 @@ flowchart LR
 There is one deployable: the Rosetta CLI, a Node.js process started by the developer. It has no server and no
 database. Inside it:
 
-- **Presentation (CLI)** - parses commands and options, loads configuration, wires everything (composition root).
+- **Presentation (CLI and local web UI)** - parses commands, serves the live web page on the loopback interface,
+  wires everything (composition root).
 - **Application** - the use cases `scan`, `understand`, `verify`, `answer`, `report`, `plan`, `estimate`, `export`
   and the agent loop; depends only on the domain and its own ports.
 - **Domain** - cards, claims, citations, statuses, budgets and their rules.

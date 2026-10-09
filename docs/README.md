@@ -33,7 +33,7 @@ Ids are never renumbered or reused. A withdrawn item keeps its id and reads `Wit
 
 | Id | Meaning | Owned by (canonical list) |
 |---|---|---|
-| `RF-nnn` | Functional requirement; three digits, one range of a hundred per module (for example RF-001..RF-099 CLI, RF-100..RF-199 scan) | [spec/requirements.md](spec/requirements.md) section 5, ranges in section 1 |
+| `RF-nnn` | Functional requirement; one range of a hundred per module (for example RF-001..RF-099 CLI, RF-100..RF-199 scan); three digits up to RF-999, four from RF-1000 | [spec/requirements.md](spec/requirements.md) section 5, ranges in section 1 |
 | `RNF-nnn` | Non-functional requirement | [spec/requirements.md](spec/requirements.md) section 6 |
 | `Q-nn` | Open question with owner, needed-by phase, default and status (`Open`, `Default applies`, `Answered (DEC-nn)`, `Withdrawn`) | [spec/requirements.md](spec/requirements.md) section 4 |
 | `DEC-nn` | Product owner decision, with what it answers and where it is applied | [decision-log.md](decision-log.md) |
