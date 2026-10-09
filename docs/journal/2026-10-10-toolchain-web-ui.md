@@ -1,7 +1,7 @@
 ---
 type: journal
 date: 2026-10-10
-decisions: DEC-40..DEC-52
+decisions: DEC-40..DEC-53
 ---
 
 # 2026-10-10 - Toolchain, file formats, web UI and GitHub sources
@@ -30,3 +30,10 @@ Curated summary of the working session (DEC-38). No conversation is recorded her
 |---|---|---|
 | Q-13 - which web UI parts are in the M1 milestone | All of them are aimed at M1; if the date is at risk, the least essential panels move to P2 in a fixed order, decided by the owner | DEC-51 |
 | Q-14 - front-end library | Preact with Vite; Playwright and axe for browser tests | DEC-52 |
+| Q-10 - where Ollama models live | The existing models folder on drive G: is kept; the program is on E: | DEC-53 |
+
+## Data model
+
+The file formats were written down in `docs/data-model.md`: one folder per run, JSON and JSON Lines with a schema
+version in every file, costs stored as integer millionths so totals never drift, and a project-wide cost ledger.
+New open questions: Q-15 (currency, default USD) and Q-16 (clean-up command, default none in R1).

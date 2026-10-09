@@ -130,11 +130,13 @@ the decision log.
 | Q-07 | Is "Rosetta" the final name and package name? | Product owner | P3 | Keep "Rosetta" as the display name; the package name is chosen when publishing (Q-08) to avoid registry conflicts | Default applies |
 | Q-08 | Is Rosetta published to the npm registry in R1? | Product owner | P3 | No: R1 runs from source with `npm` scripts; a scoped package is published in R2 | Default applies |
 | Q-09 | Which Node.js version is the baseline? | Product owner | P1-01 | The current Node.js LTS line installed on the owner's machine, pinned in `.nvmrc` and `package.json` engines | Answered (DEC-27) |
-| Q-10 | Where are Ollama and its models installed? | Product owner | P1 (spike card) | Ollama for Windows, models in `E:\Ollama\models` through the `OLLAMA_MODELS` environment variable (drive C: has 17 GB free) | Default applies |
+| Q-10 | Where are Ollama and its models installed? | Product owner | P1 (spike card) | Ollama for Windows, models in `E:\Ollama\models` through the `OLLAMA_MODELS` environment variable (drive C: has 17 GB free) | Answered (DEC-53) |
 | Q-11 | How does the developer answer open questions? | Product owner | P2 | An `answers.md` file generated from the `OQ` cards, edited in any editor; an interactive `rosetta answer` prompt is a Should | Default applies |
 | Q-12 | Which model runs the build verifier? | Product owner | first P1 card | Claude Opus 5.5 for cards of difficulty 1-9 and Claude Fable for difficulty 10 (agents `verifier` and `verifier-fable`) | Answered (DEC-41) |
 | Q-13 | Which parts of the web UI are in the M1 milestone? | Product owner | P1 | Start a run from the browser, the live agent view, the live cost meter, the always-visible project totals, the event stream and the security rules (RF-1000..RF-1003, RF-1006, RF-1009, RF-1010); the verifier view, coverage map, provider calls and logs view, answers and history follow in P2 and P3 | Answered (DEC-51) |
 | Q-14 | Which front-end library builds the web UI and the report? | Product owner | P1 (web UI card) | Preact with Vite, shared by the live UI and the static report | Answered (DEC-52) |
+| Q-15 | In which currency are costs shown? | Product owner | P1 (cost card) | USD, as providers publish their prices; the shipped price table is in USD and there is no conversion in R1 | Default applies |
+| Q-16 | Should Rosetta offer a command to delete old snapshots and runs? | Product owner | P2 | No command in R1; the developer deletes folders under `rosetta-out/` by hand and the cost ledger keeps the project totals | Default applies |
 
 ## 5. Functional requirements (R1)
 
@@ -152,7 +154,7 @@ Verification: integration tests on a temporary folder with a fake GitHub client.
 As a developer I want the configuration (providers, models per role, caps, price table, paths) validated before any
 work starts so that a typo never costs money.
 - Given a valid configuration, when any command starts, then it loads and continues.
-- Given an unknown provider, a missing model for a role, a negative cap or an output folder inside the legacy repository, when any command starts, then it stops before any model call with one error line per problem, each with an error code.
+- Given an unknown provider, a missing model for a role, a negative cap or an output folder outside the project folder, when any command starts, then it stops before any model call with one error line per problem, each with an error code.
 - Given an API key referenced by environment variable name, when the variable is missing, then the command stops before any model call and names the variable, never a value.
 Verification: unit tests on the schema; integration test per failure.
 
@@ -372,7 +374,7 @@ Verification: integration test with the fake provider.
 
 **RF-240 Collect open questions** - R1 - Must - Source DEC-15 - ADR-005
 As a developer I want all `OQ` cards gathered into one answers file so that I can answer them in one place.
-- Given a run with `OQ` cards, when it ends, then `answers.md` in the project folder lists each open question with its card id, context and an empty answer field; existing answers are kept.
+- Given a run with `OQ` cards, when it ends, then `rosetta-out/answers.md` lists each open question with its card id, context and an empty answer field; existing answers are kept.
 Verification: integration test.
 
 **RF-241 Re-run with answers** - R1 - Must - Source DEC-15 - ADR-003

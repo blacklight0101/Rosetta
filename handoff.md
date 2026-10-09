@@ -15,7 +15,8 @@ _Last updated 2026-10-09. Phase **P0 - documentation**. No code yet._
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
   `orchestrator` still a scaffold.
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
-- Not yet filled: `docs/data-model.md`, `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
+- `docs/data-model.md` - written 2026-10-10 (all file formats; Q-15, Q-16 open with defaults).
+- Not yet filled: `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
   `docs/process-flows.md`, `docs/orchestration/`.
 
 ## Resume point
@@ -34,7 +35,7 @@ Blockers: the owner's go-ahead to create the public GitHub repository.
 ## Agenda for the next session (ask the owner first)
 
 1. ~~Round 3 of questions~~ DONE 2026-10-09: DEC-24..DEC-37.
-2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; write data-model.md.
+2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; data-model.md written, awaiting owner review.
 3. Report design: brief, optional design round trip, or v1 only - lands in design-system.md and the brief.
 4. Other things to settle: Node version, package baseline, CI, versioning, naming, error codes - lands in
    conventions.md and environments-and-delivery.md.
@@ -62,6 +63,9 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-10 (data model)** - data-model.md written: folder map, every file format, event list, call log, cost
+  ledger, schema versions. Q-10 answered (DEC-53, models on G:). Q-15 (currency) and Q-16 (clean-up command) open with
+  defaults. Next: design system v1 and brief with live-page mock-ups.
 - **2026-10-10 (Q-13, Q-14)** - DEC-51: the whole web UI is aimed at M1, with a postponement order if the date is at
   risk; DEC-52: Preact + Vite, Playwright + axe. Next: data-model.md.
 - **2026-10-10 (formats and web UI)** - DEC-43..DEC-50: file formats, report look, always English, a live local web UI
