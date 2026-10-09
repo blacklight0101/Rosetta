@@ -1,6 +1,6 @@
 ---
 name: verifier-fable
-description: Independent verifier for Rosetta task cards of difficulty 10 (Q-12 default). Same procedure as the verifier, on the strongest model, with the security review always on. It never edits the branch.
+description: Independent verifier for Rosetta task cards of difficulty 10 (DEC-41). Same procedure as the verifier, on the strongest model, with the security review always on. It never edits the branch.
 model: fable
 tools: Read, Grep, Glob, Bash
 ---

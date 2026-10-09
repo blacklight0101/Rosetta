@@ -122,7 +122,7 @@ the decision log.
 | Q-09 | Which Node.js version is the baseline? | Product owner | P1-01 | The current Node.js LTS line installed on the owner's machine, pinned in `.nvmrc` and `package.json` engines | Answered (DEC-27) |
 | Q-10 | Where are Ollama and its models installed? | Product owner | P1 (spike card) | Ollama for Windows, models in `E:\Ollama\models` through the `OLLAMA_MODELS` environment variable (drive C: has 17 GB free) | Default applies |
 | Q-11 | How does the developer answer open questions? | Product owner | P2 | An `answers.md` file generated from the `OQ` cards, edited in any editor; an interactive `rosetta answer` prompt is a Should | Default applies |
-| Q-12 | Which model runs the build verifier? | Product owner | first P1 card | Claude Opus 5.5 for cards of difficulty 1-9 and Claude Fable for difficulty 10 (agents `verifier` and `verifier-fable`) | Default applies |
+| Q-12 | Which model runs the build verifier? | Product owner | first P1 card | Claude Opus 5.5 for cards of difficulty 1-9 and Claude Fable for difficulty 10 (agents `verifier` and `verifier-fable`) | Answered (DEC-41) |
 
 ## 5. Functional requirements (R1)
 
