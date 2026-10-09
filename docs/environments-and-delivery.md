@@ -2,165 +2,168 @@
 
 | | |
 |---|---|
-| **Status** | Proposed (2026-10-09) <!-- FILL: Accepted once the owner has reviewed it; add "revised YYYY-MM-DD for DEC-nn" on later changes --> |
-| **Scope** | environments and hosting, identities and service accounts, where secrets live, source control, CI, package baseline, versioning and releases, database deployment, backup and restore, observability and alerting, rollback, runbooks |
-| **Related** | [architecture](architecture.md) section 15 (deployment view, configuration surface), [data model](data-model.md) sections 6 to 8 (accounts, migrations, test databases), [conventions](conventions.md) sections 6 and 12, [orchestration](orchestration/README.md) (human gates) |
+| **Status** | Proposed (2026-10-09) |
+| **Date** | 2026-10-09 |
+| **Owner** | BlackLigth (blacklight0101) |
+| **Related** | [Architecture](architecture.md) - [Conventions](conventions.md) - [ADR-002](adr/ADR-002-typescript-node-cli.md) - [ADR-011](adr/ADR-011-toolchain-and-quality-gates.md) - [Orchestration](orchestration/README.md) |
 
-Every decision here was taken with the owner (BlackLigth (blacklight0101)) and is recorded with its DEC-nn or ADR. What is not
-decided yet is a Q-nn in [requirements](spec/requirements.md) with the default that applies meanwhile.
-
-<!-- FILL: Settle this document before the first build phase, in one sitting with the owner (the "other things to
-settle" agenda): environments, secrets, source control and CI, package baseline, naming, release and
-versioning, backup, observability. Replace every FILL comment; write "Not applicable: <reason>" rather than
-leaving a section empty; defer nothing silently. -->
+Rosetta is a command-line tool that runs on the developer's machine; it has no servers, no database and no hosted
+environment (DEC-14). This document is the canonical home of the package and tool baseline (section 7).
 
 ## 1. Environments
 
-| Environment | Where | Database | External systems | Devices / fakes | Who | Purpose |
-|---|---|---|---|---|---|---|
-| **Dev** | developer machine <!-- FILL --> | `rosetta-dev`; tests create and drop their own ([data model](data-model.md) section 8) | fakes; recorded contracts | fakes | developer, builders | build and test every card |
-| **Test** <!-- FILL: or "none before the pilot", with the accepted risk --> | <!-- FILL --> | `rosetta-test` | test instances | real devices of the pilot | <!-- FILL --> | integration, acceptance |
-| **Prod** | <!-- FILL --> | `rosetta` | production instances | real devices | <!-- FILL --> | live use |
+| Environment | Where | AI providers | Purpose |
+|---|---|---|---|
+| **Dev** | the owner's machine (Windows 11, Node.js 24 LTS, Ollama) and the builders' worktrees | the fake provider in tests; Ollama, OpenAI and Anthropic for manual and evaluation runs | build and test every card |
+| **CI** | GitHub Actions, `ubuntu-latest` and `windows-latest` | fake provider only; no keys, no network calls to providers | the gates of section 6 on every push and pull request |
+| **Published** | GitHub Pages of the public repository | none | the sample report of the demo run (RF-800) |
 
-<!-- FILL: If an environment is missing (for example no test server before the pilot), state the decision, its
-consequences (which checks move later, which gate changes) and the mitigation, with its DEC-nn. -->
+There is no test or production server: users run released versions on their own machines.
 
 ## 2. Hosting
 
-<!-- FILL: For each deployable: the host (web server, container platform, app store, static host, desktop
-installer), instance count, TLS and certificates, base path (site root or sub-application, so links must be
-base-relative), process identity, and who operates it. -->
-
-| Deployable | Host | Instances | Identity | Operated by |
-|---|---|---|---|---|
-| <!-- FILL: example row, replace --> Web application | <!-- FILL --> | 1 | service account `svc-rosetta-web` | <!-- FILL --> |
+| Deployable | Host | Notes |
+|---|---|---|
+| Rosetta CLI | the user's machine | run from source in R1 (`npm ci`, `npm run rosetta -- <command>`); npm publishing is Q-08 |
+| Sample report | GitHub Pages, from the `site/` folder of `main` | static files only (RF-501) |
 
 ## 3. Identities and service accounts
 
-<!-- FILL: Every non-human identity: the process identity per deployable, the database accounts of data model
-section 6, accounts on external systems, API clients. Least privilege; one account per purpose; who creates and
-rotates it. -->
-
-| Account | Used by | Kind | Rights | Created and rotated by |
-|---|---|---|---|---|
-| <!-- FILL: example row, replace --> Writer | web application, jobs | database login | per [data model](data-model.md) section 6 | <!-- FILL --> |
+| Identity | Used by | Kind | Notes |
+|---|---|---|---|
+| Developer's provider accounts | the developer running Rosetta | API keys per provider | owned by each user; Rosetta never stores them |
+| GitHub Actions token | CI | `GITHUB_TOKEN` with `contents: read` by default | write scopes only in the Pages and release jobs |
 
 ## 4. Configuration and secrets
 
-Secrets never enter the repository: not in committed configuration files, not in documentation, not in test
-fixtures, not in logs. A committed configuration file holds only non-secret values.
+| Item | Where it lives |
+|---|---|
+| Project configuration | `rosetta.config.yaml` next to the run output, validated by a schema (RF-002); no secret values |
+| Provider API keys | environment variables named in the configuration (for example `OPENAI_API_KEY`), or a git-ignored `.env`; never in configuration, output or logs (RNF-003) |
+| Ollama models folder | the user's own Ollama setting (on the owner's machine `G:\Ollama Models`, program in `E:\Ollama\app`) |
+| Price table | defaults shipped with Rosetta, dated; overrides in the project configuration (RF-420) |
 
-| Setting | Dev | Test / Prod |
-|---|---|---|
-| <!-- FILL: example row, replace --> Connection strings | local secret store (for example user secrets) | environment variables or the host's protected configuration, set by the runbook |
-| <!-- FILL: example row, replace --> External system credentials | local secret store | protected store referenced by name, never the database in clear |
-| Non-secret settings | committed development settings file | environment settings file generated by the runbook from a template |
-
-Rules: the verify recipe scans for known secret patterns and fails the card on a hit; secrets are rotated at go-live
-and whenever a builder or agent had access to a value. <!-- FILL: the secret store per environment and who holds
-it. -->
+Secret hygiene: `.env` and `.env.*` are git-ignored (except `.env.example`); GitHub secret scanning with push
+protection is enabled on the repository; gitleaks runs in CI; recordings under `tests/recordings/` are scrubbed of keys
+before commit (ADR-008).
 
 ## 5. Source control and branching
 
-<!-- FILL: The working repository (local git, a hosted remote, a company system of record), the default branch,
-and how work reaches it. The default below matches the orchestration protocol. -->
-
-- Working repository: git, default branch `main`, linear history.
-- One branch per task card, named per [conventions](conventions.md) section 6; `main` receives only cards the
-  verifier passed, by fast-forward or squash.
-- Remote and system of record: <!-- FILL: e.g. a hosted remote pushed after every merged card, or a company
-  system that receives a copy at phase exits; name the gate that proves it is in place. -->
-- Branch protection is enforced by <!-- FILL: the server, or the orchestrator when there is no server -->.
+- Repository: public GitHub `blacklight0101/Rosetta`, default branch `main` (DEC-06).
+- Flow (DEC-35): issue per card -> branch `task/<card-id>-<slug>` or `docs/<topic>` -> pull request from the template
+  -> CI green -> verifier verdict posted -> the owner approves by merging with squash -> branch deleted.
+- `main` is protected by a repository ruleset: changes only through pull requests, squash merge only, linear history,
+  no force-push, no deletion, review threads resolved before merge. Required status checks are added to the ruleset
+  when the CI workflow exists (first P1 card).
+- Commits follow Conventional Commits, checked by commitlint ([conventions](conventions.md) section 9).
+- Git hooks (lefthook): `pre-commit` formats and lints staged files; `commit-msg` runs commitlint; `pre-push` runs
+  `typecheck` and the unit tests. Hooks help; CI is the gate.
 
 ## 6. Continuous integration
 
-| Check | Command or tool | Blocks the merge |
-|---|---|---|
-| Restore and build, warnings as errors | <!-- FILL --> | yes |
-| Tests per level with the pyramid count | <!-- FILL --> | yes |
-| Secret scan | <!-- FILL --> | yes |
-| <!-- FILL: example row, replace --> Lint / format | <!-- FILL --> | yes |
+Workflow `.github/workflows/ci.yml`, on `push` and `pull_request`, matrix `ubuntu-latest` and `windows-latest`,
+Node.js from `.nvmrc`, `npm ci`, concurrency group per branch with cancel-in-progress.
 
-<!-- FILL: Where the checks run now (a local verify recipe the builders and the verifier run on every card, or a CI
-server) and what is prepared for later (a pipeline file committed but not active, so switching CI on is a
-configuration step). -->
+| Check | Command | Blocks merge |
+|---|---|---|
+| Type check | `npm run typecheck` (`tsc --noEmit`) | yes |
+| Lint, zero warnings | `npm run lint` (`eslint . --max-warnings 0`) | yes |
+| Format | `npm run format:check` (`prettier --check .`) | yes |
+| Architecture rule | `npm run arch` (dependency-cruiser) | yes |
+| Dead code and dependencies | `npm run deadcode` (knip) | yes |
+| Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7) | yes |
+| Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
+| Secret scan | gitleaks action | yes |
+| Static analysis | CodeQL (`javascript-typescript`), on pull requests and weekly | yes, for high and critical alerts |
+
+`npm run verify` runs the first six checks locally in the same order; builders and the verifier run it on every card.
+
+Workflow hardening: top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
+version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm
+packages and GitHub Actions weekly, grouped by minor and patch.
 
 ## 7. Package and tool baseline
 
-The canonical list of packages, tools and their versions. Anything not listed here needs an ADR before it is
-referenced.
+Versions checked on the npm registry on 2026-10-09. Ranges are caret ranges on these versions; `package-lock.json` is
+committed and installs use `npm ci`. Any runtime dependency not listed here needs an ADR (CLAUDE.md stack rules).
 
-| Area | Package or tool | Notes |
-|---|---|---|
-| <!-- FILL: example row, replace --> Data access | <!-- FILL --> | |
-| <!-- FILL: example row, replace --> Tests | <!-- FILL --> | |
-| Forbidden without an ADR | <!-- FILL: libraries rejected by ADRs or house rules --> | |
+**Runtime**
+
+| Purpose | Package | Version | Notes |
+|---|---|---|---|
+| Runtime | Node.js | 24 LTS (24.11 on the owner's machine) | pinned in `.nvmrc` and `engines` (DEC-27) |
+| CLI parsing | `commander` | 15.0 | subcommands and help (RNF-008) |
+| Schema validation | `zod` | 4.6 | configuration, cards, code map, model output and tool arguments are parsed, never cast |
+| YAML | `yaml` | 2.9 | configuration file (DEC-25) |
+| OpenAI and OpenAI-compatible | `openai` | 7.32 | infrastructure adapter only (ADR-003) |
+| Anthropic | `@anthropic-ai/sdk` | 0.133 | infrastructure adapter only, P2 |
+| Ollama | Node.js `fetch` against the Ollama HTTP API | built in | no SDK needed; decided in the provider card |
+| Language packs | `web-tree-sitter` + `tree-sitter-c-sharp` (WebAssembly grammar) | 0.27 / 0.23 | WebAssembly avoids native builds on Windows (ADR-004) |
+| Zip export | `yazl` | 3.3 | streaming zip writer (RF-008) |
+
+**Development**
+
+| Purpose | Package | Version | Notes |
+|---|---|---|---|
+| Compiler | `typescript` | 6.0 (6.0.3) | not 7.x until typescript-eslint supports it (ADR-011) |
+| Node types | `@types/node` | 24.x | matches the runtime line |
+| Lint | `eslint`, `@eslint/js` | 10.12 / 10.0 | flat configuration only |
+| TypeScript lint | `typescript-eslint` | 8.71 | `strictTypeChecked` + `stylisticTypeChecked`, `projectService: true` |
+| Node lint | `eslint-plugin-n` | 18.4 | ESM resolution, Node 24 built-ins |
+| Test lint | `@vitest/eslint-plugin` | 1.6 | test files only |
+| Format | `prettier`, `eslint-config-prettier` | 3.9 / 10.1 | Prettier owns formatting; ESLint owns correctness |
+| Tests | `vitest`, `@vitest/coverage-v8` | 5.0 | projects `unit`, `integration`, `e2e` |
+| Architecture | `dependency-cruiser` | 18.5 | Clean Architecture and no cycles (ADR-009) |
+| Dead code | `knip` | 6.41 | unused files, exports, dependencies |
+| Commits | `@commitlint/cli`, `@commitlint/config-conventional` | 21.2 | `commit-msg` hook and CI on pull request titles |
+| Git hooks | `lefthook` | 2.2 | no install scripts in the hooks |
+
+**Forbidden without an ADR**: any agent framework that owns the loop (ADR-003); provider SDKs outside
+infrastructure; native addons that need a C++ toolchain on Windows; `ts-node` (Node.js runs and type-strips
+TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a second test runner or formatter.
 
 ## 8. Versioning and releases
 
-- Version format and meaning per [conventions](conventions.md) section 12, stamped into the build, the health page
-  and the log entries.
-- A release = a tag on `main`, one published artefact per deployable with its migrations, and a line in
-  `docs/releases.md` (created at the first release): version, migration set, compatible previous version, cards
-  included, rollback notes.
-- Cadence: <!-- FILL: e.g. per phase exit before go-live, a monthly window after -->.
-- Deployment window: <!-- FILL: when deployments are allowed and who agrees them -->.
+- Semantic Versioning in 0.x (DEC-29); `v0.1.0` is the 2026-10-26 milestone.
+- A release is a pull request that bumps `package.json`, adds a section to `docs/releases.md`, merges, then a tag
+  `vX.Y.Z` and a GitHub release with the same notes; the owner creates the tag.
+- Cadence: one release per phase exit; patch releases as needed.
 
 ## 9. Database deployment
 
-<!-- FILL: How migrations reach each environment: who runs the runner, with which account (the deploy account
-only), in which step of the release, and how the start-up guard of architecture section 15 reacts. Migrations are
-forward-only and stay compatible with the previous build ([data model](data-model.md) section 7). -->
+Not applicable: no database in R1 (DEC-14). Any future database is PostgreSQL behind an infrastructure adapter
+(DEC-37).
 
 ## 10. Deployment procedure
 
-<!-- FILL: The numbered steps, manual or automated, from a green build to a verified release. Suggested shape: -->
-
-1. Run the verify recipe and publish the artefacts.
-2. Put the application in maintenance mode.
-3. Run the migrations with the deploy account.
-4. Replace the application and any worker or service.
-5. Leave maintenance mode; the health page is green.
-6. Run the smoke journey <!-- FILL: which one -->.
+1. All cards of the phase merged, CI green on `main`.
+2. Run the demo `scan` and `understand` from a clean clone with the README quick start (RF-801).
+3. Regenerate the sample report into `site/` in a pull request; merge.
+4. GitHub Pages publishes `site/` from `main`; open the public URL and check it (RF-800).
+5. Release pull request, merge, tag, GitHub release.
 
 ## 11. Rollback
 
-<!-- FILL: The rollback path per deployable. Suggested default: redeploy the previous published artefact; it
-starts on the newer schema inside the compatibility window; never run a down-migration. State who decides and
-the time budget. -->
+Users check out the previous tag. The sample report is restored by reverting the pull request that changed `site/`.
 
 ## 12. Backup and restore
 
-<!-- FILL: What is backed up (databases, uploaded files, configuration), how often, where, for how long; recovery
-point and recovery time objectives (RNF ids); who restores; how and how often a restore is tested. If deferred,
-say so with its DEC-nn and when it will be taken up again. -->
+The repository on GitHub is the backup of code and documents. Run output belongs to the user and is never committed.
 
-| Data | Backup | Retention | RPO / RTO | Restore tested |
-|---|---|---|---|---|
-| <!-- FILL: example row, replace --> Production database | nightly full, hourly log | 30 days | 1 h / 4 h | quarterly |
+## 13. Observability
 
-## 13. Observability and alerting
-
-- **Health**: an authenticated health page and an anonymous liveness endpoint. <!-- FILL: what the health page
-  shows, e.g. build version, database reachable per account, external systems reachable, queue lengths and
-  oldest age, job leases, migration-set status. -->
-- **Logs**: structured, fields per [conventions](conventions.md) section 8, stored in <!-- FILL -->, retained per
-  [data model](data-model.md) section 9.
-- **Alerting**: <!-- FILL: which conditions alert whom through which channel, with cooldown and digest; who
-  watches what (users, supervisors, IT, developers). -->
-- **Agent triage**: <!-- FILL: optional. How an incident becomes a fix card: a context bundle (log lines by
-  correlation id, the item's timeline, health) readable by a tool, and the follow-up card flow of the
-  orchestration protocol. -->
+- Every run writes its manifest, egress log and cost report (RF-003, RF-142, RF-426); this is the audit trail.
+- `--verbose` adds debug logs to standard error; logs never contain secrets or API keys (RNF-003).
+- No telemetry: Rosetta sends nothing anywhere except to the providers the user configures.
 
 ## 14. Runbooks
 
-| Runbook | File | Written by card | Covers |
+| Runbook | Path | Created by | Content |
 |---|---|---|---|
-| <!-- FILL: example row, replace --> Deploy to test | `docs/deploy-test.md` | P1-nn | first install, configuration, release steps, smoke journey |
-| <!-- FILL: example row, replace --> Deploy to production | `docs/deploy-prod.md` | Pn-nn | cutover, rollback, secret rotation |
+| Provider setup | `docs/providers.md` | P1 provider card | Ollama, OpenAI, Anthropic, OpenAI-compatible; tested models |
+| Release | `docs/releases.md` | P1 milestone card | release notes and the release steps of section 8 |
 
 ## 15. Naming of environments in code and configuration
 
-<!-- FILL: The environment names the code sees (for example Development, Test, Production), how the host sets
-them, and the rule that test-only features (test authentication, impersonation, demo seeds, the component
-gallery) exist only in Development or under an explicit test flag, never in Test or Production. -->
+Rosetta has no environment switch. Tests set `ROSETTA_TEST=1`, which makes any real provider adapter refuse to call
+the network (ADR-008).

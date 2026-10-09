@@ -22,15 +22,16 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-008](ADR-008-testing-with-recorded-responses.md) | Test with recorded model responses and score quality against a golden set | Accepted | 2026-10-09 |
 | [ADR-009](ADR-009-clean-architecture.md) | Structure Rosetta with Clean Architecture | Accepted | 2026-10-09 |
 | [ADR-010](ADR-010-spec-driven-and-test-driven-development.md) | Develop Rosetta spec-driven and test-driven | Accepted | 2026-10-09 |
+| [ADR-011](ADR-011-toolchain-and-quality-gates.md) | Adopt a strict TypeScript toolchain with automated quality gates | Accepted | 2026-10-10 |
 
-**Totals**: 10 in total - Accepted 10, Proposed 0, Amended 0, Superseded 0.
+**Totals**: 11 in total - Accepted 11, Proposed 0, Amended 0, Superseded 0.
 
 
 ## Relationships
 
 ADR-005, ADR-006 and ADR-007 all constrain the agent loop of ADR-003: every call passes the egress guard
 (ADR-006) and the budget guard (ADR-007), and every result is a card checked by the verifier (ADR-005). ADR-008 tests
-ADR-003 at its port. ADR-009 refines the layering of ADR-002 and ADR-003 (does not supersede them). ADR-010 refines ADR-008: test-first applies to every card. The product owner's decisions behind these ADRs are listed in ../decision-log.md.
+ADR-003 at its port. ADR-009 refines the layering of ADR-002 and ADR-003 (does not supersede them). ADR-010 refines ADR-008: test-first applies to every card. ADR-011 refines ADR-002, ADR-008, ADR-009 and ADR-010 with the tools that enforce them. The product owner's decisions behind these ADRs are listed in ../decision-log.md.
 
 ## Deferred decisions (write the ADR when the trigger fires)
 
@@ -40,4 +41,5 @@ ADR-003 at its port. ADR-009 refines the layering of ADR-002 and ADR-003 (does n
 | Report rendering approach (static site generator or own templates) | first P3 report card |
 | Claude Code plugin packaging | start of P4 (R2) |
 | npm publishing and package name | Q-07 and Q-08 answered |
+| Move to TypeScript 7 | typescript-eslint supports TypeScript 7.x (expected with TypeScript 7.1) |
 | Persistence in PostgreSQL (DEC-37) | the first requirement that files in the output folder cannot meet |

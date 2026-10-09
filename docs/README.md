@@ -12,8 +12,8 @@ here; they never hold a second copy of these documents.
 | [adr/README.md](adr/README.md) | Architecture decision records index, counts by status, deferred decisions | Living | 2026-10-09 |
 | [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model, services, ports, data ownership, background work, security, deployment, testing approach | Living | 2026-10-09 |
 | [data-model.md](data-model.md) | No database: the file formats Rosetta reads and writes (configuration, code map, run folder, cards, cost report, hand-off package) and their schema versions | Proposed | 2026-10-09 |
-| [conventions.md](conventions.md) | Naming (code, data, routes, permission codes, resources, tests, branches), error handling per layer, what the user sees when something is down | Proposed | 2026-10-09 |
-| [environments-and-delivery.md](environments-and-delivery.md) | Environments, configuration and secrets placement, source control, CI, package baseline, versioning and releases, deployment, observability | Proposed | 2026-10-09 |
+| [conventions.md](conventions.md) | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits | Proposed | 2026-10-10 |
+| [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases | Proposed | 2026-10-10 |
 | [design-system.md](design-system.md) | Terminal output style and the HTML report: tokens, components, patterns, accessibility, verification | Proposed | 2026-10-09 |
 | [design-system-brief.md](design-system-brief.md) | The brief sent to an external design pass; Superseded by design-system.md v2 after the round trip | Proposed | 2026-10-09 |
 | [roadmap.md](roadmap.md) | Phases P0..Pn with exit criteria, later releases with entry conditions, backlog by requirement id, deliberately not built | Living | 2026-10-09 |
@@ -23,8 +23,9 @@ here; they never hold a second copy of these documents.
 
 `legacy-sources.md` is not written: Rosetta replaces no system (DEC-03).
 
-Agent definitions used by the orchestration protocol live in `.claude/agents/` (`orchestrator`, `builder-sonnet`,
-`builder-opus`, `builder-fable`, `verifier`).
+Agent definitions used by the orchestration protocol live in `.claude/agents/` (`orchestrator`, `builder-haiku`,
+`builder-sonnet`, `builder-opus`, `builder-fable`, `verifier`, `verifier-fable`); the difficulty of a card selects
+the builder (DEC-32).
 
 ## Identifier schemes
 

@@ -112,8 +112,12 @@ applied, and fixing it is part of applying the decision.
   `docs/spec/requirements.md` in the same pull request ([ADR-010](docs/adr/ADR-010-spec-driven-and-test-driven-development.md)).
 - **Test-driven (TDD):** red, green, refactor on every card. Each Given/When/Then scenario becomes a Vitest test named
   after its requirement id; a `test:` commit with failing tests comes before the `feat:`/`fix:` commit that makes them
-  pass. Levels unit / integration / end-to-end with the split in `docs/conventions.md`. `npm run verify` (lint,
-  type-check, dependency rule, tests) must pass before any card is reported done (ADR-008, ADR-010).
+  pass. Levels unit / integration / end-to-end with the split in `docs/conventions.md`.
+- **Quality gates ([ADR-011](docs/adr/ADR-011-toolchain-and-quality-gates.md)):** `npm run verify` runs typecheck,
+  lint (zero warnings), format check, dependency-cruiser, knip and tests with coverage; it must pass before any card is
+  reported done, and CI runs the same gates. Never weaken a gate to make it pass.
+- **Coding rules:** `docs/conventions.md` (types parsed at boundaries, no `any`/`!`/casts, determinism ports, timeouts
+  and abort signals, error-code catalogue, size limits, named exports).
 - **Packages:** the baseline list in `docs/environments-and-delivery.md`; any new runtime dependency needs an ADR.
 <!-- STACK-RULES:END -->
 
