@@ -1,0 +1,82 @@
+# Decision log
+
+| | |
+|---|---|
+| **Status** | Living |
+| **Date** | 2026-10-09 |
+| **Owner** | BlackLigth (blacklight0101) |
+| **Related** | [Requirements](spec/requirements.md) - [ADRs](adr/README.md) - [Tasks](orchestration/tasks.md) |
+
+Product decisions taken by BlackLigth (blacklight0101), the product owner, in the order they were taken. `DEC-nn` ids are the owner's
+decisions; `Q-nn` ids are the open questions in [requirements.md section 4](spec/requirements.md#4-open-questions);
+`ADR-nnn` ids are architecture decisions that may implement a DEC.
+
+Rules:
+
+- **Append only.** The Decision text of a row is never edited. When a later decision changes an earlier one, add a
+  new row that says so (`Replaces DEC-07: ...`) and add "replaced by DEC-nn" to the old row's Where applied cell.
+- **Answer to** names what prompted the decision: an open question (`Q-nn`); the kick-off question it answers
+  (its id in the interview bank, for example `0.7`); a review round (`Review YYYY-MM-DD`); or `Owner` when the owner
+  raised it unprompted. Never a conversation handle such as `#4` or a plan-internal finding id: they mean nothing
+  outside the session.
+- **Where applied** lists every requirement, ADR, card and document section the decision changed, filled when the
+  change is made. A decision whose Where applied cell is empty has not been applied yet; review treats that as a
+  finding. An answered question's Status becomes `Answered (DEC-nn)` in the same change.
+- A decision the owner has not actually taken is never written here. Undecided points stay open questions with a
+  default in the requirements.
+
+## Kick-off scope decisions
+
+| Id | Date | Decision | Answer to | Where applied |
+|---|---|---|---|---|
+| DEC-01 | 2026-10-09 | Chosen: the product is called **Rosetta** (working name), short code `RST`, slug `rosetta`. Instead of: no alternative proposed; the name stays open to change (Q-07). | 0.1, 0.2 | README.md, CLAUDE.md, RFC-001 |
+| DEC-02 | 2026-10-09 | Chosen: BlackLigth (blacklight0101) is the sponsor, product owner and only reviewer; Rosetta is the final project of the Master en Desarrollo con IA (BIG School). | 0.4, 9.1 | README.md, orchestration/README.md gates |
+| DEC-03 | 2026-10-09 | Chosen: Rosetta replaces no system; it analyses third-party legacy codebases. No code from the owner's employer is ever analysed in or committed to this public repository. Instead of: analysing work code. | 0.5 | RFC-001 section 2, CLAUDE.md hard rules, legacy part skipped |
+| DEC-04 | 2026-10-09 | Chosen: the first milestone, due 2026-10-26 (Fundae), is the documentation set plus a working slice (`scan` and `understand` on one area of the demo app with a local model) and the hand-in: public repository URL, slides URL, video URL, the sample report on GitHub Pages as the deployment URL, no test user (no login). Instead of: docs plus a compiling skeleton; docs only. | 0.6, 0.8 | RFC-001 section 3, roadmap P1, RF-001..RF-005, RF-800 range |
+| DEC-05 | 2026-10-09 | Chosen: release 1 is the whole pipeline on one machine: `scan`, `understand` with verifier, the open-question loop, the HTML report and `plan`, with cost control. Instead of: shipping stages one release at a time. | 0.7 | README.md, requirements section 1, roadmap P1..P4 |
+| DEC-06 | 2026-10-09 | Chosen: repository at `C:\BuildingFolder\Rosetta`, local git on `main`, public GitHub repository `blacklight0101/rosetta` created now; nothing is pushed without the owner's request. Instead of: local only, GitHub later. | 0.9 | CLAUDE.md, environments-and-delivery.md, G-03 |
+| DEC-07 | 2026-10-09 | Chosen: repository documents in English. Instead of: Spanish; English with a Spanish proposal. | Owner | all documents |
+| DEC-08 | 2026-10-09 | Chosen: TypeScript on Node.js. Instead of: .NET 10; Python. | 4.2 | ADR-002, CLAUDE.md stack rules, architecture.md |
+| DEC-09 | 2026-10-09 | Chosen: an own agent loop behind a swappable `LlmProvider` interface with adapters for Ollama, OpenAI, OpenAI-compatible services and Anthropic, a model per role in configuration, and a Claude Code plugin run mode later. Ollama first, OpenAI second (existing credit), Anthropic when the owner opens an account. Instead of: Claude Agent SDK (Claude only); Claude Code plugin only; a multi-provider framework that hides the loop. | Owner | ADR-003, RF-400 range, RF-700 range, roadmap |
+| DEC-10 | 2026-10-09 | Chosen: no rebuild stage. Rosetta ends with a tool-agnostic hand-off package (specification, target architecture, decision records, roadmap, task cards) that whoever takes the project builds in their own way. Instead of: an optional rebuild stage with old-versus-new tests. | Owner | RFC-001 non-goals, RF-600 range, roadmap not-built list |
+| DEC-11 | 2026-10-09 | Chosen: Rosetta must handle legacy code in any stack: a universal scan layer for every stack plus optional language packs built on tree-sitter; release 1 ships the universal layer and a C# pack. Instead of: C# / ASP.NET WebForms only. | Owner | ADR-004, RF-100 range |
+| DEC-12 | 2026-10-09 | Chosen: the demo target is Microsoft eShopLegacyWebForms (`dotnet-architecture/eShopModernizing`, MIT), with Microsoft's modernised version as the reference answer; a second target in a different stack follows after the first milestone (Q-05). Instead of: BlogEngine.NET. | Owner | RFC-001, roadmap, golden set RNF-006 |
+| DEC-13 | 2026-10-09 | Chosen: cost control inside the app: a cost estimate before a run, hard token and cost caps per run and per role that stop the run cleanly, a live cost meter, an editable price table per provider and model, and a cost report saved with every run. Instead of: logging only. | Owner | ADR-007, RF-420..RF-429 |
+| DEC-14 | 2026-10-09 | Chosen: users are individual developers or tech leads running a command-line tool on their own machine; no accounts, no server, no database. Instead of: a hosted web service. | 1.1, 1.4, 1.6 | RFC-001, requirements actors, ADR-002 |
+| DEC-15 | 2026-10-09 | Chosen: the main workflows are `scan` -> `understand` -> answer open questions -> `report` -> `plan`. Instead of: a single one-shot command. | 1.2 | requirements section 5, process-flows.md |
+| DEC-16 | 2026-10-09 | Chosen: only files an agent explicitly asks to read are sent to a provider; paths in `.rosettaignore` are never read; secrets are masked before sending; a cloud provider run shows a warning first. Instead of: sending the whole repository. | 1.9 | ADR-006, RF-140..RF-149, RNF-003 |
+| DEC-17 | 2026-10-09 | Chosen: agents are read-only on the analysed repository and every output goes to a separate output folder. Instead of: writing notes next to the legacy code. | Owner | ADR-006, RF-005, CLAUDE.md hard rules |
+| DEC-18 | 2026-10-09 | Chosen: each finding is a Markdown card with a metadata header plus a JSON index; card ids use the prefixes `FEAT-`, `BR-`, `ENT-`, `INT-`, `OQ-`; the first milestone produces Markdown, the HTML report follows. Instead of: a single long document. | Owner | ADR-005, RF-200 range, RF-500 range |
+| DEC-19 | 2026-10-09 | Chosen: the verifier works in two steps: code checks that every cited file and line range exists, then a model checks that the cited lines support the claim; rejected claims are kept and marked, never deleted. Instead of: a single model review. | Owner | ADR-005, RF-300 range |
+| DEC-20 | 2026-10-09 | Chosen: tests with Vitest; a fake provider replays recorded model responses so tests are repeatable; a hand-checked golden set of eShop findings scores quality. Instead of: manual checking only. | 7.1, 7.5 | ADR-008, RNF-005, RNF-006 |
+| DEC-21 | 2026-10-09 | Chosen: MIT license. Instead of: Apache-2.0; no license. | Owner | README.md, LICENSE (card P1-01) |
+| DEC-22 | 2026-10-09 | Chosen: Claude agents build Rosetta under an orchestrator and the owner reviews; the only capacity limit is Claude session usage. Instead of: the owner codes by hand. | 8.1, 8.7 | orchestration/README.md, tasks.md |
+| DEC-23 | 2026-10-09 | Chosen: local development on the owner's machine (RTX 4060 Ti 8 GB, 32 GB RAM) with Ollama and a 7-9B tool-calling model; Ollama models are stored outside drive C:, which has little free space. Instead of: cloud-only development. | Owner | environments-and-delivery.md, Q-04 |
+
+## Later decisions
+
+### 2026-10-09 - kick-off round 3 (files, report, delivery, build, control)
+
+| Id | Date | Decision | Answer to | Where applied |
+|---|---|---|---|---|
+| DEC-24 | 2026-10-09 | Chosen: run results go to a `rosetta-out/` folder next to the configuration, outside the legacy repository, kept until the developer deletes them; any run or hand-off package can also be downloaded as a zip file with its full folder structure, from the CLI and from the HTML report. Instead of: folder only. | Review 2026-10-09 (data 3.x) | RF-008, RF-505, data-model.md |
+| DEC-25 | 2026-10-09 | Chosen: configuration in YAML (`rosetta.config.yaml`) validated against a schema. Instead of: JSON; a TypeScript config file. | Review 2026-10-09 (data 3.x) | RF-002, data-model.md |
+| DEC-26 | 2026-10-09 | Chosen: the HTML report gets a neutral technical look with one accent colour and light and dark themes following the operating system; Claude writes design system v1 without an external design-tool round trip, and the owner approves it at gate G-02 before any report card is built. Instead of: a design-tool round trip first. | 5.1, 5.3, 5.6 | design-system.md, G-02 |
+| DEC-27 | 2026-10-09 | Chosen: Node.js 24 LTS, pinned in `.nvmrc` and `package.json` engines. Instead of: an older LTS line. | Q-09 | environments-and-delivery.md, Q-09 |
+| DEC-28 | 2026-10-09 | Chosen: GitHub Actions runs `npm run verify` on Windows and Linux on every push and pull request; a failing check blocks the merge. Instead of: a local verify script only. | 6.3 | environments-and-delivery.md, orchestration/README.md |
+| DEC-29 | 2026-10-09 | Chosen: Semantic Versioning in 0.x; the 2026-10-26 milestone is `v0.1.0`, every release is a git tag and a GitHub release with notes in `docs/releases.md`. Instead of: no versions until release 1. | 6.4 | environments-and-delivery.md, roadmap.md |
+| DEC-30 | 2026-10-09 | Chosen: test split of about 60% unit, 30% integration, 10% end-to-end as a guideline that warns, not blocks; a test without a level label or a run with zero tests always fails. Instead of: an enforced split. | 7.2 | conventions.md, ADR-008 |
+| DEC-31 | 2026-10-09 | Chosen: the golden set for the demo app is drafted by Claude from a manual reading of the code (about 20 findings with citations) and approved by the owner before it is used to score runs. Instead of: no golden set; owner writes it alone. | Review 2026-10-09 | RNF-006, docs/golden-set.md (planned) |
+| DEC-32 | 2026-10-09 | Chosen: every task card gets a difficulty from 1 to 10 that selects its builder: 10 Claude Fable, 7-9 Claude Opus 5.5, 4-6 Claude Sonnet, 1-3 Claude Haiku. At most two agents run at the same time. Instead of: the three-tier rule with Haiku limited to text-only edits. | 8.2, 8.7, 8.8 | orchestration/README.md, tasks.md, .claude/agents/ |
+| DEC-33 | 2026-10-09 | Chosen: the owner reviews and approves everything and keeps full control: no provisional gate; gate G-01 opens only after the owner has reviewed the whole documentation set; no change reaches `main` without the owner's approval. A curated conversation journal (`docs/journal/`) records each working session's questions, options, the owner's answers and the reasoning, next to the decision log, so every choice can be justified. Instead of: a provisional G-01 now with a later review; decision log only. | 9.1, 9.2 | CLAUDE.md, handoff.md G-01, docs/journal/, orchestration/README.md; journal part replaced by DEC-38 |
+| DEC-34 | 2026-10-09 | Chosen: the owner tries the tool hands-on as soon as anything is testable (starting with `scan`), not only at fixed points. Instead of: two fixed hands-on reviews. | 8.9 | roadmap.md, tasks.md (a demo step in every phase) |
+| DEC-35 | 2026-10-09 | Chosen: GitHub best practice leaves a trace of everything built and merged: one GitHub issue per task card, one branch per issue, one pull request per branch using a template that cites the card, requirement, ADR and DEC ids, CI must pass, the verifier's verdict is posted on the pull request, the owner approves and merges with squash into a protected `main`, milestones group issues per phase, releases are tagged. Instead of: local commits pushed in batches. | 0.9, 8.5 | CLAUDE.md commit policy, conventions.md, environments-and-delivery.md, orchestration/README.md, G-03 |
+| DEC-36 | 2026-10-09 | Chosen: Rosetta follows Clean Architecture: domain, application (use cases and ports), infrastructure (adapters) and presentation (CLI), with dependencies pointing inward only. Instead of: an informal ports-and-adapters split. | Owner | ADR-009, CLAUDE.md stack rules, architecture.md |
+| DEC-37 | 2026-10-09 | Chosen: release 1 keeps no database (DEC-14 stands); if Rosetta ever needs a database, it is PostgreSQL. Instead of: SQLite or another engine. | Owner | ADR index deferred decisions, data-model.md |
+| DEC-38 | 2026-10-09 | Replaces part of DEC-33: the conversation journal (questions, options, the owner's answers in their words) is private and kept in the owner's notes vault, never in this repository or on GitHub; the repository keeps `docs/journal/` as a curated per-session summary of what was decided and why, without conversations or quotes. Instead of: publishing the conversation journal. | Owner | docs/journal/, CLAUDE.md documentation protocol, docs/README.md |
+
+### 2026-10-09 - development method
+
+| Id | Date | Decision | Answer to | Where applied |
+|---|---|---|---|---|
+| DEC-39 | 2026-10-09 | Chosen: Spec-Driven Development at the spec-anchored level and Test-Driven Development (red, green, refactor) on every card, as far as possible: no card without requirement ids; behaviour changes edit the specification in the same pull request; every Given/When/Then scenario becomes a test named after its id; failing tests are committed before the code; the verifier checks scenario coverage, commit order and a mutation check. Instead of: test-first for core logic only. | Owner | ADR-010, CLAUDE.md stack rules and documentation protocol, conventions.md (test names, commit types), orchestration/README.md (verifier) |
