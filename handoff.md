@@ -9,14 +9,14 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1012 and RNF-001..RNF-013, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-012; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-55.
+- `docs/decision-log.md` - decisions DEC-01..DEC-56.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
   `orchestrator` still a scaffold.
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
 - `docs/design-system.md` v1, `docs/design-system-brief.md` and `docs/design/tokens.css` - written 2026-10-11; design
-  board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - awaiting owner review (G-02).
+  board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); board files in `docs/design/board/`.
 - `docs/data-model.md` - written 2026-10-10 (all file formats); Q-15 and Q-16 answered (DEC-54, DEC-55).
 - Not yet filled: `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
   `docs/process-flows.md`, `docs/orchestration/`.
@@ -29,8 +29,8 @@ DEC-01..DEC-55, architecture, data model, conventions, environments and delivery
 journal. Every open question Q-01..Q-16 is answered or runs on its default.
 
 Next, in this order (ask the owner before each):
-1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; the owner reviews the design board and approves it
-   at G-02 or asks for changes (folded in as v2).
+1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56). PR #2 brings the P0 work
+   since PR #1 to `main`.
 2. Roadmap (P0..P4 with exit criteria) and process flows.
 3. Build plan: `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
    card, and the orchestrator agent.
@@ -44,7 +44,7 @@ Blockers: none.
 1. ~~Round 3 of questions~~ DONE 2026-10-09: DEC-24..DEC-37.
 2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; data-model.md written, awaiting owner review.
 3. ~~Conventions and delivery~~ DONE 2026-10-10: DEC-40, ADR-011.
-4. ~~Design system v1 + brief with live web UI mock-ups~~ DONE 2026-10-11: board published; owner review pending (G-02).
+4. ~~Design system v1 + brief with live web UI mock-ups~~ DONE 2026-10-11: approved at G-02 (DEC-56).
 5. Roadmap, process flows, build plan.
 6. Owner review of the whole documentation set, which opens G-01 (DEC-33).
 
@@ -57,7 +57,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 | Gate | Name | State | Since | Note |
 |---|---|---|---|---|
 | G-01 | Documentation set accepted | Closed | - | opens only after the owner reviews the whole set (DEC-33); no provisional opening |
-| G-02 | Design board approved (web UI and report) | Closed | - | v1 board published 2026-10-11; needed before the web UI shell card and the first report card |
+| G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56) |
 | G-03 | Public GitHub repository ready | Closed | - | `blacklight0101/Rosetta`, created on the owner's request |
 | G-04 | Provider access ready | Closed | - | Ollama installed with the model of Q-04; OpenAI key in the environment |
 | G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26 |
@@ -70,6 +70,9 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-11 (G-02 and PR #2)** - the owner approved the design board (DEC-56, G-02 open). PR #1 had been merged on
+  2026-10-09 with only the first two commits; the later work was replayed onto `main` in branch
+  `docs/p0-design-and-architecture` and opened as PR #2 for the owner to merge.
 - **2026-10-11 (design system)** - design-system.md v1, the brief and the token file written; design board v1 published
   as a private Artifact (tokens sheet, start a run, live run, API calls and logs, history with delete, report and
   replay), light and dark, all token pairs WCAG AA (lowest 3.14:1 for control borders). Next: owner reviews the board

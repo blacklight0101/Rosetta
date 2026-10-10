@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rosetta tokens and components</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.sw{display:flex;flex-direction:column;gap:6px}
+.chip{height:56px;border-radius:var(--rst-radius-md);border:1px solid var(--rst-rule)}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 14px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:20px;box-shadow:var(--rst-shadow-1)}
+h2{margin:0 0 14px;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="width: 1440px; height: 1240px; box-sizing: border-box; padding: 48px 56px; display: flex; flex-direction: column; gap: 28px;">
+  <div style="display: flex; align-items: baseline; gap: 16px;">
+    <div style="font-size: 32px; font-weight: 700; letter-spacing: -0.02em; color: var(--rst-ink);">Rosetta</div>
+    <div style="font-size: var(--rst-fs-md); color: var(--rst-ink-muted);">Design system v1 - tokens, status badges and core components. Theme follows the OS; the tweak switches it here.</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;">
+    <section class="card">
+      <h2>Surfaces and ink</h2>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;">
+        <div class="sw"><div class="chip" style="background: var(--rst-bg);"></div><span class="lbl">bg</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-surface);"></div><span class="lbl">surface</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-surface-2);"></div><span class="lbl">surface-2</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-ink);"></div><span class="lbl">ink</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-ink-muted);"></div><span class="lbl">ink-muted</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-rule-strong);"></div><span class="lbl">rule-strong</span></div>
+      </div>
+      <h2 style="margin-top: 20px;">Brand and agent roles</h2>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;">
+        <div class="sw"><div class="chip" style="background: var(--rst-brand);"></div><span class="lbl">brand (deep teal)</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-brand-tint);"></div><span class="lbl">brand-tint</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-role-reader);"></div><span class="lbl">role reader</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-role-verifier);"></div><span class="lbl">role verifier</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-role-planner);"></div><span class="lbl">role planner</span></div>
+        <div class="sw"><div class="chip" style="background: var(--rst-role-summariser);"></div><span class="lbl">role summariser</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Type</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: var(--rst-fs-3xl); font-weight: var(--rst-fw-head); line-height: var(--rst-lh-head);">Page title 32</div>
+        <div style="font-size: var(--rst-fs-2xl); font-weight: var(--rst-fw-head);">Section 24</div>
+        <div style="font-size: var(--rst-fs-xl); font-weight: var(--rst-fw-head);">Panel title 20</div>
+        <div style="font-size: var(--rst-fs-md);">Body 14 - system UI font, tabular figures for every number: 1,284,903 tokens</div>
+        <div style="font-size: var(--rst-fs-xs); color: var(--rst-ink-muted);">Caption 12 - muted ink, still 4.5:1 on every surface</div>
+        <div class="rst-mono" style="color: var(--rst-ink-soft);">Catalog/Edit.aspx.cs:40-80 - mono for paths, ids, SHAs, model names</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Status badges - glyph and word always together, never colour alone</h2>
+    <div style="display: grid; grid-template-columns: 160px minmax(0, 1fr); row-gap: 14px; align-items: center;">
+      <span class="lbl">ClaimStatus</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="badge" style="background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"></circle></svg>Proposed</span>
+        <span class="badge" style="background: var(--rst-danger-bg); color: var(--rst-danger-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 8 2.5 9.5a2 2 0 0 1-2.8-2.8L1.5 5M8 4l1.5-1.5a2 2 0 0 0-2.8-2.8L5 1.5M3 9 9 3" fill="none" stroke="currentColor" stroke-width="1.5" transform="translate(1 1) scale(0.85)"></path></svg>Citation invalid</span>
+        <span class="badge" style="background: var(--rst-ok-solid); color: var(--rst-ok-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Supported</span>
+        <span class="badge" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3 3 9" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Rejected</span>
+        <span class="badge" style="background: var(--rst-warn-bg); color: var(--rst-warn-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.2 4.4a1.9 1.9 0 1 1 2.6 1.7c-.6.3-.8.6-.8 1.2M6 9.3v.2" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>Unverified</span>
+      </div>
+      <span class="lbl">AgentTaskState</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="badge" style="background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"></circle></svg>Planned</span>
+        <span class="badge" style="background: var(--rst-info-solid); color: var(--rst-info-solid-ink);"><svg class="rst-live-dot" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="currentColor"></circle></svg>Running</span>
+        <span class="badge" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Done</span>
+        <span class="badge" style="background: var(--rst-warn-bg); color: var(--rst-warn-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v4l2.5 1.5" fill="none" stroke="currentColor" stroke-width="1.5"></path><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.2"></circle></svg>Turn limit reached</span>
+        <span class="badge" style="background: var(--rst-danger-bg); color: var(--rst-danger-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 3 1.5 6 4 9M8 3l2.5 3L8 9" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>Invalid output</span>
+        <span class="badge" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v4.5M6 9v.3" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Failed</span>
+        <span class="badge" style="background: var(--rst-warn-solid); color: var(--rst-warn-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2.5" width="7" height="7" fill="currentColor"></rect></svg>Stopped by cap</span>
+      </div>
+      <span class="lbl">RunEndState</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="badge" style="background: var(--rst-ok-solid); color: var(--rst-ok-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Completed</span>
+        <span class="badge" style="background: var(--rst-warn-solid); color: var(--rst-warn-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2.5" width="7" height="7" fill="currentColor"></rect></svg>Cap reached</span>
+        <span class="badge" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v4.5M6 9v.3" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Failed</span>
+        <span class="badge" style="background: var(--rst-neutral-solid); color: var(--rst-neutral-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 3v6M8 3v6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Interrupted</span>
+      </div>
+      <span class="lbl">Open question / API call</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="badge" style="background: var(--rst-warn-bg); color: var(--rst-warn-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.2 4.4a1.9 1.9 0 1 1 2.6 1.7c-.6.3-.8.6-.8 1.2M6 9.3v.2" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>Open</span>
+        <span class="badge" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Answered</span>
+        <span class="badge" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);">200 ok</span>
+        <span class="badge" style="background: var(--rst-warn-bg); color: var(--rst-warn-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M9.5 5A3.5 3.5 0 1 0 9 8M9.5 2.5V5H7" fill="none" stroke="currentColor" stroke-width="1.4"></path></svg>Retried</span>
+        <span class="badge" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);">429 failed</span>
+        <span class="badge" style="background: var(--rst-warn-solid); color: var(--rst-warn-solid-ink);">Refused by cap</span>
+      </div>
+    </section>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+    <section class="card">
+      <h2>Buttons</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <button class="btn" type="button" style="background: var(--rst-brand); color: var(--rst-brand-ink);">Start run</button>
+        <button class="btn" type="button" style="background: var(--rst-surface); color: var(--rst-ink); border-color: var(--rst-rule-strong);">Estimate</button>
+        <button class="btn" type="button" style="background: transparent; color: var(--rst-brand);">View report</button>
+        <button class="btn" type="button" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);">Stop run</button>
+        <button class="btn" type="button" disabled style="background: var(--rst-surface-2); color: var(--rst-ink-muted); cursor: not-allowed;">Delete (in use)</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Cost meter against a cap</h2>
+      <div style="display: flex; justify-content: space-between; font-size: var(--rst-fs-sm);"><span>Run cost</span><span><strong>$0.412</strong> of $2.00 cap</span></div>
+      <div role="meter" aria-label="Run cost against cap" aria-valuenow="21" aria-valuemin="0" aria-valuemax="100" style="margin-top: 8px; height: 10px; background: var(--rst-surface-2); border-radius: var(--rst-radius-pill); overflow: hidden; position: relative;">
+        <div style="width: 21%; height: 100%; background: var(--rst-brand);"></div>
+        <div style="position: absolute; left: 34%; top: 0; bottom: 0; width: 2px; background: var(--rst-ink-soft);"></div>
+      </div>
+      <div class="lbl" style="margin-top: 6px;">21% used - marker at the likely estimate (34%). Warn tone from 80%, danger at 95%.</div>
+    </section>
+
+    <section class="card">
+      <h2>Fields</h2>
+      <label for="ex-url" style="display: block; font-size: var(--rst-fs-sm); font-weight: var(--rst-fw-label); margin-bottom: 6px;">GitHub repository URL</label>
+      <input id="ex-url" type="url" value="https://github.com/owner/private-repo" aria-invalid="true" aria-describedby="ex-url-err" style="width: 100%; box-sizing: border-box; height: var(--rst-control-h); padding: 0 10px; border: 1px solid var(--rst-danger-ink); border-radius: var(--rst-radius-md); background: var(--rst-surface); color: var(--rst-ink); font: inherit;">
+      <div id="ex-url-err" style="margin-top: 6px; font-size: var(--rst-fs-xs); color: var(--rst-danger-ink);">RST-1903 - This repository is private or does not exist. Only public GitHub repositories can be analysed.</div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+renderVals() {
+return { theme: this.props.theme ?? 'light' };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rosetta - start a run</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
+.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
+.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:20px;box-shadow:var(--rst-shadow-1)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 14px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rst-rule);font-size:var(--rst-fs-sm)}
+th{font-weight:var(--rst-fw-label);color:var(--rst-ink-muted);font-size:var(--rst-fs-xs)}
+td.n,th.n{text-align:right}
+h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
+h2{margin:0 0 12px;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="min-height: 1000px; display: flex; flex-direction: column;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
+    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
+    <div class="rst-mono" style="color: var(--rst-ink-soft);">dotnet-architecture/eShopModernizing</div>
+    <div style="flex: 1 1 auto;"></div>
+    <div style="display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
+      <span class="lbl">Project total</span>
+      <span><strong>1,284,903</strong> tokens</span>
+      <span class="lbl">in 1.12M - out 141k - cached 22k</span>
+      <span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$3.47</span>
+      <button class="btn" type="button" style="height: 26px; padding: 0 8px; background: transparent; color: var(--rst-brand);">Breakdown</button>
+    </div>
+  </header>
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
+    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
+      <a href="StartRun.dc.html" aria-current="page">Start a run</a>
+      <a href="LiveRun.dc.html">Live run</a>
+      <a href="#">Verification</a>
+      <a href="#">Coverage</a>
+      <a href="ApiCalls.dc.html">API calls and logs</a>
+      <a href="#">Open questions</a>
+      <a href="History.dc.html">History and snapshots</a>
+    </nav>
+    <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; max-width: 1160px;">
+      <div>
+        <h1>Start a run</h1>
+        <div style="color: var(--rst-ink-muted); margin-top: 4px;">Paste a public GitHub repository URL. Rosetta pins it to a commit and downloads that snapshot once.</div>
+      </div>
+
+      <section class="card" style="display: flex; flex-direction: column; gap: 14px;">
+        <label for="url" style="font-weight: var(--rst-fw-label);">GitHub repository URL</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+          <input id="url" type="url" value="https://github.com/dotnet-architecture/eShopModernizing/tree/master/eShopLegacyWebFormsSolution" style="flex: 1 1 420px; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--rst-rule-strong); border-radius: var(--rst-radius-md); background: var(--rst-surface); color: var(--rst-ink); font-family: var(--rst-mono); font-size: var(--rst-fs-sm);">
+          <button class="btn" type="button" style="height: 36px; background: var(--rst-surface); color: var(--rst-ink); border-color: var(--rst-rule-strong);">Resolve</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 12px; background: var(--rst-surface-2); border-radius: var(--rst-radius-md);">
+          <div><div class="lbl">Repository</div><div class="rst-mono">dotnet-architecture/eShopModernizing</div></div>
+          <div><div class="lbl">Ref, pinned commit</div><div class="rst-mono">master @ [COMMIT SHA]</div></div>
+          <div><div class="lbl">Subpath</div><div class="rst-mono">eShopLegacyWebFormsSolution</div></div>
+          <div><div class="lbl">Snapshot</div><div><span class="badge" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Cached</span> <span class="lbl">MIT licence</span></div></div>
+        </div>
+      </section>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+        <section class="card">
+          <h2>Stage and areas</h2>
+          <fieldset style="border: 0; padding: 0; margin: 0 0 14px; display: flex; gap: 18px;">
+            <legend class="lbl" style="margin-bottom: 6px;">Stage</legend>
+            <label style="display: flex; gap: 6px; align-items: center;"><input type="radio" name="stage"> Scan only</label>
+            <label style="display: flex; gap: 6px; align-items: center;"><input type="radio" name="stage" checked> Understand</label>
+            <label style="display: flex; gap: 6px; align-items: center;"><input type="radio" name="stage"> Verify</label>
+          </fieldset>
+          <div class="lbl" style="margin-bottom: 6px;">Areas from the code map</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="display: flex; gap: 8px; align-items: center;"><input type="checkbox" checked> <span class="rst-mono">Catalog</span> <span class="lbl">pages and code-behind</span></label>
+            <label style="display: flex; gap: 8px; align-items: center;"><input type="checkbox" checked> <span class="rst-mono">Models</span> <span class="lbl">entities and DbContext</span></label>
+            <label style="display: flex; gap: 8px; align-items: center;"><input type="checkbox" checked> <span class="rst-mono">Services</span> <span class="lbl">catalog service and mock</span></label>
+            <label style="display: flex; gap: 8px; align-items: center;"><input type="checkbox" checked> <span class="rst-mono">App_Start, configuration</span></label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Estimate before running</h2>
+          <table>
+            <thead><tr><th>Role</th><th>Provider, model</th><th class="n">Low</th><th class="n">Likely</th><th class="n">High</th></tr></thead>
+            <tbody>
+              <tr><td>reader</td><td class="rst-mono">ollama / qwen3.5:9b</td><td class="n">$0.00</td><td class="n">$0.00</td><td class="n">$0.00</td></tr>
+              <tr><td>verifier</td><td class="rst-mono">openai / [MODEL]</td><td class="n">$0.18</td><td class="n">$0.34</td><td class="n">$0.71</td></tr>
+              <tr><td>summariser</td><td class="rst-mono">openai / [MODEL]</td><td class="n">$0.02</td><td class="n">$0.05</td><td class="n">$0.09</td></tr>
+              <tr><td><strong>Total</strong></td><td class="lbl">cap $2.00</td><td class="n">$0.20</td><td class="n"><strong>$0.39</strong></td><td class="n">$0.80</td></tr>
+            </tbody>
+          </table>
+          <div class="lbl" style="margin-top: 8px;">Illustrative figures. Assumptions: 4 areas, 12 turns per agent, price table 2026-10-01 (USD).</div>
+        </section>
+      </div>
+
+      <section role="alert" style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: var(--rst-radius-md); background: var(--rst-warn-bg); color: var(--rst-warn-ink); border: 1px solid var(--rst-warn-solid);">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" style="flex: none; margin-top: 1px;"><path d="M10 3 18 17H2L10 3Z M10 8v4 M10 14.5v.3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        <div>
+          <strong>Code will leave this machine.</strong> The verifier and summariser use OpenAI. Excerpts are masked for secrets and every one is logged in the egress log. The reader stays local on Ollama.
+          <label style="display: flex; gap: 8px; align-items: center; margin-top: 8px; color: var(--rst-ink);"><input type="checkbox"> I understand; send masked excerpts to OpenAI for this run</label>
+        </div>
+      </section>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end;">
+        <button class="btn" type="button" style="background: var(--rst-surface); color: var(--rst-ink); border-color: var(--rst-rule-strong);">Re-estimate</button>
+        <button class="btn" type="button" style="background: var(--rst-brand); color: var(--rst-brand-ink); height: 40px; padding: 0 20px;">Start run</button>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return { theme: this.props.theme ?? 'light' };
+}
+}
+</script>
+</body>
+</html>

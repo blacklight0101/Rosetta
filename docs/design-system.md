@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Status** | Proposed, v1 draft (2026-10-11); becomes Accepted when the owner approves the design board at gate G-02 |
+| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56) |
 | **Decisions** | DEC-44 (text wordmark, system fonts, deep teal accent, light and dark per OS, multi-page static report), DEC-45 (English only), DEC-46 (verbose, graphic live web UI), DEC-49 (project totals always visible), DEC-50 (API calls and logs), DEC-52 (Preact + Vite), DEC-55 (delete with confirmation); [ADR-012](adr/ADR-012-local-web-ui-and-github-sources.md) |
-| **Source artefacts** | [design-system-brief.md](design-system-brief.md) (what was asked); the v1 design board (private Artifact "Rosetta design board v1", link in [handoff](../handoff.md)); [`docs/design/tokens.css`](design/tokens.css) (the token file) |
+| **Source artefacts** | [design-system-brief.md](design-system-brief.md) (what was asked); the v1 design board, exported to [`docs/design/board/`](design/board/) (open the `.dc.html` files in the design canvas; never edited after export); [`docs/design/tokens.css`](design/tokens.css) (the token file) |
 | **Devices** | desktop and laptop browsers, 1280 px and wider, mouse and keyboard (the local web UI); the published report also on tablets and phones (360 px and wider) |
 | **Feeds** | the web UI shell card, the component gallery card, each web UI page card (RF-1000..RF-1012), the report cards (RF-500..RF-506), the terminal output card (RF-004) |
 | **Ancestry** | none |

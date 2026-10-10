@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed (written 2026-10-09, completed 2026-10-11); the v1 board was drawn from it on 2026-10-11 |
+| **Status** | Superseded 2026-10-11: the board drawn from it was approved without changes (DEC-56); the result is design-system.md v1 and `docs/design/board/`; kept for history only |
 | **Sent to** | Claude (Design canvas Artifact "Rosetta design board v1"), run with the owner on 2026-10-11; the owner may also run it in another design tool |
 | **Folded back into** | [design-system.md](design-system.md) (v1); after approval at G-02 the board is exported to `docs/design/board/` and this brief is marked Superseded |
 
@@ -77,5 +77,5 @@ None.
 - [x] Token file for light and dark (v1: `docs/design/tokens.css`)
 - [x] Components sheet with every badge state
 - [x] The six screens of Appendix A in light, with a dark switch
-- [ ] Owner critique folded in as v2 (section 0 of design-system.md)
-- [ ] Board exported to `docs/design/board/`
+- [x] Owner review: approved without changes, no v2 needed (DEC-56)
+- [x] Board exported to `docs/design/board/`

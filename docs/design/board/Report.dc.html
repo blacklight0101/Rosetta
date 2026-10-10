@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rosetta report - eShopLegacyWebForms</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.tabs a{display:inline-flex;align-items:center;height:40px;padding:0 12px;color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label);border-bottom:2px solid transparent}
+.tabs a[aria-current="page"]{color:var(--rst-brand);border-bottom-color:var(--rst-brand)}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:18px;box-shadow:var(--rst-shadow-1)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:var(--rst-control-h);min-width:var(--rst-control-h);padding:0 10px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid var(--rst-rule-strong);background:var(--rst-surface);color:var(--rst-ink)}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+.bar{height:8px;background:var(--rst-surface-2);border-radius:var(--rst-radius-pill);overflow:hidden;display:flex}
+h1{margin:0;font-size:var(--rst-fs-3xl);font-weight:var(--rst-fw-head);line-height:var(--rst-lh-head)}
+h2{margin:0 0 12px;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="min-height: 1240px;">
+  <header style="background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
+    <div style="max-width: 1180px; margin: 0 auto; padding: 14px 24px 0; display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px;">
+        <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
+        <span class="lbl">Functional specification report - generated 2026-10-11 from run 20261011-091204-understand</span>
+      </div>
+      <nav class="tabs" aria-label="Report" style="display: flex; flex-wrap: wrap; gap: 4px;">
+        <a href="#" aria-current="page">Dashboard</a><a href="#">Areas</a><a href="#">Cards</a><a href="#">Open questions</a><a href="#">Run replay</a><a href="#">Cost</a>
+      </nav>
+    </div>
+  </header>
+  <main style="max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; display: flex; flex-direction: column; gap: 22px;">
+    <div>
+      <h1>eShopLegacyWebForms</h1>
+      <div style="margin-top: 6px; color: var(--rst-ink-soft);"><a class="rst-mono" href="#">dotnet-architecture/eShopModernizing</a> <span class="lbl">- subpath</span> <span class="rst-mono">eShopLegacyWebFormsSolution</span> <span class="lbl">- commit</span> <span class="rst-mono">[SHA]</span> <span class="lbl">- MIT</span></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+      <div class="card"><div class="lbl">Cards</div><div style="font-size: 28px; font-weight: var(--rst-fw-head);">17</div><div class="lbl">FEAT 5 - BR 6 - ENT 3 - INT 1 - OQ 2</div></div>
+      <div class="card"><div class="lbl">Claims verified</div><div style="font-size: 28px; font-weight: var(--rst-fw-head);">27 of 29</div>
+        <div class="bar" role="img" aria-label="21 supported, 3 rejected, 3 citation invalid, 2 unverified" style="margin-top: 8px;"><div style="width: 72%; background: var(--rst-ok-solid);"></div><div style="width: 10%; background: var(--rst-danger-solid);"></div><div style="width: 10%; background: var(--rst-danger-ink); opacity: 0.55;"></div><div style="width: 8%; background: var(--rst-warn-solid);"></div></div>
+        <div class="lbl" style="margin-top: 6px;">21 supported - 3 rejected - 3 citation invalid - 2 unverified</div></div>
+      <div class="card"><div class="lbl">Code read by agents</div><div style="font-size: 28px; font-weight: var(--rst-fw-head);">81%</div><div class="lbl">of area tokens; map level symbols (C# pack)</div></div>
+      <div class="card"><div class="lbl">This run / project total</div><div style="font-size: 28px; font-weight: var(--rst-fw-head);">$0.52</div><div class="lbl">project at report time: 1.31M tokens - $3.99</div></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px;">
+      <article class="card" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <span class="rst-mono" style="font-weight: 600;">BR-004</span>
+          <h2 style="margin: 0;">An item's price must be greater than zero</h2>
+        </div>
+        <div class="lbl">Area Catalog - confidence High - business rule</div>
+        <div style="color: var(--rst-ink-soft);">The create and edit pages refuse a catalog item whose price is zero or negative, with a validation message next to the field.</div>
+        <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px;">
+          <li style="display: flex; flex-direction: column; gap: 4px; padding: 10px; border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="badge" style="background: var(--rst-ok-solid); color: var(--rst-ok-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Supported</span><span>Price has a range validator on the create page.</span></div>
+            <a class="rst-mono" href="#" style="font-size: 12px;">Catalog/Create.aspx:[LINES] on GitHub</a>
+          </li>
+          <li style="display: flex; flex-direction: column; gap: 4px; padding: 10px; border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="badge" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3 3 9" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Rejected</span><span>The service also checks the price before saving.</span></div>
+            <div class="lbl">Verifier: the cited lines save the item without any price check.</div>
+            <a class="rst-mono" href="#" style="font-size: 12px;">Services/CatalogService.cs:[LINES] on GitHub</a>
+          </li>
+        </ol>
+      </article>
+
+      <section class="card" style="display: flex; flex-direction: column; gap: 12px;">
+        <h2 style="margin: 0;">Run replay</h2>
+        <div class="lbl">Replays events.jsonl: the agents, their tool calls, cards and verdicts, and the cost over time. Without JavaScript the same timeline shows as a list.</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px; align-items: center;"><span class="rst-mono" style="font-size: 12px;">reader Models</span><div style="position: relative; height: 16px; background: var(--rst-surface-2); border-radius: 3px;"><div style="position: absolute; top: 3px; bottom: 3px; left: 0; width: 46%; background: var(--rst-role-reader); border-radius: 3px;"></div></div></div>
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px; align-items: center;"><span class="rst-mono" style="font-size: 12px;">reader Catalog</span><div style="position: relative; height: 16px; background: var(--rst-surface-2); border-radius: 3px;"><div style="position: absolute; top: 3px; bottom: 3px; left: 4%; width: 70%; background: var(--rst-role-reader); border-radius: 3px;"></div></div></div>
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px; align-items: center;"><span class="rst-mono" style="font-size: 12px;">verifier</span><div style="position: relative; height: 16px; background: var(--rst-surface-2); border-radius: 3px;"><div style="position: absolute; top: 3px; bottom: 3px; left: 41%; width: 52%; background: var(--rst-role-verifier); border-radius: 3px;"></div></div></div>
+          <div style="position: relative; height: 0;"><div style="position: absolute; left: calc(120px + 8px + (100% - 128px) * 0.62); top: -80px; height: 80px; width: 2px; background: var(--rst-ink);"></div></div>
+        </div>
+        <div style="padding: 10px; border-radius: var(--rst-radius-md); background: var(--rst-surface-2); font-family: var(--rst-mono); font-size: 12px; color: var(--rst-ink-soft);">04:51.2 agent.card.proposed - Catalog BR-004 "An item's price must be greater than zero"</div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <button class="btn" type="button" aria-label="Step back"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2v10M12 2 5 7l7 5Z" fill="currentColor" stroke="currentColor" stroke-width="1"></path></svg></button>
+          <button class="btn" type="button" aria-label="Play" style="background: var(--rst-brand); color: var(--rst-brand-ink); border-color: var(--rst-brand);"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2v10l9-5Z" fill="currentColor"></path></svg></button>
+          <button class="btn" type="button" aria-label="Step forward"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M11 2v10M2 2l7 5-7 5Z" fill="currentColor" stroke="currentColor" stroke-width="1"></path></svg></button>
+          <label for="speed" class="lbl" style="margin-left: 8px;">Speed</label>
+          <select id="speed" style="height: var(--rst-control-h); border: 1px solid var(--rst-rule-strong); border-radius: var(--rst-radius-md); background: var(--rst-surface); color: var(--rst-ink); font: inherit;"><option>1x</option><option selected>4x</option><option>16x</option></select>
+          <div style="flex: 1 1 auto;"></div>
+          <span class="lbl">cost at this moment $0.29</span>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Open questions for the owner of the legacy system</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: flex-start;"><span class="badge" style="background: var(--rst-warn-bg); color: var(--rst-warn-ink);">Open</span><div><span class="rst-mono" style="font-weight: 600;">OQ-001</span> Is a catalog item with zero stock still shown to buyers? <span class="lbl">- the code never filters on stock; the intent is unclear.</span></div></div>
+        <div style="display: flex; gap: 10px; align-items: flex-start;"><span class="badge" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);">Answered</span><div><span class="rst-mono" style="font-weight: 600;">OQ-002</span> Is the mock catalog service used in production? <span class="lbl">- answered: no, demo only.</span></div></div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+renderVals() {
+return { theme: this.props.theme ?? 'light' };
+}
+}
+</script>
+</body>
+</html>

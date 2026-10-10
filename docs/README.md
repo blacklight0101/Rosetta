@@ -14,8 +14,8 @@ here; they never hold a second copy of these documents.
 | [data-model.md](data-model.md) | No database: the file formats Rosetta reads and writes (configuration, snapshot cache, code map, run folder, cards, events, call and application logs, cost ledger) and their schema versions | Proposed | 2026-10-10 |
 | [conventions.md](conventions.md) | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits | Proposed | 2026-10-10 |
 | [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases | Proposed | 2026-10-10 |
-| [design-system.md](design-system.md) | Live web UI, published report and terminal output: tokens (`design/tokens.css`), components, status badges, patterns, accessibility, verification | Proposed (v1) | 2026-10-11 |
-| [design-system-brief.md](design-system-brief.md) | The brief for the design board; Superseded by design-system.md v2 after the owner's review | Proposed | 2026-10-11 |
+| [design-system.md](design-system.md) | Live web UI, published report and terminal output: tokens (`design/tokens.css`), components, status badges, patterns, accessibility, verification | Accepted (v1) | 2026-10-11 |
+| [design-system-brief.md](design-system-brief.md) | The brief for the design board | Superseded | 2026-10-11 |
 | [roadmap.md](roadmap.md) | Phases P0..Pn with exit criteria, later releases with entry conditions, backlog by requirement id, deliberately not built | Living | 2026-10-09 |
 | [process-flows.md](process-flows.md) | Stakeholder flowcharts (Mermaid) with requirement ids in captions; source of any exported page or PDF | Reference | 2026-10-09 |
 | [orchestration/README.md](orchestration/README.md) | Build protocol: roles, builder tiers, card life cycle, builder rules, verifier checklist and verdict format, human gates G-nn, parallelism, stop conditions | Living | 2026-10-09 |

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rosetta - history and snapshots</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
+.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
+.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:16px;box-shadow:var(--rst-shadow-1)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 12px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rst-rule);font-size:var(--rst-fs-sm);white-space:nowrap}
+th{font-weight:var(--rst-fw-label);color:var(--rst-ink-muted);font-size:var(--rst-fs-xs);background:var(--rst-surface-2)}
+td.n,th.n{text-align:right}
+h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
+h2{margin:0 0 10px;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="min-height: 1000px; display: flex; flex-direction: column; position: relative;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
+    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
+    <div class="rst-mono" style="color: var(--rst-ink-soft);">dotnet-architecture/eShopModernizing</div>
+    <div style="flex: 1 1 auto;"></div>
+    <div style="display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
+      <span class="lbl">Project total</span><span><strong>1,302,118</strong> tokens</span><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$3.88</span>
+    </div>
+  </header>
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
+    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
+      <a href="StartRun.dc.html">Start a run</a>
+      <a href="LiveRun.dc.html">Live run</a>
+      <a href="#">Verification</a>
+      <a href="#">Coverage</a>
+      <a href="ApiCalls.dc.html">API calls and logs</a>
+      <a href="#">Open questions</a>
+      <a href="History.dc.html" aria-current="page">History and snapshots</a>
+    </nav>
+    <main style="flex: 999 1 560px; min-width: 0; padding: 24px 28px; display: flex; flex-direction: column; gap: 18px;">
+      <h1>History and snapshots</h1>
+      <section class="card">
+        <h2>Runs</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>Run</th><th>Stage</th><th>Commit</th><th>State</th><th class="n">Tokens</th><th class="n">Cost</th><th>Open</th><th></th></tr></thead>
+            <tbody>
+              <sc-for list="{{runs}}" as="r" hint-placeholder-count="5">
+                <tr>
+                  <td class="rst-mono">{{r.id}}</td><td>{{r.stage}}</td><td class="rst-mono">{{r.sha}}</td>
+                  <td><span class="badge" style="{{r.badgeStyle}}">{{r.state}}</span></td>
+                  <td class="n">{{r.tokens}}</td><td class="n">{{r.cost}}</td>
+                  <td><a href="Report.dc.html">Report</a> - <a href="#">Zip</a></td>
+                  <td><button class="btn" type="button" style="{{r.delStyle}}" aria-label="Delete run {{r.id}}">{{r.delLabel}}</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Downloaded snapshots</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>Repository</th><th>Commit</th><th>Downloaded</th><th class="n">Files</th><th class="n">Size</th><th>Used by</th><th></th></tr></thead>
+            <tbody>
+              <tr><td class="rst-mono">dotnet-architecture/eShopModernizing</td><td class="rst-mono">[SHA]</td><td>2026-10-11 09:11</td><td class="n">412</td><td class="n">18.4 MB</td><td>3 runs, 1 running</td><td><button class="btn" type="button" disabled title="In use by a running run" style="background: var(--rst-surface-2); color: var(--rst-ink-muted); cursor: not-allowed;">Delete (in use)</button></td></tr>
+              <tr><td class="rst-mono">dotnet-architecture/eShopModernizing</td><td class="rst-mono">[OLDER SHA]</td><td>2026-10-09 18:40</td><td class="n">409</td><td class="n">18.1 MB</td><td>1 run</td><td><button class="btn" type="button" style="background: var(--rst-surface); color: var(--rst-danger-ink); border-color: var(--rst-danger-ink);">Delete</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="lbl" style="margin-top: 10px;">Deleting never changes the project totals: the cost ledger keeps every call ever paid for.</div>
+      </section>
+    </main>
+  </div>
+
+  <div style="position: absolute; inset: 0; background: var(--rst-scrim); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-body" style="width: 100%; max-width: 520px; background: var(--rst-surface-raised); color: var(--rst-ink); border-radius: var(--rst-radius-lg); box-shadow: var(--rst-shadow-2); padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="dlg-title" style="margin: 0;">Delete run 20261009-184012-understand?</h2>
+      <div id="dlg-body" style="display: flex; flex-direction: column; gap: 8px;">
+        <div>This removes the run folder with its cards, report, transcripts and logs.</div>
+        <ul style="margin: 0; padding-left: 18px; color: var(--rst-ink-soft);">
+          <li>Frees <strong>3.2 MB</strong></li>
+          <li>Its snapshot stays; delete it separately if no other run uses it</li>
+          <li>Project totals keep this run's <strong>412,606 tokens - $1.31</strong></li>
+        </ul>
+        <div class="lbl">This cannot be undone.</div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn" type="button" style="background: var(--rst-surface); color: var(--rst-ink); border-color: var(--rst-rule-strong);">Cancel</button>
+        <button class="btn" type="button" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);">Delete run</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+const ok = 'background: var(--rst-ok-solid); color: var(--rst-ok-solid-ink);';
+const cap = 'background: var(--rst-warn-solid); color: var(--rst-warn-solid-ink);';
+const run = 'background: var(--rst-info-solid); color: var(--rst-info-solid-ink);';
+const del = 'background: var(--rst-surface); color: var(--rst-danger-ink); border-color: var(--rst-danger-ink);';
+const dis = 'background: var(--rst-surface-2); color: var(--rst-ink-muted); cursor: not-allowed;';
+return {
+theme: this.props.theme ?? 'light',
+runs: [
+{ id: '20261011-091204-understand', stage: 'understand', sha: '[SHA]', state: 'Running', badgeStyle: run, tokens: '196,102', cost: '$0.41', delStyle: dis, delLabel: 'Running' },
+{ id: '20261011-091150-scan', stage: 'scan', sha: '[SHA]', state: 'Completed', badgeStyle: ok, tokens: '0', cost: '$0.00', delStyle: del, delLabel: 'Delete' },
+{ id: '20261010-201533-understand', stage: 'understand', sha: '[SHA]', state: 'Cap reached', badgeStyle: cap, tokens: '693,410', cost: '$2.16', delStyle: del, delLabel: 'Delete' },
+{ id: '20261009-184012-understand', stage: 'understand', sha: '[OLDER SHA]', state: 'Completed', badgeStyle: ok, tokens: '412,606', cost: '$1.31', delStyle: del, delLabel: 'Delete' }
+]
+};
+}
+}
+</script>
+</body>
+</html>
