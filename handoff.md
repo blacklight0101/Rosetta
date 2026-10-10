@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/planning-brief`._
+_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/roadmap-flows`._
 
 ## Current state
 
@@ -9,7 +9,7 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-018; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-86.
+- `docs/decision-log.md` - decisions DEC-01..DEC-95.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
@@ -20,7 +20,10 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
   `docs/design/board/`.
 - `docs/data-model.md` - written 2026-10-10 (all file formats); Q-15 and Q-16 answered (DEC-54, DEC-55).
 - `docs/security/threat-model.md` and `SECURITY.md` - rewritten 2026-10-11 for the hosted application (DEC-69).
-- Not yet filled: `docs/roadmap.md`, `docs/process-flows.md`, `docs/orchestration/`.
+- `docs/roadmap.md` - written 2026-10-11: P0..P3 for release 1, P4 is release 2, dates for P1 (DEC-87..DEC-92).
+- `docs/process-flows.md` - written 2026-10-11, eight flows (DEC-93..DEC-95); PDF `docs/rosetta-flows.pdf` and private
+  page https://claude.ai/artifact/1LY8Fx8ZFjxSQXvtRFDoDj, both regenerated 2026-10-11.
+- Not yet filled: `docs/orchestration/` (build plan).
 
 ## Resume point
 
@@ -29,14 +32,15 @@ application (DEC-59..DEC-69): no CLI, no plugin; one container image, Docker Com
 (Q-18); accounts, landing page, per-user keys, caps, PostgreSQL plus files; ADR-014..ADR-017; requirements
 RF-010, RF-803, RF-1100..RF-1306; threat model rewritten. PR #5 added the approved hosted screens (DEC-70) and the
 revised v1 screens (DEC-71). Branch `docs/planning-brief` adds the planning brief and the principle catalogue for
-`plan` (DEC-72..DEC-85, ADR-018, RF-604..RF-613; Q-06 answered) and the approved Plan setup artboard (DEC-86).
+`plan` (DEC-72..DEC-85, ADR-018, RF-604..RF-613; Q-06 answered) and the approved Plan setup artboard (DEC-86). Branch `docs/roadmap-flows`, stacked on it, adds the
+roadmap and the process flows (DEC-87..DEC-95).
 
 Next, in this order (ask the owner before each):
 1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56).
 2. ~~Artboards for the hosted screens (design-system.md section 14)~~ DONE 2026-10-11: artboards 7-13, approved as a
    G-02 amendment (DEC-70).
 2a. ~~Plan setup artboard~~ DONE 2026-10-11: artboard 14, approved as a G-02 amendment (DEC-86).
-3. Roadmap (P0..P4 with exit criteria) and process flows.
+3. ~~Roadmap and process flows~~ DONE 2026-10-11: DEC-87..DEC-95; PDF and page published.
 4. Build plan (with the hosted cards: image, Compose, accounts, landing, hosted deploy by 2026-10-20): `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
    card, and the orchestrator agent.
 5. Run `check_docs.py --without legacy`, a light review, fix what is mechanical.
@@ -76,6 +80,10 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-11 (roadmap and flows)** - roadmap written: P1 milestone slice by 2026-10-22 (hosted deploy 2026-10-20,
+  G-06 2026-10-24, hand-in 2026-10-26), P2 full understand, P3 report and plan, P4 release 2; G-01 review set for
+  2026-10-13; owner hands-on reviews at the end of P1 and P2; postponement order restated. Eight process flows for the
+  teachers, PDF and private page. DEC-87..DEC-95. Next: build plan, then the G-01 review.
 - **2026-10-11 (planning brief)** - `plan` gets an interview with defaults (Plan setup) and a principle catalogue
   built from the master's curriculum: DEC-72..DEC-85, ADR-018, RF-604..RF-613, RF-600 withdrawn, Q-06 answered,
   `planning-brief.json` in the data model. Journal: `docs/journal/2026-10-11-planning-brief.md`. Plan setup artboard
