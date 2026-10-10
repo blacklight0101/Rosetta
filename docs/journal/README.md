@@ -26,3 +26,5 @@ Rules:
 | 2026-10-10 | [Toolchain, formats, web UI and GitHub sources](2026-10-10-toolchain-web-ui.md) | DEC-40..DEC-55 |
 | 2026-10-11 | [Design system and design board](2026-10-11-design-system.md) | DEC-56 |
 | 2026-10-11 | [Master modules 07 and 08 folded in](2026-10-11-master-modules-07-08.md) | DEC-57, DEC-58 |
+| 2026-10-11 | [Hosted web application](2026-10-11-hosted-web-app.md) | DEC-59..DEC-69 |
+| 2026-10-11 | [Planning brief and principle catalogue](2026-10-11-planning-brief.md) | DEC-72..DEC-86 |

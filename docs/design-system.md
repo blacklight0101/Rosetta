@@ -274,6 +274,7 @@ cards are built (an amendment of G-02, recorded in `handoff.md`).
 | Settings and keys | RF-1104, RF-407 | per provider: last four characters, replace, delete, Test; which key a run will use |
 | Administration: users | RF-1102, RF-1106, RF-1107 | table of accounts with role, state, last sign-in, month-to-date cost; create, disable, reset; caps form; server month meter with the 80% banner |
 | Administration: audit | RF-1109 | filterable table, last 30 days |
+| Plan setup | RF-605, RF-608, RF-609 | interview in small groups, each question with a default, the reason and the recommended option; architecture styles with evidence card ids; stack per layer; "What I recorded" summary; added 2026-10-11, artboard 14 (`PlanSetup.dc.html`, steps principles, architecture and stack), approved as a G-02 amendment (DEC-86) |
 | Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |
 
 **Status (2026-10-11):** drawn as artboards 7-13 of the design board (`docs/design/board/Landing.dc.html`,
