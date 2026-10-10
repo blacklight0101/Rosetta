@@ -60,3 +60,6 @@ distributed from source in R1, with no server process and no database; every res
 - 2026-10-10: amended by DEC-46, DEC-47 and ADR-012 - Rosetta now also starts a local web server on the loopback
   interface for the live web UI; still no hosted service and no database. Input is a public GitHub snapshot, not a
   local folder (DEC-48).
+- 2026-10-11: amended by DEC-59 and ADR-014 - the command-line interface is out of scope; Rosetta is a web
+  application written in TypeScript on Node.js, shipped as one container image. The language, runtime and toolchain
+  choices of this ADR stand; the CLI distribution, exit codes and terminal output do not.

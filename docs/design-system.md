@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56) |
+| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56); new screens for the hosted application pending (section 14, DEC-63) |
 | **Decisions** | DEC-44 (text wordmark, system fonts, deep teal accent, light and dark per OS, multi-page static report), DEC-45 (English only), DEC-46 (verbose, graphic live web UI), DEC-49 (project totals always visible), DEC-50 (API calls and logs), DEC-52 (Preact + Vite), DEC-55 (delete with confirmation); [ADR-012](adr/ADR-012-local-web-ui-and-github-sources.md) |
 | **Source artefacts** | [design-system-brief.md](design-system-brief.md) (what was asked); the v1 design board, exported to [`docs/design/board/`](design/board/) (open the `.dc.html` files in the design canvas; never edited after export); [`docs/design/tokens.css`](design/tokens.css) (the token file) |
-| **Devices** | desktop and laptop browsers, 1280 px and wider, mouse and keyboard (the local web UI); the published report also on tablets and phones (360 px and wider) |
-| **Feeds** | the web UI shell card, the component gallery card, each web UI page card (RF-1000..RF-1012), the report cards (RF-500..RF-506), the terminal output card (RF-004) |
+| **Devices** | desktop and laptop browsers, 1280 px and wider, mouse and keyboard (the web UI); the landing page, sign-in and the published report also on tablets and phones (360 px and wider) |
+| **Feeds** | the web UI shell card, the component gallery card, each web UI page card (RF-1000..RF-1012), the report cards (RF-500..RF-506), the landing page (RF-1200), sign-in, settings and administration (RF-1100..RF-1109) |
 | **Ancestry** | none |
 
 Every page of the web UI and the report is built with the tokens, components and patterns here. A page that needs a
@@ -168,7 +168,7 @@ from tokens, and English text (DEC-45).
 | Replay player | - | playing, paused | buttons with `aria-label`; speed select | step back, play or pause, step forward, speed 1x/4x/16x |
 | Log list | - | - | list; level toggles are `aria-pressed` buttons | time, level, logger, message |
 
-A component gallery page (development only, served at `/__gallery` behind the session token) renders every
+A component gallery page (development only, served at `/__gallery` to administrators, only when `ROSETTA_GALLERY=1`) renders every
 component in every state and both themes; the end-to-end suite screenshots it.
 
 ## 6. Status badges
@@ -236,7 +236,7 @@ the middle. Errors say what happened, what to do, and the code.
 
 ## 11. Terminal output
 
-The CLI shares the vocabulary of the web UI (DEC-44): one compact line per event in colour (ANSI 16 colours mapped
+Withdrawn 2026-10-11 with the command-line interface (DEC-59, RF-004). Kept for reference: the CLI shared the vocabulary of the web UI (DEC-44): one compact line per event in colour (ANSI 16 colours mapped
 to the tones: info blue, ok green, warn yellow, danger red), state words identical to section 6, the run meter on
 one line that updates in place in a terminal; no spinners and no in-place updates when standard output is not a
 terminal; `NO_COLOR` turns colour off (RF-004).
@@ -258,3 +258,20 @@ terminal; `NO_COLOR` turns colour off (RF-004).
 - `web/src/styles/tokens.css` equals `docs/design/tokens.css` (a test compares them).
 - The verifier greps components and pages for colour literals, pixel sizes outside tokens, inline styles other than
   the allowed ones, and font or icon CDN links.
+
+## 14. Pending screens for the hosted application (added 2026-10-11)
+
+DEC-59..DEC-69 add screens the v1 board does not show. They use only the tokens and components above where they
+fit; a new component is added to section 5 in the same branch. The artboards are drawn and approved before their
+cards are built (an amendment of G-02, recorded in `handoff.md`).
+
+| Screen | Requirements | Notes |
+|---|---|---|
+| Landing page | RF-1200, RF-1201 | product-quality marketing page: hero with the one-sentence promise, the pipeline as a graphic, a still of the live agent view, evidence cards with the verifier, cost control, security and privacy, technology, about the project, Sign in and Request access; works from 360 px and without JavaScript; light and dark |
+| Sign in | RF-1100 | user name, password, one generic error, lockout message; centred card on the landing background |
+| Change password | RF-1103, RF-1102 | forced at first sign-in; rules shown before typing |
+| Projects | RF-010, RF-1105 | the user's projects with last run, totals, New project |
+| Settings and keys | RF-1104, RF-407 | per provider: last four characters, replace, delete, Test; which key a run will use |
+| Administration: users | RF-1102, RF-1106, RF-1107 | table of accounts with role, state, last sign-in, month-to-date cost; create, disable, reset; caps form; server month meter with the 80% banner |
+| Administration: audit | RF-1109 | filterable table, last 30 days |
+| Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |

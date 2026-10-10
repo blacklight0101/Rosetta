@@ -13,7 +13,7 @@ changed in part by a later decision; see the ADR's Notes).
 | Id | Title | Status | Date |
 |---|---|---|---|
 | [ADR-001](ADR-001-record-architecture-decisions.md) | Record architecture decisions | Accepted | 2026-10-09 |
-| [ADR-002](ADR-002-typescript-node-cli.md) | Build Rosetta as a TypeScript command-line tool on Node.js (amended by ADR-012: local web server) | Amended | 2026-10-09 |
+| [ADR-002](ADR-002-typescript-node-cli.md) | Build Rosetta as a TypeScript command-line tool on Node.js (amended by ADR-012: local web server; by ADR-014: no CLI, a container web application) | Amended | 2026-10-09 |
 | [ADR-003](ADR-003-provider-swappable-agent-loop.md) | Own the agent loop behind a swappable LLM provider port | Accepted | 2026-10-09 |
 | [ADR-004](ADR-004-universal-scan-and-language-packs.md) | Map any stack with a universal scan plus optional language packs | Accepted | 2026-10-09 |
 | [ADR-005](ADR-005-evidence-cards-and-two-step-verifier.md) | Make every finding an evidence-cited card checked by a two-step verifier | Accepted | 2026-10-09 |
@@ -23,10 +23,14 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-009](ADR-009-clean-architecture.md) | Structure Rosetta with Clean Architecture | Accepted | 2026-10-09 |
 | [ADR-010](ADR-010-spec-driven-and-test-driven-development.md) | Develop Rosetta spec-driven and test-driven | Accepted | 2026-10-09 |
 | [ADR-011](ADR-011-toolchain-and-quality-gates.md) | Adopt a strict TypeScript toolchain with automated quality gates | Accepted | 2026-10-10 |
-| [ADR-012](ADR-012-local-web-ui-and-github-sources.md) | Serve a live local web UI and read legacy code only from public GitHub snapshots | Accepted | 2026-10-10 |
+| [ADR-012](ADR-012-local-web-ui-and-github-sources.md) | Serve a live local web UI and read legacy code only from public GitHub snapshots (amended by ADR-014, ADR-015, ADR-017: hosted behind sign-in) | Amended | 2026-10-10 |
 | [ADR-013](ADR-013-untrusted-code-and-model-output.md) | Treat analysed code and model output as untrusted input | Accepted | 2026-10-11 |
+| [ADR-014](ADR-014-container-image-local-and-hosted.md) | Ship Rosetta as one container image, run locally with Docker Compose and hosted later | Accepted | 2026-10-11 |
+| [ADR-015](ADR-015-accounts-sessions-and-user-secrets.md) | Accounts with passwords, server-side sessions and encrypted per-user provider keys | Accepted | 2026-10-11 |
+| [ADR-016](ADR-016-postgresql-and-files.md) | PostgreSQL for accounts and indexes, files on a persistent disk for snapshots and runs | Accepted | 2026-10-11 |
+| [ADR-017](ADR-017-fastify-http-server.md) | Use Fastify as the HTTP server | Accepted | 2026-10-11 |
 
-**Totals**: 13 in total - Accepted 12, Proposed 0, Amended 1, Superseded 0.
+**Totals**: 17 in total - Accepted 15, Proposed 0, Amended 2, Superseded 0.
 
 
 ## Relationships
@@ -35,17 +39,17 @@ ADR-005, ADR-006 and ADR-007 all constrain the agent loop of ADR-003: every call
 (ADR-006) and the budget guard (ADR-007), and every result is a card checked by the verifier (ADR-005). ADR-008 tests
 ADR-003 at its port. ADR-009 refines the layering of ADR-002 and ADR-003 (does not supersede them). ADR-010 refines ADR-008: test-first applies to every card. ADR-011 refines ADR-002, ADR-008, ADR-009 and ADR-010 with the tools that enforce them. ADR-012 amends ADR-002 (a
 loopback web server is added) and refines ADR-005 (GitHub permalinks) and ADR-006 (read-only snapshot). ADR-013
-refines ADR-005, ADR-006 and ADR-012 with the trust boundaries of the threat model. The product owner's decisions behind these ADRs are listed in ../decision-log.md.
+refines ADR-005, ADR-006 and ADR-012 with the trust boundaries of the threat model. ADR-014 amends ADR-002 and ADR-012 (one container image, no CLI, not loopback-only); ADR-015 and ADR-017 amend ADR-012 (accounts and Fastify replace the URL token and the bare server); ADR-016 applies DEC-37 (PostgreSQL behind adapters). The product owner's decisions behind these ADRs are listed in ../decision-log.md.
 
 ## Deferred decisions (write the ADR when the trigger fires)
 
 | Candidate | Trigger |
 |---|---|
 | Target-stack proposal in `plan` | Q-06 answered, before the first P3 card |
-| Claude Code plugin packaging | start of P4 (R2) |
+| Claude Code plugin packaging | the owner brings the plugin back into scope after 2026-10-26 (DEC-60) |
 | OpenTelemetry (OTLP) exporter for traces | a user asks to send traces to their own collector (R2); field names already follow the GenAI conventions (DEC-57) |
-| Development container for contributors | a second regular contributor joins (DEC-58) |
-| A hosted public version of Rosetta | the owner decides to offer Rosetta as a service (would need hosting, key management and PostgreSQL, DEC-37) |
+| Development container for contributors | a second regular contributor joins (DEC-58; the runtime image of ADR-014 is not a development environment) |
+| Hosting provider (Q-18) | the hosted deploy card starts; a short ADR records the host, region and costs |
+| Self sign-up, e-mail password reset or multi-factor sign-in | the owner opens Rosetta beyond invited users |
 | npm publishing and package name | Q-07 and Q-08 answered |
 | Move to TypeScript 7 | typescript-eslint supports TypeScript 7.x (expected with TypeScript 7.1) |
-| Persistence in PostgreSQL (DEC-37) | the first requirement that files in the output folder cannot meet |

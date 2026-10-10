@@ -62,3 +62,9 @@ We choose option 1.
 
 - DEC-57, DEC-58; RF-009, RF-127, RF-141, RF-145, RF-146, RF-147, RF-507, RF-1013; RNF-014.
 - Refines ADR-005 (evidence), ADR-006 (read-only tools and egress), ADR-012 (web UI and GitHub sources).
+
+## Notes
+
+- 2026-10-11: DEC-69 adds the trust boundaries of a hosted application (browser to server over the internet,
+  server to PostgreSQL, stored secrets) to the threat model; the controls are in ADR-015 and ADR-017. The decisions
+  of this ADR are unchanged.

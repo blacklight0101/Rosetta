@@ -215,6 +215,7 @@ gate.
 | G-03 Source control remote ready | BlackLigth (blacklight0101) | the remote repository exists and `main` is pushed | the Phase 1 exit, not P1-01 |
 | G-04 Production access granted | BlackLigth (blacklight0101) | the production environment of `docs/environments-and-delivery.md` exists and access is granted | the first production deployment card |
 | G-05 Cutover approved | BlackLigth (blacklight0101) | the verification matrix has no Must gap, the security review has no BLOCKING finding, the runbook is signed | the cutover or go-live card |
+| G-06 Hosted deployment ready | BlackLigth (blacklight0101) | host chosen (Q-18) and recorded in a short ADR; secrets in the host's store; image deployed by tag; `/healthz` green; smoke test passed; the teacher account signs in on the hosted URL (RF-1304, RF-1107) | the hand-in card (RF-803) |
 
 <!-- FILL: keep the gates that apply, add project-specific ones (an external team's approval, a spike reviewed before an
 ADR is Accepted, hardware available) with the next free G-nn, name the person who holds each, and list the exact card

@@ -12,8 +12,10 @@
 
 ### 1.1 Scope
 
-Release 1 (R1) is a command-line tool with a live local web UI that a developer runs on their own machine against a
-legacy codebase in any language, taken from a public GitHub repository (DEC-46, DEC-47, DEC-48). It maps the repository (`scan`), has AI agents write evidence-cited cards that a verifier checks
+Release 1 (R1) is a web application with accounts, shipped as one container image that runs on the owner's machine
+(Docker Compose) and on a server for invited users such as the owner's teachers (DEC-59, DEC-61, DEC-62). It
+analyses a legacy codebase in any language, taken from a public GitHub repository (DEC-48), and shows its agents
+working live (DEC-46). The command-line interface and the Claude Code plugin are out of scope (DEC-59, DEC-60). It maps the repository (`scan`), has AI agents write evidence-cited cards that a verifier checks
 (`understand`), collects the developer's answers to open questions, renders an HTML report (`report`) and writes a
 tool-agnostic modernisation hand-off package (`plan`), with cost control on every model call and a swappable AI
 provider (DEC-05, DEC-09, DEC-10, DEC-11, DEC-13). A subset of R1, marked **M1** below, is the milestone due
@@ -25,6 +27,10 @@ provider (DEC-05, DEC-09, DEC-10, DEC-11, DEC-13). A subset of R1, marked **M1**
   `DEC-nn` a decision by the product owner in [decision-log.md](../decision-log.md) (a requirement cites it as
   `Decision DEC-nn`), `ADR-nnn` an architecture decision record.
 - Functional ids have three digits up to RF-999 and four digits from RF-1000.
+- Stage names such as `scan`, `understand`, `report`, `plan`, `estimate` and `export`, and the forms `rosetta <stage>`
+  that older requirements use, name the application's use cases. Since DEC-59 they are actions in the web UI and its
+  HTTP API, not terminal commands; command-line flags such as `--area` or `--resume` are the matching options in the
+  page.
 - Ids are **never renumbered or reused**. A dropped requirement keeps its id and reads
   `Withdrawn YYYY-MM-DD - see <id>`.
 - **Release** says when it ships: `R1 (M1)` is part of the 2026-10-26 milestone, `R1` ships later in release 1.
@@ -40,16 +46,19 @@ takes the next free range. This table is the canonical list of ranges.
 
 | Range | Module | Release |
 |---|---|---|
-| RF-001..RF-099 | CLI, configuration and runs | R1 |
+| RF-001..RF-099 | Projects, configuration and runs | R1 |
 | RF-100..RF-199 | Scan and file access (RF-140..RF-149: data egress and untrusted content) | R1 |
 | RF-200..RF-299 | Understand: agents, cards, coverage, open questions | R1 |
 | RF-300..RF-399 | Verifier | R1 |
 | RF-400..RF-499 | Providers (RF-400..RF-419) and cost control (RF-420..RF-429) | R1 |
 | RF-500..RF-599 | Report | R1 |
 | RF-600..RF-699 | Plan: the hand-off package | R1 |
-| RF-700..RF-799 | Claude Code plugin run mode | R2 (deferred) |
+| RF-700..RF-799 | Claude Code plugin run mode | out of scope (DEC-60) |
 | RF-800..RF-899 | Milestone hand-in artefacts | R1 (M1) |
-| RF-1000..RF-1099 | Local web UI (live agents, runs from the browser) | R1 |
+| RF-1000..RF-1099 | Web UI (live agents, runs from the browser) | R1 |
+| RF-1100..RF-1199 | Accounts, sessions, keys and administration | R1 (M1) |
+| RF-1200..RF-1299 | Landing page | R1 (M1) |
+| RF-1300..RF-1399 | Container, local and hosted deployment | R1 (M1) |
 | RF-900..RF-999 | Multi-target evaluation and provider comparison | R2 (deferred) |
 | RNF-001..RNF-099 | Non-functional requirements, grouped in tens by quality (see section 6) | all |
 
@@ -65,7 +74,10 @@ Every scenario becomes at least one automated test named after the requirement i
 
 | Actor | Kind | Role in R1 |
 |---|---|---|
-| Developer | person | installs and configures Rosetta, runs every command, answers open questions, reads the report, hands the package on (RF-001..RF-699) |
+| User | person | a developer or tech lead with an account: creates projects, starts runs, answers open questions, reads the report, hands the package on (RF-001..RF-699, RF-1000..RF-1099) |
+| Administrator | person | the product owner: creates and disables accounts, sets server keys and caps, sees every workspace and the server totals (RF-1102, RF-1106) |
+| Teacher | person | an evaluator of the master with a user account created by the administrator (RF-1107) |
+| Visitor | person | anyone who opens the landing page without signing in (RF-1200) |
 | Modernisation team | person | receives the hand-off package and builds the new system in its own way; never runs Rosetta (RF-600..RF-699) |
 | GitHub | system | hosts the public legacy repositories; Rosetta resolves refs and downloads snapshots (RF-120..RF-126) |
 | Legacy repository | system | the read-only input: a snapshot of a public GitHub repository in any language (RF-100..RF-149) |
@@ -80,12 +92,14 @@ Every scenario becomes at least one automated test named after the requirement i
 | Term | Meaning |
 |---|---|
 | Legacy repository | The public GitHub repository being analysed (optionally one subpath of it). |
-| Snapshot | The legacy repository's files at one commit, downloaded and cached in `rosetta-out/sources/<owner>__<repo>@<sha>/`; read-only (RF-005). |
+| Snapshot | The legacy repository's files at one commit, downloaded and cached in `<data>/sources/<owner>__<repo>@<sha>/`; shared by all users, never listed to them; read-only (RF-005). |
 | Permalink | A GitHub link to cited lines at the snapshot's commit: `https://github.com/<owner>/<repo>/blob/<sha>/<path>#L<a>-L<b>`. |
 | Run event | A typed event a run publishes (agent spawned, turn, tool call, card, verdict, usage, state); streamed to the web UI and stored in `events.jsonl`. |
-| Web UI | The local web page Rosetta serves on the loopback interface (RF-1000..RF-1009). |
-| Project | One legacy repository (GitHub URL, ref, optional subpath) plus its Rosetta configuration file and output folder. |
-| Output folder | The folder where every run writes (`rosetta-out/`), including the snapshot cache. Layout in [data-model.md](../data-model.md). |
+| Web UI | The web application behind the sign-in (RF-1000..RF-1099); the landing page is its public front (RF-1200). |
+| Workspace | A user's private part of the data folder and database: their projects, runs and cost ledger (RF-1105). |
+| Data folder | `ROSETTA_DATA_DIR`: the persistent disk that holds the snapshot cache, the workspaces and the logs (ADR-016). |
+| Project | One legacy repository (GitHub URL, ref, optional subpath) in a user's workspace, with its settings (RF-010). |
+| Output folder | A project's folder in its workspace where every run writes. Layout in [data-model.md](../data-model.md). |
 | Run | One execution of one stage (`scan`, `understand`, `verify`, `report`, `plan`), stored in its own run folder with a manifest. |
 | Code map | The deterministic result of `scan` (`codemap.json`): files, languages, sizes, token estimates, entry points, artefacts, symbols and references where a language pack exists, and areas. |
 | Map level | How rich the code map is for a file: `coarse` (universal layer only) or `symbols` (a language pack ran). |
@@ -105,8 +119,8 @@ Every scenario becomes at least one automated test named after the requirement i
 | Price table | Per provider and model: price per million input tokens, output tokens and cached input tokens, and currency. |
 | Cost report | Tokens and cost of a run by role, agent task, provider and model (RF-426). |
 | Provider call log | `provider-calls.jsonl` in a run folder: one record per provider call attempt with timing, tokens, cost and status (RF-408). |
-| Application log | `rosetta-out/logs/rosetta-YYYY-MM-DD.jsonl`: Rosetta's own structured log (RF-009). |
-| Cost ledger | `rosetta-out/cost-ledger.jsonl`: one line per model call across every run of the project; the source of the project totals (RF-428). |
+| Application log | `<data>/logs/rosetta-YYYY-MM-DD.jsonl` and the container's standard output: Rosetta's own structured log (RF-009). |
+| Cost ledger | The `cost_ledger` table: one row per model call, with user, project and run; the source of every total and cap (RF-428). |
 | Hand-off package | The output of `plan`: specification, target architecture, ADRs, data mapping, roadmap and task cards (RF-600..RF-699). |
 | Golden set | Hand-checked findings for a demo repository used to score runs (RNF-006). |
 | Recorded response | A saved provider response replayed by the fake provider in tests (ADR-008). |
@@ -137,25 +151,31 @@ the decision log.
 | Q-14 | Which front-end library builds the web UI and the report? | Product owner | P1 (web UI card) | Preact with Vite, shared by the live UI and the static report | Answered (DEC-52) |
 | Q-15 | In which currency are costs shown? | Product owner | P1 (cost card) | USD, as providers publish their prices; the shipped price table is in USD and there is no conversion in R1 | Answered (DEC-54) |
 | Q-16 | Should Rosetta offer a command to delete old snapshots and runs? | Product owner | P2 | No command in R1; the developer deletes folders under `rosetta-out/` by hand and the cost ledger keeps the project totals | Answered (DEC-55) |
+| Q-17 | Which HTTP server framework does the web application use? | Product owner | P1 (server card) | Fastify 5 with its official cookie, CSRF, rate-limit, helmet and static plugins (ADR-017) | Default applies |
+| Q-18 | Which host runs the hosted deployment? | Product owner | P1 (hosted deploy card, by 2026-10-20) | Chosen when the deploy card starts; candidates Render, Railway, Fly.io, Azure Container Apps or a small VPS; any host that runs a container with a persistent disk, managed PostgreSQL, secrets and HTTPS fits ADR-014 | Default applies |
+| Q-19 | Who can open the landing page? | Product owner | P1 (landing card) | Anyone with the URL; it is not indexed by search engines (`noindex`, `robots.txt`) and the URL is shared only with the teachers | Default applies |
+| Q-20 | What does the landing page offer instead of sign-up? | Product owner | P1 (landing card) | A "Sign in" button and a "Request access" link to a contact address set in the server configuration; no link when it is not set | Default applies |
+| Q-21 | Does the teacher account start with a finished demo run? | Product owner | P1 (teacher account card) | No: it starts empty; the teacher runs the demo themselves with the server keys under the caps | Default applies |
 
 ## 5. Functional requirements (R1)
 
 ### 5.1 CLI, configuration and runs (RF-001..RF-099)
 
-**RF-001 Initialise a project from a GitHub URL** - R1 (M1) - Must - Source DEC-14, DEC-48 - ADR-002, ADR-012
-As a developer I want `rosetta init <github-url>` to create a configuration file for that repository, an output
-folder and a `.rosettaignore` template so that I can start analysing in one command.
-- Given a public GitHub URL (`https://github.com/<owner>/<repo>`, optionally `/tree/<ref>/<subpath>`), when I run `rosetta init <url>`, then `rosetta.config.yaml` (with the URL, ref and subpath), `.rosettaignore` and `rosetta-out/` are created in the current folder with commented defaults.
-- Given a configuration file already exists, when I run `init` again, then nothing is overwritten and the CLI exits with an error code and a message naming the existing file.
-- Given a local path or a URL that is not a GitHub repository URL, when I run `init`, then the CLI exits with an error code explaining that only public GitHub URLs are accepted, and no file is created.
-Verification: integration tests on a temporary folder with a fake GitHub client.
+**RF-001 Initialise a project from a GitHub URL** - Withdrawn 2026-10-11 - see RF-010 (DEC-59: no command-line interface)
+
+**RF-010 Create a project from a GitHub URL** - R1 (M1) - Must - Source DEC-48, DEC-59 - ADR-012, ADR-015
+As a user I want to create a project by pasting a public GitHub URL so that I can start analysing it.
+- Given a public GitHub URL (`https://github.com/<owner>/<repo>`, optionally `/tree/<ref>/<subpath>`), when I create a project, then it is stored in my workspace with the URL, ref, subpath and default settings, and appears only in my project list.
+- Given a URL that is not a public GitHub repository URL, when I submit it, then the page shows the error code and the reason next to the field and nothing is created.
+- Given a project with the same URL, ref and subpath already in my workspace, when I create it again, then the existing project opens instead.
+Verification: integration tests with a fake GitHub client; end-to-end test of the form.
 
 **RF-002 Validate configuration** - R1 (M1) - Must - Source DEC-09, DEC-13 - ADR-003, ADR-007
 As a developer I want the configuration (providers, models per role, caps, price table, paths) validated before any
 work starts so that a typo never costs money.
-- Given a valid configuration, when any command starts, then it loads and continues.
-- Given an unknown provider, a missing model for a role, a negative cap or an output folder outside the project folder, when any command starts, then it stops before any model call with one error line per problem, each with an error code.
-- Given an API key referenced by environment variable name, when the variable is missing, then the command stops before any model call and names the variable, never a value.
+- Given valid project settings, when a run starts, then they load and the run continues.
+- Given an unknown provider, a missing model for a role or a negative cap, when settings are saved or a run starts, then nothing runs and each problem is shown next to its field with an error code.
+- Given a role whose provider has no key for this user and no server key allowed for them (RF-1104), when a run starts, then it stops before any model call and names the provider, never a value.
 Verification: unit tests on the schema; integration test per failure.
 
 **RF-003 Record every run** - R1 (M1) - Must - Source RNF-004 - ADR-005
@@ -165,34 +185,30 @@ result.
 - Given the run ends for any reason (done, cap reached, error, interrupted), when it ends, then the manifest records the end state and time.
 Verification: integration tests with the fake provider, including an interrupted run.
 
-**RF-004 Show progress** - R1 (M1) - Must - Source DEC-13 - ADR-007
-As a developer I want to see what the run is doing and what it costs while it runs so that I can stop it early.
-- Given an `understand` run, when it runs in a terminal, then each agent task shows its area, turn count and status, and a live meter shows tokens and cost so far against the cap.
-- Given `--json`, when the run ends, then a machine-readable summary is printed to standard output and progress goes to standard error.
-Verification: end-to-end test capturing output; manual check in a terminal.
+**RF-004 Show progress** - Withdrawn 2026-10-11 - see RF-1002 and RF-1003 (DEC-59: progress is shown in the web UI only)
 
 **RF-005 Never modify the snapshot** - R1 (M1) - Must - Source DEC-17, DEC-48 - ADR-006, ADR-012
 As a developer I want a guarantee that the downloaded snapshot is never changed so that every citation stays true.
-- Given any command, when it writes a file, then the path is inside the output folder; any write outside it fails with an error code.
-- Given a snapshot folder, when any command other than the fetch step writes, then the write is refused: the snapshot cache is written once, by the fetcher, and is read-only afterwards.
+- Given any operation, when it writes a file, then the path is inside the user's workspace or, for the fetch step, the snapshot cache; any write elsewhere fails with an error code.
+- Given a snapshot folder, when any operation other than the fetch step writes, then the write is refused: the snapshot cache is written once, by the fetcher, and is read-only afterwards.
 - Given an agent, when it asks for a tool that writes, then no such tool exists: the agent tool set is read-only.
 Verification: unit tests on the file-system adapter; integration test comparing a hash of the snapshot before and after a full run.
 
 **RF-006 Resume a stopped run** - R1 - Should - Source DEC-13 - ADR-007
 As a developer I want to resume a run that stopped at a cap or failed so that finished work is not paid for twice.
-- Given a run that stopped with unfinished agent tasks, when I run `rosetta understand --resume <run-id>` with a raised cap, then only unfinished tasks and unverified claims are processed and the results join the same run.
+- Given a run that stopped with unfinished agent tasks, when I press Resume on the run after raising its cap, then only unfinished tasks and unverified claims are processed and the results join the same run.
 Verification: integration test with the fake provider.
 
-**RF-007 Stable exit codes and error codes** - R1 (M1) - Must - Source interview 2026-10-09 - ADR-002
-As a developer I want predictable exit codes and error codes so that I can script Rosetta and look errors up.
-- Given success, when a command ends, then it exits 0; given a usage or configuration error, it exits 2; given a run stopped by a cap, it exits 3; given any other failure, it exits 1.
-- Given any failure, when it is printed, then it shows an `RST-xxxx` code, a plain message and the next step; the stack trace appears only with `--verbose`.
-Verification: unit tests on the error mapper; integration tests per exit code.
+**RF-007 Stable error codes** - R1 (M1) - Must - Source interview 2026-10-09, DEC-59 - ADR-002
+As a user I want predictable errors so that I understand what happened and can look it up.
+- Given any failure, when it is shown in the page or returned by the HTTP API, then it carries an `RST-xxxx` code, a plain message and the next step; stack traces appear only in the `debug` log, never in a response.
+- Given an API error, when it is returned, then its HTTP status follows the cause: 400 validation, 401 not signed in, 403 not allowed, 404 not found or not yours, 409 conflict, 429 rate limited or cap reached, 500 unexpected.
+Verification: unit tests on the error mapper; integration tests per status. (Exit codes withdrawn 2026-10-11 with the command-line interface, DEC-59.)
 
 **RF-009 Application log** - R1 (M1) - Must - Source DEC-50 - ADR-009
 As a developer I want Rosetta to log what it does so that I can diagnose any problem after the fact.
-- Given any command, when it runs, then structured log entries (JSON lines with time, level, logger name, message, `RST` code when there is one, and the run, agent task and call ids that apply) are written to `rosetta-out/logs/rosetta-YYYY-MM-DD.jsonl`; files older than 14 days are deleted at start-up (configurable).
-- Given the terminal, when a command runs, then readable lines at `info` level appear; `--verbose` lowers the level to `debug` and `--quiet` raises it to `warn`; the file log always records `debug` and above.
+- Given any operation, when it runs, then structured log entries (JSON lines with time, level, logger name, message, `RST` code when there is one, and the run, agent task and call ids that apply) are written to standard output (for the container's log) and to `<data>/logs/rosetta-YYYY-MM-DD.jsonl`; files older than 14 days are deleted at start-up (configurable).
+- Given the `ROSETTA_LOG_LEVEL` setting (default `info`), when the server runs, then standard output carries that level and above; the file log always records `debug` and above.
 - Given any entry, when it is written, then it passes through the secret masking and never contains an API key or a token.
 - Given a security event (a server request refused for its token, `Origin` or `Host`; a read refused by ignore rules, the deny list or the snapshot root; a link entry skipped; a call blocked by the masker), when it happens, then a `warn` entry with logger `security` and the event's code is written (DEC-57).
 Verification: unit tests on the log formatter and masking; integration test on rotation; integration test per security event.
@@ -200,8 +216,8 @@ Verification: unit tests on the log formatter and masking; integration test on r
 **RF-008 Export a run as a zip file** - R1 (M1) - Must - Source DEC-24 - ADR-009
 As a developer I want to download a run, or a hand-off package, as one zip file with its full folder structure so
 that I can share or archive it in one piece.
-- Given a finished run, when I run `rosetta export <run-id> --zip`, then a zip file with the run folder's complete structure is written to the output folder and its path is printed.
-- Given a hand-off package, when I run `rosetta export <run-id> --handoff --zip`, then only the `handoff/` folder is zipped.
+- Given a finished run, when I press Download zip on it, then a zip file with the run folder's complete structure is downloaded.
+- Given a hand-off package, when I press Download hand-off, then only the `handoff/` folder is zipped.
 - Given a run that is still in progress, when I export it, then the CLI refuses with an error code.
 Verification: integration test that unzips the file and compares the tree with the run folder.
 
@@ -268,7 +284,7 @@ Verification: end-to-end test on a small fixture in a language without a pack.
 **RF-120 Accept public GitHub URLs only** - R1 (M1) - Must - Source DEC-48 - ADR-012
 As a developer I want to point Rosetta at a public GitHub repository so that the analysed code is the one anyone can check.
 - Given `https://github.com/<owner>/<repo>`, with optional `/tree/<ref>` and `/<subpath>`, when it is parsed, then owner, repo, ref (default branch when absent) and subpath are recorded.
-- Given a private, missing or non-GitHub repository, when it is fetched, then the command stops with an error code and the reason; nothing is analysed.
+- Given a private, missing or non-GitHub repository, when it is fetched, then the operation stops with an error code and the reason; nothing is analysed.
 Verification: unit tests on URL parsing; integration tests with a fake GitHub client.
 
 **RF-121 Pin the commit** - R1 (M1) - Must - Source DEC-48 - ADR-012
@@ -278,7 +294,7 @@ Verification: integration test with a fake GitHub client.
 
 **RF-122 Download and cache the snapshot** - R1 (M1) - Must - Source DEC-48 - ADR-012
 As a developer I want the code downloaded once per commit so that repeated runs are fast and offline.
-- Given a commit SHA not yet cached, when a run starts, then the snapshot archive is downloaded and extracted into `rosetta-out/sources/<owner>__<repo>@<sha>/`, with archive paths checked so no file lands outside that folder.
+- Given a commit SHA not yet cached, when a run starts, then the snapshot archive is downloaded and extracted into `<data>/sources/<owner>__<repo>@<sha>/`, with archive paths checked so no file lands outside that folder.
 - Given the snapshot is already cached, when a run starts, then nothing is downloaded and the run works without network to GitHub.
 - Given a download that fails half way, when the run starts again, then the partial folder is discarded and the download restarts.
 Verification: integration tests with a fake archive, including a path-traversal entry.
@@ -329,8 +345,8 @@ Verification: integration test with the fake provider.
 
 **RF-143 Warn before using a cloud provider** - R1 (M1) - Must - Source DEC-16 - ADR-006
 As a developer I want to confirm before code leaves my machine so that I never send it by accident.
-- Given a run whose roles use a non-local provider, when it starts in an interactive terminal, then it names the providers and asks for confirmation; `--yes` skips the question.
-- Given a non-interactive session without `--yes`, when the run starts, then it stops with an error code before any call.
+- Given a run whose roles use a non-local provider, when the user starts it, then the start page names the providers and requires the consent checkbox (RF-1001); without it nothing is sent.
+- Given an API request that starts such a run without the consent field, when it arrives, then it is refused with an error code before any call.
 Verification: integration tests for both cases.
 
 **RF-144 Limit excerpt size** - R1 - Should - Source DEC-16 - ADR-006
@@ -400,7 +416,7 @@ Verification: integration test with the fake provider.
 
 **RF-240 Collect open questions** - R1 - Must - Source DEC-15 - ADR-005
 As a developer I want all `OQ` cards gathered into one answers file so that I can answer them in one place.
-- Given a run with `OQ` cards, when it ends, then `rosetta-out/answers.md` lists each open question with its card id, context and an empty answer field; existing answers are kept.
+- Given a run with `OQ` cards, when it ends, then the project's `answers.md` (data-model.md section 3.16) lists each open question with its card id, context and an empty answer field; existing answers are kept.
 Verification: integration test.
 
 **RF-241 Re-run with answers** - R1 - Must - Source DEC-15 - ADR-003
@@ -408,9 +424,7 @@ As a developer I want my answers used when areas are analysed again so that the 
 - Given answered questions, when I run `understand --with-answers`, then the affected areas run again with the answers as context, the answered `OQ` cards are marked `Answered`, and new or changed cards are listed in the run summary.
 Verification: integration test with recorded responses.
 
-**RF-242 Answer interactively** - R1 - Could - Source Q-11 - ADR-002
-`rosetta answer` walks through unanswered questions in the terminal and writes `answers.md`.
-Verification: manual check.
+**RF-242 Answer interactively** - Withdrawn 2026-10-11 - see RF-1007 (DEC-59)
 
 **RF-250 Consolidate cards across areas** - R1 - Should - Source interview 2026-10-09 - ADR-005
 As a developer I want duplicate entities and rules found by several agents merged so that the specification has no repeats.
@@ -500,8 +514,8 @@ As a developer I want temporary provider errors retried and permanent ones to st
 Verification: unit tests with a fake provider that fails on demand.
 
 **RF-407 Test provider access** - R1 (M1) - Should - Source interview 2026-10-09 - ADR-003
-As a developer I want `rosetta providers test` to check every configured provider and model with one tiny call so that I find setup problems before a long run.
-- Given configured providers, when I run the command, then each role shows reachable or the error, and the cost of the test calls.
+As a user I want a Test button in my settings that checks every configured provider and model with one tiny call so that I find setup problems before a long run.
+- Given configured providers and keys, when I press Test, then each role shows reachable or the error, and the cost of the test calls (counted in my ledger).
 Verification: integration test with fake providers.
 
 **RF-420 Price table** - R1 (M1) - Must - Source DEC-13 - ADR-007
@@ -528,13 +542,13 @@ Verification: integration test.
 
 **RF-424 Live cost meter** - R1 (M1) - Must - Source DEC-13 - ADR-007
 As a developer I want to see tokens and cost grow during the run so that I can interrupt it.
-- Given a run in a terminal, when calls complete, then the meter updates with tokens and cost so far, the cap, and the share used.
-Verification: end-to-end output test.
+- Given a run open in the web UI, when calls complete, then the meter updates with tokens and cost so far, the cap, and the share used (RF-1003).
+Verification: end-to-end test with recorded events.
 
 **RF-425 Estimate before running** - R1 - Must - Source DEC-13 - ADR-007
-As a developer I want `rosetta estimate` and a pre-run estimate so that I know the cost before spending.
-- Given a code map and configuration, when I run `rosetta estimate understand`, then it shows the expected tokens and cost per role as a low, likely and high range, with the assumptions used.
-- Given an `understand` run whose likely estimate exceeds the configured confirmation threshold, when it starts interactively, then it shows the estimate and asks to continue.
+As a user I want an estimate before a run so that I know the cost before spending.
+- Given a code map and settings, when the start page loads or I press Re-estimate, then it shows the expected tokens and cost per role as a low, likely and high range, with the assumptions used.
+- Given an `understand` run whose likely estimate exceeds the configured confirmation threshold, when I start it, then the page shows the estimate and asks me to confirm.
 Verification: unit tests on the estimator; RNF-012 measures accuracy.
 
 **RF-426 Cost report** - R1 (M1) - Must - Source DEC-13 - ADR-007
@@ -549,8 +563,8 @@ Verification: integration test.
 
 **RF-428 Project cost ledger** - R1 (M1) - Must - Source DEC-13, DEC-49 - ADR-007, ADR-012
 As a developer I want the tokens and cost of every run on a project added up so that I always know what analysing it has cost in total.
-- Given any model call, when it completes, then one line with run, stage, role, provider, model, tokens (input, output, cached) and cost is appended to `rosetta-out/cost-ledger.jsonl`, so the totals survive an interrupted or failed run.
-- Given the ledger, when `rosetta cost` runs, then it prints the project totals and a breakdown by run, stage, role, provider and model; local models show tokens with a cost of zero.
+- Given any model call, when it completes, then one row with user, project, run, stage, role, provider, model, key source (user or server), tokens (input, output, cached) and cost is inserted in the `cost_ledger` table in the same step as the budget check, so the totals survive an interrupted or failed run.
+- Given the ledger, when I open a project's cost page, then it shows the project totals and a breakdown by run, stage, role, provider and model; local models show tokens with a cost of zero.
 - Given a price table change, when totals are shown, then each line keeps the cost computed at the time of the call and the price table version it used.
 Verification: unit tests on the ledger totals; integration test with an interrupted run.
 
@@ -629,9 +643,9 @@ As the product owner I want the demo run's report published on GitHub Pages so t
 - Given a finished demo run, when the publish step runs, then the report is copied to `site/` and served by GitHub Pages for the public repository, and the README links it.
 Verification: manual check of the public URL.
 
-**RF-801 Reproducible quick start** - R1 (M1) - Must - Source DEC-04 - ADR-002
-As a reviewer I want the README to reproduce the demo run with a local model so that I can check the tool works.
-- Given a clean machine with Node.js and Ollama, when I follow the README quick start, then the demo `scan` and `understand` on the chosen area complete.
+**RF-801 Reproducible quick start** - R1 (M1) - Must - Source DEC-04, DEC-61 - ADR-014
+As a reviewer I want the README to reproduce the demo locally so that I can check the tool works without the hosted server.
+- Given a clean machine with Docker and Ollama, when I follow the README quick start (`.env` from `.env.example`, `docker compose up`, sign in with the bootstrap admin), then the demo `scan` and `understand` on the chosen area complete.
 Verification: manual walk-through on a clean folder.
 
 **RF-802 Slides and video** - R1 (M1) - Must - Source DEC-04 - -
@@ -639,13 +653,14 @@ As the product owner I want slides and a video that present Rosetta so that the 
 - Given the milestone, when it is handed in, then the slides URL and the video URL are linked from the README; the format follows Q-02 and Q-03.
 Verification: manual check of both URLs.
 
-### 5.9 Local web UI (RF-1000..RF-1099)
+**RF-803 Hosted URL and teacher account for the hand-in** - R1 (M1) - Must - Source DEC-67 - ADR-014, ADR-015
+As the product owner I want the hand-in to give the evaluators a working URL and an account so that they can use Rosetta themselves.
+- Given the hosted deployment (RF-1304), when the milestone is handed in, then the deployment URL field holds the hosted URL, the test user field holds the teacher account's user name and password (RF-1107), and the GitHub Pages sample report (RF-800) is listed as a fallback.
+Verification: manual sign-in with the teacher account on the hosted URL the day before the hand-in.
 
-**RF-1000 Start the web UI** - R1 (M1) - Must - Source DEC-46, DEC-47 - ADR-012
-As a developer I want `rosetta ui` to open a local web page so that I can work visually.
-- Given the command, when it runs, then a server starts on `127.0.0.1` on a free port (or the configured one), the browser opens the page with a per-session token in the URL, and Ctrl+C stops the server cleanly.
-- Given a run command such as `rosetta understand <github-url>`, when it starts, then the same live page opens unless `--no-ui` is given.
-Verification: integration test of the server lifecycle; end-to-end test opening the page.
+### 5.9 Web UI (RF-1000..RF-1099)
+
+**RF-1000 Start the web UI** - Withdrawn 2026-10-11 - see RF-1300 and RF-1301 (DEC-59, DEC-61: the server starts with the container)
 
 **RF-1001 Start a run from the browser** - R1 (M1) - Must - Source DEC-47, DEC-48 - ADR-012
 As a developer I want to paste a GitHub URL and start a run from the page so that I never need the terminal for a demo.
@@ -690,10 +705,12 @@ As a developer I want the page to list past runs and open their reports and zip 
 - Given previous runs in the output folder, when I open the history, then each run shows its source, commit, stage, state, cost and links to its report and zip (RF-008).
 Verification: end-to-end test.
 
-**RF-1009 Keep the local server private** - R1 (M1) - Must - Source DEC-46 - ADR-006, ADR-012
-As a developer I want the local server reachable only by my browser session so that no other site or machine can drive Rosetta or read results.
-- Given the server, when it starts, then it listens only on the loopback interface; requests without the session token, with a foreign `Origin`, or with a `Host` other than the loopback address and port are refused.
-- Given any response, when it is sent, then it never contains an API key or other secret.
+**RF-1009 Protect every request** - R1 (M1) - Must - Source DEC-46, DEC-62, DEC-69 - ADR-013, ADR-015, ADR-017
+As a user I want every page and API call to require my session so that no one else can drive Rosetta or read my results.
+- Given any route other than the landing page, sign-in, `/healthz`, static assets and `robots.txt`, when it is requested without a valid session, then pages redirect to sign-in and the API answers 401.
+- Given a state-changing request (POST, PUT, PATCH, DELETE), when its `Origin` differs from the configured public URL or its CSRF token is missing or wrong, then it is refused with 403 and a security event is logged.
+- Given any response, when it is sent, then it never contains a password hash, a session id other than in the cookie, a provider key or another secret.
+- Given the local Compose deployment, when it starts, then the app port is published on `127.0.0.1` only (RF-1301).
 Verification: integration tests for each refused request; output scan test.
 
 **RF-1010 Project tokens and cost always visible** - R1 (M1) - Must - Source DEC-49 - ADR-007, ADR-012
@@ -701,6 +718,7 @@ As a developer I want the tokens and price spent on the whole project in view at
 - Given any page of the web UI, when it is open, then a header bar shows the project's total tokens (input, output, cached) and total cost from the cost ledger (RF-428), with a breakdown by run, stage, provider and model one click away.
 - Given a run in progress, when a model call completes, then the project totals in the header update live together with the run's own meter (RF-1003).
 - Given no run in progress, when the page is opened after runs have finished, then the same totals are shown from the ledger; the report dashboard of each run also shows the project totals at the time it was generated.
+- Given my account, when the header is shown, then totals cover my own projects only; the administrator also sees the server totals for the month against the server cap (RF-1106).
 Verification: end-to-end test with recorded events and a fixture ledger.
 
 **RF-1011 Live provider calls and logs view** - R1 (M1) - Should - Source DEC-51, DEC-50 - ADR-012
@@ -712,44 +730,172 @@ As a developer I want to watch the calls to the model providers and Rosetta's lo
 Verification: end-to-end test with recorded events.
 
 **RF-1012 Delete snapshots and runs from the page** - R1 (M1) - Should - Source DEC-51, DEC-55 - ADR-012
-As a developer I want to delete downloaded code and old runs from the page so that the output folder does not grow without limit.
-- Given the history or the snapshot list, when I press Delete on a run or a snapshot, then a confirmation names what will be deleted and the disk space it frees, and only after I confirm is the folder removed and an `info` entry written to the application log.
+As a user I want to delete my old runs and projects from the page so that my workspace does not grow without limit; the administrator also deletes unused snapshots.
+- Given my history, or for the administrator the snapshot list, when I press Delete on a run, a project or a snapshot, then a confirmation names what will be deleted and the disk space it frees, and only after I confirm is the folder removed and an `info` entry written to the application log.
 - Given a snapshot used by a run in progress, or a run in progress, when I try to delete it, then the button is disabled with the reason.
-- Given any deletion, when it completes, then `cost-ledger.jsonl` is unchanged and the project totals (RF-1010) still include the deleted runs' calls.
+- Given any deletion, when it completes, then the `cost_ledger` rows are kept and the totals (RF-1010) still include the deleted runs' calls.
 Verification: end-to-end test on a temporary project; integration test that the ledger is untouched.
 
-**RF-1013 Security headers and token handling** - R1 (M1) - Must - Source DEC-57 - ADR-012, ADR-013
-As a developer I want the local page hardened so that its token never leaks and injected content cannot run.
-- Given any response of the local server, when it is sent, then it carries `Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`.
-- Given the page opened with the session token in its URL, when it has loaded, then the token is kept in memory and removed from the address bar; a link opened from the page sends no referrer.
+**RF-1013 Security headers and cookies** - R1 (M1) - Must - Source DEC-57, DEC-69 - ADR-013, ADR-015, ADR-017
+As a user I want the application hardened so that its session never leaks and injected content cannot run.
+- Given any response, when it is sent, then it carries `Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`; when served over HTTPS it also carries `Strict-Transport-Security: max-age=31536000`.
+- Given a session, when its cookie is set, then it is `__Host-rosetta_session` with `HttpOnly`, `Secure`, `SameSite=Strict` and `Path=/`, and no session id or token ever appears in a URL.
 - Given the static report, when it is generated, then each page carries an equivalent content security policy in a `meta` element and `referrer` set to `no-referrer`.
-Verification: integration tests on response headers; end-to-end test that the address bar no longer holds the token.
+Verification: integration tests on response headers and cookie attributes.
+
+### 5.10 Accounts, sessions, keys and administration (RF-1100..RF-1199)
+
+**RF-1100 Sign in with a user name and password** - R1 (M1) - Must - Source DEC-62 - ADR-015
+As a user I want to sign in with my user name and password so that only invited people use Rosetta.
+- Given the sign-in page, when I enter a correct user name and password for an enabled account, then a session starts (RF-1101) and I land on my projects.
+- Given a wrong user name or password, when I submit, then the page says only "User name or password is incorrect", with the same response time whether or not the user exists.
+- Given five failed attempts for one user name within 15 minutes, when another attempt arrives, then the account is locked for 15 minutes, the attempt is refused with the same message, and a security event is logged; sign-in is also rate limited to 10 attempts per minute per IP address.
+- Given any password, when it is stored, then only its scrypt hash with salt and parameters is kept (ADR-015).
+Verification: integration tests for success, failure, lockout, rate limit and timing; unit test on the hash format.
+
+**RF-1101 Sessions and sign-out** - R1 (M1) - Must - Source DEC-62 - ADR-015
+As a user I want my session to be safe and to end when I leave so that a forgotten browser does not stay signed in.
+- Given a successful sign-in, when the session is created, then its id is new (any previous id is discarded), random (256 bits), only its SHA-256 is stored, and the cookie follows RF-1013.
+- Given 8 hours without activity or 7 days since sign-in, when the next request arrives, then the session is ended and I must sign in again.
+- Given Sign out, when I press it, then the session is deleted on the server and the cookie is cleared.
+- Given an administrator disables my account or resets my password, when my next request arrives, then all my sessions are ended.
+Verification: integration tests with a fixed clock.
+
+**RF-1102 Administer accounts** - R1 (M1) - Must - Source DEC-62, DEC-66 - ADR-015
+As the administrator I want to create and manage accounts so that I decide who uses Rosetta.
+- Given the first start of an empty database, when `ROSETTA_ADMIN_USER` and `ROSETTA_ADMIN_PASSWORD` are set, then that administrator account is created once and the password must be changed at first sign-in; the values are never logged.
+- Given the administration page, when I create an account, then I set the user name, display name, role (`admin` or `user`) and an initial password the user must change at first sign-in; there is no self sign-up anywhere.
+- Given an account, when I disable it, enable it or reset its password, then the change takes effect at once (RF-1101) and an audit event is written (RF-1109).
+- Given the administration page, when I open it, then I see every account with its last sign-in, number of projects and month-to-date cost.
+Verification: integration tests per action; end-to-end test of the page; authorization test that a `user` gets 403.
+
+**RF-1103 Change my password** - R1 (M1) - Must - Source DEC-62 - ADR-015
+As a user I want to change my password so that only I know it.
+- Given my settings, when I enter my current password and a new one, then the new one is accepted only if it has at least 12 characters, is not on the common-passwords list and does not contain my user name; my other sessions are ended.
+Verification: integration tests for each rule.
+
+**RF-1104 My provider API keys** - R1 (M1) - Must - Source DEC-64 - ADR-015
+As a user I want to store my own API keys for the providers so that runs use my account; otherwise the server's keys are used under caps.
+- Given my settings, when I save a key for a provider (OpenAI, Anthropic, an OpenAI-compatible endpoint), then it is encrypted (AES-256-GCM with the server secret) and stored; the page shows only its last four characters, and no API ever returns it.
+- Given a run, when a role needs a provider, then my key for it is used if I have one; otherwise the server key is used if the administrator allows server keys for my account (default: allowed), and the ledger records which (RF-428).
+- Given I replace or delete a key, when I confirm, then the old value is gone from the database and an audit event is written without the value.
+- Given Ollama in the local deployment, when it is configured, then no key is needed; the hosted deployment offers Ollama only if the administrator sets its URL.
+- Given an OpenAI-compatible key with a base URL, when it is saved, then the URL must use `https` and must not resolve to a private, loopback or link-local address; otherwise it is refused with an error code.
+Verification: integration tests on storage, use and deletion; output scan test that no response contains a key.
+
+**RF-1105 Private workspaces** - R1 (M1) - Must - Source DEC-66 - ADR-015, ADR-016
+As a user I want my projects and runs to be visible to me only so that my work stays private.
+- Given any list, page, event stream, file download or API call, when I request it, then it includes only my projects, runs, events, files and ledger rows; another user's id in a URL answers 404.
+- Given the administrator, when they open another user's workspace from the administration page, then they can read it, and an audit event is written.
+Verification: integration tests with two users for every route (access matrix test).
+
+**RF-1106 Usage caps** - R1 (M1) - Must - Source DEC-13, DEC-64 - ADR-007, ADR-015
+As the administrator I want limits on what users spend with the server keys so that the bill stays under control.
+- Given server keys, when any call would push one of these over its cap, then the call is refused before it is made and the run ends with `CapReached`: the run cap (default $0.50), the user's daily cap (default $1.00) and the server's monthly cap (default $10.00), all configurable on the administration page.
+- Given a user's own keys, when they run, then only the run cap and the user's own caps apply; their spend does not count against the server cap.
+- Given the server reaches 80% of its monthly cap, when the next page loads for the administrator, then a warning banner is shown.
+Verification: integration tests per cap with a fixed clock.
+
+**RF-1107 Teacher account** - R1 (M1) - Must - Source DEC-62, DEC-67 - ADR-015
+As the product owner I want an account for the evaluators so that they can try Rosetta on the hosted URL.
+- Given the hosted deployment, when the administrator creates the account `teacher` with role `user`, then its password is set by the administrator outside the repository, it does not need a change at first sign-in, and it is delivered only in the hand-in form (RF-803).
+- Given the teacher account, when it signs in, then it sees an empty workspace (Q-21) and can run the demo with the server keys under the caps.
+Verification: manual sign-in on the hosted URL.
+
+**RF-1108 Run queue** - R1 (M1) - Should - Source DEC-61 - ADR-014
+As a user I want my run to wait its turn when the server is busy so that the server stays responsive.
+- Given more running runs than the configured limit (default 2), when I start a run, then it is queued, the page shows its position, and it starts automatically when a slot frees; one user has at most one running run.
+Verification: integration test with the fake provider.
+
+**RF-1109 Security audit trail** - R1 (M1) - Must - Source DEC-69 - ADR-013, ADR-015
+As the administrator I want account and key events recorded so that I can see who did what.
+- Given a sign-in (success or failure), lockout, sign-out, account change, key change, administrator access to another workspace, or a refused request, when it happens, then an audit row with time, actor, action, target, IP address and outcome is stored and a `warn` or `info` log entry is written (RF-009); no row contains a password or key.
+- Given the administration page, when I open the audit view, then I can filter the last 30 days by user and action.
+Verification: integration tests per event.
+
+### 5.11 Landing page (RF-1200..RF-1299)
+
+**RF-1200 Landing page** - R1 (M1) - Must - Source DEC-63 - ADR-012
+As a visitor I want a page that explains Rosetta well so that I understand what it does before signing in.
+- Given the root URL, when it is opened without a session, then a product-quality landing page shows: what Rosetta does in one sentence; the pipeline (GitHub URL, scan, agents, verifier, report, hand-off) as a graphic; the live agent view; evidence-cited cards with the verifier; cost control; security and privacy; the technology; who built it and why (a master's final project); and a Sign in button.
+- Given a signed-in user, when they open the root URL, then they go to their projects.
+- Given any screen width from 360 px, when the page is shown, then it follows the design system (RNF-010) and works without JavaScript.
+Verification: end-to-end test with axe; review against the design board.
+
+**RF-1201 Landing page reach** - R1 (M1) - Should - Source DEC-63, Q-19, Q-20 - ADR-014
+As the product owner I want the landing page seen only by the people I share the URL with so that the project is not public yet.
+- Given any page of the application, when it is served, then it carries `noindex, nofollow`, and `robots.txt` disallows everything.
+- Given a contact address in the server configuration, when the landing page is shown, then a "Request access" link opens an e-mail to it; without the setting there is no such link and no sign-up.
+Verification: integration tests on headers and `robots.txt`.
+
+### 5.12 Container, local and hosted deployment (RF-1300..RF-1399)
+
+**RF-1300 One container image** - R1 (M1) - Must - Source DEC-61 - ADR-014
+As the product owner I want one image for every deployment so that what I test is what the teachers use.
+- Given the repository, when the image is built, then a multi-stage `Dockerfile` produces a runtime image from a Node.js 24 slim base pinned by digest, with the built server and front end, the migrations and the prompts, running as a non-root user, listening on port 8080, with a `HEALTHCHECK` on `/healthz`.
+- Given the image, when it is inspected, then it contains no secret, no `.env`, no source maps of server code, no test files and no build tools.
+Verification: CI builds the image and runs a container scan; an integration test starts it and calls `/healthz`.
+
+**RF-1301 Local deployment with Docker Compose** - R1 (M1) - Must - Source DEC-61 - ADR-014, ADR-016
+As the product owner I want to run the whole system on my machine exactly as it will run hosted so that I can test the deployment.
+- Given `compose.yaml` and a `.env` copied from `.env.example`, when I run `docker compose up`, then PostgreSQL and the app start with named volumes for the database and the data folder, migrations run, and the app is reachable at `http://127.0.0.1:8080` only.
+- Given Ollama running on the host, when a role uses it, then the app reaches it at `http://host.docker.internal:11434`.
+- Given `docker compose down` and `up` again, when the app starts, then accounts, projects, runs and snapshots are still there.
+Verification: manual run on the owner's machine; a CI job runs the Compose stack and an end-to-end smoke test with the fake provider.
+
+**RF-1302 Database migrations at start-up** - R1 (M1) - Must - Source DEC-65 - ADR-016
+As the product owner I want the database schema updated automatically and safely so that a new image never runs on an old schema.
+- Given numbered migration files, when the app starts, then pending migrations are applied in order, each in a transaction, and recorded with their checksum in `schema_version` before the server accepts requests.
+- Given an applied migration whose file has changed, or a database with a migration the image does not know, when the app starts, then it stops with an error code and does not serve requests.
+Verification: integration tests on a disposable database.
+
+**RF-1303 Health endpoint** - R1 (M1) - Must - Source DEC-61 - ADR-014
+- Given `GET /healthz`, when the server and the database are reachable, then it answers 200 with `{ "status": "ok", "version": "<rosetta version>" }`; otherwise 503 with no detail; it needs no session and reveals no secret.
+Verification: integration test.
+
+**RF-1304 Hosted deployment** - R1 (M1) - Must - Source DEC-61, DEC-67 - ADR-014
+As the product owner I want Rosetta running on a server so that my teachers can use it from anywhere.
+- Given the host chosen in Q-18, when the image is deployed, then it runs behind the host's HTTPS with managed PostgreSQL, a persistent disk mounted at `ROSETTA_DATA_DIR`, and every secret in the host's secret store; plain HTTP redirects to HTTPS.
+- Given a new image version, when it is deployed, then migrations run first (RF-1302) and the previous image tag stays available for rollback.
+- Given the deployment, when it is live, then `docs/runbooks/deploy.md` describes how to deploy, roll back, back up and restore it.
+Verification: manual deployment; smoke test on the public URL (health, landing page, sign-in).
+
+**RF-1305 Configuration from the environment** - R1 (M1) - Must - Source DEC-61 - ADR-014
+- Given the server, when it starts, then it reads `DATABASE_URL`, `ROSETTA_SECRET_KEY`, `ROSETTA_DATA_DIR`, `ROSETTA_PUBLIC_URL`, the bootstrap administrator, optional server provider keys, caps and log level from the environment, validates them with a schema, and stops with an error code naming any missing or invalid variable, never its value.
+- Given `.env.example`, when it is read, then it lists every variable with a comment and a safe example value, and contains no real secret.
+Verification: unit tests on the configuration schema.
+
+**RF-1306 Backups** - R1 - Should - Source DEC-65 - ADR-016
+- Given the hosted deployment, when a day passes, then the database is backed up by the host (or a scheduled `pg_dump`) and kept 7 days; the data folder is backed up weekly; the runbook describes the restore and it has been tried once.
+Verification: one restore drill recorded in the runbook.
 
 ## 6. Non-functional requirements
 
 | Id | Requirement | Verification |
 |---|---|---|
-| RNF-001 | **Portability**: runs on Windows, macOS and Linux with the baseline Node.js LTS; paths are handled with the platform's separators and citations always use forward slashes. | CI on Windows and Linux; manual check on the owner's Windows machine |
+| RNF-001 | **Portability**: the server runs as a Linux container image (amd64) locally and hosted; development from source works on Windows, macOS and Linux with the baseline Node.js LTS; citations always use forward slashes. | CI on Windows and Linux; image built in CI; manual check on the owner's Windows machine with Docker |
 | RNF-002 | **Robustness**: an interrupted run (Ctrl+C, crash, cap) leaves its run folder consistent: finished cards, the manifest end state and the cost so far are on disk. | integration test that interrupts a run |
 | RNF-003 | **Secrets**: no API key, token or masked secret is ever written to the repository, the output folder or a log; keys come only from environment variables or a git-ignored `.env`. | test that scans outputs for key patterns; secret scanning on the public repository |
 | RNF-004 | **Reproducibility**: every run records the Rosetta version, the code map hash, prompt versions with a SHA-256 of each prompt file, provider, the exact model version the provider reports (dated id; for Ollama the model digest) and parameters per role, so it can be explained and repeated (DEC-57). | integration test on the manifest |
 | RNF-005 | **Offline tests**: the full automated suite passes with no network, using the fake provider and recorded responses; core logic coverage is at least 80%. | CI with network disabled; coverage report |
 | RNF-006 | **Measured quality**: a golden set of hand-checked findings for the demo app scores each evaluated run; R1 targets at least 90% precision of `Supported` claims and at least 70% recall of golden business rules with a cloud verifier; local-model results are measured and reported, not targeted. | `npm run eval` against the golden set |
 | RNF-007 | **Performance**: `scan` of the demo app takes under 10 seconds and of a 100,000-line repository under 2 minutes on the owner's machine. | timing in the scan summary |
-| RNF-008 | **Usability**: every command has `--help` with an example; every error shows a code, a plain message and the next step. | review of help output; error-mapper tests |
+| RNF-008 | **Usability**: every page explains its main action in one sentence; every error shows a code, a plain message and the next step. | review of the pages; error-mapper tests |
 | RNF-009 | **Licensing**: Rosetta is MIT-licensed; any third-party code used as a fixture is a small excerpt with its source and licence cited. | review at each phase exit |
 | RNF-010 | **Report accessibility**: the HTML report meets WCAG 2.1 AA for contrast, keyboard navigation and headings, in light and dark themes. | automated accessibility check plus manual keyboard test |
-| RNF-011 | **Local-first**: once a snapshot is cached, the whole pipeline works with Ollama only and no internet connection. | end-to-end run with the network disabled, a cached snapshot and Ollama running |
+| RNF-011 | **Local-first**: in the local deployment, once a snapshot is cached, the whole pipeline works with Ollama only and no internet connection. | end-to-end run with the network disabled, a cached snapshot and Ollama running |
 | RNF-012 | **Estimate accuracy**: the actual cost of an `understand` run falls within 30% of the likely estimate on the demo app. | comparison of `estimate` and `cost.json` over three runs |
 | RNF-013 | **Clean Architecture**: the domain and application layers import nothing from infrastructure or presentation; dependencies point inward only; checked automatically on every pull request. | dependency rule check in `npm run verify` (ADR-009) |
-| RNF-014 | **Secure by default**: with no configuration beyond a source URL, Rosetta listens only on the loopback interface with a session token, asks before any cloud egress, masks secrets, applies the built-in deny list, masks transcripts and sends no telemetry; weakening any of these needs an explicit configuration entry that the run records (DEC-57, ADR-013). | integration test with the `init` template; review of the defaults table in architecture section 10 |
+| RNF-014 | **Secure by default**: with only the required environment variables set, Rosetta requires sign-in for everything except the landing page, sign-in and health check, publishes its local port on `127.0.0.1` only, uses secure cookies, asks before any cloud egress, applies the server caps, masks secrets, applies the built-in deny list, masks transcripts and sends no telemetry; weakening any of these needs an explicit configuration entry that the run records (DEC-57, ADR-013). | integration test with `.env.example`; review of the defaults table in architecture section 10 |
 | RNF-015 | **Evaluations are experiments**: every `npm run eval` result is saved with its date, models and model versions, prompt hashes and settings; each golden case runs at least 3 times and the report shows the spread; the golden set includes cases whose correct answer is "not in the code" (DEC-57). | evaluation output schema test |
+| RNF-016 | **Availability for evaluation**: the hosted deployment is reachable from 2026-10-26 until the master's evaluation ends (Q-01), with a monthly server cap that cannot be exceeded and a health check the host restarts on. | host health checks; budget banner (RF-1106) |
+| RNF-017 | **Hosted performance**: with two runs in progress, pages answer in under 1 second and the live view receives events within 2 seconds of their creation. | measured once on the hosted deployment before the hand-in |
 
 ## 7. Deferred requirements (reserved ids, not commitments)
 
 | Range | Release | Intent |
 |---|---|---|
-| RF-700..RF-799 | R2 | Claude Code plugin run mode: the same prompts and card formats as skills and subagents, writing the same output folder, so a final run can use a Claude subscription |
+| RF-700..RF-799 | out of scope (DEC-60; revisit after 2026-10-26) | Claude Code plugin run mode: the same prompts and card formats as skills and subagents, writing the same output folder, so a final run can use a Claude subscription |
 | RF-900..RF-999 | R2 | Multi-target evaluation and provider comparison: a second demo target in another stack (Q-05) and a report comparing quality and cost per provider and model |
 
 ## 8. Traceability matrix
@@ -760,7 +906,7 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 
 | Requirement group | Source | ADR | Phase | Cards |
 |---|---|---|---|---|
-| RF-001..RF-009 | DEC-13, DEC-14, DEC-17, DEC-24, DEC-50 | ADR-002, ADR-006, ADR-007, ADR-009 | P1 (RF-006: P2) | to be filled with the build plan |
+| RF-001..RF-010 | DEC-13, DEC-14, DEC-17, DEC-24, DEC-50, DEC-59 | ADR-002, ADR-006, ADR-007, ADR-009, ADR-015 | P1 (RF-006: P2; RF-001, RF-004 withdrawn) | to be filled with the build plan |
 | RF-100..RF-112 | DEC-11, DEC-12 | ADR-004 | P1 | to be filled with the build plan |
 | RF-120..RF-127 | DEC-48, DEC-57 | ADR-012, ADR-013 | P1 | to be filled with the build plan |
 | RF-140..RF-147 | DEC-16, DEC-57 | ADR-006, ADR-013 | P1 (RF-144: P2) | to be filled with the build plan |
@@ -772,7 +918,10 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-420..RF-428 | DEC-13, DEC-49 | ADR-007 | P1 (RF-423, RF-425, RF-427: P2) | to be filled with the build plan |
 | RF-500..RF-507 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57 | ADR-002, ADR-005, ADR-012, ADR-013 | P3 (RF-504, RF-506, RF-507: P1) | to be filled with the build plan |
 | RF-600..RF-603 | DEC-10 | ADR-005 | P3 | to be filled with the build plan |
-| RF-800..RF-802 | DEC-04 | ADR-002 | P1 | to be filled with the build plan |
+| RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | to be filled with the build plan |
 | RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | to be filled with the build plan |
-| RNF-001..RNF-015 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31, DEC-57 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009, ADR-013 | all | to be filled with the build plan |
+| RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | to be filled with the build plan |
+| RF-1200..RF-1201 | DEC-63 | ADR-012, ADR-014 | P1 | to be filled with the build plan |
+| RF-1300..RF-1306 | DEC-61, DEC-65, DEC-67 | ADR-014, ADR-016 | P1 (RF-1306: P2) | to be filled with the build plan |
+| RNF-001..RNF-017 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31, DEC-57 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009, ADR-013 | all | to be filled with the build plan |
 | [Decision log](../decision-log.md) (all DEC ids) | - (product owner's decisions) | ADR-002..ADR-008 | all | - |
