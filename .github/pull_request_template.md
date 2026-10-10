@@ -26,4 +26,4 @@ Closes #<!-- issue number -->
 <!-- Commands the product owner can run to see the change working (DEC-34). "Not applicable" for docs-only changes. -->
 
 ---
-Merged only by the product owner, with squash (DEC-33, DEC-35).
+Merged with squash: task-card pull requests by the orchestrator under the merge rules of `docs/orchestration/README.md` section 3.1 (DEC-96); pull requests labelled `needs-owner` only by the product owner (DEC-33, DEC-35).

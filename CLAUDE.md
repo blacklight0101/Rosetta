@@ -142,15 +142,20 @@ applied, and fixing it is part of applying the decision.
   only; never edit them and never copy their files into this repository except as small, cited excerpts in test
   fixtures (MIT licence, attribution kept).
 
-## Commit policy and GitHub workflow (DEC-33, DEC-35)
+## Commit policy and GitHub workflow (DEC-33, DEC-35, DEC-96)
 
-- **The product owner has full control.** Nothing reaches `main` without the owner's approval of its pull request;
-  agents never merge, never push to `main`, never force-push and never rewrite published history.
+- **The product owner keeps control of `main`.** Nothing reaches `main` except through a pull request. Agents never
+  push to `main`, never force-push `main`, never bypass the ruleset and never rewrite published history. Builders
+  never merge. The orchestrator merges task-card pull requests itself, with squash, only under the merge rules of
+  `docs/orchestration/README.md` section 3.1 (CI green, verifier PASS posted, branch up to date) (DEC-96); a pull
+  request that changes `docs/spec/`, `docs/adr/`, `docs/decision-log.md`, `docs/rfc/` or this file, and every
+  documentation pull request outside a card, is merged only by the owner.
 - **Trace everything:** one GitHub issue per task card; one branch per issue (`task/<card-id>-<slug>` in lower case,
   or `docs/<topic>` for documentation that belongs to no card; exact names in `docs/conventions.md`); one pull
   request per branch, filled from the template, citing the card, `RF`, `ADR` and `DEC` ids and closing its issue.
-- **Before review:** CI (`npm run verify` on Windows and Linux) is green and the verifier's verdict is posted on the
-  pull request. The owner reviews, approves and merges with squash so `main` stays linear; the branch is deleted.
+- **Before merge:** CI (`npm run verify` on Windows and Linux) is green and the verifier's verdict is posted on the
+  pull request. The merge is a squash so `main` stays linear; the branch is deleted. The owner can review any merged
+  pull request afterwards.
 - Commits use Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`) and end with `Refs:` naming the ids.
 - Milestones group issues by phase; every release is a tag and a GitHub release (DEC-29).
 - Commit only when asked; the working tree is clean before a multi-file change starts.

@@ -415,7 +415,7 @@ As a developer I want to know which files each agent actually read so that silen
 - Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of area tokens read.
 Verification: integration test with the fake provider.
 
-**RF-240 Collect open questions** - R1 - Must - Source DEC-15 - ADR-005
+**RF-240 Collect open questions** - R1 (M1, DEC-98) - Must - Source DEC-15 - ADR-005
 As a developer I want all `OQ` cards gathered into one answers file so that I can answer them in one place.
 - Given a run with `OQ` cards, when it ends, then the project's `answers.md` (data-model.md section 3.16) lists each open question with its card id, context and an empty answer field; existing answers are kept.
 Verification: integration test.
@@ -546,7 +546,7 @@ As a developer I want to see tokens and cost grow during the run so that I can i
 - Given a run open in the web UI, when calls complete, then the meter updates with tokens and cost so far, the cap, and the share used (RF-1003).
 Verification: end-to-end test with recorded events.
 
-**RF-425 Estimate before running** - R1 - Must - Source DEC-13 - ADR-007
+**RF-425 Estimate before running** - R1 (M1: first scenario, DEC-97) - Must - Source DEC-13 - ADR-007
 As a user I want an estimate before a run so that I know the cost before spending.
 - Given a code map and settings, when the start page loads or I press Re-estimate, then it shows the expected tokens and cost per role as a low, likely and high range, with the assumptions used.
 - Given an `understand` run whose likely estimate exceeds the configured confirmation threshold, when I start it, then the page shows the estimate and asks me to confirm.
@@ -958,27 +958,27 @@ Verification: one restore drill recorded in the runbook.
 ## 8. Traceability matrix
 
 Each requirement group traces to where its behaviour comes from, the ADRs that shape it, the phase that delivers it
-and the task cards that build it. The cards column is filled when the build plan is written and kept current when
+and the task cards that build it. The cards column was filled with the build plan on 2026-10-11 and is kept current when
 cards are added. A requirement with no card, or a card with no requirement, is a finding in review.
 
 | Requirement group | Source | ADR | Phase | Cards |
 |---|---|---|---|---|
-| RF-001..RF-010 | DEC-13, DEC-14, DEC-17, DEC-24, DEC-50, DEC-59 | ADR-002, ADR-006, ADR-007, ADR-009, ADR-015 | P1 (RF-006: P2; RF-001, RF-004 withdrawn) | to be filled with the build plan |
-| RF-100..RF-112 | DEC-11, DEC-12 | ADR-004 | P1 | to be filled with the build plan |
-| RF-120..RF-127 | DEC-48, DEC-57 | ADR-012, ADR-013 | P1 | to be filled with the build plan |
-| RF-140..RF-147 | DEC-16, DEC-57 | ADR-006, ADR-013 | P1 (RF-144: P2) | to be filled with the build plan |
-| RF-200..RF-205 | DEC-15, DEC-18 | ADR-003, ADR-005 | P1 | to be filled with the build plan |
-| RF-230..RF-250 | DEC-15, DEC-18 | ADR-003, ADR-005 | P2 | to be filled with the build plan |
-| RF-300, RF-302 | DEC-19 | ADR-005 | P1 | to be filled with the build plan |
-| RF-301, RF-303..RF-305 | DEC-19, DEC-57 | ADR-005, ADR-008 | P2 | to be filled with the build plan |
-| RF-400..RF-408 | DEC-09, DEC-23, DEC-50 | ADR-003 | P1 (RF-403, RF-404: P2) | to be filled with the build plan |
-| RF-420..RF-428 | DEC-13, DEC-49 | ADR-007 | P1 (RF-423, RF-425, RF-427: P2) | to be filled with the build plan |
-| RF-500..RF-507 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57 | ADR-002, ADR-005, ADR-012, ADR-013 | P3 (RF-504, RF-506, RF-507: P1) | to be filled with the build plan |
-| RF-600..RF-613 | DEC-10, DEC-72..DEC-85 | ADR-005, ADR-007, ADR-018 | P3 (RF-600 withdrawn) | to be filled with the build plan |
-| RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | to be filled with the build plan |
-| RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | to be filled with the build plan |
-| RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | to be filled with the build plan |
-| RF-1200..RF-1201 | DEC-63 | ADR-012, ADR-014 | P1 | to be filled with the build plan |
-| RF-1300..RF-1306 | DEC-61, DEC-65, DEC-67 | ADR-014, ADR-016 | P1 (RF-1306: P2) | to be filled with the build plan |
-| RNF-001..RNF-017 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31, DEC-57 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009, ADR-013 | all | to be filled with the build plan |
+| RF-001..RF-010 | DEC-13, DEC-14, DEC-17, DEC-24, DEC-50, DEC-59 | ADR-002, ADR-006, ADR-007, ADR-009, ADR-015 | P1 (RF-006: P2; RF-001, RF-004 withdrawn) | P1-03, P1-04, P1-07, P1-16, P1-17, P1-18, P1-22, P1-23, P1-29, P1-33, P1-40, P1-41, P2-01, P2-13 |
+| RF-100..RF-112 | DEC-11, DEC-12 | ADR-004 | P1 | P1-19, P1-20, P1-21, P1-23, P1-46 |
+| RF-120..RF-127 | DEC-48, DEC-57 | ADR-012, ADR-013, ADR-019 | P1 | P1-16, P1-19, P1-22, P1-23, P1-32, P3-02 |
+| RF-140..RF-147 | DEC-16, DEC-57 | ADR-006, ADR-013, ADR-019 | P1 (RF-144: P2) | P1-04, P1-17, P1-28, P1-31, P1-33, P1-34, P2-07 |
+| RF-200..RF-205 | DEC-15, DEC-18 | ADR-003, ADR-005 | P1 | P1-25, P1-31, P1-32, P1-33 |
+| RF-230..RF-250 | DEC-15, DEC-18, DEC-98 | ADR-003, ADR-005 | P2 (RF-240: P1, DEC-98) | P1-33, P1-39, P2-04, P2-05, P2-06, P2-13 |
+| RF-300, RF-302 | DEC-19 | ADR-005 | P1 | P1-32, P1-33 |
+| RF-301, RF-303..RF-305 | DEC-19, DEC-57 | ADR-005, ADR-008 | P2 | P2-01, P2-02, P2-03, P2-13 |
+| RF-400..RF-408 | DEC-09, DEC-23, DEC-50 | ADR-003 | P1 (RF-403, RF-404: P2) | P1-18, P1-24, P1-25, P1-26, P1-29, P1-37, P1-47, P2-09, P2-10 |
+| RF-420..RF-428 | DEC-13, DEC-49 | ADR-007 | P1 (RF-423, RF-427 and the second RF-425 scenario: P2; DEC-97) | P1-27, P1-30, P1-33, P1-34, P1-35, P1-36, P2-08 |
+| RF-500..RF-507 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57 | ADR-002, ADR-005, ADR-012, ADR-013 | P3 (RF-504, RF-506, RF-507: P1) | P1-12, P1-43, P1-50, P3-01, P3-02, P3-03, P3-04 |
+| RF-600..RF-613 | DEC-10, DEC-72..DEC-85 | ADR-005, ADR-007, ADR-018 | P3 (RF-600 withdrawn) | P3-05, P3-06, P3-07, P3-08, P3-09, P3-10, P3-11, P3-12 |
+| RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | P1-45, P1-50, P1-52, P1-53, P1-54 |
+| RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | P1-07, P1-09, P1-12, P1-22, P1-34, P1-35, P1-36, P1-37, P1-38, P1-39, P1-40, P1-42, P1-43, P1-45, P1-46, P2-02, P2-05, P3-01 |
+| RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | P1-08, P1-09, P1-10, P1-11, P1-14, P1-18, P1-22, P1-27, P1-29, P1-34, P1-36, P1-41, P1-42, P1-46, P1-48, P1-54, P2-10 |
+| RF-1200..RF-1201 | DEC-63 | ADR-012, ADR-014 | P1 | P1-07, P1-15 |
+| RF-1300..RF-1306 | DEC-61, DEC-65, DEC-67 | ADR-014, ADR-016 | P1 (RF-1306: P2) | P1-05, P1-06, P1-07, P1-44, P1-45, P1-48, P2-12 |
+| RNF-001..RNF-017 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31, DEC-57 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009, ADR-013 | all | P1-01, P1-02, P1-03, P1-04, P1-05, P1-06, P1-07, P1-08, P1-09, P1-11, P1-12, P1-13, P1-14, P1-15, P1-16, P1-17, P1-19, P1-20, P1-21, P1-22, P1-24, P1-25, P1-28, P1-31, P1-33, P1-44, P1-45, P1-46, P1-47, P1-48, P1-49, P1-50, P1-51, P2-11, P2-14, P3-04, P3-09, P3-12 |
 | [Decision log](../decision-log.md) (all DEC ids) | - (product owner's decisions) | ADR-002..ADR-008 | all | - |
