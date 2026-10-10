@@ -140,7 +140,7 @@ the decision log.
 | Q-03 | In which language are the slides and the video? | Product owner | P1 (slides card) | Spanish (the master is taught in Spanish); the repository stays English | Default applies |
 | Q-04 | Which local model runs the `reader` role on the owner's machine (8 GB VRAM)? | Product owner, with the spike card | P1 (spike card) | The best 7-9B tool-calling coding model that fits in 8 GB, chosen by a spike that runs one area and scores it | Default applies |
 | Q-05 | Which second demo target, in a different stack, follows the milestone? | Product owner | P4 | An old open-source PHP or Java business application under MIT or Apache-2.0, chosen after M1 | Default applies |
-| Q-06 | Does `plan` take the target stack from the developer, or propose it? | Product owner | P3 | The developer passes `--target "<stack>"`; without it, `plan` proposes two target options as an ADR with trade-offs and asks the developer to choose | Default applies |
+| Q-06 | Does `plan` take the target stack from the developer, or propose it? | Product owner | P3 | The developer passes `--target "<stack>"`; without it, `plan` proposes two target options as an ADR with trade-offs and asks the developer to choose | Answered (DEC-77, DEC-78) |
 | Q-07 | Is "Rosetta" the final name and package name? | Product owner | P3 | Keep "Rosetta" as the display name; the package name is chosen when publishing (Q-08) to avoid registry conflicts | Default applies |
 | Q-08 | Is Rosetta published to the npm registry in R1? | Product owner | P3 | No: R1 runs from source with `npm` scripts; a scoped package is published in R2 | Default applies |
 | Q-09 | Which Node.js version is the baseline? | Product owner | P1-01 | The current Node.js LTS line installed on the owner's machine, pinned in `.nvmrc` and `package.json` engines | Answered (DEC-27) |
@@ -616,11 +616,7 @@ Verification: snapshot test.
 
 ### 5.7 Plan: the hand-off package (RF-600..RF-699)
 
-**RF-600 Produce the hand-off package** - R1 - Must - Source DEC-10 - ADR-005
-As a developer I want `rosetta plan` to turn verified findings and answers into a modernisation package so that a team can start building.
-- Given a run with verified cards and answers, when I run `rosetta plan <run-id> --target "<stack>"`, then a `handoff/` folder is written using only `Supported` claims and answered questions; `Rejected`, invalid and unverified claims are listed as excluded with their ids.
-- Given no `--target`, when `plan` runs, then it proposes target options as decided by Q-06.
-Verification: integration test with recorded responses.
+**RF-600 Produce the hand-off package** - Withdrawn 2026-10-11 - see RF-604 (DEC-59: no command-line interface; DEC-77, DEC-78: the planning brief replaces `--target`)
 
 **RF-601 Package contents** - R1 - Must - Source DEC-10 - ADR-005
 As a modernisation team I want a complete, standard package so that we can plan the work without asking.
@@ -636,6 +632,66 @@ Verification: structure test: no requirement without a source card.
 As a modernisation team I want plain Markdown with no dependency on Rosetta, a build tool or an AI vendor so that we can use it any way we like.
 - Given the package, when it is read outside Rosetta, then it is plain Markdown and Mermaid, with no Rosetta-specific syntax.
 Verification: structure test.
+
+**RF-604 Produce the hand-off package from the planning brief** - R1 - Must - Source DEC-72, DEC-80, DEC-82 - ADR-005, ADR-018
+As a developer I want to start `plan` from the web UI once the planning brief is saved so that a team receives a package built the way we chose.
+- Given a run with verified cards and answers and a saved planning brief, when I start `plan`, then a `handoff/` folder is written using only `Supported` claims and answered questions; `Rejected`, invalid and unverified claims are listed as excluded with their ids.
+- Given a planning brief with unanswered questions, when `plan` runs, then each takes its default and the package lists it in its open-questions file with that default (DEC-80).
+- Given a finished package, when its run manifest is read, then it records the planning brief, the catalogue version and the prompt versions used (RNF-004).
+Verification: integration test with recorded responses.
+
+**RF-605 Plan setup page** - R1 - Must - Source DEC-72, DEC-80 - ADR-012, ADR-018
+As a developer I want Rosetta to interview me before it plans, the way a senior architect would, so that the package follows my choices instead of guesses.
+- Given a project with a finished `understand` run, when I open Plan setup, then the questions appear in small groups (principles, architecture, migration, stack, project context, build method), each with a default, the reason it matters and the option Rosetta recommends marked "(Recommended)".
+- Given I accept the defaults or change some answers, when I save, then the planning brief is stored with the project (data-model.md section 3.20) and shown as a "What I recorded" summary that I can edit and save again.
+- Given a saved brief, when I change an answer after a package exists, then the page says the package is out of date and offers to run `plan` again.
+Verification: end-to-end test of the page with the fake provider; unit tests of the brief schema.
+
+**RF-606 Principle catalogue** - R1 - Must - Source DEC-73, DEC-74, DEC-84, DEC-85 - ADR-018
+As a developer I want a catalogue of proven principles and practices to choose from so that the package carries good engineering by default.
+- Given the catalogue, when it is listed, then it contains these groups, each entry with a one-line rule, why it matters and how to check it: design principles (SOLID, DRY, KISS, YAGNI, design patterns and when not to use them, antipatterns to avoid); method (SDD, TDD with red-green-refactor, requirements with Given/When/Then and MoSCoW); architecture styles (RF-608); modernisation path (Strangler Fig, Parallel Change, Mikado, approval tests); quality gates (testing pyramid, honest coverage by layer, pre-commit and CI gates); documentation (ADRs, docs as code, API contracts); security (security by design and by default, STRIDE, OWASP Top 10, a secure development life cycle); delivery (CI/CD built once, DORA metrics, containers, observability); AI-assisted build (agent instructions file, plan before build, human review).
+- Given a new brief, when it is created, then SOLID, KISS, DRY, YAGNI, TDD, SDD, ADRs, the testing pyramid with honest coverage, security by design and CI quality gates are switched on, and the other entries are off (DEC-74).
+- Given the catalogue files, when Rosetta starts, then they are read from `prompts/catalogue/` with a version, and the catalogue README credits the master (Master en Desarrollo con IA, BIG School) as the source of its curriculum; entries are written in Rosetta's own words (DEC-73, DEC-85).
+Verification: schema test of the catalogue files; unit test of the defaults.
+
+**RF-607 Principles applied in the package** - R1 - Must - Source DEC-75 - ADR-018
+As a modernisation team I want each chosen principle turned into rules and checks so that we can tell whether the code follows it.
+- Given a chosen principle, when the package is written, then it appears as rules in the package's conventions document and as checks on the task cards that it concerns; a principle that is not chosen does not appear.
+- Given TDD is chosen, when a task card is written, then it lists the Given/When/Then tests to write before the code; given SDD is chosen, every task card names the requirement ids it implements and no card exists without one.
+- Given SOLID or KISS is chosen, when a task card is written, then its review checklist names the principle and what a reviewer looks for.
+Verification: structure test of the package with recorded responses.
+
+**RF-608 Architecture style recommendation** - R1 - Must - Source DEC-76, DEC-77 - ADR-018
+As a developer I want Rosetta to recommend an architecture from what it found in the code so that the choice is grounded in evidence.
+- Given the code map and the verified cards, when Plan setup opens, then Rosetta proposes the two best-fitting styles from layered (N-tier), modular monolith, hexagonal, Clean, event-driven and microservices, each with its trade-offs, the evidence (card ids) behind it and one marked recommended.
+- Given I choose a style, when the package is written, then it contains an ADR for the style with the options considered, the evidence and the reason, and a target architecture that follows the style.
+Verification: integration test with recorded responses.
+
+**RF-609 Target stack per layer** - R1 - Must - Source DEC-78 - ADR-018
+As a developer I want to choose the target technology layer by layer so that the package is specific enough to build from.
+- Given the legacy stack found by the scan, when Plan setup opens, then for each layer (language and runtime, back-end framework, front end, database, data access, testing, hosting) two options are pre-filled and I can pick one or type my own.
+- Given a chosen stack, when the package is written, then each layer has an ADR and the task cards use those technologies.
+Verification: unit test of the brief; structure test of the package.
+
+**RF-610 Migration strategy** - R1 - Should - Source DEC-76 - ADR-018
+As a modernisation team I want the package to say how we move from the legacy system to the new one so that the plan is safe to execute.
+- Given the brief, when I choose the migration strategy, then the options are Strangler Fig (default), Parallel Change or a full rewrite, and the package's roadmap orders the phases accordingly, with an ADR explaining the choice.
+Verification: structure test of the package.
+
+**RF-611 Project context questions** - R1 - Should - Source DEC-79 - ADR-018
+As a developer I want to state my team and constraints so that the roadmap is realistic.
+- Given the optional project questions (team size and experience, deadline, integrations that must stay, data migration approach), when they are answered, then the roadmap's phases and sizes reflect them; when they are not, they appear in the package's open questions with their defaults.
+Verification: structure test of the package.
+
+**RF-612 Build method for an AI-assisted team** - R1 - Should - Source DEC-76 - ADR-018
+As a modernisation team that builds with AI agents I want the package to include the working method so that we can start the way this repository was built.
+- Given AI-assisted build is chosen, when the package is written, then it contains an agent instructions file (AGENTS.md) with the chosen principles and stack as rules, task cards rated by difficulty for builders, the rule to plan before building, and a human review on every pull request.
+Verification: structure test of the package.
+
+**RF-613 Plan cost estimate and caps** - R1 - Must - Source DEC-81 - ADR-007
+As a developer I want to see what `plan` will cost before it starts so that it stays within my caps.
+- Given a saved brief, when I start `plan`, then the page shows the estimate for the `planner` role against my caps, and every call goes through the budget guard like any other run (RF-420..RF-429).
+Verification: integration test with the fake provider.
 
 ### 5.8 Milestone hand-in artefacts (RF-800..RF-899)
 
@@ -918,7 +974,7 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-400..RF-408 | DEC-09, DEC-23, DEC-50 | ADR-003 | P1 (RF-403, RF-404: P2) | to be filled with the build plan |
 | RF-420..RF-428 | DEC-13, DEC-49 | ADR-007 | P1 (RF-423, RF-425, RF-427: P2) | to be filled with the build plan |
 | RF-500..RF-507 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57 | ADR-002, ADR-005, ADR-012, ADR-013 | P3 (RF-504, RF-506, RF-507: P1) | to be filled with the build plan |
-| RF-600..RF-603 | DEC-10 | ADR-005 | P3 | to be filled with the build plan |
+| RF-600..RF-613 | DEC-10, DEC-72..DEC-85 | ADR-005, ADR-007, ADR-018 | P3 (RF-600 withdrawn) | to be filled with the build plan |
 | RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | to be filled with the build plan |
 | RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | to be filled with the build plan |
 | RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | to be filled with the build plan |

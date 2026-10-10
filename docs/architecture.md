@@ -105,6 +105,7 @@ src/
     budget/             Money, TokenUsage, Price, PriceTable, Budget, Cap
     runs/               Run, RunManifest, RunEndState, AgentTaskState, RunEvent types
     sources/            GitHubRepoRef, CommitSha, Permalink
+    planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018)
     errors/             domain error codes and Result type
   application/
     ports/              port interfaces (section 7)
@@ -134,6 +135,7 @@ Dockerfile              multi-stage image (RF-1300)
 compose.yaml            local deployment: app + PostgreSQL (RF-1301)
 .env.example            every environment variable with a safe example (RF-1305)
 prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/)
+                        and catalogue/ (principles, styles and practices for plan, ADR-018)
 tests/
   unit/                 mirrors src/
   integration/          mirrors src/
@@ -189,7 +191,7 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `RunVerify` | part of `understand`; Resume verification on a run | RF-300..RF-304 |
 | `RecordAnswers` | answers page (`PUT /api/runs/:id/answers`) | RF-240, RF-241, RF-1007 |
 | `BuildReport` | Build report on a run | RF-500..RF-505 |
-| `BuildPlan` | Build hand-off on a run, with the target stack | RF-600..RF-603 |
+| `BuildPlan` | Build the hand-off package from a run, the planning brief and the catalogue (ADR-018) | RF-604..RF-613 |
 | `ExportZip` | Download zip / Download hand-off | RF-008 |
 | `TestProviders` | Test button in settings | RF-407 |
 | `DeleteRun`, `DeleteProject`, `DeleteSnapshot` | Delete buttons (snapshots: administrator) | RF-1012 |
@@ -436,7 +438,7 @@ Test names start with the requirement id; failing tests are committed first (ADR
 | Question | Link | Default |
 |---|---|---|
 | Which local model runs the reader role? | Q-04 | chosen by the P1 spike card |
-| Target stack input for `plan` | Q-06 | the user types the target on the hand-off form; otherwise two options proposed |
+| Target stack input for `plan` | Q-06 (answered: DEC-77, DEC-78) | the planning brief on the Plan setup page (ADR-018) |
 | HTTP server framework | Q-17 | Fastify (ADR-017) |
 | Hosting provider | Q-18 | chosen when the hosted deploy card starts |
 | Report rendering approach | ADR index, deferred decisions | decided in the first P3 report card |

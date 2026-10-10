@@ -29,8 +29,9 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-015](ADR-015-accounts-sessions-and-user-secrets.md) | Accounts with passwords, server-side sessions and encrypted per-user provider keys | Accepted | 2026-10-11 |
 | [ADR-016](ADR-016-postgresql-and-files.md) | PostgreSQL for accounts and indexes, files on a persistent disk for snapshots and runs | Accepted | 2026-10-11 |
 | [ADR-017](ADR-017-fastify-http-server.md) | Use Fastify as the HTTP server | Accepted | 2026-10-11 |
+| [ADR-018](ADR-018-planning-brief-and-principle-catalogue.md) | Drive `plan` from a planning brief and a versioned principle catalogue | Accepted | 2026-10-11 |
 
-**Totals**: 17 in total - Accepted 15, Proposed 0, Amended 2, Superseded 0.
+**Totals**: 18 in total - Accepted 16, Proposed 0, Amended 2, Superseded 0.
 
 
 ## Relationships
@@ -39,13 +40,12 @@ ADR-005, ADR-006 and ADR-007 all constrain the agent loop of ADR-003: every call
 (ADR-006) and the budget guard (ADR-007), and every result is a card checked by the verifier (ADR-005). ADR-008 tests
 ADR-003 at its port. ADR-009 refines the layering of ADR-002 and ADR-003 (does not supersede them). ADR-010 refines ADR-008: test-first applies to every card. ADR-011 refines ADR-002, ADR-008, ADR-009 and ADR-010 with the tools that enforce them. ADR-012 amends ADR-002 (a
 loopback web server is added) and refines ADR-005 (GitHub permalinks) and ADR-006 (read-only snapshot). ADR-013
-refines ADR-005, ADR-006 and ADR-012 with the trust boundaries of the threat model. ADR-014 amends ADR-002 and ADR-012 (one container image, no CLI, not loopback-only); ADR-015 and ADR-017 amend ADR-012 (accounts and Fastify replace the URL token and the bare server); ADR-016 applies DEC-37 (PostgreSQL behind adapters). The product owner's decisions behind these ADRs are listed in ../decision-log.md.
+refines ADR-005, ADR-006 and ADR-012 with the trust boundaries of the threat model. ADR-014 amends ADR-002 and ADR-012 (one container image, no CLI, not loopback-only); ADR-015 and ADR-017 amend ADR-012 (accounts and Fastify replace the URL token and the bare server); ADR-016 applies DEC-37 (PostgreSQL behind adapters). ADR-018 extends ADR-005 (the hand-off package) and runs under ADR-007. The product owner's decisions behind these ADRs are listed in ../decision-log.md.
 
 ## Deferred decisions (write the ADR when the trigger fires)
 
 | Candidate | Trigger |
 |---|---|
-| Target-stack proposal in `plan` | Q-06 answered, before the first P3 card |
 | Claude Code plugin packaging | the owner brings the plugin back into scope after 2026-10-26 (DEC-60) |
 | OpenTelemetry (OTLP) exporter for traces | a user asks to send traces to their own collector (R2); field names already follow the GenAI conventions (DEC-57) |
 | Development container for contributors | a second regular contributor joins (DEC-58; the runtime image of ADR-014 is not a development environment) |

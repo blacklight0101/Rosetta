@@ -56,6 +56,7 @@ Folder names come from ids, never from request text.
       codemap.json                    code map of the last scan (3.4)
       scan-summary.md                 readable scan summary (3.5)
       answers.md                      answers to open questions (3.16)
+      planning-brief.json             planning brief for plan (3.20)
       runs/
         <runId>/                      one folder per run (3.6..3.15)
           manifest.json
@@ -406,6 +407,16 @@ in a user's project: `experiment.json` `{ schemaVersion, id, at, rosettaVersion,
 modelDigest), promptVersions (with sha256), goldenSetVersion, repetitions }` and `results.json` with per-case scores
 per repetition, precision, recall, the spread across repetitions, cost per supported claim, and, with the calibration
 set, the verifier's agreement rate.
+
+### 3.20 `planning-brief.json` (added 2026-10-11)
+
+The answers saved by Plan setup (RF-605, ADR-018): `{ schemaVersion, savedAt, catalogueVersion,
+principles: [entryId], architecture: { style, recommended: [style], evidence: [cardId] },
+migration: "strangler-fig" | "parallel-change" | "rewrite", stack: [{ layer, choice, custom }],
+context: { teamSize, experience, deadline, keepIntegrations: [text], dataMigration }, buildMethod: { aiAssisted },
+defaulted: [questionId] }`. `defaulted` lists the questions that took their default, so the package can list them
+as open questions (RF-604). Free-text answers are untrusted input: they reach the planner only inside labelled data
+blocks (ADR-013). `plan` copies the brief and the catalogue version into the run manifest (RNF-004).
 
 ## 4. Tables (PostgreSQL)
 

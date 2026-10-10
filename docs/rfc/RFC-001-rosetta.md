@@ -266,6 +266,16 @@ affected areas with the answers as context. `report` renders the cards, verdicts
 HTML site. `plan` reads the verified cards and answers and writes the hand-off package. Covers RF-240..RF-249,
 RF-500..RF-699.
 
+#### 4.5.4 Planning brief and principle catalogue (added 2026-10-11)
+
+Before `plan` runs, the Plan setup page interviews the user with defaults: which principles to apply (from a
+catalogue that follows the curriculum of the owner's master), which architecture style (Rosetta recommends two from
+the evidence), which migration strategy, which stack per layer, the project context and the build method. The
+answers are saved as the planning brief; `plan` turns each choice into ADRs, conventions rules and task-card checks
+in the package. Release 1 does not score the legacy code against these principles: the report describes what the
+code does (DEC-83). Covers RF-604..RF-613 ([ADR-018](../adr/ADR-018-planning-brief-and-principle-catalogue.md);
+DEC-72..DEC-85).
+
 ### 4.6 Identity, authorization and audit
 
 Rewritten 2026-10-11 (DEC-62, DEC-64, DEC-66, DEC-69). Users sign in with a user name and a password; there is no
