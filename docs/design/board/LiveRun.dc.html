@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rosetta - live run</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
+.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
+.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:16px;box-shadow:var(--rst-shadow-1)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 14px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+.bar{height:8px;background:var(--rst-surface-2);border-radius:var(--rst-radius-pill);overflow:hidden}
+.step{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-sm);font-weight:var(--rst-fw-label)}
+.chip{display:inline-flex;height:22px;align-items:center;padding:0 8px;border-radius:var(--rst-radius-sm);background:var(--rst-surface-2);font-family:var(--rst-mono);font-size:11px;color:var(--rst-ink-soft)}
+h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
+h2{margin:0;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="min-height: 1560px; display: flex; flex-direction: column;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
+    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
+    <div class="rst-mono" style="color: var(--rst-ink-soft);">dotnet-architecture/eShopModernizing @ [SHA]</div>
+    <div style="flex: 1 1 auto;"></div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
+      <span class="lbl">This run</span>
+      <span><strong>$0.412</strong> <span class="lbl">of $2.00</span></span>
+      <div class="bar" role="meter" aria-label="Run cost against cap" aria-valuenow="21" aria-valuemin="0" aria-valuemax="100" style="width: 120px;"><div style="width: 21%; height: 100%; background: var(--rst-brand);"></div></div>
+      <span style="width: 1px; height: 24px; background: var(--rst-rule-strong);"></span>
+      <span class="lbl">Project total</span>
+      <span><strong>1,302,118</strong> tokens</span>
+      <span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$3.88</span>
+    </div>
+  </header>
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
+    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
+      <a href="StartRun.dc.html">Start a run</a>
+      <a href="LiveRun.dc.html" aria-current="page">Live run</a>
+      <a href="#">Verification</a>
+      <a href="#">Coverage</a>
+      <a href="ApiCalls.dc.html">API calls and logs</a>
+      <a href="#">Open questions</a>
+      <a href="History.dc.html">History and snapshots</a>
+    </nav>
+    <main style="flex: 999 1 560px; min-width: 0; padding: 24px 28px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;">
+        <h1>Live run</h1>
+        <span class="rst-mono lbl" style="font-size: var(--rst-fs-sm);">20261011-091204-understand</span>
+        <span class="badge" style="background: var(--rst-info-solid); color: var(--rst-info-solid-ink);"><svg class="rst-live-dot" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="currentColor"></circle></svg>Running 06:42</span>
+        <div style="flex: 1 1 auto;"></div>
+        <button class="btn" type="button" style="background: var(--rst-surface); color: var(--rst-ink); border-color: var(--rst-rule-strong);">Pause updates</button>
+        <button class="btn" type="button" style="background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);">Stop run</button>
+      </div>
+
+      <ol aria-label="Pipeline" style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+        <li class="step" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Snapshot</li>
+        <li aria-hidden="true" style="color: var(--rst-ink-muted);">-</li>
+        <li class="step" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Scan - 36 files, 4 areas</li>
+        <li aria-hidden="true" style="color: var(--rst-ink-muted);">-</li>
+        <li class="step" aria-current="step" style="background: var(--rst-info-solid); color: var(--rst-info-solid-ink);"><svg class="rst-live-dot" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="currentColor"></circle></svg>Understand - 2 of 4 agents done</li>
+        <li aria-hidden="true" style="color: var(--rst-ink-muted);">-</li>
+        <li class="step" style="background: var(--rst-info-bg); color: var(--rst-info-ink);">Verify - 9 of 23 claims checked</li>
+        <li aria-hidden="true" style="color: var(--rst-ink-muted);">-</li>
+        <li class="step" style="background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);">Report</li>
+      </ol>
+
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+        <div class="card"><div class="lbl">Agents</div><div style="font-size: 24px; font-weight: var(--rst-fw-head);">5</div><div class="lbl">2 running - 2 done - 1 planned - 0 failed</div></div>
+        <div class="card"><div class="lbl">Cards proposed</div><div style="font-size: 24px; font-weight: var(--rst-fw-head);">14</div><div class="lbl">FEAT 4 - BR 5 - ENT 3 - INT 1 - OQ 1</div></div>
+        <div class="card"><div class="lbl">Claims</div><div style="font-size: 24px; font-weight: var(--rst-fw-head);">23</div><div class="lbl">7 supported - 1 rejected - 1 citation invalid - 14 proposed</div></div>
+        <div class="card"><div class="lbl">Area tokens read</div><div style="font-size: 24px; font-weight: var(--rst-fw-head);">58%</div><div class="bar" style="margin-top: 6px;"><div style="width: 58%; height: 100%; background: var(--rst-brand);"></div></div></div>
+      </div>
+
+      <h2>Agents</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;">
+        <sc-for list="{{agents}}" as="a" hint-placeholder-count="5">
+          <article class="card" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: {{a.roleColor}};"></span>
+              <strong class="rst-mono" style="font-size: var(--rst-fs-md);">{{a.area}}</strong>
+              <span class="lbl">{{a.role}}</span>
+              <div style="flex: 1 1 auto;"></div>
+              <span class="badge" style="{{a.badgeStyle}}">{{a.state}}</span>
+            </div>
+            <div class="lbl rst-mono">{{a.model}}</div>
+            <div style="padding: 8px 10px; border-radius: var(--rst-radius-md); background: var(--rst-surface-2); font-family: var(--rst-mono); font-size: 12px; color: var(--rst-ink-soft); min-height: 18px;">{{a.now}}</div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+              <div><div class="lbl">Turn</div><strong>{{a.turn}}</strong></div>
+              <div><div class="lbl">Files read</div><strong>{{a.files}}</strong></div>
+              <div><div class="lbl">Tokens</div><strong>{{a.tokens}}</strong></div>
+              <div><div class="lbl">Cost</div><strong>{{a.cost}}</strong></div>
+            </div>
+            <div>
+              <div class="lbl" style="display: flex; justify-content: space-between;"><span>Area read</span><span>{{a.readPct}}</span></div>
+              <div class="bar" style="margin-top: 4px;"><div style="width: {{a.readPct}}; height: 100%; background: {{a.roleColor}};"></div></div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <sc-for list="{{a.cards}}" as="c" hint-placeholder-count="3"><span class="chip">{{c}}</span></sc-for>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px;">
+        <section class="card">
+          <h2 style="margin-bottom: 12px;">Timeline</h2>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{lanes}}" as="l" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; align-items: center;">
+                <span class="rst-mono" style="font-size: 12px;">{{l.name}}</span>
+                <div style="position: relative; height: 18px; background: var(--rst-surface-2); border-radius: var(--rst-radius-sm);">
+                  <div style="position: absolute; top: 3px; bottom: 3px; left: {{l.start}}; width: {{l.width}}; background: {{l.color}}; border-radius: 3px; opacity: 0.85;"></div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px;"><span></span><div class="lbl" style="display: flex; justify-content: space-between;"><span>00:00</span><span>02:00</span><span>04:00</span><span>06:42 now</span></div></div>
+          </div>
+        </section>
+        <section class="card" aria-live="polite">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><h2>Event stream</h2><span class="lbl">verbose - newest first</span></div>
+          <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; font-family: var(--rst-mono); font-size: 12px;">
+            <sc-for list="{{events}}" as="e" hint-placeholder-count="10">
+              <li style="display: grid; grid-template-columns: 64px 150px minmax(0, 1fr); gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--rst-rule);">
+                <span style="color: var(--rst-ink-muted);">{{e.t}}</span>
+                <span style="color: {{e.color}};">{{e.type}}</span>
+                <span style="color: var(--rst-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{e.text}}</span>
+              </li>
+            </sc-for>
+          </ol>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+renderVals() {
+const run = 'background: var(--rst-info-solid); color: var(--rst-info-solid-ink);';
+const done = 'background: var(--rst-ok-bg); color: var(--rst-ok-ink);';
+const plan = 'background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);';
+const r = 'var(--rst-role-reader)', v = 'var(--rst-role-verifier)';
+return {
+theme: this.props.theme ?? 'light',
+agents: [
+{ area: 'Catalog', role: 'reader', roleColor: r, state: 'Running', badgeStyle: run, model: 'ollama / qwen3.5:9b', now: 'read_file Catalog/Edit.aspx.cs:40-80', turn: '7 / 20', files: '9 of 14', tokens: '48.2k', cost: '$0.00', readPct: '64%', cards: ['FEAT-001', 'FEAT-002', 'BR-003', 'BR-004'] },
+{ area: 'Services', role: 'reader', roleColor: r, state: 'Running', badgeStyle: run, model: 'ollama / qwen3.5:9b', now: 'grep "PriceInDollars" Services/**', turn: '4 / 20', files: '3 of 5', tokens: '21.7k', cost: '$0.00', readPct: '41%', cards: ['BR-005'] },
+{ area: 'Models', role: 'reader', roleColor: r, state: 'Done', badgeStyle: done, model: 'ollama / qwen3.5:9b', now: 'finished: 5 cards, 11 claims', turn: '11', files: '6 of 6', tokens: '39.0k', cost: '$0.00', readPct: '100%', cards: ['ENT-001', 'ENT-002', 'ENT-003', 'BR-001', 'OQ-001'] },
+{ area: 'App_Start', role: 'reader', roleColor: r, state: 'Done', badgeStyle: done, model: 'ollama / qwen3.5:9b', now: 'finished: 4 cards, 6 claims', turn: '8', files: '7 of 11', tokens: '27.5k', cost: '$0.00', readPct: '72%', cards: ['FEAT-003', 'FEAT-004', 'INT-001', 'BR-002'] },
+{ area: 'verifier', role: 'verifier', roleColor: v, state: 'Running', badgeStyle: run, model: 'openai / [MODEL]', now: 'judge BR-003.c2 against Catalog/Edit.aspx.cs:52-61', turn: '9 / 23 claims', files: '12', tokens: '31.4k', cost: '$0.41', readPct: '39%', cards: ['7 supported', '1 rejected', '1 invalid'] }
+],
+lanes: [
+{ name: 'reader Models', start: '0%', width: '46%', color: r },
+{ name: 'reader App_Start', start: '2%', width: '38%', color: r },
+{ name: 'reader Catalog', start: '4%', width: '96%', color: r },
+{ name: 'reader Services', start: '47%', width: '53%', color: r },
+{ name: 'verifier', start: '41%', width: '59%', color: v }
+],
+events: [
+{ t: '06:42.1', type: 'agent.tool.called', text: 'Catalog read_file Catalog/Edit.aspx.cs:40-80', color: 'var(--rst-info-ink)' },
+{ t: '06:41.8', type: 'usage.recorded', text: 'verifier openai 2,114 in / 186 out $0.0061', color: 'var(--rst-ink-muted)' },
+{ t: '06:41.7', type: 'verify.claim.judged', text: 'BR-004.c1 Rejected - cited lines do not set the price', color: 'var(--rst-danger-ink)' },
+{ t: '06:40.2', type: 'agent.card.proposed', text: 'Catalog BR-004 "Price must be positive"', color: 'var(--rst-brand)' },
+{ t: '06:39.9', type: 'agent.tool.result', text: 'Catalog read_file ok 41 lines', color: 'var(--rst-ink-muted)' },
+{ t: '06:38.0', type: 'verify.citation.checked', text: 'ENT-002.c3 ok Models/CatalogItem.cs:12-30', color: 'var(--rst-ok-ink)' },
+{ t: '06:31.4', type: 'agent.ended', text: 'Models Done - 11 turns, 5 cards', color: 'var(--rst-ok-ink)' },
+{ t: '06:30.9', type: 'budget.warning', text: 'none - run at 21% of cap', color: 'var(--rst-ink-muted)' },
+{ t: '06:12.3', type: 'agent.started', text: 'Services reader ollama/qwen3.5:9b', color: 'var(--rst-info-ink)' },
+{ t: '05:58.0', type: 'verify.citation.checked', text: 'BR-001.c2 CitationInvalid line 140 > file length 96', color: 'var(--rst-danger-ink)' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

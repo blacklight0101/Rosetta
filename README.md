@@ -1,13 +1,14 @@
 # Rosetta
 
-Rosetta is an open-source command-line tool for developers and tech leads who inherit a legacy codebase and need to
-understand it before they can replace it. It maps the code without AI, then sends a team of AI agents through it to
+Rosetta is an open-source tool for developers and tech leads who inherit a legacy codebase and need to understand it
+before they can replace it. Give it a public GitHub repository URL; it pins the commit, maps the code without AI, then sends a team of AI agents through it to
 write a functional specification: features, business rules, data entities, integrations and open questions, where
 every claim cites the file and lines it comes from and a verifier agent rejects what the code does not support.
 From that specification it produces a tool-agnostic modernisation hand-off package (target architecture, decision
 records, roadmap and task cards) that any team can build from in its own way. It works with any legacy stack, runs
 against any AI provider (local models through Ollama, OpenAI, Anthropic and OpenAI-compatible services), and keeps
-the cost of every run visible and capped.
+the cost of every run visible and capped. A local web page shows every agent it spawns, live, and the published
+report replays their work.
 
 **Status: documentation phase (P0).** No code exists yet. This repository holds the design documents that
 development will follow. See [docs/README.md](docs/README.md) for the full map.

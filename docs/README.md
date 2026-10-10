@@ -10,12 +10,12 @@ here; they never hold a second copy of these documents.
 | [decision-log.md](decision-log.md) | The product owner's decisions (DEC-nn), what each answers and where it is applied | Living | 2026-10-09 |
 | [journal/](journal/) | Curated per-session summary of what was decided and why, with DEC and Q ids; no conversations | Living | 2026-10-09 |
 | [adr/README.md](adr/README.md) | Architecture decision records index, counts by status, deferred decisions | Living | 2026-10-09 |
-| [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model, services, ports, data ownership, background work, security, deployment, testing approach | Living | 2026-10-09 |
-| [data-model.md](data-model.md) | No database: the file formats Rosetta reads and writes (configuration, code map, run folder, cards, cost report, hand-off package) and their schema versions | Proposed | 2026-10-09 |
-| [conventions.md](conventions.md) | Naming (code, data, routes, permission codes, resources, tests, branches), error handling per layer, what the user sees when something is down | Proposed | 2026-10-09 |
-| [environments-and-delivery.md](environments-and-delivery.md) | Environments, configuration and secrets placement, source control, CI, package baseline, versioning and releases, deployment, observability | Proposed | 2026-10-09 |
-| [design-system.md](design-system.md) | Terminal output style and the HTML report: tokens, components, patterns, accessibility, verification | Proposed | 2026-10-09 |
-| [design-system-brief.md](design-system-brief.md) | The brief sent to an external design pass; Superseded by design-system.md v2 after the round trip | Proposed | 2026-10-09 |
+| [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model and state lists, use cases, ports, agent loop, security, testing approach | Living | 2026-10-10 |
+| [data-model.md](data-model.md) | No database: the file formats Rosetta reads and writes (configuration, snapshot cache, code map, run folder, cards, events, call and application logs, cost ledger) and their schema versions | Proposed | 2026-10-10 |
+| [conventions.md](conventions.md) | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits | Proposed | 2026-10-10 |
+| [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases | Proposed | 2026-10-10 |
+| [design-system.md](design-system.md) | Live web UI, published report and terminal output: tokens (`design/tokens.css`), components, status badges, patterns, accessibility, verification | Accepted (v1) | 2026-10-11 |
+| [design-system-brief.md](design-system-brief.md) | The brief for the design board | Superseded | 2026-10-11 |
 | [roadmap.md](roadmap.md) | Phases P0..Pn with exit criteria, later releases with entry conditions, backlog by requirement id, deliberately not built | Living | 2026-10-09 |
 | [process-flows.md](process-flows.md) | Stakeholder flowcharts (Mermaid) with requirement ids in captions; source of any exported page or PDF | Reference | 2026-10-09 |
 | [orchestration/README.md](orchestration/README.md) | Build protocol: roles, builder tiers, card life cycle, builder rules, verifier checklist and verdict format, human gates G-nn, parallelism, stop conditions | Living | 2026-10-09 |
@@ -23,8 +23,9 @@ here; they never hold a second copy of these documents.
 
 `legacy-sources.md` is not written: Rosetta replaces no system (DEC-03).
 
-Agent definitions used by the orchestration protocol live in `.claude/agents/` (`orchestrator`, `builder-sonnet`,
-`builder-opus`, `builder-fable`, `verifier`).
+Agent definitions used by the orchestration protocol live in `.claude/agents/` (`orchestrator`, `builder-haiku`,
+`builder-sonnet`, `builder-opus`, `builder-fable`, `verifier`, `verifier-fable`); the difficulty of a card selects
+the builder (DEC-32).
 
 ## Identifier schemes
 
@@ -32,7 +33,7 @@ Ids are never renumbered or reused. A withdrawn item keeps its id and reads `Wit
 
 | Id | Meaning | Owned by (canonical list) |
 |---|---|---|
-| `RF-nnn` | Functional requirement; three digits, one range of a hundred per module (for example RF-001..RF-099 CLI, RF-100..RF-199 scan) | [spec/requirements.md](spec/requirements.md) section 5, ranges in section 1 |
+| `RF-nnn` | Functional requirement; one range of a hundred per module (for example RF-001..RF-099 CLI, RF-100..RF-199 scan); three digits up to RF-999, four from RF-1000 | [spec/requirements.md](spec/requirements.md) section 5, ranges in section 1 |
 | `RNF-nnn` | Non-functional requirement | [spec/requirements.md](spec/requirements.md) section 6 |
 | `Q-nn` | Open question with owner, needed-by phase, default and status (`Open`, `Default applies`, `Answered (DEC-nn)`, `Withdrawn`) | [spec/requirements.md](spec/requirements.md) section 4 |
 | `DEC-nn` | Product owner decision, with what it answers and where it is applied | [decision-log.md](decision-log.md) |

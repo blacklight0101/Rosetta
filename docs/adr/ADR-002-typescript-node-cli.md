@@ -1,7 +1,7 @@
 # ADR-002: Build Rosetta as a TypeScript command-line tool on Node.js
 
 **Date**: 2026-10-09
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -54,3 +54,9 @@ distributed from source in R1, with no server process and no database; every res
 - DEC-08, DEC-14, DEC-22; Q-08, Q-09.
 - RF-001, RF-007, RF-500, RF-501, RF-800, RF-801; RNF-001, RNF-011.
 - ADR-003, ADR-004.
+
+## Notes
+
+- 2026-10-10: amended by DEC-46, DEC-47 and ADR-012 - Rosetta now also starts a local web server on the loopback
+  interface for the live web UI; still no hosted service and no database. Input is a public GitHub snapshot, not a
+  local folder (DEC-48).

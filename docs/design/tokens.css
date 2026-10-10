@@ -1,0 +1,101 @@
+/* Rosetta design tokens v1 (2026-10-10). Canonical copy: docs/design/tokens.css in the repository. */
+:root, [data-theme="light"] {
+  --rst-bg: #F4F6F6;
+  --rst-surface: #FFFFFF;
+  --rst-surface-2: #EAEFEE;
+  --rst-surface-raised: #FFFFFF;
+  --rst-ink: #13201F;
+  --rst-ink-soft: #364644;
+  --rst-ink-muted: #56645F;
+  --rst-rule: #D8DFDE;
+  --rst-rule-strong: #7A8987;
+  --rst-brand: #0E6B6B;
+  --rst-brand-hover: #0A5555;
+  --rst-brand-ink: #FFFFFF;
+  --rst-brand-tint: #DDEFEE;
+
+  --rst-ok-ink: #1C6E37; --rst-ok-bg: #E2F2E7; --rst-ok-solid: #1C6E37; --rst-ok-solid-ink: #FFFFFF;
+  --rst-warn-ink: #7A4A00; --rst-warn-bg: #FBEBD2; --rst-warn-solid: #E39A1F; --rst-warn-solid-ink: #1F1500;
+  --rst-danger-ink: #A8211A; --rst-danger-bg: #FBE4E2; --rst-danger-solid: #B42318; --rst-danger-solid-ink: #FFFFFF;
+  --rst-info-ink: #1B5799; --rst-info-bg: #E2ECF8; --rst-info-solid: #1B5799; --rst-info-solid-ink: #FFFFFF;
+  --rst-neutral-ink: #45524F; --rst-neutral-bg: #E8ECEB; --rst-neutral-solid: #56645F; --rst-neutral-solid-ink: #FFFFFF;
+
+  --rst-role-reader: #0E6B6B;
+  --rst-role-verifier: #6A48B8;
+  --rst-role-planner: #B5520B;
+  --rst-role-summariser: #1B5799;
+
+  --rst-focus: #1B5799;
+  --rst-scrim: rgba(10, 20, 19, 0.55);
+  --rst-shadow-1: 0 1px 2px rgba(16, 32, 31, 0.08), 0 1px 1px rgba(16, 32, 31, 0.04);
+  --rst-shadow-2: 0 12px 32px rgba(16, 32, 31, 0.18);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --rst-bg: #0D1413;
+  --rst-surface: #141D1C;
+  --rst-surface-2: #1B2625;
+  --rst-surface-raised: #212E2D;
+  --rst-ink: #E5EDEC;
+  --rst-ink-soft: #BAC8C6;
+  --rst-ink-muted: #93A5A2;
+  --rst-rule: #2A3836;
+  --rst-rule-strong: #66807C;
+  --rst-brand: #45B8B0;
+  --rst-brand-hover: #64CBC4;
+  --rst-brand-ink: #04201E;
+  --rst-brand-tint: #123533;
+
+  --rst-ok-ink: #63CC88; --rst-ok-bg: #12301D; --rst-ok-solid: #3DAA62; --rst-ok-solid-ink: #04140A;
+  --rst-warn-ink: #F2BA5C; --rst-warn-bg: #36270B; --rst-warn-solid: #E39A1F; --rst-warn-solid-ink: #1F1500;
+  --rst-danger-ink: #FF8E84; --rst-danger-bg: #3C1513; --rst-danger-solid: #EA5E55; --rst-danger-solid-ink: #1C0403;
+  --rst-info-ink: #84B9F2; --rst-info-bg: #10253D; --rst-info-solid: #5B9DE4; --rst-info-solid-ink: #04121F;
+  --rst-neutral-ink: #BAC8C6; --rst-neutral-bg: #222E2D; --rst-neutral-solid: #93A5A2; --rst-neutral-solid-ink: #0D1413;
+
+  --rst-role-reader: #45B8B0;
+  --rst-role-verifier: #A98BF0;
+  --rst-role-planner: #F09A55;
+  --rst-role-summariser: #84B9F2;
+
+  --rst-focus: #84B9F2;
+  --rst-scrim: rgba(0, 0, 0, 0.6);
+  --rst-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --rst-shadow-2: 0 12px 32px rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
+}
+
+:root {
+  --rst-sans: system-ui, -apple-system, "Segoe UI", "Noto Sans", "Helvetica Neue", sans-serif;
+  --rst-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --rst-fs-xs: 12px; --rst-fs-sm: 13px; --rst-fs-md: 14px; --rst-fs-lg: 16px;
+  --rst-fs-xl: 20px; --rst-fs-2xl: 24px; --rst-fs-3xl: 32px;
+  --rst-fw-body: 400; --rst-fw-label: 500; --rst-fw-head: 650;
+  --rst-lh-body: 1.45; --rst-lh-head: 1.2;
+  --rst-sp-1: 4px; --rst-sp-2: 8px; --rst-sp-3: 12px; --rst-sp-4: 16px;
+  --rst-sp-5: 24px; --rst-sp-6: 32px; --rst-sp-7: 48px; --rst-sp-8: 64px;
+  --rst-radius-sm: 4px; --rst-radius-md: 6px; --rst-radius-lg: 10px; --rst-radius-pill: 999px;
+  --rst-control-h: 32px; --rst-row-h: 36px; --rst-touch: 44px;
+  --rst-dur-fast: 120ms; --rst-dur-base: 200ms; --rst-ease: cubic-bezier(0.2, 0, 0, 1);
+  --rst-z-menu: 40; --rst-z-banner: 45; --rst-z-dialog: 50; --rst-z-toast: 60;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --rst-dur-fast: 0ms; --rst-dur-base: 0ms; }
+}
+
+.rst-root {
+  background: var(--rst-bg);
+  color: var(--rst-ink);
+  font-family: var(--rst-sans);
+  font-size: var(--rst-fs-md);
+  line-height: var(--rst-lh-body);
+  font-variant-numeric: tabular-nums;
+}
+.rst-root a { color: var(--rst-brand); }
+.rst-root a:hover { color: var(--rst-brand-hover); }
+.rst-root :focus-visible { outline: 2px solid var(--rst-focus); outline-offset: 2px; }
+.rst-mono { font-family: var(--rst-mono); font-size: 0.92em; }
+@keyframes rst-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.rst-live-dot { animation: rst-pulse 1.4s var(--rst-ease) infinite; }
+@media (prefers-reduced-motion: reduce) { .rst-live-dot { animation: none; } }

@@ -1,163 +1,156 @@
-# Conventions: naming, errors and user-facing behaviour
+# Conventions
 
 | | |
 |---|---|
-| **Status** | Proposed (2026-10-09) <!-- FILL: Accepted once the owner has reviewed it; add "revised YYYY-MM-DD for DEC-nn" on every later change --> |
-| **Scope** | names for code, database objects, files, routes, permissions, configuration keys, resources, tests, branches and commits; error codes and handling; log fields; versioning; what the user sees when something is down |
-| **Related** | [CLAUDE.md](../CLAUDE.md) hard rules, [data model](data-model.md) section 1 (database), [design system](design-system.md) (UI patterns), [architecture](architecture.md) sections 4 and 11, [orchestration](orchestration/README.md) (branch and commit names) |
+| **Status** | Proposed (2026-10-09) |
+| **Date** | 2026-10-09 |
+| **Owner** | BlackLigth (blacklight0101) |
+| **Related** | [Architecture](architecture.md) - [Environments and delivery](environments-and-delivery.md) - [ADR-009](adr/ADR-009-clean-architecture.md) - [ADR-010](adr/ADR-010-spec-driven-and-test-driven-development.md) - [ADR-011](adr/ADR-011-toolchain-and-quality-gates.md) |
 
-Every name a builder invents is fixed here first. A convention that is missing is added to this document in the
-same branch that needs it. Where this document and a stack preset disagree, this document wins and the
-difference is recorded in an ADR.
+The rules every builder applies the same way. Rules marked **(tool)** are enforced by a gate of `npm run verify`
+([environments and delivery](environments-and-delivery.md) section 6); the rest are checked by the verifier. This
+document is the canonical home of the error-code catalogue (section 6) and the test naming rules (section 7).
 
-<!-- FILL: Fill every table for the chosen stack. The examples are generic placeholders; replace them with names
-from this project. Delete rows that do not apply. Keep the tables short: a rule plus one example is enough. -->
+## 1. Language and compiler
 
-## 1. Code
+- TypeScript 6.0, ES modules only (`"type": "module"`), `module` and `moduleResolution` `nodenext`, target and lib
+  `es2024`. **(tool)**
+- `tsconfig.json` turns on `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noFallthroughCasesInSwitch`, `noImplicitReturns`,
+  `useUnknownInCatchVariables`, `verbatimModuleSyntax`, `isolatedModules`, `erasableSyntaxOnly`,
+  `forceConsistentCasingInFileNames`. **(tool)**
+- `erasableSyntaxOnly` forbids `enum`, `namespace` and parameter properties: use string-literal unions with an
+  `as const` object, modules and explicit fields. **(tool)**
+- Node built-ins are imported with the `node:` prefix (`node:fs/promises`, `node:path`). **(tool)**
+- Type-only imports use `import type`. **(tool)**
 
-| Item | Rule | Example |
+## 2. Folders, files and names
+
+| Thing | Rule | Example |
 |---|---|---|
-| Root namespace or package | <!-- FILL --> | `RST.Application` <!-- FILL: example, replace --> |
-| Folders | exactly those of [architecture](architecture.md) section 4 | |
-| Types | <!-- FILL: casing, one type per file, sealed or final by default, suffixes by role (Service, Repository, Client, Adapter, Job, Dto, Result) --> | `RequestService` |
-| Fakes | `Fake<Port>` next to the adapters or in the test project when only tests need them | `FakeExternalSystemAClient` |
-| Async | <!-- FILL: suffix and cancellation parameter rule --> | |
-| Enums | singular, members equal to the database check-constraint values | `RequestState.Submitted` |
-| Constants and literals | no business literals (site codes, device ids, time-zone ids, shift times) in code; they are data | |
+| Layers | `src/domain`, `src/application`, `src/infrastructure`, `src/presentation` ([architecture](architecture.md)) | |
+| Files | kebab-case, one main export per file, named after it | `budget-guard.ts` exports `BudgetGuard` |
+| Types, classes | PascalCase; no `I` prefix on interfaces | `LlmProvider`, `CodeMap` |
+| Functions, variables | camelCase; verbs for functions | `parseCitation`, `estimateRun` |
+| Constants | camelCase for module constants; UPPER_SNAKE only for environment variable names | `defaultMaxTurns`, `OPENAI_API_KEY` |
+| Ports | a noun for the capability, in `src/application/ports/` | `FileReader`, `Clock` |
+| Adapters | technology plus port, in `src/infrastructure/<area>/` | `OpenAiProvider`, `NodeFileReader` |
+| Use cases | verb phrase, one per file in `src/application/use-cases/` | `RunUnderstand` |
+| Tests | next to nothing in `src`; under `tests/<level>/` mirroring `src` | `tests/unit/domain/citation.test.ts` |
+| Prompts | `prompts/<role>/<name>.v<n>.md`; a change creates a new version file | `prompts/reader/area.v1.md` |
 
-## 2. Database
+- **Named exports only**; no default exports. **(tool)**
+- No barrel files (`index.ts` re-exporting a folder) inside `src`; import the file you need. **(tool: knip,
+  dependency-cruiser)**
 
-Per [data model](data-model.md) section 1. Queries in code are parameterised and schema-qualified, never built by
-string concatenation of values or identifiers; select lists are explicit.
-<!-- FILL: where SQL lives in code (constants named by intent, files, an ORM), or "Not applicable". -->
+## 3. Types and data
 
-## 3. Files and documents
+- No `any`. At a boundary (file, network, model output, tool arguments, configuration) data is `unknown` and is
+  parsed with a zod schema before use; after parsing, types flow from `z.infer`. **(tool: `no-explicit-any`,
+  `no-unsafe-*`)**
+- No non-null assertions (`!`) and no `as` casts except `as const`; narrow with checks or schemas instead.
+  **(tool: `no-non-null-assertion`, `consistent-type-assertions`)**
+- Prefer `readonly` properties and `ReadonlyArray`; domain objects are immutable; changes return new values.
+- Exhaustive `switch` over unions. **(tool: `switch-exhaustiveness-check`)**
+- No `Date.now()`, `new Date()`, `Math.random()` or `crypto.randomUUID()` in `domain` or `application`; take a `Clock`
+  or `IdGenerator` port so tests are deterministic.
+- Paths: build with `node:path`, resolve against a root and check the result stays inside it (no path traversal);
+  citations and stored paths use forward slashes relative to the repository root.
 
-| Item | Rule | Example |
-|---|---|---|
-| Requirements | ids `RF-nnn` / `RNF-nnn`, never renumbered or reused; withdrawn items keep their id with "Withdrawn YYYY-MM-DD - see ..." | `RF-001` |
-| ADRs | `ADR-nnn-kebab-title.md` in the `adr` folder, title starts with a verb | `ADR-001-record-architecture-decisions.md` |
-| Migrations | `NNNN_PascalName.sql` in the block of its card or module ([data model](data-model.md) section 7) | `0010_Requests.sql` |
-| Scripts and tools | <!-- FILL --> | |
-| Other files | <!-- FILL: casing for source files, assets, resource files --> | |
+## 4. Functions and modules
 
-## 4. Routes and API
+- One responsibility per module; a use case does one thing.
+- Size limits: function body at most 50 lines, file at most 300 lines, cyclomatic complexity at most 10, nesting depth
+  at most 3, at most 4 parameters (pass an options object beyond that). **(tool: `max-lines-per-function`,
+  `max-lines`, `complexity`, `max-depth`, `max-params`)**
+- Dependencies arrive through constructor or factory parameters; no singletons, no module-level mutable state; the
+  composition root in `src/presentation` is the only place that creates adapters.
+- No `console` outside `src/presentation`; other layers report through a `Logger` port. **(tool: `no-console`)**
+- Standard output carries results (and `--json`); progress and logs go to standard error (RF-004).
 
-| Area | Route pattern | Example |
-|---|---|---|
-| <!-- FILL: example row, replace --> Pages | `/<area>` and `/<area>/{id}` | `/requests/42` |
-| <!-- FILL: example row, replace --> Admin | `/admin/<catalogue>` | `/admin/users` |
-| <!-- FILL: example row, replace --> API | `/api/v1/<resource>`, kebab-case plural | `/api/v1/work-items` |
+## 5. Asynchronous code
 
-Lower-case, kebab-case, no trailing slash. Public identifiers on the API are opaque (for example GUIDs), never the
-internal integer key. <!-- FILL: adapt for a game, CLI or mobile app, or mark "Not applicable". -->
+- No floating promises and no promises in places that expect a value. **(tool: `no-floating-promises`,
+  `no-misused-promises`)**
+- Every network call has a timeout and accepts an `AbortSignal`; Ctrl+C and budget caps cancel through the same
+  signal (RF-422, RNF-002).
+- Use `node:fs/promises`; no synchronous file system calls outside CLI start-up. **(tool: `n/no-sync`)**
+- Retries only in the provider adapters, with exponential back-off and jitter (RF-406); nowhere else.
 
-## 5. Tests
+## 6. Errors
 
-- Test files mirror the subject: `RequestTests`, `RequestServiceTests`, `RequestRepositoryTests`.
-- Test names: <!-- FILL: one style, e.g. `Given_<state>_When_<action>_Then_<outcome>` or
-  `<Action>_<Condition>_<Result>` -->.
-- Every test declares its level (Unit, Integration, E2E) so the pyramid can be counted.
-  <!-- FILL: how, in this stack: trait, tag, folder. -->
-- End-to-end journeys are named `Journey_<Area>_<Name>`.
+- Throw only `Error` subclasses with a stable `code`; never strings or plain objects. **(tool:
+  `only-throw-error`)**
+- Expected failures in `domain` and `application` (invalid citation, cap reached, unknown area) are returned as a
+  typed `Result`; exceptions are for programming errors and infrastructure failures.
+- Wrap with `cause` when rethrowing; never swallow an error in an empty `catch`. **(tool: `no-empty`)**
+- The CLI maps every error to an exit code (RF-007) and prints `RST-xxxx`, a plain message and the next step; stack
+  traces only with `--verbose`.
 
-## 6. Branches, commits and tags
+**Error-code catalogue** (canonical; a new code gets the next free number in its range):
 
-- Branch `task/<card-id>-<slug>` in lower case, one task card per branch (`task/p1-03-request-repository`).
-  Follow-up cards use their own card id. The orchestration protocol ([orchestration](orchestration/README.md))
-  is the source of these names and wins over any other convention. A documentation-only change that belongs to
-  no card uses `docs/<topic>`.
-- Commit subject `<card-id>: <title>` (`P1-03: Request repository with concurrency check`), followed by one or
-  more `Refs: RF-nnn, ADR-nnn` lines and the attribution line the session's instructions give. The merge into
-  `main` (fast-forward or squash) keeps the same message; history stays linear.
-- Release tags `v<major>.<minor>.<patch>` on `main` only (section 12).
-
-## 7. Error codes and user-facing messages
-
-Every business or technical error shown to a user carries a stable code `E-<AREA>-<nnn>` (`E-AUTH-001`,
-`E-EXTA-412`) from one code catalogue, with one resource key per code (`Errors.<AREA>.<nnn>`, section 11) holding
-the user text. The page shows the code, the text and the correlation id, so a user can report a problem in any
-language. The catalogue's completeness (every code has a text in every enabled language, no duplicate number per
-area) is unit-tested.
-
-<!-- FILL: list the areas (short uppercase codes) and who owns each range, e.g. AUTH, DB, EXTA for External system
-A, VAL for validation. -->
-
-| Area | Meaning | Owner |
-|---|---|---|
-| <!-- FILL: example row, replace --> `VAL` | input validation | core |
-
-Error handling per layer is in [architecture](architecture.md) section 11. Additional rules:
-
-| Where | Rule |
+| Range | Area |
 |---|---|
-| Pages | business error: message with the code and text; technical error: error state with the correlation id and a retry; unhandled: global error boundary with the correlation id, never a stack trace |
-| API | problem details (RFC 7807): `type`, `title`, `status`, `detail`, `instance` = request id, `errors` for validation; no stack traces |
-| Retries | a user never has to "press again" to finish an operation; a repeated action is made harmless by an idempotency key ([architecture](architecture.md) section 8.3) |
+| RST-1000..1099 | CLI usage and configuration |
+| RST-1100..1199 | file system, ignore rules, output folder |
+| RST-1200..1299 | scan and language packs |
+| RST-1300..1399 | agent loop, tools and card parsing |
+| RST-1400..1499 | verifier |
+| RST-1500..1599 | providers |
+| RST-1600..1699 | budget and cost |
+| RST-1700..1799 | report and export |
+| RST-1800..1899 | plan |
+| RST-1900..1999 | GitHub sources (URL, ref resolution, snapshot download, rate limits) |
+| RST-2000..2099 | local web UI and its server |
+| RST-2100..2199 | logging and observability |
 
-### 7.1 What the user sees when something is down
+## 7. Tests
 
-<!-- FILL: One row per dependency that can fail (external system, device, directory, database, connection to the
-server). Decide the behaviour before building, together with the owner: can work continue, what is queued, what
-text and status indicator the user sees, who is alerted. -->
+- Vitest projects `unit`, `integration`, `e2e` under `tests/<level>/`; the level is the project, so every test has
+  one. Split about 60 / 30 / 10 as a guideline that warns (DEC-30); a run with zero tests fails.
+- **Test names start with the requirement id** they prove, then the behaviour (ADR-010):
+  `it('RF-422 stops the run when the next call would exceed the cap', ...)`. Tests for internal helpers name the
+  requirement their caller serves.
+- Arrange, act, assert; one behaviour per test; no logic in tests beyond setup tables (`it.each`).
+- Unit tests touch no disk, network, clock or randomness; integration tests cross exactly one real boundary (the file
+  system in a temporary folder from `fs.mkdtemp`, or a recorded provider); end-to-end tests run the CLI process.
+- No real provider calls: the test setup sets `ROSETTA_TEST=1` and blocks outbound network; providers are the fake
+  provider with recordings in `tests/recordings/` (ADR-008).
+- Every port has a contract test suite that the real adapters and the fakes both pass.
+- No `.only`, no skipped tests on `main`, no snapshot for something an assertion can state. **(tool:
+  `@vitest/eslint-plugin`)**
+- Coverage thresholds (v8): `domain` and `application` at least 90% lines and 85% branches; whole project at least
+  80% lines (RNF-005). **(tool)**
 
-| Situation | Behaviour |
-|---|---|
-| <!-- FILL: example row, replace --> External system A unreachable | the action is saved and queued; the page shows "External system A not reachable, N items waiting since HH:mm"; nothing for the user to do; an alert after the queue age threshold |
-| <!-- FILL: example row, replace --> Outcome of a call unknown | item marked as waiting for confirmation; reconciliation resolves it; no "press again" |
+## 8. Formatting
 
-## 8. Logging fields
+Prettier with `printWidth: 100`, `singleQuote: true`, `trailingComma: "all"`, `semi: true`; Markdown is formatted
+too. ESLint never formats (`eslint-config-prettier` last). **(tool)**
 
-Every log entry is structured and carries the fields below. An error without an event id fails the tests.
+## 9. Branches, commits and pull requests
 
-| Field | Rule |
-|---|---|
-| `EventId` | from the event catalogue, `<Area>.<Event>` (`Requests.Submitted`) |
-| `Level` | Trace, Debug, Information, Warning, Error, Critical |
-| `ErrorCode` | for errors: the `E-<AREA>-<nnn>` code of section 7 |
-| `CorrelationId` | one per user action or job item, carried through services, adapters, external calls and audit rows |
-| `Operation`, `Module` | what was running and which module owns it |
-| `User`, `DurationMs`, `Outcome` | who, how long, Ok / BusinessError / TechnicalError |
-| `Exception` | full chain for errors |
-| `Data` | a redacted bag of inputs; never a credential, token, connection string or secret-bearing payload |
-| <!-- FILL: example row, replace or delete --> `BuildVersion`, `Site` | build and deployment context |
+- Branches: `task/<card-id>-<slug>` (lower case, for example `task/p1-04-budget-guard`), `docs/<topic>`,
+  `fix/<issue>-<slug>`.
+- Commits: Conventional Commits, `type(scope): subject` in the imperative, at most 72 characters, types `feat`,
+  `fix`, `test`, `refactor`, `docs`, `chore`, `ci`, `build`, `perf`; body explains why; footer `Refs:` with card,
+  `RF`, `ADR` and `DEC` ids. **(tool: commitlint)**
+- TDD order on every code card: `test:` commit(s) with failing tests, then `feat:`/`fix:`, then optional
+  `refactor:` (ADR-010).
+- Pull requests use the template, close their issue, and are merged by the owner with squash; the squash title is the
+  pull request title in Conventional Commit form.
 
-## 9. Configuration keys
+## 10. Lint configuration summary
 
-- Keys are `Section:Key` in PascalCase (`ExternalSystemA:Endpoint`); environment-variable form
-  `Section__Key`. <!-- FILL: adapt to the stack's configuration system. -->
-- A value that users or admins change at runtime is data in the database (a settings table), not configuration.
-- Secrets are never values in a committed file; the key holds a reference or the value comes from the secret
-  store of [environments and delivery](environments-and-delivery.md) section 4.
-- Every key is listed once, with its meaning, in [architecture](architecture.md) section 15.
+`eslint.config.ts` (flat): `@eslint/js` recommended; `typescript-eslint` `strictTypeChecked` and
+`stylisticTypeChecked` with `parserOptions.projectService: true`; `eslint-plugin-n` `flat/recommended-module`;
+`@vitest/eslint-plugin` recommended on `tests/**`; `eslint-config-prettier` last. Added rules, all errors:
+`consistent-type-imports`, `switch-exhaustiveness-check`, `no-import-type-side-effects`,
+`explicit-module-boundary-types`, `prefer-readonly`, `no-restricted-exports` (default), `no-console` (except
+`src/presentation`), `eqeqeq`, `complexity` 10, `max-depth` 3, `max-params` 4, `max-lines` 300,
+`max-lines-per-function` 50, `n/no-sync`, `n/prefer-node-protocol`. Lint runs with `--max-warnings 0`. A disabled rule
+needs an inline `eslint-disable-next-line <rule> -- <reason>`; blanket disables are forbidden. **(tool)**
 
-## 10. Permission codes
-
-`<area>.<action>` in lower case, or `<area>.<subject>.<action>` for a sub-area: `requests.view`,
-`requests.create`, `requests.approve`, `users.manage`. A page, endpoint or service action names exactly one
-permission; composite needs are separate codes. Roles are data that group codes; authorization never checks a
-role name. Codes flagged administrative are listed in the permission catalogue and are never granted to shared
-or generic accounts. <!-- FILL: the code catalogue location and the list of areas, or "Not applicable: no
-authorization beyond sign-in". -->
-
-## 11. UI text and localisation keys
-
-- Keys `<Area>.<Screen>.<Element>` in PascalCase: `Requests.List.Title`, `Common.Actions.Save`,
-  `Validation.Required`, `Errors.VAL.001`.
-- No user-visible text in code, SQL, e-mail or document templates; texts come from resource files per language,
-  data-carried texts (menu labels, catalogue names) from rows per language.
-- A message for an external outcome has a key per outcome, never the raw external text as key.
-- Business formats (identifiers, codes, dates sent to other systems) never follow the UI culture.
-- A test fails on a key missing in any enabled language.
-
-<!-- FILL: the languages at launch, the fallback chain (user, then site default, then English), where resource
-files live, or "Single language: English; keys still used so a language can be added". -->
-
-## 12. Versioning
-
-- Version `<major>.<minor>.<patch>` <!-- FILL: meaning of each part, e.g. major = release, minor = phase or
-  feature drop, patch = build or fix -->, stamped into the build, the health page and every log entry.
-- A release is a tag on `main`, a published artefact per deployable and a line in the release notes
-  ([environments and delivery](environments-and-delivery.md) section 8).
-- APIs are versioned in the route (`/api/v1/`); a breaking change is a new version, never an edit of the old one.
-- The database schema version is the applied migration set ([data model](data-model.md) section 7).
+`.dependency-cruiser.cjs`: `domain` may import only `domain`; `application` only `domain` and `application`;
+`infrastructure` may not import `presentation`; nothing in `src` imports `tests`; no circular dependencies; no
+dependency missing from `package.json`; provider SDKs, `web-tree-sitter` and `yazl` only from `src/infrastructure`.
+**(tool)**

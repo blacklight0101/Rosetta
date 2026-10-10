@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rosetta - API calls and logs</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
+.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
+.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:16px;box-shadow:var(--rst-shadow-1)}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+select{height:var(--rst-control-h);padding:0 8px;border:1px solid var(--rst-rule-strong);border-radius:var(--rst-radius-md);background:var(--rst-surface);color:var(--rst-ink);font:inherit}
+table{border-collapse:collapse;width:100%;min-width:980px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--rst-rule);font-size:var(--rst-fs-sm);white-space:nowrap}
+th{font-weight:var(--rst-fw-label);color:var(--rst-ink-muted);font-size:var(--rst-fs-xs);background:var(--rst-surface-2)}
+td.n,th.n{text-align:right}
+.toggle{height:28px;padding:0 10px;border-radius:var(--rst-radius-pill);border:1px solid var(--rst-rule-strong);background:var(--rst-surface);color:var(--rst-ink-soft);font:inherit;font-size:var(--rst-fs-xs);cursor:pointer}
+.toggle[aria-pressed="true"]{background:var(--rst-brand);color:var(--rst-brand-ink);border-color:var(--rst-brand)}
+h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
+h2{margin:0;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="min-height: 1160px; display: flex; flex-direction: column;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
+    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
+    <div class="rst-mono" style="color: var(--rst-ink-soft);">dotnet-architecture/eShopModernizing @ [SHA]</div>
+    <div style="flex: 1 1 auto;"></div>
+    <div style="display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
+      <span class="lbl">Project total</span><span><strong>1,302,118</strong> tokens</span><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$3.88</span>
+    </div>
+  </header>
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
+    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
+      <a href="StartRun.dc.html">Start a run</a>
+      <a href="LiveRun.dc.html">Live run</a>
+      <a href="#">Verification</a>
+      <a href="#">Coverage</a>
+      <a href="ApiCalls.dc.html" aria-current="page">API calls and logs</a>
+      <a href="#">Open questions</a>
+      <a href="History.dc.html">History and snapshots</a>
+    </nav>
+    <main style="flex: 999 1 560px; min-width: 0; padding: 24px 28px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;"><h1>API calls and logs</h1><span class="lbl">every provider interaction of run 20261011-091204-understand, live</span></div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+        <section class="card">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><h2>Ollama</h2><span class="lbl rst-mono">localhost:11434 - qwen3.5:9b</span></div>
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
+            <div><div class="lbl">Calls</div><strong>30</strong></div>
+            <div><div class="lbl">Errors</div><strong>0</strong></div>
+            <div><div class="lbl">Avg latency</div><strong>4.8 s</strong></div>
+            <div><div class="lbl">Slowest</div><strong>11.2 s</strong></div>
+            <div><div class="lbl">Generation</div><strong>38 tok/s</strong></div>
+          </div>
+        </section>
+        <section class="card">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><h2>OpenAI</h2><span class="lbl rst-mono">api.openai.com - [MODEL]</span></div>
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
+            <div><div class="lbl">Calls</div><strong>12</strong></div>
+            <div><div class="lbl">Errors</div><strong style="color: var(--rst-danger-ink);">1 (retried)</strong></div>
+            <div><div class="lbl">Avg latency</div><strong>2.1 s</strong></div>
+            <div><div class="lbl">Slowest</div><strong>6.4 s</strong></div>
+            <div><div class="lbl">Cost</div><strong>$0.412</strong></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+          <h2>Calls</h2>
+          <div style="flex: 1 1 auto;"></div>
+          <label class="lbl" for="f-prov">Provider</label><select id="f-prov"><option>All</option><option>ollama</option><option>openai</option></select>
+          <label class="lbl" for="f-role">Role</label><select id="f-role"><option>All</option><option>reader</option><option>verifier</option></select>
+          <label class="lbl" for="f-agent">Agent</label><select id="f-agent"><option>All</option><option>Catalog</option><option>Services</option></select>
+          <label class="lbl" for="f-status">Status</label><select id="f-status"><option>All</option><option>Errors and retries</option></select>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>#</th><th>Time</th><th>Agent</th><th>Provider, model</th><th class="n">First token</th><th class="n">Latency</th><th class="n">In</th><th class="n">Out</th><th class="n">Cost</th><th>Status</th><th>Transcript</th></tr></thead>
+            <tbody>
+              <sc-for list="{{calls}}" as="c" hint-placeholder-count="9">
+                <tr style="{{c.rowStyle}}">
+                  <td class="rst-mono">{{c.n}}</td><td class="rst-mono">{{c.t}}</td><td>{{c.agent}}</td><td class="rst-mono">{{c.model}}</td>
+                  <td class="n">{{c.ttft}}</td><td class="n">{{c.lat}}</td><td class="n">{{c.inT}}</td><td class="n">{{c.outT}}</td><td class="n">{{c.cost}}</td>
+                  <td><span class="badge" style="{{c.badgeStyle}}">{{c.status}}</span></td>
+                  <td><a href="#">open</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding: 12px; border-radius: var(--rst-radius-md); background: var(--rst-surface-2); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+          <div style="grid-column: 1 / -1;" class="lbl">Selected call #41 - ollama details</div>
+          <div><div class="lbl">Load</div><strong>0.21 s</strong></div>
+          <div><div class="lbl">Prompt evaluation</div><strong>1.92 s - 6,814 tokens</strong></div>
+          <div><div class="lbl">Generation</div><strong>3.05 s - 116 tokens</strong></div>
+          <div><div class="lbl">Finish reason</div><strong class="rst-mono">tool_use</strong></div>
+        </div>
+      </section>
+
+      <section class="card" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+          <h2>Application log</h2><span class="lbl">rosetta-out/logs/rosetta-2026-10-11.jsonl</span>
+          <div style="flex: 1 1 auto;"></div>
+          <button class="toggle" type="button" aria-pressed="false">debug</button>
+          <button class="toggle" type="button" aria-pressed="true">info</button>
+          <button class="toggle" type="button" aria-pressed="true">warn</button>
+          <button class="toggle" type="button" aria-pressed="true">error</button>
+        </div>
+        <ol style="list-style: none; margin: 0; padding: 0; font-family: var(--rst-mono); font-size: 12px;">
+          <sc-for list="{{logs}}" as="l" hint-placeholder-count="6">
+            <li style="display: grid; grid-template-columns: 96px 56px 180px minmax(0, 1fr); gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--rst-rule);">
+              <span style="color: var(--rst-ink-muted);">{{l.t}}</span>
+              <span style="color: {{l.color}}; font-weight: 600;">{{l.level}}</span>
+              <span style="color: var(--rst-ink-soft);">{{l.logger}}</span>
+              <span>{{l.msg}}</span>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+renderVals() {
+const ok = 'background: var(--rst-ok-bg); color: var(--rst-ok-ink);';
+const retried = 'background: var(--rst-warn-bg); color: var(--rst-warn-ink);';
+const failed = 'background: var(--rst-danger-solid); color: var(--rst-danger-solid-ink);';
+const hi = 'background: var(--rst-danger-bg);';
+return {
+theme: this.props.theme ?? 'light',
+calls: [
+{ n: '42', t: '09:18:46', agent: 'Catalog', model: 'ollama / qwen3.5:9b', ttft: '1.9 s', lat: '4.6 s', inT: '7,022', outT: '98', cost: '$0.00', status: 'ok', badgeStyle: ok, rowStyle: '' },
+{ n: '41', t: '09:18:40', agent: 'Catalog', model: 'ollama / qwen3.5:9b', ttft: '2.1 s', lat: '5.2 s', inT: '6,814', outT: '116', cost: '$0.00', status: 'ok', badgeStyle: ok, rowStyle: 'outline: 2px solid var(--rst-focus); outline-offset: -2px;' },
+{ n: '40', t: '09:18:39', agent: 'verifier', model: 'openai / [MODEL]', ttft: '0.8 s', lat: '1.7 s', inT: '2,114', outT: '186', cost: '$0.0061', status: 'ok', badgeStyle: ok, rowStyle: '' },
+{ n: '39', t: '09:18:31', agent: 'verifier', model: 'openai / [MODEL]', ttft: '0.9 s', lat: '2.0 s', inT: '1,980', outT: '142', cost: '$0.0055', status: 'ok - attempt 2', badgeStyle: ok, rowStyle: '' },
+{ n: '39', t: '09:18:28', agent: 'verifier', model: 'openai / [MODEL]', ttft: '-', lat: '0.3 s', inT: '-', outT: '-', cost: '$0.00', status: '429 retried', badgeStyle: retried, rowStyle: hi },
+{ n: '38', t: '09:18:20', agent: 'Services', model: 'ollama / qwen3.5:9b', ttft: '1.4 s', lat: '3.9 s', inT: '4,410', outT: '201', cost: '$0.00', status: 'ok', badgeStyle: ok, rowStyle: '' },
+{ n: '37', t: '09:18:02', agent: 'Catalog', model: 'ollama / qwen3.5:9b', ttft: '3.6 s', lat: '11.2 s', inT: '9,880', outT: '412', cost: '$0.00', status: 'ok - slowest', badgeStyle: retried, rowStyle: '' },
+{ n: '36', t: '09:17:51', agent: 'verifier', model: 'openai / [MODEL]', ttft: '-', lat: '30.0 s', inT: '-', outT: '-', cost: '$0.00', status: 'timeout failed', badgeStyle: failed, rowStyle: hi }
+],
+logs: [
+{ t: '09:18:46.204', level: 'INFO', color: 'var(--rst-info-ink)', logger: 'agent.loop', msg: 'Catalog turn 7 tool read_file Catalog/Edit.aspx.cs:40-80' },
+{ t: '09:18:28.911', level: 'WARN', color: 'var(--rst-warn-ink)', logger: 'provider.openai', msg: 'RST-1504 rate limited (429), retry in 2.4 s, attempt 1 of 3' },
+{ t: '09:18:12.077', level: 'INFO', color: 'var(--rst-info-ink)', logger: 'egress.guard', msg: 'masked 1 connection-string password in Web.config:18 before send' },
+{ t: '09:17:51.630', level: 'ERROR', color: 'var(--rst-danger-ink)', logger: 'provider.openai', msg: 'RST-1505 timeout after 30 s, call #36 failed; claim BR-002.c1 left Unverified' },
+{ t: '09:17:20.418', level: 'INFO', color: 'var(--rst-info-ink)', logger: 'budget.guard', msg: 'run at 18% of cap ($0.36 of $2.00)' },
+{ t: '09:12:04.002', level: 'INFO', color: 'var(--rst-info-ink)', logger: 'run', msg: 'run 20261011-091204-understand started, snapshot cached' }
+]
+};
+}
+}
+</script>
+</body>
+</html>
