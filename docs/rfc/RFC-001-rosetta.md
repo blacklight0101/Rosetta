@@ -81,6 +81,7 @@ a hand-off package a team can build from.
 - Modifying, refactoring or running the legacy code: tools are read-only (DEC-17).
 - Analysing the owner's employer's code in this public project (DEC-03).
 - Training or fine-tuning models.
+- Scoring the quality of the legacy code against the principle catalogue (added 2026-10-11, DEC-83).
 - Guaranteeing correctness: findings carry a verification status and a confidence, and the open-question loop keeps
   a person in charge.
 
@@ -357,7 +358,7 @@ Phases P0..Pn with exit criteria are maintained in [roadmap.md](../roadmap.md). 
 | P0 | this documentation set, decisions, open questions |
 | P1 | milestone slice (2026-10-26): web application with sign-in, accounts and per-user keys, landing page, container image with local Compose and hosted deployment, project settings, providers Ollama and OpenAI, budget guard, universal scan and C# pack, `understand` on one area, Markdown cards, sample report on GitHub Pages, slides, video |
 | P2 | full `understand`: all areas, two-step verifier, open-question loop, golden-set evaluation, `estimate`, Anthropic and OpenAI-compatible adapters |
-| P3 | `report` (HTML) and `plan` (hand-off package) |
+| P3 | `report` (HTML) and `plan`: Plan setup, the principle catalogue and the hand-off package (ADR-018) |
 | P4 (R2) | second demo target in another stack, provider comparison, final master delivery; the Claude Code plugin mode only if brought back into scope (DEC-60) |
 
 ## 7. Success criteria
