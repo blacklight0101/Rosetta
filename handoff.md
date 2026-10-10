@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-10. Phase **P0 - documentation**. No code yet. Work is on branch `docs/kickoff`, PR #1._
+_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/kickoff`, PR #1._
 
 ## Current state
 
@@ -15,6 +15,8 @@ _Last updated 2026-10-10. Phase **P0 - documentation**. No code yet. Work is on 
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
   `orchestrator` still a scaffold.
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
+- `docs/design-system.md` v1, `docs/design-system-brief.md` and `docs/design/tokens.css` - written 2026-10-11; design
+  board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - awaiting owner review (G-02).
 - `docs/data-model.md` - written 2026-10-10 (all file formats); Q-15 and Q-16 answered (DEC-54, DEC-55).
 - Not yet filled: `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
   `docs/process-flows.md`, `docs/orchestration/`.
@@ -27,8 +29,8 @@ DEC-01..DEC-55, architecture, data model, conventions, environments and delivery
 journal. Every open question Q-01..Q-16 is answered or runs on its default.
 
 Next, in this order (ask the owner before each):
-1. Design system v1 and the design brief, with mock-ups of the live web UI (agent panels, project cost bar, API
-   calls and logs panels, history with delete) and the report; owner approval at G-02.
+1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; the owner reviews the design board and approves it
+   at G-02 or asks for changes (folded in as v2).
 2. Roadmap (P0..P4 with exit criteria) and process flows.
 3. Build plan: `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
    card, and the orchestrator agent.
@@ -42,7 +44,7 @@ Blockers: none.
 1. ~~Round 3 of questions~~ DONE 2026-10-09: DEC-24..DEC-37.
 2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; data-model.md written, awaiting owner review.
 3. ~~Conventions and delivery~~ DONE 2026-10-10: DEC-40, ADR-011.
-4. Design system v1 + brief with live web UI mock-ups - lands in design-system.md and the brief (G-02).
+4. ~~Design system v1 + brief with live web UI mock-ups~~ DONE 2026-10-11: board published; owner review pending (G-02).
 5. Roadmap, process flows, build plan.
 6. Owner review of the whole documentation set, which opens G-01 (DEC-33).
 
@@ -55,7 +57,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 | Gate | Name | State | Since | Note |
 |---|---|---|---|---|
 | G-01 | Documentation set accepted | Closed | - | opens only after the owner reviews the whole set (DEC-33); no provisional opening |
-| G-02 | Report design approved | Closed | - | needed before the first P3 report card |
+| G-02 | Design board approved (web UI and report) | Closed | - | v1 board published 2026-10-11; needed before the web UI shell card and the first report card |
 | G-03 | Public GitHub repository ready | Closed | - | `blacklight0101/Rosetta`, created on the owner's request |
 | G-04 | Provider access ready | Closed | - | Ollama installed with the model of Q-04; OpenAI key in the environment |
 | G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26 |
@@ -68,6 +70,10 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-11 (design system)** - design-system.md v1, the brief and the token file written; design board v1 published
+  as a private Artifact (tokens sheet, start a run, live run, API calls and logs, history with delete, report and
+  replay), light and dark, all token pairs WCAG AA (lowest 3.14:1 for control borders). Next: owner reviews the board
+  (G-02); then roadmap, flows, build plan.
 - **2026-10-10 (end of day)** - Q-15 answered: USD (DEC-54). Q-16 answered: delete button for snapshots and runs in
   the web UI, cost ledger untouched (DEC-55, RF-1012). Resume point rewritten. Next: design system.
 - **2026-10-10 (data model)** - data-model.md written: folder map, every file format, event list, call log, cost
