@@ -9,14 +9,14 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-017; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-70.
+- `docs/decision-log.md` - decisions DEC-01..DEC-71.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
   `orchestrator` still a scaffold.
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
 - `docs/design-system.md` v1, `docs/design-system-brief.md` and `docs/design/tokens.css` - written 2026-10-11; design
-  board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); hosted screens (artboards 7-13) approved as a G-02 amendment (DEC-70); board files in
+  board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); hosted screens (artboards 7-13) approved as a G-02 amendment (DEC-70); v1 artboards revised after a critique (DEC-71); board files in
   `docs/design/board/`.
 - `docs/data-model.md` - written 2026-10-10 (all file formats); Q-15 and Q-16 answered (DEC-54, DEC-55).
 - `docs/security/threat-model.md` and `SECURITY.md` - rewritten 2026-10-11 for the hosted application (DEC-69).
@@ -28,7 +28,7 @@ State (2026-10-11): main has P0 work through PR #4, which turned Rosetta into a 
 application (DEC-59..DEC-69): no CLI, no plugin; one container image, Docker Compose locally, a host chosen later
 (Q-18); accounts, landing page, per-user keys, caps, PostgreSQL plus files; ADR-014..ADR-017; requirements
 RF-010, RF-803, RF-1100..RF-1306; threat model rewritten. Branch `docs/hosted-screens` adds the approved hosted
-screens (artboards 7-13, DEC-70); the owner reviews and merges its PR.
+screens (artboards 7-13, DEC-70) and the revised v1 screens (DEC-71); the owner reviews and merges its PR.
 
 Next, in this order (ask the owner before each):
 1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56).
@@ -60,7 +60,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 | Gate | Name | State | Since | Note |
 |---|---|---|---|---|
 | G-01 | Documentation set accepted | Closed | - | opens only after the owner reviews the whole set (DEC-33); no provisional opening |
-| G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70) |
+| G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70); v1 artboards 1-6 revised (DEC-71) |
 | G-03 | Public GitHub repository ready | Closed | - | `blacklight0101/Rosetta`, created on the owner's request |
 | G-04 | Provider access ready | Closed | - | Ollama installed with the model of Q-04; OpenAI key in the environment |
 | G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26: hosted URL, teacher account (RF-803) |
@@ -69,11 +69,16 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Decisions pending
 
-- Open questions Q-01..Q-21 are answered or run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
+- Open questions Q-01..Q-22 are answered or run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
 - Deferred ADRs and their triggers are listed in the [ADR index](docs/adr/README.md).
 
 ## Session log
 
+- **2026-10-11 (v1 critique, G-02 amendment)** - Impeccable critique of artboards 1-6 scored 25/40 (three P1: badge
+  glyphs, Start run guard rail, cap overrun in the sample). All P1 and P2 fixed: glyphs everywhere, Start run disabled
+  until consent with an editable cap, the cap-reached run within its cap with Raise cap and resume, hosted header and
+  navigation on the run pages, consistent figures, no overflow at 390 px. Approved (DEC-71). Q-22 (administrator caps)
+  left for later; the board is visual only.
 - **2026-10-11 (hosted screens, G-02 amendment)** - artboards 7-13 drawn with the Impeccable skill and Claude design:
   landing page ("Watch it work", chosen from three dealt structures), sign in, change password, projects with the
   queue state, settings and keys, administration users and caps, audit. `PRODUCT.md` added; design-system.md

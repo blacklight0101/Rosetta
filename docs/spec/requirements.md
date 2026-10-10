@@ -156,6 +156,7 @@ the decision log.
 | Q-19 | Who can open the landing page? | Product owner | P1 (landing card) | Anyone with the URL; it is not indexed by search engines (`noindex`, `robots.txt`) and the URL is shared only with the teachers | Default applies |
 | Q-20 | What does the landing page offer instead of sign-up? | Product owner | P1 (landing card) | A "Sign in" button and a "Request access" link to a contact address set in the server configuration; no link when it is not set | Default applies |
 | Q-21 | Does the teacher account start with a finished demo run? | Product owner | P1 (teacher account card) | No: it starts empty; the teacher runs the demo themselves with the server keys under the caps | Default applies |
+| Q-22 | Which caps apply to the administrator's own runs? The v1 board shows a $2.00 run cap while the hosted defaults are $0.50 per run and $1.00 per user per day (DEC-64). | Product owner | P1 (caps card) | The administrator is under the same caps as every user; the board's figures are illustrative only | Default applies |
 
 ## 5. Functional requirements (R1)
 

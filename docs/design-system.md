@@ -280,7 +280,9 @@ cards are built (an amendment of G-02, recorded in `handoff.md`).
 `SignIn`, `ChangePassword`, `Projects`, `Settings`, `AdminUsers`, `AdminAudit`), with the Impeccable design
 skill and Claude design. The landing structure ("Watch it work": a replay of a sample run as the first viewport)
 was chosen by the owner from three dealt structures; its direction contract is in
-`.impeccable/surfaces/`. Approved by the owner without changes as a G-02 amendment (DEC-70). The run queue state is
+`.impeccable/surfaces/`. Approved by the owner without changes as a G-02 amendment (DEC-70). The v1 artboards 1-6 were then revised after an Impeccable critique and approved as a further
+amendment (DEC-71): they share the hosted header and navigation, keep badge glyphs everywhere and hold Start run
+disabled until consent. The run queue state is
 drawn on the Projects artboard (Queued badge, position and Cancel); the start page reuses the same notice.
 
 Components these screens add to section 5:
