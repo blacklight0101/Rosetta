@@ -223,6 +223,15 @@ sequenceDiagram
   higher for cloud providers); every task shares one `AbortSignal` for Ctrl+C and caps.
 - **Prompt caching**: the system prompt, tool definitions and card schema form a stable prefix so providers that
   cache (Anthropic, OpenAI) charge less for repeated turns.
+- **Multi-agent pattern** (DEC-57): a **code-driven orchestrator** (no model decides the routing) fans out one
+  `reader` agent per area in parallel, the `verifier` is the evaluator of every claim, and the `summariser` is the
+  reducer that merges cards across areas (RF-250). Agents never hand off to each other and never talk directly; they
+  share nothing but the code map and the orchestrator's inputs. Each role has least privilege: readers get the
+  read-only tools for their area, the verifier sees only the cited lines, the summariser sees only cards. The cost of
+  the pattern (every agent re-reads context, so tokens grow with the number of agents) is bounded by the caps of
+  ADR-007. Frameworks that own this loop (LangGraph, Google ADK) are not used (ADR-003, DEC-58).
+- **Untrusted content** (ADR-013): tool results enter the conversation only inside delimited repository-content
+  blocks, never in the system prompt (RF-145); `grep` runs in a worker with limits (RF-146).
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.
 
@@ -246,7 +255,25 @@ sequenceDiagram
 - The repository reader resolves every path against the snapshot root and refuses anything outside it or matched by
   ignore rules (RF-140); the output writer does the same for the output folder (RF-005).
 - Model output is data: it is parsed with schemas, never executed, never used as a shell command or an unchecked path.
-- The egress guard masks secrets before any call and logs what was sent (RF-141, RF-142).
+- The egress guard masks secrets before any call and logs what was sent (RF-141, RF-142); if masking fails the call
+  is blocked (fail closed).
+- Downloads use https to GitHub hosts only, with size and entry limits, and refuse link entries (RF-127).
+- Repository and model text is rendered as text only; the page and the report carry a content security policy and no
+  referrer; the session token leaves the address bar after load (RF-507, RF-1013).
+- Refused requests, refused reads, skipped links and blocked calls are logged as security events (RF-009).
+- The trust boundaries, their threats and the mapping to OWASP Top 10:2025 and the OWASP Top 10 for LLM applications
+  are in the [threat model](security/threat-model.md) (ADR-013).
+
+**Secure by default** (RNF-014):
+
+| Default | Value | Changed only by |
+|---|---|---|
+| Web server address | `127.0.0.1`, free port, session token | `ui.port` (address never configurable) |
+| Cloud egress | confirmation before the first call | `--yes` per run |
+| Secret masking | on | never |
+| Built-in deny list | on (RF-147) | `scan.allowDenied`, recorded in the run |
+| Transcripts | masked | `--no-transcripts` to skip them |
+| Telemetry | none | never |
 
 ## 11. Error handling
 

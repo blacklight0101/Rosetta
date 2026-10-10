@@ -11,6 +11,7 @@ here; they never hold a second copy of these documents.
 | [journal/](journal/) | Curated per-session summary of what was decided and why, with DEC and Q ids; no conversations | Living | 2026-10-09 |
 | [adr/README.md](adr/README.md) | Architecture decision records index, counts by status, deferred decisions | Living | 2026-10-09 |
 | [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model and state lists, use cases, ports, agent loop, security, testing approach | Living | 2026-10-10 |
+| [security/threat-model.md](security/threat-model.md) | Trust boundaries, STRIDE threats and controls, OWASP Top 10:2025 and LLM Top 10 mapping, secure lifecycle | Proposed | 2026-10-11 |
 | [data-model.md](data-model.md) | No database: the file formats Rosetta reads and writes (configuration, snapshot cache, code map, run folder, cards, events, call and application logs, cost ledger) and their schema versions | Proposed | 2026-10-10 |
 | [conventions.md](conventions.md) | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits | Proposed | 2026-10-10 |
 | [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases | Proposed | 2026-10-10 |

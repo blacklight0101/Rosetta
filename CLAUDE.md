@@ -74,6 +74,10 @@ applied, and fixing it is part of applying the decision.
 - **Never write to a snapshot.** Legacy code comes only from public GitHub repositories, pinned to a commit and
   cached read-only; agent tools are read-only; every output goes to the run output folder. (DEC-17, DEC-48,
   [ADR-006](docs/adr/ADR-006-read-only-tools-and-data-egress.md), [ADR-012](docs/adr/ADR-012-local-web-ui-and-github-sources.md), RF-005, RF-122)
+- **Analysed code and model output are untrusted.** Repository content reaches a model only inside labelled data
+  blocks; model and repository text is rendered as text, never HTML; every guard fails closed and logs a security
+  event. ([ADR-013](docs/adr/ADR-013-untrusted-code-and-model-output.md), [threat model](docs/security/threat-model.md),
+  RF-145, RF-507, RF-1013)
 - **The web server is loopback-only.** It binds `127.0.0.1`, requires the session token, checks `Host` and `Origin`
   and never sends a secret to the browser. (DEC-46, ADR-012, RF-1009)
 - **Never send a file a run did not ask for, a path listed in `.rosettaignore`, or an unmasked secret to a

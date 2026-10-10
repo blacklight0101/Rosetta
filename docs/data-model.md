@@ -196,8 +196,9 @@ and map level (RF-105). Generated; never read back.
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
 | `options` | object | the normalised command options |
-| `roles` | object | per role `{ provider, kind, model, toolMode, maxOutputTokens, temperature, maxTurns }` |
-| `promptVersions` | object | prompt file name to version (RNF-004) |
+| `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004) |
+| `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `caps` | object | run and role caps in force |
 | `masking` | object | count per secret kind (RF-141) |
@@ -301,6 +302,8 @@ entries are not run events: the web UI logs panel receives them on its own strea
 |---|---|---|
 | `schemaVersion` | int | 1 |
 | `seq` | int | order in the run |
+| `traceId` | string | one per run (32 hex characters) |
+| `spanId`, `parentSpanId` | string | the call's span (16 hex) and its agent task's span |
 | `callId` | string | `<runId>#<n>`; the same for every attempt of one logical call |
 | `attempt` | int | 1 for the first attempt (RF-406) |
 | `runId`, `agentTaskId`, `role` | string | |
@@ -317,6 +320,12 @@ entries are not run events: the web UI logs panel receives them on its own strea
 | `httpStatus` | int | when there was an HTTP response |
 | `ollama` | object | Ollama only: `{ loadDurationMs, promptEvalDurationMs, evalDurationMs, tokensPerSecond }` |
 | `transcriptRef` | string | `transcripts/<agentTaskId>.jsonl#<line>` when transcripts are on |
+
+Tracing vocabulary (DEC-57): a run is a trace, an agent task a span, a provider call a child span. Field names map to
+the OpenTelemetry GenAI semantic conventions so an exporter can be added later without renaming (deferred, ADR index):
+`provider` -> `gen_ai.system`, `model` -> `gen_ai.request.model`, `modelVersion` -> `gen_ai.response.model`,
+`inputTokens` -> `gen_ai.usage.input_tokens`, `outputTokens` -> `gen_ai.usage.output_tokens`, `finishReason` ->
+`gen_ai.response.finish_reasons`, `requestId` -> `gen_ai.response.id`. Nothing is sent anywhere (no telemetry).
 
 ### 3.11 `egress.log.jsonl`
 
@@ -382,6 +391,14 @@ Shipped as `prices/default-prices.yaml` in the Rosetta repository: `{ schemaVers
 currency, models: [{ provider kind, model, inputPerMillionMicros, outputPerMillionMicros,
 cachedInputPerMillionMicros }] }`. Ollama models have price 0. Overrides in the configuration use the same entry
 shape (RF-420, RF-427).
+
+### 3.19 Evaluation results: `eval/<date>-<id>/`
+
+Written by `npm run eval` (RNF-006, RNF-015, RF-305), inside the Rosetta repository's git-ignored `eval-out/`, never
+in a user's project: `experiment.json` `{ schemaVersion, id, at, rosettaVersion, roles (with modelVersion and
+modelDigest), promptVersions (with sha256), goldenSetVersion, repetitions }` and `results.json` with per-case scores
+per repetition, precision, recall, the spread across repetitions, cost per supported claim, and, with the calibration
+set, the verifier's agreement rate.
 
 ## 4. Reserved for later releases
 

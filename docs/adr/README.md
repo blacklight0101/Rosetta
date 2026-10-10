@@ -24,8 +24,9 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-010](ADR-010-spec-driven-and-test-driven-development.md) | Develop Rosetta spec-driven and test-driven | Accepted | 2026-10-09 |
 | [ADR-011](ADR-011-toolchain-and-quality-gates.md) | Adopt a strict TypeScript toolchain with automated quality gates | Accepted | 2026-10-10 |
 | [ADR-012](ADR-012-local-web-ui-and-github-sources.md) | Serve a live local web UI and read legacy code only from public GitHub snapshots | Accepted | 2026-10-10 |
+| [ADR-013](ADR-013-untrusted-code-and-model-output.md) | Treat analysed code and model output as untrusted input | Accepted | 2026-10-11 |
 
-**Totals**: 12 in total - Accepted 11, Proposed 0, Amended 1, Superseded 0.
+**Totals**: 13 in total - Accepted 12, Proposed 0, Amended 1, Superseded 0.
 
 
 ## Relationships
@@ -33,7 +34,8 @@ changed in part by a later decision; see the ADR's Notes).
 ADR-005, ADR-006 and ADR-007 all constrain the agent loop of ADR-003: every call passes the egress guard
 (ADR-006) and the budget guard (ADR-007), and every result is a card checked by the verifier (ADR-005). ADR-008 tests
 ADR-003 at its port. ADR-009 refines the layering of ADR-002 and ADR-003 (does not supersede them). ADR-010 refines ADR-008: test-first applies to every card. ADR-011 refines ADR-002, ADR-008, ADR-009 and ADR-010 with the tools that enforce them. ADR-012 amends ADR-002 (a
-loopback web server is added) and refines ADR-005 (GitHub permalinks) and ADR-006 (read-only snapshot). The product owner's decisions behind these ADRs are listed in ../decision-log.md.
+loopback web server is added) and refines ADR-005 (GitHub permalinks) and ADR-006 (read-only snapshot). ADR-013
+refines ADR-005, ADR-006 and ADR-012 with the trust boundaries of the threat model. The product owner's decisions behind these ADRs are listed in ../decision-log.md.
 
 ## Deferred decisions (write the ADR when the trigger fires)
 
@@ -41,6 +43,8 @@ loopback web server is added) and refines ADR-005 (GitHub permalinks) and ADR-00
 |---|---|
 | Target-stack proposal in `plan` | Q-06 answered, before the first P3 card |
 | Claude Code plugin packaging | start of P4 (R2) |
+| OpenTelemetry (OTLP) exporter for traces | a user asks to send traces to their own collector (R2); field names already follow the GenAI conventions (DEC-57) |
+| Development container for contributors | a second regular contributor joins (DEC-58) |
 | A hosted public version of Rosetta | the owner decides to offer Rosetta as a service (would need hosting, key management and PostgreSQL, DEC-37) |
 | npm publishing and package name | Q-07 and Q-08 answered |
 | Move to TypeScript 7 | typescript-eslint supports TypeScript 7.x (expected with TypeScript 7.1) |
