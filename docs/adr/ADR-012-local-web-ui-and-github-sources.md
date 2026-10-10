@@ -1,7 +1,7 @@
 # ADR-012: Serve a live local web UI and read legacy code only from public GitHub snapshots
 
 **Date**: 2026-10-10
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -72,3 +72,7 @@ We choose option 1.
 - 2026-10-10: Q-14 answered (DEC-52) - the front end is Preact with Vite, tested with Playwright and axe. Q-13
   answered (DEC-51) - the whole web UI is aimed at M1, with a postponement order. DEC-49 and DEC-50 add the
   always-visible project cost (RF-428, RF-1010) and the provider call and application logs (RF-408, RF-009, RF-1011).
+- 2026-10-11: amended by DEC-59, DEC-61, DEC-62, ADR-014, ADR-015 and ADR-017 - the web UI is no longer started by
+  a command and bound to the loopback interface with a URL token; it is the whole application, served by Fastify
+  from a container behind sign-in. Locally the port is published on `127.0.0.1` only. The live view, the event
+  stream, the always-visible cost and the GitHub-only sources of this ADR stand.

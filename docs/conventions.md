@@ -38,6 +38,10 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 | Use cases | verb phrase, one per file in `src/application/use-cases/` | `RunUnderstand` |
 | Tests | next to nothing in `src`; under `tests/<level>/` mirroring `src` | `tests/unit/domain/citation.test.ts` |
 | Prompts | `prompts/<role>/<name>.v<n>.md`; a change creates a new version file | `prompts/reader/area.v1.md` |
+| SQL tables and columns | `snake_case`; tables plural; `id` primary key; `<singular>_id` foreign keys; `*_at` `timestamptz`; `*_micros` `bigint`; enumerations as `text` with `CHECK` ([data-model](data-model.md) section 1) | `cost_ledger.cost_micros` |
+| Migrations | `db/migrations/NNNN_snake_name.sql`, never edited after merge | `0001_accounts.sql` |
+| HTTP routes | pages at kebab-case paths; JSON API under `/api/`, plural nouns, ids as path segments | `GET /api/projects/:projectId/runs` |
+| Environment variables | `ROSETTA_` prefix for Rosetta's own; provider and database names as the ecosystem uses them | `ROSETTA_SECRET_KEY`, `DATABASE_URL` |
 
 - **Named exports only**; no default exports. **(tool)**
 - No barrel files (`index.ts` re-exporting a folder) inside `src`; import the file you need. **(tool: knip,
@@ -74,7 +78,7 @@ document is the canonical home of the error-code catalogue (section 6) and the t
   `no-misused-promises`)**
 - Every network call has a timeout and accepts an `AbortSignal`; Ctrl+C and budget caps cancel through the same
   signal (RF-422, RNF-002).
-- Use `node:fs/promises`; no synchronous file system calls outside CLI start-up. **(tool: `n/no-sync`)**
+- Use `node:fs/promises`; no synchronous file system calls outside server start-up. **(tool: `n/no-sync`)**
 - Retries only in the provider adapters, with exponential back-off and jitter (RF-406); nowhere else.
 
 ## 6. Errors
@@ -84,14 +88,15 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 - Expected failures in `domain` and `application` (invalid citation, cap reached, unknown area) are returned as a
   typed `Result`; exceptions are for programming errors and infrastructure failures.
 - Wrap with `cause` when rethrowing; never swallow an error in an empty `catch`. **(tool: `no-empty`)**
-- The CLI maps every error to an exit code (RF-007) and prints `RST-xxxx`, a plain message and the next step; stack
-  traces only with `--verbose`.
+- The HTTP layer maps every error to an HTTP status (RF-007) and returns `RST-xxxx`, a plain message and the next
+  step; stack traces only in the `debug` log, never in a response. Authentication and authorization failures never
+  say whether the user or the resource exists.
 
 **Error-code catalogue** (canonical; a new code gets the next free number in its range):
 
 | Range | Area |
 |---|---|
-| RST-1000..1099 | CLI usage and configuration |
+| RST-1000..1099 | configuration: server environment and project settings (CLI usage until DEC-59) |
 | RST-1100..1199 | file system, ignore rules, output folder |
 | RST-1200..1299 | scan and language packs |
 | RST-1300..1399 | agent loop, tools and card parsing |
@@ -101,8 +106,12 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 | RST-1700..1799 | report and export |
 | RST-1800..1899 | plan |
 | RST-1900..1999 | GitHub sources (URL, ref resolution, snapshot download, rate limits) |
-| RST-2000..2099 | local web UI and its server |
+| RST-2000..2099 | web UI and HTTP server (routes, validation, CSRF, headers) |
 | RST-2100..2199 | logging and observability |
+| RST-2200..2299 | accounts, sign-in, sessions, roles and audit (RF-1100..RF-1109) |
+| RST-2300..2399 | provider keys, caps and the run queue (RF-1104, RF-1106, RF-1108) |
+| RST-2400..2499 | database and migrations (RF-1302) |
+| RST-2500..2599 | deployment, start-up and health (RF-1300..RF-1306) |
 
 ## 7. Tests
 
@@ -113,7 +122,10 @@ document is the canonical home of the error-code catalogue (section 6) and the t
   requirement their caller serves.
 - Arrange, act, assert; one behaviour per test; no logic in tests beyond setup tables (`it.each`).
 - Unit tests touch no disk, network, clock or randomness; integration tests cross exactly one real boundary (the file
-  system in a temporary folder from `fs.mkdtemp`, or a recorded provider); end-to-end tests run the CLI process.
+  system in a temporary folder from `fs.mkdtemp`, a disposable PostgreSQL, the HTTP server in process through
+  `fastify.inject`, or a recorded provider); end-to-end tests drive a browser with Playwright against a running
+  server.
+- Every route has a row in the access matrix test (anonymous, user, other user, administrator) (RF-1105).
 - No real provider calls: the test setup sets `ROSETTA_TEST=1` and blocks outbound network; providers are the fake
   provider with recordings in `tests/recordings/` (ADR-008).
 - Every port has a contract test suite that the real adapters and the fakes both pass.

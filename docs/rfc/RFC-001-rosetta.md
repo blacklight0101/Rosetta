@@ -41,8 +41,8 @@ a hand-off package a team can build from.
 
 **Goals**
 
-1. Release 1 runs the whole pipeline on one machine: `scan`, `understand` with verification, the open-question
-   loop, the HTML report and `plan` (DEC-05; RF-001..RF-699).
+1. Release 1 runs the whole pipeline as a web application: `scan`, `understand` with verification, the
+   open-question loop, the HTML report and `plan` (DEC-05, DEC-59; RF-002..RF-699).
 2. Every finding cites the file and line range it comes from, and a two-step verifier marks each claim supported or
    rejected, so the specification can be checked by a person in minutes
    ([ADR-005](../adr/ADR-005-evidence-cards-and-two-step-verifier.md); RF-200..RF-399).
@@ -58,17 +58,25 @@ a hand-off package a team can build from.
    roadmap, task cards) that any team can build from (DEC-10; RF-600..RF-699).
 8. Quality is measured, not asserted: a golden set of known findings scores each run, and recorded responses keep
    tests repeatable ([ADR-008](../adr/ADR-008-testing-with-recorded-responses.md); RNF-005, RNF-006).
-9. Progress is visible: a local web page shows every agent the run spawns and what it is doing, live, with the
+9. Progress is visible: the web page shows every agent the run spawns and what it is doing, live, with the
    tokens and cost of the whole project always in view; the published report replays the run
-   ([ADR-012](../adr/ADR-012-local-web-ui-and-github-sources.md); RF-1000..RF-1010, RF-506).
+   ([ADR-012](../adr/ADR-012-local-web-ui-and-github-sources.md); RF-1001..RF-1013, RF-506).
 10. Input is a public GitHub repository pinned to a commit, so anyone can follow a citation to the exact lines
     (ADR-012; RF-120..RF-126).
+11. Invited people use it through a URL (added 2026-10-11): one container image runs on the owner's machine with
+    Docker Compose and on a server for the teachers, behind sign-in, with private workspaces, per-user provider keys
+    and spending caps, and a landing page that presents the product
+    ([ADR-014](../adr/ADR-014-container-image-local-and-hosted.md),
+    [ADR-015](../adr/ADR-015-accounts-sessions-and-user-secrets.md),
+    [ADR-016](../adr/ADR-016-postgresql-and-files.md); DEC-61..DEC-69; RF-1100..RF-1306).
 
 **Non-goals (explicitly out of release 1)**
 
 - Rebuilding or migrating the legacy system: Rosetta stops at the hand-off package (DEC-10).
-- A hosted web service, accounts or a database: Rosetta runs on the developer's machine; its web UI is local
-  (DEC-14, DEC-46).
+- A command-line interface: every stage is an action in the web application (DEC-59, which replaces the earlier
+  non-goal "a hosted web service, accounts or a database").
+- A Claude Code plugin run mode: out of scope until after the 2026-10-26 hand-in (DEC-60).
+- Public sign-up, e-mail password reset or multi-factor sign-in: the administrator creates every account (DEC-62).
 - Local folders or private repositories as input: only public GitHub repositories (DEC-48).
 - Modifying, refactoring or running the legacy code: tools are read-only (DEC-17).
 - Analysing the owner's employer's code in this public project (DEC-03).
@@ -85,10 +93,10 @@ Snapshot; canonical entries are DEC-01..DEC-23 in [../decision-log.md](../decisi
 | Name and code | **Rosetta** (working name), code `RST` | - |
 | Product owner | **BlackLigth (blacklight0101)**, sole owner; master final project | - |
 | Replaces a system | **No.** Rosetta analyses third-party legacy codebases | - |
-| First milestone (2026-10-26) | **Docs plus a working slice**, public repo, sample report on GitHub Pages, slides, video | Docs plus a compiling skeleton; docs only |
+| First milestone (2026-10-26) | **Docs plus a working slice**, public repo, sample report on GitHub Pages, slides, video (changed by DEC-67: the hosted application is the deployment URL) | Docs plus a compiling skeleton; docs only |
 | Repository | **`C:\BuildingFolder\Rosetta`, local git, public GitHub `blacklight0101/Rosetta`** | Local only, GitHub later |
 | Document language | **English** | Spanish; mixed |
-| Stack | **TypeScript on Node.js** | .NET 10; Python |
+| Stack | **TypeScript on Node.js** (changed by DEC-59, DEC-61: a web application in one container image, no CLI) | .NET 10; Python |
 | AI access | **Own agent loop behind a provider interface** (Ollama first, then OpenAI, then Anthropic) | Claude Agent SDK (Claude only); Claude Code plugin only |
 | Last stage | **A tool-agnostic hand-off package**; no rebuild | An optional rebuild stage |
 | Legacy stacks | **Any stack**: universal scan plus language packs | C# / WebForms only |
@@ -105,6 +113,8 @@ Snapshot; canonical entries are DEC-01..DEC-23 in [../decision-log.md](../decisi
 | **C. A standalone app on the Claude Agent SDK** | agent loop, tools and subagents for free | Claude only; the loop is hidden; no swap to local or other providers |
 | **D. A standalone CLI with an own agent loop behind a provider interface, plus a plugin run mode later** (chosen) | any provider including free local models; full control of cost, egress and verification; the loop itself is a learning goal | more code to write and test; provider differences must be absorbed by adapters |
 
+Option D was chosen at kick-off; on 2026-10-11 its delivery changed to a web application with no CLI (DEC-59) and the plugin run mode left the scope (DEC-60). The own agent loop behind a provider interface stands.
+
 Sub-decisions with their own trade-off tables live in the ADRs: ADR-002 (language and form), ADR-003 (agent loop
 and providers), ADR-004 (scan layers), ADR-005 (cards and verifier), ADR-006 (read-only tools and data egress),
 ADR-007 (cost control), ADR-008 (testing), ADR-009 (Clean Architecture), ADR-010 (spec-driven and test-driven development).
@@ -115,8 +125,10 @@ ADR-007 (cost control), ADR-008 (testing), ADR-009 (Clean Architecture), ADR-010
 
 ```mermaid
 flowchart LR
-  DEV[Developer or tech lead]
-  RST["Rosetta CLI + local web UI<br/>(on the developer's machine)"]
+  DEV[User: developer, tech lead or teacher]
+  ADM[Administrator: product owner]
+  RST["Rosetta web application<br/>(container: locally with Compose, or hosted)"]
+  DB[(PostgreSQL<br/>accounts, runs index, cost ledger)]
   GH[(GitHub<br/>public legacy repository)]
   OUT[(Run output folder<br/>cards, report, hand-off)]
   OLL[Ollama<br/>local models]
@@ -124,7 +136,9 @@ flowchart LR
   ANT[Anthropic API]
   OCP[OpenAI-compatible APIs<br/>OpenRouter, Groq, DeepSeek, Gemini]
   TEAM[Modernisation team]
-  DEV -- commands or browser, answers to open questions --> RST
+  DEV -- browser over HTTPS: sign in, runs, answers --> RST
+  ADM -- browser: accounts, caps, server keys --> RST
+  RST -- reads and writes --> DB
   RST -- downloads a commit snapshot --> GH
   RST -- writes --> OUT
   RST -- prompts with selected, masked excerpts --> OLL
@@ -136,19 +150,22 @@ flowchart LR
 
 ### 4.2 Containers
 
-There is one deployable: the Rosetta CLI, a Node.js process started by the developer. It has no server and no
-database. Inside it:
+There is one deployable: the Rosetta container image, a Node.js web server ([ADR-014](../adr/ADR-014-container-image-local-and-hosted.md)),
+next to a PostgreSQL database ([ADR-016](../adr/ADR-016-postgresql-and-files.md)). Inside it:
 
-- **Presentation (CLI and local web UI)** - parses commands, serves the live web page on the loopback interface,
-  wires everything (composition root).
+- **Presentation (web server and web UI)** - the Fastify HTTP server with sign-in, sessions and the HTTP API, the
+  landing page, the live web page and its event stream; wires everything (composition root)
+  ([ADR-017](../adr/ADR-017-fastify-http-server.md)).
 - **Application** - the use cases `scan`, `understand`, `verify`, `answer`, `report`, `plan`, `estimate`, `export`
   and the agent loop; depends only on the domain and its own ports.
 - **Domain** - cards, claims, citations, statuses, budgets and their rules.
 - **Infrastructure** - LLM providers, the egress guard, the budget guard, the file system, language packs, output
-  writers, zip export.
+  writers, zip export, the PostgreSQL repositories, password hashing and secret encryption.
 
 The layers follow Clean Architecture ([ADR-009](../adr/ADR-009-clean-architecture.md)).
-- **Run output folder** - everything a run produces, as files (layout in [data-model.md](../data-model.md)).
+- **Data folder** - the snapshot cache and each user's workspace with the run output, as files on a persistent disk;
+  **database** - accounts, sessions, encrypted keys, projects, the run index, the cost ledger and the audit trail
+  (both in [data-model.md](../data-model.md)).
 
 Detail in [architecture.md](../architecture.md).
 
@@ -251,17 +268,34 @@ RF-500..RF-699.
 
 ### 4.6 Identity, authorization and audit
 
-There are no users or accounts: the developer running the CLI is the only actor (DEC-14). Provider credentials come
-from environment variables or a git-ignored `.env` file and are never written to output. Audit is the run record:
-every run folder keeps its settings, prompt versions, model ids, the files sent to each provider and the usage, so
-a result can be explained and repeated (RNF-004).
+Rewritten 2026-10-11 (DEC-62, DEC-64, DEC-66, DEC-69). Users sign in with a user name and a password; there is no
+self sign-up; the administrator (the product owner) creates every account, including the teacher account for the
+evaluators. Two roles: `admin` and `user`. Each user sees only their own projects and runs; the administrator can
+open any workspace, and that access is audited. Sessions live on the server behind a secure cookie
+([ADR-015](../adr/ADR-015-accounts-sessions-and-user-secrets.md); RF-1100..RF-1105).
+
+Provider credentials: the server keys come from the environment (the host's secret store, or a git-ignored `.env`
+locally) and are used under caps per run, per user per day and per server per month (RF-1106); each user can also
+store their own keys, encrypted in the database and never sent back to the browser (RF-1104). No key is ever written
+to run output.
+
+Audit has two parts: the run record (every run folder keeps its settings, prompt versions, model ids, the files sent
+to each provider and the usage, RNF-004) and the security audit trail of sign-ins, account and key changes and
+administrator access (RF-1109).
 
 ### 4.7 Deployment topology
 
-Rosetta runs on the developer's machine. Release 1 runs from source (`npm` scripts) with Node.js LTS; publishing to
-the npm registry is open (Q-08). Local models run in Ollama on the same machine. The sample report for the demo
-target is published as a static site on GitHub Pages and serves as the milestone's deployment URL (DEC-04). Detail
-in [environments-and-delivery.md](../environments-and-delivery.md).
+Rewritten 2026-10-11 (DEC-61, DEC-67). One container image runs in two places
+([ADR-014](../adr/ADR-014-container-image-local-and-hosted.md)):
+
+- **Local**: Docker Compose on the owner's machine runs the app and PostgreSQL with named volumes; the app is
+  published on `127.0.0.1:8080` only and reaches Ollama on the host at `host.docker.internal:11434` (RF-1301). This
+  simulates the hosted deployment before it exists.
+- **Hosted**: the same image on a container host (chosen in Q-18) behind HTTPS, with managed PostgreSQL, a persistent
+  disk for the data folder and secrets in the host's secret store (RF-1304). The hosted mode uses cloud providers.
+
+The hosted URL is the milestone's deployment URL and the teacher account its test user; the sample report on GitHub
+Pages stays as a fallback (RF-800, RF-803). Detail in [environments-and-delivery.md](../environments-and-delivery.md).
 
 ### 4.8 Cost control
 
@@ -273,7 +307,8 @@ cost but their tokens are still tracked, so runs on different providers can be c
 
 ### 4.9 Claude Code plugin run mode
 
-After release 1's core, the same prompts and card formats are packaged as a Claude Code plugin (skills and
+Out of scope since 2026-10-11 (DEC-60); to be reviewed after the hand-in. The original proposal is kept for that
+review: after release 1's core, the same prompts and card formats are packaged as a Claude Code plugin (skills and
 subagents) so a final run can use a Claude subscription instead of API credit. The plugin reads the same code map
 and writes the same output folder; the verifier's step 1 runs as a script. Covers RF-700..RF-799.
 
@@ -287,12 +322,15 @@ and writes the same output folder; the verifier's step 1 runs as a script. Cover
 | Hallucinated rules reach the specification | two-step verifier; rejected claims stay visible; golden set measures precision (RNF-006) |
 | A run silently skips files | coverage table in every run: files read per area against files in the area (RF-230) |
 | Cost overrun on paid APIs | estimate, hard caps per run and per role, prepaid accounts with spending limits (ADR-007) |
+| Abuse of the hosted server or its keys | sign-in only for invited accounts, lockout and rate limits, caps per run, user-day and server-month (RF-1100, RF-1106), audit trail |
+| The hosted deployment is not ready for the hand-in | local Compose simulation first (RF-1301), host chosen by 2026-10-20 (Q-18), GitHub Pages report as fallback (DEC-67) |
 | Secrets or private code sent to a cloud provider | `.rosettaignore`, secret masking, cloud warning, record of every file sent (ADR-006) |
 | The demo app is small and has few business rules | second, richer target in a different stack after the milestone (Q-05) |
 | Seventeen days to the milestone | the milestone slice is cut to one area, Ollama and OpenAI only, Markdown output; everything else is later phases |
 | Provider APIs differ (tool-call formats, caching, usage fields) | adapters normalise to one port; a contract test runs against every adapter with recorded responses |
 
-**Costs**: no infrastructure. Development runs on local models at zero API cost; the OpenAI credit (10 EUR) and a
+**Costs**: a container host and a managed PostgreSQL for the evaluation period, estimated under 25 USD per month
+and chosen in Q-18; server model calls are capped per month (RF-1106). Development runs on local models at zero API cost; the OpenAI credit (10 EUR) and a
 capped Anthropic account cover verification and final runs, estimated at 60-100 USD over the whole project. Claude
 agent sessions build the code (DEC-22).
 
@@ -307,10 +345,10 @@ Phases P0..Pn with exit criteria are maintained in [roadmap.md](../roadmap.md). 
 | Phase | Delivers |
 |---|---|
 | P0 | this documentation set, decisions, open questions |
-| P1 | milestone slice (2026-10-26): CLI, config, providers Ollama and OpenAI, budget guard, universal scan and C# pack, `understand` on one area, Markdown cards, sample report on GitHub Pages, slides, video |
+| P1 | milestone slice (2026-10-26): web application with sign-in, accounts and per-user keys, landing page, container image with local Compose and hosted deployment, project settings, providers Ollama and OpenAI, budget guard, universal scan and C# pack, `understand` on one area, Markdown cards, sample report on GitHub Pages, slides, video |
 | P2 | full `understand`: all areas, two-step verifier, open-question loop, golden-set evaluation, `estimate`, Anthropic and OpenAI-compatible adapters |
 | P3 | `report` (HTML) and `plan` (hand-off package) |
-| P4 (R2) | Claude Code plugin mode, second demo target in another stack, provider comparison, final master delivery |
+| P4 (R2) | second demo target in another stack, provider comparison, final master delivery; the Claude Code plugin mode only if brought back into scope (DEC-60) |
 
 ## 7. Success criteria
 

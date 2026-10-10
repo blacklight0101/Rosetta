@@ -5,13 +5,16 @@ Rules of the road for anyone (including Claude) working in this repository. The 
 
 ## Mission and scope
 
-Rosetta is a new open-source command-line tool (it replaces no system) that turns a legacy codebase into a verified
+Rosetta is a new open-source web application (it replaces no system) that turns a legacy codebase into a verified
 functional specification and a tool-agnostic modernisation hand-off package:
 public GitHub repository URL (pinned to a commit) -> `scan` (deterministic code map) -> `understand` (agents write evidence-cited cards, a verifier
 checks them) -> owner answers open questions -> `report` (HTML) -> `plan` (architecture, ADRs, roadmap, task cards).
-Release 1 is the whole pipeline on one developer machine with cost control; the first milestone (2026-10-26) is a
-`scan` + `understand` slice on the demo app. Rebuilding the legacy system is never part of Rosetta. Audience:
-developers and tech leads; it runs locally as a CLI with a live loopback web UI that shows every agent and the project's tokens and cost, and talks to AI providers over their APIs. Phases are in
+Release 1 is the whole pipeline as a web application with accounts and cost control; the first milestone
+(2026-10-26) is a `scan` + `understand` slice on the demo app, run locally with Docker Compose and hosted for the
+teachers. Rebuilding the legacy system is never part of Rosetta. Audience:
+developers and tech leads, and the owner's teachers as evaluators; signed-in users see every agent live with the
+project's tokens and cost, and Rosetta talks to AI providers over their APIs. No CLI and no Claude Code plugin
+(DEC-59, DEC-60). Phases are in
 [docs/roadmap.md](docs/roadmap.md).
 
 ## Repository and deployment
@@ -23,8 +26,8 @@ developers and tech leads; it runs locally as a CLI with a live loopback web UI 
 | Product owner | BlackLigth (blacklight0101) |
 | Version control | git, branch `main`; remote `origin` = public GitHub `blacklight0101/Rosetta` (created at gate G-03); never push unless asked |
 | Branching | branch off `main` per change -> review -> fast-forward or squash merge -> linear history |
-| Hosting target | None: a CLI plus a loopback-only web UI on the user's machine ([ADR-002](docs/adr/ADR-002-typescript-node-cli.md), [ADR-012](docs/adr/ADR-012-local-web-ui-and-github-sources.md)); the sample report is published as a static site on GitHub Pages |
-| Data store | No database. Files only: configuration and the run output folder ([docs/data-model.md](docs/data-model.md)) |
+| Hosting target | One container image ([ADR-014](docs/adr/ADR-014-container-image-local-and-hosted.md)): locally Docker Compose (app + PostgreSQL, port on `127.0.0.1:8080`); hosted on a container host chosen in Q-18 for the teachers; the sample report is also published as a static site on GitHub Pages |
+| Data store | PostgreSQL for accounts, sessions, keys, projects, run index, cost ledger and audit; files in the data folder for snapshots and run output ([ADR-016](docs/adr/ADR-016-postgresql-and-files.md), [docs/data-model.md](docs/data-model.md)) |
 | Read-only references | Snapshots of the public GitHub repositories being analysed, including `dotnet-architecture/eShopModernizing` |
 
 ## Sources of truth
@@ -78,9 +81,13 @@ applied, and fixing it is part of applying the decision.
   blocks; model and repository text is rendered as text, never HTML; every guard fails closed and logs a security
   event. ([ADR-013](docs/adr/ADR-013-untrusted-code-and-model-output.md), [threat model](docs/security/threat-model.md),
   RF-145, RF-507, RF-1013)
-- **The web server is loopback-only.** It binds `127.0.0.1`, requires the session token, checks `Host` and `Origin`
-  and never sends a secret to the browser. (DEC-46, ADR-012, RF-1009)
-- **Never send a file a run did not ask for, a path listed in `.rosettaignore`, or an unmasked secret to a
+- **Every route except the public ones requires a session, and every query is scoped to its user.** Landing,
+  sign-in, `/healthz`, assets and `robots.txt` are public; everything else checks the session, the role, CSRF and
+  `Origin`; another user's id answers 404; keys and passwords never reach the browser or a log. (DEC-62, DEC-66,
+  DEC-69, [ADR-015](docs/adr/ADR-015-accounts-sessions-and-user-secrets.md), RF-1009, RF-1100..RF-1105)
+- **SQL is parameterised, always.** No string-built SQL; queries live only in `src/infrastructure/db/`; every schema
+  change is a new numbered migration. ([ADR-016](docs/adr/ADR-016-postgresql-and-files.md))
+- **Never send a file a run did not ask for, a path matched by the project's ignore rules, or an unmasked secret to a
   provider.** All provider traffic goes through the egress guard. (DEC-16, ADR-006, RF-140..RF-149)
 - **Never call a provider SDK outside its adapter.** Agents, orchestrator and verifier talk only to the
   `LlmProvider` port; provider-specific types never leak past the adapter. (DEC-09,
@@ -100,7 +107,8 @@ applied, and fixing it is part of applying the decision.
   only in an explicitly opted-in evaluation. ([ADR-008](docs/adr/ADR-008-testing-with-recorded-responses.md))
 - **Nothing from the owner's employer enters this public repository**, not as a test fixture, an example or a
   screenshot. (DEC-03)
-- **No API key or secret is committed.** Keys come from environment variables or a git-ignored `.env`. (RNF-003)
+- **No API key or secret is committed or baked into the image.** Server keys come from environment variables (the
+  host's secret store or a git-ignored `.env`); users' keys are stored only encrypted. (RNF-003, RF-1104)
 
 ## Stack rules
 
@@ -109,11 +117,11 @@ applied, and fixing it is part of applying the decision.
   ES modules. No `any` without a comment that says why.
 - **Architecture:** Clean Architecture ([ADR-009](docs/adr/ADR-009-clean-architecture.md)). `domain` imports nothing
   outside itself; `application` (use cases and ports) imports only `domain`; `infrastructure` (providers, guards, file
-  system, language packs, writers) implements the ports; `presentation` (CLI) holds the single composition root.
+  system, language packs, writers) implements the ports; `presentation` (Fastify server and web UI) holds the single composition root.
   Dependencies point inward only; the rule is checked by `npm run verify`. Details in `docs/architecture.md`.
-- **Database:** none in release 1. If one is ever needed it is PostgreSQL, behind an infrastructure adapter (DEC-37).
+- **Database:** PostgreSQL 17 through `pg` with plain parameterised SQL in infrastructure adapters; numbered migrations in `db/migrations/` (DEC-37, DEC-65, ADR-016).
 - **Errors:** domain errors are typed results or typed error classes with a stable code (`RST-xxxx`, catalogue in
-  `docs/conventions.md`); the CLI prints the code and a plain message, never a stack trace unless `--verbose`.
+  `docs/conventions.md`); the HTTP layer returns the code, a plain message and an HTTP status, never a stack trace.
 - **Spec-driven (SDD, spec-anchored):** no card without the requirement ids it implements; behaviour the
   specification does not describe stops the card and becomes a new `RF` or `Q-nn` first; any behaviour change edits
   `docs/spec/requirements.md` in the same pull request ([ADR-010](docs/adr/ADR-010-spec-driven-and-test-driven-development.md)).
@@ -130,7 +138,7 @@ applied, and fixing it is part of applying the decision.
 
 ## Read-only paths
 
-- Snapshots under `rosetta-out/sources/` (for example of `dotnet-architecture/eShopModernizing`): input for runs
+- Snapshots under `<data>/sources/` (for example of `dotnet-architecture/eShopModernizing`): input for runs
   only; never edit them and never copy their files into this repository except as small, cited excerpts in test
   fixtures (MIT licence, attribution kept).
 
@@ -167,7 +175,10 @@ applied, and fixing it is part of applying the decision.
 src/domain/          entities, value objects, domain rules (claims, citations, budgets)
 src/application/     use cases (scan, understand, verify, answer, report, plan, estimate, export) and ports
 src/infrastructure/  LLM providers, egress and budget guards, file system, language packs, writers, zip
-src/presentation/    command-line interface and composition root
+src/presentation/    Fastify web server, routes and composition root
+web/                 front end (landing page, web UI, report components)
+db/migrations/       numbered SQL migrations
+Dockerfile, compose.yaml, .env.example   container image and local deployment
 prompts/         versioned agent prompts and card templates
 tests/           unit, integration and end-to-end tests, recorded provider responses, golden set
 site/            the published sample report (GitHub Pages)
