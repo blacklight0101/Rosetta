@@ -1,15 +1,15 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/kickoff`, PR #1._
+_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/hosted-web-app`._
 
 ## Current state
 
 - `README.md`, `CLAUDE.md` (rules), this file.
 - `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Proposed**.
-- `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1013 and RNF-001..RNF-015, **Status: Proposed**;
+- `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Proposed**;
   open questions in its section 4.
-- `docs/adr/` - ADR-001..ADR-013; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-58.
+- `docs/adr/` - ADR-001..ADR-017; counts by status in the [index](docs/adr/README.md).
+- `docs/decision-log.md` - decisions DEC-01..DEC-69.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
@@ -18,24 +18,26 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/design-system.md` v1, `docs/design-system-brief.md` and `docs/design/tokens.css` - written 2026-10-11; design
   board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); board files in `docs/design/board/`.
 - `docs/data-model.md` - written 2026-10-10 (all file formats); Q-15 and Q-16 answered (DEC-54, DEC-55).
-- Not yet filled: `docs/design-system.md`, `docs/design-system-brief.md`, `docs/roadmap.md`,
-  `docs/process-flows.md`, `docs/orchestration/`.
+- `docs/security/threat-model.md` and `SECURITY.md` - rewritten 2026-10-11 for the hosted application (DEC-69).
+- Not yet filled: `docs/roadmap.md`, `docs/process-flows.md`, `docs/orchestration/`; design artboards for the new
+  screens (design-system.md section 14).
 
 ## Resume point
 
-State (2026-10-10, end of session): documentation P0 in progress on `docs/kickoff` (PR #1, not merged; the owner
-merges). Written: README, CLAUDE.md, RFC-001, requirements (RF-001..RF-1012), ADR-001..ADR-012, decision log
-DEC-01..DEC-55, architecture, data model, conventions, environments and delivery, builder and verifier agents,
-journal. Every open question Q-01..Q-16 is answered or runs on its default.
+State (2026-10-11): main has P0 work through PR #3. Branch `docs/hosted-web-app` turns Rosetta into a hosted web
+application (DEC-59..DEC-69): no CLI, no plugin; one container image, Docker Compose locally, a host chosen later
+(Q-18); accounts, landing page, per-user keys, caps, PostgreSQL plus files; ADR-014..ADR-017; requirements
+RF-010, RF-803, RF-1100..RF-1306; threat model rewritten. The owner reviews and merges its PR.
 
 Next, in this order (ask the owner before each):
-1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56). PR #2 brings the P0 work
-   since PR #1 to `main`.
-2. Roadmap (P0..P4 with exit criteria) and process flows.
-3. Build plan: `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
+1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56).
+2. Artboards for the hosted screens (landing, sign-in, settings and keys, administration; design-system.md section
+   14), approved as a G-02 amendment.
+3. Roadmap (P0..P4 with exit criteria) and process flows.
+4. Build plan (with the hosted cards: image, Compose, accounts, landing, hosted deploy by 2026-10-20): `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
    card, and the orchestrator agent.
-4. Run `check_docs.py --without legacy`, a light review, fix what is mechanical.
-5. Owner reviews the whole set and merges PR #1; G-01 opens only then (DEC-33).
+5. Run `check_docs.py --without legacy`, a light review, fix what is mechanical.
+6. Owner reviews the whole set; G-01 opens only then (DEC-33).
 
 Blockers: none.
 
@@ -45,7 +47,7 @@ Blockers: none.
 2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; data-model.md written, awaiting owner review.
 3. ~~Conventions and delivery~~ DONE 2026-10-10: DEC-40, ADR-011.
 4. ~~Design system v1 + brief with live web UI mock-ups~~ DONE 2026-10-11: approved at G-02 (DEC-56).
-5. Roadmap, process flows, build plan.
+5. Hosted screens artboards, roadmap, process flows, build plan.
 6. Owner review of the whole documentation set, which opens G-01 (DEC-33).
 
 ## Gates
@@ -60,15 +62,23 @@ opened it; a `Provisional` gate names the only cards it releases.
 | G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56) |
 | G-03 | Public GitHub repository ready | Closed | - | `blacklight0101/Rosetta`, created on the owner's request |
 | G-04 | Provider access ready | Closed | - | Ollama installed with the model of Q-04; OpenAI key in the environment |
-| G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26 |
+| G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26: hosted URL, teacher account (RF-803) |
+| G-06 | Hosted deployment ready | Closed | - | host chosen (Q-18), secrets set, smoke test passed, teacher account signs in; by 2026-10-24 |
 
 
 ## Decisions pending
 
-- Open questions Q-01..Q-16 are answered or run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
+- Open questions Q-01..Q-21 are answered or run on their defaults; see [requirements section 4](docs/spec/requirements.md#4-open-questions).
 - Deferred ADRs and their triggers are listed in the [ADR index](docs/adr/README.md).
 
 ## Session log
+
+- **2026-10-11 (hosted web application)** - the owner wants the teachers to use Rosetta through a URL: DEC-59..DEC-69
+  (no CLI, plugin out of scope, one container image local and hosted, accounts and teacher account, landing page,
+  server and per-user keys with caps, PostgreSQL plus files, isolation, hand-in URL, security controls).
+  ADR-014..ADR-017; RF-010, RF-803, RF-1100..RF-1109, RF-1200..RF-1201, RF-1300..RF-1306, RNF-016, RNF-017;
+  RF-001, RF-004, RF-242, RF-1000 withdrawn; Q-17..Q-21 on defaults. RFC, architecture, data model (tables), threat
+  model, environments, conventions rewritten. Gate G-06 added.
 
 - **2026-10-11 (modules 07 and 08)** - the master's Modules 07 and 08 reviewed against Rosetta: DEC-57 adopts 20
   items (ADR-013 untrusted input, threat model, SECURITY.md, RF-127, RF-145..RF-147, RF-305, RF-507, RF-1013,
