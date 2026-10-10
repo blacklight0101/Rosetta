@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/roadmap-flows`._
+_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/roadmap-and-flows`._
 
 ## Current state
 
@@ -32,7 +32,7 @@ application (DEC-59..DEC-69): no CLI, no plugin; one container image, Docker Com
 (Q-18); accounts, landing page, per-user keys, caps, PostgreSQL plus files; ADR-014..ADR-017; requirements
 RF-010, RF-803, RF-1100..RF-1306; threat model rewritten. PR #5 added the approved hosted screens (DEC-70) and the
 revised v1 screens (DEC-71). Branch `docs/planning-brief` adds the planning brief and the principle catalogue for
-`plan` (DEC-72..DEC-85, ADR-018, RF-604..RF-613; Q-06 answered) and the approved Plan setup artboard (DEC-86). Branch `docs/roadmap-flows`, stacked on it, adds the
+`plan` (DEC-72..DEC-85, ADR-018, RF-604..RF-613; Q-06 answered) and the approved Plan setup artboard (DEC-86). Branch `docs/roadmap-and-flows` adds the
 roadmap and the process flows (DEC-87..DEC-95).
 
 Next, in this order (ask the owner before each):
