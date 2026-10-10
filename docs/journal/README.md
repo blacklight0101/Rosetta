@@ -25,3 +25,4 @@ Rules:
 | 2026-10-09 | [Kick-off](2026-10-09-kickoff.md) | DEC-01..DEC-39 |
 | 2026-10-10 | [Toolchain, formats, web UI and GitHub sources](2026-10-10-toolchain-web-ui.md) | DEC-40..DEC-55 |
 | 2026-10-11 | [Design system and design board](2026-10-11-design-system.md) | DEC-56 |
+| 2026-10-11 | [Master modules 07 and 08 folded in](2026-10-11-master-modules-07-08.md) | DEC-57, DEC-58 |

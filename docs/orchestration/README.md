@@ -165,12 +165,15 @@ worktree for the mutation check, removed afterwards. Checks, in order; stop earl
 
 | Pattern | Allowed where | Rule |
 |---|---|---|
-| `Password=` | nowhere in committed files | no secret in the repository |
-| `DateTime.Now` | nowhere | time only through the clock abstraction |
-
-<!-- FILL: derive one row per greppable hard rule of CLAUDE.md and docs/conventions.md (forbidden packages, forbidden
-APIs, literals that must be data, style literals outside the token file, anonymous endpoints). Replace the two example
-rows above with the project's own; keep patterns exact so the verifier can run them unchanged. -->
+| `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML` | nowhere | repository and model text is rendered as text (RF-507) |
+| `eval(`, `new Function` | nowhere | model output is never executed (ADR-013) |
+| `child_process`, `shell: true` | nowhere in `src/` | Rosetta runs no shell commands |
+| `rejectUnauthorized` | nowhere | TLS is never disabled |
+| `Date.now(`, `new Date(` | `src/infrastructure/` only | time only through the `Clock` port |
+| `Math.random(`, `randomUUID(` | `src/infrastructure/` only | ids only through the `IdGenerator` port |
+| `openai`, `@anthropic-ai/sdk` imports | `src/infrastructure/providers/` only | provider SDKs only in adapters (ADR-003) |
+| `${{` inside a workflow `run:` | nowhere | pass values through `env:` (shell injection) |
+| `api_key`, `sk-`, `ghp_` literals | `tests/` fixtures marked fake only | no secret in the repository |
 
 ### 5.2 Verdict format
 

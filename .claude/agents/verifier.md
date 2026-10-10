@@ -40,9 +40,16 @@ Inputs: the task card (id, difficulty, Reads, Do, Delivers, Done when, Refs), th
 9. **Design:** SOLID (one reason to change, extension through ports, contract tests shared by fakes and adapters, small
    ports, constructor injection) and KISS (no abstraction, mechanism or package the card did not ask for; a new
    runtime dependency without an ADR is MAJOR).
-10. **Security** for difficulty 9-10 cards and any card touching egress, secrets, paths, tool arguments or model
-    output: path traversal, injection of model output into commands or file paths, secret leakage into logs,
-    recordings or output, unbounded reads.
+10. **Security** for difficulty 9-10 cards and **every** card that touches external input (GitHub, archives,
+    repository content, model output, HTTP requests to the local server, configuration) or egress (ADR-013,
+    [threat model](../../docs/security/threat-model.md)): path traversal and links, injection of model output into
+    commands, paths or HTML, secret leakage into logs, recordings or output, unbounded reads, missing timeouts.
+    Grep the diff for `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML`, `eval(`, `new Function`, `child_process`,
+    `shell: true`, `rejectUnauthorized`, `http://` outside loopback and tests, and `${{` inside a workflow `run:`;
+    any hit without a justified exception is BLOCKING. Each security requirement in Refs needs at least one test
+    that attacks it (abuse case); a missing one is MAJOR. For every new package: confirm it exists on the npm
+    registry, check its age, maintainers and weekly downloads, and that the name is not a near-miss of a known
+    package (AI-invented names, "slopsquatting"); a doubtful package is BLOCKING.
 11. **Docs:** architecture, data model, conventions and requirements updated when the change requires it.
 12. **Report check:** every claim in the builder's report is true on the branch; a claimed-but-absent item is
     BLOCKING.

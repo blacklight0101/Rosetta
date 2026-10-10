@@ -6,10 +6,10 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 
 - `README.md`, `CLAUDE.md` (rules), this file.
 - `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Proposed**.
-- `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1012 and RNF-001..RNF-013, **Status: Proposed**;
+- `docs/spec/requirements.md` - release 1 requirements RF-001..RF-1013 and RNF-001..RNF-015, **Status: Proposed**;
   open questions in its section 4.
-- `docs/adr/` - ADR-001..ADR-012; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-56.
+- `docs/adr/` - ADR-001..ADR-013; counts by status in the [index](docs/adr/README.md).
+- `docs/decision-log.md` - decisions DEC-01..DEC-58.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
@@ -70,6 +70,10 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-11 (modules 07 and 08)** - the master's Modules 07 and 08 reviewed against Rosetta: DEC-57 adopts 20
+  items (ADR-013 untrusted input, threat model, SECURITY.md, RF-127, RF-145..RF-147, RF-305, RF-507, RF-1013,
+  RNF-014, RNF-015, changes to RF-009, RF-141, RF-301, RF-1011, RNF-004, CI, verifier rules); DEC-58 records what is
+  not adopted and why. Private vulnerability reporting turned on.
 - **2026-10-11 (G-02 and PR #2)** - the owner approved the design board (DEC-56, G-02 open). PR #1 had been merged on
   2026-10-09 with only the first two commits; the later work was replayed onto `main` in branch
   `docs/p0-design-and-architecture` and opened as PR #2 for the owner to merge.

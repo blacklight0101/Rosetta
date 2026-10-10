@@ -76,10 +76,13 @@ Node.js from `.nvmrc`, `npm ci`, concurrency group per branch with cancel-in-pro
 | Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
 | Secret scan | gitleaks action | yes |
 | Static analysis | CodeQL (`javascript-typescript`), on pull requests and weekly | yes, for high and critical alerts |
+| Dependency review | `actions/dependency-review-action` on pull requests: fails on newly added packages with high or critical advisories or a disallowed licence | yes |
+| Pull request title | commitlint on the title, passed as `env: TITLE: ${{ github.event.pull_request.title }}` and read as `"$TITLE"`, never `${{ }}` inside `run:` | yes |
 
 `npm run verify` runs the first six checks locally in the same order; builders and the verifier run it on every card.
 
-Workflow hardening: top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
+Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
+exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
 version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm
 packages and GitHub Actions weekly, grouped by minor and patch.
 
@@ -132,6 +135,22 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 - A release is a pull request that bumps `package.json`, adds a section to `docs/releases.md`, merges, then a tag
   `vX.Y.Z` and a GitHub release with the same notes; the owner creates the tag.
 - Cadence: one release per phase exit; patch releases as needed.
+- Build once: the release job runs `npm pack` once and attaches that tarball and a CycloneDX SBOM
+  (`npm sbom --sbom-format cyclonedx`) to the GitHub release (DEC-57). Signed provenance comes with npm publishing
+  (Q-08).
+- After the GitHub Pages deploy, a smoke-test step fetches the published report's index and fails the job (`exit 1`)
+  if it is missing or does not contain the run id.
+
+### 8.1 The six repeated errors of the master's Module 07
+
+| Error | Rosetta |
+|---|---|
+| Version ranges such as `>=` | covered: `package-lock.json` committed, installs with `npm ci`, caret ranges only in `package.json` |
+| `latest` tags | covered: Node.js pinned in `.nvmrc`, actions pinned to a commit SHA, model versions and Ollama digests recorded per run (RNF-004) |
+| State kept in memory | covered: every state is a file (data-model.md); the web UI rebuilds from `events.jsonl` |
+| Public endpoints | covered: loopback only, session token, `Host` and `Origin` checks (RF-1009, RF-1013); no hosted service |
+| Secrets in an image or published output | covered: no image; masked transcripts; output scan before publishing `site/` (RNF-003) |
+| Running as root or on `0.0.0.0` | not applicable: no container; the server never binds `0.0.0.0` |
 
 ## 9. Database deployment
 
@@ -164,6 +183,8 @@ The repository on GitHub is the backup of code and documents. Run output belongs
   terminal shows `info` (`--verbose` for `debug`, `--quiet` for `warn`) (RF-009).
 - Logs and records pass through the secret masking and never contain secrets or API keys (RNF-003).
 - No telemetry: Rosetta sends nothing anywhere except to the providers the user configures.
+- Latency is reported as P50 and P95, never as an average alone (RF-1011); provider calls carry trace and span ids
+  mapped to the OpenTelemetry GenAI conventions (data-model.md section 3.10).
 
 ## 14. Runbooks
 
