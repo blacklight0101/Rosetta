@@ -148,7 +148,7 @@ too. ESLint never formats (`eslint-config-prettier` last). **(tool)**
   `RF`, `ADR` and `DEC` ids. **(tool: commitlint)**
 - TDD order on every code card: `test:` commit(s) with failing tests, then `feat:`/`fix:`, then optional
   `refactor:` (ADR-010).
-- Pull requests use the template, close their issue, and are merged by the owner with squash; the squash title is the
+- Pull requests use the template, close their issue, and are merged with squash, by the orchestrator under `docs/orchestration/README.md` section 3.1 or, when labelled `needs-owner`, by the owner (DEC-96); the squash title is the
   pull request title in Conventional Commit form.
 
 ## 10. Lint configuration summary

@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/roadmap-and-flows`._
+_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/build-plan`._
 
 ## Current state
 
@@ -8,12 +8,12 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Proposed**.
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Proposed**;
   open questions in its section 4.
-- `docs/adr/` - ADR-001..ADR-018; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-95.
+- `docs/adr/` - ADR-001..ADR-019; counts by status in the [index](docs/adr/README.md).
+- `docs/decision-log.md` - decisions DEC-01..DEC-101.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
-- `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
-  `orchestrator` still a scaffold.
+- `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
+  `orchestrator` (rewritten 2026-10-11 for DEC-96 and DEC-100).
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
 - `docs/design-system.md` v1, `docs/design-system-brief.md` and `docs/design/tokens.css` - written 2026-10-11; design
   board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); hosted screens (artboards 7-13) approved as a G-02 amendment (DEC-70); v1 artboards revised after a critique (DEC-71); board files in
@@ -23,7 +23,8 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/roadmap.md` - written 2026-10-11: P0..P3 for release 1, P4 is release 2, dates for P1 (DEC-87..DEC-92).
 - `docs/process-flows.md` - written 2026-10-11, eight flows (DEC-93..DEC-95); PDF `docs/rosetta-flows.pdf` and private
   page https://claude.ai/artifact/1LY8Fx8ZFjxSQXvtRFDoDj, both regenerated 2026-10-11.
-- Not yet filled: `docs/orchestration/` (build plan).
+- `docs/orchestration/` - build plan written 2026-10-11: protocol (merge rules, usage throttle, gates) and the task
+  cards of P1..P3 with the counts in the [tasks.md totals](docs/orchestration/tasks.md) (DEC-96..DEC-101).
 
 ## Resume point
 
@@ -32,8 +33,11 @@ application (DEC-59..DEC-69): no CLI, no plugin; one container image, Docker Com
 (Q-18); accounts, landing page, per-user keys, caps, PostgreSQL plus files; ADR-014..ADR-017; requirements
 RF-010, RF-803, RF-1100..RF-1306; threat model rewritten. PR #5 added the approved hosted screens (DEC-70) and the
 revised v1 screens (DEC-71). Branch `docs/planning-brief` adds the planning brief and the principle catalogue for
-`plan` (DEC-72..DEC-85, ADR-018, RF-604..RF-613; Q-06 answered) and the approved Plan setup artboard (DEC-86). Branch `docs/roadmap-and-flows` adds the
-roadmap and the process flows (DEC-87..DEC-95).
+`plan` (DEC-72..DEC-85, ADR-018, RF-604..RF-613; Q-06 answered) and the approved Plan setup artboard (DEC-86). PR #7 added the
+roadmap and the process flows (DEC-87..DEC-95). Branch `docs/build-plan` adds the build plan (protocol, cards for
+P1..P3, orchestrator agent), ADR-019 (Proposed: `tar` and `ignore`), and DEC-96..DEC-101: the orchestrator merges
+task-card pull requests itself under the merge rules; RF-240 and the first RF-425 scenario move into P1; gate names
+aligned; up to 3 agents under a 5-hour usage throttle.
 
 Next, in this order (ask the owner before each):
 1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56).
@@ -41,10 +45,12 @@ Next, in this order (ask the owner before each):
    G-02 amendment (DEC-70).
 2a. ~~Plan setup artboard~~ DONE 2026-10-11: artboard 14, approved as a G-02 amendment (DEC-86).
 3. ~~Roadmap and process flows~~ DONE 2026-10-11: DEC-87..DEC-95; PDF and page published.
-4. Build plan (with the hosted cards: image, Compose, accounts, landing, hosted deploy by 2026-10-20): `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
-   card, and the orchestrator agent.
-5. Run `check_docs.py --without legacy`, a light review, fix what is mechanical.
-6. Owner reviews the whole set; G-01 opens only then (DEC-33).
+4. ~~Build plan~~ DONE 2026-10-11: DEC-96..DEC-101, ADR-019; pull request for the owner to merge.
+5. After the owner merges the build plan: create milestones P1..P3 and one issue per card (DEC-101).
+6. Owner: add the CI jobs as required status checks to the `main` ruleset once P1-02 is merged
+   (environments-and-delivery.md section 5).
+7. Owner reviews the whole set on 2026-10-13 (accepts ADR-019 or changes it); G-01 opens only then (DEC-33). Then
+   start the build as the orchestrator (`claude --agent orchestrator` in `C:\BuildingFolder\Rosetta`).
 
 Blockers: none.
 
@@ -54,7 +60,7 @@ Blockers: none.
 2. ~~File formats walk-through~~ DONE 2026-10-10: DEC-43; data-model.md written, awaiting owner review.
 3. ~~Conventions and delivery~~ DONE 2026-10-10: DEC-40, ADR-011.
 4. ~~Design system v1 + brief with live web UI mock-ups~~ DONE 2026-10-11: approved at G-02 (DEC-56).
-5. Hosted screens artboards, roadmap, process flows, build plan.
+5. ~~Hosted screens artboards, roadmap, process flows, build plan~~ DONE 2026-10-11.
 6. Owner review of the whole documentation set, which opens G-01 (DEC-33).
 
 ## Gates
@@ -67,7 +73,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 |---|---|---|---|---|
 | G-01 | Documentation set accepted | Closed | - | opens only after the owner reviews the whole set (DEC-33); no provisional opening |
 | G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70); v1 artboards 1-6 revised (DEC-71); Plan setup, artboard 14 (DEC-86) |
-| G-03 | Public GitHub repository ready | Closed | - | `blacklight0101/Rosetta`, created on the owner's request |
+| G-03 | Public GitHub repository ready | Open | 2026-10-11 | opened by BlackLigth (blacklight0101) in the build-plan session (DEC-101): `blacklight0101/Rosetta` exists, `main` pushed and protected |
 | G-04 | Provider access ready | Closed | - | Ollama installed with the model of Q-04; OpenAI key in the environment |
 | G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26: hosted URL, teacher account (RF-803) |
 | G-06 | Hosted deployment ready | Closed | - | host chosen (Q-18), secrets set, smoke test passed, teacher account signs in; by 2026-10-24 |
@@ -79,6 +85,14 @@ opened it; a `Provisional` gate names the only cards it releases.
 - Deferred ADRs and their triggers are listed in the [ADR index](docs/adr/README.md).
 
 ## Session log
+
+- **2026-10-11 (build plan)** - protocol and task cards for P1..P3 written from the templates; DEC-96: the
+  orchestrator opens and merges task-card pull requests itself under strict merge rules (decision documents stay with
+  the owner); DEC-97 and DEC-98 move the basic estimate and the answers file into P1; DEC-99 aligns gate names;
+  DEC-100: up to 3 agents with a 5-hour usage throttle (3 to 2 from 75%, 1 from 90%, hold at 95%), orchestrator on Opus 5.5; DEC-101: the remaining defaults
+  (all of R1 carded, issues after the merge, host chosen by the owner, spike on the owner's machine, slides drafted by
+  Claude); G-03 opened by the owner. ADR-019 Proposed for `tar` and `ignore`. Traceability matrix filled. Next: owner
+  merges the plan, issues created, G-01 review on 2026-10-13.
 
 - **2026-10-11 (roadmap and flows)** - roadmap written: P1 milestone slice by 2026-10-22 (hosted deploy 2026-10-20,
   G-06 2026-10-24, hand-in 2026-10-26), P2 full understand, P3 report and plan, P4 release 2; G-01 review set for

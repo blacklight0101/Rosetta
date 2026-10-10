@@ -1,95 +1,1044 @@
 # Task cards - Rosetta
 
-Protocol: [README.md](README.md). Plan written 2026-10-09. Every finished card is checked by the verifier before it is
-merged. The orchestrator edits only the **Status** line of a card and appends follow-up cards; it never rewrites a
-card. Card ids are never renumbered or reused.
+Protocol: [README.md](README.md). Plan written 2026-10-11 (DEC-96..DEC-100). Every finished card is checked by the
+verifier before it is merged. The orchestrator edits only the **Status** line of a card and appends follow-up cards;
+it never rewrites a card. Card ids are never renumbered or reused.
 
 ## Totals (canonical)
 
 This table is the only canonical place for card counts. `handoff.md` and `README.md` link here; any number they repeat
-is re-checked against this table whenever a card is added, withdrawn or re-tiered (README section 11).
+is re-checked against this table whenever a card is added, withdrawn or re-rated (README section 11). Bands follow
+DEC-32: 1-3 haiku, 4-6 sonnet, 7-9 opus, 10 fable.
 
-| Phase | Cards | sonnet | opus | fable | S | M | L | Follow-ups | Withdrawn |
-|---|---|---|---|---|---|---|---|---|---|
-| P1 Foundation | 3 | 1 | 1 | 1 | 0 | 2 | 1 | 0 | 0 |
-| **Total** | **3** | **1** | **1** | **1** | **0** | **2** | **1** | **0** | **0** |
-
-<!-- FILL: one row per phase of docs/roadmap.md that has cards (P0 is the documentation phase and has none). Recount
-after every change: "Cards" counts every card heading in the phase including withdrawn ones; the tier and size
-columns count the same cards; "Follow-ups" and "Withdrawn" say how many of them are follow-up cards and withdrawn
-cards. The numbers above describe the three example cards below. -->
+| Phase | Cards | haiku 1-3 | sonnet 4-6 | opus 7-9 | fable 10 | S | M | L | Follow-ups | Withdrawn |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P1 Milestone slice (M1) | 54 | 1 | 18 | 28 | 7 | 9 | 37 | 8 | 0 | 0 |
+| P2 Full understand | 14 | 0 | 4 | 10 | 0 | 2 | 11 | 1 | 0 | 0 |
+| P3 Report and plan | 12 | 0 | 3 | 9 | 0 | 1 | 9 | 2 | 0 | 0 |
+| **Total** | **80** | **1** | **25** | **47** | **7** | **12** | **57** | **11** | **0** | **0** |
 
 ## Conventions for every card
 
-- **Card format**: heading `### P<phase>-nn - Title`, then the fields Builder, Size, Depends on, Gate, Status, Reads,
-  Do, Delivers, Done when, Refs, one per line, in that order.
-- **Builder**: `sonnet` | `opus` | `fable` (agents `builder-sonnet`, `builder-opus`, `builder-fable`; tier criteria in
-  README section 2).
+- **Card format**: heading `### P<phase>-nn - Title`, then the fields Difficulty, Size, Depends on, Gate, Status,
+  Reads, Do, Delivers, Done when, Refs, one per line, in that order.
+- **Difficulty**: 1-10 with the builder in brackets (DEC-32; README section 2). The verifier is `verifier` for 1-9 and
+  `verifier-fable` for 10 (DEC-41).
 - **Size**: S (at most half a day for a builder), M (about a day), L (two to three days). Nothing larger; split it.
-- **Status**: `Todo` | `In progress` | `In review` | `Done` | `Blocked (<reason>)`, where the reason is a gate
-  (`G-nn`), an open question (`Q-nn`), `escalated YYYY-MM-DD - see handoff.md` or `withdrawn YYYY-MM-DD - see <id>`.
-  A part of a card can wait while the rest runs: `Todo; <part> Blocked (Q-nn)`.
-- **Common Reads** for every card, not repeated on the cards: `CLAUDE.md`, `docs/architecture.md`, the requirement ids
-  in *Refs* inside `docs/spec/requirements.md`, the ADRs in *Refs*, and `docs/legacy-sources.md` when a `DEF-nn` is
-  cited. <!-- FILL: add the template repository the builders copy patterns from, if any, with its path. -->
-- **Test mix**: every card is built test-first (README section 1). Unless a card says otherwise, domain and
-  application work delivers unit tests; persistence, HTTP boundaries, adapters and jobs deliver integration tests (one
-  real boundary) plus unit tests for their pure parts; pages deliver service tests; the E2E cards cover the browser
-  journeys. The release pyramid is enforced by the verification-matrix card.
-  <!-- FILL: name the E2E cards (one per phase that delivers user journeys) and the verification-matrix card. -->
-- **Ownership**: every shared component, table, migration number block and module is built by exactly one card; a card
-  that needs something another card owns depends on that card, directly or through its chain.
-  <!-- FILL: list the owners here when there are more than a handful (e.g. "P1-04 owns the UI shell and the general
-  components; P2-03 owns the data grid"). -->
-- **Follow-up cards**: a verifier MINOR finding or a defect found after merge becomes a card with the next free
-  `P<phase>-nn` of the phase that owns the affected work, appended at the end of that phase's section, its title
-  starting with `Follow-up:` and its Refs naming the originating card (README section 9). When the defect needs a
-  test, the card's first step is a failing test that reproduces it.
-- **Gates and open questions**: gate G-01 gates P1-01, and every other card reaches P1-01 through its dependencies. A
-  card uses the stated default of an open question whose Status is "Default applies"; only when no safe default exists
-  is the dependent part marked `Blocked (Q-nn)`.
+- **Status**: `Todo` | `In progress` | `In review` | `Done` | `Blocked (<reason>)` (README section 3). A part of a card
+  can wait while the rest runs: `Todo; <part> Blocked (G-nn)`.
+- **Common Reads** for every card, not repeated on the cards: `CLAUDE.md`, `docs/architecture.md`,
+  `docs/conventions.md`, the requirement ids in *Refs* inside `docs/spec/requirements.md`, the ADRs in *Refs*, and
+  for every card that touches a page `docs/design-system.md` and the named artboard in `docs/design/board/`.
+- **Test mix**: test-first on every card (README section 1). Unless a card says otherwise, domain and application
+  work delivers unit tests; persistence, HTTP routes, adapters and file writers deliver integration tests plus unit
+  tests for their pure parts; every new route adds its rows to the access matrix test; pages are covered by the
+  card's E2E spec on the harness of P1-13. The E2E journey cards are P1-46, P2-13 and P3-12; the verification-matrix
+  cards are P1-49, P2-14 and P3-12, which also report the pyramid against README section 1.
+- **Ownership** (one creator each; later cards add to it and depend on the owner):
+
+| Owner | Owns |
+|---|---|
+| P1-01 | `package.json` scripts, tool configuration, `scripts/test-levels.mjs`, the layer folders |
+| P1-02 | `.github/workflows/ci.yml`, `codeql.yml`, `.github/dependabot.yml` |
+| P1-03 | `src/domain/errors/` (Result, error-code catalogue in code), `Clock`, `IdGenerator`, `Money` |
+| P1-04 | `src/infrastructure/guards/secret-masker.ts`, the `Logger` port and loggers, security-event logging |
+| P1-05 | `src/infrastructure/config/environment.ts`, `.env.example` |
+| P1-06 | `db/migrations/0001_accounts.sql`, `0002_projects_runs.sql`, `0003_cost_ledger_audit.sql`, `0004_server_settings_defaults.sql`; the pool, `PgMigrator`, `tests/support/postgres.ts` |
+| P1-07 | `src/presentation/main.ts`, `composition-root.ts`, the Fastify server, the error-to-status mapper |
+| P1-08 | `UserRepository`, `AuditLog`, `PasswordHasher` and their adapters |
+| P1-09 | `SessionStore`, the session, CSRF, Origin and role hooks, `tests/integration/access-matrix.test.ts` |
+| P1-12 | `web/` (Vite, Preact, tokens, shell, router `web/src/app/routes.ts`), `.claude/launch.json` |
+| P1-13 | `playwright.config.ts`, `tests/e2e/support/` |
+| P1-16 | `SourceFetcher` and `src/infrastructure/github/` |
+| P1-17 | `RepositoryReader`, `OutputWriter`, `src/infrastructure/files/` |
+| P1-22 | `RunIndex`, `RunEventSink` adapters, the run queue, `RunManifest` writing |
+| P1-24 | `LlmProvider`, `FakeProvider`, `tests/contracts/llm-provider.contract.ts`, `ProviderCallRecorder` |
+| P1-27 | `PriceTable`, `BudgetGuard`, `CostLedger`, `prices/default-prices.yaml`, `server_settings` caps use cases |
+| P1-28 | `EgressGuard` |
+| P1-31 | the agent loop, tools, `prompts/reader/` |
+| P1-32 | the card schema, parser and card writers |
+| P3-05 | `prompts/catalogue/` |
+
+- **Follow-up cards**: README section 9.
+- **Gates and open questions**: G-01 and G-03 gate P1-01, and every other card reaches P1-01 through its
+  dependencies. G-02 is open; it is named on page cards for traceability. A card uses the stated default of an open
+  question whose Status is "Default applies".
 
 ---
 
-## Phase 1 - Foundation
+## Phase 1 - Milestone slice (M1)
 
-<!-- FILL: replace the three example cards with the real Phase 1 cards derived from docs/roadmap.md, following
-references/build-plan.md in the project-blueprint skill. Keep the field order. Reads names exact sections; Done when
-lists only checks the verifier can run. -->
+Window 2026-10-13 to 2026-10-22; hosted deploy by 2026-10-20 (P1-48); G-06 by 2026-10-24; hand-in by 2026-10-26
+(roadmap.md P1, DEC-87..DEC-92). If P1 runs late, the postponement order of roadmap.md applies (DEC-90): P1-40 (delete
+part), P1-37, P1-38, P1-39, P1-40 (history part), the verification view part of P1-35, then the queue part of P1-22
+move to P2.
 
-### P1-01 - Scaffold the solution
-- **Builder**: sonnet
+### P1-01 - Toolchain, quality gates and `npm run verify`
+- **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: none
-- **Gate**: G-01
+- **Gate**: G-01, G-03
 - **Status**: Blocked (G-01)
-- **Reads**: `docs/architecture.md` section on layers and solution layout; `docs/conventions.md` naming section; `docs/environments-and-delivery.md` package baseline.
-- **Do**: create the solution and projects exactly as the architecture's layout, with project references that follow the dependency rule; shared build properties (nullable on, warnings as errors in source projects); pinned SDK or toolchain version; editor configuration; the test project with the level markers of README section 1 and one placeholder test per level that can run; a test filter per level works.
-- **Delivers**: the solution tree; build configuration files; the test project; the build and test commands of README section 1 run green.
-- **Done when**: the verifier runs the build and test commands; the innermost layer has zero project references (verifier reads the project files); the created tree matches the layout section of `docs/architecture.md`; running the tests filtered by level `Unit` runs only unit tests.
-- **Refs**: ADR-nnn, RNF-001. <!-- FILL: the real ids (e.g. the stack ADR and the maintainability RNF). -->
+- **Reads**: `docs/environments-and-delivery.md` sections 5-7; `docs/conventions.md` sections 1, 2, 7, 8 and 10; `docs/architecture.md` section 4.
+- **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 ±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
+- **Delivers**: the files above; `npm run verify` green; `package-lock.json`.
+- **Done when**: the verifier runs `npm ci` and `npm run verify` (exit 0); a test file importing `src/infrastructure/` from `src/domain/` makes `npm run arch` fail (verifier tries it in a disposable worktree); an `any` in `src/` makes `npm run lint` fail; `npm run test:levels` prints three counts; `npm ls --depth=0` shows only baseline packages.
+- **Refs**: RNF-001, RNF-005, RNF-013, ADR-009, ADR-010, ADR-011, DEC-27, DEC-30, DEC-39, DEC-40.
 
-### P1-02 - Database bootstrap and migrations runner
-- **Builder**: opus
+### P1-02 - CI workflows and repository security
+- **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-01
 - **Gate**: none
 - **Status**: Todo
-- **Reads**: `docs/data-model.md` sections on conventions, the foundation tables, grants and migration numbering; `docs/environments-and-delivery.md` section on secrets.
-- **Do**: a runner that applies numbered, idempotent migration scripts in order and records each applied script in a schema-version table; the database name is a parameter; the first migrations create the foundation tables of the data model with the names, constraints and grants it states; passwords and connection strings come from a secure prompt or secret store, never from the repository; a test-database helper creates a fresh database per test run.
-- **Delivers**: the runner and its usage notes; the foundation migrations with the numbers `docs/data-model.md` assigns to this card; a schema test comparing the created objects and grants with the data model; integration tests for the runner.
-- **Done when**: the verifier runs the runner twice on an empty local database and the second run changes nothing; the schema test passes; a grep for `Password=` in committed files finds nothing; the created objects match the data model's tables for these migration numbers.
-- **Refs**: ADR-nnn, RNF-nnn. <!-- FILL: the data-model ADR, the security and data RNFs. -->
+- **Reads**: `docs/environments-and-delivery.md` sections 4-6; `docs/conventions.md` section 9.
+- **Do**: `.github/workflows/ci.yml` on push and pull request, matrix `ubuntu-latest` and `windows-latest`, Node from `.nvmrc`, `npm ci`, `npm run verify` with a PostgreSQL 17 service container on Linux (database tests reported as skipped on Windows), `npm audit --audit-level=high --omit=dev` with `audit-exceptions.json`, gitleaks, dependency review on pull requests, pull request title checked by commitlint through `env: TITLE`; `.github/workflows/codeql.yml` (pull requests and weekly); `.github/dependabot.yml` (npm and actions weekly, grouped minor and patch). Top-level `permissions: contents: read`, `timeout-minutes` on every job, concurrency per branch, every third-party action pinned to a full commit SHA with the version in a comment, no `pull_request_target`, no secrets. Add a "Required checks" paragraph to `docs/environments-and-delivery.md` section 5 naming the job names the owner adds to the `main` ruleset.
+- **Delivers**: the three workflow files; `audit-exceptions.json`; the doc paragraph.
+- **Done when**: the card's own pull request shows every job green on both runners; `grep -n '\${{' .github/workflows/*.yml` shows no hit inside a `run:` block; every `uses:` line carries a 40-character SHA; a pull request title `bad title` fails the title job (verifier reads the job log of a test run or the commitlint unit test).
+- **Refs**: RNF-001, RNF-003, ADR-011, DEC-28, DEC-35, DEC-42, DEC-57.
 
-### P1-03 - Authentication and authorization
-- **Builder**: fable
-- **Size**: L
-- **Depends on**: P1-02
+### P1-03 - Domain kernel: results, error codes, clock, ids and money
+- **Difficulty**: 5 (sonnet)
+- **Size**: S
+- **Depends on**: P1-01
 - **Gate**: none
 - **Status**: Todo
-- **Reads**: `docs/architecture.md` section on authentication and authorization; `docs/spec/requirements.md` sign-in and permission requirements; the authentication ADR.
-- **Do**: the sign-in path of the chosen identity provider; claims built from the stored user and permissions; one authorization policy per permission code, registered from the permission catalogue, with a start-up check that every policy name used by a page or endpoint exists; no anonymous route except the health check; a test authentication scheme for integration and E2E tests; a development-only impersonation switch that is off outside development.
-- **Delivers**: the host's authentication and authorization setup; the permission catalogue; the test authentication handler; integration tests: unknown identity is refused, a user with the permission gets the page, a user without it is refused, an unknown policy name fails start-up.
-- **Done when**: the verifier runs the tests; a grep shows no anonymous attribute outside the health check; claims never use role names for authorization decisions; the security checks of README section 5 step 10 pass; every RF-001 scenario has a passing test.
-- **Refs**: ADR-nnn, RF-001, RNF-nnn. <!-- FILL: the real sign-in and permission requirement ids and the authentication ADR. -->
+- **Reads**: `docs/conventions.md` sections 3 and 6; `docs/architecture.md` sections 5, 11 and 12.
+- **Do**: `src/domain/errors/result.ts` (`Result<T, E>` with `ok`/`err` helpers), `src/domain/errors/codes.ts` (the ranges of conventions section 6 as `as const` objects, one entry per code used so far, each with a plain message and next step), `src/domain/errors/rosetta-error.ts` (`Error` subclass with `code` and `cause`); `src/application/ports/clock.ts`, `id-generator.ts`; `src/infrastructure/system/system-clock.ts`, `timestamp-id-generator.ts` (run ids `yyyyMMdd-HHmmss-<stage>`, UUIDs through `node:crypto`), `tests/support/fixed-clock.ts`, `sequence-id-generator.ts`; `src/domain/budget/money.ts` (integer micro-USD, add, compare, format as USD; no floating point).
+- **Delivers**: the files above; unit tests for Result, Money arithmetic and formatting, id formats.
+- **Done when**: `npm run verify` green; grep of hard-rule table rows `Date.now(`, `new Date(`, `randomUUID(` outside `src/infrastructure/` is empty; Money has no `number` division on cost values (verifier reads the code).
+- **Refs**: RF-007, RNF-004, ADR-009, DEC-54.
 
+### P1-04 - Secret masker and the application log
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-03
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.14; `docs/security/threat-model.md` (secrets and logging rows); `docs/environments-and-delivery.md` section 13.
+- **Do**: `SecretMasker` in `src/infrastructure/guards/secret-masker.ts`: masks connection-string passwords, API keys (`sk-`, `sk-ant-`, `ghp_`, `github_pat_`, `AKIA`), bearer tokens, private key blocks and `password=`/`pwd=` settings as `[MASKED:<kind>]`, keeps line count and line numbers, returns counts per kind, and throws a coded error on internal failure (callers fail closed). `Logger` port; `StdoutJsonLogger`, `JsonlFileLogger` (daily file `<data>/logs/rosetta-YYYY-MM-DD.jsonl`, `debug` and above, retention `ROSETTA_LOG_RETENTION_DAYS` applied at start-up), `FanOutLogger`, `MemoryLogger`; every entry passes the masker; entries carry time, level, logger, message, `RST` code and run, task and call ids when present; `securityEvent(code, detail)` writes `warn` with logger `security`.
+- **Delivers**: the masker, the port, four loggers; unit tests with a fixture of secret patterns (including multi-line private keys and a value split across a JSON string), a failing-masker test, formatter tests; an integration test for daily files and retention in a temporary folder.
+- **Done when**: every RF-009 and RF-141 masking scenario has a passing test; a test proves a fixture key never appears in any logger output; the masker keeps the line count of every fixture; `npm run verify` green.
+- **Refs**: RF-009, RF-141, RNF-003, ADR-006, ADR-013, DEC-50, DEC-57.
+
+### P1-05 - Server configuration from the environment
+- **Difficulty**: 5 (sonnet)
+- **Size**: S
+- **Depends on**: P1-03
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/environments-and-delivery.md` section 4; `docs/architecture.md` section 10 (secure by default).
+- **Do**: `src/infrastructure/config/environment.ts`: a zod schema for every variable of environments section 4 (types, defaults, `ROSETTA_SECRET_KEY` as 32 bytes base64, `ROSETTA_PUBLIC_URL` as an http(s) origin), parsed once into an immutable object; a failure throws `RST-10xx` naming each missing or invalid variable and never its value. `.env.example` lists every variable with a comment and a safe example; `.env` and `.env.*` (except the example) are git-ignored.
+- **Delivers**: the schema and loader; `.env.example`; unit tests per variable rule; a test that parses `.env.example` successfully and finds no value matching the secret patterns of P1-04.
+- **Done when**: every RF-1305 scenario has a passing test; an error message test proves a wrong value is not echoed; `git check-ignore .env` succeeds.
+- **Refs**: RF-1305, RNF-003, RNF-014, ADR-014.
+
+### P1-06 - PostgreSQL, migrations and the release-1 schema
+- **Difficulty**: 8 (opus)
+- **Size**: L
+- **Depends on**: P1-05
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` sections 1, 4, 6, 7 and 8; `docs/environments-and-delivery.md` section 9.
+- **Do**: `src/infrastructure/db/pool.ts` (`pg` pool from `DATABASE_URL`, statement timeout); `PgMigrator` (files `db/migrations/NNNN_*.sql` in order, each in a transaction, recorded in `schema_version` with a SHA-256 checksum; a changed applied file or an unknown applied version stops with `RST-24xx`; uses `DATABASE_MIGRATOR_URL` when set); migrations `0001_accounts` (users, sessions, provider_keys), `0002_projects_runs`, `0003_cost_ledger_audit`, `0004_server_settings_defaults` with every column, check, index and default of data-model section 4 and the grants of section 6 (`rosetta_app` with insert and select only on `cost_ledger` and `audit_events`; roles created only when the connecting user may create roles); `tests/support/postgres.ts`: uses `ROSETTA_TEST_DATABASE_URL` when set (CI service) or starts a `postgres:17` container for the run, applies every migration, gives each test file its own schema.
+- **Delivers**: the pool, the migrator, four migrations, the test helper; integration tests: apply on an empty database, second run changes nothing, edited file refused, unknown version refused, failing migration leaves the previous schema; a schema test comparing tables, columns, checks and grants with data-model section 4.
+- **Done when**: every RF-1302 scenario has a passing test; the verifier runs the integration project against a disposable database; `rosetta_app` cannot `UPDATE cost_ledger` (test); no SQL string is built with template literals (grep of README section 5.1).
+- **Refs**: RF-1302, RNF-002, ADR-016, DEC-65.
+
+### P1-07 - HTTP server foundation, health and security headers
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-04, P1-06
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-017-fastify-http-server.md`; `docs/architecture.md` sections 2, 10 and 11; `docs/security/threat-model.md` (HTTP rows).
+- **Do**: `src/presentation/main.ts` (read the environment, apply migrations, then listen on `0.0.0.0:8080`); `composition-root.ts` (the only place creating adapters); Fastify with `@fastify/helmet` set to the exact CSP and headers of RF-1013 (HSTS only when `ROSETTA_PUBLIC_URL` is https), `@fastify/static` for the built front end, body size limits; the error-to-status mapper (400, 401, 403, 404, 409, 429, 500) returning `{ code, message, nextStep }` and never a stack; `GET /healthz` (200 `{status, version}` when the database answers, else 503 with no detail); `robots.txt` disallowing everything and `X-Robots-Tag: noindex, nofollow` on every response; request logging through the `Logger` port with masked values.
+- **Delivers**: the server, the start-up order, the mapper, health and robots routes; integration tests through `fastify.inject` for headers, statuses, health up and down, robots.
+- **Done when**: every RF-1303 scenario and the header scenario of RF-1013 have passing tests; the RF-1201 noindex scenario passes; a thrown error with a stack produces a response without `at ` lines (test); `npm run verify` green.
+- **Refs**: RF-007, RF-1013, RF-1201, RF-1303, RNF-008, ADR-013, ADR-014, ADR-017.
+
+### P1-08 - Users, passwords, audit log and the bootstrap administrator
+- **Difficulty**: 10 (fable)
+- **Size**: M
+- **Depends on**: P1-04, P1-06
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md`; `docs/data-model.md` section 4 (`users`, `audit_events`); `docs/security/threat-model.md` (accounts rows).
+- **Do**: domain `User`, `Role`, `AccountState` with the transitions of architecture section 5; password rules (at least 12 characters, not in `src/infrastructure/security/common-passwords.txt` of the 10,000 most common, not containing the user name); `PasswordHasher` port and `ScryptPasswordHasher` (`scrypt$N$r$p$salt$hash`, constant-time compare); `UserRepository` with `PgUserRepository` and `MemoryUserRepository` passing one contract suite (user name unique case-insensitively; list queries never select the hash); `AuditLog` port with `PgAuditLog` and `MemoryAuditLog` (detail masked by P1-04); `BootstrapAdmin` use case run by `main.ts`: creates the administrator from `ROSETTA_ADMIN_USER`/`ROSETTA_ADMIN_PASSWORD` once on an empty `users` table, state `MustChangePassword`, never logging the values.
+- **Delivers**: the domain types, rules, hasher, two ports with adapters and contract suites, the use case; unit tests for rules and transitions; integration tests on PostgreSQL.
+- **Done when**: the RF-1102 bootstrap scenario and the RF-1100 hash scenario have passing tests; a second start with the variables set creates no second account (test); grep of the test log output finds no fixture password; the verifier-fable security review passes.
+- **Refs**: RF-1100, RF-1102, RF-1103, RF-1109, RNF-003, ADR-015, ADR-016, DEC-62, DEC-66, DEC-69.
+
+### P1-09 - Sign-in, sessions, CSRF and access control
+- **Difficulty**: 10 (fable)
+- **Size**: L
+- **Depends on**: P1-07, P1-08
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md`; `docs/data-model.md` section 4 (`sessions`); `docs/architecture.md` section 10; `docs/security/threat-model.md`.
+- **Do**: `SessionStore` port with `PgSessionStore` and `MemorySessionStore` (256-bit id from `node:crypto`, only its SHA-256 stored, expiry min(idle 8 h, absolute 7 days), touch, end, end all for a user, hourly purge); `SignIn` (generic message, equal timing with a dummy hash for unknown users, five failures in 15 minutes lock for 15 minutes, audit and security events), `SignOut`; `@fastify/rate-limit` 10 sign-in attempts per minute per IP; the session cookie `__Host-rosetta_session` with the attributes of RF-1013; hooks: session (pages redirect to `/sign-in`, API 401), role guard, CSRF token per session through `@fastify/csrf-protection` and an `Origin` check against `ROSETTA_PUBLIC_URL` on every state-changing request (403 and a security event); the `Actor` passed to every use case; `tests/integration/access-matrix.test.ts` with rows anonymous, user, other user, administrator for every route that exists.
+- **Delivers**: the store, two use cases, the hooks, routes `POST /api/session`, `DELETE /api/session`, `GET /api/session`; integration tests for success, failure, lockout, rate limit, timing (statistical bound), expiry with a fixed clock, CSRF and Origin refusals; the access matrix.
+- **Done when**: every RF-1100, RF-1101 and RF-1009 scenario has a passing test; no response body in the test suite contains a session id, a hash or a CSRF secret (output scan test); the verifier-fable security review passes.
+- **Refs**: RF-1009, RF-1013, RF-1100, RF-1101, RF-1105, RF-1109, RNF-014, ADR-013, ADR-015, ADR-017, DEC-62, DEC-69.
+
+### P1-10 - Change password and account administration API
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` section 6 (account use cases); `docs/data-model.md` section 4 (`users`, `audit_events`, `cost_ledger`).
+- **Do**: `ChangePassword` (current password, rules of P1-08, ends the user's other sessions, clears `MustChangePassword`); `CreateUser` (user name, display name, role, initial password, option `mustChangePassword` default true so the teacher account can be created without it, RF-1107), `UpdateUser` (disable, enable; disabling ends sessions), `ResetPassword` (ends sessions, sets `MustChangePassword`), `ListUsers` (last sign-in, project count, month-to-date cost from a read-only sum over `cost_ledger`), `ListAudit` (last 30 days, filter by user and action); routes under `/api/account/` and `/api/admin/` with role checks; an audit row for every change; a signed-in user in `MustChangePassword` is limited to the change-password route.
+- **Delivers**: the use cases, routes and access-matrix rows; integration tests per action and per refusal.
+- **Done when**: every RF-1102, RF-1103 and RF-1109 scenario has a passing test; a `user` gets 403 on every `/api/admin/` route (matrix); audit rows never contain a password (test).
+- **Refs**: RF-1102, RF-1103, RF-1105, RF-1107, RF-1109, ADR-015, DEC-62, DEC-66.
+
+### P1-11 - Encrypted provider keys
+- **Difficulty**: 10 (fable)
+- **Size**: M
+- **Depends on**: P1-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md`; `docs/data-model.md` section 4 (`provider_keys`); `docs/security/threat-model.md` (keys and SSRF rows).
+- **Do**: `SecretBox` port and `AesGcmSecretBox` (AES-256-GCM, random IV, additional data `user_id:provider`, key version; decrypts with `ROSETTA_SECRET_KEY_PREVIOUS` during a rotation); `ProviderKeyRepository` with Pg and memory adapters; `SaveProviderKey` (stores ciphertext and last four characters; for `openai-compatible` the base URL must be https and must not resolve to a private, loopback or link-local address, checked through `node:dns` in infrastructure), `DeleteProviderKey` (row removed), `ListProviderKeys` (provider, last four, updated time only); routes under `/api/account/keys`; audit rows without the value.
+- **Delivers**: the box, repository, use cases and routes; unit tests for the box (tamper detection, wrong additional data, rotation); integration tests on storage, replacement, deletion and the URL check with a fake resolver; an output scan test over every response of the suite.
+- **Done when**: every RF-1104 scenario except the run-time key choice (P1-29) has a passing test; no response, log entry or audit row in the suite contains a fixture key; the verifier-fable security review passes.
+- **Refs**: RF-1104, RF-1109, RNF-003, ADR-015, DEC-64.
+
+### P1-12 - Web front end shell and design tokens
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-07
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design-system.md` sections 2-9, 12 and 13; `docs/design/tokens.css`; `docs/design/board/Main.dc.html`; DEC-52.
+- **Do**: `web/` with Vite and `@preact/preset-vite` building into `dist/web/` served by P1-07; `web/src/styles/tokens.css` identical to `docs/design/tokens.css`; the signed-in shell (header with the totals pill slot, navigation groups, main region) and the shared components of design-system section 5 that every page needs (buttons, fields with error text, status badges with glyphs for every value of every state list, error banner with code and next step, empty state); a text-only rendering helper for repository and model text (RF-507 rule 2: only `https://github.com/` links stay links); a typed API client that sends the CSRF token and maps error bodies; the router `web/src/app/routes.ts`; no inline scripts or styles (CSP of RF-1013); `.claude/launch.json` entry `rosetta-web` starting the dev server.
+- **Delivers**: the shell, components, client, router and launch entry; unit tests for the badge map over every state value, the link filter and the client's error mapping; a component gallery page under `/dev/gallery` built only in development.
+- **Done when**: the tokens comparison test passes; the verifier walks `/dev/gallery` at 1280x800 and 360x780, light and dark, and sees no console error; a lint test proves `innerHTML` and `dangerouslySetInnerHTML` are rejected; `npm run build` produces `dist/web/`.
+- **Refs**: RF-507, RF-1013, RNF-008, RNF-010, ADR-012, DEC-26, DEC-44, DEC-52, DEC-56, DEC-70, DEC-71.
+
+### P1-13 - End-to-end harness
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-09, P1-12
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` section 17; `docs/conventions.md` section 7; `docs/data-model.md` section 8.
+- **Do**: `playwright.config.ts` (Chromium, the two viewports of README section 1, light and dark projects); `tests/e2e/support/`: a test server started with a disposable database, `ROSETTA_TEST=1`, the fake provider and fake GitHub injection points in the composition root (test-only factory), seeded users through the use cases, a sign-in helper, an axe helper failing on serious and critical violations; one smoke spec (health, robots, sign-in page reachable).
+- **Delivers**: the configuration, support files and the smoke spec; the e2e project wired into `npm run test:ci` on Linux.
+- **Done when**: the verifier runs the e2e project headless from a clean database (exit 0); the smoke spec runs in both colour schemes; network calls outside `127.0.0.1` fail the test run (test with a blocked request).
+- **Refs**: RNF-005, ADR-008, ADR-010, DEC-39.
+
+### P1-14 - Sign-in, change password and settings pages
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-10, P1-11, P1-13
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/SignIn.dc.html`, `ChangePassword.dc.html`, `Settings.dc.html`; `docs/design-system.md` section 14.
+- **Do**: pages `/sign-in` (generic error, lockout shown as the same message), `/account/password` (forced at first sign-in; rule checklist updating while typing), `/settings` (keys per provider with last four, replace, delete with confirmation; the Test button slot that P1-29 fills); sign-out in the header menu.
+- **Delivers**: three pages; E2E specs: sign in and out, forced change at first sign-in, save and delete a key, axe on each page.
+- **Done when**: the verifier walks the three pages at both viewports and colour schemes; the E2E specs pass; no page shows a full key (spec asserts on the DOM).
+- **Refs**: RF-1100, RF-1101, RF-1103, RF-1104, RNF-008, DEC-70.
+
+### P1-15 - Landing page
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-13
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/Landing.dc.html`; `.impeccable/surfaces/` (landing direction contract); `docs/design-system.md` section 14 (replay stage, pipeline rail).
+- **Do**: the public page at `/` exactly as the approved artboard: hero, "Watch it work" replay stage with a static sample run labelled "Sample run" (animation once per 10 s cycle, paused on hover or focus, static under reduced motion), pipeline rail, evidence cards, cost control, security and privacy, technology, about the project; Sign in button; "Request access" mail link only when `ROSETTA_CONTACT_EMAIL` is set; a signed-in visitor is redirected to `/projects`; works without JavaScript from 360 px.
+- **Delivers**: the page and its assets; E2E specs: page with JavaScript disabled, at 360 px, axe in both schemes, redirect when signed in, link present or absent by configuration.
+- **Done when**: every RF-1200 and RF-1201 scenario has a passing test; the verifier walks the page at both viewports and colour schemes and compares it with the artboard.
+- **Refs**: RF-1200, RF-1201, RNF-010, Q-19, Q-20, DEC-63, DEC-70.
+
+### P1-16 - GitHub sources: URLs, commits and safe snapshot download
+- **Difficulty**: 10 (fable)
+- **Size**: L
+- **Depends on**: P1-04, P1-05
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-012-local-web-ui-and-github-sources.md`; `docs/adr/ADR-019-tarball-extraction-and-ignore-matching.md`; `docs/data-model.md` section 3.3; `docs/security/threat-model.md` (download rows).
+- **Do**: domain `GitHubRepoRef` (parse `https://github.com/<owner>/<repo>[/tree/<ref>[/<subpath>]]`, normalise), `CommitSha`, `Permalink` builder; `SourceFetcher` port; `GitHubSnapshotFetcher`: resolve the ref to a full SHA through the REST API (default branch when absent), download the tarball over https from `api.github.com`/`codeload.github.com`/`github.com` only (redirects checked), stream through `tar` with the filter of ADR-019 (no absolute paths, no `..`, links skipped and counted, entry and byte limits 100,000 and 500 MB configurable), extract into `<data>/sources/.partial-<id>/`, then rename to `<owner>__<repo>@<sha>/` and make it read-only; reuse a cached snapshot without network; discard partial folders at start-up; rate-limit responses become `RST-19xx` with the reset time and the `GITHUB_TOKEN` hint; the token is sent only to GitHub hosts and never logged; snapshot hash recorded; `FakeSourceFetcher` and a fake GitHub HTTP server for tests; fixture archives under `tests/fixtures/snapshots/` (normal, traversal entry, symlink and hardlink entries, oversized, too many entries, redirect to another host).
+- **Delivers**: the domain types, port, adapter, fake, fixtures; unit tests for URL parsing and permalinks; integration tests per hostile fixture and for cache reuse and partial cleanup.
+- **Done when**: every RF-120, RF-121, RF-122, RF-123, RF-125 and RF-127 scenario has a passing test; after the traversal fixture no file exists outside the snapshot folder (test lists the parent); the verifier-fable security review passes.
+- **Refs**: RF-005, RF-120, RF-121, RF-122, RF-123, RF-125, RF-126, RF-127, RNF-001, ADR-012, ADR-013, ADR-019, DEC-48, DEC-57.
+
+### P1-17 - Repository reader, ignore rules, deny list and output writer
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-04
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-006-read-only-tools-and-data-egress.md`; `docs/adr/ADR-019-tarball-extraction-and-ignore-matching.md`; `docs/data-model.md` sections 2, 3.2 and 6 (files).
+- **Do**: `RepositoryReader` port and `NodeRepositoryReader` over a snapshot root and optional subpath: list files, read a line range, grep; every path resolved against the root and refused outside it; ignore rules from the project setting or `.rosettaignore` matched with `ignore`; the built-in deny list of RF-147 always applied unless `scan.allowDenied` lifts a pattern (recorded); refused reads return a reason and log a security event; `grep` in a `node:worker_threads` worker with the RF-146 limits (pattern length 200, line cut at 2,000 characters, 2 s timeout terminates the worker); `OutputWriter` port and `NodeOutputWriter` writing only inside `<data>/users/<userId>/` (paths built from ids, resolved and checked), refusing the snapshot cache; workspace path helpers.
+- **Delivers**: two ports, two adapters, the grep worker, the helpers; unit tests for matching and limits; integration tests in temporary folders: refused traversal, ignored and denied paths, `^(a+)+$` on a long line times out, write outside the workspace refused.
+- **Done when**: every RF-005, RF-140, RF-146 and RF-147 scenario has a passing test; no write API exists on `RepositoryReader` (verifier reads the port); `npm run verify` green.
+- **Refs**: RF-005, RF-140, RF-146, RF-147, RNF-001, ADR-006, ADR-013, ADR-019, DEC-16, DEC-17, DEC-57.
+
+### P1-18 - Projects and project settings API
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-09, P1-16
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` sections 3.1 and 4 (`projects`); `docs/architecture.md` section 6.
+- **Do**: `ProjectRepository` with Pg and memory adapters (scoped by actor; unique on user, URL, ref, subpath); `CreateProject` (parse with P1-16, store with default settings from `templates/project-settings.json` and `templates/ignore-rules.txt`; an existing match is returned instead), `ListProjects`, `GetProject`, `UpdateProjectSettings` (zod schema of data-model 3.1: providers known, a model for every role, caps non-negative, price overrides, ignore rules; each problem returned with its field and code), `OpenWorkspace` for the administrator with an audit row; routes under `/api/projects` and `/api/admin/users/:id/projects`; access-matrix rows.
+- **Delivers**: repository, use cases, templates, routes; unit tests for the settings schema; integration tests per scenario.
+- **Done when**: every RF-010 scenario, the first two RF-002 scenarios, the RF-405 configuration shape and both RF-1105 scenarios have passing tests; another user's project id answers 404 (matrix).
+- **Refs**: RF-002, RF-010, RF-405, RF-1105, RF-1109, ADR-012, ADR-015, ADR-016, DEC-48, DEC-66.
+
+### P1-19 - Universal scan: files, languages, sizes, artefacts and SQL
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-17
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-004-universal-scan-and-language-packs.md`; `docs/data-model.md` section 3.4.
+- **Do**: in `src/infrastructure/scan/universal/`: walk the snapshot (subpath only, paths relative to the repository root), default ignores (version control, `bin/`, `obj/`, `node_modules/`, `packages/`, binary detection), size limit with `skipped: too large`; language by extension and content heuristics (`unknown` allowed); line count and token estimate; artefact kinds of RF-102 by rule table; embedded SQL statements with `path:line`; stable sort of every list. Fixture repositories under `tests/fixtures/repos/` in two stacks (a small C# WebForms sample with cited MIT excerpts and a small PHP sample) plus one in a language with no pack.
+- **Delivers**: the walker, detectors, rule tables, fixtures; unit tests per language and artefact rule and per SQL pattern; integration tests on the fixtures.
+- **Done when**: every RF-100, RF-101, RF-102, RF-103 and RF-124 scenario has a passing test; fixture excerpts carry their source and licence in a README beside them (RNF-009).
+- **Refs**: RF-100, RF-101, RF-102, RF-103, RF-124, RNF-009, ADR-004, DEC-11.
+
+### P1-20 - Areas, code map and scan summary
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` sections 3.4 and 3.5; `docs/architecture.md` section 5 (`CodeMap`, `Area`).
+- **Do**: domain `CodeMap`, `FileEntry`, `Area`, `MapLevel` with their invariants; grouping by folder and by language-pack references, splitting groups over the area token budget, configured areas replacing the automatic grouping for the files they match; `codemap.json` writer and zod schema with `schemaVersion` 1, byte-identical for the same input (no times, stable order); `scan-summary.md` with languages, artefact counts, areas with files, tokens and map level, and the scan duration.
+- **Delivers**: domain types, grouping, writers, schema; unit tests on grouping and invariants; schema validation test; a determinism test running the scan twice; snapshot test of the summary; a timing assertion on the demo-size fixture.
+- **Done when**: every RF-104, RF-105 and RF-106 scenario has a passing test; the coarse path of RF-112 produces a valid code map for the no-pack fixture; the summary states the map level per area.
+- **Refs**: RF-104, RF-105, RF-106, RF-112, RNF-004, RNF-007, ADR-004.
+
+### P1-21 - Language pack interface and the C# pack
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-19
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-004-universal-scan-and-language-packs.md`; `docs/data-model.md` section 3.4 (symbols, references, routes).
+- **Do**: `LanguagePack` port (extensions, `analyse(file) -> symbols, references, routes`); a registry in the composition root; per-file fallback to `coarse` with a warning when a pack throws; `CSharpPack` on `web-tree-sitter` with the `tree-sitter-c-sharp` WebAssembly grammar loaded from the package: classes, interfaces, methods, properties with line ranges; `.aspx`/`.ascx`/`.master` linked to their code-behind class; `DbContext` entity sets as candidate entities; a test pack for the interface tests.
+- **Delivers**: port, registry, C# pack, test pack; unit tests on fixtures from the demo app (cited, MIT); an integration test with a failing pack.
+- **Done when**: every RF-110 and RF-111 scenario has a passing test; `web-tree-sitter` is imported only under `src/infrastructure/scan/packs/` (grep).
+- **Refs**: RF-110, RF-111, RNF-009, ADR-004, DEC-12.
+
+### P1-22 - Runs: index, manifest, events and the run queue
+- **Difficulty**: 8 (opus)
+- **Size**: L
+- **Depends on**: P1-18
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` sections 3.6, 3.9 and 4 (`runs`); `docs/architecture.md` sections 5 (`Run`, `RunQueueState`) and 7 (`RunIndex`, `RunEventSink`).
+- **Do**: domain `Run`, `RunManifest`, `RunEndState`, `RunEvent` types; `RunIndex` with Pg and memory adapters (scoped by actor); manifest written at start (version, stage, options, source URL, ref, commit, subpath, snapshot hash, settings, caps) and at end (end state set once, time); `RunEventSink` with `JsonlEventLog` (`seq` without gaps, `run.ended` last), `SseBroadcaster` (per user; late subscribers get stored events first) and `FanOutSink`; SSE route `/api/runs/:id/events` with the session check; the run queue (default 2 running, one per user, positions, cancel a queued run as `Interrupted`); on start-up, runs left `Running` are ended as `Interrupted`.
+- **Delivers**: domain types, adapters, queue, routes; unit tests on the aggregate and queue rules; integration tests for the event log, SSE reconnect, queue with a fixed clock, an interrupted run.
+- **Done when**: every RF-003, RF-126, RF-1006 and RF-1108 scenario has a passing test; RNF-002 interrupted-run test passes; another user cannot subscribe to a run's events (matrix).
+- **Refs**: RF-003, RF-126, RF-1006, RF-1105, RF-1108, RNF-002, RNF-004, ADR-005, ADR-012, ADR-014, DEC-46, DEC-61.
+
+### P1-23 - Scan as a run
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-20, P1-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` section 6 (`RunScan`); `docs/data-model.md` sections 2 and 3.6.
+- **Do**: `RunScan` use case: resolve and fetch the snapshot (P1-16), scan (P1-19..P1-21), write `codemap.json` and `scan-summary.md` into the run folder, publish run events, record the manifest; route `POST /api/projects/:id/runs` with stage `scan`; the run row's state through the queue.
+- **Delivers**: the use case and route; integration tests with the fake source fetcher and a fixture snapshot, including a failed fetch ending the run as `Failed` with its code.
+- **Done when**: a scan run on the C# fixture produces a valid code map and a manifest holding RF-126's fields (test); the snapshot hash is unchanged after the run (RF-005 test); `npm run verify` green.
+- **Refs**: RF-003, RF-005, RF-100, RF-121, RF-126, ADR-004, ADR-012.
+
+### P1-24 - Provider port, fake provider and the provider call log
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-04
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/adr/ADR-008-testing-with-recorded-responses.md`; `docs/data-model.md` sections 3.10 and 3.15.
+- **Do**: `LlmProvider` port (system prompt, messages, tool definitions, abort signal; returns text, tool calls, usage with input, output and cached tokens, finish reason, provider request id, exact model version); `FakeProvider` replaying recordings from `tests/recordings/` and failing on demand; `tests/contracts/llm-provider.contract.ts`; `ObservedProvider` decorator writing one `provider-calls.jsonl` record per attempt through `ProviderCallRecorder` (`JsonlProviderCallLog`, `MemoryProviderCallLog`) with every RF-408 field and a link to the masked transcript entry; transcripts written masked.
+- **Delivers**: port, fake, contract suite, decorator, recorders; tests: contract on the fake, record fields, retry attempts linked by call id, output scan for keys.
+- **Done when**: every RF-400 and RF-408 scenario that does not need a real adapter has a passing test; the contract suite is importable by adapter tests; no test reaches the network (`ROSETTA_TEST=1` guard test).
+- **Refs**: RF-400, RF-408, RNF-003, RNF-004, RNF-005, ADR-003, ADR-008, DEC-09, DEC-50.
+
+### P1-25 - Ollama adapter with the text tool protocol
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-24
+- **Gate**: G-04
+- **Status**: Blocked (G-01); live check Blocked (G-04)
+- **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/data-model.md` section 3.10 (Ollama fields); `docs/environments-and-delivery.md` section 4 (`ROSETTA_OLLAMA_URL`).
+- **Do**: `OllamaProvider` over `fetch` against the Ollama chat API with a timeout and abort signal: native tool calls where the model supports them, the JSON-in-text protocol (`toolMode: text`) otherwise with the same validation; usage and Ollama's load, prompt-evaluation and generation durations and tokens per second; model digest as the exact version; refusal to call when `ROSETTA_TEST=1`; a clear `RST-15xx` with the fix command when Ollama is down or the model is missing; retries with back-off for timeouts and 5xx; `docs/providers.md` created with the Ollama section.
+- **Delivers**: the adapter, recordings from a fake Ollama HTTP server, the contract suite run on it, `docs/providers.md`; a manual live check script documented in `docs/providers.md`.
+- **Done when**: every RF-401 and RF-205 scenario has a passing test against the fake server; the contract suite passes; the owner's live check (G-04) is recorded in the pull request by the orchestrator when G-04 is open, otherwise noted as pending in `handoff.md`.
+- **Refs**: RF-205, RF-401, RF-406, RF-408, RNF-011, ADR-003, ADR-008, DEC-23, DEC-53.
+
+### P1-26 - OpenAI adapter with retries
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-24
+- **Gate**: G-04
+- **Status**: Blocked (G-01); live check Blocked (G-04)
+- **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/data-model.md` section 3.10.
+- **Do**: `OpenAiProvider` on the `openai` package: tool calling, usage including cached tokens, dated model id, request id; retries with exponential back-off and jitter honouring retry-after for 429, timeouts and 5xx; permanent errors (bad key, unknown model) as coded errors that stop the task; key passed per call from the provider set (P1-29), never read from the environment inside the adapter; refuses to call when `ROSETTA_TEST=1`; an OpenAI section in `docs/providers.md`.
+- **Delivers**: the adapter, recordings, the contract suite run on it, the docs section; unit tests with a fake HTTP server for each retry and failure path.
+- **Done when**: every RF-402 and RF-406 scenario has a passing test; `openai` is imported only under `src/infrastructure/providers/` (grep); one live call by the owner is recorded when G-04 is open.
+- **Refs**: RF-402, RF-406, RF-408, ADR-003, ADR-008, DEC-09.
+
+### P1-27 - Prices, budget guard, caps and the cost ledger
+- **Difficulty**: 10 (fable)
+- **Size**: L
+- **Depends on**: P1-06, P1-24
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-007-cost-control.md`; `docs/data-model.md` sections 3.12, 3.13, 3.18 and 4 (`cost_ledger`, `server_settings`).
+- **Do**: domain `PriceTable`, `Price`, `TokenUsage`, `Budget`, `UsageCap`; `prices/default-prices.yaml` (dated, USD, Ollama at zero) with project overrides; `CostLedger` port with Pg and memory adapters; `BudgetGuard` decorator of `LlmProvider`: before each call, inside one transaction with `pg_advisory_xact_lock` on the user and on the server, sum the run, user-day and server-month spend and refuse the call with `CapReached` when its worst case (prompt tokens plus maximum output) would pass any applicable cap (user-day and server-month only for server keys); after the call, insert one ledger row with every column of data-model 3.13, estimated usage marked `estimated`; a cap refusal aborts the run's signal and the run ends `CapReached`; `GetCaps`/`SetCaps` use cases on `server_settings` with audit; the cost report writer (`cost.json`, `cost.md`) by role, task, provider and model with the price table version.
+- **Delivers**: domain types, price file, ledger, guard, cap use cases and routes, cost writer; unit tests on pricing and cap arithmetic; integration tests: each cap with a fixed clock, two parallel runs racing for the last cent, an interrupted run keeping its ledger rows.
+- **Done when**: every RF-420, RF-421, RF-422, RF-426, RF-428 and RF-1106 scenario has a passing test (the cost page of RF-428 is P1-36); no code path calls a real provider without the guard (verifier reads the composition root and P1-29's factory once merged); the verifier-fable security review passes.
+- **Refs**: RF-420, RF-421, RF-422, RF-426, RF-428, RF-1106, ADR-007, ADR-016, DEC-13, DEC-49, DEC-54, DEC-64, Q-22.
+
+### P1-28 - Egress guard
+- **Difficulty**: 10 (fable)
+- **Size**: M
+- **Depends on**: P1-17, P1-24
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-006-read-only-tools-and-data-egress.md`; `docs/adr/ADR-013-untrusted-code-and-model-output.md`; `docs/data-model.md` section 3.11; `docs/security/threat-model.md`.
+- **Do**: `EgressGuard` decorator of `LlmProvider`: masks every message part with the masker of P1-04 (a masker failure blocks the call, logs the code and stops the task), adds mask counts to the run record, appends `egress.log.jsonl` records (provider, model, role, task, path and line range of each excerpt), and refuses any call to a non-local provider unless the run carries consent (RF-143); repository content reaches the guard only inside labelled data blocks built by P1-31, and the guard refuses a message that places tool results in the system prompt.
+- **Delivers**: the guard; unit tests with the secret fixture and a failing masker; integration tests with the fake provider for the egress log and the consent refusal.
+- **Done when**: every RF-141, RF-142 and RF-143 scenario at the guard has a passing test; a fixture secret never reaches the fake provider's recorded request (test); the verifier-fable security review passes.
+- **Refs**: RF-141, RF-142, RF-143, RF-145, RNF-003, RNF-014, ADR-006, ADR-013, DEC-16, DEC-57.
+
+### P1-29 - Provider set per run, key choice and the provider test
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-11, P1-18, P1-25, P1-26, P1-27, P1-28
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` sections 2 (composition root) and 7; `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md` (keys at run time).
+- **Do**: a provider factory used only by the composition root: for each role, pick the user's key, else the server key when the user may use server keys, else stop before any call naming the provider (RF-002 third scenario); wrap every provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`; record the key source for the ledger; Ollama only when `ROSETTA_OLLAMA_URL` is set; `TestProviders` use case (one tiny call per configured role through the guards, cost counted in the ledger) with route `POST /api/account/providers/test`; the Test button on `/settings` showing reachable or the error per role.
+- **Delivers**: the factory, use case, route and button; integration tests with two fake providers for model per role, key choice and the missing-key stop; an E2E spec for the Test button.
+- **Done when**: every RF-405 and RF-407 scenario, the third RF-002 scenario and the run-time RF-1104 scenario have passing tests; a test proves an adapter created by the factory cannot be called without both guards.
+- **Refs**: RF-002, RF-405, RF-407, RF-1104, ADR-003, ADR-006, ADR-007, ADR-015, DEC-64.
+
+### P1-30 - Run estimate
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-20, P1-27
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-007-cost-control.md`; `docs/architecture.md` section 6 (`EstimateRun`).
+- **Do**: `EstimateRun` in `src/application/estimate/`: from the code map, the chosen areas, the models per role and the price table, compute tokens and cost per role as low, likely and high with the assumptions stated (turns per area, output per turn, verifier share); route `GET /api/projects/:id/estimate`; the confirmation threshold of RF-425's second scenario stays in P2-08 (DEC-97).
+- **Delivers**: the estimator and route; unit tests on fixed code maps and price tables.
+- **Done when**: the first RF-425 scenario has passing tests; the estimate for Ollama-only roles is zero cost with token figures (test).
+- **Refs**: RF-425, ADR-007, DEC-13, DEC-97.
+
+### P1-31 - Agent loop, read-only tools and the reader prompt
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: P1-17, P1-20, P1-24
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` section 8; `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/adr/ADR-013-untrusted-code-and-model-output.md`; `docs/data-model.md` section 3.15.
+- **Do**: in `src/application/agent/`: the tool-calling loop (system prompt, messages, tools, max turns, context-share limit ending as `TurnLimitReached`, shared abort signal); tools `list_area_files`, `read_file`, `grep`, `codemap_query` with zod-validated arguments, error results the model can correct, results wrapped in delimited repository-content blocks; `prompts/reader/area.v1.md` stating the data-block rule; prompt files loaded with version and SHA-256 recorded for the manifest; an injection fixture repository under `tests/fixtures/repos/injection/` with recordings.
+- **Delivers**: the loop, tools, prompt, fixture and recordings; integration tests with recorded responses: a normal area, a bad tool call corrected, the turn limit, the injection fixture; a unit test that every prompt file states the data-block rule.
+- **Done when**: every RF-201 and RF-145 scenario has a passing test; no tool can write (verifier reads the tool set); the manifest records prompt versions and hashes (test).
+- **Refs**: RF-145, RF-146, RF-201, RNF-004, ADR-003, ADR-006, ADR-013, DEC-15, DEC-17, DEC-57, DEC-58.
+
+### P1-32 - Card schema, parsing with repair, ids and card writers
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-03, P1-17
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md`; `docs/data-model.md` sections 3.7 and 3.8.
+- **Do**: domain `Card`, `CardType`, `Claim`, `Citation`, `ClaimStatus` (transitions of architecture section 5; a claim is never removed), `Confidence`; the card zod schema and a parser that returns validation errors for one repair attempt (raw output saved and the task marked `InvalidOutput` after a second failure); ids `FEAT-001`, `BR-001`, `ENT-001`, `INT-001`, `OQ-001` in area and appearance order; writers for `cards/<TYPE>/<ID>.md` with a YAML header, `cards/index.json` and `spec.md` per area with permalinks (P1-16 builder).
+- **Delivers**: domain types, schema, parser, id assignment, writers; unit tests on the schema, transitions and ids; snapshot tests of the written files.
+- **Done when**: every RF-202, RF-203 and RF-204 scenario and the storage scenario of RF-302 have passing tests; a card without a citation is rejected by the schema (test); rendered citations link to the RF-125 permalink (test).
+- **Refs**: RF-125, RF-202, RF-203, RF-204, RF-302, ADR-005, DEC-18.
+
+### P1-33 - Understand as a run: orchestration, citation check and answers file
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: P1-23, P1-29, P1-31, P1-32
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` sections 6 and 8; `docs/data-model.md` sections 3.6, 3.7, 3.12 and 3.16.
+- **Do**: `RunUnderstand`: one reader task per area or only the named areas (unknown names stop with a code listing valid names); configurable parallelism with one abort signal; task states of architecture section 5; partial cards saved on stop; step 1 of the verifier (`src/application/verifier/citation-check.ts`): every citation's file in the code map and its range inside the file, otherwise `CitationInvalid` with the reason; claims never deleted; the cost report at the end (P1-27 writer); `answers.md` generated from `OQ` cards keeping existing answers (DEC-98); run events for every step; route `POST /api/projects/:id/runs` with stage `understand`, area list and consent flag (a cloud run without consent is refused, RF-143).
+- **Delivers**: the use case, citation check, answers writer, route; integration tests with recorded responses: a full run on the C# fixture, an unknown area, a cap reached mid-run, an interrupted run, consent refused; a hash of the snapshot before and after the run.
+- **Done when**: every RF-200, RF-240, RF-300 and RF-302 scenario and the RF-143 API scenario have passing tests; RNF-002 and RF-005 tests pass on an understand run; `npm run verify` green.
+- **Refs**: RF-005, RF-143, RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007, DEC-15, DEC-19, DEC-98.
+
+### P1-34 - Start run page
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-30, P1-33, P1-41
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/StartRun.dc.html`; `docs/design-system.md` section 14 (queue notice).
+- **Do**: `/projects/:id/start`: stage and areas, the estimate (P1-30) with low, likely and high, the cloud notice naming the providers with the consent checkbox (Start disabled until checked when a cloud provider is involved), the editable run cap with its meter, Start; the queued state with position and Cancel; errors next to their fields.
+- **Delivers**: the page; E2E specs: start a scan and an understand run with the fake provider, consent required, invalid URL error, queued run shown.
+- **Done when**: every RF-1001 scenario and the RF-143 page scenario have passing E2E tests; the verifier walks the page at 1280x800 in both schemes and compares it with the artboard.
+- **Refs**: RF-143, RF-425, RF-1001, RF-1108, DEC-47, DEC-71.
+
+### P1-35 - Live run page: agents, events, cost meter and claims
+- **Difficulty**: 8 (opus)
+- **Size**: L
+- **Depends on**: P1-34
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/LiveRun.dc.html`; `docs/data-model.md` section 3.9.
+- **Do**: `/runs/:id`: subscribes to the SSE stream (stored events first); one panel per agent with area, role, model, state, turn count, tool call in progress, files read, cards so far, tokens and cost; the overview (planned, running, done, failed) and the verbose event log; the run meter (tokens and cost per role and total, cap bar, estimate for comparison) and Stop (cancels through the abort signal); the claims list with live status and reason and a link to the cited lines (RF-1004, statuses of P1 are `Proposed` and `CitationInvalid`); works after reconnect.
+- **Delivers**: the page; E2E specs driven by recorded events: panels update, Stop ends the run, reconnect replays, claims change status.
+- **Done when**: every RF-1002, RF-1003, RF-424 and RF-1004 scenario has a passing E2E test; the verifier walks the page at 1280x800 in both schemes.
+- **Refs**: RF-424, RF-1002, RF-1003, RF-1004, DEC-46, DEC-51, DEC-71.
+
+### P1-36 - Project totals header and cost page
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-14, P1-27
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design-system.md` section 14 (totals pill); `docs/design/board/Main.dc.html`.
+- **Do**: the totals pill in every signed-in header ("Your total" from the ledger; the administrator also sees "Server, this month" against the cap); live update on usage events during a run; `/projects/:id/cost` with the project totals and the breakdown by run, stage, role, provider and model (local models with zero cost); the 80% server-cap banner for the administrator.
+- **Delivers**: header component data, cost page, route `GET /api/projects/:id/cost`; integration tests with a fixture ledger; E2E specs for live update and the banner.
+- **Done when**: every RF-1010 scenario and the cost-page scenarios of RF-428 and RF-1106 have passing tests.
+- **Refs**: RF-428, RF-1010, RF-1106, DEC-49.
+
+### P1-37 - API calls and logs panels
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-35
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/ApiCalls.dc.html`; `docs/data-model.md` sections 3.10 and 3.14.
+- **Do**: the "API calls" panel listing calls live from the provider call log with filters (provider, role, agent, status), errors and retries highlighted, link to the masked transcript, "Next error"; summary per provider and role (calls, errors, P50 and P95 latency and time to first token, tokens per second for Ollama); the security-event counter filtering the log; the "Logs" panel streaming the user's own run log entries with a level filter.
+- **Delivers**: the panels and their routes; integration tests for percentiles and scoping; E2E specs with recorded events.
+- **Done when**: every RF-1011 scenario has a passing test; a user sees only their own runs' log entries (matrix).
+- **Refs**: RF-408, RF-1011, DEC-50, DEC-51, DEC-57.
+
+### P1-38 - Live coverage map
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-35
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/LiveRun.dc.html` (coverage section).
+- **Do**: a tree of the analysed files by area filling in from `read_file` events with the read share per area.
+- **Delivers**: the component; an E2E spec with recorded events.
+- **Done when**: the RF-1005 scenario has a passing E2E test.
+- **Refs**: RF-1005, DEC-51.
+
+### P1-39 - Answer open questions in the page
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-35
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.16; `docs/architecture.md` section 6 (`RecordAnswers`).
+- **Do**: `RecordAnswers` use case and `PUT /api/runs/:id/answers` updating `answers.md` (other answers kept); the answers list on the run page.
+- **Delivers**: use case, route, component; integration and E2E tests.
+- **Done when**: the RF-1007 scenario has passing tests (marking answered on re-run is RF-241, P2-05).
+- **Refs**: RF-240, RF-1007, DEC-15, DEC-51.
+
+### P1-40 - History, zip export and deletion
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-33, P1-36
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/History.dc.html`; `docs/data-model.md` sections 2 and 9.
+- **Do**: `/projects/:id/history` listing runs with source, commit, stage, state, cost and links (report, zip); `ExportZip` with `yazl` (`ArchiveWriter`): the full run folder, or only `handoff/`; refused while running; `DeleteRun` and `DeleteProject` with a confirmation naming the folder and the space freed, disabled while running, an `info` log entry, ledger untouched; `DeleteSnapshot` for the administrator, disabled while a run uses it.
+- **Delivers**: page, use cases, routes; integration tests unzipping and comparing trees, ledger kept after deletion; E2E specs.
+- **Done when**: every RF-008, RF-1008 and RF-1012 scenario has a passing test.
+- **Refs**: RF-008, RF-1008, RF-1012, ADR-009, DEC-24, DEC-51, DEC-55.
+
+### P1-41 - Projects and project settings pages
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-14, P1-18, P1-22
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/Projects.dc.html`.
+- **Do**: `/projects` (the user's projects with last run and totals, New project form with the URL error next to the field, queue notice); `/projects/:id/settings` (models per role, caps, ignore rules, price overrides) with field errors from the API.
+- **Delivers**: two pages; E2E specs: create a project from a fake GitHub URL, duplicate opens the existing one, invalid URL error, save settings with an error.
+- **Done when**: the RF-010 E2E scenarios pass; the verifier walks both pages at 1280x800 in both schemes.
+- **Refs**: RF-002, RF-010, RF-1108, DEC-70.
+
+### P1-42 - Administration pages
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-10, P1-14, P1-27
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/AdminUsers.dc.html`, `AdminAudit.dc.html`.
+- **Do**: `/admin/users` (accounts with role, state, last sign-in, month-to-date cost; create, disable, enable, reset; open a workspace; caps form; server-month meter and the 80% banner); `/admin/audit` (filter by user and action, last 30 days); `/admin/snapshots` with delete (P1-40 use case).
+- **Delivers**: three pages; E2E specs: create a user who must change the password, disable ends the session, caps saved, audit filter.
+- **Done when**: the RF-1102 page scenario and the RF-1109 view scenario have passing E2E tests; a `user` reaching `/admin/*` sees 403 (spec).
+- **Refs**: RF-1102, RF-1106, RF-1107, RF-1109, RF-1012, DEC-70.
+
+### P1-43 - Markdown report, run replay page and safe rendering
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-33
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.17; `docs/adr/ADR-013-untrusted-code-and-model-output.md`; `docs/design/board/Report.dc.html`.
+- **Do**: `BuildReport` with `--format md` semantics: `report.md` linking the specification, every card, coverage and the cost report; a static "Run replay" page from `events.jsonl` (timeline of agents, turns, tool calls, cards, verdicts and cost, with play, pause and step; a static list without JavaScript) carrying the meta CSP and `referrer` of RF-1013; repository and model text rendered as text with the link rule of RF-507; a fixture card with `<script>`, `onerror` and `javascript:`.
+- **Delivers**: the use case, the Markdown writer, the replay page, the fixture; snapshot tests; an E2E spec opening the replay of a recorded run with JavaScript on and off and asserting nothing from the fixture runs.
+- **Done when**: every RF-504, RF-506 and RF-507 scenario and the static-report scenario of RF-1013 have passing tests; axe passes on the replay page.
+- **Refs**: RF-504, RF-506, RF-507, RF-1013, ADR-005, ADR-013, DEC-04, DEC-46.
+
+### P1-44 - Container image
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-07, P1-12
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-014-container-image-local-and-hosted.md`; `docs/environments-and-delivery.md` sections 2 and 8.1.
+- **Do**: multi-stage `Dockerfile` from `node:24-slim` pinned by digest: build stage (`npm ci`, `npm run build`), runtime stage with production dependencies, built server and front end, `db/migrations/`, `prompts/`, `prices/`, `templates/`, non-root user, port 8080, `HEALTHCHECK` on `/healthz`; `.dockerignore` excluding `.env*`, tests, source maps of server code and build tools; a CI job building the image and running Trivy (high and critical with a fix fail); an integration test starting the container and calling `/healthz` (Linux CI only).
+- **Delivers**: `Dockerfile`, `.dockerignore`, the CI job, the test.
+- **Done when**: every RF-1300 scenario passes in CI; `docker run --rm --entrypoint id <image>` prints a non-zero uid (verifier); `docker history` and a file listing show no `.env`, test or `.map` file.
+- **Refs**: RF-1300, RNF-001, RNF-003, ADR-014, DEC-61.
+
+### P1-45 - Docker Compose, local runbook and smoke test
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-44
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/environments-and-delivery.md` sections 2, 6, 9 and 14; `docs/adr/ADR-016-postgresql-and-files.md`.
+- **Do**: `compose.yaml` (services `app` and `db` PostgreSQL 17 by digest, volumes `pgdata` and `rosetta-data`, app on `127.0.0.1:8080` only, `extra_hosts: host.docker.internal:host-gateway`, health checks, restart policy); `compose.ci.yaml` (fake provider, test seed); the CI Compose smoke job (up, wait for `/healthz`, Playwright smoke: landing, sign-in, a fake-provider scan, `down -v`); `docs/runbooks/local.md` (`.env`, up, first sign-in, Ollama on the host, reset); the README quick start section.
+- **Delivers**: the two Compose files, the CI job, the runbook, the README section.
+- **Done when**: the CI smoke job is green; `docker compose config` shows the port bound to `127.0.0.1` (verifier); data survives `down` and `up` (test in the smoke job with a project created before the restart).
+- **Refs**: RF-801, RF-1009, RF-1301, RNF-011, RNF-014, ADR-014, ADR-016, DEC-61.
+
+### P1-46 - Milestone end-to-end journeys
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-15, P1-35, P1-40, P1-42, P1-43
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/process-flows.md` flows 1, 2, 4 and 5; `docs/architecture.md` section 17.
+- **Do**: journeys on the harness with the fake provider and fixture repositories: visitor to landing to sign-in; first sign-in password change; create project, scan, understand one area, watch the live page, read the Markdown report and the replay, download the zip; the administrator creates a user and sets caps, a run stops at the cap and the totals still show it; a repository in a language without a pack completes scan, understand and report (RF-112); two users cannot see each other's projects.
+- **Delivers**: the journey specs under `tests/e2e/journeys/`; the pyramid line for the phase.
+- **Done when**: every journey passes headless from a clean database in CI; the RF-112 end-to-end scenario passes; the pyramid report is pasted in the pull request.
+- **Refs**: RF-112, RF-1001, RF-1002, RF-1105, RF-1106, RNF-005, ADR-008, ADR-010.
+
+### P1-47 - Local reader model spike
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-25, P1-33
+- **Gate**: G-04
+- **Status**: Blocked (G-01); then Blocked (G-04)
+- **Reads**: `docs/spec/requirements.md` Q-04 and Q-10; `docs/providers.md`.
+- **Do**: a scoring script `eval/spike/score-reader.ts` (`npm run spike:reader`) that runs one demo area with each candidate 7-9B tool-calling model through Ollama under the local deployment and scores valid cards, valid citations, tool-call errors and time; a candidate list of at most four models that fit 8 GB of VRAM; the owner runs it on their machine; the result table and the recommended model in `docs/providers.md`.
+- **Delivers**: the script, the documented results, the recommended model as the default `reader` model for Ollama in `templates/project-settings.json`.
+- **Done when**: the script runs against the fake provider in a test; the results table is in `docs/providers.md` with the date and the owner's run; Q-04 can be answered by the owner from it (the answer itself is a DEC row the owner records).
+- **Refs**: Q-04, Q-10, RF-401, RNF-011, DEC-23, DEC-53.
+
+### P1-48 - Hosted deployment and the teacher account
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-45
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/environments-and-delivery.md` sections 2, 3, 8, 10-12 and 14; `docs/adr/ADR-014-container-image-local-and-hosted.md`.
+- **Do**: compare the Q-18 candidates against the requirements of environments section 2 and write a Proposed ADR (next free id) recommending one host with region and monthly cost; stop for the owner's choice (the pull request is `needs-owner` because it adds an ADR); after the owner creates the host account and stores the secrets, add the release workflow (image to GHCR as `X.Y.Z` and `sha-<short>`, CycloneDX SBOM), deploy by tag, run the smoke test (health, landing, sign-in, a cheap scan), measure RNF-017 once; write `docs/runbooks/deploy.md` (deploy, rollback, backup, restore, teacher account); the owner creates the `teacher` account (RF-1107).
+- **Delivers**: the host ADR, `.github/workflows/release.yml`, `docs/runbooks/deploy.md`, the smoke script, the recorded hosted URL in `handoff.md`.
+- **Done when**: every RF-1304 scenario is checked on the hosted URL and recorded in the runbook; `/healthz` answers 200 over HTTPS and HTTP redirects to HTTPS (verifier with `curl`); the teacher account signs in (owner); hosted by 2026-10-20 (DEC-89).
+- **Refs**: RF-1107, RF-1304, RNF-016, RNF-017, Q-18, ADR-014, DEC-61, DEC-67, DEC-89.
+
+### P1-49 - Security review and the milestone verification matrix
+- **Difficulty**: 10 (fable)
+- **Size**: M
+- **Depends on**: P1-46, P1-48
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/security/threat-model.md`; `SECURITY.md`; `docs/roadmap.md` (P1 exit criteria); `docs/architecture.md` section 10.
+- **Do**: `docs/verification/m1-matrix.md`: every P1 Must and Should requirement with its passing test or recorded manual check, gaps listed; a review of every threat-model row against the code with findings ranked BLOCKING, MAJOR, MINOR; RNF-014 defaults checked on a Compose stack started from `.env.example`; an output scan of a full demo run folder and the logs for key patterns (RNF-003); licence review of fixtures (RNF-009); gaps and MAJOR findings become follow-up cards.
+- **Delivers**: the matrix, the security review section in it, follow-up cards.
+- **Done when**: the matrix lists no Must without evidence, or each gap has a follow-up card; no BLOCKING finding is open; the pyramid line for P1 is recorded.
+- **Refs**: RNF-003, RNF-009, RNF-014, ADR-013, DEC-57, DEC-69.
+
+### P1-50 - Sample report on GitHub Pages
+- **Difficulty**: 5 (sonnet)
+- **Size**: S
+- **Depends on**: P1-02, P1-43
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/environments-and-delivery.md` sections 2 and 8.
+- **Do**: a Pages workflow publishing `site/` from `main` with the smoke step that fetches the index and fails when the run id is missing; `site/` holding the Markdown report and replay of the demo run (copied from a run by the owner or the orchestrator after an output scan for secrets); the README link.
+- **Delivers**: `.github/workflows/pages.yml`, `site/`, the README link.
+- **Done when**: the RF-800 scenario is checked on the public URL; the smoke step fails on a missing run id (test with a fixture).
+- **Refs**: RF-800, RF-501, RNF-003, DEC-04.
+
+### P1-51 - Documentation consistency tests
+- **Difficulty**: 4 (sonnet)
+- **Size**: S
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/README.md` (Totals); this file's Totals table; README section 11.
+- **Do**: unit tests under `tests/unit/docs/` that parse the ADR index Totals and every ADR's Status line, and the card counts by phase, difficulty band and size of this file, and fail on any drift; a test that every card's *Depends on* names an existing card.
+- **Delivers**: the tests.
+- **Done when**: the tests pass on `main`; changing one count in a disposable worktree makes them fail (verifier).
+- **Refs**: RNF-005, ADR-001, ADR-010.
+
+### P1-52 - Release v0.1.0 and the quick start
+- **Difficulty**: 4 (sonnet)
+- **Size**: S
+- **Depends on**: P1-49, P1-50
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/environments-and-delivery.md` section 8; `README.md`.
+- **Do**: `docs/releases.md` with the v0.1.0 notes; the README status, quick start (checked against `docs/runbooks/local.md`) and links (hosted URL, sample report, slides, video placeholders); the version bump; a walk-through of the quick start on a clean folder recorded in the pull request; the tag is created by the owner.
+- **Delivers**: `docs/releases.md`, README updates, the version bump.
+- **Done when**: the RF-801 scenario is walked on a clean clone and recorded; `npm run verify` green.
+- **Refs**: RF-801, DEC-29.
+
+### P1-53 - Slides and video script
+- **Difficulty**: 4 (sonnet)
+- **Size**: S
+- **Depends on**: P1-46
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/rfc/RFC-001-rosetta.md` sections 1-4; `docs/process-flows.md`; Q-02 and Q-03.
+- **Do**: slides in Spanish (Q-03) presenting the problem, the pipeline, the live agents, evidence and the verifier, cost control, security, the build method and the results; a video script of about 5 minutes (Q-02) with the explainer and a clip of a real run; the owner records the video; both URLs added to the README.
+- **Delivers**: `docs/hand-in/slides/` source, `docs/hand-in/video-script.md`, README links.
+- **Done when**: the RF-802 scenario is checked by the owner (both URLs open).
+- **Refs**: RF-802, Q-02, Q-03, DEC-04.
+
+### P1-54 - Milestone hand-in
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-52, P1-53
+- **Gate**: G-06
+- **Status**: Blocked (G-01); then Blocked (G-06)
+- **Reads**: RF-803; `docs/runbooks/deploy.md`.
+- **Do**: `docs/hand-in/m1.md`: the hosted URL, the teacher account's user name (the password is given only in the hand-in form), the sample report URL as a fallback, the slides and video URLs, the repository URL; a checklist the owner ticks the day before the hand-in; the owner submits (G-05).
+- **Delivers**: `docs/hand-in/m1.md`.
+- **Done when**: the RF-803 manual sign-in the day before the hand-in is recorded by the owner; no password appears in the file (grep).
+- **Refs**: RF-803, RF-1107, DEC-67.
+
+---
+
+## Phase 2 - Full understand
+
+Sized, not dated, until Q-01 is answered (roadmap.md).
+
+### P2-01 - Resume a stopped run
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-33
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` section 8; `docs/data-model.md` section 3.6.
+- **Do**: `ResumeRun`: after the cap is raised, process only unfinished tasks and `Unverified` claims into the same run folder and manifest; the Resume button on the run and history pages; claims left unjudged at a cap are `Unverified`.
+- **Delivers**: the use case, route and buttons; integration tests with the fake provider; an E2E spec.
+- **Done when**: every RF-006 and RF-304 scenario has a passing test.
+- **Refs**: RF-006, RF-304, ADR-007, DEC-13.
+
+### P2-02 - Verifier judgement step
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-33
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md`; `docs/architecture.md` section 8 (verifier role).
+- **Do**: step 2 with the `verifier` role: the model sees the claim and only the cited lines with a small margin, answers with the reason before the verdict, one retry on an invalid answer, otherwise `Unverified`; a warning when reader and verifier share a model family; `prompts/verifier/claim.v1.md` with the data-block rule; verdict events for the live page.
+- **Delivers**: the step, the prompt, recordings; integration tests with recorded responses; a unit test on the family check.
+- **Done when**: every RF-301 scenario has a passing test; the live page shows `Supported` and `Rejected` from recorded events (E2E).
+- **Refs**: RF-301, RF-1004, ADR-005, ADR-013, DEC-19, DEC-57.
+
+### P2-03 - Verification summary and verifier calibration
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P2-02, P2-11
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.19; `docs/adr/ADR-008-testing-with-recorded-responses.md`.
+- **Do**: the summary of claims per status per area and the supported share in the run summary and report; a calibration set of about 30 hand-labelled claims under `eval/calibration/`; `npm run eval -- --calibration` reporting agreement per model and the disagreements.
+- **Delivers**: the summary writer, the calibration set, the eval mode; snapshot and integration tests.
+- **Done when**: every RF-303 and RF-305 scenario has a passing test or a recorded evaluation run.
+- **Refs**: RF-303, RF-305, ADR-005, ADR-008, DEC-57.
+
+### P2-04 - Coverage per area
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-33
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.8.
+- **Do**: `coverage.json` and `coverage.md` per run: every file in each area as read (with line ranges) or not read, and the share of area tokens read in the run summary.
+- **Delivers**: the writer; integration tests with the fake provider.
+- **Done when**: the RF-230 scenario has a passing test.
+- **Refs**: RF-230, ADR-005.
+
+### P2-05 - Re-run with answers
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-39
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.16; `docs/architecture.md` section 6 (`RunUnderstand` options).
+- **Do**: the "with answers" option of `RunUnderstand`: affected areas run again with the answers as context, answered `OQ` cards marked `Answered`, new and changed cards listed in the run summary.
+- **Delivers**: the option, prompt changes as a new prompt version, recordings; integration tests.
+- **Done when**: the RF-241 scenario has a passing test.
+- **Refs**: RF-241, RF-1007, ADR-003, DEC-15.
+
+### P2-06 - Consolidate cards across areas
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-33
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` section 8 (summariser role).
+- **Do**: consolidation with the `summariser` role: duplicate entities and rules from several areas merged into one card keeping every citation; the merge recorded; `prompts/summariser/merge.v1.md`.
+- **Delivers**: the step, prompt, recordings; integration tests.
+- **Done when**: the RF-250 scenario has a passing test; no citation is lost in a merge (test).
+- **Refs**: RF-250, ADR-005.
+
+### P2-07 - Excerpt size limit
+- **Difficulty**: 5 (sonnet)
+- **Size**: S
+- **Depends on**: P1-31
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.1 (limits).
+- **Do**: `read_file` cuts a request beyond the configured maximum lines and tells the agent the remaining range.
+- **Delivers**: the change and unit tests.
+- **Done when**: the RF-144 scenario has a passing test.
+- **Refs**: RF-144, ADR-006.
+
+### P2-08 - Estimate confirmation, caps per role and unpriced models
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-30, P1-34
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-007-cost-control.md`.
+- **Do**: the confirmation threshold on the start page (RF-425 second scenario); caps per role in the budget guard; a non-local model missing from the price table stops the run unless allowed, then cost shows as unknown and only the token cap applies.
+- **Delivers**: the changes; integration and E2E tests.
+- **Done when**: the second RF-425 scenario and every RF-423 and RF-427 scenario have passing tests.
+- **Refs**: RF-423, RF-425, RF-427, ADR-007, DEC-97.
+
+### P2-09 - Anthropic adapter
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-29
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/providers.md`.
+- **Do**: `AnthropicProvider` on `@anthropic-ai/sdk`: tool calling, the stable prompt prefix marked for caching, cached-token usage, retries; key from the provider set; the Anthropic section of `docs/providers.md`.
+- **Delivers**: the adapter, recordings, the contract suite run on it; one live call by the owner recorded.
+- **Done when**: every RF-404 scenario has a passing test.
+- **Refs**: RF-404, ADR-003, ADR-008.
+
+### P2-10 - OpenAI-compatible adapter
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P1-29
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`.
+- **Do**: `OpenAiCompatibleProvider` with a base URL and key from the provider set (URL rules of RF-1104), same contract; a section in `docs/providers.md`.
+- **Delivers**: the adapter, recordings, the contract suite run on it.
+- **Done when**: the RF-403 scenario has a passing test.
+- **Refs**: RF-403, RF-1104, ADR-003.
+
+### P2-11 - Golden set and the evaluation runner
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: P2-02
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.19; `docs/rfc/RFC-001-rosetta.md` section 7.
+- **Do**: the golden set for the demo app under `eval/golden/` (hand-checked features, rules, entities and "not in the code" cases); `npm run eval` running each case at least 3 times with the chosen models, saving results with date, models, model versions, prompt hashes and settings, reporting precision of `Supported` claims, recall of golden rules, citation validity, the spread, and estimate accuracy against `cost.json`.
+- **Delivers**: the golden set, runner, output schema; a schema test; the first recorded evaluation.
+- **Done when**: RNF-006, RNF-012 and RNF-015 each have a recorded evaluation or a passing schema test; the runner uses the fake provider in its own tests.
+- **Refs**: RNF-006, RNF-012, RNF-015, ADR-008, DEC-57.
+
+### P2-12 - Backups and restore drill
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-48
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/environments-and-delivery.md` section 12; `docs/runbooks/deploy.md`.
+- **Do**: daily database backups kept 7 days (host or scheduled `pg_dump`), weekly data-folder copy, a restore drill into the local Compose stack recorded in the runbook.
+- **Delivers**: the backup configuration or script and the runbook section.
+- **Done when**: the RF-1306 drill is recorded with its date.
+- **Refs**: RF-1306, ADR-016.
+
+### P2-13 - Full-understand end-to-end journeys
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-01, P2-03, P2-04, P2-05, P2-06, P2-08
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/process-flows.md` flows 2-4.
+- **Do**: journeys: understand every area with both verifier steps, a cap stop and resume, answer questions and re-run, consolidation visible in the specification.
+- **Delivers**: journey specs.
+- **Done when**: the journeys pass headless in CI.
+- **Refs**: RF-006, RF-241, RF-301, ADR-010.
+
+### P2-14 - Phase 2 verification matrix and owner review
+- **Difficulty**: 9 (opus)
+- **Size**: S
+- **Depends on**: P2-09, P2-10, P2-11, P2-12, P2-13
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/roadmap.md` (P2 exit criteria).
+- **Do**: `docs/verification/p2-matrix.md` for every P2 requirement with its evidence; the golden-set result against the RFC success criteria; the owner's hands-on review agenda and its changes recorded as follow-up cards; the pyramid line.
+- **Delivers**: the matrix and follow-up cards.
+- **Done when**: no P2 Must lacks evidence or a follow-up card.
+- **Refs**: RNF-005, RNF-006.
+
+---
+
+## Phase 3 - Report and plan
+
+### P3-01 - HTML report: rendering approach and dashboard
+- **Difficulty**: 8 (opus)
+- **Size**: L
+- **Depends on**: P1-43, P2-03
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design/board/Report.dc.html`; `docs/data-model.md` section 3.17; ADR index deferred decision "Report rendering approach".
+- **Do**: a Proposed ADR for the rendering approach (Preact components rendered to static HTML at build time, DEC-52) as the first commit (the pull request is `needs-owner`); `BuildReport` writing a static site: dashboard (cards by type, claims by status, coverage, cost, project totals at generation time), the open questions and the cost report, every page carrying the meta CSP of RF-1013.
+- **Delivers**: the ADR, the site writer, the dashboard; snapshot tests.
+- **Done when**: the RF-500 scenario has passing tests for the dashboard pages.
+- **Refs**: RF-500, RF-1010, RF-1013, ADR-005, DEC-44, DEC-52.
+
+### P3-02 - Area and card pages with the evidence
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P3-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design/board/Report.dc.html`.
+- **Do**: a page per area and per card; each citation shows the cited lines with context, line numbers, the claim status and reason, and the permalink.
+- **Delivers**: the pages; snapshot tests.
+- **Done when**: the RF-502 scenario and the page parts of RF-500 have passing tests.
+- **Refs**: RF-500, RF-502, RF-125, RF-507.
+
+### P3-03 - Filters and the replay in the HTML report
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P3-02
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design/board/Report.dc.html`.
+- **Do**: client-side filters by type, area and status without a server; the replay page of P1-43 linked from the dashboard.
+- **Delivers**: the filters; E2E specs.
+- **Done when**: the RF-503 scenario has a passing E2E test.
+- **Refs**: RF-503, RF-506.
+
+### P3-04 - Self-contained report, downloads and accessibility
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P3-03
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design-system.md` section 8.
+- **Do**: the report works from disk and from a sub-path with no external request; "Download all" zips of the run and, when present, the hand-off package; WCAG 2.1 AA in both themes (axe plus a keyboard walk).
+- **Delivers**: the changes; E2E specs from disk and from a sub-path, downloading and unzipping both files, axe.
+- **Done when**: every RF-501 and RF-505 scenario and RNF-010 have passing tests.
+- **Refs**: RF-501, RF-505, RNF-010, DEC-24.
+
+### P3-05 - Principle catalogue files
+- **Difficulty**: 5 (sonnet)
+- **Size**: M
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`; RF-606.
+- **Do**: `prompts/catalogue/` with a version: every group and entry of RF-606, each with a one-line rule, why it matters and how to check it, in Rosetta's own words; the six architecture styles with selection criteria; a README crediting the master (Master en Desarrollo con IA, BIG School); a zod schema and loader.
+- **Delivers**: the catalogue files, schema, loader; a schema test and a defaults test.
+- **Done when**: every RF-606 scenario has a passing test.
+- **Refs**: RF-606, ADR-018, DEC-73, DEC-74, DEC-84, DEC-85.
+
+### P3-06 - Planning brief model and storage
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P3-05, P1-18
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` section 3.20.
+- **Do**: domain `PlanningBrief`, `CatalogueEntry`, `ArchitectureStyle`, `StackChoice`; the `planning-brief.json` schema; save and load per project with defaults for every unanswered question (DEC-80); "out of date" when the brief changes after a package exists.
+- **Delivers**: domain types, schema, use cases and routes; unit and integration tests.
+- **Done when**: the save and out-of-date scenarios of RF-605 have passing tests.
+- **Refs**: RF-605, ADR-018, DEC-72, DEC-80.
+
+### P3-07 - Architecture recommendation and stack options
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P3-06, P2-03
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`.
+- **Do**: from the code map and the verified cards, propose the two best-fitting styles with trade-offs, the evidence card ids and one marked recommended (planner role through the guards, prompt versioned); two pre-filled stack options per layer from the legacy stack found by the scan.
+- **Delivers**: the use case, prompt, recordings; integration tests.
+- **Done when**: the first RF-608 scenario and the first RF-609 scenario have passing tests.
+- **Refs**: RF-608, RF-609, ADR-007, ADR-018, DEC-76, DEC-77, DEC-78.
+
+### P3-08 - Plan setup page
+- **Difficulty**: 7 (opus)
+- **Size**: M
+- **Depends on**: P3-07
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/PlanSetup.dc.html`; `docs/design-system.md` section 14.
+- **Do**: `/projects/:id/plan-setup` as the approved artboard: steps principles, architecture, migration, stack, project context and build method; each question with its default, reason and "(Recommended)" option; catalogue toggles; "What I recorded" summary; the plan estimate (P3-11) and Write the package.
+- **Delivers**: the page; E2E specs with the fake provider.
+- **Done when**: every RF-605 scenario has a passing E2E test; the verifier walks the page in both schemes.
+- **Refs**: RF-605, RF-608, RF-609, RF-610, RF-611, DEC-72, DEC-86.
+
+### P3-09 - Planner and the hand-off package
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: P3-06, P2-03
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`; `docs/data-model.md` section 3.17 (`handoff/`).
+- **Do**: `BuildPlan` writing `handoff/` from `Supported` claims, answered questions and the brief: README with reading order, requirements specification with source card ids, target architecture, ADRs, entity mapping, roadmap, task cards with acceptance criteria, risks and open questions (unanswered brief questions with their defaults, excluded claims with their ids); plain Markdown and Mermaid only; the manifest records the brief, catalogue version and prompt versions.
+- **Delivers**: the use case, writers, prompts, recordings; structure tests of the package.
+- **Done when**: every RF-601, RF-602, RF-603 and RF-604 scenario has a passing test.
+- **Refs**: RF-601, RF-602, RF-603, RF-604, RNF-004, ADR-005, ADR-018, DEC-10, DEC-80.
+
+### P3-10 - Principles, styles, stack, migration and build method in the package
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P3-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`.
+- **Do**: each chosen principle as conventions rules and task-card checks (TDD lists the tests first, SDD names requirement ids, SOLID and KISS in review checklists); the style ADR and a target architecture following it; an ADR per stack layer; the migration strategy ordering the roadmap with its ADR; project context shaping phases and sizes; the AI-assisted build method (AGENTS.md, rated cards, plan before build, human review).
+- **Delivers**: the writers; structure tests.
+- **Done when**: every RF-607, RF-610, RF-611 and RF-612 scenario and the second scenarios of RF-608 and RF-609 have passing tests.
+- **Refs**: RF-607, RF-608, RF-609, RF-610, RF-611, RF-612, ADR-018, DEC-75, DEC-76, DEC-79.
+
+### P3-11 - Plan estimate and caps
+- **Difficulty**: 7 (opus)
+- **Size**: S
+- **Depends on**: P3-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/adr/ADR-007-cost-control.md`.
+- **Do**: the `planner` estimate against the user's caps on Plan setup; every planner call through the guards.
+- **Delivers**: the estimator extension and route; integration tests.
+- **Done when**: the RF-613 scenario has a passing test.
+- **Refs**: RF-613, ADR-007, DEC-81.
+
+### P3-12 - Release 1 journeys and verification matrix
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P3-04, P3-08, P3-10, P3-11
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/roadmap.md` (P3 exit criteria); `docs/process-flows.md` flows 1 and 7.
+- **Do**: journeys from a GitHub URL to a downloaded hand-off package with a saved brief; `docs/verification/r1-matrix.md` covering every release-1 requirement; the pyramid for the release; follow-up cards for gaps.
+- **Delivers**: journey specs, the matrix.
+- **Done when**: every journey passes in CI; no R1 Must lacks evidence or a follow-up card.
+- **Refs**: RF-601, RF-604, RF-605, RNF-005, RNF-010.

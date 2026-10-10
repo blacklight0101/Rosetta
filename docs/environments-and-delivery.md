@@ -82,10 +82,12 @@ before commit (ADR-008).
 
 - Repository: public GitHub `blacklight0101/Rosetta`, default branch `main` (DEC-06).
 - Flow (DEC-35): issue per card -> branch `task/<card-id>-<slug>` or `docs/<topic>` -> pull request from the template
-  -> CI green -> verifier verdict posted -> the owner approves by merging with squash -> branch deleted.
+  -> CI green -> verifier verdict posted -> squash merge by the orchestrator under the merge rules of the orchestration protocol section 3.1, or by the owner for `needs-owner` pull requests (DEC-96) -> branch deleted.
 - `main` is protected by a repository ruleset: changes only through pull requests, squash merge only, linear history,
-  no force-push, no deletion, review threads resolved before merge. Required status checks are added to the ruleset
-  when the CI workflow exists (first P1 card).
+  no force-push, no deletion, review threads resolved before merge, no required approving review (the orchestrator
+  and the owner use the same GitHub account, which cannot approve its own pull request; DEC-96). The owner adds the CI
+  jobs as required status checks to the ruleset once P1-02 has merged the workflow; from then on no pull request can
+  be merged with a red check.
 - Commits follow Conventional Commits, checked by commitlint ([conventions](conventions.md) section 9).
 - Git hooks (lefthook): `pre-commit` formats and lints staged files; `commit-msg` runs commitlint; `pre-push` runs
   `typecheck` and the unit tests. Hooks help; CI is the gate.
@@ -143,6 +145,8 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Ollama | Node.js `fetch` against the Ollama HTTP API | built in | no SDK needed; decided in the provider card |
 | Language packs | `web-tree-sitter` + `tree-sitter-c-sharp` (WebAssembly grammar) | 0.27 / 0.23 | WebAssembly avoids native builds on Windows (ADR-004) |
 | Zip export | `yazl` | 3.3 | streaming zip writer (RF-008) |
+| Snapshot extraction | `tar` | 7.5 | GitHub tarball extraction with an entry filter, `src/infrastructure/github/` only (ADR-019, RF-122, RF-127) |
+| Ignore rules | `ignore` | 7.0 | gitignore-syntax matching for `.rosettaignore` and the deny list, `src/infrastructure/files/` only (ADR-019, RF-140) |
 | Web UI and report components | `preact` | 11.0 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52) |
 
 **Development**
