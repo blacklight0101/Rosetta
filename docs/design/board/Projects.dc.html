@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rosetta - projects</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
+.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
+.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
+.nav .grp{margin:14px 12px 4px;font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:20px;box-shadow:var(--rst-shadow-1)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 14px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent;text-decoration:none;white-space:nowrap}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+table{border-collapse:collapse;width:100%;min-width:860px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid var(--rst-rule);font-size:var(--rst-fs-sm);white-space:nowrap}
+th{font-weight:var(--rst-fw-label);color:var(--rst-ink-muted);font-size:var(--rst-fs-xs);background:var(--rst-surface-2)}
+td.n,th.n{text-align:right}
+h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
+h2{margin:0 0 12px;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="min-height: 1100px; display: flex; flex-direction: column;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
+    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
+    <div style="flex: 1 1 auto;"></div>
+    <div style="display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
+      <span class="lbl">Your total</span><span><strong>1,302,118</strong> tokens</span><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$3.88</span><span class="lbl">today $0.62 of $1.00</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;"><span>Ana Ruiz</span><span class="badge" style="background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);">user</span><a href="SignIn.dc.html">Sign out</a></div>
+  </header>
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
+    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
+      <a href="Projects.dc.html" aria-current="page">Projects</a>
+      <a href="Settings.dc.html">Settings and keys</a>
+      <sc-if value="{{isAdmin}}" hint-placeholder-val="{{ false }}">
+      <div class="grp">Administration</div>
+      <a href="AdminUsers.dc.html">Users and caps</a>
+      <a href="AdminAudit.dc.html">Audit</a>
+      </sc-if>
+    </nav>
+    <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; max-width: 1160px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+        <div style="flex: 1 1 320px;"><h1>Projects</h1><div style="color: var(--rst-ink-muted); margin-top: 4px;">Each project is one public GitHub repository. Only you can see your projects.</div></div>
+      </div>
+
+      <section class="card" aria-labelledby="np" style="display: flex; flex-direction: column; gap: 12px;">
+        <h2 id="np" style="margin: 0;">New project</h2>
+        <label for="url" style="font-weight: var(--rst-fw-label);">GitHub repository URL</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+          <input id="url" class="rst-mono" value="https://github.com/dotnet-architecture/eShopModernizing/tree/master/eShopLegacyWebFormsSolution" style="flex: 1 1 420px; min-width: 0; height: 40px; padding: 0 12px; border-radius: var(--rst-radius-md); border: 1px solid var(--rst-rule-strong); background: var(--rst-bg); color: var(--rst-ink);">
+          <button class="btn" type="button" style="height: 40px; padding: 0 18px; background: var(--rst-brand); color: var(--rst-brand-ink);">Create project</button>
+        </div>
+        <div class="lbl">Deleting a project asks for confirmation and keeps its cost in your totals; it is disabled while a run is in progress. Public repositories only. Add <span class="rst-mono" style="font-size: 12px;">/tree/&lt;branch&gt;/&lt;folder&gt;</span> to analyse one folder.</div>
+      </section>
+
+      <section class="card" aria-labelledby="yp">
+        <h2 id="yp">Your projects</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>Repository</th><th>Last run</th><th>State</th><th class="n">Runs</th><th class="n">Tokens</th><th class="n">Cost</th><th></th></tr></thead>
+            <tbody>
+              <sc-for list="{{projects}}" as="p" hint-placeholder-count="3">
+                <tr>
+                  <td><a href="LiveRun.dc.html" class="rst-mono">{{p.repo}}</a><div class="lbl">{{p.path}}</div></td>
+                  <td>{{p.last}}</td>
+                  <td><span class="badge" style="{{p.badgeStyle}}">{{p.state}}</span><div class="lbl">{{p.stateNote}}</div></td>
+                  <td class="n">{{p.runs}}</td><td class="n">{{p.tokens}}</td><td class="n">{{p.cost}}</td>
+                  <td><div style="display: flex; gap: 6px;"><a class="btn" href="{{p.href}}" style="border-color: var(--rst-rule-strong); color: var(--rst-ink);">{{p.action}}</a><sc-if value="{{p.canDelete}}" hint-placeholder-val="{{ true }}"><a class="btn" href="History.dc.html" style="border-color: var(--rst-danger-solid); color: var(--rst-danger-ink);">Delete</a></sc-if><sc-if value="{{p.busy}}" hint-placeholder-val="{{ false }}"><button class="btn" type="button" disabled title="A run is in progress. Stop it before deleting the project." style="border-color: var(--rst-rule); color: var(--rst-ink-muted); background: transparent; cursor: not-allowed;">Delete</button></sc-if></div></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-label="Queued run" style="display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; padding: 14px 16px; border-radius: var(--rst-radius-md); background: var(--rst-info-bg); color: var(--rst-info-ink); border: 1px solid var(--rst-info-solid);">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" style="flex: none;"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"></circle><path d="M10 5.5V10l3 2" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
+        <div style="flex: 1 1 360px;"><strong>Your scan of jhipster/jhipster-sample-app is queued, position 2.</strong> Two runs are in progress on the server; yours starts automatically when a slot frees. You can leave this page.</div>
+        <button class="btn" type="button" style="background: transparent; color: var(--rst-info-ink); border-color: var(--rst-info-solid);">Cancel queued run</button>
+      </section>
+
+      <section class="card" aria-label="Empty state example" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; border-style: dashed; box-shadow: none;">
+        <div style="flex: 1 1 360px;"><strong>When you have no projects yet</strong><div style="color: var(--rst-ink-soft); margin-top: 4px;">Paste a public GitHub URL above. The demo repository, eShopLegacyWebForms, is a good first run: about 70 files, a few cents with cloud models, free on Ollama.</div></div>
+        <button class="btn" type="button" style="border-color: var(--rst-rule-strong); color: var(--rst-ink); background: transparent;">Use the demo repository</button>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"role":{"editor":"enum","options":["user","admin"],"default":"user"},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+renderVals() {
+const ok = 'background: var(--rst-ok-bg); color: var(--rst-ok-ink);';
+const run = 'background: var(--rst-info-solid); color: var(--rst-info-solid-ink);';
+const q = 'background: var(--rst-info-bg); color: var(--rst-info-ink);';
+const cap = 'background: var(--rst-warn-bg); color: var(--rst-warn-ink);';
+return {
+theme: this.props.theme ?? 'light',
+isAdmin: (this.props.role ?? 'user') === 'admin',
+projects: [
+{ repo: 'dotnet-architecture/eShopModernizing', path: 'eShopLegacyWebFormsSolution', last: 'understand · 14:02', badgeStyle: run, state: 'Running', stateNote: 'turn 11 of the Orders reader', runs: '6', tokens: '1,284,903', cost: '$3.47', action: 'Open live run', href: 'LiveRun.dc.html', canDelete: false, busy: true },
+{ repo: 'jhipster/jhipster-sample-app', path: 'root', last: 'scan · queued', badgeStyle: q, state: 'Queued', stateNote: 'position 2', runs: '0', tokens: '0', cost: '$0.00', action: 'Open', href: '#', canDelete: true, busy: false },
+{ repo: 'spring-projects/spring-petclinic', path: 'root', last: 'understand · Oct 9', badgeStyle: cap, state: 'Cap reached', stateNote: 'resume after raising the cap', runs: '3', tokens: '17,215', cost: '$0.41', action: 'Resume', href: 'StartRun.dc.html', canDelete: true, busy: false }
+]
+};
+}
+}
+</script>
+</body>
+</html>

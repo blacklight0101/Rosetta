@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56); new screens for the hosted application pending (section 14, DEC-63) |
+| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56); hosted-application screens (section 14, artboards 7-13) approved as a G-02 amendment (DEC-70) |
 | **Decisions** | DEC-44 (text wordmark, system fonts, deep teal accent, light and dark per OS, multi-page static report), DEC-45 (English only), DEC-46 (verbose, graphic live web UI), DEC-49 (project totals always visible), DEC-50 (API calls and logs), DEC-52 (Preact + Vite), DEC-55 (delete with confirmation); [ADR-012](adr/ADR-012-local-web-ui-and-github-sources.md) |
 | **Source artefacts** | [design-system-brief.md](design-system-brief.md) (what was asked); the v1 design board, exported to [`docs/design/board/`](design/board/) (open the `.dc.html` files in the design canvas; never edited after export); [`docs/design/tokens.css`](design/tokens.css) (the token file) |
 | **Devices** | desktop and laptop browsers, 1280 px and wider, mouse and keyboard (the web UI); the landing page, sign-in and the published report also on tablets and phones (360 px and wider) |
@@ -259,7 +259,7 @@ terminal; `NO_COLOR` turns colour off (RF-004).
 - The verifier greps components and pages for colour literals, pixel sizes outside tokens, inline styles other than
   the allowed ones, and font or icon CDN links.
 
-## 14. Pending screens for the hosted application (added 2026-10-11)
+## 14. Screens for the hosted application (added 2026-10-11)
 
 DEC-59..DEC-69 add screens the v1 board does not show. They use only the tokens and components above where they
 fit; a new component is added to section 5 in the same branch. The artboards are drawn and approved before their
@@ -268,10 +268,30 @@ cards are built (an amendment of G-02, recorded in `handoff.md`).
 | Screen | Requirements | Notes |
 |---|---|---|
 | Landing page | RF-1200, RF-1201 | product-quality marketing page: hero with the one-sentence promise, the pipeline as a graphic, a still of the live agent view, evidence cards with the verifier, cost control, security and privacy, technology, about the project, Sign in and Request access; works from 360 px and without JavaScript; light and dark |
-| Sign in | RF-1100 | user name, password, one generic error, lockout message; centred card on the landing background |
+| Sign in | RF-1100 | user name, password and one generic error; a locked account shows the same message as a wrong password, so the page never reveals that an account exists; centred card on the landing background |
 | Change password | RF-1103, RF-1102 | forced at first sign-in; rules shown before typing |
 | Projects | RF-010, RF-1105 | the user's projects with last run, totals, New project |
 | Settings and keys | RF-1104, RF-407 | per provider: last four characters, replace, delete, Test; which key a run will use |
 | Administration: users | RF-1102, RF-1106, RF-1107 | table of accounts with role, state, last sign-in, month-to-date cost; create, disable, reset; caps form; server month meter with the 80% banner |
 | Administration: audit | RF-1109 | filterable table, last 30 days |
 | Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |
+
+**Status (2026-10-11):** drawn as artboards 7-13 of the design board (`docs/design/board/Landing.dc.html`,
+`SignIn`, `ChangePassword`, `Projects`, `Settings`, `AdminUsers`, `AdminAudit`), with the Impeccable design
+skill and Claude design. The landing structure ("Watch it work": a replay of a sample run as the first viewport)
+was chosen by the owner from three dealt structures; its direction contract is in
+`.impeccable/surfaces/`. Approved by the owner without changes as a G-02 amendment (DEC-70). The v1 artboards 1-6 were then revised after an Impeccable critique and approved as a further
+amendment (DEC-71): they share the hosted header and navigation, keep badge glyphs everywhere and hold Start run
+disabled until consent. The run queue state is
+drawn on the Projects artboard (Queued badge, position and Cancel); the start page reuses the same notice.
+
+Components these screens add to section 5:
+
+| Component | Where | Notes |
+|---|---|---|
+| Replay stage | landing first viewport | the live-run lanes, claim counts, event stream and cost meter of a sample run in one framed window; animates once per 10 s cycle, pauses on hover or focus, static under reduced motion; always labelled "Sample run" |
+| Pipeline rail | landing "How it works" | an ordered list drawn as a line with one node per stage; reader and verifier nodes take their role colours; each stage names the file it leaves |
+| Totals pill | every signed-in header | "Your total" for users, "Server, this month" against the cap for the administrator (RF-1010, RF-1106) |
+| Cap banner | administration pages | warning bar at 80% of the server's monthly cap (RF-1106) |
+| Queue notice | projects | info callout with the queue position and Cancel queued run (RF-1108) |
+| Rule checklist | change password | each password rule with a pass or fail glyph and text, updated as the user types (RF-1103) |
