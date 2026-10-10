@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/hosted-web-app`._
+_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/hosted-screens`._
 
 ## Current state
 
@@ -9,30 +9,31 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-017; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-69.
+- `docs/decision-log.md` - decisions DEC-01..DEC-70.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`;
   `orchestrator` still a scaffold.
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
 - `docs/design-system.md` v1, `docs/design-system-brief.md` and `docs/design/tokens.css` - written 2026-10-11; design
-  board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); board files in `docs/design/board/`.
+  board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); hosted screens (artboards 7-13) approved as a G-02 amendment (DEC-70); board files in
+  `docs/design/board/`.
 - `docs/data-model.md` - written 2026-10-10 (all file formats); Q-15 and Q-16 answered (DEC-54, DEC-55).
 - `docs/security/threat-model.md` and `SECURITY.md` - rewritten 2026-10-11 for the hosted application (DEC-69).
-- Not yet filled: `docs/roadmap.md`, `docs/process-flows.md`, `docs/orchestration/`; design artboards for the new
-  screens (design-system.md section 14).
+- Not yet filled: `docs/roadmap.md`, `docs/process-flows.md`, `docs/orchestration/`.
 
 ## Resume point
 
-State (2026-10-11): main has P0 work through PR #3. Branch `docs/hosted-web-app` turns Rosetta into a hosted web
+State (2026-10-11): main has P0 work through PR #4, which turned Rosetta into a hosted web
 application (DEC-59..DEC-69): no CLI, no plugin; one container image, Docker Compose locally, a host chosen later
 (Q-18); accounts, landing page, per-user keys, caps, PostgreSQL plus files; ADR-014..ADR-017; requirements
-RF-010, RF-803, RF-1100..RF-1306; threat model rewritten. The owner reviews and merges its PR.
+RF-010, RF-803, RF-1100..RF-1306; threat model rewritten. Branch `docs/hosted-screens` adds the approved hosted
+screens (artboards 7-13, DEC-70); the owner reviews and merges its PR.
 
 Next, in this order (ask the owner before each):
 1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56).
-2. Artboards for the hosted screens (landing, sign-in, settings and keys, administration; design-system.md section
-   14), approved as a G-02 amendment.
+2. ~~Artboards for the hosted screens (design-system.md section 14)~~ DONE 2026-10-11: artboards 7-13, approved as a
+   G-02 amendment (DEC-70).
 3. Roadmap (P0..P4 with exit criteria) and process flows.
 4. Build plan (with the hosted cards: image, Compose, accounts, landing, hosted deploy by 2026-10-20): `docs/orchestration/README.md`, `tasks.md` with cards rated 1-10 (DEC-32), one GitHub issue per
    card, and the orchestrator agent.
@@ -59,7 +60,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 | Gate | Name | State | Since | Note |
 |---|---|---|---|---|
 | G-01 | Documentation set accepted | Closed | - | opens only after the owner reviews the whole set (DEC-33); no provisional opening |
-| G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56) |
+| G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70) |
 | G-03 | Public GitHub repository ready | Closed | - | `blacklight0101/Rosetta`, created on the owner's request |
 | G-04 | Provider access ready | Closed | - | Ollama installed with the model of Q-04; OpenAI key in the environment |
 | G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26: hosted URL, teacher account (RF-803) |
@@ -73,6 +74,11 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 ## Session log
 
+- **2026-10-11 (hosted screens, G-02 amendment)** - artboards 7-13 drawn with the Impeccable skill and Claude design:
+  landing page ("Watch it work", chosen from three dealt structures), sign in, change password, projects with the
+  queue state, settings and keys, administration users and caps, audit. `PRODUCT.md` added; design-system.md
+  section 14 gains six components. Two finish-review rounds, detector clean. The owner approved them without
+  changes (DEC-70). Next: roadmap and process flows.
 - **2026-10-11 (hosted web application)** - the owner wants the teachers to use Rosetta through a URL: DEC-59..DEC-69
   (no CLI, plugin out of scope, one container image local and hosted, accounts and teacher account, landing page,
   server and per-user keys with caps, PostgreSQL plus files, isolation, hand-in URL, security controls).
