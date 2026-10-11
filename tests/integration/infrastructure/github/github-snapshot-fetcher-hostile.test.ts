@@ -5,6 +5,7 @@ import {
   demoGitHub,
   fetcherHarness,
   FIXTURE_KEY,
+  requestsToHost,
 } from '../../../support/snapshot-fetcher-harness.js';
 import { NORMAL_FILES } from '../../../support/snapshot-fixtures.js';
 import { listTree, useWritableTempRoot } from '../../../support/writable-temp-root.js';
@@ -120,7 +121,7 @@ describe('GitHubSnapshotFetcher limits and hosts', () => {
     const { fetch } = harness(github.fetch);
 
     await expect(fetch()).rejects.toMatchObject({ code: 'RST-1904' });
-    expect(github.requests.some((request) => request.url.includes('evil.example'))).toBe(false);
+    expect(requestsToHost(github, 'evil.example')).toBe(0);
     expect(await readdir(sourcesDir())).toEqual([]);
   });
 });

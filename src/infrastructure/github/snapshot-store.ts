@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { Dirent } from 'node:fs';
 import {
   chmod,
   lstat,
@@ -99,19 +100,25 @@ async function assertInside(realRoot: string, absolute: string, path: string): P
   }
 }
 
+/** Refuses a link (dangling ones included) before anything follows it (ADR-019). */
+async function assertNotLink(entry: Dirent, absolute: string, path: string): Promise<void> {
+  if (entry.isSymbolicLink() || (await lstat(absolute)).isSymbolicLink()) {
+    throw entryRefused(`contains a link at ${JSON.stringify(path)}`);
+  }
+}
+
 /**
- * Relative forward-slash paths of every regular file under `root`; an entry that resolves outside
- * the tree or is a link anywhere is refused (ADR-019).
+ * Relative forward-slash paths of every regular file under `root`; an entry that is a link anywhere
+ * or resolves outside the tree is refused (ADR-019). The link check runs first, so a dangling link
+ * is refused as a link rather than failing `realpath`.
  */
 async function listFiles(root: string, realRoot: string, relative = ''): Promise<string[]> {
   const found: string[] = [];
   for (const entry of await readdir(join(root, relative), { withFileTypes: true })) {
     const path = relative === '' ? entry.name : `${relative}/${entry.name}`;
     const absolute = join(root, path);
+    await assertNotLink(entry, absolute, path);
     await assertInside(realRoot, absolute, path);
-    if (entry.isSymbolicLink() || (await lstat(absolute)).isSymbolicLink()) {
-      throw entryRefused(`contains a link at ${JSON.stringify(path)}`);
-    }
     if (entry.isDirectory()) found.push(...(await listFiles(root, realRoot, path)));
     else if (entry.isFile()) found.push(path);
   }

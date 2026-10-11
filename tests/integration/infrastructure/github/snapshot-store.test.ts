@@ -89,6 +89,20 @@ describe('SnapshotStore inspect safety', () => {
     });
   });
 
+  it('RF-122 reports an empty tree as zero files with a stable hash', async () => {
+    const store = new SnapshotStore(root.path);
+    const files = join(root.path, 'files');
+    await mkdir(files);
+
+    expect(await store.inspect(files)).toEqual({
+      fileCount: 0,
+      totalBytes: 0,
+      snapshotHash: `sha256:${sha256('')}`,
+    });
+  });
+});
+
+describe('SnapshotStore inspect links (ADR-019)', () => {
   it.skipIf(!symlinksAllowed)(
     'RF-122 refuses an entry under files/ that resolves outside it (ADR-019)',
     async () => {
@@ -121,18 +135,6 @@ describe('SnapshotStore inspect safety', () => {
       expect(failure).toHaveProperty('message', expect.stringContaining('link'));
     },
   );
-
-  it('RF-122 reports an empty tree as zero files with a stable hash', async () => {
-    const store = new SnapshotStore(root.path);
-    const files = join(root.path, 'files');
-    await mkdir(files);
-
-    expect(await store.inspect(files)).toEqual({
-      fileCount: 0,
-      totalBytes: 0,
-      snapshotHash: `sha256:${sha256('')}`,
-    });
-  });
 });
 
 describe('SnapshotStore cached snapshot and read-only marking', () => {

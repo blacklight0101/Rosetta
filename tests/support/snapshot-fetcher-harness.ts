@@ -85,5 +85,9 @@ export function expectedSnapshotHash(files: Readonly<Record<string, string>>): s
   return `sha256:${createHash('sha256').update(lines).digest('hex')}`;
 }
 
+/** How many recorded requests went to exactly `hostname` (compared on the parsed URL, not a substring). */
+export const requestsToHost = (github: FakeGitHub, hostname: string): number =>
+  github.requests.filter((request) => new URL(request.url).hostname === hostname).length;
+
 export const codeloadRequests = (github: FakeGitHub): number =>
-  github.requests.filter((request) => request.url.includes('codeload.github.com')).length;
+  requestsToHost(github, 'codeload.github.com');
