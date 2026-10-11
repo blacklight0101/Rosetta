@@ -188,10 +188,42 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 No times and no absolute paths, so two scans of the same commit are byte-identical (RF-106). The file hash
 (`codemapHash`, SHA-256 of the file) goes into the run manifest.
 
+Rules for `areas[]` (RF-104, added with P1-20):
+
+- A file in the `config` areas of the settings (3.1) goes to the first area whose patterns match it (gitignore syntax); every
+  other file is grouped automatically. Links never join a configured area.
+- Automatic grouping: each top-level folder is one area (`name` is the folder path; files at the root form `(root)`).
+  A folder over `scan.areaTokenBudget` is split by sub-folder; its own files stay in an area named after the folder.
+  Files that a language pack links (a page and its code-behind) are put in the area of the linking file, with
+  `origin` `references`, when together they fit the budget.
+- A group still over the budget is cut, in path order and never between linked files, into parts named `<name>#1`,
+  `<name>#2`, and so on. A single file larger than the budget is the one allowed exception and forms an area alone.
+- An automatic name gets ` (auto)` appended until neither it nor its numbered parts equal a configured name or another
+  area's name; two configured areas whose names (parts included) collide are refused.
+- `mapLevel` of an area is `symbols` when at least one of its files is `symbols`, else `coarse`.
+- Every text taken from a repository (file paths, area names, `subpath`, SQL text, symbol and entity names, link
+  symbols) is passed through the secret masker before it is written (RF-141); `sqlStatements[].text` is cut to 500
+  characters after masking. The scan keeps up to 1 536 characters of a statement for the masker, and every cut the
+  scan makes (that window, and the 4 000-character line limit) falls between words: when it would fall inside a run
+  without white space, the whole run is dropped. Every masker rule matches inside one such run (keys, connection
+  URLs, `password=value`) or runs to the end of the text once its keyword is seen (key blocks, quoted values,
+  `;Password=`), so a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
+  A wider window alone would not be enough: masking shortens the text, so the cut end can reach the first 500
+  characters. The 500-character cut after masking falls between words as well, so it never leaves half a marker or
+  a bare `scheme://user:` behind. A statement with no white space before a cut keeps an empty text.
+- File paths and area names that masking changed and that then share one masked form get `~1`, `~2`, ... in the
+  code-unit order of the real names, so two files that differ only by a secret stay distinct. The suffix is an
+  ordinal, not a hash, so it cannot confirm a guessed secret. If a masked or suffixed name still equals another name, the map
+  is refused (`duplicate-file` or `duplicate-area-name`) and nothing is written.
+- Reading `codemap.json` checks the 40-character lower-case `commitSha`, `endLine >= startLine` of a symbol, and
+  that each area's `files` are sorted.
+- Routes found by a language pack are not written to the code map in this release (3.4 has no field for them).
+
 ### 3.5 `scan-summary.md`
 
-Readable summary of the code map: source and commit, languages, artefact counts, areas with file and token counts
-and map level (RF-105). Generated; never read back.
+Readable summary of the code map: source and commit, the scan duration (the only value that differs between two scans
+of one commit, which is why it is here and not in `codemap.json`), languages with files, lines and tokens, artefact
+counts, areas with file and token counts, map level and origin (RF-105, RF-112). Generated; never read back.
 
 ### 3.6 `runs/<runId>/manifest.json`
 

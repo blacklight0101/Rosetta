@@ -1,9 +1,6 @@
 import type { Node } from 'web-tree-sitter';
-import type {
-  PackEntity,
-  PackSymbol,
-  SymbolKind,
-} from '../../../../application/ports/language-pack.js';
+import type { PackEntity, PackSymbol } from '../../../../application/ports/language-pack.js';
+import type { SymbolKind } from '../../../../domain/code-map/vocabulary.js';
 import { RosettaError } from '../../../../domain/errors/rosetta-error.js';
 
 // RF-111: types, methods and properties of one C# syntax tree, and the entity sets of an Entity

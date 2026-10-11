@@ -1,14 +1,10 @@
+import type { ArtefactKind } from '../../../domain/code-map/artefact.js';
+import type { SkipReason } from '../../../domain/code-map/file-entry.js';
+import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
 import type { SkippedPaths } from '../../../application/ports/repository-reader.js';
 
 // RF-100..RF-103: what the universal scan reports. Language packs add symbols and references
 // elsewhere (RF-110); nothing here depends on a stack's syntax.
-
-/** RF-102: the kind of a file that tells an agent where behaviour starts or what it depends on. */
-export type ArtefactKind =
-  'configuration' | 'controller' | 'database-script' | 'entry-point' | 'manifest' | 'page';
-
-/** RF-100: why a listed file was not read. */
-export type SkipReason = 'binary' | 'too-large';
 
 /** One listed file. `language` is a lower-case id, or `unknown` (RF-101). */
 export interface ScannedFile {
@@ -26,15 +22,13 @@ export interface ScannedFile {
   readonly skipped?: SkipReason;
 }
 
-export type SqlVerb = 'CREATE' | 'DELETE' | 'EXEC' | 'INSERT' | 'SELECT' | 'UPDATE';
-
 /** RF-103: a statement and where it starts. */
 export interface SqlStatement {
   readonly path: string;
   /** 1-based line where the statement starts. */
   readonly line: number;
   readonly verb: SqlVerb;
-  /** Whitespace collapsed, cut to 500 characters. */
+  /** Whitespace collapsed, cut to 1536 characters never inside a word; masked, then cut to 500. */
   readonly text: string;
 }
 

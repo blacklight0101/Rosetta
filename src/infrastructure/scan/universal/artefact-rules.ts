@@ -1,5 +1,5 @@
 import { baseName, extensionOf, stemOf } from './path-parts.js';
-import type { ArtefactKind } from './scan-types.js';
+import type { ArtefactKind } from '../../../domain/code-map/artefact.js';
 
 // RF-102: the rule table that tags a file with its artefact kinds. Rules look at the file name
 // only (no parsing), so one table serves every stack; a new stack adds names to the sets.

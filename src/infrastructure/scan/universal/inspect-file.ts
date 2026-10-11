@@ -4,7 +4,8 @@ import { artefactKindsOf } from './artefact-rules.js';
 import { decodeText, isBinary } from './binary-detect.js';
 import { countLines, estimateTokens } from './file-facts.js';
 import { detectLanguage } from './language-detect.js';
-import type { ScannedFile, SkipReason, SqlStatement } from './scan-types.js';
+import type { SkipReason } from '../../../domain/code-map/file-entry.js';
+import type { ScannedFile, SqlStatement } from './scan-types.js';
 import { extractEmbeddedStatements } from './sql-embedded.js';
 import { extractScriptStatements } from './sql-script.js';
 

@@ -88,10 +88,10 @@ describe('SQL statements in a script (part 2)', () => {
     expect(scriptOf('SELECT 1 FROM T')).toHaveLength(1);
   });
 
-  it('RF-103 the statement text is cut to 500 characters', () => {
-    const [statement] = scriptOf(`SELECT ${'a, '.repeat(400)}b FROM T;`);
+  it('RF-103 the statement text is kept to a window of 1536 characters, wider than the 500 of the code map, so it can be masked first', () => {
+    const [statement] = scriptOf(`SELECT ${'a, '.repeat(800)}b FROM T;`);
 
-    expect(statement?.text).toHaveLength(500);
+    expect(statement?.text).toHaveLength(1536);
   });
 
   it('RF-103 a script with no statement gives an empty list', () => {
@@ -112,6 +112,6 @@ describe('SQL statements in a script (part 3)', () => {
   it('RF-103 a very long line is cut, not scanned whole', () => {
     const [statement] = scriptOf(`SELECT ${'x'.repeat(2_000_000)} FROM T;`);
 
-    expect(statement?.text.length).toBeLessThanOrEqual(500);
+    expect(statement?.text.length).toBeLessThanOrEqual(1536);
   });
 });

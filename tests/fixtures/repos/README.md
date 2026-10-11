@@ -1,6 +1,6 @@
 # Scan fixture repositories
 
-Small synthetic repositories for the scan tests (P1-19: RF-100..RF-103, RF-124; P1-21: RF-110, RF-111). They are read in place,
+Small synthetic repositories for the scan tests (P1-19: RF-100..RF-103, RF-124; P1-21: RF-110, RF-111; P1-20: RF-104..RF-106, RF-112). They are read in place,
 never changed by a test; a test that needs extra files (`bin/`, binaries, huge files) copies a fixture to a
 temporary folder first.
 

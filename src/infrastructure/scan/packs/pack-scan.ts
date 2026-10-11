@@ -1,7 +1,6 @@
 import { setImmediate as yieldToEventLoop } from 'node:timers/promises';
 import type {
   LanguagePack,
-  MapLevel,
   PackAnalysis,
   PackEntity,
   PackReference,
@@ -12,7 +11,8 @@ import type { Logger } from '../../../application/ports/logger.js';
 import type { RepositoryReader } from '../../../application/ports/repository-reader.js';
 import type { ErrorCode } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
-import { byCodeUnit } from '../code-unit-order.js';
+import { byCodeUnit } from '../../../domain/code-map/code-unit-order.js';
+import type { MapLevel } from '../../../domain/code-map/map-level.js';
 import { decodeText } from '../universal/binary-detect.js';
 import type { ScannedFile } from '../universal/scan-types.js';
 import type { LanguagePackRegistry } from './pack-registry.js';

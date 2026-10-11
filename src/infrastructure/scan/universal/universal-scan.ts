@@ -1,5 +1,5 @@
 import type { RepositoryReader } from '../../../application/ports/repository-reader.js';
-import { byCodeUnit } from '../code-unit-order.js';
+import { byCodeUnit } from '../../../domain/code-map/code-unit-order.js';
 import { isDefaultIgnored } from './default-ignores.js';
 import { inspectFile } from './inspect-file.js';
 import type { ScanOptions, ScannedFile, SqlStatement, UniversalScan } from './scan-types.js';

@@ -1,8 +1,9 @@
-import type { SqlStatement, SqlVerb } from './scan-types.js';
+import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
+import type { SqlStatement } from './scan-types.js';
 import {
   cutLine,
   leadingVerb,
-  maxStatementText,
+  statementWindow,
   maxStatementsPerFile,
   statementText,
 } from './sql-words.js';
@@ -55,7 +56,7 @@ class ScriptReader {
 
   #append(line: string): void {
     const current = this.#current;
-    if (current === undefined || current.length >= maxStatementText) return;
+    if (current === undefined || current.length >= statementWindow) return;
     current.parts.push(line);
     current.length += line.length + 1;
   }
