@@ -89,13 +89,21 @@ function parseDirective(inner: string): Directive {
   return { name, attributes };
 }
 
-/** The first Page, Control or Master directive in the head of the file. */
+/** The first Page, Control or Master directive in the head of the file, outside server comments. */
 function pageDirective(text: string): Directive | undefined {
   const head = text.length > headCharacters ? text.slice(0, headCharacters) : text;
   let from = 0;
   for (let seen = 0; seen < maxDirectives; seen += 1) {
     const open = head.indexOf('<%@', from);
-    const close = open < 0 ? -1 : head.indexOf('%>', open);
+    if (open < 0) return undefined;
+    const comment = head.indexOf('<%--', from);
+    if (comment >= 0 && comment < open) {
+      const end = head.indexOf('--%>', comment + 4);
+      if (end < 0) return undefined;
+      from = end + 4;
+      continue;
+    }
+    const close = head.indexOf('%>', open);
     if (close < 0) return undefined;
     from = close + 2;
     const directive = parseDirective(head.slice(open + 3, close));
@@ -104,17 +112,35 @@ function pageDirective(text: string): Directive | undefined {
   return undefined;
 }
 
-/** `target` against the folder of `path`; undefined when it is absolute or leaves the repository. */
+/** Control characters (including NUL), `%` and `:` never appear in a plain sibling file name. */
+function hasUnsafeCharacter(text: string): boolean {
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    if (code < 32 || code === 37 || code === 58) return true;
+  }
+  return false;
+}
+
+/**
+ * `target` against the folder of `path`. A code-behind file sits beside its page, so anything else is
+ * refused: an empty value, control characters, `%` (encoded tricks), a drive letter, an absolute,
+ * UNC or home-relative path, and any `..` segment.
+ */
 function resolveSibling(path: string, target: string): string | undefined {
   const slashed = target.replaceAll('\\', '/');
-  if (slashed.startsWith('/') || slashed.startsWith('~') || slashed.includes(':')) return undefined;
+  if (slashed === '' || hasUnsafeCharacter(slashed)) return undefined;
+  if (slashed.startsWith('/') || slashed.startsWith('~')) return undefined;
   const parts = path.split('/').slice(0, -1);
   for (const part of slashed.split('/')) {
-    if (part === '' || part === '.') continue;
-    if (part !== '..') parts.push(part);
-    else if (parts.pop() === undefined) return undefined;
+    if (part === '..') return undefined;
+    if (part !== '' && part !== '.') parts.push(part);
   }
   return parts.length === 0 ? undefined : parts.join('/');
+}
+
+function codeFileOf(directive: Directive): string | undefined {
+  const { attributes } = directive;
+  return attributes.get('codebehind') ?? attributes.get('codefile') ?? attributes.get('src');
 }
 
 /**
@@ -123,9 +149,10 @@ function resolveSibling(path: string, target: string): string | undefined {
  */
 export function codeBehindReference(path: string, text: string): PackReference | undefined {
   const directive = pageDirective(text);
-  const target = directive?.attributes.get('codebehind') ?? directive?.attributes.get('codefile');
+  if (directive === undefined) return undefined;
+  const target = codeFileOf(directive);
   const to = target === undefined ? undefined : resolveSibling(path, target);
-  if (directive === undefined || to === undefined) return undefined;
+  if (to === undefined) return undefined;
   const symbol = directive.attributes.get('inherits');
   return {
     from: path,

@@ -68,6 +68,10 @@ export class CSharpPack implements LanguagePack {
     });
     if (tree === null) throw new RosettaError('RST-1200', 'Parsing the file took too long.');
     try {
+      // A tree with errors would give partial data under map level `symbols`; the file stays coarse.
+      if (tree.rootNode.hasError) {
+        throw new RosettaError('RST-1200', 'The file has syntax errors the C# pack cannot map.');
+      }
       const { symbols, entities } = collectDeclarations(tree.rootNode, file.path);
       return { ...empty, symbols, entities };
     } finally {

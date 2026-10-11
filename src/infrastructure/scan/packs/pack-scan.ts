@@ -1,3 +1,4 @@
+import { setImmediate as yieldToEventLoop } from 'node:timers/promises';
 import type {
   LanguagePack,
   MapLevel,
@@ -136,7 +137,10 @@ export async function analyseWithPacks(input: PackScanInput): Promise<PackScan> 
     warnings: [],
     used: new Set<string>(),
   };
-  for (const file of files) await mapFile(input, file, mapped);
+  for (const file of files) {
+    await mapFile(input, file, mapped);
+    await yieldToEventLoop();
+  }
   const { collected, used } = mapped;
   const warnings = mapped.warnings.sort((a, b) => byCodeUnit(a.path, b.path));
   for (const warning of warnings) await logWarning(logger, warning);
