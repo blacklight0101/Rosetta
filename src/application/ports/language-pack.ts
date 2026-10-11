@@ -1,9 +1,6 @@
 // RF-110, ADR-004: a language pack adds symbols, references and routes for the files of one
 // language. The universal scan never depends on one; a file no pack maps stays at the coarse level.
 
-/** RF-110: `symbols` when a pack mapped the file, `coarse` otherwise (RF-112). */
-export type MapLevel = 'coarse' | 'symbols';
-
 export type SymbolKind =
   'class' | 'enum' | 'function' | 'interface' | 'method' | 'property' | 'struct';
 

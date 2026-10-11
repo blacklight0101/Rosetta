@@ -1,11 +1,8 @@
+import type { ArtefactKind } from '../../../domain/code-map/artefact.js';
 import type { SkippedPaths } from '../../../application/ports/repository-reader.js';
 
 // RF-100..RF-103: what the universal scan reports. Language packs add symbols and references
 // elsewhere (RF-110); nothing here depends on a stack's syntax.
-
-/** RF-102: the kind of a file that tells an agent where behaviour starts or what it depends on. */
-export type ArtefactKind =
-  'configuration' | 'controller' | 'database-script' | 'entry-point' | 'manifest' | 'page';
 
 /** RF-100: why a listed file was not read. */
 export type SkipReason = 'binary' | 'too-large';
