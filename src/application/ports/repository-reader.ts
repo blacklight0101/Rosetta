@@ -12,6 +12,7 @@ export type ReadRefusalReason =
   | 'denied'
   | 'not-found'
   | 'invalid-range'
+  | 'invalid-limit'
   | 'pattern-too-long'
   | 'invalid-pattern'
   | 'timeout';
@@ -63,7 +64,7 @@ export interface GrepResult {
 
 export interface ReadBytesRequest {
   readonly path: string;
-  /** Files larger than this are not read; a negative or fractional limit counts as 0. */
+  /** Files larger than this are not read. A whole number of zero or more, else the call is refused. */
   readonly maxBytes: number;
 }
 
@@ -92,4 +93,6 @@ export interface RepositoryReader {
   /** Built-in deny patterns lifted by `scan.allowDenied`, for the run record (RF-147). */
   readonly liftedDenyPatterns: readonly string[];
   readonly skippedPaths: SkippedPaths;
+  /** The repository-relative folder the reader is limited to, or '' for the whole snapshot (RF-124). */
+  readonly subpath: string;
 }

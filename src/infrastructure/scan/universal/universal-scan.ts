@@ -8,25 +8,24 @@ import type { ScanOptions, ScannedFile, SqlStatement, UniversalScan } from './sc
 // file in memory at a time, and returns lists in a fixed order so two scans of one snapshot are
 // identical (RF-106).
 
-function byCodePoint(left: string, right: string): number {
+function byCodeUnit(left: string, right: string): number {
   if (left === right) return 0;
   return left < right ? -1 : 1;
 }
 
 function bySqlPosition(left: SqlStatement, right: SqlStatement): number {
-  return byCodePoint(left.path, right.path) || left.line - right.line;
+  return byCodeUnit(left.path, right.path) || left.line - right.line;
 }
 
 export async function scanRepository(
   reader: RepositoryReader,
   options: ScanOptions,
 ): Promise<UniversalScan> {
-  const subpath = options.subpath ?? '';
   const files: ScannedFile[] = [];
   const sqlStatements: SqlStatement[] = [];
   const unreadable: string[] = [];
   for (const path of await reader.listFiles()) {
-    if (isDefaultIgnored(path, subpath)) continue;
+    if (isDefaultIgnored(path, reader.subpath)) continue;
     const read = await reader.readBytes({ path, maxBytes: options.maxFileBytes });
     if (!read.ok) {
       unreadable.push(path);
@@ -37,12 +36,12 @@ export async function scanRepository(
     sqlStatements.push(...inspected.sql);
   }
   return {
-    files: files.sort((left, right) => byCodePoint(left.path, right.path)),
+    files: files.sort((left, right) => byCodeUnit(left.path, right.path)),
     sqlStatements: sqlStatements.sort(bySqlPosition),
     skippedPaths: {
-      links: [...reader.skippedPaths.links].sort(byCodePoint),
-      invalidNames: [...reader.skippedPaths.invalidNames].sort(byCodePoint),
+      links: [...reader.skippedPaths.links].sort(byCodeUnit),
+      invalidNames: [...reader.skippedPaths.invalidNames].sort(byCodeUnit),
     },
-    unreadable: unreadable.sort(byCodePoint),
+    unreadable: unreadable.sort(byCodeUnit),
   };
 }

@@ -41,8 +41,6 @@ export interface SqlStatement {
 export interface ScanOptions {
   /** `scan.maxFileBytes`: larger files are listed as `skipped: too-large` and never read. */
   readonly maxFileBytes: number;
-  /** The repository-relative folder the run is limited to (RF-124); '' or absent for none. */
-  readonly subpath?: string;
 }
 
 export interface UniversalScan {
