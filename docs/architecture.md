@@ -121,8 +121,8 @@ src/
     github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
                         hash, snapshot.json, read-only), github-snapshot-fetcher, fake-source-fetcher
-    files/              node-repository-reader, snapshot-index, ignore-rules (deny list), grep worker and
-                        limits, node-output-writer, workspace-guard, workspace-paths, repository-path checks
+    files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
+                        search and limits, node-output-writer, workspace-guard, workspace-paths, repository-path checks
     events/             sse-broadcaster, jsonl-event-log
     db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit), migration runner
     security/           password-hasher (scrypt), secret-box (AES-256-GCM), token generator
