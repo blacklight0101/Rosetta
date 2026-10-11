@@ -131,6 +131,7 @@ deployment procedure (environments-and-delivery.md section 10).
 - The host provider and its staff are trusted with the database and the disk.
 - A process on the owner's machine can read the local volumes; Rosetta does not defend against a compromised machine.
 - The output writer checks every folder on the way to a workspace file for links, then checks the folder's real path
-  again just before the rename or append, but the file system offers no atomic "open beneath this folder" call in
+  again just before the temporary file is created, before the rename and before the append, but the file system
+  offers no atomic "open beneath this folder" call in
   Node.js, so a short check-then-use window remains. Exploiting it needs a local process that can already write to
   the data folder, which is outside this threat model (see the previous point).
