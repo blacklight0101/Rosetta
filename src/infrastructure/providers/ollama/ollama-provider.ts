@@ -1,4 +1,3 @@
-import { setTimeout as wait } from 'node:timers/promises';
 import type {
   LlmAttemptObserver,
   LlmProvider,
@@ -6,17 +5,18 @@ import type {
   LlmResponse,
 } from '../../../application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../../domain/errors/codes.js';
-import { RosettaError } from '../../../domain/errors/rosetta-error.js';
-import { ProviderCallError } from '../provider-call-error.js';
-import { modelMissing, type AttemptFailed } from './ollama-errors.js';
+import { refuseRealProviderInTests } from '../real-provider-guard.js';
+import {
+  completeWithRetries,
+  type AttemptFailed,
+  type AttemptResult,
+  type Sleep,
+} from '../retrying-call.js';
+import { modelMissing } from './ollama-errors.js';
 import { exchange } from './ollama-http.js';
 import { chatBody, type ToolMode } from './ollama-request.js';
 import { llmResponseOf } from './ollama-response.js';
 import { digestOf, parseChat } from './ollama-wire.js';
-import { backoffDelayMs } from './retry-backoff.js';
-
-/** Waits `ms`, rejecting when `signal` aborts. */
-type Sleep = (ms: number, signal: AbortSignal) => Promise<void>;
 
 export interface OllamaProviderOptions {
   /** `ROSETTA_OLLAMA_URL`, the only source of the Ollama URL (DEC-112). */
@@ -43,15 +43,6 @@ export interface OllamaProviderOptions {
 }
 
 const defaultContextTokens = 32_768;
-const loopbackHosts = new Set(['127.0.0.1', 'localhost', '[::1]']);
-
-type AttemptResult =
-  | { readonly ok: true; readonly response: LlmResponse }
-  | { readonly ok: false; readonly failed: AttemptFailed };
-
-function cancelled(signal: AbortSignal): RosettaError {
-  return new RosettaError(ERROR_CODES.providerCallCancelled, undefined, { cause: signal.reason });
-}
 
 function invalidAnswer(): AttemptResult {
   const failure = { code: ERROR_CODES.providerCallFailed, httpStatus: 200 };
@@ -71,42 +62,14 @@ export class OllamaProvider implements LlmProvider {
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
-    this.refuseInTests();
-    const { maxRetries } = this.options;
-    for (let retry = 0; ; retry += 1) {
-      if (request.signal.aborted) throw cancelled(request.signal);
-      observer?.attemptStarted();
-      const result = await this.attempt(request);
-      if (result.ok) return result.response;
-      const { failed } = result;
-      if (!failed.retryable || retry >= maxRetries) {
-        throw new ProviderCallError(failed.failure, {
-          cause: failed.cause,
-          message: failed.message,
-        });
-      }
-      await observer?.attemptRetried(failed.failure);
-      await this.backOff(retry + 1, failed, request.signal);
-    }
-  }
-
-  /** RNF-005: under ROSETTA_TEST=1 only a loopback fake server may be called. */
-  private refuseInTests(): void {
-    if (!this.options.testMode) return;
-    const host = new URL(this.options.baseUrl).hostname;
-    if (this.options.fakeServer === true && loopbackHosts.has(host)) return;
-    throw new RosettaError(ERROR_CODES.realProviderRefusedInTests);
-  }
-
-  private async backOff(retry: number, failed: AttemptFailed, signal: AbortSignal): Promise<void> {
-    const random = this.options.random ?? Math.random;
-    const delay = backoffDelayMs({ retry, random: random(), retryAfterMs: failed.retryAfterMs });
-    const sleep = this.options.sleep ?? ((ms, s) => wait(ms, undefined, { signal: s }));
-    try {
-      await sleep(delay, signal);
-    } catch (error) {
-      throw new RosettaError(ERROR_CODES.providerCallCancelled, undefined, { cause: error });
-    }
+    const { baseUrl, testMode, fakeServer, maxRetries, sleep, random } = this.options;
+    refuseRealProviderInTests({ testMode, fakeServer, baseUrl });
+    return completeWithRetries({
+      attempt: () => this.attempt(request),
+      signal: request.signal,
+      policy: { maxRetries, sleep, random },
+      observer,
+    });
   }
 
   private async attempt(request: LlmRequest): Promise<AttemptResult> {

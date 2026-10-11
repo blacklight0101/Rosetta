@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ToolCall } from '../../../application/ports/llm-provider.js';
+import type { ToolCall } from '../../application/ports/llm-provider.js';
 
 // RF-205: the one validation every tool call passes, native or sent in the text protocol: a tool
 // name and an arguments object. What the arguments mean (unknown tool, numeric strings, a path

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   numberedToolCalls,
   toolCallOf,
-} from '../../../../../src/infrastructure/providers/ollama/tool-call-shape.js';
+} from '../../../../src/infrastructure/providers/tool-call-shape.js';
 
 // RF-205: native and text-protocol tool calls pass the same validation.
 

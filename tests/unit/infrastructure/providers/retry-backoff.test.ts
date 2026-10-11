@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   backoffDelayMs,
   retryAfterMs,
-} from '../../../../../src/infrastructure/providers/ollama/retry-backoff.js';
+} from '../../../../src/infrastructure/providers/retry-backoff.js';
 
 // RF-406: exponential back-off with jitter, honouring any retry-after hint.
 

@@ -7,7 +7,8 @@ import type {
 import type { ToolMode } from './ollama-request.js';
 import type { OllamaChat } from './ollama-wire.js';
 import { parseTextAnswer, stripThinking, type TextAnswer } from './text-tool-protocol.js';
-import { numberedToolCalls, toolCallOf, type ParsedToolCall } from './tool-call-shape.js';
+import { numberedToolCalls, toolCallOf, type ParsedToolCall } from '../tool-call-shape.js';
+import { estimateInputTokens, estimateTokens } from '../usage-estimate.js';
 
 // RF-401, RF-408, RF-421: Ollama's /api/chat answer in the port's one shape. Thinking text is
 // never part of the answer; Ollama has no cached-input-token count, so it is 0.
@@ -20,7 +21,6 @@ export interface ResponseContext {
 }
 
 const nsPerMs = 1_000_000;
-const charsPerToken = 4;
 
 function ms(nanoseconds: number | undefined): number {
   return Math.round((nanoseconds ?? 0) / nsPerMs);
@@ -37,10 +37,6 @@ function metricsOf(chat: OllamaChat): OllamaMetrics {
   };
 }
 
-function estimate(text: string): number {
-  return Math.ceil(text.length / charsPerToken);
-}
-
 /** Reported counts, or an estimate of about four characters per token (RF-421). */
 function usageOf(chat: OllamaChat, request: LlmRequest): TokenUsage {
   const { prompt_eval_count: input, eval_count: output } = chat;
@@ -52,14 +48,9 @@ function usageOf(chat: OllamaChat, request: LlmRequest): TokenUsage {
       usageSource: 'reported',
     };
   }
-  const prompt = [
-    request.system,
-    ...request.messages.map((m) => m.content),
-    JSON.stringify(request.tools),
-  ];
   return {
-    inputTokens: input ?? estimate(prompt.join('')),
-    outputTokens: output ?? estimate(chat.message.content ?? ''),
+    inputTokens: input ?? estimateInputTokens(request),
+    outputTokens: output ?? estimateTokens(chat.message.content ?? ''),
     cachedInputTokens: 0,
     usageSource: 'estimated',
   };

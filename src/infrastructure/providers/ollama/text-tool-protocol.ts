@@ -1,5 +1,5 @@
 import type { ToolCall, ToolDefinition } from '../../../application/ports/llm-provider.js';
-import { toolCallOf, type ParsedToolCall } from './tool-call-shape.js';
+import { toolCallOf, type ParsedToolCall } from '../tool-call-shape.js';
 
 // RF-205, ADR-003: the JSON-in-text tool protocol for models without native tool calling. The
 // wording the model reads is the versioned prompt prompts/shared/text-tool-protocol.v<n>.md;

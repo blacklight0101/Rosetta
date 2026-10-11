@@ -1,4 +1,5 @@
-import { failedStatus, failedThrown, type AttemptFailed } from './ollama-errors.js';
+import type { AttemptFailed } from '../retrying-call.js';
+import { failedStatus, failedThrown } from './ollama-errors.js';
 import { errorText } from './ollama-wire.js';
 
 // RF-401, conventions section 5: one HTTP exchange with Ollama, with a timeout and the caller's

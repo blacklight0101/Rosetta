@@ -3,7 +3,7 @@ import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../../src/domain/errors/rosetta-error.js';
 import { OllamaProvider } from '../../../../../src/infrastructure/providers/ollama/ollama-provider.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
-import { closedLoopbackUrl } from '../../../../support/fake-ollama-server.js';
+import { closedLoopbackUrl } from '../../../../support/fake-http-server.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { useFakeOllama } from '../../../../support/ollama-harness.js';
 
