@@ -1,8 +1,11 @@
+import { IncomingMessage } from 'node:http';
+import { Socket } from 'node:net';
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import {
   clientErrorHandler,
+  connectHandler,
   type ClientSocket,
 } from '../../../../src/presentation/web/early-errors.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
@@ -106,5 +109,28 @@ describe('client error handler: refused requests', () => {
     handle(new RangeError('no code'), fakeSocket());
 
     expect(logger.entries[0]?.data).toMatchObject({ statusCode: 400, error: 'RangeError' });
+  });
+});
+
+describe('connect handler', () => {
+  it('RF-007 a CONNECT request answers 400 RST-2000 on the socket', () => {
+    const logger = new MemoryLogger(new FixedClock('2026-10-11T09:00:00.000Z'), new SecretMasker());
+    const socket = fakeSocket();
+
+    connectHandler(logger, publicUrl)(new IncomingMessage(new Socket()), socket);
+
+    expect(socket.written[0]?.startsWith('HTTP/1.1 400 Bad Request\r\n')).toBe(true);
+    expect(socket.written[0]).toContain('X-Robots-Tag: noindex, nofollow\r\n');
+    expect(logger.entries[0]?.data).toMatchObject({ method: 'CONNECT', statusCode: 400 });
+  });
+
+  it('RF-009 a CONNECT request on a destroyed socket gets no response and no log entry', () => {
+    const logger = new MemoryLogger(new FixedClock('2026-10-11T09:00:00.000Z'), new SecretMasker());
+    const socket = fakeSocket({ destroyed: true });
+
+    connectHandler(logger, publicUrl)(new IncomingMessage(new Socket()), socket);
+
+    expect(socket.written).toEqual([]);
+    expect(logger.entries).toEqual([]);
   });
 });
