@@ -107,6 +107,21 @@ describe('SnapshotStore inspect safety', () => {
     },
   );
 
+  it.skipIf(!symlinksAllowed)(
+    'RF-122 refuses a dangling link under files/ as a link, not as a disk failure (ADR-019)',
+    async () => {
+      const store = new SnapshotStore(root.path);
+      const files = join(root.path, 'files');
+      await mkdir(files);
+      await symlink(join(root.path, 'nowhere.txt'), join(files, 'dangling.txt'), 'file');
+
+      const failure: unknown = await store.inspect(files).catch((error: unknown) => error);
+
+      expect(failure).toMatchObject({ code: 'RST-1906' });
+      expect(failure).toHaveProperty('message', expect.stringContaining('link'));
+    },
+  );
+
   it('RF-122 reports an empty tree as zero files with a stable hash', async () => {
     const store = new SnapshotStore(root.path);
     const files = join(root.path, 'files');
