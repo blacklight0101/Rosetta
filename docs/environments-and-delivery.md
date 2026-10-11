@@ -68,6 +68,7 @@ every variable with a comment and a safe example.
 | `GITHUB_TOKEN` | no | yes | raises GitHub rate limits for snapshot downloads (RF-123) |
 | `ROSETTA_TRUST_PROXY` | no | no | number of proxy hops to trust for the client IP (rate limits, audit); 0 locally, 1 behind the host's proxy (DEC-112) |
 | `ROSETTA_APP_DB_PASSWORD`, `ROSETTA_MIGRATOR_DB_PASSWORD` | local only | yes | read by the Compose init script that creates the database roles (data-model.md section 6) |
+| `ROSETTA_DB_ADMIN_PASSWORD` | local only | yes | password of the PostgreSQL image's bootstrap superuser `postgres` in the Compose `db` service; until the init script creates the roles (P1-45), local development may connect as that user |
 | `ROSETTA_TEST` | tests only | no | `1` enables the fake provider and fake GitHub and blocks real provider calls (ADR-008); refused when `ROSETTA_PUBLIC_URL` is https |
 | `ROSETTA_TEST_DATABASE_URL` | tests only | yes | the disposable PostgreSQL for integration tests (data-model.md section 8) |
 | `ROSETTA_GALLERY` | development only | no | serves the component gallery (design-system.md section 13); refused when `ROSETTA_PUBLIC_URL` is https |

@@ -440,7 +440,7 @@ the `Clock` port.
 | `role` | `text` | `CHECK (role IN ('admin','user'))` |
 | `state` | `text` | `CHECK (state IN ('Active','MustChangePassword','Disabled'))`; `Locked` is derived from `locked_until` |
 | `password_hash` | `text` | `scrypt$N$r$p$salt$hash` (base64); never selected by list queries |
-| `failed_sign_ins` | `int` | reset to 0 on success, and when `first_failed_at` is older than 15 minutes |
+| `failed_sign_ins` | `int` | reset to 0 on success, and when `first_failed_at` is older than 15 minutes; `CHECK (failed_sign_ins >= 0)` |
 | `first_failed_at` | `timestamptz` null | start of the current failure window (RF-1100, DEC-112) |
 | `locked_until` | `timestamptz` null | set for 15 minutes after the fifth failure |
 | `server_keys_allowed` | `boolean` | default `true` (RF-1104) |
@@ -452,10 +452,10 @@ the `Clock` port.
 
 | Column | Type | Rules |
 |---|---|---|
-| `id_hash` | `bytea` | primary key; SHA-256 of the 256-bit session id; the id itself is never stored |
+| `id_hash` | `bytea` | primary key; SHA-256 of the 256-bit session id (32 bytes, checked); the id itself is never stored |
 | `user_id` | `uuid` | references `users`, `ON DELETE CASCADE`; indexed |
 | `created_at`, `last_seen_at`, `expires_at` | `timestamptz` | `expires_at` = min(`last_seen_at` + 8 h, `created_at` + 7 days) |
-| `ip`, `user_agent` | `text` | for the administrator's view and audit; user agent cut to 200 characters |
+| `ip`, `user_agent` | `text` | for the administrator's view and audit; user agent cut to 200 characters (checked) |
 
 **`provider_keys`** (RF-1104)
 
@@ -463,10 +463,10 @@ the `Clock` port.
 |---|---|---|
 | `user_id` | `uuid` | references `users`; part of the primary key |
 | `provider` | `text` | `CHECK (provider IN ('openai','anthropic','openai-compatible'))`; part of the primary key |
-| `base_url` | `text` null | required for `openai-compatible`; https and a public address, checked on save and on every connect (RF-1104) |
+| `base_url` | `text` null | required for `openai-compatible` (`CHECK`); https and a public address, checked on save and on every connect (RF-1104) |
 | `ciphertext`, `iv`, `auth_tag` | `bytea` | AES-256-GCM; the additional authenticated data is `user_id:provider` |
 | `key_version` | `text` | fingerprint of the key that encrypted it: the AES key is derived from `ROSETTA_SECRET_KEY` with HKDF-SHA256 (info `rosetta/provider-keys/v1`); rows under `ROSETTA_SECRET_KEY_PREVIOUS` are re-encrypted at start-up (DEC-112) |
-| `last4` | `text` | the last four characters, for display |
+| `last4` | `text` | the last four characters, for display; at most 4 characters (checked) |
 | `created_at`, `updated_at` | `timestamptz` | |
 
 **`projects`** (RF-010, RF-1105)
@@ -486,12 +486,12 @@ the `Clock` port.
 |---|---|---|
 | `id` | `uuid` | primary key |
 | `project_id` | `uuid` | references `projects`, `ON DELETE CASCADE` |
-| `user_id` | `uuid` | references `users`; equals the project's owner |
+| `user_id` | `uuid` | references `users`; equals the project's owner, enforced by a foreign key (`project_id`, `user_id`) to `projects` (`id`, `user_id`), which is unique |
 | `run_key` | `text` | the `<runId>` folder name; unique per project |
 | `stage` | `text` | `CHECK (stage IN ('scan','understand','verify','report','plan'))` |
 | `commit_sha`, `snapshot_key` | `text` null | the pinned commit and the snapshot folder name; indexed, for the history list and the snapshot-in-use check (RF-1008, RF-1012) |
-| `queue_state` | `text` | `RunQueueState` (architecture section 5) |
-| `end_state` | `text` null | `RunEndState`; set once |
+| `queue_state` | `text` | `RunQueueState` (architecture section 5), `CHECK` on the list |
+| `end_state` | `text` null | `RunEndState`, `CHECK` on the list; set once; set exactly when `queue_state` is `Ended` (`CHECK`) |
 | `queued_at`, `started_at`, `ended_at` | `timestamptz` | the last two null until reached |
 | `cost_micros`, `input_tokens`, `output_tokens`, `cached_input_tokens` | `bigint` | running totals for lists; the ledger is the source of truth |
 
@@ -503,13 +503,14 @@ the `Clock` port.
 | `at` | `timestamptz` | indexed with `user_id` and alone (server month) |
 | `user_id` | `uuid` | references `users` (accounts are disabled, never deleted) |
 | `project_id`, `run_id` | `uuid` null | no foreign key: rows outlive deleted projects and runs (DEC-55); null for a provider test (RF-407) |
-| `stage`, `role`, `provider`, `model` | `text` | `stage` is a run stage or `provider-test` |
-| `call_id` | `text` | matches `provider-calls.jsonl`; `attempt` `int` |
+| `stage`, `role`, `provider`, `model` | `text` | `stage` is a run stage or `provider-test` (`CHECK`) |
+| `call_id` | `text` | matches `provider-calls.jsonl` |
+| `attempt` | `int` | 1 for the first attempt; `CHECK (attempt >= 1)` |
 | `key_source` | `text` | `CHECK (key_source IN ('user','server','none'))`; `none` for Ollama |
 | `input_tokens`, `output_tokens`, `cached_input_tokens` | `bigint` | |
-| `usage_source` | `text` | `reported` or `estimated` |
+| `usage_source` | `text` | `CHECK (usage_source IN ('reported','estimated'))` |
 | `cost_micros` | `bigint` | fixed at call time |
-| `currency` | `char(3)` | `USD` (DEC-54) |
+| `currency` | `char(3)` | `USD` (DEC-54); `CHECK` three capital letters (ISO 4217) |
 | `price_table_version` | `text` | |
 
 **`cost_reservations`** (RF-422, RF-1106; added by the review of 2026-10-11, DEC-112)
@@ -533,7 +534,9 @@ All periods are UTC calendar days and months (DEC-107).
 One row per key: `key text` primary key, `value jsonb`, `updated_at`, `updated_by uuid`. Keys:
 `caps` (`runMicros`, `userDayMicros`, `serverMonthMicros`), `queue` (`maxRunning`), `providers` (which server keys
 are offered), `defaultRoles` (provider and dated model id per role for new projects, DEC-106). Defaults are inserted
-by a migration (`defaultRoles` empty until the administrator sets it). The Ollama URL is only the environment
+by migration `0004_server_settings_defaults`: `caps` `{ runMicros: 500000, userDayMicros: 1000000,
+serverMonthMicros: 10000000 }` (RF-1106), `queue` `{ maxRunning: 2 }` (RF-1108) and `defaultRoles` `{}` (empty until
+the administrator sets it). The Ollama URL is only the environment
 variable `ROSETTA_OLLAMA_URL`.
 
 **`audit_events`** (RF-1109)
@@ -549,8 +552,9 @@ variable `ROSETTA_OLLAMA_URL`.
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
 | `detail` | `jsonb` | masked; never a password, key or session id |
 
-**`schema_version`** (RF-1302): `version int` primary key, `name text`, `checksum text` (SHA-256 of the file),
-`applied_at timestamptz`.
+**`schema_version`** (RF-1302): `version int` primary key, `name text` (the file name), `checksum text` (SHA-256 of
+the file, lower-case hex), `applied_at timestamptz`. Created by the migration runner (`PgMigrator`) itself, not by a
+migration.
 
 ### 4.1 Reserved for later releases
 
@@ -590,7 +594,9 @@ The roles are created outside the migrations, because a committed file cannot ho
 Compose init script (`db/init/roles.sh`) that reads the passwords from `.env`, hosted by the runbook in the host's
 console; migrations only `GRANT` and `ALTER DEFAULT PRIVILEGES` (DEC-112).
 
-When the host provides a single database user, both roles collapse into it and the runbook records that.
+When the host provides a single database user, both roles collapse into it and the runbook records that. Each
+migration therefore grants to `rosetta_app` only when that role exists. `schema_version` belongs to the migration
+runner; `rosetta_app` has no right on it.
 
 **Files**:
 
