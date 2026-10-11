@@ -30,6 +30,10 @@ export const ERROR_CODES = {
   githubSourceUnavailable: 'RST-1903',
   invalidCredentials: 'RST-2201',
   baseUrlRejected: 'RST-2304',
+  migrationFileInvalid: 'RST-2400',
+  migrationChanged: 'RST-2401',
+  migrationUnknown: 'RST-2402',
+  migrationFailed: 'RST-2403',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -65,6 +69,22 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   'RST-2304': {
     message: 'The URL must use https and a public address.',
     nextStep: 'Enter an https address that is reachable from the internet.',
+  },
+  'RST-2400': {
+    message: 'A database migration file has an invalid name or a duplicate number.',
+    nextStep: 'Name each file NNNN_snake_name.sql with a number used once, then start again.',
+  },
+  'RST-2401': {
+    message: 'A database migration that was already applied has been changed.',
+    nextStep: 'Restore the original file and put the change in a new numbered migration.',
+  },
+  'RST-2402': {
+    message: 'The database has a migration that this version of Rosetta does not know.',
+    nextStep: 'Run the Rosetta version that applied it, or restore the database from a backup.',
+  },
+  'RST-2403': {
+    message: 'A database migration failed; the previous schema was kept.',
+    nextStep: 'Read the cause in the log, fix the migration and start again.',
   },
 };
 

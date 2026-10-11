@@ -22,7 +22,7 @@ export const migrationsFolder = fileURLToPath(new URL('../../db/migrations/', im
 /** A fixed instant for `schema_version.applied_at`. */
 export const testClock = new FixedClock('2026-10-11T09:00:00.000Z');
 
-export interface TestSchema {
+interface TestSchema {
   /** A pool whose connections use this schema (search_path). */
   readonly pool: DatabasePool;
   /** The schema name, unique per call. */
@@ -68,7 +68,7 @@ async function runFormatted(pool: DatabasePool, template: string, name: string):
 }
 
 /** Applies every release migration in `db/migrations/` to the schema of `pool`. */
-export async function applyReleaseMigrations(pool: DatabasePool): Promise<void> {
+async function applyReleaseMigrations(pool: DatabasePool): Promise<void> {
   const migrations = await readMigrationFiles(migrationsFolder);
   await new PgMigrator({ pool, migrations, clock: testClock }).migrate();
 }

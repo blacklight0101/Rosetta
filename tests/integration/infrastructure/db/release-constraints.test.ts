@@ -90,15 +90,26 @@ const accepted: readonly Case[] = [
   ['audit_events anonymous refused', () => auditEvent({ outcome: 'refused' })],
 ];
 
-describe.skipIf(!hasTestDatabase)('release-1 constraints', () => {
-  const database = useTestDatabase();
-  let pool: DatabasePool;
-  const parents = { userId: randomUUID(), projectId: randomUUID() };
+const database = useTestDatabase();
+const parents = { userId: randomUUID(), projectId: randomUUID() };
+let ready: Promise<DatabasePool> | undefined;
 
-  beforeAll(async () => {
-    ({ pool } = await database.createSchema({ migrate: true }));
+/** One migrated schema for the file, with an owner and a project to hang rows on. */
+function migratedSchema(): Promise<DatabasePool> {
+  ready ??= (async () => {
+    const { pool } = await database.createSchema({ migrate: true });
     await insert(pool, user({ id: parents.userId, user_name: 'owner' }));
     await insert(pool, project(parents.userId, { id: parents.projectId }));
+    return pool;
+  })();
+  return ready;
+}
+
+describe.skipIf(!hasTestDatabase)('release-1 checks', () => {
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    pool = await migratedSchema();
   });
 
   it.each(refusedByCheck)('RF-1302 refuses %s', async (_, row) => {
@@ -107,6 +118,14 @@ describe.skipIf(!hasTestDatabase)('release-1 constraints', () => {
 
   it.each(accepted)('RF-1302 accepts %s', async (_, row) => {
     expect(await outcomeOf(pool, row(parents))).toBe('ok');
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('release-1 keys and defaults', () => {
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    pool = await migratedSchema();
   });
 
   it('RF-1302 a user name is unique', async () => {
@@ -142,6 +161,14 @@ describe.skipIf(!hasTestDatabase)('release-1 constraints', () => {
 
   it('RF-1302 required columns refuse null', async () => {
     expect(await outcomeOf(pool, user({ password_hash: null }))).toBe(NOT_NULL_VIOLATION);
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('release-1 references', () => {
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    pool = await migratedSchema();
   });
 
   it('RF-1302 a session needs an existing user', async () => {

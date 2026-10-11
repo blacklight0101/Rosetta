@@ -8,43 +8,62 @@ import { auditEvent, insert, ledgerRow, outcomeOf, user } from './rows.js';
 const INSUFFICIENT_PRIVILEGE = '42501';
 const PRIVILEGES = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE'] as const;
 
-describe.skipIf(!hasTestDatabase)('release-1 grants', () => {
-  const database = useTestDatabase();
-  let pool: DatabasePool;
-  const ownerId = randomUUID();
+const database = useTestDatabase();
+const ownerId = randomUUID();
+let ready: Promise<DatabasePool> | undefined;
 
-  async function privilegesOf(table: string): Promise<string[]> {
-    const granted: string[] = [];
-    for (const privilege of PRIVILEGES) {
-      const result = await pool.query<{ granted: boolean }>(
-        'SELECT has_table_privilege($1, $2, $3) AS granted',
-        ['rosetta_app', table, privilege],
-      );
-      if (result.rows[0]?.granted === true) granted.push(privilege);
-    }
-    return granted;
-  }
-
-  beforeAll(async () => {
-    ({ pool } = await database.createSchema({ migrate: true }));
+/** One migrated schema for the file, with a user, a ledger row and an audit event. */
+function migratedSchema(): Promise<DatabasePool> {
+  ready ??= (async () => {
+    const { pool } = await database.createSchema({ migrate: true });
     await insert(pool, user({ id: ownerId }));
     await insert(pool, ledgerRow(ownerId));
     await insert(pool, auditEvent());
+    return pool;
+  })();
+  return ready;
+}
+
+async function privilegesOf(pool: DatabasePool, table: string): Promise<string[]> {
+  const granted: string[] = [];
+  for (const privilege of PRIVILEGES) {
+    const result = await pool.query<{ granted: boolean }>(
+      'SELECT has_table_privilege($1, $2, $3) AS granted',
+      ['rosetta_app', table, privilege],
+    );
+    if (result.rows[0]?.granted === true) granted.push(privilege);
+  }
+  return granted;
+}
+
+describe.skipIf(!hasTestDatabase)('release-1 grants', () => {
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    pool = await migratedSchema();
   });
 
   it.each(readWriteTables)(
     'RF-1302 rosetta_app may select, insert, update and delete %s',
     async (table) => {
-      expect(await privilegesOf(table)).toEqual(['SELECT', 'INSERT', 'UPDATE', 'DELETE']);
+      expect(await privilegesOf(pool, table)).toEqual(['SELECT', 'INSERT', 'UPDATE', 'DELETE']);
     },
   );
 
   it.each(appendOnlyTables)('RF-1302 rosetta_app may only select and insert %s', async (table) => {
-    expect(await privilegesOf(table)).toEqual(['SELECT', 'INSERT']);
+    expect(await privilegesOf(pool, table)).toEqual(['SELECT', 'INSERT']);
   });
 
   it('RF-1302 rosetta_app has no right on schema_version', async () => {
-    expect(await privilegesOf('schema_version')).toEqual([]);
+    expect(await privilegesOf(pool, 'schema_version')).toEqual([]);
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('release-1 grants in use', () => {
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    pool = await migratedSchema();
   });
 
   it('RF-1302 rosetta_app can insert a cost_ledger row', async () => {
