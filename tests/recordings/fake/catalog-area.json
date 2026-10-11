@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "description": "A reader turn that reads one file, then answers. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": { "path": "src/Catalog/CatalogService.cs", "startLine": 1, "endLine": 40 }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "failure": { "code": "RST-1504", "httpStatus": 429 }
+        },
+        {
+          "response": {
+            "text": "The Catalog area lists products from the database.",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1400,
+              "outputTokens": 80,
+              "cachedInputTokens": 896,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
