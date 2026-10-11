@@ -213,7 +213,7 @@ Rules for `areas[]` (RF-104, added with P1-20):
   a bare `scheme://user:` behind. A statement with no white space before a cut keeps an empty text.
 - File paths and area names that masking changed and that then share one masked form get `~1`, `~2`, ... in the
   code-unit order of the real names, so two files that differ only by a secret stay distinct. The suffix is an
-  ordinal, not a hash, so it cannot confirm a guessed secret. If a suffixed name still equals another name, the map
+  ordinal, not a hash, so it cannot confirm a guessed secret. If a masked or suffixed name still equals another name, the map
   is refused (`duplicate-file` or `duplicate-area-name`) and nothing is written.
 - Reading `codemap.json` checks the 40-character lower-case `commitSha`, `endLine >= startLine` of a symbol, and
   that each area's `files` are sorted.
