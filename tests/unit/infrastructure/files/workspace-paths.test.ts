@@ -82,7 +82,7 @@ describe('workspace path check', () => {
   });
 
   it.each([
-    ['a name longer than 100 characters', `${'n'.repeat(101)}`],
+    ['a name longer than 100 characters', 'n'.repeat(101)],
     ['a path longer than 200 characters', `${'d'.repeat(100)}/${'e'.repeat(100)}`],
   ])('RF-005 refuses %s as an invalid path', (_label, path) => {
     expect(checkWorkspacePath(path)).toEqual({ ok: false, error: 'invalid-path' });

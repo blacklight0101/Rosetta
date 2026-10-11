@@ -1,6 +1,7 @@
 import type { Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { checkRepositoryPath } from './repository-path.js';
 
 // RF-140, RF-005: the files of a snapshot, found once by walking the tree. Links (symbolic links
 // and Windows junctions) are never followed, so nothing outside the root can enter the index.
@@ -10,6 +11,8 @@ export interface SnapshotIndex {
   readonly files: readonly string[];
   /** Links that were found and skipped, repository-relative. */
   readonly links: readonly string[];
+  /** Files whose names fail the path check, so no request could name them; never read. */
+  readonly invalidNames: readonly string[];
 }
 
 function byCodePoint(left: string, right: string): number {
@@ -38,7 +41,12 @@ export async function indexSnapshot(root: string, start: string): Promise<Snapsh
       else if (entry.isFile()) files.push(path);
     }
   }
-  return { files: files.sort(byCodePoint), links: links.sort(byCodePoint) };
+  const readable = files.filter((path) => checkRepositoryPath(path).ok);
+  return {
+    files: readable.sort(byCodePoint),
+    links: links.sort(byCodePoint),
+    invalidNames: files.filter((path) => !checkRepositoryPath(path).ok).sort(byCodePoint),
+  };
 }
 
 function isMissing(error: unknown): boolean {

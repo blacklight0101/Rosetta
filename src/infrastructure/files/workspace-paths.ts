@@ -9,7 +9,10 @@ import { checkRepositoryPath } from './repository-path.js';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const runId = /^\d{8}-\d{6}-[a-z]+(?:-\d+)?$/;
-const plainSegment = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
+// Names are at most 100 characters and paths at most 200, well inside every file system's limits
+// once `<data>/users/<userId>/` is added, so an over-long name is refused instead of failing in fs.
+const plainSegment = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,99}$/;
+const maxPathLength = 200;
 
 function requireId(value: string, shape: RegExp): string {
   if (!shape.test(value)) throw new RosettaError(ERROR_CODES.workspaceIdInvalid);
@@ -47,7 +50,8 @@ export function checkWorkspacePath(path: string): Result<string, WorkspacePathPr
   const checked = checkRepositoryPath(path);
   if (!checked.ok)
     return err(checked.error === 'outside-root' ? 'outside-workspace' : 'invalid-path');
-  return path.split('/').every((segment) => plainSegment.test(segment))
+  return path.length <= maxPathLength &&
+    path.split('/').every((segment) => plainSegment.test(segment))
     ? ok(path)
     : err('invalid-path');
 }

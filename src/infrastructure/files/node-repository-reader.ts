@@ -1,4 +1,4 @@
-import { lstat, readFile, realpath } from 'node:fs/promises';
+import { lstat, readFile, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger, LogValue } from '../../application/ports/logger.js';
 import type {
@@ -9,16 +9,16 @@ import type {
   ReadRefusal,
   ReadRefusalReason,
   RepositoryReader,
+  SkippedPaths,
 } from '../../application/ports/repository-reader.js';
-import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { cutLine, grepLimits, isPatternTooLong } from './grep-limits.js';
 import { runGrep, type GrepFile } from './grep-runner.js';
 import { IgnoreRules, pathFilter } from './ignore-rules.js';
 import { cutNotice, isSecurityRefusal, refusal } from './read-refusals.js';
 import { checkRepositoryPath, isInside } from './repository-path.js';
 import { indexSnapshot, type SnapshotIndex } from './snapshot-index.js';
+import { checkedScope } from './snapshot-scope.js';
 
 // RF-005, RF-140, RF-146, RF-147, ADR-006, ADR-013: read-only access to one snapshot.
 
@@ -64,23 +64,19 @@ async function readRepositoryRules(root: string): Promise<string> {
   return stats?.isFile() === true ? readFile(path, 'utf8') : '';
 }
 
-function checkedSubpath(subpath: string | undefined): string {
-  if (subpath === undefined || subpath === '') return '';
-  if (!checkRepositoryPath(subpath).ok) throw new RosettaError(ERROR_CODES.pathOutsideRoot);
-  return subpath;
-}
-
 export class NodeRepositoryReader implements RepositoryReader {
   readonly liftedDenyPatterns: readonly string[];
+  readonly skippedPaths: SkippedPaths;
   readonly #state: ReaderState;
 
   private constructor(state: ReaderState) {
     this.#state = state;
     this.liftedDenyPatterns = state.rules.liftedDenyPatterns;
+    this.skippedPaths = { links: state.index.links, invalidNames: state.index.invalidNames };
   }
 
   static async open(options: NodeRepositoryReaderOptions): Promise<NodeRepositoryReader> {
-    const scope = checkedSubpath(options.subpath);
+    const scope = await checkedScope(options.root, options.subpath, options.logger);
     const rules = new IgnoreRules({
       settingsRules: options.ignoreRules,
       repositoryRules: await readRepositoryRules(options.root),
@@ -91,7 +87,7 @@ export class NodeRepositoryReader implements RepositoryReader {
       realRoot: await realpath(options.root),
       scope,
       rules,
-      index: { ...index, files: index.files.filter((path) => checkRepositoryPath(path).ok) },
+      index,
       logger: options.logger,
       timeoutMs: options.grepTimeoutMs ?? grepLimits.timeoutMs,
     };
@@ -169,12 +165,17 @@ export class NodeRepositoryReader implements RepositoryReader {
     return searched;
   }
 
-  /** The absolute path of an indexed file, only while it still resolves inside the root. */
+  /**
+   * The absolute path of an indexed file, only while it still resolves inside the root and is not
+   * hard-linked (a hard link could share its content with a file outside the snapshot).
+   */
   async #realFile(path: string): Promise<string | undefined> {
     const real = await realpath(join(this.#state.realRoot, ...path.split('/'))).catch(
       () => undefined,
     );
-    return real !== undefined && isInside(this.#state.realRoot, real) ? real : undefined;
+    if (real === undefined || !isInside(this.#state.realRoot, real)) return undefined;
+    const stats = await stat(real);
+    return stats.nlink > 1 ? undefined : real;
   }
 
   async #access(path: string): Promise<Result<string, ReadRefusal>> {

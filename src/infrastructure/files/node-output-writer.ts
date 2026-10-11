@@ -68,6 +68,11 @@ export class NodeOutputWriter implements OutputWriter {
     const temporary = join(dirname(target.value), `.${basename(target.value)}.${randomUUID()}.tmp`);
     try {
       await writeFile(temporary, content, { encoding: 'utf8', flag: 'wx' });
+      const moved = await this.#parentProblem(target.value, file.userId);
+      if (moved !== undefined) {
+        await rm(temporary, { force: true });
+        return await this.#refuse(moved, file);
+      }
       await rename(temporary, target.value);
     } catch (error: unknown) {
       await rm(temporary, { force: true });
@@ -79,6 +84,8 @@ export class NodeOutputWriter implements OutputWriter {
   async appendLine(file: WorkspaceFile, line: string): Promise<Result<void, WriteRefusal>> {
     const target = await this.#resolve(file, 'append');
     if (!target.ok) return target;
+    const moved = await this.#parentProblem(target.value, file.userId);
+    if (moved !== undefined) return this.#refuse(moved, file);
     await appendFile(target.value, `${line}\n`, 'utf8');
     return ok(undefined);
   }
@@ -110,6 +117,18 @@ export class NodeOutputWriter implements OutputWriter {
       if (problem !== undefined) return this.#refuse(problem, file);
     }
     return ok(current);
+  }
+
+  /**
+   * Checks again, just before the file is used, that its folder still resolves inside the
+   * workspace: narrows the window in which a folder swapped for a link could redirect the write.
+   */
+  async #parentProblem(target: string, userId: string): Promise<WriteRefusalReason | undefined> {
+    const roots = await this.#roots(userId);
+    const parent = await realpath(dirname(target)).catch(() => undefined);
+    if (roots === undefined || parent === undefined) return 'outside-workspace';
+    if (isInside(roots.workspace, parent)) return undefined;
+    return isInside(roots.sources, parent) ? 'snapshot-cache' : 'outside-workspace';
   }
 
   async #roots(userId: string): Promise<WorkspaceRoots | undefined> {
