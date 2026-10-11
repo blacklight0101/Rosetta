@@ -63,6 +63,8 @@ Next, in this order (ask the owner before each):
 
 Blockers: none. G-04 (Ollama with the DEC-53 models folder and an OpenAI key) holds only the live checks of P1-25,
 P1-26 and P1-47; the reader model of Q-04 comes from the P1-47 spike.
+Pending live check: P1-25 (Ollama adapter) is built and tested against a fake server; the owner runs
+`npm run live:ollama -- <model> native` and `... text` once G-04 opens (docs/providers.md section 2.5).
 
 ## Agenda for the next session (ask the owner first)
 
