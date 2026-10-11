@@ -62,11 +62,13 @@ describe('Ollama permanent HTTP failures', () => {
   });
 
   it('RF-401 a missing model names the pull command', () => {
-    expect(modelMissing('qwen3:8b')).toMatchObject({
+    const failed = modelMissing('qwen3:8b');
+
+    expect(failed).toMatchObject({
       failure: { code: ERROR_CODES.ollamaModelMissing },
       retryable: false,
-      message: expect.stringContaining('ollama pull qwen3:8b') as unknown,
     });
+    expect(failed.message).toContain('ollama pull qwen3:8b');
   });
 });
 
