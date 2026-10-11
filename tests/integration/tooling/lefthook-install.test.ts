@@ -37,7 +37,7 @@ describe('lefthook install for agents and CI', () => {
     expect(await hooksAfterPostinstall(tmp.path, { CI: 'true' })).toEqual([]);
   });
 
-  it('RNF-005 only lefthook and the macOS-only fsevents have install scripts', async () => {
+  it('RNF-005 only lefthook, fsevents and the grammar package have install scripts', async () => {
     const lock: unknown = JSON.parse(await readFile('package-lock.json', 'utf8'));
     const packages =
       typeof lock === 'object' && lock !== null && 'packages' in lock ? lock.packages : {};
@@ -47,7 +47,13 @@ describe('lefthook install for agents and CI', () => {
       )
       .map(([path]) => path);
 
-    expect(withScripts.sort()).toEqual(['node_modules/fsevents', 'node_modules/lefthook']);
+    // tree-sitter-c-sharp runs node-gyp-build, which finds its shipped prebuilds and compiles nothing;
+    // Rosetta loads the WebAssembly grammar instead and never needs the native addon (ADR-004).
+    expect(withScripts.sort()).toEqual([
+      'node_modules/fsevents',
+      'node_modules/lefthook',
+      'node_modules/tree-sitter-c-sharp',
+    ]);
   });
 
   it('RNF-005 lefthook.yml tells agents to install with npm ci --ignore-scripts, not LEFTHOOK=0', async () => {

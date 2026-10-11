@@ -67,6 +67,15 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     message: 'The file size limit is not a whole number of bytes of zero or more.',
     nextStep: 'Correct the maximum file size in the project settings.',
   },
+  'RST-1200': {
+    message: 'A language pack could not map one file; the file stays at the coarse map level.',
+    nextStep:
+      'No action needed; agents read the file as text. Report the file type if it happens often.',
+  },
+  'RST-1201': {
+    message: 'A language pack is registered with an invalid or duplicate file extension.',
+    nextStep: 'Give each pack its own extensions, lower case and starting with a dot.',
+  },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
     nextStep:

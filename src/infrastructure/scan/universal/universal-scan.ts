@@ -1,4 +1,5 @@
 import type { RepositoryReader } from '../../../application/ports/repository-reader.js';
+import { byCodeUnit } from '../code-unit-order.js';
 import { isDefaultIgnored } from './default-ignores.js';
 import { inspectFile } from './inspect-file.js';
 import type { ScanOptions, ScannedFile, SqlStatement, UniversalScan } from './scan-types.js';
@@ -7,11 +8,6 @@ import type { ScanOptions, ScannedFile, SqlStatement, UniversalScan } from './sc
 // RepositoryReader port (so ignore rules, the deny list and the subpath already apply), holds one
 // file in memory at a time, and returns lists in a fixed order so two scans of one snapshot are
 // identical (RF-106).
-
-function byCodeUnit(left: string, right: string): number {
-  if (left === right) return 0;
-  return left < right ? -1 : 1;
-}
 
 function bySqlPosition(left: SqlStatement, right: SqlStatement): number {
   return byCodeUnit(left.path, right.path) || left.line - right.line;

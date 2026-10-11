@@ -39,6 +39,8 @@ export const ERROR_CODES = {
   workspaceIdInvalid: 'RST-1111',
   grepFailed: 'RST-1112',
   byteLimitInvalid: 'RST-1113',
+  languagePackFailed: 'RST-1200',
+  languagePackInvalid: 'RST-1201',
   fakeProviderRefused: 'RST-1500',
   providerCallCancelled: 'RST-1501',
   recordingInvalid: 'RST-1502',

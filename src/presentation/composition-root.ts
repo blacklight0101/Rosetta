@@ -9,6 +9,8 @@ import { readMigrationFiles } from '../infrastructure/db/migration-files.js';
 import { PgDatabaseHealth } from '../infrastructure/db/pg-database-health.js';
 import { PgMigrator } from '../infrastructure/db/pg-migrator.js';
 import { createAppPool, createMigratorPool, type DatabasePool } from '../infrastructure/db/pool.js';
+import { CSharpPack } from '../infrastructure/scan/packs/csharp/csharp-pack.js';
+import { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
 import { SecretMasker } from '../infrastructure/guards/secret-masker.js';
 import { FanOutLogger } from '../infrastructure/system/fan-out-logger.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
@@ -133,6 +135,12 @@ async function createServer(parts: ServerParts): Promise<ReturnType<typeof build
     trustProxy: environment.trustProxy,
     staticRoot,
   });
+}
+
+// RF-110, ADR-004: the language packs of this release. Adding a language is one line here and a pack
+// under src/infrastructure/scan/packs/; the scan itself never names a stack.
+export async function composeLanguagePacks(): Promise<LanguagePackRegistry> {
+  return new LanguagePackRegistry([await CSharpPack.create()]);
 }
 
 // Architecture section 2

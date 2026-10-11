@@ -180,7 +180,7 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 | `files[]` | list, sorted by `path` | `{ path, language, lines, estimatedTokens, sha256, artefactKinds[], mapLevel, skipped? }`; `skipped` is `too-large`, `binary` or absent; `sha256` is absent on a `too-large` file (it is never read), and `lines` and `estimatedTokens` are 0 on any skipped file; a binary format named by its extension (images, archives, `.dll`) is left out of the list, while a file whose first 8 000 bytes hold a zero byte is listed as `skipped: binary` |
 | `areas[]` | list, sorted by `name` | `{ name, files[] (paths), estimatedTokens, mapLevel, origin }`; `origin` is `folder`, `references` or `config` (RF-104) |
 | `symbols[]` | list, sorted by `path`, `startLine` | `{ path, kind, name, startLine, endLine, container? }` from language packs (RF-110, RF-111) |
-| `links[]` | list | `{ from, to, kind }`, for example an `.aspx` page to its code-behind class (RF-111) |
+| `links[]` | list, sorted by `from`, `to`, `kind` | `{ from, to, kind, symbol? }`, for example an `.aspx` page to its code-behind file (`to`) and the class named by its `Inherits` attribute (`symbol`); `to` is always a scanned file (RF-111) |
 | `sqlStatements[]` | list | `{ path, line, verb, text }`, text cut to 500 characters (RF-103) |
 | `entities[]` | list | candidate entities `{ name, path, startLine, source }` (RF-111) |
 | `languagePacks[]` | list | `{ name, version }` used |
