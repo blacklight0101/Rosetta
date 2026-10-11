@@ -18,8 +18,7 @@ const fixture: ReaderFixture = {
   ignoreRules: 'skipme/\n',
 };
 
-/** Contract of `readBytes` (RF-100, RF-101): the facts the universal scan needs about one file. */
-export function bytesContract(newReader: NewReader): void {
+function readingTests(newReader: NewReader): void {
   it('RF-100 readBytes returns the size and the bytes of a file within the limit', async () => {
     const { reader } = await newReader(fixture);
     const result = await reader.readBytes({ path: 'src/small.txt', maxBytes: 100 });
@@ -57,7 +56,9 @@ export function bytesContract(newReader: NewReader): void {
 
     expect(result.ok && Array.from(result.value.bytes ?? [])).toEqual([97, 98, 0, 99, 100]);
   });
+}
 
+function refusalTests(newReader: NewReader): void {
   it('RF-140 readBytes refuses a missing, ignored or denied file like readLines does', async () => {
     const { reader } = await newReader(fixture);
     const missing = await reader.readBytes({ path: 'src/none.txt', maxBytes: 10 });
@@ -76,4 +77,10 @@ export function bytesContract(newReader: NewReader): void {
     expect(refusalOf(result)?.code).toBe(ERROR_CODES.pathOutsideRoot);
     expect(securityCodes(logger)).toEqual([ERROR_CODES.pathOutsideRoot]);
   });
+}
+
+/** Contract of `readBytes` (RF-100, RF-101): the facts the universal scan needs about one file. */
+export function bytesContract(newReader: NewReader): void {
+  readingTests(newReader);
+  refusalTests(newReader);
 }

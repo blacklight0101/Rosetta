@@ -61,6 +61,19 @@ export interface GrepResult {
   readonly notice?: string;
 }
 
+export interface ReadBytesRequest {
+  readonly path: string;
+  /** Files larger than this are not read; a negative or fractional limit counts as 0. */
+  readonly maxBytes: number;
+}
+
+export interface FileBytes {
+  readonly path: string;
+  readonly sizeBytes: number;
+  /** The whole file, or undefined when it is larger than `maxBytes` (RF-100). */
+  readonly bytes: Uint8Array | undefined;
+}
+
 /** Snapshot entries the reader left out, for the run record. */
 export interface SkippedPaths {
   /** Symbolic links and junctions, never followed. */
@@ -74,6 +87,8 @@ export interface RepositoryReader {
   listFiles(): Promise<readonly string[]>;
   readLines(request: ReadLinesRequest): Promise<Result<LineRange, ReadRefusal>>;
   grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>>;
+  /** The size and, within the limit, the bytes of one file, for the universal scan (RF-100, RF-101). */
+  readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>>;
   /** Built-in deny patterns lifted by `scan.allowDenied`, for the run record (RF-147). */
   readonly liftedDenyPatterns: readonly string[];
   readonly skippedPaths: SkippedPaths;

@@ -1,10 +1,12 @@
-import { lstat, readFile, realpath, stat } from 'node:fs/promises';
+import { lstat, open, readFile, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger, LogValue } from '../../application/ports/logger.js';
 import type {
+  FileBytes,
   GrepRequest,
   GrepResult,
   LineRange,
+  ReadBytesRequest,
   ReadLinesRequest,
   ReadRefusal,
   ReadRefusalReason,
@@ -132,6 +134,15 @@ export class NodeRepositoryReader implements RepositoryReader {
     });
   }
 
+  async readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>> {
+    const access = await this.#access(request.path);
+    if (!access.ok) return access;
+    const limit = Number.isInteger(request.maxBytes) && request.maxBytes > 0 ? request.maxBytes : 0;
+    const { size } = await stat(access.value);
+    const bytes = size > limit ? undefined : await readUpTo(access.value, limit);
+    return ok({ path: request.path, sizeBytes: bytes?.length ?? size, bytes });
+  }
+
   async grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>> {
     if (isPatternTooLong(request.pattern)) {
       return this.#refuse('pattern-too-long', { patternLength: request.pattern.length });
@@ -209,6 +220,24 @@ export class NodeRepositoryReader implements RepositoryReader {
       });
     }
     return err(refused);
+  }
+}
+
+/**
+ * At most `limit` bytes of a file, or undefined when it is larger (it grew since it was measured).
+ * The buffer never exceeds `limit + 1` bytes, whatever the file does.
+ */
+async function readUpTo(path: string, limit: number): Promise<Uint8Array | undefined> {
+  const handle = await open(path, 'r');
+  try {
+    const buffer = Buffer.alloc(limit + 1);
+    let filled = 0;
+    for (let read = 1; read > 0 && filled < buffer.length; filled += read) {
+      ({ bytesRead: read } = await handle.read(buffer, filled, buffer.length - filled, filled));
+    }
+    return filled > limit ? undefined : new Uint8Array(buffer.buffer, buffer.byteOffset, filled);
+  } finally {
+    await handle.close();
   }
 }
 
