@@ -18,10 +18,13 @@ import { SystemClock } from '../infrastructure/system/system-clock.js';
 import { startUp } from './start-up.js';
 import { buildServer } from './web/server.js';
 
-// Architecture section 2: the only place that creates adapters and wires them together. The
-// migrations folder and the built front end sit at the same depth from `src/` and from `dist/`.
-const migrationsFolder = fileURLToPath(new URL('../../db/migrations/', import.meta.url));
-const staticRoot = fileURLToPath(new URL('../../web/dist/', import.meta.url));
+// Architecture section 2: the only place that creates adapters and wires them together. This file
+// is at the same depth in `src/` and in the built `dist/`, so `../../` is the repository root (the
+// image's app folder) from both: migrations in `db/migrations/`, the front end built into
+// `dist/web/` (tasks.md P1-12).
+const repositoryRoot = new URL('../../', import.meta.url);
+const migrationsFolder = fileURLToPath(new URL('db/migrations/', repositoryRoot));
+const staticRoot = fileURLToPath(new URL('dist/web/', repositoryRoot));
 
 export interface ApplicationOptions {
   readonly environment: Environment;

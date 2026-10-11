@@ -11,27 +11,62 @@ export const robotsTag = 'noindex, nofollow';
 /** RF-1201: robots.txt disallows everything. */
 export const robotsTxt = 'User-agent: *\nDisallow: /\n';
 
+/** The directives of RF-1013, in its order. */
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  connectSrc: ["'self'"],
+  imgSrc: ["'self'", 'data:'],
+  styleSrc: ["'self'"],
+  frameAncestors: ["'none'"],
+  baseUri: ["'none'"],
+  formAction: ["'self'"],
+} as const;
+
+function isHttps(publicUrl: string): boolean {
+  return new URL(publicUrl).protocol === 'https:';
+}
+
 // RF-1013
 export function securityHeaderOptions(publicUrl: string): FastifyHelmetOptions {
-  const https = new URL(publicUrl).protocol === 'https:';
   return {
     global: true,
     contentSecurityPolicy: {
       useDefaults: false,
-      directives: {
-        defaultSrc: ["'self'"],
-        connectSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:'],
-        styleSrc: ["'self'"],
-        frameAncestors: ["'none'"],
-        baseUri: ["'none'"],
-        formAction: ["'self'"],
-      },
+      directives: Object.fromEntries(
+        Object.entries(cspDirectives).map(([name, sources]) => [name, [...sources]]),
+      ),
     },
     xContentTypeOptions: true,
     referrerPolicy: { policy: 'no-referrer' },
-    strictTransportSecurity: https
+    // Agrees with `frame-ancestors 'none'` for browsers that ignore the CSP directive.
+    xFrameOptions: { action: 'deny' },
+    strictTransportSecurity: isHttps(publicUrl)
       ? { maxAge: oneYearInSeconds, includeSubDomains: false, preload: false }
       : false,
+  };
+}
+
+/** `defaultSrc` -> `default-src`. */
+function kebab(name: string): string {
+  return name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
+/**
+ * RF-1013, RF-1201: the same headers written by hand, for the responses sent before helmet's hook
+ * runs (framework errors and refused connections).
+ */
+export function fallbackSecurityHeaders(publicUrl: string): Readonly<Record<string, string>> {
+  const policy = Object.entries(cspDirectives)
+    .map(([name, sources]) => `${kebab(name)} ${sources.join(' ')}`)
+    .join('; ');
+  return {
+    'Content-Security-Policy': policy,
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'X-Frame-Options': 'DENY',
+    ...(isHttps(publicUrl)
+      ? { 'Strict-Transport-Security': `max-age=${String(oneYearInSeconds)}` }
+      : {}),
+    'X-Robots-Tag': robotsTag,
   };
 }

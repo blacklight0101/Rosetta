@@ -5,6 +5,7 @@ import type { DatabaseHealth } from '../../application/ports/database-health.js'
 import type { Logger, LogRecord } from '../../application/ports/logger.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { clientErrorHandler, frameworkErrorHandler } from './early-errors.js';
 import { toErrorReply } from './error-mapper.js';
 import { registerPublicRoutes } from './public-routes.js';
 import { robotsTag, securityHeaderOptions } from './security-headers.js';
@@ -101,7 +102,10 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     logger: false,
     bodyLimit: bodyLimitBytes,
     // Trust the `trustProxy` nearest hops, as a number does in Fastify (its types omit numbers).
+    // With a trusted proxy, `request.host` also follows X-Forwarded-Host (the Origin check, P1-09).
     trustProxy: (_address, hop) => hop < options.trustProxy,
+    frameworkErrors: frameworkErrorHandler(options.logger, options.publicUrl),
+    clientErrorHandler: clientErrorHandler(options.logger, options.publicUrl),
   });
   void server.register(fastifyHelmet, securityHeaderOptions(options.publicUrl));
   registerHooks(server, options.logger);
