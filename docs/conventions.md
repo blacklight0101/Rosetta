@@ -90,7 +90,9 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 - Wrap with `cause` when rethrowing; never swallow an error in an empty `catch`. **(tool: `no-empty`)**
 - The HTTP layer maps every error to an HTTP status (RF-007) and returns `RST-xxxx`, a plain message and the next
   step; stack traces only in the `debug` log, never in a response. Authentication and authorization failures never
-  say whether the user or the resource exists.
+  say whether the user or the resource exists. The status of each code with an HTTP cause is listed in
+  `src/presentation/web/error-mapper.ts` (RST-2000..2006 for 400, 401, 403, 404, 409, 429 and 500); any other code
+  answers 500, and the body carries the catalogue message and next step, never the error's own message.
 
 **Error-code catalogue** (canonical; a new code gets the next free number in its range). Individual codes live in one
 registry, `src/domain/errors/codes.ts`, one code per line, so two parallel pull requests that take the same number

@@ -251,6 +251,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
 | `AuditLog` | security audit rows (RF-1109) | `PgAuditLog`, `MemoryAuditLog` |
 | `Migrator` | apply and check migrations (RF-1302) | `PgMigrator` |
+| `DatabaseHealth` | whether the database answers a trivial query within 3 seconds, for `GET /healthz` (RF-1303); never throws | `PgDatabaseHealth`, `FakeDatabaseHealth` (tests) |
 | `Scheduler` | periodic jobs in the process: session and reservation purge hourly, log retention daily, restart recovery at start-up (one instance assumed, DEC-112); a job still running when its next tick arrives is skipped, and a failing job is reported through the scheduler's `onError` callback without stopping its schedule or other jobs | `IntervalScheduler`, `ManualScheduler` (tests) |
 
 The egress guard and the budget guard are **decorators** of `LlmProvider`: the composition root wraps every real
@@ -363,7 +364,7 @@ sequenceDiagram
 | domain | pure functions; invariant violations return a typed `Result` error; no exceptions for expected cases |
 | application | returns `Result`; turns infrastructure exceptions into task states (`Failed`) with the error code |
 | infrastructure | throws `Error` subclasses with an `RST-xxxx` code and the original as `cause` |
-| presentation | maps errors to HTTP statuses (RF-007) and returns code, message and next step as JSON; pages show them next to the field or in a banner; no stack trace in any response |
+| presentation | maps errors to HTTP statuses (RF-007) and returns code, message and next step as JSON; pages show them next to the field or in a banner; no stack trace in any response. Requests refused before routing (a bad URL, a parser error, a headers timeout, an unmet `Expect`, a CONNECT tunnel) get the same body and the RF-1013 headers from `presentation/web/early-errors.ts`; a missing `Host` header and requests arriving while the server drains go through the normal chain |
 
 Codes and ranges: [conventions.md](conventions.md) section 6.
 
