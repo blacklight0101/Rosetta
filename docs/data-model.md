@@ -320,10 +320,11 @@ entries are not run events: the web UI logs panel receives them on its own strea
 | `attempt` | int | 1 for the first attempt (RF-406) |
 | `runId`, `agentTaskId`, `role` | string | |
 | `provider`, `kind`, `model` | string | |
+| `modelVersion` | string | the exact model version the provider reported, on an attempt that answered (RNF-004) |
 | `endpointHost` | string | host only, never a full URL with a query |
 | `requestId` | string | the provider's request id when it returns one |
 | `startedAt` | instant | |
-| `timeToFirstTokenMs`, `latencyMs` | int | |
+| `timeToFirstTokenMs`, `latencyMs` | int | per attempt; without streaming the first token arrives with the answer, so both are equal |
 | `inputTokens`, `outputTokens`, `cachedInputTokens`, `usageSource` | int, enum | |
 | `costMicros`, `currency` | int, string | |
 | `finishReason` | string | normalised: `stop`, `length`, `tool_use`, `error` |
@@ -331,7 +332,10 @@ entries are not run events: the web UI logs panel receives them on its own strea
 | `errorCode` | string | `RST-xxxx` when not `ok` |
 | `httpStatus` | int | when there was an HTTP response |
 | `ollama` | object | Ollama only: `{ loadDurationMs, promptEvalDurationMs, evalDurationMs, tokensPerSecond }` |
-| `transcriptRef` | string | `transcripts/<agentTaskId>.jsonl#<line>` when transcripts are on |
+| `transcriptRef` | string | `transcripts/<agentTaskId>.jsonl#<line>` when transcripts are on: the first transcript line the call added; every attempt of the call carries the same link |
+
+An attempt that failed (`retried` or `failed`) has no usage from the provider: its token fields and `costMicros` are
+0, `usageSource` is `estimated` and `finishReason` is `error`.
 
 Tracing vocabulary (DEC-57): a run is a trace, an agent task a span, a provider call a child span. Field names map to
 the OpenTelemetry GenAI semantic conventions so an exporter can be added later without renaming (deferred, ADR index):
@@ -382,7 +386,10 @@ nothing of the original entry; it is filtered by its own level, so it reaches st
 
 The masked messages exchanged with the model for one agent task, one message per line `{ schemaVersion, seq, at,
 callId, role (system, user, assistant, tool), content, toolCalls? }`. Written unless the project setting `output.transcripts` is false (DEC-43).
-Content is exactly what was sent after masking, so it may contain excerpts of the legacy code.
+Content is exactly what was sent after masking, so it may contain excerpts of the legacy code. Writer: the
+`ObservedProvider` through `ProviderCallRecorder` (RF-408): the system prompt on the task's first call, then each
+call's new messages before it is sent and its answer after; every key and string is masked, and when masking fails
+nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file name.
 
 ### 3.16 `answers.md`
 
