@@ -13,6 +13,7 @@ import type {
   TranscriptEntry,
 } from '../../application/ports/provider-call-recorder.js';
 import { CallAttempts, failureOf, type CallPricer, type ProviderTarget } from './call-attempts.js';
+import { laterRef } from './provider-call-lines.js';
 
 export interface ObservedProviderOptions {
   readonly inner: LlmProvider;
@@ -26,6 +27,11 @@ export interface ObservedProviderOptions {
 }
 
 const spanIdLength = 16;
+
+interface TranscribedTask {
+  readonly messages: number;
+  readonly lastRef: string;
+}
 
 function entryOf(message: LlmMessage, at: string, callId: string): TranscriptEntry {
   switch (message.role) {
@@ -48,8 +54,8 @@ function entryOf(message: LlmMessage, at: string, callId: string): TranscriptEnt
 // linked to that transcript entry; the call itself passes through unchanged (RF-400).
 export class ObservedProvider implements LlmProvider {
   private readonly options: ObservedProviderOptions;
-  /** Per agent task, how many request messages its transcript already holds. */
-  private readonly transcribed = new Map<string, number>();
+  /** Per agent task: how many request messages its transcript holds, and its last line. */
+  private readonly transcribed = new Map<string, TranscribedTask>();
 
   constructor(options: ObservedProviderOptions) {
     this.options = options;
@@ -88,7 +94,11 @@ export class ObservedProvider implements LlmProvider {
     return response;
   }
 
-  /** Appends the system prompt (first call of a task) and the new messages; returns the link. */
+  /**
+   * Appends the system prompt (first call of a task) and the messages the task's transcript does
+   * not hold yet, and returns the link to the first of them. A call that adds nothing (the same
+   * messages again) links to the transcript's last line. Messages are append-only (LlmRequest).
+   */
   private async transcribeRequest(request: LlmRequest): Promise<string | undefined> {
     if (!this.options.transcripts) return undefined;
     const { agentTaskId, callId } = request.context;
@@ -96,11 +106,14 @@ export class ObservedProvider implements LlmProvider {
     const at = this.options.clock.now().toISOString();
     const system: TranscriptEntry[] =
       known === undefined ? [{ at, callId, role: 'system', content: request.system }] : [];
-    const added = request.messages.slice(known ?? 0).map((message) => entryOf(message, at, callId));
+    const added = request.messages
+      .slice(known?.messages ?? 0)
+      .map((message) => entryOf(message, at, callId));
     const entries = [...system, ...added];
-    if (entries.length === 0) return undefined;
+    if (known !== undefined && entries.length === 0) return known.lastRef;
     const ref = await this.options.recorder.transcript(agentTaskId, entries);
-    this.transcribed.set(agentTaskId, request.messages.length);
+    const lastRef = laterRef(ref, entries.length - 1);
+    this.transcribed.set(agentTaskId, { messages: request.messages.length, lastRef });
     return ref;
   }
 
@@ -114,7 +127,9 @@ export class ObservedProvider implements LlmProvider {
       ...(toolCalls.length === 0 ? {} : { toolCalls }),
     };
     const at = this.options.clock.now().toISOString();
-    await this.options.recorder.transcript(agentTaskId, [entryOf(answer, at, callId)]);
-    this.transcribed.set(agentTaskId, request.messages.length + 1);
+    const lastRef = await this.options.recorder.transcript(agentTaskId, [
+      entryOf(answer, at, callId),
+    ]);
+    this.transcribed.set(agentTaskId, { messages: request.messages.length + 1, lastRef });
   }
 }

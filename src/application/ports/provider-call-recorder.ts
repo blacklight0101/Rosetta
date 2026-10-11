@@ -56,7 +56,10 @@ export interface TranscriptEntry {
 }
 
 export interface ProviderCallRecorder {
-  /** Appends one masked record; `seq` counts the records of the run from 1. */
+  /**
+   * Appends one masked record; `seq` counts the records of the run from 1 and continues after the
+   * records already in the run folder (RF-006).
+   */
   record(call: ProviderCallRecord): Promise<void>;
   /**
    * Appends masked entries to the agent task's transcript, `seq` counting its lines from 1, and

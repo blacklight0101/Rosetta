@@ -332,7 +332,7 @@ entries are not run events: the web UI logs panel receives them on its own strea
 | `errorCode` | string | `RST-xxxx` when not `ok` |
 | `httpStatus` | int | when there was an HTTP response |
 | `ollama` | object | Ollama only: `{ loadDurationMs, promptEvalDurationMs, evalDurationMs, tokensPerSecond }` |
-| `transcriptRef` | string | `transcripts/<agentTaskId>.jsonl#<line>` when transcripts are on: the first transcript line the call added; every attempt of the call carries the same link |
+| `transcriptRef` | string | `transcripts/<agentTaskId>.jsonl#<line>` when transcripts are on: the first transcript line the call added, or the transcript's last line when the call repeats the same messages; every attempt of the call carries the same link |
 
 An attempt that failed (`retried` or `failed`) has no usage from the provider: its token fields and `costMicros` are
 0, `usageSource` is `estimated` and `finishReason` is `error`.
@@ -388,8 +388,12 @@ The masked messages exchanged with the model for one agent task, one message per
 callId, role (system, user, assistant, tool), content, toolCalls? }`. Written unless the project setting `output.transcripts` is false (DEC-43).
 Content is exactly what was sent after masking, so it may contain excerpts of the legacy code. Writer: the
 `ObservedProvider` through `ProviderCallRecorder` (RF-408): the system prompt on the task's first call, then each
-call's new messages before it is sent and its answer after; every key and string is masked, and when masking fails
-nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file name.
+call's new messages before it is sent and its answer after. The messages of a task are append-only (each call repeats
+the earlier ones unchanged), so only the new ones are written. Every key and string is masked, and every value is
+masked again together with its property name, so a secret held under a key such as `password` is masked too;
+when masking fails nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file
+name. `seq` continues after the lines a file already holds, so a resumed run (RF-006) never repeats a number; the
+same holds for `provider-calls.jsonl`.
 
 ### 3.16 `answers.md`
 

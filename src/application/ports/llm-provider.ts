@@ -57,6 +57,11 @@ export interface LlmRequest {
   readonly context: LlmCallContext;
   readonly model: string;
   readonly system: string;
+  /**
+   * The agent task's conversation so far. It is append-only: each call repeats the earlier
+   * messages unchanged and adds new ones at the end, so the transcript records only the new ones
+   * (RF-408).
+   */
   readonly messages: readonly LlmMessage[];
   readonly tools: readonly ToolDefinition[];
   readonly maxOutputTokens?: number;

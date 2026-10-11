@@ -1,4 +1,4 @@
-import { appendFile, mkdir } from 'node:fs/promises';
+import { appendFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type {
   ProviderCallRecord,
@@ -19,6 +19,16 @@ export interface JsonlProviderCallLogOptions {
   /** The run folder: `<data>/users/<userId>/projects/<projectId>/runs/<runId>`. */
   readonly runDir: string;
   readonly masker: TextMasker;
+}
+
+/** RF-006: the complete lines a file already holds, so a resumed run continues its `seq`. */
+async function existingLines(file: string): Promise<number> {
+  try {
+    return (await readFile(file, 'utf8')).split('\n').length - 1;
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return 0;
+    throw new RosettaError(ERROR_CODES.providerCallLogFailed, undefined, { cause: error });
+  }
 }
 
 async function appendTo(file: string, text: string): Promise<void> {
@@ -62,7 +72,7 @@ export class JsonlProviderCallLog implements ProviderCallRecorder {
 
   /** Masks the lines numbered from the next free `seq`, appends them and returns that `seq`. */
   private async append(file: string, lines: (first: number) => string[]): Promise<number> {
-    const first = (this.lineCounts.get(file) ?? 0) + 1;
+    const first = (this.lineCounts.get(file) ?? (await existingLines(file))) + 1;
     const text = lines(first);
     await appendTo(file, text.join(''));
     this.lineCounts.set(file, first - 1 + text.length);
