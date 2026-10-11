@@ -256,3 +256,21 @@ describe('a masker that fails', () => {
     expect(written).toEqual([]);
   });
 });
+
+describe('a private key inside a SQL statement whose marker lines look like comments', () => {
+  const body = ['Zq7Fk2', 'Lm9Xw4'].map((part) => part.repeat(10));
+  const lines = [
+    "INSERT INTO Keys (Name, Pem) VALUES ('svc',",
+    ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' '),
+    ...body,
+    ['-----END', 'PRIVATE', 'KEY-----'].join(' '),
+    ');',
+  ];
+
+  it('RF-141 no key body line reaches the code map', () => {
+    const text = textOf(buildWith(extractScriptStatements('db/a.sql', lines)));
+
+    for (const part of body) expect(text).not.toContain(part.slice(0, 20));
+    expect(text).toContain('[MASKED:private-key]');
+  });
+});
