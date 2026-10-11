@@ -24,6 +24,16 @@ const REPO = /^[A-Za-z0-9_.-]+$/;
 // Characters git refuses in a ref name, plus whitespace and control characters.
 const REF_FORBIDDEN = /[\s~^:?*[\\\p{Cc}]/u;
 
+/** A GitHub account name: alphanumerics and hyphens, not starting or ending with a hyphen. */
+export function isGitHubOwnerName(name: string): boolean {
+  return OWNER.test(name);
+}
+
+/** A GitHub repository name: alphanumerics, `_`, `.` and `-` (RF-120). */
+export function isGitHubRepoName(name: string): boolean {
+  return REPO.test(name);
+}
+
 function decodeSegments(pathname: string): string[] | undefined {
   try {
     return pathname
@@ -85,7 +95,7 @@ export function parseGitHubUrl(input: string): Result<GitHubRepoRef, GitHubUrlPr
   const [owner, rawRepo, ...rest] = segments;
   if (owner === undefined || rawRepo === undefined) return err('missing-repository');
   const repo = rawRepo.endsWith('.git') ? rawRepo.slice(0, -'.git'.length) : rawRepo;
-  if (!OWNER.test(owner) || !REPO.test(repo)) return err('invalid-name');
+  if (!isGitHubOwnerName(owner) || !isGitHubRepoName(repo)) return err('invalid-name');
   const tree = parseTree(rest);
   return tree.ok ? ok({ owner, repo, ...tree.value }) : tree;
 }

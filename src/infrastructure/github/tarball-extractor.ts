@@ -3,6 +3,7 @@ import { createGunzip } from 'node:zlib';
 import { extract as tarExtract, ReadEntry } from 'tar';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { isFileSystemFailure, snapshotWriteFailed } from './snapshot-errors.js';
 
 export interface ExtractionLimits {
   readonly maxEntries: number;
@@ -120,6 +121,7 @@ export async function extractTarball(
   } catch (error) {
     if (gate.failure !== undefined) throw gate.failure;
     if (signal.aborted) throw error;
+    if (isFileSystemFailure(error)) throw snapshotWriteFailed('could not be extracted', error);
     throw new RosettaError(
       ERROR_CODES.githubRequestFailed,
       'The repository archive could not be read to its end.',

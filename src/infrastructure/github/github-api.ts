@@ -2,7 +2,11 @@ import { z } from 'zod';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { parseCommitSha, type CommitSha } from '../../domain/sources/commit-sha.js';
-import type { GitHubRepoRef } from '../../domain/sources/github-repo-ref.js';
+import {
+  isGitHubOwnerName,
+  isGitHubRepoName,
+  type GitHubRepoRef,
+} from '../../domain/sources/github-repo-ref.js';
 import type { GitHubHttpClient } from './github-http-client.js';
 
 export interface RepositoryInfo {
@@ -60,10 +64,17 @@ export class GitHubApi {
     const parsed = REPOSITORY_SCHEMA.safeParse(await response.json().catch(() => undefined));
     if (!parsed.success) throw invalidAnswer('repository description', parsed.error);
     if (parsed.data.private) throw new RosettaError(ERROR_CODES.githubSourceUnavailable);
+    const { login: owner } = parsed.data.owner;
+    const repo = parsed.data.name;
+    // ADR-013: the answer is untrusted; the names become a folder name, so they get the same
+    // checks as a typed URL before that happens.
+    if (!isGitHubOwnerName(owner) || !isGitHubRepoName(repo)) {
+      throw invalidAnswer('owner or repository name');
+    }
     const spdx = parsed.data.license?.spdx_id;
     return {
-      owner: parsed.data.owner.login,
-      repo: parsed.data.name,
+      owner,
+      repo,
       defaultBranch: parsed.data.default_branch,
       licence: spdx === undefined || spdx === '' || spdx === 'NOASSERTION' ? 'unknown' : spdx,
     };

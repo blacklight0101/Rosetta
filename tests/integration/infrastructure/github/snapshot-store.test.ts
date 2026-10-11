@@ -78,7 +78,9 @@ describe('SnapshotStore inspect', () => {
       snapshotHash: `sha256:${sha256(lines)}`,
     });
   });
+});
 
+describe('SnapshotStore inspect safety', () => {
   it('RF-122 reports a tree it cannot read with RST-1908', async () => {
     const store = new SnapshotStore(root.path);
 

@@ -6,16 +6,18 @@ import {
   open,
   readdir,
   readFile,
+  realpath,
   rename,
   rm,
   stat,
   writeFile,
 } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { z } from 'zod';
 import type { Snapshot, SnapshotInfo } from '../../application/ports/source-fetcher.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { errorCode, snapshotWriteFailed } from './snapshot-errors.js';
 
 export interface TreeSummary {
   readonly fileCount: number;
@@ -45,17 +47,18 @@ const INFO_SCHEMA = z.object({
 
 const SNAPSHOT_SCHEMA = INFO_SCHEMA.extend({ schemaVersion: z.literal(1) });
 
-function errorCode(error: unknown): string | undefined {
-  return typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    typeof error.code === 'string'
-    ? error.code
-    : undefined;
+function entryRefused(detail: string): RosettaError {
+  return new RosettaError(ERROR_CODES.snapshotEntryRefused, `The extracted tree ${detail}.`);
 }
 
-function writeFailed(what: string, cause: unknown): RosettaError {
-  return new RosettaError(ERROR_CODES.snapshotWriteFailed, `The snapshot ${what}.`, { cause });
+/** Runs a file-system step; a Node failure becomes RST-1908 naming the step. */
+async function onDisk<T>(what: string, action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    if (error instanceof RosettaError) throw error;
+    throw snapshotWriteFailed(what, error);
+  }
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -64,7 +67,7 @@ async function exists(path: string): Promise<boolean> {
     return true;
   } catch (error) {
     if (errorCode(error) === 'ENOENT') return false;
-    throw writeFailed('folder could not be checked', error);
+    throw snapshotWriteFailed('folder could not be checked', error);
   }
 }
 
@@ -86,21 +89,55 @@ async function hashFile(path: string): Promise<string> {
   return hash.digest('hex');
 }
 
-/** Relative forward-slash paths of every regular file under `root`; a link anywhere is refused (ADR-019). */
-async function listFiles(root: string, relative = ''): Promise<string[]> {
+/** ADR-019: every entry's real path must lie inside the real snapshot tree. */
+async function assertInside(realRoot: string, absolute: string, path: string): Promise<void> {
+  const real = await realpath(absolute);
+  if (real !== realRoot && !real.startsWith(realRoot + sep)) {
+    throw entryRefused(
+      `has an entry that resolves outside the snapshot folder: ${JSON.stringify(path)}`,
+    );
+  }
+}
+
+/**
+ * Relative forward-slash paths of every regular file under `root`; an entry that resolves outside
+ * the tree or is a link anywhere is refused (ADR-019).
+ */
+async function listFiles(root: string, realRoot: string, relative = ''): Promise<string[]> {
   const found: string[] = [];
   for (const entry of await readdir(join(root, relative), { withFileTypes: true })) {
     const path = relative === '' ? entry.name : `${relative}/${entry.name}`;
-    if (entry.isSymbolicLink() || (await lstat(join(root, path))).isSymbolicLink()) {
-      throw new RosettaError(
-        ERROR_CODES.snapshotEntryRefused,
-        `The extracted tree contains a link at ${JSON.stringify(path)}.`,
-      );
+    const absolute = join(root, path);
+    await assertInside(realRoot, absolute, path);
+    if (entry.isSymbolicLink() || (await lstat(absolute)).isSymbolicLink()) {
+      throw entryRefused(`contains a link at ${JSON.stringify(path)}`);
     }
-    if (entry.isDirectory()) found.push(...(await listFiles(root, path)));
+    if (entry.isDirectory()) found.push(...(await listFiles(root, realRoot, path)));
     else if (entry.isFile()) found.push(path);
   }
   return found;
+}
+
+async function markReadOnly(dir: string): Promise<void> {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) await markReadOnly(path);
+    else if (entry.isFile()) await chmod(path, READ_ONLY_FILE);
+  }
+  await chmod(dir, READ_ONLY_DIR);
+}
+
+/** `snapshot.json` text as data; text that is not JSON is a damaged snapshot (RST-1906). */
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new RosettaError(
+      ERROR_CODES.snapshotEntryRefused,
+      `The cached snapshot has a ${INFO_FILE} that is not JSON.`,
+      { cause: error },
+    );
+  }
 }
 
 /**
@@ -134,9 +171,9 @@ export class SnapshotStore {
       text = await readFile(join(this.snapshotDir(key), INFO_FILE), 'utf8');
     } catch (error) {
       if (errorCode(error) === 'ENOENT') return undefined;
-      throw writeFailed(`${key} could not be read`, error);
+      throw snapshotWriteFailed(`${key} could not be read`, error);
     }
-    const parsed = SNAPSHOT_SCHEMA.safeParse(JSON.parse(text));
+    const parsed = SNAPSHOT_SCHEMA.safeParse(parseJson(text));
     if (!parsed.success) {
       throw new RosettaError(
         ERROR_CODES.snapshotEntryRefused,
@@ -149,22 +186,27 @@ export class SnapshotStore {
   }
 
   /** Walks the extracted tree: counts, bytes and the `sha256:` hash of sorted path and file hash pairs. */
-  async inspect(filesDir: string): Promise<TreeSummary> {
-    const paths = (await listFiles(filesDir)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-    const hash = createHash('sha256');
-    let totalBytes = 0;
-    for (const path of paths) {
-      const absolute = join(filesDir, path);
-      totalBytes += (await stat(absolute)).size;
-      hash.update(`${path}\0${await hashFile(absolute)}\n`);
-    }
-    return { fileCount: paths.length, totalBytes, snapshotHash: `sha256:${hash.digest('hex')}` };
+  inspect(filesDir: string): Promise<TreeSummary> {
+    return onDisk('tree could not be read', async () => {
+      const realRoot = await realpath(filesDir);
+      const paths = (await listFiles(filesDir, realRoot)).sort((a, b) =>
+        a < b ? -1 : a > b ? 1 : 0,
+      );
+      const hash = createHash('sha256');
+      let totalBytes = 0;
+      for (const path of paths) {
+        const absolute = join(filesDir, path);
+        totalBytes += (await stat(absolute)).size;
+        hash.update(`${path}\0${await hashFile(absolute)}\n`);
+      }
+      return { fileCount: paths.length, totalBytes, snapshotHash: `sha256:${hash.digest('hex')}` };
+    });
   }
 
   async writeInfo(dir: string, info: SnapshotInfo): Promise<void> {
     const text = `${JSON.stringify({ schemaVersion: 1, ...info }, null, 2)}\n`;
     await writeFile(join(dir, INFO_FILE), text, 'utf8').catch((error: unknown) => {
-      throw writeFailed('description could not be written', error);
+      throw snapshotWriteFailed('description could not be written', error);
     });
   }
 
@@ -189,18 +231,13 @@ export class SnapshotStore {
         await rm(partialDir, { recursive: true, force: true });
         return false;
       }
-      throw writeFailed(`${key} could not be renamed into place`, error);
+      throw snapshotWriteFailed(`${key} could not be renamed into place`, error);
     }
   }
 
   /** Marks files and folders read-only where the operating system allows it (RF-005). */
-  async makeReadOnly(dir: string): Promise<void> {
-    for (const entry of await readdir(dir, { withFileTypes: true })) {
-      const path = join(dir, entry.name);
-      if (entry.isDirectory()) await this.makeReadOnly(path);
-      else if (entry.isFile()) await chmod(path, READ_ONLY_FILE);
-    }
-    await chmod(dir, READ_ONLY_DIR);
+  makeReadOnly(dir: string): Promise<void> {
+    return onDisk('could not be marked read-only', () => markReadOnly(dir));
   }
 
   /** Deletes every `.partial-*` folder left by an interrupted download; returns their names. */
@@ -210,7 +247,7 @@ export class SnapshotStore {
       entries = await readdir(this.sourcesDir, { withFileTypes: true });
     } catch (error) {
       if (errorCode(error) === 'ENOENT') return [];
-      throw writeFailed('folder could not be listed', error);
+      throw snapshotWriteFailed('folder could not be listed', error);
     }
     const partials = entries
       .filter((entry) => entry.isDirectory() && entry.name.startsWith(PARTIAL_PREFIX))
@@ -225,7 +262,7 @@ export class SnapshotStore {
     const dir = this.partialDir(id);
     const filesDir = join(dir, FILES);
     await mkdir(filesDir, { recursive: true }).catch((error: unknown) => {
-      throw writeFailed('folder could not be created', error);
+      throw snapshotWriteFailed('folder could not be created', error);
     });
     return { dir, filesDir };
   }

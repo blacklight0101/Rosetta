@@ -88,14 +88,14 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
   async fetch(ref: GitHubRepoRef, signal: AbortSignal): Promise<Snapshot> {
     const pinned = ref.ref === undefined ? undefined : parseCommitSha(ref.ref);
     if (pinned?.ok === true) {
-      const existing = await this.store.readExisting(snapshotKey(ref, pinned.value));
+      const existing = await this.cached(snapshotKey(ref, pinned.value));
       if (existing !== undefined) return existing;
     }
     const repository = await this.api.repository(ref, signal);
     const refName = ref.ref ?? repository.defaultBranch;
     const sha = await this.api.commitSha(ref, refName, signal);
     const key = snapshotKey(repository, sha);
-    const existing = await this.store.readExisting(key);
+    const existing = await this.cached(key);
     if (existing !== undefined) return existing;
     return this.locked(key, () => this.download({ ref, repository, refName, sha, key }, signal));
   }
@@ -103,6 +103,16 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
   /** Start-up: deletes every partial folder left by an interrupted download (RF-122). */
   discardPartialFolders(): Promise<string[]> {
     return this.store.discardPartials();
+  }
+
+  /** The cached snapshot, or undefined; a damaged one is refused and logged as a security event. */
+  private async cached(key: string): Promise<Snapshot | undefined> {
+    try {
+      return await this.store.readExisting(key);
+    } catch (error) {
+      await this.reportFailure(key, error);
+      throw error;
+    }
   }
 
   private locked(key: string, work: () => Promise<Snapshot>): Promise<Snapshot> {

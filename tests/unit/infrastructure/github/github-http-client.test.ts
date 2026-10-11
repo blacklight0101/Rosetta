@@ -126,7 +126,9 @@ describe('GitHubHttpClient rate limits and the token', () => {
 
     expect(github.requests.map((request) => request.authorization)).toEqual([undefined]);
   });
+});
 
+describe('GitHubHttpClient token secrecy', () => {
   it('RF-123 never writes the token into an error or the log', async () => {
     // Recorded unmasked: MemoryLogger would hide a leaked token behind the masker.
     const logger = new RecordingLogger();

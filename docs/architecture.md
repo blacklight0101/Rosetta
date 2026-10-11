@@ -228,7 +228,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | Port | Purpose | Adapters |
 |---|---|---|
 | `LlmProvider` | chat with tools; returns text, tool calls, usage (ADR-003) | `OllamaProvider`, `OpenAiProvider`, `OpenAiCompatibleProvider`, `AnthropicProvider`, `FakeProvider` (recordings) |
-| `SourceFetcher` | resolve a GitHub URL and ref to a commit and provide its snapshot (ADR-012) | `GitHubSnapshotFetcher`, `FakeSourceFetcher` |
+| `SourceFetcher` | resolve a GitHub URL and ref to a commit and provide its snapshot (ADR-012); the composition root calls `GitHubSnapshotFetcher.discardPartialFolders()` at start-up, before the server accepts runs (RF-122) | `GitHubSnapshotFetcher`, `FakeSourceFetcher` |
 | `RepositoryReader` | list files, read line ranges, grep in a snapshot; read-only, ignore rules applied | `NodeRepositoryReader` |
 | `OutputWriter` | write and read files inside the user's workspace only | `NodeOutputWriter` |
 | `LanguagePack` | symbols, references, routes for some extensions (ADR-004) | `CSharpPack` (tree-sitter) |
