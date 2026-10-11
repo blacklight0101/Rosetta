@@ -94,6 +94,13 @@ before commit (ADR-008).
   and the owner use the same GitHub account, which cannot approve its own pull request; DEC-96). The owner adds the CI
   jobs as required status checks to the ruleset once P1-02 has merged the workflow; from then on no pull request can
   be merged with a red check.
+- **Required checks.** The owner adds these job names to the `main` ruleset as required status checks:
+  `verify (ubuntu-latest)`, `verify (windows-latest)`, `audit`, `gitleaks`, `dependency-review`, `pr-title` (all in
+  `.github/workflows/ci.yml`) and `codeql` (`.github/workflows/codeql.yml`). Jobs that later cards add to the table of
+  section 6 (image build and scan, Compose smoke test) join this list in the card that adds them. The `audit` job
+  runs `scripts/audit-check.mjs`, which reads `audit-exceptions.json`: a JSON array of
+  `{ "id": "GHSA-xxxx-xxxx-xxxx", "reason": "...", "expires": "YYYY-MM-DD" }`, empty by default; an expired entry stops
+  applying and the advisory fails the job again.
 - Commits follow Conventional Commits, checked by commitlint ([conventions](conventions.md) section 9).
 - Git hooks (lefthook): `pre-commit` formats and lints staged files; `commit-msg` runs commitlint; `pre-push` runs
   `typecheck` and the unit tests. Hooks help; CI is the gate. Humans install them with `npm run hooks:install`
