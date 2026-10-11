@@ -1,4 +1,7 @@
 # Hooks help; CI is the gate (environments-and-delivery.md section 5).
+# Humans get the hooks from `npm run hooks:install` (its postinstall also installs them).
+# Agents and CI install with LEFTHOOK=0 (`LEFTHOOK=0 npm ci`): worktrees share one .git/hooks
+# directory, so hooks written from one worktree would run in every other.
 pre-commit:
   parallel: false
   commands:

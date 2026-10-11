@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:ci": "vitest run --coverage && node scripts/test-levels.mjs",
     "test:levels": "node scripts/test-levels.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && npm run test:ci"
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && npm run test:ci",
+    "hooks:install": "lefthook install"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
@@ -36,7 +37,7 @@
     "knip": "^6.41.0",
     "lefthook": "^2.2.1",
     "prettier": "^3.9.10",
-    "typescript": "~6.0.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.1",
     "vitest": "^5.0.3"
   }
