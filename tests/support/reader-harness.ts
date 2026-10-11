@@ -19,7 +19,7 @@ export type RepositoryReaderFactory = (
   logger: Logger,
 ) => Promise<RepositoryReader>;
 
-export interface ReaderHarness {
+interface ReaderHarness {
   readonly reader: RepositoryReader;
   readonly logger: MemoryLogger;
 }

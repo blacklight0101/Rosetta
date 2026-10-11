@@ -46,7 +46,7 @@ export interface GrepRequest {
   readonly pathGlob?: string;
 }
 
-export interface GrepMatch {
+interface GrepMatch {
   readonly path: string;
   readonly line: number;
   readonly text: string;

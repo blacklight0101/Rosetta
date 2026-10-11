@@ -135,7 +135,7 @@ describe('NodeRepositoryReader grep worker', () => {
 describe('NodeRepositoryReader deny list', () => {
   it('RF-147 a lifted deny pattern is recorded in the application log', async () => {
     const logger = newLogger();
-    await openReader({ files: {}, allowDenied: ['*.key'] }, logger);
+    await openReader({ files: { 'a.txt': 'x\n' }, allowDenied: ['*.key'] }, logger);
 
     expect(logger.entries).toContainEqual(
       expect.objectContaining({ level: 'warn', data: { liftedDenyPatterns: ['*.key'] } }),

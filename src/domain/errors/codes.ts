@@ -37,6 +37,7 @@ export const ERROR_CODES = {
   writeOutsideWorkspace: 'RST-1109',
   snapshotWriteRefused: 'RST-1110',
   workspaceIdInvalid: 'RST-1111',
+  grepFailed: 'RST-1112',
   fakeProviderRefused: 'RST-1500',
   providerCallCancelled: 'RST-1501',
   recordingInvalid: 'RST-1502',
@@ -137,6 +138,10 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   'RST-1111': {
     message: 'A workspace id is not in the expected format, so no path was built from it.',
     nextStep: 'Check the user, project or run id that was passed.',
+  },
+  'RST-1112': {
+    message: 'The search could not run because its worker failed.',
+    nextStep: 'Search again; if it keeps failing, check the application log.',
   },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
