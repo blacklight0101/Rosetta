@@ -47,6 +47,10 @@ describe('scripts/test-levels.mjs', () => {
   it('RNF-005 fails when the run counts zero tests', async () => {
     await expect(run('node', [script, tmp.path])).rejects.toThrow(/counted zero tests/u);
   });
+});
+
+describe('scripts/test-levels.mjs skipped tests', () => {
+  const tmp = useTempRoot('rosetta-levels-skip-');
 
   it('RNF-005 does not count skipped or todo tests, nor tests inside describe.skip', async () => {
     const folder = join(tmp.path, 'tests', 'unit');
@@ -60,6 +64,23 @@ describe('scripts/test-levels.mjs', () => {
       "  it('RNF-005 inside a skipped suite', () => {});",
       '});',
       "it('RNF-005 counted again', () => {});",
+    ];
+    await writeFile(join(folder, 'sample.test.ts'), lines.join('\n'));
+
+    const { stdout } = await run('node', [script, tmp.path]);
+
+    expect(stdout).toContain('Unit 2 / Integration 0 / E2E 0');
+  });
+
+  it('RNF-005 a one-line describe.skip does not hide the tests after it', async () => {
+    const folder = join(tmp.path, 'tests', 'unit');
+    await mkdir(folder, { recursive: true });
+    const lines = [
+      "describe.skip('suite', () => { it('RNF-005 inside a one-line skipped suite', () => {}); });",
+      "it('RNF-005 counted after the one-line suite', () => {});",
+      "describe('suite', () => {",
+      "  it('RNF-005 counted in a later suite', () => {});",
+      '});',
     ];
     await writeFile(join(folder, 'sample.test.ts'), lines.join('\n'));
 
