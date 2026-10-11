@@ -31,8 +31,9 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-017](ADR-017-fastify-http-server.md) | Use Fastify as the HTTP server | Accepted | 2026-10-11 |
 | [ADR-018](ADR-018-planning-brief-and-principle-catalogue.md) | Drive `plan` from a planning brief and a versioned principle catalogue | Accepted | 2026-10-11 |
 | [ADR-019](ADR-019-tarball-extraction-and-ignore-matching.md) | Extract snapshots with `tar` and match ignore rules with `ignore` | Accepted | 2026-10-11 |
+| [ADR-020](ADR-020-host-on-railway-eu-west.md) | Host the hosted deployment on Railway in EU West (Amsterdam) | Proposed | 2026-10-11 |
 
-**Totals**: 19 in total - Accepted 12, Proposed 0, Amended 7, Superseded 0.
+**Totals**: 20 in total - Accepted 12, Proposed 1, Amended 7, Superseded 0.
 
 
 ## Relationships
