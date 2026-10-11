@@ -24,6 +24,7 @@ export const ERROR_RANGES = {
 
 /** Codes in use, reserved first for the ones the design board already shows. */
 export const ERROR_CODES = {
+  configurationInvalid: 'RST-1000',
   providerRateLimited: 'RST-1504',
   providerTimeout: 'RST-1505',
   githubSourceUnavailable: 'RST-1903',
@@ -39,6 +40,11 @@ export interface ErrorDescription {
 }
 
 const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
+  'RST-1000': {
+    message: 'The server configuration is missing or invalid.',
+    nextStep:
+      'Set the variables named in the message in the environment or .env, then start again.',
+  },
   'RST-1504': {
     message: 'The AI provider is limiting requests right now.',
     nextStep: 'Rosetta retries by itself; if it keeps failing, wait a minute and resume the run.',
