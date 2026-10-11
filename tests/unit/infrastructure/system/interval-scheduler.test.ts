@@ -41,6 +41,16 @@ describe('IntervalScheduler', () => {
     expect(onError).toHaveBeenCalledWith(failure);
     expect(job).toHaveBeenCalledTimes(2);
   });
+});
+
+describe('IntervalScheduler overlap', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('RF-1101 skips a tick while the previous run is still going', async () => {
     let release: () => void = () => undefined;

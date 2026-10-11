@@ -26,15 +26,16 @@ describe('error-code registry', () => {
     }
   });
 
-  it('RF-007 every code lies inside one of the ranges of conventions section 6', () => {
-    for (const code of allCodes) {
-      const inRange = Object.values(ERROR_RANGES).some(
-        (range) => numberOf(code) >= range.first && numberOf(code) <= range.last,
-      );
-      expect(inRange, code).toBe(true);
-    }
-  });
+  it.each(allCodes)('RF-007 %s lies inside one of the ranges of conventions section 6', (code) => {
+    const inRange = Object.values(ERROR_RANGES).some(
+      (range) => numberOf(code) >= range.first && numberOf(code) <= range.last,
+    );
 
+    expect(inRange).toBe(true);
+  });
+});
+
+describe('error-code ranges', () => {
   it('RF-007 the ranges are hundreds from RST-1000 to RST-2599 without overlap', () => {
     const ranges = Object.values(ERROR_RANGES);
 
@@ -46,15 +47,15 @@ describe('error-code registry', () => {
       expect(range.first).toBe(1000 + index * 100);
     });
   });
+});
 
-  it('RF-007 every code carries a plain message and a next step', () => {
-    for (const code of allCodes) {
-      const description = describeError(code);
+describe('error-code descriptions', () => {
+  it.each(allCodes)('RF-007 %s carries a plain message and a next step', (code) => {
+    const description = describeError(code);
 
-      expect(description.message.length, code).toBeGreaterThan(10);
-      expect(description.nextStep.length, code).toBeGreaterThan(10);
-      expect(description.message, code).not.toContain('RST-');
-    }
+    expect(description.message.length).toBeGreaterThan(10);
+    expect(description.nextStep.length).toBeGreaterThan(10);
+    expect(description.message).not.toContain('RST-');
   });
 
   it('RF-007 the messages shown on the design board are kept word for word', () => {
