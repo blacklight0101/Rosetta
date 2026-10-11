@@ -25,12 +25,18 @@ export const ERROR_RANGES = {
 /** Codes in use, reserved first for the ones the design board already shows. */
 export const ERROR_CODES = {
   configurationInvalid: 'RST-1000',
+  fakeProviderRefused: 'RST-1500',
+  providerCallCancelled: 'RST-1501',
+  recordingInvalid: 'RST-1502',
+  recordingExhausted: 'RST-1503',
   providerRateLimited: 'RST-1504',
   providerTimeout: 'RST-1505',
+  providerCallFailed: 'RST-1506',
   githubSourceUnavailable: 'RST-1903',
   invalidCredentials: 'RST-2201',
   secretMaskingFailed: 'RST-2101',
   logFileFailed: 'RST-2102',
+  providerCallLogFailed: 'RST-2103',
   baseUrlRejected: 'RST-2304',
   migrationFileInvalid: 'RST-2400',
   migrationChanged: 'RST-2401',
@@ -51,6 +57,23 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     nextStep:
       'Set the variables named in the message in the environment or .env, then start again.',
   },
+  'RST-1500': {
+    message: 'The fake provider runs only in automated tests.',
+    nextStep:
+      'Choose a real provider kind in the project settings, or set ROSETTA_TEST=1 in tests.',
+  },
+  'RST-1501': {
+    message: 'The call to the AI provider was cancelled.',
+    nextStep: 'The run was stopped or reached a cap; resume it when you are ready.',
+  },
+  'RST-1502': {
+    message: 'A recorded provider response is missing or invalid.',
+    nextStep: 'Fix the recording file named in the message, or record it again.',
+  },
+  'RST-1503': {
+    message: 'The fake provider has no recorded response left for this call.',
+    nextStep: 'Add the missing response to the recording, or check the calls the test makes.',
+  },
   'RST-1504': {
     message: 'The AI provider is limiting requests right now.',
     nextStep: 'Rosetta retries by itself; if it keeps failing, wait a minute and resume the run.',
@@ -58,6 +81,10 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   'RST-1505': {
     message: 'The AI provider did not answer in time.',
     nextStep: 'Resume the run to check the unverified claims again.',
+  },
+  'RST-1506': {
+    message: 'The call to the AI provider failed.',
+    nextStep: 'Read the cause in the API calls panel or the log, then try again.',
   },
   'RST-1903': {
     message:
@@ -70,6 +97,10 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   },
   'RST-2102': {
     message: 'The application log folder could not be written.',
+    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
+  },
+  'RST-2103': {
+    message: 'The provider call log or a transcript could not be written.',
     nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
   },
   'RST-2201': {
