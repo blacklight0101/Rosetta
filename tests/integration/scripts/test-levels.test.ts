@@ -55,4 +55,24 @@ describe('scripts/test-levels.mjs', () => {
   it('RNF-005 fails when the run counts zero tests', async () => {
     await expect(run('node', [script, root])).rejects.toThrow(/counted zero tests/u);
   });
+
+  it('RNF-005 does not count skipped or todo tests, nor tests inside describe.skip', async () => {
+    const folder = join(root, 'tests', 'unit');
+    await mkdir(folder, { recursive: true });
+    const lines = [
+      "it('RNF-005 counted', () => {});",
+      "it.skip('RNF-005 skipped', () => {});",
+      "test.skip('RNF-005 skipped too', () => {});",
+      "it.todo('RNF-005 todo');",
+      "describe.skip('suite', () => {",
+      "  it('RNF-005 inside a skipped suite', () => {});",
+      '});',
+      "it('RNF-005 counted again', () => {});",
+    ];
+    await writeFile(join(folder, 'sample.test.ts'), lines.join('\n'));
+
+    const { stdout } = await run('node', [script, root]);
+
+    expect(stdout).toContain('Unit 2 / Integration 0 / E2E 0');
+  });
 });
