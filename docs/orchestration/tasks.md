@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 73 | 18 | 41 | 14 | 0 | 26 | 39 | 8 | 17 | 0 |
+| P1 Milestone slice (M1) | 75 | 18 | 43 | 14 | 0 | 28 | 39 | 8 | 19 | 0 |
 | P2 Full understand | 14 | 1 | 10 | 3 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **99** | **20** | **60** | **19** | **0** | **29** | **59** | **11** | **17** | **0** |
+| **Total** | **101** | **20** | **62** | **19** | **0** | **31** | **59** | **11** | **19** | **0** |
 
 ## Conventions for every card
 
@@ -298,7 +298,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-17
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-004-universal-scan-and-language-packs.md`; `docs/data-model.md` section 3.4.
 - **Do**: in `src/infrastructure/scan/universal/`: walk the snapshot (subpath only, paths relative to the repository root), default ignores (version control, `bin/`, `obj/`, `node_modules/`, `packages/`, binary detection), size limit with `skipped: too large`; language by extension and content heuristics (`unknown` allowed); line count and token estimate; artefact kinds of RF-102 by rule table; embedded SQL statements with `path:line`; stable sort of every list. Fixture repositories under `tests/fixtures/repos/` in two stacks (a small C# WebForms sample with cited MIT excerpts and a small PHP sample) plus one in a language with no pack.
 - **Delivers**: the walker, detectors, rule tables, fixtures; unit tests per language and artefact rule and per SQL pattern; integration tests on the fixtures.
@@ -310,7 +310,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` sections 3.4 and 3.5; `docs/architecture.md` section 5 (`CodeMap`, `Area`).
 - **Do**: domain `CodeMap`, `FileEntry`, `Area`, `MapLevel` with their invariants; grouping by folder and by language-pack references, splitting groups over the area token budget, configured areas replacing the automatic grouping for the files they match; `codemap.json` writer and zod schema with `schemaVersion` 1, byte-identical for the same input (no times, stable order); `scan-summary.md` with languages, artefact counts, areas with files, tokens and map level, and the scan duration.
 - **Delivers**: domain types, grouping, writers, schema; unit tests on grouping and invariants; schema validation test; a determinism test running the scan twice; snapshot test of the summary; a timing assertion on the demo-size fixture.
@@ -322,7 +322,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-07, P1-19
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-004-universal-scan-and-language-packs.md`; `docs/data-model.md` section 3.4 (symbols, references, routes).
 - **Do**: `LanguagePack` port (extensions, `analyse(file) -> symbols, references, routes`); a registry in the composition root; per-file fallback to `coarse` with a warning when a pack throws; `CSharpPack` on `web-tree-sitter` with the `tree-sitter-c-sharp` WebAssembly grammar loaded from the package: classes, interfaces, methods, properties with line ranges; `.aspx`/`.ascx`/`.master` linked to their code-behind class; `DbContext` entity sets as candidate entities; a test pack for the interface tests.
 - **Delivers**: port, registry, C# pack, test pack; unit tests on fixtures from the demo app (cited, MIT); an integration test with a failing pack.
@@ -344,7 +344,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 ### P1-23 - Scan as a run
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
-- **Depends on**: P1-20, P1-22
+- **Depends on**: P1-20, P1-22, P1-74
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/architecture.md` section 6 (`RunScan`); `docs/data-model.md` sections 2 and 3.6.
@@ -816,7 +816,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/data-model.md` sections 3.6 and 3.14; `docs/security/threat-model.md`.
-- **Do**: extend `SecretMasker` to `Authorization: Basic` and `token` schemes, AWS `ASIA` keys, XML `<password>` elements, `mysql -p<pw>` and `sk-` after an underscore; in the log formatter, mask the whole value of any data key that matches `password|passwd|pwd|secret|token|api[_-]?key`; keep linear time (extend the hostile-input suite).
+- **Do**: extend `SecretMasker` to `Authorization: Basic` and `token` schemes, AWS `ASIA` keys, XML `<password>` elements, `mysql -p<pw>` and `sk-` after an underscore; in the log formatter, mask the whole value of any data key that matches `password|passwd|pwd|secret|token|api[_-]?key`; keep linear time (extend the hostile-input suite); lift or document the 512-character bound on connection-string values (P1-04 scope).
 - **Delivers**: the masker and formatter changes with fixture cases and hostile-input cases.
 - **Done when**: every new shape is masked in a fixture test; a fake key under a `password` data key never appears in any logger output; the hostile-input suite stays within budget; `npm run verify` green.
 - **Refs**: RF-009, RF-141, RNF-003, ADR-013, P1-04 (verifier MINOR 5 and open question).
@@ -952,6 +952,30 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the start-up step and its test.
 - **Done when**: a `.partial-*` folder left in `sources/` is gone after `start()`; `npm run verify` green.
 - **Refs**: RF-122, ADR-019, P1-16 (verifier note).
+
+### P1-74 - Follow-up: private-key lines inside a SQL statement reach the code map
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-19
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/scan/universal/sql-script.ts`; `docs/data-model.md` (code map); RNF-003.
+- **Do**: write a failing test first: a SQL statement holding a `-----BEGIN PRIVATE KEY-----` block whose marker lines look like comments; then keep comment-like lines inside an open statement, or mask the raw lines before comments are dropped, so the key body is masked or left out.
+- **Delivers**: the fix and its fixture test.
+- **Done when**: no base64 key body from the fixture appears in `codemap.json` or the scan summary; `npm run verify` green. Must land before P1-23 sends code map text to a provider.
+- **Refs**: RNF-003, RF-009, RF-104, P1-20 (verifier MINOR 1, round 3).
+
+### P1-75 - Follow-up: a scan-wide parse budget for language packs
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/scan/packs/`; `src/infrastructure/scan/codemap/`.
+- **Do**: bound the total tree-sitter parse time of a scan (a scan-wide budget, or parsing in a worker that can be stopped); files past the budget are recorded as not analysed with a reason instead of blocking the event loop.
+- **Delivers**: the budget and its tests.
+- **Done when**: a fixture repository whose parse time exceeds a small test budget finishes with the remaining files recorded as not analysed; `npm run verify` green.
+- **Refs**: RF-110, RNF-004, P1-21 (verifier note).
 
 ---
 
