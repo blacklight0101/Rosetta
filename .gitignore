@@ -28,3 +28,7 @@ npm-debug.log*
 # Impeccable design skill: keep product and surface briefs, ignore working files
 .impeccable/*
 !.impeccable/surfaces/
+
+# Tool output
+.eslintcache
+eval-out/
