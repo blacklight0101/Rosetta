@@ -364,7 +364,7 @@ sequenceDiagram
 | domain | pure functions; invariant violations return a typed `Result` error; no exceptions for expected cases |
 | application | returns `Result`; turns infrastructure exceptions into task states (`Failed`) with the error code |
 | infrastructure | throws `Error` subclasses with an `RST-xxxx` code and the original as `cause` |
-| presentation | maps errors to HTTP statuses (RF-007) and returns code, message and next step as JSON; pages show them next to the field or in a banner; no stack trace in any response |
+| presentation | maps errors to HTTP statuses (RF-007) and returns code, message and next step as JSON; pages show them next to the field or in a banner; no stack trace in any response. Requests refused before routing (a bad URL, a parser error, a headers timeout, an unmet `Expect`, a CONNECT tunnel) get the same body and the RF-1013 headers from `presentation/web/early-errors.ts`; a missing `Host` header and requests arriving while the server drains go through the normal chain |
 
 Codes and ranges: [conventions.md](conventions.md) section 6.
 
