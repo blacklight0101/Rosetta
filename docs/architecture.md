@@ -118,7 +118,9 @@ src/
     providers/          ollama/, openai/, openai-compatible/, anthropic/, fake/; at the root the
                         ObservedProvider decorator and the provider call logs (JSON Lines, memory)
     guards/             egress-guard, secret-masker, budget-guard
-    github/             url parser, ref resolver, snapshot downloader and extractor
+    github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
+                        (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
+                        hash, snapshot.json, read-only), github-snapshot-fetcher, fake-source-fetcher
     files/              snapshot-reader, ignore-rules, output-writer, workspace paths
     events/             sse-broadcaster, jsonl-event-log
     db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit), migration runner
@@ -226,7 +228,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | Port | Purpose | Adapters |
 |---|---|---|
 | `LlmProvider` | chat with tools; returns text, tool calls, usage (ADR-003) | `OllamaProvider`, `OpenAiProvider`, `OpenAiCompatibleProvider`, `AnthropicProvider`, `FakeProvider` (recordings) |
-| `SourceFetcher` | resolve a GitHub URL and ref to a commit and provide its snapshot (ADR-012) | `GitHubSnapshotFetcher`, `FakeSourceFetcher` |
+| `SourceFetcher` | resolve a GitHub URL and ref to a commit and provide its snapshot (ADR-012); the composition root calls `GitHubSnapshotFetcher.discardPartialFolders()` at start-up, before the server accepts runs (RF-122) | `GitHubSnapshotFetcher`, `FakeSourceFetcher` |
 | `RepositoryReader` | list files, read line ranges, grep in a snapshot; read-only, ignore rules applied | `NodeRepositoryReader` |
 | `OutputWriter` | write and read files inside the user's workspace only | `NodeOutputWriter` |
 | `LanguagePack` | symbols, references, routes for some extensions (ADR-004) | `CSharpPack` (tree-sitter) |

@@ -32,7 +32,15 @@ export const ERROR_CODES = {
   providerRateLimited: 'RST-1504',
   providerTimeout: 'RST-1505',
   providerCallFailed: 'RST-1506',
+  githubUrlInvalid: 'RST-1900',
+  githubRefNotFound: 'RST-1901',
+  githubRateLimited: 'RST-1902',
   githubSourceUnavailable: 'RST-1903',
+  githubHostRefused: 'RST-1904',
+  snapshotTooLarge: 'RST-1905',
+  snapshotEntryRefused: 'RST-1906',
+  githubRequestFailed: 'RST-1907',
+  snapshotWriteFailed: 'RST-1908',
   invalidCredentials: 'RST-2201',
   secretMaskingFailed: 'RST-2101',
   logFileFailed: 'RST-2102',
@@ -86,10 +94,44 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     message: 'The call to the AI provider failed.',
     nextStep: 'Read the cause in the API calls panel or the log, then try again.',
   },
+  'RST-1900': {
+    message: 'The address is not a public GitHub repository URL.',
+    nextStep:
+      'Use https://github.com/<owner>/<repo>, with an optional /tree/<branch or tag>/<folder>.',
+  },
+  'RST-1901': {
+    message: 'The branch, tag or commit was not found in this repository.',
+    nextStep: 'Check the ref in the address, or leave it out to use the default branch.',
+  },
+  'RST-1902': {
+    message: 'GitHub is limiting requests from this server right now.',
+    nextStep:
+      'Wait until the reset time in the message, or set a read-only GITHUB_TOKEN to raise the limit.',
+  },
   'RST-1903': {
     message:
       'This repository is private or does not exist. Only public GitHub repositories can be analysed.',
     nextStep: 'Check the address, or choose a public repository.',
+  },
+  'RST-1904': {
+    message: 'The download was refused because it would leave GitHub or drop to http.',
+    nextStep: 'Nothing was downloaded; check the address and try again.',
+  },
+  'RST-1905': {
+    message: 'The repository archive is larger than the configured limit.',
+    nextStep: 'Choose a smaller repository or raise the snapshot limits on the server.',
+  },
+  'RST-1906': {
+    message: 'The repository archive contains an entry that is not allowed, so it was discarded.',
+    nextStep: 'Nothing was kept; check the repository or report the archive as a security issue.',
+  },
+  'RST-1907': {
+    message: 'GitHub could not be reached or answered with an error.',
+    nextStep: 'Check the network and the GitHub status page, then try again.',
+  },
+  'RST-1908': {
+    message: 'The snapshot could not be written to the data folder.',
+    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
   },
   'RST-2101': {
     message: 'Secret masking failed, so the content was withheld.',

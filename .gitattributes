@@ -4,3 +4,5 @@
 *.gif binary
 *.zip binary
 *.pdf binary
+*.tar.gz binary
+*.tgz binary
