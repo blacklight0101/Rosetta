@@ -13,7 +13,7 @@ const SECRET_PATTERNS: readonly (readonly [string, RegExp])[] = [
   ['AKIA key', /\bAKIA[0-9A-Z]{16}\b/],
   ['bearer token', /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/i],
   ['private key block', /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
-  ['password= setting', /\b(?:password|pwd)\s*=\s*[^\s;'"]+/i],
+  ['password= setting', /\b[\w.-]*?(?:password|passwd|pwd)\s*[:=]\s*[^\s;'"]+/i],
 ];
 
 // Fake samples built by concatenation so that this file holds no complete key-shaped literal.
@@ -27,6 +27,7 @@ const POSITIVE_SAMPLES: readonly (readonly [string, string])[] = [
   ['bearer token', 'Authorization: Bearer ' + 'a'.repeat(20)],
   ['private key block', '-----BEGIN RSA PRIVATE KEY-----'],
   ['password= setting', 'Server=h;Password=hunter2;'],
+  ['password= setting', 'ROSETTA_ADMIN_PASSWORD=hunter2'],
 ];
 
 const VARIABLES = [
