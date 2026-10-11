@@ -157,6 +157,7 @@ the decision log.
 | Q-20 | What does the landing page offer instead of sign-up? | Product owner | P1 (landing card) | A "Sign in" button and a "Request access" link to a contact address set in the server configuration; no link when it is not set | Default applies |
 | Q-21 | Does the teacher account start with a finished demo run? | Product owner | P1 (teacher account card) | No: it starts empty; the teacher runs the demo themselves with the server keys under the caps | Default applies |
 | Q-22 | Which caps apply to the administrator's own runs? The v1 board shows a $2.00 run cap while the hosted defaults are $0.50 per run and $1.00 per user per day (DEC-64). | Product owner | P1 (caps card) | The administrator is under the same caps as every user; the board's figures are illustrative only | Default applies |
+| Q-23 | Which limits does the automatic Ollama context size use (DEC-114)? | Product owner | P1 (P1-63) | Ceiling 32 768 tokens, floor 4 096, halving between them; the result is cached per Ollama server and model digest for the life of the process | Default applies |
 
 ## 5. Functional requirements (R1)
 
@@ -487,6 +488,8 @@ Verification: a contract test suite run against every adapter with recorded resp
 As a developer I want to run every role on local models so that development costs nothing and code stays local.
 - Given Ollama running locally with the configured model, when a role uses provider `ollama`, then calls succeed with native tool calling where the model supports it, or the text protocol (RF-205).
 - Given Ollama not running or the model not pulled, when the run starts, then it stops before any work with an error code and the command to fix it.
+- Given `providers.<name>.contextTokens` is `auto` (the default), when a model is first used, then the adapter picks the largest context size that keeps the model entirely in the GPU memory Ollama reports (`/api/ps` `size_vram` equal to `size`), starting at the smaller of the model's trained context (`/api/show`) and the ceiling, halving down to the floor (Q-23), sends it as `num_ctx` on every call, and records the chosen value in the call log and the run manifest (DEC-114).
+- Given `contextTokens` is a number, when a role calls the model, then that value is sent unchanged, and a warning is logged if Ollama reports part of the model on the CPU (DEC-114).
 Verification: contract test with recorded responses; manual run against Ollama.
 
 **RF-402 OpenAI adapter** - R1 (M1) - Must - Source DEC-09 - ADR-003
