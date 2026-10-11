@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { LanguagePack } from '../../../../../src/application/ports/language-pack.js';
+import type {
+  LanguagePack,
+  PackAnalysis,
+  PackFile,
+} from '../../../../../src/application/ports/language-pack.js';
 import { SecretMasker } from '../../../../../src/infrastructure/guards/secret-masker.js';
 import { LanguagePackRegistry } from '../../../../../src/infrastructure/scan/packs/pack-registry.js';
 import { analyseWithPacks } from '../../../../../src/infrastructure/scan/packs/pack-scan.js';
@@ -159,5 +163,40 @@ describe('analysis with language packs (ordering and links)', () => {
     const dropped = logger.entries.filter((entry) => entry.message.includes('outside the scan'));
     expect(dropped).toHaveLength(1);
     expect(dropped[0]?.data).toMatchObject({ dropped: 1 });
+  });
+});
+
+/** A test pack that records each `analyse` call in a shared event list. */
+class RecordingPack implements LanguagePack {
+  readonly name = 'test';
+  readonly version = '1.0.0';
+  readonly extensions: readonly string[] = ['.tst'];
+  private readonly inner = new TestLanguagePack();
+  private readonly events: string[];
+
+  constructor(events: string[]) {
+    this.events = events;
+  }
+
+  analyse(file: PackFile): PackAnalysis {
+    this.events.push(`analyse ${file.path}`);
+    return this.inner.analyse(file);
+  }
+}
+
+describe('analysis with language packs (event loop)', () => {
+  it('RF-110 yields to the event loop between files so a long scan never blocks the server', async () => {
+    const events: string[] = [];
+    const { run } = setup({ 'a.tst': 'type A\n', 'b.tst': 'type B\n', 'c.tst': 'type C\n' }, [
+      new RecordingPack(events),
+    ]);
+    // Scheduled before the run: without a yield between files every await inside the runner is a
+    // microtask, so all three files would be mapped before this macrotask gets a turn.
+    setImmediate(() => events.push('tick'));
+
+    await run();
+
+    expect(events).toContain('tick');
+    expect(events.indexOf('tick')).toBeLessThan(events.indexOf('analyse c.tst'));
   });
 });
