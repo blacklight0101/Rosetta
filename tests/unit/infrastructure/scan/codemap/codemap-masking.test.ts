@@ -90,6 +90,17 @@ describe('a secret that straddles the end of the 500 characters of a statement',
 
     expect(result.ok && result.value.sqlStatements[0]?.text.length).toBeLessThanOrEqual(500);
   });
+
+  it('RF-141 the 500-character cut falls between words, so it never splits a mask marker', () => {
+    const halves = Array.from({ length: 30 }, (_, index) => 450 + index).filter((pad) => {
+      const line = `SELECT ${'a'.repeat(pad)} FROM T WHERE u = '${connection}';`;
+      const result = buildWith(extractScriptStatements('db/a.sql', [line]));
+      const text = result.ok ? (result.value.sqlStatements[0]?.text ?? '') : '';
+      return text.lastIndexOf('[') > text.lastIndexOf(']') || text.endsWith('adm:');
+    });
+
+    expect(halves).toEqual([]);
+  });
 });
 
 // Three long FAKE keys that mask to short markers, then a FAKE connection string at `start`.
