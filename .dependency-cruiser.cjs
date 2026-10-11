@@ -72,6 +72,13 @@ module.exports = {
       to: { path: `node_modules/${sdkPackages}/` },
     },
     {
+      name: 'openai-sdk-only-in-openai-adapter',
+      comment: 'the openai package only from src/infrastructure/providers/openai/ (ADR-003)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/infrastructure/providers/openai/' },
+      to: { path: '^openai(/|$)|node_modules/openai/' },
+    },
+    {
       name: 'tar-only-in-github',
       comment: 'tar only from src/infrastructure/github/ (ADR-019)',
       severity: 'error',

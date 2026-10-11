@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A 429 for an account without credit (insufficient_quota): not a rate limit, not retried. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 429,
+      "body": {
+        "error": {
+          "message": "You exceeded your current quota, please check your plan and billing details.",
+          "type": "insufficient_quota",
+          "param": null,
+          "code": "insufficient_quota"
+        }
+      }
+    }
+  ]
+}

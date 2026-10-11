@@ -111,6 +111,21 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     nextStep:
       'Set toolMode to text for this provider in the project settings, or choose a model with tool support.',
   },
+  'RST-1511': {
+    message: 'OpenAI rejected the API key.',
+    nextStep:
+      'Check the OpenAI key in your account settings (or OPENAI_API_KEY on the server), then start the run again.',
+  },
+  'RST-1512': {
+    message: 'The configured model does not exist at OpenAI or this key cannot use it.',
+    nextStep:
+      'Choose a model the key can use (see docs/providers.md) in the project settings, then start the run again.',
+  },
+  'RST-1513': {
+    message: 'The OpenAI account has no credit left.',
+    nextStep:
+      'Add credit or raise the limit in the OpenAI billing settings, then start the run again.',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

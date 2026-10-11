@@ -21,6 +21,7 @@
     "test:ci": "vitest run --coverage && node scripts/test-levels.mjs",
     "test:levels": "node scripts/test-levels.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && npm run test:ci",
+    "live:openai": "npm run build && node scripts/openai-live-check.mjs",
     "live:ollama": "npm run build && node scripts/ollama-live-check.mjs",
     "hooks:install": "lefthook install"
   },
@@ -48,6 +49,7 @@
     "@fastify/static": "^10.1.6",
     "fastify": "^5.12.5",
     "ignore": "^7.0.12",
+    "openai": "^7.32.0",
     "pg": "^8.23.1",
     "tar": "^7.5.22",
     "zod": "^4.6.5"

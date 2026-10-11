@@ -1,19 +1,10 @@
-import type { LlmAttemptFailure } from '../../../application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../../domain/errors/codes.js';
-import { retryAfterMs } from './retry-backoff.js';
+import { retryAfterMs } from '../retry-backoff.js';
+import type { AttemptFailed } from '../retrying-call.js';
 
 // RF-401, RF-406: what each Ollama failure means, whether it is retried, and the fix it names.
 // Rate limits, timeouts, server errors (a cold load that ran out of memory answers 500) and a
 // connection dropped mid-answer are retried; everything else ends the call at once.
-
-export interface AttemptFailed {
-  readonly failure: LlmAttemptFailure;
-  readonly retryable: boolean;
-  readonly retryAfterMs?: number | undefined;
-  /** A message that names the fix, when the catalogue's plain one is not enough. */
-  readonly message?: string;
-  readonly cause?: unknown;
-}
 
 export interface FailedResponse {
   readonly status: number;

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A text answer without usage. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000001"
+      },
+      "body": {
+        "id": "chatcmpl-FAKE0000000000000001",
+        "object": "chat.completion",
+        "created": 1791700000,
+        "model": "contract-model-2026-08-07",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "The Catalog area lists products from the database.",
+              "refusal": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop"
+          }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null
+      }
+    }
+  ]
+}

@@ -3,11 +3,13 @@ import type {
   LlmResponse,
   OllamaMetrics,
   TokenUsage,
+  ToolCall,
 } from '../../../application/ports/llm-provider.js';
 import type { ToolMode } from './ollama-request.js';
 import type { OllamaChat } from './ollama-wire.js';
-import { parseTextAnswer, stripThinking, type TextAnswer } from './text-tool-protocol.js';
-import { numberedToolCalls, toolCallOf, type ParsedToolCall } from './tool-call-shape.js';
+import { parseTextAnswer, stripThinking } from './text-tool-protocol.js';
+import { nativeToolCalls, numberedToolCalls } from '../tool-call-shape.js';
+import { estimateInputTokens, estimateTokens } from '../usage-estimate.js';
 
 // RF-401, RF-408, RF-421: Ollama's /api/chat answer in the port's one shape. Thinking text is
 // never part of the answer; Ollama has no cached-input-token count, so it is 0.
@@ -20,7 +22,6 @@ export interface ResponseContext {
 }
 
 const nsPerMs = 1_000_000;
-const charsPerToken = 4;
 
 function ms(nanoseconds: number | undefined): number {
   return Math.round((nanoseconds ?? 0) / nsPerMs);
@@ -37,10 +38,6 @@ function metricsOf(chat: OllamaChat): OllamaMetrics {
   };
 }
 
-function estimate(text: string): number {
-  return Math.ceil(text.length / charsPerToken);
-}
-
 /** Reported counts, or an estimate of about four characters per token (RF-421). */
 function usageOf(chat: OllamaChat, request: LlmRequest): TokenUsage {
   const { prompt_eval_count: input, eval_count: output } = chat;
@@ -52,45 +49,42 @@ function usageOf(chat: OllamaChat, request: LlmRequest): TokenUsage {
       usageSource: 'reported',
     };
   }
-  const prompt = [
-    request.system,
-    ...request.messages.map((m) => m.content),
-    JSON.stringify(request.tools),
-  ];
   return {
-    inputTokens: input ?? estimate(prompt.join('')),
-    outputTokens: output ?? estimate(chat.message.content ?? ''),
+    inputTokens: input ?? estimateInputTokens(request),
+    outputTokens: output ?? estimateTokens(chat.message.content ?? ''),
     cachedInputTokens: 0,
     usageSource: 'estimated',
   };
 }
 
+interface Answer {
+  readonly text: string;
+  readonly toolCalls: readonly ToolCall[];
+}
+
 /** Native tool calls; an entry that fails validation stays visible as text (RF-205). */
-function nativeAnswer(content: string, entries: readonly unknown[]): TextAnswer {
-  const calls: ParsedToolCall[] = [];
-  const rejected: string[] = [];
-  for (const entry of entries) {
-    const fn: unknown =
-      typeof entry === 'object' && entry !== null ? Reflect.get(entry, 'function') : undefined;
-    const call = toolCallOf(fn);
-    if (call === undefined) rejected.push(JSON.stringify(entry));
-    else calls.push(call);
-  }
+function nativeAnswer(content: string, entries: readonly unknown[]): Answer {
+  const { calls, rejected } = nativeToolCalls(entries, false);
   const text = [stripThinking(content).trim(), ...rejected].filter((part) => part !== '');
-  return { text: text.join('\n'), calls };
+  return { text: text.join('\n'), toolCalls: calls };
+}
+
+function textAnswer(content: string): Answer {
+  const { text, calls } = parseTextAnswer(content);
+  return { text, toolCalls: numberedToolCalls(calls) };
 }
 
 export function llmResponseOf(chat: OllamaChat, context: ResponseContext): LlmResponse {
   const content = chat.message.content ?? '';
   const answer =
     context.toolMode === 'text'
-      ? parseTextAnswer(content)
+      ? textAnswer(content)
       : nativeAnswer(content, chat.message.tool_calls ?? []);
   const finishReason =
-    answer.calls.length > 0 ? 'tool_use' : chat.done_reason === 'length' ? 'length' : 'stop';
+    answer.toolCalls.length > 0 ? 'tool_use' : chat.done_reason === 'length' ? 'length' : 'stop';
   return {
     text: answer.text,
-    toolCalls: numberedToolCalls(answer.calls),
+    toolCalls: answer.toolCalls,
     usage: usageOf(chat, context.request),
     finishReason,
     modelVersion: context.modelVersion,

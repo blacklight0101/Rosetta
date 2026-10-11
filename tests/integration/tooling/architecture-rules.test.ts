@@ -98,3 +98,26 @@ describe('dependency-cruiser layer rule: fastify', () => {
     expect(report).not.toContain('fastify-only-in-presentation-web');
   });
 });
+
+describe('dependency-cruiser layer rule: provider SDKs', () => {
+  const root = useTempRoot('rosetta-arch-');
+
+  it.each([
+    ['src/infrastructure/guards/egress.ts', 'openai'],
+    ['src/infrastructure/github/api.ts', 'openai/resources/chat/completions'],
+    ['src/infrastructure/providers/ollama/client.ts', 'openai'],
+    ['src/infrastructure/providers/shared.ts', 'openai'],
+  ])('RF-402 %s importing %s is reported outside the openai adapter', async (file, module) => {
+    const report = await cruise(root.path, { [file]: importing(module) });
+
+    expect(report).toContain('openai-sdk-only-in-openai-adapter');
+  });
+
+  it('RF-402 the adapter under infrastructure/providers/openai may import openai', async () => {
+    const report = await cruise(root.path, {
+      'src/infrastructure/providers/openai/client.ts': importing('openai'),
+    });
+
+    expect(report).not.toContain('openai-sdk-only-in-openai-adapter');
+  });
+});

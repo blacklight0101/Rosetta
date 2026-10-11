@@ -21,7 +21,8 @@ function fakeValue(length: number): string {
 }
 
 const dash = '-';
-const openAiKey = ['sk', 'proj', fakeValue(40)].join(dash);
+/** A FAKE OpenAI project key, for the OpenAI adapter tests (RF-402). */
+export const fakeOpenAiKey = ['sk', 'proj', fakeValue(40)].join(dash);
 const anthropicKey = ['sk', 'ant', 'api03', fakeValue(48)].join(dash);
 const githubToken = ['ghp', fakeValue(36)].join('_');
 const githubPat = ['github', 'pat', fakeValue(30)].join('_');
@@ -41,9 +42,9 @@ export const secretCases: readonly SecretCase[] = [
   {
     name: 'an OpenAI key (sk-)',
     kind: 'api-key',
-    text: `OPENAI_API_KEY=${openAiKey}`,
+    text: `OPENAI_API_KEY=${fakeOpenAiKey}`,
     masked: 'OPENAI_API_KEY=[MASKED:api-key]',
-    secrets: [openAiKey],
+    secrets: [fakeOpenAiKey],
   },
   {
     name: 'an Anthropic key (sk-ant-) in source code',

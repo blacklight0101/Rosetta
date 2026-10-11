@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Four 503 answers: every retry fails. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 503,
+      "body": {
+        "error": {
+          "message": "The server is overloaded or not ready yet.",
+          "type": "server_error",
+          "param": null,
+          "code": null
+        }
+      },
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000501"
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "error": {
+          "message": "The server is overloaded or not ready yet.",
+          "type": "server_error",
+          "param": null,
+          "code": null
+        }
+      },
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000502"
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "error": {
+          "message": "The server is overloaded or not ready yet.",
+          "type": "server_error",
+          "param": null,
+          "code": null
+        }
+      },
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000503"
+      }
+    },
+    {
+      "status": 503,
+      "body": {
+        "error": {
+          "message": "The server is overloaded or not ready yet.",
+          "type": "server_error",
+          "param": null,
+          "code": null
+        }
+      },
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000504"
+      }
+    }
+  ]
+}
