@@ -6,7 +6,7 @@ Status: 2026-10-11
 |---|---|
 | **Audience** | the teachers evaluating the master's final project first, then prospective customers; plain words, no internal codes (DEC-93) |
 | **Source** | derived from [RFC-001](rfc/RFC-001-rosetta.md) and the [requirements](spec/requirements.md); when a flow changes, change the RFC or the spec first and this page in the same branch |
-| **Published** | the same diagrams as a private shareable page and as `docs/rosetta-flows.pdf` (A4: a cover page and one landscape page per diagram), regenerated whenever a flow changes (DEC-95); page: https://claude.ai/artifact/1LY8Fx8ZFjxSQXvtRFDoDj (private); last regenerated 2026-10-11 |
+| **Published** | the same diagrams as a private shareable page and as `docs/rosetta-flows.pdf` (A4: a cover page and one landscape page per diagram), regenerated whenever a flow changes (DEC-95); page: https://claude.ai/artifact/1LY8Fx8ZFjxSQXvtRFDoDj (private); last regenerated 2026-10-11 (after the build-plan review) |
 
 ## About this page
 
@@ -93,22 +93,24 @@ stateDiagram-v2
   Proposed --> Supported: the verifier agrees with the evidence
   Proposed --> Rejected: the evidence does not support the claim
   Proposed --> Unverified: the run stopped before the check
-  Unverified --> Proposed: the run is resumed
+  Unverified --> Supported: the run is resumed and the verifier agrees
+  Unverified --> Rejected: the run is resumed and the evidence does not hold
   Supported --> [*]
   Rejected --> [*]
   CitationInvalid --> [*]
 ```
 
 A rejected claim is never deleted: it stays in the report with the verifier's reason, and only supported claims
-feed the hand-off package. Sources RF-300..RF-304, RF-006, RF-604.
+feed the hand-off package. In the first milestone the verifier's second check is not built yet, so a claim whose
+citation holds is shown as awaiting model verification. Sources RF-300..RF-304, RF-006, RF-604.
 
 ## 4. Cost control from estimate to cap
 
 ```mermaid
 flowchart TB
   A[User picks the areas and the models per role] --> B[Estimate shown: low, likely and high cost]
-  B --> C{Within the run cap and the user's daily cap?}
-  C -->|no| C1[Lower the scope or raise the cap] --> B
+  B --> C{Likely cost within the cap that remains?}
+  C -->|no| C1[Warning names the cap: lower the scope, raise the cap, or start anyway] --> D
   C -->|yes| D[Run starts]
   D --> E[Every call metered: tokens and cost per role, live meter in the page]
   E --> F{Could the next call pass the cap?}
@@ -120,7 +122,8 @@ flowchart TB
   E --> J[Run finishes: cost report, project and user totals updated]
 ```
 
-A cap is never exceeded: the worst case of each call is checked before it is made, and every cent is kept in the
+The estimate only warns; the cap itself is never exceeded: the worst case of each call is reserved and checked
+before it is made, and every cent is kept in the
 project's cost ledger even after runs are deleted. Sources RF-006, RF-420..RF-428, RF-1003, RF-1010, RF-1106.
 
 ## 5. Accounts and the teacher account
@@ -130,12 +133,12 @@ flowchart TB
   A[Administrator creates an account with a temporary password] --> B[Person signs in]
   B --> C{User name and password correct?}
   C -->|no| C1[One generic message, repeated failures lock the account for a while] --> B
-  C -->|yes| D{First sign-in?}
+  C -->|yes| D{First sign-in with a required password change?}
   D -->|yes| E[Choose a new password that meets the rules] --> F
   D -->|no| F[Own workspace: only their projects and runs]
   F --> G[Optional: add their own provider keys, stored encrypted]
   F --> H[Runs use their keys first, otherwise the server keys under the caps]
-  I[Teacher account created for the evaluators] --> B
+  I[Teacher account created for the evaluators, no change required] --> B
   J[Administrator opens another workspace] --> K[Access recorded in the audit trail]
 ```
 

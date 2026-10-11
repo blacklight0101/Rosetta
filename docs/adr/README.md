@@ -17,22 +17,22 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-003](ADR-003-provider-swappable-agent-loop.md) | Own the agent loop behind a swappable LLM provider port | Accepted | 2026-10-09 |
 | [ADR-004](ADR-004-universal-scan-and-language-packs.md) | Map any stack with a universal scan plus optional language packs | Accepted | 2026-10-09 |
 | [ADR-005](ADR-005-evidence-cards-and-two-step-verifier.md) | Make every finding an evidence-cited card checked by a two-step verifier | Accepted | 2026-10-09 |
-| [ADR-006](ADR-006-read-only-tools-and-data-egress.md) | Keep agents read-only and guard everything that leaves the machine | Accepted | 2026-10-09 |
-| [ADR-007](ADR-007-cost-control.md) | Meter and cap every model call through a budget guard | Accepted | 2026-10-09 |
+| [ADR-006](ADR-006-read-only-tools-and-data-egress.md) | Keep agents read-only and guard everything that leaves the machine | Amended | 2026-10-09 |
+| [ADR-007](ADR-007-cost-control.md) | Meter and cap every model call through a budget guard | Amended | 2026-10-09 |
 | [ADR-008](ADR-008-testing-with-recorded-responses.md) | Test with recorded model responses and score quality against a golden set | Accepted | 2026-10-09 |
-| [ADR-009](ADR-009-clean-architecture.md) | Structure Rosetta with Clean Architecture | Accepted | 2026-10-09 |
+| [ADR-009](ADR-009-clean-architecture.md) | Structure Rosetta with Clean Architecture | Amended | 2026-10-09 |
 | [ADR-010](ADR-010-spec-driven-and-test-driven-development.md) | Develop Rosetta spec-driven and test-driven | Accepted | 2026-10-09 |
 | [ADR-011](ADR-011-toolchain-and-quality-gates.md) | Adopt a strict TypeScript toolchain with automated quality gates | Accepted | 2026-10-10 |
 | [ADR-012](ADR-012-local-web-ui-and-github-sources.md) | Serve a live local web UI and read legacy code only from public GitHub snapshots (amended by ADR-014, ADR-015, ADR-017: hosted behind sign-in) | Amended | 2026-10-10 |
 | [ADR-013](ADR-013-untrusted-code-and-model-output.md) | Treat analysed code and model output as untrusted input | Accepted | 2026-10-11 |
-| [ADR-014](ADR-014-container-image-local-and-hosted.md) | Ship Rosetta as one container image, run locally with Docker Compose and hosted later | Accepted | 2026-10-11 |
-| [ADR-015](ADR-015-accounts-sessions-and-user-secrets.md) | Accounts with passwords, server-side sessions and encrypted per-user provider keys | Accepted | 2026-10-11 |
+| [ADR-014](ADR-014-container-image-local-and-hosted.md) | Ship Rosetta as one container image, run locally with Docker Compose and hosted later | Amended | 2026-10-11 |
+| [ADR-015](ADR-015-accounts-sessions-and-user-secrets.md) | Accounts with passwords, server-side sessions and encrypted per-user provider keys | Amended | 2026-10-11 |
 | [ADR-016](ADR-016-postgresql-and-files.md) | PostgreSQL for accounts and indexes, files on a persistent disk for snapshots and runs | Accepted | 2026-10-11 |
 | [ADR-017](ADR-017-fastify-http-server.md) | Use Fastify as the HTTP server | Accepted | 2026-10-11 |
 | [ADR-018](ADR-018-planning-brief-and-principle-catalogue.md) | Drive `plan` from a planning brief and a versioned principle catalogue | Accepted | 2026-10-11 |
 | [ADR-019](ADR-019-tarball-extraction-and-ignore-matching.md) | Extract snapshots with `tar` and match ignore rules with `ignore` | Proposed | 2026-10-11 |
 
-**Totals**: 19 in total - Accepted 16, Proposed 1, Amended 2, Superseded 0.
+**Totals**: 19 in total - Accepted 11, Proposed 1, Amended 7, Superseded 0.
 
 
 ## Relationships

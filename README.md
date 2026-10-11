@@ -56,6 +56,10 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 5. [docs/architecture.md](docs/architecture.md) - the living architecture reference.
 6. [docs/design-system.md](docs/design-system.md) - the web UI and HTML report design.
 7. [docs/roadmap.md](docs/roadmap.md) - phases with exit criteria, later releases and what is deliberately not built.
+8. [docs/data-model.md](docs/data-model.md), [docs/conventions.md](docs/conventions.md) and
+   [docs/environments-and-delivery.md](docs/environments-and-delivery.md) - tables, coding rules, environments.
+9. [docs/orchestration/README.md](docs/orchestration/README.md) and [tasks.md](docs/orchestration/tasks.md) - the
+   build protocol and the task cards.
 
 Rules for anyone (human or AI agent) changing this repository are in [CLAUDE.md](CLAUDE.md).
 The current state and next steps are in [handoff.md](handoff.md).

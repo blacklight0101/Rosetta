@@ -1,7 +1,7 @@
 # ADR-006: Keep agents read-only and guard everything that leaves the machine
 
 **Date**: 2026-10-09
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -52,3 +52,7 @@ excerpt size (RF-144).
 - DEC-03, DEC-16, DEC-17.
 - RF-002, RF-005, RF-140..RF-144, RF-201; RNF-003, RNF-004, RNF-011.
 - ADR-003.
+
+## Notes
+
+- 2026-10-11 (review, DEC-109): the ignore rules are the project setting `scan.ignoreRules` plus a `.rosettaignore` committed in the analysed repository, which can only add exclusions; read "ignore rules" wherever this record says `.rosettaignore`.

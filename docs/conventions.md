@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Proposed (2026-10-09) |
-| **Date** | 2026-10-09 |
+| **Date** | 2026-10-11 (review of the build plan, DEC-112) |
 | **Owner** | BlackLigth (blacklight0101) |
 | **Related** | [Architecture](architecture.md) - [Environments and delivery](environments-and-delivery.md) - [ADR-009](adr/ADR-009-clean-architecture.md) - [ADR-010](adr/ADR-010-spec-driven-and-test-driven-development.md) - [ADR-011](adr/ADR-011-toolchain-and-quality-gates.md) |
 
@@ -33,8 +33,8 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 | Types, classes | PascalCase; no `I` prefix on interfaces | `LlmProvider`, `CodeMap` |
 | Functions, variables | camelCase; verbs for functions | `parseCitation`, `estimateRun` |
 | Constants | camelCase for module constants; UPPER_SNAKE only for environment variable names | `defaultMaxTurns`, `OPENAI_API_KEY` |
-| Ports | a noun for the capability, in `src/application/ports/` | `FileReader`, `Clock` |
-| Adapters | technology plus port, in `src/infrastructure/<area>/` | `OpenAiProvider`, `NodeFileReader` |
+| Ports | a noun for the capability, in `src/application/ports/` | `RepositoryReader`, `Clock` |
+| Adapters | technology plus port, in `src/infrastructure/<area>/` | `OpenAiProvider`, `NodeRepositoryReader` |
 | Use cases | verb phrase, one per file in `src/application/use-cases/` | `RunUnderstand` |
 | Tests | next to nothing in `src`; under `tests/<level>/` mirroring `src` | `tests/unit/domain/citation.test.ts` |
 | Prompts | `prompts/<role>/<name>.v<n>.md`; a change creates a new version file | `prompts/reader/area.v1.md` |
@@ -70,14 +70,14 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 - Dependencies arrive through constructor or factory parameters; no singletons, no module-level mutable state; the
   composition root in `src/presentation` is the only place that creates adapters.
 - No `console` outside `src/presentation`; other layers report through a `Logger` port. **(tool: `no-console`)**
-- Standard output carries results (and `--json`); progress and logs go to standard error (RF-004).
+- Logs go to standard output as JSON lines through the `Logger` port (RF-009); there is no other console output.
 
 ## 5. Asynchronous code
 
 - No floating promises and no promises in places that expect a value. **(tool: `no-floating-promises`,
   `no-misused-promises`)**
-- Every network call has a timeout and accepts an `AbortSignal`; Ctrl+C and budget caps cancel through the same
-  signal (RF-422, RNF-002).
+- Every network call has a timeout and accepts an `AbortSignal`; Stop, shutdown and budget caps cancel through the
+  same signal (RF-422, RNF-002).
 - Use `node:fs/promises`; no synchronous file system calls outside server start-up. **(tool: `n/no-sync`)**
 - Retries only in the provider adapters, with exponential back-off and jitter (RF-406); nowhere else.
 
@@ -92,7 +92,9 @@ document is the canonical home of the error-code catalogue (section 6) and the t
   step; stack traces only in the `debug` log, never in a response. Authentication and authorization failures never
   say whether the user or the resource exists.
 
-**Error-code catalogue** (canonical; a new code gets the next free number in its range):
+**Error-code catalogue** (canonical; a new code gets the next free number in its range). Individual codes live in one
+registry, `src/domain/errors/codes.ts`, one code per line, so two parallel pull requests that take the same number
+conflict visibly; the codes already shown on the design board are reserved there first (DEC-112):
 
 | Range | Area |
 |---|---|
@@ -131,6 +133,8 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 - Every port has a contract test suite that the real adapters and the fakes both pass.
 - No `.only`, no skipped tests on `main`, no snapshot for something an assertion can state. **(tool:
   `@vitest/eslint-plugin`)**
+- The front end in `web/` has its own `web/tsconfig.json` (DOM library) and a Vitest project `web` with happy-dom and
+  `@testing-library/preact` for component tests, counted as unit tests (DEC-112).
 - Coverage thresholds (v8): `domain` and `application` at least 90% lines and 85% branches; whole project at least
   80% lines (RNF-005). **(tool)**
 
@@ -159,10 +163,14 @@ too. ESLint never formats (`eslint-config-prettier` last). **(tool)**
 `consistent-type-imports`, `switch-exhaustiveness-check`, `no-import-type-side-effects`,
 `explicit-module-boundary-types`, `prefer-readonly`, `no-restricted-exports` (default), `no-console` (except
 `src/presentation`), `eqeqeq`, `complexity` 10, `max-depth` 3, `max-params` 4, `max-lines` 300,
-`max-lines-per-function` 50, `n/no-sync`, `n/prefer-node-protocol`. Lint runs with `--max-warnings 0`. A disabled rule
+`max-lines-per-function` 50, `n/no-sync`, `n/prefer-node-protocol`, and in `src/infrastructure/db/**` a
+`no-restricted-syntax` rule that rejects a template literal as the first argument of `query` (parameterised SQL,
+ADR-016). Lint runs with `--max-warnings 0`. A disabled rule
 needs an inline `eslint-disable-next-line <rule> -- <reason>`; blanket disables are forbidden. **(tool)**
 
 `.dependency-cruiser.cjs`: `domain` may import only `domain`; `application` only `domain` and `application`;
 `infrastructure` may not import `presentation`; nothing in `src` imports `tests`; no circular dependencies; no
-dependency missing from `package.json`; provider SDKs, `web-tree-sitter` and `yazl` only from `src/infrastructure`.
+dependency missing from `package.json`; provider SDKs, `web-tree-sitter` and `yazl` only from `src/infrastructure`; `tar` only from
+`src/infrastructure/github/` and `ignore` only from `src/infrastructure/files/` (ADR-019); `web/` may import from
+`src/` only `src/application/contracts/`.
 **(tool)**

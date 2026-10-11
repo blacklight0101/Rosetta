@@ -50,7 +50,8 @@ applied, and fixing it is part of applying the decision.
 6. `handoff.md` - the living state. Update it at the end of every working session.
 7. `docs/orchestration/` - the build plan: `README.md` (protocol, builder tiers, verifier, human gates `G-nn`) and
    `tasks.md` (task cards `P<phase>-nn`). Agents live in `.claude/agents/`. The orchestrator edits only the Status
-   line of a card; every finished card is verified before it is merged.
+   lines of cards and appends follow-up cards (through a `docs/build-status` pull request); every finished card is
+   verified before it is merged.
 
 
 ## Hard rules for the documents

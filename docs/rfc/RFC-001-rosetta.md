@@ -213,7 +213,7 @@ Rejected and invalid claims are kept and shown as such; nothing is deleted
 
 ```mermaid
 flowchart LR
-  A[rosetta scan path] --> B[walk files, apply .rosettaignore]
+  A[Scan pressed for a project at a pinned commit] --> B[walk the snapshot, apply the ignore rules]
   B --> C[universal layer: languages, sizes, tokens, entry points, config, SQL strings, manifests]
   C --> D{language pack available?}
   D -- yes --> E[symbols, references, routes]
@@ -237,7 +237,7 @@ sequenceDiagram
   participant Eg as Egress and budget guards
   participant LLM as Provider
   participant Ver as Verifier
-  Dev->>Orc: rosetta understand [--area X]
+  Dev->>Orc: Start understand in the web UI, one area or all
   Orc->>Orc: estimate cost, check caps
   Orc->>Ag: area, file list, card format
   loop until the area is done or the budget stops it
@@ -253,7 +253,7 @@ sequenceDiagram
   Ver->>Ver: step 1 - citations exist
   Ver->>Eg: step 2 - does the evidence support the claim?
   Ver-->>Orc: verdicts
-  Orc-->>Dev: cards, verdicts, open questions, cost report
+  Orc-->>Dev: live page: cards, verdicts, open questions, cost
 ```
 
 Failure paths: when a provider is down or rate-limited, the call is retried with back-off and then the agent task
@@ -262,8 +262,9 @@ not finish (`Unverified`); a run can be resumed. Covers RF-200..RF-399, RF-420..
 
 #### 4.5.3 Open questions, report and plan
 
-The developer answers `OQ` cards in a Markdown answers file or interactively; `understand` can be re-run for the
-affected areas with the answers as context. `report` renders the cards, verdicts, code map and cost into a static
+The developer answers `OQ` cards in the run page, which writes them to the run's `answers.md` (RF-240, RF-1007);
+`understand` can be re-run for the affected areas with the answers as context (RF-241). All of it is web UI actions
+(DEC-59). `report` renders the cards, verdicts, code map and cost into a static
 HTML site. `plan` reads the verified cards and answers and writes the hand-off package. Covers RF-240..RF-249,
 RF-500..RF-699.
 
@@ -300,7 +301,8 @@ Rewritten 2026-10-11 (DEC-61, DEC-67). One container image runs in two places
 ([ADR-014](../adr/ADR-014-container-image-local-and-hosted.md)):
 
 - **Local**: Docker Compose on the owner's machine runs the app and PostgreSQL with named volumes; the app is
-  published on `127.0.0.1:8080` only and reaches Ollama on the host at `host.docker.internal:11434` (RF-1301). This
+  published on `127.0.0.1:8080` only and reaches Ollama on the host at the operator's `ROSETTA_OLLAMA_URL`,
+  normally `http://host.docker.internal:11434` (RF-1301, DEC-112). This
   simulates the hosted deployment before it exists.
 - **Hosted**: the same image on a container host (chosen in Q-18) behind HTTPS, with managed PostgreSQL, a persistent
   disk for the data folder and secrets in the host's secret store (RF-1304). The hosted mode uses cloud providers.
@@ -337,7 +339,7 @@ and writes the same output folder; the verifier's step 1 runs as a script. Cover
 | The hosted deployment is not ready for the hand-in | local Compose simulation first (RF-1301), host chosen by 2026-10-20 (Q-18), GitHub Pages report as fallback (DEC-67) |
 | Secrets or private code sent to a cloud provider | `.rosettaignore`, secret masking, cloud warning, record of every file sent (ADR-006) |
 | The demo app is small and has few business rules | second, richer target in a different stack after the milestone (Q-05) |
-| Seventeen days to the milestone | the milestone slice is cut to one area, Ollama and OpenAI only, Markdown output; everything else is later phases |
+| Seventeen days to the milestone | the milestone slice is cut to one area, Ollama and OpenAI only, the citation check without the model verifier (DEC-103); the build runs as agent task cards in parallel (DEC-96, DEC-100, DEC-102); everything else is later phases |
 | Provider APIs differ (tool-call formats, caching, usage fields) | adapters normalise to one port; a contract test runs against every adapter with recorded responses |
 
 **Costs**: a container host and a managed PostgreSQL for the evaluation period, estimated under 25 USD per month
@@ -356,7 +358,7 @@ Phases P0..Pn with exit criteria are maintained in [roadmap.md](../roadmap.md). 
 | Phase | Delivers |
 |---|---|
 | P0 | this documentation set, decisions, open questions |
-| P1 | milestone slice (2026-10-26): web application with sign-in, accounts and per-user keys, landing page, container image with local Compose and hosted deployment, project settings, providers Ollama and OpenAI, budget guard, universal scan and C# pack, `understand` on one area, Markdown cards, sample report on GitHub Pages, slides, video |
+| P1 | milestone slice (hosted by 2026-10-20, hand-in 2026-10-26): web application with sign-in, accounts and per-user keys, landing page, container image with local Compose and hosted deployment, project settings, providers Ollama and OpenAI, budget guard with reservations, universal scan and C# pack, `understand` on one area with the citation check, the live page, Markdown cards, the sample report as escaped HTML on GitHub Pages from the owner's hosted demo run (DEC-105), slides, video |
 | P2 | full `understand`: all areas, two-step verifier, open-question loop, golden-set evaluation, `estimate`, Anthropic and OpenAI-compatible adapters |
 | P3 | `report` (HTML) and `plan`: Plan setup, the principle catalogue and the hand-off package (ADR-018) |
 | P4 (R2) | second demo target in another stack, provider comparison, final master delivery; the Claude Code plugin mode only if brought back into scope (DEC-60) |

@@ -56,15 +56,21 @@ every variable with a comment and a safe example.
 |---|---|---|---|
 | `DATABASE_URL` | yes | yes | PostgreSQL URL for `rosetta_app` |
 | `DATABASE_MIGRATOR_URL` | no | yes | URL for `rosetta_migrator`; `DATABASE_URL` is used when absent |
-| `ROSETTA_SECRET_KEY` | yes | yes | 32 random bytes, base64; encrypts user provider keys (ADR-015); `ROSETTA_SECRET_KEY_PREVIOUS` during a rotation |
+| `ROSETTA_SECRET_KEY` | yes | yes | 32 random bytes, base64; the provider-key encryption key is derived from it with HKDF (ADR-015, DEC-112) |
+| `ROSETTA_SECRET_KEY_PREVIOUS` | no | yes | the previous key during a rotation; rows under it are re-encrypted at start-up |
 | `ROSETTA_PUBLIC_URL` | yes | no | the URL users open (`http://127.0.0.1:8080` locally); the `Origin` check compares with it |
 | `ROSETTA_DATA_DIR` | yes | no | `/data` in the image |
 | `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` | first start | yes | bootstrap administrator (RF-1102) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | no | yes | server keys (DEC-64) |
-| `ROSETTA_OLLAMA_URL` | no | no | `http://host.docker.internal:11434` locally; unset when hosted |
+| `ROSETTA_OLLAMA_URL` | no | no | `http://host.docker.internal:11434` locally; unset when hosted; the only source of the Ollama URL (DEC-112) |
 | `ROSETTA_CONTACT_EMAIL` | no | no | the landing page's "Request access" address (Q-20) |
 | `ROSETTA_LOG_LEVEL`, `ROSETTA_LOG_RETENTION_DAYS` | no | no | `info`, 14 |
 | `GITHUB_TOKEN` | no | yes | raises GitHub rate limits for snapshot downloads (RF-123) |
+| `ROSETTA_TRUST_PROXY` | no | no | number of proxy hops to trust for the client IP (rate limits, audit); 0 locally, 1 behind the host's proxy (DEC-112) |
+| `ROSETTA_APP_DB_PASSWORD`, `ROSETTA_MIGRATOR_DB_PASSWORD` | local only | yes | read by the Compose init script that creates the database roles (data-model.md section 6) |
+| `ROSETTA_TEST` | tests only | no | `1` enables the fake provider and fake GitHub and blocks real provider calls (ADR-008); refused when `ROSETTA_PUBLIC_URL` is https |
+| `ROSETTA_TEST_DATABASE_URL` | tests only | yes | the disposable PostgreSQL for integration tests (data-model.md section 8) |
+| `ROSETTA_GALLERY` | development only | no | serves the component gallery (design-system.md section 13); refused when `ROSETTA_PUBLIC_URL` is https |
 
 | Item | Where it lives |
 |---|---|
@@ -155,6 +161,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 |---|---|---|---|
 | Compiler | `typescript` | 6.0 (6.0.3) | not 7.x until typescript-eslint supports it (ADR-011) |
 | Node types | `@types/node` | 24.x | matches the runtime line |
+| Library types | `@types/pg`, `@types/yazl` | 8.23 / 3.3 | types for the two runtime packages that ship none |
 | Lint | `eslint`, `@eslint/js` | 10.12 / 10.0 | flat configuration only |
 | TypeScript lint | `typescript-eslint` | 8.71 | `strictTypeChecked` + `stylisticTypeChecked`, `projectService: true` |
 | Node lint | `eslint-plugin-n` | 18.4 | ESM resolution, Node 24 built-ins |
@@ -167,6 +174,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Git hooks | `lefthook` | 2.2 | no install scripts in the hooks |
 | Front-end build | `vite`, `@preact/preset-vite` | 8.3 / 2.10 | builds `web/` into static assets (DEC-52); preset compatibility with Preact 11 confirmed in the first web UI card |
 | Browser tests | `@playwright/test`, `@axe-core/playwright` | 1.64 / 4.13 | the e2e project for the web UI and report; accessibility checks (RNF-010) |
+| Component tests | `happy-dom`, `@testing-library/preact` | 20.14 / 3.2 | the `web` Vitest project (conventions section 7, DEC-112) |
 | Containers | Docker Engine, Docker Compose | 29.7 / v5.4 | on the owner's machine; base images `node:24-slim` and `postgres:17` pinned by digest |
 
 **Forbidden without an ADR**: any agent framework that owns the loop (ADR-003); provider SDKs outside
@@ -181,7 +189,10 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 - Cadence: one release per phase exit; patch releases as needed.
 - Build once: the release job builds the image once, pushes it to GHCR as `X.Y.Z` and `sha-<short>`, and attaches a
   CycloneDX SBOM (`npm sbom --sbom-format cyclonedx`) to the GitHub release (DEC-57). Every deployment uses that
-  exact tag.
+  exact tag. Before the first release (v0.1.0), the hosted deployment runs the `sha-<short>` image that CI built from
+  `main` (DEC-104).
+- The `Dockerfile` has a `test` stage with the fake provider and fake GitHub, used only by `compose.ci.yaml`; the
+  production stage contains no fakes, and `kind: fake` is refused unless `ROSETTA_TEST=1` (DEC-112).
 - After the GitHub Pages deploy, a smoke-test step fetches the published report's index and fails the job (`exit 1`)
   if it is missing or does not contain the run id.
 
@@ -200,8 +211,9 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 
 PostgreSQL 17 (ADR-016). Locally the `db` service of `compose.yaml` with the `pgdata` volume; hosted a managed
 PostgreSQL. The app applies pending migrations at start-up before it listens (RF-1302); a migration that fails stops
-the start and leaves the previous schema. The roles of data-model.md section 6 are created by the first migration
-when the connecting user may create roles, otherwise by the host's console (runbook).
+the start and leaves the previous schema. The roles of data-model.md section 6 are created locally by the Compose init
+script `db/init/roles.sh` (passwords from `.env`) and hosted in the host's console (runbook); migrations only grant
+(DEC-112).
 
 ## 10. Deployment procedure
 
@@ -209,8 +221,9 @@ when the connecting user may create roles, otherwise by the host's console (runb
 2. Local: `docker compose pull` (or `build`), `docker compose up -d`, sign in, run the demo `scan` and `understand`
    (RF-801, RF-1301).
 3. Release pull request, merge, tag; the release job pushes the image to GHCR.
-4. Hosted: back up the database (host snapshot), set the new image tag on the host, wait for `/healthz`, run the
-   smoke test (landing, sign-in with the teacher account, a fake-provider or cheap scan) (RF-1304).
+4. Hosted: run the OWASP ZAP baseline scan against the local Compose stack (threat model section 5); back up the
+   database (host snapshot), set the new image tag on the host, wait for `/healthz`, run the smoke test (landing,
+   sign-in with the teacher account, a cheap scan, which needs no provider) (RF-1304).
 5. Regenerate the sample report into `site/` in a pull request; merge; GitHub Pages publishes it (RF-800).
 6. Record the deployed tag and date in `docs/runbooks/deploy.md` and `handoff.md`.
 

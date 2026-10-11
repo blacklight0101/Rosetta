@@ -1,7 +1,7 @@
 # ADR-009: Structure Rosetta with Clean Architecture
 
 **Date**: 2026-10-09
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -54,3 +54,7 @@ check fails the build on any violation (RNF-013).
 - DEC-22, DEC-32, DEC-36, DEC-37.
 - RNF-005, RNF-013.
 - Refines ADR-002 and ADR-003 (layering); ADR-004, ADR-006, ADR-007, ADR-008.
+
+## Notes
+
+- 2026-10-11 (review, DEC-59): `presentation` is the Fastify web server and the composition root, not a CLI; the web front end in `web/` imports only the contract types in `src/application/contracts/`.

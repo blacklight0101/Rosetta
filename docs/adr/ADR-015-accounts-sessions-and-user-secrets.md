@@ -1,7 +1,7 @@
 # ADR-015: Accounts with passwords, server-side sessions and encrypted per-user provider keys
 
 **Date**: 2026-10-11
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -65,3 +65,7 @@ We choose option 1.
 - DEC-62, DEC-64, DEC-66, DEC-69; RF-1009, RF-1100..RF-1109.
 - Amends ADR-012 (accounts replace the per-session URL token) and ADR-013 (new trust boundaries in the threat
   model).
+
+## Notes
+
+- 2026-10-11 (review, DEC-112): the provider-key encryption key is derived from `ROSETTA_SECRET_KEY` with HKDF-SHA256 (info `rosetta/provider-keys/v1`); `key_version` is the key's fingerprint and rows under the previous key are re-encrypted at start-up. scrypt runs with `maxmem` 256 MiB and at most two hashes at a time, so the host needs at least 1 GiB of memory. CSRF tokens use the `@fastify/csrf-protection` cookie mode (`__Host-` cookie, `SameSite=Strict`); the sign-in request is protected by the `Origin` check.

@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/build-plan`._
+_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/review-fixes`._
 
 ## Current state
 
@@ -9,7 +9,7 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Proposed**;
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-019; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-101.
+- `docs/decision-log.md` - decisions DEC-01..DEC-112.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
@@ -24,7 +24,8 @@ _Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on 
 - `docs/process-flows.md` - written 2026-10-11, eight flows (DEC-93..DEC-95); PDF `docs/rosetta-flows.pdf` and private
   page https://claude.ai/artifact/1LY8Fx8ZFjxSQXvtRFDoDj, both regenerated 2026-10-11.
 - `docs/orchestration/` - build plan written 2026-10-11: protocol (merge rules, usage throttle, gates) and the task
-  cards of P1..P3 with the counts in the [tasks.md totals](docs/orchestration/tasks.md) (DEC-96..DEC-101).
+  cards of P1..P3 with the counts in the [tasks.md totals](docs/orchestration/tasks.md) (DEC-96..DEC-101), revised
+  after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
 
@@ -37,7 +38,12 @@ revised v1 screens (DEC-71). Branch `docs/planning-brief` adds the planning brie
 roadmap and the process flows (DEC-87..DEC-95). Branch `docs/build-plan` adds the build plan (protocol, cards for
 P1..P3, orchestrator agent), ADR-019 (Proposed: `tar` and `ignore`), and DEC-96..DEC-101: the orchestrator merges
 task-card pull requests itself under the merge rules; RF-240 and the first RF-425 scenario move into P1; gate names
-aligned; up to 3 agents under a 5-hour usage throttle.
+aligned; up to 3 agents under a 5-hour usage throttle. PR #8 merged the build plan; milestones P1..P3 and issues
+#9..#88 exist (one per card). Branch `docs/review-fixes` applies the owner's answers to the light review
+(DEC-102..DEC-112): card sizes are agent time and the dates stand; the model verifier stays in P2; the hosted deploy is
+split into P1-48 (host ADR) and P1-55 (deploy, behind new gate G-07); the zip export is split into P1-56; cap
+semantics, estimate warning, ignore union, audit retention, owner checks and a technical bundle; status lines now
+reach `main` through `docs/build-status` pull requests after merges; ADR-006, 007, 009, 014 and 015 amended.
 
 Next, in this order (ask the owner before each):
 1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56).
@@ -46,13 +52,17 @@ Next, in this order (ask the owner before each):
 2a. ~~Plan setup artboard~~ DONE 2026-10-11: artboard 14, approved as a G-02 amendment (DEC-86).
 3. ~~Roadmap and process flows~~ DONE 2026-10-11: DEC-87..DEC-95; PDF and page published.
 4. ~~Build plan~~ DONE 2026-10-11: DEC-96..DEC-101, ADR-019; pull request for the owner to merge.
-5. After the owner merges the build plan: create milestones P1..P3 and one issue per card (DEC-101).
+5. ~~Create milestones P1..P3 and one issue per card~~ DONE 2026-10-11: issues #9..#88 (DEC-101).
+5a. Owner merges `docs/review-fixes` (`needs-owner`). Then the orchestrator creates the issues for P1-55 and P1-56
+   and updates the bodies of the issues whose cards changed (P1-03, 05..09, 11, 13, 14, 16..18, 21, 22, 24..27, 29,
+   30, 34..36, 40, 42..50, 54, P2-01, P2-02, P2-12, P2-14, P3-08, P3-12).
 6. Owner: add the CI jobs as required status checks to the `main` ruleset once P1-02 is merged
    (environments-and-delivery.md section 5).
 7. Owner reviews the whole set on 2026-10-13 (accepts ADR-019 or changes it); G-01 opens only then (DEC-33). Then
    start the build as the orchestrator (`claude --agent orchestrator` in `C:\BuildingFolder\Rosetta`).
 
-Blockers: none.
+Blockers: none. G-04 (Ollama with the DEC-53 models folder and an OpenAI key) holds only the live checks of P1-25,
+P1-26 and P1-47; the reader model of Q-04 comes from the P1-47 spike.
 
 ## Agenda for the next session (ask the owner first)
 
@@ -74,9 +84,10 @@ opened it; a `Provisional` gate names the only cards it releases.
 | G-01 | Documentation set accepted | Closed | - | opens only after the owner reviews the whole set (DEC-33); no provisional opening |
 | G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70); v1 artboards 1-6 revised (DEC-71); Plan setup, artboard 14 (DEC-86) |
 | G-03 | Public GitHub repository ready | Open | 2026-10-11 | opened by BlackLigth (blacklight0101) in the build-plan session (DEC-101): `blacklight0101/Rosetta` exists, `main` pushed and protected |
-| G-04 | Provider access ready | Closed | - | Ollama installed with the model of Q-04; OpenAI key in the environment |
+| G-04 | Provider access ready | Closed | - | Ollama installed with the DEC-53 models folder; OpenAI key in the owner's `.env`; holds only live-check parts (DEC-104) |
 | G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26: hosted URL, teacher account (RF-803) |
-| G-06 | Hosted deployment ready | Closed | - | host chosen (Q-18), secrets set, smoke test passed, teacher account signs in; by 2026-10-24 |
+| G-06 | Hosted deployment ready | Closed | - | `sha-<short>` image deployed, smoke test passed, teacher account signs in; by 2026-10-24 |
+| G-07 | Host account and secrets ready | Closed | - | the owner creates the host account and stores the secrets after the host ADR of P1-48 merges (DEC-104) |
 
 
 ## Decisions pending
@@ -85,6 +96,16 @@ opened it; a `Provisional` gate names the only cards it releases.
 - Deferred ADRs and their triggers are listed in the [ADR index](docs/adr/README.md).
 
 ## Session log
+
+- **2026-10-11 (review fixes)** - light review of the build plan (three slice reviewers, high findings verified);
+  the owner took every default: DEC-102..DEC-112. Applied on branch `docs/review-fixes`: requirements (CLI wording
+  removed, Q-02, Q-03, Q-08, Q-11 closed, caps semantics, estimate warning, ignore union, sign-in CSRF, SSRF on
+  connect), data model (`cost_reservations`, HKDF fingerprint, `first_failed_at`, roles outside migrations), ADRs
+  006, 007, 009, 014, 015 amended and 012 noted, architecture (`Scheduler`, `StopRun`, `ReadRunFile`), conventions,
+  environments, threat model, decision log annotations, tasks (dependency fixes, P1-48 split into P1-48 and P1-55,
+  P1-40 split into P1-40 and P1-56, gate fixes, totals 82 cards), protocol (status after merge, P1-01 merge
+  exception, owner checks, G-07), agents, roadmap, RFC, flows 3-5 (PDF and page regenerated). Journal:
+  `docs/journal/2026-10-11-review-fixes.md`. Next: owner merges, new issues, G-01 review on 2026-10-13.
 
 - **2026-10-11 (build plan)** - protocol and task cards for P1..P3 written from the templates; DEC-96: the
   orchestrator opens and merges task-card pull requests itself under strict merge rules (decision documents stay with
