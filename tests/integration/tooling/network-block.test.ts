@@ -1,7 +1,8 @@
 import { once } from 'node:events';
 import { get as httpGet, createServer, type Server } from 'node:http';
 import { get as httpsGet } from 'node:https';
-import { connect as netConnect } from 'node:net';
+import type { LookupFunction } from 'node:net';
+import { Socket, connect as netConnect } from 'node:net';
 import { connect as tlsConnect } from 'node:tls';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -46,6 +47,23 @@ describe('RNF-005 outbound network block', () => {
     const error = await fetch('https://example.com/').catch((reason: unknown) => reason);
     expect(error).toBeInstanceOf(Error);
     expect(String(error instanceof Error ? error.cause : error)).toMatch(BLOCKED);
+  });
+
+  it('RNF-005 refuses a numeric-string port to a public address', async () => {
+    const socket = new Socket();
+    const error = await failureOf(() => socket.connect('80' as unknown as number, '192.0.2.1'));
+    socket.destroy();
+    expect(error.message).toMatch(BLOCKED);
+  });
+
+  it('RNF-005 refuses a loopback name that a custom lookup resolves to a public address', async () => {
+    const lookup: LookupFunction = (_host, options, callback) => {
+      if (options.all === true) callback(null, [{ address: '192.0.2.1', family: 4 }]);
+      else callback(null, '192.0.2.1', 4);
+    };
+    const error = await failureOf(() => netConnect({ host: 'localhost', port: 80, lookup }));
+    expect(error.message).toMatch(BLOCKED);
+    expect(error.message).toContain('192.0.2.1');
   });
 });
 
