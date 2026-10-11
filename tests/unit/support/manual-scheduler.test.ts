@@ -3,7 +3,7 @@ import { ManualScheduler } from '../../support/manual-scheduler.js';
 
 describe('ManualScheduler', () => {
   it('RF-1101 runs every registered job only when ticked', async () => {
-    const scheduler = new ManualScheduler();
+    const scheduler = new ManualScheduler(vi.fn());
     const first = vi.fn(() => Promise.resolve());
     const second = vi.fn(() => Promise.resolve());
     scheduler.every(3_600_000, first);
@@ -17,7 +17,7 @@ describe('ManualScheduler', () => {
   });
 
   it('RF-1101 forgets a cancelled job', async () => {
-    const scheduler = new ManualScheduler();
+    const scheduler = new ManualScheduler(vi.fn());
     const job = vi.fn(() => Promise.resolve());
     const cancel = scheduler.every(1000, job);
 
@@ -30,7 +30,7 @@ describe('ManualScheduler', () => {
   });
 
   it('RF-1101 exposes the interval each job asked for', () => {
-    const scheduler = new ManualScheduler();
+    const scheduler = new ManualScheduler(vi.fn());
     scheduler.every(1000, () => Promise.resolve());
     scheduler.every(5000, () => Promise.resolve());
 

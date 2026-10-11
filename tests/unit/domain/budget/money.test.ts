@@ -10,6 +10,8 @@ import {
 describe('Money', () => {
   it('RF-420 keeps integer micro-USD and starts at zero', () => {
     expect(microUsd(1_500_000n).micros).toBe(1_500_000n);
+    expect(microUsd(1n).currency).toBe('USD');
+    expect(zeroUsd()).toEqual({ micros: 0n, currency: 'USD' });
     expect(zeroUsd().micros).toBe(0n);
   });
 
@@ -45,7 +47,9 @@ describe('Money', () => {
     [1_234_567n, '$1.23'],
     [1_004_999n, '$1.00'],
     [1_005_000n, '$1.01'],
-    [1_234_567_890_123n, '$1234567.89'],
+    [1_234_567_890_123n, '$1,234,567.89'],
+    [1_000_000_000n, '$1,000.00'],
+    [999_000_000n, '$999.00'],
     [-1_500_000n, '-$1.50'],
     [-12_300n, '-$0.0123'],
   ])('RF-420 formats %s micro-USD as %s (4 decimals below 1, 2 above)', (micros, expected) => {
