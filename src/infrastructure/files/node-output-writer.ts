@@ -65,6 +65,8 @@ export class NodeOutputWriter implements OutputWriter {
   async writeText(file: WorkspaceFile, content: string): Promise<Result<void, WriteRefusal>> {
     const target = await this.#resolve(file, 'replace');
     if (!target.ok) return target;
+    const swapped = await this.#parentProblem(target.value, file.userId);
+    if (swapped !== undefined) return this.#refuse(swapped, file);
     const temporary = join(dirname(target.value), `.${basename(target.value)}.${randomUUID()}.tmp`);
     try {
       await writeFile(temporary, content, { encoding: 'utf8', flag: 'wx' });
