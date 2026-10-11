@@ -15,7 +15,7 @@ export function languagePackContract(
       const pack = await create();
 
       expect(pack.name).not.toBe('');
-      expect(pack.version).not.toBe('');
+      expect([pack.name, pack.version]).not.toContain('');
       expect(pack.extensions.length).toBeGreaterThan(0);
       for (const extension of pack.extensions) expect(extension).toMatch(/^\.[a-z0-9]+$/u);
     });
@@ -24,9 +24,8 @@ export function languagePackContract(
       const analysis = (await create()).analyse(sample);
 
       expect(analysis.symbols.length).toBeGreaterThan(0);
-      expect(Array.isArray(analysis.references)).toBe(true);
-      expect(Array.isArray(analysis.routes)).toBe(true);
-      expect(Array.isArray(analysis.entities)).toBe(true);
+      const lists = [analysis.references, analysis.routes, analysis.entities];
+      expect(lists.every((list) => Array.isArray(list))).toBe(true);
     });
 
     it('RF-110 keeps every line range inside the file and every record on the file path', async () => {
@@ -51,9 +50,8 @@ export function languagePackContract(
     });
 
     it('RF-110 answers an empty file with no symbols instead of failing', async () => {
-      const analysis = (await create()).analyse({ path: sample.path, text: '' });
-
-      expect(analysis.symbols).toEqual([]);
+      const empty = (await create()).analyse({ path: sample.path, text: '' });
+      expect(empty.symbols).toEqual([]);
     });
   });
 }

@@ -121,3 +121,25 @@ describe('dependency-cruiser layer rule: provider SDKs', () => {
     expect(report).not.toContain('openai-sdk-only-in-openai-adapter');
   });
 });
+
+describe('dependency-cruiser layer rule: tree-sitter', () => {
+  const root = useTempRoot('rosetta-arch-');
+
+  it.each([
+    ['src/infrastructure/scan/universal/walk.ts', 'web-tree-sitter'],
+    ['src/infrastructure/files/reader.ts', 'tree-sitter-c-sharp/tree-sitter-c_sharp.wasm'],
+    ['src/application/ports/thing.ts', 'web-tree-sitter'],
+  ])('RF-110 %s importing %s is reported', async (file, module) => {
+    const report = await cruise(root.path, { [file]: importing(module) });
+
+    expect(report).toContain('tree-sitter-only-in-packs');
+  });
+
+  it('RF-110 a pack under infrastructure/scan/packs may import web-tree-sitter', async () => {
+    const report = await cruise(root.path, {
+      'src/infrastructure/scan/packs/csharp/grammar.ts': importing('web-tree-sitter'),
+    });
+
+    expect(report).not.toContain('tree-sitter-only-in-packs');
+  });
+});

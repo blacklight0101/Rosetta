@@ -72,7 +72,9 @@ describe('analysis with language packs', () => {
     expect(result.symbols).toEqual([]);
     expect(result.languagePacks).toEqual([]);
   });
+});
 
+describe('analysis with language packs (failures)', () => {
   it('RF-110 falls back to coarse with a warning when a pack fails on one file and goes on', async () => {
     const { run, logger } = setup({ 'bad.tst': 'type Bad\n', 'good.tst': 'type Good\n' }, [
       new TestLanguagePack({ failOn: (path) => path === 'bad.tst' }),
@@ -91,7 +93,9 @@ describe('analysis with language packs', () => {
     expect(warnings[0]).toMatchObject({ logger: 'scan', code: 'RST-1200' });
     expect(warnings[0]?.data).toMatchObject({ path: 'bad.tst', pack: 'test' });
   });
+});
 
+describe('analysis with language packs (privacy and skipped files)', () => {
   it('RF-141 never copies the text of a pack failure or of the file into the log', async () => {
     const secret = ["AK", "IA", "ABCDEFGHIJKLMNOP"].join("");
     const { run, logger } = setup({ 'bad.tst': `boom ${secret}\n` }, [new TestLanguagePack()]);
@@ -123,7 +127,9 @@ describe('analysis with language packs', () => {
     ]);
     expect(result.symbols).toEqual([]);
   });
+});
 
+describe('analysis with language packs (ordering and links)', () => {
   it('RF-106 sorts symbols by path and line whatever order the files arrive in', async () => {
     const { run } = setup(
       { 'z.tst': 'type Z\nfn z2\n', 'a.tst': 'fn a1\ntype A\n' },

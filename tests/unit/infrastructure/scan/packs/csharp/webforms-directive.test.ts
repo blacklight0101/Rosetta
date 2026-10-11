@@ -51,7 +51,9 @@ describe('WebForms code-behind link', () => {
 
     expect(reference).toEqual({ from: 'A.aspx', to: 'A.aspx.cs', kind: 'code-behind' });
   });
+});
 
+describe('WebForms code-behind link (part 2)', () => {
   it('RF-111 refuses a code-behind that climbs out of the repository', () => {
     const text = page('<%@ Page CodeBehind="../../../etc/x.cs" Inherits="A.B" %>');
 

@@ -78,7 +78,9 @@ describe('C# pack symbols', () => {
       'method:N.Outer.Inner.F',
     ]);
   });
+});
 
+describe('C# pack symbols (part 2)', () => {
   it('RF-111 handles file-scoped namespaces and declarations inside preprocessor blocks', () => {
     const { symbols } = analyse(
       'namespace A.B;\n#if DEBUG\npublic class C1 { }\n#else\npublic class C2 { }\n#endif\nclass C3 { }\n',

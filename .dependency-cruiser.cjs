@@ -79,6 +79,16 @@ module.exports = {
       to: { path: '^openai(/|$)|node_modules/openai/' },
     },
     {
+      name: 'tree-sitter-only-in-packs',
+      comment:
+        'web-tree-sitter and its grammars only from src/infrastructure/scan/packs/ (ADR-004, DEC-11)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/infrastructure/scan/packs/' },
+      to: {
+        path: '^(web-tree-sitter|tree-sitter-c-sharp)(/|$)|node_modules/(web-tree-sitter|tree-sitter-c-sharp)/',
+      },
+    },
+    {
       name: 'tar-only-in-github',
       comment: 'tar only from src/infrastructure/github/ (ADR-019)',
       severity: 'error',

@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreDependencies": ["tree-sitter-c-sharp"],
   "entry": [
     "src/presentation/main.ts",
     "scripts/*.mjs",

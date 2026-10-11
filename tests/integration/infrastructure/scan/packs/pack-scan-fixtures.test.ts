@@ -80,7 +80,9 @@ describe('C# pack on the WebForms fixtures', () => {
     const edit = result.symbols.find((s) => s.name === 'EditPage');
     expect(edit).toMatchObject({ path: 'Admin/Edit.aspx.cs', container: 'ShopWeb.Admin' });
   });
+});
 
+describe('C# pack on the WebForms fixtures (part 2)', () => {
   it('RF-111 records the entity sets of the DbContext as candidate entities', async () => {
     const result = await analyseFixture('webforms-ef', new LanguagePackRegistry([csharp]));
 
