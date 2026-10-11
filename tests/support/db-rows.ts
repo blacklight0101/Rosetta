@@ -1,5 +1,6 @@
-import { randomUUID } from 'node:crypto';
-import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
+import type { DatabasePool } from '../../src/infrastructure/db/pool.js';
+import { testClock } from './postgres.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 // Valid rows for the release-1 tables, with fixed parameterised INSERT statements. A test
 // overrides one value to see the schema refuse it. Generated test data only.
@@ -11,7 +12,18 @@ export interface Insert {
   readonly params: unknown[];
 }
 
-const at = new Date('2026-10-11T09:00:00.000Z');
+const ids = new SequenceIdGenerator();
+const at = testClock.now();
+
+/** A fresh predictable UUID; unique within one test file (each file has its own schema). */
+export function newId(): string {
+  return ids.uuid();
+}
+
+/** The last twelve digits of a fresh id, for names that must be unique. */
+function suffix(): string {
+  return newId().slice(-12);
+}
 
 /** The fixed statement, with the values in the order of `defaults` (the statement's columns). */
 function statement(sql: string, defaults: Values, overrides: Values): Insert {
@@ -23,8 +35,8 @@ export function user(overrides: Values = {}): Insert {
   return statement(
     'INSERT INTO users (id, user_name, display_name, role, state, password_hash, failed_sign_ins, server_keys_allowed, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
     {
-      id: randomUUID(),
-      user_name: `user.${randomUUID().slice(0, 8)}`,
+      id: newId(),
+      user_name: `user.${suffix()}`,
       display_name: 'Test User',
       role: 'user',
       state: 'Active',
@@ -42,7 +54,7 @@ export function session(userId: string, overrides: Values = {}): Insert {
   return statement(
     'INSERT INTO sessions (id_hash, user_id, created_at, last_seen_at, expires_at, ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6, $7)',
     {
-      id_hash: Buffer.alloc(32, randomUUID()),
+      id_hash: Buffer.alloc(32, newId()),
       user_id: userId,
       created_at: at,
       last_seen_at: at,
@@ -77,10 +89,10 @@ export function project(userId: string, overrides: Values = {}): Insert {
   return statement(
     'INSERT INTO projects (id, user_id, name, source_url, ref, subpath, settings, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
     {
-      id: randomUUID(),
+      id: newId(),
       user_id: userId,
       name: 'owner/repo',
-      source_url: `https://github.com/owner/${randomUUID()}`,
+      source_url: `https://github.com/owner/repo-${suffix()}`,
       ref: '',
       subpath: '',
       settings: { schemaVersion: 1 },
@@ -95,10 +107,10 @@ export function run(projectId: string, userId: string, overrides: Values = {}): 
   return statement(
     'INSERT INTO runs (id, project_id, user_id, run_key, stage, queue_state, end_state, queued_at, cost_micros, input_tokens, output_tokens, cached_input_tokens) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
     {
-      id: randomUUID(),
+      id: newId(),
       project_id: projectId,
       user_id: userId,
-      run_key: `20261011-090000-scan-${randomUUID().slice(0, 8)}`,
+      run_key: `20261011-090000-scan-${suffix()}`,
       stage: 'scan',
       queue_state: 'Queued',
       end_state: null,
@@ -118,8 +130,8 @@ export function ledgerRow(userId: string, overrides: Values = {}): Insert {
     {
       at,
       user_id: userId,
-      project_id: randomUUID(),
-      run_id: randomUUID(),
+      project_id: newId(),
+      run_id: newId(),
       stage: 'understand',
       role: 'reader',
       provider: 'fake',
@@ -143,9 +155,9 @@ export function reservation(userId: string, overrides: Values = {}): Insert {
   return statement(
     'INSERT INTO cost_reservations (call_id, user_id, run_id, key_source, worst_case_micros, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
     {
-      call_id: `call-${randomUUID()}`,
+      call_id: `call-${suffix()}`,
       user_id: userId,
-      run_id: randomUUID(),
+      run_id: newId(),
       key_source: 'server',
       worst_case_micros: 100,
       expires_at: at,

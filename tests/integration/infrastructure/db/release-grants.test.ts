@@ -1,15 +1,14 @@
-import { randomUUID } from 'node:crypto';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
 import { appendOnlyTables, readWriteTables } from './expected-schema.js';
-import { auditEvent, insert, ledgerRow, outcomeOf, user } from './rows.js';
+import { auditEvent, insert, ledgerRow, newId, outcomeOf, user } from '../../../support/db-rows.js';
 
 const INSUFFICIENT_PRIVILEGE = '42501';
 const PRIVILEGES = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE'] as const;
 
 const database = useTestDatabase();
-const ownerId = randomUUID();
+const ownerId = newId();
 let ready: Promise<DatabasePool> | undefined;
 
 /** One migrated schema for the file, with a user, a ledger row and an audit event. */

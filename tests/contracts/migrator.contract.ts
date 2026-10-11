@@ -25,6 +25,16 @@ const failing = toMigrationFile(
   'CREATE TABLE gadgets (id int);\nSELECT * FROM no_such_table;\n',
 );
 
+// Succeeds on its own, but records its own version, so recording it afterwards conflicts.
+const recordsItself = toMigrationFile(
+  '0001_records_itself.sql',
+  [
+    'CREATE TABLE widgets (id int);',
+    "INSERT INTO schema_version (version, name, checksum, applied_at) VALUES (1, 'x', 'x', now());",
+    '',
+  ].join('\n'),
+);
+
 async function failureOf(action: () => Promise<unknown>): Promise<RosettaError> {
   try {
     await action();
@@ -118,6 +128,31 @@ function refusingTests(fresh: () => Promise<MigratorStore>): void {
   });
 }
 
+function safetyTests(fresh: () => Promise<MigratorStore>): void {
+  it('RF-1302 a migration and its schema_version row commit together or not at all', async () => {
+    const store = await fresh();
+
+    const error = await failureOf(() => store.migratorFor([recordsItself]).migrate());
+
+    expect(error.code).toBe(ERROR_CODES.migrationFailed);
+    expect(await store.tableExists('widgets')).toBe(false);
+    expect(await store.recorded()).toEqual([]);
+  });
+
+  it('RF-1302 two migrators starting together apply every migration once', async () => {
+    const store = await fresh();
+    const migrations = [createWidgets, addColour];
+
+    const [first, second] = await Promise.all([
+      store.migratorFor(migrations).migrate(),
+      store.migratorFor(migrations).migrate(),
+    ]);
+
+    expect([...first, ...second].map((migration) => migration.version).sort()).toEqual([1, 2]);
+    expect(await store.recorded()).toHaveLength(2);
+  });
+}
+
 /** Contract of the Migrator port (RF-1302): every adapter must pass it. */
 export function migratorContract(name: string, fresh: () => Promise<MigratorStore>): void {
   describe(`Migrator contract: ${name} applies`, () => {
@@ -125,5 +160,8 @@ export function migratorContract(name: string, fresh: () => Promise<MigratorStor
   });
   describe(`Migrator contract: ${name} refuses`, () => {
     refusingTests(fresh);
+  });
+  describe(`Migrator contract: ${name} is safe`, () => {
+    safetyTests(fresh);
   });
 }

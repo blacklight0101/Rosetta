@@ -57,6 +57,7 @@ describe('environment: optional values and defaults', () => {
         ROSETTA_CONTACT_EMAIL: 'contact@example.com',
         ROSETTA_APP_DB_PASSWORD: 'fake-app-db',
         ROSETTA_MIGRATOR_DB_PASSWORD: 'fake-migrator-db',
+        ROSETTA_DB_ADMIN_PASSWORD: 'fake-db-admin',
       }),
     );
 
@@ -69,6 +70,7 @@ describe('environment: optional values and defaults', () => {
     expect(environment.contactEmail).toBe('contact@example.com');
     expect(environment.appDbPassword).toBe('fake-app-db');
     expect(environment.migratorDbPassword).toBe('fake-migrator-db');
+    expect(environment.dbAdminPassword).toBe('fake-db-admin');
   });
 });
 

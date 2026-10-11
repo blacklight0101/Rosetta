@@ -30,10 +30,17 @@ describe('compose.yaml', () => {
     expect(ports).toEqual(['127.0.0.1:5432:5432']);
   });
 
+  it('RF-1301 bootstraps the image with its default superuser, not a Rosetta role', async () => {
+    const text = await compose();
+
+    expect(text).not.toMatch(/POSTGRES_USER:/);
+    expect(text).not.toMatch(/rosetta_migrator|rosetta_app/);
+  });
+
   it('RNF-003 takes the database password from .env, never from the file', async () => {
     const text = await compose();
 
-    expect(text).toMatch(/POSTGRES_PASSWORD: \$\{ROSETTA_MIGRATOR_DB_PASSWORD:\?/);
+    expect(text).toMatch(/POSTGRES_PASSWORD: \$\{ROSETTA_DB_ADMIN_PASSWORD:\?/);
     expect(text).not.toMatch(/PASSWORD: [^$\s]/);
   });
 });

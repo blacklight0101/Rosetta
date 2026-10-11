@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
@@ -6,6 +5,7 @@ import {
   auditEvent,
   insert,
   ledgerRow,
+  newId,
   outcomeOf,
   project,
   providerKey,
@@ -14,7 +14,7 @@ import {
   session,
   user,
   type Insert,
-} from './rows.js';
+} from '../../../support/db-rows.js';
 
 const CHECK_VIOLATION = '23514';
 const UNIQUE_VIOLATION = '23505';
@@ -91,7 +91,7 @@ const accepted: readonly Case[] = [
 ];
 
 const database = useTestDatabase();
-const parents = { userId: randomUUID(), projectId: randomUUID() };
+const parents = { userId: newId(), projectId: newId() };
 let ready: Promise<DatabasePool> | undefined;
 
 /** One migrated schema for the file, with an owner and a project to hang rows on. */
@@ -172,12 +172,20 @@ describe.skipIf(!hasTestDatabase)('release-1 references', () => {
   });
 
   it('RF-1302 a session needs an existing user', async () => {
-    expect(await outcomeOf(pool, session(randomUUID()))).toBe(FOREIGN_KEY_VIOLATION);
+    expect(await outcomeOf(pool, session(newId()))).toBe(FOREIGN_KEY_VIOLATION);
+  });
+
+  it("RF-1105 a run's user is the owner of its project", async () => {
+    const otherId = newId();
+    await insert(pool, user({ id: otherId }));
+
+    expect(await outcomeOf(pool, run(parents.projectId, otherId))).toBe(FOREIGN_KEY_VIOLATION);
+    expect(await outcomeOf(pool, run(parents.projectId, parents.userId))).toBe('ok');
   });
 
   it('RF-1302 deleting a user deletes its sessions, deleting a project deletes its runs', async () => {
-    const ownerId = randomUUID();
-    const projectId = randomUUID();
+    const ownerId = newId();
+    const projectId = newId();
     await insert(pool, user({ id: ownerId }));
     await insert(pool, session(ownerId));
     await insert(pool, project(ownerId, { id: projectId }));
