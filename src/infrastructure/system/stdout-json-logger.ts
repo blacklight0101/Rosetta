@@ -29,9 +29,9 @@ export class StdoutJsonLogger implements Logger {
 
   log(record: LogRecord): Promise<void> {
     const { output, clock, masker, minLevel } = this.options;
-    if (isAtLeast(record.level, minLevel)) {
-      output.write(toJsonLine(formatLogEntry(record, clock.now(), masker)));
-    }
+    // Filter on the formatted entry, so a withheld security warning is never filtered away.
+    const logEntry = formatLogEntry(record, clock.now(), masker);
+    if (isAtLeast(logEntry.level, minLevel)) output.write(toJsonLine(logEntry));
     return Promise.resolve();
   }
 

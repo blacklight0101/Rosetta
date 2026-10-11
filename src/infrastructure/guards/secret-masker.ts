@@ -26,7 +26,9 @@ export interface MaskRule {
 
 // A value that an earlier rule already replaced is never masked again.
 const notMasked = String.raw`(?!\[MASKED:)`;
-const passwordKey = String.raw`\b[\w.-]*?(?:password|passwd|pwd)["']?[ \t]*(?::=|[:=])[ \t]*`;
+// RF-141: anchored on the keyword (no open-ended prefix) so no pattern rescans the input from
+// every position; every repetition that could meet a long run of matching text is bounded.
+const passwordKey = String.raw`(?:password|passwd|pwd)["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}`;
 
 // The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
 // whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
@@ -34,7 +36,7 @@ const defaultRules: readonly MaskRule[] = [
   {
     kind: 'private-key',
     pattern:
-      /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----(?:[\s\S]*?-----END (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----|[\s\S]*$)/g,
+      /-----BEGIN (?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY(?: BLOCK)?-----(?:[\s\S]*?-----END (?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY(?: BLOCK)?-----|[\s\S]*$)/g,
   },
   {
     kind: 'api-key',
@@ -44,28 +46,31 @@ const defaultRules: readonly MaskRule[] = [
   {
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>\bBearer[ \t]+)${notMasked}[A-Za-z0-9._~+/=-]{20,}`,
+      String.raw`(?<keep>\bBearer[ \t]{1,16})${notMasked}[A-Za-z0-9._~+/=-]{20,}`,
       'gi',
     ),
   },
   {
+    // The user may be empty (`redis://:secret@host`); the password runs to the last `@` of the
+    // authority, so a password that contains `@` is masked whole.
     kind: 'connection-string',
     pattern: new RegExp(
-      String.raw`(?<keep>\b[A-Za-z][A-Za-z0-9+.-]*://[^\s:/@"'[\]]+:)${notMasked}[^\s@/"']+(?=@)`,
+      String.raw`(?<keep>\b[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s:/@"'[\]]{0,256}:)${notMasked}[^\s/"']{1,512}(?=@)`,
       'g',
     ),
   },
   {
     kind: 'connection-string',
     pattern: new RegExp(
-      String.raw`(?<keep>;[ \t]*(?:password|pwd)[ \t]*=[ \t]*)${notMasked}[^;"'\s][^;"'\r\n]*`,
+      String.raw`(?<keep>;[ \t]{0,16}(?:password|pwd)[ \t]{0,16}=[ \t]{0,16})${notMasked}[^;"'\s][^;"'\r\n]*`,
       'gi',
     ),
   },
   {
+    // A quoted value ends at its closing quote; a backslash escape such as \" belongs to it.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>${passwordKey}(?<quote>["']))${notMasked}(?:(?!\k<quote>)[^\r\n])+`,
+      String.raw`(?<keep>${passwordKey}(?<quote>["']))${notMasked}(?:\\[^\r\n]|(?!\k<quote>)[^\r\n\\])+`,
       'gi',
     ),
   },

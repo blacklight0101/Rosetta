@@ -76,10 +76,11 @@ export class JsonlFileLogger implements Logger {
     }
   }
 
-  /** The names in the logs folder; none before the first entry created it. */
+  /** The names of the files in the logs folder; none before the first entry created it. */
   private async fileNames(): Promise<string[]> {
     try {
-      return await readdir(this.directory);
+      const entries = await readdir(this.directory, { withFileTypes: true });
+      return entries.filter((item) => item.isFile()).map((item) => item.name);
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
       throw error;

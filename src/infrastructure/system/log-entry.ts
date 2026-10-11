@@ -40,17 +40,23 @@ function maskData(
   masker: TextMasker,
 ): Record<string, LogValue> {
   return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [key, maskValue(value, masker)]),
+    Object.entries(data).map(([key, value]) => [masker.mask(key).text, maskValue(value, masker)]),
   );
 }
 
-/** The ids that apply, in their fixed order, leaving out the absent ones. */
-function idFields(context: LogContext): LogContext {
+/** Every string of the record masked: logger, message, ids, data keys and data values. */
+function maskRecord(record: LogRecord, masker: TextMasker): LogRecord {
+  const mask = (text: string): string => masker.mask(text).text;
+  const { runId, agentTaskId, callId, userId, data } = record;
   return {
-    ...(context.runId === undefined ? {} : { runId: context.runId }),
-    ...(context.agentTaskId === undefined ? {} : { agentTaskId: context.agentTaskId }),
-    ...(context.callId === undefined ? {} : { callId: context.callId }),
-    ...(context.userId === undefined ? {} : { userId: context.userId }),
+    ...record,
+    logger: mask(record.logger),
+    message: mask(record.message),
+    ...(runId === undefined ? {} : { runId: mask(runId) }),
+    ...(agentTaskId === undefined ? {} : { agentTaskId: mask(agentTaskId) }),
+    ...(callId === undefined ? {} : { callId: mask(callId) }),
+    ...(userId === undefined ? {} : { userId: mask(userId) }),
+    ...(data === undefined ? {} : { data: maskData(data, masker) }),
   };
 }
 
@@ -58,7 +64,10 @@ function idFields(context: LogContext): LogContext {
 function contextFields(context: LogContext): LogContext {
   return {
     ...(context.code === undefined ? {} : { code: context.code }),
-    ...idFields(context),
+    ...(context.runId === undefined ? {} : { runId: context.runId }),
+    ...(context.agentTaskId === undefined ? {} : { agentTaskId: context.agentTaskId }),
+    ...(context.callId === undefined ? {} : { callId: context.callId }),
+    ...(context.userId === undefined ? {} : { userId: context.userId }),
     ...(context.data === undefined ? {} : { data: context.data }),
   };
 }
@@ -75,28 +84,21 @@ function entry(record: LogRecord, at: Date): LogEntry {
   };
 }
 
-/** RF-141, DEC-57: fail closed; only the ids survive, never the content that could not be masked. */
-function withheldEntry(record: LogRecord, at: Date): LogEntry {
-  return entry(
-    {
-      ...idFields(record),
-      level: 'warn',
-      logger: 'security',
-      message: withheldMessage,
-      code: ERROR_CODES.secretMaskingFailed,
-    },
-    at,
-  );
-}
-
-// RF-009, RNF-003: every entry passes the secret masking before any logger writes it.
+// RF-009, RNF-003: every entry passes the secret masking before any logger writes it. RF-141,
+// DEC-57: when masking fails the entry is withheld; nothing of the original record is kept.
 export function formatLogEntry(record: LogRecord, at: Date, masker: TextMasker): LogEntry {
   try {
-    const message = masker.mask(record.message).text;
-    const data = record.data === undefined ? undefined : maskData(record.data, masker);
-    return entry({ ...record, message, ...(data === undefined ? {} : { data }) }, at);
+    return entry(maskRecord(record, masker), at);
   } catch {
-    return withheldEntry(record, at);
+    return entry(
+      {
+        level: 'warn',
+        logger: 'security',
+        message: withheldMessage,
+        code: ERROR_CODES.secretMaskingFailed,
+      },
+      at,
+    );
   }
 }
 
