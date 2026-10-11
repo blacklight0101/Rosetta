@@ -28,10 +28,12 @@ const githubPat = ['github', 'pat', fakeValue(30)].join('_');
 const awsKeyId = ['AK', 'IA', fakeValue(16)].join('');
 const bearerToken = [fakeValue(24), fakeValue(30), fakeValue(20)].join('.');
 const fakePassword = `Pw${fakeValue(14)}`;
+const fakePasswordTail = `Tail${fakeValue(12)}`;
 const keyLines = [fakeValue(64), fakeValue(64), fakeValue(20)];
 const pemBegin = ['-----BEGIN', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
 const pemEnd = ['-----END', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
-const pkcs8Begin = ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ');
+/** The first line of a PKCS#8 key block, built from pieces (also the start of an unterminated block). */
+export const pkcs8Begin = ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ');
 const pkcs8End = ['-----END', 'PRIVATE', 'KEY-----'].join(' ');
 
 /** One case per secret pattern of RF-141. */
@@ -86,6 +88,20 @@ export const secretCases: readonly SecretCase[] = [
     secrets: [fakePassword],
   },
   {
+    name: 'a password in a connection URL with an empty user name',
+    kind: 'connection-string',
+    text: `REDIS_URL=redis://:${fakePassword}@cache:6379/0`,
+    masked: 'REDIS_URL=redis://:[MASKED:connection-string]@cache:6379/0',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a connection URL password that contains @',
+    kind: 'connection-string',
+    text: `amqp://app:${fakePassword}@${fakePasswordTail}@broker:5672/`,
+    masked: 'amqp://app:[MASKED:connection-string]@broker:5672/',
+    secrets: [fakePassword, fakePasswordTail],
+  },
+  {
     name: 'a Password setting in an ADO.NET connection string',
     kind: 'connection-string',
     text: `Server=db;Database=Catalog;User Id=sa;Password=${fakePassword};`,
@@ -129,6 +145,13 @@ export const secretCases: readonly SecretCase[] = [
     secrets: [fakePassword],
   },
   {
+    name: 'a JSON password with an escaped quote inside the value',
+    kind: 'password',
+    text: `{"password":"${fakePassword}\\"${fakePasswordTail}"}`,
+    masked: '{"password":"[MASKED:password]"}',
+    secrets: [fakePassword, fakePasswordTail],
+  },
+  {
     name: 'a password in YAML',
     kind: 'password',
     text: `database:\n  password: ${fakePassword}\n  user: app`,
@@ -167,4 +190,33 @@ export const innocentTexts: readonly string[] = [
   'The bearer of this note may pass.',
   'See https://example.com/docs:8080/path for details.',
   'AKIA is not a key on its own',
+];
+
+/**
+ * Shapes that make a backtracking pattern scan the rest of the input from every position (RF-141).
+ * Each secret-like prefix is built from pieces, like the cases above, so none appears as a literal.
+ */
+export const adversarialPieces: readonly string[] = [
+  'a.b-c',
+  ['sk', ''].join(dash),
+  'a-pwd',
+  'password',
+  ['pwd', ''].join('='),
+  'password \t',
+  'x://',
+  'a://:',
+  ':@',
+  '@',
+  'Bearer ',
+  [';pwd', ''].join('='),
+  '; ',
+  ['-----BEGIN', 'RSA', ''].join(' '),
+  pkcs8Begin,
+  ['ghp', 'aaaa'].join('_'),
+  ['github', 'pat', ''].join('_'),
+  ['AK', 'IA'].join(''),
+  ['password', '"\\'].join('='),
+  ['"password"', '"'].join(':'),
+  ['pwd', "'a\\'"].join('='),
+  ['pwd', '"\\"'].join('='),
 ];

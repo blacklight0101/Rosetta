@@ -48,8 +48,8 @@ describe('SecretMasker on the whole fixture', () => {
     expect(masker.mask(wholeFixture).counts).toEqual({
       'api-key': 5,
       'bearer-token': 1,
-      'connection-string': 4,
-      password: 4,
+      'connection-string': 6,
+      password: 5,
       'private-key': 3,
     });
   });

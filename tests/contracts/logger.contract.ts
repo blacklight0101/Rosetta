@@ -94,14 +94,22 @@ function securityTests(newHarness: NewHarness): void {
 }
 
 function maskingTests(newHarness: NewHarness): void {
-  it('RF-009 never writes a fixture secret, in the message or nested in data', async () => {
+  it('RF-009 never writes a fixture secret in any field, id, data key or data value', async () => {
     const harness = await newHarness();
-    for (const secretCase of secretCases) {
+    for (const { text } of secretCases) {
       await harness.logger.log({
         level: 'warn',
-        logger: 'fixture',
-        message: secretCase.text,
-        data: { nested: { content: secretCase.text, list: [secretCase.text] } },
+        logger: text,
+        message: text,
+        runId: text,
+        agentTaskId: text,
+        callId: text,
+        userId: text,
+        data: { [text]: text, nested: { content: text, list: [text], deeper: { [text]: 1 } } },
+      });
+      await harness.logger.securityEvent(ERROR_CODES.baseUrlRejected, {
+        message: text,
+        runId: text,
       });
     }
 
@@ -112,7 +120,7 @@ function maskingTests(newHarness: NewHarness): void {
     }
   });
 
-  it('RF-141 fails closed: a failing masker withholds the entry and logs the failure', async () => {
+  it('RF-141 fails closed: a failing masker withholds the entry, ids included, and logs it', async () => {
     const harness = await newHarness(new FailingMasker());
     const [secretCase] = secretCases;
     await harness.logger.log({
@@ -131,7 +139,6 @@ function maskingTests(newHarness: NewHarness): void {
         logger: 'security',
         message: 'Log entry withheld because secret masking failed.',
         code: 'RST-2101',
-        runId: 'run-1',
       },
     ]);
   });

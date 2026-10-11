@@ -115,6 +115,17 @@ describe('JsonlFileLogger retention', () => {
     expect(await logger.applyRetention()).toEqual(['rosetta-2026-10-09.jsonl']);
     expect(await readdir(logsDir())).toEqual(['rosetta-2026-10-10.jsonl']);
   });
+});
+
+describe('JsonlFileLogger retention edge cases', () => {
+  it('RF-009 leaves a folder that is named like a log file alone', async () => {
+    await createLogFiles(['rosetta-2026-01-02.jsonl']);
+    await mkdir(join(logsDir(), 'rosetta-2026-01-01.jsonl'));
+    const logger = fileLogger(new FixedClock('2026-10-11T08:00:00.000Z'));
+
+    expect(await logger.applyRetention()).toEqual(['rosetta-2026-01-02.jsonl']);
+    expect(await readdir(logsDir())).toEqual(['rosetta-2026-01-01.jsonl']);
+  });
 
   it('RF-009 has nothing to delete before the first log file exists', async () => {
     const logger = fileLogger(new FixedClock('2026-10-11T08:00:00.000Z'));

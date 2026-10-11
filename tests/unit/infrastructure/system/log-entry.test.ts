@@ -70,6 +70,31 @@ describe('log entry masking', () => {
     expect(entry.message).toBe(masker.mask(allCases).text);
     expect(entry.data?.['list']).toEqual([masker.mask(allCases).text, 3, false, null]);
   });
+});
+
+describe('log entry masking of names, ids and keys', () => {
+  it('RF-009 masks the logger name, every id and every data key as well', () => {
+    const entry = formatLogEntry(
+      {
+        level: 'info',
+        logger: allCases,
+        message: 'm',
+        runId: allCases,
+        agentTaskId: allCases,
+        callId: allCases,
+        userId: allCases,
+        data: { [allCases]: { [allCases]: 'v' } },
+      },
+      at,
+      masker,
+    );
+
+    const masked = masker.mask(allCases).text;
+    expect([entry.logger, entry.runId, entry.agentTaskId, entry.callId, entry.userId]).toEqual(
+      Array.from({ length: 5 }, () => masked),
+    );
+    expect(entry.data).toEqual({ [masked]: { [masked]: 'v' } });
+  });
 
   it('RF-009 keeps the line count of a masked multi-line message', () => {
     const entry = formatLogEntry({ level: 'info', logger: 'scan', message: allCases }, at, masker);
@@ -91,7 +116,6 @@ describe('log entry masking', () => {
       logger: 'security',
       message: 'Log entry withheld because secret masking failed.',
       code: 'RST-2101',
-      callId: 'call-9',
     });
   });
 });
