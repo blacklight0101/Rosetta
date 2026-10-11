@@ -48,7 +48,9 @@ describe('log entry formatter', () => {
     ]);
     expect(entry.at).toBe('2026-10-11T09:05:03.007Z');
   });
+});
 
+describe('log entry masking', () => {
   it('RF-009 masks the message and every string nested in data, keeping other values', () => {
     const entry = formatLogEntry(
       {
@@ -92,7 +94,9 @@ describe('log entry formatter', () => {
       callId: 'call-9',
     });
   });
+});
 
+describe('log entry lines, security records and levels', () => {
   it('RF-009 serialises one entry as exactly one JSON line ending in a line feed', () => {
     const entry = formatLogEntry({ level: 'info', logger: 'scan', message: 'a\nb' }, at, masker);
 

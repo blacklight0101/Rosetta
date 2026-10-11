@@ -7,9 +7,10 @@ function lineCount(text: string): number {
   return text.split('\n').length;
 }
 
-describe('SecretMasker', () => {
-  const masker = new SecretMasker();
+const masker = new SecretMasker();
+const wholeFixture = secretCases.map((secretCase) => secretCase.text).join('\n');
 
+describe('SecretMasker on each fixture case', () => {
   it.each(secretCases)('RF-141 replaces $name with [MASKED:$kind]', (secretCase) => {
     const result = masker.mask(secretCase.text);
 
@@ -26,20 +27,25 @@ describe('SecretMasker', () => {
   });
 
   it.each(secretCases)('RF-141 keeps the line count and line numbers of $name', (secretCase) => {
-    const input = `first line\n${secretCase.text}\nlast line`;
+    const input = `first line\n${secretCase.text}`;
     const lines = masker.mask(input).text.split('\n');
 
     expect(lines).toHaveLength(lineCount(input));
     expect(lines[0]).toBe('first line');
-    expect(lines.at(-1)).toBe('last line');
+    expect(lines.slice(1).join('\n')).toBe(secretCase.masked);
   });
 
+  it.each(innocentTexts)('RF-141 leaves text that only looks like a secret alone: %s', (text) => {
+    const result = masker.mask(text);
+
+    expect(result.text).toBe(text);
+    expect(Object.values(result.counts).every((count) => count === 0)).toBe(true);
+  });
+});
+
+describe('SecretMasker on the whole fixture', () => {
   it('RF-141 counts every masked secret per kind', () => {
-    const content = secretCases.map((secretCase) => secretCase.text).join('\n');
-
-    const { counts } = masker.mask(content);
-
-    expect(counts).toEqual({
+    expect(masker.mask(wholeFixture).counts).toEqual({
       'api-key': 5,
       'bearer-token': 1,
       'connection-string': 4,
@@ -49,38 +55,32 @@ describe('SecretMasker', () => {
   });
 
   it('RF-141 keeps every line of the whole fixture in place', () => {
-    const content = secretCases.map((secretCase) => secretCase.text).join('\n');
-
-    expect(lineCount(masker.mask(content).text)).toBe(lineCount(content));
+    expect(lineCount(masker.mask(wholeFixture).text)).toBe(lineCount(wholeFixture));
   });
 
-  it.each(innocentTexts)(
-    'RF-141 leaves text that only looks like a secret unchanged: %s',
-    (text) => {
-      const result = masker.mask(text);
-
-      expect(result.text).toBe(text);
-      expect(Object.values(result.counts).every((count) => count === 0)).toBe(true);
-    },
-  );
-
   it('RF-141 does not mask an already masked value again', () => {
-    const once = masker.mask(secretCases.map((secretCase) => secretCase.text).join('\n'));
+    const once = masker.mask(wholeFixture);
 
     const twice = masker.mask(once.text);
 
     expect(twice.text).toBe(once.text);
     expect(Object.values(twice.counts).every((count) => count === 0)).toBe(true);
   });
+});
 
+describe('SecretMasker failure', () => {
   it('RF-141 throws a coded error with the cause when masking fails, so callers fail closed', () => {
     const broken = new SecretMasker([{ kind: 'password', pattern: /password=\S+/ }]);
 
-    const attempt = (): unknown => broken.mask('password=anything');
+    let thrown: unknown;
+    try {
+      broken.mask('password=anything');
+    } catch (error) {
+      thrown = error;
+    }
 
-    expect(attempt).toThrow(RosettaError);
-    expect(attempt).toThrow(
-      expect.objectContaining({ code: 'RST-2101', cause: expect.any(TypeError) }),
-    );
+    expect(thrown).toBeInstanceOf(RosettaError);
+    expect(thrown).toHaveProperty('code', 'RST-2101');
+    expect(thrown).toHaveProperty('cause', expect.any(TypeError));
   });
 });

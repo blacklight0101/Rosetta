@@ -1,0 +1,134 @@
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
+
+export type SecretKind =
+  'api-key' | 'bearer-token' | 'connection-string' | 'password' | 'private-key';
+
+export interface MaskResult {
+  readonly text: string;
+  /** How many secrets of each kind were replaced. */
+  readonly counts: Readonly<Record<SecretKind, number>>;
+}
+
+/** What callers of the masker depend on, so a test can hand them a failing one. */
+export interface TextMasker {
+  mask(text: string): MaskResult;
+}
+
+/**
+ * One detection pattern. It must carry the `g` flag. The optional named group `keep` is a prefix of
+ * the match that stays visible (for example `Password=`); the rest of the match is the secret.
+ */
+export interface MaskRule {
+  readonly kind: SecretKind;
+  readonly pattern: RegExp;
+}
+
+// A value that an earlier rule already replaced is never masked again.
+const notMasked = String.raw`(?!\[MASKED:)`;
+const passwordKey = String.raw`\b[\w.-]*?(?:password|passwd|pwd)["']?[ \t]*(?::=|[:=])[ \t]*`;
+
+// The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
+// whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
+const defaultRules: readonly MaskRule[] = [
+  {
+    kind: 'private-key',
+    pattern:
+      /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----(?:[\s\S]*?-----END (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----|[\s\S]*$)/g,
+  },
+  {
+    kind: 'api-key',
+    pattern:
+      /\b(?:sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,}|AKIA[0-9A-Z]{16}(?![A-Za-z0-9]))/g,
+  },
+  {
+    kind: 'bearer-token',
+    pattern: new RegExp(
+      String.raw`(?<keep>\bBearer[ \t]+)${notMasked}[A-Za-z0-9._~+/=-]{20,}`,
+      'gi',
+    ),
+  },
+  {
+    kind: 'connection-string',
+    pattern: new RegExp(
+      String.raw`(?<keep>\b[A-Za-z][A-Za-z0-9+.-]*://[^\s:/@"'[\]]+:)${notMasked}[^\s@/"']+(?=@)`,
+      'g',
+    ),
+  },
+  {
+    kind: 'connection-string',
+    pattern: new RegExp(
+      String.raw`(?<keep>;[ \t]*(?:password|pwd)[ \t]*=[ \t]*)${notMasked}[^;"'\s][^;"'\r\n]*`,
+      'gi',
+    ),
+  },
+  {
+    kind: 'password',
+    pattern: new RegExp(
+      String.raw`(?<keep>${passwordKey}(?<quote>["']))${notMasked}(?:(?!\k<quote>)[^\r\n])+`,
+      'gi',
+    ),
+  },
+  {
+    kind: 'password',
+    pattern: new RegExp(String.raw`(?<keep>${passwordKey})${notMasked}(?![="'])[^\s;,&"']+`, 'gi'),
+  },
+];
+
+function emptyCounts(): Record<SecretKind, number> {
+  return {
+    'api-key': 0,
+    'bearer-token': 0,
+    'connection-string': 0,
+    password: 0,
+    'private-key': 0,
+  };
+}
+
+/** The line breaks of the secret, so the masked text keeps its line count and line numbers. */
+function lineBreaksOf(secret: string): string {
+  return (secret.match(/\r?\n/g) ?? []).join('');
+}
+
+function applyRule(
+  text: string,
+  rule: MaskRule,
+): { readonly text: string; readonly count: number } {
+  let masked = '';
+  let position = 0;
+  let count = 0;
+  for (const match of text.matchAll(rule.pattern)) {
+    const keep = match.groups?.['keep'] ?? '';
+    const secret = match[0].slice(keep.length);
+    masked += text.slice(position, match.index) + keep;
+    masked += `[MASKED:${rule.kind}]${lineBreaksOf(secret)}`;
+    position = match.index + match[0].length;
+    count += 1;
+  }
+  return { text: masked + text.slice(position), count };
+}
+
+// RF-141, RNF-003: replaces secrets with [MASKED:<kind>] and keeps every line where it was, so
+// citations stay valid. Any internal failure is thrown as RST-2101 and callers fail closed (DEC-57).
+export class SecretMasker implements TextMasker {
+  private readonly rules: readonly MaskRule[];
+
+  constructor(rules: readonly MaskRule[] = defaultRules) {
+    this.rules = rules;
+  }
+
+  mask(text: string): MaskResult {
+    try {
+      const counts = emptyCounts();
+      let masked = text;
+      for (const rule of this.rules) {
+        const result = applyRule(masked, rule);
+        masked = result.text;
+        counts[rule.kind] += result.count;
+      }
+      return { text: masked, counts };
+    } catch (error) {
+      throw new RosettaError(ERROR_CODES.secretMaskingFailed, undefined, { cause: error });
+    }
+  }
+}

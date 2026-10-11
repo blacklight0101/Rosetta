@@ -68,18 +68,20 @@ describe('JsonlFileLogger daily files', () => {
       .trim()
       .split('\n')
       .map((line): unknown => JSON.parse(line));
-    expect(entries).toEqual(
-      ['a', 'b', 'c', 'd'].map((message) => expect.objectContaining({ message })),
-    );
+    for (const [index, message] of ['a', 'b', 'c', 'd'].entries()) {
+      expect(entries[index]).toHaveProperty('message', message);
+    }
+    expect(entries).toHaveLength(4);
   });
 
   it('RF-009 reports a file it cannot write with its code', async () => {
     await writeFile(join(root.path, 'logs'), 'not a folder', 'utf8');
     const logger = fileLogger(new FixedClock('2026-10-11T09:00:00.000Z'));
 
-    await expect(logger.log({ level: 'info', logger: 'x', message: 'lost' })).rejects.toMatchObject(
-      { code: 'RST-2102', cause: expect.any(Error) },
-    );
+    const failure = logger.log({ level: 'info', logger: 'x', message: 'lost' });
+
+    await expect(failure).rejects.toHaveProperty('code', 'RST-2102');
+    await expect(failure).rejects.toHaveProperty('cause.code', 'EEXIST');
   });
 });
 

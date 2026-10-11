@@ -29,6 +29,8 @@ export const ERROR_CODES = {
   providerTimeout: 'RST-1505',
   githubSourceUnavailable: 'RST-1903',
   invalidCredentials: 'RST-2201',
+  secretMaskingFailed: 'RST-2101',
+  logFileFailed: 'RST-2102',
   baseUrlRejected: 'RST-2304',
   migrationFileInvalid: 'RST-2400',
   migrationChanged: 'RST-2401',
@@ -61,6 +63,14 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     message:
       'This repository is private or does not exist. Only public GitHub repositories can be analysed.',
     nextStep: 'Check the address, or choose a public repository.',
+  },
+  'RST-2101': {
+    message: 'Secret masking failed, so the content was withheld.',
+    nextStep: 'Nothing was sent or logged unmasked; check the application log and try again.',
+  },
+  'RST-2102': {
+    message: 'The application log folder could not be written.',
+    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
   },
   'RST-2201': {
     message: 'User name or password is incorrect.',

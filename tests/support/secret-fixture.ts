@@ -2,12 +2,11 @@
 // "FAKE0", so the repository holds no secret-like literal and none of them was ever a credential.
 // Shared by the masker tests (RF-141), the logger tests (RF-009) and the egress guard (P1-28).
 
-export type FixtureKind =
-  'api-key' | 'bearer-token' | 'connection-string' | 'password' | 'private-key';
+import type { SecretKind } from '../../src/infrastructure/guards/secret-masker.js';
 
 export interface SecretCase {
   readonly name: string;
-  readonly kind: FixtureKind;
+  readonly kind: SecretKind;
   /** Content that holds the fake secret. */
   readonly text: string;
   /** Exactly what the masker must return. */
