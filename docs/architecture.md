@@ -115,7 +115,8 @@ src/
     estimate/           cost estimator
     contracts/          event and API contract types shared with the front end in web/
   infrastructure/
-    providers/          ollama/, openai/, openai-compatible/, anthropic/, fake/
+    providers/          ollama/, openai/, openai-compatible/, anthropic/, fake/; at the root the
+                        ObservedProvider decorator and the provider call logs (JSON Lines, memory)
     guards/             egress-guard, secret-masker, budget-guard
     github/             url parser, ref resolver, snapshot downloader and extractor
     files/              snapshot-reader, ignore-rules, output-writer, workspace paths
@@ -233,7 +234,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `Clock` | current time | `SystemClock`, `FixedClock` (tests) |
 | `IdGenerator` | run ids and every UUID | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
 | `Logger` | structured application log with levels and correlation ids (RF-009) | `StdoutJsonLogger`, `JsonlFileLogger`, `FanOutLogger`, `MemoryLogger` (tests) |
-| `ProviderCallRecorder` | one record per provider call attempt (RF-408), written by an `ObservedProvider` decorator around every provider | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
+| `ProviderCallRecorder` | one record per provider call attempt (RF-408) and the masked transcript lines of each agent task (data-model.md section 3.15), written by an `ObservedProvider` decorator around every provider; masks every line before it is kept | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
 | `RunEventSink` | typed run events for the web UI and the replay log (RF-424, RF-1006) | `SseBroadcaster`, `JsonlEventLog`, `FanOutSink`, `MemorySink` |
 | `ArchiveWriter` | zip a folder (RF-008) | `YazlArchiveWriter` |
 | `UserPrompt` | withdrawn 2026-10-11 (DEC-59): confirmations are fields of the start request (consent, estimate accepted) | - |
@@ -306,6 +307,8 @@ sequenceDiagram
 |---|---|
 | Calls | synchronous HTTP per turn, streamed when the adapter supports it, with a timeout and an `AbortSignal` |
 | Retries | only in adapters: exponential back-off with jitter on rate limits, timeouts and server errors; honour retry-after (RF-406) |
+| Attempts | an adapter tells the `LlmAttemptObserver` passed with the call when each attempt starts and when one fails and will be retried, so the `ObservedProvider` writes one record per attempt, all with the call's `callId` (RF-408) |
+| Call context | each request carries its run, agent task, role, `callId` and trace ids, created by the caller, so the guards and the call log of one call share them |
 | Failures | permanent errors (bad key, unknown model) stop the task with partial cards saved; the run continues unless every task is affected |
 | Usage | every adapter returns input, output and cached tokens; estimated and flagged when the provider reports none (RF-421) |
 | Idempotency | not needed: provider calls have no side effects; a retried call may cost twice and is metered twice |
