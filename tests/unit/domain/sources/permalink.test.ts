@@ -40,7 +40,9 @@ describe('buildPermalink', () => {
         'https://github.com/Octo/Demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/docs/My%20Notes%231.md#L1-L2',
     });
   });
+});
 
+describe('buildPermalink refusals', () => {
   it.each([
     ['an absolute path', '/etc/passwd'],
     ['a path with a backslash', 'src\\Web\\Default.aspx'],

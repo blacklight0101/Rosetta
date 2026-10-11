@@ -118,7 +118,9 @@ src/
     providers/          ollama/, openai/, openai-compatible/, anthropic/, fake/; at the root the
                         ObservedProvider decorator and the provider call logs (JSON Lines, memory)
     guards/             egress-guard, secret-masker, budget-guard
-    github/             url parser, ref resolver, snapshot downloader and extractor
+    github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
+                        (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
+                        hash, snapshot.json, read-only), github-snapshot-fetcher, fake-source-fetcher
     files/              snapshot-reader, ignore-rules, output-writer, workspace paths
     events/             sse-broadcaster, jsonl-event-log
     db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit), migration runner

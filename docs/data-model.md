@@ -136,8 +136,11 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 | Readers | scanner, agent tools, verifier, through `RepositoryReader` |
 | Spec | RF-120..RF-126, RF-005 |
 
-- The archive is extracted into `sources/.partial-<random>/`; every entry path is normalised and refused if it would
-  land outside that folder (RF-122). When extraction and hashing finish, the folder is renamed to its final name, so
+- The folder name is lower case (`<owner>__<repo>` as GitHub names are case-insensitive), so a cached commit is
+  found however the URL was typed; `snapshot.json` keeps GitHub's spelling.
+- The archive is extracted into `sources/.partial-<uuid>/` (id from `IdGenerator`); an entry with an absolute path or
+  a `..` segment stops the fetch with `RST-1906` and the partial folder is deleted (RF-122, ADR-019); link entries are
+  skipped and counted (RF-127). When extraction and hashing finish, the folder is renamed to its final name, so
   a half-finished download never looks complete. Leftover `.partial-*` folders are deleted at start-up.
 - The repository tree goes under `files/`; `snapshot.json` sits next to it, outside the analysed tree.
 - After the rename, files are marked read-only where the operating system allows it; the reader opens files
@@ -153,9 +156,10 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 | `url` | string | canonical `https://github.com/<owner>/<repo>` |
 | `owner`, `repo` | string | as returned by the GitHub API (case preserved) |
 | `commitSha` | string | 40 hex characters |
-| `resolvedFrom` | string | the ref that was asked for |
+| `resolvedFrom` | string | the ref that was asked for, or the default branch when the URL had none |
 | `downloadedAt` | instant | |
-| `fileCount`, `totalBytes` | int | |
+| `fileCount`, `totalBytes` | int | regular files under `files/` |
+| `skippedLinks` | int | symbolic and hard link entries skipped during extraction (RF-127) |
 | `snapshotHash` | string | `sha256:` of the sorted list of `path` + file SHA-256 pairs; recorded in each run manifest (RF-126) |
 | `licence` | string | SPDX id reported by GitHub, or `unknown` |
 

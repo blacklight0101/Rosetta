@@ -50,7 +50,13 @@ describe('GitHubApi repository', () => {
   });
 
   it('RF-126 reports the licence as unknown when GitHub lists none', async () => {
-    const unlicensed: FakeRepository = { ...demo, licence: undefined };
+    const unlicensed: FakeRepository = {
+      owner: demo.owner,
+      repo: demo.repo,
+      defaultBranch: demo.defaultBranch,
+      refs: demo.refs,
+      archive: demo.archive,
+    };
 
     await expect(api([unlicensed]).repository(ref(), signal)).resolves.toMatchObject({
       licence: 'unknown',

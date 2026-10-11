@@ -7,7 +7,7 @@ const WRITABLE_FILE = 0o644;
 const WRITABLE_DIR = 0o755;
 
 /** Makes every file and folder under `path` writable again, so a read-only snapshot can be deleted. */
-export async function makeWritable(path: string): Promise<void> {
+async function makeWritable(path: string): Promise<void> {
   await chmod(path, WRITABLE_DIR);
   for (const entry of await readdir(path, { withFileTypes: true })) {
     const child = join(path, entry.name);

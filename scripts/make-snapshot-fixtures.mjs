@@ -5,7 +5,10 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gzipSync } from 'node:zlib';
+import { promisify } from 'node:util';
+import { gzip } from 'node:zlib';
+
+const gzipAsync = promisify(gzip);
 
 const BLOCK = 512;
 const TYPE = { file: '0', hardLink: '1', symlink: '2', directory: '5' };
@@ -45,7 +48,7 @@ function tar(entries) {
     }
   }
   parts.push(Buffer.alloc(BLOCK * 2));
-  return gzipSync(Buffer.concat(parts), { level: 9 });
+  return gzipAsync(Buffer.concat(parts), { level: 9 });
 }
 
 const top = 'octo-demo-3f78685';
@@ -88,6 +91,6 @@ const fixtures = {
 const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'tests', 'fixtures', 'snapshots');
 await mkdir(out, { recursive: true });
 for (const [name, entries] of Object.entries(fixtures)) {
-  await writeFile(join(out, name), tar(entries));
+  await writeFile(join(out, name), await tar(entries));
   process.stdout.write(`wrote ${name}\n`);
 }

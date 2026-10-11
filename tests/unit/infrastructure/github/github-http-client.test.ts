@@ -34,7 +34,7 @@ function fakeGitHub(behaviour: FakeGitHubBehaviour = {}): FakeGitHub {
 
 function harness(
   fetch: FetchFunction,
-  token: string | undefined = undefined,
+  token?: string,
 ): { client: GitHubHttpClient; logger: MemoryLogger } {
   const logger = new MemoryLogger(new FixedClock('2026-10-11T09:00:00.000Z'), new SecretMasker());
   return { client: new GitHubHttpClient({ fetch, token, logger }), logger };
@@ -164,10 +164,10 @@ describe('GitHubHttpClient failures', () => {
     const failing: FetchFunction = () => Promise.reject(new TypeError('fetch failed'));
     const { client } = harness(failing);
 
-    await expect(client.get(api, options)).rejects.toMatchObject({
-      code: 'RST-1907',
-      cause: expect.objectContaining({ message: 'fetch failed' }),
-    });
+    const failure: unknown = await client.get(api, options).catch((error: unknown) => error);
+
+    expect(failure).toMatchObject({ code: 'RST-1907' });
+    expect(failure).toHaveProperty('cause.message', 'fetch failed');
   });
 
   it("RF-127 rethrows the caller's abort unchanged", async () => {

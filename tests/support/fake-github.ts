@@ -45,6 +45,38 @@ function notFound(): Response {
   return json(404, { message: 'Not Found' });
 }
 
+function rateLimited(reset: number): Response {
+  return json(
+    403,
+    { message: 'API rate limit exceeded for 203.0.113.7.' },
+    {
+      'x-ratelimit-limit': '60',
+      'x-ratelimit-remaining': '0',
+      'x-ratelimit-reset': String(reset),
+    },
+  );
+}
+
+/** A branch, tag or short SHA from `refs`, or a full SHA the repository has. */
+function resolveRef(repository: FakeRepository, wanted: string): string | undefined {
+  return (
+    repository.refs[wanted] ??
+    (Object.values(repository.refs).includes(wanted) ? wanted : undefined)
+  );
+}
+
+function unknownRef(ref: string): Response {
+  return /^[0-9a-f]{7,40}$/i.test(ref)
+    ? json(422, { message: `No commit found for SHA: ${ref}` })
+    : notFound();
+}
+
+function commitSha(sha: string, headers: Headers): Response {
+  return headers.get('accept')?.includes(SHA_ACCEPT) === true
+    ? new Response(sha, { status: 200, headers: { 'content-type': SHA_ACCEPT } })
+    : json(406, { message: 'Unsupported Accept header' });
+}
+
 /**
  * RF-120..RF-127 test double of the GitHub REST API and the archive host. `fetch` answers in process;
  * `listen()` serves the same answers over loopback HTTP for tests that need a socket.
@@ -93,7 +125,10 @@ export class FakeGitHub {
       url: `http://127.0.0.1:${String(address.port)}`,
       close: () =>
         new Promise<void>((resolve, reject) => {
-          server.close((error) => (error ? reject(error) : resolve()));
+          server.close((error) => {
+            if (error) reject(error);
+            else resolve();
+          });
         }),
     };
   }
@@ -124,35 +159,39 @@ export class FakeGitHub {
 
   private api(url: URL, headers: Headers): Response {
     const reset = this.behaviour.rateLimitResetAt;
-    if (reset !== undefined) {
-      return json(
-        403,
-        { message: 'API rate limit exceeded for 203.0.113.7.' },
-        {
-          'x-ratelimit-limit': '60',
-          'x-ratelimit-remaining': '0',
-          'x-ratelimit-reset': String(reset),
-        },
-      );
-    }
+    if (reset !== undefined) return rateLimited(reset);
     const match = /^\/repos\/([^/]+)\/([^/]+)(?:\/(commits|tarball)\/(.+))?$/.exec(url.pathname);
     if (match === null) return notFound();
     const [, owner = '', repo = '', kind, ref = ''] = match;
-    const repository = this.find(owner, repo);
+    const repository = this.visibleRepository(owner, repo, headers);
     if (repository === undefined) return notFound();
-    if (repository.isPrivate === true && !headers.has('authorization')) return notFound();
     if (kind === undefined) return this.repositoryJson(repository);
-    const sha = repository.refs[decodeURIComponent(ref)];
-    if (sha === undefined) {
-      return /^[0-9a-f]{7,40}$/i.test(ref)
-        ? json(422, { message: `No commit found for SHA: ${ref}` })
-        : notFound();
-    }
-    if (kind === 'commits') {
-      return headers.get('accept')?.includes(SHA_ACCEPT) === true
-        ? new Response(sha, { status: 200, headers: { 'content-type': SHA_ACCEPT } })
-        : json(406, { message: 'Unsupported Accept header' });
-    }
+    return this.refAnswer(repository, kind, decodeURIComponent(ref), headers);
+  }
+
+  /** A known repository, unless it is private and the request carries no token (GitHub hides it). */
+  private visibleRepository(
+    owner: string,
+    repo: string,
+    headers: Headers,
+  ): FakeRepository | undefined {
+    const repository = this.find(owner, repo);
+    const hidden = repository?.isPrivate === true && !headers.has('authorization');
+    return hidden ? undefined : repository;
+  }
+
+  private refAnswer(
+    repository: FakeRepository,
+    kind: string,
+    ref: string,
+    headers: Headers,
+  ): Response {
+    const sha = resolveRef(repository, ref);
+    if (sha === undefined) return unknownRef(ref);
+    return kind === 'commits' ? commitSha(sha, headers) : this.tarballRedirect(repository, sha);
+  }
+
+  private tarballRedirect(repository: FakeRepository, sha: string): Response {
     const host = this.behaviour.tarballHost ?? 'codeload.github.com';
     const location = `${this.behaviour.tarballScheme ?? 'https'}://${host}/${repository.owner}/${repository.repo}/legacy.tar.gz/${sha}`;
     return new Response(null, { status: 302, headers: { location } });

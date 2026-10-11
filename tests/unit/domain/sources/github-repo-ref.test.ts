@@ -30,6 +30,13 @@ describe('parseGitHubUrl', () => {
     });
   });
 
+  it('RF-120 resolves dot segments like a browser, so a subpath can never climb up', () => {
+    expect(parseGitHubUrl('https://github.com/Octo/Demo/tree/main/src/%2E%2E/lib/../lib')).toEqual({
+      ok: true,
+      value: { owner: 'Octo', repo: 'Demo', ref: 'main', subpath: 'lib' },
+    });
+  });
+
   it('RF-120 decodes percent-encoded segments', () => {
     expect(parseGitHubUrl('https://github.com/Octo/Demo/tree/release%2F1/My%20Folder')).toEqual({
       ok: true,
@@ -49,7 +56,9 @@ describe('parseGitHubUrl', () => {
       value: { owner: 'Octo', repo: 'Demo', ref: undefined, subpath: undefined },
     });
   });
+});
 
+describe('parseGitHubUrl refusals', () => {
   it.each([
     ['not a URL', 'octo/demo', 'not-a-url'],
     ['an http URL', 'http://github.com/Octo/Demo', 'not-https'],
@@ -59,15 +68,8 @@ describe('parseGitHubUrl', () => {
     ['credentials in the URL', 'https://user:secret@github.com/Octo/Demo', 'not-github'],
     ['a missing repository', 'https://github.com/Octo', 'missing-repository'],
     ['an owner starting with a hyphen', 'https://github.com/-Octo/Demo', 'invalid-name'],
-    ['a repository named ..', 'https://github.com/Octo/..', 'invalid-name'],
     ['a file URL', 'https://github.com/Octo/Demo/blob/main/README.md', 'invalid-ref'],
     ['/tree without a ref', 'https://github.com/Octo/Demo/tree', 'invalid-ref'],
-    ['a ref of ..', 'https://github.com/Octo/Demo/tree/..', 'invalid-ref'],
-    [
-      'a subpath that climbs up',
-      'https://github.com/Octo/Demo/tree/main/src/../..',
-      'invalid-subpath',
-    ],
     [
       'a subpath with a backslash',
       'https://github.com/Octo/Demo/tree/main/src%5Cweb',
