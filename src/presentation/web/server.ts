@@ -1,0 +1,114 @@
+import fastifyHelmet from '@fastify/helmet';
+import fastifyStatic from '@fastify/static';
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
+import type { DatabaseHealth } from '../../application/ports/database-health.js';
+import type { Logger, LogRecord } from '../../application/ports/logger.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { toErrorReply } from './error-mapper.js';
+import { registerPublicRoutes } from './public-routes.js';
+import { robotsTag, securityHeaderOptions } from './security-headers.js';
+
+// ADR-017: the Fastify server. Plugins and hooks are registered here; routes call use cases only.
+
+export interface ServerOptions {
+  /** RF-009: request and error entries; the logger masks every value. */
+  readonly logger: Logger;
+  readonly databaseHealth: DatabaseHealth;
+  /** The Rosetta version reported by /healthz. */
+  readonly version: string;
+  /** `ROSETTA_PUBLIC_URL`; https turns HSTS on (RF-1013). */
+  readonly publicUrl: string;
+  /** `ROSETTA_TRUST_PROXY`: proxy hops trusted for the client address; 0 trusts none. */
+  readonly trustProxy: number;
+  /** The folder of the built front end; no static files are served without it. */
+  readonly staticRoot?: string;
+}
+
+/** The largest request body accepted (Fastify's default, stated so it is a decision). */
+const bodyLimitBytes = 1_048_576;
+
+/** Writes the entries; a log that cannot be written never stops the response. */
+async function writeLog(logger: Logger, records: readonly LogRecord[]): Promise<void> {
+  // The standard-output logger has already written each entry when the file logger fails, and
+  // the response must still go out, so a failed write is not rethrown here.
+  await Promise.allSettled(records.map((record) => logger.log(record)));
+}
+
+function requestData(request: FastifyRequest): { requestId: string; method: string; url: string } {
+  return { requestId: request.id, method: request.method, url: request.url };
+}
+
+// RF-009: one `http` entry per response; the URL is masked by the logger like every value.
+function logResponse(logger: Logger, request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { statusCode } = reply;
+  return writeLog(logger, [
+    {
+      level: 'info',
+      logger: 'http',
+      message: `${request.method} ${request.url} ${String(statusCode)}`,
+      data: { ...requestData(request), statusCode, durationMs: Math.round(reply.elapsedTime) },
+    },
+  ]);
+}
+
+// RF-007: an unexpected error is logged at `error` without its stack; the stack goes only to the
+// `debug` log.
+function logUnexpected(logger: Logger, request: FastifyRequest, error: unknown): Promise<void> {
+  const failure = error instanceof Error ? error : new Error(String(error));
+  const data = { ...requestData(request), error: failure.name };
+  return writeLog(logger, [
+    {
+      level: 'error',
+      logger: 'http',
+      message: `Unexpected error: ${failure.message}`,
+      code: ERROR_CODES.unexpected,
+      data,
+    },
+    {
+      level: 'debug',
+      logger: 'http',
+      message: 'Stack of the unexpected error.',
+      data: { ...data, stack: failure.stack ?? '' },
+    },
+  ]);
+}
+
+function registerHooks(server: FastifyInstance, logger: Logger): void {
+  server.addHook('onRequest', (_request, reply, done) => {
+    reply.header('X-Robots-Tag', robotsTag);
+    done();
+  });
+  server.addHook('onResponse', (request, reply) => logResponse(logger, request, reply));
+}
+
+// RF-007: every failure answers { code, message, nextStep } with the status of its cause.
+function registerErrorHandlers(server: FastifyInstance, logger: Logger): void {
+  server.setErrorHandler(async (error, request, reply) => {
+    const errorReply = toErrorReply(error);
+    if (errorReply.unexpected) await logUnexpected(logger, request, error);
+    return reply.status(errorReply.status).send(errorReply.body);
+  });
+  server.setNotFoundHandler((_request, reply) => {
+    const errorReply = toErrorReply(new RosettaError(ERROR_CODES.notFound));
+    return reply.status(errorReply.status).send(errorReply.body);
+  });
+}
+
+/** RF-1013, RF-1201, RF-1303, RF-007: the server with its plugins, hooks and public routes. */
+export function buildServer(options: ServerOptions): FastifyInstance {
+  const server = Fastify({
+    logger: false,
+    bodyLimit: bodyLimitBytes,
+    // Trust the `trustProxy` nearest hops, as a number does in Fastify (its types omit numbers).
+    trustProxy: (_address, hop) => hop < options.trustProxy,
+  });
+  void server.register(fastifyHelmet, securityHeaderOptions(options.publicUrl));
+  registerHooks(server, options.logger);
+  registerErrorHandlers(server, options.logger);
+  registerPublicRoutes(server, options);
+  if (options.staticRoot !== undefined) {
+    void server.register(fastifyStatic, { root: options.staticRoot });
+  }
+  return server;
+}

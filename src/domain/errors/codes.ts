@@ -45,15 +45,23 @@ export const ERROR_CODES = {
   snapshotEntryRefused: 'RST-1906',
   githubRequestFailed: 'RST-1907',
   snapshotWriteFailed: 'RST-1908',
-  invalidCredentials: 'RST-2201',
+  requestInvalid: 'RST-2000',
+  notSignedIn: 'RST-2001',
+  notAllowed: 'RST-2002',
+  notFound: 'RST-2003',
+  conflict: 'RST-2004',
+  rateLimited: 'RST-2005',
+  unexpected: 'RST-2006',
   secretMaskingFailed: 'RST-2101',
   logFileFailed: 'RST-2102',
   providerCallLogFailed: 'RST-2103',
+  invalidCredentials: 'RST-2201',
   baseUrlRejected: 'RST-2304',
   migrationFileInvalid: 'RST-2400',
   migrationChanged: 'RST-2401',
   migrationUnknown: 'RST-2402',
   migrationFailed: 'RST-2403',
+  versionUnreadable: 'RST-2500',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -156,6 +164,34 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     message: 'The snapshot could not be written to the data folder.',
     nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
   },
+  'RST-2000': {
+    message: 'The request is not valid.',
+    nextStep: 'Check the values you sent and try again.',
+  },
+  'RST-2001': {
+    message: 'You are not signed in.',
+    nextStep: 'Sign in and try again.',
+  },
+  'RST-2002': {
+    message: 'You are not allowed to do this.',
+    nextStep: 'Ask an administrator if you need access.',
+  },
+  'RST-2003': {
+    message: 'The page or item was not found.',
+    nextStep: 'Check the address, or go back to your projects.',
+  },
+  'RST-2004': {
+    message: 'The request conflicts with the current state.',
+    nextStep: 'Reload the page to see the latest state, then try again.',
+  },
+  'RST-2005': {
+    message: 'Too many requests.',
+    nextStep: 'Wait a minute and try again.',
+  },
+  'RST-2006': {
+    message: 'Something unexpected went wrong.',
+    nextStep: 'Try again; if it keeps failing, ask the operator to check the application log.',
+  },
   'RST-2101': {
     message: 'Secret masking failed, so the content was withheld.',
     nextStep: 'Nothing was sent or logged unmasked; check the application log and try again.',
@@ -191,6 +227,10 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   'RST-2403': {
     message: 'A database migration failed; the previous schema was kept.',
     nextStep: 'Read the cause in the log, fix the migration and start again.',
+  },
+  'RST-2500': {
+    message: 'The Rosetta version could not be read from package.json.',
+    nextStep: 'Rebuild or reinstall Rosetta so that package.json ships next to the server.',
   },
 };
 

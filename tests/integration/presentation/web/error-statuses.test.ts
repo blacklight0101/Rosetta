@@ -45,7 +45,9 @@ describe('error responses', () => {
       expect(response.json()).toEqual({ code, ...describeError(code) });
     },
   );
+});
 
+describe('error responses from the framework', () => {
   it('RF-007 a request body that is not valid JSON answers 400 with RST-2000', async () => {
     const { server } = serverThrowing(new Error('unused'));
 
@@ -85,7 +87,9 @@ describe('error responses', () => {
       ...describeError(ERROR_CODES.notFound),
     });
   });
+});
 
+describe('unexpected errors', () => {
   it('RF-007 a thrown error with a stack answers 500 without any stack line or internal detail', async () => {
     const failure = new Error('connection to postgres://db:5432 refused');
     expect(failure.stack).toMatch(/\n\s+at /);

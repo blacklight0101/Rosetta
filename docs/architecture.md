@@ -251,6 +251,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
 | `AuditLog` | security audit rows (RF-1109) | `PgAuditLog`, `MemoryAuditLog` |
 | `Migrator` | apply and check migrations (RF-1302) | `PgMigrator` |
+| `DatabaseHealth` | whether the database answers a trivial query within 3 seconds, for `GET /healthz` (RF-1303); never throws | `PgDatabaseHealth`, `FakeDatabaseHealth` (tests) |
 | `Scheduler` | periodic jobs in the process: session and reservation purge hourly, log retention daily, restart recovery at start-up (one instance assumed, DEC-112); a job still running when its next tick arrives is skipped, and a failing job is reported through the scheduler's `onError` callback without stopping its schedule or other jobs | `IntervalScheduler`, `ManualScheduler` (tests) |
 
 The egress guard and the budget guard are **decorators** of `LlmProvider`: the composition root wraps every real
