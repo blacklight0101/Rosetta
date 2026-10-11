@@ -198,10 +198,14 @@ Rules for `areas[]` (RF-104, added with P1-20):
   `origin` `references`, when together they fit the budget.
 - A group still over the budget is cut, in path order and never between linked files, into parts named `<name>#1`,
   `<name>#2`, and so on. A single file larger than the budget is the one allowed exception and forms an area alone.
-- An automatic name equal to a configured name gets ` (auto)` appended.
+- An automatic name gets ` (auto)` appended until neither it nor its numbered parts equal a configured name or another
+  area's name; two configured areas whose names (parts included) collide are refused.
 - `mapLevel` of an area is `symbols` when at least one of its files is `symbols`, else `coarse`.
-- Every text taken from a repository file (SQL text, symbol and entity names, link symbols) is passed through the
-  secret masker before it is written (RF-141); `sqlStatements[].text` is cut to 500 characters after masking.
+- Every text taken from a repository (file paths, area names, `subpath`, SQL text, symbol and entity names, link
+  symbols) is passed through the secret masker before it is written (RF-141); `sqlStatements[].text` is cut to 500
+  characters after masking (the scan keeps a 1 536-character window so a secret across character 500 is masked whole).
+- Reading `codemap.json` checks the 40-character lower-case `commitSha`, `endLine >= startLine` of a symbol, and
+  that each area's `files` are sorted.
 - Routes found by a language pack are not written to the code map in this release (3.4 has no field for them).
 
 ### 3.5 `scan-summary.md`

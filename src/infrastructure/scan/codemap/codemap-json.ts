@@ -95,7 +95,7 @@ const codeMapSchema = z.strictObject({
   source: z.strictObject({
     owner: z.string().min(1).max(100),
     repo: z.string().min(1).max(100),
-    commitSha: z.string().length(40),
+    commitSha: z.string().regex(/^[0-9a-f]{40}$/u),
     subpath: z.string().max(maxPath),
   }),
   files: z.array(fileSchema).max(maxFiles),

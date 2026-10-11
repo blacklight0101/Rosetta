@@ -33,15 +33,17 @@ export async function writeScanOutputs(
   target: ScanOutputTarget,
   input: ScanOutputInput,
 ): Promise<Result<ScanOutputsWritten, WriteRefusal>> {
+  // Both texts are made (and the summary masked) before anything is written: a masker that fails
+  // leaves no file behind (RF-141).
   const codeMapText = serialiseCodeMap(input.codeMap);
+  const summary = input.masker.mask(
+    renderScanSummary({ codeMap: input.codeMap, durationMs: input.durationMs }),
+  ).text;
   const codeMap = await writer.writeText(
     { userId: target.userId, path: `${target.folder}/codemap.json` },
     codeMapText,
   );
   if (!codeMap.ok) return codeMap;
-  const summary = input.masker.mask(
-    renderScanSummary({ codeMap: input.codeMap, durationMs: input.durationMs }),
-  ).text;
   const written = await writer.writeText(
     { userId: target.userId, path: `${target.folder}/scan-summary.md` },
     summary,

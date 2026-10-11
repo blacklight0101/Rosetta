@@ -6,8 +6,12 @@ import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
 
 /** The longest line the SQL extractors look at; the rest of a longer line is ignored. */
 const maxLineLength = 4000;
-/** The longest statement text kept (data-model section 3.4). */
-export const maxStatementText = 500;
+/**
+ * The longest statement text the scan keeps. The code map records 500 characters (data-model 3.4),
+ * but only after masking: a secret that straddles character 500 must be seen whole by the masker,
+ * and the longest secret pattern is 512 characters plus its look-ahead, so the window is wider.
+ */
+export const statementWindow = 1536;
 /** The most statements kept per file, so one huge script cannot flood the code map. */
 export const maxStatementsPerFile = 1000;
 
@@ -51,7 +55,7 @@ function collapse(text: string): string {
 
 /** The statement text as it is recorded. */
 export function statementText(text: string): string {
-  return collapse(text.slice(0, maxStatementText * 2)).slice(0, maxStatementText);
+  return collapse(text.slice(0, statementWindow * 2)).slice(0, statementWindow);
 }
 
 /** The verb a text starts with (after leading white space), in any letter case. */

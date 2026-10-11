@@ -4,7 +4,10 @@ import { createArea } from '../../../../../src/domain/code-map/area.js';
 import { createCodeMap } from '../../../../../src/domain/code-map/code-map.js';
 import type { OutputWriter } from '../../../../../src/application/ports/output-writer.js';
 import { ok } from '../../../../../src/domain/errors/result.js';
-import { SecretMasker } from '../../../../../src/infrastructure/guards/secret-masker.js';
+import {
+  SecretMasker,
+  type TextMasker,
+} from '../../../../../src/infrastructure/guards/secret-masker.js';
 import { buildCodeMap } from '../../../../../src/infrastructure/scan/codemap/build-code-map.js';
 import { writeScanOutputs } from '../../../../../src/infrastructure/scan/codemap/write-scan-outputs.js';
 import type { PackScan } from '../../../../../src/infrastructure/scan/packs/pack-scan.js';
@@ -42,7 +45,7 @@ function file(path: string): ScannedFile {
   };
 }
 
-function buildWith(statements: readonly SqlStatement[], masker = new SecretMasker()) {
+function buildWith(statements: readonly SqlStatement[], masker: TextMasker = new SecretMasker()) {
   return buildCodeMap({
     source,
     scan: { files: [file('db/a.sql'), file('src/A.cs')], sqlStatements: statements },

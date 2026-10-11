@@ -101,7 +101,7 @@ describe('SQL statements in string literals (part 2)', () => {
 
 describe('SQL statements in string literals (part 3)', () => {
   it('RF-103 the statement text is kept to a window of 1536 characters, wider than the 500 of the code map, so it can be masked first', () => {
-    const [statement] = found(`var sql = "SELECT ${'a, '.repeat(400)}b FROM T";`);
+    const [statement] = found(`var sql = "SELECT ${'a, '.repeat(800)}b FROM T";`);
 
     expect(statement?.[2]).toHaveLength(1536);
   });

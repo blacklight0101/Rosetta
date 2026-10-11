@@ -89,7 +89,7 @@ describe('SQL statements in a script (part 2)', () => {
   });
 
   it('RF-103 the statement text is kept to a window of 1536 characters, wider than the 500 of the code map, so it can be masked first', () => {
-    const [statement] = scriptOf(`SELECT ${'a, '.repeat(400)}b FROM T;`);
+    const [statement] = scriptOf(`SELECT ${'a, '.repeat(800)}b FROM T;`);
 
     expect(statement?.text).toHaveLength(1536);
   });

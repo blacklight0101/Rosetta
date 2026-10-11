@@ -148,15 +148,41 @@ function configuredDrafts(
   return { drafts, rest };
 }
 
-/** An automatic name that a configured area already uses gets ` (auto)` until it is free. */
-function withFreeNames(drafts: readonly Draft[], taken: ReadonlySet<string>): Draft[] {
-  const used = new Set(taken);
-  return drafts.map((draft) => {
-    let name = draft.name;
-    while (used.has(name)) name = `${name} (auto)`;
-    used.add(name);
-    return { ...draft, name };
-  });
+/**
+ * Builds the areas of the automatic groups in name order. A group whose final area names (its
+ * numbered parts included) are already taken gets ` (auto)` appended until they are free.
+ */
+function automaticAreas(
+  drafts: readonly Draft[],
+  budget: number,
+  taken: Set<string>,
+): Result<Area[], AreaProblem> {
+  const areas: Area[] = [];
+  for (const draft of drafts) {
+    for (let name = draft.name; ; name = `${name} (auto)`) {
+      const made = areasOf({ ...draft, name }, budget);
+      if (!made.ok) return made;
+      if (made.value.some((area) => taken.has(area.name))) continue;
+      for (const area of made.value) taken.add(area.name);
+      areas.push(...made.value);
+      break;
+    }
+  }
+  return ok(areas);
+}
+
+function configuredAreas(
+  drafts: readonly Draft[],
+  budget: number,
+): Result<Area[], AreaProblem | 'duplicate-configured-area'> {
+  const areas: Area[] = [];
+  for (const draft of drafts) {
+    const made = areasOf(draft, budget);
+    if (!made.ok) return made;
+    areas.push(...made.value);
+  }
+  const names = areas.map((area) => area.name);
+  return new Set(names).size === names.length ? ok(areas) : err('duplicate-configured-area');
 }
 
 /**
@@ -170,12 +196,11 @@ export function groupIntoAreas(input: GroupingInput): Result<readonly Area[], Gr
   if (new Set(names).size !== names.length) return err('duplicate-configured-area');
   const files = [...input.files].sort(byPath);
   const { drafts: fromSettings, rest } = configuredDrafts(files, input.configured);
-  const automatic = withFreeNames(automaticDrafts(rest, input.links, budget), new Set(names));
-  const areas: Area[] = [];
-  for (const draft of [...fromSettings, ...automatic]) {
-    const made = areasOf(draft, budget);
-    if (!made.ok) return made;
-    areas.push(...made.value);
-  }
+  const settings = configuredAreas(fromSettings, budget);
+  if (!settings.ok) return settings;
+  const taken = new Set(settings.value.map((area) => area.name));
+  const automatic = automaticAreas(automaticDrafts(rest, input.links, budget), budget, taken);
+  if (!automatic.ok) return automatic;
+  const areas = [...settings.value, ...automatic.value];
   return ok(areas.sort((a, b) => byCodeUnit(a.name, b.name)));
 }

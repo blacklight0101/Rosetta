@@ -73,8 +73,10 @@ export type CodeMapProblem =
   | 'duplicate-area-name'
   | 'duplicate-file'
   | 'file-in-no-area'
+  | 'area-files-unsorted'
   | 'file-in-two-areas'
-  | 'reference-to-unknown-file';
+  | 'reference-to-unknown-file'
+  | 'symbol-range-invalid';
 
 const bySymbol = (a: CodeSymbol, b: CodeSymbol): number =>
   byCodeUnit(a.path, b.path) ||
@@ -96,6 +98,10 @@ function hasDuplicates(values: readonly string[]): boolean {
   return new Set(values).size !== values.length;
 }
 
+function isSorted(paths: readonly string[]): boolean {
+  return paths.every((path, index) => index === 0 || byCodeUnit(paths[index - 1] ?? '', path) < 0);
+}
+
 function areaProblem(
   files: readonly FileEntry[],
   areas: readonly Area[],
@@ -108,6 +114,7 @@ function areaProblem(
     if (placed.has(path)) return 'file-in-two-areas';
     placed.add(path);
   }
+  if (!areas.every((area) => isSorted(area.files))) return 'area-files-unsorted';
   if (placed.size !== files.length) return 'file-in-no-area';
   const wrong = areas.some(
     (area) =>
@@ -133,6 +140,9 @@ function referencesUnknownFile(input: CodeMapInput, known: ReadonlySet<string>):
 export function createCodeMap(input: CodeMapInput): Result<CodeMap, CodeMapProblem> {
   const paths = input.files.map((file) => file.path);
   if (hasDuplicates(paths)) return err('duplicate-file');
+  if (input.symbols.some((symbol) => symbol.endLine < symbol.startLine)) {
+    return err('symbol-range-invalid');
+  }
   const problem = areaProblem(input.files, input.areas);
   if (problem !== undefined) return err(problem);
   if (referencesUnknownFile(input, new Set(paths))) return err('reference-to-unknown-file');

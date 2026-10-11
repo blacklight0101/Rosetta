@@ -19,12 +19,13 @@ import {
 import type { MapLevel } from '../../../domain/code-map/map-level.js';
 import { err, type Result } from '../../../domain/errors/result.js';
 import { pathFilter } from '../../files/ignore-rules.js';
+import { maskCodeMap } from './mask-code-map.js';
 import type { PackScan } from '../packs/pack-scan.js';
 import type { ScannedFile, UniversalScan } from '../universal/scan-types.js';
 
 // RF-104, RF-105, RF-141: joins the universal scan and the language-pack analysis into the code
-// map. Every piece of text taken from a repository file goes through the SecretMasker here, so
-// nothing downstream (the JSON writer, the summary) ever sees an unmasked secret.
+// map on the real paths, then masks every repository text with the SecretMasker (mask-code-map.ts)
+// before returning it, so the JSON writer and the summary only ever see masked text.
 
 /** `scan.areas`: a manual area and the gitignore-style patterns of the files it takes. */
 interface ConfiguredAreaSettings {
@@ -44,9 +45,6 @@ export interface BuildCodeMapInput {
 }
 
 export type BuildCodeMapProblem = CodeMapProblem | FileEntryProblem | GroupingProblem;
-
-/** RF-103: a statement is recorded with at most this many characters. */
-const maxStatementCharacters = 500;
 
 function entryOf(file: ScannedFile, mapLevel: MapLevel): FileEntry {
   return {
@@ -76,42 +74,17 @@ function configuredAreaOf(settings: ConfiguredAreaSettings): ConfiguredArea {
   return { name: settings.name, matches: pathFilter(settings.include.join('\n')) };
 }
 
-/** The masked text of the free-text fields the packs and the SQL extractor took from source files. */
-function maskedTexts(input: BuildCodeMapInput): {
+function rawTexts(input: BuildCodeMapInput): {
   readonly symbols: CodeSymbol[];
   readonly links: CodeLink[];
   readonly sqlStatements: CodeSqlStatement[];
   readonly entities: CodeEntity[];
 } {
-  const mask = (text: string): string => input.masker.mask(text).text;
   return {
-    symbols: input.packs.symbols.map((symbol) => ({
-      path: symbol.path,
-      kind: symbol.kind,
-      name: mask(symbol.name),
-      startLine: symbol.startLine,
-      endLine: symbol.endLine,
-      ...(symbol.container === undefined ? {} : { container: mask(symbol.container) }),
-    })),
-    links: input.packs.links.map((link) => ({
-      from: link.from,
-      to: link.to,
-      kind: link.kind,
-      ...(link.symbol === undefined ? {} : { symbol: mask(link.symbol) }),
-    })),
-    // Masking can lengthen a text (a short secret becomes a longer marker), so the cut comes last.
-    sqlStatements: input.scan.sqlStatements.map((statement) => ({
-      path: statement.path,
-      line: statement.line,
-      verb: statement.verb,
-      text: mask(statement.text).slice(0, maxStatementCharacters),
-    })),
-    entities: input.packs.entities.map((entity) => ({
-      name: mask(entity.name),
-      path: entity.path,
-      startLine: entity.startLine,
-      source: mask(entity.source),
-    })),
+    symbols: input.packs.symbols.map((symbol) => ({ ...symbol })),
+    links: input.packs.links.map((link) => ({ ...link })),
+    sqlStatements: input.scan.sqlStatements.map((statement) => ({ ...statement })),
+    entities: input.packs.entities.map((entity) => ({ ...entity })),
   };
 }
 
@@ -126,11 +99,12 @@ export function buildCodeMap(input: BuildCodeMapInput): Result<CodeMap, BuildCod
     configured: input.configuredAreas.map(configuredAreaOf),
   });
   if (!areas.ok) return err(areas.error);
-  return createCodeMap({
+  const raw = createCodeMap({
     source: input.source,
     files: files.value,
     areas: areas.value,
-    ...maskedTexts(input),
+    ...rawTexts(input),
     languagePacks: input.packs.languagePacks,
   });
+  return raw.ok ? maskCodeMap(raw.value, input.masker) : raw;
 }
