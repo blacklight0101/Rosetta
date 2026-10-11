@@ -15,7 +15,7 @@ Every rule below refers to these settings by name, so a stack change is made her
 
 | Setting | Value |
 |---|---|
-| Install | `npm ci` (Node.js from `.nvmrc`, DEC-27) |
+| Install | `npm ci` (Node.js from `.nvmrc`, DEC-27); agents run `npm ci --ignore-scripts` so no git hooks land in the `.git/hooks` folder the worktrees share (environments-and-delivery.md section 5) |
 | Build command | `npm run build` (`tsc` for the server, Vite for `web/`; zero errors) |
 | Verify command | `npm run verify`: typecheck, lint with zero warnings, format check, dependency-cruiser, knip, tests with coverage, in that order (ADR-011, environments-and-delivery.md section 6) |
 | Test-first | on (DEC-39, ADR-010): a `test:` commit with failing tests before the `feat:`/`fix:` commit that makes them pass, then optional `refactor:` |

@@ -14,8 +14,10 @@ const testDeclaration = /^\s*(?:it|test)(?:\.(?!skip\b|todo\b)\w+)*(?:\([^)]*\))
 const skippedSuite = /^\s*describe\.skip\(/u;
 
 const indentOf = (line) => line.length - line.trimStart().length;
+const braceBalance = (line) => line.split('{').length - line.split('}').length;
 
-// Counts declarations line by line; Prettier-formatted code closes a suite at its own indentation.
+// Counts declarations line by line; Prettier-formatted code closes a suite at its own indentation,
+// and a skipped suite whose braces balance on its own line is skipped as that one line.
 function countInSource(source) {
   let count = 0;
   let skipIndent = -1;
@@ -23,7 +25,7 @@ function countInSource(source) {
     if (skipIndent >= 0) {
       if (line.trimStart().startsWith('}') && indentOf(line) <= skipIndent) skipIndent = -1;
     } else if (skippedSuite.test(line)) {
-      skipIndent = indentOf(line);
+      if (braceBalance(line) > 0) skipIndent = indentOf(line);
     } else if (testDeclaration.test(line)) {
       count += 1;
     }
