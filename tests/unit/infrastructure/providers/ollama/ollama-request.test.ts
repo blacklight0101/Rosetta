@@ -63,11 +63,13 @@ describe('Ollama chat body', () => {
       ],
     });
   });
+});
 
+describe('Ollama chat body without tools or in text mode', () => {
   it('RF-401 a call without tools sends no tools and no output limit when none is set', () => {
-    const { maxOutputTokens: _unused, ...request } = contractRequest();
+    const { context, model, system, messages, signal } = contractRequest();
 
-    const body = chatBody({ ...request, tools: [] }, native);
+    const body = chatBody({ context, model, system, messages, tools: [], signal }, native);
 
     expect(body).not.toHaveProperty('tools');
     expect(body.options).toEqual({ num_ctx: 32768 });

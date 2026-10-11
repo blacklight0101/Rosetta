@@ -28,7 +28,7 @@ const recordingSchema = z.strictObject({
 export type OllamaExchange = z.infer<typeof exchangeSchema>;
 export type OllamaRecording = z.infer<typeof recordingSchema>;
 
-export const recordingsFolder = join(process.cwd(), 'tests', 'recordings', 'ollama');
+const recordingsFolder = join(process.cwd(), 'tests', 'recordings', 'ollama');
 
 /** Parses `tests/recordings/ollama/<name>.json`. */
 export async function loadOllamaRecording(name: string): Promise<OllamaRecording> {

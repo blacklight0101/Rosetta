@@ -56,7 +56,9 @@ describe('OllamaProvider retries', () => {
 
     expect(waits).toEqual([7000]);
   });
+});
 
+describe('OllamaProvider retry limits', () => {
   it('RF-406 waits longer before each retry (exponential back-off)', async () => {
     const { provider, waits } = await start('server-errors-exhausted');
 

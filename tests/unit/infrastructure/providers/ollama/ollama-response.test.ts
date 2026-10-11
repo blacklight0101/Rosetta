@@ -68,7 +68,9 @@ describe('Ollama answer', () => {
       tokensPerSecond: 0,
     });
   });
+});
 
+describe('Ollama usage and finish reasons', () => {
   it('RF-421 usage Ollama does not report is estimated and marked estimated', () => {
     const response = answer({
       prompt_eval_count: undefined,
@@ -92,7 +94,9 @@ describe('Ollama answer', () => {
   ] as const)('RF-401 done reason %s is the finish reason %s', (doneReason, finishReason) => {
     expect(answer({ done_reason: doneReason }).finishReason).toBe(finishReason);
   });
+});
 
+describe('Ollama tool calls and thinking', () => {
   it('RF-401 native tool calls are numbered and finish with tool_use', () => {
     const response = answer({
       message: {

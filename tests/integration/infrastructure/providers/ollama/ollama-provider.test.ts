@@ -64,7 +64,9 @@ describe('OllamaProvider with native tool calling', () => {
 
     expect(chatBody(server.chatBodies())).toMatchObject({ options: { num_ctx: 32768 } });
   });
+});
 
+describe('OllamaProvider answers', () => {
   it('RF-401 reports the model digest from Ollama as the exact model version', async () => {
     const { provider } = await start('contract-text');
 

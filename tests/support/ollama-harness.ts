@@ -21,7 +21,7 @@ export type HarnessOverrides = Partial<
   Omit<OllamaProviderOptions, 'baseUrl' | 'textProtocolPrompt' | 'sleep'>
 >;
 
-export const promptsFolder = join(process.cwd(), 'prompts');
+const promptsFolder = join(process.cwd(), 'prompts');
 
 /** Starts fake Ollama servers for one test file and stops them after each test. */
 export function useFakeOllama(): (

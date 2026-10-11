@@ -51,7 +51,9 @@ describe('Ollama HTTP failures', () => {
       retryable: false,
     });
   });
+});
 
+describe('Ollama permanent HTTP failures', () => {
   it.each([400, 401, 403])('RF-406 client error %i is permanent', (status) => {
     expect(failedStatus({ status, error: 'no', retryAfter: null }, 'm')).toMatchObject({
       failure: { code: ERROR_CODES.providerCallFailed, httpStatus: status },

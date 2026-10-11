@@ -60,7 +60,9 @@ describe('OllamaProvider with the text tool protocol', () => {
       range: '10‑20',
     });
   });
+});
 
+describe('OllamaProvider text protocol history and final answers', () => {
   it('RF-205 a final answer keeps its JSON card block and a malformed tool block as text', async () => {
     const { provider } = await start('text-final-answer', { toolMode: 'text' });
 
