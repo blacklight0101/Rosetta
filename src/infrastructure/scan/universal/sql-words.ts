@@ -1,4 +1,4 @@
-import type { SqlVerb } from './scan-types.js';
+import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
 
 // RF-103: the words that make text a SQL statement. No regular expression runs over file content:
 // every function here works on a string that is already cut to a few hundred or thousand

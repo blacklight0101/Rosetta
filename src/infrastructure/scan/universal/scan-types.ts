@@ -1,4 +1,5 @@
 import type { ArtefactKind } from '../../../domain/code-map/artefact.js';
+import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
 import type { SkippedPaths } from '../../../application/ports/repository-reader.js';
 
 // RF-100..RF-103: what the universal scan reports. Language packs add symbols and references
@@ -22,8 +23,6 @@ export interface ScannedFile {
   readonly artefactKinds: readonly ArtefactKind[];
   readonly skipped?: SkipReason;
 }
-
-export type SqlVerb = 'CREATE' | 'DELETE' | 'EXEC' | 'INSERT' | 'SELECT' | 'UPDATE';
 
 /** RF-103: a statement and where it starts. */
 export interface SqlStatement {

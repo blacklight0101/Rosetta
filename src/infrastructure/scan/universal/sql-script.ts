@@ -1,4 +1,5 @@
-import type { SqlStatement, SqlVerb } from './scan-types.js';
+import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
+import type { SqlStatement } from './scan-types.js';
 import {
   cutLine,
   leadingVerb,

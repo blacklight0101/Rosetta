@@ -1,11 +1,7 @@
 // RF-110, ADR-004: a language pack adds symbols, references and routes for the files of one
 // language. The universal scan never depends on one; a file no pack maps stays at the coarse level.
 
-export type SymbolKind =
-  'class' | 'enum' | 'function' | 'interface' | 'method' | 'property' | 'struct';
-
-/** The kinds of reference a pack may report; `code-behind` is a WebForms page to its code (RF-111). */
-type ReferenceKind = 'code-behind' | 'import';
+import type { LinkKind, SymbolKind } from '../../domain/code-map/vocabulary.js';
 
 /** One file to analyse: a repository-relative path with forward slashes, and its text. */
 export interface PackFile {
@@ -30,7 +26,7 @@ export interface PackReference {
   readonly from: string;
   /** A repository-relative path; the runner drops a reference to a file that was not scanned. */
   readonly to: string;
-  readonly kind: ReferenceKind;
+  readonly kind: LinkKind;
   /** The class or name inside `to` that the link targets, when the source names one. */
   readonly symbol?: string;
 }
