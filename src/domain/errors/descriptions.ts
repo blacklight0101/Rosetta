@@ -1,9 +1,10 @@
 import type { ErrorCode, ErrorDescription } from './codes.js';
 
 // RF-007: the plain message and the next step of every code in ERROR_CODES, in numeric order. The
-// codes themselves live in codes.ts; a new code adds its entry here in the same change.
+// codes themselves live in codes.ts (which imports nothing); a new code adds its entry here in
+// the same change, and describeError is the only way to read the table.
 
-export const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
+const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   'RST-1000': {
     message: 'The server configuration is missing or invalid.',
     nextStep:
@@ -218,3 +219,7 @@ export const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> =
     nextStep: 'Rebuild or reinstall Rosetta so that package.json ships next to the server.',
   },
 };
+
+export function describeError(code: ErrorCode): ErrorDescription {
+  return ERROR_DESCRIPTIONS[code];
+}

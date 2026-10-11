@@ -1,4 +1,5 @@
-import { describeError, type ErrorCode } from './codes.js';
+import type { ErrorCode } from './codes.js';
+import { describeError } from './descriptions.js';
 
 // RF-007: infrastructure failures are thrown as Error subclasses with a stable code and the
 // original failure as `cause` (conventions section 6).

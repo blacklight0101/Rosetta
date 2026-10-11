@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { describeError, ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { describeError } from '../../../../src/domain/errors/descriptions.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 
 describe('RosettaError', () => {

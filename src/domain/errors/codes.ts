@@ -2,8 +2,6 @@
 // number conflict visibly (DEC-112). A new code takes the next free number in its range
 // (conventions section 6) and gets a plain message and a next step in descriptions.ts.
 
-import { ERROR_DESCRIPTIONS } from './descriptions.js';
-
 /** The ranges of conventions section 6, in order; each holds one hundred codes. */
 export const ERROR_RANGES = {
   configuration: { first: 1000, last: 1099 },
@@ -84,8 +82,4 @@ export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 export interface ErrorDescription {
   readonly message: string;
   readonly nextStep: string;
-}
-
-export function describeError(code: ErrorCode): ErrorDescription {
-  return ERROR_DESCRIPTIONS[code];
 }
