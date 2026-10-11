@@ -226,3 +226,21 @@ describe('OpenAiProvider in automated tests', () => {
     expect(server.received).toEqual([]);
   });
 });
+
+describe('OpenAiProvider keys', () => {
+  const pieces = [fakeOpenAiKey.slice(0, 12), fakeOpenAiKey.slice(12)];
+
+  it.each([
+    ['a newline', pieces.join('\n')],
+    ['a carriage return', pieces.join('\r')],
+    ['a tab', pieces.join('\t')],
+    ['a space inside', pieces.join(' ')],
+  ])('RNF-003 a key with %s is refused with RST-1511 and appears nowhere', async (_n, apiKey) => {
+    const error = await failureOf(start('contract-text', { apiKey }));
+
+    expect(error).toMatchObject({ code: ERROR_CODES.openAiKeyRejected });
+    const shown = JSON.stringify(error, Object.getOwnPropertyNames(error));
+    for (const part of pieces) expect(shown).not.toContain(part);
+    expect(error instanceof Error ? error.cause : undefined).toBeUndefined();
+  });
+});

@@ -82,6 +82,29 @@ describe('OpenAI answer tool calls and refusals', () => {
     expect(llmResponseOf(body, context)?.finishReason).toBe('stop');
   });
 
+  it('RF-421 a usage without completion tokens is estimated and marked estimated', () => {
+    const body = completion(
+      { content: 'twelve chars' },
+      { usage: { prompt_tokens: 100, prompt_tokens_details: { cached_tokens: 40 } } },
+    );
+
+    expect(llmResponseOf(body, context)?.usage).toEqual({
+      inputTokens: 100,
+      outputTokens: 3,
+      cachedInputTokens: 40,
+      usageSource: 'estimated',
+    });
+  });
+
+  it('RF-421 a usage without prompt tokens is estimated and marked estimated', () => {
+    const body = completion({ content: 'x' }, { usage: { completion_tokens: 7 } });
+
+    const usage = llmResponseOf(body, context)?.usage;
+
+    expect(usage).toMatchObject({ outputTokens: 7, usageSource: 'estimated' });
+    expect(usage?.inputTokens).toBeGreaterThan(0);
+  });
+
   it.each([
     ['no choices', { model: 'gpt-test', choices: [] }],
     ['no model', { choices: [{ message: { content: 'x' } }] }],

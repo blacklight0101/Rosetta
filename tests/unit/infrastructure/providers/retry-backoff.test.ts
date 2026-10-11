@@ -40,12 +40,33 @@ describe('retry-after header', () => {
     expect(retryAfterMs(header)).toBe(expected);
   });
 
-  it.each([[null], [''], ['soon'], ['Wed, 21 Oct 2026 07:28:00 GMT'], ['-3']])(
+  it.each([[null], [''], ['soon'], ['-3'], ['Wed, 31 Feb 2026 07:28:00 GMT']])(
     'RF-406 %s is not a usable hint',
     (header) => {
       expect(retryAfterMs(header)).toBeUndefined();
     },
   );
+});
+
+describe('retry-after HTTP date', () => {
+  const now = Date.parse('2026-10-21T07:00:00Z');
+
+  it.each([
+    ['Wed, 21 Oct 2026 07:00:30 GMT', 30_000],
+    ['Wed, 21 Oct 2026 06:00:00 GMT', 0],
+    ['Wed, 21 Oct 2026 09:00:00 GMT', 300_000],
+  ])(
+    'RF-406 the date %s is read as %i ms from now (capped at five minutes)',
+    (header, expected) => {
+      expect(retryAfterMs(header, now)).toBe(expected);
+    },
+  );
+
+  it('RF-406 a date in the retry hint headers is used when no seconds are given', () => {
+    const headers = new Headers({ 'retry-after': 'Wed, 21 Oct 2026 07:00:10 GMT' });
+
+    expect(retryHintMs(headers, now)).toBe(10_000);
+  });
 });
 
 describe('retry hint headers', () => {

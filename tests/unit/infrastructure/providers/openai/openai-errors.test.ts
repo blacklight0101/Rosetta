@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
-import { failedStatus } from '../../../../../src/infrastructure/providers/openai/openai-errors.js';
+import {
+  failedStatus,
+  failedThrown,
+} from '../../../../../src/infrastructure/providers/openai/openai-errors.js';
 
 // RF-406: what each OpenAI error status means, whether it is retried, and the fix it names.
 
@@ -55,5 +58,21 @@ describe('OpenAI error statuses', () => {
     const failed = failedStatus({ status, errorCode }, 'gpt-test');
 
     expect(failed.message).toContain(fix);
+  });
+});
+
+describe('OpenAI thrown errors', () => {
+  const secret = ['sk', 'proj', 'FAKE0FAKE0FAKE0'].join('-');
+  const foreign = new TypeError(`Bearer ${secret} is not a legal HTTP header value`);
+
+  it.each([
+    ['a failure that is neither an API nor a transport error', false, false],
+    ['a cancel', true, false],
+    ['a timeout flag', false, true],
+  ])('RNF-003 %s carries no cause', (_name, cancelled, timedOut) => {
+    const failed = failedThrown(foreign, { cancelled, timedOut }, 'gpt-test');
+
+    expect(failed.cause).toBeUndefined();
+    expect(JSON.stringify(failed)).not.toContain(secret);
   });
 });
