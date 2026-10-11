@@ -1,4 +1,10 @@
 # Hooks help; CI is the gate (environments-and-delivery.md section 5).
+# Humans get the hooks from `npm run hooks:install` (its postinstall also installs them).
+# Agents install with `npm ci --ignore-scripts`: worktrees share one .git/hooks directory, so hooks
+# written from one worktree would run in every other. LEFTHOOK=0 does not stop the postinstall
+# (lefthook 2.2 skips it only when CI is set and LEFTHOOK is not); only lefthook and the macOS-only
+# fsevents have install scripts (tests/integration/tooling/lefthook-install.test.ts). CI runners set
+# CI=true, so a plain `npm ci` there writes no hooks.
 pre-commit:
   parallel: false
   commands:

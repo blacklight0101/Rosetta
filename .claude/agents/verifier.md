@@ -17,7 +17,7 @@ Inputs: the task card (id, difficulty, Reads, Do, Delivers, Done when, Refs), th
    `docs/architecture.md` and `docs/conventions.md`.
 2. **Scope:** `git diff --stat main...HEAD`; every Delivers item exists at its path; nothing outside the card changed;
    `docs/spec`, `docs/rfc`, `docs/adr` change only when the card or a behaviour change requires it (ADR-010).
-3. **Gates:** run `npm ci` and `npm run verify` yourself. Every gate green: typecheck, lint with zero warnings, format,
+3. **Gates:** run `npm ci --ignore-scripts` (never plain `npm ci`: lefthook would write hooks into the shared `.git`) and `npm run verify` yourself. Every gate green: typecheck, lint with zero warnings, format,
    dependency-cruiser, knip, tests with coverage thresholds. A skipped, `.only` or early-returning test counts as not
    run. Any weakened gate (new `eslint-disable` without a reason, lowered threshold, `@ts-expect-error`, removed test)
    is BLOCKING.

@@ -96,7 +96,10 @@ before commit (ADR-008).
   be merged with a red check.
 - Commits follow Conventional Commits, checked by commitlint ([conventions](conventions.md) section 9).
 - Git hooks (lefthook): `pre-commit` formats and lints staged files; `commit-msg` runs commitlint; `pre-push` runs
-  `typecheck` and the unit tests. Hooks help; CI is the gate.
+  `typecheck` and the unit tests. Hooks help; CI is the gate. Humans install them with `npm run hooks:install`
+  (a plain `npm ci` also does, through lefthook's postinstall). Agents install with `npm ci --ignore-scripts`,
+  because worktrees share one `.git/hooks` folder; `LEFTHOOK=0` does not stop the postinstall, `CI=true` does
+  (see `lefthook.yml`).
 
 ## 6. Continuous integration
 

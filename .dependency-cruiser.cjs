@@ -29,6 +29,28 @@ module.exports = {
       to: { path: '^(src/(infrastructure|presentation)/|tests/|web/)' },
     },
     {
+      name: 'domain-no-node-builtins',
+      comment: 'domain imports no Node built-in module (architecture section 3)',
+      severity: 'error',
+      from: { path: '^src/domain/' },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'node-io-only-in-infrastructure',
+      comment: 'node:fs and node:crypto appear only in src/infrastructure (architecture section 3)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/infrastructure/' },
+      to: { dependencyTypes: ['core'], path: '^(node:)?(fs|crypto)(/|$)' },
+    },
+    {
+      name: 'fastify-only-in-presentation-web',
+      comment:
+        'fastify and its plugins appear only in src/presentation/web/ (architecture section 3)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/presentation/web/' },
+      to: { path: '^(fastify|@fastify/)|node_modules/(fastify|@fastify/)' },
+    },
+    {
       name: 'infrastructure-not-presentation',
       comment: 'infrastructure may not import presentation',
       severity: 'error',
