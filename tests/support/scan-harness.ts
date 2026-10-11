@@ -12,7 +12,7 @@ import { MemoryLogger } from './memory-logger.js';
 
 export type FixtureRepository = 'webforms-csharp' | 'php-shop' | 'cobol-ledger';
 
-export const defaultMaxFileBytes = 1_000_000;
+const defaultMaxFileBytes = 1_000_000;
 
 export function fixtureRoot(name: FixtureRepository): string {
   return join(process.cwd(), 'tests', 'fixtures', 'repos', name);

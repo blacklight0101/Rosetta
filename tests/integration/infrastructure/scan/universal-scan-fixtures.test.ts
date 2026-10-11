@@ -30,18 +30,22 @@ describe('universal scan of the C# WebForms fixture', () => {
   it('RF-101 records language, lines, estimated tokens and a content hash', async () => {
     const { scan } = await scanTree(fixtureRoot('webforms-csharp'));
 
-    expect(entry(scan.files, 'Default.aspx.cs')).toEqual({
+    const { sha256, ...facts } = entry(scan.files, 'Default.aspx.cs') ?? { path: 'missing' };
+
+    expect(sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(facts).toEqual({
       path: 'Default.aspx.cs',
       language: 'csharp',
       lines: 14,
       estimatedTokens: 79,
-      sha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
       artefactKinds: [],
     });
     expect(entry(scan.files, 'Default.aspx')?.language).toBe('aspnet');
     expect(entry(scan.files, 'Database/schema.sql')?.language).toBe('sql');
   });
+});
 
+describe('universal scan of the C# WebForms fixture (continued)', () => {
   it('RF-102 tags pages, controllers, entry points, configuration, scripts and manifests', async () => {
     const { scan } = await scanTree(fixtureRoot('webforms-csharp'));
     const kinds = Object.fromEntries(scan.files.map((file) => [file.path, file.artefactKinds]));
@@ -62,7 +66,9 @@ describe('universal scan of the C# WebForms fixture', () => {
       'packages.config': ['manifest'],
     });
   });
+});
 
+describe('universal scan of the C# WebForms fixture (part 2)', () => {
   it('RF-103 records SQL from scripts and string literals with path and line', async () => {
     const { scan } = await scanTree(fixtureRoot('webforms-csharp'));
 
@@ -86,7 +92,9 @@ describe('universal scan of the C# WebForms fixture', () => {
 
     expect(scan.sqlStatements.some((s) => s.text.startsWith('Select an item'))).toBe(false);
   });
+});
 
+describe('universal scan of the C# WebForms fixture (part 3)', () => {
   it('RF-124 with a subpath only its files are listed, with paths from the repository root', async () => {
     const { scan } = await scanTree(fixtureRoot('webforms-csharp'), { subpath: 'Catalog' });
 

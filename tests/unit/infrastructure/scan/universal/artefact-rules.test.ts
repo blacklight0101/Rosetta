@@ -15,7 +15,7 @@ describe('artefact rules', () => {
 
   it.each([
     ['Controllers/CatalogController.cs', ['controller']],
-    ['src/OrderController.php', ['controller']],
+    ['src/OrderController.php', ['controller', 'page']],
     ['api/UsersController.java', ['controller']],
     ['api/usersController.ts', ['controller']],
   ])('RF-102 %s is a controller', (path, kinds) => {
@@ -35,7 +35,9 @@ describe('artefact rules', () => {
   ])('RF-102 %s is an entry point', (path, kinds) => {
     expect(artefactKindsOf(path)).toEqual(kinds);
   });
+});
 
+describe('artefact rules (part 2)', () => {
   it.each([
     ['Web.config', ['configuration']],
     ['src/App.config', ['configuration']],
@@ -54,7 +56,9 @@ describe('artefact rules', () => {
   ])('RF-102 %s is a database script', (path, kinds) => {
     expect(artefactKindsOf(path)).toEqual(kinds);
   });
+});
 
+describe('artefact rules (part 3)', () => {
   it.each([
     ['packages.config', ['manifest']],
     ['ShopWeb.csproj', ['manifest']],

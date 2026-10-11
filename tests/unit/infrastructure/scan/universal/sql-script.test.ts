@@ -49,7 +49,9 @@ describe('SQL statements in a script', () => {
       [3, 'SELECT', 'SELECT Id FROM T'],
     ]);
   });
+});
 
+describe('SQL statements in a script (continued)', () => {
   it('RF-103 a SELECT under an unfinished CREATE or INSERT belongs to it', () => {
     const statements = scriptOf(
       ['CREATE VIEW V AS', 'SELECT Id FROM T;', 'INSERT INTO U (Id)', 'SELECT Id FROM T;'].join(
@@ -73,7 +75,9 @@ describe('SQL statements in a script', () => {
       [3, 'UPDATE', 'update T set A = 1;'],
     ]);
   });
+});
 
+describe('SQL statements in a script (part 2)', () => {
   it('RF-103 EXECUTE is recorded as EXEC', () => {
     const statements = scriptOf('EXECUTE dbo.Refresh @Id = 1;\nexec sp_who;');
 
@@ -93,7 +97,9 @@ describe('SQL statements in a script', () => {
   it('RF-103 a script with no statement gives an empty list', () => {
     expect(scriptOf('-- only a comment\n\n')).toEqual([]);
   });
+});
 
+describe('SQL statements in a script (part 3)', () => {
   it('RF-103 at most 1000 statements are kept per file', () => {
     const many = Array.from(
       { length: 1200 },

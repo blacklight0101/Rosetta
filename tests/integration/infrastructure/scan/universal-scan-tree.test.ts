@@ -35,19 +35,22 @@ describe('universal scan of a tree with ignorable content', () => {
     await writeFile(join(temp.path, 'blob.dat'), Buffer.from([1, 2, 0, 3, 4]));
     const { scan } = await scanTree(temp.path);
 
-    expect(scan.files).toEqual([
-      {
-        path: 'blob.dat',
-        language: 'unknown',
-        lines: 0,
-        estimatedTokens: 0,
-        sha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
-        artefactKinds: [],
-        skipped: 'binary',
-      },
-    ]);
-  });
+    const { sha256, ...facts } = scan.files[0] ?? { path: 'missing' };
 
+    expect(scan.files).toHaveLength(1);
+    expect(sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(facts).toEqual({
+      path: 'blob.dat',
+      language: 'unknown',
+      lines: 0,
+      estimatedTokens: 0,
+      artefactKinds: [],
+      skipped: 'binary',
+    });
+  });
+});
+
+describe('universal scan of a tree with ignorable content (part 2)', () => {
   it('RF-100 a file over the limit is listed as skipped: too large and is never read', async () => {
     await copyFixture('php-shop', temp.path);
     await writeFile(join(temp.path, 'export.csv'), Buffer.alloc(3_000_000, 97));
@@ -86,7 +89,9 @@ describe('universal scan of a tree with ignorable content', () => {
 
     expect(scan.files.map((file) => file.path)).toEqual(['packages/app/src/a.cs']);
   });
+});
 
+describe('universal scan of a tree with ignorable content (part 3)', () => {
   it('RF-101 the language comes from the content when the extension says nothing', async () => {
     await writeTree(temp.path, { 'bin2/run': '#!/usr/bin/env python3\nprint(1)\n' });
     const { scan } = await scanTree(temp.path);

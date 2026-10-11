@@ -52,7 +52,9 @@ describe('SQL statements in string literals', () => {
       ),
     ).toEqual([]);
   });
+});
 
+describe('SQL statements in string literals (continued)', () => {
   it('RF-103 SQL text outside a string literal is not recorded', () => {
     expect(found('// SELECT Id FROM Item', 'SELECT Id FROM Item')).toEqual([]);
   });
@@ -65,7 +67,9 @@ describe('SQL statements in string literals', () => {
       [1, 'SELECT', 'SELECT \\"Id\\" FROM Item'],
     ]);
   });
+});
 
+describe('SQL statements in string literals (part 2)', () => {
   it('RF-103 two statements on one line are both recorded', () => {
     expect(found('a("DELETE FROM A WHERE x = 1"); b("DELETE FROM B WHERE y = 2");')).toHaveLength(
       2,
@@ -93,7 +97,9 @@ describe('SQL statements in string literals', () => {
       [2, 'DELETE', 'DELETE FROM T WHERE Id = 1'],
     ]);
   });
+});
 
+describe('SQL statements in string literals (part 3)', () => {
   it('RF-103 the statement text is cut to 500 characters', () => {
     const [statement] = found(`var sql = "SELECT ${'a, '.repeat(400)}b FROM T";`);
 
