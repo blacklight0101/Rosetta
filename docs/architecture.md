@@ -121,7 +121,8 @@ src/
     github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
                         hash, snapshot.json, read-only), github-snapshot-fetcher, fake-source-fetcher
-    files/              snapshot-reader, ignore-rules, output-writer, workspace paths
+    files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
+                        search and limits, node-output-writer, workspace-guard, workspace-paths, repository-path checks
     events/             sse-broadcaster, jsonl-event-log
     db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit), migration runner
     security/           password-hasher (scrypt), secret-box (AES-256-GCM), token generator
@@ -230,7 +231,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 |---|---|---|
 | `LlmProvider` | chat with tools; returns text, tool calls, usage (ADR-003) | `OllamaProvider`, `OpenAiProvider`, `OpenAiCompatibleProvider`, `AnthropicProvider`, `FakeProvider` (recordings) |
 | `SourceFetcher` | resolve a GitHub URL and ref to a commit and provide its snapshot (ADR-012); the composition root calls `GitHubSnapshotFetcher.discardPartialFolders()` at start-up, before the server accepts runs (RF-122) | `GitHubSnapshotFetcher`, `FakeSourceFetcher` |
-| `RepositoryReader` | list files, read line ranges, grep in a snapshot; read-only, ignore rules applied | `NodeRepositoryReader` |
+| `RepositoryReader` | list files, read line ranges, grep in a snapshot; read-only (no write operation), ignore rules and the RF-147 deny list applied, grep in a `node:worker_threads` worker with the RF-146 limits (the worker loads the search module next to it, never one named by its input); every path is resolved against the real root and refused outside it: a subpath that is or passes through a link, a file under a linked folder, a hard-linked file (`nlink > 1`) or a file that vanished between `realpath` and `stat` answers `RST-1100`; `skippedPaths` records the links and the invalid names left out of the index, names only | `NodeRepositoryReader` |
 | `OutputWriter` | write and read files inside the user's workspace only | `NodeOutputWriter` |
 | `LanguagePack` | symbols, references, routes for some extensions (ADR-004) | `CSharpPack` (tree-sitter) |
 | `ConfigSource` | load and validate the server environment (RF-1305) and project settings | `EnvConfigSource`, `DbProjectSettings` |

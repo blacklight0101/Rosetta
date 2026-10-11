@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { describeError, ERROR_CODES, type ErrorCode } from '../../../../src/domain/errors/codes.js';
+import { ERROR_CODES, type ErrorCode } from '../../../../src/domain/errors/codes.js';
+import { describeError } from '../../../../src/domain/errors/descriptions.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 

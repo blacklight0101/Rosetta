@@ -1,4 +1,5 @@
-import { describeError, ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
+import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
+import { describeError } from '../../domain/errors/descriptions.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 // RF-007, RNF-008: every error becomes an HTTP status of its cause and a body with the `RST`

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  describeError,
-  ERROR_CODES,
-  ERROR_RANGES,
-  type ErrorCode,
-} from '../../../../src/domain/errors/codes.js';
+import { ERROR_CODES, ERROR_RANGES, type ErrorCode } from '../../../../src/domain/errors/codes.js';
+import { describeError } from '../../../../src/domain/errors/descriptions.js';
 
 const allCodes: readonly ErrorCode[] = Object.values(ERROR_CODES);
 

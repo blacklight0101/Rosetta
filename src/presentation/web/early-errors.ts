@@ -1,7 +1,8 @@
 import { STATUS_CODES, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Logger, LogRecord } from '../../application/ports/logger.js';
-import { describeError, ERROR_CODES } from '../../domain/errors/codes.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { describeError } from '../../domain/errors/descriptions.js';
 import { toErrorReply } from './error-mapper.js';
 import { fallbackSecurityHeaders } from './security-headers.js';
 
