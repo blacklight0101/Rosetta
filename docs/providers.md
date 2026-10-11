@@ -25,8 +25,8 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 - Every adapter passes the contract suite `tests/contracts/llm-provider.contract.ts`: its test arranges recordings so
   that each scenario of the suite (`text`, `tool-call`, `retry-then-text`, `permanent-failure`) answers with the
   normalised values of `contractScenarios`, and runs `llmProviderContract(name, factory)`.
-- No automated test calls a real provider: the test setup sets `ROSETTA_TEST=1` and refuses every connection beyond
-  this machine (`tests/support/block-network.ts`, RNF-005, ADR-008).
+- No automated test calls a real provider: tests use the fake provider with recordings and the test setup sets
+  `ROSETTA_TEST=1` (RNF-005, ADR-008).
 
 ## 2. Ollama
 
