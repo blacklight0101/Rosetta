@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -11,26 +11,30 @@ import {
 } from '../../support/docs-consistency.js';
 
 const ROOT = process.cwd();
-const read = (path: string): string => readFileSync(join(ROOT, path), 'utf8');
+const read = (path: string): Promise<string> => readFile(join(ROOT, path), 'utf8');
 
-const adrIndex = read('docs/adr/README.md');
-const adrFiles = readdirSync(join(ROOT, 'docs/adr')).filter((f) => /^ADR-\d{3}-.*\.md$/.test(f));
-const tasks = read('docs/orchestration/tasks.md');
+const adrIndex = await read('docs/adr/README.md');
+const adrFiles = (await readdir(join(ROOT, 'docs/adr'))).filter((f) => /^ADR-\d{3}-.*\.md$/.test(f));
+const fileStatus = new Map(
+  await Promise.all(
+    adrFiles.map(async (f) => [f.slice(0, 7), parseAdrStatusLine(await read(`docs/adr/${f}`))] as const),
+  ),
+);
+
+const tasks = await read('docs/orchestration/tasks.md');
 const cards = parseCards(tasks);
 const totals = parseTaskTotals(tasks);
 
 describe('ADR index consistency', () => {
   const rows = parseAdrIndexRows(adrIndex);
-  const fileStatus = new Map(
-    adrFiles.map((f) => [f.slice(0, 7), parseAdrStatusLine(read(`docs/adr/${f}`))]),
-  );
-
   it('RNF-005 the ADR index lists exactly the ADR files', () => {
     expect(rows.map((r) => r.id)).toEqual([...fileStatus.keys()].sort());
   });
 
-  it.each(rows)('RNF-005 $id has the same status in the index and in its file', (row) => {
-    expect(fileStatus.get(row.id)).toBe(row.status);
+  it('RNF-005 every ADR has the same status in the index and in its file', () => {
+    const indexed = rows.map((r) => [r.id, r.status]);
+
+    expect(indexed).toEqual(indexed.map(([id]) => [id, fileStatus.get(id ?? '')]));
   });
 
   it('RNF-005 the ADR index Totals line matches the status of every ADR file', () => {

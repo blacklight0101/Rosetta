@@ -63,7 +63,7 @@ const P1_COUNTS = {
   withdrawn: 0,
 };
 
-describe('docs consistency parsers', () => {
+describe('ADR parsers', () => {
   it('RNF-005 reads the ADR index totals line', () => {
     expect(parseAdrTotals(ADR_INDEX)).toEqual({
       total: 2,
@@ -101,34 +101,19 @@ describe('docs consistency parsers', () => {
     expect(parseAdrStatusLine(md)).toBe('Accepted');
   });
 
+});
+
+describe('task card parsers', () => {
   it('RNF-005 reads every card with its fields', () => {
-    expect(parseCards(TASKS)).toEqual([
-      { id: 'P1-01', title: 'Scaffold', difficulty: 2, size: 'S', dependsOn: [], status: 'Done' },
-      {
-        id: 'P1-02',
-        title: 'Pipeline',
-        difficulty: 5,
-        size: 'M',
-        dependsOn: ['P1-01'],
-        status: 'Todo; live check Blocked (G-04)',
-      },
-      {
-        id: 'P1-03',
-        title: 'Engine',
-        difficulty: 8,
-        size: 'L',
-        dependsOn: ['P1-01', 'P1-02'],
-        status: 'Todo',
-      },
-      {
-        id: 'P2-01',
-        title: 'Judge',
-        difficulty: 10,
-        size: 'M',
-        dependsOn: ['P1-03'],
-        status: 'Todo',
-      },
+    const cards = parseCards(TASKS);
+
+    expect(cards.map((c) => [c.id, c.title, c.difficulty, c.size, c.status])).toEqual([
+      ["P1-01", "Scaffold", 2, "S", "Done"],
+      ["P1-02", "Pipeline", 5, "M", "Todo; live check Blocked (G-04)"],
+      ["P1-03", "Engine", 8, "L", "Todo"],
+      ["P2-01", "Judge", 10, "M", "Todo"],
     ]);
+    expect(cards.map((c) => c.dependsOn)).toEqual([[], ["P1-01"], ["P1-01", "P1-02"], ["P1-03"]]);
   });
 
   it('RNF-005 reads the totals table by phase and total', () => {

@@ -58,15 +58,15 @@ export function normalizeAdrStatus(raw: string): AdrStatus {
 }
 
 export function parseAdrStatusLine(markdown: string): AdrStatus {
-  return normalizeAdrStatus(group(markdown.match(/^\*\*Status\*\*:\s*(.+)$/m), 'ADR Status line'));
+  return normalizeAdrStatus(group(/^\*\*Status\*\*:\s*(.+)$/m.exec(markdown), 'ADR Status line'));
 }
 
 export function parseAdrTotals(markdown: string): AdrTotals {
-  const line = group(markdown.match(/^\*\*Totals\*\*:\s*(.+)$/m), 'ADR index Totals line');
+  const line = group(/^\*\*Totals\*\*:\s*(.+)$/m.exec(markdown), 'ADR index Totals line');
   const number = (label: string): number =>
-    Number(group(line.match(new RegExp(`${label}\\s+(\\d+)`)), `Totals ${label}`));
+    Number(group(new RegExp(`${label}\\s+(\\d+)`).exec(line), `Totals ${label}`));
   return {
-    total: Number(group(line.match(/^(\d+) in total/), 'Totals total')),
+    total: Number(group(/^(\d+) in total/.exec(line), 'Totals total')),
     Accepted: number('Accepted'),
     Proposed: number('Proposed'),
     Amended: number('Amended'),
@@ -89,7 +89,7 @@ export function parseAdrIndexRows(markdown: string): AdrIndexRow[] {
 
 function parseField(block: string, name: string): string {
   return group(
-    block.match(new RegExp(`^- \\*\\*${name}\\*\\*:\\s*(.+)$`, 'm')),
+    new RegExp(`^- \\*\\*${name}\\*\\*:\\s*(.+)$`, 'm').exec(block),
     `card field ${name}`,
   );
 }
@@ -101,11 +101,11 @@ function parseDependsOn(value: string): string[] {
 export function parseCards(markdown: string): Card[] {
   const blocks = markdown.split(/^(?=### P\d-\d+ - )/m).filter((b) => /^### P\d-\d+ - /.test(b));
   return blocks.map((block) => {
-    const heading = block.match(/^### (P\d-\d+) - (.+)$/m);
+    const heading = /^### (P\d-\d+) - (.+)$/m.exec(block);
     return {
       id: group(heading, 'card id'),
       title: heading?.[2] ?? '',
-      difficulty: Number(group(parseField(block, 'Difficulty').match(/^(\d+)/), 'card difficulty')),
+      difficulty: Number(group(/^(\d+)/.exec(parseField(block, 'Difficulty')), 'card difficulty')),
       size: parseField(block, 'Size'),
       dependsOn: parseDependsOn(parseField(block, 'Depends on')),
       status: parseField(block, 'Status'),
@@ -116,9 +116,19 @@ export function parseCards(markdown: string): Card[] {
 const COLUMN_COUNT = 10;
 
 function toCounts(v: readonly number[]): CardCounts {
-  const [cards = NaN, haiku = NaN, sonnet = NaN, opus = NaN, fable = NaN] = v;
-  const [s = NaN, m = NaN, l = NaN, followUps = NaN, withdrawn = NaN] = v.slice(5);
-  return { cards, haiku, sonnet, opus, fable, s, m, l, followUps, withdrawn };
+  const at = (i: number): number => v[i] ?? Number.NaN;
+  return {
+    cards: at(0),
+    haiku: at(1),
+    sonnet: at(2),
+    opus: at(3),
+    fable: at(4),
+    s: at(5),
+    m: at(6),
+    l: at(7),
+    followUps: at(8),
+    withdrawn: at(9),
+  };
 }
 
 /** Rows of the Totals table keyed by phase ("P1") or "Total". */
