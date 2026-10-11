@@ -89,6 +89,10 @@ describe('scripts/audit-check.mjs', () => {
 
     expect(result.code).toBe(0);
   });
+});
+
+describe('scripts/audit-check.mjs exceptions and input', () => {
+  const tmp = useTempRoot('rosetta-audit-');
 
   it('RNF-003 passes a high advisory that has an unexpired exception', async () => {
     const result = await audit(tmp.path, lodashHigh, [exception('GHSA-aaaa-bbbb-cccc')]);
@@ -118,6 +122,10 @@ describe('scripts/audit-check.mjs', () => {
     expect(open.code).toBe(1);
     expect(excepted.code).toBe(0);
   });
+});
+
+describe('scripts/audit-check.mjs input checks', () => {
+  const tmp = useTempRoot('rosetta-audit-');
 
   it('RNF-003 one exception does not cover a second high advisory on the same package', async () => {
     const vulnerable = report({

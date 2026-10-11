@@ -1,0 +1,133 @@
+# CI gates (environments-and-delivery.md section 6, ADR-011). Hardening: top-level read-only token,
+# a timeout on every job, one run per branch, third-party actions pinned to a commit SHA, no secrets,
+# values reach shell steps through env: and never as an expression inside run:.
+name: CI
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            # Disposable database for the integration tests (P1-06); the credentials are throwaway.
+            database-url: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
+            services:
+              postgres:
+                image: postgres:17
+                env:
+                  POSTGRES_USER: postgres
+                  POSTGRES_PASSWORD: postgres
+                  POSTGRES_DB: rosetta_test
+                ports:
+                  - 5432:5432
+                options: >-
+                  --health-cmd "pg_isready -U postgres"
+                  --health-interval 5s
+                  --health-timeout 5s
+                  --health-retries 10
+          - os: windows-latest
+            database-url: ''
+            services: {}
+    services: ${{ matrix.services }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # CI=true on the runner keeps lefthook from writing git hooks.
+      - run: npm ci
+      - name: Database tests are skipped on Windows
+        if: runner.os == 'Windows'
+        run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
+        shell: bash
+      - run: npm run verify
+        env:
+          ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
+
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # npm audit exits non-zero on findings; audit-check.mjs decides, honouring audit-exceptions.json.
+      - run: |
+          npm audit --audit-level=high --omit=dev --json > "$RUNNER_TEMP/audit-report.json" || true
+          node scripts/audit-check.mjs --report "$RUNNER_TEMP/audit-report.json"
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Personal account: no licence key needed. github.token is the run's automatic token.
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          deny-licenses: AGPL-3.0-only, AGPL-3.0-or-later, GPL-2.0-only, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later
+          comment-summary-in-pr: never
+
+  pr-title:
+    name: pr-title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # The title is untrusted input: it is read from the environment, never expanded into the script.
+      - run: printf '%s\n' "$TITLE" | npx --no-install commitlint
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
