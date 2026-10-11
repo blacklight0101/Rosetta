@@ -191,6 +191,45 @@ describe('secrets inside the repository text', () => {
   });
 });
 
+// Three long FAKE keys that mask to short markers, then a FAKE connection string at `start`.
+const longKeys = ['A', 'B', 'C'].map((tag) => ['sk', `${tag}${'Kx9'.repeat(150)}`].join('-'));
+const longPassword = ['Pw', 'FAKE0'.repeat(8)].join('');
+const longConnection = `${['postgres', '://adm:'].join('')}${longPassword}@db.example/app`;
+
+function shrinkingStatement(start: number): string {
+  const head = `SELECT ${longKeys.join(' ')} `;
+  return `${head}${'a'.repeat(start - head.length - 1)} ${longConnection} FROM T`;
+}
+
+describe('secrets cut by the statement window', () => {
+  it('RF-141 a connection string across character 1536 never reaches codemap.json, from .sql files or embedded SQL', async () => {
+    const starts = Array.from({ length: 51 }, (_, index) => 1490 + index);
+    const repo = join(temp.path, 'window-repo');
+    const tree: Record<string, string> = {
+      'src/Queries.cs': [
+        'public class Queries {',
+        ...starts.map((start) => `  string Q${String(start)} = "${shrinkingStatement(start)}";`),
+        '}',
+        '',
+      ].join('\n'),
+    };
+    for (const start of starts)
+      tree[`db/q${String(start)}.sql`] = `${shrinkingStatement(start)};\n`;
+    await writeTree(repo, tree);
+
+    const run = await scanToOutputs(repo, { runFolder: 'runs/window', dataDir: dataDir() });
+
+    const codeMapText = await readFile(run.codeMapPath, 'utf8');
+    const summaryText = await readFile(run.summaryPath, 'utf8');
+    expect(run.codeMap.sqlStatements).toHaveLength(starts.length * 2);
+    for (const text of [codeMapText, summaryText]) {
+      expect(text).not.toContain('FAKE0');
+      expect(text).not.toMatch(/adm:(?!\[MASKED:)/u);
+      expect(text).not.toContain('Kx9Kx9');
+    }
+  });
+});
+
 describe('writing the scan outputs', () => {
   it('RF-005 a refused write is returned as a refusal and no output file is made', async () => {
     const run = await scanToOutputs(fixtureRoot('php-shop'), {

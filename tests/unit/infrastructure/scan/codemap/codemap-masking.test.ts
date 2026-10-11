@@ -92,7 +92,94 @@ describe('a secret that straddles the end of the 500 characters of a statement',
   });
 });
 
+// Three long FAKE keys that mask to short markers, then a FAKE connection string at `start`.
+const longKeys = ['A', 'B', 'C'].map((tag) => ['sk', `${tag}${'Kx9'.repeat(150)}`].join('-'));
+const longPassword = ['Pw', 'FAKE0'.repeat(8)].join('');
+const longConnection = `${['postgres', '://adm:'].join('')}${longPassword}@db.example/app`;
+
+/** A statement whose connection string starts at character `start` of the collapsed text. */
+function shrinkingStatement(start: number): string {
+  const head = `SELECT ${longKeys.join(' ')} `;
+  return `${head}${'a'.repeat(start - head.length - 1)} ${longConnection} FROM T`;
+}
+
+/** Whether a text still holds any part of the FAKE password or keys of the probes. */
+function leaks(text: string): boolean {
+  return (
+    text.includes('FAKE0') ||
+    /adm:(?!\[MASKED:)/u.test(text) ||
+    longKeys.some((key) => text.includes(key.slice(0, 24)))
+  );
+}
+
+describe('a secret cut by the statement window after masking shortened the head', () => {
+  const starts = Array.from({ length: 51 }, (_, index) => 1490 + index);
+
+  it('RF-141 a connection string across character 1536 of a script statement is never written', () => {
+    const leaked = starts.filter((start) => {
+      const line = `${shrinkingStatement(start)};`;
+      return leaks(textOf(buildWith(extractScriptStatements('db/a.sql', [line]))));
+    });
+
+    expect(leaked).toEqual([]);
+  });
+
+  it('RF-141 a connection string across character 1536 of an embedded statement is never written', () => {
+    const leaked = starts.filter((start) => {
+      const line = `var sql = "${shrinkingStatement(start)}";`;
+      return leaks(textOf(buildWith(extractEmbeddedStatements('src/A.cs', [line]))));
+    });
+
+    expect(leaked).toEqual([]);
+  });
+});
+
+describe('a secret cut by the 4000-character line limit', () => {
+  const kept = Array.from({ length: longPassword.length + 2 }, (_, index) => index);
+  const prefixLength = ['postgres', '://adm:'].join('').length;
+
+  it('RF-141 a script line cut inside a connection string leaks no part of the password', () => {
+    const leaked = kept.filter((keep) => {
+      const line = `${' '.repeat(4000 - prefixLength - keep)}${longConnection}`;
+      const statements = extractScriptStatements('db/a.sql', ['SELECT a FROM T WHERE u =', line]);
+      return leaks(textOf(buildWith(statements)));
+    });
+
+    expect(leaked).toEqual([]);
+  });
+
+  it('RF-141 an embedded literal cut inside a connection string leaks no part of the password', () => {
+    const leaked = kept.filter((keep) => {
+      const head = `${'x'.repeat(1000)} = "SELECT a FROM T WHERE u = `;
+      const spaces = ' '.repeat(4000 - head.length - prefixLength - keep);
+      const lines = [`${head}${spaces}${longConnection}`, '";'];
+      return leaks(textOf(buildWith(extractEmbeddedStatements('src/A.cs', lines))));
+    });
+
+    expect(leaked).toEqual([]);
+  });
+});
 describe('masking of paths, area names and the subpath', () => {
+  it('RF-141 two file paths that differ only by a secret stay two distinct masked paths', () => {
+    const second = ['sk', 'proj', 'Other'.repeat(8)].join('-');
+    const paths = [`cfg/${fakeOpenAiKey}.txt`, `cfg/${second}.txt`];
+    const result = buildCodeMap({
+      source,
+      scan: { files: paths.map(file), sqlStatements: [] },
+      packs: noPacks,
+      areaTokenBudget: 60_000,
+      configuredAreas: [],
+      masker: new SecretMasker(),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const masked = result.value.files.map((entry) => entry.path);
+    expect(masked).toEqual(['cfg/[MASKED:api-key].txt~1', 'cfg/[MASKED:api-key].txt~2']);
+    expect(result.value.areas.flatMap((area) => area.files)).toEqual(masked);
+    expect(JSON.stringify(result.value)).not.toContain('Other');
+  });
+
   it('RF-141 a secret in a file path, an area name or the subpath is masked in the code map', () => {
     const secretPath = `cfg/${fakeOpenAiKey}.txt`;
     const result = buildCodeMap({
