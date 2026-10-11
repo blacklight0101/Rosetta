@@ -104,7 +104,7 @@ describe('SnapshotStore inspect safety', () => {
 
 describe('SnapshotStore inspect links (ADR-019)', () => {
   it.skipIf(!symlinksAllowed)(
-    'RF-122 refuses an entry under files/ that resolves outside it (ADR-019)',
+    'RF-122 refuses a link under files/ that points outside it before following it (ADR-019)',
     async () => {
       const store = new SnapshotStore(root.path);
       const files = join(root.path, 'files');
@@ -117,7 +117,7 @@ describe('SnapshotStore inspect links (ADR-019)', () => {
       const failure: unknown = await store.inspect(files).catch((error: unknown) => error);
 
       expect(failure).toMatchObject({ code: 'RST-1906' });
-      expect(failure).toHaveProperty('message', expect.stringContaining('outside'));
+      expect(failure).toHaveProperty('message', expect.stringContaining('link'));
     },
   );
 
