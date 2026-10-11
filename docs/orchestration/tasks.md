@@ -8,21 +8,21 @@ it never rewrites a card. Card ids are never renumbered or reused.
 
 This table is the only canonical place for card counts. `handoff.md` and `README.md` link here; any number they repeat
 is re-checked against this table whenever a card is added, withdrawn or re-rated (README section 11). Bands follow
-DEC-32: 1-3 haiku, 4-6 sonnet, 7-9 opus, 10 fable.
+DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts on fable (it is escalation only, with owner approval).
 
-| Phase | Cards | haiku 1-3 | sonnet 4-6 | opus 7-9 | fable 10 | S | M | L | Follow-ups | Withdrawn |
+| Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 63 | 4 | 22 | 30 | 7 | 16 | 39 | 8 | 7 | 0 |
-| P2 Full understand | 14 | 0 | 4 | 10 | 0 | 2 | 11 | 1 | 0 | 0 |
-| P3 Report and plan | 12 | 0 | 3 | 9 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **89** | **4** | **29** | **49** | **7** | **19** | **59** | **11** | **7** | **0** |
+| P1 Milestone slice (M1) | 63 | 12 | 37 | 14 | 0 | 16 | 39 | 8 | 7 | 0 |
+| P2 Full understand | 14 | 1 | 10 | 3 | 0 | 2 | 11 | 1 | 0 | 0 |
+| P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
+| **Total** | **89** | **14** | **56** | **19** | **0** | **19** | **59** | **11** | **7** | **0** |
 
 ## Conventions for every card
 
 - **Card format**: heading `### P<phase>-nn - Title`, then the fields Difficulty, Size, Depends on, Gate, Status,
   Reads, Do, Delivers, Done when, Refs, one per line, in that order.
-- **Difficulty**: 1-10 with the builder in brackets (DEC-32; README section 2). The verifier is `verifier` for 1-9 and
-  `verifier-fable` for 10 (DEC-41).
+- **Difficulty**: 1-10 with the builder in brackets (DEC-32; README section 2). The verifier is `verifier` for 1-8 and
+  `verifier-opus` for 9-10; `verifier-fable` only for work of a fable builder (DEC-41, DEC-115).
 - **Size**: agent working time, not developer days (DEC-102): S at most about 1 hour, M about 2-3 hours, L about 4-6
   hours, each before verification. Nothing larger; split it.
 - **Status**: `Todo` | `In progress` | `In review` | `Done` | `Blocked (<reason>)` (README section 3). A part of a card
@@ -102,7 +102,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-001, RNF-003, ADR-011, DEC-28, DEC-35, DEC-42, DEC-57.
 
 ### P1-03 - Domain kernel: results, error codes, clock, ids and money
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
@@ -126,7 +126,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-141, RNF-003, ADR-006, ADR-013, DEC-50, DEC-57.
 
 ### P1-05 - Server configuration from the environment
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-03
 - **Gate**: none
@@ -138,7 +138,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1305, RNF-003, RNF-014, ADR-014.
 
 ### P1-06 - PostgreSQL, migrations and the release-1 schema
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-05
 - **Gate**: none
@@ -150,7 +150,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1302, RNF-002, ADR-016, DEC-65.
 
 ### P1-07 - HTTP server foundation, health and security headers
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-04, P1-06
 - **Gate**: none
@@ -162,7 +162,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-007, RF-1013, RF-1201, RF-1303, RNF-008, ADR-013, ADR-014, ADR-017.
 
 ### P1-08 - Users, passwords, audit log and the bootstrap administrator
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-04, P1-06, P1-07
 - **Gate**: none
@@ -174,7 +174,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1102, RF-1103, RF-1109, RNF-003, ADR-015, ADR-016, DEC-62, DEC-66, DEC-69.
 
 ### P1-09 - Sign-in, sessions, CSRF and access control
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: L
 - **Depends on**: P1-07, P1-08
 - **Gate**: none
@@ -198,7 +198,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1102, RF-1103, RF-1105, RF-1107, RF-1109, ADR-015, DEC-62, DEC-66.
 
 ### P1-11 - Encrypted provider keys
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-09
 - **Gate**: none
@@ -210,7 +210,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1104, RF-1109, RNF-003, ADR-015, DEC-64.
 
 ### P1-12 - Web front end shell and design tokens
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-07
 - **Gate**: G-02
@@ -222,7 +222,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-507, RF-1013, RNF-008, RNF-010, ADR-012, DEC-26, DEC-44, DEC-52, DEC-56, DEC-70, DEC-71.
 
 ### P1-13 - End-to-end harness
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-09, P1-12, P1-16, P1-24
 - **Gate**: none
@@ -258,7 +258,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1200, RF-1201, RNF-010, Q-19, Q-20, DEC-63, DEC-70.
 
 ### P1-16 - GitHub sources: URLs, commits and safe snapshot download
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: L
 - **Depends on**: P1-04, P1-05
 - **Gate**: none
@@ -282,7 +282,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-005, RF-140, RF-146, RF-147, RNF-001, ADR-006, ADR-013, ADR-019, DEC-16, DEC-17, DEC-57.
 
 ### P1-18 - Projects and project settings API
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-09, P1-16
 - **Gate**: none
@@ -294,7 +294,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-002, RF-010, RF-405, RF-1105, RF-1109, ADR-012, ADR-015, ADR-016, DEC-48, DEC-66.
 
 ### P1-19 - Universal scan: files, languages, sizes, artefacts and SQL
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-17
 - **Gate**: none
@@ -306,7 +306,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-100, RF-101, RF-102, RF-103, RF-124, RNF-009, ADR-004, DEC-11.
 
 ### P1-20 - Areas, code map and scan summary
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-21
 - **Gate**: none
@@ -318,7 +318,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-104, RF-105, RF-106, RF-112, RNF-004, RNF-007, ADR-004.
 
 ### P1-21 - Language pack interface and the C# pack
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-07, P1-19
 - **Gate**: none
@@ -330,7 +330,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-110, RF-111, RNF-009, ADR-004, DEC-12.
 
 ### P1-22 - Runs: index, manifest, events and the run queue
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-18
 - **Gate**: none
@@ -354,7 +354,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-003, RF-005, RF-100, RF-121, RF-126, ADR-004, ADR-012.
 
 ### P1-24 - Provider port, fake provider and the provider call log
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-04
 - **Gate**: none
@@ -366,7 +366,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-400, RF-408, RNF-003, RNF-004, RNF-005, ADR-003, ADR-008, DEC-09, DEC-50.
 
 ### P1-25 - Ollama adapter with the text tool protocol
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-24
 - **Gate**: none
@@ -378,7 +378,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-205, RF-401, RF-406, RF-408, RNF-011, ADR-003, ADR-008, DEC-23, DEC-53.
 
 ### P1-26 - OpenAI adapter with retries
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-24
 - **Gate**: none
@@ -390,7 +390,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-402, RF-406, RF-408, ADR-003, ADR-008, DEC-09.
 
 ### P1-27 - Prices, budget guard, caps and the cost ledger
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: L
 - **Depends on**: P1-06, P1-09, P1-24
 - **Gate**: none
@@ -402,7 +402,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-420, RF-421, RF-422, RF-426, RF-428, RF-1106, ADR-007, ADR-016, DEC-13, DEC-49, DEC-54, DEC-64, Q-22.
 
 ### P1-28 - Egress guard
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-17, P1-24
 - **Gate**: none
@@ -414,7 +414,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-141, RF-142, RF-143, RF-145, RNF-003, RNF-014, ADR-006, ADR-013, DEC-16, DEC-57.
 
 ### P1-29 - Provider set per run, key choice and the provider test
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-11, P1-13, P1-14, P1-18, P1-25, P1-26, P1-27, P1-28
 - **Gate**: none
@@ -426,7 +426,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-002, RF-405, RF-407, RF-1104, ADR-003, ADR-006, ADR-007, ADR-015, DEC-64.
 
 ### P1-30 - Run estimate
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-18, P1-20, P1-27
 - **Gate**: none
@@ -450,7 +450,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-145, RF-146, RF-201, RNF-004, ADR-003, ADR-006, ADR-013, DEC-15, DEC-17, DEC-57, DEC-58.
 
 ### P1-32 - Card schema, parsing with repair, ids and card writers
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-03, P1-17
 - **Gate**: none
@@ -474,7 +474,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-005, RF-143, RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007, DEC-15, DEC-19, DEC-98.
 
 ### P1-34 - Start run page
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-30, P1-33, P1-41
 - **Gate**: G-02
@@ -486,7 +486,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-143, RF-425, RF-1001, RF-1108, DEC-47, DEC-71.
 
 ### P1-35 - Live run page: agents, events, cost meter and claims
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-34
 - **Gate**: G-02
@@ -498,7 +498,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-424, RF-1002, RF-1003, RF-1004, DEC-46, DEC-51, DEC-71.
 
 ### P1-36 - Project totals header and cost page
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-14, P1-18, P1-22, P1-27
 - **Gate**: G-02
@@ -510,7 +510,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-428, RF-1010, RF-1106, DEC-49.
 
 ### P1-37 - API calls and logs panels
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-35
 - **Gate**: G-02
@@ -546,7 +546,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-240, RF-1007, DEC-15, DEC-51.
 
 ### P1-40 - History and deletion
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33, P1-36, P1-56
 - **Gate**: G-02
@@ -582,7 +582,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1102, RF-1105, RF-1106, RF-1107, RF-1109, DEC-70, DEC-106.
 
 ### P1-43 - Markdown report, run replay page and safe rendering
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33
 - **Gate**: none
@@ -594,7 +594,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-504, RF-506, RF-507, RF-1013, ADR-005, ADR-013, DEC-04, DEC-46.
 
 ### P1-44 - Container image
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-02, P1-07, P1-12, P1-18, P1-27, P1-31
 - **Gate**: none
@@ -654,7 +654,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: Q-18, ADR-014, DEC-61, DEC-104.
 
 ### P1-49 - Security review and the milestone verification matrix
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-46, P1-55
 - **Gate**: none
@@ -666,7 +666,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RNF-009, RNF-014, ADR-013, DEC-57, DEC-69.
 
 ### P1-50 - Sample report on GitHub Pages
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-02, P1-43, P1-55
 - **Gate**: none
@@ -678,7 +678,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-800, RF-501, RNF-003, DEC-04.
 
 ### P1-51 - Documentation consistency tests
-- **Difficulty**: 4 (sonnet)
+- **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
@@ -690,7 +690,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-001, ADR-010.
 
 ### P1-52 - Release v0.1.0 and the quick start
-- **Difficulty**: 4 (sonnet)
+- **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-49, P1-50
 - **Gate**: none
@@ -702,7 +702,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-801, DEC-29.
 
 ### P1-53 - Slides and video script
-- **Difficulty**: 4 (sonnet)
+- **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-46
 - **Gate**: none
@@ -762,7 +762,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-011, P1-01 (verifier MINOR 3).
 
 ### P1-58 - Follow-up: block outbound network in unit and integration tests
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
@@ -798,7 +798,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-011, P1-01 (fix verifier MINORs 1 and 2).
 
 ### P1-61 - Follow-up: count contract tests and it.each rows in the level report
-- **Difficulty**: 4 (sonnet)
+- **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
@@ -822,7 +822,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-141, RNF-003, ADR-013, P1-04 (verifier MINOR 5 and open question).
 
 ### P1-63 - Follow-up: automatic Ollama context size
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-25
 - **Gate**: none
@@ -840,7 +840,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 Sized, not dated, until Q-01 is answered (roadmap.md).
 
 ### P2-01 - Resume a stopped run
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33, P1-35, P1-40
 - **Gate**: none
@@ -864,7 +864,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-301, RF-1004, ADR-005, ADR-013, DEC-19, DEC-57.
 
 ### P2-03 - Verification summary and verifier calibration
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P2-02, P2-11
 - **Gate**: none
@@ -888,7 +888,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-230, ADR-005.
 
 ### P2-05 - Re-run with answers
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-39
 - **Gate**: none
@@ -900,7 +900,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-241, RF-1007, ADR-003, DEC-15.
 
 ### P2-06 - Consolidate cards across areas
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33
 - **Gate**: none
@@ -912,7 +912,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-250, ADR-005.
 
 ### P2-07 - Excerpt size limit
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-31
 - **Gate**: none
@@ -924,7 +924,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-144, ADR-006.
 
 ### P2-08 - Estimate confirmation, caps per role and unpriced models
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-30, P1-34
 - **Gate**: none
@@ -936,7 +936,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-423, RF-425, RF-427, ADR-007, DEC-97.
 
 ### P2-09 - Anthropic adapter
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-29
 - **Gate**: none
@@ -948,7 +948,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-404, ADR-003, ADR-008.
 
 ### P2-10 - OpenAI-compatible adapter
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-29
 - **Gate**: none
@@ -1012,7 +1012,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 ## Phase 3 - Report and plan
 
 ### P3-01 - HTML report: rendering approach and dashboard
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-43, P2-03
 - **Gate**: none
@@ -1024,7 +1024,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-500, RF-1010, RF-1013, ADR-005, DEC-44, DEC-52.
 
 ### P3-02 - Area and card pages with the evidence
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-01
 - **Gate**: none
@@ -1048,7 +1048,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-503, RF-506.
 
 ### P3-04 - Self-contained report, downloads and accessibility
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-03
 - **Gate**: none
@@ -1060,7 +1060,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-501, RF-505, RNF-010, DEC-24.
 
 ### P3-05 - Principle catalogue files
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 5 (haiku)
 - **Size**: M
 - **Depends on**: P1-01
 - **Gate**: none
@@ -1084,7 +1084,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-605, ADR-018, DEC-72, DEC-80.
 
 ### P3-07 - Architecture recommendation and stack options
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-06, P2-03
 - **Gate**: none
@@ -1096,7 +1096,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-608, RF-609, ADR-007, ADR-018, DEC-76, DEC-77, DEC-78.
 
 ### P3-08 - Plan setup page
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-07, P3-09, P3-11
 - **Gate**: G-02
@@ -1120,7 +1120,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-601, RF-602, RF-603, RF-604, RNF-004, ADR-005, ADR-018, DEC-10, DEC-80.
 
 ### P3-10 - Principles, styles, stack, migration and build method in the package
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-09
 - **Gate**: none
@@ -1132,7 +1132,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-607, RF-608, RF-609, RF-610, RF-611, RF-612, ADR-018, DEC-75, DEC-76, DEC-79.
 
 ### P3-11 - Plan estimate and caps
-- **Difficulty**: 7 (opus)
+- **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P3-09
 - **Gate**: none

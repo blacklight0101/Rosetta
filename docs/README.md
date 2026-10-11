@@ -25,8 +25,8 @@ here; they never hold a second copy of these documents.
 `legacy-sources.md` is not written: Rosetta replaces no system (DEC-03).
 
 Agent definitions used by the orchestration protocol live in `.claude/agents/` (`orchestrator`, `builder-haiku`,
-`builder-sonnet`, `builder-opus`, `builder-fable`, `verifier`, `verifier-fable`); the difficulty of a card selects
-the builder (DEC-32).
+`builder-sonnet`, `builder-opus`, `builder-fable`, `verifier`, `verifier-opus`, `verifier-fable`); the difficulty of a card selects
+the builder (DEC-32, DEC-115).
 
 ## Identifier schemes
 

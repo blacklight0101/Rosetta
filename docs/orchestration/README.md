@@ -32,31 +32,33 @@ Every rule below refers to these settings by name, so a stack change is made her
 | Commit message | Conventional Commits, `type(scope): subject`, a `Refs:` footer with the card, RF, ADR and DEC ids, and the attribution line given by the session instructions |
 | Issue and pull request | one GitHub issue per card (title `<id> <title>`, milestone of the phase, labels `difficulty:<n>` and `builder:<model>`); one pull request per card from `.github/pull_request_template.md`, closing its issue (DEC-35) |
 | Merge | by the orchestrator, squash only, under the merge rules of section 3.1 (DEC-96); pull requests labelled `needs-owner` are merged only by the owner |
-| Agents in flight | at most 3, builders and verifiers together, under the usage throttle of section 8.1 (DEC-100) |
+| Agents in flight | one at a time, builders and verifiers together, under the usage throttle of section 8.1 (DEC-115) |
 | Serialized resources | `db/migrations/`; `src/presentation/composition-root.ts` and `src/presentation/main.ts`; `package.json` and `package-lock.json`; `.github/workflows/`; `web/src/app/routes.ts`; `tests/integration/access-matrix.test.ts` |
 | Requirement comment | `// RF-nnn` (or `RNF-nnn`) on the line above each implementing class or function |
 
 ## 2. Roles
 
-The difficulty of a card (1-10) selects its builder (DEC-32) and its verifier (DEC-41).
+The difficulty of a card (1-10) selects its builder (DEC-32, DEC-115) and its verifier (DEC-41, DEC-115).
 
 | Role | Agent | Model | Responsibility | May edit |
 |---|---|---|---|---|
 | Orchestrator | `orchestrator`, run as the main session (`claude --agent orchestrator`) or the session itself following this file; never spawned as a subagent, because subagents cannot spawn builders | Opus 5.5 (DEC-100) | reads this file, `tasks.md` and `handoff.md`; picks ready cards; opens the issue; spawns one builder per card; opens the pull request; spawns the verifier; posts the verdict; merges under section 3.1; stops at gates and escalations | the Status line of each card, new follow-up cards (section 9), `handoff.md`, the project notes `CLAUDE.md` names, issues, pull requests and their labels, squash merges into `main` under section 3.1 |
-| Builder, difficulty 1-3 | `builder-haiku` | Haiku | trivial, fully specified work with a pattern to copy: text and documentation edits, prompt wording, small configuration | files inside the card's scope |
-| Builder, difficulty 4-6 | `builder-sonnet` | Sonnet | routine, well-specified work that follows an existing pattern: scaffolding, pages on an existing shell, wiring, fakes, runbooks | files inside the card's scope |
-| Builder, difficulty 7-9 | `builder-opus` | Opus 5.5 | substantial or cross-cutting work that needs judgement: shared infrastructure, provider adapters, the scan pipeline, the agent loop, multi-step UI flows | files inside the card's scope |
-| Builder, difficulty 10 | `builder-fable` | Fable | the riskiest work: authentication, sessions, secrets, the egress and budget guards, untrusted archives, the final security review | files inside the card's scope |
-| Verifier, difficulty 1-9 | `verifier` | Opus 5.5 | independent check against the card, the spec, the ADRs and `CLAUDE.md`; runs every gate itself; returns PASS or FAIL with findings; never edits the branch | nothing in the branch (a disposable detached worktree for the mutation check) |
-| Verifier, difficulty 10 | `verifier-fable` | Fable | the same procedure with the security review always on; also verifies any card re-run by `builder-fable` after a promotion | the same |
+| Builder, difficulty 1-5 | `builder-haiku` | Haiku | trivial or routine, fully specified work with a pattern to copy: text and documentation edits, prompt wording, small configuration, scaffolding, wiring, fakes, runbooks | files inside the card's scope |
+| Builder, difficulty 6-8 | `builder-sonnet` | Sonnet | well-specified work that follows an existing pattern but spans several files: pages on an existing shell, adapters behind an existing port, multi-step flows | files inside the card's scope |
+| Builder, difficulty 9-10 | `builder-opus` | Opus 5.5 | substantial or cross-cutting work that needs judgement, and the riskiest work: shared infrastructure, the scan pipeline, the agent loop, authentication, sessions, secrets, the egress and budget guards, untrusted archives, the final security review | files inside the card's scope |
+| Builder, escalation only | `builder-fable` | Fable | a third attempt at a card, only after the owner approves it (section 3, FAIL 3); no card starts here | files inside the card's scope |
+| Verifier, difficulty 1-8 | `verifier` | Sonnet | independent check against the card, the spec, the ADRs and `CLAUDE.md`; runs every gate itself; returns PASS or FAIL with findings; never edits the branch | nothing in the branch (a disposable detached worktree for the mutation check) |
+| Verifier, difficulty 9-10 | `verifier-opus` | Opus 5.5 | the same procedure with the security review always on; also verifies a card escalated to an opus builder by FAIL 2 | the same |
+| Verifier, escalation only | `verifier-fable` | Fable | the same procedure, only for the work of `builder-fable` (owner-approved FAIL 3) | the same |
 | Product owner | BlackLigth (blacklight0101) | - | answers open questions, opens human gates, merges `needs-owner` pull requests, reviews escalations and any merged pull request after the fact, does what needs access Claude does not have | anything |
 
-**Difficulty rule of thumb.** A card is 10 when a mistake would leak a credential or a user's code, let one user see
+**Difficulty rule of thumb.** A card is 10 (the top of the opus band) when a mistake would leak a credential or a user's code, let one user see
 another's data, let a run pass a cap, or let a hostile repository or archive reach the host; in Rosetta that is
 authentication and sessions, provider keys, the egress and budget guards, snapshot extraction and the final security
-review. A card is 7-9 when it needs design judgement across several collaborators and has no pattern to copy. A card
-with a working pattern to copy is 4-6; a pure text or configuration edit is 1-3. When in doubt between two bands,
-take the higher one.
+review. A card is 9 when it needs design judgement across several collaborators and has no pattern to copy. A card
+is 6-8 when it spans several files and collaborators but a working pattern exists to copy; 1-5 when it is a pure
+text or configuration edit or routine work with a pattern to copy. When in doubt between two bands, take the higher
+one.
 
 When models change, keep the criteria and change only the `model:` lines in `.claude/agents/`.
 
@@ -70,8 +72,8 @@ stateDiagram-v2
     Todo --> InProgress: dependencies Done and gates open
     InProgress --> InReview: builder reports, pull request opened
     InReview --> Done: verifier PASS, CI green, merged
-    InReview --> InProgress: FAIL 1 (same builder) or FAIL 2 below difficulty 10 (one band up)
-    InReview --> Blocked: FAIL 2 at difficulty 10, or a third FAIL (escalated)
+    InReview --> InProgress: FAIL 1 (same builder), FAIL 2 (fresh builder one band up) or FAIL 3 (fable, owner-approved)
+    InReview --> Blocked: FAIL 3 awaiting the owner, or any later FAIL (escalated)
     Todo --> Blocked: gate closed or open question without a safe default
     Blocked --> Todo: owner opens the gate or resolves the escalation
     Done --> [*]
@@ -106,11 +108,13 @@ part of a card waits, the rest runs: `Todo; <part> Blocked (G-nn)`.
      listed by the verifier as "owner check pending"; they do not block the merge, and the orchestrator copies them to
      the owner's agenda in `handoff.md` (DEC-111).
    - FAIL 1: send the findings back to the **same** builder (context intact) for a second round.
-   - FAIL 2 below difficulty 10: re-run the card once with a fresh builder one band up (haiku to sonnet, sonnet to
-     opus, opus to fable; never down). The card's difficulty line is not edited; the pull request notes the promotion.
-   - FAIL 2 at difficulty 10, or a FAIL of the promoted re-run: set `Blocked (escalated ...)`, leave the pull request
-     open and unmerged, and write the case in `handoff.md` for BlackLigth (blacklight0101). An escalated card stops
-     its dependency chain.
+   - FAIL 2: re-run the card once with a fresh builder one band up (haiku to sonnet, sonnet to opus; an opus card
+     stays on opus; never down). The verifier moves up with the builder (`verifier-opus` after a promotion to opus).
+     The card's difficulty line is not edited; the pull request notes the promotion (DEC-115).
+   - FAIL 3: may go to a fresh `builder-fable` with `verifier-fable`, but only after the owner approves it in chat.
+     Until then set `Blocked (escalated ...)` and leave the pull request open.
+   - Any later FAIL: set `Blocked (escalated ...)`, leave the pull request open and unmerged, and write the case in
+     `handoff.md` for BlackLigth (blacklight0101). An escalated card stops its dependency chain.
 6. **Gates** (section 7) are never opened by the orchestrator.
 7. **Session end.** `handoff.md` holds the state, the next ready cards, the pull requests waiting for the owner and
    every escalation; the project notes named in `CLAUDE.md` are updated; the local `main` equals `origin/main` and is
@@ -179,8 +183,8 @@ Windows, and the workflow's first run on the pull request is green on both runne
 
 The verifier receives the card, the builder report and the branch name. It works in the branch's worktree without
 changing it; its only writes are in a disposable detached worktree for the mutation check, removed afterwards. Its
-full procedure is in `.claude/agents/verifier.md` (difficulty 1-9) and `.claude/agents/verifier-fable.md`
-(difficulty 10). In short: scope, gates (`npm ci`, `npm run verify` run by itself), scenario coverage and TDD order,
+full procedure is in `.claude/agents/verifier.md` (difficulty 1-8), `.claude/agents/verifier-opus.md`
+(difficulty 9-10) and `.claude/agents/verifier-fable.md` (fable escalation only). In short: scope, gates (`npm ci`, `npm run verify` run by itself), scenario coverage and TDD order,
 mutation check, the card's *Done when* exactly as written, page walk for page cards, ADR conformance, the hard-rule
 greps of section 5.1, engineering standards, SOLID and KISS, security, docs, report honesty.
 
@@ -236,7 +240,7 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 - Two cards run at the same time only when their *Delivers* paths are disjoint and they share no serialized resource
   (section 1). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
   never reassigns them.
-- Keep at most the configured number of agents in flight. One card has one verifier at a time.
+- Keep at most the configured number of agents in flight (one at a time, DEC-115). One card has one verifier at a time.
 - When the owner asks to pause (usage limits), stop the running agents; their worktrees keep the work. On resume,
   continue the same agent (SendMessage) rather than starting the card again.
 - Use Agent-tool subagents (one per builder or verifier, each builder in its own worktree). A Workflow script runs
@@ -245,30 +249,34 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 - When the session's working directory is not this repository, the agent types in `.claude/agents/` are not loaded;
   launch a general-purpose subagent with the card's model and tell it to read and follow the agent file.
 
-### 8.1 Usage throttle for the 5-hour window (DEC-100)
+### 8.1 Usage throttle (DEC-115, replaces DEC-100)
 
-The build must never stop because the Claude usage of the current 5-hour window ran out. Before every launch of a
-builder or verifier, and at least every 15 minutes while agents run, the orchestrator reads the share of the window
-used and the time left until it resets, in this order of preference: the session's usage tool, a scheduled check
-that reads it, or asking the owner (DEC-111); `/usage` works in a terminal session. It applies:
+The build must never stop because the Claude usage ran out. The orchestrator runs **one agent at a time**, and it
+reads the plan usage before every launch and after every finish, in this order of preference: the session's usage
+tool, a scheduled check that reads it, or asking the owner (DEC-111); `/usage` works in a terminal session. The
+band of the 5-hour window decides what may start:
 
-| Window used | Agents in flight | Behaviour |
-|---|---|---|
-| below 75% | up to 3 | normal pace |
-| 75% to 90% | at most 2 | slow down: no new agent starts while 2 are running, so 3 in flight drop to 2 as they finish; the next agent starts only when the projected use reaches 90% no earlier than 30 minutes before the reset |
-| 90% to 95% | at most 1 | no new agent starts while 1 is running, so 2 drop to 1; a new agent (a verifier first) starts only when the projected use reaches 95% no earlier than 10 minutes before the reset |
-| 95% or more | 0 | hold: start nothing, pause the running agent (its worktree keeps the work), record the hold and the reset time in `handoff.md`, and schedule a wake-up just after the reset |
+| 5-hour window used | What may start |
+|---|---|
+| below 50% | any one agent (builder, verifier or fix round) |
+| 50% to 70% | only verifiers and fix rounds; no new card starts |
+| 70% to 85% | only the orchestrator's own cheap work: merges, rebases, status pull requests; no agent |
+| 85% or more | stop until the reset; record the hold and the reset time in `handoff.md` and schedule a wake-up just after it |
 
-Running agents are not stopped to lower the count before 95%: the count falls because nothing new starts. After
-the reset the orchestrator resumes the paused agents (the same agent through SendMessage, not a fresh start) and
-returns to the normal pace. The projection is the use of the last 30 minutes extended to the reset time. When the
-usage cannot be read, the orchestrator keeps at most 1 agent in flight until it can.
+Further limits:
+
+- Round 2 and later verifiers probe only the changed code and the earlier findings.
+- Round-1 verifiers cap adversarial probes (the mutation check and extra attacks) at about 30.
+- Above 70% of the weekly window: at most one agent per hour.
+- A running agent is not killed when a band is crossed; the next launch waits for the right band. After the reset the
+  orchestrator resumes a paused agent (SendMessage, not a fresh start).
+- When the usage cannot be read, keep to the 50 to 70% rules until it can.
 
 ## 9. Follow-up and fix cards
 
 - A follow-up card takes the next free `P<phase>-nn` of the phase that owns the affected work, is appended at the
   end of that phase's section in `tasks.md`, starts its title with `Follow-up:` and names the originating card in its
-  Refs. Its difficulty follows the rule of thumb of section 2; a follow-up of a card that failed twice is 10.
+  Refs. Its difficulty follows the rule of thumb of section 2; a follow-up of a card that failed twice is rated one band above the original.
 - A MINOR verifier finding becomes a follow-up card. A finding that is pure wording (a message, a doc sentence) may
   instead be fixed by the orchestrator on the branch before the merge, with the matching test updated and the
   verifier asked to confirm.
@@ -304,10 +312,9 @@ added, withdrawn or re-rated. The header can be checked with:
 
 ```bash
 grep -c '^### P' docs/orchestration/tasks.md
-grep -cE '^- \*\*Difficulty\*\*: (1|2|3) ' docs/orchestration/tasks.md
-grep -cE '^- \*\*Difficulty\*\*: (4|5|6) ' docs/orchestration/tasks.md
-grep -cE '^- \*\*Difficulty\*\*: (7|8|9) ' docs/orchestration/tasks.md
-grep -cE '^- \*\*Difficulty\*\*: 10 ' docs/orchestration/tasks.md
+grep -cE '^- \*\*Difficulty\*\*: (1|2|3|4|5) ' docs/orchestration/tasks.md
+grep -cE '^- \*\*Difficulty\*\*: (6|7|8) ' docs/orchestration/tasks.md
+grep -cE '^- \*\*Difficulty\*\*: (9|10) ' docs/orchestration/tasks.md
 ```
 
 The docs consistency tests of P1-51 run the same counts in `npm run verify`.
