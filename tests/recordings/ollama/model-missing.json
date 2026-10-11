@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "description": "Ollama runs but the configured model is not pulled: /api/tags lists another model only. Hand-written in the documented shape of Ollama's /api/chat answer (stream false); no real model was called (ADR-008).",
+  "models": [
+    {
+      "name": "other-model:latest",
+      "digest": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    }
+  ],
+  "chat": []
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "description": "The permanent-failure scenario: a 401 that is not retried. Hand-written in the documented shape of Ollama's /api/chat answer (stream false); no real model was called (ADR-008).",
+  "models": [
+    {
+      "name": "contract-model:latest",
+      "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "chat": [
+    {
+      "status": 401,
+      "body": {
+        "error": "unauthorized"
+      }
+    }
+  ]
+}
