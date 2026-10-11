@@ -11,12 +11,17 @@ describe('RNF-005 network policy', () => {
     },
   );
 
-  it.each(['192.0.2.1', '8.8.8.8', 'example.com', '10.0.0.5', '0.0.0.0', '', 'localhost.example.com'])(
-    'RNF-005 refuses the host %j',
-    (host) => {
-      expect(isAllowedHost(host, undefined)).toBe(false);
-    },
-  );
+  it.each([
+    '192.0.2.1',
+    '8.8.8.8',
+    'example.com',
+    '10.0.0.5',
+    '0.0.0.0',
+    '',
+    'localhost.example.com',
+  ])('RNF-005 refuses the host %j', (host) => {
+    expect(isAllowedHost(host, undefined)).toBe(false);
+  });
 
   it('RNF-005 allows the host of the test database URL and nothing else', () => {
     expect(isAllowedHost('host.docker.internal', databaseUrl)).toBe(true);
