@@ -163,6 +163,6 @@ export function countCards(cards: readonly Card[], phase: string): CardCounts {
     m: size('M'),
     l: size('L'),
     followUps: own.filter((c) => c.title.startsWith('Follow-up:')).length,
-    withdrawn: own.filter((c) => c.status.startsWith('Withdrawn')).length,
+    withdrawn: own.filter((c) => /^Blocked \(withdrawn\b/.test(c.status)).length,
   };
 }
