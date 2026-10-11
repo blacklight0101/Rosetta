@@ -27,6 +27,8 @@ interface TestSchema {
   readonly pool: DatabasePool;
   /** The schema name, unique per call. */
   readonly name: string;
+  /** A connection URL whose connections use this schema, for code that builds its own pool. */
+  readonly url: string;
 }
 
 export interface TestDatabase {
@@ -97,10 +99,11 @@ export function useTestDatabase(): TestDatabase {
       await admin.query(ENSURE_APP_ROLE);
       await runFormatted(admin, 'CREATE SCHEMA %I', name);
       await runFormatted(admin, 'GRANT USAGE ON SCHEMA %I TO rosetta_app', name);
-      const pool = createPool({ connectionString: schemaUrl(name), onIdleError: ignoreIdleError });
-      schemas.push({ pool, name });
+      const url = schemaUrl(name);
+      const pool = createPool({ connectionString: url, onIdleError: ignoreIdleError });
+      schemas.push({ pool, name, url });
       if (options.migrate) await applyReleaseMigrations(pool);
-      return { pool, name };
+      return { pool, name, url };
     },
   };
 }
