@@ -213,3 +213,39 @@ describe('grouping rules and determinism', () => {
     expect([...placed].sort()).toEqual(files.map((f) => f.path).sort());
   });
 });
+
+describe('names of the parts of a split group', () => {
+  it('RF-104 an automatic part name never equals a configured area name', () => {
+    const files = [entry('src/a.cs', 60), entry('src/b.cs', 60), entry('docs/x.md', 1)];
+    const areas = group(files, {
+      configured: [{ name: 'src#1', matches: underFolder('docs') }],
+    });
+
+    expect(summary(areas)).toEqual([
+      'src (auto)#1[folder]=src/a.cs',
+      'src (auto)#2[folder]=src/b.cs',
+      'src#1[config]=docs/x.md',
+    ]);
+  });
+
+  it('RF-104 an automatic part name never equals another automatic folder name', () => {
+    const files = [entry('x/a.cs', 60), entry('x/b.cs', 60), entry('x#1/c.cs', 5)];
+    const names = group(files).map((area) => area.name);
+
+    expect(new Set(names).size).toBe(names.length);
+    expect(names).toEqual(['x#1', 'x#1 (auto)', 'x#2']);
+  });
+
+  it('RF-104 two configured areas whose part names collide are refused', () => {
+    const configured = [
+      { name: 'a', matches: underFolder('A') },
+      { name: 'a#1', matches: underFolder('B') },
+    ];
+    const files = [entry('A/1.cs', 60), entry('A/2.cs', 60), entry('B/3.cs', 5)];
+
+    expect(groupIntoAreas({ files, links: [], areaTokenBudget: 100, configured })).toEqual({
+      ok: false,
+      error: 'duplicate-configured-area',
+    });
+  });
+});

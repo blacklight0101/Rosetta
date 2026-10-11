@@ -165,3 +165,26 @@ describe('codemap.json (refusals)', () => {
     expect(parseCodeMap(text)).toEqual({ ok: false, error: 'file-in-two-areas' });
   });
 });
+
+describe('codemap.json (more refusals)', () => {
+  it('RF-105 refuses a commit SHA that is not 40 lower-case hexadecimal characters', () => {
+    const text = serialiseCodeMap(sample()).replace('c'.repeat(40), 'z'.repeat(40));
+
+    expect(parseCodeMap(text)).toEqual({ ok: false, error: 'invalid-schema' });
+  });
+
+  it('RF-110 refuses a symbol whose end line is before its start line', () => {
+    const text = serialiseCodeMap(sample()).replace('"endLine": 20', '"endLine": 2');
+
+    expect(parseCodeMap(text)).toEqual({ ok: false, error: 'symbol-range-invalid' });
+  });
+
+  it('RF-106 refuses an area whose files are not sorted', () => {
+    const text = serialiseCodeMap(sample()).replace(
+      '"Web/Home.aspx",\n        "Web/Home.aspx.cs"',
+      '"Web/Home.aspx.cs",\n        "Web/Home.aspx"',
+    );
+
+    expect(parseCodeMap(text)).toEqual({ ok: false, error: 'area-files-unsorted' });
+  });
+});

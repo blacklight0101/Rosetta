@@ -168,3 +168,25 @@ describe('CodeMap (references)', () => {
     expect(map.ok && map.value.files).toHaveLength(1);
   });
 });
+
+describe('CodeMap (ranges and order of area files)', () => {
+  it('RF-110 refuses a symbol that ends before it starts', () => {
+    const base = input([a], [area('A', [a])]);
+
+    expect(
+      createCodeMap({
+        ...base,
+        symbols: [{ path: 'a.cs', kind: 'class', name: 'X', startLine: 9, endLine: 3 }],
+      }),
+    ).toEqual({ ok: false, error: 'symbol-range-invalid' });
+  });
+
+  it('RF-106 refuses an area whose files are not sorted', () => {
+    const unsorted: Area = { ...area('A', [a, b]), files: ['b.cs', 'a.cs'] };
+
+    expect(createCodeMap(input([a, b], [unsorted]))).toEqual({
+      ok: false,
+      error: 'area-files-unsorted',
+    });
+  });
+});
