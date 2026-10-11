@@ -100,7 +100,6 @@ describe('ADR parsers', () => {
 
     expect(parseAdrStatusLine(md)).toBe('Accepted');
   });
-
 });
 
 describe('task card parsers', () => {
@@ -108,12 +107,12 @@ describe('task card parsers', () => {
     const cards = parseCards(TASKS);
 
     expect(cards.map((c) => [c.id, c.title, c.difficulty, c.size, c.status])).toEqual([
-      ["P1-01", "Scaffold", 2, "S", "Done"],
-      ["P1-02", "Pipeline", 5, "M", "Todo; live check Blocked (G-04)"],
-      ["P1-03", "Engine", 8, "L", "Todo"],
-      ["P2-01", "Judge", 10, "M", "Todo"],
+      ['P1-01', 'Scaffold', 2, 'S', 'Done'],
+      ['P1-02', 'Pipeline', 5, 'M', 'Todo; live check Blocked (G-04)'],
+      ['P1-03', 'Engine', 8, 'L', 'Todo'],
+      ['P2-01', 'Judge', 10, 'M', 'Todo'],
     ]);
-    expect(cards.map((c) => c.dependsOn)).toEqual([[], ["P1-01"], ["P1-01", "P1-02"], ["P1-03"]]);
+    expect(cards.map((c) => c.dependsOn)).toEqual([[], ['P1-01'], ['P1-01', 'P1-02'], ['P1-03']]);
   });
 
   it('RNF-005 reads the totals table by phase and total', () => {
@@ -131,16 +130,36 @@ describe('task card parsers', () => {
     expect(countCards(cards, 'Total').fable).toBe(1);
   });
 
-  it('RNF-005 counts follow-up and withdrawn cards', () => {
+  it('RNF-005 counts follow-up cards and cards withdrawn in the documented form', () => {
     const base = { difficulty: 4, size: 'S', dependsOn: [] };
     const cards = [
       { ...base, id: 'P1-90', title: 'Follow-up: fix', status: 'Todo' },
-      { ...base, id: 'P1-91', title: 'Gone', status: 'Withdrawn 2026-10-12 - see P1-90' },
+      { ...base, id: 'P1-91', title: 'Gone', status: 'Blocked (withdrawn 2026-10-12 - see P1-90)' },
+      { ...base, id: 'P1-92', title: 'Waiting', status: 'Todo; live check Blocked (G-04)' },
+      { ...base, id: 'P1-93', title: 'Held', status: 'Blocked (needs-owner - see #12)' },
     ];
 
     const counts = countCards(cards, 'P1');
 
     expect(counts.followUps).toBe(1);
     expect(counts.withdrawn).toBe(1);
+  });
+
+  it('RNF-005 still counts a withdrawn card in the cards, band and size columns', () => {
+    const withdrawn = {
+      id: 'P1-91',
+      title: 'Gone',
+      difficulty: 4,
+      size: 'S',
+      dependsOn: [],
+      status: 'Blocked (withdrawn 2026-10-12 - see P1-90)',
+    };
+
+    expect(countCards([withdrawn], 'P1')).toMatchObject({
+      cards: 1,
+      sonnet: 1,
+      s: 1,
+      withdrawn: 1,
+    });
   });
 });

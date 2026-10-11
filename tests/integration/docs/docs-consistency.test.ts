@@ -14,10 +14,14 @@ const ROOT = process.cwd();
 const read = (path: string): Promise<string> => readFile(join(ROOT, path), 'utf8');
 
 const adrIndex = await read('docs/adr/README.md');
-const adrFiles = (await readdir(join(ROOT, 'docs/adr'))).filter((f) => /^ADR-\d{3}-.*\.md$/.test(f));
+const adrFiles = (await readdir(join(ROOT, 'docs/adr'))).filter((f) =>
+  /^ADR-\d{3}-.*\.md$/.test(f),
+);
 const fileStatus = new Map(
   await Promise.all(
-    adrFiles.map(async (f) => [f.slice(0, 7), parseAdrStatusLine(await read(`docs/adr/${f}`))] as const),
+    adrFiles.map(
+      async (f) => [f.slice(0, 7), parseAdrStatusLine(await read(`docs/adr/${f}`))] as const,
+    ),
   ),
 );
 
