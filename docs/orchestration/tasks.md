@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 63 | 12 | 37 | 14 | 0 | 16 | 39 | 8 | 7 | 0 |
+| P1 Milestone slice (M1) | 73 | 18 | 41 | 14 | 0 | 26 | 39 | 8 | 17 | 0 |
 | P2 Full understand | 14 | 1 | 10 | 3 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **89** | **14** | **56** | **19** | **0** | **19** | **59** | **11** | **7** | **0** |
+| **Total** | **99** | **20** | **60** | **19** | **0** | **29** | **59** | **11** | **17** | **0** |
 
 ## Conventions for every card
 
@@ -118,7 +118,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-03
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.14; `docs/security/threat-model.md` (secrets and logging rows); `docs/environments-and-delivery.md` section 13.
 - **Do**: `SecretMasker` in `src/infrastructure/guards/secret-masker.ts`: masks connection-string passwords, API keys (`sk-`, `sk-ant-`, `ghp_`, `github_pat_`, `AKIA`), bearer tokens, private key blocks and `password=`/`pwd=` settings as `[MASKED:<kind>]`, keeps line count and line numbers, returns counts per kind, and throws a coded error on internal failure (callers fail closed). `Logger` port; `StdoutJsonLogger`, `JsonlFileLogger` (daily file `<data>/logs/rosetta-YYYY-MM-DD.jsonl`, `debug` and above, retention `ROSETTA_LOG_RETENTION_DAYS` applied at start-up), `FanOutLogger`, `MemoryLogger`; every entry passes the masker; entries carry time, level, logger, message, `RST` code and run, task and call ids when present; `securityEvent(code, detail)` writes `warn` with logger `security`.
 - **Delivers**: the masker, the port, four loggers; unit tests with a fixture of secret patterns (including multi-line private keys and a value split across a JSON string), a failing-masker test, formatter tests; an integration test for daily files and retention in a temporary folder.
@@ -154,7 +154,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-04, P1-06
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-017-fastify-http-server.md`; `docs/architecture.md` sections 2, 10 and 11; `docs/security/threat-model.md` (HTTP rows).
 - **Do**: `src/presentation/main.ts` (read the environment, apply migrations, then listen on `0.0.0.0:8080`); `composition-root.ts` (the only place creating adapters); Fastify with `@fastify/helmet` set to the exact CSP and headers of RF-1013 (HSTS only when `ROSETTA_PUBLIC_URL` is https), `@fastify/static` for the built front end, body size limits; the error-to-status mapper (400, 401, 403, 404, 409, 429, 500) returning `{ code, message, nextStep }` and never a stack; `GET /healthz` (200 `{status, version}` when the database answers, else 503 with no detail); `robots.txt` disallowing everything and `X-Robots-Tag: noindex, nofollow` on every response; request logging through the `Logger` port with masked values. Client IPs follow `ROSETTA_TRUST_PROXY`; the start-up starts the `Scheduler`.
 - **Delivers**: the server, the start-up order, the mapper, health and robots routes; integration tests through `fastify.inject` for headers, statuses, health up and down, robots.
@@ -262,7 +262,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-04, P1-05
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-012-local-web-ui-and-github-sources.md`; `docs/adr/ADR-019-tarball-extraction-and-ignore-matching.md`; `docs/data-model.md` section 3.3; `docs/security/threat-model.md` (download rows).
 - **Do**: domain `GitHubRepoRef` (parse `https://github.com/<owner>/<repo>[/tree/<ref>[/<subpath>]]`, normalise), `CommitSha`, `Permalink` builder; `SourceFetcher` port; `GitHubSnapshotFetcher`: resolve the ref to a full SHA through the REST API (default branch when absent), download the tarball over https from `api.github.com`/`codeload.github.com`/`github.com` only (redirects checked), stream through `tar` with the filter of ADR-019 (no absolute paths, no `..`, links skipped and counted, entry and byte limits 100,000 and 500 MB configurable), extract into `<data>/sources/.partial-<id>/`, then rename to `<owner>__<repo>@<sha>/` and make it read-only; reuse a cached snapshot without network; discard partial folders at start-up; rate-limit responses become `RST-19xx` with the reset time and the `GITHUB_TOKEN` hint; the token is sent only to GitHub hosts and never logged; snapshot hash recorded; `FakeSourceFetcher` and a fake GitHub HTTP server for tests; fixture archives under `tests/fixtures/snapshots/` (normal, traversal entry, symlink and hardlink entries, oversized, too many entries, redirect to another host). Concurrent fetches of the same commit take an in-process lock per `owner/repo@sha`; a rename onto an existing snapshot deletes its own partial folder and uses the existing one.
 - **Delivers**: the domain types, port, adapter, fake, fixtures; unit tests for URL parsing and permalinks; integration tests per hostile fixture and for cache reuse and partial cleanup.
@@ -274,7 +274,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-04
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-006-read-only-tools-and-data-egress.md`; `docs/adr/ADR-019-tarball-extraction-and-ignore-matching.md`; `docs/data-model.md` sections 2, 3.2 and 6 (files).
 - **Do**: `RepositoryReader` port and `NodeRepositoryReader` over a snapshot root and optional subpath: list files, read a line range, grep; every path resolved against the root and refused outside it; ignore rules from the project setting joined with a `.rosettaignore` committed in the snapshot, which can only add exclusions (DEC-109), matched with `ignore`; the built-in deny list of RF-147 always applied unless `scan.allowDenied` lifts a pattern (recorded); refused reads return a reason and log a security event; `grep` in a `node:worker_threads` worker with the RF-146 limits (pattern length 200, line cut at 2,000 characters, 2 s timeout terminates the worker); `OutputWriter` port and `NodeOutputWriter` writing only inside `<data>/users/<userId>/` (paths built from ids, resolved and checked), refusing the snapshot cache; workspace path helpers.
 - **Delivers**: two ports, two adapters, the grep worker, the helpers; unit tests for matching and limits; integration tests in temporary folders: refused traversal, ignored and denied paths, `^(a+)+$` on a long line times out, write outside the workspace refused.
@@ -358,7 +358,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-04
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/adr/ADR-008-testing-with-recorded-responses.md`; `docs/data-model.md` sections 3.10 and 3.15.
 - **Do**: `LlmProvider` port (system prompt, messages, tool definitions, abort signal; returns text, tool calls, usage with input, output and cached tokens, finish reason, provider request id, exact model version); `FakeProvider` replaying recordings from `tests/recordings/` and failing on demand; `tests/contracts/llm-provider.contract.ts`; `ObservedProvider` decorator writing one `provider-calls.jsonl` record per attempt through `ProviderCallRecorder` (`JsonlProviderCallLog`, `MemoryProviderCallLog`) with every RF-408 field and a link to the masked transcript entry; transcripts written masked. `kind: fake` is refused unless `ROSETTA_TEST=1`; create `docs/providers.md` with its outline (one section per provider, filled by the adapter cards).
 - **Delivers**: port, fake, contract suite, decorator, recorders; tests: contract on the fake, record fields, retry attempts linked by call id, output scan for keys.
@@ -370,7 +370,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-24
 - **Gate**: none
-- **Status**: Todo; live check Blocked (G-04)
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/data-model.md` section 3.10 (Ollama fields); `docs/environments-and-delivery.md` section 4 (`ROSETTA_OLLAMA_URL`).
 - **Do**: `OllamaProvider` over `fetch` against the Ollama chat API with a timeout and abort signal: native tool calls where the model supports them, the JSON-in-text protocol (`toolMode: text`) otherwise with the same validation; usage and Ollama's load, prompt-evaluation and generation durations and tokens per second; model digest as the exact version; refusal to call when `ROSETTA_TEST=1`; a clear `RST-15xx` with the fix command when Ollama is down or the model is missing; retries with back-off for timeouts and 5xx; the Ollama section of `docs/providers.md`.
 - **Delivers**: the adapter, recordings from a fake Ollama HTTP server, the contract suite run on it, `docs/providers.md`; a manual live check script documented in `docs/providers.md`.
@@ -382,7 +382,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-24
 - **Gate**: none
-- **Status**: Todo; live check Blocked (G-04)
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/data-model.md` section 3.10.
 - **Do**: `OpenAiProvider` on the `openai` package: tool calling, usage including cached tokens, dated model id, request id; retries with exponential back-off and jitter honouring retry-after for 429, timeouts and 5xx; permanent errors (bad key, unknown model) as coded errors that stop the task; key passed per call from the provider set (P1-29), never read from the environment inside the adapter; refuses to call when `ROSETTA_TEST=1`; an OpenAI section in `docs/providers.md`. Record in `docs/providers.md` the cheapest current OpenAI tool-calling model with its dated id as the recommended `defaultRoles` value for the hosted deployment (DEC-106).
 - **Delivers**: the adapter, recordings, the contract suite run on it, the docs section; unit tests with a fake HTTP server for each retry and failure path.
@@ -766,7 +766,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/conventions.md` section 7; ADR-008.
 - **Do**: a Vitest setup file for the `unit` and `integration` projects that refuses every non-loopback connection (net, tls, http, https, fetch) with a clear error, and a test that proves a call to a public address fails while a loopback server still answers.
 - **Delivers**: the setup file and its test.
@@ -790,7 +790,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `lefthook.yml`; `tests/integration/tooling/lefthook-install.test.ts`.
 - **Do**: run the test's `git init` with the cleaned environment (no `GIT_*`) as the postinstall call already does, and reword the `lefthook.yml` comment to "a plain `npm ci` also installs them through lefthook's postinstall".
 - **Delivers**: the two edits.
@@ -826,12 +826,132 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-25
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/spec/requirements.md` RF-401 and Q-23; `docs/data-model.md` section 3.1; `docs/providers.md` section 2; DEC-114.
 - **Do**: add `providers.<name>.contextTokens` (`auto` or an int of at least 1 024, `ollama` only) to the settings schema; in the Ollama adapter, resolve `auto` once per server and model digest: start at the smaller of the model's trained context (`/api/show`) and the ceiling, load with a minimal call, read `/api/ps`, and halve while `size_vram` is below `size`, down to the floor (Q-23 defaults); send the result as `num_ctx`; for a fixed number, send it unchanged and log a warning when Ollama reports CPU offload; record the chosen value and how it was chosen in the provider call log and the run manifest.
 - **Delivers**: the setting, the resolver with its cache, fake-Ollama recordings for fits, spills and model limits, and `docs/providers.md` section 2 updated.
 - **Done when**: with the fake Ollama reporting partial GPU memory at 32 768 and full at 16 384, `auto` sends 16 384 and records it; a model whose trained context is 8 192 never gets more; a fixed value is sent unchanged with one warning on spill; the resolver runs once per model; `npm run verify` green.
 - **Refs**: RF-401, RNF-004, ADR-003, DEC-114, Q-23.
+
+### P1-64 - Follow-up: Windows pipe traversal and a test cast in the network guard
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-58
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/support/network-policy.ts`; `tests/integration/tooling/network-block.test.ts`.
+- **Do**: refuse a pipe path with a `.` or `..` segment after the `\\.\`, `\\?\` or `\??\` prefix (after normalisation it can reach a remote pipe) and add the form to the remote-pipe cases; replace the double cast on the numeric-string port test with `Reflect.apply`.
+- **Delivers**: the policy change and its tests.
+- **Done when**: `\\.\pipe\..\UNC\<server>\pipe\x` is refused with the RNF-005 error; no `as` cast remains; `npm run verify` green.
+- **Refs**: RNF-005, ADR-008, P1-58 (verifier MINORs, round 3).
+
+### P1-65 - Follow-up: keyed array secrets and a torn last line in the call log
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-24
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/provider-call-lines.ts`; `jsonl-provider-call-log.ts`; `docs/data-model.md` 3.10 and 3.15.
+- **Do**: mask each primitive item of an array held by a secret-named key together with that key; when a JSONL log file ends without a newline (a crash mid-append), start the next record on a new line and count the partial line, so `seq` has no repeat.
+- **Delivers**: the two fixes with fixture cases.
+- **Done when**: a password key holding an array never appears in clear in any log; a file ending in a partial line gets a valid next line with the next `seq`; `npm run verify` green.
+- **Refs**: RNF-003, RF-006, RF-408, P1-24 (verifier MINORs, round 2).
+
+### P1-66 - Follow-up: Ollama adapter hardening
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-25
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/ollama/`; `src/infrastructure/config/environment.ts`; `docs/providers.md` section 2.
+- **Do**: strip thinking in linear time and also for an orphan closing tag, any letter case and `<thinking>`; refuse userinfo in `ROSETTA_OLLAMA_URL` at parse time; let the fake Ollama server register its port so the test-mode check trusts that port, not the caller flag; make the text-tool-protocol loader return `{ version, sha256, text }` for the manifest.
+- **Delivers**: the changes with tests.
+- **Done when**: a 300 KB unclosed `<think>` is stripped in under 50 ms; an orphan `</think>`, `<THINK>` and `<thinking>` never reach the answer; a URL with userinfo is refused with RST-1000; `npm run verify` green.
+- **Refs**: RF-205, RF-401, RNF-004, ADR-013, P1-25 (verifier MINORs 1, 2, 4, 7, 8).
+
+### P1-67 - Follow-up: size caps on reads and grep
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-17
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/files/`; `docs/conventions.md` size limits; RF-144, RF-146.
+- **Do**: add a per-file byte cap to readLines and grep (files above `scan.maxFileBytes` refused with a reason) and a match cap on grep results with a truncation notice; keep the worker contract.
+- **Delivers**: the caps and their tests.
+- **Done when**: a 10 MB line is not returned whole; a pattern matching every line returns at most the cap with a notice; `npm run verify` green.
+- **Refs**: RF-144, RF-146, P1-17 (verifier MINOR 5, all rounds).
+
+### P1-68 - Follow-up: bounded shutdown when the database hangs
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-07
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/composition-root.ts`; ADR-014.
+- **Do**: bound `stop()` with a deadline: race `pool.end()` against a few seconds, then resolve so the process exits; unit test with a pool whose `end()` never settles under fake timers.
+- **Delivers**: the deadline and its test.
+- **Done when**: SIGTERM exits within the deadline with a frozen database; `npm run verify` green.
+- **Refs**: RF-1302, ADR-014, P1-07 (verifier MINOR, round 3).
+
+### P1-69 - Follow-up: Ollama context probe fallback and timeouts
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-63
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/ollama/ollama-context-*.ts`; `docs/providers.md` 2.2; `docs/data-model.md` 3.10.
+- **Do**: on a probe failure part-way through halving, send the last size known to fit (or the floor) instead of the start value and make the docs say what is sent; give probes a short timeout and a short back-off after a fallback; race the fixed-size spill check against the request signal; add tests for `num_ctx` on retried attempts, a malformed `/api/show` through the provider and an abort of one of two sharing callers; add a cache reset for test harnesses.
+- **Delivers**: the changes with tests.
+- **Done when**: a failure after 32 768 spilled never sends 32 768; a hanging `/api/show` costs at most the probe timeout; `npm run verify` green.
+- **Refs**: RF-401, DEC-114, Q-23, P1-63 (verifier MINORs 1-4).
+
+### P1-70 - Follow-up: reject non-Latin-1 characters in an OpenAI key
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-26
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/openai/openai-provider.ts`.
+- **Do**: refuse a key holding any character above U+00FF at construction with RST-1511, so a deterministic SDK failure is not retried.
+- **Delivers**: the check and its test.
+- **Done when**: a key with a zero-width space or an emoji is refused at construction and the key never appears in the error; `npm run verify` green.
+- **Refs**: RNF-003, RF-402, P1-26 (verifier MINOR, round 2).
+
+### P1-71 - Follow-up: wire the Ollama context setting and record it in the manifest
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-18, P1-22, P1-63
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` 3.1 (`contextTokens`); RF-401; DEC-114.
+- **Do**: validate `providers.<name>.contextTokens` (`auto` or an int of at least 1 024, `ollama` kind only) in the settings schema, pass it to the Ollama adapter, and record the chosen `contextTokens` and `contextSource` per model in the run manifest.
+- **Delivers**: the schema field, the wiring and the manifest entry with tests.
+- **Done when**: a project with `contextTokens: 8192` sends 8 192; `contextTokens` on an `openai` provider is refused; the manifest lists the value per model; `npm run verify` green.
+- **Refs**: RF-401, RNF-004, DEC-114, P1-63 (verifier MINOR 5).
+
+### P1-72 - Follow-up: stop a run before any work when Ollama is not ready
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-29
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-401 scenario 2; `docs/providers.md` section 2.
+- **Do**: at run start make one tiny call through the guards to every Ollama provider the run uses, so a stopped server or a missing model ends the run before any agent starts, with RST-1507 or RST-1508 and the fix command.
+- **Delivers**: the start check and its tests.
+- **Done when**: with the fake server down, a run ends before its first agent task with RST-1507; `npm run verify` green.
+- **Refs**: RF-401, P1-25 (verifier MINOR 5).
+
+### P1-73 - Follow-up: discard partial snapshot folders at start-up
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-07, P1-16
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/composition-root.ts`; RF-122; `docs/architecture.md` section 4.
+- **Do**: call `discardPartialFolders()` of the snapshot store in the start-up sequence, before the server accepts runs.
+- **Delivers**: the start-up step and its test.
+- **Done when**: a `.partial-*` folder left in `sources/` is gone after `start()`; `npm run verify` green.
+- **Refs**: RF-122, ADR-019, P1-16 (verifier note).
 
 ---
 
