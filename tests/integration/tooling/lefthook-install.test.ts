@@ -20,7 +20,7 @@ function cleanEnv(extra: Record<string, string>, target: string): NodeJS.Process
 }
 
 async function hooksAfterPostinstall(target: string, extra: Record<string, string>) {
-  await run('git', ['init', '--quiet', target]);
+  await run('git', ['init', '--quiet', target], { env: cleanEnv({}, target) });
   await run('node', [postinstall], { env: cleanEnv(extra, target) });
   const hooks = await readdir(join(target, '.git', 'hooks'));
   return hooks.filter((name) => !name.endsWith('.sample'));
