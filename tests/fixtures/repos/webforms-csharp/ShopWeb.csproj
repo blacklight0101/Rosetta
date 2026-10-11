@@ -1,0 +1,5 @@
+<Project ToolsVersion="15.0" DefaultTargets="Build">
+  <PropertyGroup>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+  </PropertyGroup>
+</Project>
