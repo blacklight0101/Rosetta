@@ -1,4 +1,5 @@
 import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
+import { SecretMasker } from '../../guards/secret-masker.js';
 import type { SqlStatement } from './scan-types.js';
 import {
   cutLine,
@@ -78,13 +79,24 @@ function isComment(line: string): boolean {
   return line.startsWith('--') || line.startsWith('/*') || line.startsWith('*');
 }
 
+const masker = new SecretMasker();
+
+/**
+ * RF-141: the raw text is masked before comments are dropped, so a private key block is masked
+ * whatever comment syntax surrounds its marker lines (`-----BEGIN` starts with `--`, `/* -----BEGIN`
+ * opens a block comment). Masking keeps the line breaks of a block, so line numbers do not move.
+ */
+function maskedLines(lines: readonly string[]): readonly string[] {
+  return masker.mask(lines.join('\n')).text.split('\n');
+}
+
 /** The statements of a script, in file order. `lines` hold no line breaks. */
 export function extractScriptStatements(
   path: string,
   lines: readonly string[],
 ): readonly SqlStatement[] {
   const reader = new ScriptReader(path);
-  lines.forEach((line, index) => {
+  maskedLines(lines).forEach((line, index) => {
     reader.feed(index + 1, line);
   });
   return reader.finish();
