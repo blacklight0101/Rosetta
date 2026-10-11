@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P1 - milestone slice** starting: G-01 open (DEC-113). No code yet._
+_Last updated 2026-10-11. Phase **P1 - milestone slice** in progress: G-01 open (DEC-113); cards Done: P1-01, P1-02, P1-03, P1-05, P1-06, P1-48, P1-51._
 
 ## Current state
 
@@ -96,6 +96,18 @@ opened it; a `Provisional` gate names the only cards it releases.
 - Deferred ADRs and their triggers are listed in the [ADR index](docs/adr/README.md).
 
 ## Session log
+
+- **2026-10-11 (build, first cards)** - the orchestrator started P1 after G-01 opened (DEC-113). Done: P1-01 toolchain
+  (#93 merged by the owner before verification, completed by #95 after two FAILs and a promotion to opus), P1-48 host
+  ADR-020 Railway EU West (#94, started early on the owner's instruction), P1-02 CI (#97; the `gh` token gained the
+  `workflow` scope), P1-03 domain kernel (#96), P1-05 configuration (#100), P1-51 documentation tests (#101), P1-06
+  PostgreSQL and schema (#103). The owner added the seven required checks to the `main` ruleset. P1-04 secret masker in
+  review (#102, promoted to fable after two FAILs). Follow-up cards P1-57..P1-62 filed from MINOR findings. Ollama set
+  up on the owner's machine (flash attention, q8_0 KV cache; the adapter must send `num_ctx`, 16k-32k fits the 8 GB
+  GPU). Agents install with `npm ci --ignore-scripts`. PR titles must be Conventional Commits of at most 72
+  characters with a lower-case subject. Owner checks pending: `docker compose up -d db` with `ROSETTA_DB_ADMIN_PASSWORD`;
+  OpenAI key in `.env` (G-04); Railway account (G-07, ADR-020 appendix). Open question to raise: the value shape of the
+  `providers` server setting (P1-06 left it unseeded).
 
 - **2026-10-11 (review fixes)** - light review of the build plan (three slice reviewers, high findings verified);
   the owner took every default: DEC-102..DEC-112. Applied on branch `docs/review-fixes`: requirements (CLI wording

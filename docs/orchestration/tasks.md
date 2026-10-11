@@ -12,10 +12,10 @@ DEC-32: 1-3 haiku, 4-6 sonnet, 7-9 opus, 10 fable.
 
 | Phase | Cards | haiku 1-3 | sonnet 4-6 | opus 7-9 | fable 10 | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 56 | 1 | 20 | 28 | 7 | 11 | 37 | 8 | 0 | 0 |
+| P1 Milestone slice (M1) | 62 | 4 | 22 | 29 | 7 | 16 | 38 | 8 | 6 | 0 |
 | P2 Full understand | 14 | 0 | 4 | 10 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 0 | 3 | 9 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **82** | **1** | **27** | **47** | **7** | **14** | **57** | **11** | **0** | **0** |
+| **Total** | **88** | **4** | **29** | **48** | **7** | **19** | **58** | **11** | **6** | **0** |
 
 ## Conventions for every card
 
@@ -82,7 +82,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: none
 - **Gate**: G-01, G-03
-- **Status**: Blocked (G-01)
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 5-7; `docs/conventions.md` sections 1, 2, 7, 8 and 10; `docs/architecture.md` section 4.
 - **Do**: create `package.json` (`"type": "module"`, engines from `.nvmrc`, scripts `build`, `dev`, `typecheck`, `lint`, `format`, `format:check`, `arch`, `deadcode`, `test`, `test:ci`, `test:levels`, `verify`), `.nvmrc`, `tsconfig.json` with every flag of conventions section 1, `eslint.config.ts` exactly as conventions section 10, `.prettierrc`, `.dependency-cruiser.cjs` with the layer rules of architecture section 3, `knip.json`, `vitest.config.ts` with projects `unit`, `integration`, `e2e` by folder and the coverage thresholds of conventions section 7, `commitlint.config.ts`, `lefthook.yml` (pre-commit, commit-msg, pre-push as environments section 5), `.editorconfig`, `.gitignore` additions; the folders of architecture section 4 with one module in `src/domain/` and one test per level that runs; `scripts/test-levels.mjs` printing `Unit n / Integration n / E2E n` with the shares and a warning outside 60/30/10 ±10, failing when the count is zero. Only devDependencies from the baseline of environments section 7.
 - **Delivers**: the files above; `npm run verify` green; `package-lock.json`.
@@ -94,7 +94,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 4-6; `docs/conventions.md` section 9.
 - **Do**: `.github/workflows/ci.yml` on push and pull request, matrix `ubuntu-latest` and `windows-latest`, Node from `.nvmrc`, `npm ci`, `npm run verify` with a PostgreSQL 17 service container on Linux (database tests reported as skipped on Windows), `npm audit --audit-level=high --omit=dev` with `audit-exceptions.json`, gitleaks, dependency review on pull requests, pull request title checked by commitlint through `env: TITLE`; `.github/workflows/codeql.yml` (pull requests and weekly); `.github/dependabot.yml` (npm and actions weekly, grouped minor and patch). Top-level `permissions: contents: read`, `timeout-minutes` on every job, concurrency per branch, every third-party action pinned to a full commit SHA with the version in a comment, no `pull_request_target`, no secrets. Add a "Required checks" paragraph to `docs/environments-and-delivery.md` section 5 naming the job names the owner adds to the `main` ruleset.
 - **Delivers**: the three workflow files; `audit-exceptions.json`; the doc paragraph.
@@ -106,7 +106,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/conventions.md` sections 3 and 6; `docs/architecture.md` sections 5, 11 and 12.
 - **Do**: `src/domain/errors/result.ts` (`Result<T, E>` with `ok`/`err` helpers), `src/domain/errors/codes.ts` (the ranges of conventions section 6 as `as const` objects, one entry per code used so far, each with a plain message and next step), `src/domain/errors/rosetta-error.ts` (`Error` subclass with `code` and `cause`); `src/application/ports/clock.ts`, `id-generator.ts`; `src/infrastructure/system/system-clock.ts`, `timestamp-id-generator.ts` (run ids `yyyyMMdd-HHmmss-<stage>`, UUIDs through `node:crypto`), `tests/support/fixed-clock.ts`, `sequence-id-generator.ts`; `src/domain/budget/money.ts` (integer micro-USD, add, compare, format as USD; no floating point). The error-code registry reserves first the codes the design board already shows (`docs/design/board/`), one code per line. `Scheduler` port with `IntervalScheduler` (in `src/infrastructure/system/`) and `ManualScheduler` for tests (DEC-112).
 - **Delivers**: the files above; unit tests for Result, Money arithmetic and formatting, id formats.
@@ -130,7 +130,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-03
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` section 4; `docs/architecture.md` section 10 (secure by default).
 - **Do**: `src/infrastructure/config/environment.ts`: a zod schema for every variable of environments section 4 (types, defaults, `ROSETTA_SECRET_KEY` as 32 bytes base64, `ROSETTA_PUBLIC_URL` as an http(s) origin), parsed once into an immutable object; a failure throws `RST-10xx` naming each missing or invalid variable and never its value. `.env.example` lists every variable with a comment and a safe example; `.env` and `.env.*` (except the example) are git-ignored. Also `ROSETTA_TRUST_PROXY` (hop count, default 0) and the test-only variables of environments section 4, which are refused when `ROSETTA_PUBLIC_URL` is https.
 - **Delivers**: the schema and loader; `.env.example`; unit tests per variable rule; a test that parses `.env.example` successfully and finds no value matching the secret patterns of P1-04.
@@ -142,7 +142,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-05
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` sections 1, 4, 6, 7 and 8; `docs/environments-and-delivery.md` section 9.
 - **Do**: `src/infrastructure/db/pool.ts` (`pg` pool from `DATABASE_URL`, statement timeout); `PgMigrator` (files `db/migrations/NNNN_*.sql` in order, each in a transaction, recorded in `schema_version` with a SHA-256 checksum; a changed applied file or an unknown applied version stops with `RST-24xx`; uses `DATABASE_MIGRATOR_URL` when set); migrations `0001_accounts` (users, sessions, provider_keys), `0002_projects_runs`, `0003_cost_ledger_audit` (with `cost_reservations`), `0004_server_settings_defaults` with every column, check, index and default of data-model section 4 and the grants of section 6 (`rosetta_app` with insert and select only on `cost_ledger` and `audit_events`); migrations only grant, the roles are created outside them (data-model section 6); `compose.yaml` with the `db` service (PostgreSQL 17 by digest, volume `pgdata`, port on `127.0.0.1` only) for local development; `tests/support/postgres.ts`: uses `ROSETTA_TEST_DATABASE_URL` (the CI service or the Compose `db`), applies every migration, gives each test file its own schema.
 - **Delivers**: the pool, the migrator, four migrations, the test helper; integration tests: apply on an empty database, second run changes nothing, edited file refused, unknown version refused, failing migration leaves the previous schema; a schema test comparing tables, columns, checks and grants with data-model section 4.
@@ -646,7 +646,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-45
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 3, 8, 10-12 and 14; `docs/adr/ADR-014-container-image-local-and-hosted.md`.
 - **Do**: compare the Q-18 candidates against the requirements of environments section 2 (container from GHCR, persistent disk, managed PostgreSQL, secret store, HTTPS, health checks, under 25 USD a month, at least 1 GiB of memory for scrypt) and write a Proposed ADR (next free id) recommending one host with region and monthly cost; the pull request is `needs-owner` (it adds an ADR); after the merge the owner creates the host account and stores the secrets, which opens G-07 (DEC-104).
 - **Delivers**: the host ADR and its row in the ADR index.
@@ -682,7 +682,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/README.md` (Totals); this file's Totals table; README section 11.
 - **Do**: unit tests under `tests/unit/docs/` that parse the ADR index Totals and every ADR's Status line, and the card counts by phase, difficulty band and size of this file, and fail on any drift; a test that every card's *Depends on* names an existing card.
 - **Delivers**: the tests.
@@ -748,6 +748,78 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the port, adapter, use case, routes and button; integration tests that unzip and compare the tree with the run folder; an access-matrix row.
 - **Done when**: every RF-008 scenario has a passing test; another user's run id answers 404 (matrix).
 - **Refs**: RF-008, RF-1105, ADR-009, DEC-24.
+
+### P1-57 - Follow-up: format the documentation with Prettier
+- **Difficulty**: 2 (haiku)
+- **Size**: S
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `.prettierignore`; `docs/conventions.md` section 8.
+- **Do**: run Prettier on every Markdown, `.github/` and `.claude/` file and narrow `.prettierignore` to nothing but generated files, so the format gate covers documentation (conventions section 8); the pull request is `needs-owner` because it reformats protected documents.
+- **Delivers**: the formatted files and the narrowed `.prettierignore`.
+- **Done when**: `npm run format:check` passes with `.prettierignore` holding no documentation path; the diff is whitespace and quoting only.
+- **Refs**: RNF-005, ADR-011, P1-01 (verifier MINOR 3).
+
+### P1-58 - Follow-up: block outbound network in unit and integration tests
+- **Difficulty**: 5 (sonnet)
+- **Size**: S
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/conventions.md` section 7; ADR-008.
+- **Do**: a Vitest setup file for the `unit` and `integration` projects that refuses every non-loopback connection (net, tls, http, https, fetch) with a clear error, and a test that proves a call to a public address fails while a loopback server still answers.
+- **Delivers**: the setup file and its test.
+- **Done when**: a test calling a public host fails with the setup error; `npm run verify` green.
+- **Refs**: RNF-005, ADR-008, P1-01 (verifier MINOR 7).
+
+### P1-59 - Follow-up: cruise web/ in the architecture check
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-12
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/conventions.md` section 10; `.dependency-cruiser.cjs`.
+- **Do**: add `web` to the `arch` script so the `web-imports-contracts-only` rule (DEC-112) runs, with a fixture test that a `web/` file importing `src/infrastructure/` is reported.
+- **Delivers**: the script change and the test.
+- **Done when**: the fixture test fails without the change; `npm run verify` green.
+- **Refs**: RNF-013, DEC-112, P1-01 (verifier MINOR 6).
+
+### P1-60 - Follow-up: lefthook install test hygiene
+- **Difficulty**: 2 (haiku)
+- **Size**: S
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `lefthook.yml`; `tests/integration/tooling/lefthook-install.test.ts`.
+- **Do**: run the test's `git init` with the cleaned environment (no `GIT_*`) as the postinstall call already does, and reword the `lefthook.yml` comment to "a plain `npm ci` also installs them through lefthook's postinstall".
+- **Delivers**: the two edits.
+- **Done when**: the test passes with `GIT_DIR` set in the environment and touches no other repository; `npm run verify` green.
+- **Refs**: RNF-005, ADR-011, P1-01 (fix verifier MINORs 1 and 2).
+
+### P1-61 - Follow-up: count contract tests and it.each rows in the level report
+- **Difficulty**: 4 (sonnet)
+- **Size**: S
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `scripts/test-levels.mjs`; `docs/conventions.md` section 7.
+- **Do**: make `npm run test:levels` count the tests that actually run, including suites in `tests/contracts/` (by the level of the file that runs them) and each `it.each` row, preferably from the Vitest JSON reporter rather than a static scan.
+- **Delivers**: the script change and its tests.
+- **Done when**: the printed counts equal the executed test counts of a `vitest run --reporter=json`; `npm run verify` green.
+- **Refs**: RNF-005, DEC-30, P1-03 (verifier note).
+
+### P1-62 - Follow-up: more secret shapes and key-name masking
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-04
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/data-model.md` sections 3.6 and 3.14; `docs/security/threat-model.md`.
+- **Do**: extend `SecretMasker` to `Authorization: Basic` and `token` schemes, AWS `ASIA` keys, XML `<password>` elements, `mysql -p<pw>` and `sk-` after an underscore; in the log formatter, mask the whole value of any data key that matches `password|passwd|pwd|secret|token|api[_-]?key`; keep linear time (extend the hostile-input suite).
+- **Delivers**: the masker and formatter changes with fixture cases and hostile-input cases.
+- **Done when**: every new shape is masked in a fixture test; a fake key under a `password` data key never appears in any logger output; the hostile-input suite stays within budget; `npm run verify` green.
+- **Refs**: RF-009, RF-141, RNF-003, ADR-013, P1-04 (verifier MINOR 5 and open question).
 
 ---
 
