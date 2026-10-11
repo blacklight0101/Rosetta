@@ -4,7 +4,9 @@ import type {
   LlmRequest,
   LlmResponse,
 } from '../../../application/ports/llm-provider.js';
+import type { Logger } from '../../../application/ports/logger.js';
 import { ERROR_CODES } from '../../../domain/errors/codes.js';
+import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { refuseRealProviderInTests } from '../real-provider-guard.js';
 import {
   completeWithRetries,
@@ -12,6 +14,13 @@ import {
   type AttemptResult,
   type Sleep,
 } from '../retrying-call.js';
+import { contextSettingOf, type ContextChoice, type ContextSetting } from './ollama-context.js';
+import { HttpContextProbe } from './ollama-context-probe.js';
+import {
+  OllamaContextResolver,
+  processContextCache,
+  type ModelRef,
+} from './ollama-context-resolver.js';
 import { modelMissing } from './ollama-errors.js';
 import { exchange } from './ollama-http.js';
 import { chatBody, type ToolMode } from './ollama-request.js';
@@ -33,8 +42,13 @@ export interface OllamaProviderOptions {
   readonly testMode: boolean;
   /** True only in tests whose base URL is a loopback fake Ollama server they started. */
   readonly fakeServer?: boolean;
-  /** Ollama's `num_ctx`; 32768 when not set (an open question until a setting names it). */
-  readonly contextTokens?: number;
+  /**
+   * `providers.<name>.contextTokens` (DEC-114): `auto` (the default) or a fixed `num_ctx` of at
+   * least 1024; a smaller number is refused with RST-1514.
+   */
+  readonly contextTokens?: ContextSetting;
+  /** Receives the context-size warnings (RF-401, DEC-114). */
+  readonly logger: Logger;
   /** Ollama's `think`; false when not set. */
   readonly think?: boolean;
   readonly sleep?: Sleep;
@@ -42,7 +56,23 @@ export interface OllamaProviderOptions {
   readonly random?: () => number;
 }
 
-const defaultContextTokens = 32_768;
+function cancelled(signal: AbortSignal): RosettaError {
+  return new RosettaError(ERROR_CODES.providerCallCancelled, undefined, { cause: signal.reason });
+}
+
+/** `promise`, or RST-1501 as soon as `signal` aborts; the shared measurement itself goes on. */
+function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(cancelled(signal));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = (): void => {
+      reject(cancelled(signal));
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+    void promise.then(resolve, reject).finally(() => {
+      signal.removeEventListener('abort', onAbort);
+    });
+  });
+}
 
 function invalidAnswer(): AttemptResult {
   const failure = { code: ERROR_CODES.providerCallFailed, httpStatus: 200 };
@@ -56,9 +86,19 @@ function invalidAnswer(): AttemptResult {
 export class OllamaProvider implements LlmProvider {
   private readonly options: OllamaProviderOptions;
   private readonly digests = new Map<string, string>();
+  private readonly contextSetting: ContextSetting;
+  private readonly contexts: OllamaContextResolver;
 
   constructor(options: OllamaProviderOptions) {
     this.options = options;
+    this.contextSetting = contextSettingOf(options.contextTokens);
+    const timeoutMs = options.timeoutSeconds * 1000;
+    this.contexts = new OllamaContextResolver({
+      serverUrl: options.baseUrl,
+      probe: new HttpContextProbe({ baseUrl: options.baseUrl, timeoutMs }),
+      logger: options.logger,
+      cache: processContextCache,
+    });
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
@@ -75,11 +115,13 @@ export class OllamaProvider implements LlmProvider {
   private async attempt(request: LlmRequest): Promise<AttemptResult> {
     const digest = await this.digest(request);
     if (!digest.ok) return digest;
-    const { toolMode, think, contextTokens, textProtocolPrompt } = this.options;
+    const ref = { model: request.model, digest: digest.value };
+    const context = await untilAborted(this.contextFor(ref), request.signal);
+    const { toolMode, think, textProtocolPrompt } = this.options;
     const settings = {
       toolMode,
       think: think ?? false,
-      contextTokens: contextTokens ?? defaultContextTokens,
+      contextTokens: context.tokens,
       textProtocolPrompt,
     };
     const result = await exchange({
@@ -89,8 +131,21 @@ export class OllamaProvider implements LlmProvider {
     if (!result.ok) return result;
     const chat = parseChat(result.body);
     if (chat === undefined) return invalidAnswer();
-    const response = llmResponseOf(chat, { request, toolMode, modelVersion: digest.value });
+    if (context.source === 'fixed') await this.contexts.checkFixed(ref, context.tokens);
+    const response = llmResponseOf(chat, {
+      request,
+      toolMode,
+      modelVersion: digest.value,
+      context,
+    });
     return { ok: true, response };
+  }
+
+  /** RF-401, DEC-114: the `num_ctx` of this model, measured once when the setting is `auto`. */
+  private contextFor(ref: ModelRef): Promise<ContextChoice> {
+    const setting = this.contextSetting;
+    if (setting === 'auto') return this.contexts.auto(ref);
+    return Promise.resolve({ tokens: setting, source: 'fixed' });
   }
 
   /** The model digest from /api/tags, once per model; a missing model is a failure (RF-401). */

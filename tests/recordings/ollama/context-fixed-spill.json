@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "description": "A fixed context size that leaves part of the model on the CPU; two text answers. Hand-written in the documented shape of Ollama's /api/show, /api/ps and /api/chat answers (stream false); no real model was called (ADR-008).",
+  "models": [
+    {
+      "name": "contract-model:latest",
+      "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "ps": [
+    {
+      "status": 200,
+      "body": {
+        "models": [
+          {
+            "name": "contract-model:latest",
+            "model": "contract-model:latest",
+            "size": 9100000000,
+            "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "details": {
+              "format": "gguf",
+              "family": "llama",
+              "parameter_size": "8.0B",
+              "quantization_level": "Q4_K_M"
+            },
+            "expires_at": "2026-10-11T09:10:03.007Z",
+            "size_vram": 6400000000,
+            "context_length": 32768
+          }
+        ]
+      }
+    }
+  ],
+  "chat": [
+    {
+      "status": 200,
+      "body": {
+        "model": "contract-model",
+        "created_at": "2026-10-11T09:05:03.007Z",
+        "message": {
+          "role": "assistant",
+          "content": "The Catalog area lists products from the database."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 2600000000,
+        "load_duration": 500000000,
+        "prompt_eval_duration": 600000000,
+        "eval_duration": 1000000000,
+        "prompt_eval_count": 1200,
+        "eval_count": 80
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "model": "contract-model",
+        "created_at": "2026-10-11T09:05:03.007Z",
+        "message": {
+          "role": "assistant",
+          "content": "The Catalog area lists products from the database."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 2600000000,
+        "load_duration": 500000000,
+        "prompt_eval_duration": 600000000,
+        "eval_duration": 1000000000,
+        "prompt_eval_count": 1200,
+        "eval_count": 80
+      }
+    }
+  ]
+}

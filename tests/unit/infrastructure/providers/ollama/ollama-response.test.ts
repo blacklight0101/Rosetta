@@ -25,6 +25,7 @@ function answer(overrides: Partial<OllamaChat> = {}, toolMode: 'native' | 'text'
     request: contractRequest(),
     toolMode,
     modelVersion: digest,
+    context: { tokens: 16_384, source: 'auto-fit' },
   });
 }
 
@@ -43,6 +44,8 @@ describe('Ollama answer', () => {
           promptEvalDurationMs: 2,
           evalDurationMs: 500,
           tokensPerSecond: 40,
+          contextTokens: 16_384,
+          contextSource: 'auto-fit',
         },
       },
     });
@@ -66,6 +69,8 @@ describe('Ollama answer', () => {
       promptEvalDurationMs: 0,
       evalDurationMs: 0,
       tokensPerSecond: 0,
+      contextTokens: 16_384,
+      contextSource: 'auto-fit',
     });
   });
 });

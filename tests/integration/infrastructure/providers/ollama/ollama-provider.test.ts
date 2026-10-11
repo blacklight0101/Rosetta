@@ -6,6 +6,7 @@ import { contractRequest } from '../../../../contracts/llm-provider.contract.js'
 import { closedLoopbackUrl } from '../../../../support/fake-http-server.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { useFakeOllama } from '../../../../support/ollama-harness.js';
+import { RecordingLogger } from '../../../../support/recording-logger.js';
 
 // RF-401: the Ollama adapter against a fake Ollama server (ADR-008).
 
@@ -57,7 +58,7 @@ describe('OllamaProvider with native tool calling', () => {
     });
   });
 
-  it('RF-401 sends a context size of 32768 tokens when none is configured', async () => {
+  it('RF-401 sends the 32768-token ceiling when contextTokens is auto and Ollama cannot be probed', async () => {
     const { provider, server } = await start('contract-text');
 
     await provider.complete(contractRequest());
@@ -104,6 +105,7 @@ describe('OllamaProvider when Ollama or the model is missing', () => {
       textProtocolPrompt: '{{tools}}',
       testMode: true,
       fakeServer: true,
+      logger: new RecordingLogger(),
     });
 
     const error = await failureOf(provider.complete(contractRequest()));
@@ -143,6 +145,7 @@ describe('OllamaProvider in automated tests', () => {
       textProtocolPrompt: '{{tools}}',
       testMode: true,
       fakeServer: true,
+      logger: new RecordingLogger(),
     });
 
     const error = await failureOf(provider.complete(contractRequest()));
