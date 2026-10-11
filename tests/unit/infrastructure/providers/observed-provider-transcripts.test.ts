@@ -59,6 +59,23 @@ describe('ObservedProvider transcripts', () => {
     );
     expect(log.records()[1]).toMatchObject({ transcriptRef: 'transcripts/task-1.jsonl#4' });
   });
+});
+
+describe('ObservedProvider transcript links', () => {
+  it('RF-408 links a call that repeats the same messages to the last transcript entry', async () => {
+    const { provider, log } = observedHarness({
+      recording: recordingOf(contractScenarios['permanent-failure'], contractScenarios.text),
+    });
+    await provider.complete(contractRequest()).catch(() => undefined);
+
+    await provider.complete(contractRequest());
+
+    expect(log.transcriptLines('task-1')).toHaveLength(3);
+    expect(log.records()).toEqual([
+      expect.objectContaining({ status: 'failed', transcriptRef: 'transcripts/task-1.jsonl#1' }),
+      expect.objectContaining({ status: 'ok', transcriptRef: 'transcripts/task-1.jsonl#2' }),
+    ]);
+  });
 
   it('RF-408 writes no transcript and no link when transcripts are off', async () => {
     const { provider, log } = observedHarness({ transcripts: false });

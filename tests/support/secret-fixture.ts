@@ -220,3 +220,39 @@ export const adversarialPieces: readonly string[] = [
   ['pwd', "'a\\'"].join('='),
   ['pwd', '"\\"'].join('='),
 ];
+
+export interface KeyedSecretCase {
+  readonly name: string;
+  /** Object-shaped tool-call arguments whose secret sits under a password-like property name. */
+  readonly arguments: Readonly<Record<string, unknown>>;
+  /** The fake values that must never appear after masking. */
+  readonly secrets: readonly string[];
+}
+
+const keyedPassword = (tag: string): string => `Pw${tag}${fakeValue(12)}`;
+
+/** RF-141, RF-408: secrets whose only clue is the property name that holds them. */
+export const keyedSecretCases: readonly KeyedSecretCase[] = [
+  {
+    name: 'a password property',
+    arguments: { user: 'app', password: keyedPassword('A') },
+    secrets: [keyedPassword('A')],
+  },
+  { name: 'a pwd property', arguments: { pwd: keyedPassword('B') }, secrets: [keyedPassword('B')] },
+  {
+    name: 'a password property in a nested object',
+    arguments: { db: { connection: { Password: keyedPassword('C') } } },
+    secrets: [keyedPassword('C')],
+  },
+  {
+    name: 'a password property of an object inside an array',
+    arguments: { accounts: [{ name: 'smtp', smtpPassword: keyedPassword('D') }] },
+    secrets: [keyedPassword('D')],
+  },
+  {
+    name: 'a password with quotes, spaces and a line break',
+    arguments: { passwd: `${keyedPassword('E')} "quoted" text\nnext` },
+    secrets: [keyedPassword('E'), 'quoted'],
+  },
+  { name: 'a numeric password', arguments: { password: 73915820 }, secrets: ['73915820'] },
+];

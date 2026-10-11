@@ -10,7 +10,7 @@ import type { Recording } from '../../../../src/infrastructure/providers/fake/re
 import { contractRequest } from '../../../contracts/llm-provider.contract.js';
 import { fakeResponse } from '../../../support/fake-recordings.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
-import { secretCases } from '../../../support/secret-fixture.js';
+import { keyedSecretCases, secretCases } from '../../../support/secret-fixture.js';
 import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
@@ -35,7 +35,14 @@ function echoingRecording(): Recording {
         {
           response: fakeResponse({
             text,
-            toolCalls: [{ id: text, name: text, arguments: { [text]: text } }],
+            toolCalls: [
+              { id: text, name: text, arguments: { [text]: text } },
+              ...keyedSecretCases.map((keyed, index) => ({
+                id: `keyed-${String(index)}`,
+                name: 'read_file',
+                arguments: keyed.arguments,
+              })),
+            ],
             requestId: text,
             modelVersion: text,
             finishReason: 'tool_use',
@@ -78,7 +85,8 @@ describe('provider output scan', () => {
 
     const written = await everything(tmp.path);
     expect(written).toContain('[MASKED:');
-    for (const secret of secretCases.flatMap((secretCase) => secretCase.secrets)) {
+    const secrets = [...secretCases, ...keyedSecretCases].flatMap((item) => item.secrets);
+    for (const secret of secrets) {
       expect(written).not.toContain(secret);
     }
   });

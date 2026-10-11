@@ -7,7 +7,7 @@ import type {
 import { ERROR_CODES } from '../../src/domain/errors/codes.js';
 import { SecretMasker, type TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { FailingMasker } from '../support/failing-masker.js';
-import { secretCases } from '../support/secret-fixture.js';
+import { keyedSecretCases, secretCases } from '../support/secret-fixture.js';
 import { failureOf } from '../support/failure-of.js';
 
 // RF-408, RNF-003: every ProviderCallRecorder (the JSON Lines log and the memory log) passes this
@@ -136,7 +136,32 @@ function maskingTests(newHarness: NewHarness): void {
       expect(written).not.toContain(secret);
     }
   });
+}
 
+function keyedMaskingTests(newHarness: NewHarness): void {
+  it.each(keyedSecretCases)(
+    'RNF-003 masks $name in tool-call arguments and keeps valid JSON',
+    async ({ arguments: args, secrets }) => {
+      const harness = await newHarness();
+      await harness.recorder.transcript('task-1', [
+        {
+          ...sampleEntry,
+          role: 'assistant',
+          toolCalls: [{ id: 'c1', name: 'x', arguments: args }],
+        },
+      ]);
+
+      const written = await harness.transcript('task-1');
+      expect(linesOf(written)).toHaveLength(1);
+      expect(written).toContain('[MASKED:');
+      for (const secret of secrets) {
+        expect(written).not.toContain(secret);
+      }
+    },
+  );
+}
+
+function failClosedTests(newHarness: NewHarness): void {
   it('RF-141 fails closed with RST-2101 and writes nothing when masking fails', async () => {
     const harness = await newHarness(new FailingMasker());
 
@@ -157,5 +182,7 @@ export function providerCallRecorderContract(name: string, create: RecorderFacto
 
     recordTests(newHarness);
     maskingTests(newHarness);
+    keyedMaskingTests(newHarness);
+    failClosedTests(newHarness);
   });
 }

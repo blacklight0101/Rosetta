@@ -56,3 +56,36 @@ describe('JsonlProviderCallLog', () => {
     ]);
   });
 });
+
+describe('JsonlProviderCallLog on a resumed run (RF-006)', () => {
+  const tmp = useTempRoot('rosetta-resume-');
+  const entry = { at: sampleRecord.startedAt, callId: sampleRecord.callId, role: 'user' as const };
+
+  function seqsOf(text: string): unknown[] {
+    return text
+      .trimEnd()
+      .split('\n')
+      .map((line): unknown => {
+        const parsed: unknown = JSON.parse(line);
+        return parsed instanceof Object && 'seq' in parsed ? parsed.seq : undefined;
+      });
+  }
+
+  it('RF-408 continues seq and transcript lines after the lines a previous log wrote', async () => {
+    const first = new JsonlProviderCallLog({ runDir: tmp.path, masker: new SecretMasker() });
+    await first.record(sampleRecord);
+    await first.transcript('task-1', [
+      { ...entry, content: 'one' },
+      { ...entry, content: 'two' },
+    ]);
+    const second = new JsonlProviderCallLog({ runDir: tmp.path, masker: new SecretMasker() });
+
+    await second.record({ ...sampleRecord, attempt: 2 });
+    const ref = await second.transcript('task-1', [{ ...entry, content: 'three' }]);
+
+    expect(ref).toBe('transcripts/task-1.jsonl#3');
+    expect(seqsOf(await readFile(join(tmp.path, 'provider-calls.jsonl'), 'utf8'))).toEqual([1, 2]);
+    const transcript = await readFile(join(tmp.path, 'transcripts', 'task-1.jsonl'), 'utf8');
+    expect(seqsOf(transcript)).toEqual([1, 2, 3]);
+  });
+});
