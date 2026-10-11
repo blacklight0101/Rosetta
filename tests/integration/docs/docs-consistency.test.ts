@@ -2,6 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  builderForDifficulty,
   countCards,
   parseAdrIndexRows,
   parseAdrStatusLine,
@@ -67,6 +68,14 @@ describe('task card consistency', () => {
     const phases = [...new Set(cards.map((c) => c.id.slice(0, 2)))];
 
     expect([...totals.keys()].sort()).toEqual([...phases, 'Total'].sort());
+  });
+
+  it('RNF-005 every card builder label matches the difficulty band (DEC-115)', () => {
+    const wrong = cards
+      .filter((c) => c.builder !== builderForDifficulty(c.difficulty))
+      .map((c) => c.id);
+
+    expect(wrong).toEqual([]);
   });
 
   it('RNF-005 every card id is unique', () => {

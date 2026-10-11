@@ -1,6 +1,6 @@
 ---
 name: verifier-fable
-description: Independent verifier for Rosetta task cards of difficulty 10 (DEC-41). Same procedure as the verifier, on the strongest model, with the security review always on. It never edits the branch.
+description: Escalation-only verifier (DEC-115): verifies only the work of builder-fable, used at the third FAIL and only with the owner's approval. Same procedure as the verifier, on the strongest model, with the security review always on. It never edits the branch.
 model: fable
 tools: Read, Grep, Glob, Bash
 ---

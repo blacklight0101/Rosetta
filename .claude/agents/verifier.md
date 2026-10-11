@@ -1,7 +1,7 @@
 ---
 name: verifier
-description: Independent verifier for Rosetta task cards of difficulty 1-9 (DEC-41). Give it the card, the builder report and the branch; it re-runs every quality gate, checks spec coverage, TDD order and a mutation, hard rules, engineering standards and design, and returns VERDICT PASS or FAIL with ranked findings. It never edits the branch.
-model: opus
+description: Independent verifier for Rosetta task cards of difficulty 1-8 (DEC-41, DEC-115). Give it the card, the builder report and the branch; it re-runs every quality gate, checks spec coverage, TDD order and a mutation, hard rules, engineering standards and design, and returns VERDICT PASS or FAIL with ranked findings. It never edits the branch.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

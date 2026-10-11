@@ -19,9 +19,17 @@ export interface Card {
   readonly id: string;
   readonly title: string;
   readonly difficulty: number;
+  /** The builder label of the Difficulty line, for example "haiku" in "2 (haiku)". */
+  readonly builder: string;
   readonly size: string;
   readonly dependsOn: readonly string[];
   readonly status: string;
+}
+
+/** Builder band of a difficulty (DEC-115): haiku 1-5, sonnet 6-8, opus 9-10. Fable is escalation only. */
+export function builderForDifficulty(difficulty: number): string {
+  if (difficulty <= 5) return 'haiku';
+  return difficulty <= 8 ? 'sonnet' : 'opus';
 }
 
 export interface CardCounts {
@@ -106,6 +114,7 @@ export function parseCards(markdown: string): Card[] {
       id: group(heading, 'card id'),
       title: heading?.[2] ?? '',
       difficulty: Number(group(/^(\d+)/.exec(parseField(block, 'Difficulty')), 'card difficulty')),
+      builder: /\((\w+)\)/.exec(parseField(block, 'Difficulty'))?.[1] ?? '',
       size: parseField(block, 'Size'),
       dependsOn: parseDependsOn(parseField(block, 'Depends on')),
       status: parseField(block, 'Status'),
@@ -155,10 +164,11 @@ export function countCards(cards: readonly Card[], phase: string): CardCounts {
   const size = (s: string): number => own.filter((c) => c.size === s).length;
   return {
     cards: own.length,
-    haiku: band(1, 3),
-    sonnet: band(4, 6),
-    opus: band(7, 9),
-    fable: band(10, 10),
+    haiku: band(1, 5),
+    sonnet: band(6, 8),
+    opus: band(9, 10),
+    // No card starts on fable (DEC-115): the column counts escalations only and stays 0.
+    fable: 0,
     s: size('S'),
     m: size('M'),
     l: size('L'),

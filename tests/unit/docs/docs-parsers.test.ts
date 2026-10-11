@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  builderForDifficulty,
   countCards,
   normalizeAdrStatus,
   parseAdrIndexRows,
@@ -19,11 +20,11 @@ const ADR_INDEX = `
 `;
 
 const TASKS = `
-| Phase | Cards | haiku 1-3 | sonnet 4-6 | opus 7-9 | fable 10 | S | M | L | Follow-ups | Withdrawn |
+| Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P1 Milestone slice (M1) | 3 | 1 | 1 | 1 | 0 | 1 | 1 | 1 | 0 | 0 |
-| P2 Full understand | 1 | 0 | 0 | 0 | 1 | 0 | 1 | 0 | 0 | 0 |
-| **Total** | **4** | **1** | **1** | **1** | **1** | **1** | **2** | **1** | **0** | **0** |
+| P2 Full understand | 1 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 |
+| **Total** | **4** | **1** | **1** | **2** | **0** | **1** | **2** | **1** | **0** | **0** |
 
 ### P1-01 - Scaffold
 - **Difficulty**: 2 (haiku)
@@ -32,19 +33,19 @@ const TASKS = `
 - **Status**: Done
 
 ### P1-02 - Pipeline
-- **Difficulty**: 5 (sonnet)
+- **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-01
 - **Status**: Todo; live check Blocked (G-04)
 
 ### P1-03 - Engine
-- **Difficulty**: 8 (opus)
+- **Difficulty**: 9 (opus)
 - **Size**: L
 - **Depends on**: P1-01, P1-02
 - **Status**: Todo
 
 ### P2-01 - Judge
-- **Difficulty**: 10 (fable)
+- **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-03
 - **Status**: Todo
@@ -108,10 +109,11 @@ describe('task card parsers', () => {
 
     expect(cards.map((c) => [c.id, c.title, c.difficulty, c.size, c.status])).toEqual([
       ['P1-01', 'Scaffold', 2, 'S', 'Done'],
-      ['P1-02', 'Pipeline', 5, 'M', 'Todo; live check Blocked (G-04)'],
-      ['P1-03', 'Engine', 8, 'L', 'Todo'],
+      ['P1-02', 'Pipeline', 6, 'M', 'Todo; live check Blocked (G-04)'],
+      ['P1-03', 'Engine', 9, 'L', 'Todo'],
       ['P2-01', 'Judge', 10, 'M', 'Todo'],
     ]);
+    expect(cards.map((c) => c.builder)).toEqual(['haiku', 'sonnet', 'opus', 'opus']);
     expect(cards.map((c) => c.dependsOn)).toEqual([[], ['P1-01'], ['P1-01', 'P1-02'], ['P1-03']]);
   });
 
@@ -129,11 +131,11 @@ describe('task card counting', () => {
     const cards = parseCards(TASKS);
 
     expect(countCards(cards, 'P1')).toEqual(P1_COUNTS);
-    expect(countCards(cards, 'Total').fable).toBe(1);
+    expect(countCards(cards, 'Total')).toMatchObject({ haiku: 1, sonnet: 1, opus: 2, fable: 0 });
   });
 
   it('RNF-005 counts follow-up cards and cards withdrawn in the documented form', () => {
-    const base = { difficulty: 4, size: 'S', dependsOn: [] };
+    const base = { difficulty: 4, builder: 'haiku', size: 'S', dependsOn: [] };
     const cards = [
       { ...base, id: 'P1-90', title: 'Follow-up: fix', status: 'Todo' },
       { ...base, id: 'P1-91', title: 'Gone', status: 'Blocked (withdrawn 2026-10-12 - see P1-90)' },
@@ -152,6 +154,7 @@ describe('task card counting', () => {
       id: 'P1-91',
       title: 'Gone',
       difficulty: 4,
+      builder: 'haiku',
       size: 'S',
       dependsOn: [],
       status: 'Blocked (withdrawn 2026-10-12 - see P1-90)',
@@ -159,9 +162,33 @@ describe('task card counting', () => {
 
     expect(countCards([withdrawn], 'P1')).toMatchObject({
       cards: 1,
-      sonnet: 1,
+      haiku: 1,
       s: 1,
       withdrawn: 1,
     });
+  });
+});
+
+describe('builder bands', () => {
+  it.each([
+    [1, 'haiku'],
+    [5, 'haiku'],
+    [6, 'sonnet'],
+    [8, 'sonnet'],
+    [9, 'opus'],
+    [10, 'opus'],
+  ])('RNF-005 difficulty %i is built by %s (DEC-115 bands)', (difficulty, builder) => {
+    const card = {
+      id: 'P1-90',
+      title: 'Edge',
+      difficulty,
+      builder,
+      size: 'S',
+      dependsOn: [],
+      status: 'Todo',
+    };
+
+    expect(builderForDifficulty(difficulty)).toBe(builder);
+    expect(countCards([card], 'P1')).toMatchObject({ [builder]: 1, fable: 0 });
   });
 });

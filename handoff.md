@@ -14,6 +14,7 @@ _Last updated 2026-10-11. Phase **P1 - milestone slice** in progress: G-01 open 
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
   `orchestrator` (rewritten 2026-10-11 for DEC-96 and DEC-100).
+- Model bands changed by DEC-115: builders haiku 1-5, sonnet 6-8, opus 9-10; verifiers sonnet 1-8, opus 9-10; fable only by owner approval at the third FAIL; usage throttle: one agent at a time (README section 8.1).
 - `docs/architecture.md` - written 2026-10-10: layers, layout, state lists, ports, agent loop.
 - `docs/design-system.md` v1, `docs/design-system-brief.md` and `docs/design/tokens.css` - written 2026-10-11; design
   board (private Artifact): https://claude.ai/artifact/465wJUMV3RCHvDVAJG2oEm - approved at G-02 (DEC-56); hosted screens (artboards 7-13) approved as a G-02 amendment (DEC-70); v1 artboards revised after a critique (DEC-71); board files in
