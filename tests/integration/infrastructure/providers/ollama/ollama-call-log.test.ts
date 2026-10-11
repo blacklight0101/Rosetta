@@ -27,6 +27,8 @@ describe('OllamaProvider in the provider call log', () => {
           promptEvalDurationMs: 600,
           evalDurationMs: 1000,
           tokensPerSecond: 80,
+          contextTokens: 32768,
+          contextSource: 'auto-fallback',
         },
       }),
     ]);
