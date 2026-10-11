@@ -58,6 +58,36 @@ function readingTests(newReader: NewReader): void {
   });
 }
 
+function limitTests(newReader: NewReader): void {
+  it('RF-100 readBytes with a huge limit reads a small file at the cost of the file', async () => {
+    const { reader } = await newReader(fixture);
+    const result = await reader.readBytes({ path: 'src/small.txt', maxBytes: 2 ** 40 });
+
+    expect(result.ok && result.value.bytes?.length).toBe(4);
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, 1.5])(
+    'RF-100 readBytes refuses the limit %d',
+    async (maxBytes) => {
+      const { reader } = await newReader(fixture);
+      const result = await reader.readBytes({ path: 'src/small.txt', maxBytes });
+
+      expect(refusalOf(result)).toMatchObject({
+        code: ERROR_CODES.byteLimitInvalid,
+        reason: 'invalid-limit',
+      });
+    },
+  );
+
+  it('RF-124 the reader states the subpath it is limited to, or an empty one', async () => {
+    const whole = await newReader(fixture);
+    const limited = await newReader({ ...fixture, subpath: 'src' });
+
+    expect(whole.reader.subpath).toBe('');
+    expect(limited.reader.subpath).toBe('src');
+  });
+}
+
 function refusalTests(newReader: NewReader): void {
   it('RF-140 readBytes refuses a missing, ignored or denied file like readLines does', async () => {
     const { reader } = await newReader(fixture);
@@ -82,5 +112,6 @@ function refusalTests(newReader: NewReader): void {
 /** Contract of `readBytes` (RF-100, RF-101): the facts the universal scan needs about one file. */
 export function bytesContract(newReader: NewReader): void {
   readingTests(newReader);
+  limitTests(newReader);
   refusalTests(newReader);
 }

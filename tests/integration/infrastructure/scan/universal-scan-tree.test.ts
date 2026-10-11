@@ -92,6 +92,13 @@ describe('universal scan of a tree with ignorable content (part 2)', () => {
 });
 
 describe('universal scan of a tree with ignorable content (part 3)', () => {
+  it('RF-124 a reader opened on a subpath is scanned as that subpath without being told twice', async () => {
+    await writeTree(temp.path, { 'packages/app/src/a.cs': 'class A {}\n' });
+    const { scan } = await scanTree(temp.path, { subpath: 'packages/app' });
+
+    expect(scan.files.map((file) => file.path)).toEqual(['packages/app/src/a.cs']);
+  });
+
   it('RF-101 the language comes from the content when the extension says nothing', async () => {
     await writeTree(temp.path, { 'bin2/run': '#!/usr/bin/env python3\nprint(1)\n' });
     const { scan } = await scanTree(temp.path);

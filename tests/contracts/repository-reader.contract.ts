@@ -230,6 +230,7 @@ function readOnlyTests(newReader: NewReader): void {
       'readBytes',
       'readLines',
       'skippedPaths',
+      'subpath',
     ]);
   });
 }
