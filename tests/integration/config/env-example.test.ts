@@ -67,11 +67,10 @@ async function readExample(): Promise<string> {
 }
 
 describe('.env.example', () => {
-  it('RNF-003 the secret patterns used here match their own samples', () => {
-    for (const [kind, sample] of POSITIVE_SAMPLES) {
-      const pattern = SECRET_PATTERNS.find(([name]) => name === kind)?.[1];
-      expect(pattern?.test(sample), kind).toBe(true);
-    }
+  it.each(POSITIVE_SAMPLES)('RNF-003 the %s pattern matches its own sample', (kind, sample) => {
+    const pattern = SECRET_PATTERNS.find(([name]) => name === kind)?.[1];
+
+    expect(pattern?.test(sample)).toBe(true);
   });
 
   it('RF-1305 lists every variable of the configuration table', async () => {
@@ -83,11 +82,11 @@ describe('.env.example', () => {
   it('RF-1305 puts a comment line above every variable', async () => {
     const lines = (await readExample()).split(/\r?\n/);
 
-    lines.forEach((line, index) => {
-      if (/^[A-Z][A-Z0-9_]*=/.test(line)) {
-        expect(lines[index - 1]?.startsWith('#'), line).toBe(true);
-      }
-    });
+    const uncommented = lines.filter(
+      (line, index) => /^[A-Z][A-Z0-9_]*=/.test(line) && lines[index - 1]?.startsWith('#') !== true,
+    );
+
+    expect(uncommented).toEqual([]);
   });
 
   it('RF-1305 parses successfully with the configuration schema', async () => {
@@ -99,8 +98,10 @@ describe('.env.example', () => {
   it('RF-1305 RNF-003 contains no value matching a secret pattern', async () => {
     const text = await readExample();
 
-    for (const [kind, pattern] of SECRET_PATTERNS) {
-      expect(pattern.test(text), kind).toBe(false);
-    }
+    const matched = SECRET_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(
+      ([kind]) => kind,
+    );
+
+    expect(matched).toEqual([]);
   });
 });
