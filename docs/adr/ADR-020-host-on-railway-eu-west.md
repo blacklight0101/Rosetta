@@ -34,10 +34,10 @@ list prices in USD unless marked EUR, before VAT.
 | Requirement | Render (1) | Railway (2) | Fly.io (3) | Azure Container Apps (4) | Hetzner VPS (5) |
 |---|---|---|---|---|---|
 | Image from public GHCR | yes, no credentials for public images [S1] | yes, Docker image source; public needs no credentials [S9] | yes, `fly deploy --image` [S17] | yes, any registry image (`az containerapp update --image`) [S22] | yes, `docker compose pull` |
-| Instance with at least 1 GiB, always on | cheapest is `1c-2g`, 2 GB, 25 USD; the 7 USD instance has 512 MB [S2] | billed by use, about 10 USD per GB-month RAM and 20 USD per vCPU-month; up to 48 GB per service on Hobby [S8][S10] | `shared-cpu-1x` 1 GB: 7.73 USD in `fra`, 6.95 USD in `ams` [S15] | 0.5 vCPU / 1 GiB, min replicas 1; idle replicas billed at the reduced idle rate [S21][S23] | CPX12 (1 vCPU, 2 GB) [S28]; CX23 (4 GB, 5.49 EUR) is currently not orderable [S29][S30] |
+| Instance with at least 1 GiB, always on | cheapest is `1c-2g`, 2 GB, 25 USD; the 7 USD instance has 512 MB [S2] | billed by use, about 10 USD per GB-month RAM and 20 USD per vCPU-month; up to 48 GB per service on Hobby [S8][S10] | `shared-cpu-1x` 1 GB: 7.73 USD in `fra`, 6.95 USD in `ams` (derived from the regional markup) [S15] | 0.5 vCPU / 1 GiB, min replicas 1; idle replicas billed at the reduced idle rate [S21][S23] | CPX12 (1 vCPU, 2 GB) [S28]; CX23 (4 GB, 5.49 EUR) is currently not orderable [S29][S30] |
 | Persistent disk at `/data` | 0.25 USD/GB-month; one instance; a few seconds of downtime per deploy; daily snapshot kept 7 days [S2][S3] | volume 0.15 USD/GB-month, 5 GB maximum on Hobby, one per service, brief downtime per deploy; non-root images need `RAILWAY_RUN_UID=0` [S8][S11] | volume 0.15 USD/GB-month; snapshots 0.08 USD/GB, first 10 GB free [S15][S16] | Azure Files share (SMB) mounted as a volume; Hot LRS 0.0271 USD/GB-month plus metadata and operations [S24][S25] | local NVMe of the server (40 GB) |
-| PostgreSQL 17 | managed; 13-18 offered, 17 selectable; `0.1c-256mb` 6 USD, `0.5c-1g` 19 USD; 1 GB included, 0.30 USD/GB [S2][S5] | Railway-maintained template on the official image, pinned to a major (14-18); Railway patches the image, the owner upgrades majors in one click [S12][S13] | Managed Postgres Basic 38 USD (1 GB), storage 0.28 USD/GB; EU regions not listed; unmanaged Fly Postgres is "Unsupported" [S15][S18] | managed Flexible Server, PostgreSQL 17.11 offered; B1MS 0.0199 USD/h (14.53 USD/month), storage 0.1369 USD/GB-month [S25][S26] | not offered; official `postgres:17` container with the server's disk (allowed by section 2) |
-| Database backups | point-in-time recovery 3 days on Hobby, logical exports kept 7 days [S2][S6] | volume backups daily (kept 6 days), weekly, monthly [S14]; whether Hobby has scheduled backups is unclear in the docs | included in every Managed Postgres plan [S18] | automatic, retention 7-35 days [S26] | server backups daily, 7 slots [S31]; plus a `pg_dump` job |
+| PostgreSQL 17 | managed; 13-18 offered, 17 selectable; `0.1c-256mb` 6 USD, `0.5c-1g` 19 USD; 1 GB included, 0.30 USD/GB [S2][S5] | official Railway `postgres-ssl:17` image, pinned to a major; in-place `pg_upgrade` from 14-17 to newer majors [S12][S13] | Managed Postgres Basic 38 USD (1 GB), storage 0.28 USD/GB; EU regions not listed; unmanaged Fly Postgres is "Unsupported" [S15][S18] | managed Flexible Server, PostgreSQL 17.11 offered; B1MS 0.0199 USD/h (14.53 USD/month), storage 0.1369 USD/GB-month [S25][S26] | not offered; official `postgres:17` container with the server's disk (allowed by section 2) |
+| Database backups | point-in-time recovery 3 days on Hobby, logical exports kept 7 days [S2][S6] | volume backups daily (kept 6 days), weekly (kept 27 days), monthly [S14]; whether Hobby has scheduled backups is unclear in the docs | included in every Managed Postgres plan [S18] | automatic, retention 7-35 days [S26] | server backups daily, 7 slots [S31]; plus a `pg_dump` job |
 | Secret store | environment variables, environment groups, secret files [S7] | variables; sealed variables hidden from dashboard and API [S19] | `fly secrets set`, encrypted per-app vault, injected at boot [S20] | Container Apps secrets, Key Vault references [S24] | a `.env` file on the server; nothing built in |
 | HTTPS and HTTP redirect | automatic certificates; HTTP redirected on custom domains; 2 custom domains on Hobby [S4] | automatic certificates for `*.railway.app` and custom domains [S19]; redirect not stated in the docs | `force_https` [S16] | TLS at ingress; port 80 redirected to 443 by default [S23] | Caddy issues and renews certificates and redirects HTTP; needs a domain pointing at the server [S32] |
 | Health check and restart | HTTP check on a path; restarts after 60 s of failures [S3] | health check at deploy time only; restart policy Always or On Failure, no limit on paid plans [S11][S13] | `http_service.checks`; `[[restart]]` always / on-failure [S16] | liveness, readiness and startup HTTP probes; failing replicas are restarted [S27] | Docker `HEALTHCHECK` and `restart: unless-stopped` (restarts on exit, not on an unhealthy check) |
@@ -61,6 +61,8 @@ Container Apps in Spain Central.
 - Railway is the only candidate that stays inside 25 USD a month without a time-limited offer while the host still
   runs the database, TLS and secrets: it bills used memory, not the 1 GiB ceiling, and the hard limit caps the bill
   [S8][S33]. Its gaps (deploy-time health check, volume ownership, Hobby backups) have workarounds listed below.
+- RNF-017 has headroom: Hobby allows up to 48 vCPU and 48 GB per service, billed by use [S10], so two parallel runs are
+  a cost risk, not a capacity limit.
 - PostgreSQL 17 runs as a Railway-maintained service in the same project, with backups and one-click major upgrades
   [S12][S13]; section 2 accepts a PostgreSQL container with a volume.
 - Render lost on cost: the smallest instance with at least 1 GiB costs 25 USD alone [S2]. Fly.io lost on cost: Managed
@@ -75,20 +77,31 @@ Container Apps in Spain Central.
 
 **Positive**
 - One dashboard holds the app, the database, the volume and the secrets; rollback is redeploying the previous tag.
-- The bill is capped by the hard limit, and the free `*.railway.app` domain with HTTPS needs no domain purchase.
+- The bill is capped by the hard limit (the 15 USD alert of the appendix is the early warning), and the free
+  `*.railway.app` domain with HTTPS needs no domain purchase.
 
 **Negative**
 - Railway checks `/healthz` only at deploy time [S11]: a hung process that does not exit is not restarted, so
   RNF-016 ("a health check the host restarts on") is met only for crashes (restart policy Always). Closing the gap
-  needs either an in-process watchdog that exits when `/healthz` fails, so that Railway restarts the container, or
-  the runner-up host, whose liveness probe restarts replicas [S27]; the owner decides when merging this ADR.
+  needs either a watchdog outside the main event loop (a blocked loop never fires its own timer): a `worker_thread`
+  or a small supervisor process that probes `/healthz` over HTTP and exits the container with a non-zero code after
+  N consecutive failures, so that Railway restarts it; or the runner-up host, whose liveness probe restarts replicas
+  [S27]. The owner decides when merging this ADR.
 - Railway does not document an HTTP-to-HTTPS redirect; P1-55 verifies it with `curl` and, if it is missing, the
   server redirects on `X-Forwarded-Proto` (RF-1304).
 - The image runs as a non-root user and Railway volumes then need `RAILWAY_RUN_UID=0` [S11]; running as root breaks
   ADR-014 and section 8.1. The image must instead fix `/data` ownership at start and drop to the non-root user
-  (Dockerfile owned by P1-45; open question for the orchestrator).
+  (Dockerfile owned by P1-45; open question for the orchestrator). The container then starts as root, so accepting
+  this ADR needs follow-up edits (not made here): environments-and-delivery.md section 8.1 (the "Running as root"
+  row), threat-model.md TB7 ("non-root user"), and P1-45's hadolint rule on the final `USER`.
 - Hobby volumes stop at 5 GB [S8]; snapshots must be pruned or the plan raised to Pro (20 USD) when it fills.
-- If scheduled volume backups are not available on Hobby, a daily `pg_dump` to `/data` covers RF-1306 (section 12).
+- Railway keeps daily volume backups only 6 days [S14], while RF-1306 and section 12 ask for 7: the weekly backups
+  (kept 27 days) plus a daily `pg_dump` to `/data`, kept 7 days, cover the retention whether or not scheduled
+  backups are offered on Hobby.
+- The Railway compute hard limit takes every workload offline when it is reached [S33]; the teachers then lose the
+  URL until the owner raises the limit, so the 15 USD alert must be acted on.
+- Environments-and-delivery.md section 9 says "a managed PostgreSQL" hosted, while this ADR uses Railway's PostgreSQL
+  service on a volume, which section 2 allows; section 9's wording is a follow-up edit on acceptance.
 - Each deploy has a short downtime because the volume blocks overlapping instances [S8].
 
 ## References
