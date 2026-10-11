@@ -372,10 +372,11 @@ Line: `{ schemaVersion, at, level, logger, message, code?, runId?, agentTaskId?,
 `debug`, `info`, `warn` or `error`; `userId` is added when a request or run has one. The same entries go to standard
 output as JSON lines at `ROSETTA_LOG_LEVEL` and above. One file per UTC day; files older than `ROSETTA_LOG_RETENTION_DAYS` (default 14) are deleted at
 start-up and daily (RF-009): a file is deleted when its UTC day is more than that many days before today, and
-only names of the form `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the secret masking: the message
-and every string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept. When masking fails the entry
-is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code `RST-2101`, the fixed message
-`Log entry withheld because secret masking failed.` and only the ids of the original entry is written instead.
+only files named `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the secret masking: `logger`,
+`message`, the ids and every key and string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept.
+When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
+`RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
+nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
 
 ### 3.15 `transcripts/<agentTaskId>.jsonl`
 
