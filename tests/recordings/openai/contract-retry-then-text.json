@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "The retry-then-text scenario: a 429 rate limit without a request id, then the text answer. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "description": "FAKE recording, no real key or secret. The retry-then-text scenario: a 429 rate limit without a request id, then the text answer. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
   "chat": [
     {
       "status": 429,

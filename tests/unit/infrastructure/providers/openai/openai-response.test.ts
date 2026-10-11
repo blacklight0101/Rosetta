@@ -54,7 +54,9 @@ describe('OpenAI answers', () => {
 
     expect(response).not.toHaveProperty('requestId');
   });
+});
 
+describe('OpenAI answer tool calls and refusals', () => {
   it('RF-402 reads tool calls with their own ids and JSON-string arguments', () => {
     const toolCalls = [
       {

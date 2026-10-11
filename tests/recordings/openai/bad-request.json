@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "A 400 for a prompt longer than the context window: permanent, not retried. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "description": "FAKE recording, no real key or secret. A 400 for a prompt longer than the context window: permanent, not retried. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
   "chat": [
     {
       "status": 400,

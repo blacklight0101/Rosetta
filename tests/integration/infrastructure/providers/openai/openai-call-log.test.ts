@@ -36,8 +36,7 @@ describe('OpenAiProvider in the provider call log', () => {
 
     await provider.complete(contractRequest());
 
-    const records = log.records();
-    expect(records).toEqual([
+    expect(log.records()).toEqual([
       expect.objectContaining({
         attempt: 1,
         status: 'retried',
@@ -46,9 +45,14 @@ describe('OpenAiProvider in the provider call log', () => {
       }),
       expect.objectContaining({ attempt: 2, status: 'ok' }),
     ]);
-    expect(new Set(records.map((record) => record.callId)).size).toBe(1);
+    expect(log.records()).toEqual([
+      expect.objectContaining({ callId: contractRequest().context.callId }),
+      expect.objectContaining({ callId: contractRequest().context.callId }),
+    ]);
   });
+});
 
+describe('OpenAiProvider failures in the provider call log', () => {
   it('RF-408 a failed OpenAI call leaves no key in the call log', async () => {
     const { provider: openAi } = await start('contract-permanent-failure');
     const { provider, log } = observedHarness({ inner: () => openAi });

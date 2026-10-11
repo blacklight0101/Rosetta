@@ -25,3 +25,16 @@ export function retryAfterMs(header: string | null): number | undefined {
   const value = header?.trim() ?? '';
   return /^\d{1,6}$/.test(value) ? Number(value) * 1000 : undefined;
 }
+
+/** A `retry-after-ms` header (OpenAI), in milliseconds. */
+function retryAfterMsHeader(header: string | null): number | undefined {
+  const value = header?.trim() ?? '';
+  return /^\d{1,7}$/.test(value) ? Number(value) : undefined;
+}
+
+/** The retry hint of a response: `retry-after-ms` first, then `retry-after` in seconds. */
+export function retryHintMs(headers: Headers): number | undefined {
+  return (
+    retryAfterMsHeader(headers.get('retry-after-ms')) ?? retryAfterMs(headers.get('retry-after'))
+  );
+}

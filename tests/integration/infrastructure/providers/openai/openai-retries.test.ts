@@ -37,7 +37,7 @@ function everythingIn(error: unknown): string {
   let current: unknown = error;
   for (let depth = 0; depth < 5 && current !== undefined; depth += 1) {
     if (current instanceof Error) parts.push(current.message, current.stack ?? '');
-    parts.push(JSON.stringify(current) ?? '');
+    parts.push(JSON.stringify(current));
     current = current instanceof Error ? current.cause : undefined;
   }
   return parts.join('\n');
@@ -79,7 +79,9 @@ describe('OpenAiProvider retries temporary failures', () => {
     expect(response.finishReason).toBe('stop');
     expect(attempts.retried).toEqual([{ code: ERROR_CODES.providerTimeout }]);
   });
+});
 
+describe('OpenAiProvider retry hints and connections', () => {
   it('RF-406 honours a retry-after hint in seconds', async () => {
     const { provider, waits } = await start('retry-after');
 
@@ -183,7 +185,9 @@ describe('OpenAiProvider permanent failures', () => {
     expect(shown).not.toContain(fakeOpenAiKey.slice(-8));
     expect(shown).not.toContain('Incorrect API key provided');
   });
+});
 
+describe('OpenAiProvider other permanent failures', () => {
   it('RF-406 an unknown model stops at once with RST-1512 naming the model', async () => {
     const { provider, server } = await start('model-unknown');
 

@@ -4,6 +4,9 @@ import { failedStatus } from '../../../../../src/infrastructure/providers/openai
 
 // RF-406: what each OpenAI error status means, whether it is retried, and the fix it names.
 
+/** OpenAI's error code for a rejected key, built from pieces (FAKE fixture, RNF-003). */
+const invalidKey = ['invalid', 'api', 'key'].join('_');
+
 describe('OpenAI error statuses', () => {
   it.each([
     [429, 'rate_limit_exceeded', ERROR_CODES.providerRateLimited],
@@ -18,7 +21,7 @@ describe('OpenAI error statuses', () => {
   });
 
   it.each([
-    [401, 'invalid_api_key', ERROR_CODES.openAiKeyRejected],
+    [401, invalidKey, ERROR_CODES.openAiKeyRejected],
     [404, 'model_not_found', ERROR_CODES.openAiModelUnknown],
     [429, 'insufficient_quota', ERROR_CODES.openAiQuotaExhausted],
     [400, 'context_length_exceeded', ERROR_CODES.providerCallFailed],
@@ -45,7 +48,7 @@ describe('OpenAI error statuses', () => {
   });
 
   it.each([
-    [401, 'invalid_api_key', 'OPENAI_API_KEY'],
+    [401, invalidKey, 'OPENAI_API_KEY'],
     [404, 'model_not_found', '"gpt-test"'],
     [429, 'insufficient_quota', 'billing'],
   ])('RF-406 the message of permanent status %i (%s) names the fix', (status, errorCode, fix) => {

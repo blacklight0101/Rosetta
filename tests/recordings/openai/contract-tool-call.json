@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "The tool-call scenario: one read_file call with JSON-string arguments. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "description": "FAKE recording, no real key or secret. The tool-call scenario: one read_file call with JSON-string arguments. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
   "chat": [
     {
       "status": 200,

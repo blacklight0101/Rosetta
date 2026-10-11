@@ -17,7 +17,7 @@ export type OpenAiRecording = z.infer<typeof recordingSchema>;
 
 const recordingsFolder = join(process.cwd(), 'tests', 'recordings', 'openai');
 
-export const chatCompletionsPath = '/v1/chat/completions';
+const chatCompletionsPath = '/v1/chat/completions';
 
 /** Parses `tests/recordings/openai/<name>.json`. */
 export async function loadOpenAiRecording(name: string): Promise<OpenAiRecording> {

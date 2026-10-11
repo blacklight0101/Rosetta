@@ -62,7 +62,9 @@ describe('OpenAiProvider requests', () => {
       stream: false,
     });
   });
+});
 
+describe('OpenAiProvider conversation history', () => {
   it('RF-402 sends earlier tool calls with JSON arguments and tool results by call id', async () => {
     const { provider, server } = await start('contract-text');
 
@@ -88,7 +90,9 @@ describe('OpenAiProvider requests', () => {
       ],
     });
   });
+});
 
+describe('OpenAiProvider request headers and fields', () => {
   it('RF-402 sends no tools field when the call has no tools', async () => {
     const { provider, server } = await start('contract-text');
 
@@ -148,7 +152,9 @@ describe('OpenAiProvider answers', () => {
       usageSource: 'reported',
     });
   });
+});
 
+describe('OpenAiProvider answer shapes', () => {
   it('RF-421 estimates the usage when the API reports none', async () => {
     const { provider } = await start('usage-missing');
 

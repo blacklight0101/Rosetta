@@ -72,6 +72,13 @@ module.exports = {
       to: { path: `node_modules/${sdkPackages}/` },
     },
     {
+      name: 'provider-sdks-only-in-providers',
+      comment: 'provider SDKs only from their adapters in src/infrastructure/providers/ (ADR-003)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/infrastructure/providers/' },
+      to: { path: '^(openai|@anthropic-ai/sdk)(/|$)|node_modules/(openai|@anthropic-ai/sdk)/' },
+    },
+    {
       name: 'tar-only-in-github',
       comment: 'tar only from src/infrastructure/github/ (ADR-019)',
       severity: 'error',

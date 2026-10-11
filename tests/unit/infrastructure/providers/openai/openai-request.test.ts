@@ -6,9 +6,9 @@ import { contractRequest } from '../../../../contracts/llm-provider.contract.js'
 
 describe('OpenAI request body', () => {
   it('RF-402 leaves out the output limit and temperature when the role sets none', () => {
-    const { maxOutputTokens: _limit, ...request } = contractRequest();
+    const { context, model, system, messages, tools, signal } = contractRequest();
 
-    const body = chatCompletionBody(request);
+    const body = chatCompletionBody({ context, model, system, messages, tools, signal });
 
     expect(body).not.toHaveProperty('max_completion_tokens');
     expect(body).not.toHaveProperty('temperature');
