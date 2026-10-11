@@ -33,7 +33,9 @@ describe('Area', () => {
 
     expect(area.ok && area.value.mapLevel).toBe('symbols');
   });
+});
 
+describe('Area (limits)', () => {
   it('RF-104 an area is not empty and has a name', () => {
     expect(createArea({ name: 'X', origin: 'folder', members: [] }, 10)).toEqual({
       ok: false,

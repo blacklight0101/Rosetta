@@ -1,14 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createArea } from '../../../../../src/domain/code-map/area.js';
 import { createCodeMap, type CodeMap } from '../../../../../src/domain/code-map/code-map.js';
-import type { FileEntry } from '../../../../../src/domain/code-map/file-entry.js';
 import { renderScanSummary } from '../../../../../src/infrastructure/scan/codemap/scan-summary.js';
-import { entry } from '../../../../support/code-map-builders.js';
-
-function withoutHash(file: FileEntry): FileEntry {
-  const { sha256: _hash, ...rest } = file;
-  return rest;
-}
+import { entry, unhashed } from '../../../../support/code-map-builders.js';
 
 function sample(): CodeMap {
   const web = [
@@ -18,7 +12,7 @@ function sample(): CodeMap {
   ];
   const rest = [
     entry('logo.dat', 0, { language: 'unknown', skipped: 'binary' }),
-    withoutHash(entry('huge.sql', 0, { language: 'sql', skipped: 'too-large' })),
+    unhashed('huge.sql', 0, { language: 'sql', skipped: 'too-large' }),
     entry('run.cbl', 30, { language: 'cobol', artefactKinds: ['entry-point'] }),
   ];
   const areas = [
@@ -105,7 +99,9 @@ describe('scan-summary.md', () => {
 
     expect(renderScanSummary({ codeMap: sample(), durationMs: 10 })).toBe(first);
   });
+});
 
+describe('scan-summary.md (details)', () => {
   it('RF-105 says so when no language pack mapped anything and when the subpath is set', () => {
     const base = sample();
     const text = renderScanSummary({

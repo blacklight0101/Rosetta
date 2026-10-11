@@ -100,7 +100,7 @@ Canonical layout; card Delivers paths must match it. Created by the first P1 sca
 src/
   domain/
     accounts/           User, Role, Session, ProviderKeyRef, UsageCap
-    code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel
+    code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel; area grouping (folder buckets, linked sets); the code-unit comparator every sorted list uses
     cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids
     budget/             Money, TokenUsage, Price, PriceTable, Budget, Cap
     runs/               Run, RunManifest, RunEndState, AgentTaskState, RunEvent types
@@ -128,7 +128,7 @@ src/
     events/             sse-broadcaster, jsonl-event-log
     db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit), migration runner
     security/           password-hasher (scrypt), secret-box (AES-256-GCM), token generator
-    scan/               universal/, packs/csharp/
+    scan/               universal/, packs/csharp/, codemap/ (build the code map, `codemap.json` writer and schema, `scan-summary.md`)
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
     system/             clock, id generator, logger
@@ -169,8 +169,8 @@ and API contract types in `src/application/contracts/` (dependency-cruiser rule,
 
 | Concept | Kind | Invariants |
 |---|---|---|
-| `CodeMap` | aggregate | file paths unique and relative with forward slashes; every file in exactly one area; byte-identical output for the same input (RF-106) |
-| `Area` | entity in `CodeMap` | non-empty; total tokens at most the configured area budget (RF-104) |
+| `CodeMap` | aggregate | file paths unique and relative with forward slashes; every file in exactly one area; every symbol, link, statement and entity points at a listed file; every list sorted by the code-unit comparator, so the output is byte-identical for the same input (RF-106); created only through `createCodeMap`, which returns a typed problem instead of throwing |
+| `Area` | entity in `CodeMap` | non-empty; total tokens at most the configured area budget, except an area made of one file that is larger than the budget alone (a file is never cut) (RF-104) |
 | `Card` | aggregate | id unique in the run (`FEAT-001` style, RF-203); at least one claim; `OQ` cards carry a question |
 | `Claim` | entity in `Card` | at least one citation; status changes only through the transitions below; never removed (RF-302) |
 | `Citation` | value object | `path:startLine-endLine`, `1 <= startLine <= endLine` |

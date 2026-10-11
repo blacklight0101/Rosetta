@@ -51,7 +51,9 @@ describe('grouping files into areas', () => {
       'Web/Pages[folder]=Web/Pages/a.cs',
     ]);
   });
+});
 
+describe('splitting big groups into areas', () => {
   it('RF-104 splits a group that is still over the budget into numbered parts in path order', () => {
     const files = ['a', 'b', 'c', 'd', 'e'].map((n) => entry(`Big/${n}.cs`, 40));
     const areas = group(files);
@@ -73,7 +75,9 @@ describe('grouping files into areas', () => {
       'Big#3[folder]=Big/z.cs',
     ]);
   });
+});
 
+describe('grouping by language-pack references', () => {
   it('RF-104 puts files that a language pack links together into one area, whatever their folder', () => {
     const files = [
       entry('Pages/Home.aspx', 10),
@@ -112,7 +116,9 @@ describe('grouping files into areas', () => {
       'G#3[folder]=G/d.cs',
     ]);
   });
+});
 
+describe('configured areas', () => {
   it('RF-104 configured areas replace the automatic grouping for the files they match', () => {
     const files = [entry('Web/a.cs'), entry('Web/b.cs'), entry('Data/x.cs'), entry('Data/y.cs')];
     const areas = group(files, {
@@ -138,7 +144,9 @@ describe('grouping files into areas', () => {
 
     expect(summary(areas)).toEqual(['One[config]=Web/a.cs']);
   });
+});
 
+describe('configured areas (limits)', () => {
   it('RF-104 a configured area over the budget is split like any other', () => {
     const files = [entry('W/a.cs', 60), entry('W/b.cs', 60)];
     const areas = group(files, { configured: [{ name: 'All', matches: underFolder('W') }] });
@@ -167,9 +175,11 @@ describe('grouping files into areas', () => {
       configured: [{ name: 'Web', matches: underFolder('Data') }],
     });
 
-    expect(summary(areas)).toEqual(['Web (auto)[folder]=Web/a.cs', 'Web[config]=Data/b.cs']);
+    expect(summary(areas)).toEqual(['Web[config]=Data/b.cs', 'Web (auto)[folder]=Web/a.cs']);
   });
+});
 
+describe('grouping rules and determinism', () => {
   it('RF-104 refuses two configured areas with one name and a budget that is not positive', () => {
     const two = { name: 'Same', matches: () => false };
 

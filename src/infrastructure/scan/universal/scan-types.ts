@@ -1,12 +1,10 @@
 import type { ArtefactKind } from '../../../domain/code-map/artefact.js';
+import type { SkipReason } from '../../../domain/code-map/file-entry.js';
 import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
 import type { SkippedPaths } from '../../../application/ports/repository-reader.js';
 
 // RF-100..RF-103: what the universal scan reports. Language packs add symbols and references
 // elsewhere (RF-110); nothing here depends on a stack's syntax.
-
-/** RF-100: why a listed file was not read. */
-export type SkipReason = 'binary' | 'too-large';
 
 /** One listed file. `language` is a lower-case id, or `unknown` (RF-101). */
 export interface ScannedFile {

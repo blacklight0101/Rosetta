@@ -15,7 +15,7 @@ import { MemoryLogger } from './memory-logger.js';
 import { scanTree } from './scan-harness.js';
 import { timedAsync } from './stopwatch.js';
 
-export const testUserId = '0b7c3f8e-5d1a-4c2b-9e6f-1a2b3c4d5e6f';
+const testUserId = '0b7c3f8e-5d1a-4c2b-9e6f-1a2b3c4d5e6f';
 const maxFileBytes = 1_000_000;
 
 export interface ScanToOutputsOptions {

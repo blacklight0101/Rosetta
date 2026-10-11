@@ -6,15 +6,77 @@ import {
   parseCodeMap,
   serialiseCodeMap,
 } from '../../../../../src/infrastructure/scan/codemap/codemap-json.js';
-import { entry } from '../../../../support/code-map-builders.js';
+import { entry, unhashed } from '../../../../support/code-map-builders.js';
 
 const source = { owner: 'octo', repo: 'demo', commitSha: 'c'.repeat(40), subpath: 'src' };
+
+const expectedJson = {
+  schemaVersion: 1,
+  source,
+  files: [
+    {
+      path: 'Web/Home.aspx',
+      language: 'aspx',
+      lines: 4,
+      estimatedTokens: 4,
+      sha256: 'a'.repeat(64),
+      artefactKinds: ['page'],
+      mapLevel: 'symbols',
+    },
+    {
+      path: 'Web/Home.aspx.cs',
+      language: 'csharp',
+      lines: 9,
+      estimatedTokens: 9,
+      sha256: 'a'.repeat(64),
+      artefactKinds: [],
+      mapLevel: 'symbols',
+    },
+    {
+      path: 'huge.sql',
+      language: 'sql',
+      lines: 0,
+      estimatedTokens: 0,
+      artefactKinds: [],
+      mapLevel: 'coarse',
+      skipped: 'too-large',
+    },
+  ],
+  areas: [
+    {
+      name: '(root)',
+      files: ['huge.sql'],
+      estimatedTokens: 0,
+      mapLevel: 'coarse',
+      origin: 'folder',
+    },
+    {
+      name: 'Web',
+      files: ['Web/Home.aspx', 'Web/Home.aspx.cs'],
+      estimatedTokens: 13,
+      mapLevel: 'symbols',
+      origin: 'folder',
+    },
+  ],
+  symbols: [{ path: 'Web/Home.aspx.cs', kind: 'class', name: 'Home', startLine: 3, endLine: 20 }],
+  links: [
+    {
+      from: 'Web/Home.aspx',
+      to: 'Web/Home.aspx.cs',
+      kind: 'code-behind',
+      symbol: 'Demo.Home',
+    },
+  ],
+  sqlStatements: [{ path: 'Web/Home.aspx.cs', line: 8, verb: 'SELECT', text: 'SELECT 1' }],
+  entities: [{ name: 'Items', path: 'Web/Home.aspx.cs', startLine: 5, source: 'Demo.Ctx.Items' }],
+  languagePacks: [{ name: 'csharp', version: '1.0.0' }],
+};
 
 function sample(): CodeMap {
   const members: readonly FileEntry[] = [
     entry('Web/Home.aspx', 4, { language: 'aspx', artefactKinds: ['page'], mapLevel: 'symbols' }),
     entry('Web/Home.aspx.cs', 9, { language: 'csharp', mapLevel: 'symbols' }),
-    omitHash(entry('huge.sql', 0, { language: 'sql', skipped: 'too-large' })),
+    unhashed('huge.sql', 0, { language: 'sql', skipped: 'too-large' }),
   ];
   const web = createArea({ name: 'Web', origin: 'folder', members: members.slice(0, 2) }, 100);
   const rest = createArea({ name: '(root)', origin: 'folder', members: members.slice(2) }, 100);
@@ -32,83 +94,15 @@ function sample(): CodeMap {
     languagePacks: [{ name: 'csharp', version: '1.0.0' }],
   });
   if (!map.ok) throw new Error(map.error);
-  return map.value;
-}
 
-function omitHash(file: FileEntry): FileEntry {
-  const { sha256: _hash, ...rest } = file;
-  return rest;
+  return map.value;
 }
 
 describe('codemap.json', () => {
   it('RF-105 writes the fields of data-model 3.4 and nothing that varies between runs', () => {
     const json: unknown = JSON.parse(serialiseCodeMap(sample()));
 
-    expect(json).toEqual({
-      schemaVersion: 1,
-      source,
-      files: [
-        {
-          path: 'Web/Home.aspx',
-          language: 'aspx',
-          lines: 4,
-          estimatedTokens: 4,
-          sha256: 'a'.repeat(64),
-          artefactKinds: ['page'],
-          mapLevel: 'symbols',
-        },
-        {
-          path: 'Web/Home.aspx.cs',
-          language: 'csharp',
-          lines: 9,
-          estimatedTokens: 9,
-          sha256: 'a'.repeat(64),
-          artefactKinds: [],
-          mapLevel: 'symbols',
-        },
-        {
-          path: 'huge.sql',
-          language: 'sql',
-          lines: 0,
-          estimatedTokens: 0,
-          artefactKinds: [],
-          mapLevel: 'coarse',
-          skipped: 'too-large',
-        },
-      ],
-      areas: [
-        {
-          name: '(root)',
-          files: ['huge.sql'],
-          estimatedTokens: 0,
-          mapLevel: 'coarse',
-          origin: 'folder',
-        },
-        {
-          name: 'Web',
-          files: ['Web/Home.aspx', 'Web/Home.aspx.cs'],
-          estimatedTokens: 13,
-          mapLevel: 'symbols',
-          origin: 'folder',
-        },
-      ],
-      symbols: [
-        { path: 'Web/Home.aspx.cs', kind: 'class', name: 'Home', startLine: 3, endLine: 20 },
-      ],
-      links: [
-        {
-          from: 'Web/Home.aspx',
-          to: 'Web/Home.aspx.cs',
-          kind: 'code-behind',
-          symbol: 'Demo.Home',
-        },
-      ],
-      sqlStatements: [{ path: 'Web/Home.aspx.cs', line: 8, verb: 'SELECT', text: 'SELECT 1' }],
-      entities: [
-        { name: 'Items', path: 'Web/Home.aspx.cs', startLine: 5, source: 'Demo.Ctx.Items' },
-      ],
-      languagePacks: [{ name: 'csharp', version: '1.0.0' }],
-    });
+    expect(json).toEqual(expectedJson);
   });
 
   it('RF-106 is byte-identical for the same map, ends with one line break and has no time', () => {
@@ -132,7 +126,9 @@ describe('codemap.json', () => {
     expect(text).toContain('"too-large"');
     expect(parseCodeMap(text).ok).toBe(true);
   });
+});
 
+describe('codemap.json (refusals)', () => {
   it.each([
     ['text that is not JSON', '{nope', 'invalid-json'],
     ['another schema version', '{"schemaVersion":2}', 'invalid-schema'],

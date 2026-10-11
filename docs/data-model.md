@@ -188,10 +188,27 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 No times and no absolute paths, so two scans of the same commit are byte-identical (RF-106). The file hash
 (`codemapHash`, SHA-256 of the file) goes into the run manifest.
 
+Rules for `areas[]` (RF-104, added with P1-20):
+
+- A file in the `config` areas of the settings (3.1) goes to the first area whose patterns match it (gitignore syntax); every
+  other file is grouped automatically. Links never join a configured area.
+- Automatic grouping: each top-level folder is one area (`name` is the folder path; files at the root form `(root)`).
+  A folder over `scan.areaTokenBudget` is split by sub-folder; its own files stay in an area named after the folder.
+  Files that a language pack links (a page and its code-behind) are put in the area of the linking file, with
+  `origin` `references`, when together they fit the budget.
+- A group still over the budget is cut, in path order and never between linked files, into parts named `<name>#1`,
+  `<name>#2`, and so on. A single file larger than the budget is the one allowed exception and forms an area alone.
+- An automatic name equal to a configured name gets ` (auto)` appended.
+- `mapLevel` of an area is `symbols` when at least one of its files is `symbols`, else `coarse`.
+- Every text taken from a repository file (SQL text, symbol and entity names, link symbols) is passed through the
+  secret masker before it is written (RF-141); `sqlStatements[].text` is cut to 500 characters after masking.
+- Routes found by a language pack are not written to the code map in this release (3.4 has no field for them).
+
 ### 3.5 `scan-summary.md`
 
-Readable summary of the code map: source and commit, languages, artefact counts, areas with file and token counts
-and map level (RF-105). Generated; never read back.
+Readable summary of the code map: source and commit, the scan duration (the only value that differs between two scans
+of one commit, which is why it is here and not in `codemap.json`), languages with files, lines and tokens, artefact
+counts, areas with file and token counts, map level and origin (RF-105, RF-112). Generated; never read back.
 
 ### 3.6 `runs/<runId>/manifest.json`
 

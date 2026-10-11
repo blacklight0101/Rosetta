@@ -75,7 +75,9 @@ describe('CodeMap', () => {
 
     expect(backward).toEqual(forward);
   });
+});
 
+describe('CodeMap (area rules)', () => {
   it('RF-105 refuses a path that is listed twice', () => {
     expect(createCodeMap(input([a, a], [area('A', [a])]))).toEqual({
       ok: false,
@@ -119,7 +121,9 @@ describe('CodeMap', () => {
       error: 'area-tokens-mismatch',
     });
   });
+});
 
+describe('CodeMap (references)', () => {
   it('RF-111 refuses a link, symbol, statement or entity that points at an unscanned file', () => {
     const base = input([a], [area('A', [a])]);
 

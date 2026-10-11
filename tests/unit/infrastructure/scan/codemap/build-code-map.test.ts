@@ -75,12 +75,14 @@ describe('building the code map from the scans', () => {
   });
 
   it('RF-100 leaves the hash out of a too-large file and keeps its skip reason', () => {
-    const { sha256: _hash, ...bare } = file('huge.sql', {
+    const bare: ScannedFile = {
+      path: 'huge.sql',
       language: 'sql',
       lines: 0,
       estimatedTokens: 0,
+      artefactKinds: [],
       skipped: 'too-large',
-    });
+    };
     const map = build(input([bare]));
 
     expect(map.files[0]).toEqual({
@@ -93,7 +95,9 @@ describe('building the code map from the scans', () => {
       skipped: 'too-large',
     });
   });
+});
 
+describe('building the code map (links and areas)', () => {
   it('RF-111 writes the optional symbol of a link', () => {
     const map = build(
       input([file('Home.aspx'), file('Home.aspx.cs')], {
@@ -128,7 +132,9 @@ describe('building the code map from the scans', () => {
       'Pages:references:Code/Home.aspx.cs+Pages/Home.aspx',
     ]);
   });
+});
 
+describe('building the code map (configured areas)', () => {
   it('RF-104 configured areas take the files their include patterns match', () => {
     const map = build(
       input([file('Web/a.cs'), file('Web/b.cs'), file('Data/x.cs')], {
@@ -148,7 +154,9 @@ describe('building the code map from the scans', () => {
 
     expect(map.areas.map((a) => a.estimatedTokens)).toEqual([80, 40]);
   });
+});
 
+describe('building the code map (packs and masking)', () => {
   it('RF-110 records the packs that were used', () => {
     const map = build(
       input([file('a.cs')], { packs: { languagePacks: [{ name: 'csharp', version: '1.0.0' }] } }),
@@ -181,10 +189,10 @@ describe('building the code map from the scans', () => {
             {
               path: 'a.cs',
               kind: 'class',
-              name: `K_${fakeOpenAiKey}`,
+              name: `K ${fakeOpenAiKey}`,
               startLine: 1,
               endLine: 2,
-              container: `NS_${fakeOpenAiKey}`,
+              container: `NS ${fakeOpenAiKey}`,
             },
           ],
           links: [{ from: 'a.cs', to: 'b.cs', kind: 'code-behind', symbol: fakeOpenAiKey }],
@@ -195,7 +203,9 @@ describe('building the code map from the scans', () => {
 
     expect(JSON.stringify(map)).not.toContain(fakeOpenAiKey);
   });
+});
 
+describe('building the code map (limits and order)', () => {
   it('RF-103 keeps a statement within 500 characters even when masking lengthens it', () => {
     const text = `SELECT '${fakeOpenAiKey}'${' x'.repeat(240)}`.slice(0, 500);
     const map = build(

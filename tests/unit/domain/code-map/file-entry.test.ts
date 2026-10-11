@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createFileEntry } from '../../../../src/domain/code-map/file-entry.js';
-import { entry } from '../../../support/code-map-builders.js';
+import { entry, unhashed } from '../../../support/code-map-builders.js';
 
 describe('FileEntry', () => {
   it('RF-105 accepts a listed file with its counts, hash and map level', () => {
@@ -28,7 +28,9 @@ describe('FileEntry', () => {
   ])('RF-101 refuses %s', (_name, extra) => {
     expect(createFileEntry(entry('a.cs', 3, extra))).toEqual({ ok: false, error: 'invalid-count' });
   });
+});
 
+describe('FileEntry (skipped files)', () => {
   it('RF-100 a skipped file has no lines and no tokens', () => {
     const skipped = entry('big.dat', 5, { skipped: 'binary' });
 
@@ -37,7 +39,7 @@ describe('FileEntry', () => {
   });
 
   it('RF-100 a too-large file may have no hash, because it is never read', () => {
-    const { sha256: _hash, ...withoutHash } = entry('huge.sql', 0, { skipped: 'too-large' });
+    const withoutHash = unhashed('huge.sql', 0, { skipped: 'too-large' });
 
     expect(createFileEntry(withoutHash).ok).toBe(true);
   });

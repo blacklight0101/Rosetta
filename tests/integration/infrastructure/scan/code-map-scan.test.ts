@@ -1,8 +1,15 @@
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { OutputWriter } from '../../../../src/application/ports/output-writer.js';
+import { err, ok } from '../../../../src/domain/errors/result.js';
+import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
+import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { writeScanOutputs } from '../../../../src/infrastructure/scan/codemap/write-scan-outputs.js';
 import { parseCodeMap } from '../../../../src/infrastructure/scan/codemap/codemap-json.js';
+import { FixedClock } from '../../../support/fixed-clock.js';
+import { MemoryLogger } from '../../../support/memory-logger.js';
 import { scanToOutputs } from '../../../support/code-map-harness.js';
 import { fixtureRoot } from '../../../support/scan-harness.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
@@ -10,6 +17,15 @@ import { hashTree, writeTree } from '../../../support/snapshot-fixture.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 const temp = useTempRoot('rosetta-codemap-');
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const dataDir = (): string => join(temp.path, 'data');
 
@@ -41,7 +57,9 @@ describe('scan to code map and summary on the fixture repositories', () => {
       .digest('hex');
     expect(run.codeMapHash).toBe(expected);
   });
+});
 
+describe('scan to code map (contents)', () => {
   it('RF-105 codemap.json validates against its schema and holds symbols, links and SQL', async () => {
     const run = await scanToOutputs(fixtureRoot('webforms-ef'), {
       runFolder: 'runs/schema',
@@ -72,7 +90,9 @@ describe('scan to code map and summary on the fixture repositories', () => {
     expect(summary).toMatch(/\| Services \| \d+ \| \d+ \| symbols \| folder \|/);
     expect(summary).toContain('- Scan duration: ');
   });
+});
 
+describe('scan to code map (no language pack)', () => {
   it('RF-112 a repository in a language with no pack gets a valid code map, every area coarse', async () => {
     const run = await scanToOutputs(fixtureRoot('cobol-ledger'), {
       runFolder: 'runs/cobol',
@@ -91,7 +111,9 @@ describe('scan to code map and summary on the fixture repositories', () => {
     expect(summary).toMatch(/\| coarse \| folder \|/);
     expect(summary).not.toContain('| symbols |');
   });
+});
 
+describe('scan to code map (areas)', () => {
   it('RF-104 an area configured in the settings replaces the folder grouping for its files', async () => {
     const run = await scanToOutputs(fixtureRoot('webforms-csharp'), {
       runFolder: 'runs/config',
@@ -123,7 +145,9 @@ describe('scan to code map and summary on the fixture repositories', () => {
       expect(area.estimatedTokens <= 150 || area.files.length === 1).toBe(true);
     }
   });
+});
 
+describe('scan to code map (safety and speed)', () => {
   it('RF-005 the analysed repository is not changed by the scan', async () => {
     const root = fixtureRoot('webforms-csharp');
     const before = await hashTree(root);
@@ -164,5 +188,52 @@ describe('secrets inside the repository text', () => {
     expect(codeMapText).toContain('[MASKED:api-key]');
     expect(run.codeMap.sqlStatements).toHaveLength(1);
     expect(run.codeMap.sqlStatements[0]).toMatchObject({ path: 'Data/Keys.cs', line: 3 });
+  });
+});
+
+describe('writing the scan outputs', () => {
+  it('RF-005 a refused write is returned as a refusal and no output file is made', async () => {
+    const run = await scanToOutputs(fixtureRoot('php-shop'), {
+      runFolder: 'runs/ok',
+      dataDir: dataDir(),
+      withCSharpPack: false,
+    });
+    const logger = new MemoryLogger(new FixedClock('2026-10-11T09:00:00.000Z'), new SecretMasker());
+    const writer = new NodeOutputWriter({ dataDir: dataDir(), logger });
+
+    const written = await writeScanOutputs(
+      writer,
+      { userId: 'not-a-user-id', folder: 'runs/bad' },
+      { codeMap: run.codeMap, durationMs: 1, masker: new SecretMasker() },
+    );
+
+    expect(written.ok).toBe(false);
+    expect(await pathExists(join(dataDir(), 'users', 'not-a-user-id'))).toBe(false);
+  });
+
+  it('RF-005 a refusal to write the summary after the code map is returned too', async () => {
+    const run = await scanToOutputs(fixtureRoot('php-shop'), {
+      runFolder: 'runs/ok2',
+      dataDir: dataDir(),
+      withCSharpPack: false,
+    });
+    const refuseSummary: OutputWriter = {
+      writeText: (file) =>
+        Promise.resolve(
+          file.path.endsWith('.md')
+            ? err({ code: 'RST-1109', reason: 'outside-workspace', message: 'refused' })
+            : ok(undefined),
+        ),
+      appendLine: () => Promise.resolve(ok(undefined)),
+      readText: () => Promise.resolve(ok('')),
+    };
+
+    const written = await writeScanOutputs(
+      refuseSummary,
+      { userId: 'u', folder: 'runs/x' },
+      { codeMap: run.codeMap, durationMs: 1, masker: new SecretMasker() },
+    );
+
+    expect(written.ok).toBe(false);
   });
 });

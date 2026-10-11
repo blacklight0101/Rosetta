@@ -1,17 +1,24 @@
 import type { FileEntry } from '../../src/domain/code-map/file-entry.js';
 
-/** A file entry with the given path and token count; `extra` overrides any field. */
-export function entry(path: string, tokens = 10, extra: Partial<FileEntry> = {}): FileEntry {
+function base(path: string, tokens: number): FileEntry {
   return {
     path,
     language: 'x',
     lines: tokens,
     estimatedTokens: tokens,
-    sha256: 'a'.repeat(64),
     artefactKinds: [],
     mapLevel: 'coarse',
-    ...extra,
   };
+}
+
+/** A file entry with the given path and token count; `extra` overrides any field. */
+export function entry(path: string, tokens = 10, extra: Partial<FileEntry> = {}): FileEntry {
+  return { ...base(path, tokens), sha256: 'a'.repeat(64), ...extra };
+}
+
+/** Like `entry`, without a hash (a file that was too large to be read). */
+export function unhashed(path: string, tokens = 0, extra: Partial<FileEntry> = {}): FileEntry {
+  return { ...base(path, tokens), ...extra };
 }
 
 export const underFolder =
