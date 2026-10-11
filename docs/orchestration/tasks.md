@@ -12,10 +12,10 @@ DEC-32: 1-3 haiku, 4-6 sonnet, 7-9 opus, 10 fable.
 
 | Phase | Cards | haiku 1-3 | sonnet 4-6 | opus 7-9 | fable 10 | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 62 | 4 | 22 | 29 | 7 | 16 | 38 | 8 | 6 | 0 |
+| P1 Milestone slice (M1) | 63 | 4 | 22 | 30 | 7 | 16 | 39 | 8 | 7 | 0 |
 | P2 Full understand | 14 | 0 | 4 | 10 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 0 | 3 | 9 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **88** | **4** | **29** | **48** | **7** | **19** | **58** | **11** | **6** | **0** |
+| **Total** | **89** | **4** | **29** | **49** | **7** | **19** | **59** | **11** | **7** | **0** |
 
 ## Conventions for every card
 
@@ -820,6 +820,18 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the masker and formatter changes with fixture cases and hostile-input cases.
 - **Done when**: every new shape is masked in a fixture test; a fake key under a `password` data key never appears in any logger output; the hostile-input suite stays within budget; `npm run verify` green.
 - **Refs**: RF-009, RF-141, RNF-003, ADR-013, P1-04 (verifier MINOR 5 and open question).
+
+### P1-63 - Follow-up: automatic Ollama context size
+- **Difficulty**: 8 (opus)
+- **Size**: M
+- **Depends on**: P1-25
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/spec/requirements.md` RF-401 and Q-23; `docs/data-model.md` section 3.1; `docs/providers.md` section 2; DEC-114.
+- **Do**: add `providers.<name>.contextTokens` (`auto` or an int of at least 1 024, `ollama` only) to the settings schema; in the Ollama adapter, resolve `auto` once per server and model digest: start at the smaller of the model's trained context (`/api/show`) and the ceiling, load with a minimal call, read `/api/ps`, and halve while `size_vram` is below `size`, down to the floor (Q-23 defaults); send the result as `num_ctx`; for a fixed number, send it unchanged and log a warning when Ollama reports CPU offload; record the chosen value and how it was chosen in the provider call log and the run manifest.
+- **Delivers**: the setting, the resolver with its cache, fake-Ollama recordings for fits, spills and model limits, and `docs/providers.md` section 2 updated.
+- **Done when**: with the fake Ollama reporting partial GPU memory at 32 768 and full at 16 384, `auto` sends 16 384 and records it; a model whose trained context is 8 192 never gets more; a fixed value is sent unchanged with one warning on spill; the resolver runs once per model; `npm run verify` green.
+- **Refs**: RF-401, RNF-004, ADR-003, DEC-114, Q-23.
 
 ---
 

@@ -101,6 +101,7 @@ column of the `projects` table, edited on the project's settings page. The sourc
 | | `<name>.toolMode` | enum | `native` | `native` or `text` (RF-205) |
 | | `<name>.timeoutSeconds` | int | 120 | per call |
 | | `<name>.maxRetries` | int | 3 | RF-406 |
+| | `<name>.contextTokens` | `auto` or int | `auto` | `ollama` only, refused for other kinds: `auto` picks the largest context that fits the GPU memory Ollama reports; a number (at least 1 024) is sent as `num_ctx` unchanged (RF-401, DEC-114, Q-23) |
 | `roles` | `reader`, `verifier`, `planner`, `summariser` | object | - | each `{ provider, model, maxOutputTokens, temperature?, maxTurns? }`; `maxTurns` for `reader` only (RF-201, RF-405) |
 | `budget` | `run.maxCostMicros`, `run.maxTokens` | int | template values | hard caps per run (RF-422) |
 | | `roles.<role>.maxCostMicros`, `roles.<role>.maxTokens` | int | none | caps per role (RF-423) |
