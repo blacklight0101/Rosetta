@@ -213,7 +213,7 @@ and map level (RF-105). Generated; never read back.
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `caps` | object | run and role caps in force |
-| `masking` | object | count per secret kind (RF-141) |
+| `masking` | object | count per secret kind (RF-141): `api-key`, `bearer-token`, `connection-string`, `password`, `private-key` (the kinds of `SecretMasker`, `src/infrastructure/guards/secret-masker.ts`) |
 | `totals` | object | `{ inputTokens, outputTokens, cachedInputTokens, costMicros, calls }` |
 | `agentTasks[]` | list | `{ agentTaskId, area, role, state (AgentTaskState), turns, cards }` |
 
@@ -371,7 +371,12 @@ different currencies are totalled per currency. Rows are never deleted with runs
 Line: `{ schemaVersion, at, level, logger, message, code?, runId?, agentTaskId?, callId?, data? }`; `level` is
 `debug`, `info`, `warn` or `error`; `userId` is added when a request or run has one. The same entries go to standard
 output as JSON lines at `ROSETTA_LOG_LEVEL` and above. One file per UTC day; files older than `ROSETTA_LOG_RETENTION_DAYS` (default 14) are deleted at
-start-up and daily (RF-009). Every entry passes the secret masking.
+start-up and daily (RF-009): a file is deleted when its UTC day is more than that many days before today, and
+only files named `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the secret masking: `logger`,
+`message`, the ids and every key and string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept.
+When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
+`RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
+nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
 
 ### 3.15 `transcripts/<agentTaskId>.jsonl`
 
