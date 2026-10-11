@@ -5,8 +5,9 @@
 #   docker compose up -d db
 #
 # The image is pinned by digest (postgres:17, PostgreSQL 17.11).
-# The image's entrypoint creates rosetta_migrator, which owns the rosetta database, with the
-# password from ROSETTA_MIGRATOR_DB_PASSWORD on the first start of an empty pgdata volume.
+# On the first start of an empty pgdata volume the image creates its bootstrap superuser postgres
+# with ROSETTA_DB_ADMIN_PASSWORD and the empty rosetta database. The application and migration
+# roles come from db/init/roles.sh (card P1-45); until then local development connects as postgres.
 
 name: rosetta
 
@@ -14,8 +15,7 @@ services:
   db:
     image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
     environment:
-      POSTGRES_USER: rosetta_migrator
-      POSTGRES_PASSWORD: ${ROSETTA_MIGRATOR_DB_PASSWORD:?Set ROSETTA_MIGRATOR_DB_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${ROSETTA_DB_ADMIN_PASSWORD:?Set ROSETTA_DB_ADMIN_PASSWORD in .env}
       POSTGRES_DB: rosetta
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -23,7 +23,7 @@ services:
       # Reachable from this machine only (RNF-014).
       - '127.0.0.1:5432:5432'
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', 'rosetta_migrator', '-d', 'rosetta']
+      test: ['CMD', 'pg_isready', '-U', 'postgres', '-d', 'rosetta']
       interval: 5s
       timeout: 5s
       retries: 10

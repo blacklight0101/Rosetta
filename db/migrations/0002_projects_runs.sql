@@ -11,14 +11,16 @@ CREATE TABLE projects (
   settings jsonb NOT NULL,
   created_at timestamptz NOT NULL,
   updated_at timestamptz NOT NULL,
-  CONSTRAINT projects_source_key UNIQUE (user_id, source_url, ref, subpath)
+  CONSTRAINT projects_source_key UNIQUE (user_id, source_url, ref, subpath),
+  -- Target of the runs foreign key that makes a run's user the project's owner.
+  CONSTRAINT projects_id_user_id_key UNIQUE (id, user_id)
 );
 
 CREATE INDEX projects_user_id_idx ON projects (user_id);
 
 CREATE TABLE runs (
   id uuid PRIMARY KEY,
-  project_id uuid NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  project_id uuid NOT NULL,
   user_id uuid NOT NULL REFERENCES users (id),
   run_key text NOT NULL,
   stage text NOT NULL CHECK (stage IN ('scan', 'understand', 'verify', 'report', 'plan')),
@@ -33,6 +35,8 @@ CREATE TABLE runs (
   input_tokens bigint NOT NULL,
   output_tokens bigint NOT NULL,
   cached_input_tokens bigint NOT NULL,
+  CONSTRAINT runs_project_owner_fkey FOREIGN KEY (project_id, user_id)
+    REFERENCES projects (id, user_id) ON DELETE CASCADE,
   CONSTRAINT runs_run_key_key UNIQUE (project_id, run_key),
   CONSTRAINT runs_end_state_check_ended CHECK ((queue_state = 'Ended') = (end_state IS NOT NULL))
 );

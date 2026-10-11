@@ -14,6 +14,7 @@ INSERT INTO server_settings (key, value, updated_at) VALUES
   ('caps', '{"runMicros": 500000, "userDayMicros": 1000000, "serverMonthMicros": 10000000}', now()),
   ('queue', '{"maxRunning": 2}', now()),
   ('defaultRoles', '{}', now());
+-- providers: value shape not yet defined (orchestrator raises a question)
 
 DO $$
 BEGIN

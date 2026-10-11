@@ -3,7 +3,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { inVersionOrder, type MigrationFile } from './migration-files.js';
 
 /** A row of `schema_version`: what the database says was applied. */
-export interface RecordedMigration {
+interface RecordedMigration {
   readonly version: number;
   readonly checksum: string;
 }

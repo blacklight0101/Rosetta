@@ -28,6 +28,7 @@ export interface Environment {
   readonly trustProxy: number;
   readonly appDbPassword: string | undefined;
   readonly migratorDbPassword: string | undefined;
+  readonly dbAdminPassword: string | undefined;
   readonly test: boolean;
   readonly testDatabaseUrl: string | undefined;
   readonly gallery: boolean;
@@ -116,6 +117,7 @@ const SCHEMA = z.object({
   ).optional(),
   ROSETTA_APP_DB_PASSWORD: text().optional(),
   ROSETTA_MIGRATOR_DB_PASSWORD: text().optional(),
+  ROSETTA_DB_ADMIN_PASSWORD: text().optional(),
   ROSETTA_TEST: switchOn.optional(),
   ROSETTA_TEST_DATABASE_URL: text(postgresUrl).optional(),
   ROSETTA_GALLERY: switchOn.optional(),
@@ -161,6 +163,7 @@ function toEnvironment(parsed: Parsed): Environment {
     trustProxy: parsed.ROSETTA_TRUST_PROXY ?? 0,
     appDbPassword: parsed.ROSETTA_APP_DB_PASSWORD,
     migratorDbPassword: parsed.ROSETTA_MIGRATOR_DB_PASSWORD,
+    dbAdminPassword: parsed.ROSETTA_DB_ADMIN_PASSWORD,
     test: parsed.ROSETTA_TEST !== undefined,
     testDatabaseUrl: parsed.ROSETTA_TEST_DATABASE_URL,
     gallery: parsed.ROSETTA_GALLERY !== undefined,

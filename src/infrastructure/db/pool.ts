@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 import type { Environment } from '../config/environment.js';
 
 // ADR-016: the only place that creates `pg` pools. Every query has a statement timeout, every
@@ -6,6 +6,7 @@ import type { Environment } from '../config/environment.js';
 // crashing the process.
 
 export type DatabasePool = Pool;
+export type DatabaseClient = PoolClient;
 
 export interface PoolOptions {
   readonly connectionString: string;

@@ -4,8 +4,8 @@ import type { AppliedMigration, Migrator } from '../../application/ports/migrato
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { MigrationFile } from './migration-files.js';
-import { pendingMigrations, type RecordedMigration } from './migration-plan.js';
-import type { DatabasePool } from './pool.js';
+import { pendingMigrations } from './migration-plan.js';
+import type { DatabaseClient, DatabasePool } from './pool.js';
 
 export interface PgMigratorOptions {
   /** A pool connected as `rosetta_migrator` (see `createMigratorPool`). */
@@ -25,6 +25,11 @@ const SELECT_RECORDED = 'SELECT version, checksum FROM schema_version ORDER BY v
 const INSERT_RECORDED =
   'INSERT INTO schema_version (version, name, checksum, applied_at) VALUES ($1, $2, $3, $4)';
 
+// One fixed advisory-lock key for every migration run on this database (RST range 2400, RF-1302).
+const MIGRATION_LOCK_KEY = 24_001_302;
+const LOCK = 'SELECT pg_advisory_lock($1)';
+const UNLOCK = 'SELECT pg_advisory_unlock($1)';
+
 const recordedRows = z.array(z.object({ version: z.number().int(), checksum: z.string() }));
 
 /** Applies `db/migrations/NNNN_*.sql` files in order, each in one transaction (ADR-016). */
@@ -41,21 +46,32 @@ export class PgMigrator implements Migrator {
   }
 
   async migrate(): Promise<readonly AppliedMigration[]> {
-    await this.pool.query(CREATE_SCHEMA_VERSION);
-    const pending = pendingMigrations(await this.recorded(), this.migrations);
+    const client = await this.pool.connect();
+    try {
+      await client.query(LOCK, [MIGRATION_LOCK_KEY]);
+      try {
+        return await this.migrateWith(client);
+      } finally {
+        await client.query(UNLOCK, [MIGRATION_LOCK_KEY]);
+      }
+    } finally {
+      client.release();
+    }
+  }
+
+  /** Runs under the migration lock, so a second migrator waits and then finds nothing to do. */
+  private async migrateWith(client: DatabaseClient): Promise<readonly AppliedMigration[]> {
+    await client.query(CREATE_SCHEMA_VERSION);
+    const recorded = recordedRows.parse((await client.query(SELECT_RECORDED)).rows);
+    const pending = pendingMigrations(recorded, this.migrations);
     for (const migration of pending) {
-      await this.apply(migration);
+      await this.apply(client, migration);
     }
     return pending.map(({ version, name }) => ({ version, name }));
   }
 
-  private async recorded(): Promise<RecordedMigration[]> {
-    const result = await this.pool.query(SELECT_RECORDED);
-    return recordedRows.parse(result.rows);
-  }
-
-  private async apply(migration: MigrationFile): Promise<void> {
-    const client = await this.pool.connect();
+  /** The migration and its schema_version row commit in one explicit transaction, or neither does. */
+  private async apply(client: DatabaseClient, migration: MigrationFile): Promise<void> {
     try {
       await client.query('BEGIN');
       await client.query(migration.sql);
@@ -73,8 +89,6 @@ export class PgMigrator implements Migrator {
         `Migration ${migration.name} failed and was rolled back; the previous schema is kept.`,
         { cause: error },
       );
-    } finally {
-      client.release();
     }
   }
 }
