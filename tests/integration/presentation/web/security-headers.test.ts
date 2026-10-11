@@ -53,6 +53,7 @@ describe('security headers', () => {
       expect(directives(response.headers['content-security-policy'])).toEqual(cspDirectives);
       expect(response.headers['x-content-type-options']).toBe('nosniff');
       expect(response.headers['referrer-policy']).toBe('no-referrer');
+      expect(response.headers['x-frame-options']).toBe('DENY');
     },
   );
 
