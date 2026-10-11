@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed (becomes Accepted after the review that opens gate G-01) |
+| **Status** | Accepted 2026-10-11 by BlackLigth (blacklight0101), opening gate G-01 (DEC-113) |
 | **Date** | 2026-10-09 |
 | **Owner** | BlackLigth (blacklight0101) |
 | **Reviewers** | BlackLigth (blacklight0101), product owner |

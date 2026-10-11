@@ -1,7 +1,7 @@
 # ADR-019: Extract snapshots with `tar` and match ignore rules with `ignore`
 
 **Date**: 2026-10-11
-**Status**: Proposed
+**Status**: Accepted (2026-10-11, DEC-113)
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context

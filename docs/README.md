@@ -5,8 +5,8 @@ here; they never hold a second copy of these documents.
 
 | Document | Purpose | Status | Date |
 |---|---|---|---|
-| [rfc/RFC-001-rosetta.md](rfc/RFC-001-rosetta.md) | Design proposal: problem, goals and non-goals, alternatives, proposed design, impact, phases, success metrics | Proposed | 2026-10-09 |
-| [spec/requirements.md](spec/requirements.md) | Requirements with Given/When/Then acceptance criteria, non-functional requirements, open questions, reserved ranges, traceability | Proposed | 2026-10-09 |
+| [rfc/RFC-001-rosetta.md](rfc/RFC-001-rosetta.md) | Design proposal: problem, goals and non-goals, alternatives, proposed design, impact, phases, success metrics | Accepted | 2026-10-11 |
+| [spec/requirements.md](spec/requirements.md) | Requirements with Given/When/Then acceptance criteria, non-functional requirements, open questions, reserved ranges, traceability | Accepted | 2026-10-11 |
 | [decision-log.md](decision-log.md) | The product owner's decisions (DEC-nn), what each answers and where it is applied | Living | 2026-10-09 |
 | [journal/](journal/) | Curated per-session summary of what was decided and why, with DEC and Q ids; no conversations | Living | 2026-10-09 |
 | [adr/README.md](adr/README.md) | Architecture decision records index, counts by status, deferred decisions | Living | 2026-10-09 |
