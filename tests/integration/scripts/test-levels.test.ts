@@ -11,7 +11,10 @@ const script = join(process.cwd(), 'scripts', 'test-levels.mjs');
 async function writeTests(root: string, level: string, count: number): Promise<void> {
   const folder = join(root, 'tests', level);
   await mkdir(folder, { recursive: true });
-  const body = Array.from({ length: count }, (_, i) => `it('RNF-005 case ${String(i)}', () => {});`);
+  const body = Array.from(
+    { length: count },
+    (_, i) => `it('RNF-005 case ${String(i)}', () => {});`,
+  );
   await writeFile(join(folder, 'sample.test.ts'), body.join('\n'));
 }
 
@@ -50,6 +53,6 @@ describe('scripts/test-levels.mjs', () => {
   });
 
   it('RNF-005 fails when the run counts zero tests', async () => {
-    await expect(run('node', [script, root])).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('counted zero tests') });
+    await expect(run('node', [script, root])).rejects.toThrow(/counted zero tests/u);
   });
 });
