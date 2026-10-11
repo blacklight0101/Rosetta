@@ -89,6 +89,30 @@ describe('NodeRepositoryReader and links', () => {
   });
 });
 
+describe('NodeRepositoryReader after open()', () => {
+  it('RF-140 an indexed folder swapped for a link is refused on read and skipped by grep', async () => {
+    const outside = join(temp.path, 'outside');
+    await mkdir(outside, { recursive: true });
+    await writeFile(join(outside, 'main.ts'), 'needle outside\n', 'utf8');
+    const logger = newLogger();
+    const reader = await openReader({ files: { 'src/main.ts': 'needle inside\n' } }, logger);
+    await rm(join(snapshotRoot(), 'src'), { recursive: true, force: true });
+    await symlink(outside, join(snapshotRoot(), 'src'), 'junction');
+
+    const refusal = refusalOf(
+      await reader.readLines({ path: 'src/main.ts', startLine: 1, endLine: 1 }),
+    );
+
+    expect(await reader.listFiles()).toEqual(['src/main.ts']);
+    expect(refusal).toMatchObject({ code: ERROR_CODES.pathOutsideRoot, reason: 'outside-root' });
+    expect(securityCodes(logger)).toEqual([ERROR_CODES.pathOutsideRoot]);
+    expect(await reader.grep({ pattern: 'needle' })).toMatchObject({
+      ok: true,
+      value: { matches: [] },
+    });
+  });
+});
+
 async function linkedOutside(linkPath: string): Promise<void> {
   const outside = join(temp.path, 'outside');
   await mkdir(join(outside, 'inner'), { recursive: true });

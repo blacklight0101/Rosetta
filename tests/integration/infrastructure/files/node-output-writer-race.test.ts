@@ -17,18 +17,27 @@ import { useTempRoot } from '../../../support/temp-root.js';
 // write; the writer must notice and refuse instead of writing into the snapshot.
 
 const trap = vi.hoisted((): FsTrap => ({ path: undefined, action: undefined }));
+/** Paths handed to `writeFile` once the trap has sprung: none is allowed after a swap. */
+const writesAfterSwap = vi.hoisted((): string[] => []);
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof FsPromises>();
   const { springTrap } = await import('../../../support/fs-trap.js');
+  let sprung = false;
   return {
     ...actual,
     lstat: async (...args: Parameters<typeof actual.lstat>) => {
       try {
         return await actual.lstat(...args);
       } finally {
+        if (trap.path !== undefined && args[0] === trap.path) sprung = true;
         await springTrap(trap, args[0]);
       }
+    },
+    writeFile: (...args: Parameters<typeof actual.writeFile>) => {
+      const [path] = args;
+      if (sprung) writesAfterSwap.push(typeof path === 'string' ? path : '<not a string path>');
+      return actual.writeFile(...args);
     },
   };
 });
@@ -88,6 +97,7 @@ describe('NodeOutputWriter when a folder is swapped for a link after the check',
     expect(await hashTree(snapshotFolder())).toBe(before);
     expect(await temporaryFiles(snapshotFolder())).toEqual([]);
     expect(await temporaryFiles(userFolder())).toEqual([]);
+    expect(writesAfterSwap).toEqual([]);
   });
 
   it('RF-005 appendLine refuses the swapped folder and leaves the snapshot unchanged', async () => {
