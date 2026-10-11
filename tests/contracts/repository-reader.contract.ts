@@ -222,7 +222,31 @@ function readOnlyTests(newReader: NewReader): void {
       (name) => name !== 'constructor' && !name.startsWith('#'),
     );
 
-    expect(operations.sort()).toEqual(['grep', 'liftedDenyPatterns', 'listFiles', 'readLines']);
+    expect(operations.sort()).toEqual([
+      'grep',
+      'liftedDenyPatterns',
+      'listFiles',
+      'readLines',
+      'skippedPaths',
+    ]);
+  });
+}
+
+function skippedNameTests(newReader: NewReader): void {
+  // Full-width dots fold to `..` (NFKC); the name can be created on every operating system.
+  const foldedName = 'src/．．';
+
+  it('RF-140 a file whose name fails the path check is left out of the listing and recorded', async () => {
+    const { reader } = await newReader({ files: { [foldedName]: 'x\n', 'src/a.ts': 'y\n' } });
+
+    expect(await reader.listFiles()).toEqual(['src/a.ts']);
+    expect(reader.skippedPaths).toEqual({ links: [], invalidNames: [foldedName] });
+  });
+
+  it('RF-140 nothing is recorded as skipped for a plain repository', async () => {
+    const { reader } = await newReader(basic);
+
+    expect(reader.skippedPaths).toEqual({ links: [], invalidNames: [] });
   });
 }
 
@@ -245,5 +269,6 @@ export function repositoryReaderContract(name: string, create: RepositoryReaderF
     denyTests(newReader);
     grepContract(newReader);
     readOnlyTests(newReader);
+    skippedNameTests(newReader);
   });
 }

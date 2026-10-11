@@ -61,6 +61,14 @@ export interface GrepResult {
   readonly notice?: string;
 }
 
+/** Snapshot entries the reader left out, for the run record. */
+export interface SkippedPaths {
+  /** Symbolic links and junctions, never followed. */
+  readonly links: readonly string[];
+  /** Files whose names fail the path check (for example `aux.c` or `name.`), never read. */
+  readonly invalidNames: readonly string[];
+}
+
 export interface RepositoryReader {
   /** Files under the subpath, without ignored or denied paths, sorted by path. */
   listFiles(): Promise<readonly string[]>;
@@ -68,4 +76,5 @@ export interface RepositoryReader {
   grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>>;
   /** Built-in deny patterns lifted by `scan.allowDenied`, for the run record (RF-147). */
   readonly liftedDenyPatterns: readonly string[];
+  readonly skippedPaths: SkippedPaths;
 }

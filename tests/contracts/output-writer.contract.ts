@@ -106,7 +106,7 @@ function refusalTests(newWriter: NewWriter): void {
 }
 
 function invalidPathTests(newWriter: NewWriter): void {
-  it.each(['NUL', 'runs/con.json', 'x.json:stream', 'x.json.'])(
+  it.each(['NUL', 'runs/con.json', 'x.json:stream', 'x.json.', `${'n'.repeat(300)}.json`])(
     'RF-005 a write to the invalid path %j is refused with a security event',
     async (path) => {
       const { writer, logger } = await newWriter();

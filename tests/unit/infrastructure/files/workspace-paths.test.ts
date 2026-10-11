@@ -73,4 +73,18 @@ describe('workspace path check', () => {
       expect(checkWorkspacePath(path)).toEqual({ ok: false, error: 'invalid-path' });
     },
   );
+
+  it('RF-005 a name of up to 100 characters in a path of up to 200 is accepted', () => {
+    const name = `${'n'.repeat(95)}.json`;
+    const path = `${'d'.repeat(98)}/${name}`;
+
+    expect(checkWorkspacePath(path)).toEqual({ ok: true, value: path });
+  });
+
+  it.each([
+    ['a name longer than 100 characters', `${'n'.repeat(101)}`],
+    ['a path longer than 200 characters', `${'d'.repeat(100)}/${'e'.repeat(100)}`],
+  ])('RF-005 refuses %s as an invalid path', (_label, path) => {
+    expect(checkWorkspacePath(path)).toEqual({ ok: false, error: 'invalid-path' });
+  });
 });

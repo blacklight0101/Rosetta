@@ -1,4 +1,5 @@
-import { mkdir, symlink, writeFile } from 'node:fs/promises';
+import { link, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Logger } from '../../../../src/application/ports/logger.js';
@@ -55,6 +56,7 @@ describe('NodeRepositoryReader and links', () => {
     const reader = await openReader({ files: {} }, logger);
 
     expect(await reader.listFiles()).toEqual(['src/main.ts']);
+    expect(reader.skippedPaths).toEqual({ links: ['src/linked'], invalidNames: [] });
     const refusal = refusalOf(
       await reader.readLines({ path: 'src/linked/stolen.txt', startLine: 1, endLine: 1 }),
     );
@@ -85,6 +87,71 @@ describe('NodeRepositoryReader and links', () => {
 
     expect(await reader.listFiles()).toEqual(['src/main.ts']);
   });
+});
+
+async function linkedOutside(linkPath: string): Promise<void> {
+  const outside = join(temp.path, 'outside');
+  await mkdir(join(outside, 'inner'), { recursive: true });
+  await writeFile(join(outside, 'inner', 'stolen.txt'), 'outside the snapshot\n', 'utf8');
+  await writeTree(snapshotRoot(), { 'src/main.ts': 'x\n' });
+  await symlink(outside, join(snapshotRoot(), ...linkPath.split('/')), 'junction');
+}
+
+describe('NodeRepositoryReader and a linked subpath', () => {
+  it.each([
+    ['is a link', 'linked', 'linked'],
+    ['passes through a link', 'src/linked', 'src/linked/inner'],
+  ])(
+    'RF-140 a subpath that %s is refused when the reader opens, with a security event',
+    async (_label, linkPath, subpath) => {
+      await linkedOutside(linkPath);
+      const logger = newLogger();
+
+      await expect(openReader({ files: {}, subpath }, logger)).rejects.toMatchObject({
+        code: ERROR_CODES.pathOutsideRoot,
+      });
+      expect(securityCodes(logger)).toEqual([ERROR_CODES.pathOutsideRoot]);
+    },
+  );
+});
+
+async function canHardLink(): Promise<boolean> {
+  const folder = await mkdtemp(join(tmpdir(), 'rosetta-link-probe-'));
+  try {
+    await writeFile(join(folder, 'a'), 'a', 'utf8');
+    await link(join(folder, 'a'), join(folder, 'b'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await rm(folder, { recursive: true, force: true });
+  }
+}
+
+const hardLinks = await canHardLink();
+
+describe('NodeRepositoryReader and hard links', () => {
+  it.skipIf(!hardLinks)(
+    'RF-140 a file hard-linked to a file outside the snapshot is refused and never searched',
+    async () => {
+      await writeTree(snapshotRoot(), { 'src/main.ts': 'x\n' });
+      const outside = join(temp.path, 'outside.txt');
+      await writeFile(outside, 'needle outside\n', 'utf8');
+      await link(outside, join(snapshotRoot(), 'src', 'hard.txt'));
+      const logger = newLogger();
+      const reader = await openReader({ files: {} }, logger);
+
+      const refusal = refusalOf(
+        await reader.readLines({ path: 'src/hard.txt', startLine: 1, endLine: 1 }),
+      );
+      expect(refusal).toMatchObject({ code: ERROR_CODES.pathOutsideRoot, reason: 'outside-root' });
+      expect(securityCodes(logger)).toEqual([ERROR_CODES.pathOutsideRoot]);
+      expect(await reader.grep({ pattern: 'needle' })).toMatchObject({
+        ok: true,
+        value: { matches: [] },
+      });
+    },
+  );
 });
 
 describe('NodeRepositoryReader leaves the snapshot alone', () => {
