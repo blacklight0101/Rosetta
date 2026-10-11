@@ -94,6 +94,16 @@ describe('scripts/audit-check.mjs', () => {
 describe('scripts/audit-check.mjs exceptions and input', () => {
   const tmp = useTempRoot('rosetta-audit-');
 
+  it('RNF-003 passes a high-severity package whose advisories are only moderate', async () => {
+    const vulnerable = report({
+      lodash: { severity: 'high', via: [advisory('GHSA-aaaa-bbbb-cccc', 'moderate')] },
+    });
+
+    const result = await audit(tmp.path, vulnerable, []);
+
+    expect(result.code).toBe(0);
+  });
+
   it('RNF-003 passes a high advisory that has an unexpired exception', async () => {
     const result = await audit(tmp.path, lodashHigh, [exception('GHSA-aaaa-bbbb-cccc')]);
 
@@ -154,5 +164,16 @@ describe('scripts/audit-check.mjs input checks', () => {
 
     expect(result.code).toBe(2);
     expect(result.output).toContain('ENOTFOUND');
+  });
+
+  it('RNF-003 requires --today so the script reads no clock', async () => {
+    const reportPath = join(tmp.path, 'audit.json');
+    await writeFile(reportPath, report({}));
+
+    const failure = await run('node', [script, '--report', reportPath]).catch(
+      (error: { code: number }) => error,
+    );
+
+    expect(failure).toMatchObject({ code: 2 });
   });
 });

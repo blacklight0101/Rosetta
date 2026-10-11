@@ -84,11 +84,22 @@ describe('GitHub Actions workflows: files', () => {
     expect(text).toContain('run: npm run verify');
   });
 
-  it('DEC-35 the pull request title reaches commitlint through env: TITLE', async () => {
+  it('DEC-35 the pull request title reaches commitlint through env: TITLE and audit gets today', async () => {
     const text = await ci();
 
     expect(text).toContain('TITLE: ${{ github.event.pull_request.title }}');
     expect(text).toContain('"$TITLE"');
+    expect(text).toContain('--today "$(date -u +%F)"');
+  });
+});
+
+describe('GitHub Actions workflows: triggers', () => {
+  it('RNF-001 push runs only on main so a pull request commit is not built twice', async () => {
+    const found = await violations(({ lines }) =>
+      /^ {2}push:\n {4}branches: \[main\]$/mu.test(lines.join('\n')) ? [] : ['push trigger'],
+    );
+
+    expect(found).toEqual([]);
   });
 });
 
