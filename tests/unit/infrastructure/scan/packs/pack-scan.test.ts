@@ -97,7 +97,7 @@ describe('analysis with language packs (failures)', () => {
 
 describe('analysis with language packs (privacy and skipped files)', () => {
   it('RF-141 never copies the text of a pack failure or of the file into the log', async () => {
-    const secret = ["AK", "IA", "ABCDEFGHIJKLMNOP"].join("");
+    const secret = ['AK', 'IA', 'ABCDEFGHIJKLMNOP'].join('');
     const { run, logger } = setup({ 'bad.tst': `boom ${secret}\n` }, [new TestLanguagePack()]);
 
     const result = await run();

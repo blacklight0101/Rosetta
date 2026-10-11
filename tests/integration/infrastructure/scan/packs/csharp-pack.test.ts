@@ -175,10 +175,12 @@ describe('C# pack WebForms links', () => {
 });
 
 describe('C# pack on hostile input', () => {
-  it('RNF-001 answers broken code with what could be read instead of failing', () => {
-    const { symbols } = analyse('class Good { void M() { } }\nclass Broken { void (( {{ ');
-
-    expect(symbols.map((s) => s.name)).toContain('Good');
+  it.each([
+    ['unbalanced braces', 'class Good { void M() { } }\nclass Broken { void (( {{ '],
+    ['an opening brace only', 'class{{{'],
+    ['an unterminated #if', '#if DEBUG\nclass A { }\n#else\nclass B {'],
+  ])('RF-110 refuses a file with syntax errors (%s) with RST-1200', (_label, text) => {
+    expect(() => analyse(text)).toThrow(expect.objectContaining({ code: 'RST-1200' }));
   });
 
   it('RNF-001 survives thousands of nested namespaces and braces without a stack overflow', () => {
@@ -209,7 +211,9 @@ describe('C# pack on hostile input', () => {
   });
 
   it('RNF-001 reports no secret from a string literal in a symbol name', () => {
-    const { symbols } = analyse("class C { string Key = \"" + ["AK", "IA", "ABCDEFGHIJKLMNOP"].join("") + "\"; void M() { } }");
+    const { symbols } = analyse(
+      'class C { string Key = "' + ['AK', 'IA', 'ABCDEFGHIJKLMNOP'].join('') + '"; void M() { } }',
+    );
 
     expect(JSON.stringify(symbols)).not.toContain('AKIA');
   });

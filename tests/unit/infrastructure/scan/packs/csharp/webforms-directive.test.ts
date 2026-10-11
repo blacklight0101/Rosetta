@@ -33,10 +33,10 @@ describe('WebForms code-behind link', () => {
   });
 
   it('RF-111 reads attributes in any case, with single quotes and backslash paths', () => {
-    const text = page("<%@ page codebehind='..\\Code\\P.aspx.cs' INHERITS='A.P' %>");
+    const text = page("<%@ page codebehind='Code\\P.aspx.cs' INHERITS='A.P' %>");
 
     expect(codeBehindReference('Pages/P.aspx', text)).toMatchObject({
-      to: 'Code/P.aspx.cs',
+      to: 'Pages/Code/P.aspx.cs',
       symbol: 'A.P',
     });
   });
@@ -83,5 +83,53 @@ describe('WebForms code-behind link (part 2)', () => {
     expect(codeBehindReference('A.aspx', unterminated)).toBeUndefined();
     expect(codeBehindReference('A.aspx', manyDirectives)).toBeUndefined();
     expect(performance.now() - start).toBeLessThan(1000);
+  });
+});
+
+describe('WebForms code-behind link: hostile values', () => {
+  const bs = String.fromCharCode(92);
+  const attributes = ['CodeBehind', 'CodeFile', 'Src'];
+  const values: readonly [string, string][] = [
+    ['an absolute path', '/x.cs'],
+    ['a drive letter', `C:${bs}x.cs`],
+    ['a UNC path', `${bs}${bs}h${bs}s${bs}x.cs`],
+    ['a home-relative path', '~/x.cs'],
+    ['a NUL byte', 'a\u0000b.cs'],
+    ['an encoded climb', '%2e%2e/x.cs'],
+    ['a climb out of the folder', '../x.cs'],
+    ['a climb out of a subfolder', '../../x.cs'],
+    ['an empty value', ''],
+  ];
+  const cases = attributes.flatMap((attribute) =>
+    values.map(([label, value]) => [attribute, label, value] as const),
+  );
+
+  it.each(cases)('RF-111 %s with %s (%j) gives no link', (attribute, _label, value) => {
+    const text = page(`<%@ Page ${attribute}="${value}" Inherits="A.B" %>`);
+
+    expect(codeBehindReference('Pages/A.aspx', text)).toBeUndefined();
+    expect(codeBehindReference('A.aspx', text)).toBeUndefined();
+  });
+
+  it('RF-111 reads the Src attribute like CodeFile', () => {
+    expect(codeBehindReference('A.aspx', page('<%@ Page Src="A.aspx.cs" %>'))).toMatchObject({
+      to: 'A.aspx.cs',
+    });
+  });
+
+  it('RF-111 skips a directive inside a server comment', () => {
+    const text = '<%-- <%@ Page CodeBehind="evil.cs" Inherits="A.E" %> --%>\n<html></html>\n';
+
+    expect(codeBehindReference('A.aspx', text)).toBeUndefined();
+  });
+
+  it('RF-111 still finds the real directive after a commented-out one', () => {
+    const text = '<%-- <%@ Page CodeBehind="evil.cs" %> --%>\n<%@ Page CodeBehind="A.aspx.cs" %>\n';
+
+    expect(codeBehindReference('A.aspx', text)).toMatchObject({ to: 'A.aspx.cs' });
+  });
+
+  it('RNF-001 an unterminated server comment gives no link and does not hang', () => {
+    expect(codeBehindReference('A.aspx', `<%-- ${'<%@ '.repeat(50_000)}`)).toBeUndefined();
   });
 });
