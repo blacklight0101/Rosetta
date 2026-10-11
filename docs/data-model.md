@@ -486,7 +486,7 @@ the `Clock` port.
 |---|---|---|
 | `id` | `uuid` | primary key |
 | `project_id` | `uuid` | references `projects`, `ON DELETE CASCADE` |
-| `user_id` | `uuid` | references `users`; equals the project's owner |
+| `user_id` | `uuid` | references `users`; equals the project's owner, enforced by a foreign key (`project_id`, `user_id`) to `projects` (`id`, `user_id`), which is unique |
 | `run_key` | `text` | the `<runId>` folder name; unique per project |
 | `stage` | `text` | `CHECK (stage IN ('scan','understand','verify','report','plan'))` |
 | `commit_sha`, `snapshot_key` | `text` null | the pinned commit and the snapshot folder name; indexed, for the history list and the snapshot-in-use check (RF-1008, RF-1012) |
@@ -536,7 +536,7 @@ One row per key: `key text` primary key, `value jsonb`, `updated_at`, `updated_b
 are offered), `defaultRoles` (provider and dated model id per role for new projects, DEC-106). Defaults are inserted
 by migration `0004_server_settings_defaults`: `caps` `{ runMicros: 500000, userDayMicros: 1000000,
 serverMonthMicros: 10000000 }` (RF-1106), `queue` `{ maxRunning: 2 }` (RF-1108) and `defaultRoles` `{}` (empty until
-the administrator sets it); `providers` is not seeded until its value shape is defined. The Ollama URL is only the environment
+the administrator sets it). The Ollama URL is only the environment
 variable `ROSETTA_OLLAMA_URL`.
 
 **`audit_events`** (RF-1109)
@@ -596,9 +596,7 @@ console; migrations only `GRANT` and `ALTER DEFAULT PRIVILEGES` (DEC-112).
 
 When the host provides a single database user, both roles collapse into it and the runbook records that. Each
 migration therefore grants to `rosetta_app` only when that role exists. `schema_version` belongs to the migration
-runner; `rosetta_app` has no right on it. Locally, the `db` service of `compose.yaml` creates `rosetta_migrator` as
-the owner of the `rosetta` database from `ROSETTA_MIGRATOR_DB_PASSWORD`; `db/init/roles.sh` (card P1-45) adds
-`rosetta_app`.
+runner; `rosetta_app` has no right on it.
 
 **Files**:
 
