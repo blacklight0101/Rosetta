@@ -28,7 +28,7 @@ export interface SqlStatement {
   /** 1-based line where the statement starts. */
   readonly line: number;
   readonly verb: SqlVerb;
-  /** Whitespace collapsed, cut to a 1536-character window; the code map masks, then cuts to 500. */
+  /** Whitespace collapsed, cut to 1536 characters never inside a word; masked, then cut to 500. */
   readonly text: string;
 }
 

@@ -6,8 +6,9 @@ import type { TextMasker } from '../../guards/secret-masker.js';
 
 // RF-141: every string of the code map that comes from the repository (file paths, area names, the
 // subpath, SQL text, symbol and entity names, link symbols) goes through the SecretMasker before
-// the map is returned, so nothing downstream sees an unmasked secret. The map is built and grouped
-// on the real paths first; masking comes last and the map is re-created, which sorts it again.
+// the map is returned. The map is built and grouped on the real paths first; masking comes last and
+// the map is re-created, which sorts it again. The SQL text was cut by the scan never inside a word
+// (sql-words.ts `cutAtWord`), so the masker sees every secret of the kept text whole.
 
 /** RF-103: a statement is recorded with at most this many characters, counted after masking. */
 const maxStatementCharacters = 500;
@@ -24,39 +25,70 @@ function memoMask(masker: TextMasker): (text: string) => string {
   };
 }
 
-/** The same map with every repository text masked; a problem if two masked names now collide. */
+/**
+ * Masks names that must stay unique (file paths, area names). Names that masking changed and that
+ * now share one masked form get `~1`, `~2`, ... in the code-unit order of the real names, so two
+ * files that differ only by a secret stay two files. An ordinal, not a hash of the real name: a
+ * short hash would let a reader confirm a guessed secret. Other names are masked as usual.
+ */
+function uniqueMask(
+  names: readonly string[],
+  mask: (text: string) => string,
+): (text: string) => string {
+  const byMasked = new Map<string, string[]>();
+  for (const name of [...new Set(names)].sort(byCodeUnit)) {
+    const masked = mask(name);
+    if (masked !== name) byMasked.set(masked, [...(byMasked.get(masked) ?? []), name]);
+  }
+  const unique = new Map<string, string>();
+  for (const [masked, group] of byMasked) {
+    if (group.length < 2) continue;
+    group.forEach((name, index) => unique.set(name, `${masked}~${String(index + 1)}`));
+  }
+  return (text) => unique.get(text) ?? mask(text);
+}
+
+/** The same map with every repository text masked; a problem if two masked names still collide. */
 export function maskCodeMap(map: CodeMap, masker: TextMasker): Result<CodeMap, CodeMapProblem> {
   const mask = memoMask(masker);
+  const maskPath = uniqueMask(
+    map.files.map((file) => file.path),
+    mask,
+  );
+  const maskArea = uniqueMask(
+    map.areas.map((area) => area.name),
+    mask,
+  );
   return createCodeMap({
     source: { ...map.source, subpath: mask(map.source.subpath) },
-    files: map.files.map((file) => ({ ...file, path: mask(file.path) })),
+    files: map.files.map((file) => ({ ...file, path: maskPath(file.path) })),
     areas: map.areas.map((area) => ({
       ...area,
-      name: mask(area.name),
-      files: area.files.map(mask).sort(byCodeUnit),
+      name: maskArea(area.name),
+      files: area.files.map(maskPath).sort(byCodeUnit),
     })),
     symbols: map.symbols.map((symbol) => ({
       ...symbol,
-      path: mask(symbol.path),
+      path: maskPath(symbol.path),
       name: mask(symbol.name),
       ...(symbol.container === undefined ? {} : { container: mask(symbol.container) }),
     })),
     links: map.links.map((link) => ({
       ...link,
-      from: mask(link.from),
-      to: mask(link.to),
+      from: maskPath(link.from),
+      to: maskPath(link.to),
       ...(link.symbol === undefined ? {} : { symbol: mask(link.symbol) }),
     })),
     // Masking can lengthen a text (a short secret becomes a longer marker), so the cut comes last.
     sqlStatements: map.sqlStatements.map((statement) => ({
       ...statement,
-      path: mask(statement.path),
+      path: maskPath(statement.path),
       text: mask(statement.text).slice(0, maxStatementCharacters),
     })),
     entities: map.entities.map((entity) => ({
       ...entity,
       name: mask(entity.name),
-      path: mask(entity.path),
+      path: maskPath(entity.path),
       source: mask(entity.source),
     })),
     languagePacks: map.languagePacks,

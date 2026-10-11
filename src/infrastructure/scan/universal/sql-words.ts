@@ -8,8 +8,7 @@ import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
 const maxLineLength = 4000;
 /**
  * The longest statement text the scan keeps. The code map records 500 characters (data-model 3.4),
- * but only after masking: a secret that straddles character 500 must be seen whole by the masker,
- * and the longest secret pattern is 512 characters plus its look-ahead, so the window is wider.
+ * counted after masking, so the scan keeps more for the masker to see.
  */
 export const statementWindow = 1536;
 /** The most statements kept per file, so one huge script cannot flood the code map. */
@@ -40,9 +39,25 @@ const createdObjects: ReadonlySet<string> = new Set([
   'sequence',
 ]);
 
-/** A line cut to the length the extractors look at. */
+/**
+ * RF-141: `text` cut to at most `length` characters, never inside a word. When the cut falls inside
+ * a run without white space, that whole run is dropped. Every masker rule either matches inside one
+ * such run (keys, connection URLs, `password=value`) or, once its keyword is in the text, runs to
+ * the end of the text (private key blocks, quoted values, `;Password=` settings). So the masker
+ * finds in the kept prefix every secret character it would find in the whole text, and a secret
+ * whose end (for example the `@` of a connection URL) was cut away is never kept in part. A wider
+ * window alone cannot give this: masking shortens the text, so the cut end can reach the output.
+ */
+function cutAtWord(text: string, length: number): string {
+  if (text.length <= length || /\s/u.test(text.charAt(length))) return text.slice(0, length);
+  let end = length;
+  while (end > 0 && !/\s/u.test(text.charAt(end - 1))) end -= 1;
+  return text.slice(0, end).trimEnd();
+}
+
+/** A line cut to the length the extractors look at, never inside a word. */
 export function cutLine(line: string): string {
-  return line.slice(0, maxLineLength);
+  return cutAtWord(line, maxLineLength);
 }
 
 /** The text with every run of white space replaced by one space, and trimmed. */
@@ -53,9 +68,9 @@ function collapse(text: string): string {
     .join(' ');
 }
 
-/** The statement text as it is recorded. */
+/** The statement text as it is recorded: both cuts end at a word (see `cutAtWord`). */
 export function statementText(text: string): string {
-  return collapse(text.slice(0, statementWindow * 2)).slice(0, statementWindow);
+  return cutAtWord(collapse(cutAtWord(text, statementWindow * 2)), statementWindow);
 }
 
 /** The verb a text starts with (after leading white space), in any letter case. */

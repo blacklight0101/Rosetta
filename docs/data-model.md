@@ -203,7 +203,17 @@ Rules for `areas[]` (RF-104, added with P1-20):
 - `mapLevel` of an area is `symbols` when at least one of its files is `symbols`, else `coarse`.
 - Every text taken from a repository (file paths, area names, `subpath`, SQL text, symbol and entity names, link
   symbols) is passed through the secret masker before it is written (RF-141); `sqlStatements[].text` is cut to 500
-  characters after masking (the scan keeps a 1 536-character window so a secret across character 500 is masked whole).
+  characters after masking. The scan keeps up to 1 536 characters of a statement for the masker, and every cut the
+  scan makes (that window, and the 4 000-character line limit) falls between words: when it would fall inside a run
+  without white space, the whole run is dropped. Every masker rule matches inside one such run (keys, connection
+  URLs, `password=value`) or runs to the end of the text once its keyword is seen (key blocks, quoted values,
+  `;Password=`), so a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
+  A wider window alone would not be enough: masking shortens the text, so the cut end can reach the first 500
+  characters. A statement with no white space before the cut keeps an empty text.
+- File paths and area names that masking changed and that then share one masked form get `~1`, `~2`, ... in the
+  code-unit order of the real names, so two files that differ only by a secret stay distinct. The suffix is an
+  ordinal, not a hash, so it cannot confirm a guessed secret. If a suffixed name still equals another name, the map
+  is refused (`duplicate-file` or `duplicate-area-name`) and nothing is written.
 - Reading `codemap.json` checks the 40-character lower-case `commitSha`, `endLine >= startLine` of a symbol, and
   that each area's `files` are sorted.
 - Routes found by a language pack are not written to the code map in this release (3.4 has no field for them).
