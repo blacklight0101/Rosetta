@@ -64,24 +64,25 @@ export class JsonlFileLogger implements Logger {
   async applyRetention(): Promise<readonly string[]> {
     const today = startOfUtcDay(this.options.clock.now());
     const oldest = today - this.options.retentionDays * dayMs;
-    const expired = (await this.fileNames()).filter((name) => {
-      const day = fileDay(name);
-      return day !== undefined && day < oldest;
-    });
     try {
+      const expired = (await this.fileNames()).filter((name) => {
+        const day = fileDay(name);
+        return day !== undefined && day < oldest;
+      });
       await Promise.all(expired.map((name) => rm(join(this.directory, name), { force: true })));
+      return expired.sort();
     } catch (error) {
       throw fileFailure(error);
     }
-    return expired.sort();
   }
 
+  /** The names in the logs folder; none before the first entry created it. */
   private async fileNames(): Promise<string[]> {
     try {
       return await readdir(this.directory);
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
-      throw fileFailure(error);
+      throw error;
     }
   }
 
