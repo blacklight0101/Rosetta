@@ -109,8 +109,87 @@ To be filled by the reader model spike (P1-47, Q-04). Measured so far on the own
 
 ## 3. OpenAI
 
-To be filled by P1-26: key placement, tool calling, cached-token usage, the recommended `defaultRoles` model with its
-dated id (DEC-106).
+`OpenAiProvider` (`src/infrastructure/providers/openai/openai-provider.ts`, RF-402) calls the Chat Completions API
+(`POST /v1/chat/completions`, `stream: false`) through the `openai` package (baseline in
+[environments and delivery](environments-and-delivery.md) section 7). The package is imported only under
+`src/infrastructure/providers/`; the dependency-cruiser rule `provider-sdks-only-in-providers` enforces it (ADR-003).
+
+### 3.1 Key placement
+
+- The adapter never reads the environment. The provider set (P1-29) chooses the key for each run, the user's own key
+  or the server key `OPENAI_API_KEY` when the user may use server keys (DEC-64), and passes it to the adapter as
+  `apiKey`. Organisation, project, admin key, webhook secret, base URL and log level are passed explicitly, so the
+  package's own environment defaults (`OPENAI_API_KEY`, `OPENAI_ORG_ID`, `OPENAI_BASE_URL`, `OPENAI_LOG` and the
+  rest) never apply, and the adapter's fetch sends only the headers Rosetta means to send, so
+  `OPENAI_CUSTOM_HEADERS` is dropped too.
+- The key goes only into the `Authorization` header. OpenAI's error text, which can quote part of the key, is never
+  copied into an error, its cause, a log or the call log (RNF-003).
+
+### 3.2 What every call sends and reads
+
+- The system prompt is the first message (`role: system`); earlier tool calls go back in the assistant message's
+  `tool_calls` with their ids and JSON-string arguments, and each tool result answers its call by `tool_call_id`.
+  Tools go in `tools` as functions; no `tools` field when the call has none.
+- `maxOutputTokens` is sent as `max_completion_tokens` (the older `max_tokens` is refused by reasoning models);
+  `temperature` only when the role sets one. Reasoning models such as the GPT-5 family accept only the default
+  temperature, so leave it unset for them; their reasoning tokens count in the output tokens.
+- Tool calls keep the ids OpenAI gave them. A call whose arguments are not a JSON object stays visible as text, like
+  the Ollama native mode (`tool-call-shape.ts`). A refusal is returned as the answer text.
+- Usage (`usageSource: reported`): `inputTokens` is `prompt_tokens`, which **includes** the cached tokens;
+  `cachedInputTokens` is `prompt_tokens_details.cached_tokens`, 0 when OpenAI leaves it out; `outputTokens` is
+  `completion_tokens`. OpenAI caches prompt prefixes of 1024 tokens or more by itself. An answer without usage is
+  estimated at about four characters per token and marked `estimated` (RF-421).
+- `modelVersion` is the answer's `model`, the dated model id (for example `gpt-5-nano-2025-08-07`, RNF-004);
+  `requestId` is the `x-request-id` header, also kept on failed attempts for the call log (RF-408).
+- Finish reason: `tool_use` when the answer holds tool calls, `length` for `finish_reason: length`, otherwise `stop`
+  (including `content_filter`).
+- An answer is read with a size limit (8 MiB, adapter option `maxResponseBytes`); a larger one, or a body that is not
+  a chat completion, fails with `RST-1506` and is not retried.
+
+### 3.3 Retries and permanent errors (RF-406)
+
+The package's own retries are off; the adapter uses the retry loop it shares with Ollama
+(`src/infrastructure/providers/retrying-call.ts`), so every attempt reaches the attempt observer and the call log.
+Each attempt has its own timeout (`timeoutSeconds`) and the caller's abort signal.
+
+| Failure | Code | Retried |
+|---|---|---|
+| 429 rate limit | `RST-1504` | yes, never sooner than `retry-after-ms`, else `retry-after` in seconds |
+| timeout of an attempt, or 408 | `RST-1505` | yes |
+| 5xx, or a failed connection | `RST-1506` | yes |
+| 401 rejected key | `RST-1511` | no; the message names the fix (account settings or `OPENAI_API_KEY`) |
+| 404 `model_not_found` | `RST-1512` | no; the message names the model |
+| 429 `insufficient_quota` (no credit) | `RST-1513` | no; the message names the billing settings |
+| any other 4xx (for example 400 `context_length_exceeded`, 403) | `RST-1506` | no |
+| cancelled by the caller | `RST-1501` | no |
+
+The back-off is the same as Ollama's (section 2.4): from one second, doubled per retry, capped at 30 seconds, with
+jitter, never shorter than the hint (capped at five minutes), up to `maxRetries` retries.
+
+### 3.4 Tests and the manual live check
+
+- Automated tests never call OpenAI (ADR-008): under `ROSETTA_TEST=1` the adapter refuses every call with
+  `RST-1509` unless it was built for a loopback fake server (`fakeServer: true`). The tests run it against
+  `tests/support/fake-openai-server.ts`, which replays the hand-written recordings under `tests/recordings/openai/`
+  with a FAKE key, and run the contract suite on it.
+- Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key in `OPENAI_API_KEY`:
+
+  ```text
+  npm run live:openai -- gpt-5-nano
+  ```
+
+  It builds Rosetta, then makes two calls with fixed synthetic prompts (a short text answer and one `read_file` tool
+  call) and prints both answers, with the dated model id, the request id and the usage, or the error code and its
+  next step. Paste the output into the pull request.
+
+### 3.5 Recommended model (DEC-106)
+
+The cheapest current OpenAI model with tool calling, checked on OpenAI's pricing and model pages on 2026-10-11, is
+**`gpt-5-nano`**, dated id **`gpt-5-nano-2025-08-07`**: USD 0.05 per million input tokens, 0.005 cached input, 0.40
+output (standard tier). It supports function calling on Chat Completions. It is the recommended `defaultRoles` value
+for every role of the hosted deployment until the reader model spike (P1-47) shows a role needs a stronger model;
+OpenAI recommends `gpt-5.6-luna` (0.20 / 0.02 / 1.20) as the next step up. Prices change: the price table (P1-27) is
+the source for cost figures, not this section.
 
 ## 4. Anthropic
 

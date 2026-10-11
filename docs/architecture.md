@@ -116,7 +116,9 @@ src/
     contracts/          event and API contract types shared with the front end in web/
   infrastructure/
     providers/          ollama/, openai/, openai-compatible/, anthropic/, fake/; at the root the
-                        ObservedProvider decorator and the provider call logs (JSON Lines, memory)
+                        ObservedProvider decorator, the provider call logs (JSON Lines, memory) and what
+                        the adapters share: retry loop and back-off, ROSETTA_TEST refusal, tool-call
+                        shape, token estimate, capped answer bodies
     guards/             egress-guard, secret-masker, budget-guard
     github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
