@@ -38,6 +38,7 @@ export const ERROR_CODES = {
   snapshotWriteRefused: 'RST-1110',
   workspaceIdInvalid: 'RST-1111',
   grepFailed: 'RST-1112',
+  byteLimitInvalid: 'RST-1113',
   fakeProviderRefused: 'RST-1500',
   providerCallCancelled: 'RST-1501',
   recordingInvalid: 'RST-1502',

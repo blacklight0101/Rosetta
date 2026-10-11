@@ -10,6 +10,7 @@ import {
   type ReaderFixture,
   type RepositoryReaderFactory,
 } from '../support/reader-harness.js';
+import { bytesContract } from './repository-reader-bytes.contract.js';
 import { grepContract } from './repository-reader-grep.contract.js';
 
 const basic: ReaderFixture = {
@@ -226,8 +227,10 @@ function readOnlyTests(newReader: NewReader): void {
       'grep',
       'liftedDenyPatterns',
       'listFiles',
+      'readBytes',
       'readLines',
       'skippedPaths',
+      'subpath',
     ]);
   });
 }
@@ -268,6 +271,7 @@ export function repositoryReaderContract(name: string, create: RepositoryReaderF
     ignoreTests(newReader);
     denyTests(newReader);
     grepContract(newReader);
+    bytesContract(newReader);
     readOnlyTests(newReader);
     skippedNameTests(newReader);
   });

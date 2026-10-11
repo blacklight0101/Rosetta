@@ -1,0 +1,5 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LEDGER.
+       PROCEDURE DIVISION.
+           DISPLAY "POSTING".
+           STOP RUN.

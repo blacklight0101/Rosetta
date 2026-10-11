@@ -1,10 +1,12 @@
-import { lstat, readFile, realpath, stat } from 'node:fs/promises';
+import { lstat, open, readFile, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger, LogValue } from '../../application/ports/logger.js';
 import type {
+  FileBytes,
   GrepRequest,
   GrepResult,
   LineRange,
+  ReadBytesRequest,
   ReadLinesRequest,
   ReadRefusal,
   ReadRefusalReason,
@@ -41,6 +43,8 @@ interface ReaderState {
   readonly scope: string;
   readonly rules: IgnoreRules;
   readonly index: SnapshotIndex;
+  readonly fileSet: ReadonlySet<string>;
+  readonly linkSet: ReadonlySet<string>;
   readonly logger: Logger;
   readonly timeoutMs: number;
 }
@@ -67,11 +71,13 @@ async function readRepositoryRules(root: string): Promise<string> {
 export class NodeRepositoryReader implements RepositoryReader {
   readonly liftedDenyPatterns: readonly string[];
   readonly skippedPaths: SkippedPaths;
+  readonly subpath: string;
   readonly #state: ReaderState;
 
   private constructor(state: ReaderState) {
     this.#state = state;
     this.liftedDenyPatterns = state.rules.liftedDenyPatterns;
+    this.subpath = state.scope;
     this.skippedPaths = { links: state.index.links, invalidNames: state.index.invalidNames };
   }
 
@@ -88,6 +94,8 @@ export class NodeRepositoryReader implements RepositoryReader {
       scope,
       rules,
       index,
+      fileSet: new Set(index.files),
+      linkSet: new Set(index.links),
       logger: options.logger,
       timeoutMs: options.grepTimeoutMs ?? grepLimits.timeoutMs,
     };
@@ -130,6 +138,16 @@ export class NodeRepositoryReader implements RepositoryReader {
       totalLines: lines.length,
       lines: lines.slice(startLine - 1, last),
     });
+  }
+
+  async readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>> {
+    const limit = request.maxBytes;
+    if (!Number.isSafeInteger(limit) || limit < 0) return this.#refuse('invalid-limit', { limit });
+    const access = await this.#access(request.path);
+    if (!access.ok) return access;
+    const { size } = await stat(access.value);
+    const bytes = size > limit ? undefined : await readUpTo(access.value, size, limit);
+    return ok({ path: request.path, sizeBytes: bytes?.length ?? size, bytes });
   }
 
   async grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>> {
@@ -182,7 +200,7 @@ export class NodeRepositoryReader implements RepositoryReader {
   async #access(path: string): Promise<Result<string, ReadRefusal>> {
     const problem = this.#pathProblem(path);
     if (problem !== undefined) return this.#refuse(problem, { path });
-    if (!this.#state.index.files.includes(path)) return this.#refuse('not-found', { path });
+    if (!this.#state.fileSet.has(path)) return this.#refuse('not-found', { path });
     const real = await this.#realFile(path);
     return real === undefined ? this.#refuse('outside-root', { path }) : ok(real);
   }
@@ -190,9 +208,9 @@ export class NodeRepositoryReader implements RepositoryReader {
   #pathProblem(path: string): ReadRefusalReason | undefined {
     const checked = checkRepositoryPath(path);
     if (!checked.ok) return checked.error;
-    const { scope, index, rules } = this.#state;
+    const { scope, linkSet, rules } = this.#state;
     if (!isUnder(path, scope)) return 'outside-root';
-    if (index.links.some((link) => isUnder(path, link))) return 'outside-root';
+    if (isUnderAny(path, linkSet)) return 'outside-root';
     const verdict = rules.verdict(path);
     return verdict === 'allowed' ? undefined : verdict;
   }
@@ -209,6 +227,37 @@ export class NodeRepositoryReader implements RepositoryReader {
       });
     }
     return err(refused);
+  }
+}
+
+/** Whether `path` is one of the folders in `folders`, or lies below one. */
+function isUnderAny(path: string, folders: ReadonlySet<string>): boolean {
+  if (folders.size === 0) return false;
+  const parts = path.split('/');
+  return parts.some((_, index) => folders.has(parts.slice(0, index + 1).join('/')));
+}
+
+/**
+ * The bytes of a file measured at `size` (at most `limit`), or undefined when it has grown since.
+ * The buffer holds `size + 1` bytes, so its cost follows the file, never the limit.
+ */
+async function readUpTo(
+  path: string,
+  size: number,
+  limit: number,
+): Promise<Uint8Array | undefined> {
+  const handle = await open(path, 'r');
+  try {
+    const buffer = Buffer.alloc(Math.min(size, limit) + 1);
+    let filled = 0;
+    for (let read = 1; read > 0 && filled < buffer.length; filled += read) {
+      ({ bytesRead: read } = await handle.read(buffer, filled, buffer.length - filled, filled));
+    }
+    return filled >= buffer.length
+      ? undefined
+      : new Uint8Array(buffer.buffer, buffer.byteOffset, filled);
+  } finally {
+    await handle.close();
   }
 }
 

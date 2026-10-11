@@ -44,6 +44,11 @@ const refusals: Readonly<Record<ReadRefusalReason, RefusalText>> = {
       'Lines are 1-based whole numbers; the start must not be after the end or past the last line.',
     security: false,
   },
+  'invalid-limit': {
+    code: ERROR_CODES.byteLimitInvalid,
+    message: 'The size limit must be a whole number of bytes, zero or more.',
+    security: false,
+  },
   'pattern-too-long': {
     code: ERROR_CODES.grepPatternTooLong,
     message: `The pattern is longer than ${String(grepLimits.maxPatternLength)} characters, so it was not run.`,

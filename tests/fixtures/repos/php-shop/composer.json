@@ -1,0 +1,4 @@
+{
+  "name": "example/php-shop",
+  "require": { "php": ">=8.1" }
+}

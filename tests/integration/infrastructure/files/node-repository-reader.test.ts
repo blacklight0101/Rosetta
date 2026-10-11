@@ -89,6 +89,19 @@ describe('NodeRepositoryReader and links', () => {
   });
 });
 
+describe('NodeRepositoryReader.readBytes and links', () => {
+  it('RF-140 readBytes refuses a file under a folder link and a hard-linked file', async () => {
+    await linkedOutside('src/linked');
+    await link(join(snapshotRoot(), 'src', 'main.ts'), join(snapshotRoot(), 'hard.ts'));
+    const reader = await openReader({ files: {} });
+
+    for (const path of ['src/linked/inner/stolen.txt', 'hard.ts']) {
+      const result = await reader.readBytes({ path, maxBytes: 100 });
+      expect(refusalOf(result)?.code).toBe(ERROR_CODES.pathOutsideRoot);
+    }
+  });
+});
+
 describe('NodeRepositoryReader after open()', () => {
   it('RF-140 an indexed folder swapped for a link is refused on read and skipped by grep', async () => {
     const outside = join(temp.path, 'outside');

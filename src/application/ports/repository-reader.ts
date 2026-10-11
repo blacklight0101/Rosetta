@@ -12,6 +12,7 @@ export type ReadRefusalReason =
   | 'denied'
   | 'not-found'
   | 'invalid-range'
+  | 'invalid-limit'
   | 'pattern-too-long'
   | 'invalid-pattern'
   | 'timeout';
@@ -61,6 +62,19 @@ export interface GrepResult {
   readonly notice?: string;
 }
 
+export interface ReadBytesRequest {
+  readonly path: string;
+  /** Files larger than this are not read. A whole number of zero or more, else the call is refused. */
+  readonly maxBytes: number;
+}
+
+export interface FileBytes {
+  readonly path: string;
+  readonly sizeBytes: number;
+  /** The whole file, or undefined when it is larger than `maxBytes` (RF-100). */
+  readonly bytes: Uint8Array | undefined;
+}
+
 /** Snapshot entries the reader left out, for the run record. */
 export interface SkippedPaths {
   /** Symbolic links and junctions, never followed. */
@@ -74,7 +88,11 @@ export interface RepositoryReader {
   listFiles(): Promise<readonly string[]>;
   readLines(request: ReadLinesRequest): Promise<Result<LineRange, ReadRefusal>>;
   grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>>;
+  /** The size and, within the limit, the bytes of one file, for the universal scan (RF-100, RF-101). */
+  readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>>;
   /** Built-in deny patterns lifted by `scan.allowDenied`, for the run record (RF-147). */
   readonly liftedDenyPatterns: readonly string[];
   readonly skippedPaths: SkippedPaths;
+  /** The repository-relative folder the reader is limited to, or '' for the whole snapshot (RF-124). */
+  readonly subpath: string;
 }

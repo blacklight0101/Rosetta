@@ -63,6 +63,10 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     message: 'The search could not run because its worker failed.',
     nextStep: 'Search again; if it keeps failing, check the application log.',
   },
+  'RST-1113': {
+    message: 'The file size limit is not a whole number of bytes of zero or more.',
+    nextStep: 'Correct the maximum file size in the project settings.',
+  },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
     nextStep:

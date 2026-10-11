@@ -7,7 +7,7 @@ import { checkRepositoryPath } from './repository-path.js';
 // and Windows junctions) are never followed, so nothing outside the root can enter the index.
 
 export interface SnapshotIndex {
-  /** Regular files, repository-relative with forward slashes, sorted by code point. */
+  /** Regular files, repository-relative with forward slashes, sorted by UTF-16 code unit. */
   readonly files: readonly string[];
   /** Links that were found and skipped, repository-relative. */
   readonly links: readonly string[];
@@ -15,7 +15,7 @@ export interface SnapshotIndex {
   readonly invalidNames: readonly string[];
 }
 
-function byCodePoint(left: string, right: string): number {
+function byCodeUnit(left: string, right: string): number {
   if (left === right) return 0;
   return left < right ? -1 : 1;
 }
@@ -43,9 +43,9 @@ export async function indexSnapshot(root: string, start: string): Promise<Snapsh
   }
   const readable = files.filter((path) => checkRepositoryPath(path).ok);
   return {
-    files: readable.sort(byCodePoint),
-    links: links.sort(byCodePoint),
-    invalidNames: files.filter((path) => !checkRepositoryPath(path).ok).sort(byCodePoint),
+    files: readable.sort(byCodeUnit),
+    links: links.sort(byCodeUnit),
+    invalidNames: files.filter((path) => !checkRepositoryPath(path).ok).sort(byCodeUnit),
   };
 }
 

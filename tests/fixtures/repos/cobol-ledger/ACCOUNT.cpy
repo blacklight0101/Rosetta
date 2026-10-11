@@ -1,0 +1,3 @@
+       01 ACCOUNT-RECORD.
+          05 ACCOUNT-ID    PIC 9(8).
+          05 ACCOUNT-TOTAL PIC 9(9)V99.

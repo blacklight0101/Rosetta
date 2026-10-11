@@ -177,7 +177,7 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 |---|---|---|
 | `schemaVersion` | int | 1 |
 | `source` | object | `{ owner, repo, commitSha, subpath }` |
-| `files[]` | list, sorted by `path` | `{ path, language, lines, estimatedTokens, sha256, artefactKinds[], mapLevel, skipped? }`; `skipped` is `too-large`, `binary` or absent |
+| `files[]` | list, sorted by `path` | `{ path, language, lines, estimatedTokens, sha256, artefactKinds[], mapLevel, skipped? }`; `skipped` is `too-large`, `binary` or absent; `sha256` is absent on a `too-large` file (it is never read), and `lines` and `estimatedTokens` are 0 on any skipped file; a binary format named by its extension (images, archives, `.dll`) is left out of the list, while a file whose first 8 000 bytes hold a zero byte is listed as `skipped: binary` |
 | `areas[]` | list, sorted by `name` | `{ name, files[] (paths), estimatedTokens, mapLevel, origin }`; `origin` is `folder`, `references` or `config` (RF-104) |
 | `symbols[]` | list, sorted by `path`, `startLine` | `{ path, kind, name, startLine, endLine, container? }` from language packs (RF-110, RF-111) |
 | `links[]` | list | `{ from, to, kind }`, for example an `.aspx` page to its code-behind class (RF-111) |
