@@ -23,11 +23,9 @@ const outcome = z.discriminatedUnion('kind', [
 
 export type GrepOutcome = z.infer<typeof outcome> | { readonly kind: 'timeout' };
 
-// The worker and the search module sit next to this file: `.ts` when run from source, `.js` from
-// the build.
+// The worker sits next to this file: `.ts` when run from source, `.js` from the build.
 const extension = extname(fileURLToPath(import.meta.url));
 const workerUrl = new URL(`./grep-worker${extension}`, import.meta.url);
-const searchModule = new URL(`./grep-search${extension}`, import.meta.url).href;
 
 export function runGrep(
   pattern: string,
@@ -35,7 +33,7 @@ export function runGrep(
   timeoutMs: number,
 ): Promise<GrepOutcome> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(workerUrl, { workerData: { searchModule, pattern, files } });
+    const worker = new Worker(workerUrl, { workerData: { pattern, files } });
     const timer = setTimeout(() => {
       resolve({ kind: 'timeout' });
       void worker.terminate();

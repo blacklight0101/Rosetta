@@ -166,16 +166,17 @@ export class NodeRepositoryReader implements RepositoryReader {
   }
 
   /**
-   * The absolute path of an indexed file, only while it still resolves inside the root and is not
-   * hard-linked (a hard link could share its content with a file outside the snapshot).
+   * The absolute path of an indexed file, only while it still resolves inside the root, still
+   * exists and is not hard-linked (a hard link could share its content with a file outside the
+   * snapshot). A file that vanishes between the two calls is refused like any other.
    */
   async #realFile(path: string): Promise<string | undefined> {
     const real = await realpath(join(this.#state.realRoot, ...path.split('/'))).catch(
       () => undefined,
     );
     if (real === undefined || !isInside(this.#state.realRoot, real)) return undefined;
-    const stats = await stat(real);
-    return stats.nlink > 1 ? undefined : real;
+    const stats = await stat(real).catch(() => undefined);
+    return stats === undefined || stats.nlink > 1 ? undefined : real;
   }
 
   async #access(path: string): Promise<Result<string, ReadRefusal>> {
