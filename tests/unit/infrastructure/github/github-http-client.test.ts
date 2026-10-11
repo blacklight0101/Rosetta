@@ -7,6 +7,7 @@ import {
 import { FakeGitHub, type FakeGitHubBehaviour } from '../../../support/fake-github.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
 import { MemoryLogger } from '../../../support/memory-logger.js';
+import { RecordingLogger } from '../../../support/recording-logger.js';
 import { FIXTURE_SHA } from '../../../support/snapshot-fixtures.js';
 
 // FAKE token (RNF-003): built from harmless pieces, never a credential.
@@ -127,18 +128,24 @@ describe('GitHubHttpClient rate limits and the token', () => {
   });
 
   it('RF-123 never writes the token into an error or the log', async () => {
-    const github = fakeGitHub({ tarballHost: 'evil.example', rateLimitResetAt: resetAt });
-    const { client, logger } = harness(github.fetch, fakeToken);
+    // Recorded unmasked: MemoryLogger would hide a leaked token behind the masker.
+    const logger = new RecordingLogger();
+    const scenarios = [
+      { github: fakeGitHub({ rateLimitResetAt: resetAt }), url: api },
+      { github: fakeGitHub({ tarballHost: 'evil.example' }), url: tarball },
+    ];
 
-    const rejected: unknown[] = [];
-    for (const url of [api, tarball]) {
-      await client.get(url, options).catch((error: unknown) => rejected.push(error));
+    const messages: string[] = [];
+    for (const { github, url } of scenarios) {
+      const client = new GitHubHttpClient({ fetch: github.fetch, token: fakeToken, logger });
+      await client
+        .get(url, options)
+        .catch((error: unknown) => messages.push(error instanceof Error ? error.message : ''));
     }
 
-    expect(rejected).toHaveLength(2);
-    expect(
-      JSON.stringify(rejected.map((error) => (error instanceof Error ? error.message : ''))),
-    ).not.toContain(fakeToken);
+    expect(messages).toHaveLength(2);
+    expect(messages.join(' ')).not.toContain(fakeToken);
+    expect(logger.records.length).toBeGreaterThan(0);
     expect(logger.text()).not.toContain(fakeToken);
   });
 });

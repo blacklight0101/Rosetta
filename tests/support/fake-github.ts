@@ -10,6 +10,9 @@ export interface FakeRepository {
   readonly archive: Buffer;
   readonly licence?: string;
   readonly isPrivate?: boolean;
+  /** Names the API answer reports instead of `owner` and `repo` (to fake a hostile answer). */
+  readonly reportedOwner?: string;
+  readonly reportedRepo?: string;
 }
 
 export interface FakeGitHubBehaviour {
@@ -198,10 +201,12 @@ export class FakeGitHub {
   }
 
   private repositoryJson(repository: FakeRepository): Response {
+    const owner = repository.reportedOwner ?? repository.owner;
+    const repo = repository.reportedRepo ?? repository.repo;
     return json(200, {
-      name: repository.repo,
-      full_name: `${repository.owner}/${repository.repo}`,
-      owner: { login: repository.owner },
+      name: repo,
+      full_name: `${owner}/${repo}`,
+      owner: { login: owner },
       private: repository.isPrivate ?? false,
       default_branch: repository.defaultBranch,
       license: repository.licence === undefined ? null : { spdx_id: repository.licence },

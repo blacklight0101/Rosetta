@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SnapshotStore } from '../../../../src/infrastructure/github/snapshot-store.js';
@@ -8,6 +9,21 @@ import { useWritableTempRoot } from '../../../support/writable-temp-root.js';
 
 const root = useWritableTempRoot('rosetta-store-');
 const key = `octo__demo@${FIXTURE_SHA}`;
+
+/** Whether this account may create symbolic links (Windows needs developer mode or admin rights). */
+async function canCreateSymlinks(): Promise<boolean> {
+  const probe = join(tmpdir(), `rosetta-symlink-probe-${String(process.pid)}`);
+  try {
+    await mkdir(probe, { recursive: true });
+    await symlink(probe, join(probe, 'link'), 'dir');
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await rm(probe, { recursive: true, force: true });
+  }
+}
+const symlinksAllowed = await canCreateSymlinks();
 
 async function partialWith(store: SnapshotStore, id: string, content: string): Promise<string> {
   const dir = store.partialDir(id);
@@ -63,6 +79,32 @@ describe('SnapshotStore inspect', () => {
     });
   });
 
+  it('RF-122 reports a tree it cannot read with RST-1908', async () => {
+    const store = new SnapshotStore(root.path);
+
+    await expect(store.inspect(join(root.path, 'missing'))).rejects.toMatchObject({
+      code: 'RST-1908',
+    });
+  });
+
+  it.skipIf(!symlinksAllowed)(
+    'RF-122 refuses an entry under files/ that resolves outside it (ADR-019)',
+    async () => {
+      const store = new SnapshotStore(root.path);
+      const files = join(root.path, 'files');
+      const outside = join(root.path, 'outside');
+      await mkdir(files);
+      await mkdir(outside);
+      await writeFile(join(outside, 'secret.txt'), 'x', 'utf8');
+      await symlink(outside, join(files, 'escape'), 'dir');
+
+      const failure: unknown = await store.inspect(files).catch((error: unknown) => error);
+
+      expect(failure).toMatchObject({ code: 'RST-1906' });
+      expect(failure).toHaveProperty('message', expect.stringContaining('outside'));
+    },
+  );
+
   it('RF-122 reports an empty tree as zero files with a stable hash', async () => {
     const store = new SnapshotStore(root.path);
     const files = join(root.path, 'files');
@@ -72,6 +114,24 @@ describe('SnapshotStore inspect', () => {
       fileCount: 0,
       totalBytes: 0,
       snapshotHash: `sha256:${sha256('')}`,
+    });
+  });
+});
+
+describe('SnapshotStore cached snapshot and read-only marking', () => {
+  it('RF-122 a cached snapshot.json that is not JSON is refused with RST-1906', async () => {
+    const store = new SnapshotStore(root.path);
+    await mkdir(store.snapshotDir(key), { recursive: true });
+    await writeFile(join(store.snapshotDir(key), 'snapshot.json'), '{ not json', 'utf8');
+
+    await expect(store.readExisting(key)).rejects.toMatchObject({ code: 'RST-1906' });
+  });
+
+  it('RF-005 reports a folder it cannot mark read-only with RST-1908', async () => {
+    const store = new SnapshotStore(root.path);
+
+    await expect(store.makeReadOnly(join(root.path, 'missing'))).rejects.toMatchObject({
+      code: 'RST-1908',
     });
   });
 });

@@ -10,6 +10,7 @@ import {
   fetcherHarness,
   FIXTURE_KEY,
 } from '../../../support/snapshot-fetcher-harness.js';
+import { RecordingLogger } from '../../../support/recording-logger.js';
 import { FIXTURE_SHA, NORMAL_FILES } from '../../../support/snapshot-fixtures.js';
 import { listTree, useWritableTempRoot } from '../../../support/writable-temp-root.js';
 
@@ -93,14 +94,16 @@ describe('GitHubSnapshotFetcher resolution and record', () => {
 
   it('RF-123 sends the token to GitHub and keeps it out of the log', async () => {
     const github = await demoGitHub('normal');
-    const { fetch, logger } = harness(github.fetch, { githubToken: fakeToken });
+    // Recorded unmasked: MemoryLogger would hide a leaked token behind the masker.
+    const logger = new RecordingLogger();
+    const { fetch } = harness(github.fetch, { githubToken: fakeToken, logger });
 
     await fetch();
 
     expect(
       github.requests.every((request) => request.authorization === `Bearer ${fakeToken}`),
     ).toBe(true);
-    expect(logger.entries.length).toBeGreaterThan(0);
+    expect(logger.records.length).toBeGreaterThan(0);
     expect(logger.text()).not.toContain(fakeToken);
   });
 });

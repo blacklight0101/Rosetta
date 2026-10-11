@@ -1,7 +1,11 @@
 import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { demoGitHub, fetcherHarness } from '../../../support/snapshot-fetcher-harness.js';
+import {
+  demoGitHub,
+  fetcherHarness,
+  FIXTURE_KEY,
+} from '../../../support/snapshot-fetcher-harness.js';
 import { NORMAL_FILES } from '../../../support/snapshot-fixtures.js';
 import { listTree, useWritableTempRoot } from '../../../support/writable-temp-root.js';
 
@@ -36,6 +40,17 @@ describe('GitHubSnapshotFetcher partial folders', () => {
 
     expect(discarded).toEqual(['.partial-left-over']);
     expect(await readdir(sourcesDir())).toEqual([complete]);
+  });
+
+  it('RF-122 a damaged cached snapshot stops the fetch with RST-1906 and a security event', async () => {
+    await mkdir(join(sourcesDir(), FIXTURE_KEY), { recursive: true });
+    await writeFile(join(sourcesDir(), FIXTURE_KEY, 'snapshot.json'), '{ not json', 'utf8');
+    const { fetch, logger } = harness((await demoGitHub('normal')).fetch);
+
+    await expect(fetch()).rejects.toMatchObject({ code: 'RST-1906' });
+    expect(logger.entries).toContainEqual(
+      expect.objectContaining({ logger: 'security', code: 'RST-1906' }),
+    );
   });
 
   it('RF-122 has nothing to discard before the sources folder exists', async () => {

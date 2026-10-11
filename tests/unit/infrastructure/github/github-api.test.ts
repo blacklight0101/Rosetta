@@ -63,6 +63,18 @@ describe('GitHubApi repository', () => {
     });
   });
 
+  it.each([
+    ['an owner with a path segment', { reportedOwner: '../evil' }],
+    ['a repository name with a slash', { reportedRepo: 'demo/..' }],
+    ['an empty owner', { reportedOwner: '' }],
+  ])('RF-127 refuses %s in the API answer with RST-1907', async (_name, reported) => {
+    const hostile: FakeRepository = { ...demo, ...reported };
+
+    await expect(api([hostile]).repository(ref(), signal)).rejects.toMatchObject({
+      code: 'RST-1907',
+    });
+  });
+
   it('RF-120 stops with RST-1903 for a missing repository', async () => {
     await expect(api([]).repository(ref(), signal)).rejects.toMatchObject({ code: 'RST-1903' });
   });
