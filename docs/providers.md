@@ -83,7 +83,7 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 Each attempt has its own timeout (`timeoutSeconds`). Rate limits (429), timeouts, server errors (5xx, including a
 cold load that fails with an out-of-memory 500) and a connection dropped mid-answer are retried up to `maxRetries`
 times with exponential back-off from one second, doubled per retry and capped at 30 seconds, with jitter (half to
-all of the delay), and never shorter than a `retry-after` hint in seconds (capped at five minutes). Other errors and
+all of the delay), and never shorter than a `retry-after` hint (seconds or an HTTP date) (capped at five minutes). Other errors and
 a cancelled call (`RST-1501`) are not retried.
 
 ### 2.5 Tests and the manual live check
@@ -112,7 +112,7 @@ To be filled by the reader model spike (P1-47, Q-04). Measured so far on the own
 `OpenAiProvider` (`src/infrastructure/providers/openai/openai-provider.ts`, RF-402) calls the Chat Completions API
 (`POST /v1/chat/completions`, `stream: false`) through the `openai` package (baseline in
 [environments and delivery](environments-and-delivery.md) section 7). The package is imported only under
-`src/infrastructure/providers/`; the dependency-cruiser rule `provider-sdks-only-in-providers` enforces it (ADR-003).
+`src/infrastructure/providers/openai/`; the dependency-cruiser rule `openai-sdk-only-in-openai-adapter` enforces it (ADR-003).
 
 ### 3.1 Key placement
 
@@ -138,7 +138,7 @@ To be filled by the reader model spike (P1-47, Q-04). Measured so far on the own
 - Usage (`usageSource: reported`): `inputTokens` is `prompt_tokens`, which **includes** the cached tokens;
   `cachedInputTokens` is `prompt_tokens_details.cached_tokens`, 0 when OpenAI leaves it out; `outputTokens` is
   `completion_tokens`. OpenAI caches prompt prefixes of 1024 tokens or more by itself. An answer without usage is
-  estimated at about four characters per token and marked `estimated` (RF-421).
+  estimated at about four characters per token and marked `estimated` (RF-421); so is a usage that leaves out one of the two counts (the missing count is estimated).
 - `modelVersion` is the answer's `model`, the dated model id (for example `gpt-5-nano-2025-08-07`, RNF-004);
   `requestId` is the `x-request-id` header, also kept on failed attempts for the call log (RF-408).
 - Finish reason: `tool_use` when the answer holds tool calls, `length` for `finish_reason: length`, otherwise `stop`
@@ -154,7 +154,7 @@ Each attempt has its own timeout (`timeoutSeconds`) and the caller's abort signa
 
 | Failure | Code | Retried |
 |---|---|---|
-| 429 rate limit | `RST-1504` | yes, never sooner than `retry-after-ms`, else `retry-after` in seconds |
+| 429 rate limit | `RST-1504` | yes, never sooner than `retry-after-ms`, else `retry-after` (seconds or HTTP date) |
 | timeout of an attempt, or 408 | `RST-1505` | yes |
 | 5xx, or a failed connection | `RST-1506` | yes |
 | 401 rejected key | `RST-1511` | no; the message names the fix (account settings or `OPENAI_API_KEY`) |

@@ -6,8 +6,9 @@ import { z } from 'zod';
 const count = z.number().int().nonnegative();
 
 const usageSchema = z.object({
-  prompt_tokens: count,
-  completion_tokens: count,
+  /** A usage may leave either count out; the missing one is estimated (RF-421). */
+  prompt_tokens: count.optional(),
+  completion_tokens: count.optional(),
   /** Left out by older models and by some compatible services. */
   prompt_tokens_details: z.object({ cached_tokens: count.nullish() }).nullish(),
 });

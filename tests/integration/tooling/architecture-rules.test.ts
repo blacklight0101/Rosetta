@@ -105,18 +105,19 @@ describe('dependency-cruiser layer rule: provider SDKs', () => {
   it.each([
     ['src/infrastructure/guards/egress.ts', 'openai'],
     ['src/infrastructure/github/api.ts', 'openai/resources/chat/completions'],
-    ['src/application/use.ts', '@anthropic-ai/sdk'],
-  ])('RF-402 %s importing %s is reported outside the provider adapters', async (file, module) => {
+    ['src/infrastructure/providers/ollama/client.ts', 'openai'],
+    ['src/infrastructure/providers/shared.ts', 'openai'],
+  ])('RF-402 %s importing %s is reported outside the openai adapter', async (file, module) => {
     const report = await cruise(root.path, { [file]: importing(module) });
 
-    expect(report).toContain('provider-sdks-only-in-providers');
+    expect(report).toContain('openai-sdk-only-in-openai-adapter');
   });
 
-  it('RF-402 an adapter under infrastructure/providers may import openai', async () => {
+  it('RF-402 the adapter under infrastructure/providers/openai may import openai', async () => {
     const report = await cruise(root.path, {
       'src/infrastructure/providers/openai/client.ts': importing('openai'),
     });
 
-    expect(report).not.toContain('provider-sdks-only-in-providers');
+    expect(report).not.toContain('openai-sdk-only-in-openai-adapter');
   });
 });

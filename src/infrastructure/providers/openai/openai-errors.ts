@@ -1,4 +1,4 @@
-import { APIConnectionTimeoutError, APIError, APIUserAbortError } from 'openai';
+import { APIConnectionError, APIConnectionTimeoutError, APIError, APIUserAbortError } from 'openai';
 import { ERROR_CODES, type ErrorCode } from '../../../domain/errors/codes.js';
 import { retryHintMs } from '../retry-backoff.js';
 import type { AttemptFailed } from '../retrying-call.js';
@@ -85,14 +85,31 @@ function statusOf(error: object): FailedStatus | undefined {
   };
 }
 
+/**
+ * The error to keep as the cause: only the SDK's own API and transport errors, which hold the
+ * status and the network failure but no key. Anything else (for example the TypeError of a bad
+ * header, whose message quotes the whole key) is dropped (RNF-003).
+ */
+function safeCause(error: unknown): unknown {
+  return error instanceof APIError || error instanceof APIConnectionError ? error : undefined;
+}
+
 /** A failure the SDK threw: an error status, a timeout, a cancel or a failed connection. */
 export function failedThrown(error: unknown, context: ThrownContext, model: string): AttemptFailed {
   if (context.cancelled) {
-    return { failure: { code: ERROR_CODES.providerCallCancelled }, retryable: false, cause: error };
+    return {
+      failure: { code: ERROR_CODES.providerCallCancelled },
+      retryable: false,
+      cause: safeCause(error),
+    };
   }
   const timedOut = context.timedOut || error instanceof APIConnectionTimeoutError;
   if (timedOut) {
-    return { failure: { code: ERROR_CODES.providerTimeout }, retryable: true, cause: error };
+    return {
+      failure: { code: ERROR_CODES.providerTimeout },
+      retryable: true,
+      cause: safeCause(error),
+    };
   }
   const response =
     error instanceof APIError && !(error instanceof APIUserAbortError)
@@ -100,5 +117,9 @@ export function failedThrown(error: unknown, context: ThrownContext, model: stri
       : undefined;
   if (response !== undefined) return failedStatus(response, model);
   // A failed connection: the SDK error holds no key, only the transport failure.
-  return { failure: { code: ERROR_CODES.providerCallFailed }, retryable: true, cause: error };
+  return {
+    failure: { code: ERROR_CODES.providerCallFailed },
+    retryable: true,
+    cause: safeCause(error),
+  };
 }

@@ -40,12 +40,9 @@ describe('retry-after header', () => {
     expect(retryAfterMs(header)).toBe(expected);
   });
 
-  it.each([[null], [''], ['soon'], ['-3'], ['Wed, 31 Feb 2026 07:28:00 GMT']])(
-    'RF-406 %s is not a usable hint',
-    (header) => {
-      expect(retryAfterMs(header)).toBeUndefined();
-    },
-  );
+  it.each([[null], [''], ['soon'], ['-3']])('RF-406 %s is not a usable hint', (header) => {
+    expect(retryAfterMs(header)).toBeUndefined();
+  });
 });
 
 describe('retry-after HTTP date', () => {

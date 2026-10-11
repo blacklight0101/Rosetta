@@ -104,7 +104,9 @@ describe('OpenAI answer tool calls and refusals', () => {
     expect(usage).toMatchObject({ outputTokens: 7, usageSource: 'estimated' });
     expect(usage?.inputTokens).toBeGreaterThan(0);
   });
+});
 
+describe('OpenAI answer validation', () => {
   it.each([
     ['no choices', { model: 'gpt-test', choices: [] }],
     ['no model', { choices: [{ message: { content: 'x' } }] }],

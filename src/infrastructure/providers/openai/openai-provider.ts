@@ -40,6 +40,16 @@ export interface OpenAiProviderOptions {
 
 const defaultBaseUrl = 'https://api.openai.com/v1';
 
+/** A key is one run of visible characters: a pasted newline or space would break the header. */
+function isUsableKey(key: string): boolean {
+  if (key === '') return false;
+  for (const char of key) {
+    const code = char.codePointAt(0) ?? 0;
+    if (code <= 32 || (code >= 127 && code <= 160)) return false;
+  }
+  return true;
+}
+
 function unusable(httpStatus: number, message: string, cause?: unknown): AttemptResult {
   const failure = { code: ERROR_CODES.providerCallFailed, httpStatus };
   return { ok: false, failed: { failure, retryable: false, message, cause } };
@@ -54,8 +64,12 @@ export class OpenAiProvider implements LlmProvider {
   private readonly client: OpenAI;
 
   constructor(options: OpenAiProviderOptions) {
-    if (options.apiKey.trim() === '') {
-      throw new RosettaError(ERROR_CODES.openAiKeyRejected, 'No OpenAI API key was given.');
+    if (!isUsableKey(options.apiKey)) {
+      // The message never holds the key: not even a part of it (RNF-003).
+      throw new RosettaError(
+        ERROR_CODES.openAiKeyRejected,
+        'The OpenAI API key is empty or holds spaces or control characters.',
+      );
     }
     this.options = options;
     this.baseUrl = options.baseUrl ?? defaultBaseUrl;

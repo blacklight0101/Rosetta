@@ -20,10 +20,19 @@ export function backoffDelayMs(input: BackoffInput): number {
   return Math.max(jittered, hint);
 }
 
-/** A `retry-after` header in seconds, in milliseconds; an HTTP date is not used. */
-export function retryAfterMs(header: string | null): number | undefined {
+/**
+ * A `retry-after` header, in milliseconds: delay seconds, or an HTTP date counted from `nowMs`
+ * (a date in the past is 0). The result is capped at five minutes.
+ */
+export function retryAfterMs(
+  header: string | null,
+  nowMs: number = Date.now(),
+): number | undefined {
   const value = header?.trim() ?? '';
-  return /^\d{1,6}$/.test(value) ? Number(value) * 1000 : undefined;
+  if (/^\d{1,6}$/.test(value)) return Math.min(maxRetryAfterMs, Number(value) * 1000);
+  if (value.length === 0 || value.length > 40 || !/^[A-Za-z]{3},/.test(value)) return undefined;
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? undefined : Math.min(maxRetryAfterMs, Math.max(0, date - nowMs));
 }
 
 /** A `retry-after-ms` header (OpenAI), in milliseconds. */
@@ -33,8 +42,9 @@ function retryAfterMsHeader(header: string | null): number | undefined {
 }
 
 /** The retry hint of a response: `retry-after-ms` first, then `retry-after` in seconds. */
-export function retryHintMs(headers: Headers): number | undefined {
+export function retryHintMs(headers: Headers, nowMs: number = Date.now()): number | undefined {
   return (
-    retryAfterMsHeader(headers.get('retry-after-ms')) ?? retryAfterMs(headers.get('retry-after'))
+    retryAfterMsHeader(headers.get('retry-after-ms')) ??
+    retryAfterMs(headers.get('retry-after'), nowMs)
   );
 }

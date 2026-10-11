@@ -29,11 +29,12 @@ function usageOf(completion: OpenAiCompletion, text: string, request: LlmRequest
       usageSource: 'estimated',
     };
   }
+  const { prompt_tokens: input, completion_tokens: output } = usage;
   return {
-    inputTokens: usage.prompt_tokens,
-    outputTokens: usage.completion_tokens,
+    inputTokens: input ?? estimateInputTokens(request),
+    outputTokens: output ?? estimateTokens(text),
     cachedInputTokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
-    usageSource: 'reported',
+    usageSource: input === undefined || output === undefined ? 'estimated' : 'reported',
   };
 }
 
