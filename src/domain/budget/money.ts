@@ -4,6 +4,7 @@
 
 export interface Money {
   readonly micros: bigint;
+  readonly currency: 'USD';
 }
 
 const MICROS_PER_DOLLAR = 1_000_000n;
@@ -11,15 +12,15 @@ const MICROS_PER_TEN_THOUSANDTH = 100n;
 const MICROS_PER_CENT = 10_000n;
 
 export function microUsd(micros: bigint): Money {
-  return { micros };
+  return { micros, currency: 'USD' };
 }
 
 export function zeroUsd(): Money {
-  return { micros: 0n };
+  return { micros: 0n, currency: 'USD' };
 }
 
 export function addMoney(left: Money, right: Money): Money {
-  return { micros: left.micros + right.micros };
+  return { micros: left.micros + right.micros, currency: 'USD' };
 }
 
 export function compareMoney(left: Money, right: Money): -1 | 0 | 1 {
@@ -32,9 +33,14 @@ function roundedUnits(absMicros: bigint, unit: bigint): bigint {
   return (absMicros + unit / 2n) / unit;
 }
 
+function groupThousands(digits: string): string {
+  return digits.replace(/\B(?=(\d{3})+$)/g, ',');
+}
+
 function withDecimals(units: bigint, decimals: number): string {
   const digits = units.toString().padStart(decimals + 1, '0');
-  return `${digits.slice(0, digits.length - decimals)}.${digits.slice(digits.length - decimals)}`;
+  const whole = groupThousands(digits.slice(0, digits.length - decimals));
+  return `${whole}.${digits.slice(digits.length - decimals)}`;
 }
 
 /** Four decimals below one dollar, two from one dollar up (data-model.md section 1). */

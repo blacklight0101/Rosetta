@@ -4,7 +4,7 @@ import type { Scheduler } from '../../src/application/ports/scheduler.js';
 export interface SchedulerHarness {
   readonly scheduler: Scheduler;
   /** Makes every job registered with an interval of 1000 ms due and waits for it to finish. */
-  runDue(): Promise<void>;
+  readonly runDue: () => Promise<void>;
   /** Failures reported by the scheduler. */
   readonly errors: unknown[];
 }

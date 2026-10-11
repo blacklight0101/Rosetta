@@ -14,7 +14,13 @@ afterEach(() => {
 schedulerContract('IntervalScheduler', () => {
   const errors: unknown[] = [];
   const scheduler = new IntervalScheduler((error) => errors.push(error));
-  return { scheduler, errors, runDue: () => vi.advanceTimersByTimeAsync(1000) };
+  return {
+    scheduler,
+    errors,
+    runDue: async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    },
+  };
 });
 
 schedulerContract('ManualScheduler', () => {
