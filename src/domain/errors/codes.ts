@@ -32,6 +32,10 @@ export const ERROR_CODES = {
   providerRateLimited: 'RST-1504',
   providerTimeout: 'RST-1505',
   providerCallFailed: 'RST-1506',
+  ollamaUnreachable: 'RST-1507',
+  ollamaModelMissing: 'RST-1508',
+  realProviderRefusedInTests: 'RST-1509',
+  ollamaToolsUnsupported: 'RST-1510',
   githubUrlInvalid: 'RST-1900',
   githubRefNotFound: 'RST-1901',
   githubRateLimited: 'RST-1902',
@@ -93,6 +97,25 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   'RST-1506': {
     message: 'The call to the AI provider failed.',
     nextStep: 'Read the cause in the API calls panel or the log, then try again.',
+  },
+  'RST-1507': {
+    message: 'Ollama is not running or cannot be reached.',
+    nextStep:
+      'Start Ollama on its host (ollama serve, or open the Ollama app), check ROSETTA_OLLAMA_URL, then start the run again.',
+  },
+  'RST-1508': {
+    message: 'The configured model is not pulled in Ollama.',
+    nextStep: 'Run ollama pull with the model name on the Ollama host, then start the run again.',
+  },
+  'RST-1509': {
+    message: 'Calls to a real AI provider are blocked while ROSETTA_TEST=1.',
+    nextStep:
+      'Use the fake provider with recordings in tests, or unset ROSETTA_TEST outside tests.',
+  },
+  'RST-1510': {
+    message: 'This model does not support native tool calling in Ollama.',
+    nextStep:
+      'Set toolMode to text for this provider in the project settings, or choose a model with tool support.',
   },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',

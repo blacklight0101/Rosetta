@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "description": "Native tool calls in the shapes small models send: line numbers as numeric strings, a non-breaking hyphen in a range, an invented path and an unknown tool name. Hand-written in the documented shape of Ollama's /api/chat answer (stream false); no real model was called (ADR-008).",
+  "models": [
+    {
+      "name": "gemma4:e4b",
+      "digest": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    },
+    {
+      "name": "contract-model:latest",
+      "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "chat": [
+    {
+      "status": 200,
+      "body": {
+        "model": "gemma4:e4b",
+        "created_at": "2026-10-11T09:05:03.007Z",
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "function": {
+                "name": "read_file",
+                "arguments": {
+                  "path": "src/Catalog.cs",
+                  "startLine": "12",
+                  "endLine": "40"
+                }
+              }
+            },
+            {
+              "function": {
+                "name": "read_file",
+                "arguments": {
+                  "path": "src/Invented/Nope.cs",
+                  "range": "10\u201120"
+                }
+              }
+            },
+            {
+              "function": {
+                "name": "open_file",
+                "arguments": {
+                  "path": "src/Catalog.cs"
+                }
+              }
+            }
+          ]
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 2600000000,
+        "load_duration": 500000000,
+        "prompt_eval_duration": 600000000,
+        "eval_duration": 1000000000,
+        "prompt_eval_count": 900,
+        "eval_count": 60
+      }
+    }
+  ]
+}

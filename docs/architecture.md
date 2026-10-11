@@ -143,7 +143,8 @@ prices/                 the shipped price table (data-model.md section 3.18)
 templates/              default project settings and ignore rules (data-model.md section 10)
 scripts/                build and test helper scripts (test levels, page screenshots)
 .env.example            every environment variable with a safe example (RF-1305)
-prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/)
+prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/) and shared/
+                        (prompts every role may get, such as the text tool protocol of RF-205)
                         and catalogue/ (principles, styles and practices for plan, ADR-018)
 tests/
   unit/                 mirrors src/

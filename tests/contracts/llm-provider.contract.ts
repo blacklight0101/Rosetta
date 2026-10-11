@@ -65,6 +65,27 @@ export const contractScenarios: Readonly<Record<ContractScenario, ScenarioOutcom
 /** Creates the implementation under test, arranged to answer `scenario`. */
 export type LlmProviderFactory = (scenario: ContractScenario) => Promise<LlmProvider>;
 
+/** What a provider family can report; the expected answers follow it. */
+interface ContractCapabilities {
+  /**
+   * False for a provider whose API has no cached-input-token field (Ollama): its answers carry
+   * `cachedInputTokens: 0` (RF-400, RF-421).
+   */
+  readonly reportsCachedInputTokens: boolean;
+}
+
+const fullCapabilities: ContractCapabilities = { reportsCachedInputTokens: true };
+
+/** The answer `scenario` must produce for a provider with `capabilities`. */
+function expectedResponse(
+  scenario: ContractScenario,
+  capabilities: ContractCapabilities = fullCapabilities,
+): ScenarioOutcome['response'] {
+  const response = contractScenarios[scenario].response;
+  if (response === undefined || capabilities.reportsCachedInputTokens) return response;
+  return { ...response, usage: { ...response.usage, cachedInputTokens: 0 } };
+}
+
 const context: LlmCallContext = {
   runId: '20261011-090503-understand',
   agentTaskId: 'task-1',
@@ -112,13 +133,13 @@ function isProviderCode(code: string): boolean {
   return value >= ERROR_RANGES.providers.first && value <= ERROR_RANGES.providers.last;
 }
 
-function answerTests(create: LlmProviderFactory): void {
+function answerTests(create: LlmProviderFactory, capabilities: ContractCapabilities): void {
   it('RF-400 returns text, usage with cached input tokens and the finish reason', async () => {
     const provider = await create('text');
 
     const response = await provider.complete(contractRequest());
 
-    expect(response).toMatchObject(contractScenarios.text.response ?? {});
+    expect(response).toMatchObject(expectedResponse('text', capabilities) ?? {});
   });
 
   it('RF-400 returns tool calls with their arguments in the same shape', async () => {
@@ -126,7 +147,7 @@ function answerTests(create: LlmProviderFactory): void {
 
     const response = await provider.complete(contractRequest());
 
-    expect(response).toMatchObject(contractScenarios['tool-call'].response ?? {});
+    expect(response).toMatchObject(expectedResponse('tool-call', capabilities) ?? {});
   });
 
   it('RF-400 reports the exact model version and the request id as text', async () => {
@@ -139,14 +160,14 @@ function answerTests(create: LlmProviderFactory): void {
   });
 }
 
-function attemptTests(create: LlmProviderFactory): void {
+function attemptTests(create: LlmProviderFactory, capabilities: ContractCapabilities): void {
   it('RF-406 tells the observer about each retried attempt before the answer', async () => {
     const provider = await create('retry-then-text');
     const observer = new RecordingObserver();
 
     const response = await provider.complete(contractRequest(), observer);
 
-    expect(response).toMatchObject(contractScenarios['retry-then-text'].response ?? {});
+    expect(response).toMatchObject(expectedResponse('retry-then-text', capabilities) ?? {});
     expect(observer.retried).toEqual(contractScenarios['retry-then-text'].retried);
     expect(observer.started).toBe(2);
   });
@@ -173,9 +194,13 @@ function attemptTests(create: LlmProviderFactory): void {
 }
 
 /** Contract of the LlmProvider port (RF-400): every adapter, the fake and every decorator. */
-export function llmProviderContract(name: string, create: LlmProviderFactory): void {
+export function llmProviderContract(
+  name: string,
+  create: LlmProviderFactory,
+  capabilities: ContractCapabilities = fullCapabilities,
+): void {
   describe(`LlmProvider contract: ${name}`, () => {
-    answerTests(create);
-    attemptTests(create);
+    answerTests(create, capabilities);
+    attemptTests(create, capabilities);
   });
 }

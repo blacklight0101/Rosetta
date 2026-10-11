@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "description": "Native tool calling requested from a model without tool support: Ollama answers 400. Hand-written in the documented shape of Ollama's /api/chat answer (stream false); no real model was called (ADR-008).",
+  "models": [
+    {
+      "name": "contract-model:latest",
+      "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "chat": [
+    {
+      "status": 400,
+      "body": {
+        "error": "registry.ollama.ai/library/contract-model:latest does not support tools"
+      }
+    }
+  ]
+}
