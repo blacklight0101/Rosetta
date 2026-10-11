@@ -25,6 +25,18 @@ export const ERROR_RANGES = {
 /** Codes in use, reserved first for the ones the design board already shows. */
 export const ERROR_CODES = {
   configurationInvalid: 'RST-1000',
+  pathOutsideRoot: 'RST-1100',
+  pathInvalid: 'RST-1101',
+  pathIgnored: 'RST-1102',
+  pathDenied: 'RST-1103',
+  fileNotFound: 'RST-1104',
+  lineRangeInvalid: 'RST-1105',
+  grepPatternTooLong: 'RST-1106',
+  grepPatternInvalid: 'RST-1107',
+  grepTimedOut: 'RST-1108',
+  writeOutsideWorkspace: 'RST-1109',
+  snapshotWriteRefused: 'RST-1110',
+  workspaceIdInvalid: 'RST-1111',
   fakeProviderRefused: 'RST-1500',
   providerCallCancelled: 'RST-1501',
   recordingInvalid: 'RST-1502',
@@ -76,6 +88,55 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     message: 'The server configuration is missing or invalid.',
     nextStep:
       'Set the variables named in the message in the environment or .env, then start again.',
+  },
+  'RST-1100': {
+    message: 'The path points outside the analysed repository folder, so it was not read.',
+    nextStep: 'Use a path relative to the repository root, inside the analysed folder.',
+  },
+  'RST-1101': {
+    message: 'The path is not a valid repository path, so it was not read.',
+    nextStep: 'Use forward slashes and plain file names, without device names or stream suffixes.',
+  },
+  'RST-1102': {
+    message: 'The path matches the ignore rules, so it is never read or sent.',
+    nextStep: 'Change the ignore rules in the project settings if this file must be analysed.',
+  },
+  'RST-1103': {
+    message:
+      'The path matches the built-in deny list of secret files, so it is never read or sent.',
+    nextStep: 'Add the pattern to scan.allowDenied in the project settings only if you are sure.',
+  },
+  'RST-1104': {
+    message: 'The file does not exist in the analysed snapshot.',
+    nextStep: 'Check the path against the list of files in the code map.',
+  },
+  'RST-1105': {
+    message: 'The line range is not valid for this file.',
+    nextStep: 'Ask for 1-based lines with the start not after the end and inside the file.',
+  },
+  'RST-1106': {
+    message: 'The search pattern is longer than 200 characters, so it was not run.',
+    nextStep: 'Use a shorter pattern.',
+  },
+  'RST-1107': {
+    message: 'The search pattern is not a valid regular expression.',
+    nextStep: 'Correct the pattern and search again.',
+  },
+  'RST-1108': {
+    message: 'The search took longer than its time limit and was stopped.',
+    nextStep: 'Use a simpler pattern or limit the files searched.',
+  },
+  'RST-1109': {
+    message: 'The file would be written outside the user workspace, so the write was refused.',
+    nextStep: 'Nothing was written; check the application log for the refused path.',
+  },
+  'RST-1110': {
+    message: 'The snapshot cache is read-only, so the write was refused.',
+    nextStep: 'Nothing was written; output belongs in the user workspace.',
+  },
+  'RST-1111': {
+    message: 'A workspace id is not in the expected format, so no path was built from it.',
+    nextStep: 'Check the user, project or run id that was passed.',
   },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
