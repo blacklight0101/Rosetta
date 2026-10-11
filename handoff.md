@@ -1,15 +1,15 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-11. Phase **P0 - documentation**. No code yet. Work is on branch `docs/review-fixes`._
+_Last updated 2026-10-11. Phase **P1 - milestone slice** starting: G-01 open (DEC-113). No code yet._
 
 ## Current state
 
 - `README.md`, `CLAUDE.md` (rules), this file.
-- `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Proposed**.
-- `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Proposed**;
+- `docs/rfc/RFC-001-rosetta.md` - design proposal, **Status: Accepted** (DEC-113).
+- `docs/spec/requirements.md` - release 1 requirements RF-002..RF-1306 and RNF-001..RNF-017, **Status: Accepted** (DEC-113);
   open questions in its section 4.
 - `docs/adr/` - ADR-001..ADR-019; counts by status in the [index](docs/adr/README.md).
-- `docs/decision-log.md` - decisions DEC-01..DEC-112.
+- `docs/decision-log.md` - decisions DEC-01..DEC-113.
 - `docs/journal/` - curated session summaries (the conversation journal is private, outside the repository; DEC-38).
 - `docs/conventions.md` and `docs/environments-and-delivery.md` - written 2026-10-10 (toolchain, lint, CI, baseline).
 - `.claude/agents/` - builders for difficulty bands (haiku, sonnet, opus, fable), `verifier`, `verifier-fable`,
@@ -53,13 +53,13 @@ Next, in this order (ask the owner before each):
 3. ~~Roadmap and process flows~~ DONE 2026-10-11: DEC-87..DEC-95; PDF and page published.
 4. ~~Build plan~~ DONE 2026-10-11: DEC-96..DEC-101, ADR-019; pull request for the owner to merge.
 5. ~~Create milestones P1..P3 and one issue per card~~ DONE 2026-10-11: issues #9..#88 (DEC-101).
-5a. Owner merges `docs/review-fixes` (`needs-owner`). Then the orchestrator creates the issues for P1-55 and P1-56
-   and updates the bodies of the issues whose cards changed (P1-03, 05..09, 11, 13, 14, 16..18, 21, 22, 24..27, 29,
+5a. ~~Owner merges `docs/review-fixes`; issues for P1-55 (#90) and P1-56 (#91); issue bodies synced~~ DONE
+   2026-10-11 (bodies of the cards that changed (P1-03, 05..09, 11, 13, 14, 16..18, 21, 22, 24..27, 29,
    30, 34..36, 40, 42..50, 54, P2-01, P2-02, P2-12, P2-14, P3-08, P3-12).
 6. Owner: add the CI jobs as required status checks to the `main` ruleset once P1-02 is merged
    (environments-and-delivery.md section 5).
-7. Owner reviews the whole set on 2026-10-13 (accepts ADR-019 or changes it); G-01 opens only then (DEC-33). Then
-   start the build as the orchestrator (`claude --agent orchestrator` in `C:\BuildingFolder\Rosetta`).
+7. ~~G-01~~ OPENED 2026-10-11 by the owner instead of the 2026-10-13 review (DEC-113); ADR-019 Accepted.
+8. Build: the orchestrator runs P1 from P1-01 under the protocol (`docs/orchestration/README.md`).
 
 Blockers: none. G-04 (Ollama with the DEC-53 models folder and an OpenAI key) holds only the live checks of P1-25,
 P1-26 and P1-47; the reader model of Q-04 comes from the P1-47 spike.
@@ -81,7 +81,7 @@ opened it; a `Provisional` gate names the only cards it releases.
 
 | Gate | Name | State | Since | Note |
 |---|---|---|---|---|
-| G-01 | Documentation set accepted | Closed | - | opens only after the owner reviews the whole set (DEC-33); no provisional opening |
+| G-01 | Documentation set accepted | Open | 2026-10-11 | opened by BlackLigth (blacklight0101) after the light review and its fixes (DEC-113) |
 | G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70); v1 artboards 1-6 revised (DEC-71); Plan setup, artboard 14 (DEC-86) |
 | G-03 | Public GitHub repository ready | Open | 2026-10-11 | opened by BlackLigth (blacklight0101) in the build-plan session (DEC-101): `blacklight0101/Rosetta` exists, `main` pushed and protected |
 | G-04 | Provider access ready | Closed | - | Ollama installed with the DEC-53 models folder; OpenAI key in the owner's `.env`; holds only live-check parts (DEC-104) |

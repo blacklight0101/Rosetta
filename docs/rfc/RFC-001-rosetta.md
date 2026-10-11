@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed |
+| **Status** | Accepted 2026-10-11 by BlackLigth (blacklight0101), opening gate G-01 (DEC-113) |
 | **Date** | 2026-10-09 |
 | **Author** | BlackLigth (blacklight0101) |
 | **Reviewers** | BlackLigth (blacklight0101), product owner; master tutors (BIG School) receive the milestone hand-in |
