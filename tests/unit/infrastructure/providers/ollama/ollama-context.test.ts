@@ -30,7 +30,7 @@ describe('Ollama context-size setting', () => {
     expect(contextSettingOf(value)).toBe(value);
   });
 
-  it.each([1_023, 0, -1, 2_048.5, Number.NaN])('RF-401 refuses %s with RST-1511', (value) => {
+  it.each([1_023, 0, -1, 2_048.5, Number.NaN])('RF-401 refuses %s with RST-1514', (value) => {
     expect(() => contextSettingOf(value)).toThrow(
       expect.objectContaining({ code: ERROR_CODES.ollamaContextTokensInvalid }),
     );
@@ -83,7 +83,7 @@ describe("Ollama's /api/show and /api/ps answers", () => {
 });
 
 describe('OllamaProvider options', () => {
-  it('RF-401 refuses a fixed contextTokens below 1024 with RST-1511 when it is built', () => {
+  it('RF-401 refuses a fixed contextTokens below 1024 with RST-1514 when it is built', () => {
     const build = () =>
       new OllamaProvider({
         baseUrl: 'http://127.0.0.1:11434',

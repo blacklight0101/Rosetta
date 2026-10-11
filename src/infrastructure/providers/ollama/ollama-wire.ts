@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Residency } from './ollama-context-resolver.js';
 
 // RF-401, ADR-003: the parts of Ollama's HTTP API the adapter reads, parsed at the boundary.
 // These types never leave src/infrastructure/providers/ollama/.
@@ -30,6 +31,16 @@ const tagsSchema = z.object({
 
 const errorSchema = z.object({ error: z.string() });
 
+/** /api/show: `model_info` holds `<architecture>.context_length`, the trained context. */
+const showSchema = z.object({ model_info: z.record(z.string(), z.unknown()) });
+
+/** /api/ps: the loaded models, with their total size and the part of it in GPU memory. */
+const psSchema = z.object({
+  models: z.array(z.object({ digest: z.string(), size: count, size_vram: count })),
+});
+
+const contextLength = z.number().int().positive();
+
 /** The /api/chat answer, or undefined when the body is not one. */
 export function parseChat(body: unknown): z.output<typeof chatSchema> | undefined {
   const parsed = chatSchema.safeParse(body);
@@ -48,4 +59,30 @@ export function digestOf(body: unknown, model: string): string | undefined {
 export function errorText(body: unknown): string {
   const parsed = errorSchema.safeParse(body);
   return parsed.success ? parsed.data.error : '';
+}
+
+/**
+ * The model's trained context from /api/show: `<general.architecture>.context_length`, else the
+ * first `*.context_length`; `trained` is undefined when none is named, `ok` false when the body is
+ * not a /api/show answer.
+ */
+export function trainedContextOf(
+  body: unknown,
+): { readonly ok: true; readonly trained: number | undefined } | { readonly ok: false } {
+  const parsed = showSchema.safeParse(body);
+  if (!parsed.success) return { ok: false };
+  const info = parsed.data.model_info;
+  const architecture = info['general.architecture'];
+  const own = typeof architecture === 'string' ? info[`${architecture}.context_length`] : undefined;
+  const any = Object.entries(info).find(([key]) => key.endsWith('.context_length'))?.[1];
+  const trained = contextLength.safeParse(own ?? any);
+  return { ok: true, trained: trained.success ? trained.data : undefined };
+}
+
+/** The loaded model with `digest` in the /api/ps answer, or undefined when it is not loaded. */
+export function residencyOf(body: unknown, digest: string): Residency | undefined {
+  const parsed = psSchema.safeParse(body);
+  if (!parsed.success) return undefined;
+  const loaded = parsed.data.models.find((entry) => entry.digest === digest);
+  return loaded === undefined ? undefined : { size: loaded.size, sizeVram: loaded.size_vram };
 }

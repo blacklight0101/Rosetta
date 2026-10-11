@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
+import { failureOf } from '../../../../support/failure-of.js';
 import { observedHarness } from '../../../../support/observed-harness.js';
 import { useFakeOllama } from '../../../../support/ollama-harness.js';
 import type { RecordingLogger } from '../../../../support/recording-logger.js';
@@ -12,9 +14,9 @@ function numCtx(bodies: unknown[]): unknown[] {
   return bodies.map((body) => {
     const options: unknown =
       typeof body === 'object' && body !== null ? Reflect.get(body, 'options') : undefined;
-    return typeof options === 'object' && options !== null
-      ? Reflect.get(options, 'num_ctx')
-      : undefined;
+    const value: unknown =
+      typeof options === 'object' && options !== null ? Reflect.get(options, 'num_ctx') : undefined;
+    return value;
   });
 }
 
@@ -29,12 +31,11 @@ describe('OllamaProvider with contextTokens auto', () => {
 
     expect(numCtx(server.bodiesOf('/api/generate'))).toEqual([32_768, 16_384]);
     expect(numCtx(server.chatBodies())).toEqual([16_384]);
-    expect(log.records()).toEqual([
-      expect.objectContaining({
-        status: 'ok',
-        ollama: expect.objectContaining({ contextTokens: 16_384, contextSource: 'auto-fit' }),
-      }),
-    ]);
+    expect(log.records()).toHaveLength(1);
+    expect(log.records()[0]).toMatchObject({
+      status: 'ok',
+      ollama: { contextTokens: 16_384, contextSource: 'auto-fit' },
+    });
     expect(warnings(logger)).toEqual([]);
   });
 
@@ -50,7 +51,9 @@ describe('OllamaProvider with contextTokens auto', () => {
       options: { num_ctx: 32_768 },
     });
   });
+});
 
+describe('OllamaProvider with contextTokens auto at the limits', () => {
   it('RF-401 a model whose trained context is 8192 never gets more', async () => {
     const { provider, server } = await start('context-model-limit');
 
@@ -74,7 +77,9 @@ describe('OllamaProvider with contextTokens auto', () => {
     expect(response.metrics?.ollama).toMatchObject({ contextSource: 'auto-floor' });
     expect(warnings(logger)).toHaveLength(1);
   });
+});
 
+describe('OllamaProvider with contextTokens auto across calls', () => {
   it('RF-401 the resolver runs once per model, for concurrent calls and for a second provider', async () => {
     const { provider, server, another } = await start('context-spill-then-fit');
 
@@ -125,5 +130,21 @@ describe('OllamaProvider with a fixed contextTokens', () => {
     expect(server.bodiesOf('/api/ps')).toHaveLength(1);
     expect(warnings(logger)).toHaveLength(1);
     expect(first.metrics?.ollama).toMatchObject({ contextTokens: 32_768, contextSource: 'fixed' });
+  });
+});
+
+describe('OllamaProvider while the context size is being measured', () => {
+  it('RF-401 a call stopped during the measurement ends at once as cancelled', async () => {
+    const { provider, server } = await start('context-show-hangs');
+    const controller = new AbortController();
+
+    const call = failureOf(provider.complete(contractRequest(controller.signal)));
+    await vi.waitFor(() => {
+      expect(server.bodiesOf('/api/show')).toHaveLength(1);
+    });
+    controller.abort();
+
+    expect(await call).toMatchObject({ code: ERROR_CODES.providerCallCancelled });
+    expect(server.chatBodies()).toEqual([]);
   });
 });

@@ -35,6 +35,17 @@ async function createProvider() {
     maxRetries: 3,
     textProtocolPrompt: await loadTextToolProtocol(join(root, 'prompts')),
     testMode: false,
+    // DEC-114: the context-size warnings, printed as they come.
+    logger: {
+      log: (record) => {
+        write(`[${record.level}] ${record.message}`);
+        return Promise.resolve();
+      },
+      securityEvent: (code, detail) => {
+        write(`[security] ${code} ${detail.message}`);
+        return Promise.resolve();
+      },
+    },
   });
 }
 

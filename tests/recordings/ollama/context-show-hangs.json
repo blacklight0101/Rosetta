@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "description": "An Ollama whose /api/show never answers, so the context size is still being measured when the caller stops. Hand-written; no real model was called (ADR-008).",
+  "models": [
+    {
+      "name": "contract-model:latest",
+      "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "show": { "hang": true },
+  "chat": []
+}

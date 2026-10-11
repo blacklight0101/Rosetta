@@ -126,6 +126,11 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     nextStep:
       'Add credit or raise the limit in the OpenAI billing settings, then start the run again.',
   },
+  'RST-1514': {
+    message: 'The Ollama context size must be auto or a whole number of at least 1024 tokens.',
+    nextStep:
+      'Set contextTokens for this provider in the project settings to auto, or to 1024 or more.',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

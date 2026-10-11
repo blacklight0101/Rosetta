@@ -5,6 +5,7 @@ import type {
   TokenUsage,
   ToolCall,
 } from '../../../application/ports/llm-provider.js';
+import type { ContextChoice } from './ollama-context.js';
 import type { ToolMode } from './ollama-request.js';
 import type { OllamaChat } from './ollama-wire.js';
 import { parseTextAnswer, stripThinking } from './text-tool-protocol.js';
@@ -19,6 +20,8 @@ export interface ResponseContext {
   readonly toolMode: ToolMode;
   /** The model digest from /api/tags (RNF-004). */
   readonly modelVersion: string;
+  /** The `num_ctx` sent and how it was chosen (DEC-114). */
+  readonly context: ContextChoice;
 }
 
 const nsPerMs = 1_000_000;
@@ -27,7 +30,7 @@ function ms(nanoseconds: number | undefined): number {
   return Math.round((nanoseconds ?? 0) / nsPerMs);
 }
 
-function metricsOf(chat: OllamaChat): OllamaMetrics {
+function metricsOf(chat: OllamaChat, context: ContextChoice): OllamaMetrics {
   const evalNs = chat.eval_duration ?? 0;
   const tokensPerSecond = evalNs > 0 ? ((chat.eval_count ?? 0) * 1e9) / evalNs : 0;
   return {
@@ -35,6 +38,8 @@ function metricsOf(chat: OllamaChat): OllamaMetrics {
     promptEvalDurationMs: ms(chat.prompt_eval_duration),
     evalDurationMs: ms(evalNs),
     tokensPerSecond: Math.round(tokensPerSecond * 100) / 100,
+    contextTokens: context.tokens,
+    contextSource: context.source,
   };
 }
 
@@ -88,6 +93,6 @@ export function llmResponseOf(chat: OllamaChat, context: ResponseContext): LlmRe
     usage: usageOf(chat, context.request),
     finishReason,
     modelVersion: context.modelVersion,
-    metrics: { httpStatus: 200, ollama: metricsOf(chat) },
+    metrics: { httpStatus: 200, ollama: metricsOf(chat, context.context) },
   };
 }

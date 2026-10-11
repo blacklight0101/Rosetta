@@ -77,12 +77,22 @@ export interface TokenUsage {
   readonly usageSource: UsageSource;
 }
 
-/** Ollama's own timings of a call (RF-408). */
+/**
+ * How the Ollama context size (`num_ctx`) of a call was chosen (DEC-114): the largest size that
+ * fits in GPU memory, the floor although the model spills, the model's trained context, the
+ * ceiling because Ollama could not be measured, or the project's fixed number.
+ */
+export type OllamaContextSource =
+  'auto-fit' | 'auto-floor' | 'auto-model-limit' | 'auto-fallback' | 'fixed';
+
+/** Ollama's own timings of a call (RF-408) and the context size it was sent (RF-401). */
 export interface OllamaMetrics {
   readonly loadDurationMs: number;
   readonly promptEvalDurationMs: number;
   readonly evalDurationMs: number;
   readonly tokensPerSecond: number;
+  readonly contextTokens?: number;
+  readonly contextSource?: OllamaContextSource;
 }
 
 /** What an adapter measured on the wire, for the call log (RF-408). */

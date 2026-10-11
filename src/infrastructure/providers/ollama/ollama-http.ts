@@ -1,9 +1,16 @@
+import { ERROR_CODES } from '../../../domain/errors/codes.js';
+import {
+  cappedResponse,
+  defaultMaxResponseBytes,
+  ResponseTooLargeError,
+} from '../capped-response.js';
 import type { AttemptFailed } from '../retrying-call.js';
 import { failedStatus, failedThrown } from './ollama-errors.js';
 import { errorText } from './ollama-wire.js';
 
-// RF-401, conventions section 5: one HTTP exchange with Ollama, with a timeout and the caller's
-// abort signal. A failure is classified, never thrown, so the provider decides about retries.
+// RF-401, conventions section 5: one HTTP exchange with Ollama, with a timeout, the caller's
+// abort signal and a cap on the answer's size. A failure is classified, never thrown, so the
+// provider decides about retries.
 
 export interface OllamaExchange {
   readonly url: URL;
@@ -11,11 +18,19 @@ export interface OllamaExchange {
   readonly model: string;
   readonly timeoutMs: number;
   readonly signal: AbortSignal;
+  /** The largest answer read; 8 MiB when not set. */
+  readonly maxBodyBytes?: number;
 }
 
 export type ExchangeResult =
   | { readonly ok: true; readonly body: unknown }
   | { readonly ok: false; readonly failed: AttemptFailed };
+
+function tooLarge(error: ResponseTooLargeError): ExchangeResult {
+  const failure = { code: ERROR_CODES.providerCallFailed };
+  const message = `Ollama sent an answer larger than ${String(error.maxBytes)} bytes, so it was not read.`;
+  return { ok: false, failed: { failure, retryable: false, message } };
+}
 
 async function jsonOf(response: Response): Promise<unknown> {
   const text = await response.text();
@@ -36,12 +51,15 @@ export async function exchange(request: OllamaExchange): Promise<ExchangeResult>
       ...(request.body === undefined ? {} : { body: JSON.stringify(request.body) }),
       signal,
     });
-    const body = await jsonOf(response);
+    const body = await jsonOf(
+      cappedResponse(response, request.maxBodyBytes ?? defaultMaxResponseBytes),
+    );
     if (response.ok) return { ok: true, body };
     const status = { status: response.status, error: errorText(body) };
     const retryAfter = response.headers.get('retry-after');
     return { ok: false, failed: failedStatus({ ...status, retryAfter }, request.model) };
   } catch (error) {
+    if (error instanceof ResponseTooLargeError) return tooLarge(error);
     const context = {
       cancelled: request.signal.aborted,
       timedOut: timeout.aborted,

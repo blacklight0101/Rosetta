@@ -52,6 +52,7 @@ export const ERROR_CODES = {
   openAiKeyRejected: 'RST-1511',
   openAiModelUnknown: 'RST-1512',
   openAiQuotaExhausted: 'RST-1513',
+  ollamaContextTokensInvalid: 'RST-1514',
   githubUrlInvalid: 'RST-1900',
   githubRefNotFound: 'RST-1901',
   githubRateLimited: 'RST-1902',

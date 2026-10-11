@@ -48,8 +48,18 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 - Each call first reads the model's digest from `GET /api/tags` (once per model and provider instance); the digest
   is the response's `modelVersion` (RNF-004). A model name without a tag matches `<name>:latest`.
 - `options.num_ctx` is sent on every call: Ollama's own default context of recent models overflows an 8 GB GPU and
-  spills the model to the CPU. The adapter option `contextTokens` sets it; the default is 32 768 (an open question
-  until a project setting names it). `num_predict` carries `maxOutputTokens` and `temperature` the role's temperature.
+  spills the model to the CPU. The adapter option `contextTokens` (project setting `providers.<name>.contextTokens`,
+  wired by P1-18) is `auto` (default) or a number of at least 1 024; a smaller number is refused with `RST-1514`.
+  `num_predict` carries `maxOutputTokens` and `temperature` the role's temperature.
+- Context size `auto` (DEC-114, Q-23), resolved once per server and model digest and cached for the process;
+  concurrent first calls share one resolution. Start at the smaller of the model's trained context
+  (`/api/show` `model_info` `*.context_length`) and the ceiling `CONTEXT_CEILING` = 32 768. Load the model with
+  `POST /api/generate` without a prompt at that size, read `/api/ps`, and while `size_vram` is below `size` halve the
+  size, down to the floor `CONTEXT_FLOOR` = 4 096. If the floor still spills, use it and log one warning. A model
+  whose trained context is below the ceiling never gets more. If a probe fails, the ceiling is used, a warning is
+  logged and the result is not cached. A fixed number is sent unchanged; one warning is logged if `/api/ps` shows
+  the model partly on the CPU. The call log records `contextTokens` and `contextSource` (`auto-fit`, `auto-floor`,
+  `auto-model-limit`, `auto-fallback`, `fixed`; data-model section 3.10). Probe answers are capped at 4 MiB.
 - `think: false` is sent by default (adapter option `think`): on the owner's machine the tool loop was about ten
   times faster with thinking off and as correct. Models that ignore it (for example gpt-oss, deepseek-r1) still
   think; their `thinking` field and any `<think>...</think>` text in the content never reach the answer.
