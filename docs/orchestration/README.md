@@ -25,7 +25,8 @@ Every rule below refers to these settings by name, so a stack change is made her
 | Pyramid report | `npm run test:levels` (`scripts/test-levels.mjs`, delivered by P1-01) prints `Unit n / Integration n / E2E n` and the shares |
 | Mutation check | on: the verifier replaces the body of one implementing function in a disposable worktree and confirms a test fails |
 | E2E tool | `@playwright/test` with `@axe-core/playwright`; harness delivered by P1-13 |
-| Page walk | on for cards that deliver or change a page; preview entry `rosetta-web` in `.claude/launch.json` (delivered by P1-12); viewports 1280x800 (web UI) and 360x780 (landing, sign-in, report), light and dark (design-system.md sections 3 and 13) |
+| Card size | agent working time before verification: S at most about 1 hour, M about 2-3 hours, L about 4-6 hours (DEC-102) |
+| Page walk | on for cards that deliver or change a page; `node scripts/page-shots.mjs <path>` (delivered by P1-13) captures each viewport and colour scheme with the console errors, and the preview entry `rosetta-web` in `.claude/launch.json` (delivered by P1-12) serves interactive checks; viewports 1280x800 (web UI) and 360x780 (landing, sign-in, report), light and dark (design-system.md sections 3 and 13) |
 | Design principles | SOLID and KISS (no abstraction, package or generic mechanism the card does not ask for) |
 | Branch name | `task/<id>-<kebab-title>` in lower case, for example `task/p1-09-sign-in-and-sessions` (conventions.md section 9) |
 | Commit message | Conventional Commits, `type(scope): subject`, a `Refs:` footer with the card, RF, ADR and DEC ids, and the attribution line given by the session instructions |
@@ -47,7 +48,7 @@ The difficulty of a card (1-10) selects its builder (DEC-32) and its verifier (D
 | Builder, difficulty 7-9 | `builder-opus` | Opus 5.5 | substantial or cross-cutting work that needs judgement: shared infrastructure, provider adapters, the scan pipeline, the agent loop, multi-step UI flows | files inside the card's scope |
 | Builder, difficulty 10 | `builder-fable` | Fable | the riskiest work: authentication, sessions, secrets, the egress and budget guards, untrusted archives, the final security review | files inside the card's scope |
 | Verifier, difficulty 1-9 | `verifier` | Opus 5.5 | independent check against the card, the spec, the ADRs and `CLAUDE.md`; runs every gate itself; returns PASS or FAIL with findings; never edits the branch | nothing in the branch (a disposable detached worktree for the mutation check) |
-| Verifier, difficulty 10 | `verifier-fable` | Fable | the same procedure with the security review always on | the same |
+| Verifier, difficulty 10 | `verifier-fable` | Fable | the same procedure with the security review always on; also verifies any card re-run by `builder-fable` after a promotion | the same |
 | Product owner | BlackLigth (blacklight0101) | - | answers open questions, opens human gates, merges `needs-owner` pull requests, reviews escalations and any merged pull request after the fact, does what needs access Claude does not have | anything |
 
 **Difficulty rule of thumb.** A card is 10 when a mistake would leak a credential or a user's code, let one user see
@@ -78,10 +79,11 @@ stateDiagram-v2
 
 Status values (the only text the orchestrator writes on a card): `Todo`, `In progress`, `In review`, `Done`,
 `Blocked (<reason>)`. Because `main` changes only through pull requests, the live states `In progress` and
-`In review` are shown on GitHub as the issue labels `status:in-progress` and `status:in-review`; the Status line in
-`tasks.md` is written as `Done` (with the `handoff.md` line) in a last commit on the card's own branch, after the PASS
-and before the merge, so the squash carries it. `Blocked (...)` lines, gate releases and follow-up cards reach `main`
-in the next card's pull request or in a `docs/build-status` pull request. The reason is a gate (`Blocked (G-01)`), an open question (`Blocked (Q-nn)`), an escalation
+`In review` are shown on GitHub as the issue labels `status:in-progress` and `status:in-review`. Task branches never
+edit `tasks.md` or `handoff.md`: three cards in flight would conflict on every merge. After merges, the orchestrator
+writes the `Done` Status lines, the `handoff.md` lines, `Blocked (...)` lines, gate releases and follow-up cards in one
+`docs/build-status` pull request (section 3.1 rule 4), batched at most every few merges and always before a session
+ends; until it merges, the merged pull request and the closed issue are the record. The reason is a gate (`Blocked (G-01)`), an open question (`Blocked (Q-nn)`), an escalation
 (`Blocked (escalated YYYY-MM-DD - see handoff.md)`), a pull request waiting for the owner
 (`Blocked (needs-owner - see #<pr>)`) or a withdrawal (`Blocked (withdrawn YYYY-MM-DD - see <card id>)`). When only
 part of a card waits, the rest runs: `Todo; <part> Blocked (G-nn)`.
@@ -99,8 +101,10 @@ part of a card waits, the rest runs: `Todo; <part> Blocked (G-nn)`.
    issue `status:in-review` and spawns the verifier for the card's difficulty with the card, the report and the branch.
 5. **The verifier returns** PASS or FAIL (section 5). The orchestrator posts the verdict block on the pull request
    as a comment, unchanged.
-   - PASS: on the card's branch set the Status to `Done`, append one line to `handoff.md` and file every MINOR
-     finding as a follow-up card (section 9) in one `docs:` commit, then merge under section 3.1.
+   - PASS: merge under section 3.1, then record the card as `Done`, its `handoff.md` line and every MINOR finding as
+     a follow-up card (section 9) in the next `docs/build-status` pull request. Checks only the owner can make are
+     listed by the verifier as "owner check pending"; they do not block the merge, and the orchestrator copies them to
+     the owner's agenda in `handoff.md` (DEC-111).
    - FAIL 1: send the findings back to the **same** builder (context intact) for a second round.
    - FAIL 2 below difficulty 10: re-run the card once with a fresh builder one band up (haiku to sonnet, sonnet to
      opus, opus to fable; never down). The card's difficulty line is not edited; the pull request notes the promotion.
@@ -133,6 +137,11 @@ merge:
 
 After each merge the orchestrator fast-forwards its local `main` (`git pull --ff-only`) and confirms the card's
 issue is closed. Releases, tags and gates stay with the owner.
+
+**P1-01 exception.** CI does not exist until P1-01 delivers it, so rule 1 cannot hold for that card: the orchestrator
+merges P1-01 when the verifier's PASS includes `npm ci`, `npm run verify` and the CI workflow's steps run locally on
+Windows, and the workflow's first run on the pull request is green on both runners; if that first run cannot start
+(for example the ruleset requires checks that do not exist yet), the pull request is `needs-owner`.
 
 ## 4. Builder rules (included verbatim in every builder brief)
 
@@ -183,14 +192,14 @@ greps of section 5.1, engineering standards, SOLID and KISS, security, docs, rep
 | `eval(`, `new Function` | nowhere | model output is never executed (ADR-013) |
 | `child_process`, `shell: true` | nowhere in `src/` | Rosetta runs no shell commands |
 | `rejectUnauthorized` | nowhere | TLS is never disabled |
-| `Date.now(`, `new Date(` | `src/infrastructure/` only | time only through the `Clock` port |
-| `Math.random(`, `randomUUID(`, `randomBytes(` | `src/infrastructure/` only | ids and tokens only through ports |
+| `Date.now(`, `new Date(` | `src/infrastructure/` and `tests/support/` only | time only through the `Clock` port |
+| `Math.random(`, `randomUUID(`, `randomBytes(` | `src/infrastructure/` and `tests/support/` only | ids and tokens only through ports |
 | `from 'openai'`, `from '@anthropic-ai/sdk'` | `src/infrastructure/providers/` only | provider SDKs only in adapters (ADR-003) |
 | `from 'pg'` | `src/infrastructure/db/` only | SQL only in the database adapters (ADR-016) |
 | `from 'tar'`, `from 'ignore'` | `src/infrastructure/github/`, `src/infrastructure/files/` | ADR-019 |
 | `` query(` `` with `${` | nowhere | parameterised SQL only (ADR-016) |
 | `${{` inside a workflow `run:` | nowhere | pass values through `env:` (shell injection) |
-| `sk-`, `ghp_`, `api_key`, `Passwor[d]=` literals | `tests/` fixtures marked fake only | no secret in the repository (RNF-003) |
+| `sk-`, `ghp_`, `api_key`, `Passwor[d]=` literals | `tests/` fixtures and `tests/support/` marked fake; the detection patterns in `src/infrastructure/guards/secret-masker.ts` | no secret in the repository (RNF-003) |
 | `console.` | `src/presentation/` only | logging through the `Logger` port |
 
 ### 5.2 Verdict format
@@ -214,9 +223,10 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 | G-01 Documentation set accepted | BlackLigth (blacklight0101) | the owner has reviewed the whole documentation set, RFC-001 and the requirements are set to Accepted, every open question is answered or its default accepted (DEC-33; no provisional opening) | P1-01 and, through dependencies, every other card |
 | G-02 Design board approved | BlackLigth (blacklight0101) | the design board is approved and folded into `docs/design-system.md` (open since 2026-10-11, DEC-56, amended by DEC-70, DEC-71, DEC-86) | P1-12, P1-14, P1-15, P1-34, P1-35, P1-36, P1-37, P1-38, P1-39, P1-40, P1-41, P1-42, P3-08 (page cards; the gate is open, so they are not held) |
 | G-03 Public GitHub repository ready | BlackLigth (blacklight0101) | `blacklight0101/Rosetta` exists, `main` is pushed and protected by the ruleset of environments-and-delivery.md section 5 | P1-01 (issues and pull requests need the remote) |
-| G-04 Provider access ready | BlackLigth (blacklight0101) | Ollama runs on the owner's machine with the models folder of DEC-53, and an OpenAI key is in the owner's `.env` | the live checks of P1-25, P1-26, and P1-47 |
+| G-04 Provider access ready | BlackLigth (blacklight0101) | Ollama runs on the owner's machine with the models folder of DEC-53, and an OpenAI key is in the owner's `.env`; the reader model (Q-04) comes from the spike of P1-47 | only the live-check parts of P1-25, P1-26 and P1-47; the rest of those cards runs (`Todo; ... Blocked (G-04)`) |
 | G-05 Milestone hand-in approved | BlackLigth (blacklight0101) | the owner has checked the hosted URL, the teacher account, the sample report, the slides and the video, and submits the hand-in (RF-803) by 2026-10-26 | the P1 exit |
-| G-06 Hosted deployment ready | BlackLigth (blacklight0101) | host chosen (Q-18) and recorded in its ADR; secrets in the host's store; image deployed by tag; `/healthz` green; smoke test passed; the teacher account signs in on the hosted URL (RF-1304, RF-1107); by 2026-10-24 | P1-54 |
+| G-06 Hosted deployment ready | BlackLigth (blacklight0101) | the image of `main` deployed by its `sha-<short>` tag (DEC-104); `/healthz` green; smoke test passed; the teacher account signs in on the hosted URL (RF-1304, RF-1107); by 2026-10-24 | P1-54 |
+| G-07 Host account and secrets ready | BlackLigth (blacklight0101) | the host ADR of P1-48 is merged, the owner has created the host account and stored every secret of environments-and-delivery.md section 4 in the host's store (DEC-104) | P1-55 |
 
 ## 8. Parallelism and ordering
 
@@ -239,7 +249,8 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 
 The build must never stop because the Claude usage of the current 5-hour window ran out. Before every launch of a
 builder or verifier, and at least every 15 minutes while agents run, the orchestrator reads the share of the window
-used and the time left until it resets (the session's usage tool, or `/usage` in a terminal session), and applies:
+used and the time left until it resets, in this order of preference: the session's usage tool, a scheduled check
+that reads it, or asking the owner (DEC-111); `/usage` works in a terminal session. It applies:
 
 | Window used | Agents in flight | Behaviour |
 |---|---|---|

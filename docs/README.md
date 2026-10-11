@@ -12,10 +12,10 @@ here; they never hold a second copy of these documents.
 | [adr/README.md](adr/README.md) | Architecture decision records index, counts by status, deferred decisions | Living | 2026-10-09 |
 | [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model and state lists, use cases, ports, agent loop, security, testing approach | Living | 2026-10-10 |
 | [security/threat-model.md](security/threat-model.md) | Trust boundaries, STRIDE threats and controls, OWASP Top 10:2025 and LLM Top 10 mapping, secure lifecycle | Proposed | 2026-10-11 |
-| [data-model.md](data-model.md) | No database: the file formats Rosetta reads and writes (configuration, snapshot cache, code map, run folder, cards, events, call and application logs, cost ledger) and their schema versions | Proposed | 2026-10-10 |
+| [data-model.md](data-model.md) | PostgreSQL plus files: every table, constraint, grant and migration number, and the file formats in the data folder (snapshots, code map, run folder, cards, events, logs) with their schema versions | Proposed | 2026-10-11 |
 | [conventions.md](conventions.md) | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits | Proposed | 2026-10-10 |
 | [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases | Proposed | 2026-10-10 |
-| [design-system.md](design-system.md) | Live web UI, published report and terminal output: tokens (`design/tokens.css`), components, status badges, patterns, accessibility, verification | Accepted (v1) | 2026-10-11 |
+| [design-system.md](design-system.md) | Web UI, landing page and published report: tokens (`design/tokens.css`), components, status badges, patterns, accessibility, verification, the hosted-application screens | Accepted (v1, amended by DEC-70, DEC-71, DEC-86) | 2026-10-11 |
 | [design-system-brief.md](design-system-brief.md) | The brief for the design board | Superseded | 2026-10-11 |
 | [roadmap.md](roadmap.md) | Phases P0..Pn with exit criteria, later releases with entry conditions, backlog by requirement id, deliberately not built | Living | 2026-10-09 |
 | [process-flows.md](process-flows.md) | Stakeholder flowcharts (Mermaid) with requirement ids in captions; source of any exported page or PDF | Reference | 2026-10-09 |
@@ -75,7 +75,8 @@ State each of these in its canonical place only; other documents link there.
 |---|---|---|
 | `docs/releases.md` | P1, milestone card | release notes per version, starting with the M1 milestone |
 | `docs/golden-set.md` | P2, evaluation card | how the golden set for the demo app was built and how runs are scored |
-| `docs/providers.md` | P1, provider setup card | how to set up Ollama, OpenAI, Anthropic and OpenAI-compatible providers, with tested models |
+| `docs/providers.md` | P1, cards P1-24 to P1-26 | how to set up Ollama, OpenAI, Anthropic and OpenAI-compatible providers, with tested models and the recommended default models (DEC-106) |
+| `docs/runbooks/local.md`, `docs/runbooks/deploy.md` | P1, cards P1-45 and P1-55 | local Compose and hosted deployment: deploy, rollback, backup, restore, roles, teacher account |
 
 ## How to add things
 

@@ -51,21 +51,22 @@ flowchart LR
 | TB1 | Spoofing / SSRF: a URL or redirect leads somewhere other than GitHub | https only; host allowlist on every redirect; only `github.com` repository URLs parsed | RF-120, RF-127 |
 | TB2 code to the model | Elevation of privilege: indirect prompt injection in the analysed code steers the agents | tool results in delimited data blocks, never in the system prompt; prompts declare them data; read-only tools; citation check in code; caps | RF-145, RF-201, RF-300, RF-422 |
 | TB2 | Denial of service: model-chosen regular expression blocks the process | pattern and line limits; grep in a worker with a timeout | RF-146 |
-| TB3 egress | Information disclosure: secrets or ignored files sent to a provider | built-in deny list, `.rosettaignore`, masking that fails closed, egress log, cloud warning | RF-140, RF-141, RF-142, RF-143, RF-147 |
+| TB3 egress | Information disclosure: secrets or ignored files sent to a provider | built-in deny list, ignore rules (project setting plus the repository's `.rosettaignore`, which can only add exclusions), masking that fails closed, egress log, cloud warning | RF-140, RF-141, RF-142, RF-143, RF-147 |
 | TB4 model output | Tampering: output written as code, commands or paths | output parsed with schemas; never executed; never used as a path or command | RF-202, architecture section 10 |
 | TB4 | Tampering: output rendered as HTML (stored XSS in the page or the report) | text-only rendering; no raw HTML; only `https://github.com/` links | RF-507 |
 | TB5 web | Spoofing: password guessing or credential stuffing | scrypt hashes; 12-character minimum and common-password check; lockout after 5 failures; rate limit per IP; same message and timing for unknown users | RF-1100, RF-1103 |
 | TB5 | Spoofing: session theft or fixation | random 256-bit id rotated at sign-in; only its hash stored; `__Host-` cookie with `HttpOnly`, `Secure`, `SameSite=Strict`; idle and absolute expiry; HSTS | RF-1101, RF-1013 |
-| TB5 | Spoofing: another site drives a signed-in browser (CSRF) | `SameSite=Strict`; CSRF token and `Origin` check on every state-changing request | RF-1009 |
+| TB5 | Spoofing: another site drives a signed-in browser (CSRF) | `SameSite=Strict`; CSRF token and `Origin` check on every state-changing request; the sign-in request, which has no session yet, by the `Origin` check (DEC-112) | RF-1009 |
 | TB5 | Information disclosure: one user reads another's projects, runs, files or keys (IDOR) | every query and path scoped by the actor; 404 for foreign ids; access matrix test with two users | RF-1105 |
 | TB5 | Elevation of privilege: a user calls an administrator route | role checked on the server for every route; a `user` gets 403 and the attempt is audited | RF-1102, RF-1109 |
 | TB5 | Denial of service and cost abuse: a user spends the owner's server keys | caps per run, user-day and server-month checked before every call; run queue; one running run per user; admin banner at 80% | RF-1106, RF-1108 |
 | TB5 | Information disclosure: secrets in responses, errors or logs | no key returned after saving; no stack trace in any response; masked logs; output scan test | RF-007, RF-1104, RNF-003 |
+| TB5 | Spoofing / SSRF: a user points the server at an internal address through a provider base URL | one base URL per provider, stored with the user's key; https and a public address checked on save and again on every connect (DNS rebinding); project settings cannot set a base URL; Ollama only at the operator's `ROSETTA_OLLAMA_URL` (DEC-112) | RF-1104 |
 | TB5 | Information disclosure: the landing page is indexed | `noindex`; `robots.txt` disallows all | RF-1201 |
 | TB5, TB6 | Repudiation and blind spots: refused requests and reads leave no trace | security events logged as `warn` and counted in the page; account and key events in the audit table | RF-009, RF-1011, RF-1109 |
-| TB8 database | Tampering: SQL injection | parameterised queries only, enforced by a lint rule; the app role cannot change the schema | ADR-016 |
+| TB8 database | Tampering: SQL injection | parameterised queries only, enforced by a lint rule (conventions section 10) and the verifier's grep; the app role cannot change the schema | ADR-016 |
 | TB8 | Information disclosure: a database dump exposes keys or passwords | keys encrypted with AES-256-GCM under `ROSETTA_SECRET_KEY` held outside the database; passwords and session ids hashed | RF-1104, ADR-015 |
-| TB8 | Repudiation: the audit trail is altered | the app role may only insert into `audit_events` and `cost_ledger` | data-model.md section 6 |
+| TB8 | Repudiation: the audit trail is altered | the app role may only insert into `audit_events` and `cost_ledger`; both are kept for the life of the deployment (DEC-110) | data-model.md section 6 |
 | TB6 published report | Information disclosure: secrets or employer material published | masked transcripts; output scan in CI; DEC-03 | RNF-003, DEC-03 |
 | TB7 CI and release | Tampering: compromised dependency or action | lockfile and `npm ci`; actions pinned to a commit SHA; dependency review; CodeQL; gitleaks; SBOM on releases | environments-and-delivery.md sections 6 and 8 |
 | TB7 | Tampering: a vulnerable or altered container image | base image pinned by digest; non-root user; image scanned in CI; images tagged by version and commit in GHCR; secrets never baked in | RF-1300, environments-and-delivery.md |
@@ -86,9 +87,9 @@ flowchart LR
 | A09 Logging and alerting failures | covered | security events in the application log (RF-009); audit trail (RF-1109); cap banner (RF-1106) |
 | A10 Mishandling of exceptional conditions | covered | guards fail closed (RF-141); typed errors with codes, no stack traces in responses (RF-007) |
 
-Server-side request forgery is handled at TB1 (RF-127) and for the OpenAI-compatible `baseUrl` (RF-403); a user's
-`openai-compatible` base URL must be `https` and must not resolve to a private, loopback or link-local address
-(RF-1104).
+Server-side request forgery is handled at TB1 (RF-127) and for the OpenAI-compatible base URL (RF-403, RF-1104): it is
+set only with the user's key, must be `https` and must not resolve to a private, loopback or link-local address, checked
+when saved and again when each call connects (DEC-112).
 
 ## 4. OWASP Top 10 for LLM applications (2025) mapping
 
@@ -116,7 +117,8 @@ Server-side request forgery is handled at TB1 (RF-127) and for the OpenAI-compat
 
 Tools considered and not adopted: Snyk Code (uploads source to a third party and adds nothing over CodeQL, `npm
 audit` and Dependabot) - DEC-58. Since DEC-69 the image is scanned in CI, and a baseline DAST scan (OWASP ZAP
-baseline against the local Compose stack) runs before the hosted deployment.
+baseline against the local Compose stack) runs before the hosted deployment, as a step of card P1-55 and of the
+deployment procedure (environments-and-delivery.md section 10).
 
 ## 6. Residual risks
 

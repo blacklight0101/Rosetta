@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56); hosted-application screens (section 14, artboards 7-13) approved as a G-02 amendment (DEC-70) |
+| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56); hosted-application screens (section 14, artboards 7-13) approved as a G-02 amendment (DEC-70); artboards 1-6 revised and approved (DEC-71); the Plan setup artboard 14 approved (DEC-86) |
 | **Decisions** | DEC-44 (text wordmark, system fonts, deep teal accent, light and dark per OS, multi-page static report), DEC-45 (English only), DEC-46 (verbose, graphic live web UI), DEC-49 (project totals always visible), DEC-50 (API calls and logs), DEC-52 (Preact + Vite), DEC-55 (delete with confirmation); [ADR-012](adr/ADR-012-local-web-ui-and-github-sources.md) |
 | **Source artefacts** | [design-system-brief.md](design-system-brief.md) (what was asked); the v1 design board, exported to [`docs/design/board/`](design/board/) (open the `.dc.html` files in the design canvas; never edited after export); [`docs/design/tokens.css`](design/tokens.css) (the token file) |
 | **Devices** | desktop and laptop browsers, 1280 px and wider, mouse and keyboard (the web UI); the landing page, sign-in and the published report also on tablets and phones (360 px and wider) |
@@ -116,7 +116,7 @@ web UI targets desktop only, so no second density is defined.
 ```mermaid
 flowchart TB
   H["Header: wordmark - repository @ commit - run meter (when a run is active) - project totals - theme toggle"]
-  N["Side navigation: Start a run, Live run, Verification, Coverage, API calls and logs, Open questions, History and snapshots"]
+  N["Side navigation: Projects, Start a run, Live run, Verification, Coverage, API calls and logs, Open questions, History, Settings; Administration for the administrator"]
   C["Content: page title and actions, then panels"]
   B["Banners: cloud warning, budget warnings, connection lost"]
   H --> N --> C
@@ -234,9 +234,9 @@ English only (DEC-45). Sentence case for titles, labels and buttons. Buttons sta
 time zone in the UI, UTC in files. Ids, paths and model names in the mono font, never translated or shortened in
 the middle. Errors say what happened, what to do, and the code.
 
-## 11. Terminal output
+## 11. Terminal output (withdrawn)
 
-Withdrawn 2026-10-11 with the command-line interface (DEC-59, RF-004). Kept for reference: the CLI shared the vocabulary of the web UI (DEC-44): one compact line per event in colour (ANSI 16 colours mapped
+Withdrawn 2026-10-11 with the command-line interface (DEC-59, RF-004); nothing in this section is built. Kept for reference: the CLI shared the vocabulary of the web UI (DEC-44): one compact line per event in colour (ANSI 16 colours mapped
 to the tones: info blue, ok green, warn yellow, danger red), state words identical to section 6, the run meter on
 one line that updates in place in a terminal; no spinners and no in-place updates when standard output is not a
 terminal; `NO_COLOR` turns colour off (RF-004).
@@ -277,7 +277,7 @@ cards are built (an amendment of G-02, recorded in `handoff.md`).
 | Plan setup | RF-605, RF-608, RF-609 | interview in small groups, each question with a default, the reason and the recommended option; architecture styles with evidence card ids; stack per layer; "What I recorded" summary; added 2026-10-11, artboard 14 (`PlanSetup.dc.html`, steps principles, architecture and stack), approved as a G-02 amendment (DEC-86) |
 | Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |
 
-**Status (2026-10-11):** drawn as artboards 7-13 of the design board (`docs/design/board/Landing.dc.html`,
+**Status (2026-10-11):** drawn as artboards 7-13 of the design board (artboard 14, Plan setup, follows in DEC-86) (`docs/design/board/Landing.dc.html`,
 `SignIn`, `ChangePassword`, `Projects`, `Settings`, `AdminUsers`, `AdminAudit`), with the Impeccable design
 skill and Claude design. The landing structure ("Watch it work": a replay of a sample run as the first viewport)
 was chosen by the owner from three dealt structures; its direction contract is in

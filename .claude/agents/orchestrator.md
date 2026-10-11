@@ -17,7 +17,8 @@ Rules:
 - **Usage first.** Before every launch read the share of the 5-hour window used and the time to its reset, and apply
   the throttle of protocol section 8.1: up to 3 agents below 75%; from 75% start nothing new while 2 run (3 drop to
   2); from 90% start nothing new while 1 runs (2 drop to 1); at 95% hold everything and resume the same agents after
-  the reset. Never let the window run out.
+  the reset. Never let the window run out. Read the usage from the session's usage tool, else a scheduled check,
+  else ask the owner; while it cannot be read, keep at most 1 agent in flight (DEC-111).
 - **One card, one issue, one branch, one builder.** Open the card's issue (title `<id> <title>`, milestone of the
   phase, labels `difficulty:<n>`, `builder:<model>`, `status:in-progress`), create `task/<id>-<kebab-title>` from
   the current `main` in its own worktree, and spawn the builder of the card's difficulty: 1-3 `builder-haiku`, 4-6
@@ -25,16 +26,24 @@ Rules:
   4 and 6. Run two cards at once only when their *Delivers* paths are disjoint and they share no serialized resource
   (protocol sections 1 and 8).
 - **Review.** When the builder reports and has pushed, open the pull request from the template (`Closes #<issue>`),
-  label the issue `status:in-review`, and spawn `verifier` (difficulty 1-9) or `verifier-fable` (difficulty 10) with
+  label the issue `status:in-review`, and spawn `verifier` (difficulty 1-9) or `verifier-fable` (difficulty 10, or any
+  card built by `builder-fable` after a promotion) with
   the card, the report and the branch. Do not judge the report yourself. Post the verdict block on the pull request,
   unchanged.
-- **Merge (DEC-96).** On PASS: commit on the card's branch the Status line `Done`, one `handoff.md` line and any
-  follow-up cards with the updated totals; then merge only when every rule of protocol section 3.1 holds: CI green,
+- **Merge (DEC-96).** On PASS merge only when every rule of protocol section 3.1 holds: CI green,
   PASS with no BLOCKING or MAJOR finding posted, branch up to date with `main` (rebase the task branch and push it with
   `--force-with-lease` when needed, never `main`), no change to `docs/spec/`, `docs/adr/`, `docs/decision-log.md`,
   `docs/rfc/` or `CLAUDE.md` (those pull requests get `needs-owner` and wait for the owner), and
   `gh pr merge <pr> --squash --delete-branch` exits 0. Never use an admin override, never bypass the ruleset, never
-  push to `main`. Then `git pull --ff-only` on your `main` and confirm the issue closed.
+  push to `main`. Then `git pull --ff-only` on your `main` and confirm the issue closed. P1-01 follows the exception
+  of protocol section 3.1.
+- **Status after merge.** Task branches never touch `tasks.md` or `handoff.md`. After merges, open one
+  `docs/build-status` pull request with the `Done` lines, the `handoff.md` lines, follow-up cards for MINOR findings
+  with the updated totals, and gate releases; merge it once CI is green; always before the session ends.
+- **Owner checks.** Verdict lines marked "owner check pending" do not block the merge; copy each into the owner's
+  agenda in `handoff.md` with the card and the pull request (DEC-111).
+- **Gates.** G-07 (host account and secrets) holds P1-55; G-04 holds only the live-check parts of P1-25, P1-26 and
+  P1-47, so the rest of those cards runs.
 - **Fail.** FAIL 1: send the findings back to the same builder (keep its context). FAIL 2 below difficulty 10:
   re-run once with a fresh builder one band up. FAIL 2 at difficulty 10, or a FAIL of the promoted re-run: set
   `Blocked (escalated YYYY-MM-DD - see handoff.md)`, leave the pull request unmerged, and write the case in

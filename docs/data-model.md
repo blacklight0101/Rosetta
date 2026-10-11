@@ -83,7 +83,7 @@ Folder names come from ids, never from request text.
 
 Changed 2026-10-11 (DEC-59, DEC-65): the former `rosetta.config.yaml` is now a JSON document in the `settings`
 column of the `projects` table, edited on the project's settings page. The source fields moved to columns of
-`projects`; the `output` and `ui` sections are gone.
+`projects`; the `ui` section is gone and `output` keeps only `transcripts`. Review 2026-10-11 (DEC-107, DEC-112): `scan.allowDenied`, `agents.parallelism` and `budget.allowUnpriced` added; base URLs live only on the key row.
 
 | | |
 |---|---|
@@ -96,7 +96,7 @@ column of the `projects` table, edited on the project's settings page. The sourc
 |---|---|---|---|---|
 | (root) | `schemaVersion` | int | 1 | |
 | `providers` | `<name>.kind` | enum | - | `ollama`, `openai`, `openai-compatible`, `anthropic`, `fake` |
-| | `<name>.baseUrl` | string | per kind | required for `openai-compatible`; Ollama: the server's `ROSETTA_OLLAMA_URL` (locally `http://host.docker.internal:11434`) |
+| | `<name>.baseUrl` | - | - | not allowed (refused by the schema): an `openai-compatible` base URL is stored with the user's key (`provider_keys.base_url`, RF-1104) and Ollama always uses the server's `ROSETTA_OLLAMA_URL` (DEC-112) |
 | | `<name>.keySource` | enum | `user-then-server` | `user` (only the user's stored key) or `user-then-server` (RF-1104); the key itself is never in the settings |
 | | `<name>.toolMode` | enum | `native` | `native` or `text` (RF-205) |
 | | `<name>.timeoutSeconds` | int | 120 | per call |
@@ -105,20 +105,25 @@ column of the `projects` table, edited on the project's settings page. The sourc
 | `budget` | `run.maxCostMicros`, `run.maxTokens` | int | template values | hard caps per run (RF-422) |
 | | `roles.<role>.maxCostMicros`, `roles.<role>.maxTokens` | int | none | caps per role (RF-423) |
 | | `confirmAboveCostMicros` | int | template value | estimate threshold that asks to continue (RF-425) |
-| | `prices` | list | none | overrides of the shipped price table, same shape as 3.18 |
+| | `prices` | list | none | overrides of the shipped price table, same shape as 3.18; applied only to calls with the user's own keys (DEC-107) |
+| | `allowUnpriced` | bool | false | run a non-local model missing from the price table, only with the user's own key (RF-427, DEC-112) |
 | `scan` | `maxFileBytes` | int | 1 000 000 | larger files are listed as `skipped: too large` (RF-100) |
 | | `areaTokenBudget` | int | 60 000 | RF-104 |
 | | `areas` | list | none | manual areas `{ name, include: [glob] }` (RF-104) |
 | | `excerptMaxLines` | int | 400 | RF-144 |
-| | `ignoreRules` | string | the default template | gitignore syntax, replaces `.rosettaignore` (3.2) |
+| | `ignoreRules` | string | the default template | gitignore syntax (3.2) |
+| | `allowDenied` | list | `[]` | built-in deny patterns lifted for this project; recorded in the manifest (RF-147) |
+| `agents` | `parallelism` | int | 1 for Ollama, 4 otherwise | reader tasks run at the same time (architecture section 8) |
 | `output` | `transcripts` | bool | true | skip transcripts for this project (DEC-43) |
 
 Unknown keys are an error (RF-002), so a typo never silently changes behaviour.
 
 ### 3.2 `.rosettaignore`
 
-Changed 2026-10-11: the rules are the `scan.ignoreRules` field of the project settings (3.1), not a file. Gitignore
-syntax, matched against repository-relative paths (RF-140). The default template lists common secret and binary
+Changed 2026-10-11: the rules are the `scan.ignoreRules` field of the project settings (3.1). Gitignore syntax,
+matched against repository-relative paths (RF-140). A `.rosettaignore` file committed in the analysed repository is
+also read and joined to the setting; it can only add exclusions, never lift the setting's rules or the built-in deny
+list (DEC-109). The default template lists common secret and binary
 patterns (`*.pfx`, `*.key`, `*.env`, `appsettings.*.json` with secrets, `*.mdf`, images and archives).
 No `schemaVersion`: the format is the standard gitignore syntax.
 
@@ -137,6 +142,8 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 - The repository tree goes under `files/`; `snapshot.json` sits next to it, outside the analysed tree.
 - After the rename, files are marked read-only where the operating system allows it; the reader opens files
   read-only in any case.
+- Two fetches of the same commit take an in-process lock per `owner/repo@sha`; a rename that fails because the
+  target exists deletes its own partial folder and uses the existing snapshot (DEC-112).
 
 `snapshot.json`:
 
@@ -197,11 +204,10 @@ and map level (RF-105). Generated; never read back.
 | `rosettaVersion` | string | |
 | `startedAt`, `endedAt` | instant | `endedAt` empty while running |
 | `endState` | `RunEndState` | empty while running; set exactly once |
-| `exitCode` | int | RF-007 |
 | `resumedFrom` | string | the earlier `runId` when resumed (RF-006) |
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
-| `options` | object | the normalised command options |
+| `options` | object | the start request's options (areas, answers option, consent) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
 | `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
@@ -255,7 +261,7 @@ A rejected or invalid claim is never removed; only its status and verdict change
 | Purpose | the ordered story of a run, streamed live to the web UI and replayed by the report |
 | Writer | `JsonlEventLog` behind the `RunEventSink` port (RF-1006) |
 | Readers | web UI (late subscribers read it before live events), report replay (RF-506) |
-| Spec | RF-004, RF-1002..RF-1006, RF-506 |
+| Spec | RF-1002..RF-1006, RF-506 |
 
 Envelope of every line:
 
@@ -290,7 +296,7 @@ Event types (canonical list):
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent |
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` |
 | `question.answered` | `{ cardId }` (RF-1007) |
-| `run.ended` | `{ endState, exitCode, totals }` |
+| `run.ended` | `{ endState, totals }` |
 
 New event types may be added without a version bump; a reader ignores types it does not know. Application log
 entries are not run events: the web UI logs panel receives them on its own stream (RF-1011).
@@ -300,7 +306,7 @@ entries are not run events: the web UI logs panel receives them on its own strea
 | | |
 |---|---|
 | Purpose | one record per provider call attempt, for observability |
-| Writer | the `ObservedProvider` decorator through `ProviderCallRecorder` (RF-408) |
+| Writer | the `ObservedProvider` decorator through `ProviderCallRecorder` (RF-408); a call the budget guard refuses is recorded by the guard through the same recorder with status `refused-by-cap` |
 | Readers | web UI API calls panel (RF-1011), the user |
 | Spec | RF-408, RF-406, RNF-003 |
 
@@ -353,7 +359,7 @@ sum across users and the server (RF-1106).
 | | |
 |---|---|
 | Purpose | every model call of every run of every user; the source of all totals and caps |
-| Writer | the budget guard, one row per call, in the transaction that checks the caps (RF-428) |
+| Writer | the budget guard: before the call it inserts a `cost_reservations` row in the transaction that checks the caps; after the call it inserts the ledger row and deletes the reservation in one transaction (RF-428, DEC-112) |
 | Readers | web UI header (RF-1010), cost page, caps (RF-1106), administration page, report dashboard |
 | Spec | RF-428, RF-1010, RF-1106, DEC-49 |
 
@@ -400,7 +406,7 @@ currency, models: [{ provider kind, model, inputPerMillionMicros, outputPerMilli
 cachedInputPerMillionMicros }] }`. Ollama models have price 0. Overrides in the configuration use the same entry
 shape (RF-420, RF-427).
 
-### 3.19 Evaluation results: `eval/<date>-<id>/`
+### 3.19 Evaluation results: `eval-out/<date>-<id>/`
 
 Written by `npm run eval` (RNF-006, RNF-015, RF-305), inside the Rosetta repository's git-ignored `eval-out/`, never
 in a user's project: `experiment.json` `{ schemaVersion, id, at, rosettaVersion, roles (with modelVersion and
@@ -434,10 +440,12 @@ the `Clock` port.
 | `role` | `text` | `CHECK (role IN ('admin','user'))` |
 | `state` | `text` | `CHECK (state IN ('Active','MustChangePassword','Disabled'))`; `Locked` is derived from `locked_until` |
 | `password_hash` | `text` | `scrypt$N$r$p$salt$hash` (base64); never selected by list queries |
-| `failed_sign_ins` | `int` | reset to 0 on success |
+| `failed_sign_ins` | `int` | reset to 0 on success, and when `first_failed_at` is older than 15 minutes |
+| `first_failed_at` | `timestamptz` null | start of the current failure window (RF-1100, DEC-112) |
 | `locked_until` | `timestamptz` null | set for 15 minutes after the fifth failure |
 | `server_keys_allowed` | `boolean` | default `true` (RF-1104) |
-| `daily_cap_micros` | `bigint` null | null = the server default (RF-1106) |
+| `daily_cap_micros` | `bigint` null | daily cap on server keys set by the administrator; null = the server default (RF-1106) |
+| `own_daily_cap_micros` | `bigint` null | optional daily cap the user sets for their own keys; null = none (DEC-107) |
 | `created_at`, `updated_at`, `last_sign_in_at` | `timestamptz` | `last_sign_in_at` null until the first sign-in |
 
 **`sessions`** (RF-1101)
@@ -446,7 +454,6 @@ the `Clock` port.
 |---|---|---|
 | `id_hash` | `bytea` | primary key; SHA-256 of the 256-bit session id; the id itself is never stored |
 | `user_id` | `uuid` | references `users`, `ON DELETE CASCADE`; indexed |
-| `csrf_secret` | `bytea` | per-session secret for the CSRF token |
 | `created_at`, `last_seen_at`, `expires_at` | `timestamptz` | `expires_at` = min(`last_seen_at` + 8 h, `created_at` + 7 days) |
 | `ip`, `user_agent` | `text` | for the administrator's view and audit; user agent cut to 200 characters |
 
@@ -456,9 +463,9 @@ the `Clock` port.
 |---|---|---|
 | `user_id` | `uuid` | references `users`; part of the primary key |
 | `provider` | `text` | `CHECK (provider IN ('openai','anthropic','openai-compatible'))`; part of the primary key |
-| `base_url` | `text` null | required for `openai-compatible` |
+| `base_url` | `text` null | required for `openai-compatible`; https and a public address, checked on save and on every connect (RF-1104) |
 | `ciphertext`, `iv`, `auth_tag` | `bytea` | AES-256-GCM; the additional authenticated data is `user_id:provider` |
-| `key_version` | `int` | which `ROSETTA_SECRET_KEY` generation encrypted it |
+| `key_version` | `text` | fingerprint of the key that encrypted it: the AES key is derived from `ROSETTA_SECRET_KEY` with HKDF-SHA256 (info `rosetta/provider-keys/v1`); rows under `ROSETTA_SECRET_KEY_PREVIOUS` are re-encrypted at start-up (DEC-112) |
 | `last4` | `text` | the last four characters, for display |
 | `created_at`, `updated_at` | `timestamptz` | |
 
@@ -481,7 +488,8 @@ the `Clock` port.
 | `project_id` | `uuid` | references `projects`, `ON DELETE CASCADE` |
 | `user_id` | `uuid` | references `users`; equals the project's owner |
 | `run_key` | `text` | the `<runId>` folder name; unique per project |
-| `stage` | `text` | `CHECK (stage IN ('scan','understand','verify','report','plan','test'))` |
+| `stage` | `text` | `CHECK (stage IN ('scan','understand','verify','report','plan'))` |
+| `commit_sha`, `snapshot_key` | `text` null | the pinned commit and the snapshot folder name; indexed, for the history list and the snapshot-in-use check (RF-1008, RF-1012) |
 | `queue_state` | `text` | `RunQueueState` (architecture section 5) |
 | `end_state` | `text` null | `RunEndState`; set once |
 | `queued_at`, `started_at`, `ended_at` | `timestamptz` | the last two null until reached |
@@ -494,8 +502,8 @@ the `Clock` port.
 | `id` | `bigint` | identity primary key |
 | `at` | `timestamptz` | indexed with `user_id` and alone (server month) |
 | `user_id` | `uuid` | references `users` (accounts are disabled, never deleted) |
-| `project_id`, `run_id` | `uuid` | no foreign key: rows outlive deleted projects and runs (DEC-55) |
-| `stage`, `role`, `provider`, `model` | `text` | |
+| `project_id`, `run_id` | `uuid` null | no foreign key: rows outlive deleted projects and runs (DEC-55); null for a provider test (RF-407) |
+| `stage`, `role`, `provider`, `model` | `text` | `stage` is a run stage or `provider-test` |
 | `call_id` | `text` | matches `provider-calls.jsonl`; `attempt` `int` |
 | `key_source` | `text` | `CHECK (key_source IN ('user','server','none'))`; `none` for Ollama |
 | `input_tokens`, `output_tokens`, `cached_input_tokens` | `bigint` | |
@@ -504,14 +512,29 @@ the `Clock` port.
 | `currency` | `char(3)` | `USD` (DEC-54) |
 | `price_table_version` | `text` | |
 
-The budget guard takes `pg_advisory_xact_lock` on the user and on the server before it sums the caps and reserves a
-call's worst case, so two parallel runs cannot both pass the last free cent (RF-1106).
+**`cost_reservations`** (RF-422, RF-1106; added by the review of 2026-10-11, DEC-112)
+
+| Column | Type | Rules |
+|---|---|---|
+| `call_id` | `text` | primary key |
+| `user_id`, `run_id` | `uuid` | the run's owner and run |
+| `key_source` | `text` | as in `cost_ledger` |
+| `worst_case_micros` | `bigint` | prompt tokens plus maximum output, priced |
+| `expires_at` | `timestamptz` | call timeout plus a margin; expired rows are ignored and purged |
+
+The budget guard takes `pg_advisory_xact_lock` on the user and on the server, sums the ledger and the unexpired
+reservations for each cap, and inserts the call's reservation in the same transaction, so two parallel runs cannot
+both pass the last free cent (RF-1106). The lock is released at commit, before the call is made.
+
+All periods are UTC calendar days and months (DEC-107).
 
 **`server_settings`** (RF-1106, RF-1108)
 
 One row per key: `key text` primary key, `value jsonb`, `updated_at`, `updated_by uuid`. Keys:
 `caps` (`runMicros`, `userDayMicros`, `serverMonthMicros`), `queue` (`maxRunning`), `providers` (which server keys
-are offered, Ollama URL). Defaults are inserted by a migration.
+are offered), `defaultRoles` (provider and dated model id per role for new projects, DEC-106). Defaults are inserted
+by a migration (`defaultRoles` empty until the administrator sets it). The Ollama URL is only the environment
+variable `ROSETTA_OLLAMA_URL`.
 
 **`audit_events`** (RF-1109)
 
@@ -561,7 +584,11 @@ are offered, Ollama URL). Defaults are inserted by a migration.
 | Role | Rights | Used by |
 |---|---|---|
 | `rosetta_migrator` | owns the schema; `CREATE`, `ALTER`, `DROP` | the migration runner at start-up only (`DATABASE_MIGRATOR_URL`, or `DATABASE_URL` when the host offers one role) |
-| `rosetta_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables; `INSERT`, `SELECT` only on `cost_ledger` and `audit_events` (no update or delete) | the server (`DATABASE_URL`) |
+| `rosetta_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables (including `cost_reservations`); `INSERT`, `SELECT` only on `cost_ledger` and `audit_events` (no update or delete) | the server (`DATABASE_URL`) |
+
+The roles are created outside the migrations, because a committed file cannot hold their passwords: locally by a
+Compose init script (`db/init/roles.sh`) that reads the passwords from `.env`, hosted by the runbook in the host's
+console; migrations only `GRANT` and `ALTER DEFAULT PRIVILEGES` (DEC-112).
 
 When the host provides a single database user, both roles collapse into it and the runbook records that.
 
@@ -577,8 +604,8 @@ When the host provides a single database user, both roles collapse into it and t
 
 **Database migrations** (RF-1302): files `db/migrations/NNNN_snake_name.sql`, four digits, applied in order, each in
 a transaction, recorded in `schema_version` with its checksum. An applied file is never edited; a fix is a new
-migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`,
-`0004_server_settings_defaults`), `0100..` later releases.
+migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
+with `cost_reservations`, `0004_server_settings_defaults`), `0100..` later releases.
 
 **File schema versions**:
 
@@ -601,8 +628,9 @@ migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_project
 - Provider traffic comes from recorded responses under `tests/recordings/` through the fake provider (ADR-008);
   GitHub traffic from a fake GitHub client.
 - Fixture code from the demo app is limited to small cited excerpts (MIT, attribution kept).
-- Database integration tests start one disposable PostgreSQL container per test run, apply every migration, and give
-  each test its own schema or a transaction rolled back at the end; unit tests use the memory repositories.
+- Database integration tests use the PostgreSQL at `ROSETTA_TEST_DATABASE_URL` (the CI service container, or the
+  Compose `db` service locally), apply every migration, and give each test file its own schema; unit tests use the
+  memory repositories (DEC-112).
 - Test accounts and passwords are generated by the test helpers; none is a real credential.
 
 ## 9. Retention
@@ -613,8 +641,9 @@ migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_project
 | `.partial-*` snapshot folders | until next start-up | deleted |
 | Runs, projects, exports | until the user deletes them | delete button in the web UI with confirmation (RF-1012, DEC-55); never automatic |
 | Snapshots | until the administrator deletes them | delete button on the administration page (RF-1012) |
-| Sessions | until expiry or sign-out | expired rows deleted hourly |
-| Audit events | 180 days | deleted daily |
+| Sessions | until expiry or sign-out | expired rows deleted hourly by the in-process scheduler |
+| Cost reservations | until the call ends or the row expires | expired rows deleted hourly |
+| Audit events | the life of the deployment | never purged, like the cost ledger (DEC-110) |
 | Users | the life of the deployment | disabled, never deleted (the ledger refers to them) |
 | Cost ledger | the life of the deployment | never purged, also not when runs or projects are deleted: it is the source of every total and cap |
 

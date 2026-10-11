@@ -1,7 +1,7 @@
 # ADR-014: Ship Rosetta as one container image, run locally with Docker Compose and hosted later
 
 **Date**: 2026-10-11
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -59,3 +59,7 @@ We choose option 1.
 - DEC-59, DEC-61, DEC-67, DEC-69; Q-18; RF-1300..RF-1306.
 - Amends ADR-002 (no CLI; a server application) and ADR-012 (not loopback-only); reverses the Docker and hosting
   rows of DEC-58.
+
+## Notes
+
+- 2026-10-11 (review, DEC-107): caps are not environment variables; they live in `server_settings` and are edited on the administration page. The first hosted deployment runs the `sha-<short>` image tag until v0.1.0 is released (DEC-104).

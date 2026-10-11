@@ -1,7 +1,7 @@
 # ADR-007: Meter and cap every model call through a budget guard
 
 **Date**: 2026-10-09
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -50,3 +50,7 @@ explicitly allowed (RF-427). `estimate` gives a low, likely and high forecast pe
 - DEC-09, DEC-13.
 - RF-004, RF-006, RF-304, RF-420..RF-427; RNF-012.
 - ADR-003.
+
+## Notes
+
+- 2026-10-11 (review, DEC-59, DEC-107, DEC-112): there are no exit codes; a run stopped by a cap ends with the end state `CapReached`. Every call is recorded as a row of the `cost_ledger` table (DEC-65); caps also apply per user-day and server-month for server keys (DEC-64); the worst case is reserved in `cost_reservations` under an advisory lock and released when the ledger row is written; periods are UTC calendar days and months.

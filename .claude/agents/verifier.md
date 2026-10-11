@@ -29,11 +29,18 @@ Inputs: the task card (id, difficulty, Reads, Do, Delivers, Done when, Refs), th
    tests fail. Mutation check: in a detached worktree (`git worktree add --detach ../verify-<id> HEAD`), replace the
    body of one implementing function with a wrong but compiling result, run the card's tests, confirm at least one
    fails, then `git worktree remove --force ../verify-<id>`. Missing red evidence or a surviving mutation is MAJOR.
-6. **Done when:** run every check in the card exactly as written.
+6. **Done when:** run every check in the card exactly as written. A check only the owner can make (a sign-in on
+   the hosted URL, a public page, a run on the owner's machine) is listed as "owner check pending" under Findings
+   without a severity; it does not fail the verdict (DEC-111).
+   **Page walk** for a card that delivers or changes a page: start the test server, run
+   `node scripts/page-shots.mjs <path>` for each page of the card, look at every screenshot (viewports and light and
+   dark of `docs/orchestration/README.md` section 1) against the design board and `docs/design-system.md`, and treat
+   any console error as MAJOR.
 7. **ADRs and hard rules:** the implementation follows each ADR in Refs; scan the diff for: writes outside the output
    folder; model calls that bypass the provider port, egress guard or budget guard; claims without citations or
    deleted claims; stack-specific parsing outside a language pack; real provider calls in tests; secrets; employer
-   material. Any hit is BLOCKING.
+   material. Any hit is BLOCKING. Then run every row of the hard-rule grep table in
+   `docs/orchestration/README.md` section 5.1 over the diff; a hit outside the row's allowed place is BLOCKING.
 8. **Engineering standards** (`docs/conventions.md`): types parsed at boundaries (no `any`, `!`, unchecked `as`);
    determinism ports in domain and application; timeouts and abort signals on network calls; error codes from the
    catalogue and no swallowed errors; size limits; named exports; layer placement.

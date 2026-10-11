@@ -30,3 +30,4 @@ Rules:
 | 2026-10-11 | [Planning brief and principle catalogue](2026-10-11-planning-brief.md) | DEC-72..DEC-86 |
 | 2026-10-11 | [Roadmap and process flows](2026-10-11-roadmap-flows.md) | DEC-87..DEC-95 |
 | 2026-10-11 | [Build plan](2026-10-11-build-plan.md) | DEC-96..DEC-101 |
+| 2026-10-11 | [Build plan review fixes](2026-10-11-review-fixes.md) | DEC-102..DEC-112 |

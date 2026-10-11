@@ -76,3 +76,4 @@ We choose option 1.
   a command and bound to the loopback interface with a URL token; it is the whole application, served by Fastify
   from a container behind sign-in. Locally the port is published on `127.0.0.1` only. The live view, the event
   stream, the always-visible cost and the GitHub-only sources of this ADR stand.
+- 2026-10-11 (review): snapshots are cached in `<data>/sources/<owner>__<repo>@<sha>/` (ADR-016), not under `rosetta-out/`; extraction uses `tar` (ADR-019).

@@ -113,6 +113,7 @@ src/
     agent/              agent loop, tool definitions, orchestrator, card parsing and repair
     verifier/           citation check, judgement step
     estimate/           cost estimator
+    contracts/          event and API contract types shared with the front end in web/
   infrastructure/
     providers/          ollama/, openai/, openai-compatible/, anthropic/, fake/
     guards/             egress-guard, secret-masker, budget-guard
@@ -133,6 +134,11 @@ web/                    front-end source of the landing page, web UI and report 
 db/migrations/          numbered SQL migrations (ADR-016, data-model.md section 7)
 Dockerfile              multi-stage image (RF-1300)
 compose.yaml            local deployment: app + PostgreSQL (RF-1301)
+compose.ci.yaml         CI overlay: the image's test stage, fake provider and fake GitHub (RF-1301)
+db/init/                Compose init script that creates the database roles (data-model.md section 6)
+prices/                 the shipped price table (data-model.md section 3.18)
+templates/              default project settings and ignore rules (data-model.md section 10)
+scripts/                build and test helper scripts (test levels, page screenshots)
 .env.example            every environment variable with a safe example (RF-1305)
 prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/)
                         and catalogue/ (principles, styles and practices for plan, ADR-018)
@@ -143,8 +149,13 @@ tests/
   contracts/            contract suites per port
   recordings/           recorded provider responses (ADR-008)
   fixtures/             small legacy samples per stack
-eval/                   golden set and the evaluation runner (RNF-006)
+  support/              test helpers: database, fixed clock, sequence ids, servers
+eval/                   golden set and the evaluation runner (RNF-006); results go to the git-ignored eval-out/
 site/                   published sample report (RF-800)
+docs/runbooks/          local and hosted deployment runbooks (environments-and-delivery.md section 14)
+
+The front end in `web/` has its own `web/tsconfig.json` with the DOM library and imports from `src/` only the event
+and API contract types in `src/application/contracts/` (dependency-cruiser rule, DEC-112).
 ```
 
 ## 5. Domain model
@@ -194,6 +205,8 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `BuildPlan` | Build the hand-off package from a run, the planning brief and the catalogue (ADR-018) | RF-604..RF-613 |
 | `ExportZip` | Download zip / Download hand-off | RF-008 |
 | `TestProviders` | Test button in settings | RF-407 |
+| `StopRun` | Stop button (`POST /api/runs/:runId/stop`) | RF-1003, RF-422 |
+| `ReadRunFile` | run output pages and downloads (`GET /runs/:runId/files/*`, owner-scoped, served as text or attachment with the RF-1013 CSP) | RF-504, RF-506, RF-1105 |
 | `DeleteRun`, `DeleteProject`, `DeleteSnapshot` | Delete buttons (snapshots: administrator) | RF-1012 |
 | `SignIn`, `SignOut`, `ChangePassword` | sign-in page, menu, settings | RF-1100, RF-1101, RF-1103 |
 | `SaveProviderKey`, `DeleteProviderKey` | settings, keys | RF-1104 |
@@ -218,7 +231,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `LanguagePack` | symbols, references, routes for some extensions (ADR-004) | `CSharpPack` (tree-sitter) |
 | `ConfigSource` | load and validate the server environment (RF-1305) and project settings | `EnvConfigSource`, `DbProjectSettings` |
 | `Clock` | current time | `SystemClock`, `FixedClock` (tests) |
-| `IdGenerator` | run ids | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
+| `IdGenerator` | run ids and every UUID | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
 | `Logger` | structured application log with levels and correlation ids (RF-009) | `StdoutJsonLogger`, `JsonlFileLogger`, `FanOutLogger`, `MemoryLogger` (tests) |
 | `ProviderCallRecorder` | one record per provider call attempt (RF-408), written by an `ObservedProvider` decorator around every provider | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
 | `RunEventSink` | typed run events for the web UI and the replay log (RF-424, RF-1006) | `SseBroadcaster`, `JsonlEventLog`, `FanOutSink`, `MemorySink` |
@@ -234,11 +247,14 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
 | `AuditLog` | security audit rows (RF-1109) | `PgAuditLog`, `MemoryAuditLog` |
 | `Migrator` | apply and check migrations (RF-1302) | `PgMigrator` |
+| `Scheduler` | periodic jobs in the process: session and reservation purge hourly, log retention daily, restart recovery at start-up (one instance assumed, DEC-112) | `IntervalScheduler`, `ManualScheduler` (tests) |
 
 The egress guard and the budget guard are **decorators** of `LlmProvider`: the composition root wraps every real
-provider as `BudgetGuard(EgressGuard(provider))`, so no call can bypass them (ADR-006, ADR-007). The budget guard
-checks the run cap and, for server keys, the user-day and server-month caps in the same database transaction that
-reserves the call's worst case (RF-1106). Every port has a
+provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`, so no call can bypass them (ADR-006, ADR-007);
+the budget guard records a refused call itself through `ProviderCallRecorder` (status `refused-by-cap`). The budget
+guard checks the run cap and, for server keys, the user-day and server-month caps in the same database transaction
+that inserts the call's worst-case reservation into `cost_reservations`; after the call it writes the ledger row and
+deletes the reservation (RF-1106, data-model.md section 4). Every port has a
 contract test suite in `tests/contracts/` that its real adapters and its fakes all pass (ADR-008).
 
 ## 8. The agent loop
@@ -268,7 +284,8 @@ sequenceDiagram
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,
-  higher for cloud providers); every task shares one `AbortSignal` for Ctrl+C and caps.
+  higher for cloud providers; the `agents.parallelism` setting); every task shares one `AbortSignal` for Stop, shutdown
+  and caps.
 - **Prompt caching**: the system prompt, tool definitions and card schema form a stable prefix so providers that
   cache (Anthropic, OpenAI) charge less for repeated turns.
 - **Multi-agent pattern** (DEC-57): a **code-driven orchestrator** (no model decides the routing) fans out one
@@ -439,7 +456,6 @@ Test names start with the requirement id; failing tests are committed first (ADR
 |---|---|---|
 | Which local model runs the reader role? | Q-04 | chosen by the P1 spike card |
 | Target stack input for `plan` | Q-06 (answered: DEC-77, DEC-78) | the planning brief on the Plan setup page (ADR-018) |
-| HTTP server framework | Q-17 | Fastify (ADR-017) |
 | Hosting provider | Q-18 | chosen when the hosted deploy card starts |
 | Report rendering approach | ADR index, deferred decisions | decided in the first P3 report card |
 | Move to TypeScript 7 | ADR index, deferred decisions | when typescript-eslint supports it |
