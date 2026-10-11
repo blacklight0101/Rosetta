@@ -34,7 +34,7 @@ class ScriptReader {
       this.#close();
       return;
     }
-    if (isComment(line) && !this.#keepsInsideStatement(line)) return;
+    if (isComment(line)) return;
     const verb = leadingVerb(line);
     if (verb !== undefined && !this.#continuedBy(verb)) {
       this.#close();
@@ -47,12 +47,6 @@ class ScriptReader {
   finish(): readonly SqlStatement[] {
     this.#close();
     return this.statements;
-  }
-
-  // A `--` line inside an open statement stays: the marker lines of a private key block start with
-  // dashes, and the masker needs them to see the key (RF-141). Outside a statement it is dropped.
-  #keepsInsideStatement(line: string): boolean {
-    return this.#current !== undefined && line.startsWith('--');
   }
 
   #continuedBy(verb: SqlVerb): boolean {
