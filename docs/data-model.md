@@ -209,7 +209,8 @@ Rules for `areas[]` (RF-104, added with P1-20):
   URLs, `password=value`) or runs to the end of the text once its keyword is seen (key blocks, quoted values,
   `;Password=`), so a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
   A wider window alone would not be enough: masking shortens the text, so the cut end can reach the first 500
-  characters. A statement with no white space before the cut keeps an empty text.
+  characters. The 500-character cut after masking falls between words as well, so it never leaves half a marker or
+  a bare `scheme://user:` behind. A statement with no white space before a cut keeps an empty text.
 - File paths and area names that masking changed and that then share one masked form get `~1`, `~2`, ... in the
   code-unit order of the real names, so two files that differ only by a secret stay distinct. The suffix is an
   ordinal, not a hash, so it cannot confirm a guessed secret. If a suffixed name still equals another name, the map

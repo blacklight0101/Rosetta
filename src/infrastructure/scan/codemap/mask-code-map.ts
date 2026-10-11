@@ -3,6 +3,7 @@ import { createCodeMap } from '../../../domain/code-map/code-map.js';
 import { byCodeUnit } from '../../../domain/code-map/code-unit-order.js';
 import type { Result } from '../../../domain/errors/result.js';
 import type { TextMasker } from '../../guards/secret-masker.js';
+import { cutAtWord } from '../universal/sql-words.js';
 
 // RF-141: every string of the code map that comes from the repository (file paths, area names, the
 // subpath, SQL text, symbol and entity names, link symbols) goes through the SecretMasker before
@@ -79,11 +80,12 @@ export function maskCodeMap(map: CodeMap, masker: TextMasker): Result<CodeMap, C
       to: maskPath(link.to),
       ...(link.symbol === undefined ? {} : { symbol: mask(link.symbol) }),
     })),
-    // Masking can lengthen a text (a short secret becomes a longer marker), so the cut comes last.
+    // Masking can lengthen a text (a short secret becomes a longer marker), so the cut comes last;
+    // it falls between words too, so it never leaves half a marker or a bare `user:` behind.
     sqlStatements: map.sqlStatements.map((statement) => ({
       ...statement,
       path: maskPath(statement.path),
-      text: mask(statement.text).slice(0, maxStatementCharacters),
+      text: cutAtWord(mask(statement.text), maxStatementCharacters),
     })),
     entities: map.entities.map((entity) => ({
       ...entity,

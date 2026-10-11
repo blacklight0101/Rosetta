@@ -48,7 +48,7 @@ const createdObjects: ReadonlySet<string> = new Set([
  * whose end (for example the `@` of a connection URL) was cut away is never kept in part. A wider
  * window alone cannot give this: masking shortens the text, so the cut end can reach the output.
  */
-function cutAtWord(text: string, length: number): string {
+export function cutAtWord(text: string, length: number): string {
   if (text.length <= length || /\s/u.test(text.charAt(length))) return text.slice(0, length);
   let end = length;
   while (end > 0 && !/\s/u.test(text.charAt(end - 1))) end -= 1;
