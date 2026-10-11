@@ -1,0 +1,6 @@
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="ShopWeb.SiteMaster" %>
+<html>
+<body>
+  <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+</body>
+</html>
