@@ -122,7 +122,9 @@ describe('task card parsers', () => {
     expect(totals.get('Total')?.cards).toBe(4);
     expect([...totals.keys()]).toEqual(['P1', 'P2', 'Total']);
   });
+});
 
+describe('task card counting', () => {
   it('RNF-005 counts cards by phase, difficulty band and size', () => {
     const cards = parseCards(TASKS);
 
