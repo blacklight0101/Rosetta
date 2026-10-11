@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "description": "A 400 for a prompt longer than the context window: permanent, not retried. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 400,
+      "body": {
+        "error": {
+          "message": "This model's maximum context length is 128000 tokens.",
+          "type": "invalid_request_error",
+          "param": "messages",
+          "code": "context_length_exceeded"
+        }
+      }
+    }
+  ]
+}

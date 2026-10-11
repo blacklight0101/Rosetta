@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "description": "The permanent-failure scenario: a 401 for a rejected key, not retried. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 401,
+      "body": {
+        "error": {
+          "message": "Incorrect API key provided. You can find your API key at https://platform.openai.com/account/api-keys.",
+          "type": "invalid_request_error",
+          "param": null,
+          "code": "invalid_api_key"
+        }
+      },
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000401"
+      }
+    }
+  ]
+}

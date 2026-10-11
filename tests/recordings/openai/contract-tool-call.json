@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "description": "The tool-call scenario: one read_file call with JSON-string arguments. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000002"
+      },
+      "body": {
+        "id": "chatcmpl-FAKE0000000000000001",
+        "object": "chat.completion",
+        "created": 1791700000,
+        "model": "contract-model-2026-08-07",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": null,
+              "refusal": null,
+              "tool_calls": [
+                {
+                  "id": "call-1",
+                  "type": "function",
+                  "function": {
+                    "name": "read_file",
+                    "arguments": "{\"path\":\"src/Catalog.cs\",\"startLine\":1,\"endLine\":40}"
+                  }
+                }
+              ]
+            },
+            "logprobs": null,
+            "finish_reason": "tool_calls"
+          }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 900,
+          "completion_tokens": 30,
+          "total_tokens": 930,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        }
+      }
+    }
+  ]
+}

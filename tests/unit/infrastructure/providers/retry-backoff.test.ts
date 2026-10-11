@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   backoffDelayMs,
   retryAfterMs,
+  retryHintMs,
 } from '../../../../src/infrastructure/providers/retry-backoff.js';
 
 // RF-406: exponential back-off with jitter, honouring any retry-after hint.
@@ -45,4 +46,16 @@ describe('retry-after header', () => {
       expect(retryAfterMs(header)).toBeUndefined();
     },
   );
+});
+
+describe('retry hint headers', () => {
+  it.each([
+    [{ 'retry-after-ms': '2500', 'retry-after': '3' }, 2500],
+    [{ 'retry-after': '3' }, 3000],
+    [{ 'retry-after-ms': 'soon', 'retry-after': '3' }, 3000],
+    [{ 'retry-after-ms': '1234567890' }, undefined],
+    [{}, undefined],
+  ])('RF-406 %o gives a hint of %s ms', (headers, expected) => {
+    expect(retryHintMs(new Headers(headers))).toBe(expected);
+  });
 });

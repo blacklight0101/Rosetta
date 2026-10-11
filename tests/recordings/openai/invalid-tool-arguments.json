@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "description": "One valid tool call and one whose arguments are not JSON. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req_FAKE0000000000000000000001"
+      },
+      "body": {
+        "id": "chatcmpl-FAKE0000000000000001",
+        "object": "chat.completion",
+        "created": 1791700000,
+        "model": "contract-model-2026-08-07",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Reading the file.",
+              "refusal": null,
+              "tool_calls": [
+                {
+                  "id": "call_FAKE01",
+                  "type": "function",
+                  "function": {
+                    "name": "read_file",
+                    "arguments": "{\"path\":\"src/Catalog.cs\"}"
+                  }
+                },
+                {
+                  "id": "call_FAKE02",
+                  "type": "function",
+                  "function": {
+                    "name": "read_file",
+                    "arguments": "{not json"
+                  }
+                }
+              ]
+            },
+            "logprobs": null,
+            "finish_reason": "tool_calls"
+          }
+        ],
+        "service_tier": "default",
+        "system_fingerprint": null,
+        "usage": {
+          "prompt_tokens": 1200,
+          "completion_tokens": 80,
+          "total_tokens": 1280,
+          "prompt_tokens_details": {
+            "cached_tokens": 1024,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        }
+      }
+    }
+  ]
+}

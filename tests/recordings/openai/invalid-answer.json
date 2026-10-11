@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "description": "A 200 whose body is not a chat completion. Hand-written in the documented shape of OpenAI's Chat Completions answer (POST /v1/chat/completions, stream false); no real model was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 200,
+      "body": {
+        "unexpected": true
+      }
+    }
+  ]
+}
