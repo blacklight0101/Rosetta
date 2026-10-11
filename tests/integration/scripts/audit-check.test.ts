@@ -170,10 +170,6 @@ describe('scripts/audit-check.mjs input checks', () => {
     const reportPath = join(tmp.path, 'audit.json');
     await writeFile(reportPath, report({}));
 
-    const failure = await run('node', [script, '--report', reportPath]).catch(
-      (error: { code: number }) => error,
-    );
-
-    expect(failure).toMatchObject({ code: 2 });
+    await expect(run('node', [script, '--report', reportPath])).rejects.toMatchObject({ code: 2 });
   });
 });

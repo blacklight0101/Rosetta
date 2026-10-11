@@ -5,6 +5,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
@@ -79,7 +80,7 @@ jobs:
       # npm audit exits non-zero on findings; audit-check.mjs decides, honouring audit-exceptions.json.
       - run: |
           npm audit --audit-level=high --omit=dev --json > "$RUNNER_TEMP/audit-report.json" || true
-          node scripts/audit-check.mjs --report "$RUNNER_TEMP/audit-report.json"
+          node scripts/audit-check.mjs --report "$RUNNER_TEMP/audit-report.json" --today "$(date -u +%F)"
 
   gitleaks:
     name: gitleaks

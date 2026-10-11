@@ -1,7 +1,9 @@
-# Static analysis (environments-and-delivery.md section 6): on pull requests and weekly.
+# Static analysis (environments-and-delivery.md section 6): on pushes to main, pull requests and weekly.
 name: CodeQL
 
 on:
+  push:
+    branches: [main]
   pull_request:
   schedule:
     - cron: '17 4 * * 1'
