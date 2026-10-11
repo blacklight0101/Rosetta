@@ -1,0 +1,171 @@
+// FAKE SECRETS ONLY (RNF-003). Every value below is built at run time from harmless pieces such as
+// "FAKE0", so the repository holds no secret-like literal and none of them was ever a credential.
+// Shared by the masker tests (RF-141), the logger tests (RF-009) and the egress guard (P1-28).
+
+export type FixtureKind =
+  'api-key' | 'bearer-token' | 'connection-string' | 'password' | 'private-key';
+
+export interface SecretCase {
+  readonly name: string;
+  readonly kind: FixtureKind;
+  /** Content that holds the fake secret. */
+  readonly text: string;
+  /** Exactly what the masker must return. */
+  readonly masked: string;
+  /** The fake values that must never appear after masking. */
+  readonly secrets: readonly string[];
+}
+
+/** A fake value of the given length made of "FAKE0" repeated. */
+function fakeValue(length: number): string {
+  return 'FAKE0'.repeat(Math.ceil(length / 5)).slice(0, length);
+}
+
+const dash = '-';
+const openAiKey = ['sk', 'proj', fakeValue(40)].join(dash);
+const anthropicKey = ['sk', 'ant', 'api03', fakeValue(48)].join(dash);
+const githubToken = ['ghp', fakeValue(36)].join('_');
+const githubPat = ['github', 'pat', fakeValue(30)].join('_');
+const awsKeyId = ['AK', 'IA', fakeValue(16)].join('');
+const bearerToken = [fakeValue(24), fakeValue(30), fakeValue(20)].join('.');
+const fakePassword = `Pw${fakeValue(14)}`;
+const keyLines = [fakeValue(64), fakeValue(64), fakeValue(20)];
+const pemBegin = ['-----BEGIN', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
+const pemEnd = ['-----END', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
+const pkcs8Begin = ['-----BEGIN', 'PRIVATE', 'KEY-----'].join(' ');
+const pkcs8End = ['-----END', 'PRIVATE', 'KEY-----'].join(' ');
+
+/** One case per secret pattern of RF-141. */
+export const secretCases: readonly SecretCase[] = [
+  {
+    name: 'an OpenAI key (sk-)',
+    kind: 'api-key',
+    text: `OPENAI_API_KEY=${openAiKey}`,
+    masked: 'OPENAI_API_KEY=[MASKED:api-key]',
+    secrets: [openAiKey],
+  },
+  {
+    name: 'an Anthropic key (sk-ant-) in source code',
+    kind: 'api-key',
+    text: `const client = new Client({ apiKey: "${anthropicKey}" });`,
+    masked: 'const client = new Client({ apiKey: "[MASKED:api-key]" });',
+    secrets: [anthropicKey],
+  },
+  {
+    name: 'a GitHub token (ghp_)',
+    kind: 'api-key',
+    text: `export GH_TOKEN=${githubToken}`,
+    masked: 'export GH_TOKEN=[MASKED:api-key]',
+    secrets: [githubToken],
+  },
+  {
+    name: 'a GitHub fine-grained token (github_pat_) in a URL',
+    kind: 'api-key',
+    text: `git clone https://${githubPat}@github.com/octo/demo.git`,
+    masked: 'git clone https://[MASKED:api-key]@github.com/octo/demo.git',
+    secrets: [githubPat],
+  },
+  {
+    name: 'an AWS access key id (AKIA)',
+    kind: 'api-key',
+    text: `aws_access_key_id = ${awsKeyId}`,
+    masked: 'aws_access_key_id = [MASKED:api-key]',
+    secrets: [awsKeyId],
+  },
+  {
+    name: 'a bearer token in a header',
+    kind: 'bearer-token',
+    text: `Authorization: Bearer ${bearerToken}`,
+    masked: 'Authorization: Bearer [MASKED:bearer-token]',
+    secrets: [bearerToken],
+  },
+  {
+    name: 'a password in a connection URL',
+    kind: 'connection-string',
+    text: `DATABASE_URL=postgres://rosetta:${fakePassword}@localhost:5432/rosetta`,
+    masked: 'DATABASE_URL=postgres://rosetta:[MASKED:connection-string]@localhost:5432/rosetta',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a Password setting in an ADO.NET connection string',
+    kind: 'connection-string',
+    text: `Server=db;Database=Catalog;User Id=sa;Password=${fakePassword};`,
+    masked: 'Server=db;Database=Catalog;User Id=sa;Password=[MASKED:connection-string];',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a Pwd setting in an ODBC connection string',
+    kind: 'connection-string',
+    text: `Driver={SQL Server};Server=db;Uid=app; Pwd = ${fakePassword}`,
+    masked: 'Driver={SQL Server};Server=db;Uid=app; Pwd = [MASKED:connection-string]',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a connection string password inside a JSON string value',
+    kind: 'connection-string',
+    text: `{ "ConnectionStrings": { "Catalog": "Server=db;User Id=sa;Password=${fakePassword};" } }`,
+    masked:
+      '{ "ConnectionStrings": { "Catalog": "Server=db;User Id=sa;Password=[MASKED:connection-string];" } }',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a password= setting',
+    kind: 'password',
+    text: `smtp.password=${fakePassword}`,
+    masked: 'smtp.password=[MASKED:password]',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a pwd= setting with spaces',
+    kind: 'password',
+    text: `pwd = ${fakePassword}`,
+    masked: 'pwd = [MASKED:password]',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a password property split from its key across a JSON string',
+    kind: 'password',
+    text: `{ "DbPassword": "${fakePassword} with spaces" }`,
+    masked: '{ "DbPassword": "[MASKED:password]" }',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a password in YAML',
+    kind: 'password',
+    text: `database:\n  password: ${fakePassword}\n  user: app`,
+    masked: 'database:\n  password: [MASKED:password]\n  user: app',
+    secrets: [fakePassword],
+  },
+  {
+    name: 'a multi-line private key block',
+    kind: 'private-key',
+    text: ['line one', pemBegin, ...keyLines, pemEnd, 'line seven'].join('\n'),
+    masked: ['line one', '[MASKED:private-key]', '', '', '', '', 'line seven'].join('\n'),
+    secrets: keyLines,
+  },
+  {
+    name: 'a private key split across a JSON string with escaped line breaks',
+    kind: 'private-key',
+    text: `{ "type": "service_account", "private_key": "${[pkcs8Begin, ...keyLines, pkcs8End].join('\\n')}\\n" }`,
+    masked: '{ "type": "service_account", "private_key": "[MASKED:private-key]\\n" }',
+    secrets: keyLines,
+  },
+  {
+    name: 'a private key block cut off before its end line',
+    kind: 'private-key',
+    text: ['config', pemBegin, ...keyLines].join('\r\n'),
+    masked: ['config', '[MASKED:private-key]', '', '', ''].join('\r\n'),
+    secrets: keyLines,
+  },
+];
+
+/** Text that looks close to a secret but is not one; the masker leaves it unchanged. */
+export const innocentTexts: readonly string[] = [
+  'const passwordHash = hash(input);',
+  'if (password == expected) { return true; }',
+  'pip install sk-learn',
+  'task-1234567890123456789012345 finished',
+  'The bearer of this note may pass.',
+  'See https://example.com/docs:8080/path for details.',
+  'AKIA is not a key on its own',
+];
