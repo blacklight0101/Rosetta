@@ -3,6 +3,8 @@ import type { DefaultRoles } from '../../src/application/projects/default-roles.
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import { ChangePassword } from '../../src/application/use-cases/change-password.js';
 import { CreateUser } from '../../src/application/use-cases/create-user.js';
+import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
+import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { ListAudit } from '../../src/application/use-cases/list-audit.js';
 import { ListUsers } from '../../src/application/use-cases/list-users.js';
 import { RecordRefusedRequest } from '../../src/application/use-cases/record-refused-request.js';
@@ -40,6 +42,7 @@ import { SaveProviderKey } from '../../src/application/use-cases/save-provider-k
 import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
+import { MemoryArchiveWriter } from './memory-archive-writer.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FakeHostResolver } from './fake-host-resolver.js';
 import type { FakeAdapters, SpyLedger } from './provider-fakes.js';
@@ -74,6 +77,8 @@ export interface TestServer {
   readonly usage: MemoryAccountUsage;
   /** RF-1006, RF-1108: the run queue, its stores and the executor the test controls. */
   readonly runs: RunHarness;
+  /** RF-008: the run folders the default export reads; give a run its folder with `seed`. */
+  readonly archives: MemoryArchiveWriter;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
@@ -97,6 +102,8 @@ export interface TestServerOptions extends Partial<
   readonly defaultRoles?: DefaultRoles;
   /** Where the run events are stored, given the server's logger; memory by default. */
   readonly eventStore?: (logger: MemoryLogger) => EventStore;
+  /** RF-008: where the zip export reads run folders from; the memory folders of `archives` by default. */
+  readonly archiveWriter?: ArchiveWriter;
   /** The password hasher of sign-in; the fast fake by default. */
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
@@ -211,11 +218,13 @@ function runServices(
     readonly keys: MemoryProviderKeyRepository;
   },
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
+  archives: ArchiveWriter,
 ): ServerOptions['runs'] {
   const { projects, keys } = stores;
   return {
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
+    exportZip: new ExportZip({ runs: runs.runs, archives }),
     startRun: new StartRun({ projects, submit: runs.submit }),
     // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
     estimateRun: new EstimateRun({
@@ -251,6 +260,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     hasher = new FakePasswordHasher(),
     dummyHash = 'fake$dummy',
     eventStore,
+    archiveWriter,
     providerRecordings,
     defaultRoles,
     ...overrides
@@ -261,12 +271,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const health = new FakeDatabaseHealth(true);
   const users = new MemoryUserRepository();
   const sessions = new MemorySessionStore();
-  const audit = new MemoryAuditLog(masker);
-  const auditLog = audit;
+  const auditLog = new MemoryAuditLog(masker);
   const usage = new MemoryAccountUsage();
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
+  const archives = new MemoryArchiveWriter();
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const keys = {
     keys: new MemoryProviderKeyRepository(),
@@ -287,11 +297,11 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ serverSettings, testProviders },
     }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: runServices(runs, { projects, keys: keys.keys }, route),
+    runs: runServices(runs, { projects, keys: keys.keys }, route, archiveWriter ?? archives),
     ...overrides,
   });
   return {
-    ...{ server, logger, health, clock, users, sessions, audit, hasher, usage, projects },
-    ...{ serverSettings, runs, ...route, ...keys, providers, providerLedger },
+    ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
+    ...{ serverSettings, runs, archives, ...route, ...keys, providers, providerLedger },
   };
 }

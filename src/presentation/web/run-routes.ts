@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { EstimateRun } from '../../application/estimate/estimate-run.js';
 import type { Scheduler } from '../../application/ports/scheduler.js';
+import type { ExportZip } from '../../application/use-cases/export-zip.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
 import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-run-events.js';
@@ -33,6 +34,7 @@ export interface RunServices {
   readonly estimateRun: EstimateRun;
   readonly subscribeRunEvents: SubscribeRunEvents;
   readonly stopRun: StopRun;
+  readonly exportZip: ExportZip;
   /** Drives the keep-alive comment of every open stream. */
   readonly heartbeat: Scheduler;
   /** The open event streams; a closing server ends them. */

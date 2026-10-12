@@ -121,6 +121,16 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'GET', url: runUrl('/events', (c) => c.endedRunId), expected: ownerOnly(200) },
     { method: 'GET', url: () => '/api/runs/not-a-uuid/events', expected: active(401, 404) },
   ],
+  'GET /api/runs/:runId/zip': [
+    { method: 'GET', url: runUrl('/zip', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'GET', url: runUrl('/zip', (c) => c.runningRunId), expected: ownerOnly(409) },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid/zip', expected: active(401, 404) },
+  ],
+  'GET /api/runs/:runId/handoff.zip': [
+    { method: 'GET', url: runUrl('/handoff.zip', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'GET', url: runUrl('/handoff.zip', (c) => c.runningRunId), expected: ownerOnly(409) },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid/handoff.zip', expected: active(401, 404) },
+  ],
   'POST /api/runs/:runId/stop': [
     { method: 'POST', url: runUrl('/stop', (c) => c.runningRunId), expected: ownerOnly(202) },
     { method: 'POST', url: () => '/api/runs/not-a-uuid/stop', expected: active(401, 404) },
@@ -252,6 +262,10 @@ async function browserFor(
   const ended = await test.runs.start(owner);
   test.runs.executor.settle(ended.id, { endState: 'Completed' });
   await test.runs.ended(ended);
+  test.archives.seed(test.runs.scopeOf(ended), {
+    'manifest.json': '{}',
+    'handoff/README.md': '# Hand-off',
+  });
   const running = await test.runs.start(owner);
   const context = {
     projectId: project.id,

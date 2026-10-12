@@ -242,6 +242,10 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Choose another provider for the role, or ask the operator to set it up (Ollama needs ROSETTA_OLLAMA_URL).',
   },
+  'RST-1700': {
+    message: 'This run is still in progress, so it cannot be downloaded yet.',
+    nextStep: 'Wait until the run has ended, then download it again.',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

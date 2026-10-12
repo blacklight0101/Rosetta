@@ -4,6 +4,7 @@ import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
+import { ExportZip } from '../application/use-cases/export-zip.js';
 import { RunScan } from '../application/use-cases/run-scan.js';
 import { StartRun } from '../application/use-cases/start-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
@@ -19,6 +20,7 @@ import { JsonlEventLog } from '../infrastructure/events/jsonl-event-log.js';
 import { SseBroadcaster } from '../infrastructure/events/sse-broadcaster.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
 import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
+import { YazlArchiveWriter } from '../infrastructure/files/yazl-archive-writer.js';
 import type { FetchFunction } from '../infrastructure/github/github-http-client.js';
 import { GitHubSnapshotFetcher } from '../infrastructure/github/github-snapshot-fetcher.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
@@ -137,6 +139,7 @@ function runServices(service: ServiceParts): RunServices {
     }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
+    exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     heartbeat: keepAliveScheduler(parts.logger),
     streams: new StreamRegistry(),
   };
