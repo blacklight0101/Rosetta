@@ -26,6 +26,7 @@
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && npm run test:ci",
     "live:openai": "npm run build && node scripts/openai-live-check.mjs",
     "live:ollama": "npm run build && node scripts/ollama-live-check.mjs",
+    "live:anthropic": "npm run build && node --env-file=.env scripts/anthropic-live-check.mjs",
     "hooks:install": "lefthook install"
   },
   "devDependencies": {
@@ -55,6 +56,7 @@
     "vitest": "^5.0.3"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.128.0",
     "@fastify/cookie": "11.1.2",
     "@fastify/csrf-protection": "8.0.1",
     "@fastify/helmet": "^13.1.2",

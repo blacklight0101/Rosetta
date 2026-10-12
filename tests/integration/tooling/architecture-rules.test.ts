@@ -122,6 +122,28 @@ describe('dependency-cruiser layer rule: provider SDKs', () => {
   });
 });
 
+describe('dependency-cruiser layer rule: the Anthropic SDK', () => {
+  const root = useTempRoot('rosetta-arch-');
+
+  it.each([
+    ['src/infrastructure/guards/egress.ts', '@anthropic-ai/sdk'],
+    ['src/infrastructure/providers/openai/client.ts', '@anthropic-ai/sdk'],
+    ['src/infrastructure/providers/shared.ts', '@anthropic-ai/sdk/resources/messages'],
+  ])('RF-404 %s importing %s is reported outside the anthropic adapter', async (file, module) => {
+    const report = await cruise(root.path, { [file]: importing(module) });
+
+    expect(report).toContain('anthropic-sdk-only-in-anthropic-adapter');
+  });
+
+  it('RF-404 the adapter under infrastructure/providers/anthropic may import @anthropic-ai/sdk', async () => {
+    const report = await cruise(root.path, {
+      'src/infrastructure/providers/anthropic/client.ts': importing('@anthropic-ai/sdk'),
+    });
+
+    expect(report).not.toContain('anthropic-sdk-only-in-anthropic-adapter');
+  });
+});
+
 describe('dependency-cruiser layer rule: tree-sitter', () => {
   const root = useTempRoot('rosetta-arch-');
 
@@ -149,6 +171,8 @@ describe('dependency-cruiser layer rule: provider adapters', () => {
   const adapters = {
     'src/infrastructure/providers/ollama/ollama-provider.ts': 'export class OllamaProvider {}\n',
     'src/infrastructure/providers/openai/openai-provider.ts': 'export class OpenAiProvider {}\n',
+    'src/infrastructure/providers/anthropic/anthropic-provider.ts':
+      'export class AnthropicProvider {}\n',
     'src/infrastructure/providers/fake/fake-provider.ts': 'export class FakeProvider {}\n',
   };
 
@@ -160,17 +184,21 @@ describe('dependency-cruiser layer rule: provider adapters', () => {
     ['src/infrastructure/guards/other.ts', '../providers/openai/openai-provider.js'],
     ['src/application/use.ts', '../infrastructure/providers/fake/fake-provider.js'],
     ['src/infrastructure/providers/provider-factory.ts', './openai/openai-provider.js'],
+    [
+      'src/presentation/compose-providers.ts',
+      '../infrastructure/providers/anthropic/anthropic-provider.js',
+    ],
   ])('ADR-003 %s importing %s is reported', async (file, module) => {
     const report = await cruise(root.path, { ...adapters, [file]: importing(module) });
 
     expect(report).toContain('adapters-only-via-adapter-builder');
   });
 
-  it('ADR-003 only the adapter builder may import the Ollama and OpenAI adapters', async () => {
+  it('ADR-003 only the adapter builder may import the Ollama, OpenAI and Anthropic adapters', async () => {
     const report = await cruise(root.path, {
       ...adapters,
       'src/infrastructure/providers/adapter-builder.ts':
-        "import { OllamaProvider } from './ollama/ollama-provider.js';\nimport { OpenAiProvider } from './openai/openai-provider.js';\nexport const built = [OllamaProvider, OpenAiProvider];\n",
+        "import { OllamaProvider } from './ollama/ollama-provider.js';\nimport { OpenAiProvider } from './openai/openai-provider.js';\nimport { AnthropicProvider } from './anthropic/anthropic-provider.js';\nexport const built = [OllamaProvider, OpenAiProvider, AnthropicProvider];\n",
     });
 
     expect(report).not.toContain('adapters-only-via-adapter-builder');
