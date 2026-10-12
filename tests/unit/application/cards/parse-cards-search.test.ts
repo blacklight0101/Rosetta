@@ -21,6 +21,21 @@ describe('parseCardOutput says why it found no cards', () => {
     expect(problemsOf('Nothing to report.')[0]?.message).toMatch(/No JSON found/);
   });
 
+  it.each(['use {x} here', 'set [a] and {b, c} first', 'a {broken thought'])(
+    'RF-202 prose with only braces (%s) is reported as holding no JSON, not as cut off',
+    (raw) => {
+      const messages = problemsOf(raw).map((problem) => problem.message);
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toMatch(/No JSON found/);
+    },
+  );
+
+  it('RF-202 a JSON object cut off right after its opening brace is reported as cut off', () => {
+    expect(problemsOf('Here: {"cards": [{"type"')[0]?.message).toMatch(/cut off/);
+    expect(problemsOf('```json\n{\n```')[0]?.message).toMatch(/cut off/);
+  });
+
   it('RF-202 hitting the candidate cap is reported as such, not as missing JSON', () => {
     const tail = Array.from({ length: cardLimits.maxJsonCandidates + 1 }, () => junkFence);
     const raw = `\`\`\`json\n${cardsJson()}\n\`\`\`\n${tail.join('')}`;

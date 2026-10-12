@@ -3,6 +3,7 @@ import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { writeCardOutputs } from '../../../../src/infrastructure/cards/write-card-outputs.js';
 import { cardSource, draftOf } from '../../../support/card-fixtures.js';
 import {
+  cardLogger,
   cardsOf,
   cardTarget,
   fileOf,
@@ -64,6 +65,7 @@ describe('writeCardOutputs masks secrets', () => {
       cards: cardsOf(),
       source: cardSource,
       masker,
+      logger: cardLogger(),
     });
 
     await expect(attempt).rejects.toBeInstanceOf(RosettaError);

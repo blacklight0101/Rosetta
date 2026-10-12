@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { writeInvalidOutput } from '../../../../src/infrastructure/cards/write-card-outputs.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { cardLogger } from '../../../support/card-output-harness.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 import { openWriter } from '../../../support/open-writer.js';
@@ -18,7 +19,7 @@ describe('writeInvalidOutput on the real output writer', () => {
     const result = await writeInvalidOutput(
       outputs,
       { userId, folder },
-      { agentTaskId: 'task-orders', rawOutputs, masker: new SecretMasker() },
+      { agentTaskId: 'task-orders', rawOutputs, masker: new SecretMasker(), logger: cardLogger() },
     );
 
     expect(result.ok).toBe(true);
@@ -33,7 +34,7 @@ describe('writeInvalidOutput on the real output writer', () => {
     const result = await writeInvalidOutput(
       openWriter(data.path),
       { userId, folder },
-      { agentTaskId: '../../escape', rawOutputs: ['x'], masker: new SecretMasker() },
+      { agentTaskId: '../../escape', rawOutputs: ['x'], masker: new SecretMasker(), logger: cardLogger() },
     );
 
     expect(result.ok).toBe(false);

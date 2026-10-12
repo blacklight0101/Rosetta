@@ -18,6 +18,7 @@ const hostile = [
   ['backtick and tilde fences', '```\n# breakout\n```\n~~~\nx'],
   ['an e-mail address', 'mail me@evil.example'],
   ['a heading and a rule', '# Heading\n---\n* item\n1. item'],
+  ['setext underlines', 'Title\n===\nOther\n  ---\nThird\n=  '],
 ] as const;
 
 const generatedLinks = /\]\((?:https:\/\/github\.com\/octo\/demo\/blob\/[^)]*|cards\/[^)]*)\)/g;
@@ -33,6 +34,7 @@ const rules: readonly (readonly [string, RegExp])[] = [
   ['e-mail autolink', /@/],
   ['live heading or list', /(^|[^\\])(# Heading|\* item)/],
   ['line start syntax', /^(?:\d+\. |---|\[)/m],
+  ['setext underline', /^ {0,3}(?:=+|-+)[ \t]*$/m],
 ];
 
 /** The rules a text breaks once the links Rosetta builds are taken out; empty when inert. */

@@ -4,7 +4,9 @@ import type { WriteRefusal } from '../../src/application/ports/output-writer.js'
 import type { Result } from '../../src/domain/errors/result.js';
 import { SecretMasker, type TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { writeCardOutputs } from '../../src/infrastructure/cards/write-card-outputs.js';
-import { cardSource, twoAreas } from './card-fixtures.js';
+import { cardSource, draftOf, oqDraft, twoAreas } from './card-fixtures.js';
+import { FixedClock } from './fixed-clock.js';
+import { MemoryLogger } from './memory-logger.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
 
 export const cardTarget = { userId: 'u1', folder: 'projects/p/runs/20261012-100000-understand' };
@@ -23,6 +25,17 @@ export function cardsOf(tasks: readonly TaskCards[] = twoAreas()): readonly Card
   return cards.value;
 }
 
+/** A logger that keeps its entries, for the card writers. */
+export function cardLogger(): MemoryLogger {
+  return new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker());
+}
+
+/** Two cards of one area (four files: two cards, the index and spec.md), or three with `extra`. */
+export function smallRun(extra = false): readonly Card[] {
+  const more = extra ? [draftOf({ title: 'Order cancellation' })] : [];
+  return cardsOf([{ agentTaskId: 'task-orders', area: 'orders', drafts: [draftOf(), ...more, oqDraft()] }]);
+}
+
 /** The first card with its first claim rejected, followed by the others. */
 export function withRejectedFirstClaim(cards: readonly Card[]): readonly Card[] {
   const [first, ...rest] = cards;
@@ -37,7 +50,12 @@ export async function writeCards(
   masker: TextMasker = new SecretMasker(),
 ): Promise<{ writer: MemoryOutputWriter; result: Result<void, WriteRefusal> }> {
   const writer = new MemoryOutputWriter();
-  const result = await writeCardOutputs(writer, cardTarget, { cards, source: cardSource, masker });
+  const result = await writeCardOutputs(writer, cardTarget, {
+    cards,
+    source: cardSource,
+    masker,
+    logger: cardLogger(),
+  });
   return { writer, result };
 }
 
