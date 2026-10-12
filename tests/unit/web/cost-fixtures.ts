@@ -41,13 +41,6 @@ export const projectCost: ProjectCost = {
       local: false,
       totals: usageTotals({ calls: 2 }),
     },
-    {
-      key: 'provider-tests',
-      runId: null,
-      firstAt: '2026-10-12T11:00:00.000Z',
-      local: false,
-      totals: local,
-    },
   ],
   byStage: [{ key: 'understand', local: false, totals: usageTotals() }],
   byRole: [{ key: 'reader', local: false, totals: usageTotals() }],
@@ -64,4 +57,9 @@ export const projectCost: ProjectCost = {
       totals: local,
     },
   ],
+  providerTests: {
+    key: 'provider-tests',
+    local: false,
+    totals: usageTotals({ calls: 2, cost: [{ currency: 'USD', costMicros: '7' }] }),
+  },
 };

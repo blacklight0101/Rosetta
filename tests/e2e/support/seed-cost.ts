@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { actorOf } from '../../../src/domain/accounts/actor.js';
 import { CreateUser } from '../../../src/application/use-cases/create-user.js';
 import { PgAuditLog } from '../../../src/infrastructure/db/pg-audit-log.js';
@@ -33,6 +32,10 @@ export function costAccountFor(kind: CostKind, project: string): Credentials {
 /** The server-key spend the seed puts in the ledger: $8.50. */
 const seededServerMicros = 8_500_000n;
 
+/** The project and run of the seeded call: fixed ids that name no real project or run. */
+const seededProjectId = '00000000-0000-4000-8000-0000000e2e01';
+const seededRunId = '00000000-0000-4000-8000-0000000e2e02';
+
 async function createUserCase(pool: DatabasePool, clock: SystemClock): Promise<CreateUser> {
   return new CreateUser({
     users: new PgUserRepository(pool),
@@ -47,7 +50,7 @@ async function createUserCase(pool: DatabasePool, clock: SystemClock): Promise<C
 
 async function seedServerSpend(pool: DatabasePool, userId: string, at: Date): Promise<void> {
   await new PgCostLedger(pool).settle({
-    ...{ at, userId, projectId: randomUUID(), runId: randomUUID(), agentTaskId: 'reader-seed' },
+    ...{ at, userId, projectId: seededProjectId, runId: seededRunId, agentTaskId: 'reader-seed' },
     ...{ stage: 'understand', role: 'reader', provider: 'openai', model: 'gpt-5-nano' },
     ...{ callId: 'e2e-seed#1', attempt: 1, keySource: 'server', inputTokens: 1000 },
     ...{ outputTokens: 100, cachedInputTokens: 0, usageSource: 'reported' },

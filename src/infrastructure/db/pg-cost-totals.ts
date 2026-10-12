@@ -76,6 +76,11 @@ export class PgCostTotals implements CostTotals {
     return this.groups(PROJECT_GROUPS, [userId, projectId]);
   }
 
+  // RF-428
+  providerTestGroups(_userId: string): Promise<readonly LedgerGroup[]> {
+    return Promise.resolve([]);
+  }
+
   private async groups(sql: string, params: unknown[]): Promise<readonly LedgerGroup[]> {
     let rows: unknown[];
     try {

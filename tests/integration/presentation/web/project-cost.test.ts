@@ -105,6 +105,26 @@ describe('GET /api/projects/:id/cost', () => {
   });
 });
 
+describe('GET /api/projects/:id/cost provider tests', () => {
+  it('RF-428 lists the user provider tests (no project, no run) as tests, outside the project totals', async () => {
+    const { amy, projectId } = await fixtureLedger();
+
+    const response = await amy.browser.request({
+      method: 'GET',
+      url: `/api/projects/${projectId}/cost`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json<Record<string, unknown>>();
+    expect(body['providerTests']).toEqual({
+      key: 'provider-tests',
+      local: false,
+      totals: { ...paidTotals, cost: [{ currency: 'USD', costMicros: '3' }] },
+    });
+    expect(body['totals']).toMatchObject({ calls: 2 });
+  });
+});
+
 describe('GET /api/projects/:id/cost lines and scope', () => {
   it('RF-428 shows a local model with its tokens and a cost of zero, and the price table it used', async () => {
     const { amy, projectId } = await fixtureLedger();

@@ -94,9 +94,11 @@ export function registerCostRoutes(server: FastifyInstance, services: CostServic
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
       const { project, breakdown } = outcome.value;
-      return reply
-        .status(200)
-        .send({ project: { id: project.id, name: project.name }, ...breakdownView(breakdown) });
+      return reply.status(200).send({
+        project: { id: project.id, name: project.name },
+        ...breakdownView(breakdown),
+        providerTests: null,
+      });
     },
   );
 }

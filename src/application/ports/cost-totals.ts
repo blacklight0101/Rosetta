@@ -34,4 +34,6 @@ export interface CostTotals {
   userGroups(userId: string): Promise<readonly LedgerGroup[]>;
   /** The user's ledger rows of one project, grouped. */
   projectGroups(userId: string, projectId: string): Promise<readonly LedgerGroup[]>;
+  /** The user's provider tests (RF-407): the rows of no project, grouped. */
+  providerTestGroups(userId: string): Promise<readonly LedgerGroup[]>;
 }

@@ -1,7 +1,7 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { breakdownOf, type CostBreakdown } from '../budget/cost-breakdown.js';
+import { breakdownOf, type BreakdownLine, type CostBreakdown } from '../budget/cost-breakdown.js';
 import type { CostTotals } from '../ports/cost-totals.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { Project } from '../projects/project.js';
@@ -13,6 +13,11 @@ import type { Project } from '../projects/project.js';
 export interface ProjectCost {
   readonly project: Project;
   readonly breakdown: CostBreakdown;
+  /**
+   * The user's provider tests (RF-407): they belong to no project and no run, so they are listed
+   * beside the breakdown and left out of the project totals; null when there are none.
+   */
+  readonly providerTests: BreakdownLine | null;
 }
 
 export interface GetProjectCostDependencies {
@@ -36,6 +41,6 @@ export class GetProjectCost {
     const project = await this.deps.projects.find(userId, request.projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
     const groups = await this.deps.costs.projectGroups(userId, project.id);
-    return ok({ project, breakdown: breakdownOf(groups) });
+    return ok({ project, breakdown: breakdownOf(groups), providerTests: null });
   }
 }

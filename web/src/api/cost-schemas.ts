@@ -38,6 +38,8 @@ export const projectCostSchema = z.object({
   byRole: z.array(lineSchema),
   byProvider: z.array(lineSchema),
   byModel: z.array(lineSchema.extend({ provider: z.string(), model: z.string() })),
+  /** The user's provider tests, of no project and no run, outside the project totals (RF-407). */
+  providerTests: lineSchema.nullable(),
 });
 
 export type ProjectCost = z.output<typeof projectCostSchema>;

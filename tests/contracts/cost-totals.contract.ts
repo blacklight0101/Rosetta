@@ -115,4 +115,20 @@ function scopeCases(name: string, fresh: Fresh): void {
     ]);
     expect(await fixture.totals.projectGroups(amy, costProjectId)).toEqual([]);
   });
+
+  it(`RF-428 ${name} reads the user's provider tests, of no project, for the cost page`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    const bob = await fixture.addUser();
+    await fixture.add(providerTestEntry(amy, { costMicros: 3n }));
+    await fixture.add(providerTestEntry(amy, { costMicros: 4n }));
+    await fixture.add(providerTestEntry(bob, { costMicros: 9n }));
+    await fixture.add(costEntry(amy));
+
+    const tests = await fixture.totals.providerTestGroups(amy);
+
+    expect(tests).toEqual([
+      expect.objectContaining({ runId: null, stage: 'provider-test', calls: 2, costMicros: 7n }),
+    ]);
+  });
 }

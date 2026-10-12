@@ -41,12 +41,24 @@ describe('project cost page', () => {
     expect(within(await table('By role')).getByText('reader')).not.toBeNull();
   });
 
-  it('RF-428 lists the provider tests as tests, joined to no run', async () => {
+  it('RF-428 lists the provider tests as tests, joined to no run and outside the project totals', async () => {
     renderCost();
 
-    const row = within(await table('By run')).getByRole('row', { name: /Provider tests/u });
+    const tests = await table('Provider tests');
 
+    const row = within(tests).getByRole('row', { name: /Provider tests/u });
     expect(within(row).queryByRole('link')).toBeNull();
+    expect(row.textContent).toContain('$0.000007');
+    expect(screen.getByText(/not part of this project's totals/u)).not.toBeNull();
+    expect(within(await table('By run')).queryByText('Provider tests')).toBeNull();
+  });
+
+  it('RF-428 shows no provider tests table when the user has none', async () => {
+    renderCost(json(200, { ...projectCost, providerTests: null }));
+
+    await table('By run');
+
+    expect(screen.queryByRole('table', { name: 'Provider tests' })).toBeNull();
   });
 });
 

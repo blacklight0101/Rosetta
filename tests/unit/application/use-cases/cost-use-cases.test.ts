@@ -54,6 +54,17 @@ describe('GetProjectCost', () => {
     expect(outcome.value.breakdown.byProvider.map((line) => line.key)).toEqual(['openai']);
   });
 
+  it('RF-428 lists the user provider tests beside the breakdown, outside the project totals', async () => {
+    const { project, getProjectCost } = await fixture();
+
+    const outcome = await getProjectCost.execute({ actor: amy, projectId: project.id });
+
+    if (!outcome.ok) throw new Error('The cost page was refused.');
+    expect(outcome.value.providerTests).toMatchObject({ key: 'provider-tests', local: false });
+    expect(outcome.value.providerTests?.totals.cost).toEqual([{ currency: 'USD', costMicros: 3n }]);
+    expect(outcome.value.breakdown.byRun.map((line) => line.runId)).not.toContain(null);
+  });
+
   it('RF-1105 answers another user the same not-found as an unknown project', async () => {
     const { project, getProjectCost } = await fixture();
 
