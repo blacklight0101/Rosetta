@@ -36,6 +36,8 @@ export class StartRun {
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (!STARTABLE_STAGES.includes(stage)) return err(ERROR_CODES.runStageNotAvailable);
-    return this.deps.submit.execute({ actor, project, stage, options: {} });
+    // The scan settings of this moment are the run's: an edit while it waits does not change it.
+    const options = stage === 'scan' ? { scanSettings: project.settings.scan } : {};
+    return this.deps.submit.execute({ actor, project, stage, options });
   }
 }

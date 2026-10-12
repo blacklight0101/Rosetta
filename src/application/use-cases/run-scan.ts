@@ -1,12 +1,20 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import type { Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
-import { recordManifestScan } from '../../domain/runs/run-manifest.js';
+import {
+  recordManifestCodeMap,
+  recordManifestSkippedLinks,
+  type ManifestProblem,
+  type RunManifest,
+} from '../../domain/runs/run-manifest.js';
 import type { Clock } from '../ports/clock.js';
+import type { Project } from '../projects/project.js';
+import { scanSettingsSchema } from '../projects/project-settings.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
-import type { ScanPipeline } from '../ports/scan-pipeline.js';
+import type { ScanPipeline, ScanReport, ScanRequest } from '../ports/scan-pipeline.js';
 import type { Snapshot, SourceFetcher } from '../ports/source-fetcher.js';
 import { scopeOf } from '../runs/run-scope.js';
 
@@ -30,6 +38,17 @@ const INTERRUPTED: RunOutcome = { endState: 'Interrupted' };
 /** A function, because the signal can be aborted while a step awaits and the compiler cannot know. */
 function isStopped(signal: AbortSignal): boolean {
   return signal.aborted;
+}
+
+/**
+ * The scan settings of the run: the ones recorded when it was accepted (a later edit of the project
+ * does not change a queued run), else the project's current ones. `allowDenied` always comes from
+ * the manifest, so what the scan lifted is what the manifest says (RF-147).
+ */
+function settingsOf(manifest: RunManifest, project: Project): ScanRequest['settings'] {
+  const recorded = scanSettingsSchema.safeParse(manifest.options['scanSettings']);
+  const settings = recorded.success ? recorded.data : project.settings.scan;
+  return { ...settings, allowDenied: [...manifest.security.allowDenied] };
 }
 
 export class RunScan implements RunExecutor {
@@ -67,17 +86,31 @@ export class RunScan implements RunExecutor {
         commitSha: snapshot.commitSha,
         subpath,
       },
-      settings: project.settings.scan,
+      settings: settingsOf(execution.manifest, project),
       signal,
     });
-    if (isStopped(signal)) return INTERRUPTED;
-    await this.recordScan(run, report.codeMapHash, snapshot.skippedLinks);
-    await execution.events.emit('scan.completed', {
-      files: report.files,
-      areas: report.areas,
-      mapLevels: report.mapLevels,
-    });
-    return { endState: 'Completed' };
+    return this.complete(execution, report);
+  }
+
+  /** Records the result; a run that stops or fails from here on leaves no output files (RNF-002). */
+  private async complete(execution: RunExecution, report: ScanReport): Promise<RunOutcome> {
+    const { run, signal } = execution;
+    try {
+      if (!isStopped(signal)) {
+        await this.update(run, (stored) => recordManifestCodeMap(stored, report.codeMapHash));
+        await execution.events.emit('scan.completed', {
+          files: report.files,
+          areas: report.areas,
+          mapLevels: report.mapLevels,
+        });
+        return { endState: 'Completed' };
+      }
+    } catch (error) {
+      await this.deps.pipeline.discard(scopeOf(run));
+      throw error;
+    }
+    await this.deps.pipeline.discard(scopeOf(run));
+    return INTERRUPTED;
   }
 
   /** Fetches the snapshot, records the source (RF-126) and publishes the two source events. */
@@ -98,6 +131,9 @@ export class RunScan implements RunExecutor {
       snapshotKey: snapshot.key,
       snapshotHash: snapshot.snapshotHash,
     });
+    await this.update(execution.run, (stored) =>
+      recordManifestSkippedLinks(stored, snapshot.skippedLinks),
+    );
     await execution.events.emit('source.resolved', {
       url: snapshot.url,
       ref: snapshot.resolvedFrom,
@@ -112,12 +148,15 @@ export class RunScan implements RunExecutor {
     return snapshot;
   }
 
-  private async recordScan(run: Run, codemapHash: string, skippedLinks: number): Promise<void> {
+  private async update(
+    run: Run,
+    change: (stored: RunManifest) => Result<RunManifest, ManifestProblem>,
+  ): Promise<void> {
     const { manifests } = this.deps;
     const scope = scopeOf(run);
     const stored = await manifests.read(scope);
     if (stored === undefined) return;
-    const recorded = recordManifestScan(stored, { codemapHash, skippedLinks });
+    const recorded = change(stored);
     if (recorded.ok) await manifests.write(scope, recorded.value);
   }
 }

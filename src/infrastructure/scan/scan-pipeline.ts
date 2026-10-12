@@ -1,3 +1,5 @@
+import { stat } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { Logger } from '../../application/ports/logger.js';
 import type { OutputWriter } from '../../application/ports/output-writer.js';
 import type {
@@ -5,6 +7,7 @@ import type {
   ScanReport,
   ScanRequest,
 } from '../../application/ports/scan-pipeline.js';
+import type { RunScope } from '../../application/ports/run-events.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -34,6 +37,20 @@ function mapLevels(map: CodeMap): ScanReport['mapLevels'] {
   return { coarse: map.files.length - symbols, symbols };
 }
 
+const OUTPUT_FILES = ['codemap.json', 'scan-summary.md'] as const;
+
+/** RF-124: a subpath that is not a folder of the snapshot is an error, not an empty code map. */
+async function requireSubpath(root: string, subpath: string): Promise<void> {
+  if (subpath === '') return;
+  const found = await stat(join(root, ...subpath.split('/'))).catch(() => undefined);
+  if (found?.isDirectory() !== true) {
+    throw new RosettaError(
+      ERROR_CODES.fileNotFound,
+      `The subpath ${subpath} is not in the snapshot.`,
+    );
+  }
+}
+
 export class SnapshotScanPipeline implements ScanPipeline {
   private readonly options: SnapshotScanPipelineOptions;
 
@@ -46,19 +63,39 @@ export class SnapshotScanPipeline implements ScanPipeline {
     const began = Date.now();
     const codeMap = await this.map(request);
     request.signal.throwIfAborted();
-    const { scope } = request;
-    const written = await writeScanOutputs(
-      this.options.writer,
-      { userId: scope.userId, folder: runPath(scope.projectId, scope.runKey) },
-      { codeMap, durationMs: Date.now() - began, masker: this.options.masker },
-    );
-    if (!written.ok) throw new RosettaError(written.error.code, written.error.message);
+    const codeMapHash = await this.write(request, codeMap, Date.now() - began);
     return {
-      codeMapHash: written.value.codeMapHash,
+      codeMapHash,
       files: codeMap.files.length,
       areas: codeMap.areas.length,
       mapLevels: mapLevels(codeMap),
     };
+  }
+
+  // RNF-002
+  async discard(scope: RunScope): Promise<void> {
+    const folder = runPath(scope.projectId, scope.runKey);
+    for (const name of OUTPUT_FILES) {
+      await this.options.writer.remove({ userId: scope.userId, path: `${folder}/${name}` });
+    }
+  }
+
+  /** Writes both files; a refusal, a failure or a stop in between leaves neither of them. */
+  private async write(request: ScanRequest, codeMap: CodeMap, durationMs: number): Promise<string> {
+    const { scope, signal } = request;
+    try {
+      const written = await writeScanOutputs(
+        this.options.writer,
+        { userId: scope.userId, folder: runPath(scope.projectId, scope.runKey) },
+        { codeMap, durationMs, masker: this.options.masker },
+      );
+      if (!written.ok) throw new RosettaError(written.error.code, written.error.message);
+      signal.throwIfAborted();
+      return written.value.codeMapHash;
+    } catch (error) {
+      await this.discard(scope);
+      throw error;
+    }
   }
 
   private async map(request: ScanRequest): Promise<CodeMap> {
@@ -71,6 +108,7 @@ export class SnapshotScanPipeline implements ScanPipeline {
       allowDenied: settings.allowDenied,
       logger,
     });
+    await requireSubpath(request.root, source.subpath);
     signal.throwIfAborted();
     const scan = await scanRepository(reader, { maxFileBytes: settings.maxFileBytes });
     signal.throwIfAborted();

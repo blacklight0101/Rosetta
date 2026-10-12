@@ -1,4 +1,3 @@
-import type { QueryResult } from 'pg';
 import { describe, expect, it, vi } from 'vitest';
 import { createPool } from '../../../src/infrastructure/db/pool.js';
 import { GitHubSnapshotFetcher } from '../../../src/infrastructure/github/github-snapshot-fetcher.js';
@@ -18,8 +17,6 @@ describe('composeRuns', () => {
       connectionString: 'postgres://u:p@127.0.0.1:1/none',
       onIdleError: () => undefined,
     });
-    const empty: QueryResult = { rows: [], command: 'SELECT', rowCount: 0, oid: 0, fields: [] };
-    vi.spyOn(pool, 'query').mockImplementation(() => Promise.resolve(empty));
     const discard = vi
       .spyOn(GitHubSnapshotFetcher.prototype, 'discardPartialFolders')
       .mockResolvedValue([]);
@@ -34,7 +31,8 @@ describe('composeRuns', () => {
       packs: new LanguagePackRegistry([]),
     });
 
-    await runs.recover();
+    // The database is unreachable, so the queue step that follows rejects; the discard comes first.
+    await expect(runs.recover()).rejects.toThrow();
 
     expect(discard).toHaveBeenCalledTimes(1);
     discard.mockRestore();

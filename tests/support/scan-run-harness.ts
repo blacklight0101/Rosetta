@@ -186,17 +186,9 @@ interface ReadParts {
   readonly log: JsonlEventLog;
 }
 
-// RF-003
-export async function createScanRunHarness(
-  options: ScanRunHarnessOptions,
-): Promise<ScanRunHarness> {
-  const fixture = fixtureFetcher(new FixedClock('2026-10-12T10:00:00.000Z'));
-  const { runs, project, projects, submitRun, queue, manifests, log } = await assemble(
-    options,
-    fixture,
-  );
-  const startRun = new StartRun({ projects, submit: submitRun });
-  const ended = async (run: Run): Promise<Run> => {
+/** Waits until the index shows the run ended and its log holds `run.ended`. */
+function waitUntilEnded(runs: MemoryRunIndex, log: JsonlEventLog): (run: Run) => Promise<Run> {
+  return async (run) => {
     let latest: Run | undefined;
     await vi.waitFor(async () => {
       latest = await runs.find(run.userId, run.id);
@@ -208,6 +200,19 @@ export async function createScanRunHarness(
     if (latest === undefined) throw new Error('The run vanished');
     return latest;
   };
+}
+
+// RF-003
+export async function createScanRunHarness(
+  options: ScanRunHarnessOptions,
+): Promise<ScanRunHarness> {
+  const fixture = fixtureFetcher(new FixedClock('2026-10-12T10:00:00.000Z'));
+  const { runs, project, projects, submitRun, queue, manifests, log } = await assemble(
+    options,
+    fixture,
+  );
+  const startRun = new StartRun({ projects, submit: submitRun });
+  const ended = waitUntilEnded(runs, log);
   const submit = async (): Promise<Run> => {
     const submitted = await submitRun.execute({
       actor: scanActor,

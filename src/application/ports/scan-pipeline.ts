@@ -30,4 +30,9 @@ export interface ScanReport {
 
 export interface ScanPipeline {
   scan(request: ScanRequest): Promise<ScanReport>;
+  /**
+   * Removes the output files of the run (`codemap.json`, `scan-summary.md`); a run that stops or
+   * fails leaves none behind (RNF-002). Files that do not exist are not an error.
+   */
+  discard(scope: RunScope): Promise<void>;
 }

@@ -70,7 +70,7 @@ async function outputFiles(): Promise<string[]> {
   return (await exists(folder())) ? (await readdir(folder())).sort() : [];
 }
 
-describe('SnapshotScanPipeline', () => {
+describe('SnapshotScanPipeline subpath and write failures', () => {
   it('RF-124 fails a subpath that is not in the snapshot with RST-1104 and writes nothing', async () => {
     const pipeline = pipelineOver((writer) => writer);
 
@@ -99,7 +99,9 @@ describe('SnapshotScanPipeline', () => {
     await expect(scanning).rejects.toMatchObject({ code: ERROR_CODES.writeOutsideWorkspace });
     expect(await outputFiles()).toEqual([]);
   });
+});
 
+describe('SnapshotScanPipeline stops and discard', () => {
   it('RNF-002 removes both files when the run is stopped between the two writes', async () => {
     const controller = new AbortController();
     const pipeline = pipelineOver((writer) =>
