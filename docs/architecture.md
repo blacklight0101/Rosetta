@@ -231,11 +231,12 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `StopRun` | Stop button (`POST /api/runs/:runId/stop`): aborts the signal of a running run (202, it ends as `Interrupted`) or cancels a queued run (200); an ended run answers 409 | RF-1003, RF-422, RF-1108 |
 | `ReadRunFile` | run output pages and downloads (`GET /runs/:runId/files/*`, owner-scoped, served as text or attachment with the RF-1013 CSP) | RF-504, RF-506, RF-1105 |
 | `DeleteRun`, `DeleteProject`, `DeleteSnapshot` | Delete buttons (snapshots: administrator) | RF-1012 |
-| `SignIn`, `SignOut`, `ChangePassword` | sign-in page, menu, settings (`POST`, `DELETE /api/session`) | RF-1100, RF-1101, RF-1103 |
+| `SignIn`, `SignOut`, `ChangePassword` | sign-in page, menu, change-password page (`POST`, `DELETE /api/session`; `POST /api/account/password` with the current and the new password: the RF-1103 rules, `RST-2211` for a wrong current password, every session of the account ends and a new one is opened for this browser, `MustChangePassword` is cleared) | RF-1100, RF-1101, RF-1103 |
 | `ResolveSession`, `RecordRefusedRequest` | every request: the session hook turns the cookie into the `Actor` and ends the sessions of a disabled account; the Origin, CSRF and role hooks record each refusal (audit row and security event) | RF-1009, RF-1101, RF-1109 |
 | `SaveProviderKey`, `DeleteProviderKey` | settings, keys | RF-1104 |
-| `CreateUser`, `UpdateUser`, `ResetPassword`, `SetCaps` | administration page | RF-1102, RF-1106, RF-1107 |
-| `ListAudit` | administration, audit view | RF-1109 |
+| `CreateUser`, `UpdateUser`, `ResetPassword`, `SetCaps` | administration page: `POST /api/admin/users` (201; `mustChangePassword` defaults to true, false for the teacher account), `POST /api/admin/users/:id/disable` and `/enable` (disabling ends every session of the account), `POST /api/admin/users/:id/password` (ends every session, sets `MustChangePassword`); an administrator never disables or resets their own account (`RST-2213`); each change writes a `user.*` audit row without the password. `SetCaps` follows with RF-1106 | RF-1102, RF-1106, RF-1107 |
+| `ListUsers` | administration page (`GET /api/admin/users`): every account with its state, last sign-in, number of projects and month-to-date cost per currency (a read-only sum over `cost_ledger` from the start of the UTC month, through `AccountUsage`; costs as decimal strings of micro-units) | RF-1102 |
+| `ListAudit` | administration, audit view (`GET /api/admin/audit?userId=&action=`): the last 30 days, newest first, at most 500 events with `truncated` when more matched | RF-1109 |
 | `ApplyMigrations`, `BootstrapAdmin` | server start-up | RF-1302, RF-1102 |
 
 Every use case receives the signed-in `Actor` (user id and role) and scopes every read and write by it; only
@@ -273,7 +274,8 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `ServerSettings` | the settings the administrator keeps for the server; this release reads `defaultRoles` (DEC-106), `{}` until it is set, and refuses a value of an unknown shape | `PgServerSettings`, `MemoryServerSettings` |
 | `RunIndex` | run rows: owner, stage, state, folder, commit and snapshot, totals (RF-1108). Reads for a user take the owner's id; the queue uses server-wide reads and transitions by run id; each transition is one conditional update, so the end state is set once. The queue position is computed from the queued rows (`queuePositions`) | `PgRunIndex`, `MemoryRunIndex` |
 | `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
-| `AuditLog` | security audit rows (RF-1109); the detail passes `maskDeep` (keys and values, P1-04 masking) before it is stored and is withheld whole when masking fails; listed newest first by time, actor and action | `PgAuditLog`, `MemoryAuditLog` |
+| `AuditLog` | security audit rows (RF-1109); the detail passes `maskDeep` (keys and values, P1-04 masking) before it is stored and is withheld whole when masking fails; listed newest first from an instant (epoch milliseconds), by actor and action, up to an optional limit | `PgAuditLog`, `MemoryAuditLog` |
+| `AccountUsage` | per user, the number of projects and the spend since an instant per currency, read-only sums over `projects` and `cost_ledger` for the administration page (RF-1102) | `PgAccountUsage`, `MemoryAccountUsage` |
 | `Migrator` | apply and check migrations (RF-1302) | `PgMigrator` |
 | `DatabaseHealth` | whether the database answers a trivial query within 3 seconds, for `GET /healthz` (RF-1303); never throws | `PgDatabaseHealth`, `FakeDatabaseHealth` (tests) |
 | `Scheduler` | periodic jobs in the process: session and reservation purge hourly, log retention daily, restart recovery at start-up and a run queue sweep every minute (one instance assumed, DEC-112); a job still running when its next tick arrives is skipped, and a failing job is reported through the scheduler's `onError` callback without stopping its schedule or other jobs | `IntervalScheduler`, `ManualScheduler` (tests) |
@@ -353,14 +355,20 @@ sequenceDiagram
   states its access in `config.access` (`public`, `user` by default, `admin`); a request no route claims (the
   static front end and the not-found handler) is public only for `/`, `/sign-in` and plain file names under
   `/assets/`; without a session a page (GET or HEAD outside `/api/`) redirects to `/sign-in` and anything else
-  answers 401, and a `user` on an `admin` route answers 403; (4) a state-changing request on a non-public route needs
-  the `@fastify/csrf-protection` token (cookie mode: the secret only in the `__Host-rosetta_csrf` cookie, never in
+  answers 401, and a `user` on an `admin` route answers 403; a signed-in user in `MustChangePassword` (RF-1102)
+  reaches only public requests, the routes marked `config.duringPasswordChange` (`GET`, `HEAD`, `DELETE /api/session`
+  and `POST /api/account/password`) and the change-password page `/account/password` (served by the app shell):
+  another page redirects there (302) and anything else answers 403 `RST-2212`; (4) a state-changing request on a
+  non-public route needs the `@fastify/csrf-protection` token (cookie mode: the secret only in the `__Host-rosetta_csrf` cookie, never in
   the database) in the `x-csrf-token` header, else 403 `RST-2008`. Every 403 writes a `request.refused` audit row
   and a security event. `POST /api/session` and `GET /api/session` answer the user and a CSRF token; the front end
-  sends the token back on every state-changing request. Sign-in is limited to 10 attempts per minute per address
+  sends the token back on every state-changing request; `POST /api/account/password` answers a new session cookie
+  and token in the same way. Sign-in is limited to 10 attempts per minute per address
   (`@fastify/rate-limit`), its body to 4 KiB and its password to 1,024 characters, and at most eight sign-ins are
   verified at a time (429 beyond), which bounds the scrypt queue. Attempts on one user name run one after another,
-  so parallel failures cannot slip past the lockout.
+  so parallel failures cannot slip past the lockout. `POST /api/account/password` has the same body, password, rate
+  and concurrency caps; the administrator routes that take a password cap the body at 4 KiB and the password at
+  1,024 characters.
 - Every query and file path is scoped by the signed-in user; another user's id answers 404; administrator access to
   another workspace is audited (RF-1105, RF-1109).
 - Server provider keys come from the environment (the host's secret store); user keys are encrypted with AES-256-GCM
