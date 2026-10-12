@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type {
   LlmAttemptFailure,
   LlmAttemptObserver,
@@ -6,7 +6,10 @@ import type {
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { OpenAiProvider } from '../../../../../src/infrastructure/providers/openai/openai-provider.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
-import { closedLoopbackUrl } from '../../../../support/fake-http-server.js';
+import {
+  closedLoopbackUrl,
+  releaseClosedLoopbackUrls,
+} from '../../../../support/fake-http-server.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { useFakeOpenAi } from '../../../../support/openai-harness.js';
 import { fakeOpenAiKey } from '../../../../support/secret-fixture.js';
@@ -42,6 +45,10 @@ function everythingIn(error: unknown): string {
   }
   return parts.join('\n');
 }
+
+afterEach(() => {
+  releaseClosedLoopbackUrls();
+});
 
 describe('OpenAiProvider retries temporary failures', () => {
   it('RF-406 retries a rate limit and reports the attempt to the observer', async () => {

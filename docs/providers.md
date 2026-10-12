@@ -117,7 +117,7 @@ a cancelled call (`RST-1501`) are not retried.
 
 - Automated tests never call a real Ollama (ADR-008): under `ROSETTA_TEST=1` the adapter refuses every call with
   `RST-1509` unless its base URL is a loopback address whose port a fake server registered when it started
-  (`src/infrastructure/providers/fake-server-ports.ts`); no adapter option can vouch for a URL. The tests run
+  (`src/infrastructure/providers/fake-server-ports.ts`, written only through `tests/support/fake-server-registration.ts`); no adapter option can vouch for a URL. The tests run
   the adapter against `tests/support/fake-ollama-server.ts`, which replays the hand-written recordings under
   `tests/recordings/ollama/`, and run the contract suite on it.
 - Manual live check (gate G-04), on the machine that runs Ollama, with `ROSETTA_TEST` unset:

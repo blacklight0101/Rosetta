@@ -1,10 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { z } from 'zod';
-import {
-  registerFakeServerPort,
-  releaseFakeServerPort,
-} from '../../src/infrastructure/providers/fake-server-ports.js';
+import { registerFakeServerPort, releaseFakeServerPort } from './fake-server-registration.js';
 
 // ADR-008, RF-406: a fake provider HTTP server on loopback for adapter tests. A route function
 // chooses the recorded exchange for each request; the requests it received (method, path,
@@ -115,7 +112,12 @@ export class FakeHttpServer {
   }
 }
 
-/** A loopback URL with nothing listening on it: a stopped fake server, so its port is trusted. */
+const closedPorts = new Set<number>();
+
+/**
+ * A loopback URL with nothing listening on it: a stopped fake server, so its port is trusted and
+ * the call fails on the connection. The test calls `releaseClosedLoopbackUrls` when it ends.
+ */
 export async function closedLoopbackUrl(): Promise<string> {
   const server = createServer();
   await new Promise<void>((resolve) => {
@@ -128,5 +130,12 @@ export async function closedLoopbackUrl(): Promise<string> {
     });
   });
   registerFakeServerPort(port);
+  closedPorts.add(port);
   return `http://127.0.0.1:${String(port)}`;
+}
+
+/** Stops trusting the ports that `closedLoopbackUrl` handed out. */
+export function releaseClosedLoopbackUrls(): void {
+  for (const port of closedPorts) releaseFakeServerPort(port);
+  closedPorts.clear();
 }
