@@ -71,7 +71,6 @@ every variable with a comment and a safe example.
 | `ROSETTA_DB_ADMIN_PASSWORD` | local only | yes | password of the PostgreSQL image's bootstrap superuser `postgres` in the Compose `db` service; until the init script creates the roles (P1-45), local development may connect as that user |
 | `ROSETTA_TEST` | tests only | no | `1` enables the fake provider and fake GitHub and blocks real provider calls (ADR-008); refused when `ROSETTA_PUBLIC_URL` is https |
 | `ROSETTA_TEST_DATABASE_URL` | tests only | yes | the disposable PostgreSQL for integration tests (data-model.md section 8) |
-| `ROSETTA_GALLERY` | - | no | Withdrawn 2026-10-12 - see DEC-126: the component gallery is built only in development and served at `/dev/gallery` (design-system.md section 5); no switch is needed |
 
 | Item | Where it lives |
 |---|---|
