@@ -25,6 +25,8 @@ export interface OutputWriter {
   /** Appends one complete line (a JSON Lines record); `line` holds no line break. */
   appendLine(file: WorkspaceFile, line: string): Promise<Result<void, WriteRefusal>>;
   readText(file: WorkspaceFile): Promise<Result<string, WriteRefusal>>;
+  /** Removes a file of the workspace; a file that does not exist is not an error (RNF-002). */
+  remove(file: WorkspaceFile): Promise<Result<void, WriteRefusal>>;
 }
 
 /** RF-1006: reads a large text file line by line instead of as one string. */

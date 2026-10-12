@@ -107,6 +107,10 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message: 'A language pack is registered with an invalid or duplicate file extension.',
     nextStep: 'Give each pack its own extensions, lower case and starting with a dot.',
   },
+  'RST-1202': {
+    message: 'The scan could not build a valid code map from the repository.',
+    nextStep: 'Run the scan again; if it fails again, report the repository and the run id.',
+  },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
     nextStep:

@@ -120,6 +120,13 @@ export class NodeOutputWriter implements OutputWriter, TextLineReader {
     }
   }
 
+  async remove(file: WorkspaceFile): Promise<Result<void, WriteRefusal>> {
+    const target = await this.#resolve(file, 'read');
+    if (!target.ok) return target.error.reason === 'not-found' ? ok(undefined) : target;
+    await rm(target.value, { force: true });
+    return ok(undefined);
+  }
+
   async readLines(file: WorkspaceFile): Promise<Result<AsyncIterable<string>, WriteRefusal>> {
     const target = await this.#resolve(file, 'read');
     if (!target.ok) return target;

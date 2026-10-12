@@ -118,3 +118,23 @@ export function recordManifestSource(
   if (manifest.endState !== null) return err('already-ended');
   return ok({ ...manifest, source: { ...manifest.source, ...resolved } });
 }
+
+/** Records the hash of `codemap.json` once the scan has written it. */
+// RF-003
+export function recordManifestCodeMap(
+  manifest: RunManifest,
+  codemapHash: string,
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  return ok({ ...manifest, codemapHash });
+}
+
+/** Records the links the snapshot extraction skipped, as soon as the snapshot is known. */
+// RF-127
+export function recordManifestSkippedLinks(
+  manifest: RunManifest,
+  skippedLinks: number,
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  return ok({ ...manifest, security: { ...manifest.security, skippedLinks } });
+}

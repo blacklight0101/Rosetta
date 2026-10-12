@@ -57,6 +57,15 @@ function writeTests(newWriter: NewWriter): void {
     expect(await writer.readText(events)).toEqual({ ok: true, value: '{"n":1}\n{"n":2}\n' });
   });
 
+  it('RNF-002 removes a file it wrote, and removing a missing file is not an error', async () => {
+    const { writer } = await newWriter();
+    await writer.writeText(manifest, 'x\n');
+
+    expect(await writer.remove(manifest)).toEqual({ ok: true, value: undefined });
+    expect(refusalOf(await writer.readText(manifest))).toMatchObject({ reason: 'not-found' });
+    expect(await writer.remove(manifest)).toEqual({ ok: true, value: undefined });
+  });
+
   it('RF-005 the workspaces of two users are separate', async () => {
     const { writer } = await newWriter();
     await writer.writeText(manifest, 'mine\n');
@@ -87,6 +96,15 @@ function refusalTests(newWriter: NewWriter): void {
       expect(securityCodes(logger)).toEqual([ERROR_CODES.writeOutsideWorkspace]);
     },
   );
+
+  it('RF-005 a removal outside the workspace is refused with a security event', async () => {
+    const { writer, logger } = await newWriter();
+
+    const refusal = refusalOf(await writer.remove({ userId, path: '../x.json' }));
+
+    expect(refusal).toMatchObject({ reason: 'outside-workspace' });
+    expect(securityCodes(logger)).toEqual([ERROR_CODES.writeOutsideWorkspace]);
+  });
 
   it.each(['../sources', '..', 'not-a-uuid', ''])(
     'RF-005 a write for the user id %j is refused, so no path is built from request text',

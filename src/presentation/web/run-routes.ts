@@ -1,14 +1,20 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { z } from 'zod';
 import type { Scheduler } from '../../application/ports/scheduler.js';
+import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
 import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-run-events.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { EventStream, type StreamRegistry } from './event-stream.js';
 import { signedInOf } from './request-actor.js';
 import { runView } from './run-view.js';
 
 // RF-1006, RF-1108, RF-1105: the run routes.
+// - POST /api/projects/:id/runs starts a run of one stage of the user's project: 202 with the run
+//   and its queue position (null when it started); a stage that cannot be started yet answers 409
+//   (RST-2305), another user's project 404.
 // - GET /api/runs/:runId/events streams the run's events as server-sent events: the stored events
 //   after `Last-Event-ID` (or `?after=`), then the live ones, closing after `run.ended`. Another
 //   user's run id answers 404 like an unknown one.
@@ -16,6 +22,7 @@ import { runView } from './run-view.js';
 //   stops) or cancels a queued one (200); a run that has ended answers 409.
 
 export interface RunServices {
+  readonly startRun: StartRun;
   readonly subscribeRunEvents: SubscribeRunEvents;
   readonly stopRun: StopRun;
   /** Drives the keep-alive comment of every open stream. */
@@ -24,8 +31,11 @@ export interface RunServices {
   readonly streams: StreamRegistry;
 }
 
+const START_BODY_LIMIT_BYTES = 1024;
 const KEEP_ALIVE_MS = 15_000;
 const SEQ = /^\d{1,15}$/;
+
+const startBody = z.strictObject({ stage: z.enum(RUN_STAGES) });
 
 interface EventsRequest {
   readonly Params: { readonly runId: string };
@@ -119,8 +129,28 @@ function registerStop(server: FastifyInstance, services: RunServices): void {
   );
 }
 
+function registerStart(server: FastifyInstance, services: RunServices): void {
+  server.post<{ Params: { id: string } }>(
+    '/api/projects/:id/runs',
+    { bodyLimit: START_BODY_LIMIT_BYTES, config: { access: 'user' } },
+    async (request, reply) => {
+      const body = startBody.safeParse(request.body);
+      if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const outcome = await services.startRun.execute({
+        actor: signedInOf(request).actor,
+        projectId: request.params.id,
+        stage: body.data.stage,
+      });
+      if (!outcome.ok) throw new RosettaError(outcome.error);
+      const { run, position } = outcome.value;
+      return reply.status(202).send({ ...runView(run), position: position ?? null });
+    },
+  );
+}
+
 // RF-1006, RF-1108, RF-1105
 export function registerRunRoutes(server: FastifyInstance, services: RunServices): void {
   registerEvents(server, services);
   registerStop(server, services);
+  registerStart(server, services);
 }

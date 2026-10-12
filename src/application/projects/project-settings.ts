@@ -106,7 +106,7 @@ const budgetSchema = z.strictObject(
 
 const areaSchema = z.strictObject({ name: text, include: textList.min(1, invalid) }, invalid);
 
-const scanSchema = z.strictObject(
+export const scanSettingsSchema = z.strictObject(
   {
     maxFileBytes: positive,
     areaTokenBudget: positive,
@@ -142,7 +142,7 @@ const settingsObject = z.strictObject(
     providers: z.record(providerName, providerSchema, invalid),
     roles: rolesSchema,
     budget: budgetSchema,
-    scan: scanSchema,
+    scan: scanSettingsSchema,
     agents: z.strictObject({ parallelism: positive }, invalid),
     output: z.strictObject({ transcripts: flag }, invalid),
   },

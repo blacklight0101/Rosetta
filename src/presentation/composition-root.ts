@@ -163,7 +163,12 @@ interface ServerParts {
 async function createServer(parts: ServerParts): Promise<CreatedServer> {
   const { environment, logger, pool, auth, clock, masker } = parts;
   const version = await readAppVersion();
-  const runs = composeRuns({ pool, logger, clock, masker, dataDir: environment.dataDir, version });
+  const runs = composeRuns({
+    ...{ pool, logger, clock, masker, version },
+    dataDir: environment.dataDir,
+    githubToken: environment.githubToken,
+    packs: await composeLanguagePacks(),
+  });
   const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });
   const server = buildServer({
     logger,
@@ -243,7 +248,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         migrate: () => migrate(environment, clock, logger),
         bootstrapAdmin: () =>
           bootstrapAdministrator({ environment, pool, logger, clock, masker, hasher }),
-        recoverRuns: () => runs.queue.recover(),
+        recoverRuns: () => runs.recover(),
         listen: async () => {
           address = await server.listen(options.listen);
         },

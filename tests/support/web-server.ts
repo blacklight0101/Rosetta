@@ -4,6 +4,7 @@ import { RecordRefusedRequest } from '../../src/application/use-cases/record-ref
 import { ResolveSession } from '../../src/application/use-cases/resolve-session.js';
 import { SignIn } from '../../src/application/use-cases/sign-in.js';
 import { SignOut } from '../../src/application/use-cases/sign-out.js';
+import { StartRun } from '../../src/application/use-cases/start-run.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
@@ -106,6 +107,20 @@ function authServices(parts: AuthParts): ServerOptions['auth'] {
   };
 }
 
+/** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
+function runServices(
+  runs: RunHarness,
+  projects: MemoryProjectRepository,
+  route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
+): ServerOptions['runs'] {
+  return {
+    subscribeRunEvents: runs.subscribe,
+    stopRun: runs.stop,
+    startRun: new StartRun({ projects, submit: runs.submit }),
+    ...route,
+  };
+}
+
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
@@ -142,7 +157,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     trustProxy: 0,
     auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, ...route },
+    runs: runServices(runs, projects, route),
     ...overrides,
   });
   return {

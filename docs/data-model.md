@@ -336,7 +336,7 @@ Event types (canonical list):
 | `run.started` | `{ stage, source, roles, caps, estimate? }` |
 | `source.resolved` | `{ url, ref, commitSha }` |
 | `source.downloaded` | `{ fileCount, totalBytes, durationMs, cached }` |
-| `scan.completed` | `{ files, areas, mapLevels }` |
+| `scan.completed` | `{ files, areas, mapLevels }` where `mapLevels` is `{ coarse, symbols }`, the number of files at each level |
 | `agent.planned` | `{ area, role, model }` |
 | `agent.started` | `{ area, role, model }` |
 | `agent.turn` | `{ turn, inputTokens, outputTokens }` |
