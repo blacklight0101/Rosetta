@@ -162,3 +162,20 @@ export function recordManifestBlockedCall(
   const blockedCalls = manifest.security.blockedCalls + 1;
   return ok({ ...manifest, security: { ...manifest.security, blockedCalls } });
 }
+
+/** A prompt file's version and the SHA-256 of its bytes (RNF-004). */
+export interface PromptVersion {
+  readonly version: string;
+  readonly sha256: string;
+}
+
+/** Adds the prompt files a run used, by file name, names in order; a name recorded again is replaced. */
+// RNF-004
+export function recordPromptVersions(
+  manifest: RunManifest,
+  versions: Readonly<Record<string, PromptVersion>>,
+): RunManifest {
+  const merged = Object.entries({ ...manifest.promptVersions, ...versions });
+  const promptVersions = Object.fromEntries(merged.sort(([a], [b]) => byCodeUnit(a, b)));
+  return { ...manifest, promptVersions };
+}

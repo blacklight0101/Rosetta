@@ -1,6 +1,6 @@
 import type { PromptFile } from '../../src/application/agent/prompt-file.js';
 import type { ReaderPrompts } from '../../src/application/agent/reader-prompts.js';
-import type { CodeMap } from '../../src/domain/code-map/code-map.js';
+import type { CodeMap, CodeSymbol } from '../../src/domain/code-map/code-map.js';
 import { createCodeMap } from '../../src/domain/code-map/code-map.js';
 import type { FileEntry } from '../../src/domain/code-map/file-entry.js';
 import { entry, unhashed } from './code-map-builders.js';
@@ -35,6 +35,25 @@ const files: readonly FileEntry[] = [
   entry('src/Billing/Invoice.cs', 10, { language: 'csharp', lines: 3 }),
 ];
 
+const symbols: readonly CodeSymbol[] = [
+  {
+    path: 'src/Orders/OrderService.cs',
+    kind: 'class',
+    name: 'OrderService',
+    startLine: 3,
+    endLine: 6,
+  },
+  {
+    path: 'src/Orders/OrderService.cs',
+    kind: 'method',
+    name: 'Shipping',
+    startLine: 5,
+    endLine: 5,
+    container: 'OrderService',
+  },
+  { path: 'src/Orders/Order.cs', kind: 'class', name: 'Order', startLine: 1, endLine: 4 },
+];
+
 function buildMap(): CodeMap {
   const built = createCodeMap({
     source: { owner: 'octo', repo: 'shop', commitSha: 'c'.repeat(40), subpath: '' },
@@ -55,24 +74,7 @@ function buildMap(): CodeMap {
         origin: 'folder',
       },
     ],
-    symbols: [
-      {
-        path: 'src/Orders/OrderService.cs',
-        kind: 'class',
-        name: 'OrderService',
-        startLine: 3,
-        endLine: 6,
-      },
-      {
-        path: 'src/Orders/OrderService.cs',
-        kind: 'method',
-        name: 'Shipping',
-        startLine: 5,
-        endLine: 5,
-        container: 'OrderService',
-      },
-      { path: 'src/Orders/Order.cs', kind: 'class', name: 'Order', startLine: 1, endLine: 4 },
-    ],
+    symbols,
     links: [{ from: 'src/Orders/OrderService.cs', to: 'src/Orders/Order.cs', kind: 'import' }],
     sqlStatements: [
       {

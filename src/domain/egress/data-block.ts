@@ -10,14 +10,19 @@ import type { Citation } from '../cards/citation.js';
 // the content, and a footer line. Text inside the content that looks like a header or a footer is
 // defanged, so repository text can never close its block early or open a new one; it stays data.
 
-/** The read-only tools whose results are repository content (RF-145). */
-export type DataBlockSource = 'read_file' | 'grep' | 'codemap_query' | 'list_area_files';
+/**
+ * The read-only tools whose results are repository content (RF-145), and `unknown_tool` for the
+ * error result of a call that names no tool: every tool message is one data block (P1-31).
+ */
+export type DataBlockSource =
+  'read_file' | 'grep' | 'codemap_query' | 'list_area_files' | 'unknown_tool';
 
 export const DATA_BLOCK_SOURCES: readonly DataBlockSource[] = [
   'read_file',
   'grep',
   'codemap_query',
   'list_area_files',
+  'unknown_tool',
 ];
 
 export interface DataBlock {

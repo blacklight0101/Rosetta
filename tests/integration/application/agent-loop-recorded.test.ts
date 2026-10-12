@@ -42,7 +42,9 @@ describe('reader agent task with recorded responses', () => {
     expect(error?.content).toContain('startLine');
     expect(logger.entries.map((entry) => entry.code)).toContain(ERROR_CODES.toolArgumentsInvalid);
   });
+});
 
+describe('reader agent task limits and planted instructions', () => {
   it('RF-201 ends at the turn limit with the task marked TurnLimitReached', async () => {
     const { result, egress } = await runRecordedAgent({
       fixture: 'webforms-csharp',

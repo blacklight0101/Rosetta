@@ -20,6 +20,12 @@ const notFound: ReadRefusal = {
   message: 'There is no such file in the analysed repository; check the path and its case.',
 };
 
+const invalidPattern: ReadRefusal = {
+  code: ERROR_CODES.grepPatternInvalid,
+  reason: 'invalid-pattern',
+  message: 'The pattern is not a valid JavaScript regular expression.',
+};
+
 export class MemoryRepositoryReader implements RepositoryReader {
   readonly liftedDenyPatterns: readonly string[] = [];
   readonly skippedPaths = { links: [], invalidNames: [] };
@@ -56,13 +62,21 @@ export class MemoryRepositoryReader implements RepositoryReader {
 
   grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>> {
     this.greps.push(request.pattern);
-    const pattern = new RegExp(request.pattern);
-    const matches = [...this.files.entries()].flatMap(([path, lines]) =>
+    let pattern: RegExp;
+    try {
+      pattern = new RegExp(request.pattern);
+    } catch {
+      return Promise.resolve(err(invalidPattern));
+    }
+    const sorted = [...this.files.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
+    const matches = sorted.flatMap(([path, lines]) =>
       lines.flatMap((text, index) =>
         pattern.test(text) ? [{ path, line: index + 1, text, cut: false }] : [],
       ),
     );
-    return Promise.resolve(ok({ matches, cutLines: 0 }));
+    const cutLines = request.pattern === 'cut' ? 1 : 0;
+    const notice = cutLines === 0 ? {} : { notice: 'Lines were cut before the search.' };
+    return Promise.resolve(ok({ matches, cutLines, ...notice }));
   }
 
   readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>> {

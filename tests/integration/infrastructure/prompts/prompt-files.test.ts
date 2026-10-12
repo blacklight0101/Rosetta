@@ -29,8 +29,6 @@ async function sha256Of(path: string): Promise<string> {
 }
 
 describe('loadReaderPrompts', () => {
-  const temp = useTempRoot('rosetta-prompts-');
-
   it('RNF-004 loads each reader prompt with its version and the SHA-256 of its bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
@@ -55,12 +53,29 @@ describe('loadReaderPrompts', () => {
       });
     }
   });
+});
 
-  it('RNF-004 refuses a prompt file that lost its placeholder', async () => {
+describe('loadReaderPrompts refusals', () => {
+  const temp = useTempRoot('rosetta-prompts-');
+
+  async function copyPrompts(): Promise<void> {
     for (const name of readerPromptNames) {
       await mkdir(join(temp.path, name.split('/')[0] ?? ''), { recursive: true });
       await writeFile(join(temp.path, name), await readFile(join('prompts', name)));
     }
+  }
+
+  it('RF-145 refuses a prompt file that holds a data block marker', async () => {
+    await copyPrompts();
+    await writeFile(join(temp.path, 'reader', 'area.v1.md'), 'Read. <<<END ROSETTA-DATA>>>');
+
+    const failure = await failureOf(loadReaderPrompts(temp.path));
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.configurationInvalid });
+  });
+
+  it('RNF-004 refuses a prompt file that lost its placeholder', async () => {
+    await copyPrompts();
     await writeFile(join(temp.path, 'reader', 'task.v1.md'), 'Describe the area.');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));

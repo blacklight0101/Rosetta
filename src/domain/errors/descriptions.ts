@@ -117,6 +117,37 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Open the saved raw output of the task, then run the area again or choose a more capable model for the reader role.',
   },
+  'RST-1301': {
+    message:
+      'The agent called a tool with arguments that are not valid; it was told what to change.',
+    nextStep:
+      'No action needed; the agent corrects the call. Choose a more capable model if it happens often.',
+  },
+  'RST-1302': {
+    message:
+      'The agent called a tool that does not exist; it was told the names of the valid tools.',
+    nextStep:
+      'No action needed when it happens once; a task that keeps doing it ends, so choose a more capable model.',
+  },
+  'RST-1303': {
+    message: 'The agent task ended because the model kept repeating the same tool call.',
+    nextStep: 'Run the area again, or choose a more capable model for the reader role.',
+  },
+  'RST-1304': {
+    message: 'The agent task used all its turns before it gave its final answer.',
+    nextStep:
+      'Raise maxTurns for the reader role, or split the area into smaller ones, then run the area again.',
+  },
+  'RST-1305': {
+    message:
+      "The agent task ended because its conversation reached the configured share of the model's context.",
+    nextStep:
+      'Split the area into smaller ones or choose a model with a larger context, then run the area again.',
+  },
+  'RST-1306': {
+    message: 'The file was skipped by the scan (binary or too large), so the agent cannot read it.',
+    nextStep: 'No action needed; raise scan.maxFileBytes and scan again if the file must be read.',
+  },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
     nextStep:

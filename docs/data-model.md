@@ -258,7 +258,7 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004) |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v1.md`), its version (`v1`) and the SHA-256 of its bytes, names in code-unit order |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `caps` | object | run and role caps in force |

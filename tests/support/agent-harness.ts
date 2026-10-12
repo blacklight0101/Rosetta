@@ -1,5 +1,6 @@
 import { join } from 'node:path';
-import { runAgentTask, type AgentTaskResult } from '../../src/application/agent/agent-loop.js';
+import { runAgentTask } from '../../src/application/agent/agent-loop.js';
+import type { AgentTaskResult } from '../../src/application/agent/agent-task-result.js';
 import { ReadOnlyTools } from '../../src/application/agent/read-only-tools.js';
 import type { CodeMap } from '../../src/domain/code-map/code-map.js';
 import { NodeRepositoryReader } from '../../src/infrastructure/files/node-repository-reader.js';
@@ -17,7 +18,7 @@ import { MemoryLogger } from './memory-logger.js';
 // RF-201, RF-145, ADR-008: one reader agent task over a fixture repository on disk, with the real
 // prompt files, the real read-only tools and a recorded fake provider behind the egress guard.
 
-export type AgentFixture = 'webforms-csharp' | 'injection';
+type AgentFixture = 'webforms-csharp' | 'injection';
 
 const maxFileBytes = 1_000_000;
 
