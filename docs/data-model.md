@@ -262,7 +262,7 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `caps` | object | run and role caps in force |
-| `masking` | object | count per secret kind (RF-141): `api-key`, `bearer-token`, `connection-string`, `password`, `private-key` (the kinds of `SecretMasker`, `src/infrastructure/guards/secret-masker.ts`) |
+| `masking` | object | count per secret kind (RF-141): `api-key`, `bearer-token`, `connection-string`, `password`, `private-key` (the kinds of `SecretMasker`, `src/infrastructure/guards/secret-masker.ts`), kinds in name order; the egress guard adds the secrets of content an agent task sends for the first time, so a message repeated by later calls counts once. The counts are numbers and are stored unmasked |
 | `totals` | object | `{ inputTokens, outputTokens, cachedInputTokens, costMicros, calls }` |
 | `agentTasks[]` | list | `{ agentTaskId, area, role, state (AgentTaskState), turns, cards }` |
 
@@ -415,9 +415,26 @@ the OpenTelemetry GenAI semantic conventions so an exporter can be added later w
 
 ### 3.11 `egress.log.jsonl`
 
-One line per model call: `{ schemaVersion, seq, at, callId, provider, model, role, agentTaskId, excerpts: [{ path,
-startLine, endLine }], maskedCounts }` - exactly what left the machine and where (RF-142). Content is never copied
-here.
+| | |
+|---|---|
+| Purpose | exactly what left the machine and where: one line per model call the egress guard let through (RF-142) |
+| Writer | the `EgressGuard` through `JsonlEgressLog` (the `EgressLog` port), as the last step before the call is sent (after masking and the manifest counts), so a line always means a sent call; a line that cannot be stored blocks the call (`RST-2107`) |
+| Readers | the user (audit), export |
+| Spec | RF-141, RF-142, RNF-003 |
+
+| Field | Type | Notes |
+|---|---|---|
+| `schemaVersion` | int | 1 |
+| `seq` | int | 1, 2, 3 ... within the run, no gaps; continues after the complete lines a resumed run's file holds, and a torn last line is removed before the next line |
+| `at` | instant | when the guard let the call through |
+| `callId` | string | the call's id, as in `provider-calls.jsonl` |
+| `provider`, `model`, `role`, `agentTaskId` | string | the provider's name in the project settings |
+| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with it broken, `<<<` as `<<-<`); each call repeats the earlier messages, so it lists their excerpts again |
+| `maskedCounts` | object | the secrets masked in this call's request, per kind of section 3.6 (every kind, zero included) |
+
+Content is never copied here: no excerpt text, no message text, no secret. The line is masked like every file
+Rosetta writes, except `maskedCounts`, whose keys are the masker's own kind names. A blocked call writes no line; it is
+a `security` log entry and a `blockedCalls` count in the manifest.
 
 ### 3.12 `cost.json` and `cost.md`
 

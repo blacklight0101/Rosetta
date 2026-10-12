@@ -55,6 +55,21 @@ describe('FileRunManifestStore', () => {
   });
 });
 
+describe('FileRunManifestStore and the mask counts', () => {
+  it('RF-141 keeps the count of every secret kind a number, the password count too', async () => {
+    const masking = {
+      'api-key': 1,
+      'bearer-token': 0,
+      'connection-string': 2,
+      password: 3,
+      'private-key': 0,
+    };
+    await openStore().write(scope, sampleManifest({ masking }));
+
+    expect(await openStore().read(scope)).toMatchObject({ masking });
+  });
+});
+
 describe('FileRunManifestStore with a file it cannot use', () => {
   async function plant(content: string): Promise<void> {
     await mkdir(join(manifestFile(), '..'), { recursive: true });

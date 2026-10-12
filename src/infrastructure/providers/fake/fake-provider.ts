@@ -25,6 +25,8 @@ function throwIfAborted(signal: AbortSignal): void {
 // never touches the network. DEC-112, RNF-005: refused unless ROSETTA_TEST=1, so `kind: fake`
 // cannot run in a real deployment.
 export class FakeProvider implements LlmProvider {
+  /** Every request the fake received, as it received it, so a test can see what was sent. */
+  readonly requests: LlmRequest[] = [];
   private readonly calls: readonly RecordedCall[];
   private next = 0;
 
@@ -35,6 +37,7 @@ export class FakeProvider implements LlmProvider {
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
     throwIfAborted(request.signal);
+    this.requests.push(request);
     const call = this.calls[this.next];
     if (call === undefined) throw new RosettaError(ERROR_CODES.recordingExhausted);
     this.next += 1;

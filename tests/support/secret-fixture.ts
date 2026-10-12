@@ -198,6 +198,9 @@ export const innocentTexts: readonly string[] = [
  * Each secret-like prefix is built from pieces, like the cases above, so none appears as a literal.
  */
 export const adversarialPieces: readonly string[] = [
+  pkcs8End,
+  `A\n${pkcs8End}`,
+  ['-----END', ''].join(' '),
   'a.b-c',
   ['sk', ''].join(dash),
   'a-pwd',

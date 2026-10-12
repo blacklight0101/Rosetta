@@ -106,12 +106,14 @@ src/
     runs/               Run (start and end transitions), RunManifest, RunEndState, RunQueueState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`); AgentTaskState joins with the agent cards
     sources/            GitHubRepoRef, CommitSha, Permalink
     planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018)
+    egress/             the labelled data block of repository content (`renderDataBlock`, `scanDataBlocks`, RF-145)
     errors/             domain error codes and Result type
   application/
     ports/              port interfaces (section 7)
     use-cases/          one file per use case (section 6)
     support/            helpers the use cases share (KeyedQueue: sign-in attempts per user name one at a time)
-    runs/               the run queue (`RunQueue`), the run lifecycle (manifest start and end, `run.started`, `run.ended`), the event publisher, the accepted manifest, the event and manifest schemas
+    runs/               the run queue (`RunQueue`), the run lifecycle (manifest start and end, `run.started`, `run.ended`), the event publisher, the accepted manifest, the event and manifest schemas, the manifest security recorder (mask counts and blocked calls)
+    providers/          provider rules the use cases share: which kinds need cloud consent (`needsCloudConsent`, RF-143)
     agent/              agent loop, tool definitions, orchestrator, card parsing and repair
     verifier/           citation check, judgement step
     estimate/           cost estimator
@@ -121,7 +123,8 @@ src/
                         ObservedProvider decorator, the provider call logs (JSON Lines, memory) and what
                         the adapters share: retry loop and back-off, ROSETTA_TEST refusal, tool-call
                         shape, token estimate, capped answer bodies
-    guards/             egress-guard, secret-masker, budget-guard
+    guards/             egress-guard (request masking, data-block placement, `JsonlEgressLog`), secret-masker,
+                        mask-deep, budget-guard
     github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
                         hash, snapshot.json, read-only), github-snapshot-fetcher, fake-source-fetcher
@@ -264,6 +267,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `Logger` | structured application log with levels and correlation ids (RF-009) | `StdoutJsonLogger`, `JsonlFileLogger`, `FanOutLogger`, `MemoryLogger` (tests) |
 | `ProviderCallRecorder` | one record per provider call attempt (RF-408) and the masked transcript lines of each agent task (data-model.md section 3.15), written by an `ObservedProvider` decorator around every provider; masks every line before it is kept | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
 | `RunEventSink`, `RunEventHistory`, `RunEventFeed` | typed run events for the web UI and the replay log (RF-424, RF-1006). The sink takes complete events with their `seq` (numbered by `RunEventPublisher`); the log refuses a gap, an event of another run and anything after `run.ended` (RST-2105). The history reads the stored events after a `seq` (`read`), replays them in batches at the receiver's pace (`replay`, streaming the file through the `TextLineReader` port) and gives the last `seq`; the feed gives a page the live events of its own run. `JsonlEventLog` writes through the `OutputWriter`, masks each line, serialises the writes of a run, ignores a torn last line and removes it before the next write; `SseBroadcaster` masks, delivers per user and run and forgets a run's listeners after `run.ended`; `FanOutSink` sends to the log first | `JsonlEventLog` (sink and history), `SseBroadcaster` (sink and feed), `FanOutSink`, `MemoryEventSink` (sink and history, tests) |
+| `EgressLog` | `runs/<runId>/egress.log.jsonl`: one masked line per call the egress guard let through, `seq` without gaps, a torn last line removed before the next write (RF-142, data-model.md section 3.11) | `JsonlEgressLog` (through the `OutputWriter`) |
 | `RunManifestStore` | `runs/<runId>/manifest.json`: written when a run is accepted, rewritten when it starts and when it ends; the whole file is replaced atomically (RF-003, RNF-002) | `FileRunManifestStore`, `MemoryRunManifestStore` |
 | `RunExecutor` | the work of one stage, started by the run queue with the run, its manifest, an event publisher and an abort signal; returns the end state (a thrown error ends the run as `Failed`). The stage cards register theirs in `compose-runs.ts` | `RunScan` (`scan`, P1-23), the later stages |
 | `ScanPipeline` | the scan of one snapshot written into the run folder: reader (ignore rules and deny list), universal scan, language packs, code map (masked) and `codemap.json` plus `scan-summary.md` through the `OutputWriter`; returns the code map hash, the file and area counts and the files per map level; checks the abort signal between its steps; a subpath that is not a folder of the snapshot fails with `RST-1104`; a refusal, failure or stop between the two writes removes both files, and `discard` does the same on request; a failure is a `RosettaError` (`RST-1202` when the code map is invalid) | `SnapshotScanPipeline` |
@@ -287,7 +291,18 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 
 The egress guard and the budget guard are **decorators** of `LlmProvider`: the composition root wraps every real
 provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`, so no call can bypass them (ADR-006, ADR-007);
-the budget guard records a refused call itself through `ProviderCallRecorder` (status `refused-by-cap`). The budget
+the budget guard records a refused call itself through `ProviderCallRecorder` (status `refused-by-cap`). The egress guard
+is built per run with the run's recorded cloud consent, its `JsonlEgressLog` and a `ManifestSecurityRecorder`; in
+order it refuses a provider off this machine (`needsCloudConsent`: everything but `fake` and an `ollama` whose host is
+loopback or `host.docker.internal`) without that consent (`RST-1515`), refuses a request whose system prompt holds a data block, whose tool result is not exactly one
+data block or whose message holds a broken one (`RST-1516`), masks every message part (a private key read in pieces
+included, read line by line so a key written as string literals in code counts too: an END line without its BEGIN
+masks the key lines above it, and a key left open by one read masks the key lines that start the next read of the same
+file), adds the secrets first sent by the agent task to the manifest and, last, appends
+the egress line, so a line always means a sent call. Every refusal and every failure of those steps (masking
+`RST-2101`, manifest `RST-2106`, egress log `RST-2107`, or the code the failure carries) is a `security` log entry
+and a blocked call in the manifest, and is thrown so the agent task stops; the call is never sent (RF-141..RF-143,
+RF-145, DEC-57). Tool definitions are not masked: they come from code and must never carry repository text. Nothing in a request can grant consent. The budget
 guard checks the run cap and, for server keys, the user-day and server-month caps in the same database transaction
 that inserts the call's worst-case reservation into `cost_reservations`; after the call it writes the ledger row and
 deletes the reservation (RF-1106, data-model.md section 4). Every port has a
@@ -332,7 +347,12 @@ sequenceDiagram
   the pattern (every agent re-reads context, so tokens grow with the number of agents) is bounded by the caps of
   ADR-007. Frameworks that own this loop (LangGraph, Google ADK) are not used (ADR-003, DEC-58).
 - **Untrusted content** (ADR-013): tool results enter the conversation only inside delimited repository-content
-  blocks, never in the system prompt (RF-145); `grep` runs in a worker with limits (RF-146).
+  blocks, never in the system prompt (RF-145): the loop wraps each tool result with `renderDataBlock`
+  (`src/domain/egress/data-block.ts`) as one tool message; a header line
+  `<<<ROSETTA-DATA {"label":"repository-content","note":...,"source":<tool>,"excerpts":[{"path","startLine","endLine"}]}>>>`
+  (paths with their markers defanged, every `<` and `>` of the JSON written as `\u003c`/`\u003e`, a line break in a
+  path escaped by JSON, so no header text can read as a frame), the content with every marker look-alike defanged (`<<<` becomes `<<-<`, lines kept), and the footer
+  `<<<END ROSETTA-DATA>>>`; the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.
 

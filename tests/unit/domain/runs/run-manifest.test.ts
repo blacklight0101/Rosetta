@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   endManifest,
   markManifestStarted,
+  recordManifestBlockedCall,
   recordManifestCodeMap,
+  recordManifestMasking,
   recordManifestSkippedLinks,
   recordManifestSource,
 } from '../../../../src/domain/runs/run-manifest.js';
@@ -100,3 +102,53 @@ describe('run manifest of a scan', () => {
     });
   });
 });
+
+describe('run manifest of an egress', () => {
+  it('RF-141 adds the masked secrets to the count per kind', () => {
+    const manifest = sampleManifest({ masking: { 'api-key': 1, password: 2 } });
+
+    const recorded = recordManifestMasking(manifest, { 'api-key': 2, 'private-key': 1 });
+
+    expect(recorded).toEqual({
+      ok: true,
+      value: { ...manifest, masking: { 'api-key': 3, password: 2, 'private-key': 1 } },
+    });
+  });
+
+  it('RF-141 keeps the kinds in a stable order', () => {
+    const recorded = recordManifestMasking(sampleManifest(), { password: 1, 'api-key': 0 });
+    if (!recorded.ok) throw new Error('The masking was not recorded');
+
+    expect(Object.keys(recorded.value.masking)).toEqual(['api-key', 'password']);
+  });
+
+  it('RF-141 counts a blocked call in the security block', () => {
+    const manifest = sampleManifest();
+
+    const recorded = recordManifestBlockedCall(recordManifestBlockedCallOnce(manifest));
+
+    expect(recorded).toEqual({
+      ok: true,
+      value: { ...manifest, security: { ...manifest.security, blockedCalls: 2 } },
+    });
+  });
+
+  it('RF-141 does not change a manifest that has ended', () => {
+    const ended = endManifest(sampleManifest(), 'Failed', '2026-10-12T10:05:00.000Z');
+    if (!ended.ok) throw new Error('The manifest did not end');
+
+    expect(recordManifestMasking(ended.value, { password: 1 })).toEqual({
+      ok: false,
+      error: 'already-ended',
+    });
+    expect(recordManifestBlockedCall(ended.value)).toEqual({ ok: false, error: 'already-ended' });
+  });
+});
+
+function recordManifestBlockedCallOnce(
+  manifest: ReturnType<typeof sampleManifest>,
+): ReturnType<typeof sampleManifest> {
+  const once = recordManifestBlockedCall(manifest);
+  if (!once.ok) throw new Error('The blocked call was not recorded');
+  return once.value;
+}

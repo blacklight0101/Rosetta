@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { lineBreaksOf, maskOrphanKeyEnds } from './private-key-pieces.js';
 
 export type SecretKind =
   'api-key' | 'bearer-token' | 'connection-string' | 'password' | 'private-key';
@@ -80,7 +81,17 @@ const defaultRules: readonly MaskRule[] = [
   },
 ];
 
-function emptyCounts(): Record<SecretKind, number> {
+/** Every kind, in name order. */
+export const SECRET_KINDS: readonly SecretKind[] = [
+  'api-key',
+  'bearer-token',
+  'connection-string',
+  'password',
+  'private-key',
+];
+
+/** A zero count for every kind, in name order. */
+export function emptyCounts(): Record<SecretKind, number> {
   return {
     'api-key': 0,
     'bearer-token': 0,
@@ -88,11 +99,6 @@ function emptyCounts(): Record<SecretKind, number> {
     password: 0,
     'private-key': 0,
   };
-}
-
-/** The line breaks of the secret, so the masked text keeps its line count and line numbers. */
-function lineBreaksOf(secret: string): string {
-  return (secret.match(/\r?\n/g) ?? []).join('');
 }
 
 function applyRule(
@@ -131,7 +137,9 @@ export class SecretMasker implements TextMasker {
         masked = result.text;
         counts[rule.kind] += result.count;
       }
-      return { text: masked, counts };
+      const tails = maskOrphanKeyEnds(masked);
+      counts['private-key'] += tails.count;
+      return { text: tails.text, counts };
     } catch (error) {
       throw new RosettaError(ERROR_CODES.secretMaskingFailed, undefined, { cause: error });
     }
