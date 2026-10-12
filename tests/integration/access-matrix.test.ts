@@ -111,6 +111,20 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
       expected: ownerOnly(200),
     },
   ],
+  'POST /api/projects/:id/runs': [
+    {
+      method: 'POST',
+      url: projectUrl('/runs'),
+      payload: () => ({ stage: 'scan' }),
+      expected: ownerOnly(202),
+    },
+    {
+      method: 'POST',
+      url: () => '/api/projects/not-a-uuid/runs',
+      payload: () => ({ stage: 'scan' }),
+      expected: signedIn(401, 404),
+    },
+  ],
   'GET /api/admin/users/:id/projects': [
     { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
     { method: 'GET', url: workspaceUrl(() => unknownUser), expected: adminOnly(404) },
