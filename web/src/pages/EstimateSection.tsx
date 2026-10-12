@@ -47,7 +47,10 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: bigint 
         aria-valuemax={100}
         aria-valuenow={Math.min(100, used)}
       >
-        <div class="rst-cap-meter__fill" style={{ inlineSize: `${String(Math.min(100, used))}%` }} />
+        <div
+          class="rst-cap-meter__fill"
+          style={{ inlineSize: `${String(Math.min(100, used))}%` }}
+        />
         <div class="rst-cap-meter__mark" style={{ insetInlineStart: `${String(mark)}%` }} />
       </div>
       <p id={hintId} class="rst-settings__note">
