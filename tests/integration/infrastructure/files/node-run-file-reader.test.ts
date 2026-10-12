@@ -1,4 +1,4 @@
-import { link, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { link, mkdir, mkdtemp, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -112,6 +112,37 @@ describe('NodeRunFileReader and links', () => {
     await symlink(elsewhere, join(data.path, 'users', scope.userId), 'junction');
 
     expect(await reader().open(scope, 'manifest.json')).toEqual(notFound);
+  });
+});
+
+describe('NodeRunFileReader and a swap between the look and the open', () => {
+  it('RF-1105 refuses a file that was replaced by another after it was looked at', async () => {
+    await seed(scope, { 'manifest.json': 'what was looked at' });
+    const swapping = new NodeRunFileReader(data.path, {
+      afterLook: async (path) => {
+        await writeFile(`${path}.new`, 'what was put there');
+        await rename(`${path}.new`, path);
+      },
+    });
+
+    expect(await swapping.open(scope, 'manifest.json')).toEqual(notFound);
+  });
+
+  it('RF-1105 reads the file when nothing changes between the look and the open', async () => {
+    await seed(scope, { 'manifest.json': 'steady' });
+    const calls: string[] = [];
+    const watching = new NodeRunFileReader(data.path, {
+      afterLook: (path) => {
+        calls.push(path);
+        return Promise.resolve();
+      },
+    });
+
+    const opened = await watching.open(scope, 'manifest.json');
+
+    if (!opened.ok) throw new Error('The file was refused');
+    expect(calls).toHaveLength(1);
+    expect((await collectBytes(opened.value.body)).toString('utf8')).toBe('steady');
   });
 });
 

@@ -187,6 +187,7 @@ describe('GET /runs/:runId/files/* and hostile paths', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.body).not.toContain('schemaVersion');
+    expect(response.headers['cache-control']).toBe('no-store');
   });
 
   it('RF-005 answers 404 for a path that names a link out of the run folder', async () => {
