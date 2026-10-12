@@ -1,0 +1,99 @@
+import { z } from 'zod';
+
+// RF-1002, data-model.md section 3.9: the payload of each event type the live page reads. Every
+// field is optional or defaulted, because a stream may carry an older or a newer shape: an event
+// that does not fit changes nothing but the log.
+
+const text = z.string().max(2000);
+const count = z.number().int().nonnegative();
+
+export const agentData = z.looseObject({
+  area: text.optional(),
+  role: text.optional(),
+  model: text.optional(),
+});
+
+export const turnData = z.looseObject({
+  turn: count.optional(),
+  inputTokens: count.optional(),
+  outputTokens: count.optional(),
+});
+
+export const toolCalledData = z.looseObject({
+  tool: text.optional(),
+  args: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const toolResultData = z.looseObject({
+  tool: text.optional(),
+  ok: z.boolean().optional(),
+  linesReturned: count.optional(),
+  refusedReason: text.optional(),
+});
+
+export const cardData = z.looseObject({
+  cardId: text,
+  type: text.optional(),
+  title: text.optional(),
+  claims: count.optional(),
+});
+
+export const agentEndedData = z.looseObject({
+  state: text.optional(),
+  turns: count.optional(),
+  cards: count.optional(),
+});
+
+const citation = z.object({
+  path: text,
+  startLine: z.number().int(),
+  endLine: z.number().int(),
+});
+
+export const citationCheckedData = z.looseObject({
+  claimId: text,
+  ok: z.boolean(),
+  reason: text.optional(),
+  text: z.string().max(20_000).optional(),
+  citations: z.array(citation).max(50).optional(),
+});
+
+export const claimJudgedData = z.looseObject({
+  claimId: text,
+  status: text,
+  reason: text.optional(),
+});
+
+/** `costMicros` is a number in the event log and may be a decimal string on the wire. */
+const micros = z.union([
+  count,
+  z
+    .string()
+    .regex(/^\d{1,15}$/u)
+    .transform(Number),
+]);
+
+export const usageData = z.looseObject({ role: text.optional(), costMicros: micros.optional() });
+
+const capPair = z.object({ maxCostMicros: z.number(), maxTokens: z.number() });
+
+export const startedData = z.looseObject({
+  stage: text.optional(),
+  source: z
+    .looseObject({
+      owner: text,
+      repo: text,
+      subpath: text.optional(),
+      commitSha: text.nullable().optional(),
+    })
+    .optional(),
+  caps: z.looseObject({ run: capPair }).optional(),
+});
+
+export const resolvedData = z.looseObject({ url: text.optional(), commitSha: text.optional() });
+
+export const endedData = z.looseObject({
+  endState: text,
+  errorCode: text.optional(),
+  totals: z.looseObject({ costMicros: micros.optional() }).optional(),
+});

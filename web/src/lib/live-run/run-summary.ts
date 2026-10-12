@@ -17,28 +17,70 @@ export interface RoleTotals {
   readonly costMicros: number | undefined;
 }
 
+/**
+ * Agents planned, running, done and failed. An agent that stopped at its turn limit still gave its
+ * cards, so it counts as done; one that gave invalid output, failed, or was stopped by a cap counts
+ * as failed.
+ */
 // RF-1002
 export function overviewOf(state: RunState): Overview {
-  void state;
-  return { planned: 0, running: 0, done: 0, failed: 0 };
+  const count = (states: readonly string[]): number =>
+    state.agents.filter((agent) => states.includes(agent.state)).length;
+  return {
+    planned: count(['Planned']),
+    running: count(['Running']),
+    done: count(['Done', 'TurnLimitReached']),
+    failed: count(['Failed', 'InvalidOutput', 'StoppedByCap']),
+  };
 }
 
 // RF-1003
 export function roleTotalsOf(state: RunState): readonly RoleTotals[] {
-  void state;
-  return [];
+  const totals = new Map<string, { input: number; output: number }>();
+  for (const agent of state.agents) {
+    const sum = totals.get(agent.role) ?? { input: 0, output: 0 };
+    totals.set(agent.role, {
+      input: sum.input + agent.inputTokens,
+      output: sum.output + agent.outputTokens,
+    });
+  }
+  for (const role of Object.keys(state.roleCostMicros)) {
+    if (!totals.has(role)) totals.set(role, { input: 0, output: 0 });
+  }
+  return [...totals.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([role, sum]) => ({
+      role,
+      inputTokens: sum.input,
+      outputTokens: sum.output,
+      costMicros: state.roleCostMicros[role],
+    }));
 }
 
 /** The share of `cap` that `used` is, in whole percent and never above 100; 0 for no cap. */
 // RF-1003
 export function shareOf(used: number, cap: number): number {
-  void used;
-  void cap;
-  return -1;
+  if (!(cap > 0)) return 0;
+  return Math.min(100, Math.round((used * 100) / cap));
 }
 
+/** How many claims are in each status. */
 // RF-1004
 export function claimCounts(claims: readonly ClaimRow[]): Readonly<Record<string, number>> {
-  void claims;
-  return {};
+  const counts: Record<string, number> = {};
+  for (const claim of claims) counts[claim.status] = (counts[claim.status] ?? 0) + 1;
+  return counts;
+}
+
+/**
+ * A number that grows with every model turn, every end of an agent and the end of the run: the page
+ * reads the run again when it changes, so the cost so far follows the run without a read per event.
+ */
+// RF-424
+export function progressOf(state: RunState): number {
+  const turns = state.agents.reduce((sum, agent) => sum + agent.turn, 0);
+  const ended = state.agents.filter(
+    (agent) => !['Planned', 'Running'].includes(agent.state),
+  ).length;
+  return turns + ended + (state.ended === undefined ? 0 : 1);
 }

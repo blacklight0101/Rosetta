@@ -10,7 +10,7 @@ export interface ToolNow {
   readonly status: 'running' | 'ok' | 'failed';
 }
 
-export interface CardRef {
+interface CardRef {
   readonly cardId: string;
   readonly type: string;
   readonly title: string;
@@ -25,6 +25,8 @@ export interface AgentPanelState {
   readonly turn: number;
   readonly filesRead: readonly string[];
   readonly tool: ToolNow | undefined;
+  /** The file of the `read_file` call that has not answered yet. */
+  readonly pendingRead: string | undefined;
   readonly cards: readonly CardRef[];
   readonly inputTokens: number;
   readonly outputTokens: number;
@@ -69,7 +71,7 @@ export interface CapsState {
   readonly maxTokens: number;
 }
 
-export interface EndedState {
+interface EndedState {
   readonly endState: string;
   readonly errorCode: string | undefined;
   readonly costMicros: number | undefined;
