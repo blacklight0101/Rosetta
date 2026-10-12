@@ -12,7 +12,7 @@ export interface RunFileContent {
 }
 
 /** Anything that is not a plain file of the run folder: missing, a folder, a link, a bad path. */
-export type RunFileRefusal = 'not-found';
+type RunFileRefusal = 'not-found';
 
 export interface RunFileReader {
   /**

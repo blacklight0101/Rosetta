@@ -21,7 +21,7 @@ export function claimsText(counts: Readonly<Record<string, number>>): string {
 }
 
 /** The sum of the counts. */
-export function claimCount(counts: Readonly<Record<string, number>>): number {
+function claimCount(counts: Readonly<Record<string, number>>): number {
   return CLAIM_STATUSES.reduce((sum, status) => sum + (counts[status] ?? 0), 0);
 }
 

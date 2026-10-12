@@ -9,9 +9,7 @@ import type { RunEvent } from '../../src/domain/runs/run-event.js';
 // attribute and a `javascript:` link. Nothing in it is real: the repository `octo/demo` is the
 // fixture of the other tests.
 
-export const replayDemoFolder = fileURLToPath(
-  new URL('../fixtures/runs/replay-demo/', import.meta.url),
-);
+const replayDemoFolder = fileURLToPath(new URL('../fixtures/runs/replay-demo/', import.meta.url));
 
 /** The run key of the recorded run. */
 export const replayDemoRunKey = '20261012-100000-understand';

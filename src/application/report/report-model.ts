@@ -25,7 +25,7 @@ export interface ReportDocuments {
   readonly cost: boolean;
 }
 
-export interface ReportTotals {
+interface ReportTotals {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly costMicros: number;

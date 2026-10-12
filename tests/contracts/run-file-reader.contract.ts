@@ -26,7 +26,7 @@ const files = {
 };
 const notFound = { ok: false, error: 'not-found' } as const;
 
-export const refusedPaths = [
+const refusedPaths = [
   '',
   '..',
   '../manifest.json',

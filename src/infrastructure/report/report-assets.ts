@@ -7,9 +7,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // `templates/report/`. The pages load them as files of their own folder, so the content security
 // policy needs no inline allowance.
 
-export const REPORT_ASSET_NAMES = ['report.css', 'replay.js'] as const;
-
-export type ReportAssets = Readonly<Record<(typeof REPORT_ASSET_NAMES)[number], string>>;
+export type ReportAssets = Readonly<Record<'report.css' | 'replay.js', string>>;
 
 async function readAsset(folder: string, name: string): Promise<string> {
   try {

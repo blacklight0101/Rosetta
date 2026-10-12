@@ -55,7 +55,7 @@ const runUrl = (suffix: string, pick: (context: Context) => string) => (context:
   `/api/runs/${pick(context)}${suffix}`;
 
 /** RF-008, RF-1105: the zip downloads answer the owner of a finished run, 409 while it runs. */
-export const exportRoutes: Readonly<Record<string, readonly Probe[]>> = Object.fromEntries(
+const exportRoutes: Readonly<Record<string, readonly Probe[]>> = Object.fromEntries(
   ['zip', 'handoff.zip'].map((name) => [
     `GET /api/runs/:runId/${name}`,
     [
@@ -77,7 +77,7 @@ const pageOwnerOnly = (status: number) => ({
  * RF-504, RF-506, RF-1105: the report is built by the owner of a finished run (409 while it runs)
  * and the files of a run folder are read by its owner only.
  */
-export const reportRoutes: Readonly<Record<string, readonly Probe[]>> = {
+const reportRoutes: Readonly<Record<string, readonly Probe[]>> = {
   'POST /api/runs/:runId/report': [
     {
       method: 'POST',
