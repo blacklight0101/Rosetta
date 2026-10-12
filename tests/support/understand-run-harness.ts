@@ -172,7 +172,7 @@ async function queueOf(s: Stores, providers: UnderstandProviders): Promise<RunQu
   return new RunQueue({
     ...{ runs, lifecycle, clock, logger },
     executors: {
-      scan: new RunScan({ fetcher, projects, pipeline, manifests, clock }),
+      scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
       understand: understandExecutor(s, providers),
     },
     maxRunning: 2,
