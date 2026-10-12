@@ -49,8 +49,11 @@ export async function stopWithin(steps: StopSteps, logger: Logger): Promise<Stop
     }, stopDeadlineMs);
   });
   const finished = (async (): Promise<StopOutcome> => {
-    await steps.close();
-    await steps.pool.end();
+    try {
+      await steps.close();
+    } finally {
+      await steps.pool.end();
+    }
     return 'clean';
   })();
   // If the deadline wins, a later failure of `finished` must not surface as an unhandled rejection.
@@ -74,11 +77,13 @@ export function installShutdown(
   const shutDown = (): void => {
     application.stop().then(
       (outcome) => {
-        void outcome;
+        // eslint-disable-next-line n/no-process-exit -- the pool's sockets to a frozen database keep the event loop alive, so only an explicit exit ends the process (P1-68).
+        process.exit(outcome === 'clean' ? 0 : 1);
       },
       (error: unknown) => {
         reportFailure(error);
-        process.exitCode = 1;
+        // eslint-disable-next-line n/no-process-exit -- the pool's sockets to a frozen database keep the event loop alive, so only an explicit exit ends the process (P1-68).
+        process.exit(1);
       },
     );
   };

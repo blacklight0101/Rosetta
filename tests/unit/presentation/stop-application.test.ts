@@ -9,7 +9,7 @@ import { composeApplication } from '../../../src/presentation/composition-root.j
 // The pool factory is replaced by a pool on a frozen database, whose `end()` never settles.
 
 vi.mock('../../../src/infrastructure/db/pool.js', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../../../src/infrastructure/db/pool.js')>();
+  const original = await importOriginal<object>();
   const { Pool } = await import('pg');
   class FrozenPool extends Pool {
     override end(): Promise<void> {

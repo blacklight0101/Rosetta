@@ -25,7 +25,7 @@ pool.query('SELECT 1').catch(() => undefined);
 installShutdown(
   { stop: () => stopWithin({ close: () => Promise.resolve(), pool }, logger) },
   (error) => {
-    console.error(String(error));
+    process.stderr.write(`${String(error)}\n`);
   },
 );
-console.log('ready');
+process.stdout.write('ready\n');

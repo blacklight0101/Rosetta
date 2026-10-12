@@ -1,14 +1,10 @@
 import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger, LogRecord } from '../application/ports/logger.js';
-import type { ScheduledJob } from '../application/ports/scheduler.js';
-import type { RunQueue } from '../application/runs/run-queue.js';
-import type { SessionStore } from '../application/ports/session-store.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { readAppVersion } from '../infrastructure/config/app-version.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { readMigrationFiles } from '../infrastructure/db/migration-files.js';
-import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgDatabaseHealth } from '../infrastructure/db/pg-database-health.js';
 import { PgMigrator } from '../infrastructure/db/pg-migrator.js';
 import { createAppPool, createMigratorPool, type DatabasePool } from '../infrastructure/db/pool.js';
@@ -25,6 +21,7 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
 import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './compose-accounts.js';
 import type { Auth } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
+import { scheduledTasks, type ScheduledTask } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
 import { stopWithin, type StopOutcome } from './shutdown.js';
 import { startUp } from './start-up.js';
@@ -57,55 +54,6 @@ export interface Application {
    * resolves `deadline` instead of `clean` when a frozen database made it give up waiting.
    */
   stop(): Promise<StopOutcome>;
-}
-
-interface ScheduledTask {
-  readonly intervalMs: number;
-  readonly job: ScheduledJob;
-}
-
-const dayMs = 86_400_000;
-const hourMs = 3_600_000;
-const minuteMs = 60_000;
-
-interface ScheduledParts {
-  readonly file: JsonlFileLogger;
-  readonly auth: { readonly sessions: SessionStore };
-  readonly pool: DatabasePool;
-  readonly clock: Clock;
-  readonly runs: RunQueue;
-}
-
-/**
- * The periodic jobs of architecture section 7: log retention daily (RF-009), the purge of expired
- * sessions and cost reservations hourly (RF-1101, data-model.md section 9) and the run queue sweep
- * every minute (RF-1108): runs left `Running` without a process end as `Interrupted` and a free
- * slot gets its next queued run.
- */
-function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] {
-  const { file, auth, pool, clock, runs } = parts;
-  const reservations = new PgCostLedger(pool);
-  return [
-    {
-      intervalMs: dayMs,
-      job: async () => {
-        await file.applyRetention();
-      },
-    },
-    {
-      intervalMs: hourMs,
-      job: async () => {
-        await auth.sessions.purgeExpired(clock.now());
-      },
-    },
-    {
-      intervalMs: hourMs,
-      job: async () => {
-        await reservations.purgeExpired(clock.now());
-      },
-    },
-    { intervalMs: minuteMs, job: () => runs.recover() },
-  ];
 }
 
 /** Writes an entry from a callback; a log that cannot be written must not crash the process. */
