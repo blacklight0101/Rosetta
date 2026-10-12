@@ -38,6 +38,12 @@ describe('isPublicAddress', () => {
     ['2001:db8::1', 'documentation'],
     ['2001::1', 'Teredo'],
     ['2002:a00:1::1', '6to4'],
+    ['3fff::1', 'documentation, 3fff::/20'],
+    ['3fff:fff::1', 'documentation, the last address of 3fff::/20'],
+    ['5f00::1', 'segment routing SIDs, 5f00::/16'],
+    ['5f00:ffff::1', 'segment routing SIDs, the last address of 5f00::/16'],
+    ['::ffff:0:0:1', 'IPv4-translated address, ::ffff:0:0:0/96'],
+    ['::ffff:0:102:304', 'IPv4-translated address in hexadecimal form'],
     ['fc00::1', 'unique local'],
     ['fd00:ec2::254', 'unique local and a cloud metadata address'],
     ['fe80::1', 'IPv6 link-local'],
@@ -49,12 +55,17 @@ describe('isPublicAddress', () => {
     expect(isPublicAddress(address)).toBe(false);
   });
 
-  it.each(['8.8.8.8', '1.1.1.1', '93.184.215.14', '172.32.0.1', '2606:4700:4700::1111'])(
-    'RF-1104 %s is public',
-    (address) => {
-      expect(isPublicAddress(address)).toBe(true);
-    },
-  );
+  it.each([
+    '8.8.8.8',
+    '1.1.1.1',
+    '93.184.215.14',
+    '172.32.0.1',
+    '2606:4700:4700::1111',
+    '3fff:1000::1',
+    '5eff:ffff::1',
+  ])('RF-1104 %s is public', (address) => {
+    expect(isPublicAddress(address)).toBe(true);
+  });
 });
 
 describe('bareHost', () => {
