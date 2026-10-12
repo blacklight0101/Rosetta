@@ -35,7 +35,9 @@ describe('DnsPublicHostCheck', () => {
 
     expect(await checkWith(resolver).isPublicHost('llm.example.com')).toBe(false);
   });
+});
 
+describe('DnsPublicHostCheck failures', () => {
   it('RF-1104 refuses a name that does not resolve', async () => {
     expect(await checkWith(new FakeHostResolver()).isPublicHost('nowhere.example')).toBe(false);
   });

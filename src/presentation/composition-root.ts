@@ -19,8 +19,9 @@ import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.j
 import { JsonlFileLogger } from '../infrastructure/system/jsonl-file-logger.js';
 import { StdoutJsonLogger } from '../infrastructure/system/stdout-json-logger.js';
 import { SystemClock } from '../infrastructure/system/system-clock.js';
+import { AesGcmSecretBox } from '../infrastructure/security/aes-gcm-secret-box.js';
 import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password-hasher.js';
-import { bootstrapAdministrator, composeAuth } from './compose-accounts.js';
+import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
 import { composeRuns, type RunComposition } from './compose-runs.js';
 import { startUp } from './start-up.js';
@@ -223,13 +224,25 @@ function openPool(environment: Environment, logger: Logger): DatabasePool {
   });
 }
 
+// ADR-015, DEC-112: the one password hasher and the box that seals provider keys under
+// ROSETTA_SECRET_KEY (and opens values under ROSETTA_SECRET_KEY_PREVIOUS during a rotation).
+function createSecrets(environment: Environment) {
+  return {
+    hasher: new ScryptPasswordHasher(),
+    secretBox: new AesGcmSecretBox({
+      current: environment.secretKey,
+      previous: environment.secretKeyPrevious,
+    }),
+  };
+}
+
 // Architecture section 2
 export function composeApplication(options: ApplicationOptions): Application {
   const { environment, doubles } = options;
   if (doubles !== undefined) TestDoubles.requireTestMode(environment);
   const clock = new SystemClock();
   const { file, logger, masker } = createLoggers(options, clock);
-  const hasher = new ScryptPasswordHasher();
+  const { hasher, secretBox } = createSecrets(environment);
   const pool = openPool(environment, logger);
   const cancels: (() => void)[] = [];
   let close: () => Promise<void> = () => Promise.resolve();
@@ -243,7 +256,7 @@ export function composeApplication(options: ApplicationOptions): Application {
   const start = async (): Promise<string> => {
     try {
       await file.applyRetention();
-      const auth = await composeAuth({ pool, logger, clock, masker, hasher });
+      const auth = await composeAuth({ pool, logger, clock, masker, hasher, secretBox });
       const { server, runs } = await createServer({
         ...{ environment, logger, pool, clock, masker, doubles },
         auth: auth.services,
@@ -253,6 +266,7 @@ export function composeApplication(options: ApplicationOptions): Application {
       let address = '';
       await startUp({
         migrate: () => migrate(environment, clock, logger),
+        reEncryptKeys: () => reEncryptProviderKeys({ pool, logger, secretBox }),
         bootstrapAdmin: () =>
           bootstrapAdministrator({ environment, pool, logger, clock, masker, hasher }),
         recoverRuns: () => runs.recover(),

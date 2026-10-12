@@ -68,6 +68,13 @@ async function seed(pool: DatabasePool): Promise<{ amy: string; bob: string; key
   return { amy: amy.id, bob: bob.id, key };
 }
 
+/** The stored row of the user's OpenAI key: its key version and ciphertext as text. */
+async function rowOf(keys: PgProviderKeyRepository, userId: string) {
+  const record = await keys.find(userId, 'openai');
+  if (record === undefined) throw new Error('row expected');
+  return { record, version: record.sealed.keyVersion, cipher: hex(record.sealed.ciphertext) };
+}
+
 describe.skipIf(!hasTestDatabase)('key rotation at start-up', () => {
   const database = useTestDatabase();
 
@@ -75,26 +82,21 @@ describe.skipIf(!hasTestDatabase)('key rotation at start-up', () => {
     const schema = await database.createSchema({ migrate: true });
     const { amy, bob, key } = await seed(schema.pool);
     const keys = new PgProviderKeyRepository(schema.pool);
-    const strangerBefore = await keys.find(bob, 'openai');
+    const strangerBefore = await rowOf(keys, bob);
     const output: string[] = [];
 
     await startAndStop(schema.url, output);
-    const rotated = await keys.find(amy, 'openai');
+    const rotated = await rowOf(keys, amy);
     await startAndStop(schema.url, output);
-    const again = await keys.find(amy, 'openai');
 
     const box = new AesGcmSecretBox({ current });
-    expect(rotated?.sealed.keyVersion).toBe(box.keyVersion);
-    expect(rotated && box.open(rotated.sealed, keyAdditionalData(amy, 'openai'))).toEqual({
+    expect(rotated.version).toBe(box.keyVersion);
+    expect(box.open(rotated.record.sealed, keyAdditionalData(amy, 'openai'))).toEqual({
       ok: true,
       value: key,
     });
-    expect(hex(again?.sealed.ciphertext ?? new Uint8Array())).toBe(
-      hex(rotated?.sealed.ciphertext ?? new Uint8Array()),
-    );
-    expect(hex((await keys.find(bob, 'openai'))?.sealed.ciphertext ?? new Uint8Array())).toBe(
-      hex(strangerBefore?.sealed.ciphertext ?? new Uint8Array()),
-    );
+    expect((await rowOf(keys, amy)).cipher).toBe(rotated.cipher);
+    expect((await rowOf(keys, bob)).cipher).toBe(strangerBefore.cipher);
     const log = output.join('');
     expect(log).toContain('"code":"RST-2300"');
     expect(log).not.toContain(key);

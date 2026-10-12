@@ -102,6 +102,8 @@ export const ERROR_CODES = {
   passwordChangeRequired: 'RST-2212',
   ownAccountRefused: 'RST-2213',
   passwordUnchanged: 'RST-2214',
+  providerKeyUnreadable: 'RST-2300',
+  providerKeyInvalid: 'RST-2301',
   baseUrlRejected: 'RST-2304',
   runStageNotAvailable: 'RST-2305',
   migrationFileInvalid: 'RST-2400',

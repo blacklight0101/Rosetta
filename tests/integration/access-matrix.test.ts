@@ -63,6 +63,7 @@ const runUrl = (suffix: string, pick: (context: Context) => string) => (context:
 const adminUserUrl = (suffix: string, userId: (context: Context) => string) => (context: Context) =>
   `/api/admin/users/${userId(context)}${suffix}`;
 const newPassword = fixturePassword('Renewed');
+const keysUrl = '/api/account/keys';
 
 /** One row per route (method and path as Fastify prints them), with one or more probes. */
 const matrix: Readonly<Record<string, readonly Probe[]>> = {
@@ -141,22 +142,18 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
       expected: signedIn(401, 200),
     },
   ],
-  'GET /api/account/keys': [
-    { method: 'GET', url: '/api/account/keys', expected: active(401, 200) },
-  ],
-  'HEAD /api/account/keys': [
-    { method: 'HEAD', url: '/api/account/keys', expected: active(401, 200) },
-  ],
+  'GET /api/account/keys': [{ method: 'GET', url: keysUrl, expected: active(401, 200) }],
+  'HEAD /api/account/keys': [{ method: 'HEAD', url: keysUrl, expected: active(401, 200) }],
   'PUT /api/account/keys/:provider': [
     {
       method: 'PUT',
-      url: '/api/account/keys/openai',
+      url: `${keysUrl}/openai`,
       payload: () => ({ key: fixtureKey('Matrix01') }),
       expected: active(401, 200),
     },
     {
       method: 'PUT',
-      url: '/api/account/keys/ollama',
+      url: `${keysUrl}/ollama`,
       payload: () => ({ key: fixtureKey('Matrix02') }),
       expected: active(401, 404),
     },

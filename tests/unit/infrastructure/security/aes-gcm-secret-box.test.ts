@@ -1,4 +1,5 @@
-import { createCipheriv, createHash, hkdfSync } from 'node:crypto';
+import { createCipheriv, createHash, hkdf } from 'node:crypto';
+import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { AesGcmSecretBox } from '../../../../src/infrastructure/security/aes-gcm-secret-box.js';
@@ -15,10 +16,11 @@ const bob = '00000000-0000-4000-9000-0000000000b2';
 const amyOpenAi = `${amy}:openai`;
 const unreadable = { ok: false, error: ERROR_CODES.providerKeyUnreadable };
 
-function derived(secret: string): Buffer {
+/** The documented derivation, computed here with the asynchronous HKDF of node:crypto. */
+async function derived(secret: string): Promise<Buffer> {
   const info = 'rosetta/provider-keys/v1';
   const ikm = Buffer.from(secret, 'base64');
-  return Buffer.from(hkdfSync('sha256', ikm, Buffer.alloc(0), info, 32));
+  return Buffer.from(await promisify(hkdf)('sha256', ikm, Buffer.alloc(0), info, 32));
 }
 
 function flipped(bytes: Uint8Array, index = 0): Buffer {
@@ -50,12 +52,14 @@ describe('AesGcmSecretBox', () => {
     expect(hex(first.iv)).not.toBe(hex(second.iv));
     expect(hex(first.ciphertext)).not.toBe(hex(second.ciphertext));
   });
+});
 
-  it('RF-1104 derives the AES key with HKDF-SHA256 and the documented info', () => {
+describe('AesGcmSecretBox key derivation', () => {
+  it('RF-1104 derives the AES key with HKDF-SHA256 and the documented info', async () => {
     const secret = fixtureSecret(2);
     const box = new AesGcmSecretBox({ current: secret });
     const iv = Buffer.alloc(12, 5);
-    const cipher = createCipheriv('aes-256-gcm', derived(secret), iv, { authTagLength: 16 });
+    const cipher = createCipheriv('aes-256-gcm', await derived(secret), iv, { authTagLength: 16 });
     cipher.setAAD(Buffer.from(amyOpenAi, 'utf8'));
     const ciphertext = Buffer.concat([
       cipher.update('outside-sealed-value', 'utf8'),
@@ -66,9 +70,9 @@ describe('AesGcmSecretBox', () => {
     expect(box.open(sealed, amyOpenAi)).toEqual({ ok: true, value: 'outside-sealed-value' });
   });
 
-  it('RF-1104 the key version is a fingerprint, never the secret or the derived key', () => {
+  it('RF-1104 the key version is a fingerprint, never the secret or the derived key', async () => {
     const secret = fixtureSecret(3);
-    const key = derived(secret);
+    const key = await derived(secret);
     const box = new AesGcmSecretBox({ current: secret });
 
     expect(box.keyVersion).toBe(createHash('sha256').update(key).digest('hex').slice(0, 16));
@@ -77,7 +81,9 @@ describe('AesGcmSecretBox', () => {
     }
     expect(new AesGcmSecretBox({ current: fixtureSecret(4) }).keyVersion).not.toBe(box.keyVersion);
   });
+});
 
+describe('AesGcmSecretBox refusals', () => {
   it('RF-1104 a value refuses to open under another user or another provider', () => {
     const box = new AesGcmSecretBox({ current: fixtureSecret(1) });
     const sealed = box.seal(fixtureKey('Swap1'), amyOpenAi);

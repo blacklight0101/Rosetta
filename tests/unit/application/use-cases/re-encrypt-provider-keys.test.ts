@@ -85,7 +85,9 @@ describe('ReEncryptProviderKeys', () => {
     expect(plainRecord(await keys.find(amy, 'openai'))).toEqual(amysAfterFirst);
     expect(plainRecord(await keys.find(bob, 'openai'))).toEqual(bobsBefore);
   });
+});
 
+describe('ReEncryptProviderKeys reports', () => {
   it('RF-1104 reports a row under an unknown key version and keeps it', async () => {
     const { keys, step, logger } = setUp();
     await stored(keys, strangerBox, amy, 'openai-compatible');
@@ -119,9 +121,7 @@ describe('ReEncryptProviderKeys', () => {
     const outcome = await step.execute();
 
     expect(outcome).toEqual({ reEncrypted: 0, unreadable: 1 });
-    expect(logger.entries).toContainEqual(
-      expect.objectContaining({ data: expect.objectContaining({ reason: 'does not open' }) }),
-    );
+    expect(logger.text()).toContain('"reason":"does not open"');
     expect(logger.text()).not.toContain(key);
   });
 });

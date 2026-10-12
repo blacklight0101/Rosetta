@@ -56,7 +56,9 @@ describe('start-up', () => {
 
     expect(calls).toEqual(['migrate', 'reEncryptKeys']);
   });
+});
 
+describe('start-up failures', () => {
   it('RF-1102 a refused bootstrap administrator stops the start-up before the server listens', async () => {
     const { calls, steps } = recordingSteps('bootstrapAdmin');
 

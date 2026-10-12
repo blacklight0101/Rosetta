@@ -46,7 +46,7 @@ describe('provider key rules', () => {
     ['with a space', `${'a'.repeat(10)} ${'b'.repeat(10)}`],
     ['with a line break', `${'a'.repeat(20)}\n`],
     ['with a control character', `${'a'.repeat(20)}\u0007`],
-    ['with a no-break space', `${'a'.repeat(20)} `],
+    ['with a no-break space', `${'a'.repeat(20)}${String.fromCodePoint(0xa0)}`],
   ])('RF-1104 refuses a key %s', (_case, key) => {
     expect(isUsableKeyValue(key)).toBe(false);
   });

@@ -124,6 +124,15 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'The new password must differ from the current one.',
     nextStep: 'Choose a password you have not used for this account.',
   },
+  'RST-2300': {
+    message: 'A stored provider key could not be decrypted with the server secret.',
+    nextStep:
+      'Save the key again in your settings; the operator checks ROSETTA_SECRET_KEY and ROSETTA_SECRET_KEY_PREVIOUS.',
+  },
+  'RST-2301': {
+    message: 'The API key must have 16 to 512 characters, without spaces or line breaks.',
+    nextStep: 'Paste the whole key exactly as the provider shows it.',
+  },
   'RST-2304': {
     message: 'The URL must use https and a public address.',
     nextStep: 'Enter an https address that is reachable from the internet.',

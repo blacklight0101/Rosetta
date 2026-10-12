@@ -63,7 +63,9 @@ describe('keys API', () => {
       keys: [{ provider: 'anthropic', last4: 'irst', updatedAt: '2026-10-11T09:00:00.000Z' }],
     });
   });
+});
 
+describe('keys API refusals', () => {
   it('RF-1104 deleting a key the user does not have answers 404', async () => {
     test = createTestServer();
     const amy = await signedIn('amy');
@@ -103,7 +105,9 @@ describe('keys API', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
   });
+});
 
+describe('keys API key value', () => {
   it('RF-1104 refuses an unusable key value on the key field', async () => {
     test = createTestServer();
     const amy = await signedIn('amy');

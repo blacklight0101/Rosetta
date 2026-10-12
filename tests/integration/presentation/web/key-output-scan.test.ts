@@ -22,6 +22,7 @@ const forbidden = Object.values(keys).flatMap((key) => [key, key.slice(0, -4)]);
 const browsers: TestBrowser[] = [];
 let test: TestServer;
 let bobId = '';
+let malformedStatus = 0;
 
 function put(browser: TestBrowser, provider: string, payload: Record<string, unknown>, extra = {}) {
   return browser.request({
@@ -52,6 +53,15 @@ async function driveAmy(amy: TestBrowser): Promise<void> {
   await put(amy, 'openai', { key: keys.amyRefused }, { csrf: false });
   await put(amy, 'openai', { key: keys.amyRefused }, { origin: 'https://evil.example' });
   await put(amy, 'anthropic', { key: keys.amyRefused, extra: true });
+  // A body that is not valid JSON: the parser's message quotes the start of the text.
+  const malformed = await amy.request({
+    method: 'PUT',
+    url: '/api/account/keys/anthropic',
+    payload: `{"key":"${keys.amyRefused}"`,
+    headers: { 'content-type': 'application/json' },
+    remoteAddress: '127.0.0.4',
+  });
+  malformedStatus = malformed.statusCode;
   await amy.request({ method: 'GET', url: '/api/account/keys' });
   await amy.request({ method: 'HEAD', url: '/api/account/keys' });
   await amy.request({ method: 'DELETE', url: '/api/account/keys/openai' });
@@ -71,9 +81,10 @@ async function drive(): Promise<void> {
   const anonymous = new TestBrowser(test.server);
   browsers.push(amy, bob, root, anonymous);
   await driveAmy(amy);
-  await put(bob, 'anthropic', { key: keys.bobAnthropic });
+  // Saves are limited per address (10 a minute), so the other browsers come from other addresses.
+  await put(bob, 'anthropic', { key: keys.bobAnthropic }, { remoteAddress: '127.0.0.2' });
   await bob.request({ method: 'GET', url: '/api/account/keys' });
-  await put(anonymous, 'openai', { key: keys.anonymous });
+  await put(anonymous, 'openai', { key: keys.anonymous }, { remoteAddress: '127.0.0.3' });
   await anonymous.request({ method: 'GET', url: '/api/account/keys' });
   await root.request({ method: 'GET', url: '/api/account/keys' });
   await root.request({ method: 'GET', url: '/api/admin/audit' });
@@ -102,6 +113,7 @@ describe('key output scan', () => {
     const audit = await test.audit.list({ since: 0 });
 
     expect((await test.keys.listForUser(bobId)).length).toBe(1);
+    expect(malformedStatus).toBe(400);
     expect(audit.filter((event) => event.action.startsWith('key.')).length).toBeGreaterThanOrEqual(
       5,
     );
