@@ -13,7 +13,7 @@ import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 
 // RF-010, design-system.md section 14 (Projects): the New project form. A refused address shows
 // its code and reason next to the field and creates nothing; an address that is already a project
-// of the user opens that project instead of making a second one.
+// of the user opens that project's start page instead of making a second one.
 
 export interface NewProjectFormProps {
   readonly url: string;
@@ -48,7 +48,7 @@ function useCreation(props: NewProjectFormProps): Creation {
     }
     const { project, created } = result.value;
     if (!created) {
-      navigate(`/projects/${encodeURIComponent(project.id)}/settings`);
+      navigate(`/projects/${encodeURIComponent(project.id)}/start`);
       return;
     }
     onUrl('');

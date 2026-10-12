@@ -219,7 +219,6 @@ it('RF-1001 a likely cost above the daily cap on the own keys warns and names th
 it('RF-425 an estimate that cannot be read shows its error and Start stays off for understand', async () => {
   renderStart({ [`GET ${estimatePath}`]: failure(500, 'RST-2006') });
 
-  await screen.findByText(/RST-2006/u);
-
+  expect((await screen.findByTestId('error-banner')).textContent).toContain('RST-2006');
   expect(start().disabled).toBe(true);
 });

@@ -56,8 +56,11 @@ test('RF-1001 starts a scan from the page before there is a code map and passes 
   await expect(page.getByTestId('run-notice')).toContainText('Run started');
   await expectNoSeriousViolations(page);
   const estimate = `/api/projects/${projectIdOf(page)}/estimate`;
+  // The estimate answers once the scan has completed and left its code map.
   await expect
-    .poll(async () => (await page.request.get(estimate)).status(), { timeout: 30_000 })
+    .poll(async () => page.evaluate(async (path) => (await fetch(path)).status, estimate), {
+      timeout: 30_000,
+    })
     .toBe(200);
 });
 
@@ -128,6 +131,7 @@ test('RF-1001 an invalid address is refused next to the field with its code and 
   page,
 }) => {
   await openStartPage(page);
+  await page.getByLabel('Scan only').check();
   const url = page.getByLabel('GitHub repository URL');
 
   await url.fill('https://example.com/octo/demo');

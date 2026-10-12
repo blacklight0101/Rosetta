@@ -352,3 +352,152 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Start run (design-system.md section 14) */
+
+.rst-start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-5);
+  max-inline-size: 72rem;
+}
+
+.rst-start__url {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--rst-sp-3);
+}
+
+.rst-start__url .rst-field {
+  flex: 1 1 26rem;
+  min-inline-size: 0;
+}
+
+.rst-start__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3) var(--rst-sp-6);
+  margin: 0;
+  padding: var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-2);
+}
+
+.rst-start__fact dt {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-start__fact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rst-start__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: var(--rst-sp-5);
+  align-items: start;
+}
+
+@media (max-width: 64rem) {
+  .rst-start__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rst-start__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rst-start__group legend {
+  margin-block-end: var(--rst-sp-1);
+  padding: 0;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-start__choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
+
+.rst-start__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+}
+
+.rst-start__cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+}
+
+.rst-start__cap .rst-field {
+  flex: 0 0 8rem;
+}
+
+.rst-start__meter {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+  padding-block-start: var(--rst-sp-5);
+}
+
+.rst-meter {
+  position: relative;
+  block-size: 10px;
+  overflow: hidden;
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-surface-2);
+}
+
+.rst-meter__fill {
+  block-size: 100%;
+  background: var(--rst-brand);
+}
+
+.rst-meter--over .rst-meter__fill {
+  background: var(--rst-warn-solid);
+}
+
+.rst-meter__mark {
+  position: absolute;
+  inset-block: 0;
+  inline-size: 2px;
+  background: var(--rst-ink-soft);
+}
+
+.rst-table th.rst-table__number,
+.rst-table td.rst-table__number {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.rst-table tbody th[scope='row'] {
+  background: transparent;
+  color: var(--rst-ink);
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-body);
+}
+
+.rst-table__sub {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-start__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--rst-sp-3);
+}

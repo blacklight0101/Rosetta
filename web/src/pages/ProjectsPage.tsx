@@ -58,13 +58,22 @@ function ProjectRow({ project }: { readonly project: Project }): JSX.Element {
       <td>{project.subpath === '' ? 'whole repository' : project.subpath}</td>
       <td>{project.createdAt.slice(0, 'YYYY-MM-DD'.length)}</td>
       <td>
-        <Link
-          href={`/projects/${encodeURIComponent(project.id)}/settings`}
-          class="rst-button rst-button--secondary"
-        >
-          Settings
-          <span class="rst-visually-hidden"> for {project.name}</span>
-        </Link>
+        <div class="rst-projects__actions">
+          <Link
+            href={`/projects/${encodeURIComponent(project.id)}/start`}
+            class="rst-button rst-button--primary"
+          >
+            Start run
+            <span class="rst-visually-hidden"> for {project.name}</span>
+          </Link>
+          <Link
+            href={`/projects/${encodeURIComponent(project.id)}/settings`}
+            class="rst-button rst-button--secondary"
+          >
+            Settings
+            <span class="rst-visually-hidden"> for {project.name}</span>
+          </Link>
+        </div>
       </td>
     </tr>
   );
