@@ -55,6 +55,18 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'The provider call log or a transcript could not be written.',
     nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
   },
+  'RST-2104': {
+    message: 'The events of a run could not be stored or read.',
+    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
+  },
+  'RST-2105': {
+    message: 'A run event was refused because it does not follow the run log.',
+    nextStep: 'The run keeps its stored events; report this if it happens again.',
+  },
+  'RST-2106': {
+    message: 'The manifest of a run could not be stored or read.',
+    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
+  },
   'RST-2201': {
     message: 'User name or password is incorrect.',
     nextStep: 'Check both and try again.',
@@ -99,6 +111,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
   'RST-2304': {
     message: 'The URL must use https and a public address.',
     nextStep: 'Enter an https address that is reachable from the internet.',
+  },
+  'RST-2305': {
+    message: 'This server cannot run that stage yet.',
+    nextStep: 'Start a stage that is available, or ask the operator to update Rosetta.',
   },
   'RST-2400': {
     message: 'A database migration file has an invalid name or a duplicate number.',

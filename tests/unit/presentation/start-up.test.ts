@@ -3,9 +3,10 @@ import { startUp } from '../../../src/presentation/start-up.js';
 
 // RF-1302: migrations are applied before the server accepts requests; the scheduler starts after.
 // RF-1102: the bootstrap administrator is created after the migrations and before the server
-// listens (architecture section 4, main.ts).
+// listens (architecture section 4, main.ts). RF-1108, RNF-002: runs left running by the earlier
+// process end as interrupted before the server listens.
 
-type Step = 'migrate' | 'bootstrapAdmin' | 'listen';
+type Step = 'migrate' | 'bootstrapAdmin' | 'recoverRuns' | 'listen';
 
 function recordingSteps(failAt?: Step): {
   readonly calls: string[];
@@ -21,6 +22,7 @@ function recordingSteps(failAt?: Step): {
     steps: {
       migrate: step('migrate'),
       bootstrapAdmin: step('bootstrapAdmin'),
+      recoverRuns: step('recoverRuns'),
       listen: step('listen'),
       startScheduler: () => {
         calls.push('startScheduler');
@@ -30,12 +32,12 @@ function recordingSteps(failAt?: Step): {
 }
 
 describe('start-up', () => {
-  it('RF-1302 RF-1102 migrates, creates the bootstrap admin, listens, then starts the scheduler', async () => {
+  it('RF-1302 RF-1102 RF-1108 migrates, creates the bootstrap admin, recovers runs, listens, then starts the scheduler', async () => {
     const { calls, steps } = recordingSteps();
 
     await startUp(steps);
 
-    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'listen', 'startScheduler']);
+    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'recoverRuns', 'listen', 'startScheduler']);
   });
 
   it('RF-1102 a refused bootstrap administrator stops the start-up before the server listens', async () => {
@@ -59,6 +61,14 @@ describe('start-up', () => {
 
     await expect(startUp(steps)).rejects.toThrow('listen failed');
 
-    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'listen']);
+    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'recoverRuns', 'listen']);
+  });
+
+  it('RNF-002 a failing run recovery stops the start-up before the server listens', async () => {
+    const { calls, steps } = recordingSteps('recoverRuns');
+
+    await expect(startUp(steps)).rejects.toThrow('recoverRuns failed');
+
+    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'recoverRuns']);
   });
 });

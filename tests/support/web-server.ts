@@ -15,12 +15,15 @@ import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { FakePasswordHasher } from './account-fixtures.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
+import { ManualScheduler } from './manual-scheduler.js';
+import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
@@ -40,9 +43,19 @@ export interface TestServer {
   readonly projects: MemoryProjectRepository;
   readonly serverSettings: MemoryServerSettings;
   readonly hasher: PasswordHasher;
+  /** RF-1006, RF-1108: the run queue, its stores and the executor the test controls. */
+  readonly runs: RunHarness;
+  /** The scheduler behind the SSE keep-alive; a test ticks it. */
+  readonly heartbeat: ManualScheduler;
+  /** The open event streams of the run routes. */
+  readonly streams: StreamRegistry;
 }
 
-export interface TestServerOptions extends Partial<Omit<ServerOptions, 'auth' | 'projects'>> {
+export interface TestServerOptions extends Partial<
+  Omit<ServerOptions, 'auth' | 'projects' | 'runs'>
+> {
+  /** Where the run events are stored, given the server's logger; memory by default. */
+  readonly eventStore?: (logger: MemoryLogger) => EventStore;
   /** The password hasher of sign-in; the fast fake by default. */
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
@@ -72,13 +85,39 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
   };
 }
 
+interface AuthParts {
+  readonly users: MemoryUserRepository;
+  readonly hasher: PasswordHasher;
+  readonly sessions: MemorySessionStore;
+  readonly auditLog: MemoryAuditLog;
+  readonly logger: MemoryLogger;
+  readonly clock: FixedClock;
+  readonly dummyHash: string;
+}
+
+/** RF-1009, RF-1100, RF-1101: the session use cases over memory adapters. */
+function authServices(parts: AuthParts): ServerOptions['auth'] {
+  const { users, hasher, sessions, auditLog, logger, clock, dummyHash } = parts;
+  return {
+    signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
+    signOut: new SignOut({ sessions, auditLog, logger, clock }),
+    resolveSession: new ResolveSession({ sessions, users, logger, clock }),
+    refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
+  };
+}
+
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
  * the server.
  */
 export function createTestServer(options: TestServerOptions = {}): TestServer {
-  const { hasher = new FakePasswordHasher(), dummyHash = 'fake$dummy', ...overrides } = options;
+  const {
+    hasher = new FakePasswordHasher(),
+    dummyHash = 'fake$dummy',
+    eventStore,
+    ...overrides
+  } = options;
   const clock = new FixedClock('2026-10-11T09:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -89,19 +128,21 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const auditLog = audit;
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings({});
+  const runs = createRunHarness({
+    clock,
+    logger,
+    ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
+  });
+  const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const server = buildServer({
     logger,
     databaseHealth: health,
     version: testVersion,
     publicUrl: testPublicUrl,
     trustProxy: 0,
-    auth: {
-      signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
-      signOut: new SignOut({ sessions, auditLog, logger, clock }),
-      resolveSession: new ResolveSession({ sessions, users, logger, clock }),
-      refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
-    },
+    auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
+    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, ...route },
     ...overrides,
   });
   return {
@@ -115,5 +156,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     hasher,
     projects,
     serverSettings,
+    runs,
+    ...route,
   };
 }

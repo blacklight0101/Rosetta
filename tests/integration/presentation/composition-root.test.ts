@@ -3,6 +3,22 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
+import { scopeOf } from '../../../src/application/runs/run-scope.js';
+import type { RunScope } from '../../../src/application/ports/run-events.js';
+import type { Run } from '../../../src/domain/runs/run.js';
+import { PgProjectRepository } from '../../../src/infrastructure/db/pg-project-repository.js';
+import { PgRunIndex } from '../../../src/infrastructure/db/pg-run-index.js';
+import { PgUserRepository } from '../../../src/infrastructure/db/pg-user-repository.js';
+import { JsonlEventLog } from '../../../src/infrastructure/events/jsonl-event-log.js';
+import { FileRunManifestStore } from '../../../src/infrastructure/files/file-run-manifest-store.js';
+import { NodeOutputWriter } from '../../../src/infrastructure/files/node-output-writer.js';
+import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
+import { sampleAccount } from '../../support/account-fixtures.js';
+import { FixedClock } from '../../support/fixed-clock.js';
+import { MemoryLogger } from '../../support/memory-logger.js';
+import { sampleProject } from '../../support/project-fixtures.js';
+import { eventFor } from '../../support/run-event-fixtures.js';
+import { sampleManifest, sampleRun } from '../../support/run-fixtures.js';
 import { readAppVersion } from '../../../src/infrastructure/config/app-version.js';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { readMigrationFiles } from '../../../src/infrastructure/db/migration-files.js';
@@ -28,6 +44,34 @@ const testSecretKey = Buffer.alloc(32, 7).toString('base64');
 /** The documented front-end build folder (tasks.md P1-12), from the repository root. */
 const frontEndFolder = fileURLToPath(new URL('../../../dist/web/', import.meta.url));
 
+interface LeftRun {
+  readonly run: Run;
+  readonly scope: RunScope;
+  readonly log: JsonlEventLog;
+  readonly manifests: FileRunManifestStore;
+}
+
+/** A user, a project and a run that is running, with its manifest and first event on disk. */
+async function seedRunningRun(pool: DatabasePool, dataDir: string): Promise<LeftRun> {
+  const owner = sampleAccount({ userName: 'owner' });
+  await new PgUserRepository(pool).insert(owner);
+  const project = sampleProject({ userId: owner.id });
+  await new PgProjectRepository(pool).insertOrFind(project);
+  const index = new PgRunIndex(pool);
+  const queued = sampleRun({ userId: owner.id, projectId: project.id });
+  await index.insert(queued);
+  const run = (await index.start(queued.id, queued.queuedAt + 1_000)) ?? queued;
+  const scope = scopeOf(run);
+  const masker = new SecretMasker();
+  const logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), masker);
+  const writer = new NodeOutputWriter({ dataDir, logger });
+  const log = new JsonlEventLog({ writer, masker });
+  const manifests = new FileRunManifestStore({ writer, masker });
+  await manifests.write(scope, sampleManifest({ runId: run.runKey }));
+  await log.publish(scope, eventFor(scope, 1, 'run.started', { stage: 'scan' }));
+  return { run, scope, log, manifests };
+}
+
 async function exists(path: string): Promise<boolean> {
   try {
     await access(path);
@@ -45,8 +89,8 @@ interface Composed {
 
 const cleanups: string[] = [];
 
-async function composed(database: TestDatabase): Promise<Composed> {
-  const schema = await database.createSchema({ migrate: false });
+async function composed(database: TestDatabase, migrate = false): Promise<Composed> {
+  const schema = await database.createSchema({ migrate });
   const dataDir = await mkdtemp(join(tmpdir(), 'rst-root-'));
   cleanups.push(dataDir);
   const environment = loadEnvironment({
@@ -98,6 +142,29 @@ describe.skipIf(!hasTestDatabase)('composition root', () => {
       await application.start();
 
       expect(await exists(old)).toBe(false);
+    } finally {
+      await application.stop();
+    }
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('composition root and runs', () => {
+  const database = useTestDatabase();
+
+  it('RNF-002 ends a run left running by the earlier process as Interrupted before it serves', async () => {
+    const { application, pool, dataDir } = await composed(database, true);
+    const left = await seedRunningRun(pool, dataDir);
+
+    try {
+      await application.start();
+
+      const row = await pool.query('SELECT queue_state, end_state FROM runs WHERE id = $1', [
+        left.run.id,
+      ]);
+      expect(row.rows[0]).toEqual({ queue_state: 'Ended', end_state: 'Interrupted' });
+      const events = await left.log.read(left.scope, 0);
+      expect(events.map((event) => event.type)).toEqual(['run.started', 'run.ended']);
+      expect(await left.manifests.read(left.scope)).toMatchObject({ endState: 'Interrupted' });
     } finally {
       await application.stop();
     }

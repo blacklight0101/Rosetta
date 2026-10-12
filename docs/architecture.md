@@ -103,7 +103,7 @@ src/
     code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel; area grouping (folder buckets, linked sets); the code-unit comparator every sorted list uses
     cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids
     budget/             Money, TokenUsage, Price, PriceTable, Budget, Cap
-    runs/               Run, RunManifest, RunEndState, AgentTaskState, RunEvent types
+    runs/               Run (start and end transitions), RunManifest, RunEndState, RunQueueState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`); AgentTaskState joins with the agent cards
     sources/            GitHubRepoRef, CommitSha, Permalink
     planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018)
     errors/             domain error codes and Result type
@@ -111,6 +111,7 @@ src/
     ports/              port interfaces (section 7)
     use-cases/          one file per use case (section 6)
     support/            helpers the use cases share (KeyedQueue: sign-in attempts per user name one at a time)
+    runs/               the run queue (`RunQueue`), the run lifecycle (manifest start and end, `run.started`, `run.ended`), the event publisher, the accepted manifest, the event and manifest schemas
     agent/              agent loop, tool definitions, orchestrator, card parsing and repair
     verifier/           citation check, judgement step
     estimate/           cost estimator
@@ -125,8 +126,9 @@ src/
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
                         hash, snapshot.json, read-only), github-snapshot-fetcher, fake-source-fetcher
     files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
-                        search and limits, node-output-writer, workspace-guard, workspace-paths, repository-path checks
-    events/             sse-broadcaster, jsonl-event-log
+                        search and limits, node-output-writer, workspace-guard, workspace-paths, repository-path checks,
+                        file-run-manifest-store (`manifest.json`)
+    events/             sse-broadcaster, jsonl-event-log, fan-out-sink, memory-event-sink (sequence rules shared in event-order)
     db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit) with their
                         memory twins, row schemas, migration runner
     security/           password-hasher (scrypt, at most two at a time through a semaphore), session ids (256
@@ -220,7 +222,9 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `BuildPlan` | Build the hand-off package from a run, the planning brief and the catalogue (ADR-018) | RF-604..RF-613 |
 | `ExportZip` | Download zip / Download hand-off | RF-008 |
 | `TestProviders` | Test button in settings | RF-407 |
-| `StopRun` | Stop button (`POST /api/runs/:runId/stop`) | RF-1003, RF-422 |
+| `SubmitRun` | accepts a run of the user's project into the queue (called by the stage routes, for example `POST /api/projects/:id/runs`): own folder name, manifest written, started at once when the queue has room | RF-003, RF-1108 |
+| `SubscribeRunEvents` | live page (`GET /api/runs/:runId/events`, server-sent events): the stored events after `Last-Event-ID`, then the live ones, closing after `run.ended`; stored events go out in batches that wait for the page to read (no limit on a long history), only live events are held to the 1 MiB unread limit; a `Last-Event-ID` beyond the last `seq` counts as the last one; another user's run answers 404 | RF-1006, RF-1105 |
+| `StopRun` | Stop button (`POST /api/runs/:runId/stop`): aborts the signal of a running run (202, it ends as `Interrupted`) or cancels a queued run (200); an ended run answers 409 | RF-1003, RF-422, RF-1108 |
 | `ReadRunFile` | run output pages and downloads (`GET /runs/:runId/files/*`, owner-scoped, served as text or attachment with the RF-1013 CSP) | RF-504, RF-506, RF-1105 |
 | `DeleteRun`, `DeleteProject`, `DeleteSnapshot` | Delete buttons (snapshots: administrator) | RF-1012 |
 | `SignIn`, `SignOut`, `ChangePassword` | sign-in page, menu, settings (`POST`, `DELETE /api/session`) | RF-1100, RF-1101, RF-1103 |
@@ -250,7 +254,9 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `IdGenerator` | run ids and every UUID | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
 | `Logger` | structured application log with levels and correlation ids (RF-009) | `StdoutJsonLogger`, `JsonlFileLogger`, `FanOutLogger`, `MemoryLogger` (tests) |
 | `ProviderCallRecorder` | one record per provider call attempt (RF-408) and the masked transcript lines of each agent task (data-model.md section 3.15), written by an `ObservedProvider` decorator around every provider; masks every line before it is kept | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
-| `RunEventSink` | typed run events for the web UI and the replay log (RF-424, RF-1006) | `SseBroadcaster`, `JsonlEventLog`, `FanOutSink`, `MemorySink` |
+| `RunEventSink`, `RunEventHistory`, `RunEventFeed` | typed run events for the web UI and the replay log (RF-424, RF-1006). The sink takes complete events with their `seq` (numbered by `RunEventPublisher`); the log refuses a gap, an event of another run and anything after `run.ended` (RST-2105). The history reads the stored events after a `seq` (`read`), replays them in batches at the receiver's pace (`replay`, streaming the file through the `TextLineReader` port) and gives the last `seq`; the feed gives a page the live events of its own run. `JsonlEventLog` writes through the `OutputWriter`, masks each line, serialises the writes of a run, ignores a torn last line and removes it before the next write; `SseBroadcaster` masks, delivers per user and run and forgets a run's listeners after `run.ended`; `FanOutSink` sends to the log first | `JsonlEventLog` (sink and history), `SseBroadcaster` (sink and feed), `FanOutSink`, `MemoryEventSink` (sink and history, tests) |
+| `RunManifestStore` | `runs/<runId>/manifest.json`: written when a run is accepted, rewritten when it starts and when it ends; the whole file is replaced atomically (RF-003, RNF-002) | `FileRunManifestStore`, `MemoryRunManifestStore` |
+| `RunExecutor` | the work of one stage, started by the run queue with the run, its manifest, an event publisher and an abort signal; returns the end state (a thrown error ends the run as `Failed`). The stage cards register theirs in `compose-runs.ts` (P1-23 first) | `RunScan` (P1-23), the later stages |
 | `ArchiveWriter` | zip a folder (RF-008) | `YazlArchiveWriter` |
 | `UserPrompt` | withdrawn 2026-10-11 (DEC-59): confirmations are fields of the start request (consent, estimate accepted) | - |
 | `UserRepository` | accounts, roles, state, lockout counters (RF-1100..RF-1103); user names unique case-insensitively, lists never select the password hash, `insertIfNoUsers` for `BootstrapAdmin` (under an advisory lock in PostgreSQL) | `PgUserRepository`, `MemoryUserRepository` |
@@ -260,12 +266,12 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `ProviderKeyRepository` | encrypted keys per user and provider | `PgProviderKeyRepository`, `MemoryProviderKeyRepository` |
 | `ProjectRepository` | projects and their settings per user (RF-010): every operation takes the owner's id and sees only that user's rows; `insertOrFind` returns the owner's existing project with the same source URL, ref and subpath; settings are parsed with their zod schema on every read (a row that no longer fits is an error) | `PgProjectRepository`, `MemoryProjectRepository` |
 | `ServerSettings` | the settings the administrator keeps for the server; this release reads `defaultRoles` (DEC-106), `{}` until it is set, and refuses a value of an unknown shape | `PgServerSettings`, `MemoryServerSettings` |
-| `RunIndex` | run rows: owner, stage, state, queue position, folder, totals (RF-1108) | `PgRunIndex`, `MemoryRunIndex` |
+| `RunIndex` | run rows: owner, stage, state, folder, commit and snapshot, totals (RF-1108). Reads for a user take the owner's id; the queue uses server-wide reads and transitions by run id; each transition is one conditional update, so the end state is set once. The queue position is computed from the queued rows (`queuePositions`) | `PgRunIndex`, `MemoryRunIndex` |
 | `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
 | `AuditLog` | security audit rows (RF-1109); the detail passes `maskDeep` (keys and values, P1-04 masking) before it is stored and is withheld whole when masking fails; listed newest first by time, actor and action | `PgAuditLog`, `MemoryAuditLog` |
 | `Migrator` | apply and check migrations (RF-1302) | `PgMigrator` |
 | `DatabaseHealth` | whether the database answers a trivial query within 3 seconds, for `GET /healthz` (RF-1303); never throws | `PgDatabaseHealth`, `FakeDatabaseHealth` (tests) |
-| `Scheduler` | periodic jobs in the process: session and reservation purge hourly, log retention daily, restart recovery at start-up (one instance assumed, DEC-112); a job still running when its next tick arrives is skipped, and a failing job is reported through the scheduler's `onError` callback without stopping its schedule or other jobs | `IntervalScheduler`, `ManualScheduler` (tests) |
+| `Scheduler` | periodic jobs in the process: session and reservation purge hourly, log retention daily, restart recovery at start-up and a run queue sweep every minute (one instance assumed, DEC-112); a job still running when its next tick arrives is skipped, and a failing job is reported through the scheduler's `onError` callback without stopping its schedule or other jobs | `IntervalScheduler`, `ManualScheduler` (tests) |
 
 The egress guard and the budget guard are **decorators** of `LlmProvider`: the composition root wraps every real
 provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`, so no call can bypass them (ADR-006, ADR-007);

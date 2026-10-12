@@ -21,6 +21,7 @@ import {
 import { recordCsrfRefusal, registerAccessHooks } from './access-hooks.js';
 import { toErrorReply } from './error-mapper.js';
 import { registerProjectRoutes, type ProjectServices } from './project-routes.js';
+import { registerRunRoutes, type RunServices } from './run-routes.js';
 import { registerPublicRoutes } from './public-routes.js';
 import { robotsTag, securityHeaderOptions } from './security-headers.js';
 import { CSRF_COOKIE, CSRF_HEADER, secureCookie } from './session-cookies.js';
@@ -43,6 +44,8 @@ export interface ServerOptions {
   readonly auth: AuthServices;
   /** RF-010, RF-002, RF-1105: the use cases behind the projects API. */
   readonly projects: ProjectServices;
+  /** RF-1006, RF-1108, RF-1105: the use cases behind the run events and stop routes. */
+  readonly runs: RunServices;
   /** The Rosetta version reported by /healthz. */
   readonly version: string;
   /** `ROSETTA_PUBLIC_URL`; https turns HSTS on (RF-1013). */
@@ -188,6 +191,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   void server.register((instance, _options, done) => {
     registerSessionRoutes(instance, options.auth);
     registerProjectRoutes(instance, options.projects);
+    registerRunRoutes(instance, options.runs);
     done();
   });
   if (options.staticRoot !== undefined) {

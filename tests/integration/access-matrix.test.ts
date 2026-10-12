@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { InjectOptions } from 'fastify';
+import { actorOf } from '../../src/domain/accounts/actor.js';
 import { fixturePassword } from '../support/account-fixtures.js';
 import { sampleProject, settingsWith } from '../support/project-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser, type TestUser } from '../support/test-browser.js';
@@ -13,10 +14,14 @@ import { createTestServer, type TestServer } from '../support/web-server.js';
 type Column = 'anonymous' | 'user' | 'otherUser' | 'admin';
 type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE';
 
-/** What the rows need to name: the project of the user column and a user id to open. */
+/** What the rows need to name: the project and runs of the user column and a user id to open. */
 interface Context {
   readonly projectId: string;
   readonly userId: string;
+  /** A run of that user that has ended, so its event stream closes by itself. */
+  readonly endedRunId: string;
+  /** A run of that user that is running. */
+  readonly runningRunId: string;
 }
 
 interface Probe {
@@ -57,6 +62,8 @@ const projectUrl = (suffix: string) => (context: Context) =>
   `/api/projects/${context.projectId}${suffix}`;
 const workspaceUrl = (userId: (context: Context) => string) => (context: Context) =>
   `/api/admin/users/${userId(context)}/projects`;
+const runUrl = (suffix: string, pick: (context: Context) => string) => (context: Context) =>
+  `/api/runs/${pick(context)}${suffix}`;
 const adminOnly = (admin: number): Record<Column, number> => ({
   anonymous: 401,
   user: 403,
@@ -110,6 +117,14 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   ],
   'HEAD /api/admin/users/:id/projects': [
     { method: 'HEAD', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
+  ],
+  'GET /api/runs/:runId/events': [
+    { method: 'GET', url: runUrl('/events', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid/events', expected: signedIn(401, 404) },
+  ],
+  'POST /api/runs/:runId/stop': [
+    { method: 'POST', url: runUrl('/stop', (c) => c.runningRunId), expected: ownerOnly(202) },
+    { method: 'POST', url: () => '/api/runs/not-a-uuid/stop', expected: signedIn(401, 404) },
   ],
   'GET *': [
     { method: 'GET', url: '/', expected: everyone(200) },
@@ -173,7 +188,18 @@ async function browserFor(
     user === undefined ? new TestBrowser(test.server) : await signedInBrowser(test.server, user);
   const project = sampleProject({ userId: amy.account.id });
   await test.projects.insertOrFind(project);
-  return { browser, user, context: { projectId: project.id, userId: amy.account.id } };
+  const owner = actorOf(amy.account);
+  const ended = await test.runs.start(owner);
+  test.runs.executor.settle(ended.id, { endState: 'Completed' });
+  await test.runs.ended(ended);
+  const running = await test.runs.start(owner);
+  const context = {
+    projectId: project.id,
+    userId: amy.account.id,
+    endedRunId: ended.id,
+    runningRunId: running.id,
+  };
+  return { browser, user, context };
 }
 
 const cases = Object.entries(matrix).flatMap(([route, probes]) =>

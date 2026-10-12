@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger, LogRecord } from '../application/ports/logger.js';
 import type { ScheduledJob } from '../application/ports/scheduler.js';
+import type { RunQueue } from '../application/runs/run-queue.js';
 import type { SessionStore } from '../application/ports/session-store.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { readAppVersion } from '../infrastructure/config/app-version.js';
@@ -21,6 +22,7 @@ import { SystemClock } from '../infrastructure/system/system-clock.js';
 import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password-hasher.js';
 import { bootstrapAdministrator, composeAuth } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
+import { composeRuns, type RunComposition } from './compose-runs.js';
 import { startUp } from './start-up.js';
 import { buildServer, type AuthServices } from './web/server.js';
 
@@ -55,19 +57,22 @@ interface ScheduledTask {
 
 const dayMs = 86_400_000;
 const hourMs = 3_600_000;
+const minuteMs = 60_000;
 
 interface ScheduledParts {
   readonly file: JsonlFileLogger;
   readonly sessions: SessionStore;
   readonly clock: Clock;
+  readonly runs: RunQueue;
 }
 
 /**
- * The periodic jobs of architecture section 7: log retention daily (RF-009) and the purge of
- * expired sessions hourly (RF-1101). The cards that add a job (restart recovery) add it here.
+ * The periodic jobs of architecture section 7: log retention daily (RF-009), the purge of expired
+ * sessions hourly (RF-1101) and the run queue sweep every minute (RF-1108): runs left `Running`
+ * without a process end as `Interrupted` and a free slot gets its next queued run.
  */
 function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] {
-  const { file, sessions, clock } = parts;
+  const { file, sessions, clock, runs } = parts;
   return [
     {
       intervalMs: dayMs,
@@ -81,6 +86,7 @@ function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] {
         await sessions.purgeExpired(clock.now());
       },
     },
+    { intervalMs: minuteMs, job: () => runs.recover() },
   ];
 }
 
@@ -138,6 +144,11 @@ function failureRecord(error: unknown): LogRecord {
   };
 }
 
+interface CreatedServer {
+  readonly server: ReturnType<typeof buildServer>;
+  readonly runs: RunComposition;
+}
+
 interface ServerParts {
   readonly environment: Environment;
   readonly logger: Logger;
@@ -149,19 +160,32 @@ interface ServerParts {
 
 // ADR-017, RF-1303, RF-1009: the HTTP server with the database probe, the session use cases and
 // the shipped version.
-async function createServer(parts: ServerParts): Promise<ReturnType<typeof buildServer>> {
+async function createServer(parts: ServerParts): Promise<CreatedServer> {
   const { environment, logger, pool, auth, clock, masker } = parts;
+  const version = await readAppVersion();
+  const runs = composeRuns({ pool, logger, clock, masker, dataDir: environment.dataDir, version });
   const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });
-  return buildServer({
+  const server = buildServer({
     logger,
     databaseHealth: new PgDatabaseHealth(pool),
     auth,
     projects,
-    version: await readAppVersion(),
+    runs: runs.services,
+    version,
     publicUrl: environment.publicUrl,
     trustProxy: environment.trustProxy,
     staticRoot,
   });
+  return { server, runs };
+}
+
+// RF-1108, RNF-002: the runs stop first (they end as Interrupted and their streams end), then the
+// server closes.
+function closer(created: CreatedServer): () => Promise<void> {
+  return async () => {
+    await created.runs.queue.shutDown();
+    await created.server.close();
+  };
 }
 
 // RF-110, ADR-004: the language packs of this release. Adding a language is one line here and a pack
@@ -208,23 +232,23 @@ export function composeApplication(options: ApplicationOptions): Application {
     try {
       await file.applyRetention();
       const auth = await composeAuth({ pool, logger, clock, masker, hasher });
-      const server = await createServer({
+      const { server, runs } = await createServer({
         ...{ environment, logger, pool, clock, masker },
         auth: auth.services,
       });
-      close = () => server.close();
+      close = closer({ server, runs });
+      const tasks = scheduledTasks({ file, sessions: auth.sessions, clock, runs: runs.queue });
       let address = '';
       await startUp({
         migrate: () => migrate(environment, clock, logger),
         bootstrapAdmin: () =>
           bootstrapAdministrator({ environment, pool, logger, clock, masker, hasher }),
+        recoverRuns: () => runs.queue.recover(),
         listen: async () => {
           address = await server.listen(options.listen);
         },
         startScheduler: () => {
-          cancels.push(
-            ...scheduleAll(logger, scheduledTasks({ file, sessions: auth.sessions, clock })),
-          );
+          cancels.push(...scheduleAll(logger, tasks));
         },
       });
       return address;

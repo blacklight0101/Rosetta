@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import {
+  access,
   appendFile,
   lstat,
   mkdir,
@@ -14,6 +16,7 @@ import type { Stats } from 'node:fs';
 import type { Logger } from '../../application/ports/logger.js';
 import type {
   OutputWriter,
+  TextLineReader,
   WorkspaceFile,
   WriteRefusal,
   WriteRefusalReason,
@@ -53,7 +56,21 @@ async function statOrUndefined(path: string): Promise<Stats | undefined> {
   }
 }
 
-export class NodeOutputWriter implements OutputWriter {
+/** The complete lines of a file, read in chunks; a last fragment without a line break is left. */
+async function* completeLinesOf(path: string): AsyncGenerator<string> {
+  let rest = '';
+  for await (const chunk of createReadStream(path, { encoding: 'utf8' })) {
+    rest += String(chunk);
+    let end = rest.indexOf('\n');
+    while (end >= 0) {
+      yield rest.slice(0, end);
+      rest = rest.slice(end + 1);
+      end = rest.indexOf('\n');
+    }
+  }
+}
+
+export class NodeOutputWriter implements OutputWriter, TextLineReader {
   readonly #dataDir: string;
   readonly #logger: Logger;
 
@@ -101,6 +118,18 @@ export class NodeOutputWriter implements OutputWriter {
       if (hasCode(error, 'ENOENT')) return this.#refuse('not-found', file);
       throw error;
     }
+  }
+
+  async readLines(file: WorkspaceFile): Promise<Result<AsyncIterable<string>, WriteRefusal>> {
+    const target = await this.#resolve(file, 'read');
+    if (!target.ok) return target;
+    try {
+      await access(target.value);
+    } catch (error: unknown) {
+      if (hasCode(error, 'ENOENT')) return this.#refuse('not-found', file);
+      throw error;
+    }
+    return ok(completeLinesOf(target.value));
   }
 
   async #resolve(file: WorkspaceFile, mode: Mode): Promise<Result<string, WriteRefusal>> {
