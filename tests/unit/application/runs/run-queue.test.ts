@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
 import type { Actor } from '../../../../src/domain/accounts/actor.js';
 
@@ -16,7 +16,9 @@ describe('the run queue', () => {
     const second = await h.start(userBob);
     const third = await h.start(userCyd);
 
-    expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    await vi.waitFor(() => {
+      expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    });
     expect((await h.runs.find(userCyd.userId, third.id))?.queueState).toBe('Queued');
     expect(await h.queue.positionOf(third.id)).toBe(1);
     expect(await h.queue.positionOf(first.id)).toBeUndefined();
@@ -30,7 +32,9 @@ describe('the run queue', () => {
     h.executor.settle(first.id, { endState: 'Completed' });
     await h.ended(first);
 
-    expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    await vi.waitFor(() => {
+      expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    });
     expect(await h.queue.positionOf(second.id)).toBeUndefined();
   });
 
@@ -74,6 +78,8 @@ describe('the run queue and one run per user', () => {
     h.executor.settle(first.id, { endState: 'Completed' });
     await h.ended(first);
 
-    expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    await vi.waitFor(() => {
+      expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    });
   });
 });

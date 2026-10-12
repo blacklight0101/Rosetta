@@ -56,7 +56,9 @@ describe('SubscribeRunEvents', () => {
     await h.executor.started[0]?.events.emit('agent.turn', { turn: 2 });
     expect(page.events.map((event) => event.seq)).toEqual([3]);
   });
+});
 
+describe('SubscribeRunEvents the end of the stream', () => {
   it('RF-1006 ends the stream after run.ended and frees the subscription', async () => {
     const h = createRunHarness();
     const run = await h.start(userAmy);
@@ -122,7 +124,9 @@ describe('SubscribeRunEvents access and cleanup', () => {
     expect(page.ends.count).toBe(0);
     expect(h.broadcaster.subscriberCount).toBe(0);
   });
+});
 
+describe('SubscribeRunEvents races', () => {
   it('RF-1006 delivers an event published while the history is read once and in order', async () => {
     const h = createRunHarness();
     const run = await h.start(userAmy);

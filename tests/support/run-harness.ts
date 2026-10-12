@@ -4,7 +4,7 @@ import type {
   RunExecutor,
   RunOutcome,
 } from '../../src/application/ports/run-executor.js';
-import type { RunScope } from '../../src/application/ports/run-events.js';
+import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
@@ -86,7 +86,7 @@ export interface RunHarness {
   /** Submits a run of the user for a fresh project; returns it. */
   start(actor: Actor, stage?: RunStage): Promise<Run>;
   /** The scope the events and manifest of the run are stored under. */
-  scopeOf(run: Run): RunScope;
+  scopeOf: typeof scopeOf;
   /** Waits until the run has ended. */
   ended(run: Run): Promise<Run>;
 }
@@ -99,8 +99,17 @@ export interface RunHarnessOptions {
 
 const allStages: readonly RunStage[] = ['scan', 'understand', 'verify', 'report', 'plan'];
 
-// RF-1108
-export function createRunHarness(options: RunHarnessOptions = {}): RunHarness {
+interface Stores {
+  readonly clock: FixedClock;
+  readonly logger: MemoryLogger;
+  readonly runs: MemoryRunIndex;
+  readonly manifests: MemoryRunManifestStore;
+  readonly events: MemoryEventSink;
+  readonly broadcaster: SseBroadcaster;
+  readonly lifecycle: RunLifecycle;
+}
+
+function createStores(): Stores {
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -109,66 +118,52 @@ export function createRunHarness(options: RunHarnessOptions = {}): RunHarness {
   const events = new MemoryEventSink();
   const broadcaster = new SseBroadcaster(masker);
   const sink = new FanOutSink([events, broadcaster]);
+  const lifecycle = new RunLifecycle({ runs, manifests, sink, history: events, clock, logger });
+  return { clock, logger, runs, manifests, events, broadcaster, lifecycle };
+}
+
+function waitUntilEnded(runs: MemoryRunIndex): RunHarness['ended'] {
+  return async (run) => {
+    let latest: Run | undefined;
+    await vi.waitFor(async () => {
+      latest = await runs.find(run.userId, run.id);
+      if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
+    });
+    if (latest === undefined) throw new Error('The run vanished');
+    return latest;
+  };
+}
+
+// RF-1108
+export function createRunHarness(options: RunHarnessOptions = {}): RunHarness {
+  const stores = createStores();
+  const { clock, logger, runs, manifests, events, broadcaster, lifecycle } = stores;
   const executor = new ControlledExecutor();
   const executors = Object.fromEntries(
     (options.stages ?? allStages).map((stage) => [stage, executor]),
   );
-  const lifecycle = new RunLifecycle({ runs, manifests, sink, history: events, clock, logger });
+  const maxRunning = options.maxRunning ?? 2;
   const makeQueue = (): RunQueue =>
-    new RunQueue({
-      runs,
-      lifecycle,
-      executors,
-      clock,
-      logger,
-      maxRunning: options.maxRunning ?? 2,
-    });
+    new RunQueue({ runs, lifecycle, executors, clock, logger, maxRunning });
   const queue = makeQueue();
   const ids = new SequenceIdGenerator();
-  const submit = new SubmitRun({
-    runs,
-    manifests,
-    queue,
-    ids,
-    clock,
-    rosettaVersion: '1.2.3-test',
-  });
-  const stop = new StopRun({ queue });
-  const subscribe = new SubscribeRunEvents({ runs, history: events, feed: broadcaster });
-  const scopeOf = (run: Run): RunScope => ({
-    id: run.id,
-    userId: run.userId,
-    projectId: run.projectId,
-    runKey: run.runKey,
-  });
+  const rosettaVersion = '1.2.3-test';
+  const submit = new SubmitRun({ runs, manifests, queue, ids, clock, rosettaVersion });
   return {
+    ...stores,
     queue,
     restart: makeQueue,
     submit,
-    stop,
-    subscribe,
-    runs,
-    manifests,
-    events,
-    broadcaster,
+    stop: new StopRun({ queue }),
+    subscribe: new SubscribeRunEvents({ runs, history: events, feed: broadcaster }),
     executor,
-    clock,
-    logger,
     scopeOf,
+    ended: waitUntilEnded(runs),
     async start(actor, stage = 'scan') {
       const project = sampleProject({ userId: actor.userId });
       const submitted = await submit.execute({ actor, project, stage, options: {} });
       if (!submitted.ok) throw new Error('The run was not accepted');
       return submitted.value.run;
-    },
-    async ended(run) {
-      let latest: Run | undefined;
-      await vi.waitFor(async () => {
-        latest = await runs.find(run.userId, run.id);
-        if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
-      });
-      if (latest === undefined) throw new Error('The run vanished');
-      return latest;
     },
   };
 }

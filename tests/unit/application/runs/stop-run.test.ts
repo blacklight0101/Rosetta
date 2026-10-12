@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
 
 // RF-1108, RNF-002, RF-1105: StopRun aborts the signal of a running run (it ends as Interrupted),
@@ -32,7 +32,9 @@ describe('StopRun', () => {
 
     expect((await h.ended(run)).endState).toBe('Interrupted');
   });
+});
 
+describe('StopRun and the queue', () => {
   it('RF-1108 frees the slot of a stopped run for the next queued run', async () => {
     const h = createRunHarness({ maxRunning: 1 });
     const first = await h.start(userAmy);
@@ -44,7 +46,9 @@ describe('StopRun', () => {
     await h.stop.execute({ actor: userAmy, runId: first.id });
     await h.ended(first);
 
-    expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    await vi.waitFor(() => {
+      expect(h.executor.startedKeys).toEqual([first.runKey, second.runKey]);
+    });
   });
 
   it('RF-1108 cancels a queued run as Interrupted without it ever running', async () => {

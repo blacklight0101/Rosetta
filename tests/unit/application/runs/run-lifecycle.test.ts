@@ -38,7 +38,9 @@ describe('the manifest of a run', () => {
       endedAt: '2026-10-12T10:01:30.000Z',
     });
   });
+});
 
+describe('the source of a run', () => {
   it('RF-126 records the commit and the snapshot of the source once it is resolved', async () => {
     const h = createRunHarness();
     const run = await h.start(userAmy);

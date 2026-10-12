@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
+import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
+import { SubmitRun } from '../../../../src/application/use-cases/submit-run.js';
 
 // RF-003, RF-1108, RF-1105: a run is accepted into the queue with its own folder name and manifest.
 
@@ -27,14 +29,22 @@ describe('SubmitRun', () => {
       value: { run: { queueState: 'Queued' }, position: 1 },
     });
   });
+});
 
+describe('SubmitRun folder names and options', () => {
   it('RF-003 gives two runs of one project in the same second different folder names', async () => {
     const h = createRunHarness({ maxRunning: 1 });
+    const sameSecond = new SequenceIdGenerator();
+    const submit = new SubmitRun({
+      ...{ runs: h.runs, manifests: h.manifests, queue: h.queue, clock: h.clock },
+      ids: { runId: () => '20261012-100000-scan', uuid: () => sameSecond.uuid() },
+      rosettaVersion: '1.2.3-test',
+    });
     const project = sampleProject({ userId: userAmy.userId });
     const request = { actor: userAmy, project, stage: 'scan', options: {} } as const;
 
-    const first = await h.submit.execute(request);
-    const second = await h.submit.execute(request);
+    const first = await submit.execute(request);
+    const second = await submit.execute(request);
 
     const keys = [first, second].map((result) => (result.ok ? result.value.run.runKey : ''));
     expect(new Set(keys).size).toBe(2);
@@ -58,7 +68,9 @@ describe('SubmitRun', () => {
       options: { areas: ['catalog'] },
     });
   });
+});
 
+describe('SubmitRun access', () => {
   it('RF-1105 refuses a project of another user', async () => {
     const h = createRunHarness();
 
