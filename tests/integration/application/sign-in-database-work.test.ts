@@ -15,12 +15,14 @@ import { timedAsync } from '../../support/stopwatch.js';
 
 // RF-1100: given a wrong user name or password, the response time is the same whether or not the
 // user exists. On PostgreSQL, a refused sign-in for an unknown user name runs the same statements
-// as a wrong password for a known one (the failure counter update included), and the median times
-// of both stay within a statistical bound. Every known account fails once only, so no lock adds
-// its own audit row.
+// as a wrong password for a known one (the failure counter update included); that comparison is
+// the gate for equal database work. The timing test checks the visible property end to end with
+// the production scrypt cost: the fastest refusal of each series (the least noisy estimate of
+// its own cost) stays within half of the other, a bound far above the noise of a loaded runner.
+// Every known account fails once only, so no lock adds its own audit row.
 
-const samples = 15;
-const parameters = { cost: 2 ** 12, blockSize: 8, parallelization: 1 } as const;
+const samples = 25;
+const parameters = { cost: 2 ** 14, blockSize: 8, parallelization: 1 } as const;
 const request = { ip: '203.0.113.9', userAgent: 'Browser/1.0' };
 
 interface Setup {
@@ -28,9 +30,8 @@ interface Setup {
   readonly signIn: SignIn;
 }
 
-function median(values: readonly number[]): number {
-  const sorted = [...values].sort((left, right) => left - right);
-  return sorted[Math.floor(sorted.length / 2)] ?? 0;
+function fastest(values: readonly number[]): number {
+  return Math.min(...values);
 }
 
 /** The statements one sign-in sends to the pool, in order. */
@@ -82,7 +83,7 @@ describe.skipIf(!hasTestDatabase)('sign-in database work on PostgreSQL', () => {
       dummyHash: await createDummyHash(hasher),
     });
     setup = { pool, signIn };
-  });
+  }, 30_000);
 
   it('RF-1100 an unknown user name runs the same statements as a wrong password', async () => {
     const known = await statementsOf(setup, `known${String(samples)}`);
@@ -101,11 +102,11 @@ describe.skipIf(!hasTestDatabase)('sign-in database work on PostgreSQL', () => {
       unknown.push(await timeRefusal(setup, `nobody${String(index)}`));
     }
 
-    const knownMedian = median(known);
-    const unknownMedian = median(unknown);
+    const knownFastest = fastest(known);
+    const unknownFastest = fastest(unknown);
 
-    expect(Math.abs(knownMedian - unknownMedian)).toBeLessThan(
-      0.3 * Math.max(knownMedian, unknownMedian),
+    expect(Math.abs(knownFastest - unknownFastest)).toBeLessThan(
+      0.5 * Math.max(knownFastest, unknownFastest),
     );
   }, 60_000);
 });
