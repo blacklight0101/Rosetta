@@ -188,6 +188,58 @@ function listContract(name: string, fresh: Fresh): void {
   });
 }
 
+function providerTestContract(name: string, fresh: Fresh): void {
+  const testRow = {
+    runId: null,
+    projectId: null,
+    agentTaskId: null,
+    stage: 'provider-test',
+  } as const;
+
+  it(`RF-407 ${name} meters a provider test that belongs to no run against the user's day`, async () => {
+    const { ledger, ids } = await setUp(fresh);
+    const caps: UsageCap[] = [{ kind: 'user-day', limit: 1_000n }];
+    const test = reservationOf(ids, { runId: null, ...worst(300n) });
+    expect((await reserveAt(ledger, test, caps)).ok).toBe(true);
+
+    await ledger.settle(entryOf(test, { ...testRow, costMicros: 250n }));
+    const next = await reserveAt(ledger, reservationOf(ids, worst(751n)), caps);
+
+    expect(breachOf(next)).toEqual({ kind: 'user-day', limit: 1_000n, spent: 250n, needed: 751n });
+  });
+
+  it(`RF-407 ${name} counts the reservation of a provider test until it is released`, async () => {
+    const { ledger, ids } = await setUp(fresh);
+    const caps: UsageCap[] = [{ kind: 'user-day', limit: 1_000n }];
+    const test = reservationOf(ids, { runId: null, ...worst(900n) });
+    await reserveAt(ledger, test, caps);
+    const refused = await reserveAt(ledger, reservationOf(ids, worst(200n)), caps);
+    expect(breachOf(refused)).toEqual({
+      kind: 'user-day',
+      limit: 1_000n,
+      spent: 900n,
+      needed: 200n,
+    });
+
+    await ledger.release(test.callId);
+
+    expect((await reserveAt(ledger, reservationOf(ids, worst(200n)), caps)).ok).toBe(true);
+  });
+
+  it(`RF-407 ${name} keeps the calls of provider tests out of every run's cap`, async () => {
+    const { ledger, ids } = await setUp(fresh);
+    const first = reservationOf(ids, { runId: null, ...worst(300n) });
+    const second = reservationOf(ids, { runId: null, ...worst(300n) });
+
+    await reserveAt(ledger, first, []);
+    const unrelated = await reserveAt(ledger, second, runCap(400n));
+    const ofRun = await reserveAt(ledger, reservationOf(ids, worst(350n)), runCap(400n));
+
+    expect(unrelated.ok).toBe(true);
+    expect(ofRun.ok).toBe(true);
+  });
+}
+
 export function costLedgerContract(name: string, fresh: Fresh): void {
   reserveContract(name, fresh);
   releaseContract(name, fresh);
@@ -195,4 +247,5 @@ export function costLedgerContract(name: string, fresh: Fresh): void {
   dayContract(name, fresh);
   monthContract(name, fresh);
   listContract(name, fresh);
+  providerTestContract(name, fresh);
 }

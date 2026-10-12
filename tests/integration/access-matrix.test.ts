@@ -140,6 +140,9 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   'DELETE /api/account/keys/:provider': [
     { method: 'DELETE', url: '/api/account/keys/anthropic', expected: active(401, 204) },
   ],
+  'POST /api/account/providers/test': [
+    { method: 'POST', url: '/api/account/providers/test', expected: active(401, 200) },
+  ],
   ...budgetRoutes,
   'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
   'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],

@@ -96,7 +96,7 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
   cost_reservations: [
     'call_id text',
     'user_id uuid',
-    'run_id uuid',
+    'run_id uuid null',
     'key_source text',
     'worst_case_micros int8',
     'expires_at timestamptz',

@@ -50,6 +50,7 @@ describe('release migrations', () => {
       '0003_cost_ledger_audit.sql',
       '0004_server_settings_defaults.sql',
       '0005_cost_ledger_tasks_and_tokens.sql',
+      '0006_cost_reservations_without_run.sql',
     ]);
   });
 

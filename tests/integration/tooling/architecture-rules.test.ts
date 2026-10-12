@@ -143,3 +143,33 @@ describe('dependency-cruiser layer rule: tree-sitter', () => {
     expect(report).not.toContain('tree-sitter-only-in-packs');
   });
 });
+
+describe('dependency-cruiser layer rule: provider adapters', () => {
+  const root = useTempRoot('rosetta-arch-');
+  const adapters = {
+    'src/infrastructure/providers/ollama/ollama-provider.ts': 'export class OllamaProvider {}\n',
+    'src/infrastructure/providers/openai/openai-provider.ts': 'export class OpenAiProvider {}\n',
+    'src/infrastructure/providers/fake/fake-provider.ts': 'export class FakeProvider {}\n',
+  };
+
+  it.each([
+    ['src/presentation/composition-root.ts', '../infrastructure/providers/ollama/ollama-provider.js'],
+    ['src/infrastructure/guards/other.ts', '../providers/openai/openai-provider.js'],
+    ['src/application/use.ts', '../infrastructure/providers/fake/fake-provider.js'],
+    ['src/infrastructure/providers/provider-factory.ts', './openai/openai-provider.js'],
+  ])('ADR-003 %s importing %s is reported', async (file, module) => {
+    const report = await cruise(root.path, { ...adapters, [file]: importing(module) });
+
+    expect(report).toContain('adapters-only-via-adapter-builder');
+  });
+
+  it('ADR-003 only the adapter builder may import the Ollama and OpenAI adapters', async () => {
+    const report = await cruise(root.path, {
+      ...adapters,
+      'src/infrastructure/providers/adapter-builder.ts':
+        "import { OllamaProvider } from './ollama/ollama-provider.js';\nimport { OpenAiProvider } from './openai/openai-provider.js';\nexport const built = [OllamaProvider, OpenAiProvider];\n",
+    });
+
+    expect(report).not.toContain('adapters-only-via-adapter-builder');
+  });
+});

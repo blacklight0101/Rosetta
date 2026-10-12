@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import { ChangePassword } from '../../src/application/use-cases/change-password.js';
 import { CreateUser } from '../../src/application/use-cases/create-user.js';
@@ -15,12 +16,14 @@ import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-ca
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
 import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
+import { TestProviders } from '../../src/application/use-cases/test-providers.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
+import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -28,6 +31,9 @@ import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
+import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
+import { unrecordedSinks } from '../../src/infrastructure/providers/unrecorded-sinks.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { DnsPublicHostCheck } from '../../src/infrastructure/security/public-host-check.js';
 import { DeleteProviderKey } from '../../src/application/use-cases/delete-provider-key.js';
@@ -36,8 +42,10 @@ import { SaveProviderKey } from '../../src/application/use-cases/save-provider-k
 import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
+import { budgetTable } from './budget-harness.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FakeHostResolver } from './fake-host-resolver.js';
+import { fakeAdapters, SpyLedger, type FakeAdapters } from './provider-factory-harness.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
@@ -76,11 +84,18 @@ export interface TestServer {
   readonly secretBox: AesGcmSecretBox;
   /** RF-1104: the DNS stand-in of the base-URL check; a test gives each host its addresses. */
   readonly resolver: FakeHostResolver;
+  /** RF-407: the fake adapters the provider test was given, and the ledger it wrote to. */
+  readonly providers: FakeAdapters;
+  readonly providerLedger: SpyLedger;
 }
 
 export interface TestServerOptions extends Partial<
   Omit<ServerOptions, 'auth' | 'projects' | 'runs'>
 > {
+  /** RF-407: what the fake adapter of each provider name replays; the text answer by default. */
+  readonly providerRecordings?: Readonly<Record<string, Recording>>;
+  /** DEC-106: the server's default models, which the provider test uses. */
+  readonly defaultRoles?: DefaultRoles;
   /** Where the run events are stored, given the server's logger; memory by default. */
   readonly eventStore?: (logger: MemoryLogger) => EventStore;
   /** The password hasher of sign-in; the fast fake by default. */
@@ -114,6 +129,7 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
 
 interface AuthParts {
   readonly keys: KeyParts;
+  readonly testProviders: TestProviders;
   readonly serverSettings: MemoryServerSettings;
   readonly usage: MemoryAccountUsage;
   readonly users: MemoryUserRepository;
@@ -172,7 +188,36 @@ function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
     listAudit: new ListAudit({ auditLog, clock }),
     ...keyServices(parts),
     ...capServices(parts),
+    testProviders: parts.testProviders,
   };
+}
+
+interface ProviderTestParts {
+  readonly users: MemoryUserRepository;
+  readonly serverSettings: MemoryServerSettings;
+  readonly clock: FixedClock;
+  readonly logger: MemoryLogger;
+  readonly masker: SecretMasker;
+  readonly keys: KeyParts;
+  readonly providers: FakeAdapters;
+  readonly providerLedger: SpyLedger;
+}
+
+/** RF-407: the provider test over the real factory with fake adapters and the memory ledger. */
+function providerTestService(parts: ProviderTestParts): TestProviders {
+  const { users, serverSettings, clock, logger, masker, keys } = parts;
+  const ids = new SequenceIdGenerator();
+  const factory = new GuardedProviderFactory({
+    ...{ keys: keys.keys, box: keys.secretBox, serverSettings, clock, ids, logger, masker },
+    ...{ serverKeys: {}, ollamaUrl: 'http://localhost:11434', priceTable: budgetTable },
+    ledger: parts.providerLedger,
+    adapters: parts.providers.builder,
+  });
+  const template = templateSettings;
+  return new TestProviders({
+    ...{ users, serverSettings, template, factory, ids },
+    unrecorded: unrecordedSinks(),
+  });
 }
 
 /** RF-1009, RF-1100, RF-1101: the session use cases over memory adapters. */
@@ -211,6 +256,8 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     hasher = new FakePasswordHasher(),
     dummyHash = 'fake$dummy',
     eventStore,
+    providerRecordings,
+    defaultRoles,
     ...overrides
   } = options;
   const clock = new FixedClock('2026-10-11T09:00:00.000Z');
@@ -223,7 +270,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const auditLog = audit;
   const usage = new MemoryAccountUsage();
   const projects = new MemoryProjectRepository();
-  const serverSettings = new MemoryServerSettings({});
+  const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = createRunHarness({
     clock,
     logger,
@@ -235,6 +282,11 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
     resolver: new FakeHostResolver(),
   };
+  const providers = fakeAdapters(providerRecordings);
+  const providerLedger = new SpyLedger(new MemoryCostLedger());
+  const testProviders = providerTestService({
+    ...{ users, serverSettings, clock, logger, masker, keys, providers, providerLedger },
+  });
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -243,7 +295,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     trustProxy: 0,
     auth: authServices({
       ...{ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage, keys },
-      serverSettings,
+      ...{ serverSettings, testProviders },
     }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     runs: runServices(runs, projects, route),
@@ -251,6 +303,6 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit, hasher, usage, projects },
-    ...{ serverSettings, runs, ...route, ...keys },
+    ...{ serverSettings, runs, ...route, ...keys, providers, providerLedger },
   };
 }
