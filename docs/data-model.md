@@ -117,7 +117,15 @@ column of the `projects` table, edited on the project's settings page. The sourc
 | `agents` | `parallelism` | int | 1 for Ollama, 4 otherwise | reader tasks run at the same time (architecture section 8) |
 | `output` | `transcripts` | bool | true | skip transcripts for this project (DEC-43) |
 
-Unknown keys are an error (RF-002), so a typo never silently changes behaviour.
+Unknown keys are an error (RF-002), so a typo never silently changes behaviour. The schema is
+`src/application/projects/project-settings.ts`; every field is required except the lists and values with no default
+(`budget.prices`, `budget.roles`, `scan.areas`, `contextTokens`, `temperature`, `maxTurns`), so a stored document is
+complete. A save returns every problem with its dotted field and one of: RST-1001 (unknown provider kind, or a role
+naming a provider the project does not define), RST-1002 (a role missing or without a model), RST-1003 (a cap or
+price below zero), RST-1004 (a `baseUrl`), RST-1006 (any other value or key that is not allowed); RST-1005 is the
+code of the refusal as a whole. A new project takes `templates/project-settings.json` with `scan.ignoreRules` from
+`templates/ignore-rules.txt`, the provider and model of each role from the server setting `defaultRoles` where set,
+only the providers its roles use, and `agents.parallelism` 1 when the reader is Ollama (DEC-106).
 
 ### 3.2 `.rosettaignore`
 
@@ -590,7 +598,9 @@ are offered), `defaultRoles` (provider and dated model id per role for new proje
 by migration `0004_server_settings_defaults`: `caps` `{ runMicros: 500000, userDayMicros: 1000000,
 serverMonthMicros: 10000000 }` (RF-1106), `queue` `{ maxRunning: 2 }` (RF-1108) and `defaultRoles` `{}` (empty until
 the administrator sets it). The Ollama URL is only the environment
-variable `ROSETTA_OLLAMA_URL`.
+variable `ROSETTA_OLLAMA_URL`. `defaultRoles` holds `{ reader?, verifier?, planner?, summariser? }`, each
+`{ provider, model }` with `provider` one of the kinds of 3.1; a role left out keeps the template's model, and a value
+of another shape is refused at read time.
 
 **`audit_events`** (RF-1109)
 
