@@ -57,6 +57,15 @@ it('RF-1013 puts every built file except index.html under assets/', () => {
   expect(files.some((file) => file.endsWith('.css'))).toBe(true);
 });
 
+it('RF-1200 builds the landing page style sheet under a name the server can link to', async () => {
+  expect(files).toContain('assets/landing.css');
+  const css = await textOf('assets/landing.css');
+  expect(css).toContain('--rst-brand');
+  expect(css).toContain('prefers-color-scheme');
+  expect(css).not.toContain('@import');
+  expect(files.filter((file) => /^assets\/landing.*\.js$/.test(file))).toEqual([]);
+});
+
 it('RF-1013 writes no source map and no file whose name the public path would refuse', () => {
   expect(files.filter((file) => file.endsWith('.map'))).toEqual([]);
   for (const file of files.filter((name) => name.startsWith('assets/'))) {
@@ -87,7 +96,7 @@ it('RF-1013 serves the page and its assets without a session and the root files 
   current = createTestServer({ staticRoot: outDir });
   const { server } = current;
 
-  const page = await server.inject({ method: 'GET', url: '/' });
+  const page = await server.inject({ method: 'GET', url: '/sign-in' });
   expect(page.statusCode).toBe(200);
   expect(page.headers['content-type']).toContain('text/html');
   expect(String(page.headers['content-security-policy'])).toContain("default-src 'self'");

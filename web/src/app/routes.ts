@@ -4,12 +4,12 @@ import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
 import { ProjectsPage } from '../pages/ProjectsPage.js';
 import { SettingsPage } from '../pages/SettingsPage.js';
 import { SignInPage } from '../pages/SignInPage.js';
-import { HomePage } from './HomePage.js';
 import type { RouteDefinition } from './route-types.js';
 
 // The router table. Each page card adds its rows here (landing page, sign-in, projects, ...); a row
 // with `nav` also appears in the side navigation. Unlisted paths show the not-found page.
-// `/` and `/sign-in` are the only pages the server serves without a session (P1-09).
+// `/` (the landing page, P1-15) is written by the server and is not a row here. `/sign-in` and `/` are the
+// only pages the server serves without a session (P1-09).
 
 /** The component gallery exists only in the development server (design-system.md section 5). */
 const developmentRoutes: readonly RouteDefinition[] = import.meta.env.DEV
@@ -25,8 +25,6 @@ const developmentRoutes: readonly RouteDefinition[] = import.meta.env.DEV
   : [];
 
 export const routes: readonly RouteDefinition[] = [
-  // Replaced by the landing page of P1-15.
-  { path: '/', title: 'Rosetta', access: 'public', chrome: 'bare', component: HomePage },
   { path: '/sign-in', title: 'Sign in', access: 'public', chrome: 'bare', component: SignInPage },
   {
     path: '/account/password',
