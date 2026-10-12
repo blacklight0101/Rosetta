@@ -48,7 +48,8 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 - Install Ollama on the machine that runs the models and pull the configured models (`ollama pull <model>`). On the
   owner's machine the program is in `E:\Ollama\app` and the models in `G:\Ollama Models` (DEC-53).
 - Rosetta reaches Ollama only through `ROSETTA_OLLAMA_URL` (DEC-112): `http://host.docker.internal:11434` from the
-  Compose container, `http://127.0.0.1:11434` when Rosetta runs on the host. Unset when hosted.
+  Compose container, `http://127.0.0.1:11434` when Rosetta runs on the host. Unset when hosted. A URL with a user
+  name or password (`http://user:pass@...`) is refused at start-up with `RST-1000`.
 - When Ollama is not running, a call fails at once with `RST-1507` and the message names the fix (`ollama serve`, or
   open the Ollama app, and check `ROSETTA_OLLAMA_URL`). When the model is not pulled, it fails with `RST-1508` and
   the message names `ollama pull <model>`. Neither is retried.
@@ -72,7 +73,11 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   `auto-model-limit`, `auto-fallback`, `fixed`; data-model section 3.10). Probe answers are capped at 4 MiB.
 - `think: false` is sent by default (adapter option `think`): on the owner's machine the tool loop was about ten
   times faster with thinking off and as correct. Models that ignore it (for example gpt-oss, deepseek-r1) still
-  think; their `thinking` field and any `<think>...</think>` text in the content never reach the answer.
+  think; their `thinking` field and any thinking text in the content never reach the answer. The content is
+  stripped in one pass over the tags, so the time grows linearly with its size: `<think>` and `<thinking>` and their
+  closing tags in any letter case; an opening tag hides the text up to the next closing tag, or to the end when none
+  follows; a closing tag without an opening tag hides all the text before it (the chat template sent the opening
+  tag).
 - Usage: `prompt_eval_count` and `eval_count` are the input and output tokens (`usageSource: reported`); Ollama has
   no cached-input-token count, so it is 0. When Ollama leaves the counts out (it may for a fully cached prompt) they
   are estimated at about four characters per token and marked `estimated` (RF-421).
@@ -96,7 +101,9 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   answer. What the arguments mean is judged by the agent loop with each tool's schema (ADR-013): line numbers sent
   as numeric strings, a non-breaking hyphen in a `start-end` range, an unknown tool name and an invented path all
   reach the loop unchanged, exactly as the same native call would.
-- The composition root reads the protocol prompt with `loadTextToolProtocol(<prompts folder>)`.
+- The composition root reads the protocol prompt with `loadTextToolProtocol(<prompts folder>)`, which returns the
+  prompt file (`name`, `version`, `sha256` of its bytes, `text`) for the run manifest (RNF-004) and passes its `text`
+  to the adapter.
 
 ### 2.4 Retries (RF-406)
 
@@ -109,7 +116,8 @@ a cancelled call (`RST-1501`) are not retried.
 ### 2.5 Tests and the manual live check
 
 - Automated tests never call a real Ollama (ADR-008): under `ROSETTA_TEST=1` the adapter refuses every call with
-  `RST-1509` unless it was built for a loopback fake server (`fakeServer: true`), which only tests do. The tests run
+  `RST-1509` unless its base URL is a loopback address whose port a fake server registered when it started
+  (`src/infrastructure/providers/fake-server-ports.ts`); no adapter option can vouch for a URL. The tests run
   the adapter against `tests/support/fake-ollama-server.ts`, which replays the hand-written recordings under
   `tests/recordings/ollama/`, and run the contract suite on it.
 - Manual live check (gate G-04), on the machine that runs Ollama, with `ROSETTA_TEST` unset:
@@ -189,7 +197,8 @@ jitter, never shorter than the hint (capped at five minutes), up to `maxRetries`
 ### 3.4 Tests and the manual live check
 
 - Automated tests never call OpenAI (ADR-008): under `ROSETTA_TEST=1` the adapter refuses every call with
-  `RST-1509` unless it was built for a loopback fake server (`fakeServer: true`). The tests run it against
+  `RST-1509` unless its base URL is a loopback address whose port a fake server registered (section 2.5). The tests
+  run it against
   `tests/support/fake-openai-server.ts`, which replays the hand-written recordings under `tests/recordings/openai/`
   with a FAKE key, and run the contract suite on it.
 - Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key in `OPENAI_API_KEY`:
