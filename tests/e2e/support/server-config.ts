@@ -16,3 +16,6 @@ export function e2ePort(): number {
 export function e2eOrigin(): string {
   return `http://127.0.0.1:${String(e2ePort())}`;
 }
+
+/** RF-1201: the contact address the test server is configured with (`ROSETTA_CONTACT_EMAIL`). */
+export const e2eContactEmail = 'access@example.org';

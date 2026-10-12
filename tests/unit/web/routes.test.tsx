@@ -65,8 +65,8 @@ describe('RNF-010 router', () => {
     expect(matchRoute('/projects//runs/new', table)).toBeUndefined();
   });
 
-  it('RNF-010 registers the public home page and no path twice', () => {
-    expect(routes.some((route) => route.path === '/' && route.access === 'public')).toBe(true);
+  it('RF-1200 leaves the landing page at / to the server and registers no path twice', () => {
+    expect(routes.some((route) => route.path === '/')).toBe(false);
     expect(new Set(routes.map((route) => route.path)).size).toBe(routes.length);
   });
 });

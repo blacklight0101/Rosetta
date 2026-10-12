@@ -52,17 +52,8 @@ test.describe('smoke accessibility', () => {
     await expectNoSeriousViolations(page);
   });
 
-  test('RNF-010 the start page has no serious or critical accessibility violation', async ({
-    page,
-  }) => {
-    await page.goto('/');
-    await expect(page.locator('#root')).not.toBeEmpty();
-
-    await expectNoSeriousViolations(page);
-  });
-
   test('RNF-010 the page follows the colour scheme of the project', async ({ page }, info) => {
-    await page.goto('/');
+    await page.goto('/sign-in');
     const scheme = info.project.use.colorScheme ?? 'light';
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', scheme);
