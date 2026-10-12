@@ -172,7 +172,7 @@ describe('PUT /api/projects/:id/settings', () => {
   it('RF-002 valid settings are saved and shown on the next read', async () => {
     const { amy } = await setup();
     const id = await createdId(amy);
-    const settings = settingsWith({ 'budget.run.maxCostMicros': 100_000 });
+    const settings = settingsWith({ 'budget.run.maxCostMicros': 300_000 });
 
     const response = await amy.request({
       method: 'PUT',
