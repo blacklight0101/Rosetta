@@ -10,6 +10,8 @@ export interface ButtonProps {
   readonly variant?: ButtonVariant;
   readonly type?: 'button' | 'submit';
   readonly id?: string;
+  /** The accessible name when the visible word repeats in a list ("Disable" for each account). */
+  readonly ariaLabel?: string;
   readonly busy?: boolean;
   /** Why the button cannot be used; its presence disables the button. */
   readonly disabledReason?: string;
@@ -27,6 +29,7 @@ export function Button(props: ButtonProps): JSX.Element {
       data-testid="button"
       type={type}
       disabled={disabled || busy}
+      aria-label={props.ariaLabel}
       aria-busy={busy ? 'true' : undefined}
       title={props.disabledReason}
       onClick={onClick}

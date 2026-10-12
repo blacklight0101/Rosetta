@@ -69,3 +69,10 @@ export function providerOptions(
   const names = new Set([...Object.keys(settings.providers), ...Object.keys(providerDefaults)]);
   return [...names].map((value) => ({ value, label: providerLabel(value) }));
 }
+
+/** DEC-106: the providers an administrator can make the default of a role for new projects. */
+export const defaultModelProviders: readonly { readonly value: string; readonly label: string }[] =
+  ['ollama', 'openai', 'anthropic', 'openai-compatible'].map((value) => ({
+    value,
+    label: providerLabels[value] ?? value,
+  }));

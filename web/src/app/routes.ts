@@ -1,4 +1,7 @@
 import { GalleryPage } from '../gallery/GalleryPage.js';
+import { AdminAuditPage } from '../pages/AdminAuditPage.js';
+import { AdminModelsPage } from '../pages/AdminModelsPage.js';
+import { AdminUsersPage } from '../pages/AdminUsersPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
 import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
 import { ProjectsPage } from '../pages/ProjectsPage.js';
@@ -65,6 +68,30 @@ export const routes: readonly RouteDefinition[] = [
     chrome: 'shell',
     component: SettingsPage,
     nav: { group: 'main', label: 'Settings and keys', order: 90 },
+  },
+  {
+    path: '/admin/users',
+    title: 'Users and caps',
+    access: 'admin',
+    chrome: 'shell',
+    component: AdminUsersPage,
+    nav: { group: 'admin', label: 'Users and caps', order: 10 },
+  },
+  {
+    path: '/admin/audit',
+    title: 'Audit',
+    access: 'admin',
+    chrome: 'shell',
+    component: AdminAuditPage,
+    nav: { group: 'admin', label: 'Audit', order: 20 },
+  },
+  {
+    path: '/admin/models',
+    title: 'Default models',
+    access: 'admin',
+    chrome: 'shell',
+    component: AdminModelsPage,
+    nav: { group: 'admin', label: 'Default models', order: 30 },
   },
   ...developmentRoutes,
 ];

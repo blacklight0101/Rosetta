@@ -24,6 +24,19 @@ export function serverSettingsContract(name: string, withRoles: ServerSettingsWi
 
     expect(await settings.defaultRoles()).toEqual(roles);
   });
+
+  it(`DEC-106 ${name} keeps the default models the administrator saves, replacing the earlier ones`, async () => {
+    const settings = await withRoles({ reader: { provider: 'ollama', model: 'gemma4:e4b' } });
+    const saved: DefaultRoles = { planner: { provider: 'openai', model: 'gpt-4o-2024-08-06' } };
+
+    await settings.saveDefaultRoles(saved, {
+      by: '00000000-0000-4000-9000-0000000000ad',
+      at: new Date('2026-10-12T10:00:00.000Z'),
+    });
+
+    expect(await settings.defaultRoles()).toEqual(saved);
+    expect(await settings.caps()).toMatchObject({ runMicros: 500_000n });
+  });
 }
 
 /** RF-1106, DEC-107: the caps the administrator keeps; defaults $0.50, $1.00 and $10.00. */

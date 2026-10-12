@@ -13,6 +13,8 @@ export interface MemoryCostRow {
   readonly at: Date;
   readonly costMicros: bigint;
   readonly currency: string;
+  /** Whose key paid; a row without one counts as the server's. */
+  readonly keySource?: 'user' | 'server' | 'none';
 }
 
 function byCurrency(left: CurrencyTotal, right: CurrencyTotal): number {
@@ -49,5 +51,16 @@ export class MemoryAccountUsage implements AccountUsage {
       usage.set(userId, { projects: projects.get(userId) ?? 0, spent: totals.sort(byCurrency) });
     }
     return Promise.resolve(usage);
+  }
+
+  // RF-1106
+  serverMonth(since: EpochMs): Promise<readonly CurrencyTotal[]> {
+    const totals = new Map<string, bigint>();
+    for (const row of this.costs) {
+      if (row.at.getTime() < since || (row.keySource ?? 'server') !== 'server') continue;
+      totals.set(row.currency, (totals.get(row.currency) ?? 0n) + row.costMicros);
+    }
+    const sorted = [...totals].map(([currency, costMicros]) => ({ currency, costMicros }));
+    return Promise.resolve(sorted.sort(byCurrency));
   }
 }

@@ -39,7 +39,7 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: bigint 
   return (
     <div class="rst-start__meter">
       <div
-        class={used > 100 ? 'rst-meter rst-meter--over' : 'rst-meter'}
+        class={used > 100 ? 'rst-cap-meter rst-cap-meter--over' : 'rst-cap-meter'}
         role="meter"
         aria-label="Likely cost against the cap"
         aria-describedby={hintId}
@@ -47,8 +47,8 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: bigint 
         aria-valuemax={100}
         aria-valuenow={Math.min(100, used)}
       >
-        <div class="rst-meter__fill" style={{ inlineSize: `${String(Math.min(100, used))}%` }} />
-        <div class="rst-meter__mark" style={{ insetInlineStart: `${String(mark)}%` }} />
+        <div class="rst-cap-meter__fill" style={{ inlineSize: `${String(Math.min(100, used))}%` }} />
+        <div class="rst-cap-meter__mark" style={{ insetInlineStart: `${String(mark)}%` }} />
       </div>
       <p id={hintId} class="rst-settings__note">
         Likely {dollars(likely)} is {used}% of the cap; the marker shows the high estimate,{' '}

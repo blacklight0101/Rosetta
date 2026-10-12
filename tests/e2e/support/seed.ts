@@ -44,8 +44,9 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `lock` is locked out, `force` and `force-admin` must change their password at first sign-in
  * (`force-admin` as an administrator, like the bootstrap account, which other specs need unchanged),
  * `cap` sets the daily cap on its own keys (DEC-107), `providers` presses the Test button (RF-407),
- * `projects` creates projects (RF-010), `project-settings` edits one project's settings (RF-002) and
- * `start-run` starts runs of its own project (RF-1001).
+ * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
+ * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
+ * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001).
  */
 export type E2eAccountKind =
   | 'keys'
@@ -56,7 +57,8 @@ export type E2eAccountKind =
   | 'providers'
   | 'projects'
   | 'project-settings'
-  | 'start-run';
+  | 'start-run'
+  | 'admin';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -68,6 +70,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'projects',
   'project-settings',
   'start-run',
+  'admin',
 ];
 
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
@@ -119,7 +122,7 @@ export async function seedUsers(databaseUrl: string): Promise<void> {
         actor: actorOf(admin),
         userName,
         displayName: `E2E ${kind}`,
-        role: kind === 'force-admin' ? 'admin' : 'user',
+        role: kind === 'force-admin' || kind === 'admin' ? 'admin' : 'user',
         password,
         mustChangePassword: kind.startsWith('force'),
         ip: 'e2e-seed',

@@ -18,7 +18,11 @@ const PROJECT_COUNTS =
 const SPENT =
   'SELECT user_id::text AS user_id, currency, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE at >= $1 GROUP BY user_id, currency ORDER BY currency COLLATE "C"';
 
+const SERVER_SPENT =
+  'SELECT currency, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE key_source = \'server\' AND at >= $1 GROUP BY currency ORDER BY currency COLLATE "C"';
+
 const projectRow = z.object({ user_id: z.string(), projects: z.number().int() });
+const serverRow = z.object({ currency: z.string(), cost_micros: z.string().regex(/^-?\d+$/) });
 const spentRow = z.object({
   user_id: z.string(),
   currency: z.string(),
@@ -64,5 +68,19 @@ export class PgAccountUsage implements AccountUsage {
       usage.set(userId, { projects: projects.get(userId) ?? 0, spent: spent.get(userId) ?? [] });
     }
     return usage;
+  }
+
+  // RF-1106
+  async serverMonth(since: EpochMs): Promise<readonly CurrencyTotal[]> {
+    try {
+      const result = await this.pool.query<Record<string, unknown>>(SERVER_SPENT, [
+        new Date(since),
+      ]);
+      return result.rows
+        .map((row) => serverRow.parse(row))
+        .map((row) => ({ currency: row.currency, costMicros: BigInt(row.cost_micros) }));
+    } catch (error) {
+      throw queryFailed(error);
+    }
   }
 }
