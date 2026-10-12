@@ -431,20 +431,28 @@ sequenceDiagram
   `<<<ROSETTA-DATA {"label":"repository-content","note":...,"source":<tool>,"excerpts":[{"path","startLine","endLine"}]}>>>`
   (paths with their markers defanged, every `<` and `>` of the JSON written as `\u003c`/`\u003e`, a line break in a
   path escaped by JSON and every character outside printable ASCII written as a `\u` escape, so no header text can
-  read as a frame), the content with every marker look-alike defanged (`<<<` becomes `<<-<`, lines kept), and the footer
+  read as a frame), the content with every marker look-alike defanged (the name broken, `ROSETTA|-DATA`, lines kept), and the footer
   `<<<END ROSETTA-DATA>>>`; the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
-  A look-alike of a marker is found by two independent checks, because no list of look-alikes is ever complete (a
-  symbol for `<`, a letter of another script): (1) the frame check reads the text folded (NFKC, invisible characters
-  and combining marks dropped, the characters of the Unicode confusables data written as the ASCII they imitate,
-  `src/domain/egress/marker-fold.ts` with the generated table `marker-confusables.ts`) and looks for `<<<`, an optional
-  `END` and `ROSETTA-DATA`; (2) the name check (`marker-keyword.ts`) does not look at the brackets at all: a line
-  with a non-ASCII character whose letters, with spaces, hyphens, underscores and non-ASCII symbols left out, spell
-  `ROSETTADATA` is a marker attempt, where up to three of the eleven letters may be any non-ASCII letter or digit. A
-  rendered block breaks both (`<<<` becomes `<<-<`, the name gets a `|` after `ROSETTA`); the guard refuses a block
-  read back that still holds either (`RST-1516`, security event). Known limits: a name written with four or more
-  letters that no table knows is not seen (it no longer reads as the name), and a non-ASCII line that merely says
-  "Rosetta data" is treated as an attempt and refused, the safe side; ordinary source text (`<<`, `>>`, `END`, `DATA`,
-  non-ASCII comments) passes. The table is regenerated with `scripts/make-marker-confusables.mjs` (Unicode License v3).
+  Whether text holds a marker is decided by one matcher, `src/domain/egress/marker-skeleton.ts`, used both to refuse
+  and to defang, so the two cannot drift; no list of look-alikes is ever complete, so it reads each line as a
+  skeleton. The line is folded first (`marker-fold.ts`: NFKC, invisible characters and combining marks dropped, the
+  characters of the Unicode confusables data written as the ASCII they imitate from the generated table
+  `marker-confusables.ts`, U+0085 and the line and paragraph separators as line breaks, any other space or control as
+  a space, U+0640 tatweel as a hyphen); then each character is a letter (ASCII in any case; `0 3 4 5 7 @ $` for
+  `O E A S T A S`; any other digit or non-ASCII letter stands for any letter), a bracket (`< > [ ] { } ( )` or a
+  non-ASCII symbol, opening, closing or quotation mark), a stop (`|`) or a gap (spaces and other punctuation). The
+  name is the letters `ROSETTADATA` with only gaps and brackets between them, up to three of the eleven standing for
+  any letter. It is a marker when a run of at least two brackets stands before it (`<` or non-ASCII, or any bracket
+  when a whole `END` stands between) or after it (`>` or non-ASCII), or when its part of the line spells nothing but
+  `END` and the name and holds `END` or an angle or non-ASCII bracket. A rendered block breaks every match with a `|`
+  after the seventh letter of the name; the guard refuses a block read back that still holds one (`RST-1516`, security
+  event). Known limits: a marker with single brackets and other words on its line (`<END ROSETTA-DATA> x`), one cut
+  by a line break, `>>>` or `[[[` before the name without `END`, or a name with four or more letters no table knows
+  is not seen (none reads as Rosetta's frames); on the safe side a name next to two brackets is refused even in
+  ordinary text (`«Rosetta» data`, `<< rosettaData`, `List<RosettaData>>`), while prose such as "Rosetta data: …",
+  `ROSETTA_DATA_DIR`, heredocs, shifts and generics pass. Over the fixture repositories, `src/` and `docs/` the only
+  text refused is the injection fixture and the files that document the markers. The table is regenerated with
+  `scripts/make-marker-confusables.mjs`, whose output carries the full Unicode License v3 notice.
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`.
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.

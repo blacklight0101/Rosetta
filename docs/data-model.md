@@ -438,7 +438,7 @@ the OpenTelemetry GenAI semantic conventions so an exporter can be added later w
 | `at` | instant | when the guard let the call through |
 | `callId` | string | the call's id, as in `provider-calls.jsonl` |
 | `provider`, `model`, `role`, `agentTaskId` | string | the provider's name in the project settings |
-| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with it broken, `<<<` as `<<-<`); each call repeats the earlier messages, so it lists their excerpts again |
+| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with its name broken by a bar after `ROSETTA`); each call repeats the earlier messages, so it lists their excerpts again |
 | `maskedCounts` | object | the secrets masked in this call's request, per kind of section 3.6 (every kind, zero included) |
 
 Content is never copied here: no excerpt text, no message text, no secret. The line is masked like every file
