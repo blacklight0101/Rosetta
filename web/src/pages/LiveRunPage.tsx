@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { useRouteParams } from '../app/route-params.js';
+import { useAnnounceUsage } from '../app/usage-signal.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { phaseOf } from '../lib/live-run/run-phase.js';
 import { progressOf } from '../lib/live-run/run-summary.js';
@@ -18,7 +19,10 @@ export function LiveRunPage(): JSX.Element {
   const runId = useRouteParams()['runId'] ?? '';
   const [known, setKnown] = useState(false);
   const stream = useRunStream(runId, known);
-  const load = useRun(runId, progressOf(stream.state));
+  const progress = progressOf(stream.state);
+  const load = useRun(runId, progress);
+  // RF-1010: the totals pill of the header follows the run's model calls.
+  useAnnounceUsage(progress);
   const status = load.status;
   useEffect(() => {
     if (status === 'ready') setKnown(true);

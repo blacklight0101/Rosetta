@@ -11,6 +11,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { FieldProblemsError } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { formatInstant } from '../../infrastructure/system/instant.js';
+import type { CostServices } from './cost-routes.js';
 import { signedInOf } from './request-actor.js';
 
 // RF-010, RF-002, RF-1105, RF-1109: the projects API.
@@ -23,7 +24,8 @@ import { signedInOf } from './request-actor.js';
 //   audit row.
 // The `userId` of a project never leaves the server.
 
-export interface ProjectServices {
+/** The cost routes (RF-428, RF-1010) read the same projects, so they share these services. */
+export interface ProjectServices extends CostServices {
   readonly createProject: CreateProject;
   readonly listProjects: ListProjects;
   readonly getProject: GetProject;
