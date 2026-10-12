@@ -128,7 +128,79 @@ function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
   });
 }
 
+function nulTests(name: string, fresh: () => Promise<AuditLog>): void {
+  it(`RF-1109 ${name} stores a row whose text holds a NUL, with the NUL replaced`, async () => {
+    const audit = await fresh();
+    const nul = String.fromCodePoint(0);
+    const replaced = String.fromCodePoint(0xfffd);
+
+    await audit.record(
+      event({
+        action: `auth.sign_in${nul}`,
+        targetId: `target${nul}`,
+        ip: `203.0.113.7${nul}`,
+        detail: { [`reason${nul}`]: `bad${nul}input`, list: [`a${nul}`] },
+      }),
+    );
+    const listed = await audit.list({ since: minutesAfterStart(-1).getTime() });
+
+    expect(listed.map(withoutId)).toEqual([
+      event({
+        action: `auth.sign_in${replaced}`,
+        targetId: `target${replaced}`,
+        ip: `203.0.113.7${replaced}`,
+        detail: { [`reason${replaced}`]: `bad${replaced}input`, list: [`a${replaced}`] },
+      }),
+    ]);
+  });
+}
+
+function maskingAndFilterTests(name: string, fresh: () => Promise<AuditLog>): void {
+  it(`RNF-003 ${name} masks secret-like keys and a password in free text`, async () => {
+    const audit = await fresh();
+    const password = fixturePassword('Wide');
+
+    await audit.record(
+      event({
+        detail: {
+          secret: password,
+          pass: password,
+          pw: password,
+          value: password,
+          clientSecret: { nested: password },
+          note: `my password is ${password} today`,
+        },
+      }),
+    );
+    const listed = await audit.list({ since: minutesAfterStart(-1).getTime() });
+
+    expect(JSON.stringify(listed)).not.toContain(password);
+    expect(listed[0]?.detail).toEqual({
+      secret: '[MASKED:password]',
+      pass: '[MASKED:password]',
+      pw: '[MASKED:password]',
+      value: '[MASKED:password]',
+      clientSecret: '[MASKED:password]',
+      note: 'my password is [MASKED:password] today',
+    });
+  });
+
+  it(`RF-1109 ${name} lists nothing for a user id that is not a UUID`, async () => {
+    const audit = await fresh();
+    await audit.record(event());
+
+    const listed = audit.list({
+      since: minutesAfterStart(-1).getTime(),
+      actorUserId: 'not-a-uuid',
+    });
+
+    await expect(listed).resolves.toEqual([]);
+  });
+}
+
 export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): void {
   recordingTests(name, fresh);
   listingTests(name, fresh);
+  nulTests(name, fresh);
+  maskingAndFilterTests(name, fresh);
 }
