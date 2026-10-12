@@ -30,8 +30,10 @@ function server(): TestServer {
 
 async function listening(): Promise<{ app: TestServer; address: string }> {
   const app = server();
-  app.server.post('/test/echo', (request) => ({ got: request.body }));
-  app.server.get('/test/slow', async () => {
+  app.server.post('/test/echo', { config: { access: 'public' } }, (request) => ({
+    got: request.body,
+  }));
+  app.server.get('/test/slow', { config: { access: 'public' } }, async () => {
     await sleep(400);
     return { ok: true };
   });
@@ -155,7 +157,7 @@ describe('requests Node core would answer by itself', () => {
   it('RF-1013 Expect: 100-continue is answered and the request reaches the routes', async () => {
     const { app, address } = await listening();
     const request =
-      'POST /test/echo HTTP/1.1\r\nHost: localhost\r\nExpect: 100-continue\r\n' +
+      `POST /test/echo HTTP/1.1\r\nHost: localhost\r\nOrigin: ${publicUrl}\r\nExpect: 100-continue\r\n` +
       'Content-Type: application/json\r\nContent-Length: 9\r\n\r\n{"a":"b"}';
 
     const responses = parseRawResponses(await sendRaw(address, request));
@@ -190,7 +192,7 @@ describe('requests while the server closes', () => {
     await sleep(100);
     const closing = app.server.close();
     await sleep(50);
-    connection.write('GET /no-such-page HTTP/1.1\r\nHost: localhost\r\n\r\n');
+    connection.write('GET /assets/no-such-file.js HTTP/1.1\r\nHost: localhost\r\n\r\n');
     const responses = parseRawResponses(await connection.settle());
     await closing;
 

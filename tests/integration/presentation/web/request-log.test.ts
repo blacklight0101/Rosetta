@@ -9,7 +9,9 @@ let current: TestServer | undefined;
 
 function server(trustProxy: number): TestServer {
   current = createTestServer({ trustProxy });
-  current.server.get('/test/ip', (request) => ({ ip: request.ip }));
+  current.server.get('/test/ip', { config: { access: 'public' } }, (request) => ({
+    ip: request.ip,
+  }));
   return current;
 }
 
