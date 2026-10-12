@@ -31,14 +31,39 @@ function stringField(body: unknown, key: string): string {
   return value;
 }
 
-/** The cookie and CSRF headers of a signed-in session. */
+/** The cookies a response sets, merged over the ones the browser already has. */
+function keepCookies(response: Response, known: Map<string, string>): Map<string, string> {
+  for (const line of response.headers.getSetCookie()) {
+    const [pair = ''] = line.split(';', 1);
+    const at = pair.indexOf('=');
+    known.set(pair.slice(0, at), pair.slice(at + 1));
+  }
+  return known;
+}
+
+/** The headers a browser sends with these cookies and token. */
+function authHeaders(cookies: Map<string, string>, token: string): Headers {
+  const cookie = [...cookies].map(([name, value]) => `${name}=${value}`).join('; ');
+  return { cookie, 'x-csrf-token': token };
+}
+
+/**
+ * The cookie and CSRF headers of a signed-in session. The bootstrap administrator must change its
+ * password before it reaches the projects API (RF-1102), so the session changes it first.
+ */
 async function signIn(address: string, password: string): Promise<Headers> {
   const response = await postJson(address, '/api/session', { userName: adminName, password }, {});
-  const cookies = response.headers.getSetCookie().map((line) => line.split(';')[0] ?? '');
-  return {
-    cookie: cookies.join('; '),
-    'x-csrf-token': stringField(await response.json(), 'csrfToken'),
-  };
+  const cookies = keepCookies(response, new Map());
+  const token = stringField(await response.json(), 'csrfToken');
+  const newPassword = fixturePassword('DoublesNew');
+  const changed = await postJson(
+    address,
+    '/api/account/password',
+    { currentPassword: password, newPassword },
+    authHeaders(cookies, token),
+  );
+  keepCookies(changed, cookies);
+  return authHeaders(cookies, stringField(await changed.json(), 'csrfToken'));
 }
 
 async function startScan(address: string, auth: Headers): Promise<number> {

@@ -108,6 +108,18 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'The account is locked for 15 minutes after five failed sign-ins.',
     nextStep: 'Wait 15 minutes, or ask an administrator to check the audit trail.',
   },
+  'RST-2211': {
+    message: 'The current password is not correct.',
+    nextStep: 'Enter the password you signed in with, then choose the new one.',
+  },
+  'RST-2212': {
+    message: 'You must change your password before you continue.',
+    nextStep: 'Open the change-password page and choose a new password.',
+  },
+  'RST-2213': {
+    message: 'An administrator cannot disable or reset their own account.',
+    nextStep: 'Change your own password in your settings, or ask another administrator.',
+  },
   'RST-2304': {
     message: 'The URL must use https and a public address.',
     nextStep: 'Enter an https address that is reachable from the internet.',

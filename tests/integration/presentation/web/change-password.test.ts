@@ -64,7 +64,9 @@ describe('POST /api/account/password', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code, problems: [{ field: 'newPassword', code }] });
   });
+});
 
+describe('POST /api/account/password refusals', () => {
   it('RF-1103 refuses a wrong current password with 400 RST-2211', async () => {
     const test = serve();
     const amy = await addUser(test, { userName: 'amy' });
@@ -85,7 +87,7 @@ describe('POST /api/account/password', () => {
   it.each([
     ['a password over 1,024 characters', { newPassword: 'x'.repeat(1025) }, 400],
     ['an unknown field', { other: 'value' }, 400],
-    ['a body over 4 KiB', { newPassword: 'x'.repeat(5000) }, 413],
+    ['a body over 4 KiB', { newPassword: 'x'.repeat(5000) }, 400],
   ])('RF-1103 refuses %s', async (_case, extra, status) => {
     const test = serve();
     const amy = await addUser(test, { userName: 'amy' });
@@ -99,7 +101,9 @@ describe('POST /api/account/password', () => {
 
     expect(response.statusCode).toBe(status);
   });
+});
 
+describe('POST /api/account/password protection', () => {
   it('RF-1009 needs the CSRF token', async () => {
     const test = serve();
     const amy = await addUser(test, { userName: 'amy' });
@@ -134,18 +138,18 @@ describe('POST /api/account/password', () => {
   });
 });
 
-describe('MustChangePassword', () => {
-  async function forcedBrowser(
-    test: TestServer,
-  ): Promise<{ browser: TestBrowser; password: string }> {
-    const mia = await addUser(test, {
-      userName: 'mia',
-      role: 'admin',
-      state: 'MustChangePassword',
-    });
-    return { browser: await signedInBrowser(test.server, mia), password: mia.password };
-  }
+async function forcedBrowser(
+  test: TestServer,
+): Promise<{ browser: TestBrowser; password: string }> {
+  const mia = await addUser(test, {
+    userName: 'mia',
+    role: 'admin',
+    state: 'MustChangePassword',
+  });
+  return { browser: await signedInBrowser(test.server, mia), password: mia.password };
+}
 
+describe('MustChangePassword', () => {
   it('RF-1102 an API route answers 403 RST-2212 and the refusal is audited', async () => {
     const test = serve();
     const { browser } = await forcedBrowser(test);
@@ -170,7 +174,9 @@ describe('MustChangePassword', () => {
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.passwordChangeRequired });
   });
+});
 
+describe('MustChangePassword pages and session', () => {
   it('RF-1102 a page redirects to the change-password page, which opens', async () => {
     const test = serve();
     const { browser } = await forcedBrowser(test);

@@ -192,18 +192,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     ...overrides,
   });
   return {
-    server,
-    logger,
-    health,
-    clock,
-    users,
-    sessions,
-    audit,
-    hasher,
-    usage,
-    projects,
-    serverSettings,
-    runs,
-    ...route,
+    ...{ server, logger, health, clock, users, sessions, audit, hasher, usage, projects },
+    ...{ serverSettings, runs, ...route },
   };
 }

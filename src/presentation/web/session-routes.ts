@@ -22,11 +22,15 @@ export interface SessionRouteOptions {
   readonly signOut: SignOut;
 }
 
-const SIGN_IN_BODY_LIMIT_BYTES = 4096;
-const MAX_PASSWORD_LENGTH = 1024;
+/** The body and password caps of every route that takes a password (P1-09, P1-10). */
+export const PASSWORD_BODY_LIMIT_BYTES = 4096;
+export const MAX_PASSWORD_LENGTH = 1024;
+const SIGN_IN_BODY_LIMIT_BYTES = PASSWORD_BODY_LIMIT_BYTES;
 const MAX_USER_NAME_LENGTH = 200;
 const MAX_PENDING_SIGN_INS = 8;
-const SIGN_IN_RATE = { max: 10, timeWindow: 60_000 } as const;
+/** Attempts per minute per address on the routes that verify a password (RF-1100). */
+export const PASSWORD_RATE = { max: 10, timeWindow: 60_000 } as const;
+const SIGN_IN_RATE = PASSWORD_RATE;
 
 const signInBody = z
   .object({
@@ -74,14 +78,21 @@ function registerSignIn(server: FastifyInstance, signIn: SignIn): void {
 export function registerSessionRoutes(server: FastifyInstance, options: SessionRouteOptions): void {
   registerSignIn(server, options.signIn);
 
-  server.get('/api/session', { config: { access: 'user' } }, (request, reply) =>
-    reply.status(200).send({ user: signedInOf(request).user, csrfToken: reply.generateCsrf() }),
+  server.get(
+    '/api/session',
+    { config: { access: 'user', duringPasswordChange: true } },
+    (request, reply) =>
+      reply.status(200).send({ user: signedInOf(request).user, csrfToken: reply.generateCsrf() }),
   );
 
-  server.delete('/api/session', { config: { access: 'user' } }, async (request, reply) => {
-    const { actor, sessionId } = signedInOf(request);
-    await options.signOut.execute({ actor, sessionId, ip: request.ip });
-    void reply.clearCookie(SESSION_COOKIE, secureCookie);
-    return reply.status(204).send();
-  });
+  server.delete(
+    '/api/session',
+    { config: { access: 'user', duringPasswordChange: true } },
+    async (request, reply) => {
+      const { actor, sessionId } = signedInOf(request);
+      await options.signOut.execute({ actor, sessionId, ip: request.ip });
+      void reply.clearCookie(SESSION_COOKIE, secureCookie);
+      return reply.status(204).send();
+    },
+  );
 }

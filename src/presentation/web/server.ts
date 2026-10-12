@@ -6,6 +6,7 @@ import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import type { DatabaseHealth } from '../../application/ports/database-health.js';
 import type { Logger, LogRecord } from '../../application/ports/logger.js';
+import type { ChangePassword } from '../../application/use-cases/change-password.js';
 import type { RecordRefusedRequest } from '../../application/use-cases/record-refused-request.js';
 import type { ResolveSession } from '../../application/use-cases/resolve-session.js';
 import type { SignIn } from '../../application/use-cases/sign-in.js';
@@ -19,6 +20,8 @@ import {
   frameworkErrorHandler,
 } from './early-errors.js';
 import { recordCsrfRefusal, registerAccessHooks } from './access-hooks.js';
+import { registerAccountRoutes } from './account-routes.js';
+import { registerAdminRoutes, type AdminServices } from './admin-routes.js';
 import { toErrorReply } from './error-mapper.js';
 import { registerProjectRoutes, type ProjectServices } from './project-routes.js';
 import { registerRunRoutes, type RunServices } from './run-routes.js';
@@ -30,8 +33,14 @@ import { registerSessionRoutes } from './session-routes.js';
 
 // ADR-017: the Fastify server. Plugins and hooks are registered here; routes call use cases only.
 
+/** RF-1102, RF-1103, RF-1109: the use cases behind the account and administration routes. */
+export interface AccountServices extends AdminServices {
+  readonly changePassword: ChangePassword;
+}
+
 /** RF-1009, RF-1100, RF-1101: the use cases behind the session hooks and routes. */
 export interface AuthServices {
+  readonly accounts: AccountServices;
   readonly signIn: SignIn;
   readonly signOut: SignOut;
   readonly resolveSession: ResolveSession;
@@ -195,6 +204,8 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   // Registered as a plugin, so the rate-limit plugin (loaded first) sees these routes.
   void server.register((instance, _options, done) => {
     registerSessionRoutes(instance, options.auth);
+    registerAccountRoutes(instance, options.auth.accounts);
+    registerAdminRoutes(instance, options.auth.accounts);
     registerProjectRoutes(instance, options.projects);
     registerRunRoutes(instance, options.runs);
     done();

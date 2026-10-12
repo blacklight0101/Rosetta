@@ -4,11 +4,11 @@ import type { AuditLog } from '../ports/audit-log.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
 
-// RF-1009, RF-1109, RF-009: a request refused for its `Origin`, its CSRF token or the role of its
-// user is answered 403; it also writes a `request.refused` audit row and a `warn` security event
+// RF-1009, RF-1109, RF-009: a request refused for its `Origin`, its CSRF token, the role of its
+// user or a password that must be changed first (RF-1102) is answered 403; it also writes a `request.refused` audit row and a `warn` security event
 // with the refusal's code. The path is kept without its query string.
 
-export type RefusalReason = 'origin' | 'csrf' | 'role';
+export type RefusalReason = 'origin' | 'csrf' | 'role' | 'password-change';
 
 export interface RefusedRequest {
   /** Null when nobody is signed in. */
@@ -29,6 +29,7 @@ const CODES: Readonly<Record<RefusalReason, ErrorCode>> = {
   origin: ERROR_CODES.originRefused,
   csrf: ERROR_CODES.csrfTokenInvalid,
   role: ERROR_CODES.notAllowed,
+  'password-change': ERROR_CODES.passwordChangeRequired,
 };
 
 export class RecordRefusedRequest {

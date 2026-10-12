@@ -46,7 +46,9 @@ describe('CreateUser', () => {
 
     expect(outcome.ok && outcome.value.state).toBe('Active');
   });
+});
 
+describe('CreateUser roles', () => {
   it('RF-1102 creates an administrator', async () => {
     const test = await accountAdminHarness();
 
@@ -66,7 +68,9 @@ describe('CreateUser', () => {
 
     expect(JSON.stringify(outcome)).not.toContain('fake$');
   });
+});
 
+describe('CreateUser refusals and audit', () => {
   it.each([
     ['a user that is not an administrator', 'user', {}, ERROR_CODES.notAllowed],
     ['an invalid user name', 'admin', { userName: 'a b' }, ERROR_CODES.userNameInvalid],
@@ -110,7 +114,7 @@ describe('CreateUser', () => {
         targetId: outcome.ok ? outcome.value.id : 'none',
         ip: client.ip,
         outcome: 'ok',
-        detail: { role: 'user', mustChangePassword: true },
+        detail: { role: 'user', changeAtFirstSignIn: true },
       }),
     ]);
     expect(JSON.stringify(rows) + test.logger.text()).not.toContain(password);

@@ -13,6 +13,7 @@ import { FIXTURE_SHA, fixtureArchive } from '../../support/snapshot-fixtures.js'
 import { createDisposableSchema } from './database.js';
 import { e2ePort } from './server-config.js';
 import { seededAdmin, seedUsers } from './seed.js';
+import { clearSessions } from './sign-in.js';
 
 // RNF-005, ADR-008, P1-13: the end-to-end test server. Usage (from the repository root):
 //   node --import ./scripts/register-ts.mjs tests/e2e/support/serve.ts
@@ -47,12 +48,35 @@ async function demoGitHub(): Promise<FakeGitHub> {
   ]);
 }
 
+type Composer = (port: number) => ReturnType<typeof composeApplication>;
+
+/** Composes the application with the fake provider and the fake GitHub, on a given port. */
+async function composer(environment: ReturnType<typeof loadEnvironment>): Promise<Composer> {
+  const provider = new FakeProvider({
+    testMode: true,
+    recording: {
+      schemaVersion: 1,
+      description: 'No calls: the smoke journeys call no model.',
+      calls: [],
+    },
+  });
+  const github = await demoGitHub();
+  return (port) =>
+    composeApplication({
+      environment,
+      listen: { host: '127.0.0.1', port },
+      output: { write: () => true },
+      doubles: TestDoubles.create(environment, { fetch: github.fetch, provider }),
+    });
+}
+
 async function main(): Promise<void> {
   const databaseUrl = process.env['ROSETTA_TEST_DATABASE_URL'];
   if (databaseUrl === undefined || databaseUrl === '') {
     throw new Error('ROSETTA_TEST_DATABASE_URL is not set.');
   }
   await requireFrontEnd();
+  await clearSessions();
   const port = e2ePort();
   const schema = await createDisposableSchema(databaseUrl, port);
   const dataDir = join(tmpdir(), `rosetta-e2e-${String(port)}`);
@@ -69,22 +93,7 @@ async function main(): Promise<void> {
     ROSETTA_TEST: '1',
     ROSETTA_TEST_DATABASE_URL: databaseUrl,
   });
-  const provider = new FakeProvider({
-    testMode: true,
-    recording: {
-      schemaVersion: 1,
-      description: 'No calls: the smoke journeys call no model.',
-      calls: [],
-    },
-  });
-  const github = await demoGitHub();
-  const compose = (listenPort: number) =>
-    composeApplication({
-      environment,
-      listen: { host: '127.0.0.1', port: listenPort },
-      output: { write: () => true },
-      doubles: TestDoubles.create(environment, { fetch: github.fetch, provider }),
-    });
+  const compose = await composer(environment);
   const preparation = compose(0);
   await preparation.start();
   await preparation.stop();

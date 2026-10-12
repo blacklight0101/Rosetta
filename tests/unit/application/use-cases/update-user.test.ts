@@ -68,7 +68,9 @@ describe('UpdateUser', () => {
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.accountStateInvalid });
   });
+});
 
+describe('UpdateUser refusals and audit', () => {
   it.each([
     ['a user that is not an administrator', 'amy', 'amy-target', ERROR_CODES.notAllowed],
     ['an unknown account', 'root', 'unknown', ERROR_CODES.notFound],
@@ -130,7 +132,9 @@ describe('ResetPassword', () => {
     expect(await test.hasher.verify(resetTo, stored?.passwordHash ?? '')).toBe(true);
     expect(await test.sessions.touch(session.id, test.clock.now())).toBeUndefined();
   });
+});
 
+describe('ResetPassword rules', () => {
   it.each([
     ['a short password', 'Short-pw1', ERROR_CODES.passwordTooShort],
     [
@@ -165,7 +169,9 @@ describe('ResetPassword', () => {
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.accountStateInvalid });
   });
+});
 
+describe('ResetPassword refusals and audit', () => {
   it('RF-1102 refuses a user that is not an administrator', async () => {
     const test = await accountAdminHarness();
 

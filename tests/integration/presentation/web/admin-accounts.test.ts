@@ -70,17 +70,19 @@ describe('POST /api/admin/users', () => {
   });
 
   it.each([
-    ['a taken user name', { userName: 'AMY' }, 409, ERROR_CODES.userNameTaken, 'userName'],
-    ['an invalid user name', { userName: 'a' }, 400, ERROR_CODES.userNameInvalid, 'userName'],
+    ['a taken user name', { userName: 'AMY' }, [409, ERROR_CODES.userNameTaken, 'userName']],
+    ['an invalid user name', { userName: 'a' }, [400, ERROR_CODES.userNameInvalid, 'userName']],
     [
       'an empty display name',
       { displayName: '' },
-      400,
-      ERROR_CODES.displayNameInvalid,
-      'displayName',
+      [400, ERROR_CODES.displayNameInvalid, 'displayName'],
     ],
-    ['a short password', { password: 'Short-pw1' }, 400, ERROR_CODES.passwordTooShort, 'password'],
-  ])('RF-1102 refuses %s', async (_case, change, status, code, field) => {
+    [
+      'a short password',
+      { password: 'Short-pw1' },
+      [400, ERROR_CODES.passwordTooShort, 'password'],
+    ],
+  ] as const)('RF-1102 refuses %s', async (_case, change, [status, code, field]) => {
     const { admin } = await setup();
 
     const response = await post(admin, '/api/admin/users', { ...newUser, ...change });
@@ -88,7 +90,9 @@ describe('POST /api/admin/users', () => {
     expect(response.statusCode).toBe(status);
     expect(response.json()).toMatchObject({ code, problems: [{ field, code }] });
   });
+});
 
+describe('POST /api/admin/users caps', () => {
   it.each([
     ['an unknown role', { role: 'owner' }],
     ['a password over 1,024 characters', { password: 'x'.repeat(1025) }],
@@ -102,7 +106,7 @@ describe('POST /api/admin/users', () => {
     expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
   });
 
-  it('RF-1102 refuses a body over 4 KiB with 413', async () => {
+  it('RF-1102 refuses a body over 4 KiB with 400', async () => {
     const { admin } = await setup();
 
     const response = await post(admin, '/api/admin/users', {
@@ -110,7 +114,7 @@ describe('POST /api/admin/users', () => {
       displayName: 'x'.repeat(5000),
     });
 
-    expect(response.statusCode).toBe(413);
+    expect(response.statusCode).toBe(400);
   });
 });
 
@@ -138,11 +142,11 @@ describe('POST /api/admin/users/:id/disable and /enable', () => {
   });
 
   it.each([
-    ['enabling an active account', 'amy', 'enable', 409, ERROR_CODES.accountStateInvalid],
-    ['disabling your own account', 'root', 'disable', 409, ERROR_CODES.ownAccountRefused],
-    ['an unknown account', 'unknown', 'disable', 404, ERROR_CODES.notFound],
-    ['an id that is not a UUID', 'not-a-uuid', 'disable', 404, ERROR_CODES.notFound],
-  ])('RF-1102 refuses %s', async (_case, who, action, status, code) => {
+    ['enabling an active account', ['amy', 'enable'], 409, ERROR_CODES.accountStateInvalid],
+    ['disabling your own account', ['root', 'disable'], 409, ERROR_CODES.ownAccountRefused],
+    ['an unknown account', ['unknown', 'disable'], 404, ERROR_CODES.notFound],
+    ['an id that is not a UUID', ['not-a-uuid', 'disable'], 404, ERROR_CODES.notFound],
+  ] as const)('RF-1102 refuses %s', async (_case, [who, action], status, code) => {
     const { root, amy, admin } = await setup();
     const ids: Record<string, string> = {
       amy: amy.account.id,

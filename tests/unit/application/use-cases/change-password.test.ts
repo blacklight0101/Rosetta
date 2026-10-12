@@ -71,7 +71,9 @@ describe('ChangePassword', () => {
       expect.objectContaining({ logger: 'security', code: ERROR_CODES.currentPasswordIncorrect }),
     );
   });
+});
 
+describe('ChangePassword sessions and audit', () => {
   it('RF-1103 ends my other sessions and opens a new one for this browser', async () => {
     const test = await accountAdminHarness();
     const here = await openSession(test);
@@ -96,7 +98,9 @@ describe('ChangePassword', () => {
     expect(outcome.ok && outcome.value.user.state).toBe('Active');
     expect((await test.users.findById(test.amy.account.id))?.state).toBe('Active');
   });
+});
 
+describe('ChangePassword audit', () => {
   it('RF-1103 refuses an account that is gone', async () => {
     const test = await accountAdminHarness();
 

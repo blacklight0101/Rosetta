@@ -49,7 +49,9 @@ describe('ListUsers', () => {
       ],
     });
   });
+});
 
+describe('ListUsers states and refusals', () => {
   it('RF-1100 shows a locked account as Locked', async () => {
     const test = await accountAdminHarness();
     const lockedUntil = test.clock.now().getTime() + 60_000;
@@ -77,32 +79,32 @@ describe('ListUsers', () => {
   });
 });
 
-describe('ListAudit', () => {
-  async function withEvents() {
-    const test = await accountAdminHarness();
-    const atOffset = (offsetMs: number): Date => {
-      const moved = new FixedClock('2026-10-11T09:00:00.000Z');
-      moved.advance(offsetMs);
-      return moved.now();
-    };
-    const record = (offsetMs: number, actorUserId: string, action: string) =>
-      test.auditLog.record({
-        at: atOffset(offsetMs),
-        actorUserId,
-        action,
-        targetType: null,
-        targetId: null,
-        ip: client.ip,
-        outcome: 'ok',
-        detail: {},
-      });
-    await record(-31 * dayMs, test.amy.account.id, 'auth.sign_in');
-    await record(-30 * dayMs, test.amy.account.id, 'auth.sign_in');
-    await record(-1 * dayMs, test.amy.account.id, 'auth.sign_out');
-    await record(-1000, test.admin.account.id, 'auth.sign_in');
-    return test;
-  }
+async function withEvents() {
+  const test = await accountAdminHarness();
+  const atOffset = (offsetMs: number): Date => {
+    const moved = new FixedClock('2026-10-11T09:00:00.000Z');
+    moved.advance(offsetMs);
+    return moved.now();
+  };
+  const record = (offsetMs: number, actorUserId: string, action: string) =>
+    test.auditLog.record({
+      at: atOffset(offsetMs),
+      actorUserId,
+      action,
+      targetType: null,
+      targetId: null,
+      ip: client.ip,
+      outcome: 'ok',
+      detail: {},
+    });
+  await record(-31 * dayMs, test.amy.account.id, 'auth.sign_in');
+  await record(-30 * dayMs, test.amy.account.id, 'auth.sign_in');
+  await record(-1 * dayMs, test.amy.account.id, 'auth.sign_out');
+  await record(-1000, test.admin.account.id, 'auth.sign_in');
+  return test;
+}
 
+describe('ListAudit', () => {
   it('RF-1109 lists the last 30 days, newest first', async () => {
     const test = await withEvents();
 

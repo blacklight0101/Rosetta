@@ -5,6 +5,16 @@ import { actorOf } from '../../src/domain/accounts/actor.js';
 import { fixturePassword } from '../support/account-fixtures.js';
 import { sampleProject, settingsWith } from '../support/project-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser, type TestUser } from '../support/test-browser.js';
+import {
+  active,
+  adminOnly,
+  columns,
+  everyone,
+  ownerOnly,
+  routesOf,
+  signedIn,
+  type Column,
+} from '../support/access-columns.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the
@@ -14,8 +24,6 @@ import { createTestServer, type TestServer } from '../support/web-server.js';
 // routes are read from the server itself (with the static front end mounted), so a new route
 // without a row fails this test.
 
-type Column = 'anonymous' | 'user' | 'otherUser' | 'admin' | 'mustChange';
-const columns = ['anonymous', 'user', 'otherUser', 'admin', 'mustChange'] as const;
 type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE';
 
 /** What the rows need to name: the project and runs of the user column and a user id to open. */
@@ -39,39 +47,11 @@ interface Probe {
 }
 
 const staticRoot = fileURLToPath(new URL('../fixtures/static-site/', import.meta.url));
-const everyone = (status: number): Record<Column, number> => ({
-  anonymous: status,
-  user: status,
-  otherUser: status,
-  admin: status,
-  mustChange: status,
-});
-/** A route every signed-in user reaches, also while the password must be changed. */
-const signedIn = (anonymous: number, status: number): Record<Column, number> => ({
-  anonymous,
-  user: status,
-  otherUser: status,
-  admin: status,
-  mustChange: status,
-});
-/** A route every signed-in user reaches once the password no longer must be changed. */
-const active = (anonymous: number, status: number): Record<Column, number> => ({
-  ...signedIn(anonymous, status),
-  mustChange: anonymous === 302 ? 302 : 403,
-});
 const ownCredentials = (user: TestUser | undefined): InjectOptions['payload'] => ({
   userName: user?.account.userName ?? 'nobody',
   password: user?.password ?? fixturePassword('Anonymous'),
 });
 
-/** A project of the "user" column: it answers its owner, and 404 to every other signed-in user. */
-const ownerOnly = (status: number): Record<Column, number> => ({
-  anonymous: 401,
-  user: status,
-  otherUser: 404,
-  admin: 404,
-  mustChange: 403,
-});
 const unknownUser = '00000000-0000-4000-9000-00000000ffff';
 const projectUrl = (suffix: string) => (context: Context) =>
   `/api/projects/${context.projectId}${suffix}`;
@@ -79,13 +59,6 @@ const workspaceUrl = (userId: (context: Context) => string) => (context: Context
   `/api/admin/users/${userId(context)}/projects`;
 const runUrl = (suffix: string, pick: (context: Context) => string) => (context: Context) =>
   `/api/runs/${pick(context)}${suffix}`;
-const adminOnly = (admin: number): Record<Column, number> => ({
-  anonymous: 401,
-  user: 403,
-  otherUser: 403,
-  admin,
-  mustChange: 403,
-});
 const adminUserUrl = (suffix: string, userId: (context: Context) => string) => (context: Context) =>
   `/api/admin/users/${userId(context)}${suffix}`;
 const newPassword = fixturePassword('Renewed');
@@ -231,27 +204,6 @@ afterEach(async () => {
   await current?.server.close();
   current = undefined;
 });
-
-/**
- * "METHOD path" for every route of the server, from Fastify's route listing. The listing is a tree
- * (four characters of indentation per level): a node's path is its own text after those of its
- * parents, and only nodes that end in a method list are routes.
- */
-function routesOf(listing: string): readonly string[] {
-  const parents: string[] = [];
-  const routes: string[] = [];
-  for (const line of listing.split('\n')) {
-    const match = /^((?:│ {3}| {4})*)[├└]── (\S+)(?: \(([A-Z, ]+)\))?$/u.exec(line);
-    if (match === null) continue;
-    const depth = (match[1] ?? '').length / 4;
-    parents.length = depth;
-    parents.push(match[2] ?? '');
-    for (const method of (match[3] ?? '').split(', ').filter((name) => name !== '')) {
-      routes.push(`${method} ${parents.join('')}`);
-    }
-  }
-  return routes.sort();
-}
 
 async function browserFor(
   test: TestServer,
