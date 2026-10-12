@@ -1,38 +1,35 @@
+import { markerConfusables } from './marker-confusables.js';
+
 // RF-145, ADR-013: the text a data-block marker check reads. A model can take `＜＜＜ＲＯＳＥＴＴＡ-DATA`,
 // `‹‹‹END ROSETTA-DATA›››`, a Cyrillic `О` in ROSETTA or a zero-width space inside `<<<` for a frame,
 // so the check reads the text folded: every character compatibility-normalised (NFKC: fullwidth and
 // small forms, mathematical letters), invisible characters and combining marks dropped, and the
-// common look-alikes NFKC keeps (angle quotes and brackets, dashes, Greek, Cyrillic and Cherokee
-// letters, small capitals) written as the ASCII they imitate. Folding more than a reader would is
-// the safe side: the worst case is a defanged or refused excerpt, never a forged frame.
+// look-alikes NFKC keeps written as the ASCII they imitate. The look-alikes come from the Unicode
+// confusables data (marker-confusables.ts, generated) plus the few multi-character ones below.
+//
+// The fold is one half of the marker check. It can only know the look-alikes that exist in a table,
+// so it is never the only half: marker-keyword.ts refuses a line that spells the marker name with
+// any non-ASCII letter left over, whatever stands for the angle brackets. Folding more than a
+// reader would is the safe side: the worst case is a defanged or refused excerpt, never a forged
+// frame.
 
-/** The ASCII a marker is made of, and the characters that imitate it. */
-const lookAlikesOf: Readonly<Record<string, string>> = {
-  '<': '˂ᐸ‹❮⟨⧼〈',
-  '<<': '«≪',
-  '<<<': '⋘',
-  '-': '˗‐‒–—―⁃−﹘',
-  A: 'ΑАᎪᴀ',
-  a: 'ɑαа',
-  D: 'ԀᎠᴅ',
-  d: 'ԁ',
-  E: 'ΕЕᎬᴇ',
-  e: 'е',
-  N: 'Νɴ',
-  O: 'ΟОᴏ',
-  o: 'οо',
-  R: 'ʀᎡᏒ',
-  S: 'ЅᏚꜱ',
-  s: 'ѕ',
-  T: 'ΤТᎢᴛ',
-  t: 'т',
+/** What a character stands for when it is more than one ASCII character. */
+const manyAsciiOf: Readonly<Record<string, string>> = {
+  '<<': '\u00ab\u226a',
+  '<<<': '\u22d8',
 };
 
-const asciiOf: ReadonlyMap<string, string> = new Map(
-  Object.entries(lookAlikesOf).flatMap(([ascii, chars]) =>
+function entriesOf(): (readonly [string, string])[] {
+  const single = Object.entries(markerConfusables).flatMap(([ascii, points]) =>
+    points.map((point) => [String.fromCodePoint(point), ascii] as const),
+  );
+  const many = Object.entries(manyAsciiOf).flatMap(([ascii, chars]) =>
     Array.from(chars, (char) => [char, ascii] as const),
-  ),
-);
+  );
+  return [...single, ...many];
+}
+
+const asciiOf: ReadonlyMap<string, string> = new Map(entriesOf());
 
 const invisible = /^[\p{M}\p{Cf}\p{Default_Ignorable_Code_Point}]$/u;
 
@@ -53,7 +50,7 @@ function foldChar(char: string): string {
 
 /** Whether the text is plain ASCII, which folds to itself. */
 export function isAscii(text: string): boolean {
-  return !/[\u0080-\uFFFF]/.test(text);
+  return !/[\u0080-￿]/.test(text);
 }
 
 // RF-145

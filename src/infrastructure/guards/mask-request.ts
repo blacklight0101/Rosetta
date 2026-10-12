@@ -1,6 +1,7 @@
 import type { LlmMessage, LlmRequest, ToolCall } from '../../application/ports/llm-provider.js';
 import type { Citation } from '../../domain/cards/citation.js';
 import { scanDataBlocks } from '../../domain/egress/data-block-scan.js';
+import { fileKey } from './file-key.js';
 import { maskDeep } from './mask-deep.js';
 import { leavesKeyOpen, maskKeyContinuation } from './private-key-pieces.js';
 import {
@@ -54,15 +55,6 @@ interface ContentPart {
   readonly frame: boolean;
   readonly text: string;
   readonly excerpts: readonly Citation[];
-}
-
-/**
- * The file a path names on a case-insensitive file system that may also normalise Unicode: the
- * same file can come back as `a.cs` and `A.cs`, or with `é` composed and decomposed. Folding wider
- * than a file system does (`ß` and `ss` meet) only carries a key further, which is the safe side.
- */
-function fileKey(path: string): string {
-  return path.normalize('NFC').toUpperCase().toLowerCase();
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { Citation } from '../cards/citation.js';
 import { foldMarkers, isAscii } from './marker-fold.js';
+import { breakMarkerNames, holdsMarkerName } from './marker-keyword.js';
 
 // RF-145, ADR-013: repository content reaches a model only inside a labelled data block, never in
 // the system prompt. The agent loop (P1-31) wraps every tool result with `renderDataBlock`; the
@@ -10,7 +11,10 @@ import { foldMarkers, isAscii } from './marker-fold.js';
 // (each `{ path, startLine, endLine }`, so a path with a line break stays on the header line),
 // the content, and a footer line. Text inside the content that looks like a header or a footer is
 // defanged, so repository text can never close its block early or open a new one; it stays data.
-// "Looks like" includes Unicode look-alikes: the marker checks read the text folded (marker-fold.ts).
+// "Looks like" includes Unicode look-alikes, in two independent ways: the frame checks read the text
+// folded (marker-fold.ts), and any line with a non-ASCII character whose letters spell the marker
+// name is a marker whatever its brackets are (marker-keyword.ts), so a symbol or a letter that no
+// table lists cannot get a frame through.
 
 /**
  * The read-only tools whose results are repository content (RF-145), and `unknown_tool` for the
@@ -46,17 +50,22 @@ export const DATA_BLOCK_FOOTER = '<<<END ROSETTA-DATA>>>';
 const markerPattern = /<<<\s*(?:END\s+)?ROSETTA-DATA/i;
 const defangPattern = /<<<(?=\s*(?:END\s+)?ROSETTA-DATA)/gi;
 
-/** Whether the text holds anything that looks like the start of a header or a footer. */
-export function holdsDataMarker(text: string): boolean {
+/** Whether the folded text holds a `<<<` that opens a header or a footer. */
+function holdsFrame(text: string): boolean {
   return markerPattern.test(isAscii(text) ? text : foldMarkers(text).text);
 }
 
+/** Whether the text holds anything that looks like the start of a header or a footer. */
+export function holdsDataMarker(text: string): boolean {
+  return holdsFrame(text) || holdsMarkerName(text);
+}
+
 /**
- * The text with every marker look-alike broken by a `-` after its second `<` (`<<<` becomes
+ * The text with every `<<<` that opens a marker broken by a `-` after its second `<` (`<<<` becomes
  * `<<-<`), or after its third when one character stands for two; lines stay where they are.
  */
-function defang(text: string): string {
-  if (!holdsDataMarker(text)) return text;
+function defangFrames(text: string): string {
+  if (!holdsFrame(text)) return text;
   const fold = foldMarkers(text);
   let defanged = '';
   let position = 0;
@@ -68,6 +77,14 @@ function defang(text: string): string {
     position = cut;
   }
   return defanged + text.slice(position);
+}
+
+/**
+ * The text with every marker look-alike broken: its frames as above, then the name of every
+ * marker, whatever its brackets, by a `|` after the seventh letter (`ROSETTA|DATA`).
+ */
+function defang(text: string): string {
+  return breakMarkerNames(defangFrames(text));
 }
 
 /** An excerpt as the header carries it: the path with its marker look-alikes broken. */

@@ -320,8 +320,9 @@ loopback or `host.docker.internal`) without that consent (`RST-1515`), refuses a
 data block or whose message holds a broken one (`RST-1516`), masks every message part (a private key read in pieces
 included, read line by line so a key written as string literals in code counts too: an END line without its BEGIN
 masks the key lines above it, and a key left open by one read masks the key lines that start the next read of the same
-file, the paths compared case-folded and Unicode-normalised because a case-insensitive file system can return `a.cs`
-for `A.cs`; known limit: a key written inline with no BEGIN or END line, such as `key: "MII...`, is not masked, see
+file, the paths compared as one file system would (`fileKey`, `src/infrastructure/guards/file-key.ts`: case-folded,
+Unicode-normalised, a backslash read as a slash, trailing dots and spaces dropped, Turkish `İ` read as `i`) because the
+same file can come back as `A.cs`, `a.cs.` or `a.cs` in another Unicode form; known limit: a key written inline with no BEGIN or END line, such as `key: "MII...`, is not masked, see
 the header of `private-key-pieces.ts`), adds the secrets first sent by the agent task to the manifest and, last, appends
 the egress line, so a line always means a sent call. Every refusal and every failure of those steps (masking
 `RST-2101`, manifest `RST-2106`, egress log `RST-2107`, or the code the failure carries) is a `security` log entry
@@ -431,9 +432,19 @@ sequenceDiagram
   (paths with their markers defanged, every `<` and `>` of the JSON written as `\u003c`/`\u003e`, a line break in a
   path escaped by JSON and every character outside printable ASCII written as a `\u` escape, so no header text can
   read as a frame), the content with every marker look-alike defanged (`<<<` becomes `<<-<`, lines kept), and the footer
-  `<<<END ROSETTA-DATA>>>`; a look-alike includes Unicode spellings (fullwidth and small forms, angle quotes, Greek
-  or Cyrillic letters, invisible characters), because the marker checks read the text folded
-  (`src/domain/egress/marker-fold.ts`); the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
+  `<<<END ROSETTA-DATA>>>`; the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
+  A look-alike of a marker is found by two independent checks, because no list of look-alikes is ever complete (a
+  symbol for `<`, a letter of another script): (1) the frame check reads the text folded (NFKC, invisible characters
+  and combining marks dropped, the characters of the Unicode confusables data written as the ASCII they imitate,
+  `src/domain/egress/marker-fold.ts` with the generated table `marker-confusables.ts`) and looks for `<<<`, an optional
+  `END` and `ROSETTA-DATA`; (2) the name check (`marker-keyword.ts`) does not look at the brackets at all: a line
+  with a non-ASCII character whose letters, with spaces, hyphens, underscores and non-ASCII symbols left out, spell
+  `ROSETTADATA` is a marker attempt, where up to three of the eleven letters may be any non-ASCII letter or digit. A
+  rendered block breaks both (`<<<` becomes `<<-<`, the name gets a `|` after `ROSETTA`); the guard refuses a block
+  read back that still holds either (`RST-1516`, security event). Known limits: a name written with four or more
+  letters that no table knows is not seen (it no longer reads as the name), and a non-ASCII line that merely says
+  "Rosetta data" is treated as an attempt and refused, the safe side; ordinary source text (`<<`, `>>`, `END`, `DATA`,
+  non-ASCII comments) passes. The table is regenerated with `scripts/make-marker-confusables.mjs` (Unicode License v3).
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`.
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.
