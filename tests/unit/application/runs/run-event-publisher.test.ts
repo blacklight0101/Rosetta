@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RunEventPublisher } from '../../../../src/application/runs/run-event-publisher.js';
 import { MemoryEventSink } from '../../../../src/infrastructure/events/memory-event-sink.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
@@ -64,5 +64,35 @@ describe('RunEventPublisher ordering', () => {
     const stored = await sink.read(scope, 0);
     expect(stored.map((event) => event.seq)).toEqual([1, 2, 3, 4, 5]);
     expect(stored.map((event) => event.data['turn'])).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+describe('RunEventPublisher and a sink that fails', () => {
+  it('RF-1006 numbers the next event again after a publish that the sink did not accept', async () => {
+    const sink = new MemoryEventSink();
+    const clock = new FixedClock('2026-10-12T10:00:00.000Z');
+    const publisher = await RunEventPublisher.open({ scope, sink, history: sink, clock });
+    const failing = vi.spyOn(sink, 'publish').mockRejectedValueOnce(new Error('disk full'));
+
+    await expect(publisher.emit('run.started', {})).rejects.toThrow('disk full');
+    failing.mockRestore();
+    const next = await publisher.emit('run.started', {});
+
+    expect(next.seq).toBe(1);
+    expect((await sink.read(scope, 0)).map((event) => event.seq)).toEqual([1]);
+  });
+
+  it('RF-1006 keeps later emits working when one of several emits without waiting fails', async () => {
+    const sink = new MemoryEventSink();
+    const clock = new FixedClock('2026-10-12T10:00:00.000Z');
+    const publisher = await RunEventPublisher.open({ scope, sink, history: sink, clock });
+    vi.spyOn(sink, 'publish').mockRejectedValueOnce(new Error('disk full'));
+
+    const results = await Promise.allSettled(
+      [1, 2, 3].map((turn) => publisher.emit('agent.turn', { turn })),
+    );
+
+    expect(results.map((result) => result.status)).toEqual(['rejected', 'fulfilled', 'fulfilled']);
+    expect((await sink.read(scope, 0)).map((event) => event.seq)).toEqual([1, 2]);
   });
 });

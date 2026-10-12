@@ -48,6 +48,59 @@ function readingTests(name: string, fresh: FreshEventStore): void {
   });
 }
 
+function replayTests(name: string, fresh: FreshEventStore): void {
+  it(`RF-1006 ${name} replays the stored events after a sequence number in order, in batches`, async () => {
+    const { sink, history } = await fresh();
+    for (let seq = 1; seq <= 250; seq += 1) await sink.publish(scope, eventFor(scope, seq));
+    const batches: number[][] = [];
+
+    await history.replay(scope, 200, (batch) => {
+      batches.push(batch.map((event) => event.seq));
+      return Promise.resolve();
+    });
+    const everything: number[] = [];
+    await history.replay(scope, 0, (batch) => {
+      everything.push(...batch.map((event) => event.seq));
+      return Promise.resolve();
+    });
+
+    expect(batches.flat()).toEqual(Array.from({ length: 50 }, (_unused, index) => index + 201));
+    expect(everything).toEqual(Array.from({ length: 250 }, (_unused, index) => index + 1));
+  });
+
+  it(`RF-1006 ${name} waits for the receiver of a batch before it reads on`, async () => {
+    const { sink, history } = await fresh();
+    for (let seq = 1; seq <= 250; seq += 1) await sink.publish(scope, eventFor(scope, seq));
+    const state = { inside: 0, overlapped: false, batches: 0 };
+
+    await history.replay(scope, 0, async () => {
+      state.inside += 1;
+      state.batches += 1;
+      if (state.inside > 1) state.overlapped = true;
+      await new Promise<void>((resolve) => setTimeout(resolve, 1));
+      state.inside -= 1;
+    });
+
+    expect(state.batches).toBeGreaterThan(1);
+    expect(state.overlapped).toBe(false);
+  });
+
+  it(`RF-1006 ${name} replays nothing for a run without events and stops when the receiver fails`, async () => {
+    const { sink, history } = await fresh();
+    const seen: number[] = [];
+    await history.replay(scope, 0, (batch) => {
+      seen.push(batch.length);
+      return Promise.resolve();
+    });
+    for (let seq = 1; seq <= 250; seq += 1) await sink.publish(scope, eventFor(scope, seq));
+
+    await expect(
+      history.replay(scope, 0, () => Promise.reject(new Error('page went away'))),
+    ).rejects.toThrow('page went away');
+    expect(seen).toEqual([]);
+  });
+}
+
 function refusalTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} refuses an event that leaves a gap or repeats a sequence number`, async () => {
     const { sink, history } = await fresh();
@@ -118,6 +171,7 @@ function isolationTests(name: string, fresh: FreshEventStore): void {
 
 export function runEventStoreContract(name: string, fresh: FreshEventStore): void {
   readingTests(name, fresh);
+  replayTests(name, fresh);
   refusalTests(name, fresh);
   isolationTests(name, fresh);
 }

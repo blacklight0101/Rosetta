@@ -1,6 +1,6 @@
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -117,5 +117,40 @@ describe('JsonlEventLog after a crash', () => {
     await log.publish(scope, eventFor(scope, 1, 'future.event', { anything: true }));
 
     expect((await log.read(scope, 0)).map((event) => event.type)).toEqual(['future.event']);
+  });
+});
+
+describe('JsonlEventLog reads by streaming', () => {
+  it('RF-1006 replays a long log in several batches without reading the whole file as one text', async () => {
+    const writer = new NodeOutputWriter({
+      dataDir: data.path,
+      logger: new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker()),
+    });
+    const log = new JsonlEventLog({ writer, masker: new SecretMasker() });
+    for (let seq = 1; seq <= 300; seq += 1) await log.publish(scope, eventFor(scope, seq));
+    const readText = vi.spyOn(writer, 'readText');
+    const batches: number[] = [];
+
+    await log.replay(scope, 100, (batch) => {
+      batches.push(batch.length);
+      return Promise.resolve();
+    });
+
+    expect(batches.length).toBeGreaterThan(1);
+    expect(batches.reduce((sum, size) => sum + size, 0)).toBe(200);
+    expect(readText).not.toHaveBeenCalled();
+  });
+
+  it('RNF-002 replay ignores a torn last line', async () => {
+    await openLog().publish(scope, eventFor(scope, 1));
+    await appendFile(eventsFile(), '{"schemaVersion":1,"seq":2,"at":"2026-10-1', 'utf8');
+    const seen: number[] = [];
+
+    await openLog().replay(scope, 0, (batch) => {
+      seen.push(...batch.map((event) => event.seq));
+      return Promise.resolve();
+    });
+
+    expect(seen).toEqual([1]);
   });
 });

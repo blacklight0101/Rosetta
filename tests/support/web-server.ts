@@ -15,6 +15,7 @@ import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { FakePasswordHasher } from './account-fixtures.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
@@ -46,6 +47,8 @@ export interface TestServer {
   readonly runs: RunHarness;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
+  /** The open event streams of the run routes. */
+  readonly streams: StreamRegistry;
 }
 
 export interface TestServerOptions extends Partial<
@@ -131,6 +134,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
   });
   const heartbeat = new ManualScheduler(() => undefined);
+  const streams = new StreamRegistry();
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -139,7 +143,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     trustProxy: 0,
     auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, heartbeat },
+    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, heartbeat, streams },
     ...overrides,
   });
   return {
@@ -155,5 +159,6 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     serverSettings,
     runs,
     heartbeat,
+    streams,
   };
 }
