@@ -265,6 +265,7 @@ describe('writing the scan outputs', () => {
         ),
       appendLine: () => Promise.resolve(ok(undefined)),
       readText: () => Promise.resolve(ok('')),
+      remove: () => Promise.resolve(ok(undefined)),
     };
 
     const written = await writeScanOutputs(

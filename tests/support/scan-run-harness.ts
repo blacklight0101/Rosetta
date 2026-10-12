@@ -4,12 +4,15 @@ import type {
   ScanReport,
   ScanRequest,
 } from '../../src/application/ports/scan-pipeline.js';
+import type { RunScope } from '../../src/application/ports/run-events.js';
 import type { SourceFetcher } from '../../src/application/ports/source-fetcher.js';
 import type { Project } from '../../src/application/projects/project.js';
+import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { RunScan } from '../../src/application/use-cases/run-scan.js';
+import { StartRun } from '../../src/application/use-cases/start-run.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { Actor } from '../../src/domain/accounts/actor.js';
 import type { Run } from '../../src/domain/runs/run.js';
@@ -56,6 +59,10 @@ export interface ScanRunHarness {
   scan(): Promise<Run>;
   /** Submits a scan run and returns it without waiting. */
   submit(): Promise<Run>;
+  /** Starts a scan run as the API does: the project is read and its scan settings recorded. */
+  start(): Promise<Run>;
+  /** Replaces the stored settings of the project, as an edit on the settings page does. */
+  updateSettings(settings: ProjectSettings): Promise<void>;
   /** Stops every run that is running, as the Stop button does. */
   stopRunning(): Promise<void>;
   ended(run: Run): Promise<Run>;
@@ -85,6 +92,7 @@ function fixtureFetcher(clock: FixedClock): FakeSourceFetcher {
 /** A pipeline that answers a fixed report and records its requests. */
 export class RecordingPipeline implements ScanPipeline {
   readonly requests: ScanRequest[] = [];
+  readonly discarded: RunScope[] = [];
   readonly report: ScanReport = {
     codeMapHash: 'f'.repeat(64),
     files: 3,
@@ -96,11 +104,17 @@ export class RecordingPipeline implements ScanPipeline {
     this.requests.push(request);
     return Promise.resolve(this.report);
   }
+
+  discard(scope: RunScope): Promise<void> {
+    this.discarded.push(scope);
+    return Promise.resolve();
+  }
 }
 
 interface Parts {
   readonly runs: MemoryRunIndex;
   readonly project: Project;
+  readonly projects: MemoryProjectRepository;
   readonly submitRun: SubmitRun;
   readonly queue: RunQueue;
 }
@@ -164,7 +178,7 @@ async function assemble(
     clock,
     rosettaVersion: '1.2.3-test',
   });
-  return { runs, project, submitRun, queue, manifests, log };
+  return { runs, project, projects, submitRun, queue, manifests, log };
 }
 
 interface ReadParts {
@@ -177,7 +191,11 @@ export async function createScanRunHarness(
   options: ScanRunHarnessOptions,
 ): Promise<ScanRunHarness> {
   const fixture = fixtureFetcher(new FixedClock('2026-10-12T10:00:00.000Z'));
-  const { runs, project, submitRun, queue, manifests, log } = await assemble(options, fixture);
+  const { runs, project, projects, submitRun, queue, manifests, log } = await assemble(
+    options,
+    fixture,
+  );
+  const startRun = new StartRun({ projects, submit: submitRun });
   const ended = async (run: Run): Promise<Run> => {
     let latest: Run | undefined;
     await vi.waitFor(async () => {
@@ -205,6 +223,18 @@ export async function createScanRunHarness(
     fetcher: fixture,
     runs,
     submit,
+    async start() {
+      const started = await startRun.execute({
+        actor: scanActor,
+        projectId: project.id,
+        stage: 'scan',
+      });
+      if (!started.ok) throw new Error('The scan run was not started');
+      return started.value.run;
+    },
+    async updateSettings(settings) {
+      await projects.updateSettings(scanActor.userId, project.id, settings, project.updatedAt);
+    },
     ended,
     scan: async () => ended(await submit()),
     async stopRunning() {

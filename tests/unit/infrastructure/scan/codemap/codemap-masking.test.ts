@@ -230,6 +230,7 @@ describe('a masker that fails', () => {
       },
       appendLine: () => Promise.resolve(ok(undefined)),
       readText: () => Promise.resolve(ok('')),
+      remove: () => Promise.resolve(ok(undefined)),
     };
     const member = entry('a.cs');
     const area = createArea({ name: 'A', origin: 'folder', members: [member] }, 100);

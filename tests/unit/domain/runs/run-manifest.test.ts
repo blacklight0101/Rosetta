@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   endManifest,
   markManifestStarted,
-  recordManifestScan,
+  recordManifestCodeMap,
+  recordManifestSkippedLinks,
   recordManifestSource,
 } from '../../../../src/domain/runs/run-manifest.js';
 import { sampleManifest } from '../../../support/run-fixtures.js';
@@ -67,18 +68,21 @@ describe('run manifest source', () => {
 });
 
 describe('run manifest of a scan', () => {
-  it('RF-003 records the code map hash and the skipped links, and nothing else', () => {
+  it('RF-003 records the code map hash and nothing else', () => {
     const manifest = sampleManifest();
 
-    const recorded = recordManifestScan(manifest, { codemapHash: 'c'.repeat(64), skippedLinks: 2 });
-
-    expect(recorded).toEqual({
+    expect(recordManifestCodeMap(manifest, 'c'.repeat(64))).toEqual({
       ok: true,
-      value: {
-        ...manifest,
-        codemapHash: 'c'.repeat(64),
-        security: { ...manifest.security, skippedLinks: 2 },
-      },
+      value: { ...manifest, codemapHash: 'c'.repeat(64) },
+    });
+  });
+
+  it('RF-127 records the skipped links in the security block', () => {
+    const manifest = sampleManifest();
+
+    expect(recordManifestSkippedLinks(manifest, 2)).toEqual({
+      ok: true,
+      value: { ...manifest, security: { ...manifest.security, skippedLinks: 2 } },
     });
   });
 
@@ -86,8 +90,13 @@ describe('run manifest of a scan', () => {
     const ended = endManifest(sampleManifest(), 'Failed', '2026-10-12T10:05:00.000Z');
     if (!ended.ok) throw new Error('The manifest did not end');
 
-    expect(
-      recordManifestScan(ended.value, { codemapHash: 'c'.repeat(64), skippedLinks: 0 }),
-    ).toEqual({ ok: false, error: 'already-ended' });
+    expect(recordManifestCodeMap(ended.value, 'c'.repeat(64))).toEqual({
+      ok: false,
+      error: 'already-ended',
+    });
+    expect(recordManifestSkippedLinks(ended.value, 1)).toEqual({
+      ok: false,
+      error: 'already-ended',
+    });
   });
 });
