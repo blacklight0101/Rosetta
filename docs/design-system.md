@@ -168,7 +168,7 @@ from tokens, and English text (DEC-45).
 | Replay player | - | playing, paused | buttons with `aria-label`; speed select | step back, play or pause, step forward, speed 1x/4x/16x |
 | Log list | - | - | list; level toggles are `aria-pressed` buttons | time, level, logger, message |
 
-A component gallery page (development only, served at `/__gallery` to administrators, only when `ROSETTA_GALLERY=1`) renders every
+A component gallery page (development only: built only in development and served at `/dev/gallery`, DEC-126) renders every
 component in every state and both themes; the end-to-end suite screenshots it.
 
 ## 6. Status badges
