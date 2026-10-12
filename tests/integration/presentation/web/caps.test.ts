@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { FixedClock } from '../../../support/fixed-clock.js';
 import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
@@ -34,6 +35,23 @@ describe('server caps API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       caps: { runMicros: '500000', userDayMicros: '1000000', serverMonthMicros: '10000000' },
+      serverMonthToDate: [],
+    });
+  });
+
+  it('RF-1106 the month to date counts server-key spend only, not spend on own keys', async () => {
+    test = createTestServer();
+    const root = await signedIn('root', 'admin');
+    const amy = await addUser(test, { userName: 'amy', role: 'user' });
+    const at = new FixedClock('2026-10-05T00:00:00.000Z').now();
+    const row = { userId: amy.account.id, at, currency: 'USD' };
+    test.usage.addCost({ ...row, costMicros: 3_000_000n, keySource: 'user' });
+    test.usage.addCost({ ...row, costMicros: 1_250_000n, keySource: 'server' });
+
+    const response = await root.request({ method: 'GET', url: '/api/admin/caps' });
+
+    expect(response.json()).toMatchObject({
+      serverMonthToDate: [{ currency: 'USD', costMicros: '1250000' }],
     });
   });
 
@@ -45,7 +63,7 @@ describe('server caps API', () => {
     const read = await root.request({ method: 'GET', url: '/api/admin/caps' });
 
     expect(saved.statusCode).toBe(200);
-    expect(read.json()).toEqual({ caps: newCaps });
+    expect(read.json()).toEqual({ caps: newCaps, serverMonthToDate: [] });
     const [event] = await test.audit.list({ since: 0, action: 'admin.caps_changed' });
     expect(event).toMatchObject({ outcome: 'ok', targetType: 'server_settings', targetId: 'caps' });
     expect(event?.detail).toMatchObject({ runMicros: '250000', previousRunMicros: '500000' });

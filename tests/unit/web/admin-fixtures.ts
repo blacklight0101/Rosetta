@@ -33,8 +33,10 @@ export const cap = (
   runMicros: string,
   userDayMicros: string,
   serverMonthMicros: string,
-): { readonly caps: Record<string, string> } => ({
+  serverMonthToDate: readonly { currency: string; costMicros: string }[] = [],
+): Record<string, unknown> => ({
   caps: { runMicros, userDayMicros, serverMonthMicros },
+  serverMonthToDate,
 });
 
 export const spent = (costMicros: string): readonly { currency: string; costMicros: string }[] => [

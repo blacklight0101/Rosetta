@@ -12,7 +12,10 @@ export interface AccountUsageFixture {
   /** Stores an account and answers its id. */
   addUser(): Promise<string>;
   addProject(userId: string): Promise<void>;
-  addCost(userId: string, row: { at: Date; costMicros: bigint; currency?: string }): Promise<void>;
+  addCost(
+    userId: string,
+    row: { at: Date; costMicros: bigint; currency?: string; keySource?: 'user' | 'server' },
+  ): Promise<void>;
 }
 
 const monthStart = new FixedClock('2026-10-01T00:00:00.000Z').now();
@@ -68,5 +71,31 @@ export function accountUsageContract(
     const usage = await fixture.usage.byUser(monthStart.getTime());
 
     expect(usage.has(idle)).toBe(false);
+  });
+
+  it(`RF-1106 ${name} totals the month of server-key spend only, per currency, from the instant on`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    const bob = await fixture.addUser();
+    await fixture.addCost(amy, { at: atMinutes(5), costMicros: 1_000n, keySource: 'server' });
+    await fixture.addCost(bob, { at: atMinutes(6), costMicros: 250n, keySource: 'server' });
+    await fixture.addCost(bob, { at: atMinutes(7), costMicros: 90_000n, keySource: 'user' });
+    await fixture.addCost(amy, { at: atMinutes(8), costMicros: 7n, currency: 'EUR' });
+    await fixture.addCost(amy, { at: atMinutes(-5), costMicros: 500n, keySource: 'server' });
+
+    const total = await fixture.usage.serverMonth(monthStart.getTime());
+
+    expect(total).toEqual([
+      { currency: 'EUR', costMicros: 7n },
+      { currency: 'USD', costMicros: 1_250n },
+    ]);
+  });
+
+  it(`RF-1106 ${name} totals nothing for a month without server-key spend`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    await fixture.addCost(amy, { at: atMinutes(5), costMicros: 90_000n, keySource: 'user' });
+
+    expect(await fixture.usage.serverMonth(monthStart.getTime())).toEqual([]);
   });
 }

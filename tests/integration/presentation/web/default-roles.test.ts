@@ -51,20 +51,69 @@ it('DEC-106 the administrator sets the default models; the change is kept and au
   expect(event?.detail).toMatchObject({ reader: 'ollama/gemma4:e4b', planner: 'template' });
 });
 
-it('DEC-106 a body that is not a provider and a model per role is refused and nothing changes', async () => {
+it.each([
+  [
+    'an unknown provider',
+    { reader: { provider: 'nowhere', model: 'x' } },
+    [{ field: 'reader.provider', code: ERROR_CODES.settingsProviderUnknown }],
+  ],
+  [
+    'an empty model',
+    { verifier: { provider: 'openai', model: '  ' } },
+    [{ field: 'verifier.model', code: ERROR_CODES.settingsModelMissing }],
+  ],
+  [
+    'a missing model',
+    { planner: { provider: 'openai' } },
+    [{ field: 'planner.model', code: ERROR_CODES.settingValueInvalid }],
+  ],
+  [
+    'an unknown role',
+    { editor: { provider: 'openai', model: 'x' } },
+    [{ field: 'editor', code: ERROR_CODES.settingValueInvalid }],
+  ],
+  [
+    'two problems at once',
+    {
+      reader: { provider: 'nowhere', model: '' },
+      summariser: { provider: 'openai', model: 'ok' },
+    },
+    [
+      { field: 'reader.model', code: ERROR_CODES.settingsModelMissing },
+      { field: 'reader.provider', code: ERROR_CODES.settingsProviderUnknown },
+    ],
+  ],
+])(
+  'DEC-106 %s is refused with its field and code, and nothing changes',
+  async (_name, refusedRoles, problems) => {
+    test = createTestServer();
+    const root = await signedIn('root', 'admin');
+
+    const refused = await root.request({
+      method: 'PUT',
+      url: '/api/admin/default-roles',
+      payload: { roles: refusedRoles },
+    });
+
+    expect(refused.statusCode).toBe(400);
+    expect(refused.json()).toMatchObject({ code: ERROR_CODES.settingsInvalid, problems });
+    const read = await root.request({ method: 'GET', url: '/api/admin/default-roles' });
+    expect(read.json()).toEqual({ roles: {} });
+  },
+);
+
+it('DEC-106 a body that is not an object of roles is refused with RST-2000', async () => {
   test = createTestServer();
   const root = await signedIn('root', 'admin');
 
   const refused = await root.request({
     method: 'PUT',
     url: '/api/admin/default-roles',
-    payload: { roles: { reader: { provider: 'nowhere', model: 'x' } } },
+    payload: { roles: 'reader' },
   });
 
   expect(refused.statusCode).toBe(400);
   expect(refused.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
-  const read = await root.request({ method: 'GET', url: '/api/admin/default-roles' });
-  expect(read.json()).toEqual({ roles: {} });
 });
 
 it('RF-1105 a user is refused with 403 on both routes', async () => {

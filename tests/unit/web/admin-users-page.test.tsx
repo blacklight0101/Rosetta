@@ -129,7 +129,9 @@ it('RF-1106 saves the caps in micro-dollars from dollars', async () => {
 });
 
 it('RF-1106 shows the warning banner at 82% of the monthly cap, with the meter', async () => {
-  render();
+  render({
+    'GET /api/admin/caps': json(200, cap('500000', '1000000', '10000000', spent('8200000'))),
+  });
 
   const banner = await screen.findByText(/The server has used 82% of its monthly cap/u);
 
@@ -138,11 +140,24 @@ it('RF-1106 shows the warning banner at 82% of the monthly cap, with the meter',
 });
 
 it('RF-1106 shows no banner at 21% of the monthly cap', async () => {
-  render({ 'GET /api/admin/users': json(200, { users: [ana, old] }) });
+  render({
+    'GET /api/admin/caps': json(200, cap('500000', '1000000', '10000000', spent('2100000'))),
+  });
   await screen.findByText('ana.ruiz');
 
   expect(screen.queryByText(/The server has used/u)).toBeNull();
   expect(screen.getByRole('meter', { name: 'Server spend this month' })).not.toBeNull();
+});
+
+it('RF-1106 spend on own keys alone does not trigger the banner or fill the meter', async () => {
+  const ownKeys = accountBody('u-4', 'rich.own', { monthToDate: spent('9500000') });
+  render({ 'GET /api/admin/users': json(200, { users: [me, ana, ownKeys] }) });
+  await screen.findByText('rich.own');
+
+  expect(screen.queryByText(/The server has used/u)).toBeNull();
+  expect(screen.getByRole('meter', { name: 'Server spend this month' }).textContent).toContain(
+    '$0.00',
+  );
 });
 
 it('RF-1105 opening a workspace lists the projects of that account', async () => {
