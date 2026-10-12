@@ -1,10 +1,14 @@
 import type { Actor } from '../../domain/accounts/actor.js';
-import { err, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { RunFileContent, RunFileReader } from '../ports/run-file-reader.js';
 import type { RunIndex } from '../ports/run-index.js';
-import type { RunFileKind } from '../runs/run-file-kind.js';
+import { kindOfRunFile, type RunFileKind } from '../runs/run-file-kind.js';
+import { scopeOf } from '../runs/run-scope.js';
 
-// RF-504, RF-506, RF-1105: Read run file.
+// RF-504, RF-506, RF-507, RF-1013, RF-1105: Read run file gives the owner of a run one file of its
+// folder, with the way to serve it (text or page inline, anything else as a download). A run that
+// is still running can be read: its files are the live record. Another user's run id, an unknown id
+// and a path that is not a plain file of the folder all give the same answer, `not-found`.
 
 export interface ReadRunFileDependencies {
   readonly runs: RunIndex;
@@ -24,13 +28,16 @@ export class ReadRunFile {
   }
 
   // RF-504, RF-506, RF-1105
-  execute(request: {
+  async execute(request: {
     readonly actor: Actor;
     readonly runId: string;
     readonly path: string;
   }): Promise<Result<RunFileResponse, 'not-found'>> {
-    void request;
-    void this.deps;
-    return Promise.resolve(err('not-found'));
+    const run = await this.deps.runs.find(request.actor.userId, request.runId);
+    if (run === undefined) return err('not-found');
+    const opened = await this.deps.files.open(scopeOf(run), request.path);
+    if (!opened.ok) return err('not-found');
+    const fileName = request.path.slice(request.path.lastIndexOf('/') + 1);
+    return ok({ ...kindOfRunFile(request.path), ...opened.value, fileName });
   }
 }

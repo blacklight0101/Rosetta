@@ -8,8 +8,8 @@ export type ReportErrorCode = Extract<ErrorCode, `RST-17${string}`>;
 
 export const REPORT_ERROR_DESCRIPTIONS: Readonly<Record<ReportErrorCode, ErrorDescription>> = {
   'RST-1700': {
-    message: 'This run is still in progress, so it cannot be downloaded yet.',
-    nextStep: 'Wait until the run has ended, then download it again.',
+    message: 'This run is still in progress, so it cannot be downloaded or reported on yet.',
+    nextStep: 'Wait until the run has ended, then try again.',
   },
   'RST-1701': {
     message: 'The report of this run could not be written.',

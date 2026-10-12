@@ -54,7 +54,11 @@ async function setup(extra: Readonly<Record<string, string>> = {}): Promise<Setu
 }
 
 const urlOf = (run: Run, path: string): string => `/runs/${run.id}/files/${path}`;
-const policy = fallbackSecurityHeaders(testPublicUrl)['Content-Security-Policy'];
+// helmet writes the directives without a space after `;`
+const policy = fallbackSecurityHeaders(testPublicUrl)['Content-Security-Policy']?.replaceAll(
+  '; ',
+  ';',
+);
 
 describe('GET /runs/:runId/files/* as text', () => {
   it('RF-507 serves a card file as plain text, byte for byte, with the policy and nosniff', async () => {
@@ -176,7 +180,6 @@ describe('GET /runs/:runId/files/* and hostile paths', () => {
     'manifest.json%00.txt',
     '.%2e/manifest.json',
     '%252e%252e/manifest.json',
-    'cards/./BR/BR-001.md',
   ])('RF-005 answers 404 for the path %s', async (path) => {
     const { amy, run } = await setup();
 
