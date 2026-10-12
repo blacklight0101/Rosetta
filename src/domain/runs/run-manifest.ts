@@ -179,3 +179,31 @@ export function recordPromptVersions(
   const promptVersions = Object.fromEntries(merged.sort(([a], [b]) => byCodeUnit(a, b)));
   return { ...manifest, promptVersions };
 }
+
+/** One metered model call: its tokens and its cost in micro-dollars (RF-421). */
+export interface MeteredCall {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly cachedInputTokens: number;
+  readonly costMicros: bigint;
+}
+
+/** Adds one metered call to the run totals (RF-421, data-model.md section 3.6). */
+// RF-421
+export function recordManifestCall(
+  manifest: RunManifest,
+  call: MeteredCall,
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  const { totals } = manifest;
+  return ok({
+    ...manifest,
+    totals: {
+      inputTokens: totals.inputTokens + call.inputTokens,
+      outputTokens: totals.outputTokens + call.outputTokens,
+      cachedInputTokens: totals.cachedInputTokens + call.cachedInputTokens,
+      costMicros: totals.costMicros + Number(call.costMicros),
+      calls: totals.calls + 1,
+    },
+  });
+}

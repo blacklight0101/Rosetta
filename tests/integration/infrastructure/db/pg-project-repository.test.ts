@@ -6,7 +6,10 @@ import {
   projectOwners,
   projectRepositoryContract,
 } from '../../../contracts/project-repository.contract.js';
-import { serverSettingsContract } from '../../../contracts/server-settings.contract.js';
+import {
+  serverCapsContract,
+  serverSettingsContract,
+} from '../../../contracts/server-settings.contract.js';
 import { sampleAccount } from '../../../support/account-fixtures.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
@@ -47,6 +50,20 @@ describe.skipIf(!hasTestDatabase)('PgServerSettings', () => {
       JSON.stringify(roles),
     ]);
     return new PgServerSettings(pool);
+  });
+
+  serverCapsContract('PgServerSettings', async () => {
+    const { pool } = await database.createSchema({ migrate: true });
+    return new PgServerSettings(pool);
+  });
+
+  it('RF-1106 a caps value of a wrong shape is refused instead of guessed', async () => {
+    const { pool } = await database.createSchema({ migrate: true });
+    await pool.query(
+      "UPDATE server_settings SET value = '{\"runMicros\": -1}'::jsonb WHERE key = 'caps'",
+    );
+
+    await expect(new PgServerSettings(pool).caps()).rejects.toMatchObject({ code: 'RST-1000' });
   });
 
   it('DEC-106 a defaultRoles value of a wrong shape is refused instead of guessed', async () => {

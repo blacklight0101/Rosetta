@@ -12,6 +12,10 @@ import { SaveProviderKey } from '../application/use-cases/save-provider-key.js';
 import { CreateUser } from '../application/use-cases/create-user.js';
 import { ListAudit } from '../application/use-cases/list-audit.js';
 import { ListUsers } from '../application/use-cases/list-users.js';
+import { GetCaps } from '../application/use-cases/get-caps.js';
+import { GetOwnDailyCap } from '../application/use-cases/get-own-daily-cap.js';
+import { SetCaps } from '../application/use-cases/set-caps.js';
+import { SetOwnDailyCap } from '../application/use-cases/set-own-daily-cap.js';
 import { ResetPassword } from '../application/use-cases/reset-password.js';
 import { UpdateUser } from '../application/use-cases/update-user.js';
 import { RecordRefusedRequest } from '../application/use-cases/record-refused-request.js';
@@ -25,6 +29,7 @@ import type { Environment } from '../infrastructure/config/environment.js';
 import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
 import { PgAuditLog } from '../infrastructure/db/pg-audit-log.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
+import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
 import { PgSessionStore } from '../infrastructure/db/pg-session-store.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
@@ -36,6 +41,7 @@ import {
 import { createDummyHash } from '../infrastructure/security/dummy-password-hash.js';
 import { DnsPublicHostCheck } from '../infrastructure/security/public-host-check.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import type { CapServices } from './web/cap-routes.js';
 import type { KeyServices } from './web/key-routes.js';
 import type { AccountServices, AuthServices } from './web/server.js';
 
@@ -115,6 +121,18 @@ function composeKeys(adapters: AccountAdapters): KeyServices {
   };
 }
 
+// RF-1106, DEC-107: the server caps (administrator) and the user's own daily cap.
+function composeCaps(adapters: AccountAdapters): CapServices {
+  const { pool, users, auditLog, logger, clock } = adapters;
+  const settings = new PgServerSettings(pool);
+  return {
+    getCaps: new GetCaps({ settings }),
+    setCaps: new SetCaps({ settings, auditLog, logger, clock }),
+    getOwnDailyCap: new GetOwnDailyCap({ users }),
+    setOwnDailyCap: new SetOwnDailyCap({ users, auditLog, logger, clock }),
+  };
+}
+
 // RF-1102, RF-1103, RF-1104, RF-1109: the account and administration use cases. They share the one
 // hasher.
 async function composeAccounts(adapters: AccountAdapters): Promise<AccountServices> {
@@ -134,6 +152,7 @@ async function composeAccounts(adapters: AccountAdapters): Promise<AccountServic
     listUsers: new ListUsers({ users, usage: new PgAccountUsage(pool), clock }),
     listAudit: new ListAudit({ auditLog, clock }),
     ...composeKeys(adapters),
+    ...composeCaps(adapters),
   };
 }
 

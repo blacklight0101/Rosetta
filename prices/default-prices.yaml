@@ -1,0 +1,33 @@
+# The shipped price table (RF-420, DEC-54, data-model.md section 3.18): prices per million tokens in
+# whole micro-dollars (1 USD = 1000000). A call with a server key is always priced from this file; a
+# project's `budget.prices` overrides apply only to calls with the user's own key (DEC-107). A local
+# model (Ollama) missing from this list costs zero; any other missing model is refused unless the
+# project allows unpriced models with the user's own key (RF-427). Prices change: check the
+# providers' pricing pages, update the entries and the version date together.
+#
+# OpenAI prices checked on OpenAI's pricing and model pages on 2026-10-11 (docs/providers.md
+# section 3.5), standard tier.
+schemaVersion: 1
+version: '2026-10-11'
+currency: USD
+models:
+  - provider: openai
+    model: gpt-5-nano
+    inputPerMillionMicros: 50000
+    cachedInputPerMillionMicros: 5000
+    outputPerMillionMicros: 400000
+  - provider: openai
+    model: gpt-5-nano-2025-08-07
+    inputPerMillionMicros: 50000
+    cachedInputPerMillionMicros: 5000
+    outputPerMillionMicros: 400000
+  - provider: openai
+    model: gpt-5.6-luna
+    inputPerMillionMicros: 200000
+    cachedInputPerMillionMicros: 20000
+    outputPerMillionMicros: 1200000
+  - provider: ollama
+    model: gemma4:e4b
+    inputPerMillionMicros: 0
+    cachedInputPerMillionMicros: 0
+    outputPerMillionMicros: 0

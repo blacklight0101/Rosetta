@@ -10,6 +10,7 @@ import {
 import { recordingOf } from '../../../support/fake-recordings.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
 import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
+import { budgetHarness } from '../../../support/budget-harness.js';
 
 llmProviderContract('FakeProvider', (scenario) =>
   Promise.resolve(
@@ -32,4 +33,8 @@ llmProviderContract('ObservedProvider around FakeProvider', (scenario) =>
       transcripts: true,
     }),
   ),
+);
+
+llmProviderContract('BudgetGuard around FakeProvider', (scenario) =>
+  Promise.resolve(budgetHarness({ recording: recordingOf(contractScenarios[scenario]) }).guard),
 );

@@ -102,7 +102,9 @@ src/
     accounts/           User, Role, Session, ProviderKeyRef, UsageCap
     code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel; area grouping (folder buckets, linked sets); the code-unit comparator every sorted list uses
     cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids, the claim transitions (`createCard`, `transitionClaim`, `assignCardIds`)
-    budget/             Money, TokenUsage, Price, PriceTable, Budget, Cap
+    budget/             TokenUsage, Price (`costOf`, `worstCaseCost` in integer micro-USD), PriceTable
+                        (`lookupPrice`), UsageCap and `checkCaps`, the caps of a call (`capsFor`, DEC-107),
+                        UTC day and month (`utcPeriodsOf`), `isCapStop`
     runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`)
     sources/            GitHubRepoRef, CommitSha, Permalink
     planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018)
@@ -128,7 +130,8 @@ src/
                         the adapters share: retry loop and back-off, ROSETTA_TEST refusal, tool-call
                         shape, token estimate, capped answer bodies
     guards/             egress-guard (request masking, data-block placement, `JsonlEgressLog`), secret-masker,
-                        mask-deep, budget-guard
+                        mask-deep, budget-guard (with its pricing and ledger-row helpers)
+    budget/             price-file (`prices/default-prices.yaml`, RF-427), cost-report-files (`cost.json`, `cost.md`)
     github/             github-hosts (allowlist), github-http-client (redirects, token, rate limits), github-api
                         (ref resolution), tarball-extractor (ADR-019 filter), snapshot-store (partial folders,
                         hash, snapshot.json, read-only), github-snapshot-fetcher, fake-source-fetcher
@@ -246,7 +249,9 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `ResolveSession`, `RecordRefusedRequest` | every request: the session hook turns the cookie into the `Actor` and ends the sessions of a disabled account; the Origin, CSRF and role hooks record each refusal (audit row and security event) | RF-1009, RF-1101, RF-1109 |
 | `ListProviderKeys`, `SaveProviderKey`, `DeleteProviderKey` | settings, keys (`GET /api/account/keys`: provider, last four and update time only; `PUT /api/account/keys/:provider` with `{ key, baseUrl? }` saves or replaces the key, sealed with the additional data `user_id:provider`, and answers the same three fields; `DELETE /api/account/keys/:provider` removes the row, 204, or 404 when there is none; a provider that takes no key is 404; not reachable while the password must be changed; saves 10 a minute per address, body 8 KiB; an OpenAI-compatible base URL must be https, without credentials, query or fragment, and resolve only to public addresses, `RST-2304`; a key must have 16 to 512 visible characters, `RST-2301`; `key.saved` and `key.deleted` audit rows without the value, a refused base URL also as a security event) | RF-1104, RF-1109 |
 | `ReEncryptProviderKeys` | server start-up, after the migrations: rows under another key version are opened with `ROSETTA_SECRET_KEY_PREVIOUS` and sealed again under the current key, one conditional write per row (idempotent); a row it cannot open is kept and reported as a `warn` entry with `RST-2300` | RF-1104 |
-| `CreateUser`, `UpdateUser`, `ResetPassword`, `SetCaps` | administration page: `POST /api/admin/users` (201; `mustChangePassword` defaults to true, false for the teacher account), `POST /api/admin/users/:id/disable` and `/enable` (disabling ends every session of the account), `POST /api/admin/users/:id/password` (ends every session, sets `MustChangePassword`); an administrator never disables or resets their own account (`RST-2213`; compared with the stored id, so an upper-case id in the URL is still their own); each change writes a `user.*` audit row without the password. `SetCaps` follows with RF-1106 | RF-1102, RF-1106, RF-1107 |
+| `CreateUser`, `UpdateUser`, `ResetPassword`, `SetCaps` | administration page: `POST /api/admin/users` (201; `mustChangePassword` defaults to true, false for the teacher account), `POST /api/admin/users/:id/disable` and `/enable` (disabling ends every session of the account), `POST /api/admin/users/:id/password` (ends every session, sets `MustChangePassword`); an administrator never disables or resets their own account (`RST-2213`; compared with the stored id, so an upper-case id in the URL is still their own); each change writes a `user.*` audit row without the password | RF-1102, RF-1107 |
+| `GetCaps`, `SetCaps` | administration (`GET`, `PUT /api/admin/caps`): the run, user-day and server-month caps as decimal strings of micro-dollars; a negative cap is `RST-1003` on its field, an amount that is not a whole number up to 2^53 - 1 is `RST-2000`; `SetCaps` writes the `admin.caps_changed` audit row with the new and the previous values | RF-1106, RF-1109 |
+| `GetOwnDailyCap`, `SetOwnDailyCap` | settings, spending cap (`GET`, `PUT /api/account/daily-cap` with `{ ownDailyCapMicros }`, `null` for no cap): the optional daily cap on the user's own keys (DEC-107); a negative cap is `RST-1003`, a concurrent account change `RST-2208`; `user.own_daily_cap_changed` audit row | RF-1106, RF-1109 |
 | `ListUsers` | administration page (`GET /api/admin/users`): every account with its state, last sign-in, number of projects and month-to-date cost per currency (a read-only sum over `cost_ledger` from the start of the UTC month, through `AccountUsage`; costs as decimal strings of micro-units) | RF-1102 |
 | `ListAudit` | administration, audit view (`GET /api/admin/audit?userId=&action=`): the last 30 days, newest first, at most 500 events with `truncated` when more matched | RF-1109 |
 | `ApplyMigrations`, `BootstrapAdmin` | server start-up | RF-1302, RF-1102 |
@@ -274,7 +279,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `RunEventSink`, `RunEventHistory`, `RunEventFeed` | typed run events for the web UI and the replay log (RF-424, RF-1006). The sink takes complete events with their `seq` (numbered by `RunEventPublisher`); the log refuses a gap, an event of another run and anything after `run.ended` (RST-2105). The history reads the stored events after a `seq` (`read`), replays them in batches at the receiver's pace (`replay`, streaming the file through the `TextLineReader` port) and gives the last `seq`; the feed gives a page the live events of its own run. `JsonlEventLog` writes through the `OutputWriter`, masks each line, serialises the writes of a run, ignores a torn last line and removes it before the next write; `SseBroadcaster` masks, delivers per user and run and forgets a run's listeners after `run.ended`; `FanOutSink` sends to the log first | `JsonlEventLog` (sink and history), `SseBroadcaster` (sink and feed), `FanOutSink`, `MemoryEventSink` (sink and history, tests) |
 | `EgressLog` | `runs/<runId>/egress.log.jsonl`: one masked line per call the egress guard let through, `seq` without gaps, a torn last line removed before the next write (RF-142, data-model.md section 3.11) | `JsonlEgressLog` (through the `OutputWriter`) |
 | `RunManifestStore` | `runs/<runId>/manifest.json`: written when a run is accepted, rewritten when it starts and when it ends; the whole file is replaced atomically (RF-003, RNF-002) | `FileRunManifestStore`, `MemoryRunManifestStore` |
-| `RunExecutor` | the work of one stage, started by the run queue with the run, its manifest, an event publisher and an abort signal; returns the end state (a thrown error ends the run as `Failed`). The stage cards register theirs in `compose-runs.ts` | `RunScan` (`scan`, P1-23), the later stages |
+| `RunExecutor` | the work of one stage, started by the run queue with the run, its manifest, an event publisher and an abort signal; returns the end state (a thrown error ends the run as `Failed`). `stop(reason)` aborts the run's signal with a reason: the budget guard stops the run with `RST-1600`, and the queue then ends it `CapReached` with that code instead of `Interrupted` (`isCapStop`). The stage cards register theirs in `compose-runs.ts` | `RunScan` (`scan`, P1-23), the later stages |
 | `ScanPipeline` | the scan of one snapshot written into the run folder: reader (ignore rules and deny list), universal scan, language packs, code map (masked) and `codemap.json` plus `scan-summary.md` through the `OutputWriter`; returns the code map hash, the file and area counts and the files per map level; checks the abort signal between its steps; a subpath that is not a folder of the snapshot fails with `RST-1104`; a refusal, failure or stop between the two writes removes both files, and `discard` does the same on request; a failure is a `RosettaError` (`RST-1202` when the code map is invalid) | `SnapshotScanPipeline` |
 | `ArchiveWriter` | zip a folder (RF-008) | `YazlArchiveWriter` |
 | `UserPrompt` | withdrawn 2026-10-11 (DEC-59): confirmations are fields of the start request (consent, estimate accepted) | - |
@@ -285,9 +290,10 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `ProviderKeyRepository` | encrypted keys per user and provider: an upsert keeps the creation time and says whether it replaced a key; every read takes the owner's id; for the rotation, the rows under other key versions and a swap of the sealed value only while the row still holds the value that was read | `PgProviderKeyRepository`, `MemoryProviderKeyRepository` |
 | `PublicHostCheck` | whether every address a base URL's host resolves to is public (RF-1104, DEC-112): refused are the special-purpose IPv4 and IPv6 ranges (private, loopback, link-local, shared CGNAT, unique-local, site-local, NAT64, 6to4, Teredo, documentation, multicast, reserved), IPv4-mapped and IPv4-compatible addresses and the cloud metadata addresses; a host that does not resolve within 5 seconds is refused. The same rule runs on every connect through `PublicAddressAgent` (an `https.Agent` whose lookup answers only public addresses and which refuses an internal IP literal), against DNS rebinding | `DnsPublicHostCheck` |
 | `ProjectRepository` | projects and their settings per user (RF-010): every operation takes the owner's id and sees only that user's rows; `insertOrFind` returns the owner's existing project with the same source URL, ref and subpath; settings are parsed with their zod schema on every read (a row that no longer fits is an error) | `PgProjectRepository`, `MemoryProjectRepository` |
-| `ServerSettings` | the settings the administrator keeps for the server; this release reads `defaultRoles` (DEC-106), `{}` until it is set, and refuses a value of an unknown shape | `PgServerSettings`, `MemoryServerSettings` |
+| `ServerSettings` | the settings the administrator keeps for the server; this release reads `defaultRoles` (DEC-106), `{}` until it is set, and reads and saves the caps (`caps`, `saveCaps`: run, user day and server month in micro-dollars, stored as whole JSON numbers up to 2^53 - 1, RF-1106); it refuses a value of an unknown shape (`RST-1000`) | `PgServerSettings`, `MemoryServerSettings` |
 | `RunIndex` | run rows: owner, stage, state, folder, commit and snapshot, totals (RF-1108). Reads for a user take the owner's id; the queue uses server-wide reads and transitions by run id; each transition is one conditional update, so the end state is set once. The queue position is computed from the queued rows (`queuePositions`) | `PgRunIndex`, `MemoryRunIndex` |
-| `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
+| `CostLedger` | `reserve` a call's worst case against the caps that apply to it (the sums of settled rows and live reservations per run, user day on server keys, user day on own keys, server month, read and checked in the same transaction that inserts the reservation, under the advisory locks of the user and, for server keys, the server; a refusal names the cap), `settle` (insert the call's one ledger row and delete its reservation in one transaction), `release` (a call that was never sent), `runEntries` (a run's rows for its owner, in call order) and `purgeExpired` for the hourly job (RF-428, RF-1106, DEC-112) | `PgCostLedger`, `MemoryCostLedger` |
+| `CostReportWriter` | write a run's cost report as `cost.json` and `cost.md`, masked, in the run folder (RF-426, data-model.md section 3.12) | `FileCostReportWriter` |
 | `AuditLog` | security audit rows (RF-1109); the detail passes `maskDeep` (keys and values, P1-04 masking) before it is stored and is withheld whole when masking fails; listed newest first from an instant (epoch milliseconds), by actor and action, up to an optional limit | `PgAuditLog`, `MemoryAuditLog` |
 | `AccountUsage` | per user, the number of projects and the spend since an instant per currency, read-only sums over `projects` and `cost_ledger` for the administration page (RF-1102) | `PgAccountUsage`, `MemoryAccountUsage` |
 | `Migrator` | apply and check migrations (RF-1302) | `PgMigrator` |
@@ -310,7 +316,30 @@ and a blocked call in the manifest, and is thrown so the agent task stops; the c
 RF-145, DEC-57). Tool definitions are not masked: they come from code and must never carry repository text. Nothing in a request can grant consent. The budget
 guard checks the run cap and, for server keys, the user-day and server-month caps in the same database transaction
 that inserts the call's worst-case reservation into `cost_reservations`; after the call it writes the ledger row and
-deletes the reservation (RF-1106, data-model.md section 4). Every port has a
+deletes the reservation (RF-1106, data-model.md section 4).
+
+The budget guard is outermost on purpose: it reserves before the egress guard can refuse or the adapter can
+retry, so every call that can reach a provider is priced and capped first, and it counts the attempts through the
+`LlmAttemptObserver` the inner decorators report to. A call writes **exactly one** ledger row when at least one
+attempt started: the reported or estimated usage of the answer, or a zero-usage `estimated` row with the number of
+the last attempt when the call failed after it was sent; a call refused before it was sent (by the egress guard, a
+missing consent, a stop) only releases its reservation. When the row cannot be written the call fails with
+`RST-1604` and its answer is not returned (fail closed). A call is priced from the shipped table
+(`prices/default-prices.yaml`); a project's price overrides apply only to calls with the user's own key and are
+recorded as version `<table>+project` (DEC-107); a local model missing from the table costs 0; a cloud model
+missing from it is refused with `RST-1601`, except on the user's own key with `allowUnpriced`, where the cost is
+unknown and only the token cap applies. A request without `maxOutputTokens` has no worst case and is refused
+(`RST-1603`). The caps of a call: server key - run cost (the lower of the project's and the administrator's), run
+tokens, the user's day (`users.daily_cap_micros`, else the server default) and the server month; user key - run
+cost, run tokens and the optional own daily cap; no key (local) - run cost and run tokens. Days and months are UTC
+calendar periods. A refusal (`RST-1600`) records the call as `refused-by-cap`, logs a `warn` entry and stops the run
+through `RunExecution.stop`; the run's other tasks end `StoppedByCap` and the run `CapReached`.
+
+**The guarantee** (RF-1106): calls in flight can never together reserve past a cap, across runs, users and
+parallel tasks, because each reservation is checked against the sum of every settled row and live reservation
+under the locks. A cap can be passed only by a call whose actual usage exceeds its reserved worst case (the prompt
+is estimated at four characters per token; the output is bounded by `maxOutputTokens`), or by a call that outlives
+its reservation's expiry; the next call then sees the spend and is refused. Every port has a
 contract test suite in `tests/contracts/` that its real adapters and its fakes all pass (ADR-008).
 
 ## 8. The agent loop
@@ -355,7 +384,9 @@ sequenceDiagram
   names unknown tools three times (`RST-1302`), a stop through the shared signal (checked before every turn and
   every tool call, `RST-1501`), or a provider or guard failure with its code. It never throws for a model's
   behaviour; the end, its reason and the turns are logged and returned with the cards, usage, model version and
-  conversation. `StoppedByCap` arrives with the budget guard's refusal codes (P1-27).
+  conversation. A task whose call the budget guard refuses (`RST-1600`), or whose signal another task aborted for a
+  cap, ends `StoppedByCap` with reason `cap-reached` and keeps what it learned; any other stop stays `Failed`
+  with `RST-1501`.
 - **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v1.md` followed by
   `prompts/cards/card-format.v1.md`; `loadReaderPrompts` reads the five files it uses (the two above, the task, the
   turns-left notice and `prompts/cards/repair.v1.md`), refuses a template without its one placeholder or a file

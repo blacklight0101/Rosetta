@@ -41,7 +41,7 @@ describe('readMigrationFiles', () => {
 });
 
 describe('release migrations', () => {
-  it('RF-1302 db/migrations holds the four release-1 migrations of data-model.md section 7', async () => {
+  it('RF-1302 db/migrations holds the release-1 migrations of data-model.md section 7', async () => {
     const files = await readMigrationFiles(migrationsFolder);
 
     expect(files.map((file) => file.name)).toEqual([
@@ -49,6 +49,7 @@ describe('release migrations', () => {
       '0002_projects_runs.sql',
       '0003_cost_ledger_audit.sql',
       '0004_server_settings_defaults.sql',
+      '0005_cost_ledger_tasks_and_tokens.sql',
     ]);
   });
 

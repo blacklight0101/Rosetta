@@ -33,7 +33,7 @@ test('RF-1104 starts with no key, offers every provider and passes axe', async (
   for (const name of ['OpenAI', 'Anthropic', 'OpenAI-compatible']) {
     await expect(rowOf(page, name).getByRole('button', { name: 'Save key' })).toBeVisible();
   }
-  await expect(page.getByTestId('own-daily-cap')).toContainText('not available yet');
+  await expect(page.getByTestId('own-daily-cap')).toContainText('Daily cap for my own keys');
   await expect(page.getByRole('link', { name: 'Change password' })).toBeVisible();
   await expectNoSeriousViolations(page);
 });

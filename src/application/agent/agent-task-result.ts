@@ -1,4 +1,5 @@
 import type { CardDraft } from '../../domain/cards/card-ids.js';
+import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
@@ -18,10 +19,10 @@ type AgentTaskEndReason =
   | 'repeated-calls'
   | 'unknown-tools'
   | 'aborted'
+  | 'cap-reached'
   | 'provider-failed';
 
-/** `StoppedByCap` comes with the budget guard's refusal codes (P1-27, P1-33). */
-type EndState = Exclude<AgentTaskState, 'Planned' | 'Running' | 'StoppedByCap'>;
+type EndState = Exclude<AgentTaskState, 'Planned' | 'Running'>;
 
 const stateOf: Readonly<Record<AgentTaskEndReason, EndState>> = {
   'final-answer': 'Done',
@@ -31,6 +32,7 @@ const stateOf: Readonly<Record<AgentTaskEndReason, EndState>> = {
   'repeated-calls': 'Failed',
   'unknown-tools': 'Failed',
   aborted: 'Failed',
+  'cap-reached': 'StoppedByCap',
   'provider-failed': 'Failed',
 };
 
@@ -89,21 +91,29 @@ export function taskResult(end: AgentTaskEnd, progress: AgentTaskProgress): Agen
   };
 }
 
-/** The end of a task stopped through the shared signal (Stop, shutdown or a cap). */
-export const abortedEnd: AgentTaskEnd = {
+/** The end of a task stopped through the shared signal by Stop or a shutdown. */
+const abortedEnd: AgentTaskEnd = {
   reason: 'aborted',
   code: ERROR_CODES.providerCallCancelled,
 };
 
+/** RF-422: the end of a task whose call the budget guard refused, or whose run a cap stopped. */
+const capEnd: AgentTaskEnd = { reason: 'cap-reached', code: ERROR_CODES.budgetCapReached };
+
+/** The end of a task that sees the shared signal aborted: a cap stop or any other stop. */
+export function stoppedEnd(signal: AbortSignal): AgentTaskEnd {
+  return isCapStop(signal.reason) ? capEnd : abortedEnd;
+}
+
 /**
- * The end of a task whose model call failed: a stop through the shared signal, or a failure with
- * its code (a refusal of the egress guard included). An error without a code is a programming
- * error and is thrown on. A cap of the budget guard (P1-27) ends the task the same way until that
- * guard gives its refusals a code of their own.
+ * The end of a task whose model call failed: a stop through the shared signal, a cap refusal of
+ * the budget guard (`StoppedByCap`, RST-1600), or a failure with its code (a refusal of the egress
+ * guard included). An error without a code is a programming error and is thrown on.
  */
 export function failedCallEnd(error: unknown, signal: AbortSignal): AgentTaskEnd {
-  if (signal.aborted) return abortedEnd;
+  if (signal.aborted) return stoppedEnd(signal);
   if (!(error instanceof RosettaError)) throw error;
+  if (isCapStop(error)) return capEnd;
   if (error.code === ERROR_CODES.providerCallCancelled) return abortedEnd;
   return { reason: 'provider-failed', code: error.code };
 }
