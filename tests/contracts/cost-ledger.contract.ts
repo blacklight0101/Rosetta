@@ -274,6 +274,18 @@ function sharedCallIdContract(name: string, fresh: Fresh): void {
 
     expect(breachOf(next)).toEqual({ kind: 'run-cost', limit: 1_000n, spent: 900n, needed: 200n });
   });
+
+  it(`RF-407 ${name} keeps a provider test's reservation when another user's test with the same call id is released`, async () => {
+    const { ledger, ids, mine, theirs } = await twoUsersOneCallId();
+    const caps: UsageCap[] = [{ kind: 'user-day', limit: 1_000n }];
+    await reserveAt(ledger, { ...mine, runId: null }, caps);
+    await reserveAt(ledger, { ...theirs, runId: null }, caps);
+
+    await ledger.release({ ...theirs, runId: null });
+    const next = await reserveAt(ledger, reservationOf(ids, { runId: null, ...worst(200n) }), caps);
+
+    expect(breachOf(next)).toEqual({ kind: 'user-day', limit: 1_000n, spent: 900n, needed: 200n });
+  });
 }
 
 export function costLedgerContract(name: string, fresh: Fresh): void {
