@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 75 | 18 | 43 | 14 | 0 | 28 | 39 | 8 | 19 | 0 |
+| P1 Milestone slice (M1) | 78 | 20 | 44 | 14 | 0 | 31 | 39 | 8 | 22 | 0 |
 | P2 Full understand | 14 | 1 | 10 | 3 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **101** | **20** | **62** | **19** | **0** | **31** | **59** | **11** | **19** | **0** |
+| **Total** | **104** | **22** | **63** | **19** | **0** | **34** | **59** | **11** | **22** | **0** |
 
 ## Conventions for every card
 
@@ -166,7 +166,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-04, P1-06, P1-07
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md`; `docs/data-model.md` section 4 (`users`, `audit_events`); `docs/security/threat-model.md` (accounts rows).
 - **Do**: domain `User`, `Role`, `AccountState` with the transitions of architecture section 5; password rules (at least 12 characters, not in `src/infrastructure/security/common-passwords.txt` of the 10,000 most common, not containing the user name); `PasswordHasher` port and `ScryptPasswordHasher` (`scrypt$N$r$p$salt$hash`, constant-time compare); `UserRepository` with `PgUserRepository` and `MemoryUserRepository` passing one contract suite (user name unique case-insensitively; list queries never select the hash); `AuditLog` port with `PgAuditLog` and `MemoryAuditLog` (detail masked by P1-04); `BootstrapAdmin` use case run by `main.ts`: creates the administrator from `ROSETTA_ADMIN_USER`/`ROSETTA_ADMIN_PASSWORD` once on an empty `users` table, state `MustChangePassword`, never logging the values. scrypt runs with `maxmem` 256 MiB and at most two hashes at a time (a semaphore); the failure window uses `first_failed_at` (DEC-112).
 - **Delivers**: the domain types, rules, hasher, two ports with adapters and contract suites, the use case; unit tests for rules and transitions; integration tests on PostgreSQL.
@@ -180,7 +180,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md`; `docs/data-model.md` section 4 (`sessions`); `docs/architecture.md` section 10; `docs/security/threat-model.md`.
-- **Do**: `SessionStore` port with `PgSessionStore` and `MemorySessionStore` (256-bit id from `node:crypto`, only its SHA-256 stored, expiry min(idle 8 h, absolute 7 days), touch, end, end all for a user, hourly purge); `SignIn` (generic message, equal timing with a dummy hash for unknown users, five failures in 15 minutes lock for 15 minutes, audit and security events), `SignOut`; `@fastify/rate-limit` 10 sign-in attempts per minute per IP; the session cookie `__Host-rosetta_session` with the attributes of RF-1013; hooks: session (pages redirect to `/sign-in`, API 401), role guard, CSRF token through `@fastify/csrf-protection` in its cookie mode (`__Host-` cookie, `SameSite=Strict`; no secret in the database) and an `Origin` check against `ROSETTA_PUBLIC_URL` on every state-changing request (403 and a security event); the `Actor` passed to every use case; `tests/integration/access-matrix.test.ts` with rows anonymous, user, other user, administrator for every route that exists. The sign-in request, which has no session yet, is protected by the `Origin` check (DEC-112).
+- **Do**: `SessionStore` port with `PgSessionStore` and `MemorySessionStore` (256-bit id from `node:crypto`, only its SHA-256 stored, expiry min(idle 8 h, absolute 7 days), touch, end, end all for a user, hourly purge); `SignIn` (generic message, equal timing with a dummy hash for unknown users, five failures in 15 minutes lock for 15 minutes, audit and security events), `SignOut`; `@fastify/rate-limit` 10 sign-in attempts per minute per IP; the session cookie `__Host-rosetta_session` with the attributes of RF-1013; hooks: session (pages redirect to `/sign-in`, API 401), role guard, CSRF token through `@fastify/csrf-protection` in its cookie mode (`__Host-` cookie, `SameSite=Strict`; no secret in the database) and an `Origin` check against `ROSETTA_PUBLIC_URL` on every state-changing request (403 and a security event); the `Actor` passed to every use case; `tests/integration/access-matrix.test.ts` with rows anonymous, user, other user, administrator for every route that exists. The sign-in request, which has no session yet, is protected by the `Origin` check (DEC-112). Cap the password field (for example 1 024 characters) and the sign-in request body, and bound the hashing queue (or rely on the rate limit and say so), because the P1-08 hasher has no length limit and an unbounded queue (P1-08 verifier).
 - **Delivers**: the store, two use cases, the hooks, routes `POST /api/session`, `DELETE /api/session`, `GET /api/session`; integration tests for success, failure, lockout, rate limit, timing (statistical bound), expiry with a fixed clock, CSRF and Origin refusals; the access matrix.
 - **Done when**: every RF-1100, RF-1101 and RF-1009 scenario has a passing test; no response body in the test suite contains a session id, a hash or a CSRF secret (output scan test); the verifier-opus security review passes.
 - **Refs**: RF-1009, RF-1013, RF-1100, RF-1101, RF-1105, RF-1109, RNF-014, ADR-013, ADR-015, ADR-017, DEC-62, DEC-69.
@@ -614,7 +614,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 6, 9 and 14; `docs/adr/ADR-016-postgresql-and-files.md`.
 - **Do**: `compose.yaml` (adds the `app` service to the `db` service of P1-06, volumes `pgdata` and `rosetta-data`, app on `127.0.0.1:8080` only, `extra_hosts: host.docker.internal:host-gateway`, health checks, restart policy); `compose.ci.yaml` (fake provider, test seed); the CI Compose smoke job (up, wait for `/healthz`, Playwright smoke: landing, sign-in, a fake-provider scan, `down -v`); `docs/runbooks/local.md` (`.env`, up, first sign-in, Ollama on the host, reset); the README quick start section. `db/init/roles.sh` creating `rosetta_app` and `rosetta_migrator` from passwords in `.env`; `compose.ci.yaml` runs the image's `test` stage with a fake GitHub sidecar.
 - **Delivers**: the two Compose files, the CI job, the runbook, the README section.
-- **Done when**: the CI smoke job is green; `docker compose config` shows the port bound to `127.0.0.1` (verifier); data survives `down` and `up` (test in the smoke job with a project created before the restart). The RF-1301 Ollama scenario is checked on the owner's machine (`ROSETTA_OLLAMA_URL` reaches the host's Ollama) and recorded as an owner check.
+- **Done when**: the CI smoke job is green; `docker compose config` shows the port bound to `127.0.0.1` (verifier); data survives `down` and `up` (test in the smoke job with a project created before the restart). The RF-1301 Ollama scenario is checked on the owner's machine (`ROSETTA_OLLAMA_URL` reaches the host's Ollama) and recorded as an owner check. The image ships `src/infrastructure/security/common-passwords.txt` (without it start-up fails with RST-2501).
 - **Refs**: RF-801, RF-1009, RF-1301, RNF-011, RNF-014, ADR-014, ADR-016, DEC-61.
 
 ### P1-46 - Milestone end-to-end journeys
@@ -958,7 +958,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-19
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/scan/universal/sql-script.ts`; `docs/data-model.md` (code map); RNF-003.
 - **Do**: write a failing test first: a SQL statement holding a `-----BEGIN PRIVATE KEY-----` block whose marker lines look like comments; then keep comment-like lines inside an open statement, or mask the raw lines before comments are dropped, so the key body is masked or left out.
 - **Delivers**: the fix and its fixture test.
@@ -976,6 +976,42 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the budget and its tests.
 - **Done when**: a fixture repository whose parse time exceeds a small test budget finishes with the remaining files recorded as not analysed; `npm run verify` green.
 - **Refs**: RF-110, RNF-004, P1-21 (verifier note).
+
+### P1-76 - Follow-up: an unterminated key marker hides later SQL statements
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-74
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/scan/universal/sql-script.ts`; `src/infrastructure/guards/`.
+- **Do**: a `-----BEGIN ... PRIVATE KEY-----` marker with no END (for example a comment that only mentions it) masks to the end of the file, so every later statement silently leaves the code map; bound the masked span or record a notice in the scan summary that statements were hidden by masking; use the injected `SecretMasker` instead of the module-level one.
+- **Delivers**: the change and its tests.
+- **Done when**: a file with an unterminated marker in a comment followed by three statements keeps the statements or records the notice, and no key body leaks in either case; `npm run verify` green.
+- **Refs**: RNF-003, RF-104, P1-74 (verifier MINORs 1 and 2, round 2).
+
+### P1-77 - Follow-up: accounts and audit log hardening
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P1-08
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/security/scrypt-password-hasher.ts`; `src/infrastructure/db/pg-audit-log.ts`, `audit-rows.ts`, `pg-user-repository.ts`; `tests/contracts/`.
+- **Do**: bound the parameters of a stored hash (N, r, p, key and salt lengths) and map every parse or scrypt failure, including `RangeError`, to RST-2209; keep the password hash out of any error cause from the user repository; strip or escape NUL in audit `detail`, `ip` and `action` before the insert; widen audit detail masking to keys `secret`, `pass`, `pw`, `value` and free text such as "password is"; make the audit filter with an invalid user id behave the same in both adapters (contract case); add a concurrent bootstrap test on PostgreSQL that fails without the advisory lock.
+- **Delivers**: the changes with tests.
+- **Done when**: a stored hash with `N=2^20, r=1` or `r=999` is refused with RST-2209; an audit row with a NUL is stored; the new contract case passes on both adapters; removing the advisory lock fails a test; `npm run verify` green.
+- **Refs**: RF-1100, RF-1109, RNF-003, ADR-015, P1-08 (verifier-opus MINORs 1-5, 9).
+
+### P1-78 - Follow-up: align the documents with the P1-08 defaults
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-08
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/architecture.md` section 5; `docs/environments-and-delivery.md`; `docs/data-model.md` section 4.
+- **Do**: list the account transitions P1-08 built (enable clears the failure counters, reset sets MustChangePassword, both refused on a Disabled account except enable) in architecture section 5; mark `ROSETTA_ADMIN_USER` and `ROSETTA_ADMIN_PASSWORD` as needed only on an empty `users` table (a warning otherwise); describe the bootstrap audit row (no actor, `ip = start-up`, no user name) in the data model.
+- **Delivers**: the three document edits.
+- **Done when**: the documents match the code; the documentation tests pass; `npm run verify` green.
+- **Refs**: RF-1102, RF-1109, P1-08 (verifier-opus MINORs 6-8).
 
 ---
 
