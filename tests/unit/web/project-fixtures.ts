@@ -2,7 +2,7 @@
 // settings document of templates/project-settings.json (data-model.md section 3.1), shortened to
 // the one provider the default roles use.
 
-export function templateSettings() {
+function buildTemplate() {
   const role = (maxOutputTokens: number) => ({
     provider: 'ollama',
     model: 'gemma4:e4b',
@@ -43,7 +43,17 @@ export function templateSettings() {
   };
 }
 
-export function projectOf(id: string, name: string, overrides: Record<string, unknown> = {}) {
+type TemplateSettings = ReturnType<typeof buildTemplate>;
+
+export function templateSettings(): TemplateSettings {
+  return buildTemplate();
+}
+
+export function projectOf(
+  id: string,
+  name: string,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     id,
     name,

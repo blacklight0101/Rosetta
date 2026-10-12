@@ -9,6 +9,7 @@ import { AppContext } from './app-context.js';
 import { NotFoundPage } from './NotFoundPage.js';
 import { buildNavigation } from './navigation.js';
 import { matchRoute, type RouteMatch } from './route-match.js';
+import { RouteParamsContext } from './route-params.js';
 import type { RouteDefinition } from './route-types.js';
 import { useLocation } from './router.js';
 import { SessionContext } from './session-context.js';
@@ -36,6 +37,17 @@ interface SignedInProps extends AppProps {
 
 const signInPath = '/sign-in';
 
+/** The page of the route, with the route's parameters for it to read (a denied one is not found). */
+function RoutedPage(props: { readonly match: RouteMatch; readonly denied: boolean }): JSX.Element {
+  const { match, denied } = props;
+  const Component = denied ? NotFoundPage : match.route.component;
+  return (
+    <RouteParamsContext.Provider value={match.params}>
+      <Component />
+    </RouteParamsContext.Provider>
+  );
+}
+
 function SignedInPage(props: SignedInProps): JSX.Element {
   const { client, routes, assign, match, location, theme, onTheme } = props;
   const goToSignIn = useCallback(() => {
@@ -58,13 +70,9 @@ function SignedInPage(props: SignedInProps): JSX.Element {
   }
   const { user } = state.session;
   const denied = match.route.access === 'admin' && user.role !== 'admin';
-  const Page = denied ? NotFoundPage : match.route.component;
+  const page = <RoutedPage match={match} denied={denied} />;
   if (match.route.chrome === 'bare' && !denied) {
-    return (
-      <SessionContext.Provider value={user}>
-        <Page />
-      </SessionContext.Provider>
-    );
+    return <SessionContext.Provider value={user}>{page}</SessionContext.Provider>;
   }
   const navigation = buildNavigation({
     routes,
@@ -81,7 +89,7 @@ function SignedInPage(props: SignedInProps): JSX.Element {
         onTheme={onTheme}
         actions={<SignOutButton />}
       >
-        <Page />
+        {page}
       </Shell>
     </SessionContext.Provider>
   );

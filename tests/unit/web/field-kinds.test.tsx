@@ -18,7 +18,9 @@ it('RNF-010 a number field is a labelled number input that reports what was type
 
 it('RNF-010 a textarea field is a labelled multi-line control that reports what was typed', () => {
   const onInput = vi.fn<(value: string) => void>();
-  render(<Field kind="textarea" id="rules" label="Ignore rules" value="a/\nb/" onInput={onInput} />);
+  render(
+    <Field kind="textarea" id="rules" label="Ignore rules" value="a/\nb/" onInput={onInput} />,
+  );
 
   const area = screen.getByLabelText('Ignore rules');
   fireEvent.input(area, { target: { value: 'c/' } });

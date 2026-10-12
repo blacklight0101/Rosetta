@@ -47,14 +47,7 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `projects` creates projects (RF-010) and `project-settings` edits one project's settings (RF-002).
  */
 export type E2eAccountKind =
-  | 'keys'
-  | 'lock'
-  | 'force'
-  | 'force-admin'
-  | 'cap'
-  | 'providers'
-  | 'projects'
-  | 'project-settings';
+  'keys' | 'lock' | 'force' | 'force-admin' | 'cap' | 'providers' | 'projects' | 'project-settings';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',

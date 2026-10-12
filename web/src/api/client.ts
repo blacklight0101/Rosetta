@@ -38,6 +38,8 @@ interface ApiRequest<T> {
   readonly signal?: AbortSignal;
   /** Overrides the client's timeout for a call that is slow by nature (the provider test). */
   readonly timeoutMs?: number;
+  /** Told the HTTP status of an answer, for a call whose status says more than its body (200 or 201). */
+  readonly onStatus?: (status: number) => void;
 }
 
 export interface ApiClient {
@@ -123,6 +125,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
           ...(request.body === undefined ? {} : { body: JSON.stringify(request.body) }),
           signal,
         });
+        request.onStatus?.(response.status);
         return await parseAnswer(response, request.schema);
       } catch {
         return unreachable();

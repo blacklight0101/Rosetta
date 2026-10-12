@@ -246,3 +246,109 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Projects and project settings (these pages reuse the .rst-settings layout above) */
+
+.rst-projects__create,
+.rst-projects__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-projects__actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.rst-settings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+  align-items: start;
+}
+
+.rst-field__control--multiline {
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  font-size: var(--rst-fs-sm);
+  resize: vertical;
+}
+
+.rst-table-scroll {
+  overflow-x: auto;
+}
+
+.rst-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.rst-table th,
+.rst-table td {
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border-block-end: 1px solid var(--rst-rule);
+  font-size: var(--rst-fs-sm);
+  text-align: start;
+  white-space: nowrap;
+}
+
+.rst-table th {
+  background: var(--rst-surface-2);
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-role {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(0, 4fr);
+  gap: var(--rst-sp-3) var(--rst-sp-5);
+  align-items: start;
+  padding: var(--rst-sp-4) 0;
+  border-block-start: 1px solid var(--rst-rule);
+}
+
+.rst-role__name {
+  font-size: var(--rst-fs-md);
+}
+
+.rst-role__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+  align-items: start;
+  min-inline-size: 0;
+}
+
+.rst-prices {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+  padding: var(--rst-sp-4) 0;
+  border-block-start: 1px solid var(--rst-rule);
+}
+
+.rst-price__fields {
+  display: grid;
+  flex: 1 1 32rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+  align-items: start;
+  min-inline-size: 0;
+}
+
+@media (max-width: 40rem) {
+  .rst-role {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
