@@ -236,7 +236,9 @@ Rules for `areas[]` (RF-104, added with P1-20):
 
 Readable summary of the code map: source and commit, the scan duration (the only value that differs between two scans
 of one commit, which is why it is here and not in `codemap.json`), languages with files, lines and tokens, artefact
-counts, areas with file and token counts, map level and origin (RF-105, RF-112). Generated; never read back.
+counts, areas with file and token counts, map level and origin (RF-105, RF-112). The files line also counts the
+skipped files and the files a language pack claims that stayed `coarse` because the scan-wide parse budget was spent
+(`not analysed: parse budget reached`, P1-75). Generated; never read back.
 
 ### 3.6 `runs/<runId>/manifest.json`
 
@@ -565,7 +567,7 @@ the `Clock` port.
 | `display_name` | `text` | 1..80 characters |
 | `role` | `text` | `CHECK (role IN ('admin','user'))` |
 | `state` | `text` | `CHECK (state IN ('Active','MustChangePassword','Disabled'))`; `Locked` is derived from `locked_until` |
-| `password_hash` | `text` | `scrypt$N$r$p$salt$hash` (base64); never selected by list queries |
+| `password_hash` | `text` | `scrypt$N$r$p$salt$hash` (base64); never selected by list queries; never in an error cause |
 | `failed_sign_ins` | `int` | reset to 0 on success, and when `first_failed_at` is older than 15 minutes; `CHECK (failed_sign_ins >= 0)` |
 | `first_failed_at` | `timestamptz` null | start of the current failure window (RF-1100, DEC-112) |
 | `locked_until` | `timestamptz` null | set for 15 minutes after the fifth failure |
@@ -681,7 +683,7 @@ of another shape is refused at read time.
 | `target_type`, `target_id` | `text` null | |
 | `ip` | `text` | |
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
-| `detail` | `jsonb` | masked; never a password, key or session id |
+| `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, and the word after "password is"); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
 
 **`schema_version`** (RF-1302): `version int` primary key, `name text` (the file name), `checksum text` (SHA-256 of
 the file, lower-case hex), `applied_at timestamptz`. Created by the migration runner (`PgMigrator`) itself, not by a

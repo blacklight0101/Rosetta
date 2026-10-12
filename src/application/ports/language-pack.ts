@@ -7,6 +7,11 @@ import type { LinkKind, SymbolKind } from '../../domain/code-map/vocabulary.js';
 export interface PackFile {
   readonly path: string;
   readonly text: string;
+  /**
+   * True once the scan-wide parse budget is spent (P1-75). A pack that can stop part-way, such as
+   * a tree-sitter parse, checks it while it works and throws when it says to stop.
+   */
+  readonly shouldStop?: () => boolean;
 }
 
 /** A type, function, method or property with its 1-based, inclusive line range (RF-110). */

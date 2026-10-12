@@ -218,3 +218,20 @@ describe('C# pack on hostile input', () => {
     expect(JSON.stringify(symbols)).not.toContain('AKIA');
   });
 });
+
+describe('C# pack and the scan-wide parse budget', () => {
+  it('RF-110 stops a parse when the scan-wide parse budget says to stop', () => {
+    expect(() => pack.analyse({ path: 'A.cs', text: sample, shouldStop: () => true })).toThrow(
+      expect.objectContaining({ code: 'RST-1200' }),
+    );
+  });
+
+  it('RF-110 maps the next file from its own text after a parse was stopped', async () => {
+    const fresh = await CSharpPack.create();
+    expect(() => fresh.analyse({ path: 'A.cs', text: sample, shouldStop: () => true })).toThrow();
+
+    const { symbols } = fresh.analyse({ path: 'B.cs', text: 'class Basket { }' });
+
+    expect(symbols.map((symbol) => symbol.name)).toEqual(['Basket']);
+  });
+});
