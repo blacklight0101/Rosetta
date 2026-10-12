@@ -103,10 +103,10 @@ describe('scanDataBlocks reads blocks', () => {
     if (!scan.ok) throw new Error('The block was not read');
 
     expect(scan.value.parts).toEqual([
-      { frame: false, text: 'Intro' },
-      { frame: true, text: rendered.split('\n')[0] },
-      { frame: false, text: block.text },
-      { frame: true, text: DATA_BLOCK_FOOTER },
+      { frame: false, text: 'Intro', excerpts: [] },
+      { frame: true, text: rendered.split('\n')[0], excerpts: [] },
+      { frame: false, text: block.text, excerpts: block.excerpts },
+      { frame: true, text: DATA_BLOCK_FOOTER, excerpts: [] },
     ]);
     expect(scan.value.parts.map((part) => part.text).join('\n')).toBe(`Intro\n${rendered}`);
   });

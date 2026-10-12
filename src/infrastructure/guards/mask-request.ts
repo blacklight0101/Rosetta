@@ -1,4 +1,5 @@
 import type { LlmMessage, LlmRequest, ToolCall } from '../../application/ports/llm-provider.js';
+import type { Citation } from '../../domain/cards/citation.js';
 import { scanDataBlocks } from '../../domain/egress/data-block-scan.js';
 import { maskDeep } from './mask-deep.js';
 import { leavesKeyOpen, maskKeyContinuation } from './private-key-pieces.js';
@@ -48,24 +49,35 @@ class CountingMasker implements TextMasker {
   }
 }
 
+/** A piece of repository text and the excerpts of the block it stands in. */
+interface ContentPart {
+  readonly frame: boolean;
+  readonly text: string;
+  readonly excerpts: readonly Citation[];
+}
+
 /**
  * RF-141: a private key left open by one piece of repository text (a paged read) continues in the
- * next pieces of the request, across blocks and messages; see private-key-pieces.ts.
+ * later pieces of the request that read the same file, across blocks and messages; a read of
+ * another file in between neither continues nor closes it (see private-key-pieces.ts). The file
+ * of a piece is the path of its block's first excerpt, and the key it leaves open belongs to the
+ * last one; text outside blocks and blocks without excerpts share the empty path.
  */
 class KeyCarry {
-  private open = false;
+  private readonly open = new Set<string>();
 
-  /** The piece with the body of a key an earlier piece left open masked first. */
-  take(text: string, masker: CountingMasker): string {
-    let piece = text;
+  /** The piece with the key lines of a key an earlier read of its file left open masked first. */
+  take(part: ContentPart, masker: CountingMasker): string {
+    const first = part.excerpts[0]?.path ?? '';
+    let piece = part.text;
     let open = false;
-    if (this.open) {
-      const continued = maskKeyContinuation(text);
+    if (this.open.delete(first)) {
+      const continued = maskKeyContinuation(part.text);
       masker.addKeyPieces(continued.count);
       piece = continued.text;
       open = continued.open;
     }
-    this.open = open || leavesKeyOpen(text);
+    if (open || leavesKeyOpen(part.text)) this.open.add(part.excerpts.at(-1)?.path ?? '');
     return piece;
   }
 }
@@ -73,10 +85,12 @@ class KeyCarry {
 /** The content masked between the frames of its data blocks; repository text passes the carry. */
 function maskContent(content: string, masker: CountingMasker, carry?: KeyCarry): string {
   const scan = scanDataBlocks(content);
-  const parts = scan.ok ? scan.value.parts : [{ frame: false, text: content }];
+  const parts: readonly ContentPart[] = scan.ok
+    ? scan.value.parts
+    : [{ frame: false, text: content, excerpts: [] }];
   return parts
-    .map(({ frame, text }) => {
-      const piece = frame || carry === undefined ? text : carry.take(text, masker);
+    .map((part) => {
+      const piece = part.frame || carry === undefined ? part.text : carry.take(part, masker);
       return masker.mask(piece).text;
     })
     .join('\n');

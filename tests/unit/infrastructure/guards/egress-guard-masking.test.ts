@@ -104,9 +104,9 @@ describe('EgressGuard mask counts', () => {
     expect(counts['api-key']).toBe(once['api-key'] * 4);
     expect(counts['bearer-token']).toBe(once['bearer-token'] * 4);
     expect(counts['connection-string']).toBe(once['connection-string'] * 4);
-    // The user message ends inside an unterminated key block, so the start of the tool result
-    // that follows is masked as the rest of that key: one more private-key piece.
-    expect(counts['private-key']).toBe(once['private-key'] * 4 + 1);
+    // The user message ends inside an unterminated key block, but the tool result that follows
+    // reads another file, so the key is not carried into it.
+    expect(counts['private-key']).toBe(once['private-key'] * 4);
     expect(counts['password']).toBe(once.password * 4 + keyedSecretCases.length);
   });
 

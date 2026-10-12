@@ -77,7 +77,7 @@ describe('EgressGuard and the reads that follow an open private key', () => {
     const result = toolResult({ text, excerpts: [{ path, startLine, endLine }] });
     return [
       { role: 'assistant', content: '', toolCalls: [{ id, name: 'read_file', arguments: {} }] },
-      { ...result, toolCallId: id },
+      { role: 'tool', toolCallId: id, content: result.content },
     ];
   }
 

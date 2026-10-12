@@ -31,6 +31,8 @@ interface DataBlockPart {
   /** A header or footer line. */
   readonly frame: boolean;
   readonly text: string;
+  /** The excerpts of the block the text stands in; empty for a frame or text outside blocks. */
+  readonly excerpts: readonly Citation[];
 }
 
 export type DataBlockProblem = 'malformed-block';
@@ -89,6 +91,8 @@ interface ScanState {
   readonly excerpts: Citation[];
   readonly parts: DataBlockPart[];
   pending: string[];
+  /** The excerpts of the block the scan is inside. */
+  current: readonly Citation[];
 }
 
 /** Closes the pending lines as one part; refuses a marker in them. */
@@ -97,7 +101,7 @@ function flush(state: ScanState): boolean {
   const text = state.pending.join('\n');
   if (holdsDataMarker(text)) return false;
   if (!state.inside && text.trim() !== '') state.textOutside = true;
-  state.parts.push({ frame: false, text });
+  state.parts.push({ frame: false, text, excerpts: state.inside ? state.current : [] });
   state.pending = [];
   return true;
 }
@@ -111,8 +115,9 @@ function takeLine(state: ScanState, line: string): boolean {
     return true;
   }
   if (!flush(state)) return false;
-  state.parts.push({ frame: true, text: line });
+  state.parts.push({ frame: true, text: line, excerpts: [] });
   if (excerpts !== undefined) {
+    state.current = excerpts;
     state.excerpts.push(...excerpts);
     state.blocks += 1;
   }
@@ -129,6 +134,7 @@ export function scanDataBlocks(content: string): Result<DataBlockScan, DataBlock
     excerpts: [],
     parts: [],
     pending: [],
+    current: [],
   };
   for (const line of content.split('\n')) {
     if (!takeLine(state, line)) return err('malformed-block');
