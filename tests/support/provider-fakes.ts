@@ -1,6 +1,7 @@
 import type {
   CostLedger,
   LedgerEntry,
+  ReservationKey,
   ReservationRequest,
 } from '../../src/application/ports/cost-ledger.js';
 import type { CapBreach } from '../../src/domain/budget/usage-cap.js';
@@ -21,7 +22,7 @@ import { recordingOf } from './fake-recordings.js';
 export class SpyLedger implements CostLedger {
   readonly reservations: ReservationRequest[] = [];
   readonly entries: LedgerEntry[] = [];
-  readonly released: string[] = [];
+  readonly released: ReservationKey[] = [];
   private readonly inner: CostLedger;
 
   constructor(inner: CostLedger) {
@@ -38,9 +39,9 @@ export class SpyLedger implements CostLedger {
     return this.inner.settle(entry);
   }
 
-  release(callId: string): Promise<void> {
-    this.released.push(callId);
-    return this.inner.release(callId);
+  release(key: ReservationKey): Promise<void> {
+    this.released.push(key);
+    return this.inner.release(key);
   }
 
   runEntries(userId: string, runId: string): Promise<readonly LedgerEntry[]> {

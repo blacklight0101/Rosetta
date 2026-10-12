@@ -189,7 +189,11 @@ export class BudgetGuard implements LlmProvider {
     const outcome: CallOutcome = { attempt: attempts, usage: noUsage, costMicros: 0n };
     await this.quietly('The cost of a failed call could not be recorded.', request, () =>
       attempts === 0
-        ? ledger.release(request.context.callId)
+        ? ledger.release({
+            callId: request.context.callId,
+            userId: this.options.run.userId,
+            runId: this.options.run.id,
+          })
         : ledger.settle(this.entryOf(request, plan, outcome)),
     );
   }

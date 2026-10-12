@@ -476,6 +476,10 @@ output as JSON lines at `ROSETTA_LOG_LEVEL` and above. One file per UTC day; fil
 start-up and daily (RF-009): a file is deleted when its UTC day is more than that many days before today, and
 only files named `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the secret masking: `logger`,
 `message`, the ids and every key and string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept.
+A `data` key at any depth whose name contains `password`, `passwd`, `pwd`, `secret`, `token` or `api key`
+(`api[_-]?key`), in any case, has its whole value replaced, whatever its type: `[MASKED:api-key]` for an API key
+name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count such as
+`inputTokens` is therefore never written under such a name.
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
@@ -639,7 +643,7 @@ the `Clock` port.
 
 | Column | Type | Rules |
 |---|---|---|
-| `call_id` | `text` | primary key |
+| `call_id` | `text` | the call (`<runKey>#<n>`, or `provider-test-<uuid>#1`); unique only together with `user_id` and `run_id`, because a run key is unique only within a project (`UNIQUE NULLS NOT DISTINCT (user_id, run_id, call_id)` by `0007`, which replaced the `call_id` primary key) |
 | `user_id`, `run_id` | `uuid` | the run's owner and run; `run_id` is null for a provider test, which belongs to no run (RF-407; nullable by `0006`) |
 | `key_source` | `text` | as in `cost_ledger` |
 | `worst_case_micros` | `bigint` | prompt tokens plus maximum output, priced |
@@ -736,7 +740,7 @@ runner; `rosetta_app` has no right on it.
 **Database migrations** (RF-1302): files `db/migrations/NNNN_snake_name.sql`, four digits, applied in order, each in
 a transaction, recorded in `schema_version` with its checksum. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`), `0100..` later
 releases.
 
 **File schema versions**:

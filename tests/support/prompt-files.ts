@@ -4,8 +4,11 @@ import { relative, sep } from 'node:path';
 // RF-145, RNF-004: the prompt files the prompt tests check, as forward-slash paths relative to a
 // prompts root. Every file in every folder counts, so a new folder cannot escape the checks.
 
-/** Folders whose files are fragments added to a role prompt; they need not state the rule. */
-const fragmentFolders = new Set(['cards', 'shared']);
+/**
+ * Folders whose files are fragments added to a role prompt; they need not state the rule. The
+ * catalogue (RF-606) holds entries `plan` adds to the planner's prompt, not a role prompt.
+ */
+const fragmentFolders = new Set(['cards', 'shared', 'catalogue']);
 
 /** Every file under `root`, at any depth, sorted; dot files such as `.gitkeep` are not prompts. */
 export async function listPromptFiles(root: string): Promise<string[]> {
