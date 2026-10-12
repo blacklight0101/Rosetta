@@ -15,13 +15,14 @@ import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js'
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import { StreamRegistry } from './web/event-stream.js';
 import type { RunServices } from './web/run-routes.js';
 
 // Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event
 // log with the live broadcaster, the manifest store, the run queue and the use cases behind the run
 // routes. The executors of the stages are registered here as their cards land (the scan run of
-// P1-23 first); until then the queue ends a run of a stage without one as `Failed` (RST-2305), and
-// no route accepts a run yet.
+// P1-23 first); until then a queued run of a stage without one stays queued, SubmitRun refuses
+// such a stage with RST-2305 (409), and no route accepts a run yet.
 
 export interface RunParts {
   readonly pool: DatabasePool;
@@ -79,6 +80,7 @@ export function composeRuns(parts: RunParts): RunComposition {
       subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
       stopRun: new StopRun({ queue }),
       heartbeat,
+      streams: new StreamRegistry(),
     },
     submitRun: new SubmitRun({
       runs,

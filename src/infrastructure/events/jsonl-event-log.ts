@@ -1,4 +1,8 @@
-import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
+import type {
+  OutputWriter,
+  TextLineReader,
+  WorkspaceFile,
+} from '../../application/ports/output-writer.js';
 import type {
   RunEventHistory,
   RunEventSink,
@@ -11,7 +15,13 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { RunEvent } from '../../domain/runs/run-event.js';
 import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { advance, assertNext, emptyTail, type EventTail } from './event-order.js';
+import {
+  advance,
+  assertNext,
+  emptyTail,
+  REPLAY_BATCH_SIZE,
+  type EventTail,
+} from './event-order.js';
 import { maskEvent } from './mask-event.js';
 
 // Architecture section 7, data-model.md section 3.9, RF-1006, RNF-002, RNF-003: appends the
@@ -22,7 +32,7 @@ import { maskEvent } from './mask-event.js';
 // a resumed run never appends to a fragment.
 
 export interface JsonlEventLogOptions {
-  readonly writer: OutputWriter;
+  readonly writer: OutputWriter & TextLineReader;
   readonly masker: TextMasker;
 }
 
@@ -49,12 +59,14 @@ function parseLines(text: string): StoredLog {
   const events = complete
     .split('\n')
     .filter((line) => line !== '')
-    .map((line) => {
-      const event = parseRunEvent(parseJson(line));
-      if (event === undefined) throw failed('a stored line is not a run event');
-      return event;
-    });
+    .map(parseStoredLine);
   return { events, repaired: complete === text ? undefined : complete };
+}
+
+function parseStoredLine(line: string): RunEvent {
+  const event = parseRunEvent(parseJson(line));
+  if (event === undefined) throw failed('a stored line is not a run event');
+  return event;
 }
 
 function parseJson(line: string): unknown {
@@ -63,6 +75,28 @@ function parseJson(line: string): unknown {
   } catch (error) {
     throw failed('a stored line is not JSON', error);
   }
+}
+
+/** The events after `afterSeq` in the lines, in batches; a failure to read is RST-2104. */
+async function* batchesAfter(
+  lines: AsyncIterable<string>,
+  afterSeq: number,
+): AsyncGenerator<readonly RunEvent[]> {
+  let batch: RunEvent[] = [];
+  try {
+    for await (const line of lines) {
+      if (line === '') continue;
+      const event = parseStoredLine(line);
+      if (event.seq <= afterSeq) continue;
+      batch.push(event);
+      if (batch.length < REPLAY_BATCH_SIZE) continue;
+      yield batch;
+      batch = [];
+    }
+  } catch (error) {
+    throw error instanceof RosettaError ? error : failed('the file could not be read', error);
+  }
+  if (batch.length > 0) yield batch;
 }
 
 export class JsonlEventLog implements RunEventSink, RunEventHistory {
@@ -87,11 +121,29 @@ export class JsonlEventLog implements RunEventSink, RunEventHistory {
     });
   }
 
-  read(scope: RunScope, afterSeq: number): Promise<readonly RunEvent[]> {
-    return this.queue.run(scope.id, async () => {
-      const { events } = await this.load(scope);
-      return events.filter((event) => event.seq > afterSeq);
+  async read(scope: RunScope, afterSeq: number): Promise<readonly RunEvent[]> {
+    const events: RunEvent[] = [];
+    await this.replay(scope, afterSeq, (batch) => {
+      events.push(...batch);
+      return Promise.resolve();
     });
+    return events;
+  }
+
+  // RF-1006: streams the file, so a long history is never held in memory as a whole and the
+  // receiver sets the pace. It does not wait in the run's write queue: a slow page must not hold
+  // up the run, and a line is appended whole, so a read sees complete lines or a torn tail.
+  async replay(
+    scope: RunScope,
+    afterSeq: number,
+    onBatch: (batch: readonly RunEvent[]) => Promise<void>,
+  ): Promise<void> {
+    const lines = await this.options.writer.readLines(fileOf(scope));
+    if (!lines.ok) {
+      if (lines.error.reason === 'not-found') return;
+      throw failed(lines.error.message);
+    }
+    for await (const batch of batchesAfter(lines.value, afterSeq)) await onBatch(batch);
   }
 
   lastSeq(scope: RunScope): Promise<number> {

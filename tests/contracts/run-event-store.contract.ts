@@ -84,7 +84,9 @@ function replayTests(name: string, fresh: FreshEventStore): void {
     expect(state.batches).toBeGreaterThan(1);
     expect(state.overlapped).toBe(false);
   });
+}
 
+function replayFailureTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} replays nothing for a run without events and stops when the receiver fails`, async () => {
     const { sink, history } = await fresh();
     const seen: number[] = [];
@@ -172,6 +174,7 @@ function isolationTests(name: string, fresh: FreshEventStore): void {
 export function runEventStoreContract(name: string, fresh: FreshEventStore): void {
   readingTests(name, fresh);
   replayTests(name, fresh);
+  replayFailureTests(name, fresh);
   refusalTests(name, fresh);
   isolationTests(name, fresh);
 }

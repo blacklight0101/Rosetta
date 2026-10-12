@@ -7,9 +7,12 @@ import { scopeOf } from '../runs/run-scope.js';
 
 // RF-1006, RF-1105: Subscribe run events gives a page the stored events after the one it last saw
 // (`afterSeq`), then the live ones, with none twice and none missing, and ends the stream after
-// `run.ended`. It subscribes to the live feed before it reads the stored events and holds back
-// what arrives meanwhile, so an event published during the read is not lost. Another user's run id
-// and an unknown id give the same answer, and nothing is subscribed.
+// `run.ended`. `execute` checks access and subscribes to the live feed; `replay` then reads the
+// stored events in batches, waiting for the page to drain after each (so a history of any length
+// can be sent), and holds back what arrives meanwhile, so an event published during the read is
+// not lost. The caller starts `replay` once the page can receive. A `seq` beyond the last stored
+// one (a page that names an event that never existed) counts as the last one. Another user's run
+// id and an unknown id give the same answer, and nothing is subscribed.
 
 export interface SubscribeRunEventsDependencies {
   readonly runs: RunIndex;
@@ -22,12 +25,17 @@ export interface SubscribeRunEventsRequest {
   readonly runId: string;
   /** The `seq` of the last event the page has; 0 for a page that has none. */
   readonly afterSeq: number;
-  readonly onEvent: (event: RunEvent) => void;
+  /** `stored` is true for an event read from the log, false for a live one. */
+  readonly onEvent: (event: RunEvent, stored: boolean) => void;
+  /** Resolves when the page can take more; awaited after each batch of stored events. */
+  readonly drained?: () => Promise<void>;
   /** Called once, after `run.ended` was delivered. */
   readonly onEnd: () => void;
 }
 
 export interface RunEventSubscription {
+  /** Delivers the stored events after `afterSeq`, then the ones held back; ends a finished run. */
+  replay(): Promise<void>;
   /** Stops delivering and frees the subscription (the page went away). */
   close(): void;
 }
@@ -46,25 +54,36 @@ export class SubscribeRunEvents {
     const { runs, history, feed } = this.deps;
     const run = await runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
-    const delivery = new Delivery(request);
+    const scope = scopeOf(run);
+    const afterSeq = Math.min(request.afterSeq, await history.lastSeq(scope));
+    const delivery = new Delivery(request, afterSeq);
     delivery.unsubscribe = feed.subscribe(run.userId, run.id, (event) => {
       delivery.live(event);
     });
-    try {
-      for (const event of await history.read(scopeOf(run), request.afterSeq)) delivery.send(event);
-      delivery.release();
-      if (run.queueState === 'Ended') delivery.end();
-    } catch (error) {
-      delivery.close();
-      throw error;
-    }
     return ok({
+      replay: async () => {
+        try {
+          await history.replay(scope, afterSeq, async (batch) => {
+            for (const event of batch) delivery.send(event, true);
+            await request.drained?.();
+            if (delivery.isClosed) throw new ReplayStopped();
+          });
+          delivery.release();
+          if (run.queueState === 'Ended') delivery.end();
+        } catch (error) {
+          delivery.close();
+          if (!(error instanceof ReplayStopped)) throw error;
+        }
+      },
       close: () => {
         delivery.close();
       },
     });
   }
 }
+
+/** Thrown inside the replay to stop reading once the page is gone. */
+class ReplayStopped extends Error {}
 
 /** One page's delivery: in order, each `seq` once, held back until the stored events are sent. */
 class Delivery {
@@ -75,9 +94,9 @@ class Delivery {
   private holding = true;
   private closed = false;
 
-  constructor(request: SubscribeRunEventsRequest) {
+  constructor(request: SubscribeRunEventsRequest, afterSeq: number) {
     this.request = request;
-    this.last = request.afterSeq;
+    this.last = afterSeq;
   }
 
   live(event: RunEvent): void {
@@ -85,10 +104,10 @@ class Delivery {
     else this.send(event);
   }
 
-  send(event: RunEvent): void {
+  send(event: RunEvent, stored = false): void {
     if (this.closed || event.seq <= this.last) return;
     this.last = event.seq;
-    this.request.onEvent(event);
+    this.request.onEvent(event, stored);
     if (isRunEnded(event)) this.end();
   }
 
@@ -96,6 +115,10 @@ class Delivery {
   release(): void {
     this.holding = false;
     for (const event of this.held.splice(0)) this.send(event);
+  }
+
+  get isClosed(): boolean {
+    return this.closed;
   }
 
   end(): void {

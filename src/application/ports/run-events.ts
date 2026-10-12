@@ -17,6 +17,16 @@ export interface RunEventSink {
 export interface RunEventHistory {
   /** The stored events with `seq` greater than `afterSeq`, in order; empty for a run without any. */
   read(scope: RunScope, afterSeq: number): Promise<readonly RunEvent[]>;
+  /**
+   * Hands the stored events with `seq` greater than `afterSeq` to `onBatch`, in order and in
+   * batches, waiting for each call to settle before it reads on (so the receiver sets the pace);
+   * stops with the receiver's error. Nothing is handed over for a run without events.
+   */
+  replay(
+    scope: RunScope,
+    afterSeq: number,
+    onBatch: (batch: readonly RunEvent[]) => Promise<void>,
+  ): Promise<void>;
   /** The `seq` of the last stored event; 0 for a run without any. */
   lastSeq(scope: RunScope): Promise<number>;
 }

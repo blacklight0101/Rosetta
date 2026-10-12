@@ -133,8 +133,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     logger,
     ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
   });
-  const heartbeat = new ManualScheduler(() => undefined);
-  const streams = new StreamRegistry();
+  const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -143,7 +142,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     trustProxy: 0,
     auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, heartbeat, streams },
+    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, ...route },
     ...overrides,
   });
   return {
@@ -158,7 +157,6 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     projects,
     serverSettings,
     runs,
-    heartbeat,
-    streams,
+    ...route,
   };
 }

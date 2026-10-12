@@ -172,9 +172,9 @@ describe('SubscribeRunEvents replay', () => {
     vi.spyOn(h.events, 'replay').mockRejectedValue(new Error('disk gone'));
     const page = pageOf();
 
-    await expect(
-      open(h, { actor: userAmy, runId: run.id, afterSeq: 0, page }),
-    ).rejects.toThrow('disk gone');
+    await expect(open(h, { actor: userAmy, runId: run.id, afterSeq: 0, page })).rejects.toThrow(
+      'disk gone',
+    );
 
     expect(h.broadcaster.subscriberCount).toBe(0);
   });

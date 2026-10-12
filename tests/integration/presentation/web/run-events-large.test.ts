@@ -40,7 +40,8 @@ async function largeRun(): Promise<Large> {
   const user = await addUser(test, { userName: 'amy' });
   const run = await test.runs.start(actorOf(user.account));
   const events = test.runs.executor.started[0]?.events;
-  for (let turn = 1; turn <= EVENTS; turn += 1) await events?.emit('agent.turn', { turn, note: NOTE });
+  for (let turn = 1; turn <= EVENTS; turn += 1)
+    await events?.emit('agent.turn', { turn, note: NOTE });
   test.runs.executor.settle(run.id, { endState: 'Completed' });
   await test.runs.ended(run);
   return { amy: await signedInBrowser(test.server, user), runId: run.id, lastSeq: EVENTS + 2 };
@@ -58,7 +59,9 @@ describe('GET /api/runs/:runId/events with a history over 1 MiB', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body.length).toBeGreaterThan(1_048_576);
-    expect(seqsOf(response.body)).toEqual(Array.from({ length: lastSeq }, (_u, index) => index + 1));
+    expect(seqsOf(response.body)).toEqual(
+      Array.from({ length: lastSeq }, (_u, index) => index + 1),
+    );
     expect(response.body).toContain('event: run.ended');
   }, 30_000);
 

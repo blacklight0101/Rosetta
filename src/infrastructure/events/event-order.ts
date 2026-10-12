@@ -32,3 +32,6 @@ export function assertNext(tail: EventTail, scope: RunScope, event: RunEvent): v
 export function advance(event: RunEvent): EventTail {
   return { lastSeq: event.seq, ended: isRunEnded(event) };
 }
+
+/** How many stored events a replay hands to the receiver at a time. */
+export const REPLAY_BATCH_SIZE = 100;

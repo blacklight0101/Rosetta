@@ -26,3 +26,13 @@ export interface OutputWriter {
   appendLine(file: WorkspaceFile, line: string): Promise<Result<void, WriteRefusal>>;
   readText(file: WorkspaceFile): Promise<Result<string, WriteRefusal>>;
 }
+
+/** RF-1006: reads a large text file line by line instead of as one string. */
+export interface TextLineReader {
+  /**
+   * The complete lines of the file (each ended by a line break, without it), one at a time; a
+   * last fragment without a line break (a torn write) is not yielded. A file that does not exist
+   * is refused with reason `not-found`.
+   */
+  readLines(file: WorkspaceFile): Promise<Result<AsyncIterable<string>, WriteRefusal>>;
+}

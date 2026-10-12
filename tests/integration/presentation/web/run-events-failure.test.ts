@@ -15,7 +15,7 @@ afterEach(async () => {
 
 async function openRun(): Promise<{
   test: TestServer;
-  get: () => ReturnType<TestServer['server']['inject']>;
+  get: () => Promise<{ statusCode: number }>;
 }> {
   const test = createTestServer();
   current = test;
@@ -45,7 +45,7 @@ describe('GET /api/runs/:runId/events when the history cannot be read', () => {
     const { test, get } = await openRun();
     vi.spyOn(test.runs.events, 'replay').mockRejectedValue(new Error('disk gone'));
 
-    await get();
+    await get().catch(() => undefined);
 
     await vi.waitFor(() => {
       expect(test.streams.size).toBe(0);

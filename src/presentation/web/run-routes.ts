@@ -4,7 +4,7 @@ import type { StopRun } from '../../application/use-cases/stop-run.js';
 import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-run-events.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { EventStream } from './event-stream.js';
+import { EventStream, type StreamRegistry } from './event-stream.js';
 import { signedInOf } from './request-actor.js';
 import { runView } from './run-view.js';
 
@@ -20,6 +20,8 @@ export interface RunServices {
   readonly stopRun: StopRun;
   /** Drives the keep-alive comment of every open stream. */
   readonly heartbeat: Scheduler;
+  /** The open event streams; a closing server ends them. */
+  readonly streams: StreamRegistry;
 }
 
 const KEEP_ALIVE_MS = 15_000;
@@ -39,52 +41,60 @@ function lastSeen(request: FastifyRequest<EventsRequest>): number {
   return Number(given);
 }
 
+/** The stream of a subscription that is sending: closes with its page, ends with its run. */
+function openStream(services: RunServices, close: () => void): EventStream {
+  const stream = new EventStream();
+  services.streams.add(stream);
+  stream.onClose(close);
+  const cancel = services.heartbeat.every(KEEP_ALIVE_MS, () => {
+    stream.keepAlive();
+    return Promise.resolve();
+  });
+  stream.onClose(cancel);
+  return stream;
+}
+
 function registerEvents(server: FastifyInstance, services: RunServices): void {
   // A stream stays open for as long as its run, so closing the server ends the open ones first.
-  const open = new Set<EventStream>();
   server.addHook('preClose', () => {
-    for (const stream of open) stream.finish();
+    services.streams.finishAll();
   });
   server.get<EventsRequest>(
     '/api/runs/:runId/events',
     // A HEAD request would open a stream and close it at once; the route has no HEAD form.
     { exposeHeadRoute: false, config: { access: 'user' } },
     async (request, reply) => {
-      const stream = new EventStream();
-      open.add(stream);
-      stream.onClose(() => {
-        open.delete(stream);
-      });
+      // The stream exists once the subscription does, so a failure before that leaks nothing.
+      const holder: { stream?: EventStream } = {};
       const outcome = await services.subscribeRunEvents.execute({
         actor: signedInOf(request).actor,
         runId: request.params.runId,
         afterSeq: lastSeen(request),
-        onEvent: (event) => {
-          stream.send(event);
+        onEvent: (event, stored) => {
+          if (stored) holder.stream?.sendStored(event);
+          else holder.stream?.send(event);
         },
         onEnd: () => {
-          stream.finish();
+          holder.stream?.finish();
         },
+        drained: () => holder.stream?.drained() ?? Promise.resolve(),
       });
-      if (!outcome.ok) {
-        stream.destroy();
-        throw new RosettaError(ERROR_CODES.notFound);
-      }
-      stream.onClose(() => {
+      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
+      const stream = openStream(services, () => {
         outcome.value.close();
       });
-      if (!stream.isFinished) {
-        const cancel = services.heartbeat.every(KEEP_ALIVE_MS, () => {
-          stream.keepAlive();
-          return Promise.resolve();
-        });
-        stream.onClose(cancel);
-      }
-      return reply
+      holder.stream = stream;
+      reply
         .header('content-type', 'text/event-stream; charset=utf-8')
         .header('cache-control', 'no-store')
         .header('x-accel-buffering', 'no')
         .send(stream);
+      // The stored events go out after the stream is handed over, at the pace the page reads.
+      outcome.value.replay().catch((error: unknown) => {
+        request.log.error({ err: error }, 'The stored events of a run could not be sent');
+        stream.destroy();
+      });
+      return reply;
     },
   );
 }
