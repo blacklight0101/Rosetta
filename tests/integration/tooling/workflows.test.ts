@@ -84,6 +84,15 @@ describe('GitHub Actions workflows: files', () => {
     expect(text).toContain('run: npm run verify');
   });
 
+  it('RNF-005 the Linux job installs Chromium before verify runs the end-to-end project', async () => {
+    const text = await ci();
+    const install = text.indexOf('npx playwright install --with-deps chromium');
+
+    expect(install).toBeGreaterThan(-1);
+    expect(install).toBeLessThan(text.indexOf('run: npm run verify'));
+    expect(text).toMatch(/- name: Install Chromium[^\n]*\n\s+if: runner\.os == 'Linux'/u);
+  });
+
   it('DEC-35 the pull request title reaches commitlint through env: TITLE and audit gets today', async () => {
     const text = await ci();
 

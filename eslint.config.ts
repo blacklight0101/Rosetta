@@ -65,6 +65,25 @@ export default defineConfig(
     },
   },
   {
+    // The network guard lives in the `test` of the fixtures file; a spec must use that one.
+    files: ['tests/e2e/**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@playwright/test',
+              importNames: ['test', 'expect'],
+              message:
+                'Import test and expect from tests/e2e/support/fixtures.js: its test carries the network guard (RNF-005).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/infrastructure/db/**'],
     rules: {
       'no-restricted-syntax': [
@@ -89,8 +108,8 @@ export default defineConfig(
     rules: { 'no-console': 'off', '@typescript-eslint/explicit-module-boundary-types': 'off' },
   },
   {
-    // Tools load their configuration through a default export.
-    files: ['*.config.ts', 'web/vite.config.ts'],
+    // Tools load their configuration and Playwright its global teardown through a default export.
+    files: ['*.config.ts', 'web/vite.config.ts', 'tests/e2e/support/global-teardown.ts'],
     rules: { 'no-restricted-exports': 'off' },
   },
   prettier,

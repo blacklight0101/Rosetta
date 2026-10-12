@@ -32,3 +32,5 @@ npm-debug.log*
 # Tool output
 .eslintcache
 eval-out/
+test-results/
+playwright-report/

@@ -1,4 +1,5 @@
 import type { Clock } from '../application/ports/clock.js';
+import type { LlmProvider } from '../application/ports/llm-provider.js';
 import type { Logger } from '../application/ports/logger.js';
 import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
@@ -15,6 +16,7 @@ import { JsonlEventLog } from '../infrastructure/events/jsonl-event-log.js';
 import { SseBroadcaster } from '../infrastructure/events/sse-broadcaster.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
 import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
+import type { FetchFunction } from '../infrastructure/github/github-http-client.js';
 import { GitHubSnapshotFetcher } from '../infrastructure/github/github-snapshot-fetcher.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import type { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
@@ -43,6 +45,10 @@ export interface RunParts {
   readonly githubToken: string | undefined;
   /** The language packs of this release (RF-110). */
   readonly packs: LanguagePackRegistry;
+  /** Test mode only (TestDoubles): the fake GitHub behind the snapshot fetcher. */
+  readonly fetch?: FetchFunction;
+  /** Test mode only (TestDoubles): the fake provider the stage executors use (ADR-008). */
+  readonly provider?: LlmProvider;
 }
 
 export interface RunComposition {
@@ -73,6 +79,7 @@ function composeScan(
   const fetcher = new GitHubSnapshotFetcher({
     ...{ dataDir, clock, logger, idGenerator: new TimestampIdGenerator(clock) },
     githubToken: parts.githubToken,
+    ...(parts.fetch === undefined ? {} : { fetch: parts.fetch }),
   });
   const pipeline = new SnapshotScanPipeline({
     ...{ writer: stores.writer, masker, logger, packs: parts.packs },
