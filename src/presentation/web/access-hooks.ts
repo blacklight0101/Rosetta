@@ -25,7 +25,8 @@ import { SESSION_COOKIE } from './session-cookies.js';
 //    missing) is refused with 403 RST-2007; this also protects sign-in, which has no session yet.
 // 2. Session: the `__Host-rosetta_session` cookie becomes `request.signedIn` (or null). A public
 //    route skips the lookup unless it reads the session (`readsSession`, the landing page), so
-//    /healthz still answers 503 with a cookie while the database is down (RF-1303).
+//    /healthz still answers 503 with a cookie while the database is down (RF-1303); if that
+//    lookup fails, the landing page treats the visitor as signed out (RF-1200).
 // 3. Access: without a session a page redirects to /sign-in and anything else answers 401; a
 //    `user` on an administrator route answers 403. A user whose password must be changed
 //    (MustChangePassword, RF-1102) reaches only the session API, the change-password route and
@@ -105,6 +106,23 @@ async function checkPasswordChange(
   throw new RosettaError(ERROR_CODES.passwordChangeRequired);
 }
 
+/**
+ * RF-1009, RF-1200: a public route that reads the session (the landing page) shows its visitor page
+ * when the lookup fails, instead of answering 500; any other route lets the failure through.
+ */
+async function lookUp(
+  resolveSession: ResolveSession,
+  sessionId: string,
+  publicRoute: boolean,
+): Promise<SignedInSession | null> {
+  if (!publicRoute) return (await resolveSession.execute(sessionId)) ?? null;
+  try {
+    return (await resolveSession.execute(sessionId)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // RF-1009
 export function registerAccessHooks(server: FastifyInstance, options: AccessHookOptions): void {
   const { resolveSession, refusals } = options;
@@ -120,7 +138,7 @@ export function registerAccessHooks(server: FastifyInstance, options: AccessHook
   server.addHook('onRequest', async (request) => {
     const sessionId = request.cookies[SESSION_COOKIE];
     if (sessionId === undefined || sessionId === '' || !needsSession(request)) return;
-    request.signedIn = (await resolveSession.execute(sessionId)) ?? null;
+    request.signedIn = await lookUp(resolveSession, sessionId, accessOf(request) === 'public');
   });
 
   server.addHook('onRequest', (request, reply) => checkAccess(refusals, request, reply));

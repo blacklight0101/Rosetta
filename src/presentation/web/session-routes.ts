@@ -48,8 +48,11 @@ function parseSignIn(body: unknown): z.output<typeof signInBody> {
   return parsed.data;
 }
 
-/** RF-1009: a token under a new CSRF secret; a secret the browser brought is never reused. */
-function freshCsrfToken(request: FastifyRequest, reply: FastifyReply): string {
+/**
+ * RF-1009: a token under a new CSRF secret; a secret the browser brought is never reused. Sign-in
+ * and a password change both use it.
+ */
+export function freshCsrfToken(request: FastifyRequest, reply: FastifyReply): string {
   request.cookies[CSRF_COOKIE] = undefined;
   return reply.generateCsrf();
 }
