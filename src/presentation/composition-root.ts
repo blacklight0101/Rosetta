@@ -26,6 +26,7 @@ import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './co
 import type { Auth } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
 import { composeRuns, type RunComposition } from './compose-runs.js';
+import { closePool } from './bounded-close.js';
 import { startUp } from './start-up.js';
 import { TestDoubles } from './test-doubles.js';
 import { buildServer } from './web/server.js';
@@ -260,7 +261,7 @@ export function composeApplication(options: ApplicationOptions): Application {
   const stop = async (): Promise<void> => {
     for (const cancel of cancels.splice(0)) cancel();
     await close();
-    await pool.end();
+    await closePool(pool, logger);
   };
 
   const start = async (): Promise<string> => {
