@@ -10,6 +10,7 @@ import type {
   ProviderSinks,
 } from '../ports/provider-set-factory.js';
 import type { ServerSettings } from '../ports/server-settings.js';
+import type { TimeoutSignals } from '../ports/timeout-signals.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import { settingsForNewProject } from '../projects/default-settings.js';
 import { ROLE_NAMES, type ProjectSettings } from '../projects/project-settings.js';
@@ -52,6 +53,8 @@ export interface TestProvidersDependencies {
   readonly template: ProjectSettings;
   readonly factory: ProviderSetFactory;
   readonly ids: IdGenerator;
+  /** The limit on a call's time (the cancel signal comes from the infrastructure). */
+  readonly signals: TimeoutSignals;
   /** Where a test call's records go: it has no run folder, so they are not kept. */
   readonly unrecorded: Pick<ProviderSinks, 'recorder' | 'egressLog' | 'security'>;
 }
@@ -144,7 +147,7 @@ export class TestProviders {
       messages: [{ role: 'user', content: testPrompt }],
       tools: [],
       maxOutputTokens: Math.min(chosen.maxOutputTokens, testMaxOutputTokens),
-      signal: AbortSignal.timeout(testTimeoutMs),
+      signal: this.deps.signals.after(testTimeoutMs),
     };
     try {
       await chosen.provider.complete(request);

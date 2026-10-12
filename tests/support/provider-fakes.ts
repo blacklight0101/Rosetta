@@ -10,7 +10,7 @@ import type { Recording } from '../../src/infrastructure/providers/fake/recordin
 import type {
   AdapterBuilder,
   AdapterSpec,
-} from '../../src/infrastructure/providers/adapter-builder.js';
+} from '../../src/infrastructure/providers/adapter-spec.js';
 import { contractScenarios } from '../contracts/llm-provider.contract.js';
 import { recordingOf } from './fake-recordings.js';
 

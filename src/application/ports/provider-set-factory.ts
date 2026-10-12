@@ -17,7 +17,7 @@ import type { ProviderCallRecorder } from './provider-call-recorder.js';
 // BudgetGuard(EgressGuard(ObservedProvider(adapter))) and answers the problems, one per role that
 // cannot be served, before any call is made.
 
-/** The account whose keys and caps a set uses. */
+/** The account whose keys and caps a set uses; its id must be the user of the run. */
 export type ProviderAccount = Pick<
   User,
   'id' | 'serverKeysAllowed' | 'dailyCapMicros' | 'ownDailyCapMicros'

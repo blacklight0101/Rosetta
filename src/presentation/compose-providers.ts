@@ -12,9 +12,11 @@ import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { loadProjectTemplate } from '../infrastructure/files/project-template.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
-import { realAdapters, type AdapterBuilder } from '../infrastructure/providers/adapter-builder.js';
+import { realAdapters } from '../infrastructure/providers/adapter-builder.js';
+import type { AdapterBuilder } from '../infrastructure/providers/adapter-spec.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { GuardedProviderFactory } from '../infrastructure/providers/provider-factory.js';
+import { SystemTimeoutSignals } from '../infrastructure/system/system-timeout-signals.js';
 import { unrecordedSinks } from '../infrastructure/providers/unrecorded-sinks.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import type { TestDoubles } from './test-doubles.js';
@@ -79,5 +81,6 @@ export async function composeProviders(parts: ProviderParts): Promise<TestProvid
     factory,
     ids,
     unrecorded: unrecordedSinks(),
+    signals: new SystemTimeoutSignals(),
   });
 }

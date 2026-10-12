@@ -89,6 +89,14 @@ module.exports = {
       },
     },
     {
+      name: 'adapter-builder-only-in-compose-providers',
+      comment:
+        'the adapter builder returns adapters without the guards; only the provider composition imports it and hands it to the provider factory, which wraps every adapter (ADR-003, ADR-006, ADR-007)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/presentation/compose-providers\\.ts$' },
+      to: { path: '^src/infrastructure/providers/adapter-builder\\.ts$' },
+    },
+    {
       name: 'tree-sitter-only-in-packs',
       comment:
         'web-tree-sitter and its grammars only from src/infrastructure/scan/packs/ (ADR-004, DEC-11)',

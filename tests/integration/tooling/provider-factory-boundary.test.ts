@@ -66,7 +66,9 @@ describe('provider factory boundary', () => {
 
     expect(constructing).toEqual(['infrastructure/providers/adapter-builder.ts']);
   });
+});
 
+describe('provider factory boundary: the guards', () => {
   it('ADR-006 the guards and the observer are constructed only where an adapter is wrapped', async () => {
     const constructing = await filesConstructing([
       'BudgetGuard',

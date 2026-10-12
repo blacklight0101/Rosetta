@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import {
-  realAdapters,
-  type AdapterSpec,
-} from '../../../../src/infrastructure/providers/adapter-builder.js';
+import { realAdapters } from '../../../../src/infrastructure/providers/adapter-builder.js';
+import type { AdapterSpec } from '../../../../src/infrastructure/providers/adapter-spec.js';
 import { OllamaProvider } from '../../../../src/infrastructure/providers/ollama/ollama-provider.js';
 import { OpenAiProvider } from '../../../../src/infrastructure/providers/openai/openai-provider.js';
 import { contractRequest } from '../../../contracts/llm-provider.contract.js';

@@ -23,7 +23,7 @@ import { MemoryProviderCallLog } from '../../src/infrastructure/providers/memory
 import type {
   AdapterBuilder,
   AdapterSpec,
-} from '../../src/infrastructure/providers/adapter-builder.js';
+} from '../../src/infrastructure/providers/adapter-spec.js';
 import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { contractRequest } from '../contracts/llm-provider.contract.js';

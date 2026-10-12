@@ -143,7 +143,9 @@ describe('POST /api/account/providers/test access', () => {
     expect(response.statusCode).toBe(403);
     expect(test.providerLedger.entries).toEqual([]);
   });
+});
 
+describe('POST /api/account/providers/test limits', () => {
   it('RF-1100 limits the button to a few presses a minute, since each costs money', async () => {
     test = createTestServer();
     const amy = await signedIn('amy');

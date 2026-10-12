@@ -1,33 +1,16 @@
-import type { LlmProvider, ProviderKind } from '../../application/ports/llm-provider.js';
 import type { Logger } from '../../application/ports/logger.js';
-import type { ContextSetting } from './ollama/ollama-context.js';
+import type { AdapterBuilder } from './adapter-spec.js';
 import { OllamaProvider } from './ollama/ollama-provider.js';
 import { OpenAiProvider } from './openai/openai-provider.js';
 
 // ADR-003, ADR-006, ADR-007, RNF-005: the one place that constructs the provider adapters of this
-// release. Only the provider factory calls it (dependency-cruiser rule
-// `adapters-only-via-adapter-builder`), and the factory wraps whatever it returns in the guards, so
-// no adapter is ever held without them. The key is passed per call from the factory's key choice;
-// an adapter never reads one, or a URL, from the environment.
-
-/** Everything an adapter needs for one role, as the factory resolved it. */
-export interface AdapterSpec {
-  /** The provider's name in the project settings. */
-  readonly name: string;
-  readonly kind: ProviderKind;
-  /** The URL the adapter connects to, from the one parse that also gave the guard its host. */
-  readonly baseUrl: string;
-  /** The key the factory chose for this role; undefined for a provider that takes none. */
-  readonly apiKey: string | undefined;
-  readonly timeoutSeconds: number;
-  readonly maxRetries: number;
-  readonly toolMode: 'native' | 'text';
-  /** Ollama only. */
-  readonly contextTokens: ContextSetting | undefined;
-}
-
-/** The adapter for the spec, or undefined for a kind this release has no adapter for. */
-export type AdapterBuilder = (spec: AdapterSpec) => LlmProvider | undefined;
+// release. It returns an adapter that is NOT wrapped in the guards; only the provider factory wraps
+// one. What keeps it so: the dependency-cruiser rules `adapters-only-via-adapter-builder` (only this
+// file imports an adapter class) and `adapter-builder-only-in-compose-providers` (only
+// src/presentation/compose-providers.ts imports this file, and hands the builder to the factory as
+// an `AdapterBuilder`), and a source-scan test that names every file mentioning this module.
+// The key is passed per call from the factory's key choice; an adapter never reads one, or a URL,
+// from the environment.
 
 export interface RealAdapterParts {
   /** `ROSETTA_TEST=1`: the adapters then refuse every host but a loopback fake server (RNF-005). */

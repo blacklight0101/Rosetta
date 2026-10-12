@@ -21,7 +21,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import type { AdapterBuilder } from './adapter-builder.js';
+import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
 import { resolveAccess, type ProviderAccess, type ServerKeys } from './provider-access.js';
 import { reservationLifetimeMs } from './reservation-lifetime.js';
@@ -61,6 +61,15 @@ interface WrapParts {
 }
 type PriceSetting = NonNullable<ProjectSettings['budget']['prices']>[number];
 
+/** RF-407: the most one provider test call may cost or use, whoever pays (worst case, before the call). */
+const testCeiling = { costMicros: 100_000n, tokens: 2_000n } as const;
+
+function providerTestCeiling(cap: UsageCap): bigint {
+  if (cap.kind === 'run-cost') return testCeiling.costMicros;
+  if (cap.kind === 'run-tokens') return testCeiling.tokens;
+  return cap.limit;
+}
+
 function priceOf(price: PriceSetting): Price {
   return {
     provider: price.provider,
@@ -83,6 +92,9 @@ export class GuardedProviderFactory implements ProviderSetFactory {
   async build(
     request: ProviderSetRequest,
   ): Promise<Result<ProviderSet, readonly ProviderProblem[]>> {
+    if (request.account.id !== request.run.userId) {
+      throw new Error('The account of the request is not the user of its run.');
+    }
     const serverCaps = await this.options.serverSettings.caps();
     const set = new Map<AgentRole, RoleProvider>();
     const problems: ProviderProblem[] = [];
@@ -185,7 +197,11 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     });
   }
 
-  /** DEC-107 caps for the key source; a provider test belongs to no run, so no run cap applies. */
+  /**
+   * DEC-107 caps for the key source. A provider test belongs to no run, so the project budget does
+   * not apply: the run caps become the fixed ceiling of one test call (its worst case may not
+   * exceed it), so a test of a user key with no daily cap is still bounded.
+   */
   private capsOf(
     request: ProviderSetRequest,
     access: ProviderAccess,
@@ -202,6 +218,6 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       },
     });
     if (request.run.id !== null) return caps;
-    return caps.filter((cap) => cap.kind !== 'run-cost' && cap.kind !== 'run-tokens');
+    return caps.map((cap) => ({ ...cap, limit: providerTestCeiling(cap) }));
   }
 }
