@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildCostReport } from '../../../../src/application/budget/cost-report.js';
 import type { LedgerEntry } from '../../../../src/application/ports/cost-ledger.js';
-import { entryOf, reservationOf } from '../../../contracts/cost-ledger.contract.js';
+import { entryOf, reservationOf } from '../../../support/ledger-fixtures.js';
 
 // RF-426, data-model.md section 3.12: the cost report of a run lists tokens (input, output, cached),
 // calls and cost by role, agent task, provider and model, with totals and the price table version.
@@ -71,7 +71,9 @@ describe('buildCostReport', () => {
       ['openai', 'gpt-5-nano', 2400],
     ]);
   });
+});
 
+describe('buildCostReport versions and empty runs', () => {
   it('RF-428 names every price table version the calls used and counts unpriced calls', () => {
     const report = buildCostReport('r', [
       row({ priceTableVersion: '2026-10-11+project', costKnown: false, costMicros: 0n }),

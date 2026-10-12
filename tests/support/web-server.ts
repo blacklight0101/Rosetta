@@ -10,6 +10,10 @@ import { SignIn } from '../../src/application/use-cases/sign-in.js';
 import { ResetPassword } from '../../src/application/use-cases/reset-password.js';
 import { SignOut } from '../../src/application/use-cases/sign-out.js';
 import { UpdateUser } from '../../src/application/use-cases/update-user.js';
+import { GetCaps } from '../../src/application/use-cases/get-caps.js';
+import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-cap.js';
+import { SetCaps } from '../../src/application/use-cases/set-caps.js';
+import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
@@ -110,6 +114,7 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
 
 interface AuthParts {
   readonly keys: KeyParts;
+  readonly serverSettings: MemoryServerSettings;
   readonly usage: MemoryAccountUsage;
   readonly users: MemoryUserRepository;
   readonly hasher: PasswordHasher;
@@ -138,6 +143,17 @@ function keyServices(parts: AuthParts) {
   };
 }
 
+/** RF-1106, DEC-107: the cap use cases over the memory server settings and accounts. */
+function capServices(parts: AuthParts) {
+  const { serverSettings: settings, users, auditLog, logger, clock } = parts;
+  return {
+    getCaps: new GetCaps({ settings }),
+    setCaps: new SetCaps({ settings, auditLog, logger, clock }),
+    getOwnDailyCap: new GetOwnDailyCap({ users }),
+    setOwnDailyCap: new SetOwnDailyCap({ users, auditLog, logger, clock }),
+  };
+}
+
 /** RF-1102, RF-1103, RF-1104, RF-1109: the account use cases over memory adapters. */
 function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
   const { users, hasher, sessions, auditLog, logger, clock, usage } = parts;
@@ -155,6 +171,7 @@ function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
     listUsers: new ListUsers({ users, usage, clock }),
     listAudit: new ListAudit({ auditLog, clock }),
     ...keyServices(parts),
+    ...capServices(parts),
   };
 }
 
@@ -226,6 +243,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     trustProxy: 0,
     auth: authServices({
       ...{ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage, keys },
+      serverSettings,
     }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     runs: runServices(runs, projects, route),

@@ -62,3 +62,8 @@ export const keyListSchema = z.object({ keys: z.array(keySummarySchema) });
 
 /** `PUT /api/account/keys/:provider`. */
 export const keyAnswerSchema = z.object({ key: keySummarySchema });
+
+/** DEC-107: `GET` and `PUT /api/account/daily-cap`, micro-dollars as a decimal string, or none. */
+export const ownDailyCapSchema = z.object({
+  ownDailyCapMicros: z.string().regex(/^\d+$/u).nullable(),
+});

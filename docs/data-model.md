@@ -440,7 +440,9 @@ a `security` log entry and a `blockedCalls` count in the manifest.
 
 Written when the run ends (RF-426): `{ schemaVersion, runId, currency, priceTableVersion, totals, byRole[],
 byAgentTask[], byProvider[], byModel[] }`, each entry with the token fields, `calls` and `costMicros`. `cost.md` is
-the readable table.
+the readable table. `totals` also counts `unpricedCalls` (calls of an unpriced model on the user's own key, cost
+unknown, RF-427); `priceTableVersion` names every version the calls used, sorted and joined by `, `; each list is
+sorted by its key in code-unit order. Both files are built from the run's `cost_ledger` rows and masked.
 
 ### 3.13 Cost ledger (the `cost_ledger` table)
 
@@ -507,7 +509,9 @@ inner structure is defined by the report and plan cards in P3 and documented in 
 Shipped as `prices/default-prices.yaml` in the Rosetta repository: `{ schemaVersion, version (date),
 currency, models: [{ provider kind, model, inputPerMillionMicros, outputPerMillionMicros,
 cachedInputPerMillionMicros }] }`. Ollama models have price 0. Overrides in the configuration use the same entry
-shape (RF-420, RF-427).
+shape (RF-420, RF-427). Every price is a whole number of micro-dollars up to 2^53 - 1 and a model is listed once per
+provider kind; a file that breaks this stops the server with `RST-1602`. A call priced with a project override
+(user's own key only, DEC-107) records the version `<version>+project`.
 
 ### 3.19 Evaluation results: `eval-out/<date>-<id>/`
 
@@ -615,6 +619,8 @@ the `Clock` port.
 | `cost_micros` | `bigint` | fixed at call time |
 | `currency` | `char(3)` | `USD` (DEC-54); `CHECK` three capital letters (ISO 4217) |
 | `price_table_version` | `text` | |
+| `agent_task_id` | `text` null | the agent task of the call, for the cost report by task (RF-426); null for a provider test (RF-407); added by `0005` |
+| `cost_known` | `boolean` | default `true`; `false` for a model without a price run with the user's own key and `budget.allowUnpriced` (RF-427): `cost_micros` is 0 and the cost is shown as unknown; added by `0005` |
 
 **`cost_reservations`** (RF-422, RF-1106; added by the review of 2026-10-11, DEC-112)
 
@@ -624,6 +630,7 @@ the `Clock` port.
 | `user_id`, `run_id` | `uuid` | the run's owner and run |
 | `key_source` | `text` | as in `cost_ledger` |
 | `worst_case_micros` | `bigint` | prompt tokens plus maximum output, priced |
+| `worst_case_tokens` | `bigint` | prompt tokens plus maximum output, for the run token cap; `CHECK (worst_case_tokens >= 0)`; added by `0005` |
 | `expires_at` | `timestamptz` | call timeout plus a margin; expired rows are ignored and purged |
 
 The budget guard takes `pg_advisory_xact_lock` on the user and on the server, sums the ledger and the unexpired
@@ -651,7 +658,7 @@ of another shape is refused at read time.
 | `id` | `bigint` | identity primary key |
 | `at` | `timestamptz` | indexed |
 | `actor_user_id` | `uuid` null | null for anonymous sign-in attempts |
-| `action` | `text` | for example `auth.sign_in`, `auth.locked`, `user.created`, `user.password_changed`, `user.password_reset`, `user.disabled`, `user.enabled`, `key.saved`, `key.deleted`, `admin.workspace_opened`, `request.refused` |
+| `action` | `text` | for example `auth.sign_in`, `auth.locked`, `user.created`, `user.password_changed`, `user.password_reset`, `user.disabled`, `user.enabled`, `user.own_daily_cap_changed`, `key.saved`, `key.deleted`, `admin.workspace_opened`, `admin.caps_changed`, `request.refused` |
 | `target_type`, `target_id` | `text` null | |
 | `ip` | `text` | |
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
@@ -716,7 +723,8 @@ runner; `rosetta_app` has no right on it.
 **Database migrations** (RF-1302): files `db/migrations/NNNN_snake_name.sql`, four digits, applied in order, each in
 a transaction, recorded in `schema_version` with its checksum. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`), `0100..` later releases.
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`), `0100..` later
+releases.
 
 **File schema versions**:
 

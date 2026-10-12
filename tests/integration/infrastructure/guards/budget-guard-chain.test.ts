@@ -51,7 +51,10 @@ async function chain(cloudConsent: boolean): Promise<{
     clock,
     ids: new SequenceIdGenerator(),
     target,
-    priceCall: pricerFor({ table: budgetTable, overrides: [], allowUnpriced: false }, 'server'),
+    priceCall: pricerFor(
+      { table: budgetTable, overrides: [], allowUnpriced: false },
+      { kind: 'openai', keySource: 'server' },
+    ),
     transcripts: false,
   });
   const egress = new EgressGuard({

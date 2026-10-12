@@ -3,13 +3,14 @@ import type { ApiClient, ApiResult } from './client.js';
 import {
   keyAnswerSchema,
   keyListSchema,
+  ownDailyCapSchema,
   sessionSchema,
   type KeyProvider,
   type KeySummary,
   type Session,
 } from './schemas.js';
 
-// RF-1100, RF-1101, RF-1103, RF-1104: the account calls of the sign-in, change-password and
+// RF-1100, RF-1101, RF-1103, RF-1104, DEC-107: the account calls of the sign-in, change-password and
 // settings pages. A sign-in and a password change answer a new CSRF token, which the client keeps
 // for the requests that follow; a key never comes back from the server.
 
@@ -99,4 +100,33 @@ export function deleteKey(client: ApiClient, provider: KeyProvider): Promise<Api
     path: `/api/account/keys/${provider}`,
     schema: z.undefined(),
   });
+}
+
+// DEC-107
+export async function getOwnDailyCap(
+  client: ApiClient,
+  signal: AbortSignal,
+): Promise<ApiResult<string | null>> {
+  const result = await client.request({
+    method: 'GET',
+    path: '/api/account/daily-cap',
+    schema: ownDailyCapSchema,
+    signal,
+  });
+  return result.ok ? { ok: true, value: result.value.ownDailyCapMicros } : result;
+}
+
+/** Saves the daily cap on the own keys in micro-dollars; null removes it (DEC-107). */
+// DEC-107
+export async function saveOwnDailyCap(
+  client: ApiClient,
+  micros: string | null,
+): Promise<ApiResult<string | null>> {
+  const result = await client.request({
+    method: 'PUT',
+    path: '/api/account/daily-cap',
+    body: { ownDailyCapMicros: micros },
+    schema: ownDailyCapSchema,
+  });
+  return result.ok ? { ok: true, value: result.value.ownDailyCapMicros } : result;
 }

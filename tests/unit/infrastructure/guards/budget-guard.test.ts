@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LlmProvider } from '../../../../src/application/ports/llm-provider.js';
+import type { LlmProvider, LlmRequest } from '../../../../src/application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { estimateInputTokens } from '../../../../src/infrastructure/providers/usage-estimate.js';
@@ -70,7 +70,9 @@ describe('BudgetGuard metering', () => {
       { inputTokens: 1200, outputTokens: 80, cachedInputTokens: 1024, costMicros: textCallMicros },
     ]);
   });
+});
 
+describe('BudgetGuard usage', () => {
   it('RF-421 counts a call whose usage is estimated and marks it estimated', async () => {
     const usage = { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0 };
     const estimated: ScenarioOutcome = {
@@ -101,7 +103,9 @@ describe('BudgetGuard metering', () => {
       [2, textCallMicros],
     ]);
   });
+});
 
+describe('BudgetGuard failed calls', () => {
   it('RF-428 a call that fails at the provider is one ledger row without usage, and the error goes on', async () => {
     const h = budgetHarness({ recording: recordingOf(contractScenarios['permanent-failure']) });
 
@@ -191,7 +195,9 @@ describe('BudgetGuard caps', () => {
 
     expect(h.fake.requests).toHaveLength(1);
   });
+});
 
+describe('BudgetGuard parallel and unbounded calls', () => {
   it('RF-1106 parallel calls of one run never reserve past the cap', async () => {
     const h = budgetHarness({
       caps: [{ kind: 'run-cost', limit: worstCaseMicros * 3n }],
@@ -208,21 +214,22 @@ describe('BudgetGuard caps', () => {
 
   it('RF-422 refuses a call without an output limit, whose worst case is unknown', async () => {
     const h = budgetHarness();
-    const { maxOutputTokens: _dropped, ...unbounded } = budgetRequest();
+    const { context, model, system, messages, tools, signal } = budgetRequest();
+    const unbounded: LlmRequest = { context, model, system, messages, tools, signal };
 
     expect(await codeOf(h.guard.complete(unbounded))).toBe(ERROR_CODES.outputLimitMissing);
     expect(h.fake.requests).toEqual([]);
   });
 });
 
-describe('BudgetGuard prices (DEC-107)', () => {
-  const cheap = {
-    ...contractPrice,
-    inputPerMillionMicros: 0n,
-    outputPerMillionMicros: 0n,
-    cachedInputPerMillionMicros: 0n,
-  };
+const cheap = {
+  ...contractPrice,
+  inputPerMillionMicros: 0n,
+  outputPerMillionMicros: 0n,
+  cachedInputPerMillionMicros: 0n,
+};
 
+describe('BudgetGuard prices (DEC-107)', () => {
   it('RF-1106 a call with a server key is priced from the shipped table, not the overrides', async () => {
     const h = budgetHarness({ keySource: 'server', overrides: [cheap] });
 
@@ -244,7 +251,9 @@ describe('BudgetGuard prices (DEC-107)', () => {
       'user',
     ]);
   });
+});
 
+describe('BudgetGuard local and unpriced models', () => {
   it('RF-420 a local model is priced at zero and its tokens still count', async () => {
     const h = budgetHarness({ kind: 'ollama', keySource: 'none' });
 

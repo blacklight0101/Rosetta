@@ -13,8 +13,8 @@ import type {
 } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import {
-  abortedEnd,
   failedCallEnd,
+  stoppedEnd,
   taskResult,
   type AgentTaskEnd,
   type AgentTaskResult,
@@ -115,7 +115,7 @@ class AgentTask {
   private async explore(): Promise<AgentTaskEnd> {
     const { signal, settings, prompts } = this.request;
     for (;;) {
-      if (signal.aborted) return abortedEnd;
+      if (signal.aborted) return stoppedEnd(signal);
       if (this.turns >= settings.maxTurns) {
         return { reason: 'max-turns', code: ERROR_CODES.agentTurnLimitReached };
       }
@@ -179,7 +179,7 @@ class AgentTask {
     const { signal, tools, context } = this.request;
     this.messages.push({ role: 'assistant', content: answer.text, toolCalls: answer.toolCalls });
     for (const call of answer.toolCalls) {
-      if (signal.aborted) return abortedEnd;
+      if (signal.aborted) return stoppedEnd(signal);
       const ids = { runId: context.runId, agentTaskId: context.agentTaskId, callId: call.id };
       const { name } = call;
       const outcome =

@@ -54,7 +54,9 @@ describe('runAgentTask and the caps', () => {
     expect(result.code).toBe(ERROR_CODES.budgetCapReached);
     expect(fake.requests).toHaveLength(1);
   });
+});
 
+describe('runAgentTask and stops', () => {
   it('RF-422 a call cancelled by a cap stop ends as StoppedByCap, not Failed', async () => {
     const { request } = loopSetup([]);
     const controller = new AbortController();

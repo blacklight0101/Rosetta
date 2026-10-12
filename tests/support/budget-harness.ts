@@ -60,7 +60,7 @@ export interface BudgetHarnessOptions {
   readonly ledger?: CostLedger;
 }
 
-export interface CostCall {
+interface CostCall {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;

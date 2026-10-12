@@ -1,3 +1,4 @@
+import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -40,6 +41,18 @@ export interface StopOutcome {
 export type StopProblem = 'not-found' | 'already-ended';
 
 const STEP = 'queue';
+
+/**
+ * RF-422, RNF-002: a run stopped by a cap ends `CapReached` whatever the executor reports; any other
+ * stop is not a failure, so the executor's abort error must not turn it into `Failed`.
+ */
+function stoppedOutcome(signal: AbortSignal, outcome: RunOutcome): RunOutcome {
+  if (!signal.aborted) return outcome;
+  if (isCapStop(signal.reason)) {
+    return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
+  }
+  return outcome.endState === 'Failed' ? { endState: 'Interrupted' } : outcome;
+}
 
 function failureOf(error: unknown): RunOutcome {
   const errorCode = error instanceof RosettaError ? error.code : ERROR_CODES.unexpected;
@@ -159,7 +172,7 @@ export class RunQueue {
     controller: AbortController,
   ): Promise<void> {
     const { run } = started;
-    await this.endQuietly(run, await this.outcomeOf(started, executor, controller.signal));
+    await this.endQuietly(run, await this.outcomeOf(started, executor, controller));
     this.controllers.delete(run.id);
     await this.dispatch().catch((error: unknown) =>
       this.report(run, 'could not start the next run', error),
@@ -178,14 +191,17 @@ export class RunQueue {
   private async outcomeOf(
     started: StartedRun,
     executor: RunExecutor,
-    signal: AbortSignal,
+    controller: AbortController,
   ): Promise<RunOutcome> {
     const { run } = started;
     const execution: RunExecution = {
       run,
       manifest: started.manifest,
       events: started.events,
-      signal,
+      signal: controller.signal,
+      stop: (reason) => {
+        controller.abort(reason);
+      },
       recordSource: (source) => this.deps.lifecycle.recordSource(run, source),
     };
     let outcome: RunOutcome;
@@ -195,8 +211,7 @@ export class RunQueue {
       await this.report(run, 'failed', error);
       outcome = failureOf(error);
     }
-    // A stop is not a failure: the executor's abort error must not turn it into `Failed`.
-    return signal.aborted && outcome.endState === 'Failed' ? { endState: 'Interrupted' } : outcome;
+    return stoppedOutcome(controller.signal, outcome);
   }
 
   private async report(run: Run, what: string, error: unknown): Promise<void> {

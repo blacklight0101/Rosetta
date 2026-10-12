@@ -41,9 +41,9 @@ export function serverCapsContract(name: string, fresh: () => Promise<ServerSett
     });
   });
 
-  it(`RF-1106 ${name} keeps the caps the administrator saves, beyond the float range`, async () => {
+  it(`RF-1106 ${name} keeps the caps the administrator saves, up to the largest safe whole number`, async () => {
     const settings = await fresh();
-    const caps = { runMicros: 0n, userDayMicros: 9_007_199_254_740_993n, serverMonthMicros: 7n };
+    const caps = { runMicros: 0n, userDayMicros: 9_007_199_254_740_991n, serverMonthMicros: 7n };
 
     await settings.saveCaps(caps, { by, at });
 

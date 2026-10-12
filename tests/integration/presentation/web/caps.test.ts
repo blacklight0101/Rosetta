@@ -21,7 +21,7 @@ async function signedIn(userName: string, role: 'user' | 'admin' = 'user'): Prom
 const newCaps = {
   runMicros: '250000',
   userDayMicros: '2000000',
-  serverMonthMicros: '9007199254740993',
+  serverMonthMicros: '9007199254740991',
 };
 
 describe('server caps API', () => {
@@ -69,13 +69,19 @@ describe('server caps API', () => {
     const read = await root.request({ method: 'GET', url: '/api/admin/caps' });
     expect(read.json()).toMatchObject({ caps: { userDayMicros: '1000000' } });
   });
+});
 
+describe('server caps API validation', () => {
   it.each([
     ['a fraction', { ...newCaps, runMicros: '1.5' }],
     ['a number instead of a string', { ...newCaps, runMicros: 5 }],
     ['a missing cap', { runMicros: '1', userDayMicros: '1' }],
     ['an unknown field', { ...newCaps, extra: '1' }],
     ['too many digits', { ...newCaps, runMicros: '1'.repeat(19) }],
+    [
+      'an amount beyond the largest safe whole number',
+      { ...newCaps, runMicros: '9007199254740992' },
+    ],
   ])('RF-1106 %s is refused as an invalid request', async (_name, payload) => {
     test = createTestServer();
     const root = await signedIn('root', 'admin');
@@ -124,7 +130,9 @@ describe('own daily cap API (DEC-107)', () => {
       { ownDailyCapMicros: '1500000', previousOwnDailyCapMicros: null },
     ]);
   });
+});
 
+describe('own daily cap API validation (DEC-107)', () => {
   it('RF-1106 a negative own cap is refused with RST-1003', async () => {
     test = createTestServer();
     const amy = await signedIn('amy');

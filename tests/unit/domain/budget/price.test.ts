@@ -52,7 +52,9 @@ describe('pricing', () => {
 
     expect(cost.micros).toBe(27_021_597_764_222_979n);
   });
+});
 
+describe('worst case and token pricing', () => {
   it('RF-422 prices the worst case as the whole prompt uncached plus the maximum output', () => {
     expect(
       worstCaseCost(nano, { promptTokens: 1_000_000, maxOutputTokens: 1_000_000 }).micros,
@@ -74,9 +76,9 @@ describe('pricing', () => {
   });
 });
 
-describe('price lookup', () => {
-  const override: Price = { ...nano, inputPerMillionMicros: 1n, outputPerMillionMicros: 2n };
+const override: Price = { ...nano, inputPerMillionMicros: 1n, outputPerMillionMicros: 2n };
 
+describe('price lookup', () => {
   it('RF-420 finds the shipped price of a model', () => {
     expect(
       lookupPrice(table, [], { provider: 'openai', model: 'gpt-5-nano', keySource: 'server' }),
@@ -106,7 +108,9 @@ describe('price lookup', () => {
 
     expect(lookup).toEqual({ kind: 'priced', price: override, version: '2026-10-11+project' });
   });
+});
 
+describe('price lookup of models missing from the table', () => {
   it('RF-420 prices a local model missing from the table at zero', () => {
     const lookup = lookupPrice(table, [], {
       provider: 'ollama',

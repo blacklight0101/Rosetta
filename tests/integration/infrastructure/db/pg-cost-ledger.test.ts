@@ -1,33 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
 import { PgCostLedger } from '../../../../src/infrastructure/db/pg-cost-ledger.js';
-import {
-  costLedgerContract,
-  entryOf,
-  ledgerNow,
-  reservationOf,
-} from '../../../contracts/cost-ledger.contract.js';
+import { costLedgerContract } from '../../../contracts/cost-ledger.contract.js';
 import { newId, user } from '../../../support/db-rows.js';
+import { entryOf, ledgerNow, reservationOf, worst } from '../../../support/ledger-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
 
 // Architecture section 7, ADR-016, RF-1106, DEC-112: PgCostLedger on the disposable PostgreSQL.
 // The caps are checked and the reservation inserted in one transaction under advisory locks on the
 // user and the server, so parallel runs cannot both pass the last free cent; the ledger rows of a
 // run outlive an interrupted run.
-describe.skipIf(!hasTestDatabase)('PgCostLedger', () => {
-  const database = useTestDatabase();
 
-  async function addUser(pool: DatabasePool): Promise<string> {
-    const id = newId();
-    const row = user({ id });
-    await pool.query(row.sql, row.params);
-    return id;
-  }
+async function addUser(pool: DatabasePool): Promise<string> {
+  const id = newId();
+  const row = user({ id });
+  await pool.query(row.sql, row.params);
+  return id;
+}
+
+describe.skipIf(!hasTestDatabase)('PgCostLedger contract', () => {
+  const database = useTestDatabase();
 
   costLedgerContract('PgCostLedger', async () => {
     const { pool } = await database.createSchema({ migrate: true });
     return { ledger: new PgCostLedger(pool), addUser: () => addUser(pool), newRunId: newId };
   });
+});
+
+describe.skipIf(!hasTestDatabase)('PgCostLedger under concurrency', () => {
+  const database = useTestDatabase();
 
   it('RF-1106 two parallel runs racing for the last cent: exactly one call is reserved', async () => {
     const { pool } = await database.createSchema({ migrate: true });
@@ -35,7 +36,7 @@ describe.skipIf(!hasTestDatabase)('PgCostLedger', () => {
     const userId = await addUser(pool);
     const caps = [{ kind: 'user-day', limit: 1_000n }] as const;
     const racers = Array.from({ length: 8 }, () =>
-      reservationOf({ userId, runId: newId() }, { worstCase: { micros: 600n, tokens: 0n } }),
+      reservationOf({ userId, runId: newId() }, worst(600n)),
     );
 
     const results = await Promise.all(
@@ -54,10 +55,7 @@ describe.skipIf(!hasTestDatabase)('PgCostLedger', () => {
     const results = await Promise.all(
       users.map((userId) =>
         ledger.reserve({
-          reservation: reservationOf(
-            { userId, runId: newId() },
-            { worstCase: { micros: 400n, tokens: 0n } },
-          ),
+          reservation: reservationOf({ userId, runId: newId() }, worst(400n)),
           caps,
           at: ledgerNow,
         }),
@@ -66,6 +64,10 @@ describe.skipIf(!hasTestDatabase)('PgCostLedger', () => {
 
     expect(results.filter((result) => result.ok)).toHaveLength(2);
   });
+});
+
+describe.skipIf(!hasTestDatabase)('PgCostLedger storage', () => {
+  const database = useTestDatabase();
 
   it('RF-428 an interrupted run keeps its ledger rows; its open reservation only expires', async () => {
     const { pool } = await database.createSchema({ migrate: true });

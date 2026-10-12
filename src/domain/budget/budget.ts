@@ -1,0 +1,63 @@
+import type { KeySource } from './price-table.js';
+import type { UsageCap } from './usage-cap.js';
+
+// DEC-107, RF-422, RF-1106, ADR-007, Q-22 (default: the administrator is under the same caps): which
+// caps a call is checked against.
+// - With a server key: the run cap is the lower of the project's and the administrator's, the run
+//   token cap, the user's daily cap (the administrator's figure for the account, else the server
+//   default) and the server's monthly cap.
+// - With the user's own key: the project's run caps and the user's own daily cap when set.
+// - Without a key (a local model): the project's run caps; its cost is zero but its tokens count.
+
+/** The project's caps for one run (`budget.run` of the project settings). */
+interface RunBudget {
+  readonly maxCostMicros: bigint;
+  readonly maxTokens: bigint;
+}
+
+/** The server setting `caps` (data-model.md section 4, `server_settings`). */
+export interface ServerCaps {
+  readonly runMicros: bigint;
+  readonly userDayMicros: bigint;
+  readonly serverMonthMicros: bigint;
+}
+
+/** The account's own figures (data-model.md section 4, `users`). */
+interface AccountCaps {
+  /** Set by the administrator for server keys; null = the server default. */
+  readonly dailyCapMicros: bigint | null;
+  /** Set by the user for their own keys; null = none. */
+  readonly ownDailyCapMicros: bigint | null;
+}
+
+export interface CapInputs {
+  readonly run: RunBudget;
+  readonly server: ServerCaps;
+  readonly account: AccountCaps;
+}
+
+function lower(left: bigint, right: bigint): bigint {
+  return left < right ? left : right;
+}
+
+// RF-422, RF-1106
+export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
+  const { run, server, account } = inputs;
+  const tokens: UsageCap = { kind: 'run-tokens', limit: run.maxTokens };
+  switch (keySource) {
+    case 'server':
+      return [
+        { kind: 'run-cost', limit: lower(run.maxCostMicros, server.runMicros) },
+        tokens,
+        { kind: 'user-day', limit: account.dailyCapMicros ?? server.userDayMicros },
+        { kind: 'server-month', limit: server.serverMonthMicros },
+      ];
+    case 'user': {
+      const own = account.ownDailyCapMicros;
+      const runCost: UsageCap = { kind: 'run-cost', limit: run.maxCostMicros };
+      return own === null ? [runCost, tokens] : [runCost, tokens, { kind: 'own-day', limit: own }];
+    }
+    case 'none':
+      return [{ kind: 'run-cost', limit: run.maxCostMicros }, tokens];
+  }
+}

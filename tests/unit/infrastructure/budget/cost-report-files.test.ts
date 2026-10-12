@@ -3,7 +3,7 @@ import { buildCostReport } from '../../../../src/application/budget/cost-report.
 import { FileCostReportWriter } from '../../../../src/infrastructure/budget/cost-report-files.js';
 import { runPath } from '../../../../src/infrastructure/files/workspace-paths.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
-import { entryOf, reservationOf } from '../../../contracts/cost-ledger.contract.js';
+import { entryOf, reservationOf } from '../../../support/ledger-fixtures.js';
 import { MemoryOutputWriter } from '../../../support/memory-output-writer.js';
 import { scopeFor } from '../../../support/run-event-fixtures.js';
 

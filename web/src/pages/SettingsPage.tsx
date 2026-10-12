@@ -1,9 +1,9 @@
 import type { JSX } from 'preact';
 import { useApp } from '../app/app-context.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Field } from '../components/Field.js';
 import { Link } from '../components/Link.js';
 import { KeyRow } from './KeyRow.js';
+import { OwnDailyCap } from './OwnDailyCap.js';
 import { providers } from './provider-meta.js';
 import { useProviderKeys } from './use-provider-keys.js';
 
@@ -36,32 +36,6 @@ function ProviderKeys(): JSX.Element {
   );
 }
 
-// DEC-107: the user's optional daily cap for their own keys. No endpoint stores it yet (the usage
-// caps belong to P1-27), so the slot is drawn but not wired; the field is disabled and says so.
-function OwnDailyCapSlot(): JSX.Element {
-  return (
-    <section
-      class="rst-card rst-settings__section"
-      aria-labelledby="own-cap"
-      data-testid="own-daily-cap"
-    >
-      <h2 id="own-cap" class="rst-settings__heading">
-        Spending cap
-      </h2>
-      <Field
-        kind="text"
-        id="own-daily-cap-field"
-        label="Daily cap for my own keys"
-        placeholder="No cap"
-        value=""
-        disabled
-        help="Optional. Runs that use your own keys stop when they would pass this amount in a UTC day. This setting is not available yet."
-        onInput={() => undefined}
-      />
-    </section>
-  );
-}
-
 // RF-1104
 export function SettingsPage(): JSX.Element {
   return (
@@ -83,7 +57,7 @@ export function SettingsPage(): JSX.Element {
         </p>
         <ProviderKeys />
       </section>
-      <OwnDailyCapSlot />
+      <OwnDailyCap />
       <section class="rst-card rst-settings__section rst-settings__password" aria-labelledby="pw">
         <div>
           <h2 id="pw" class="rst-settings__heading">

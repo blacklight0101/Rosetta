@@ -19,7 +19,7 @@ function renderCap(answers: Readonly<Record<string, Answer>>) {
 
 async function capField(): Promise<HTMLElement> {
   const slot = await screen.findByTestId('own-daily-cap');
-  return within(slot).getByLabelText('Daily cap for my own keys');
+  return within(slot).findByLabelText('Daily cap for my own keys');
 }
 
 function valueOf(element: HTMLElement): string {
@@ -97,7 +97,9 @@ describe('own daily cap on the settings page', () => {
     await screen.findByText('Saved: no daily cap on your own keys.');
     expect(calls.at(-1)?.body).toEqual({ ownDailyCapMicros: null });
   });
+});
 
+describe('own daily cap refusals', () => {
   it('DEC-107 an amount that is not dollars is refused next to the field, nothing is sent', async () => {
     const { calls } = renderCap({ [`GET ${capRoute}`]: json(200, { ownDailyCapMicros: null }) });
     const field = await capField();

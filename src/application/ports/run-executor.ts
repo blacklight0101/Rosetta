@@ -1,4 +1,5 @@
 import type { ErrorCode } from '../../domain/errors/codes.js';
+import type { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
@@ -14,8 +15,16 @@ export interface RunExecution {
   /** The manifest as written when the run started; the executor records what it learns. */
   readonly manifest: RunManifest;
   readonly events: RunEventPublisher;
-  /** Aborted when the user stops the run or the server shuts down (RF-1108, RNF-002). */
+  /**
+   * Aborted when the user stops the run, the server shuts down (RF-1108, RNF-002) or a cap refuses
+   * a call (RF-422; the reason is the refusal).
+   */
   readonly signal: AbortSignal;
+  /**
+   * Aborts `signal` with the reason, stopping every task of the run; the budget guard calls it with
+   * its refusal (RST-1600), after which the run ends `CapReached` whatever the executor returns.
+   */
+  stop(reason: RosettaError): void;
   /** Records the pinned commit, the snapshot folder and its hash once the source is resolved (RF-126). */
   recordSource(source: ResolvedSource): Promise<void>;
 }
