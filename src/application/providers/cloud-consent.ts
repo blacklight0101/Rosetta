@@ -6,8 +6,11 @@ import type { ProviderKind } from '../ports/llm-provider.js';
 // (whose base URL must be public, RF-1104) are cloud providers.
 
 // RF-143
-export function needsCloudConsent(kind: ProviderKind): boolean {
-  switch (kind) {
+export function needsCloudConsent(target: {
+  readonly kind: ProviderKind;
+  readonly endpointHost: string;
+}): boolean {
+  switch (target.kind) {
     case 'ollama':
     case 'fake':
       return false;

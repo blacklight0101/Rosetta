@@ -35,6 +35,8 @@ const egressLogPath = `${runPath(egressScope.projectId, egressScope.runKey)}/egr
 
 export interface EgressHarnessOptions {
   readonly kind?: ProviderKind;
+  /** The host the provider connects to; the Docker host gateway by default. */
+  readonly endpointHost?: string;
   readonly cloudConsent?: boolean;
   /** The masker of the guard; the egress log and the logger always mask with a working one. */
   readonly masker?: TextMasker;
@@ -72,7 +74,11 @@ export async function egressHarness(options: EgressHarnessOptions = {}): Promise
   const writer = options.writer ?? new MemoryOutputWriter();
   const guard = new EgressGuard({
     inner: fake,
-    target: { provider: 'main', kind: options.kind ?? 'ollama', endpointHost: 'ollama.test' },
+    target: {
+      provider: 'main',
+      kind: options.kind ?? 'ollama',
+      endpointHost: options.endpointHost ?? 'host.docker.internal',
+    },
     cloudConsent: options.cloudConsent ?? false,
     masker: options.masker ?? new SecretMasker(),
     egressLog: new JsonlEgressLog({

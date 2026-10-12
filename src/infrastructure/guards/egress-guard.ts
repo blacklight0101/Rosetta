@@ -71,7 +71,7 @@ export class EgressGuard implements LlmProvider {
   /** The excerpts of a request that may leave; a refused request is blocked. */
   private async inspect(request: LlmRequest): Promise<readonly Citation[]> {
     const { target, cloudConsent } = this.options;
-    if (needsCloudConsent(target.kind) && !cloudConsent) {
+    if (needsCloudConsent(target) && !cloudConsent) {
       return this.block(request, ERROR_CODES.cloudConsentMissing, messages.consent);
     }
     const excerpts = requestExcerpts(request);

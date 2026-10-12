@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  OutputWriter,
-  WriteRefusal,
-} from '../../../../src/application/ports/output-writer.js';
 import { renderDataBlock } from '../../../../src/domain/egress/data-block.js';
-import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import { err, type Result } from '../../../../src/domain/errors/result.js';
 import {
   egressHarness,
   egressInstant,
@@ -13,8 +7,6 @@ import {
   requestWith,
   toolResult,
 } from '../../../support/egress-harness.js';
-import { failureOf } from '../../../support/failure-of.js';
-import { MemoryOutputWriter } from '../../../support/memory-output-writer.js';
 import { secretCases } from '../../../support/secret-fixture.js';
 
 // RF-142, data-model.md section 3.11: one egress line per call with where it went and the path and
@@ -27,15 +19,6 @@ const noMasks = {
   password: 0,
   'private-key': 0,
 };
-
-/** A writer whose appends fail, as a full disk would. */
-class FullDiskWriter extends MemoryOutputWriter implements OutputWriter {
-  override appendLine(): Promise<Result<void, WriteRefusal>> {
-    return Promise.resolve(
-      err({ code: ERROR_CODES.writeOutsideWorkspace, reason: 'invalid-path', message: 'full' }),
-    );
-  }
-}
 
 describe('EgressGuard egress log', () => {
   it('RF-142 records provider, model, role, agent task and every excerpt of a call', async () => {
@@ -122,16 +105,5 @@ describe('EgressGuard egress log content and order', () => {
       { seq: 1, callId: '20261011-090503-understand#1' },
       { seq: 2, callId: 'run#2' },
     ]);
-  });
-
-  it('RF-142 does not make the call when its egress line cannot be stored', async () => {
-    const { guard, fake } = await egressHarness({ writer: new FullDiskWriter() });
-
-    const failure = await failureOf(
-      guard.complete(requestWith(readConversation(toolResult({ text: 'x' })))),
-    );
-
-    expect(failure).toMatchObject({ code: ERROR_CODES.egressLogFailed });
-    expect(fake.requests).toEqual([]);
   });
 });

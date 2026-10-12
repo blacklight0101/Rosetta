@@ -82,6 +82,39 @@ describe('EgressGuard and consent given or forged', () => {
   });
 });
 
+describe('EgressGuard and an Ollama server on another machine', () => {
+  it('RF-143 refuses a remote Ollama call without the run consent', async () => {
+    const { guard, fake, manifest } = await egressHarness({ endpointHost: 'gpu-box.lan' });
+
+    const failure = await failureOf(
+      guard.complete(requestWith(readConversation(toolResult({ text: 'x' })))),
+    );
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.cloudConsentMissing });
+    expect(fake.requests).toEqual([]);
+    expect((await manifest())?.security.blockedCalls).toBe(1);
+  });
+
+  it('RF-143 sends to a remote Ollama server when the run carries consent', async () => {
+    const { guard, fake } = await egressHarness({ endpointHost: '10.0.0.5', cloudConsent: true });
+
+    await guard.complete(requestWith(readConversation(toolResult({ text: 'x' }))));
+
+    expect(fake.requests).toHaveLength(1);
+  });
+
+  it.each(['localhost', '127.0.0.1', '::1', 'host.docker.internal'])(
+    'RF-143 sends to Ollama at %s without consent',
+    async (endpointHost) => {
+      const { guard, fake } = await egressHarness({ endpointHost });
+
+      await guard.complete(requestWith(readConversation(toolResult({ text: 'x' }))));
+
+      expect(fake.requests).toHaveLength(1);
+    },
+  );
+});
+
 describe('EgressGuard and data blocks', () => {
   it('RF-145 refuses a call that puts a tool result in the system prompt', async () => {
     const { guard, fake, logger } = await egressHarness();
