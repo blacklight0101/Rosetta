@@ -40,6 +40,7 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.userNameInvalid]: 400,
   [ERROR_CODES.displayNameInvalid]: 400,
   [ERROR_CODES.currentPasswordIncorrect]: 400,
+  [ERROR_CODES.passwordUnchanged]: 400,
   [ERROR_CODES.notSignedIn]: 401,
   [ERROR_CODES.notAllowed]: 403,
   [ERROR_CODES.originRefused]: 403,

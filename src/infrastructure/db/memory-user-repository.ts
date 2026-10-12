@@ -76,6 +76,12 @@ export class MemoryUserRepository implements UserRepository {
     return Promise.resolve(true);
   }
 
+  updateIfCurrent(account: UserAccount, read: Pick<User, 'state' | 'updatedAt'>): Promise<boolean> {
+    const stored = this.accounts.get(account.id);
+    const current = stored?.state === read.state && stored.updatedAt === read.updatedAt;
+    return current ? this.update(account) : Promise.resolve(false);
+  }
+
   private named(userName: string): UserAccount | undefined {
     const wanted = userName.toLowerCase();
     return [...this.accounts.values()].find((account) => account.userName.toLowerCase() === wanted);

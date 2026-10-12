@@ -75,6 +75,10 @@ describe.skipIf(!hasTestDatabase)('account changes that race on PostgreSQL', () 
       passwordHash: amy.passwordHash,
     });
   });
+});
+
+describe.skipIf(!hasTestDatabase)('the own-account check on PostgreSQL', () => {
+  const database = useTestDatabase();
 
   it('RF-1102 an administrator cannot disable or reset their own account by an upper-case id', async () => {
     const { users, hasher, root, parts } = await setUp(database);

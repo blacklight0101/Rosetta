@@ -120,6 +120,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'An administrator cannot disable or reset their own account.',
     nextStep: 'Change your own password in your settings, or ask another administrator.',
   },
+  'RST-2214': {
+    message: 'The new password must differ from the current one.',
+    nextStep: 'Choose a password you have not used for this account.',
+  },
   'RST-2304': {
     message: 'The URL must use https and a public address.',
     nextStep: 'Enter an https address that is reachable from the internet.',

@@ -21,7 +21,8 @@ export async function administeredAccount(
   userId: string,
 ): Promise<Result<UserAccount, AdministeredProblem>> {
   if (actor.role !== 'admin') return err(ERROR_CODES.notAllowed);
-  if (userId === actor.userId) return err(ERROR_CODES.ownAccountRefused);
   const account = await users.findById(userId);
-  return account === undefined ? err(ERROR_CODES.notFound) : ok(account);
+  if (account === undefined) return err(ERROR_CODES.notFound);
+  // Compared after loading: the stored id is canonical, the one in a URL may be in upper case.
+  return account.id === actor.userId ? err(ERROR_CODES.ownAccountRefused) : ok(account);
 }
