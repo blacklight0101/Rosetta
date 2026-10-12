@@ -10,6 +10,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { EventStream, type StreamRegistry } from './event-stream.js';
 import { signedInOf } from './request-actor.js';
+import { estimateView } from './estimate-view.js';
 import { runView } from './run-view.js';
 
 // RF-1006, RF-1108, RF-1105: the run routes.
@@ -17,6 +18,10 @@ import { runView } from './run-view.js';
 //   and its queue position (null when it started); a stage that cannot be started yet answers 409
 //   (RST-2305), another user's project 404. An understand run takes `areas` and `cloudConsent`;
 //   one whose roles need the consent and lack it answers 400 (RST-1515, RF-143).
+// - GET /api/projects/:id/estimate gives the estimate of an understand run (RF-425): tokens and cost
+//   per role as low, likely and high, with the assumptions. `areas` (repeated) names the areas to
+//   estimate; one the code map does not have answers 400 (RST-1307), a project without a completed
+//   scan 409 (RST-1203), another user's project 404.
 // - GET /api/runs/:runId/events streams the run's events as server-sent events: the stored events
 //   after `Last-Event-ID` (or `?after=`), then the live ones, closing after `run.ended`. Another
 //   user's run id answers 404 like an unknown one.
@@ -41,11 +46,21 @@ const SEQ = /^\d{1,15}$/;
 const MAX_AREAS = 200;
 const MAX_AREA_NAME = 1024;
 
+const areaName = z.string().min(1).max(MAX_AREA_NAME);
+
 /** RF-200, RF-143: the stage, and for understand the areas to read and the cloud consent. */
 const startBody = z.strictObject({
   stage: z.enum(RUN_STAGES),
-  areas: z.array(z.string().min(1).max(MAX_AREA_NAME)).max(MAX_AREAS).optional(),
+  areas: z.array(areaName).max(MAX_AREAS).optional(),
   cloudConsent: z.boolean().optional(),
+});
+
+/** RF-425: `?areas=A&areas=B`; a single `areas=A` arrives as a string. */
+const estimateQuery = z.object({
+  areas: z
+    .union([areaName, z.array(areaName).max(MAX_AREAS)])
+    .optional()
+    .transform((areas) => (typeof areas === 'string' ? [areas] : areas)),
 });
 
 interface EventsRequest {
@@ -162,9 +177,29 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
   );
 }
 
+function registerEstimate(server: FastifyInstance, services: RunServices): void {
+  server.get<{ Params: { id: string } }>(
+    '/api/projects/:id/estimate',
+    { config: { access: 'user' } },
+    async (request, reply) => {
+      const query = estimateQuery.safeParse(request.query);
+      if (!query.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const { areas } = query.data;
+      const outcome = await services.estimateRun.execute({
+        actor: signedInOf(request).actor,
+        projectId: request.params.id,
+        ...(areas === undefined ? {} : { areas }),
+      });
+      if (!outcome.ok) throw new RosettaError(outcome.error);
+      return reply.status(200).send(estimateView(outcome.value));
+    },
+  );
+}
+
 // RF-1006, RF-1108, RF-1105
 export function registerRunRoutes(server: FastifyInstance, services: RunServices): void {
   registerEvents(server, services);
   registerStop(server, services);
   registerStart(server, services);
+  registerEstimate(server, services);
 }

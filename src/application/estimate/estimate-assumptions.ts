@@ -1,17 +1,58 @@
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
-import type { EstimateAssumptions } from './estimate-types.js';
+import { readerParallelism, readerTaskSettings } from '../understand/reader-settings.js';
+import type { ByScenario, EstimateAssumptions, Scenario } from './estimate-types.js';
 
-// RF-425: the stub of the assumptions; the real numbers come with the implementation.
-export function assumptionsOf(_settings: ProjectSettings): EstimateAssumptions {
-  const none = { low: 0, likely: 0, high: 0 } as const;
+// RF-425, ADR-007, DEC-117: the assumptions of the estimate. The reader limits (turns, output,
+// context, parallelism) are the ones the understand run uses, so the estimate and the run cannot
+// disagree about them. The shares are the guesses RNF-012 calibrates over real runs: a low case
+// that reads half of each area in a third of the turns, a likely case, and a high case that uses
+// every turn. All of them are shown with the estimate.
+
+/** Of the reader's `maxTurns`, in percent. */
+const TURNS_PERCENT: ByScenario<number> = { low: 30, likely: 60, high: 100 };
+/** Of the reader's `maxOutputTokens` answered on a turn, in percent. */
+const OUTPUT_PERCENT: ByScenario<number> = { low: 15, likely: 30, high: 60 };
+/** Of an area's estimated tokens the reader reads, in percent. */
+const READ_PERCENT: ByScenario<number> = { low: 50, likely: 80, high: 100 };
+/** The verifier's tokens as a share of the readers', in percent (ADR-005). */
+const VERIFIER_PERCENT: ByScenario<number> = { low: 15, likely: 30, high: 50 };
+/** The system prompt and the tool definitions every turn resends. */
+const PROMPT_OVERHEAD_TOKENS = 2000;
+
+/** A share of a whole number, in percent, rounded up so a figure is never under-counted. */
+export function ceilPercent(value: number, percent: number): number {
+  return Math.floor((value * percent + 99) / 100);
+}
+
+function eachScenario(figure: (scenario: Scenario) => number): ByScenario<number> {
+  return { low: figure('low'), likely: figure('likely'), high: figure('high') };
+}
+
+// RF-425, DEC-117
+export function assumptionsOf(settings: ProjectSettings): EstimateAssumptions {
+  const { reader } = settings.roles;
+  const provider = Object.hasOwn(settings.providers, reader.provider)
+    ? settings.providers[reader.provider]
+    : undefined;
+  if (provider === undefined) {
+    throw new RosettaError(ERROR_CODES.settingsProviderUnknown);
+  }
+  const role = { name: reader.provider, kind: provider.kind, ...reader };
+  const task = readerTaskSettings(settings, role);
   return {
-    turnsPerArea: none,
-    outputTokensPerTurn: none,
-    readSharePercent: none,
-    verifierSharePercent: none,
-    promptOverheadTokens: 0,
-    contextLimitTokens: 0,
-    parallelism: 0,
+    turnsPerArea: eachScenario((scenario) =>
+      Math.max(1, ceilPercent(task.maxTurns, TURNS_PERCENT[scenario])),
+    ),
+    outputTokensPerTurn: eachScenario((scenario) =>
+      Math.max(1, ceilPercent(reader.maxOutputTokens, OUTPUT_PERCENT[scenario])),
+    ),
+    readSharePercent: READ_PERCENT,
+    verifierSharePercent: VERIFIER_PERCENT,
+    promptOverheadTokens: PROMPT_OVERHEAD_TOKENS,
+    contextLimitTokens: Math.floor(task.contextTokens * task.contextShare),
+    parallelism: readerParallelism(settings),
     cachedInputPercent: 0,
   };
 }
