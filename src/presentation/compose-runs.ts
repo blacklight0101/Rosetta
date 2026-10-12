@@ -11,6 +11,7 @@ import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
+import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
@@ -148,6 +149,25 @@ function runServices(service: ServiceParts): RunServices {
   };
 }
 
+// RF-122, P1-73: an interrupted download leaves a `.partial-*` folder in `<data>/sources/`; the
+// start-up discards them before the server accepts runs. A failure to discard is a warning and does
+// not stop the start-up (the next download uses a fresh partial folder of its own).
+async function discardPartialSnapshots(
+  fetcher: GitHubSnapshotFetcher,
+  logger: Logger,
+): Promise<void> {
+  try {
+    await fetcher.discardPartialFolders();
+  } catch (error) {
+    await logger.log({
+      level: 'warn',
+      logger: 'start-up',
+      message: `Partial snapshot folders could not be discarded: ${String(error)}`,
+      ...(error instanceof RosettaError ? { code: error.code } : {}),
+    });
+  }
+}
+
 // RF-1006, RF-1108
 export function composeRuns(parts: RunParts): RunComposition {
   const { pool, logger, clock, masker, dataDir, version } = parts;
@@ -194,7 +214,7 @@ export function composeRuns(parts: RunParts): RunComposition {
     }),
     submitRun,
     async recover() {
-      await scan.fetcher.discardPartialFolders();
+      await discardPartialSnapshots(scan.fetcher, logger);
       await queue.recover();
     },
   };
