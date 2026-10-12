@@ -52,7 +52,6 @@ const VARIABLES = [
   'ROSETTA_DB_ADMIN_PASSWORD',
   'ROSETTA_TEST',
   'ROSETTA_TEST_DATABASE_URL',
-  'ROSETTA_GALLERY',
 ];
 
 function parseDotenv(text: string): Record<string, string> {

@@ -32,14 +32,12 @@ describe('environment: test-only variables', () => {
   const testOnly: Record<string, string> = {
     ROSETTA_TEST: '1',
     ROSETTA_TEST_DATABASE_URL: 'postgres://rosetta_test@127.0.0.1:5433/rosetta_test',
-    ROSETTA_GALLERY: '1',
   };
 
   it('RF-1305 accepts the test-only variables with an http public URL', () => {
     const environment = loadEnvironment(validSource(testOnly));
 
     expect(environment.test).toBe(true);
-    expect(environment.gallery).toBe(true);
     expect(environment.testDatabaseUrl).toBe(testOnly['ROSETTA_TEST_DATABASE_URL']);
   });
 
@@ -60,11 +58,8 @@ describe('environment: test-only variables', () => {
     expect(environment.test).toBe(false);
   });
 
-  it('RF-1305 accepts only 1 for the ROSETTA_TEST and ROSETTA_GALLERY switches', () => {
+  it('RF-1305 accepts only 1 for the ROSETTA_TEST switch', () => {
     expect(failureOf(validSource({ ROSETTA_TEST: 'yes' })).message).toContain('ROSETTA_TEST');
-    expect(failureOf(validSource({ ROSETTA_GALLERY: 'true' })).message).toContain(
-      'ROSETTA_GALLERY',
-    );
   });
 });
 
@@ -94,7 +89,6 @@ describe('environment: the result and the error never leak a value', () => {
     ['ROSETTA_TRUST_PROXY', 'wrong-secret-value-proxy'],
     ['ROSETTA_TEST', 'wrong-secret-value-test'],
     ['ROSETTA_TEST_DATABASE_URL', 'wrong-secret-value-testdb'],
-    ['ROSETTA_GALLERY', 'wrong-secret-value-gallery'],
   ];
 
   it.each(wrongValues)('RF-1305 does not echo the wrong value of %s', (name, value) => {
