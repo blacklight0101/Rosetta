@@ -210,6 +210,12 @@ describe('C# pack on hostile input', () => {
     );
   });
 
+  it('RF-110 stops a parse when the scan-wide parse budget says to stop', () => {
+    expect(() => pack.analyse({ path: 'A.cs', text: sample, shouldStop: () => true })).toThrow(
+      expect.objectContaining({ code: 'RST-1200' }),
+    );
+  });
+
   it('RNF-001 reports no secret from a string literal in a symbol name', () => {
     const { symbols } = analyse(
       'class C { string Key = "' + ['AK', 'IA', 'ABCDEFGHIJKLMNOP'].join('') + '"; void M() { } }',
