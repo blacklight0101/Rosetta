@@ -64,7 +64,10 @@ describe('ChangePassword', () => {
     const outcome = await change(test, { currentPassword: fixturePassword('Wrong') });
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.currentPasswordIncorrect });
-    expect(await test.users.findById(test.amy.account.id)).toEqual(test.amy.account);
+    expect(await test.users.findById(test.amy.account.id)).toMatchObject({
+      passwordHash: test.amy.account.passwordHash,
+      failedSignIns: 1,
+    });
     const [audited] = await test.auditLog.list({ since: 0 });
     expect(audited).toMatchObject({ action: 'user.password_changed', outcome: 'refused' });
     expect(test.logger.records).toContainEqual(
