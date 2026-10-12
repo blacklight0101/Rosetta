@@ -327,8 +327,18 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
   cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
   is listed with its status, rejected ones included. A last section, `## Areas without cards`, names every area whose
   reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
-- `coverage.json`: per area `{ area, files: [{ path, read: [{ startLine, endLine }] }], readTokenShare }`; feeds the
-  web UI coverage map (RF-1005) and the report. `coverage.md` is its readable form (RF-230).
+- `coverage.json`: `{ schemaVersion: 1, areas }` where each area is
+  `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare }`; feeds the web UI
+  coverage map (RF-1005) and the report. Areas keep the order of the run and list only tasks that ended; `files` is
+  every file of the area in the area's order, `read` the line ranges the task's tools returned (a read, the lines of
+  grep matches, the statements of a code map entry), cut to the file, sorted and merged, empty for a file not read;
+  lines of files outside the area are not counted. `tokens` is the area's estimated tokens, `readTokens` each file's
+  estimated tokens in proportion to its lines read (rounded), `readTokenShare` their ratio from 0 to 1 with four
+  decimals (0 for an area without tokens). It holds no times, so the same coverage gives the same bytes. Rewritten with
+  the cards after every task that ends (P2-04).
+- `coverage.md` is its readable form (RF-230): a `## Run summary` table with, per area and for all areas, the files
+  read of the files listed and the percentage of area tokens read, then one `## Area: <name>` table per area with each
+  file and its read lines or `not read`.
 
 ### 3.9 `events.jsonl` (run events)
 
