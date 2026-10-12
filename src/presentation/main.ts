@@ -1,6 +1,7 @@
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { loadEnvironment } from '../infrastructure/config/environment.js';
 import { composeApplication } from './composition-root.js';
+import { installShutdown } from './shutdown.js';
 
 // RF-1305, RF-1302, ADR-014: read the environment, apply the migrations, then listen on
 // 0.0.0.0:8080 (Compose publishes it on 127.0.0.1 only). A failed start exits with code 1 and
@@ -22,15 +23,9 @@ async function main(): Promise<void> {
     listen: listenAddress,
     output: process.stdout,
   });
-  const shutDown = (): void => {
-    // With the server, the pool and the jobs stopped, nothing keeps the process alive.
-    application.stop().catch((error: unknown) => {
-      console.error(startFailure(error));
-      process.exitCode = 1;
-    });
-  };
-  process.once('SIGTERM', shutDown);
-  process.once('SIGINT', shutDown);
+  installShutdown(application, (error) => {
+    console.error(startFailure(error));
+  });
   await application.start();
 }
 
