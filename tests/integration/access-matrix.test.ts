@@ -117,6 +117,10 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   'HEAD /api/admin/users/:id/projects': [
     { method: 'HEAD', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
   ],
+  'GET /api/runs/:runId': [
+    { method: 'GET', url: runUrl('', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid', expected: active(401, 404) },
+  ],
   'GET /api/runs/:runId/events': [
     { method: 'GET', url: runUrl('/events', (c) => c.endedRunId), expected: ownerOnly(200) },
     { method: 'GET', url: () => '/api/runs/not-a-uuid/events', expected: active(401, 404) },
