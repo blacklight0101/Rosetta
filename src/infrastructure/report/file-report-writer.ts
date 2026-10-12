@@ -2,16 +2,27 @@ import type { OutputWriter } from '../../application/ports/output-writer.js';
 import type { ReportWriter } from '../../application/ports/report-writer.js';
 import type { RunScope } from '../../application/ports/run-events.js';
 import type { ReportModel } from '../../application/report/report-model.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import type { ReportAssets } from './report-assets.js';
+import { renderReplayHtml } from './replay-html.js';
+import { renderReportHtml } from './report-html.js';
+import { renderReportMarkdown } from './report-markdown.js';
 
-// RF-504, RF-506, RF-1013, DEC-112, data-model.md section 3.17: writes the report files of a run.
+// RF-504, RF-506, RF-1013, DEC-112, data-model.md section 3.17: writes the report of a run into the
+// `report/` folder of its run folder, through the workspace guard: `report.md`, the same report as
+// escaped static HTML, the "Run replay" page, and the stylesheet and script the pages load. Every
+// text is masked before it is written (RNF-003); the same report always gives the same bytes.
 
 export interface FileReportWriterOptions {
   readonly writer: OutputWriter;
   readonly masker: TextMasker;
   readonly assets: ReportAssets;
 }
+
+const FOLDER = 'report';
 
 export class FileReportWriter implements ReportWriter {
   private readonly options: FileReportWriterOptions;
@@ -20,10 +31,30 @@ export class FileReportWriter implements ReportWriter {
     this.options = options;
   }
 
-  write(scope: RunScope, model: ReportModel): Promise<readonly string[]> {
-    void scope;
-    void model;
-    void this.options;
-    return Promise.resolve([]);
+  // RF-504, RF-506
+  async write(scope: RunScope, model: ReportModel): Promise<readonly string[]> {
+    const { writer, masker, assets } = this.options;
+    // The pages are made of repository and model text, so they are masked; the two assets are the
+    // files of `templates/report/`, written as they are.
+    const files: Readonly<Record<string, string>> = {
+      'replay.html': masker.mask(renderReplayHtml(model)).text,
+      'replay.js': assets['replay.js'],
+      'report.css': assets['report.css'],
+      'report.html': masker.mask(renderReportHtml(model)).text,
+      'report.md': renderReportMarkdown(model, masker),
+    };
+    const folder = `${runPath(scope.projectId, scope.runKey)}/${FOLDER}`;
+    const written: string[] = [];
+    for (const [name, text] of Object.entries(files)) {
+      const file = { userId: scope.userId, path: `${folder}/${name}` };
+      const result = await writer.writeText(file, text);
+      if (!result.ok) {
+        throw new RosettaError(ERROR_CODES.reportWriteFailed, result.error.message, {
+          cause: result.error,
+        });
+      }
+      written.push(`${FOLDER}/${name}`);
+    }
+    return written;
   }
 }

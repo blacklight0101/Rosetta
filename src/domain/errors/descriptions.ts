@@ -1,15 +1,17 @@
 import type { ErrorCode, ErrorDescription } from './codes.js';
 import { BUDGET_ERROR_DESCRIPTIONS, type BudgetErrorCode } from './budget-descriptions.js';
+import { REPORT_ERROR_DESCRIPTIONS, type ReportErrorCode } from './report-descriptions.js';
 import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descriptions.js';
 
 // RF-007: the plain message and the next step of every code in ERROR_CODES, in numeric order. The
 // codes themselves live in codes.ts (which imports nothing); a new code adds its entry here in
 // the same change, and describeError is the only way to read the table. The codes from RST-2000
-// on live in server-descriptions.ts and the budget codes in budget-descriptions.ts, so no file
+// on live in server-descriptions.ts the budget codes in budget-descriptions.ts and the report and export codes in
+// report-descriptions.ts, so no file
 // passes the size limit.
 
 const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
-  Record<Exclude<ErrorCode, ServerErrorCode | BudgetErrorCode>, ErrorDescription>
+  Record<Exclude<ErrorCode, ServerErrorCode | BudgetErrorCode | ReportErrorCode>, ErrorDescription>
 > = {
   'RST-1000': {
     message: 'The server configuration is missing or invalid.',
@@ -242,15 +244,6 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Choose another provider for the role, or ask the operator to set it up (Ollama needs ROSETTA_OLLAMA_URL).',
   },
-  'RST-1700': {
-    message: 'This run is still in progress, so it cannot be downloaded yet.',
-    nextStep: 'Wait until the run has ended, then download it again.',
-  },
-  'RST-1701': {
-    message: 'The report of this run could not be written.',
-    nextStep:
-      'Try building the report again; if it keeps failing, check the free space of the data folder.',
-  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:
@@ -295,6 +288,7 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
 const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   ...PIPELINE_ERROR_DESCRIPTIONS,
   ...BUDGET_ERROR_DESCRIPTIONS,
+  ...REPORT_ERROR_DESCRIPTIONS,
   ...SERVER_ERROR_DESCRIPTIONS,
 };
 

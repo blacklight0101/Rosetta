@@ -101,8 +101,8 @@ export default defineConfig(
     ...vitest.configs.recommended,
   },
   {
-    // Plain JavaScript (scripts, CommonJS tool configs) is outside the TypeScript project.
-    files: ['**/*.{mjs,cjs}'],
+    // Plain JavaScript (scripts, CommonJS tool configs, the report's browser script) is outside the TypeScript project.
+    files: ['**/*.{mjs,cjs}', 'templates/**/*.js'],
     languageOptions: { globals: { module: 'writable' } },
     extends: [tseslint.configs.disableTypeChecked],
     rules: { 'no-console': 'off', '@typescript-eslint/explicit-module-boundary-types': 'off' },
