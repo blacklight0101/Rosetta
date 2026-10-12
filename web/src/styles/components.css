@@ -270,3 +270,45 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Callout tones: error is the default; warn and info are the other two (design-system.md section 7) */
+
+.rst-callout--warn {
+  border-color: var(--rst-warn-solid);
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+}
+
+.rst-callout--info {
+  border-color: var(--rst-info-solid);
+  background: var(--rst-info-bg);
+  color: var(--rst-info-ink);
+}
+
+.rst-callout__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--rst-sp-3);
+}
+
+.rst-callout__icon {
+  flex: none;
+  margin-block-start: 2px;
+}
+
+.rst-callout__icon .rst-glyph {
+  inline-size: var(--rst-fs-lg);
+  block-size: var(--rst-fs-lg);
+}
+
+.rst-callout__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  min-inline-size: 0;
+}
+
+.rst-callout .rst-field__label,
+.rst-callout .rst-field__help {
+  color: var(--rst-ink);
+}
