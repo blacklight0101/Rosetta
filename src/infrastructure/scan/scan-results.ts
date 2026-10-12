@@ -36,10 +36,15 @@ function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex');
 }
 
-/** The ignore rules the scan ran with: those recorded when it was accepted. */
-function ignoreRulesOf(manifest: RunManifest): string {
+/**
+ * The ignore rules and file size limit the scan ran with: those recorded when it was accepted, so
+ * an agent reads and searches only files the scan could read (RF-144, RF-146).
+ */
+function scanLimitsOf(manifest: RunManifest): { ignoreRules: string; maxFileBytes?: number } {
   const recorded = scanSettingsSchema.safeParse(manifest.options['scanSettings']);
-  return recorded.success ? recorded.data.ignoreRules : '';
+  if (!recorded.success) return { ignoreRules: '' };
+  const { ignoreRules, maxFileBytes } = recorded.data;
+  return { ignoreRules, maxFileBytes };
 }
 
 export class FileScanResults implements ScanResults {
@@ -60,7 +65,7 @@ export class FileScanResults implements ScanResults {
     const reader = await NodeRepositoryReader.open({
       root: this.options.snapshotRoot(snapshotKey),
       subpath: manifest.source.subpath,
-      ignoreRules: ignoreRulesOf(manifest),
+      ...scanLimitsOf(manifest),
       allowDenied: manifest.security.allowDenied,
       logger: this.options.logger,
     }).catch((error: unknown) => {
