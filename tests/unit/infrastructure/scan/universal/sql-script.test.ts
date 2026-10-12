@@ -1,8 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import {
+  SecretMasker,
+  type MaskResult,
+  type TextMasker,
+} from '../../../../../src/infrastructure/guards/secret-masker.js';
 import { extractScriptStatements } from '../../../../../src/infrastructure/scan/universal/sql-script.js';
 
+class CountingMasker implements TextMasker {
+  calls = 0;
+  readonly #inner = new SecretMasker();
+
+  mask(text: string): MaskResult {
+    this.calls += 1;
+    return this.#inner.mask(text);
+  }
+}
+
+const masker = new SecretMasker();
+
 function scriptOf(text: string) {
-  return extractScriptStatements('db/script.sql', text.split('\n'));
+  return extractScriptStatements('db/script.sql', text.split('\n'), masker);
 }
 
 describe('SQL statements in a script', () => {
@@ -135,7 +152,7 @@ describe('a private key inside a SQL statement whose marker lines look like comm
           last,
           ');',
         ].join(eol);
-        const statements = extractScriptStatements('db/a.sql', lines.split('\n'));
+        const statements = extractScriptStatements('db/a.sql', lines.split('\n'), masker);
         const text = JSON.stringify(statements);
 
         for (const part of body) expect(text).not.toContain(part.slice(0, 20));
@@ -146,22 +163,98 @@ describe('a private key inside a SQL statement whose marker lines look like comm
 
 describe('comment lines inside a SQL statement', () => {
   it('RF-103 a comment ending in a semicolon does not close the statement', () => {
-    const statements = extractScriptStatements('db/a.sql', [
-      'SELECT a',
-      '-- fetch rows;',
-      'FROM t;',
-    ]);
+    const statements = extractScriptStatements(
+      'db/a.sql',
+      ['SELECT a', '-- fetch rows;', 'FROM t;'],
+      masker,
+    );
 
     expect(statements.map((s) => s.text)).toEqual(['SELECT a FROM t;']);
   });
 
   it('RF-103 a commented-out query adds nothing to the statement text', () => {
-    const statements = extractScriptStatements('db/a.sql', [
-      'SELECT a',
-      '-- SELECT b FROM u',
-      'FROM t;',
-    ]);
+    const statements = extractScriptStatements(
+      'db/a.sql',
+      ['SELECT a', '-- SELECT b FROM u', 'FROM t;'],
+      masker,
+    );
 
     expect(statements.map((s) => s.text)).toEqual(['SELECT a FROM t;']);
+  });
+});
+
+const begin = ['-----BEGIN', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
+const body = ['Qp4Rt8', 'Vn2Ky6', 'Hj5Wd3'].map((part) => part.repeat(11));
+const statements = [
+  'INSERT INTO Item (Id) VALUES (1);',
+  'UPDATE Item SET Id = 2 WHERE Id = 1;',
+  'DELETE FROM Item WHERE Id = 2;',
+];
+
+describe('an unterminated private key marker in a SQL script', () => {
+  it('RF-104 a comment that only mentions the marker keeps the three statements after it', () => {
+    const lines = [`-- the service key file starts with ${begin}`, ...statements];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+
+    expect(found.map((s) => [s.line, s.text])).toEqual([
+      [2, statements[0]],
+      [3, statements[1]],
+      [4, statements[2]],
+    ]);
+  });
+
+  it('RNF-003 a key body under the marker stays masked and the statements after it are kept', () => {
+    const lines = [`-- ${begin}`, ...body.map((line) => `-- ${line}`), ...statements];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+    const text = JSON.stringify(found);
+
+    for (const part of body) expect(text).not.toContain(part.slice(0, 20));
+    expect(found.map((s) => s.line)).toEqual([5, 6, 7]);
+  });
+
+  it('RNF-003 header lines of an encrypted key do not end the masked span early', () => {
+    const lines = [
+      "INSERT INTO Keys (Pem) VALUES ('",
+      begin,
+      'Proc-Type: 4,ENCRYPTED',
+      'DEK-Info: AES-128-CBC,0011',
+      ...body,
+      "');",
+      ...statements,
+    ];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+    const text = JSON.stringify(found);
+
+    for (const part of body) expect(text).not.toContain(part.slice(0, 20));
+    expect(found.slice(-3).map((s) => s.text)).toEqual(statements);
+  });
+});
+
+describe('an unterminated private key marker, verb word in the key body', () => {
+  it('RNF-003 a key body line that is only a SQL verb word does not end the masked span', () => {
+    const lines = [
+      "INSERT INTO Keys (Pem) VALUES ('",
+      begin,
+      ...body.slice(0, 1),
+      'Select',
+      ...body.slice(1),
+      "');",
+      ...statements,
+    ];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+    const text = JSON.stringify(found);
+
+    for (const part of body) expect(text).not.toContain(part.slice(0, 20));
+    expect(found.slice(-3).map((s) => s.text)).toEqual(statements);
+  });
+});
+
+describe('the masker of a SQL script', () => {
+  it('RNF-003 the injected masker masks the script', () => {
+    const masker = new CountingMasker();
+
+    extractScriptStatements('db/a.sql', ['SELECT a FROM t;'], masker);
+
+    expect(masker.calls).toBeGreaterThan(0);
   });
 });

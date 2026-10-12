@@ -40,6 +40,7 @@ async function openReader(
     allowDenied: fixture.allowDenied ?? [],
     logger,
     ...(fixture.subpath === undefined ? {} : { subpath: fixture.subpath }),
+    ...(fixture.maxFileBytes === undefined ? {} : { maxFileBytes: fixture.maxFileBytes }),
   });
 }
 

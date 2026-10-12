@@ -1,4 +1,4 @@
-import { access, readdir } from 'node:fs/promises';
+import { access, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { OutputWriter } from '../../../../src/application/ports/output-writer.js';
@@ -8,6 +8,7 @@ import { err } from '../../../../src/domain/errors/result.js';
 import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
 import { runPath } from '../../../../src/infrastructure/files/workspace-paths.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { CSharpPack } from '../../../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../../../../src/infrastructure/scan/packs/pack-registry.js';
 import { SnapshotScanPipeline } from '../../../../src/infrastructure/scan/scan-pipeline.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
@@ -204,5 +205,33 @@ describe('SnapshotScanPipeline discard failures', () => {
     expect(warnings[0]?.code).toBeUndefined();
     expect(removed).toEqual([outputPath('scan-summary.md')]);
     expect(logger.text()).not.toContain(secret);
+  });
+});
+
+/** A pipeline with the C# pack and a scan-wide parse budget of `totalMs` on a clock that stands still. */
+async function budgetedPipeline(totalMs: number): Promise<SnapshotScanPipeline> {
+  const logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker());
+  return new SnapshotScanPipeline({
+    writer: new NodeOutputWriter({ dataDir: temp.path, logger }),
+    masker: new SecretMasker(),
+    logger,
+    packs: new LanguagePackRegistry([await CSharpPack.create()]),
+    parseBudget: { totalMs, now: () => 0 },
+  });
+}
+
+describe('SnapshotScanPipeline parse budget', () => {
+  it('RF-110 finishes a scan past its parse budget with the remaining files not analysed', async () => {
+    const roomy = await (await budgetedPipeline(1)).scan(request({}, new AbortController().signal));
+    expect(roomy.mapLevels.symbols).toBeGreaterThan(0);
+
+    const report = await (
+      await budgetedPipeline(0)
+    ).scan(request({}, new AbortController().signal));
+
+    expect(report.mapLevels).toEqual({ coarse: roomy.files, symbols: 0 });
+    const summary = await readFile(join(folder(), 'scan-summary.md'), 'utf8');
+    expect(summary).toContain(`not analysed: parse budget reached`);
+    expect(summary).toContain(`${String(roomy.mapLevels.symbols)} not analysed`);
   });
 });

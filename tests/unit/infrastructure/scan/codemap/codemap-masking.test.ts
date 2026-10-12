@@ -67,7 +67,9 @@ describe('a secret that straddles the end of the 500 characters of a statement',
   it('RF-141 a connection string in a script statement is masked at every cut position', () => {
     for (const pad of pads) {
       const line = `SELECT ${'a'.repeat(pad)} FROM T WHERE u = '${connection}';`;
-      const text = textOf(buildWith(extractScriptStatements('db/a.sql', [line])));
+      const text = textOf(
+        buildWith(extractScriptStatements('db/a.sql', [line], new SecretMasker())),
+      );
 
       expect(text, `pad ${String(pad)}`).not.toContain('Pw');
       expect(text, `pad ${String(pad)}`).not.toContain('FAKE0');
@@ -86,7 +88,7 @@ describe('a secret that straddles the end of the 500 characters of a statement',
 
   it('RF-103 the recorded text is still at most 500 characters', () => {
     const line = `SELECT ${'a'.repeat(480)} FROM T WHERE u = '${connection}';`;
-    const result = buildWith(extractScriptStatements('db/a.sql', [line]));
+    const result = buildWith(extractScriptStatements('db/a.sql', [line], new SecretMasker()));
 
     expect(result.ok && result.value.sqlStatements[0]?.text.length).toBeLessThanOrEqual(500);
   });
@@ -94,7 +96,7 @@ describe('a secret that straddles the end of the 500 characters of a statement',
   it('RF-141 the 500-character cut falls between words, so it never splits a mask marker', () => {
     const halves = Array.from({ length: 30 }, (_, index) => 450 + index).filter((pad) => {
       const line = `SELECT ${'a'.repeat(pad)} FROM T WHERE u = '${connection}';`;
-      const result = buildWith(extractScriptStatements('db/a.sql', [line]));
+      const result = buildWith(extractScriptStatements('db/a.sql', [line], new SecretMasker()));
       const text = result.ok ? (result.value.sqlStatements[0]?.text ?? '') : '';
       return text.lastIndexOf('[') > text.lastIndexOf(']') || text.endsWith('adm:');
     });
@@ -129,7 +131,9 @@ describe('a secret cut by the statement window after masking shortened the head'
   it('RF-141 a connection string across character 1536 of a script statement is never written', () => {
     const leaked = starts.filter((start) => {
       const line = `${shrinkingStatement(start)};`;
-      return leaks(textOf(buildWith(extractScriptStatements('db/a.sql', [line]))));
+      return leaks(
+        textOf(buildWith(extractScriptStatements('db/a.sql', [line], new SecretMasker()))),
+      );
     });
 
     expect(leaked).toEqual([]);
@@ -152,7 +156,11 @@ describe('a secret cut by the 4000-character line limit', () => {
   it('RF-141 a script line cut inside a connection string leaks no part of the password', () => {
     const leaked = kept.filter((keep) => {
       const line = `${' '.repeat(4000 - prefixLength - keep)}${longConnection}`;
-      const statements = extractScriptStatements('db/a.sql', ['SELECT a FROM T WHERE u =', line]);
+      const statements = extractScriptStatements(
+        'db/a.sql',
+        ['SELECT a FROM T WHERE u =', line],
+        new SecretMasker(),
+      );
       return leaks(textOf(buildWith(statements)));
     });
 

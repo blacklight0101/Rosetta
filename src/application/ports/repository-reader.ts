@@ -13,6 +13,7 @@ export type ReadRefusalReason =
   | 'not-found'
   | 'invalid-range'
   | 'invalid-limit'
+  | 'too-large'
   | 'pattern-too-long'
   | 'invalid-pattern'
   | 'timeout';
@@ -61,6 +62,10 @@ export interface GrepResult {
   readonly matches: readonly GrepMatch[];
   /** Searched lines that were cut; when above zero, `notice` tells the agent why. */
   readonly cutLines: number;
+  /**
+   * Present when lines were cut, files above `scan.maxFileBytes` were left out or the matches were
+   * stopped at the cap (RF-144, RF-146); tells the agent what it did not get.
+   */
   readonly notice?: string;
 }
 
@@ -88,7 +93,9 @@ export interface SkippedPaths {
 export interface RepositoryReader {
   /** Files under the subpath, without ignored or denied paths, sorted by path. */
   listFiles(): Promise<readonly string[]>;
+  /** A file above `scan.maxFileBytes` is refused as `too-large` (RF-144). */
   readLines(request: ReadLinesRequest): Promise<Result<LineRange, ReadRefusal>>;
+  /** Leaves out files above `scan.maxFileBytes` and returns at most 1000 matches (RF-146). */
   grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>>;
   /** The size and, within the limit, the bytes of one file, for the universal scan (RF-100, RF-101). */
   readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>>;
