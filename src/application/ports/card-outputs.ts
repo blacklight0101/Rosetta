@@ -1,3 +1,4 @@
+import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { CommitSha } from '../../domain/sources/commit-sha.js';
 import type { RunScope } from './run-events.js';
@@ -28,6 +29,8 @@ export interface CardSet {
 export interface CardOutputs {
   /** Writes `cards/<TYPE>/<ID>.md`, `cards/index.json` and `spec.md` for the whole set. */
   writeCards(scope: RunScope, set: CardSet): Promise<void>;
+  /** Writes `coverage.json` and `coverage.md` for the ended tasks, in area order (RF-230). */
+  writeCoverage(scope: RunScope, coverage: readonly AreaCoverage[]): Promise<void>;
   /** Keeps the raw answers of a task that ended `InvalidOutput`, masked (RF-202). */
   writeInvalidOutput(
     scope: RunScope,
