@@ -15,6 +15,7 @@ import type { ProjectSettings } from '../projects/project-settings.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { ReaderTask } from './reader-tasks.js';
+import { toolsWithReads, type TaskReads } from './run-coverage.js';
 import { readerTaskSettings, readerToolLimits } from './reader-settings.js';
 import {
   providerWithEvents,
@@ -66,10 +67,11 @@ export function recordTaskState(
   );
 }
 
-// RF-201, RF-1002
+// RF-201, RF-1002, RF-230: the lines the tools return are kept in `reads` for the coverage.
 export async function runReaderTask(
   context: ReaderTaskContext,
   task: ReaderTask,
+  reads: TaskReads,
 ): Promise<AgentTaskResult> {
   const { execution, scanned, role, updates, logger } = context;
   const { agentTaskId } = task;
@@ -93,7 +95,7 @@ export async function runReaderTask(
   });
   return runAgentTask({
     provider: providerWithEvents(role.provider, events, turns),
-    tools: toolsWithEvents(tools, events, turns),
+    tools: toolsWithEvents(toolsWithReads(tools, reads), events, turns),
     prompts: context.prompts,
     logger,
     settings: readerTaskSettings(context.settings, role),

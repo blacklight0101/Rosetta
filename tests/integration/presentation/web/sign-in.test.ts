@@ -228,5 +228,13 @@ describe('POST /api/session concurrency', () => {
     expect(ninth.statusCode).toBe(429);
     expect(ninth.json()).toMatchObject({ code: ERROR_CODES.rateLimited });
     expect(answered.map((response) => response.statusCode)).toEqual(Array(8).fill(401));
+    // RF-1109: the refused attempt is audited and logged as a security event.
+    const refused = await test.audit.list({ since: 0, action: 'request.refused' });
+    expect(refused).toEqual([
+      expect.objectContaining({ ip: '198.51.100.1', detail: { reason: 'rate-limit' } }),
+    ]);
+    expect(test.logger.entries).toContainEqual(
+      expect.objectContaining({ level: 'warn', logger: 'security', code: ERROR_CODES.rateLimited }),
+    );
   });
 });

@@ -83,7 +83,7 @@ describe('log entry masking of names, ids and keys', () => {
         agentTaskId: allCases,
         callId: allCases,
         userId: allCases,
-        data: { [allCases]: { [allCases]: 'v' } },
+        data: { [allCases]: 'v', nested: { [allCases]: 1 } },
       },
       at,
       masker,
@@ -93,7 +93,9 @@ describe('log entry masking of names, ids and keys', () => {
     expect([entry.logger, entry.runId, entry.agentTaskId, entry.callId, entry.userId]).toEqual(
       Array.from({ length: 5 }, () => masked),
     );
-    expect(entry.data).toEqual({ [masked]: { [masked]: 'v' } });
+    // The fixture names an API key, so the value under each key is masked whole as well (P1-62).
+    const marker = '[MASKED:api-key]';
+    expect(entry.data).toEqual({ [masked]: marker, nested: { [masked]: marker } });
   });
 
   it('RF-009 keeps the line count of a masked multi-line message', () => {

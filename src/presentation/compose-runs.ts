@@ -6,12 +6,15 @@ import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
 import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
+import { ListAnswers } from '../application/use-cases/list-answers.js';
+import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { RunScan } from '../application/use-cases/run-scan.js';
 import { StartRun } from '../application/use-cases/start-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
+import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
@@ -129,11 +132,12 @@ interface ServiceParts {
   readonly submitRun: SubmitRun;
   readonly queue: RunQueue;
   readonly scans: ReturnType<typeof composeScanResults>;
+  readonly answers: FileAnswersFile;
 }
 
 /** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
 function runServices(service: ServiceParts): RunServices {
-  const { parts, runs, log, broadcaster, projects, submitRun, queue, scans } = service;
+  const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   return {
     startRun: new StartRun({
@@ -150,6 +154,8 @@ function runServices(service: ServiceParts): RunServices {
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
+    listAnswers: new ListAnswers({ runs, answers }),
+    recordAnswers: new RecordAnswers({ runs, answers }),
     heartbeat: keepAliveScheduler(parts.logger),
     streams: new StreamRegistry(),
   };
@@ -205,12 +211,13 @@ export function composeRuns(parts: RunParts): RunComposition {
   });
   const projects = new PgProjectRepository(pool);
   const scan = composeScan(parts, { writer, manifests }, projects);
+  const answers = new FileAnswersFile({ writer, masker });
   const queue = new RunQueue({
     runs,
     lifecycle,
     executors: {
       scan: scan.executor,
-      understand: composeUnderstand({ ...parts, writer, manifests, projects, runs, ids }),
+      understand: composeUnderstand({ ...parts, writer, manifests, projects, runs, ids, answers }),
     },
     clock,
     logger,
@@ -227,7 +234,7 @@ export function composeRuns(parts: RunParts): RunComposition {
   return {
     queue,
     services: runServices({
-      ...{ parts, runs, log, broadcaster, projects, submitRun, queue },
+      ...{ parts, runs, log, broadcaster, projects, submitRun, queue, answers },
       scans: composeScanResults({ dataDir, writer, manifests, logger }),
     }),
     submitRun,

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Living (outline created by P1-24; each adapter card fills its section) |
-| **Date** | 2026-10-11 |
+| **Date** | 2026-10-12 |
 | **Owner** | BlackLigth (blacklight0101) |
 | **Related** | [ADR-003](adr/ADR-003-provider-swappable-agent-loop.md) - [ADR-008](adr/ADR-008-testing-with-recorded-responses.md) - [Architecture](architecture.md) sections 7 and 9 - [Data model](data-model.md) sections 3.1, 3.10 and 3.15 |
 
@@ -222,7 +222,97 @@ OpenAI recommends `gpt-5.6-luna` (0.20 / 0.02 / 1.20) as the next step up. Price
 
 ## 4. Anthropic
 
-To be filled by P2-09: key placement, prompt caching, tested models.
+`AnthropicProvider` (`src/infrastructure/providers/anthropic/anthropic-provider.ts`, RF-404) calls the Messages API
+(`POST /v1/messages`, `stream: false`) through the `@anthropic-ai/sdk` package (baseline in
+[environments and delivery](environments-and-delivery.md) section 7). The package is imported only under
+`src/infrastructure/providers/anthropic/`; the dependency-cruiser rule `anthropic-sdk-only-in-anthropic-adapter`
+enforces it (ADR-003). The adapter builder builds it for kind `anthropic` only when the provider factory chose a key,
+so every call passes `BudgetGuard(EgressGuard(ObservedProvider(adapter)))` and needs the run's cloud consent.
+
+### 4.1 Key placement
+
+- The adapter never reads the environment. The provider factory (P1-29) chooses the key for each run, the user's own
+  key or the server key `ANTHROPIC_API_KEY` when the user may use server keys (DEC-64), and passes it to the adapter
+  as `apiKey`. The auth token, webhook key, base URL and log level are passed explicitly, so the package's own
+  environment defaults (`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_LOG`, profiles
+  and the rest) never apply, and the adapter's fetch sends only the headers Rosetta means to send, so
+  `ANTHROPIC_CUSTOM_HEADERS` is dropped too.
+- The key goes only into the `x-api-key` header. A key that is empty or holds a space or control character is refused
+  when the adapter is built (`RST-1518`). Anthropic's error text is never copied into an error, its cause, a log or
+  the call log (RNF-003).
+
+### 4.2 What every call sends and reads
+
+- The system prompt goes in `system` as one text block; tools go in `tools` with their JSON Schema as `input_schema`;
+  no `tools` field when the call has none. Earlier tool calls go back as `tool_use` blocks of the assistant turn with
+  their ids and object input; the tool results answer them as `tool_result` blocks of the next user turn. Consecutive
+  tool results, and a user message after them, share one user turn; an assistant turn of tool calls only has no empty
+  text block.
+- `maxOutputTokens` is sent as `max_tokens`, which Anthropic requires; a call without it is refused with `RST-1603`
+  before anything is sent (every role sets it, RF-422). `temperature` only when the role sets one. Thinking and
+  effort are not sent, so each model runs with its own default.
+- **Prompt caching (RF-404).** The stable prompt prefix is marked with two of the four cache breakpoints Anthropic
+  allows, both `{ "type": "ephemeral" }` (five minutes): the system prompt block, which caches the tools rendered
+  before it, and the last block of the last message, because an agent task's conversation is append-only and that
+  prefix repeats unchanged in the task's next call. A prefix shorter than the model's minimum (512 to 4 096 tokens,
+  by model) is not cached and costs nothing extra.
+- Usage (`usageSource: reported`): Anthropic's `input_tokens` counts only the tokens after the last breakpoint, so
+  the port's `inputTokens` is `input_tokens + cache_read_input_tokens + cache_creation_input_tokens` and **includes**
+  the cached tokens, as for OpenAI; `cachedInputTokens` is `cache_read_input_tokens`; `outputTokens` is
+  `output_tokens`. Tokens written to the cache count as ordinary input, although Anthropic bills a cache write at
+  1.25 times the input price (see the open question in the P2-09 report). An answer without usage is estimated and
+  marked `estimated` (RF-421).
+- Tool calls keep the `tool_use` ids Anthropic gave them. A call whose input is not a JSON object stays visible as
+  text (`tool-call-shape.ts`). The text blocks are joined with a newline; thinking blocks are not read. A refusal
+  (`stop_reason: refusal`) is returned as the answer text with finish reason `stop`.
+- `modelVersion` is the answer's `model`; `requestId` is the `request-id` header, also kept on failed attempts for
+  the call log (RF-408).
+- Finish reason: `tool_use` when the answer holds tool calls, `length` for `stop_reason: max_tokens`, otherwise
+  `stop`.
+- An answer is read with a size limit (8 MiB, adapter option `maxResponseBytes`); a larger one, or a body that is not
+  a message, fails with `RST-1506` and is not retried.
+
+### 4.3 Retries and permanent errors (RF-406)
+
+The package's own retries are off; the adapter uses the shared retry loop (`retrying-call.ts`), so every attempt
+reaches the attempt observer and the call log. Each attempt has its own timeout (`timeoutSeconds`) and the caller's
+abort signal.
+
+| Failure | Code | Retried |
+|---|---|---|
+| 429 rate limit | `RST-1504` | yes, never sooner than `retry-after` (seconds or HTTP date) |
+| timeout of an attempt, or 408 | `RST-1505` | yes |
+| 5xx, 529 overloaded, or a failed connection | `RST-1506` | yes |
+| 401 rejected key | `RST-1518` | no; the message names the fix (account settings or `ANTHROPIC_API_KEY`) |
+| 402 billing error (no credit) | `RST-1520` | no; the message names the Console billing settings |
+| 404 unknown model | `RST-1519` | no; the message names the model |
+| any other 4xx (for example 400 prompt too long, 403, 413) | `RST-1506` | no |
+| cancelled by the caller | `RST-1501` | no |
+
+The back-off is the same as Ollama's (section 2.4).
+
+### 4.4 Tests and the manual live check
+
+- Automated tests never call Anthropic (ADR-008): under `ROSETTA_TEST=1` the adapter refuses every call with
+  `RST-1509` unless its base URL is a loopback address whose port a fake server registered (section 2.5). The tests run it against
+  `tests/support/fake-anthropic-server.ts`, which replays the hand-written recordings under
+  `tests/recordings/anthropic/` with a FAKE key, and run the contract suite on it.
+- Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key as `ANTHROPIC_API_KEY` in `.env`:
+
+  ```text
+  npm run live:anthropic -- <model>
+  ```
+
+  The script loads `.env` itself (`node --env-file=.env`, so the file must exist), builds Rosetta, then makes four
+  calls with fixed synthetic prompts: a short text answer, one `read_file` tool call, and the same call with a long
+  system prompt twice. It prints each answer with the model version, the request id and the usage, and fails when
+  the second long-prompt call read nothing from the cache. Paste the output into the pull request.
+
+### 4.5 Tested models
+
+None yet: the owner's live check fills this section. The price table `prices/default-prices.yaml` holds no Anthropic
+model yet, so a role on Anthropic is refused with `RST-1601` unless the project settings add a price for its model
+or turn on `allowUnpriced` for the user's own key (RF-427).
 
 ## 5. OpenAI-compatible services
 

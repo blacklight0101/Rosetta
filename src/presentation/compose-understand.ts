@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { AnswersFile } from '../application/ports/answers-file.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { IdGenerator } from '../application/ports/id-generator.js';
 import type { Logger } from '../application/ports/logger.js';
@@ -9,7 +10,6 @@ import type { RunIndex } from '../application/ports/run-index.js';
 import type { RunManifestStore } from '../application/ports/run-manifest-store.js';
 import { RunUnderstand } from '../application/use-cases/run-understand.js';
 import { FileCostReportWriter } from '../infrastructure/budget/cost-report-files.js';
-import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
 import { FileCardOutputs } from '../infrastructure/cards/file-card-outputs.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
@@ -42,6 +42,8 @@ export interface UnderstandParts {
   readonly projects: ProjectRepository;
   readonly runs: RunIndex;
   readonly ids: IdGenerator;
+  /** The project's answers.md, shared with the answer routes so writes to one file queue (RF-1007). */
+  readonly answers: AnswersFile;
 }
 
 /** RF-143: the host of the Ollama address; an address that does not parse names no host. */
@@ -84,7 +86,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
       egressLog: new JsonlEgressLog({ writer, masker, scope }),
     }),
     cards: new FileCardOutputs({ writer, masker, logger }),
-    answers: new FileAnswersFile({ writer, masker }),
+    answers: parts.answers,
     ledger: new PgCostLedger(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(promptsFolder),

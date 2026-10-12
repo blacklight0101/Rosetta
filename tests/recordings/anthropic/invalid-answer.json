@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A 200 whose body is not a message. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 200,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000001"
+      },
+      "body": {
+        "unexpected": true
+      }
+    }
+  ]
+}

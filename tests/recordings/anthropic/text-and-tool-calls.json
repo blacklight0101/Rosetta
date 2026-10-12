@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Text, then two tool_use blocks, one of whose input is not an object. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 200,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000001"
+      },
+      "body": {
+        "id": "msg_FAKE00000000000000000001",
+        "type": "message",
+        "role": "assistant",
+        "model": "contract-model-20260807",
+        "content": [
+          {
+            "type": "text",
+            "text": "Reading the file."
+          },
+          {
+            "type": "tool_use",
+            "id": "toolu_FAKE01",
+            "name": "read_file",
+            "input": {
+              "path": "src/Catalog.cs"
+            }
+          },
+          {
+            "type": "tool_use",
+            "id": "toolu_FAKE02",
+            "name": "read_file",
+            "input": "not an object"
+          }
+        ],
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 176,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 40,
+          "service_tier": "standard"
+        }
+      }
+    }
+  ]
+}

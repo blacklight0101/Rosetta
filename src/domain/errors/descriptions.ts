@@ -1,4 +1,5 @@
 import type { ErrorCode, ErrorDescription } from './codes.js';
+import { ANTHROPIC_ERROR_DESCRIPTIONS, type AnthropicErrorCode } from './anthropic-descriptions.js';
 import { BUDGET_ERROR_DESCRIPTIONS, type BudgetErrorCode } from './budget-descriptions.js';
 import { FILE_ERROR_DESCRIPTIONS, type FileErrorCode } from './file-descriptions.js';
 import { SCAN_ERROR_DESCRIPTIONS, type ScanErrorCode } from './scan-descriptions.js';
@@ -8,14 +9,14 @@ import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descri
 // codes themselves live in codes.ts (which imports nothing); a new code adds its entry here in
 // the same change, and describeError is the only way to read the table. The codes from RST-2000
 // on live in server-descriptions.ts, the file-system codes in file-descriptions.ts, the scan codes
-// in scan-descriptions.ts and the budget codes in budget-descriptions.ts, so no file passes the
-// size limit.
+// in scan-descriptions.ts, the budget codes in budget-descriptions.ts and the Anthropic codes in
+// anthropic-descriptions.ts, so no file passes the size limit.
+
+type SplitOff =
+  ServerErrorCode | FileErrorCode | BudgetErrorCode | ScanErrorCode | AnthropicErrorCode;
 
 const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
-  Record<
-    Exclude<ErrorCode, ServerErrorCode | FileErrorCode | BudgetErrorCode | ScanErrorCode>,
-    ErrorDescription
-  >
+  Record<Exclude<ErrorCode, SplitOff>, ErrorDescription>
 > = {
   'RST-1000': {
     message: 'The server configuration is missing or invalid.',
@@ -221,6 +222,7 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
 
 const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   ...PIPELINE_ERROR_DESCRIPTIONS,
+  ...ANTHROPIC_ERROR_DESCRIPTIONS,
   ...FILE_ERROR_DESCRIPTIONS,
   ...SCAN_ERROR_DESCRIPTIONS,
   ...BUDGET_ERROR_DESCRIPTIONS,

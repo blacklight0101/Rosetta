@@ -15,14 +15,16 @@ import { recordTaskState, runReaderTask, type ReaderTaskContext } from './reader
 import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
 import { cardsOf, RunCards } from './run-cards.js';
+import { RunCoverage, TaskReads } from './run-coverage.js';
 import { runPool } from './task-pool.js';
 
-// RF-200, RF-202, RF-203, RF-300, RF-1002, DEC-98, RNF-002: the reader tasks of one understand run
+// RF-200, RF-202, RF-203, RF-230, RF-300, RF-1002, DEC-98, RNF-002: the reader tasks of one understand run
 // and what they leave. Every task that ends adds its cards; the cards of the run so far are then
 // given their ids, pass the citation check and are written, so a run that stops keeps the cards of
 // the tasks that ended (partial cards). An area whose task answered no card is named in `spec.md`
-// and logged. When every task has ended (or the run stopped) the open questions are added to the
-// project's `answers.md`, keeping the answers already there.
+// and logged; the coverage of the ended tasks' areas is written with them (RF-230). When every task
+// has ended (or the run stopped) the open questions are added to the project's `answers.md`,
+// keeping the answers already there.
 
 interface UnderstandSessionDependencies {
   readonly cards: CardOutputs;
@@ -66,6 +68,7 @@ function questionOf(card: Card, runKey: string): OpenQuestion {
 export class UnderstandSession {
   private readonly parts: UnderstandSessionParts;
   private readonly cards: RunCards;
+  private readonly coverage: RunCoverage;
   private readonly ends = new Map<string, TaskOutcome>();
   private latest: CheckedCards = { cards: [], checks: [] };
   private outputFailure: ErrorCode | undefined;
@@ -73,6 +76,7 @@ export class UnderstandSession {
   constructor(parts: UnderstandSessionParts) {
     this.parts = parts;
     this.cards = new RunCards(parts.tasks);
+    this.coverage = new RunCoverage(parts.tasks);
   }
 
   /** Lists every task as `Planned` and publishes the plan (RF-200, RF-1002). */
@@ -95,10 +99,12 @@ export class UnderstandSession {
     const { tasks, settings, execution } = this.parts;
     const options = { parallelism: readerParallelism(settings), signal: execution.signal };
     await runPool(tasks, options, async (task) => {
-      const outcome = await runReaderTask(this.parts, task).catch(async (error: unknown) => {
+      const reads = new TaskReads();
+      const outcome = await runReaderTask(this.parts, task, reads).catch(async (error: unknown) => {
         await this.logFailure(task, error);
         return failedOutcome(error);
       });
+      this.coverage.record(task, this.parts.scanned.codeMap, reads);
       await this.ended(task, outcome).catch(async (error: unknown) => {
         // RNF-002: an output that cannot be written fails the run, never the other tasks.
         await this.logFailure(task, error);
@@ -134,7 +140,7 @@ export class UnderstandSession {
 
   // RF-202, RF-300
   private async ended(task: ReaderTask, outcome: TaskOutcome): Promise<void> {
-    const { execution } = this.parts;
+    const { deps, execution } = this.parts;
     const { agentTaskId } = task;
     if (outcome.state === 'InvalidOutput') await this.keepInvalid(task, outcome.rawOutputs);
     const withoutCards = outcome.state === 'Done' && outcome.drafts.length === 0;
@@ -142,6 +148,7 @@ export class UnderstandSession {
     this.ends.set(agentTaskId, outcome);
     this.cards.record({ agentTaskId, drafts: outcome.drafts, withoutCards });
     await this.writeCards();
+    await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas());
     const progress = { state: outcome.state, turns: outcome.turns, cards: outcome.drafts.length };
     await recordTaskState(this.parts, task, progress);
     await execution.events.emit('agent.ended', progress, agentTaskId);

@@ -1,3 +1,4 @@
+import type { Citation } from '../../domain/cards/citation.js';
 import type { Area } from '../../domain/code-map/area.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { FileEntry } from '../../domain/code-map/file-entry.js';
@@ -52,6 +53,8 @@ export interface ToolOutcome {
   /** One rendered data block. */
   readonly content: string;
   readonly error?: ToolError;
+  /** The file lines the content holds (RF-142), for the coverage of the task (RF-230). */
+  readonly excerpts?: readonly Citation[];
 }
 
 const shownNameChars = 64;
@@ -111,7 +114,7 @@ export class ReadOnlyTools {
       ? await this.answer(request.value, ids)
       : err({ code: ERROR_CODES.toolArgumentsInvalid, message: request.error });
     if (!answer.ok) return this.failed(call.name, answer.error, ids);
-    return { content: this.render(call.name, answer.value) };
+    return { content: this.render(call.name, answer.value), excerpts: answer.value.excerpts };
   }
 
   private async answer(request: ToolRequest, ids: ToolCallIds): Promise<ToolAnswer> {

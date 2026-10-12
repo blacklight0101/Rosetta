@@ -4,6 +4,7 @@ import { AdminModelsPage } from '../pages/AdminModelsPage.js';
 import { AdminUsersPage } from '../pages/AdminUsersPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
 import { LiveRunPage } from '../pages/LiveRunPage.js';
+import { ProjectCostPage } from '../pages/ProjectCostPage.js';
 import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
 import { ProjectsPage } from '../pages/ProjectsPage.js';
 import { SettingsPage } from '../pages/SettingsPage.js';
@@ -100,6 +101,14 @@ export const routes: readonly RouteDefinition[] = [
     access: 'user',
     chrome: 'shell',
     component: LiveRunPage,
+  },
+  {
+    path: '/projects/:projectId/cost',
+    title: 'Project cost',
+    access: 'user',
+    chrome: 'shell',
+    component: ProjectCostPage,
+    nav: { group: 'project', label: 'Cost', order: 80 },
   },
   ...developmentRoutes,
 ];

@@ -10,7 +10,8 @@ import type { ProviderKind } from '../ports/llm-provider.js';
 // is always complete; the template supplies the defaults. Unknown keys are errors (a typo never
 // changes behaviour). Each refusal carries an error code as the zod message and
 // `parseProjectSettings` returns it with the dotted path of the field. A base URL is refused
-// (DEC-112): it lives only with the user's key.
+// (DEC-112): it lives only with the user's key. Every numeric field has the allowed range of
+// DEC-117 (data-model.md 3.1); a value outside it is RST-1006, except a cap below zero (RST-1003).
 
 export const PROVIDER_KINDS = [
   'ollama',
@@ -30,10 +31,16 @@ const MIN_CONTEXT_TOKENS = 1024;
 const MAX_TEXT = 200;
 const MAX_IGNORE_RULES = 100_000;
 const MAX_LIST = 200;
+const MAX_RUN_COST_MICROS = 100_000_000;
+const MAX_RUN_TOKENS = 50_000_000;
 
 /** A whole number from zero up: caps, prices, token and byte limits. */
 const cap = z.number(invalid).int(invalid).min(0, negative);
-const positive = z.number(invalid).int(invalid).min(1, invalid);
+
+/** A whole number within the allowed range of DEC-117. */
+function ranged(low: number, high: number): z.ZodNumber {
+  return z.number(invalid).int(invalid).min(low, invalid).max(high, invalid);
+}
 const flag = z.boolean(invalid);
 const text = z.string(invalid).min(1, invalid).max(MAX_TEXT, invalid);
 const textList = z.array(text, invalid).max(MAX_LIST, invalid);
@@ -44,8 +51,8 @@ const providerSchema = z
       kind: z.enum(PROVIDER_KINDS, unknownProvider),
       keySource: z.enum(['user', 'user-then-server'], invalid),
       toolMode: z.enum(['native', 'text'], invalid),
-      timeoutSeconds: positive,
-      maxRetries: cap,
+      timeoutSeconds: ranged(10, 600),
+      maxRetries: ranged(0, 5),
       contextTokens: z
         .union([z.literal('auto'), z.number().int().min(MIN_CONTEXT_TOKENS)], invalid)
         .optional(),
@@ -60,11 +67,14 @@ const providerSchema = z
 const roleFields = {
   provider: z.string(unknownProvider).min(1, unknownProvider),
   model: z.string(missingModel).trim().min(1, missingModel).max(MAX_TEXT, invalid),
-  maxOutputTokens: positive,
+  maxOutputTokens: ranged(256, 32_768),
   temperature: z.number(invalid).min(0, invalid).max(2, invalid).optional(),
 };
 
-const readerSchema = z.strictObject({ ...roleFields, maxTurns: positive.optional() }, missingModel);
+const readerSchema = z.strictObject(
+  { ...roleFields, maxTurns: ranged(1, 50).optional() },
+  missingModel,
+);
 const otherRoleSchema = z.strictObject(roleFields, missingModel);
 
 const roleCapsSchema = z.strictObject(
@@ -93,25 +103,48 @@ const roleCapsByRole = z.strictObject(
   invalid,
 );
 
-const budgetSchema = z.strictObject(
+const runCapsSchema = z.strictObject(
   {
-    run: z.strictObject({ maxCostMicros: cap, maxTokens: cap }, invalid),
-    roles: roleCapsByRole.optional(),
-    confirmAboveCostMicros: cap,
-    prices: z.array(priceSchema, invalid).max(MAX_LIST, invalid).optional(),
-    allowUnpriced: flag,
+    maxCostMicros: cap.max(MAX_RUN_COST_MICROS, invalid),
+    maxTokens: cap.max(MAX_RUN_TOKENS, invalid),
   },
   invalid,
 );
+
+/** DEC-117: the threshold is at most the run cost cap; checked only when that cap is itself valid. */
+function confirmWithinRunCap(budget: {
+  readonly run: { readonly maxCostMicros: number };
+  readonly confirmAboveCostMicros: number;
+}): boolean {
+  const runCap = budget.run.maxCostMicros;
+  if (runCap < 0 || runCap > MAX_RUN_COST_MICROS) return true;
+  return budget.confirmAboveCostMicros <= runCap;
+}
+
+const budgetSchema = z
+  .strictObject(
+    {
+      run: runCapsSchema,
+      roles: roleCapsByRole.optional(),
+      confirmAboveCostMicros: cap,
+      prices: z.array(priceSchema, invalid).max(MAX_LIST, invalid).optional(),
+      allowUnpriced: flag,
+    },
+    invalid,
+  )
+  .refine(confirmWithinRunCap, {
+    error: ERROR_CODES.settingValueInvalid,
+    path: ['confirmAboveCostMicros'],
+  });
 
 const areaSchema = z.strictObject({ name: text, include: textList.min(1, invalid) }, invalid);
 
 export const scanSettingsSchema = z.strictObject(
   {
-    maxFileBytes: positive,
-    areaTokenBudget: positive,
+    maxFileBytes: ranged(1_000, 5_000_000),
+    areaTokenBudget: ranged(4_000, 200_000),
     areas: z.array(areaSchema, invalid).max(MAX_LIST, invalid).optional(),
-    excerptMaxLines: positive,
+    excerptMaxLines: ranged(20, 2_000),
     ignoreRules: z.string(invalid).max(MAX_IGNORE_RULES, invalid),
     allowDenied: textList,
   },
@@ -143,7 +176,7 @@ const settingsObject = z.strictObject(
     roles: rolesSchema,
     budget: budgetSchema,
     scan: scanSettingsSchema,
-    agents: z.strictObject({ parallelism: positive }, invalid),
+    agents: z.strictObject({ parallelism: ranged(1, 8) }, invalid),
     output: z.strictObject({ transcripts: flag }, invalid),
   },
   invalid,
