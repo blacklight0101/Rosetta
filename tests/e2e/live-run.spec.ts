@@ -131,6 +131,27 @@ test('RF-1004 DEC-103 the claims list marks a claim awaiting model verification 
   await expectNoSeriousViolations(page);
 });
 
+test('RF-1007 an answer typed on the page is saved in answers.md and is there after a reload', async ({
+  page,
+}) => {
+  const answer = 'Yes, a sold-out item stays in the list, greyed out.';
+  const questionOf = () =>
+    page
+      .getByRole('region', { name: 'Open questions' })
+      .getByTestId('open-question')
+      .filter({ hasText: 'OQ-001' });
+  await page.goto(finishedRun);
+  await expect(questionOf()).toContainText('Open');
+
+  await questionOf().getByLabel('Answer to OQ-001').fill(answer);
+  await questionOf().getByRole('button', { name: 'Save answer' }).click();
+
+  await expect(questionOf()).toContainText('Answer saved in answers.md.');
+  await expectNoSeriousViolations(page);
+  await page.reload();
+  await expect(questionOf().getByLabel('Answer to OQ-001')).toHaveValue(answer);
+});
+
 test('RF-1003 Stop ends a run that is working, keeps the cards that were found and enables the zip', async ({
   page,
 }) => {

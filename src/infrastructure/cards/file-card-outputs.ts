@@ -1,4 +1,5 @@
 import type { CardOutputs, CardSet } from '../../application/ports/card-outputs.js';
+import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Logger } from '../../application/ports/logger.js';
 import type { OutputWriter, WriteRefusal } from '../../application/ports/output-writer.js';
 import type { RunScope } from '../../application/ports/run-events.js';
@@ -9,6 +10,7 @@ import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import {
   writeCardOutputs,
+  writeCoverageOutputs,
   writeInvalidOutput,
   type CardOutputTarget,
 } from './write-card-outputs.js';
@@ -47,6 +49,15 @@ export class FileCardOutputs implements CardOutputs {
     const target = targetOf(scope);
     return this.serial(target, async () => {
       thrown(await writeCardOutputs(writer, target, { ...set, masker, logger }));
+    });
+  }
+
+  // RF-230
+  writeCoverage(scope: RunScope, coverage: readonly AreaCoverage[]): Promise<void> {
+    const { writer, masker, logger } = this.options;
+    const target = targetOf(scope);
+    return this.serial(target, async () => {
+      thrown(await writeCoverageOutputs(writer, target, { coverage, masker, logger }));
     });
   }
 
