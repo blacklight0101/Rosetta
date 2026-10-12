@@ -25,6 +25,8 @@ function throwIfAborted(signal: AbortSignal): void {
 // never touches the network. DEC-112, RNF-005: refused unless ROSETTA_TEST=1, so `kind: fake`
 // cannot run in a real deployment.
 export class FakeProvider implements LlmProvider {
+  /** Every request the fake received, as it received it, so a test can see what was sent. */
+  readonly requests: LlmRequest[] = [];
   private readonly calls: readonly RecordedCall[];
   private next = 0;
 

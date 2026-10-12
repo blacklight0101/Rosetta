@@ -185,6 +185,16 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Set contextTokens for this provider in the project settings to auto, or to 1024 or more.',
   },
+  'RST-1515': {
+    message: 'Code was not sent to a cloud provider because the run has no consent for it.',
+    nextStep:
+      'Start the run again and tick the consent box that names the cloud providers, or use a local Ollama model.',
+  },
+  'RST-1516': {
+    message:
+      'A model call was blocked because repository content was outside its labelled data block.',
+    nextStep: 'Report this as a bug: tool results must reach the model only as data blocks.',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

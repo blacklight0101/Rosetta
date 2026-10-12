@@ -67,6 +67,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'The manifest of a run could not be stored or read.',
     nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
   },
+  'RST-2107': {
+    message: 'The egress log of a run could not be stored, so the model call was not made.',
+    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
+  },
   'RST-2201': {
     message: 'User name or password is incorrect.',
     nextStep: 'Check both and try again.',

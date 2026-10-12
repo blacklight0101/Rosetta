@@ -138,3 +138,20 @@ export function recordManifestSkippedLinks(
   if (manifest.endState !== null) return err('already-ended');
   return ok({ ...manifest, security: { ...manifest.security, skippedLinks } });
 }
+
+/** Adds the secrets masked before egress to the count per kind (RF-141). */
+// RF-141
+export function recordManifestMasking(
+  _manifest: RunManifest,
+  _counts: Readonly<Record<string, number>>,
+): Result<RunManifest, ManifestProblem> {
+  throw new Error('not implemented');
+}
+
+/** Counts one model call a guard blocked (RF-009, RF-141, RF-143). */
+// RF-141
+export function recordManifestBlockedCall(
+  _manifest: RunManifest,
+): Result<RunManifest, ManifestProblem> {
+  throw new Error('not implemented');
+}
