@@ -9,6 +9,7 @@ import { DeleteProviderKey } from '../application/use-cases/delete-provider-key.
 import { ListProviderKeys } from '../application/use-cases/list-provider-keys.js';
 import { ReEncryptProviderKeys } from '../application/use-cases/re-encrypt-provider-keys.js';
 import { SaveProviderKey } from '../application/use-cases/save-provider-key.js';
+import type { TestProviders } from '../application/use-cases/test-providers.js';
 import { CreateUser } from '../application/use-cases/create-user.js';
 import { ListAudit } from '../application/use-cases/list-audit.js';
 import { ListUsers } from '../application/use-cases/list-users.js';
@@ -41,6 +42,7 @@ import {
 import { createDummyHash } from '../infrastructure/security/dummy-password-hash.js';
 import { DnsPublicHostCheck } from '../infrastructure/security/public-host-check.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import { composeProviders, type ProviderParts } from './compose-providers.js';
 import type { CapServices } from './web/cap-routes.js';
 import type { KeyServices } from './web/key-routes.js';
 import type { AccountServices, AuthServices } from './web/server.js';
@@ -103,6 +105,7 @@ interface AccountAdapters {
   readonly hasher: PasswordHasher;
   readonly logger: Logger;
   readonly clock: Clock;
+  readonly testProviders: TestProviders;
 }
 
 // RF-1104: the key use cases. Base URLs are checked through node:dns on save (DEC-112).
@@ -153,17 +156,31 @@ async function composeAccounts(adapters: AccountAdapters): Promise<AccountServic
     listAudit: new ListAudit({ auditLog, clock }),
     ...composeKeys(adapters),
     ...composeCaps(adapters),
+    testProviders: adapters.testProviders,
   };
 }
 
 export interface AuthParts extends Omit<AccountParts, 'environment'> {
+  /** RF-407: the provider factory reads the server keys, the Ollama address and the test mode. */
+  readonly environment: ProviderParts['environment'];
+  /** Test mode only: the model double that stands in for every adapter. */
+  readonly doubles: ProviderParts['doubles'];
   /** RF-1104: seals the provider keys under ROSETTA_SECRET_KEY. */
   readonly secretBox: SecretBox;
 }
 
 // RF-1009, RF-1100, RF-1101
-export async function composeAuth(parts: AuthParts): Promise<Auth> {
+export async function composeAuth(
+  mode: Pick<AuthParts, 'environment'> & { readonly doubles?: AuthParts['doubles'] },
+  parts: Omit<AuthParts, 'environment' | 'doubles'>,
+): Promise<Auth> {
   const { pool, logger, clock, masker, hasher, secretBox } = parts;
+  // RF-407: loads the price table, so an invalid one stops the start-up (RST-1602).
+  const testProviders = await composeProviders({
+    ...parts,
+    environment: mode.environment,
+    doubles: mode.doubles,
+  });
   const users = new PgUserRepository(pool);
   const sessions = new PgSessionStore(pool);
   const auditLog = new PgAuditLog(pool, masker);
@@ -172,7 +189,7 @@ export async function composeAuth(parts: AuthParts): Promise<Auth> {
     sessions,
     services: {
       accounts: await composeAccounts({
-        ...{ pool, secretBox, users, sessions, auditLog, hasher, logger, clock },
+        ...{ pool, secretBox, users, sessions, auditLog, hasher, logger, clock, testProviders },
       }),
       signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
       signOut: new SignOut({ sessions, auditLog, logger, clock }),

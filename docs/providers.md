@@ -29,7 +29,7 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   host needs the run's consent like `openai`, `openai-compatible` (its base URL must be public) and `anthropic`;
   without it the call is refused with `RST-1515`. The guard's `target.endpointHost` and the URL the adapter connects to
   must come from one parsed URL (`new URL(ROSETTA_OLLAMA_URL).hostname`, so `http://localhost@evil.com` gives
-  `evil.com`); the provider factory (P1-29) builds both from that one parse and tests it. The guard masks every message part, writes `egress.log.jsonl` and
+  `evil.com`); the provider factory (`provider-endpoint.ts`) builds both from that one parse and tests it. The guard masks every message part, writes `egress.log.jsonl` and
   refuses repository content outside its data blocks (RF-141, RF-142, RF-145, architecture section 7).
 - `FakeProvider.requests` keeps every request the fake received, so a test can prove what was (and was not) sent.
 - Every adapter passes the contract suite `tests/contracts/llm-provider.contract.ts`: its test arranges recordings so
@@ -136,7 +136,7 @@ To be filled by the reader model spike (P1-47, Q-04). Measured so far on the own
 
 ### 3.1 Key placement
 
-- The adapter never reads the environment. The provider set (P1-29) chooses the key for each run, the user's own key
+- The adapter never reads the environment. The provider factory (P1-29) chooses the key for each run, the user's own key
   or the server key `OPENAI_API_KEY` when the user may use server keys (DEC-64), and passes it to the adapter as
   `apiKey`. Organisation, project, admin key, webhook secret, base URL and log level are passed explicitly, so the
   package's own environment defaults (`OPENAI_API_KEY`, `OPENAI_ORG_ID`, `OPENAI_BASE_URL`, `OPENAI_LOG` and the

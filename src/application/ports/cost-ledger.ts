@@ -46,7 +46,8 @@ export interface LedgerEntry {
 export interface Reservation {
   readonly callId: string;
   readonly userId: string;
-  readonly runId: string;
+  /** Null for a provider test (RF-407): no run cap applies to it. */
+  readonly runId: string | null;
   readonly keySource: KeySource;
   readonly worstCase: WorstCase;
   /** After this instant the reservation no longer counts and may be purged. */

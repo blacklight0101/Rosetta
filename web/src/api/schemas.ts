@@ -67,3 +67,21 @@ export const keyAnswerSchema = z.object({ key: keySummarySchema });
 export const ownDailyCapSchema = z.object({
   ownDailyCapMicros: z.string().regex(/^\d+$/u).nullable(),
 });
+
+/** RF-407: one role of the provider test; a failed role carries its error. */
+const roleTestSchema = z.object({
+  role: z.enum(['reader', 'verifier', 'planner', 'summariser']),
+  provider: z.string(),
+  model: z.string(),
+  status: z.enum(['reachable', 'failed']),
+  costMicros: z.string().regex(/^\d+$/u),
+  currency: z.string(),
+  code: errorCode.optional(),
+  message: z.string().optional(),
+  nextStep: z.string().optional(),
+});
+
+export type RoleTest = z.output<typeof roleTestSchema>;
+
+/** `POST /api/account/providers/test`. */
+export const providerTestSchema = z.object({ roles: z.array(roleTestSchema) });

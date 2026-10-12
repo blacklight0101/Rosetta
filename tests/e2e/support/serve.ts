@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 // The server process of an end-to-end run must not reach the network either (RNF-005).
 import '../../support/block-network.js';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
-import { FakeProvider } from '../../../src/infrastructure/providers/fake/fake-provider.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { TestDoubles } from '../../../src/presentation/test-doubles.js';
+import { AnsweringProvider } from '../../support/answering-provider.js';
 import { FakeGitHub } from '../../support/fake-github.js';
 import { FIXTURE_SHA, fixtureArchive } from '../../support/snapshot-fixtures.js';
 import { createDisposableSchema } from './database.js';
@@ -18,7 +18,7 @@ import { clearSessions } from './sign-in.js';
 // RNF-005, ADR-008, P1-13: the end-to-end test server. Usage (from the repository root):
 //   node --import ./scripts/register-ts.mjs tests/e2e/support/serve.ts
 // It needs ROSETTA_TEST_DATABASE_URL, the built front end (`npm run build:web`) and the fixture
-// archives; it makes a disposable schema, ROSETTA_TEST=1, the fake provider and a fake GitHub that
+// archives; it makes a disposable schema, ROSETTA_TEST=1, the answering provider double and a fake GitHub that
 // knows octo/demo, creates the seeded administrator through the bootstrap use case and the seeded
 // user through CreateUser, listens on 127.0.0.1 at ROSETTA_E2E_PORT and removes everything on
 // SIGTERM or SIGINT. The accounts exist before the port answers: a first start on a free port
@@ -52,14 +52,8 @@ type Composer = (port: number) => ReturnType<typeof composeApplication>;
 
 /** Composes the application with the fake provider and the fake GitHub, on a given port. */
 async function composer(environment: ReturnType<typeof loadEnvironment>): Promise<Composer> {
-  const provider = new FakeProvider({
-    testMode: true,
-    recording: {
-      schemaVersion: 1,
-      description: 'No calls: the smoke journeys call no model.',
-      calls: [],
-    },
-  });
+  // RF-407: every role answers, except the summariser, whose call fails with RST-1506.
+  const provider = new AnsweringProvider(['summariser']);
   const github = await demoGitHub();
   return (port) =>
     composeApplication({
@@ -92,6 +86,8 @@ async function main(): Promise<void> {
     // One hop: the test server trusts X-Forwarded-For from the browser, so each test has an
     // address of its own and the sign-in rate limit (10 a minute per address) never couples tests.
     ROSETTA_TRUST_PROXY: '1',
+    // RF-407: Ollama is offered (the double stands in for it; nothing connects to this address).
+    ROSETTA_OLLAMA_URL: 'http://127.0.0.1:11434',
     ROSETTA_LOG_LEVEL: 'error',
     ROSETTA_TEST: '1',
     ROSETTA_TEST_DATABASE_URL: databaseUrl,

@@ -36,7 +36,7 @@ describe.skipIf(!hasTestDatabase)('release-1 migrations', () => {
 
     const applied = await new PgMigrator({ pool, migrations, clock: testClock }).migrate();
 
-    expect(applied.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5]);
+    expect(applied.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(await recorded(pool)).toEqual(
       migrations.map((migration) => ({
         version: migration.version,

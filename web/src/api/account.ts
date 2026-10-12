@@ -4,7 +4,9 @@ import {
   keyAnswerSchema,
   keyListSchema,
   ownDailyCapSchema,
+  providerTestSchema,
   sessionSchema,
+  type RoleTest,
   type KeyProvider,
   type KeySummary,
   type Session,
@@ -100,6 +102,20 @@ export function deleteKey(client: ApiClient, provider: KeyProvider): Promise<Api
     path: `/api/account/keys/${provider}`,
     schema: z.undefined(),
   });
+}
+
+/** The server makes one tiny call per role, one after another; a stuck provider ends at its own limit. */
+const providerTestTimeoutMs = 300_000;
+
+// RF-407
+export async function testProviders(client: ApiClient): Promise<ApiResult<readonly RoleTest[]>> {
+  const result = await client.request({
+    method: 'POST',
+    path: '/api/account/providers/test',
+    schema: providerTestSchema,
+    timeoutMs: providerTestTimeoutMs,
+  });
+  return result.ok ? { ok: true, value: result.value.roles } : result;
 }
 
 // DEC-107

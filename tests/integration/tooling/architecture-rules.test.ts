@@ -143,3 +143,84 @@ describe('dependency-cruiser layer rule: tree-sitter', () => {
     expect(report).not.toContain('tree-sitter-only-in-packs');
   });
 });
+
+describe('dependency-cruiser layer rule: provider adapters', () => {
+  const root = useTempRoot('rosetta-arch-');
+  const adapters = {
+    'src/infrastructure/providers/ollama/ollama-provider.ts': 'export class OllamaProvider {}\n',
+    'src/infrastructure/providers/openai/openai-provider.ts': 'export class OpenAiProvider {}\n',
+    'src/infrastructure/providers/fake/fake-provider.ts': 'export class FakeProvider {}\n',
+  };
+
+  it.each([
+    [
+      'src/presentation/composition-root.ts',
+      '../infrastructure/providers/ollama/ollama-provider.js',
+    ],
+    ['src/infrastructure/guards/other.ts', '../providers/openai/openai-provider.js'],
+    ['src/application/use.ts', '../infrastructure/providers/fake/fake-provider.js'],
+    ['src/infrastructure/providers/provider-factory.ts', './openai/openai-provider.js'],
+  ])('ADR-003 %s importing %s is reported', async (file, module) => {
+    const report = await cruise(root.path, { ...adapters, [file]: importing(module) });
+
+    expect(report).toContain('adapters-only-via-adapter-builder');
+  });
+
+  it('ADR-003 only the adapter builder may import the Ollama and OpenAI adapters', async () => {
+    const report = await cruise(root.path, {
+      ...adapters,
+      'src/infrastructure/providers/adapter-builder.ts':
+        "import { OllamaProvider } from './ollama/ollama-provider.js';\nimport { OpenAiProvider } from './openai/openai-provider.js';\nexport const built = [OllamaProvider, OpenAiProvider];\n",
+    });
+
+    expect(report).not.toContain('adapters-only-via-adapter-builder');
+  });
+});
+
+describe('dependency-cruiser layer rule: the adapter builder', () => {
+  const root = useTempRoot('rosetta-arch-');
+  const builder = {
+    'src/infrastructure/providers/adapter-builder.ts': 'export const realAdapters = () => 1;\n',
+  };
+
+  it('ADR-003 any file but the provider composition importing the builder is reported', async () => {
+    const importers = {
+      'src/presentation/sneaky.ts': '../infrastructure/providers/adapter-builder.js',
+      'src/infrastructure/providers/provider-factory.ts': './adapter-builder.js',
+      'src/infrastructure/guards/other.ts': '../providers/adapter-builder.js',
+      'src/application/use.ts': '../infrastructure/providers/adapter-builder.js',
+    };
+    const sources: Record<string, string> = { ...builder };
+    for (const [file, module] of Object.entries(importers)) sources[file] = importing(module);
+
+    const report = await cruise(root.path, sources);
+
+    for (const file of Object.keys(importers)) expect(report).toContain(file);
+    expect(report).toContain('adapter-builder-only-in-compose-providers');
+  });
+
+  it('ADR-003 an aliased import and a dynamic import() are reported too', async () => {
+    const report = await cruise(root.path, {
+      ...builder,
+      'src/presentation/aliased.ts':
+        "import { realAdapters as raw } from '../infrastructure/providers/adapter-builder.js';\nexport const x = raw;\n",
+      'src/presentation/dynamic.ts':
+        "export const load = () => import('../infrastructure/providers/adapter-builder.js');\n",
+    });
+
+    expect(report).toContain('src/presentation/aliased.ts');
+    expect(report).toContain('src/presentation/dynamic.ts');
+    expect(report).toContain('adapter-builder-only-in-compose-providers');
+  });
+
+  it('ADR-003 only the provider composition may import the adapter builder', async () => {
+    const report = await cruise(root.path, {
+      ...builder,
+      'src/presentation/compose-providers.ts': importing(
+        '../infrastructure/providers/adapter-builder.js',
+      ),
+    });
+
+    expect(report).not.toContain('adapter-builder-only-in-compose-providers');
+  });
+});

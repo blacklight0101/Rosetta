@@ -13,7 +13,8 @@ import type { ProviderMeta } from './provider-meta.js';
 
 // RF-1104, design-system.md section 14 (settings and keys): one provider. Without a key it offers
 // the fields to save one; with a key it shows only the last four characters, and Replace and
-// Delete each ask first. The Test button of P1-29 joins the buttons of the saved state.
+// Delete each ask first. The Test button (RF-407) checks roles, not keys, so it has a section of
+// its own on the page (ProviderTest.tsx).
 
 export interface KeyRowProps {
   readonly provider: ProviderMeta;

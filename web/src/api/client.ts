@@ -36,6 +36,8 @@ interface ApiRequest<T> {
   /** Parses the body of a good answer; `z.undefined()` for an empty 204. */
   readonly schema: z.ZodType<T>;
   readonly signal?: AbortSignal;
+  /** Overrides the client's timeout for a call that is slow by nature (the provider test). */
+  readonly timeoutMs?: number;
 }
 
 export interface ApiClient {
@@ -110,7 +112,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       const headers = new Headers({ accept: 'application/json' });
       if (request.body !== undefined) headers.set('content-type', 'application/json');
       if (request.method !== 'GET' && csrfToken !== undefined) headers.set(csrfHeader, csrfToken);
-      const timeout = AbortSignal.timeout(timeoutMs);
+      const timeout = AbortSignal.timeout(request.timeoutMs ?? timeoutMs);
       const signal =
         request.signal === undefined ? timeout : AbortSignal.any([timeout, request.signal]);
       try {
