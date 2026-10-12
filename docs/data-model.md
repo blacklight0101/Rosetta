@@ -476,6 +476,10 @@ output as JSON lines at `ROSETTA_LOG_LEVEL` and above. One file per UTC day; fil
 start-up and daily (RF-009): a file is deleted when its UTC day is more than that many days before today, and
 only files named `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the secret masking: `logger`,
 `message`, the ids and every key and string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept.
+A `data` key at any depth whose name contains `password`, `passwd`, `pwd`, `secret`, `token` or `api key`
+(`api[_-]?key`), in any case, has its whole value replaced, whatever its type: `[MASKED:api-key]` for an API key
+name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count such as
+`inputTokens` is therefore never written under such a name.
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.

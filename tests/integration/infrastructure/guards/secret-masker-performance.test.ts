@@ -28,4 +28,11 @@ describe('SecretMasker on hostile input', () => {
 
     expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
   });
+
+  it('RF-141 masks 1 MB without an @ after a scheme of many parts in budget (no length bound)', () => {
+    const scheme = Array.from({ length: 16 }, () => 'a').join('-');
+    const input = `${scheme}://user:${repeatTo(oneMegabyte, 'x')}`;
+
+    expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+  });
 });
