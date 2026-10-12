@@ -14,12 +14,16 @@ import { SignOut } from '../../src/application/use-cases/sign-out.js';
 import { UpdateUser } from '../../src/application/use-cases/update-user.js';
 import type { TestProviders } from '../../src/application/use-cases/test-providers.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
+import { GetAccountTotals } from '../../src/application/use-cases/get-account-totals.js';
+import { GetCaps } from '../../src/application/use-cases/get-caps.js';
+import { GetProjectCost } from '../../src/application/use-cases/get-project-cost.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
+import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
@@ -69,6 +73,8 @@ export interface TestServer {
   readonly hasher: PasswordHasher;
   /** RF-1102: the projects and month-to-date spend the administration list shows. */
   readonly usage: MemoryAccountUsage;
+  /** RF-428, RF-1010: the ledger rows the cost page and the totals pill sum; a test adds them. */
+  readonly costs: MemoryCostTotals;
   /** RF-1006, RF-1108: the run queue, its stores and the executor the test controls. */
   readonly runs: RunHarness;
   /** RF-008: the run folders the default export reads; give a run its folder with `seed`. */
@@ -111,12 +117,15 @@ interface ProjectParts {
   readonly auditLog: MemoryAuditLog;
   readonly logger: MemoryLogger;
   readonly clock: FixedClock;
+  readonly costs: MemoryCostTotals;
+  readonly usage: MemoryAccountUsage;
 }
 
 /** RF-010, RF-1105: the project use cases over memory adapters and predictable ids. */
 function projectServices(parts: ProjectParts): ServerOptions['projects'] {
-  const { projects, serverSettings, users, auditLog, logger, clock } = parts;
+  const { projects, serverSettings, users, auditLog, logger, clock, costs, usage } = parts;
   const ids = new SequenceIdGenerator();
+  const caps = new GetCaps({ settings: serverSettings, usage, clock });
   const template = templateSettings;
   return {
     createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
@@ -124,6 +133,8 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
     openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
+    getProjectCost: new GetProjectCost({ projects, costs }),
+    getAccountTotals: new GetAccountTotals({ costs, caps }),
   };
 }
 
@@ -224,11 +235,10 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
   const health = new FakeDatabaseHealth(true);
-  const users = new MemoryUserRepository();
-  const sessions = new MemorySessionStore();
+  const [users, sessions] = [new MemoryUserRepository(), new MemorySessionStore()];
   const auditLog = new MemoryAuditLog(masker);
   const usage = new MemoryAccountUsage();
-  const projects = new MemoryProjectRepository();
+  const [projects, costs] = [new MemoryProjectRepository(), new MemoryCostTotals()];
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
   const archives = new MemoryArchiveWriter();
@@ -241,6 +251,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
+  const projectParts = { projects, serverSettings, users, auditLog, logger, clock, costs, usage };
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -251,12 +262,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage, keys },
       ...{ serverSettings, testProviders },
     }),
-    projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
+    projects: projectServices(projectParts),
     runs: runServices(runs, { projects, keys: keys.keys }, route, archiveWriter ?? archives),
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
-    ...{ serverSettings, runs, archives, ...route, ...keys, providers, providerLedger },
+    ...{ serverSettings, runs, archives, ...route, ...keys, providers, providerLedger, costs },
   };
 }
