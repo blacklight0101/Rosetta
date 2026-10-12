@@ -107,7 +107,8 @@ src/
                         UTC day and month (`utcPeriodsOf`), `isCapStop`
     runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`)
     sources/            GitHubRepoRef, CommitSha, Permalink
-    planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018)
+    planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018); the catalogue
+                        rules (`catalogueProblems`, `defaultPrinciples`, RF-606)
     egress/             the labelled data block of repository content (`renderDataBlock`, `scanDataBlocks`, RF-145)
     errors/             domain error codes and Result type
   application/
@@ -157,6 +158,7 @@ src/
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
     prompts/            prompt files read with their version and SHA-256 (`loadReaderPrompts`, RNF-004)
+                        and the principle catalogue (`loadCatalogue`: entry schema, version, SHA-256; RF-606)
     system/             clock, id generator, logger
   presentation/
     web/                Fastify server, plugins, auth hooks, API routes, server-sent events, error-to-status mapping
@@ -581,7 +583,7 @@ flowchart LR
 
 One image, two places (ADR-014): locally `compose.yaml` runs the app and PostgreSQL with named volumes and publishes
 the app on `127.0.0.1:8080`; hosted, the same image runs behind the host's HTTPS with managed PostgreSQL and a
-persistent disk. Migrations run at start-up before the server listens (RF-1302). GitHub and cloud providers are
+persistent disk. Migrations run at start-up before the server listens (RF-1302). On SIGTERM the jobs stop, the runs end as Interrupted, the server closes and the database pool closes, all under one 5-second deadline (`stopWithin` in `src/presentation/shutdown.ts`); the pool is closed even when an earlier step fails. `main.ts` then ends the process with `process.exit` (the sockets to a frozen database would keep it alive): exit code 0 after a clean stop, 1 when the deadline passed (a warning is logged first) or the stop failed, inside the 10-second grace period of `docker stop` (P1-68). GitHub and cloud providers are
 reached over HTTPS. The `image` job of CI builds the image, starts it against a disposable PostgreSQL
 (`tests/integration/image/`) and scans it with Trivy (high and critical findings with a fix fail). The `compose-smoke` job brings the stack up with `compose.yaml` plus `compose.ci.yaml` and a throwaway `.env`, runs the Playwright smoke of `tests/compose/` (landing page, first sign-in, a project, a scan), restarts the stack with `down` and `up`, checks that the account, the project and the run survived, and runs `down -v`; the runbook is [runbooks/local.md](runbooks/local.md). The sample report is static files on GitHub Pages. Details:
 [environments-and-delivery.md](environments-and-delivery.md).
