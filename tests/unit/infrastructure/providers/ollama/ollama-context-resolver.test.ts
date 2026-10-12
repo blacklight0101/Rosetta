@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clearContextCache,
   newContextCache,
   OllamaContextResolver,
   type ContextProbe,
@@ -7,6 +8,7 @@ import {
   type ProbeResult,
   type Residency,
 } from '../../../../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
+import { FALLBACK_BACKOFF_MS } from '../../../../../src/infrastructure/providers/ollama/ollama-context.js';
 import { RecordingLogger } from '../../../../support/recording-logger.js';
 
 // RF-401, DEC-114, Q-23: the automatic Ollama context size, against a probe that simulates the
@@ -22,6 +24,8 @@ interface SimulatedGpu {
   /** The largest context that keeps the whole model in GPU memory. */
   readonly fitsUpTo: number;
   readonly psFails?: boolean;
+  /** /api/ps fails from this read on (1 is the first read). */
+  readonly psFailsFrom?: number;
 }
 
 class SimulatedProbe implements ContextProbe {
@@ -47,6 +51,8 @@ class SimulatedProbe implements ContextProbe {
   residency(): Promise<ProbeResult<Residency>> {
     this.psReads += 1;
     if (this.gpu.psFails === true) return Promise.resolve(unavailable);
+    const failsFrom = this.gpu.psFailsFrom ?? Infinity;
+    if (this.psReads >= failsFrom) return Promise.resolve(unavailable);
     const loaded = this.loads.at(-1) ?? 0;
     const size = 8_000 + loaded;
     const sizeVram = loaded <= this.gpu.fitsUpTo ? size : size - 1_000;
@@ -57,13 +63,16 @@ class SimulatedProbe implements ContextProbe {
 function resolverFor(gpu: SimulatedGpu) {
   const probe = new SimulatedProbe(gpu);
   const logger = new RecordingLogger();
+  const clock = { ms: 1_000_000 };
+  const cache = newContextCache();
   const resolver = new OllamaContextResolver({
     serverUrl: 'http://127.0.0.1:11434',
     probe,
     logger,
-    cache: newContextCache(),
+    cache,
+    now: () => clock.ms,
   });
-  return { probe, logger, resolver };
+  return { probe, logger, resolver, clock, cache };
 }
 
 const warnings = (logger: RecordingLogger) => logger.records.filter((r) => r.level === 'warn');
@@ -143,13 +152,37 @@ describe('automatic Ollama context size cache', () => {
 });
 
 describe('automatic Ollama context size when Ollama cannot be probed', () => {
-  it('RF-401 falls back to the ceiling with a warning when /api/show fails, and probes again next time', async () => {
-    const { probe, resolver, logger } = resolverFor({ trained: null, fitsUpTo: 65_536 });
+  it('RF-401 falls back to the ceiling with a warning when /api/show fails, and probes again after the back-off', async () => {
+    const { probe, resolver, logger, clock } = resolverFor({ trained: null, fitsUpTo: 65_536 });
 
     expect(await resolver.auto(gemma)).toEqual({ tokens: 32_768, source: 'auto-fallback' });
+    clock.ms += FALLBACK_BACKOFF_MS;
     expect(await resolver.auto(gemma)).toEqual({ tokens: 32_768, source: 'auto-fallback' });
     expect(probe.shows).toBe(2);
     expect(warnings(logger)).toHaveLength(2);
+  });
+
+  it('RF-401 within the back-off after a fallback, calls reuse the fallback without probing', async () => {
+    const { probe, resolver, logger, clock } = resolverFor({ trained: null, fitsUpTo: 65_536 });
+
+    await resolver.auto(gemma);
+    clock.ms += FALLBACK_BACKOFF_MS - 1;
+    expect(await resolver.auto(gemma)).toEqual({ tokens: 32_768, source: 'auto-fallback' });
+
+    expect(probe.shows).toBe(1);
+    expect(warnings(logger)).toHaveLength(1);
+  });
+
+  it('RF-401 a probe failure after a spill falls back to the floor, never to the size that spilled', async () => {
+    const { probe, resolver, logger } = resolverFor({
+      trained: 131_072,
+      fitsUpTo: 16_384,
+      psFailsFrom: 2,
+    });
+
+    expect(await resolver.auto(gemma)).toEqual({ tokens: 4_096, source: 'auto-fallback' });
+    expect(probe.loads).toEqual([32_768, 16_384]);
+    expect(warnings(logger)).toHaveLength(1);
   });
 
   it("RF-401 falls back within the model's trained context when /api/ps fails", async () => {
@@ -157,6 +190,21 @@ describe('automatic Ollama context size when Ollama cannot be probed', () => {
 
     expect(await resolver.auto(gemma)).toEqual({ tokens: 8_192, source: 'auto-fallback' });
     expect(warnings(logger)).toHaveLength(1);
+  });
+});
+
+describe('Ollama context size cache reset', () => {
+  it('RF-401 a cleared cache measures again, for test harnesses', async () => {
+    const { probe, resolver, cache } = resolverFor({ trained: 131_072, fitsUpTo: 65_536 });
+    await resolver.auto(gemma);
+    await resolver.checkFixed(gemma, 8_192);
+
+    clearContextCache(cache);
+    await resolver.auto(gemma);
+    await resolver.checkFixed(gemma, 8_192);
+
+    expect(probe.shows).toBe(2);
+    expect(probe.psReads).toBe(4);
   });
 });
 
