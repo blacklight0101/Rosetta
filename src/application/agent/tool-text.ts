@@ -36,10 +36,15 @@ export function cutLine(line: string, maxChars: number): string {
   return line.length > maxChars ? line.slice(0, maxChars) : line;
 }
 
-export function fileLine(file: FileEntry): string {
-  const what =
+/** The language and size of a listed file, or why the scan skipped it. */
+function fileFacts(file: FileEntry): string {
+  const size =
     file.skipped === undefined ? `${String(file.lines)} lines` : `skipped: ${file.skipped}`;
-  return `${file.path} (${file.language}, ${what})`;
+  return `${file.language}, ${size}`;
+}
+
+export function fileLine(file: FileEntry): string {
+  return `${file.path} (${fileFacts(file)})`;
 }
 
 export function areaHeading(area: Area): string[] {
@@ -67,11 +72,9 @@ function sqlLine(statement: CodeSqlStatement): string {
 
 export function detailLines(details: FileDetails): string[] {
   const { entry, area } = details;
-  const where =
-    entry.skipped === undefined ? `${String(entry.lines)} lines` : `skipped: ${entry.skipped}`;
   const areaName = area === undefined ? '' : `, area ${area}`;
   return [
-    `file ${entry.path} (${entry.language}, ${where}${areaName})`,
+    `file ${entry.path} (${fileFacts(entry)}${areaName})`,
     ...details.symbols.map(symbolLine),
     ...details.entities.map(entityLine),
     ...details.links.map(linkLine),
