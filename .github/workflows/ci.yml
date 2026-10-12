@@ -183,3 +183,56 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           exit-code: '1'
+
+  compose-smoke:
+    name: compose smoke (up, scan, restart, down)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      # A throwaway .env for this run: fresh random values, masked in the log, never committed
+      # (RNF-003). The URL-safe hex keeps the passwords valid inside the database URLs.
+      - name: Write a throwaway .env
+        run: |
+          : > .env
+          add() { value="$(openssl rand "$2" "$3")"; echo "::add-mask::$value"; echo "$1=$value" >> .env; }
+          add ROSETTA_DB_ADMIN_PASSWORD -hex 16
+          add ROSETTA_APP_DB_PASSWORD -hex 16
+          add ROSETTA_MIGRATOR_DB_PASSWORD -hex 16
+          add ROSETTA_SECRET_KEY -base64 32
+          add ROSETTA_ADMIN_PASSWORD -hex 16
+          add ROSETTA_SMOKE_NEW_PASSWORD -hex 16
+          echo "ROSETTA_ADMIN_USER=smoke-admin" >> .env
+      # The CI overlay swaps the app for the image's test stage with the fake provider and fake GitHub.
+      - name: Start the stack
+        run: docker compose -f compose.yaml -f compose.ci.yaml up -d --build --wait
+      - name: Wait for /healthz
+        run: curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 http://127.0.0.1:8080/healthz
+      - name: Smoke test (landing, sign-in, scan)
+        run: |
+          set -a; . ./.env; set +a
+          npx playwright test --config=playwright.compose.config.ts smoke
+      - name: Restart the stack, keeping its volumes
+        run: |
+          docker compose -f compose.yaml -f compose.ci.yaml down
+          docker compose -f compose.yaml -f compose.ci.yaml up -d --wait
+      - name: Data survives the restart
+        run: |
+          set -a; . ./.env; set +a
+          npx playwright test --config=playwright.compose.config.ts persistence
+      - name: Stack logs
+        if: failure()
+        run: docker compose -f compose.yaml -f compose.ci.yaml logs --no-color --tail 200
+      # Always remove the stack and its volumes, whatever failed.
+      - name: Remove the stack and its volumes
+        if: always()
+        run: docker compose -f compose.yaml -f compose.ci.yaml down -v --rmi local

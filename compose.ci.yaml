@@ -1,0 +1,20 @@
+# CI overlay (RNF-005, ADR-008, DEC-112, environments-and-delivery.md section 6). Use it on top of
+# compose.yaml; it is never used for a deployment:
+#   docker compose -f compose.yaml -f compose.ci.yaml up -d --build --wait
+# It swaps the app for the image's `test` stage and starts tests/compose/serve.ts, which composes the
+# server with the test doubles: the fake provider and an in-process fake GitHub that knows octo/demo
+# (the server takes its GitHub transport from the doubles, so there is no separate GitHub container).
+# Nothing reaches the network, there are no provider keys, and the ports stay those of compose.yaml.
+
+services:
+  app:
+    build:
+      context: .
+      target: test
+    image: rosetta:ci-test
+    command: ['node', '--import', './scripts/register-ts.mjs', 'tests/compose/serve.ts']
+    environment:
+      ROSETTA_TEST: '1'
+      # The network guard of the test server allows the host of this URL (tests/support/network-policy.ts).
+      ROSETTA_TEST_DATABASE_URL: postgres://rosetta_app:${ROSETTA_APP_DB_PASSWORD:?Set ROSETTA_APP_DB_PASSWORD in .env}@db:5432/rosetta
+      ROSETTA_LOG_LEVEL: error

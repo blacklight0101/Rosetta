@@ -32,8 +32,11 @@ export async function readLinesBounded(
 
 interface GrepOptions {
   readonly limits: ToolLimits;
-  /** Whether the code map lists a path; matches in other files are left out. */
-  readonly isListed: (path: string) => boolean;
+  /**
+   * The files the scan read (in the code map and not skipped); only these are searched, and a
+   * match in any other file is left out (RF-145).
+   */
+  readonly paths: readonly string[];
 }
 
 /** Room kept in a grep result for its notices. */
@@ -46,10 +49,12 @@ export async function runGrepBounded(
   options: GrepOptions,
 ): Promise<ToolAnswer> {
   const { pattern, pathGlob } = request;
-  const result = await reader.grep(pathGlob === undefined ? { pattern } : { pattern, pathGlob });
+  const { limits, paths } = options;
+  const searched = pathGlob === undefined ? { pattern, paths } : { pattern, pathGlob, paths };
+  const result = await reader.grep(searched);
   if (!result.ok) return err({ code: result.error.code, message: result.error.message });
-  const { limits, isListed } = options;
-  const matches = result.value.matches.filter((match) => isListed(match.path));
+  const readable = new Set(paths);
+  const matches = result.value.matches.filter((match) => readable.has(match.path));
   const lines = matches
     .slice(0, limits.maxGrepMatches)
     .map(

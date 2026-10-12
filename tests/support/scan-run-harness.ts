@@ -55,10 +55,12 @@ export interface ScanRunHarness {
   readonly project: Project;
   readonly fetcher: FakeSourceFetcher;
   readonly runs: MemoryRunIndex;
+  /** The application log shared by the executor and the pipeline. */
+  readonly logger: MemoryLogger;
   /** Submits a scan run of the project and waits until it has ended. */
   scan(): Promise<Run>;
-  /** Submits a scan run and returns it without waiting. */
-  submit(): Promise<Run>;
+  /** Submits a scan run with the given start options (none by default) and returns it without waiting. */
+  submit(options?: Readonly<Record<string, unknown>>): Promise<Run>;
   /** Starts a scan run as the API does: the project is read and its scan settings recorded. */
   start(): Promise<Run>;
   /** Replaces the stored settings of the project, as an edit on the settings page does. */
@@ -161,7 +163,7 @@ async function assemble(
     clock,
     logger,
   });
-  const executor = new RunScan({ fetcher, projects, pipeline, manifests, clock });
+  const executor = new RunScan({ fetcher, projects, pipeline, manifests, clock, logger });
   const queue = new RunQueue({
     runs,
     lifecycle,
@@ -178,12 +180,13 @@ async function assemble(
     clock,
     rosettaVersion: '1.2.3-test',
   });
-  return { runs, project, projects, submitRun, queue, manifests, log };
+  return { runs, project, projects, submitRun, queue, manifests, log, logger };
 }
 
 interface ReadParts {
   readonly manifests: FileRunManifestStore;
   readonly log: JsonlEventLog;
+  readonly logger: MemoryLogger;
 }
 
 /** Waits until the index shows the run ended and its log holds `run.ended`. */
@@ -207,18 +210,16 @@ export async function createScanRunHarness(
   options: ScanRunHarnessOptions,
 ): Promise<ScanRunHarness> {
   const fixture = fixtureFetcher(new FixedClock('2026-10-12T10:00:00.000Z'));
-  const { runs, project, projects, submitRun, queue, manifests, log } = await assemble(
-    options,
-    fixture,
-  );
+  const parts = await assemble(options, fixture);
+  const { runs, project, projects, submitRun, queue, manifests, log, logger } = parts;
   const startRun = new StartRun({ projects, submit: submitRun });
   const ended = waitUntilEnded(runs, log);
-  const submit = async (): Promise<Run> => {
+  const submit = async (runOptions: Readonly<Record<string, unknown>> = {}): Promise<Run> => {
     const submitted = await submitRun.execute({
       actor: scanActor,
       project,
       stage: 'scan',
-      options: {},
+      options: runOptions,
     });
     if (!submitted.ok) throw new Error('The scan run was not accepted');
     return submitted.value.run;
@@ -227,6 +228,7 @@ export async function createScanRunHarness(
     project,
     fetcher: fixture,
     runs,
+    logger,
     submit,
     async start() {
       const started = await startRun.execute({

@@ -9,6 +9,7 @@ import {
   type RunManifest,
 } from '../../domain/runs/run-manifest.js';
 import type { Clock } from '../ports/clock.js';
+import type { Logger } from '../ports/logger.js';
 import type { Project } from '../projects/project.js';
 import { scanSettingsSchema } from '../projects/project-settings.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
@@ -31,6 +32,7 @@ export interface RunScanDependencies {
   readonly pipeline: ScanPipeline;
   readonly manifests: RunManifestStore;
   readonly clock: Clock;
+  readonly logger: Logger;
 }
 
 const INTERRUPTED: RunOutcome = { endState: 'Interrupted' };
@@ -38,17 +40,6 @@ const INTERRUPTED: RunOutcome = { endState: 'Interrupted' };
 /** A function, because the signal can be aborted while a step awaits and the compiler cannot know. */
 function isStopped(signal: AbortSignal): boolean {
   return signal.aborted;
-}
-
-/**
- * The scan settings of the run: the ones recorded when it was accepted (a later edit of the project
- * does not change a queued run), else the project's current ones. `allowDenied` always comes from
- * the manifest, so what the scan lifted is what the manifest says (RF-147).
- */
-function settingsOf(manifest: RunManifest, project: Project): ScanRequest['settings'] {
-  const recorded = scanSettingsSchema.safeParse(manifest.options['scanSettings']);
-  const settings = recorded.success ? recorded.data : project.settings.scan;
-  return { ...settings, allowDenied: [...manifest.security.allowDenied] };
 }
 
 export class RunScan implements RunExecutor {
@@ -86,10 +77,37 @@ export class RunScan implements RunExecutor {
         commitSha: snapshot.commitSha,
         subpath,
       },
-      settings: settingsOf(execution.manifest, project),
+      settings: await this.settingsOf(execution, project),
       signal,
     });
     return this.complete(execution, report);
+  }
+
+  /**
+   * The scan settings of the run: the ones recorded when it was accepted (a later edit of the project
+   * does not change a queued run), else the project's current ones, with one warning that names only
+   * the reason. `allowDenied` always comes from the manifest, so what the scan lifted is what the
+   * manifest says (RF-147).
+   */
+  private async settingsOf(
+    execution: RunExecution,
+    project: Project,
+  ): Promise<ScanRequest['settings']> {
+    const { manifest, run } = execution;
+    const value = manifest.options['scanSettings'];
+    const recorded = scanSettingsSchema.safeParse(value);
+    if (!recorded.success) {
+      await this.deps.logger.log({
+        level: 'warn',
+        logger: 'runs',
+        message:
+          'The run manifest holds no valid scan settings; the current project settings apply.',
+        runId: run.id,
+        data: { reason: value === undefined ? 'missing' : 'invalid' },
+      });
+    }
+    const settings = recorded.success ? recorded.data : project.settings.scan;
+    return { ...settings, allowDenied: [...manifest.security.allowDenied] };
   }
 
   /** Records the result; a run that stops or fails from here on leaves no output files (RNF-002). */

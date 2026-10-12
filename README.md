@@ -14,6 +14,20 @@ Compose or on a server for invited users.
 **Status: documentation phase (P0).** No code exists yet. This repository holds the design documents that
 development will follow. See [docs/README.md](docs/README.md) for the full map.
 
+## Quick start
+
+Run the whole system on your machine with Docker Compose (Docker with Compose v2 or later; Node.js is not needed):
+
+```
+cp .env.example .env     # then set the passwords, ROSETTA_SECRET_KEY and the first administrator in .env
+docker compose up -d --build
+```
+
+Open <http://127.0.0.1:8080> and sign in as the administrator you set in `.env`; the page asks you to choose a new
+password. The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data,
+`docker compose down -v` deletes it. The steps in full (generating the secrets, Ollama on the host, reset and
+troubleshooting) are in [docs/runbooks/local.md](docs/runbooks/local.md).
+
 ## Release 1 scope in three lines
 
 - Release 1 covers the full pipeline as a web application with sign-in: `scan`, `understand` (agents plus

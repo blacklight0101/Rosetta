@@ -72,11 +72,25 @@ export class SnapshotScanPipeline implements ScanPipeline {
     };
   }
 
-  // RNF-002
+  // RNF-002: a file that cannot be removed is logged with its path (and the refusal code) and the
+  // other files are still removed; the error text is not logged, so no secret can reach the log.
   async discard(scope: RunScope): Promise<void> {
     const folder = runPath(scope.projectId, scope.runKey);
     for (const name of OUTPUT_FILES) {
-      await this.options.writer.remove({ userId: scope.userId, path: `${folder}/${name}` });
+      const path = `${folder}/${name}`;
+      const removed = await this.options.writer
+        .remove({ userId: scope.userId, path })
+        .catch(() => undefined);
+      if (removed?.ok !== true) {
+        await this.options.logger.log({
+          level: 'warn',
+          logger: 'scan',
+          message: 'An output file of a discarded scan could not be removed.',
+          ...(removed === undefined ? {} : { code: removed.error.code }),
+          runId: scope.id,
+          data: { path },
+        });
+      }
     }
   }
 
