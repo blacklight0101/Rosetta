@@ -1,7 +1,12 @@
 import { z } from 'zod';
-import type { AuditDetail, AuditEvent } from '../../application/ports/audit-log.js';
+import type {
+  AuditDetail,
+  AuditEvent,
+  AuditEventInput,
+} from '../../application/ports/audit-log.js';
 import { maskDeep } from '../guards/mask-deep.js';
 import type { TextMasker } from '../guards/secret-masker.js';
+import { auditSafeDetail, withoutNul } from './audit-text.js';
 
 // RF-1109, RNF-003: what the audit adapters share. The detail is masked (P1-04) and stored as JSON
 // text; when the masking fails the detail is withheld whole (fail closed, DEC-57). Rows read back
@@ -13,10 +18,23 @@ const WITHHELD_DETAIL = JSON.stringify({ withheld: 'secret masking failed' });
 // RF-1109
 export function maskedDetailJson(detail: AuditDetail, masker: TextMasker): string {
   try {
-    return JSON.stringify(maskDeep(detail, masker));
+    return JSON.stringify(maskDeep(auditSafeDetail(detail), masker));
   } catch {
     return WITHHELD_DETAIL;
   }
+}
+
+/** The text columns of an event as they are stored: every NUL replaced (P1-77). */
+// RF-1109
+export function storedAuditText(
+  event: AuditEventInput,
+): Pick<AuditEventInput, 'action' | 'targetType' | 'targetId' | 'ip'> {
+  return {
+    action: withoutNul(event.action),
+    targetType: event.targetType === null ? null : withoutNul(event.targetType),
+    targetId: event.targetId === null ? null : withoutNul(event.targetId),
+    ip: withoutNul(event.ip),
+  };
 }
 
 const detailSchema = z.record(z.string(), z.json());
