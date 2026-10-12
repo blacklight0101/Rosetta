@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   LlmAttemptFailure,
   LlmAttemptObserver,
@@ -7,7 +7,10 @@ import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { AnthropicProvider } from '../../../../../src/infrastructure/providers/anthropic/anthropic-provider.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
 import { useFakeAnthropic } from '../../../../support/anthropic-harness.js';
-import { closedLoopbackUrl, releaseClosedLoopbackUrls } from '../../../../support/fake-http-server.js';
+import {
+  closedLoopbackUrl,
+  releaseClosedLoopbackUrls,
+} from '../../../../support/fake-http-server.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { fakeAnthropicKey } from '../../../../support/secret-fixture.js';
 
@@ -150,6 +153,23 @@ describe('AnthropicProvider retry limits', () => {
     const error = await failureOf(provider.complete(contractRequest(controller.signal), observer));
 
     expect(error).toMatchObject({ code: ERROR_CODES.providerCallCancelled });
+  });
+});
+
+describe('AnthropicProvider causes', () => {
+  it('RNF-003 a call cancelled while the request is in flight keeps no SDK error as its cause', async () => {
+    const controller = new AbortController();
+    const { provider, server } = await start('timeout-then-text');
+
+    const call = failureOf(provider.complete(contractRequest(controller.signal)));
+    await vi.waitFor(() => {
+      expect(server.received).toHaveLength(1);
+    });
+    controller.abort();
+    const error = await call;
+
+    expect(error).toMatchObject({ code: ERROR_CODES.providerCallCancelled });
+    expect(error instanceof Error ? error.cause : 'no error').toBeUndefined();
   });
 });
 

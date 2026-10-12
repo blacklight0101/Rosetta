@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { AnthropicProvider } from '../../../../../src/infrastructure/providers/anthropic/anthropic-provider.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
@@ -157,5 +157,62 @@ describe('AnthropicProvider keys', () => {
     const shown = JSON.stringify(error, Object.getOwnPropertyNames(error));
     for (const part of pieces) expect(shown).not.toContain(part);
     expect(error instanceof Error ? error.cause : undefined).toBeUndefined();
+  });
+});
+
+describe('AnthropicProvider keys beyond Latin-1', () => {
+  const pieces = [fakeAnthropicKey.slice(0, 12), fakeAnthropicKey.slice(12)];
+  const zeroWidthSpace = String.fromCodePoint(0x200b);
+  const emoji = String.fromCodePoint(0x1f511);
+  const firstAboveLatin1 = String.fromCodePoint(0x100);
+  const lastLatin1 = String.fromCodePoint(0xff);
+
+  it.each([
+    ['a zero-width space', pieces.join(zeroWidthSpace)],
+    ['an emoji', pieces.join(emoji)],
+    ['the first character above U+00FF', pieces.join(firstAboveLatin1)],
+  ])(
+    'RNF-003 a key with %s is refused at construction with RST-1518, with no call and no retry',
+    async (_n, apiKey) => {
+      const logged = (['log', 'info', 'warn', 'error', 'debug'] as const).map((method) =>
+        vi.spyOn(console, method).mockImplementation(() => undefined),
+      );
+      const server = new FakeAnthropicServer(await loadAnthropicRecording('contract-text'));
+      const baseUrl = await server.start();
+
+      try {
+        const error = await failureOf(
+          Promise.resolve().then(
+            () =>
+              new AnthropicProvider({
+                apiKey,
+                baseUrl,
+                timeoutSeconds: 5,
+                maxRetries: 3,
+                testMode: true,
+              }),
+          ),
+        );
+
+        expect(error).toMatchObject({ code: ERROR_CODES.anthropicKeyRejected });
+        const shown = JSON.stringify(error, Object.getOwnPropertyNames(error));
+        for (const part of pieces) expect(shown).not.toContain(part);
+        expect(error instanceof Error ? error.cause : undefined).toBeUndefined();
+        for (const spy of logged) expect(spy).not.toHaveBeenCalled();
+        expect(server.received).toEqual([]);
+      } finally {
+        await server.stop();
+      }
+    },
+  );
+
+  it('RNF-003 a key whose last character is U+00FF is accepted and sent', async () => {
+    const apiKey = pieces.join(lastLatin1);
+    const { provider, server } = await start('contract-text', { apiKey });
+
+    const response = await provider.complete(contractRequest());
+
+    expect(response.text).not.toBe('');
+    expect(server.received).toHaveLength(1);
   });
 });
