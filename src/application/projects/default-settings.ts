@@ -22,7 +22,10 @@ export function settingsForNewProject(
   const providers = Object.fromEntries(
     Object.entries(template.providers).filter(([name]) => used.has(name)),
   );
-  const readerKind = providers[roles.reader.provider]?.kind;
+  const readerProvider = roles.reader.provider;
+  const readerKind = Object.hasOwn(providers, readerProvider)
+    ? providers[readerProvider]?.kind
+    : undefined;
   return {
     ...template,
     providers,

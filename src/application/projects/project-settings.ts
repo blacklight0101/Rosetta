@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import type { FieldProblem } from '../../domain/errors/field-problems.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { ProviderKind } from '../ports/llm-provider.js';
 
 // Data-model.md section 3.1, RF-002, RF-405, RF-010: the project settings document
 // (`projects.settings`). Every field is required except the lists and values the table gives no
@@ -17,7 +18,7 @@ export const PROVIDER_KINDS = [
   'openai-compatible',
   'anthropic',
   'fake',
-] as const;
+] as const satisfies readonly ProviderKind[];
 export const ROLE_NAMES = ['reader', 'verifier', 'planner', 'summariser'] as const;
 
 const invalid = { error: ERROR_CODES.settingValueInvalid };
@@ -117,7 +118,13 @@ const scanSchema = z.strictObject(
   invalid,
 );
 
-const providerName = z.string().regex(/^[a-z][a-z0-9-]{0,31}$/, invalid);
+/** Names every object already has; a provider of that name would look defined when it is not. */
+const RESERVED_NAMES: ReadonlySet<string> = new Set(Object.getOwnPropertyNames(Object.prototype));
+
+const providerName = z
+  .string()
+  .regex(/^[a-z][a-z0-9-]{0,31}$/, invalid)
+  .refine((name) => !RESERVED_NAMES.has(name), invalid);
 
 const rolesSchema = z.strictObject(
   {
@@ -144,7 +151,7 @@ const settingsObject = z.strictObject(
 
 export const projectSettingsSchema = settingsObject.superRefine((settings, context) => {
   for (const role of ROLE_NAMES) {
-    if (settings.providers[settings.roles[role].provider] !== undefined) continue;
+    if (Object.hasOwn(settings.providers, settings.roles[role].provider)) continue;
     context.addIssue({
       code: 'custom',
       message: ERROR_CODES.settingsProviderUnknown,
@@ -181,6 +188,16 @@ function byField(left: FieldProblem, right: FieldProblem): number {
   return left.field < right.field ? -1 : 1;
 }
 
+/** Zod's record skips an own __proto__ key, so a provider of that name is refused here. */
+function reservedProviderProblems(input: unknown): FieldProblem[] {
+  if (typeof input !== 'object' || input === null) return [];
+  const providers: unknown = Reflect.get(input, 'providers');
+  if (typeof providers !== 'object' || providers === null) return [];
+  return Object.getOwnPropertyNames(providers)
+    .filter((name) => RESERVED_NAMES.has(name))
+    .map((name) => ({ field: `providers.${name}`, code: ERROR_CODES.settingValueInvalid }));
+}
+
 /**
  * Parses a settings document (RF-002). A refusal lists every problem with its field and code,
  * ordered by field and without duplicates; nothing is cast.
@@ -189,10 +206,12 @@ function byField(left: FieldProblem, right: FieldProblem): number {
 export function parseProjectSettings(
   input: unknown,
 ): Result<ProjectSettings, readonly FieldProblem[]> {
+  const reserved = reservedProviderProblems(input);
   const parsed = projectSettingsSchema.safeParse(input);
-  if (parsed.success) return ok(parsed.data);
+  if (parsed.success && reserved.length === 0) return ok(parsed.data);
   const problems = new Map<string, FieldProblem>();
-  for (const problem of parsed.error.issues.flatMap(problemsOf)) {
+  const issues = parsed.success ? [] : parsed.error.issues.flatMap(problemsOf);
+  for (const problem of [...issues, ...reserved]) {
     problems.set(`${problem.field}|${problem.code}`, problem);
   }
   return err([...problems.values()].sort(byField));

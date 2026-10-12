@@ -125,7 +125,10 @@ naming a provider the project does not define), RST-1002 (a role missing or with
 price below zero), RST-1004 (a `baseUrl`), RST-1006 (any other value or key that is not allowed); RST-1005 is the
 code of the refusal as a whole. A new project takes `templates/project-settings.json` with `scan.ignoreRules` from
 `templates/ignore-rules.txt`, the provider and model of each role from the server setting `defaultRoles` where set,
-only the providers its roles use, and `agents.parallelism` 1 when the reader is Ollama (DEC-106).
+only the providers its roles use, and `agents.parallelism` 1 when the reader is Ollama (DEC-106). The numbers in
+`templates/project-settings.json` (run cap, confirmation threshold, output limits, turns, timeouts) are
+owner-editable defaults pending the owner's confirmation; the placeholder model is `gemma4:e4b`, the best reader measured
+so far (providers.md 2.6), until the reader spike (P1-47) decides.
 
 ### 3.2 `.rosettaignore`
 

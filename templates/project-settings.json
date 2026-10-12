@@ -41,13 +41,13 @@
   "roles": {
     "reader": {
       "provider": "ollama",
-      "model": "qwen2.5-coder:7b",
+      "model": "gemma4:e4b",
       "maxOutputTokens": 4096,
       "maxTurns": 12
     },
-    "verifier": { "provider": "ollama", "model": "qwen2.5-coder:7b", "maxOutputTokens": 2048 },
-    "planner": { "provider": "ollama", "model": "qwen2.5-coder:7b", "maxOutputTokens": 4096 },
-    "summariser": { "provider": "ollama", "model": "qwen2.5-coder:7b", "maxOutputTokens": 2048 }
+    "verifier": { "provider": "ollama", "model": "gemma4:e4b", "maxOutputTokens": 2048 },
+    "planner": { "provider": "ollama", "model": "gemma4:e4b", "maxOutputTokens": 4096 },
+    "summariser": { "provider": "ollama", "model": "gemma4:e4b", "maxOutputTokens": 2048 }
   },
   "budget": {
     "run": { "maxCostMicros": 500000, "maxTokens": 2000000 },

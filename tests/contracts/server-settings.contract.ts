@@ -17,7 +17,7 @@ export function serverSettingsContract(name: string, withRoles: ServerSettingsWi
 
   it(`DEC-106 ${name} reads the provider and model the administrator set per role`, async () => {
     const roles: DefaultRoles = {
-      reader: { provider: 'ollama', model: 'qwen2.5-coder:7b' },
+      reader: { provider: 'ollama', model: 'gemma4:e4b' },
       verifier: { provider: 'openai', model: 'gpt-4o-mini-2024-07-18' },
     };
     const settings = await withRoles(roles);
