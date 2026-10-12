@@ -73,7 +73,9 @@ describe('CSRF secret at sign-in and sign-out', () => {
     expect(browser.cookies.get(CSRF_COOKIE)).not.toBe(earlierSecret);
     expect(stale.statusCode).toBe(403);
   });
+});
 
+describe('CSRF secret at a password change', () => {
   it('RF-1103 a password change replaces the CSRF secret and refuses an earlier token', async () => {
     const test = serve();
     const amy = await addUser(test, { userName: 'amy' });
