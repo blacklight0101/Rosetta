@@ -37,7 +37,7 @@ interface Pending {
 }
 
 /** An executor whose runs end when the test says so. */
-export class ControlledExecutor implements RunExecutor {
+class ControlledExecutor implements RunExecutor {
   readonly started: RunExecution[] = [];
   private readonly pending = new Map<string, Pending>();
 

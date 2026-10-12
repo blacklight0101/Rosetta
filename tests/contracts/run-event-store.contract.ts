@@ -7,7 +7,7 @@ import { eventFor, scopeFor } from '../support/run-event-fixtures.js';
 // passes this suite. RF-1006: events in order with a sequence number, no gaps, `run.ended` last,
 // and a page that connects late reads what it missed.
 
-export interface EventStore {
+interface EventStore {
   readonly sink: RunEventSink;
   readonly history: RunEventHistory;
 }

@@ -241,7 +241,7 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | | |
 |---|---|
 | Purpose | what a run was, what it used and how it ended; the key to repeat it |
-| Writer | the use case of the run: at start, and at end (RF-003) |
+| Writer | the run lifecycle (`RunLifecycle`) through `RunManifestStore`: when the run is accepted (so the options survive a restart while the run is queued), when it starts, when its source is resolved and when it ends (RF-003, RF-126); the whole file is replaced atomically each time |
 | Readers | report, history in the web UI (RF-1008), resume (RF-006), export |
 | Spec | RF-003, RF-126, RF-141, RNF-002, RNF-004 |
 
@@ -250,8 +250,8 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | `schemaVersion` | int | 1 |
 | `runId`, `stage` | string | `stage`: `scan`, `understand`, `verify`, `report`, `plan` |
 | `rosettaVersion` | string | |
-| `startedAt`, `endedAt` | instant | `endedAt` empty while running |
-| `endState` | `RunEndState` | empty while running; set exactly once |
+| `startedAt`, `endedAt` | instant | `startedAt` is `null` while the run waits in the queue, `endedAt` while it is not over |
+| `endState` | `RunEndState` | `null` while the run is not over; set exactly once |
 | `resumedFrom` | string | the earlier `runId` when resumed (RF-006) |
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
@@ -264,6 +264,12 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | `masking` | object | count per secret kind (RF-141): `api-key`, `bearer-token`, `connection-string`, `password`, `private-key` (the kinds of `SecretMasker`, `src/infrastructure/guards/secret-masker.ts`) |
 | `totals` | object | `{ inputTokens, outputTokens, cachedInputTokens, costMicros, calls }` |
 | `agentTasks[]` | list | `{ agentTaskId, area, role, state (AgentTaskState), turns, cards }` |
+
+A field that is not known yet is `null` (or `{}` / `[]` for objects and lists), never absent, so the file always has the
+same fields; `source.commitSha` and `source.snapshotHash` are `null` until the source is resolved, and `roles[].modelVersion`
+and `modelDigest` until the first call. The file is masked like every file Rosetta writes (RNF-003). A file with a
+newer `schemaVersion` is refused with RST-2106. The queue's run row mirrors the end state, the commit and the snapshot
+folder (section 4, `runs`); the folder name is the `runId` of this file and of every event, while URLs use the row's `id`.
 
 ### 3.7 Cards: `cards/<TYPE>/<CARD-ID>.md` and `cards/index.json`
 
@@ -344,9 +350,12 @@ Event types (canonical list):
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent |
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` |
 | `question.answered` | `{ cardId }` (RF-1007) |
-| `run.ended` | `{ endState, totals }` |
+| `run.ended` | `{ endState, totals, errorCode? }`; `errorCode` is the `RST` code of a `Failed` run |
 
-New event types may be added without a version bump; a reader ignores types it does not know. Application log
+New event types may be added without a version bump; a reader ignores types it does not know. Each line is masked before
+it is stored (RNF-003). A crash can leave a last line without its line break: readers ignore it and the writer removes it
+before the next event, so a resumed run continues from the last complete line. A run that is cancelled while queued, or
+ended by restart recovery, has only the events it had plus `run.ended`. Application log
 entries are not run events: the web UI logs panel receives them on its own stream (RF-1011).
 
 ### 3.10 `provider-calls.jsonl`

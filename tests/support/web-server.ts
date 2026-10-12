@@ -82,6 +82,27 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
   };
 }
 
+interface AuthParts {
+  readonly users: MemoryUserRepository;
+  readonly hasher: PasswordHasher;
+  readonly sessions: MemorySessionStore;
+  readonly auditLog: MemoryAuditLog;
+  readonly logger: MemoryLogger;
+  readonly clock: FixedClock;
+  readonly dummyHash: string;
+}
+
+/** RF-1009, RF-1100, RF-1101: the session use cases over memory adapters. */
+function authServices(parts: AuthParts): ServerOptions['auth'] {
+  const { users, hasher, sessions, auditLog, logger, clock, dummyHash } = parts;
+  return {
+    signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
+    signOut: new SignOut({ sessions, auditLog, logger, clock }),
+    resolveSession: new ResolveSession({ sessions, users, logger, clock }),
+    refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
+  };
+}
+
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
@@ -116,12 +137,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     version: testVersion,
     publicUrl: testPublicUrl,
     trustProxy: 0,
-    auth: {
-      signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
-      signOut: new SignOut({ sessions, auditLog, logger, clock }),
-      resolveSession: new ResolveSession({ sessions, users, logger, clock }),
-      refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
-    },
+    auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, heartbeat },
     ...overrides,

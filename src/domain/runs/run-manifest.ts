@@ -6,7 +6,7 @@ import type { RunEndState, RunStage } from './run-states.js';
 // time while the run is not over, the commit and the snapshot hash until the source is resolved),
 // so the file always has the same fields. The end state is set exactly once.
 
-export interface ManifestSource {
+interface ManifestSource {
   readonly url: string;
   readonly owner: string;
   readonly repo: string;
@@ -37,7 +37,7 @@ export interface ManifestCaps {
   >;
 }
 
-export interface ManifestSecurity {
+interface ManifestSecurity {
   readonly deniedReads: number;
   readonly refusedRequests: number;
   readonly skippedLinks: number;
@@ -45,7 +45,7 @@ export interface ManifestSecurity {
   readonly allowDenied: readonly string[];
 }
 
-export interface ManifestTotals {
+interface ManifestTotals {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
@@ -53,7 +53,7 @@ export interface ManifestTotals {
   readonly calls: number;
 }
 
-export interface ManifestAgentTask {
+interface ManifestAgentTask {
   readonly agentTaskId: string;
   readonly area: string;
   readonly role: string;

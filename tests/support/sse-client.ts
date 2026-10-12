@@ -32,7 +32,7 @@ export function connectSse(url: string, headers: Record<string, string>): Promis
       });
       resolve({
         status: response.statusCode ?? 0,
-        contentType: String(response.headers['content-type'] ?? ''),
+        contentType: response.headers['content-type'] ?? '',
         text: () => received,
         waitFor: (part) =>
           new Promise<void>((found) => {

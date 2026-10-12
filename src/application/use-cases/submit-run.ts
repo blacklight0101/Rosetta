@@ -53,9 +53,12 @@ export class SubmitRun {
   // RF-003, RF-1108
   async execute(
     request: SubmitRunRequest,
-  ): Promise<Result<SubmittedRun, typeof ERROR_CODES.notFound>> {
+  ): Promise<
+    Result<SubmittedRun, typeof ERROR_CODES.notFound | typeof ERROR_CODES.runStageNotAvailable>
+  > {
     const { actor, project, stage } = request;
     if (project.userId !== actor.userId) return err(ERROR_CODES.notFound);
+    if (!this.deps.queue.canRun(stage)) return err(ERROR_CODES.runStageNotAvailable);
     const run = await this.insert(project, stage);
     await this.writeManifest(run, request);
     await this.deps.queue.dispatch();

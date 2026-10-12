@@ -4,31 +4,28 @@
 // plain text and a reader ignores the types it does not know.
 
 /** The canonical list of event types (data-model.md section 3.9). */
-export const RUN_EVENT_TYPES = [
-  'run.started',
-  'source.resolved',
-  'source.downloaded',
-  'scan.completed',
-  'agent.planned',
-  'agent.started',
-  'agent.turn',
-  'agent.tool.called',
-  'agent.tool.result',
-  'agent.card.proposed',
-  'agent.ended',
-  'verify.citation.checked',
-  'verify.claim.judged',
-  'usage.recorded',
-  'budget.warning',
-  'budget.capReached',
-  'question.answered',
-  'run.ended',
-] as const;
-
-export type RunEventType = (typeof RUN_EVENT_TYPES)[number];
+export type RunEventType =
+  | 'run.started'
+  | 'source.resolved'
+  | 'source.downloaded'
+  | 'scan.completed'
+  | 'agent.planned'
+  | 'agent.started'
+  | 'agent.turn'
+  | 'agent.tool.called'
+  | 'agent.tool.result'
+  | 'agent.card.proposed'
+  | 'agent.ended'
+  | 'verify.citation.checked'
+  | 'verify.claim.judged'
+  | 'usage.recorded'
+  | 'budget.warning'
+  | 'budget.capReached'
+  | 'question.answered'
+  | 'run.ended';
 
 /** The type of the last event of every run. */
-export const RUN_ENDED: RunEventType = 'run.ended';
+const RUN_ENDED: RunEventType = 'run.ended';
 
 export interface RunEvent {
   readonly schemaVersion: 1;

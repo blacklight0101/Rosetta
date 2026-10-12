@@ -47,7 +47,7 @@ async function setup(test: TestServer = createTestServer(), note = 'first turn')
   };
 }
 
-describe('GET /api/runs/:id/events', () => {
+describe('GET /api/runs/:runId/events', () => {
   it('RF-1006 replays the stored events of a finished run as server-sent events and ends', async () => {
     const { amy, runId } = await setup();
 
@@ -91,7 +91,9 @@ describe('GET /api/runs/:id/events', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
   });
+});
 
+describe('GET /api/runs/:runId/events access', () => {
   it('RF-1105 answers 404 for another user run, an administrator and an unknown id', async () => {
     const { bob, root, amy, runId } = await setup();
     const url = (id: string): string => `/api/runs/${id}/events`;
@@ -111,7 +113,7 @@ describe('GET /api/runs/:id/events', () => {
   });
 });
 
-describe('GET /api/runs/:id/events and secrets', () => {
+describe('GET /api/runs/:runId/events and secrets', () => {
   const data = useTempRoot('rosetta-sse-');
 
   it('RNF-003 keeps a secret out of the replayed stream', async () => {

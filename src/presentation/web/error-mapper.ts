@@ -41,6 +41,7 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.invalidCredentials]: 401,
   [ERROR_CODES.notFound]: 404,
   [ERROR_CODES.conflict]: 409,
+  [ERROR_CODES.runStageNotAvailable]: 409,
   [ERROR_CODES.rateLimited]: 429,
 };
 

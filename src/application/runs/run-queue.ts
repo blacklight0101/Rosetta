@@ -24,7 +24,7 @@ export const DEFAULT_MAX_RUNNING_RUNS = 2;
 export interface RunQueueDependencies {
   readonly runs: RunIndex;
   readonly lifecycle: RunLifecycle;
-  /** The executor of each stage; a stage without one ends its runs as `Failed`. */
+  /** The executor of each stage; a run of a stage without one waits in the queue. */
   readonly executors: Partial<Record<RunStage, RunExecutor>>;
   readonly clock: Clock;
   readonly logger: Logger;
@@ -61,6 +61,11 @@ export class RunQueue {
   // RF-1108
   dispatch(): Promise<void> {
     return this.steps.run(STEP, () => this.startWaiting());
+  }
+
+  /** Whether an executor is registered for the stage, so a run of it can start. */
+  canRun(stage: RunStage): boolean {
+    return this.deps.executors[stage] !== undefined;
   }
 
   /** The position of a queued run, counted from 1; undefined when it is not queued. */
@@ -112,10 +117,23 @@ export class RunQueue {
     if (this.closing) return;
     const { runs, maxRunning } = this.deps;
     const [queued, running] = await Promise.all([runs.listQueued(), runs.listRunning()]);
-    for (const run of runsToStart(queued, running, maxRunning)) await this.launch(run);
+    const startable = queued.flatMap((run) => {
+      const executor = this.deps.executors[run.stage];
+      return executor === undefined ? [] : [{ run, executor }];
+    });
+    const chosen = new Set(
+      runsToStart(
+        startable.map((item) => item.run),
+        running,
+        maxRunning,
+      ),
+    );
+    for (const { run, executor } of startable) {
+      if (chosen.has(run)) await this.launch(run, executor);
+    }
   }
 
-  private async launch(run: Run): Promise<void> {
+  private async launch(run: Run, executor: RunExecutor): Promise<void> {
     const controller = new AbortController();
     this.controllers.set(run.id, controller);
     let started: StartedRun | undefined;
@@ -123,39 +141,46 @@ export class RunQueue {
       started = await this.deps.lifecycle.begin(run);
     } catch (error) {
       await this.report(run, 'could not start', error);
-      await this.deps.lifecycle.finish(run, 'Failed', failureOf(error).errorCode);
+      await this.endQuietly(run, failureOf(error));
     }
     if (started === undefined) {
       this.controllers.delete(run.id);
       return;
     }
-    const finished = this.execute(started, controller).finally(() => {
+    const finished = this.execute(started, executor, controller).finally(() => {
       this.inFlight.delete(finished);
     });
     this.inFlight.add(finished);
   }
 
-  private async execute(started: StartedRun, controller: AbortController): Promise<void> {
+  private async execute(
+    started: StartedRun,
+    executor: RunExecutor,
+    controller: AbortController,
+  ): Promise<void> {
     const { run } = started;
-    const { lifecycle } = this.deps;
-    const outcome = await this.outcomeOf(started, controller.signal);
-    try {
-      await lifecycle.finish(run, outcome.endState, outcome.errorCode);
-    } catch (error) {
-      await this.report(run, 'could not end', error);
-    }
+    await this.endQuietly(run, await this.outcomeOf(started, executor, controller.signal));
     this.controllers.delete(run.id);
     await this.dispatch().catch((error: unknown) =>
       this.report(run, 'could not start the next run', error),
     );
   }
 
-  private async outcomeOf(started: StartedRun, signal: AbortSignal): Promise<RunOutcome> {
-    const { run } = started;
-    const executor = this.deps.executors[run.stage];
-    if (executor === undefined) {
-      return { endState: 'Failed', errorCode: ERROR_CODES.runStageNotAvailable };
+  /** Records the end of a run; a failure is logged, because the run row is the record that counts. */
+  private async endQuietly(run: Run, outcome: RunOutcome): Promise<void> {
+    try {
+      await this.deps.lifecycle.finish(run, outcome.endState, outcome.errorCode);
+    } catch (error) {
+      await this.report(run, 'could not end', error);
     }
+  }
+
+  private async outcomeOf(
+    started: StartedRun,
+    executor: RunExecutor,
+    signal: AbortSignal,
+  ): Promise<RunOutcome> {
+    const { run } = started;
     const execution: RunExecution = {
       run,
       manifest: started.manifest,

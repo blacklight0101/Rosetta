@@ -72,6 +72,19 @@ describe('the live stream of a run', () => {
       expect(test.heartbeat.activeJobs).toBe(0);
     });
   });
+});
+
+describe('the live stream of a run and shutdown', () => {
+  it('RF-1006 ends the open streams when the server closes, so a shutdown does not wait for them', async () => {
+    const { test, connect } = await openRun();
+    const stream = await connect();
+    await stream.waitFor('event: run.started');
+
+    await test.server.close();
+    await stream.ended;
+
+    expect(test.runs.broadcaster.subscriberCount).toBe(0);
+  });
 
   it('RF-1006 sends a keep-alive comment on every tick of the heartbeat', async () => {
     const { test, connect } = await openRun();
@@ -80,6 +93,6 @@ describe('the live stream of a run', () => {
 
     await test.heartbeat.tick();
 
-    await stream.waitFor(': keepalive');
+    await expect(stream.waitFor(': keepalive')).resolves.toBeUndefined();
   });
 });

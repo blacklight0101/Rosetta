@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
@@ -82,6 +83,39 @@ describe('SubmitRun access', () => {
     });
 
     expect(submitted).toEqual({ ok: false, error: ERROR_CODES.notFound });
+    expect(h.executor.started).toHaveLength(0);
+  });
+});
+
+describe('SubmitRun and stages', () => {
+  it('RF-1108 refuses a stage the server has no executor for yet, queueing nothing', async () => {
+    const h = createRunHarness({ stages: ['scan'] });
+
+    const submitted = await h.submit.execute({
+      actor: userAmy,
+      project: sampleProject({ userId: userAmy.userId }),
+      stage: 'plan',
+      options: {},
+    });
+
+    expect(submitted).toEqual({ ok: false, error: ERROR_CODES.runStageNotAvailable });
+    expect(h.executor.started).toHaveLength(0);
+  });
+});
+
+describe('SubmitRun and a manifest that cannot be written', () => {
+  it('RF-003 cancels the run it queued and passes the failure on', async () => {
+    const h = createRunHarness();
+    const failure = new RosettaError(ERROR_CODES.runManifestFailed);
+    vi.spyOn(h.manifests, 'write').mockRejectedValue(failure);
+    const project = sampleProject({ userId: userAmy.userId });
+
+    await expect(
+      h.submit.execute({ actor: userAmy, project, stage: 'scan', options: {} }),
+    ).rejects.toBe(failure);
+
+    const [left] = await h.runs.list(userAmy.userId, project.id);
+    expect(left).toMatchObject({ queueState: 'Ended', endState: 'Interrupted' });
     expect(h.executor.started).toHaveLength(0);
   });
 });

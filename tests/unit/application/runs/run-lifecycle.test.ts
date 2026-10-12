@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
+import { sampleRun } from '../../../support/run-fixtures.js';
 
 // RF-003, RF-126, RF-1006: the manifest is written when the run is accepted, rewritten when it
 // starts and when it ends; the events start with run.started and end with run.ended.
@@ -111,14 +112,48 @@ describe('a run that fails', () => {
     expect(h.logger.entries.some((entry) => entry.level === 'error')).toBe(true);
   });
 
-  it('RF-1108 ends a run whose stage has no executor as Failed with RST-2305', async () => {
-    const h = createRunHarness({ stages: ['scan'] });
+  it('RF-1108 leaves a run queued whose stage has no executor yet, and starts the others', async () => {
+    const h = createRunHarness({ stages: ['scan'], maxRunning: 2 });
+    const stored = await h.runs.insert({
+      ...sampleRun({ userId: userAmy.userId, stage: 'plan' }),
+    });
+    if (!stored.ok) throw new Error('The run was not stored');
+    const scan = await h.start(userBob);
 
-    const run = await h.start(userAmy, 'plan');
-    const ended = await h.ended(run);
+    await h.queue.recover();
 
+    expect(h.executor.startedKeys).toEqual([scan.runKey]);
+    expect((await h.runs.find(userAmy.userId, stored.value.id))?.queueState).toBe('Queued');
+  });
+});
+
+describe('a run whose records cannot be written', () => {
+  it('RF-003 ends a run as Failed with RST-2106 when it has no manifest at its start', async () => {
+    const h = createRunHarness();
+    const stored = await h.runs.insert(sampleRun({ userId: userAmy.userId }));
+    if (!stored.ok) throw new Error('The run was not stored');
+
+    await h.queue.recover();
+
+    const ended = await h.ended(stored.value);
     expect(ended.endState).toBe('Failed');
-    const stored = await h.events.read(h.scopeOf(run), 0);
-    expect(stored.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.runStageNotAvailable });
+    const events = await h.events.read(h.scopeOf(stored.value), 0);
+    expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.runManifestFailed });
+    expect(h.executor.started).toHaveLength(0);
+  });
+
+  it('RNF-002 still ends the run and publishes run.ended when the manifest cannot be rewritten', async () => {
+    const h = createRunHarness();
+    const run = await h.start(userAmy);
+    vi.spyOn(h.manifests, 'write').mockRejectedValue(
+      new RosettaError(ERROR_CODES.runManifestFailed),
+    );
+
+    h.executor.settle(run.id, { endState: 'Completed' });
+    await h.ended(run);
+
+    const events = await h.events.read(h.scopeOf(run), 0);
+    expect(events.at(-1)?.type).toBe('run.ended');
+    expect(h.logger.entries.some((entry) => entry.level === 'error')).toBe(true);
   });
 });

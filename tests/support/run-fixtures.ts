@@ -6,7 +6,7 @@ import { fixtureNow } from './account-fixtures.js';
 
 let runCount = 0;
 
-export const noTotals = {
+const noTotals = {
   costMicros: 0,
   inputTokens: 0,
   outputTokens: 0,
