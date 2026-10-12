@@ -43,7 +43,7 @@ export function useFakeOllama(): (
     const baseUrl = await server.start();
     const waits: number[] = [];
     const logger = new RecordingLogger();
-    const textProtocolPrompt = await loadTextToolProtocol(promptsFolder);
+    const { text: textProtocolPrompt } = await loadTextToolProtocol(promptsFolder);
     const create = (): OllamaProvider =>
       new OllamaProvider({
         baseUrl,
@@ -51,7 +51,6 @@ export function useFakeOllama(): (
         timeoutSeconds: 5,
         maxRetries: 3,
         testMode: true,
-        fakeServer: true,
         random: () => 0.5,
         ...overrides,
         textProtocolPrompt,

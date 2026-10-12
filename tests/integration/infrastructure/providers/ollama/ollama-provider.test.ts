@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../../src/domain/errors/rosetta-error.js';
 import { OllamaProvider } from '../../../../../src/infrastructure/providers/ollama/ollama-provider.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
-import { closedLoopbackUrl } from '../../../../support/fake-http-server.js';
+import {
+  closedLoopbackUrl,
+  releaseClosedLoopbackUrls,
+} from '../../../../support/fake-http-server.js';
+import { FakeOllamaServer, loadOllamaRecording } from '../../../../support/fake-ollama-server.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { useFakeOllama } from '../../../../support/ollama-harness.js';
 import { RecordingLogger } from '../../../../support/recording-logger.js';
@@ -104,7 +108,6 @@ describe('OllamaProvider when Ollama or the model is missing', () => {
       maxRetries: 3,
       textProtocolPrompt: '{{tools}}',
       testMode: true,
-      fakeServer: true,
       logger: new RecordingLogger(),
     });
 
@@ -126,9 +129,45 @@ describe('OllamaProvider when Ollama or the model is missing', () => {
   });
 });
 
+const servers: FakeOllamaServer[] = [];
+afterEach(async () => {
+  releaseClosedLoopbackUrls();
+  await Promise.all(servers.splice(0).map((server) => server.stop()));
+});
+
+async function startServer(registerPort: boolean): Promise<FakeOllamaServer> {
+  const recording = await loadOllamaRecording('contract-text');
+  const server = new FakeOllamaServer(recording, { registerPort });
+  servers.push(server);
+  return server;
+}
+
+function providerOn(baseUrl: string): OllamaProvider {
+  return new OllamaProvider({
+    baseUrl,
+    toolMode: 'native',
+    timeoutSeconds: 5,
+    maxRetries: 0,
+    textProtocolPrompt: '{{tools}}',
+    testMode: true,
+    logger: new RecordingLogger(),
+  });
+}
+
 describe('OllamaProvider in automated tests', () => {
-  it('RNF-005 refuses to call a real Ollama when ROSETTA_TEST=1', async () => {
-    const { provider, server } = await start('contract-text', { fakeServer: false });
+  it('RNF-005 trusts the port the fake server registered, without a flag from the caller', async () => {
+    const server = await startServer(true);
+    const provider = providerOn(await server.start());
+
+    const response = await provider.complete(contractRequest());
+
+    expect(response.text).not.toBe('');
+    expect(server.chatBodies()).toHaveLength(1);
+  });
+
+  it('RNF-005 refuses a loopback server that did not register its port', async () => {
+    const server = await startServer(false);
+    const provider = providerOn(await server.start());
 
     const error = await failureOf(provider.complete(contractRequest()));
 
@@ -137,16 +176,7 @@ describe('OllamaProvider in automated tests', () => {
   });
 
   it('RNF-005 calls a fake server only on a loopback address', async () => {
-    const provider = new OllamaProvider({
-      baseUrl: 'http://ollama.example.test:11434',
-      toolMode: 'native',
-      timeoutSeconds: 5,
-      maxRetries: 0,
-      textProtocolPrompt: '{{tools}}',
-      testMode: true,
-      fakeServer: true,
-      logger: new RecordingLogger(),
-    });
+    const provider = providerOn('http://ollama.example.test:11434');
 
     const error = await failureOf(provider.complete(contractRequest()));
 

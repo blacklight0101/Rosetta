@@ -1,7 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { exchangeSchema, FakeHttpServer, type RecordedExchange } from './fake-http-server.js';
+import {
+  exchangeSchema,
+  FakeHttpServer,
+  type FakeServerOptions,
+  type RecordedExchange,
+} from './fake-http-server.js';
 
 // ADR-008, RF-401: a fake Ollama HTTP server on loopback that replays a recording of Ollama's
 // wire answers. `GET /api/tags` answers the recording's installed models; each `POST /api/chat`
@@ -67,8 +72,8 @@ function ollamaRoute(recording: OllamaRecording) {
 }
 
 export class FakeOllamaServer extends FakeHttpServer {
-  constructor(recording: OllamaRecording) {
-    super(ollamaRoute(recording));
+  constructor(recording: OllamaRecording, options: FakeServerOptions = {}) {
+    super(ollamaRoute(recording), options);
   }
 
   /** The chat bodies received, in order. */

@@ -29,8 +29,6 @@ export interface OpenAiProviderOptions {
   readonly maxRetries: number;
   /** `ROSETTA_TEST=1`: real OpenAI calls are refused (RNF-005, ADR-008). */
   readonly testMode: boolean;
-  /** True only in tests whose base URL is a loopback fake OpenAI server they started. */
-  readonly fakeServer?: boolean;
   /** The size limit of one answer; 8 MiB when not set. */
   readonly maxResponseBytes?: number;
   readonly sleep?: Sleep;
@@ -91,8 +89,8 @@ export class OpenAiProvider implements LlmProvider {
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
-    const { testMode, fakeServer, maxRetries, sleep, random } = this.options;
-    refuseRealProviderInTests({ testMode, fakeServer, baseUrl: this.baseUrl });
+    const { testMode, maxRetries, sleep, random } = this.options;
+    refuseRealProviderInTests({ testMode, baseUrl: this.baseUrl });
     return completeWithRetries({
       attempt: () => this.attempt(request),
       signal: request.signal,

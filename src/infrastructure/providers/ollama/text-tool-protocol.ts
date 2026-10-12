@@ -11,13 +11,29 @@ const toolResultLabel = 'tool_result';
 /** Where the prompt file wants the tool definitions. */
 export const toolsPlaceholder = '{{tools}}';
 
-const thinkingBlock = /<think>[\s\S]*?<\/think>/g;
-const unclosedThinking = /<think>[\s\S]*$/;
+/** `<think>`, `<thinking>` and their closing tags, in any letter case. */
+const thinkingTag = /<(\/?)think(?:ing)?>/gi;
 const fencedBlock = /```([\w-]*)[ \t]*\r?\n([\s\S]*?)```/g;
 
-/** The content without thinking text, which some models send even with thinking off. */
+/**
+ * The content without thinking text, which some models send even with thinking off. One pass over
+ * the tags, so the time grows linearly with the content. An opening tag hides the text up to the
+ * next closing tag, or to the end when none follows. A closing tag with no opening tag hides all
+ * the text before it: the chat template sent the opening tag, not the model.
+ */
 export function stripThinking(content: string): string {
-  return content.replace(thinkingBlock, '').replace(unclosedThinking, '');
+  const kept: string[] = [];
+  let visibleFrom = 0;
+  let thinking = false;
+  for (const tag of content.matchAll(thinkingTag)) {
+    const closing = tag[1] === '/';
+    if (!closing && !thinking) kept.push(content.slice(visibleFrom, tag.index));
+    if (closing && !thinking) kept.length = 0;
+    if (closing) visibleFrom = tag.index + tag[0].length;
+    thinking = !closing;
+  }
+  if (!thinking) kept.push(content.slice(visibleFrom));
+  return kept.join('');
 }
 
 export interface TextAnswer {
