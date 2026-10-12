@@ -84,7 +84,7 @@ describe('totals pill', () => {
     await waitFor(() => {
       expect(totals.textContent).toContain('Your total');
     });
-    expect(totals.textContent).toContain('1,302,118 tokens');
+    expect(totals.textContent).toContain('1,280,000 tokens');
     expect(totals.textContent).toContain('$3.88');
     expect(totals.textContent).toContain('in 1,200,000');
     expect(totals.textContent).toContain('out 80,000');

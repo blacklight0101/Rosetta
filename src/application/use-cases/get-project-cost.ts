@@ -1,7 +1,7 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { err, type Result } from '../../domain/errors/result.js';
-import type { CostBreakdown } from '../budget/cost-breakdown.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
+import { breakdownOf, type CostBreakdown } from '../budget/cost-breakdown.js';
 import type { CostTotals } from '../ports/cost-totals.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { Project } from '../projects/project.js';
@@ -28,11 +28,14 @@ export class GetProjectCost {
   }
 
   // RF-428
-  execute(_request: {
+  async execute(request: {
     readonly actor: Actor;
     readonly projectId: string;
   }): Promise<Result<ProjectCost, typeof ERROR_CODES.notFound>> {
-    void this.deps;
-    return Promise.resolve(err(ERROR_CODES.notFound));
+    const { userId } = request.actor;
+    const project = await this.deps.projects.find(userId, request.projectId);
+    if (project === undefined) return err(ERROR_CODES.notFound);
+    const groups = await this.deps.costs.projectGroups(userId, project.id);
+    return ok({ project, breakdown: breakdownOf(groups) });
   }
 }

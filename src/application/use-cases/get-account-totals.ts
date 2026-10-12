@@ -27,8 +27,12 @@ export class GetAccountTotals {
   }
 
   // RF-1010
-  execute(_request: { readonly actor: Actor }): Promise<AccountTotals> {
-    void this.deps;
-    return Promise.resolve({ totals: totalsOf([]), server: undefined });
+  async execute(request: { readonly actor: Actor }): Promise<AccountTotals> {
+    const { actor } = request;
+    const [groups, server] = await Promise.all([
+      this.deps.costs.userGroups(actor.userId),
+      actor.role === 'admin' ? this.deps.caps.execute() : Promise.resolve(undefined),
+    ]);
+    return { totals: totalsOf(groups), server };
   }
 }

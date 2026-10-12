@@ -31,7 +31,7 @@ export function costAccountFor(kind: CostKind, project: string): Credentials {
 }
 
 /** The server-key spend the seed puts in the ledger: $8.50. */
-export const seededServerMicros = 8_500_000n;
+const seededServerMicros = 8_500_000n;
 
 async function createUserCase(pool: DatabasePool, clock: SystemClock): Promise<CreateUser> {
   return new CreateUser({

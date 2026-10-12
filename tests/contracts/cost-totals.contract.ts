@@ -8,7 +8,7 @@ import { costEntry, costProjectId, costRunB, providerTestEntry } from '../suppor
 // run, stage, role, provider, model, key source, currency, known cost and price table version.
 
 /** What a suite needs to put rows behind the adapter; each adapter's test provides it. */
-export interface CostTotalsFixture {
+interface CostTotalsFixture {
   readonly totals: CostTotals;
   /** Stores an account and answers its id. */
   addUser(): Promise<string>;
@@ -16,7 +16,9 @@ export interface CostTotalsFixture {
 }
 
 const byFirstCall = (left: LedgerGroup, right: LedgerGroup): number =>
-  left.firstAt.getTime() - right.firstAt.getTime() || left.model.localeCompare(right.model);
+  left.firstAt.getTime() - right.firstAt.getTime() ||
+  left.model.localeCompare(right.model) ||
+  Number(left.costKnown) - Number(right.costKnown);
 
 /** The two calls of the first case, summed: the first call's instant, both calls' tokens and cost. */
 const summedGroup: LedgerGroup = {
