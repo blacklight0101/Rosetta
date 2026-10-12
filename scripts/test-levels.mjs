@@ -1,7 +1,12 @@
 // RNF-005 / DEC-30: prints the test pyramid by level, warns outside 60 / 30 / 10 +- 10 points,
-// and fails when the run counts zero tests. Usage: node scripts/test-levels.mjs [root]
+// and fails when the run counts zero tests or a test runs outside the three level folders.
+// Usage: node scripts/test-levels.mjs --report <vitest-json> [root]
+// The Vitest counts come from the JSON report of the run (`vitest run --reporter=json`): every
+// executed test (passed or failed) counts once, so each it.each row counts, and a contract suite
+// from tests/contracts/ counts at the level of the test file that runs it (P1-61). Playwright
+// specs (tests/e2e/**/*.spec.ts) run in a later step, so their tests are counted from the source.
 import { readdir, readFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 
 const levels = [
   { name: 'Unit', folder: 'unit', target: 60 },
@@ -9,15 +14,17 @@ const levels = [
   { name: 'E2E', folder: 'e2e', target: 10 },
 ];
 const tolerance = 10;
-// Vitest files are *.test.ts and Playwright files *.spec.ts (P1-13). A declaration is it(...),
-// test(...) or it.each(...)(...); skipped and todo tests are not counted, nor are the members of
-// Playwright's test that declare no test (describe, fail, fixme, slow, step, use, hooks, ...).
+const executed = new Set(['passed', 'failed']);
+
+// A Playwright declaration is test(...) or test.<modifier>(...); skipped and todo tests are not
+// counted, nor are the members of Playwright's test that declare no test (describe, fail, fixme,
+// slow, step, use, hooks, ...).
 const notATest = String.raw`skip|todo|describe|fail|fixme|slow|step|use|before\w*|after\w*|extend|info|setTimeout|expect`;
 const testDeclaration = new RegExp(
   String.raw`^\s*(?:it|test)(?:\.(?!(?:${notATest})\b)\w+)*(?:\([^)]*\))?\(`,
   'u',
 );
-const skippedSuite = /^\s*describe\.skip\(/u;
+const skippedSuite = /^\s*(?:describe|test\.describe)\.skip\(/u;
 
 const indentOf = (line) => line.length - line.trimStart().length;
 const braceBalance = (line) => line.split('{').length - line.split('}').length;
@@ -39,29 +46,73 @@ function countInSource(source) {
   return count;
 }
 
-async function listTestFiles(folder) {
-  const entries = await readdir(folder, { recursive: true, withFileTypes: true }).catch(() => []);
-  return entries
-    .filter((entry) => entry.isFile() && /\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(entry.name))
-    .map((entry) => join(entry.parentPath, entry.name));
+class LevelReportError extends Error {}
+
+function fail(message) {
+  throw new LevelReportError(message);
 }
 
-async function countTests(folder) {
+function parseArguments(args) {
+  const at = args.indexOf('--report');
+  const report = at >= 0 ? args[at + 1] : undefined;
+  if (report === undefined) {
+    fail('pass the Vitest JSON report with --report <file> (vitest run --reporter=json).');
+  }
+  const rest = args.filter((_, i) => i !== at && i !== at + 1);
+  return { report: resolve(report), root: resolve(rest[0] ?? '.') };
+}
+
+async function readReport(path) {
+  const text = await readFile(path, 'utf8').catch((error) => fail(`cannot read ${path}: ${error}`));
+  let report;
+  try {
+    report = JSON.parse(text);
+  } catch {
+    fail(`${path} is not a Vitest JSON report (invalid JSON).`);
+  }
+  const files = report?.testResults;
+  const valid =
+    Array.isArray(files) &&
+    files.every((file) => typeof file?.name === 'string' && Array.isArray(file.assertionResults));
+  if (!valid) fail(`${path} is not a Vitest JSON report (no testResults).`);
+  return files;
+}
+
+// The level of a test file is the folder under tests/; a file elsewhere has no level (DEC-30).
+function levelOf(root, file) {
+  const [top, folder] = relative(root, file).split(sep);
+  return top === 'tests' ? levels.findIndex((level) => level.folder === folder) : -1;
+}
+
+function countReport(root, files) {
+  const counts = levels.map(() => 0);
+  const unlabelled = [];
+  for (const file of files) {
+    const runs = file.assertionResults.filter((test) => executed.has(test.status)).length;
+    const level = levelOf(root, file.name);
+    if (level >= 0) counts[level] += runs;
+    else if (runs > 0) unlabelled.push(relative(root, file.name).split(sep).join('/'));
+  }
+  if (unlabelled.length > 0) {
+    fail(`tests ran outside tests/unit, tests/integration and tests/e2e: ${unlabelled.join(', ')}`);
+  }
+  return counts;
+}
+
+async function countPlaywrightSpecs(root) {
+  const folder = join(root, 'tests', 'e2e');
+  const entries = await readdir(folder, { recursive: true, withFileTypes: true }).catch(() => []);
   let total = 0;
-  for (const file of await listTestFiles(folder)) {
-    total += countInSource(await readFile(file, 'utf8'));
+  for (const entry of entries) {
+    if (!entry.isFile() || !/\.spec\.[cm]?[jt]sx?$/u.test(entry.name)) continue;
+    const source = await readFile(join(entry.parentPath, entry.name), 'utf8');
+    total += countInSource(source);
   }
   return total;
 }
 
-const root = resolve(process.argv[2] ?? '.');
-const counts = [];
-for (const level of levels) {
-  counts.push(await countTests(join(root, 'tests', level.folder)));
-}
-const total = counts.reduce((sum, count) => sum + count, 0);
-
-function report() {
+function report(counts) {
+  const total = counts.reduce((sum, count) => sum + count, 0);
   const out = (text) => process.stdout.write(`${text}\n`);
   const shares = counts.map((count) => Math.round((count / total) * 100));
   out(levels.map((level, i) => `${level.name} ${String(counts[i])}`).join(' / '));
@@ -76,9 +127,18 @@ function report() {
   }
 }
 
-if (total === 0) {
-  process.stderr.write('test-levels: the run counted zero tests (RNF-005, DEC-30).\n');
+async function main() {
+  const { report: reportPath, root } = parseArguments(process.argv.slice(2));
+  const counts = countReport(root, await readReport(reportPath));
+  counts[2] += await countPlaywrightSpecs(root);
+  if (counts.every((count) => count === 0)) fail('the run counted zero tests (RNF-005, DEC-30).');
+  report(counts);
+}
+
+try {
+  await main();
+} catch (error) {
+  if (!(error instanceof LevelReportError)) throw error;
+  process.stderr.write(`test-levels: ${error.message}\n`);
   process.exitCode = 1;
-} else {
-  report();
 }
