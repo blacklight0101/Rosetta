@@ -26,7 +26,7 @@ import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './co
 import type { Auth } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
-import { closePool } from './bounded-close.js';
+import { stopWithin, type StopOutcome } from './shutdown.js';
 import { startUp } from './start-up.js';
 import { TestDoubles } from './test-doubles.js';
 import { buildServer } from './web/server.js';
@@ -52,8 +52,11 @@ export interface ApplicationOptions {
 export interface Application {
   /** Applies the migrations, listens and starts the scheduled jobs; returns the listening URL. */
   start(): Promise<string>;
-  /** Stops the jobs, closes the server and the database pool. */
-  stop(): Promise<void>;
+  /**
+   * Stops the jobs, closes the server and the database pool, all within one deadline (P1-68);
+   * resolves `deadline` instead of `clean` when a frozen database made it give up waiting.
+   */
+  stop(): Promise<StopOutcome>;
 }
 
 interface ScheduledTask {
@@ -258,10 +261,9 @@ export function composeApplication(options: ApplicationOptions): Application {
   const cancels: (() => void)[] = [];
   let close: () => Promise<void> = () => Promise.resolve();
 
-  const stop = async (): Promise<void> => {
+  const stop = (): Promise<StopOutcome> => {
     for (const cancel of cancels.splice(0)) cancel();
-    await close();
-    await closePool(pool, logger);
+    return stopWithin({ close: () => close(), pool }, logger);
   };
 
   const start = async (): Promise<string> => {
