@@ -31,7 +31,7 @@ function runFolder(): string {
   return join(data.path, 'users', scope.userId, 'projects', scope.projectId, 'runs', scope.runKey);
 }
 
-async function writerOver(inner?: (real: NodeOutputWriter) => NodeOutputWriter | RefusingWriter) {
+function writerOver(inner?: (real: NodeOutputWriter) => NodeOutputWriter | RefusingWriter) {
   const real = new NodeOutputWriter({
     dataDir: data.path,
     logger: new MemoryLogger(clock, masker),
@@ -39,7 +39,7 @@ async function writerOver(inner?: (real: NodeOutputWriter) => NodeOutputWriter |
   return new FileReportWriter({
     writer: inner === undefined ? real : inner(real),
     masker,
-    assets: await loadReportAssets(templates),
+    assetsFolder: templates,
   });
 }
 
@@ -53,7 +53,7 @@ const paths = [
 
 describe('FileReportWriter', () => {
   it('RF-504 writes the Markdown report, the static pages and their assets into report/', async () => {
-    const written = await (await writerOver()).write(scope, reportModel());
+    const written = await writerOver().write(scope, reportModel());
 
     expect(written).toEqual(paths);
     expect((await readdir(join(runFolder(), 'report'))).sort()).toEqual(
@@ -62,7 +62,7 @@ describe('FileReportWriter', () => {
   });
 
   it('RF-504 writes report.md as the Markdown writer renders it', async () => {
-    await (await writerOver()).write(scope, reportModel());
+    await writerOver().write(scope, reportModel());
 
     expect(await readFile(join(runFolder(), 'report', 'report.md'), 'utf8')).toBe(
       renderReportMarkdown(reportModel(), masker),
@@ -70,7 +70,7 @@ describe('FileReportWriter', () => {
   });
 
   it('RF-506 ships the stylesheet and the replay script of the templates folder', async () => {
-    await (await writerOver()).write(scope, reportModel());
+    await writerOver().write(scope, reportModel());
 
     for (const name of ['report.css', 'replay.js']) {
       expect(await readFile(join(runFolder(), 'report', name), 'utf8')).toBe(
@@ -80,7 +80,7 @@ describe('FileReportWriter', () => {
   });
 
   it('RF-504 gives the same bytes for the same report, with LF line ends', async () => {
-    const writer = await writerOver();
+    const writer = writerOver();
     await writer.write(scope, reportModel());
     const first = await Promise.all(paths.map((path) => readFile(join(runFolder(), path), 'utf8')));
     await writer.write(scope, reportModel());
@@ -93,7 +93,7 @@ describe('FileReportWriter', () => {
   });
 
   it('RF-504 writes nothing outside report/', async () => {
-    await (await writerOver()).write(scope, reportModel());
+    await writerOver().write(scope, reportModel());
 
     expect(await readdir(runFolder())).toEqual(['report']);
   });
@@ -103,7 +103,7 @@ describe('FileReportWriter and failures', () => {
   it('RNF-003 masks a secret in model text in every file', async () => {
     const model = reportModel({ cards: [{ ...plainCard, title: `Key ${fakeOpenAiKey} here` }] });
 
-    await (await writerOver()).write(scope, model);
+    await writerOver().write(scope, model);
 
     for (const path of paths) {
       expect(await readFile(join(runFolder(), path), 'utf8')).not.toContain(fakeOpenAiKey);
@@ -111,7 +111,7 @@ describe('FileReportWriter and failures', () => {
   });
 
   it('RF-504 rejects with RST-1701 when a file is refused', async () => {
-    const writer = await writerOver((real) => new RefusingWriter(real, 2));
+    const writer = writerOver((real) => new RefusingWriter(real, 2));
 
     const failure = await writer.write(scope, reportModel()).catch((error: unknown) => error);
 

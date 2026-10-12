@@ -39,7 +39,9 @@ import { SaveProviderKey } from '../../src/application/use-cases/save-provider-k
 import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
-import { MemoryArchiveWriter } from './memory-archive-writer.js';
+import type { MemoryArchiveWriter } from './memory-archive-writer.js';
+import type { MemoryRunFileReader } from './memory-run-file-reader.js';
+import type { RecordingReportWriter } from './report-doubles.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FakeHostResolver } from './fake-host-resolver.js';
 import type { FakeAdapters, SpyLedger } from './provider-fakes.js';
@@ -49,7 +51,7 @@ import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
-import { runServices } from './web-run-services.js';
+import { runOutputs, runServices, type RunOutputGiven } from './web-run-services.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
@@ -76,6 +78,10 @@ export interface TestServer {
   readonly runs: RunHarness;
   /** RF-008: the run folders the default export reads; give a run its folder with `seed`. */
   readonly archives: MemoryArchiveWriter;
+  /** RF-506: the run folders the default file reader reads; give a run its folder with `seed`. */
+  readonly runFiles: MemoryRunFileReader;
+  /** RF-504: the models the default report writer was asked to write. */
+  readonly reportWriter: RecordingReportWriter;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
@@ -101,6 +107,10 @@ export interface TestServerOptions extends Partial<
   readonly eventStore?: (logger: MemoryLogger) => EventStore;
   /** RF-008: where the zip export reads run folders from; the memory folders of `archives` by default. */
   readonly archiveWriter?: ArchiveWriter;
+  /** RF-506: where run files are read from; the memory folders of `runFiles` by default. */
+  readonly runFileReader?: RunOutputGiven['runFileReader'];
+  /** RF-504: the files the report reads and the writer that writes it; memory doubles by default. */
+  readonly report?: RunOutputGiven['report'];
   /** The password hasher of sign-in; the fast fake by default. */
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
@@ -148,6 +158,15 @@ interface KeyParts {
   readonly keys: MemoryProviderKeyRepository;
   readonly secretBox: AesGcmSecretBox;
   readonly resolver: FakeHostResolver;
+}
+
+/** RF-1104: the stored keys, the box that seals them and the DNS stand-in of the base-URL check. */
+function keyStores(): KeyParts {
+  return {
+    keys: new MemoryProviderKeyRepository(),
+    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
+    resolver: new FakeHostResolver(),
+  };
 }
 
 /** RF-1104: the key use cases over memory adapters and the fake resolver. */
@@ -230,6 +249,8 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     dummyHash = 'fake$dummy',
     eventStore,
     archiveWriter,
+    runFileReader,
+    report,
     providerRecordings,
     defaultRoles,
     ...overrides
@@ -245,16 +266,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
-  const archives = new MemoryArchiveWriter();
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
-  const keys = {
-    keys: new MemoryProviderKeyRepository(),
-    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
-    resolver: new FakeHostResolver(),
-  };
+  const keys = keyStores();
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
+  const { outputs, doubles } = runOutputs({ archiveWriter, runFileReader, report });
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -266,11 +283,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ serverSettings, testProviders },
     }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: runServices(runs, { projects, keys: keys.keys }, route, archiveWriter ?? archives),
+    runs: runServices(runs, { projects, keys: keys.keys }, route, outputs),
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
-    ...{ serverSettings, runs, archives, ...route, ...keys, providers, providerLedger },
+    ...{ serverSettings, runs, ...doubles, ...route, ...keys },
+    ...{ providers, providerLedger },
   };
 }

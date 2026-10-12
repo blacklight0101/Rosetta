@@ -6,7 +6,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import type { ReportAssets } from './report-assets.js';
+import { loadReportAssets } from './report-assets.js';
 import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
@@ -19,7 +19,8 @@ import { renderReportMarkdown } from './report-markdown.js';
 export interface FileReportWriterOptions {
   readonly writer: OutputWriter;
   readonly masker: TextMasker;
-  readonly assets: ReportAssets;
+  /** The folder with `report.css` and `replay.js` (`templates/report/`). */
+  readonly assetsFolder: string;
 }
 
 const FOLDER = 'report';
@@ -33,7 +34,8 @@ export class FileReportWriter implements ReportWriter {
 
   // RF-504, RF-506
   async write(scope: RunScope, model: ReportModel): Promise<readonly string[]> {
-    const { writer, masker, assets } = this.options;
+    const { writer, masker } = this.options;
+    const assets = await loadReportAssets(this.options.assetsFolder);
     // The pages are made of repository and model text, so they are masked; the two assets are the
     // files of `templates/report/`, written as they are.
     const files: Readonly<Record<string, string>> = {

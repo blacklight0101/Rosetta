@@ -17,7 +17,7 @@ import {
   signedIn,
   type Column,
 } from '../support/access-columns.js';
-import { budgetRoutes, exportRoutes, type Context, type Probe } from '../support/access-probes.js';
+import { budgetRoutes, outputRoutes, type Context, type Probe } from '../support/access-probes.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the
@@ -156,7 +156,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'POST', url: '/api/account/providers/test', expected: active(401, 200) },
   ],
   ...budgetRoutes,
-  ...exportRoutes,
+  ...outputRoutes,
   'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
   'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],
   'POST /api/admin/users': [
@@ -257,6 +257,7 @@ async function browserFor(
     'manifest.json': '{}',
     'handoff/README.md': '# Hand-off',
   });
+  test.runFiles.seed(test.runs.scopeOf(ended), { 'manifest.json': '{}' });
   const running = await test.runs.start(owner);
   const context = {
     projectId: project.id,

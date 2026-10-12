@@ -1,8 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { ReportWriter } from '../../../../src/application/ports/report-writer.js';
-import type { RunScope } from '../../../../src/application/ports/run-events.js';
-import type { RunTextFiles } from '../../../../src/application/ports/run-text-files.js';
-import type { ReportModel } from '../../../../src/application/report/report-model.js';
 import { scopeOf } from '../../../../src/application/runs/run-scope.js';
 import { BuildReport } from '../../../../src/application/use-cases/build-report.js';
 import type { Actor } from '../../../../src/domain/accounts/actor.js';
@@ -11,6 +7,7 @@ import { RUN_END_STATES } from '../../../../src/domain/runs/run-states.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
 import { MemoryEventSink } from '../../../../src/infrastructure/events/memory-event-sink.js';
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
+import { MapRunTextFiles, RecordingReportWriter } from '../../../support/report-doubles.js';
 import {
   replayDemoEvents,
   replayDemoRunKey,
@@ -22,27 +19,6 @@ import { userAmy, userBob } from '../../../support/run-harness.js';
 // RF-504, RF-506, RF-1105: Build report gives the owner of a finished run its report files, built
 // from the manifest, the events and the files of the run folder; another user's run id answers like
 // an unknown one; a run in progress has no report yet.
-
-class RecordingWriter implements ReportWriter {
-  readonly written: { readonly scope: RunScope; readonly model: ReportModel }[] = [];
-
-  write(scope: RunScope, model: ReportModel): Promise<readonly string[]> {
-    this.written.push({ scope, model });
-    return Promise.resolve(['report/report.md', 'report/report.html']);
-  }
-}
-
-class MapFiles implements RunTextFiles {
-  private readonly files: Readonly<Record<string, string>>;
-
-  constructor(files: Readonly<Record<string, string>>) {
-    this.files = files;
-  }
-
-  read(_scope: RunScope, path: string): Promise<string | undefined> {
-    return Promise.resolve(this.files[path]);
-  }
-}
 
 const endedRun = (overrides: Partial<Run> = {}): Run =>
   sampleRun({
@@ -98,8 +74,8 @@ async function setup(run: Run, parts: Parts = {}) {
   if (parts.withEvents !== false) {
     for (const event of await replayDemoEvents()) await history.publish(scopeOf(run), event);
   }
-  const writer = new RecordingWriter();
-  const files = new MapFiles(
+  const writer = new RecordingReportWriter();
+  const files = new MapRunTextFiles(
     parts.files ?? {
       'cards/index.json': await replayDemoText('cards/index.json'),
       'spec.md': '# Specification\n',
