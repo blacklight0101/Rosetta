@@ -21,6 +21,11 @@ function pathSegments(path: string): string[] | undefined {
   return valid ? segments : undefined;
 }
 
+/** True for a repository-relative path with forward slashes and no `.`, `..` or empty segment. */
+export function isRepositoryPath(path: string): boolean {
+  return pathSegments(path) !== undefined;
+}
+
 function validLines(startLine: number, endLine: number): boolean {
   return (
     Number.isInteger(startLine) &&

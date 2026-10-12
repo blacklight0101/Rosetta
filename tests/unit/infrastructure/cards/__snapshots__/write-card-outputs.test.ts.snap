@@ -1,0 +1,256 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`writeCardOutputs snapshots > RF-204 a card file is a YAML header and a generated body (snapshot) 1`] = `
+"---
+schemaVersion: 1
+id: "FEAT-001"
+type: "FEAT"
+title: "Order checkout"
+summary: "The shop turns a basket into an order."
+area: "orders"
+agentTaskId: "task-orders"
+confidence: "High"
+claims:
+  - claimId: "FEAT-001.c1"
+    text: "Checkout creates an order from the basket."
+    citations:
+      - "src/Orders/Checkout.cs:10-24"
+    status: "Proposed"
+---
+
+# FEAT-001 Order checkout
+
+> The shop turns a basket into an order.
+
+Type: FEAT | Area: orders | Confidence: High
+
+## Claims
+
+### FEAT-001.c1 (Proposed)
+
+> Checkout creates an order from the basket.
+
+Evidence:
+- [src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24)
+"
+`;
+
+exports[`writeCardOutputs snapshots > RF-204 a card file is a YAML header and a generated body (snapshot) 2`] = `
+"---
+schemaVersion: 1
+id: "OQ-001"
+type: "OQ"
+title: "Who may cancel an order?"
+summary: "The code does not show a role check."
+area: "orders"
+agentTaskId: "task-orders"
+confidence: "Low"
+claims:
+  - claimId: "OQ-001.c1"
+    text: "Checkout creates an order from the basket."
+    citations:
+      - "src/Orders/Checkout.cs:10-24"
+    status: "Proposed"
+question: "Which roles may cancel a paid order?"
+whyItMatters: "The new system must enforce the same rule."
+questionState: "Open"
+---
+
+# OQ-001 Who may cancel an order?
+
+> The code does not show a role check.
+
+Type: OQ | Area: orders | Confidence: Low
+
+## Question
+
+> Which roles may cancel a paid order?
+
+Why it matters:
+
+> The new system must enforce the same rule.
+
+State: Open
+
+## Claims
+
+### OQ-001.c1 (Proposed)
+
+> Checkout creates an order from the basket.
+
+Evidence:
+- [src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24)
+"
+`;
+
+exports[`writeCardOutputs snapshots > RF-204 cards/index.json lists every card sorted by id with claim counts (snapshot) 1`] = `
+"{
+  "schemaVersion": 1,
+  "cards": [
+    {
+      "id": "BR-001",
+      "type": "BR",
+      "title": "Free shipping over 50",
+      "area": "orders",
+      "path": "cards/BR/BR-001.md",
+      "claimCounts": {
+        "Proposed": 1,
+        "CitationInvalid": 0,
+        "Supported": 0,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    },
+    {
+      "id": "BR-002",
+      "type": "BR",
+      "title": "Hidden products",
+      "area": "catalog",
+      "path": "cards/BR/BR-002.md",
+      "claimCounts": {
+        "Proposed": 1,
+        "CitationInvalid": 0,
+        "Supported": 0,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    },
+    {
+      "id": "ENT-001",
+      "type": "ENT",
+      "title": "Product",
+      "area": "catalog",
+      "path": "cards/ENT/ENT-001.md",
+      "claimCounts": {
+        "Proposed": 1,
+        "CitationInvalid": 0,
+        "Supported": 0,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    },
+    {
+      "id": "FEAT-001",
+      "type": "FEAT",
+      "title": "Order checkout",
+      "area": "orders",
+      "path": "cards/FEAT/FEAT-001.md",
+      "claimCounts": {
+        "Proposed": 1,
+        "CitationInvalid": 0,
+        "Supported": 0,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    },
+    {
+      "id": "FEAT-002",
+      "type": "FEAT",
+      "title": "Order cancellation",
+      "area": "orders",
+      "path": "cards/FEAT/FEAT-002.md",
+      "claimCounts": {
+        "Proposed": 1,
+        "CitationInvalid": 0,
+        "Supported": 0,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    },
+    {
+      "id": "FEAT-003",
+      "type": "FEAT",
+      "title": "Product search",
+      "area": "catalog",
+      "path": "cards/FEAT/FEAT-003.md",
+      "claimCounts": {
+        "Proposed": 1,
+        "CitationInvalid": 0,
+        "Supported": 0,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    },
+    {
+      "id": "OQ-001",
+      "type": "OQ",
+      "title": "Who may cancel an order?",
+      "area": "orders",
+      "path": "cards/OQ/OQ-001.md",
+      "claimCounts": {
+        "Proposed": 1,
+        "CitationInvalid": 0,
+        "Supported": 0,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    }
+  ]
+}
+"
+`;
+
+exports[`writeCardOutputs snapshots > RF-204 spec.md presents the cards per area with links to the card files (snapshot) 1`] = `
+"# Specification
+
+## Area: orders
+
+### FEAT-001 Order checkout ([card file](cards/FEAT/FEAT-001.md))
+
+> The shop turns a basket into an order.
+
+Confidence: High
+
+- FEAT-001.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+
+### BR-001 Free shipping over 50 ([card file](cards/BR/BR-001.md))
+
+> The shop turns a basket into an order.
+
+Confidence: High
+
+- BR-001.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+
+### FEAT-002 Order cancellation ([card file](cards/FEAT/FEAT-002.md))
+
+> The shop turns a basket into an order.
+
+Confidence: High
+
+- FEAT-002.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+
+### OQ-001 Who may cancel an order? ([card file](cards/OQ/OQ-001.md))
+
+> The code does not show a role check.
+
+Confidence: Low
+
+- OQ-001.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+
+## Area: catalog
+
+### ENT-001 Product ([card file](cards/ENT/ENT-001.md))
+
+> The shop turns a basket into an order.
+
+Confidence: High
+
+- ENT-001.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+
+### FEAT-003 Product search ([card file](cards/FEAT/FEAT-003.md))
+
+> The shop turns a basket into an order.
+
+Confidence: High
+
+- FEAT-003.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+
+### BR-002 Hidden products ([card file](cards/BR/BR-002.md))
+
+> The shop turns a basket into an order.
+
+Confidence: High
+
+- BR-002.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+"
+`;

@@ -33,13 +33,13 @@ describe('citation', () => {
   });
 
   it.each([
-    ['start below 1', 'src/a.cs', 0, 3, 'invalid-lines'],
-    ['end before start', 'src/a.cs', 5, 4, 'invalid-lines'],
-    ['a fractional line', 'src/a.cs', 1.5, 4, 'invalid-lines'],
-    ['an absolute path', '/etc/passwd', 1, 2, 'invalid-path'],
-    ['a path that climbs up', 'src/../x.cs', 1, 2, 'invalid-path'],
-    ['a backslash path', 'src\\a.cs', 1, 2, 'invalid-path'],
-  ] as const)('RF-202 refuses %s', (_name, path, startLine, endLine, problem) => {
+    ['start below 1', ['src/a.cs', 0, 3], 'invalid-lines'],
+    ['end before start', ['src/a.cs', 5, 4], 'invalid-lines'],
+    ['a fractional line', ['src/a.cs', 1.5, 4], 'invalid-lines'],
+    ['an absolute path', ['/etc/passwd', 1, 2], 'invalid-path'],
+    ['a path that climbs up', ['src/../x.cs', 1, 2], 'invalid-path'],
+    ['a backslash path', ['src\\a.cs', 1, 2], 'invalid-path'],
+  ] as const)('RF-202 refuses %s', (_name, [path, startLine, endLine], problem) => {
     expect(createCitation(path, startLine, endLine)).toEqual({ ok: false, error: problem });
   });
 });

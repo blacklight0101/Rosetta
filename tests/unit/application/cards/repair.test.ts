@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { parseCardsWithRepair } from '../../../../src/application/cards/parse-cards.js';
+import {
+  parseCardsWithRepair,
+  type RequestRepair,
+} from '../../../../src/application/cards/parse-cards.js';
 import { renderRepairRequest } from '../../../../src/application/cards/repair-request.js';
 import { validCardJson } from '../../../support/card-fixtures.js';
 
@@ -7,7 +10,7 @@ const invalid = '{"cards":[{"type":"FEAT"}]}';
 
 describe('parseCardsWithRepair', () => {
   it('RF-202 valid output needs no repair attempt', async () => {
-    const repair = vi.fn(() => Promise.resolve(validCardJson));
+    const repair = vi.fn<RequestRepair>(() => Promise.resolve(validCardJson));
 
     const outcome = await parseCardsWithRepair(validCardJson, repair);
 
@@ -16,9 +19,7 @@ describe('parseCardsWithRepair', () => {
   });
 
   it('RF-202 invalid output gets one repair attempt with the validation errors', async () => {
-    const repair = vi.fn((_problems: readonly { path: string; message: string }[]) =>
-      Promise.resolve(validCardJson),
-    );
+    const repair = vi.fn<RequestRepair>(() => Promise.resolve(validCardJson));
 
     const outcome = await parseCardsWithRepair(invalid, repair);
 
@@ -29,23 +30,20 @@ describe('parseCardsWithRepair', () => {
     expect(outcome.ok && outcome.value.drafts).toHaveLength(1);
   });
 
-  it('RF-202 a second failure gives InvalidOutput with the raw outputs, and no third attempt', async () => {
-    const repair = vi.fn(() => Promise.resolve('still not cards'));
+  it('RF-202 a second failure gives InvalidOutput with both raw outputs and no third attempt', async () => {
+    const repair = vi.fn<RequestRepair>(() => Promise.resolve('still not cards'));
 
     const outcome = await parseCardsWithRepair(invalid, repair);
 
     expect(repair).toHaveBeenCalledTimes(1);
-    expect(outcome).toEqual({
-      ok: false,
-      error: {
-        state: 'InvalidOutput',
-        problems: [{ path: '', message: expect.stringContaining('JSON') }],
-        rawOutputs: [invalid, 'still not cards'],
-      },
-    });
+    const error = outcome.ok ? undefined : outcome.error;
+    expect(error?.state).toBe('InvalidOutput');
+    expect(error?.code).toBe('RST-1300');
+    expect(error?.rawOutputs).toEqual([invalid, 'still not cards']);
+    expect(error?.problems[0]?.message).toContain('JSON');
   });
 
-  it('RF-202 a repair that cannot be requested still ends as InvalidOutput with the first raw output', async () => {
+  it('RF-202 a repair that cannot be requested ends as InvalidOutput with the first raw output', async () => {
     const outcome = await parseCardsWithRepair(invalid, () => Promise.resolve(undefined));
 
     expect(outcome.ok).toBe(false);
