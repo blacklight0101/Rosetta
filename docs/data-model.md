@@ -556,7 +556,7 @@ the `Clock` port.
 | `display_name` | `text` | 1..80 characters |
 | `role` | `text` | `CHECK (role IN ('admin','user'))` |
 | `state` | `text` | `CHECK (state IN ('Active','MustChangePassword','Disabled'))`; `Locked` is derived from `locked_until` |
-| `password_hash` | `text` | `scrypt$N$r$p$salt$hash` (base64); never selected by list queries |
+| `password_hash` | `text` | `scrypt$N$r$p$salt$hash` (base64); never selected by list queries; never in an error cause |
 | `failed_sign_ins` | `int` | reset to 0 on success, and when `first_failed_at` is older than 15 minutes; `CHECK (failed_sign_ins >= 0)` |
 | `first_failed_at` | `timestamptz` null | start of the current failure window (RF-1100, DEC-112) |
 | `locked_until` | `timestamptz` null | set for 15 minutes after the fifth failure |
@@ -672,7 +672,7 @@ of another shape is refused at read time.
 | `target_type`, `target_id` | `text` null | |
 | `ip` | `text` | |
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
-| `detail` | `jsonb` | masked; never a password, key or session id |
+| `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, and the word after "password is"); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
 
 **`schema_version`** (RF-1302): `version int` primary key, `name text` (the file name), `checksum text` (SHA-256 of
 the file, lower-case hex), `applied_at timestamptz`. Created by the migration runner (`PgMigrator`) itself, not by a
