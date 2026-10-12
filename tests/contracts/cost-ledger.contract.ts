@@ -67,7 +67,7 @@ function releaseContract(name: string, fresh: Fresh): void {
     const first = reservationOf(ids, worst(900n));
     await reserveAt(ledger, first, runCap(1_000n));
 
-    await ledger.release(first.callId);
+    await ledger.release(first);
 
     const next = await reserveAt(ledger, reservationOf(ids, worst(900n)), runCap(1_000n));
     expect(next.ok).toBe(true);
@@ -221,7 +221,7 @@ function providerTestContract(name: string, fresh: Fresh): void {
       needed: 200n,
     });
 
-    await ledger.release(test.callId);
+    await ledger.release(test);
 
     expect((await reserveAt(ledger, reservationOf(ids, worst(200n)), caps)).ok).toBe(true);
   });
@@ -242,6 +242,40 @@ function providerTestRunsContract(name: string, fresh: Fresh): void {
   });
 }
 
+function sharedCallIdContract(name: string, fresh: Fresh): void {
+  // Call ids are `<runKey>#<n>` and a run key is unique only within a project, so two users'
+  // calls can carry the same call id: a reservation is the call of one user's run, not of an id.
+  async function twoUsersOneCallId() {
+    const { fixture, ledger, ids } = await setUp(fresh);
+    const other = { userId: await fixture.addUser(), runId: fixture.newRunId() };
+    const mine = reservationOf(ids, worst(900n));
+    const theirs = { ...reservationOf(other, worst(900n)), callId: mine.callId };
+    return { ledger, ids, mine, theirs };
+  }
+
+  it(`RF-1106 ${name} keeps the reservation of a call when another user's call with the same id settles`, async () => {
+    const { ledger, ids, mine, theirs } = await twoUsersOneCallId();
+    expect((await reserveAt(ledger, mine, runCap(1_000n))).ok).toBe(true);
+    expect((await reserveAt(ledger, theirs, runCap(1_000n))).ok).toBe(true);
+
+    await ledger.settle(entryOf(theirs, { costMicros: 30n }));
+    const next = await reserveAt(ledger, reservationOf(ids, worst(200n)), runCap(1_000n));
+
+    expect(breachOf(next)).toEqual({ kind: 'run-cost', limit: 1_000n, spent: 900n, needed: 200n });
+  });
+
+  it(`RF-1106 ${name} keeps the reservation of a call when another user's call with the same id is released`, async () => {
+    const { ledger, ids, mine, theirs } = await twoUsersOneCallId();
+    await reserveAt(ledger, mine, runCap(1_000n));
+    await reserveAt(ledger, theirs, runCap(1_000n));
+
+    await ledger.release(theirs);
+    const next = await reserveAt(ledger, reservationOf(ids, worst(200n)), runCap(1_000n));
+
+    expect(breachOf(next)).toEqual({ kind: 'run-cost', limit: 1_000n, spent: 900n, needed: 200n });
+  });
+}
+
 export function costLedgerContract(name: string, fresh: Fresh): void {
   reserveContract(name, fresh);
   releaseContract(name, fresh);
@@ -251,4 +285,5 @@ export function costLedgerContract(name: string, fresh: Fresh): void {
   listContract(name, fresh);
   providerTestContract(name, fresh);
   providerTestRunsContract(name, fresh);
+  sharedCallIdContract(name, fresh);
 }
