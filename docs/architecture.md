@@ -107,7 +107,8 @@ src/
                         UTC day and month (`utcPeriodsOf`), `isCapStop`
     runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`)
     sources/            GitHubRepoRef, CommitSha, Permalink
-    planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018)
+    planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018); the catalogue
+                        rules (`catalogueProblems`, `defaultPrinciples`, RF-606)
     egress/             the labelled data block of repository content (`renderDataBlock`, `scanDataBlocks`, RF-145)
     errors/             domain error codes and Result type
   application/
@@ -157,6 +158,7 @@ src/
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
     prompts/            prompt files read with their version and SHA-256 (`loadReaderPrompts`, RNF-004)
+                        and the principle catalogue (`loadCatalogue`: entry schema, version, SHA-256; RF-606)
     system/             clock, id generator, logger
   presentation/
     web/                Fastify server, plugins, auth hooks, API routes, server-sent events, error-to-status mapping
