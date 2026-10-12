@@ -101,16 +101,18 @@ const defaultRules: readonly MaskRule[] = [
     pattern: new RegExp(String.raw`(?<keep>${passwordKey})${notMasked}(?![="'])[^\s;,&"']+`, 'gi'),
   },
   {
-    // An XML element whose name ends in a password name, with an optional prefix and attributes.
+    // An XML element whose name ends in a password name, with an optional prefix and attributes;
+    // the value runs to its closing tag on the same line, so a `<password>` placeholder in prose
+    // is left alone.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep><[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>)${notMasked}[^<\s][^<]*`,
+      String.raw`(?<keep><[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>)${notMasked}[^<\s][^<\r\n]*(?=</)`,
       'gi',
     ),
   },
   {
     // `mysql -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and is left alone.
-    // The options before `-p` are bounded to 128 characters, so each `mysql` is scanned once.
+    // The options before `-p` are bounded to 128 characters, so a `mysql` is never followed further.
     kind: 'password',
     pattern: new RegExp(
       String.raw`(?<keep>\bmysql(?:admin|dump)?[ \t][^\r\n]{0,128}?[ \t]-p)${notMasked}[^\s]+`,
