@@ -56,10 +56,10 @@ function linesIn(ranges: readonly LineRange[]): number {
   return ranges.reduce((sum, range) => sum + range.endLine - range.startLine + 1, 0);
 }
 
-/** The file's tokens in proportion to the share of its lines that were read. */
+/** The file's tokens in proportion to the share of its lines that were read, rounded. */
 function tokensRead(file: CoverageFile | undefined, read: readonly LineRange[]): number {
   if (file === undefined || file.lines === 0) return 0;
-  return (file.estimatedTokens * linesIn(read)) / file.lines;
+  return Math.round((file.estimatedTokens * linesIn(read)) / file.lines);
 }
 
 function rounded(value: number, decimals: number): number {
@@ -88,7 +88,7 @@ export function areaCoverage(
     area: area.name,
     files: covered,
     tokens,
-    readTokens: Math.round(readTokens),
+    readTokens,
     readTokenShare,
   };
 }

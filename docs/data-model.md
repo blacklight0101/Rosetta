@@ -333,7 +333,7 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
   every file of the area in the area's order, `read` the line ranges the task's tools returned (a read, the lines of
   grep matches, the statements of a code map entry), cut to the file, sorted and merged, empty for a file not read;
   lines of files outside the area are not counted. `tokens` is the area's estimated tokens, `readTokens` each file's
-  estimated tokens in proportion to its lines read (rounded), `readTokenShare` their ratio from 0 to 1 with four
+  estimated tokens in proportion to its lines read (rounded per file, then summed), `readTokenShare` their ratio from 0 to 1 with four
   decimals (0 for an area without tokens). It holds no times, so the same coverage gives the same bytes. Rewritten with
   the cards after every task that ends (P2-04).
 - `coverage.md` is its readable form (RF-230): a `## Run summary` table with, per area and for all areas, the files
