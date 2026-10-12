@@ -12,6 +12,8 @@ export interface ReaderFixture {
   readonly ignoreRules?: string;
   readonly allowDenied?: readonly string[];
   readonly subpath?: string;
+  /** The project's `scan.maxFileBytes`; the reader's default when absent. */
+  readonly maxFileBytes?: number;
 }
 
 export type RepositoryReaderFactory = (
