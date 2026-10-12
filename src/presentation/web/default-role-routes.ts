@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { defaultRolesSchema } from '../../application/projects/default-roles.js';
+import { parseDefaultRoles } from '../../application/projects/default-roles.js';
 import type { GetDefaultRoles } from '../../application/use-cases/get-default-roles.js';
 import type { SetDefaultRoles } from '../../application/use-cases/set-default-roles.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { FieldProblemsError } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { signedInOf } from './request-actor.js';
 
@@ -18,7 +19,7 @@ export interface DefaultRoleServices {
 }
 
 const BODY_LIMIT_BYTES = 4096;
-const body = z.strictObject({ roles: defaultRolesSchema });
+const body = z.strictObject({ roles: z.record(z.string(), z.unknown()) });
 
 // DEC-106
 export function registerDefaultRoleRoutes(
@@ -35,9 +36,11 @@ export function registerDefaultRoleRoutes(
     async (request, reply) => {
       const parsed = body.safeParse(request.body);
       if (!parsed.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const checked = parseDefaultRoles(parsed.data.roles);
+      if (!checked.ok) throw new FieldProblemsError(ERROR_CODES.settingsInvalid, checked.error);
       const roles = await services.setDefaultRoles.execute({
         actor: signedInOf(request).actor,
-        roles: parsed.data.roles,
+        roles: checked.value,
         ip: request.ip,
       });
       return reply.status(200).send({ roles });

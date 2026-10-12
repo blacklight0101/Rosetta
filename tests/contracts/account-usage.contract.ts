@@ -72,7 +72,10 @@ export function accountUsageContract(
 
     expect(usage.has(idle)).toBe(false);
   });
+  serverMonthContract(name, fresh);
+}
 
+function serverMonthContract(name: string, fresh: () => Promise<AccountUsageFixture>): void {
   it(`RF-1106 ${name} totals the month of server-key spend only, per currency, from the instant on`, async () => {
     const fixture = await fresh();
     const amy = await fixture.addUser();

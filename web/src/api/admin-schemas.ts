@@ -47,6 +47,11 @@ export type Caps = z.output<typeof capsSchema>;
 
 export const capsAnswerSchema = z.object({ caps: capsSchema });
 
+/** `GET /api/admin/caps`: the caps and this month's spend on the server's keys (RF-1106). */
+export const capsViewSchema = capsAnswerSchema.extend({ serverMonthToDate: z.array(money) });
+
+export type CapsView = z.output<typeof capsViewSchema>;
+
 const auditEventSchema = z.object({
   id: z.string(),
   at: z.string(),

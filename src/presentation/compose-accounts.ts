@@ -138,7 +138,7 @@ function composeCaps(adapters: AccountAdapters): CapServices & DefaultRoleServic
   const { pool, users, auditLog, logger, clock } = adapters;
   const settings = new PgServerSettings(pool);
   return {
-    getCaps: new GetCaps({ settings }),
+    getCaps: new GetCaps({ settings, usage: new PgAccountUsage(pool), clock }),
     setCaps: new SetCaps({ settings, auditLog, logger, clock }),
     getDefaultRoles: new GetDefaultRoles({ settings }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),

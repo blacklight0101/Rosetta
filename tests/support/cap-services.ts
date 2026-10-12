@@ -6,6 +6,7 @@ import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-ca
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
 import { SetDefaultRoles } from '../../src/application/use-cases/set-default-roles.js';
 import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
+import type { AccountUsage } from '../../src/application/ports/account-usage.js';
 import type { Logger } from '../../src/application/ports/logger.js';
 import type { Clock } from '../../src/application/ports/clock.js';
 import type { AuditLog } from '../../src/application/ports/audit-log.js';
@@ -18,15 +19,16 @@ import type { UserRepository } from '../../src/application/ports/user-repository
 export interface CapParts {
   readonly serverSettings: ServerSettings;
   readonly users: UserRepository;
+  readonly usage: AccountUsage;
   readonly auditLog: AuditLog;
   readonly logger: Logger;
   readonly clock: Clock;
 }
 
 export function capServices(parts: CapParts): CapServices & DefaultRoleServices {
-  const { serverSettings: settings, users, auditLog, logger, clock } = parts;
+  const { serverSettings: settings, users, usage, auditLog, logger, clock } = parts;
   return {
-    getCaps: new GetCaps({ settings }),
+    getCaps: new GetCaps({ settings, usage, clock }),
     setCaps: new SetCaps({ settings, auditLog, logger, clock }),
     getDefaultRoles: new GetDefaultRoles({ settings }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),

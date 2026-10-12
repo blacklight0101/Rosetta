@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
-import type { Account, Caps, ListedAccount } from '../api/admin-schemas.js';
+import type { Account, Caps, ListedAccount, Money } from '../api/admin-schemas.js';
 import { useUser } from '../app/session-context.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { withChange, withNew } from './admin-format.js';
@@ -80,8 +80,9 @@ function UsersView(props: {
   readonly editor: OverviewEditor;
   readonly users: readonly ListedAccount[];
   readonly caps: Caps;
+  readonly spent: readonly Money[];
 }): JSX.Element {
-  const { editor, users, caps } = props;
+  const { editor, users, caps, spent } = props;
   const own = useUser();
   const [panel, setPanel] = useState<Panel | undefined>();
   const actions = useAccountActions((account) => {
@@ -89,7 +90,7 @@ function UsersView(props: {
   });
   return (
     <>
-      <CapBanner users={users} caps={caps} onCapsPage />
+      <CapBanner spent={spent} caps={caps} onCapsPage />
       <AccountsSection
         users={users}
         ownId={own.id}
@@ -120,7 +121,7 @@ function UsersView(props: {
             editor.setUsers((current) => withNew(current, account));
           }}
         />
-        <CapsForm caps={caps} users={users} onSaved={editor.setCaps} />
+        <CapsForm caps={caps} spent={spent} onSaved={editor.setCaps} />
       </div>
     </>
   );
@@ -146,7 +147,12 @@ export function AdminUsersPage(): JSX.Element {
       ) : null}
       {overview.status === 'failed' ? <ErrorBanner error={overview.error} /> : null}
       {overview.status === 'ready' ? (
-        <UsersView editor={editor} users={overview.users} caps={overview.caps} />
+        <UsersView
+          editor={editor}
+          users={overview.users}
+          caps={overview.caps}
+          spent={overview.serverSpent}
+        />
       ) : null}
     </div>
   );

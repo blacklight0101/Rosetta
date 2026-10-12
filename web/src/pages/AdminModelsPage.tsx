@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { getDefaultRoles, saveDefaultRoles } from '../api/admin.js';
 import { defaultRoleNames, type DefaultRoleName, type DefaultRoles } from '../api/admin-schemas.js';
 import type { ApiFailure } from '../api/client.js';
+import { namesAField, problemFor } from '../api/problems.js';
 import { useApp } from '../app/app-context.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
@@ -124,6 +125,8 @@ function RoleFields(props: { readonly name: DefaultRoleName; readonly editing: E
           label={`${title} provider`}
           value={role.provider}
           options={providerOptions}
+          error={problemFor(editing.failure, `${name}.provider`)}
+          announce={false}
           onChange={(provider) => {
             editing.edit(name, { provider });
           }}
@@ -138,7 +141,7 @@ function RoleFields(props: { readonly name: DefaultRoleName; readonly editing: E
           error={
             editing.missing.includes(name)
               ? { message: 'Enter the dated model id for this provider.' }
-              : undefined
+              : problemFor(editing.failure, `${name}.model`)
           }
           announce={false}
           onInput={(model) => {
@@ -164,7 +167,13 @@ function ModelsForm({ saved }: { readonly saved: DefaultRoles }): JSX.Element {
         void editing.submit();
       }}
     >
-      {editing.failure === undefined ? null : <ErrorBanner error={editing.failure} />}
+      {editing.failure === undefined ||
+      namesAField(
+        editing.failure,
+        defaultRoleNames.flatMap((name) => [`${name}.provider`, `${name}.model`]),
+      ) ? null : (
+        <ErrorBanner error={editing.failure} />
+      )}
       <p class="rst-settings__note">
         A new project starts with these. A role left on Template default keeps the model of the
         template. Projects that exist keep their own models.
@@ -216,7 +225,7 @@ export function AdminModelsPage(): JSX.Element {
   return (
     <div class="rst-settings rst-admin">
       {overview.status === 'ready' ? (
-        <CapBanner users={overview.users} caps={overview.caps} />
+        <CapBanner spent={overview.serverSpent} caps={overview.caps} />
       ) : null}
       <div>
         <h1 class="rst-page__title">Default models</h1>

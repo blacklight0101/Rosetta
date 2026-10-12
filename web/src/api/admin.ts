@@ -2,6 +2,7 @@ import type { ApiClient, ApiResult } from './client.js';
 import {
   auditSchema,
   capsAnswerSchema,
+  capsViewSchema,
   defaultRolesAnswerSchema,
   userAnswerSchema,
   userListSchema,
@@ -9,6 +10,7 @@ import {
   type Account,
   type AuditPage,
   type Caps,
+  type CapsView,
   type DefaultRoles,
   type ListedAccount,
   type Workspace,
@@ -99,14 +101,13 @@ export function openWorkspace(
 }
 
 // RF-1106
-export async function getCaps(client: ApiClient, signal: AbortSignal): Promise<ApiResult<Caps>> {
-  const result = await client.request({
+export function getCaps(client: ApiClient, signal: AbortSignal): Promise<ApiResult<CapsView>> {
+  return client.request({
     method: 'GET',
     path: '/api/admin/caps',
-    schema: capsAnswerSchema,
+    schema: capsViewSchema,
     signal,
   });
-  return result.ok ? { ok: true, value: result.value.caps } : result;
 }
 
 // RF-1106

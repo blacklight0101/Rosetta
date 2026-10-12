@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import { useRef, useState } from 'preact/hooks';
 import { saveCaps } from '../api/admin.js';
-import type { Caps, ListedAccount } from '../api/admin-schemas.js';
+import type { Caps, Money } from '../api/admin-schemas.js';
 import type { ApiFailure } from '../api/client.js';
 import { namesAField, problemFor } from '../api/problems.js';
 import { useApp } from '../app/app-context.js';
@@ -125,10 +125,10 @@ function CapInputs({ editing }: { readonly editing: CapsEditing }): JSX.Element 
 // RF-1106
 export function CapsForm(props: {
   readonly caps: Caps;
-  readonly users: readonly ListedAccount[];
+  readonly spent: readonly Money[];
   readonly onSaved: (caps: Caps) => void;
 }): JSX.Element {
-  const { caps, users, onSaved } = props;
+  const { caps, spent, onSaved } = props;
   const editing = useCapsEditing(caps, onSaved);
   const { busy, failure, message, refusals } = editing;
   const formRef = useRef<HTMLFormElement>(null);
@@ -138,7 +138,7 @@ export function CapsForm(props: {
       <h2 id="caps-title" class="rst-settings__heading">
         Caps on server keys
       </h2>
-      <ServerMeter month={serverMonthOf(users, BigInt(caps.serverMonthMicros))} />
+      <ServerMeter month={serverMonthOf(spent, BigInt(caps.serverMonthMicros))} />
       <form
         ref={formRef}
         class="rst-admin__form"

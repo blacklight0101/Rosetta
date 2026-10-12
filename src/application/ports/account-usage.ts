@@ -20,4 +20,9 @@ export interface UserUsage {
 export interface AccountUsage {
   /** The usage of every user that has a project or a ledger row at or after `since`. */
   byUser(since: EpochMs): Promise<ReadonlyMap<string, UserUsage>>;
+  /**
+   * The spend on the server's keys since the instant, per currency and ordered by currency: only
+   * ledger rows whose key source is `server`, so spend on users' own keys is left out (RF-1106).
+   */
+  serverMonth(since: EpochMs): Promise<readonly CurrencyTotal[]>;
 }

@@ -39,22 +39,6 @@ describe('server caps API', () => {
     });
   });
 
-  it('RF-1106 the month to date counts server-key spend only, not spend on own keys', async () => {
-    test = createTestServer();
-    const root = await signedIn('root', 'admin');
-    const amy = await addUser(test, { userName: 'amy', role: 'user' });
-    const at = new FixedClock('2026-10-05T00:00:00.000Z').now();
-    const row = { userId: amy.account.id, at, currency: 'USD' };
-    test.usage.addCost({ ...row, costMicros: 3_000_000n, keySource: 'user' });
-    test.usage.addCost({ ...row, costMicros: 1_250_000n, keySource: 'server' });
-
-    const response = await root.request({ method: 'GET', url: '/api/admin/caps' });
-
-    expect(response.json()).toMatchObject({
-      serverMonthToDate: [{ currency: 'USD', costMicros: '1250000' }],
-    });
-  });
-
   it('RF-1106 the administrator sets the caps; the change is kept and audited', async () => {
     test = createTestServer();
     const root = await signedIn('root', 'admin');
@@ -86,6 +70,24 @@ describe('server caps API', () => {
     });
     const read = await root.request({ method: 'GET', url: '/api/admin/caps' });
     expect(read.json()).toMatchObject({ caps: { userDayMicros: '1000000' } });
+  });
+});
+
+describe('server month to date', () => {
+  it('RF-1106 the month to date counts server-key spend only, not spend on own keys', async () => {
+    test = createTestServer();
+    const root = await signedIn('root', 'admin');
+    const amy = await addUser(test, { userName: 'amy', role: 'user' });
+    const at = new FixedClock('2026-10-05T00:00:00.000Z').now();
+    const row = { userId: amy.account.id, at, currency: 'USD' };
+    test.usage.addCost({ ...row, costMicros: 3_000_000n, keySource: 'user' });
+    test.usage.addCost({ ...row, costMicros: 1_250_000n, keySource: 'server' });
+
+    const response = await root.request({ method: 'GET', url: '/api/admin/caps' });
+
+    expect(response.json()).toMatchObject({
+      serverMonthToDate: [{ currency: 'USD', costMicros: '1250000' }],
+    });
   });
 });
 

@@ -202,7 +202,7 @@ export function AdminAuditPage(): JSX.Element {
   return (
     <div class="rst-settings rst-admin">
       {overview.status === 'ready' ? (
-        <CapBanner users={overview.users} caps={overview.caps} />
+        <CapBanner spent={overview.serverSpent} caps={overview.caps} />
       ) : null}
       <div>
         <h1 class="rst-page__title">Audit</h1>

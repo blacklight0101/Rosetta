@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { getCaps, listUsers } from '../api/admin.js';
-import type { Caps, ListedAccount } from '../api/admin-schemas.js';
+import type { Caps, ListedAccount, Money } from '../api/admin-schemas.js';
 import type { ApiFailure } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
 
@@ -11,7 +11,13 @@ import { useApp } from '../app/app-context.js';
 type Overview =
   | { readonly status: 'loading' }
   | { readonly status: 'failed'; readonly error: ApiFailure }
-  | { readonly status: 'ready'; readonly users: readonly ListedAccount[]; readonly caps: Caps };
+  | {
+      readonly status: 'ready';
+      readonly users: readonly ListedAccount[];
+      readonly caps: Caps;
+      /** This month's spend on the server's keys; spend on users' own keys is not in it. */
+      readonly serverSpent: readonly Money[];
+    };
 
 export interface OverviewEditor {
   readonly overview: Overview;
@@ -32,7 +38,13 @@ export function useAdminOverview(): OverviewEditor {
         if (abort.signal.aborted) return;
         if (!users.ok) setOverview({ status: 'failed', error: users.error });
         else if (!caps.ok) setOverview({ status: 'failed', error: caps.error });
-        else setOverview({ status: 'ready', users: users.value, caps: caps.value });
+        else
+          setOverview({
+            status: 'ready',
+            users: users.value,
+            caps: caps.value.caps,
+            serverSpent: caps.value.serverMonthToDate,
+          });
       },
     );
     return () => {

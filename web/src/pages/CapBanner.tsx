@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import type { Caps, ListedAccount } from '../api/admin-schemas.js';
+import type { Caps, Money } from '../api/admin-schemas.js';
 import { Glyph } from '../components/Glyph.js';
 import { Link } from '../components/Link.js';
 import { microsToDollars } from '../lib/usd.js';
@@ -9,15 +9,16 @@ import { serverMonthOf } from './admin-month.js';
 // administration page opens with a warning. On the users page "Review caps" jumps to the caps form.
 
 export interface CapBannerProps {
-  readonly users: readonly ListedAccount[];
+  /** This month's spend on the server's keys. */
+  readonly spent: readonly Money[];
   readonly caps: Caps;
   /** True on the page that holds the caps form. */
   readonly onCapsPage?: boolean;
 }
 
 // RF-1106
-export function CapBanner({ users, caps, onCapsPage = false }: CapBannerProps): JSX.Element | null {
-  const month = serverMonthOf(users, BigInt(caps.serverMonthMicros));
+export function CapBanner({ spent, caps, onCapsPage = false }: CapBannerProps): JSX.Element | null {
+  const month = serverMonthOf(spent, BigInt(caps.serverMonthMicros));
   if (!month.warn) return null;
   const used = `$${microsToDollars(month.usedMicros.toString())}`;
   const cap = `$${microsToDollars(caps.serverMonthMicros)}`;
