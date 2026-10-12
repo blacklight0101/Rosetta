@@ -50,7 +50,7 @@ import {
 // guards in front of a fake provider that replays a recording.
 
 const account = sampleAccount({ userName: 'understand.user' });
-export const understandActor: Actor = { userId: account.id, role: 'user' };
+const understandActor: Actor = { userId: account.id, role: 'user' };
 const commitSha = 'c'.repeat(40);
 
 /** The fake reader, one task at a time (the fake replays its calls in order). */
@@ -69,7 +69,7 @@ export interface UnderstandHarnessOptions {
   readonly beforeCall?: (call: number, harness: UnderstandHarness) => Promise<void>;
 }
 
-export interface UnderstandStart {
+interface UnderstandStart {
   readonly areas?: readonly string[];
   readonly cloudConsent?: boolean;
 }

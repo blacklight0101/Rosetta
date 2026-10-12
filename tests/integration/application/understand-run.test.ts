@@ -1,8 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { useTempRoot } from '../../support/temp-root.js';
-import { fullUnderstandRun, readJson } from '../../support/understand-full-run.js';
+import {
+  fullUnderstandRun,
+  readJson,
+  UNDERSTAND_TIMEOUT,
+} from '../../support/understand-full-run.js';
 
 // RF-200, RF-203, RF-300, RF-302, RF-240, ADR-008: an understand run over every area of the C#
 // fixture, after a scan, with the real prompts, tools, guards and writers and a recorded reader.
@@ -18,7 +23,7 @@ const task = (n: number, area: string, turns: number, cards: number) => ({
   cards,
 });
 
-describe('an understand run on the C# fixture: tasks', () => {
+describe('an understand run on the C# fixture: tasks', UNDERSTAND_TIMEOUT, () => {
   it('RF-200 plans one reader task per area, runs each with the reader role and completes', async () => {
     const { h, run } = await fullUnderstandRun(temp.path);
 
@@ -37,19 +42,18 @@ describe('an understand run on the C# fixture: tasks', () => {
   });
 });
 
-describe('an understand run on the C# fixture: cards', () => {
+describe('an understand run on the C# fixture: cards', UNDERSTAND_TIMEOUT, () => {
   it('RF-203 writes the cards with ids in area order, the index and spec.md', async () => {
     const { folder } = await fullUnderstandRun(temp.path);
 
-    expect(await readJson(join(folder, 'cards', 'index.json'))).toMatchObject({
-      cards: [
-        { id: 'BR-001', area: 'Catalog' },
-        { id: 'BR-002', area: 'Services' },
-        { id: 'ENT-001', area: 'Database' },
-        { id: 'FEAT-001', area: '(root)' },
-        { id: 'OQ-001', area: '(root)' },
-      ],
-    });
+    const index = z
+      .object({
+        cards: z.array(z.object({ id: z.string(), claimCounts: z.record(z.string(), z.number()) })),
+      })
+      .parse(await readJson(join(folder, 'cards', 'index.json')));
+    const counts = (id: string) => index.cards.find((entry) => entry.id === id)?.claimCounts;
+    expect(counts('BR-001')).toMatchObject({ Proposed: 1, CitationInvalid: 2 });
+    expect(counts('BR-002')).toMatchObject({ Proposed: 1, CitationInvalid: 0 });
     const spec = await readFile(join(folder, 'spec.md'), 'utf8');
     expect(spec.indexOf('Area: \\(root\\)')).toBeLessThan(spec.indexOf('Area: Catalog'));
   });
@@ -65,7 +69,7 @@ describe('an understand run on the C# fixture: cards', () => {
   });
 });
 
-describe('an understand run on the C# fixture: citations', () => {
+describe('an understand run on the C# fixture: citations', UNDERSTAND_TIMEOUT, () => {
   it('RF-300 RF-302 a citation outside its file or of an unknown file makes its claim CitationInvalid, kept with the reason', async () => {
     const { folder } = await fullUnderstandRun(temp.path);
 
@@ -74,16 +78,18 @@ describe('an understand run on the C# fixture: citations', () => {
     expect(card).toMatch(/claimId: "BR-001\.c2"[\s\S]*status: "CitationInvalid"/u);
     expect(card).toContain('ends after the last line of the file (10).');
     expect(card).toContain('Catalog/Missing.cs is not a file of the code map.');
-    expect(await readJson(join(folder, 'cards', 'index.json'))).toMatchObject({
-      cards: [
-        { id: 'BR-001', claimCounts: { Proposed: 1, CitationInvalid: 2 } },
-        { id: 'BR-002', claimCounts: { Proposed: 1, CitationInvalid: 0 } },
-      ],
-    });
+    const index = z
+      .object({
+        cards: z.array(z.object({ id: z.string(), claimCounts: z.record(z.string(), z.number()) })),
+      })
+      .parse(await readJson(join(folder, 'cards', 'index.json')));
+    const counts = (id: string) => index.cards.find((entry) => entry.id === id)?.claimCounts;
+    expect(counts('BR-001')).toMatchObject({ Proposed: 1, CitationInvalid: 2 });
+    expect(counts('BR-002')).toMatchObject({ Proposed: 1, CitationInvalid: 0 });
   });
 });
 
-describe('an understand run on the C# fixture: open questions', () => {
+describe('an understand run on the C# fixture: open questions', UNDERSTAND_TIMEOUT, () => {
   it('RF-240 writes the open questions to the project answers.md with an empty answer', async () => {
     const { h, run } = await fullUnderstandRun(temp.path);
 

@@ -29,6 +29,8 @@ export interface CardOutputInput {
   readonly masker: TextMasker;
   /** Where a file that cannot be restored after a failed write is reported. */
   readonly logger: Logger;
+  /** Areas whose task ended without a card; `spec.md` names them (P1-33). */
+  readonly areasWithoutCards?: readonly string[];
 }
 
 interface PlannedFile {
@@ -55,14 +57,14 @@ export async function writeCardOutputs(
   target: CardOutputTarget,
   input: CardOutputInput,
 ): Promise<Result<void, WriteRefusal>> {
-  const { cards, source, masker, logger } = input;
+  const { cards, source, masker, logger, areasWithoutCards = [] } = input;
   const files: PlannedFile[] = [
     ...cards.map((card) => ({
       path: cardPath(card),
       text: renderCardFile(card, source, masker),
     })),
     { path: 'cards/index.json', text: serialiseCardIndex(cards, masker) },
-    { path: 'spec.md', text: renderSpec(cards, source, masker) },
+    { path: 'spec.md', text: renderSpec(cards, source, masker, areasWithoutCards) },
   ];
   return writeAll(writer, target, files, logger);
 }

@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { useTempRoot } from '../../support/temp-root.js';
+import { UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
 import {
   createUnderstandHarness,
   understandSettings,
@@ -22,7 +23,7 @@ async function json(path: string): Promise<unknown> {
   return JSON.parse(await readFile(path, 'utf8'));
 }
 
-describe('an understand run stopped by its cap', () => {
+describe('an understand run stopped by its cap', UNDERSTAND_TIMEOUT, () => {
   it('RF-422 a cap reached mid-run ends CapReached; the finished task keeps its cards, the next stops by cap', async () => {
     const h = await createUnderstandHarness({
       dataDir: temp.path,
@@ -62,7 +63,7 @@ describe('an understand run stopped by its cap', () => {
   });
 });
 
-describe('the cost report of an understand run stopped by its cap', () => {
+describe('the cost report of an understand run stopped by its cap', UNDERSTAND_TIMEOUT, () => {
   it('RF-426 the cost report is written when the run ends at its cap', async () => {
     const h = await createUnderstandHarness({
       dataDir: temp.path,
@@ -80,7 +81,7 @@ describe('the cost report of an understand run stopped by its cap', () => {
   });
 });
 
-describe('an understand run the user stops', () => {
+describe('an understand run the user stops', UNDERSTAND_TIMEOUT, () => {
   it('RNF-002 an interrupted run keeps its finished cards, the manifest end state and the cost so far', async () => {
     const h = await createUnderstandHarness({
       dataDir: temp.path,

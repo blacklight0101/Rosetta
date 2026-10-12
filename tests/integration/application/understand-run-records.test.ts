@@ -5,7 +5,11 @@ import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { fixtureRoot } from '../../support/scan-harness.js';
 import { hashTree } from '../../support/snapshot-fixture.js';
 import { useTempRoot } from '../../support/temp-root.js';
-import { fullUnderstandRun, readJson } from '../../support/understand-full-run.js';
+import {
+  fullUnderstandRun,
+  readJson,
+  UNDERSTAND_TIMEOUT,
+} from '../../support/understand-full-run.js';
 import { createUnderstandHarness } from '../../support/understand-run-harness.js';
 
 // RF-426, RNF-004, RF-1002, RF-005, RF-200: what an understand run records besides its cards: the
@@ -14,7 +18,7 @@ import { createUnderstandHarness } from '../../support/understand-run-harness.js
 
 const temp = useTempRoot('rosetta-understand-records-');
 
-describe('an understand run: cost and prompts', () => {
+describe('an understand run: cost and prompts', UNDERSTAND_TIMEOUT, () => {
   it('RF-426 writes cost.json and cost.md from the ledger rows of the run', async () => {
     const { folder } = await fullUnderstandRun(temp.path);
 
@@ -49,7 +53,7 @@ describe('an understand run: cost and prompts', () => {
   });
 });
 
-describe('an understand run: events', () => {
+describe('an understand run: events', UNDERSTAND_TIMEOUT, () => {
   it('RF-1002 publishes the plan, every turn and tool call, the cards, the citation checks and each end', async () => {
     const { h, run } = await fullUnderstandRun(temp.path);
 
@@ -78,7 +82,7 @@ describe('an understand run: events', () => {
   });
 });
 
-describe('an understand run and the snapshot', () => {
+describe('an understand run and the snapshot', UNDERSTAND_TIMEOUT, () => {
   it('RF-005 the snapshot hashes the same before and after the run, and every write is in the workspace', async () => {
     const before = await hashTree(fixtureRoot('webforms-csharp'));
     const { run } = await fullUnderstandRun(temp.path);
@@ -89,7 +93,7 @@ describe('an understand run and the snapshot', () => {
   });
 });
 
-describe('an understand run that cannot start', () => {
+describe('an understand run that cannot start', UNDERSTAND_TIMEOUT, () => {
   it('RF-200 an unknown area stops the run with RST-1307 and the log names the valid areas', async () => {
     const h = await createUnderstandHarness({
       dataDir: temp.path,

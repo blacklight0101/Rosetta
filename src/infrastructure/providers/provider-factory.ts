@@ -20,6 +20,7 @@ import type { UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { priceCall, type BudgetPricing } from '../guards/budget-pricing.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
@@ -30,8 +31,8 @@ import { reservationLifetimeMs } from './reservation-lifetime.js';
 // provider factory, the only way to get a provider. For each role asked for it picks the provider
 // and model the settings name, chooses the key (the user's own, else the server's where allowed),
 // builds the adapter from the one parsed endpoint and wraps it in the guards. A role that cannot be
-// served (no usable key, a provider this server does not offer) is a problem naming the provider;
-// nothing has been called by then.
+// served (no usable key, a provider this server does not offer, a cloud model without a price on
+// its key, RF-427) is a problem naming the provider; nothing has been called by then.
 
 export interface GuardedProviderFactoryOptions {
   readonly keys: ProviderKeyRepository;
@@ -128,6 +129,10 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     if (!access.ok) return fail(access.error);
     const adapter = this.adapterFor(name, config, access.value);
     if (!adapter.ok) return fail(adapter.error);
+    // RF-427: an unpriced model is refused when the run starts, before its first call.
+    if (!this.isPriced(request, config.kind, setting.model, access.value)) {
+      return fail(ERROR_CODES.modelUnpriced);
+    }
     const caps = this.capsOf(request, access.value, serverCaps);
     const provider = this.wrap({
       request,
@@ -146,6 +151,34 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       ...(setting.temperature === undefined ? {} : { temperature: setting.temperature }),
       keySource: access.value.keySource,
     });
+  }
+
+  /**
+   * RF-427: whether the role's model can be priced on its key, so a run with an unpriced cloud model
+   * stops before any call; the budget guard checks every call again.
+   */
+  private isPriced(
+    request: ProviderSetRequest,
+    kind: ProviderConfig['kind'],
+    model: string,
+    access: ProviderAccess,
+  ): boolean {
+    try {
+      priceCall(this.pricingOf(request), { kind, keySource: access.keySource }, model);
+      return true;
+    } catch (error) {
+      if (error instanceof RosettaError && error.code === ERROR_CODES.modelUnpriced) return false;
+      throw error;
+    }
+  }
+
+  private pricingOf(request: ProviderSetRequest): BudgetPricing {
+    const { budget } = request.settings;
+    return {
+      table: this.options.priceTable,
+      overrides: (budget.prices ?? []).map(priceOf),
+      allowUnpriced: budget.allowUnpriced,
+    };
   }
 
   /** The adapter for the role; a builder that throws (a key it refuses) is that error's code. */
@@ -180,11 +213,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
       run: request.run,
       keySource: access.keySource,
       caps: parts.caps,
-      pricing: {
-        table: this.options.priceTable,
-        overrides: (request.settings.budget.prices ?? []).map(priceOf),
-        allowUnpriced: request.settings.budget.allowUnpriced,
-      },
+      pricing: this.pricingOf(request),
       cloudConsent: request.cloudConsent,
       transcripts: request.settings.output.transcripts,
       reservationTtlMs: reservationLifetimeMs({

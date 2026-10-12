@@ -22,3 +22,6 @@ export async function fullUnderstandRun(dataDir: string): Promise<FullRun> {
 export async function readJson(path: string): Promise<unknown> {
   return JSON.parse(await readFile(path, 'utf8'));
 }
+
+/** A scan and an understand run take a few seconds; more when the whole suite runs at once. */
+export const UNDERSTAND_TIMEOUT = { timeout: 30_000 } as const;

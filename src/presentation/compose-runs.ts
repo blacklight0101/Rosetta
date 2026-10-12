@@ -1,6 +1,6 @@
 import type { Clock } from '../application/ports/clock.js';
-import type { LlmProvider } from '../application/ports/llm-provider.js';
 import type { Logger } from '../application/ports/logger.js';
+import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
 import { RunScan } from '../application/use-cases/run-scan.js';
@@ -24,12 +24,13 @@ import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import { StreamRegistry } from './web/event-stream.js';
+import { composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { RunServices } from './web/run-routes.js';
 
 // Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event
 // log with the live broadcaster, the manifest store, the run queue and the use cases behind the run
 // routes. The executors of the stages are registered here as their cards land (the scan run of
-// P1-23 first); SubmitRun refuses a stage without one with RST-2305 (409), and `POST
+// P1-23, the understand run of P1-33); SubmitRun refuses a stage without one with RST-2305 (409), and `POST
 // /api/projects/:id/runs` starts the stages that have one (RF-003, RF-121, RF-126).
 
 export interface RunParts {
@@ -47,8 +48,13 @@ export interface RunParts {
   readonly packs: LanguagePackRegistry;
   /** Test mode only (TestDoubles): the fake GitHub behind the snapshot fetcher. */
   readonly fetch?: FetchFunction;
-  /** Test mode only (TestDoubles): the fake provider the stage executors use (ADR-008). */
-  readonly provider?: LlmProvider;
+  /**
+   * The provider factory: the only way the stage executors get a provider (ADR-003). In test mode
+   * it builds the model double for every role (ADR-008).
+   */
+  readonly providers: ProviderSetFactory;
+  /** `ROSETTA_OLLAMA_URL`; an Ollama on another host needs the cloud consent (RF-143). */
+  readonly ollamaUrl: string | undefined;
 }
 
 export interface RunComposition {
@@ -98,6 +104,33 @@ function keepAliveScheduler(logger: Logger): IntervalScheduler {
   });
 }
 
+interface ServiceParts {
+  readonly parts: RunParts;
+  readonly runs: PgRunIndex;
+  readonly log: JsonlEventLog;
+  readonly broadcaster: SseBroadcaster;
+  readonly projects: PgProjectRepository;
+  readonly submitRun: SubmitRun;
+  readonly queue: RunQueue;
+}
+
+/** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
+function runServices(service: ServiceParts): RunServices {
+  const { parts, runs, log, broadcaster, projects, submitRun, queue } = service;
+  const ollamaHost = ollamaHostOf(parts.ollamaUrl);
+  return {
+    startRun: new StartRun({
+      projects,
+      submit: submitRun,
+      ...(ollamaHost === undefined ? {} : { ollamaHost }),
+    }),
+    subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
+    stopRun: new StopRun({ queue }),
+    heartbeat: keepAliveScheduler(parts.logger),
+    streams: new StreamRegistry(),
+  };
+}
+
 // RF-1006, RF-1108
 export function composeRuns(parts: RunParts): RunComposition {
   const { pool, logger, clock, masker, dataDir, version } = parts;
@@ -120,7 +153,10 @@ export function composeRuns(parts: RunParts): RunComposition {
   const queue = new RunQueue({
     runs,
     lifecycle,
-    executors: { scan: scan.executor },
+    executors: {
+      scan: scan.executor,
+      understand: composeUnderstand({ ...parts, writer, manifests, projects, runs }),
+    },
     clock,
     logger,
     maxRunning: DEFAULT_MAX_RUNNING_RUNS,
@@ -135,13 +171,7 @@ export function composeRuns(parts: RunParts): RunComposition {
   });
   return {
     queue,
-    services: {
-      startRun: new StartRun({ projects, submit: submitRun }),
-      subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
-      stopRun: new StopRun({ queue }),
-      heartbeat: keepAliveScheduler(logger),
-      streams: new StreamRegistry(),
-    },
+    services: runServices({ parts, runs, log, broadcaster, projects, submitRun, queue }),
     submitRun,
     async recover() {
       await scan.fetcher.discardPartialFolders();

@@ -1,9 +1,10 @@
 import type { Area } from '../../domain/code-map/area.js';
-import { ok, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 
 // RF-200, DEC-15: the reader tasks of an understand run: one per area of the code map, or one per
 // area the start request named, always in the code map's area order (so card ids follow it,
 // RF-203). A name the code map does not have stops the run, and the refusal lists the valid names.
+// Names are compared exactly, as the code map writes them.
 
 export interface ReaderTask {
   /** `reader-001`: a plain file name, used for the transcript and the invalid output (3.7, 3.15). */
@@ -17,10 +18,19 @@ export interface UnknownAreas {
   readonly valid: readonly string[];
 }
 
+function taskId(index: number): string {
+  return `reader-${String(index + 1).padStart(3, '0')}`;
+}
+
 // RF-200
 export function planReaderTasks(
-  _areas: readonly Area[],
-  _requested: readonly string[] | undefined,
+  areas: readonly Area[],
+  requested: readonly string[] | undefined,
 ): Result<readonly ReaderTask[], UnknownAreas> {
-  return ok([]);
+  const valid = areas.map((area) => area.name);
+  const named = new Set(requested ?? []);
+  const unknown = [...named].filter((name) => !valid.includes(name));
+  if (unknown.length > 0) return err({ unknown, valid });
+  const chosen = named.size === 0 ? areas : areas.filter((area) => named.has(area.name));
+  return ok(chosen.map((area, index) => ({ agentTaskId: taskId(index), area })));
 }

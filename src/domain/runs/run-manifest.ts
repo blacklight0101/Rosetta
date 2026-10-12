@@ -54,7 +54,7 @@ interface ManifestTotals {
   readonly calls: number;
 }
 
-interface ManifestAgentTask {
+export interface ManifestAgentTask {
   readonly agentTaskId: string;
   readonly area: string;
   readonly role: string;
@@ -206,4 +206,44 @@ export function recordManifestCall(
       calls: totals.calls + 1,
     },
   });
+}
+
+/**
+ * Records an agent task: a task already listed is replaced where it stands, a new one is added at
+ * the end, so the list keeps the order the run planned (RF-200, RNF-002).
+ */
+// RF-200
+export function recordManifestAgentTask(
+  manifest: RunManifest,
+  task: ManifestAgentTask,
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  const listed = manifest.agentTasks.some((each) => each.agentTaskId === task.agentTaskId);
+  const agentTasks = listed
+    ? manifest.agentTasks.map((each) => (each.agentTaskId === task.agentTaskId ? task : each))
+    : [...manifest.agentTasks, task];
+  return ok({ ...manifest, agentTasks });
+}
+
+/** Records the exact model version a role's provider reported, once it is known (RNF-004). */
+// RNF-004
+export function recordManifestModelVersion(
+  manifest: RunManifest,
+  role: string,
+  modelVersion: string,
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  const current = manifest.roles[role];
+  if (current === undefined || current.modelVersion === modelVersion) return ok(manifest);
+  return ok({ ...manifest, roles: { ...manifest.roles, [role]: { ...current, modelVersion } } });
+}
+
+/** Records the price table the run's calls were priced with (data-model.md section 3.6). */
+// RF-426
+export function recordManifestPriceTable(
+  manifest: RunManifest,
+  priceTable: { readonly version: string; readonly currency: string },
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  return ok({ ...manifest, priceTable });
 }

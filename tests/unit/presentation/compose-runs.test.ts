@@ -29,6 +29,8 @@ describe('composeRuns', () => {
       version: '1.2.3-test',
       githubToken: undefined,
       packs: new LanguagePackRegistry([]),
+      providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
+      ollamaUrl: undefined,
     });
 
     // The database is unreachable, so the queue step that follows rejects; the discard comes first.

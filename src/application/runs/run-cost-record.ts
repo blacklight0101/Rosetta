@@ -2,6 +2,7 @@ import { recordManifestCall, type MeteredCall } from '../../domain/runs/run-mani
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { RunScope } from '../ports/run-events.js';
+import type { KeyedQueue } from '../support/keyed-queue.js';
 
 // RF-421, RF-1010, data-model.md sections 3.6 and 4 (`runs`): after each metered call the budget
 // guard adds the call's tokens and cost to the run's manifest totals and to the running totals of
@@ -18,6 +19,11 @@ export interface ManifestCostRecorderOptions {
   readonly manifests: RunManifestStore;
   readonly runs: RunIndex;
   readonly scope: RunScope;
+  /**
+   * The queue every writer of the run's manifest shares (P1-33): updates keyed by the run id run one
+   * after another, so the cost, the security counts and the agent tasks never overwrite each other.
+   */
+  readonly queue?: KeyedQueue;
 }
 
 export class ManifestCostRecorder implements RunCostRecorder {
@@ -30,7 +36,7 @@ export class ManifestCostRecorder implements RunCostRecorder {
 
   // RF-421
   addCall(call: MeteredCall): Promise<void> {
-    const result = this.tail.then(async () => {
+    const update = async (): Promise<void> => {
       const { manifests, runs, scope } = this.options;
       const stored = await manifests.read(scope);
       if (stored === undefined) return;
@@ -44,7 +50,10 @@ export class ManifestCostRecorder implements RunCostRecorder {
         cachedInputTokens,
         costMicros,
       });
-    });
+    };
+    const { queue, scope } = this.options;
+    if (queue !== undefined) return queue.run(scope.id, update);
+    const result = this.tail.then(update);
     this.tail = result.catch(() => undefined);
     return result;
   }
