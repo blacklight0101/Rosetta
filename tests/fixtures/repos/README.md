@@ -1,6 +1,6 @@
 # Scan fixture repositories
 
-Small synthetic repositories for the scan tests (P1-19: RF-100..RF-103, RF-124; P1-21: RF-110, RF-111; P1-20: RF-104..RF-106, RF-112). They are read in place,
+Small synthetic repositories for the scan and agent tests (P1-19: RF-100..RF-103, RF-124; P1-21: RF-110, RF-111; P1-20: RF-104..RF-106, RF-112). They are read in place,
 never changed by a test; a test that needs extra files (`bin/`, binaries, huge files) copies a fixture to a
 temporary folder first.
 
@@ -10,6 +10,7 @@ temporary folder first.
 | `webforms-ef/` | C# WebForms with an Entity Framework `DbContext`, a master page, a user control and pages with and without a code-behind | RF-111 symbols, code-behind links and candidate entities (P1-21) |
 | `php-shop/` | PHP with a front controller, an `.ini` file, `composer.json` and a SQL script | RF-102 and RF-103 in a second stack |
 | `cobol-ledger/` | COBOL and JCL, a language with no language pack | RF-102: unfamiliar files are still listed, language `cobol` or `unknown` |
+| `injection/` | C# with comments and a README that give orders to AI agents, a marker look-alike and a request to read `../../.env` | RF-145: planted instructions stay data; the refused read is logged (P1-31) |
 
 ## Sources and licences (RNF-009)
 
