@@ -16,14 +16,13 @@ import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-ca
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
 import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
-import { TestProviders } from '../../src/application/use-cases/test-providers.js';
+import type { TestProviders } from '../../src/application/use-cases/test-providers.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
-import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -32,8 +31,6 @@ import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-s
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
-import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
-import { unrecordedSinks } from '../../src/infrastructure/providers/unrecorded-sinks.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { DnsPublicHostCheck } from '../../src/infrastructure/security/public-host-check.js';
 import { DeleteProviderKey } from '../../src/application/use-cases/delete-provider-key.js';
@@ -42,10 +39,10 @@ import { SaveProviderKey } from '../../src/application/use-cases/save-provider-k
 import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
-import { budgetTable } from './budget-harness.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FakeHostResolver } from './fake-host-resolver.js';
-import { fakeAdapters, SpyLedger, type FakeAdapters } from './provider-factory-harness.js';
+import type { FakeAdapters, SpyLedger } from './provider-fakes.js';
+import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
@@ -192,34 +189,6 @@ function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
   };
 }
 
-interface ProviderTestParts {
-  readonly users: MemoryUserRepository;
-  readonly serverSettings: MemoryServerSettings;
-  readonly clock: FixedClock;
-  readonly logger: MemoryLogger;
-  readonly masker: SecretMasker;
-  readonly keys: KeyParts;
-  readonly providers: FakeAdapters;
-  readonly providerLedger: SpyLedger;
-}
-
-/** RF-407: the provider test over the real factory with fake adapters and the memory ledger. */
-function providerTestService(parts: ProviderTestParts): TestProviders {
-  const { users, serverSettings, clock, logger, masker, keys } = parts;
-  const ids = new SequenceIdGenerator();
-  const factory = new GuardedProviderFactory({
-    ...{ keys: keys.keys, box: keys.secretBox, serverSettings, clock, ids, logger, masker },
-    ...{ serverKeys: {}, ollamaUrl: 'http://localhost:11434', priceTable: budgetTable },
-    ledger: parts.providerLedger,
-    adapters: parts.providers.builder,
-  });
-  const template = templateSettings;
-  return new TestProviders({
-    ...{ users, serverSettings, template, factory, ids },
-    unrecorded: unrecordedSinks(),
-  });
-}
-
 /** RF-1009, RF-1100, RF-1101: the session use cases over memory adapters. */
 function authServices(parts: AuthParts): ServerOptions['auth'] {
   const { users, hasher, sessions, auditLog, logger, clock, dummyHash } = parts;
@@ -244,6 +213,18 @@ function runServices(
     startRun: new StartRun({ projects, submit: runs.submit }),
     ...route,
   };
+}
+
+function runHarnessOf(
+  clock: FixedClock,
+  logger: MemoryLogger,
+  eventStore: TestServerOptions['eventStore'],
+): RunHarness {
+  return createRunHarness({
+    clock,
+    logger,
+    ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
+  });
 }
 
 /**
@@ -271,21 +252,15 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const usage = new MemoryAccountUsage();
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
-  const runs = createRunHarness({
-    clock,
-    logger,
-    ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
-  });
+  const runs = runHarnessOf(clock, logger, eventStore);
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const keys = {
     keys: new MemoryProviderKeyRepository(),
     secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
     resolver: new FakeHostResolver(),
   };
-  const providers = fakeAdapters(providerRecordings);
-  const providerLedger = new SpyLedger(new MemoryCostLedger());
-  const testProviders = providerTestService({
-    ...{ users, serverSettings, clock, logger, masker, keys, providers, providerLedger },
+  const { providers, providerLedger, testProviders } = providerTestService({
+    ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
   const server = buildServer({
     logger,

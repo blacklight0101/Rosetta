@@ -16,7 +16,7 @@ const roles = {
   verifier: { provider: 'ollama', model: 'gemma4:e4b' },
   planner: { provider: 'fake', model: 'planner-model' },
   summariser: { provider: 'ollama', model: 'gemma4:e4b' },
-};
+} as const;
 const ready = {
   ollamaUrl: 'http://host.docker.internal:11434',
   serverKeys: { openai: serverKeyText },
@@ -36,14 +36,40 @@ describe('TestProviders', () => {
     expect(result).toEqual({
       ok: true,
       value: [
-        { role: 'reader', provider: 'openai', model: 'contract-model', status: 'reachable', costMicros: readerCost },
-        { role: 'verifier', provider: 'ollama', model: 'gemma4:e4b', status: 'reachable', costMicros: 0n },
-        { role: 'planner', provider: 'fake', model: 'planner-model', status: 'reachable', costMicros: 0n },
-        { role: 'summariser', provider: 'ollama', model: 'gemma4:e4b', status: 'reachable', costMicros: 0n },
+        {
+          role: 'reader',
+          provider: 'openai',
+          model: 'contract-model',
+          status: 'reachable',
+          costMicros: readerCost,
+        },
+        {
+          role: 'verifier',
+          provider: 'ollama',
+          model: 'gemma4:e4b',
+          status: 'reachable',
+          costMicros: 0n,
+        },
+        {
+          role: 'planner',
+          provider: 'fake',
+          model: 'planner-model',
+          status: 'reachable',
+          costMicros: 0n,
+        },
+        {
+          role: 'summariser',
+          provider: 'ollama',
+          model: 'gemma4:e4b',
+          status: 'reachable',
+          costMicros: 0n,
+        },
       ],
     });
   });
+});
 
+describe('TestProviders: the ledger', () => {
   it('RF-407 counts the test calls in the ledger of the user, as rows of no run', async () => {
     const harness = await providerTestHarness(ready);
 
@@ -62,7 +88,9 @@ describe('TestProviders', () => {
     );
     expect(harness.ledger.entries[0]?.costMicros).toBe(readerCost);
   });
+});
 
+describe('TestProviders: the call', () => {
   it('RF-407 sends each role one tiny call to its own model, with a small output limit', async () => {
     const harness = await providerTestHarness(ready);
 
@@ -70,7 +98,11 @@ describe('TestProviders', () => {
 
     const requests = harness.fakeList.map((fake, index) => [
       harness.built[index]?.name,
-      fake.requests.map((request) => [request.model, request.maxOutputTokens, request.tools.length]),
+      fake.requests.map((request) => [
+        request.model,
+        request.maxOutputTokens,
+        request.tools.length,
+      ]),
     ]);
     expect(requests).toEqual([
       ['openai', [['contract-model', 64, 0]]],
@@ -93,7 +125,9 @@ describe('TestProviders', () => {
       ['summariser', 'reachable', undefined],
     ]);
   });
+});
 
+describe('TestProviders: keys', () => {
   it('RF-002 shows a role without a usable key as failed, names no value and calls nothing for it', async () => {
     const harness = await providerTestHarness({
       ...ready,
@@ -121,10 +155,13 @@ describe('TestProviders', () => {
     const result = await harness.testProviders.execute({ actor: harness.actor });
 
     expect(harness.ledger.entries[0]?.keySource).toBe('user');
-    expect(JSON.stringify(result, (_key, value: unknown) => (typeof value === 'bigint' ? '0' : value)))
-      .not.toContain(userKeyText);
+    expect(
+      JSON.stringify(result, (_key, value: unknown) => (typeof value === 'bigint' ? '0' : value)),
+    ).not.toContain(userKeyText);
   });
+});
 
+describe('TestProviders: caps and consent', () => {
   it('RF-1106 a test call is held to the same caps: the server month stops it with RST-1600', async () => {
     const caps = { runMicros: 500_000n, userDayMicros: 1_000_000n, serverMonthMicros: 1n };
     const harness = await providerTestHarness({ ...ready, caps });

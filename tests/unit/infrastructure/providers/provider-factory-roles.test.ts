@@ -35,7 +35,10 @@ describe('the provider set of a run: roles', () => {
     });
 
     const built = await harness.factory.build(
-      harness.request({ settings, roles: ['reader', 'verifier', 'planner', 'summariser'] }),
+      harness.request({
+        ...{ settings, cloudConsent: true },
+        roles: ['reader', 'verifier', 'planner', 'summariser'],
+      }),
     );
     const set = unwrapped(built);
     for (const role of ['reader', 'verifier', 'planner'] as const) {
@@ -44,18 +47,28 @@ describe('the provider set of a run: roles', () => {
     }
 
     expect([...set.keys()]).toEqual(['reader', 'verifier', 'planner', 'summariser']);
-    expect(set.get('reader')).toMatchObject({ name: 'openai', kind: 'openai', model: 'contract-model' });
-    expect(set.get('verifier')).toMatchObject({ name: 'ollama', kind: 'ollama', model: 'gemma4:e4b' });
+    expect(set.get('reader')).toMatchObject({
+      name: 'openai',
+      kind: 'openai',
+      model: 'contract-model',
+    });
+    expect(set.get('verifier')).toMatchObject({
+      name: 'ollama',
+      kind: 'ollama',
+      model: 'gemma4:e4b',
+    });
     expect(harness.ledger.entries.map((e) => [e.role, e.provider, e.model, e.keySource])).toEqual([
       ['reader', 'openai', 'contract-model', 'server'],
       ['verifier', 'ollama', 'gemma4:e4b', 'none'],
       ['planner', 'fake', 'planner-model', 'none'],
     ]);
-    expect(harness.fakes.get('openai')?.requests).toHaveLength(1);
-    expect(harness.fakes.get('ollama')?.requests).toHaveLength(1);
-    expect(harness.fakes.get('fake')?.requests).toHaveLength(1);
+    // One adapter per role, in the order of the roles; each received only its own role's call.
+    expect(harness.built.map((spec) => spec.name)).toEqual(['openai', 'ollama', 'fake', 'ollama']);
+    expect(harness.fakeList.map((fake) => fake.requests.length)).toEqual([1, 1, 1, 0]);
   });
+});
 
+describe('the provider set of a run: role settings', () => {
   it('RF-405 builds only the roles it is asked for', async () => {
     const harness = factoryHarness({ ollamaUrl: 'http://localhost:11434' });
 
@@ -91,7 +104,7 @@ describe('the provider set of a run: key choice', () => {
     await harness.storeKey(factoryAccount.id, 'openai', userKeyText);
 
     const set = unwrapped(
-      await harness.factory.build(harness.request({ settings: openAiReader })),
+      await harness.factory.build(harness.request({ settings: openAiReader, cloudConsent: true })),
     );
     await set.get('reader')?.provider.complete(callFor('reader', 'contract-model'));
 
@@ -103,7 +116,7 @@ describe('the provider set of a run: key choice', () => {
     const harness = factoryHarness({ serverKeys: { openai: serverKeyText } });
 
     const set = unwrapped(
-      await harness.factory.build(harness.request({ settings: openAiReader })),
+      await harness.factory.build(harness.request({ settings: openAiReader, cloudConsent: true })),
     );
     await set.get('reader')?.provider.complete(callFor('reader', 'contract-model'));
 
@@ -115,19 +128,21 @@ describe('the provider set of a run: key choice', () => {
     const harness = factoryHarness();
     await harness.storeKey('00000000-0000-4000-9000-0000000000ff', 'openai', userKeyText);
 
-    const built = await harness.factory.build(harness.request({ settings: openAiReader }));
+    const built = await harness.factory.build(
+      harness.request({ settings: openAiReader, cloudConsent: true }),
+    );
 
     expect(built.ok).toBe(false);
     expect(harness.built).toEqual([]);
   });
+});
 
+describe('the provider set of a run: missing keys', () => {
   it('RF-002 stops before any call, naming the provider, when there is no key and no server key is allowed', async () => {
     const harness = factoryHarness({ serverKeys: { openai: serverKeyText } });
     const account = { ...factoryAccount, serverKeysAllowed: false };
 
-    const built = await harness.factory.build(
-      harness.request({ account, settings: openAiReader }),
-    );
+    const built = await harness.factory.build(harness.request({ account, settings: openAiReader }));
 
     expect(built).toEqual({
       ok: false,
@@ -167,13 +182,17 @@ describe('the provider set of a run: key choice', () => {
     expect(built.ok).toBe(false);
     expect(harness.built).toEqual([]);
   });
+});
 
+describe('the provider set of a run: stored keys', () => {
   it('RF-1104 a stored key the server secret cannot open stops the role with RST-2300', async () => {
     const harness = factoryHarness({ serverKeys: { openai: serverKeyText } });
     const sealed = sampleSealed(7, 'unknown-version');
     await harness.keys.upsert(sampleKeyRecord(factoryAccount.id, 'openai', { sealed }));
 
-    const built = await harness.factory.build(harness.request({ settings: openAiReader }));
+    const built = await harness.factory.build(
+      harness.request({ settings: openAiReader, cloudConsent: true }),
+    );
 
     expect(built).toEqual({
       ok: false,
@@ -187,7 +206,7 @@ describe('the provider set of a run: key choice', () => {
     await harness.storeKey(factoryAccount.id, 'openai', userKeyText);
 
     const set = unwrapped(
-      await harness.factory.build(harness.request({ settings: openAiReader })),
+      await harness.factory.build(harness.request({ settings: openAiReader, cloudConsent: true })),
     );
     await set.get('reader')?.provider.complete(callFor('reader', 'contract-model'));
 
@@ -195,7 +214,12 @@ describe('the provider set of a run: key choice', () => {
       harness.logger.entries,
       harness.ledger.entries.map((e) => ({ ...e, costMicros: e.costMicros.toString() })),
       harness.calls.records(),
-      [...set.values()].map(({ provider: _provider, ...rest }) => rest),
+      [...set.values()].map(({ name, kind, model, keySource }) => ({
+        name,
+        kind,
+        model,
+        keySource,
+      })),
     ]);
     expect(everything).not.toContain(userKeyText);
     expect(everything).not.toContain(userKeyText.slice(0, 20));

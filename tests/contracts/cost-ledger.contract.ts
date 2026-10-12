@@ -225,7 +225,9 @@ function providerTestContract(name: string, fresh: Fresh): void {
 
     expect((await reserveAt(ledger, reservationOf(ids, worst(200n)), caps)).ok).toBe(true);
   });
+}
 
+function providerTestRunsContract(name: string, fresh: Fresh): void {
   it(`RF-407 ${name} keeps the calls of provider tests out of every run's cap`, async () => {
     const { ledger, ids } = await setUp(fresh);
     const first = reservationOf(ids, { runId: null, ...worst(300n) });
@@ -248,4 +250,5 @@ export function costLedgerContract(name: string, fresh: Fresh): void {
   monthContract(name, fresh);
   listContract(name, fresh);
   providerTestContract(name, fresh);
+  providerTestRunsContract(name, fresh);
 }

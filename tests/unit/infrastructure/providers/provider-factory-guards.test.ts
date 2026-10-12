@@ -38,7 +38,9 @@ async function setUp(
 ): Promise<ReaderSetup> {
   const harness = factoryHarness(options);
   const settings: ProjectSettings = change.settings ?? openAiSettings;
-  const built = await harness.factory.build(harness.request({ roles: ['reader'], ...change, settings }));
+  const built = await harness.factory.build(
+    harness.request({ roles: ['reader'], ...change, settings }),
+  );
   const reader = built.ok ? built.value.get('reader') : undefined;
   if (reader === undefined) throw new Error('The reader was not built.');
   return { harness, reader };
@@ -126,7 +128,9 @@ describe('cloud consent and the one parsed URL', () => {
       expect(harness.fakes.get('ollama')?.requests).toHaveLength(1);
     },
   );
+});
 
+describe('cloud consent: local and remote Ollama', () => {
   it('DEC-118 an Ollama server on another host needs the consent like a cloud provider', async () => {
     const ollamaUrl = 'http://gpu-box.example:11434';
     const { harness, reader } = await setUp({ ollamaUrl }, { settings: ollamaSettings });
@@ -184,7 +188,9 @@ describe('caps and reservations', () => {
     const lifetime = reservationLifetimeMs({ kind: 'openai', timeoutSeconds: 120, maxRetries: 3 });
     expect(held?.reservation.expiresAt.getTime()).toBe((held?.at.getTime() ?? 0) + lifetime);
   });
+});
 
+describe('caps: server and own keys', () => {
   it('RF-1106 a server key is held to the administrator caps, a user key is not', async () => {
     const caps = { runMicros: 50_000_000n, userDayMicros: 1_000_000n, serverMonthMicros: 1n };
     const server = await setUp({ ...withServerKey, caps }, { cloudConsent: true });

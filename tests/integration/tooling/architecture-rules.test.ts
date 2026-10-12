@@ -153,7 +153,10 @@ describe('dependency-cruiser layer rule: provider adapters', () => {
   };
 
   it.each([
-    ['src/presentation/composition-root.ts', '../infrastructure/providers/ollama/ollama-provider.js'],
+    [
+      'src/presentation/composition-root.ts',
+      '../infrastructure/providers/ollama/ollama-provider.js',
+    ],
     ['src/infrastructure/guards/other.ts', '../providers/openai/openai-provider.js'],
     ['src/application/use.ts', '../infrastructure/providers/fake/fake-provider.js'],
     ['src/infrastructure/providers/provider-factory.ts', './openai/openai-provider.js'],

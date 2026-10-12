@@ -25,19 +25,27 @@ async function sourceFiles(): Promise<{ path: string; text: string }[]> {
 }
 
 async function filesConstructing(classes: readonly string[]): Promise<string[]> {
-  const pattern = new RegExp(`new\s+(?:${classes.join('|')})\s*\(`, 'u');
+  const pattern = new RegExp(String.raw`new\s+(?:${classes.join('|')})\s*\(`, 'u');
   return (await sourceFiles()).filter((file) => pattern.test(file.text)).map((file) => file.path);
 }
 
 describe('provider factory boundary', () => {
   it('ADR-003 an adapter is constructed only in the adapter builder', async () => {
-    const constructing = await filesConstructing(['OllamaProvider', 'OpenAiProvider', 'FakeProvider']);
+    const constructing = await filesConstructing([
+      'OllamaProvider',
+      'OpenAiProvider',
+      'FakeProvider',
+    ]);
 
     expect(constructing).toEqual(['infrastructure/providers/adapter-builder.ts']);
   });
 
   it('ADR-006 the guards and the observer are constructed only where an adapter is wrapped', async () => {
-    const constructing = await filesConstructing(['BudgetGuard', 'EgressGuard', 'ObservedProvider']);
+    const constructing = await filesConstructing([
+      'BudgetGuard',
+      'EgressGuard',
+      'ObservedProvider',
+    ]);
 
     expect(constructing).toEqual(['infrastructure/providers/guarded-provider.ts']);
   });

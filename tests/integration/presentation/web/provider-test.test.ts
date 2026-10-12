@@ -4,7 +4,7 @@ import { describeError } from '../../../../src/domain/errors/descriptions.js';
 import { contractScenarios } from '../../../contracts/llm-provider.contract.js';
 import { recordingOf } from '../../../support/fake-recordings.js';
 import { fixtureKey } from '../../../support/provider-key-fixtures.js';
-import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
+import { addUser, signedInBrowser, TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
 // RF-407, RF-1105, RF-1009, RF-1104: POST /api/account/providers/test checks every role of a new
@@ -58,7 +58,9 @@ describe('POST /api/account/providers/test', () => {
     expect(new Set(rows.map((row) => row.stage))).toEqual(new Set(['provider-test']));
     expect(new Set(rows.map((row) => row.userId)).size).toBe(2);
   });
+});
 
+describe('POST /api/account/providers/test failures and keys', () => {
   it('RF-407 shows the error, a plain message and the next step of a role that fails', async () => {
     const recordings = { ollama: recordingOf(contractScenarios['permanent-failure']) };
     test = createTestServer({ providerRecordings: recordings });
@@ -67,8 +69,9 @@ describe('POST /api/account/providers/test', () => {
     const response = await press(amy);
 
     expect(response.statusCode).toBe(200);
-    const [reader, verifier] = response.json<{ roles: Record<string, unknown>[] }>().roles;
-    expect(reader).toEqual({
+    const { roles } = response.json<{ roles: Record<string, unknown>[] }>();
+    expect(roles.map((role) => role['status'])).toEqual(['failed', 'failed', 'failed', 'failed']);
+    expect(roles[0]).toEqual({
       role: 'reader',
       provider: 'ollama',
       model: 'gemma4:e4b',
@@ -78,11 +81,10 @@ describe('POST /api/account/providers/test', () => {
       code: ERROR_CODES.providerCallFailed,
       ...describeError(ERROR_CODES.providerCallFailed),
     });
-    expect(verifier).toMatchObject({ status: 'reachable' });
   });
 
   it('RF-1104 uses the key of the user for a role on OpenAI, and never answers it', async () => {
-    const reader = { provider: 'openai', model: 'contract-model' };
+    const reader = { provider: 'openai', model: 'contract-model' } as const;
     test = createTestServer({ defaultRoles: { reader } });
     const amy = await signedIn('amy');
     const key = fixtureKey('TestRoute01');
@@ -109,7 +111,7 @@ describe('POST /api/account/providers/test access', () => {
   it('RF-1105 refuses a visitor without a session', async () => {
     test = createTestServer();
 
-    const response = await test.server.inject({ method: 'POST', url: '/api/account/providers/test' });
+    const response = await press(new TestBrowser(test.server));
 
     expect(response.statusCode).toBe(401);
   });

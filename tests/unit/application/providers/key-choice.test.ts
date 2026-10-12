@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { chooseKeySource, keyProviderOf } from '../../../../src/application/providers/key-choice.js';
+import {
+  chooseKeySource,
+  keyProviderOf,
+} from '../../../../src/application/providers/key-choice.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 
 // RF-1104, RF-002: which key a role uses. The user's own key first; the server key only when the

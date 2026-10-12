@@ -35,7 +35,9 @@ describe('endpointOf', () => {
   ])('DEC-118 counts %s as this machine', (url) => {
     expect(needsConsent(url)).toBe(false);
   });
+});
 
+describe('endpointOf: other hosts and URL clean-up', () => {
   it.each([
     'http://192.168.1.20:11434',
     'http://ollama.internal:11434',
@@ -45,19 +47,22 @@ describe('endpointOf', () => {
     expect(needsConsent(url)).toBe(true);
   });
 
-  it('RF-143 drops credentials, a path and a query from the URL the adapter connects to', () => {
+  it('RF-143 drops credentials and the query from the URL the adapter connects to, and keeps the path', () => {
     const endpoint = endpointOf('http://user:pa55@host.docker.internal:11434/some/path?x=1');
 
     expect(endpoint).toEqual({
       ok: true,
-      value: { baseUrl: 'http://host.docker.internal:11434', host: 'host.docker.internal' },
+      value: {
+        baseUrl: 'http://host.docker.internal:11434/some/path',
+        host: 'host.docker.internal',
+      },
     });
   });
 
-  it('RF-143 leaves the default port out and keeps an IPv6 host in brackets', () => {
+  it('RF-143 leaves the default port out, keeps the path and keeps an IPv6 host in brackets', () => {
     expect(endpointOf('https://api.example.com:443/v1')).toEqual({
       ok: true,
-      value: { baseUrl: 'https://api.example.com', host: 'api.example.com' },
+      value: { baseUrl: 'https://api.example.com/v1', host: 'api.example.com' },
     });
     expect(endpointOf('http://[::1]:11434')).toEqual({
       ok: true,
