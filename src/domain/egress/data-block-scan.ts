@@ -1,4 +1,4 @@
-import { parseCitation, type Citation } from '../cards/citation.js';
+import { createCitation, type Citation } from '../cards/citation.js';
 import { err, ok, type Result } from '../errors/result.js';
 import {
   DATA_BLOCK_CLOSE,
@@ -47,22 +47,35 @@ function parseJson(text: string): unknown {
   }
 }
 
+function citationOf(value: unknown): Citation | undefined {
+  if (!isRecord(value)) return undefined;
+  const { path, startLine, endLine } = value;
+  if (typeof path !== 'string' || holdsDataMarker(path)) return undefined;
+  if (typeof startLine !== 'number' || typeof endLine !== 'number') return undefined;
+  const citation = createCitation(path, startLine, endLine);
+  return citation.ok ? citation.value : undefined;
+}
+
 function citationsOf(value: unknown): Citation[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const citations: Citation[] = [];
   for (const item of value) {
-    if (typeof item !== 'string') return undefined;
-    const citation = parseCitation(item);
-    if (!citation.ok) return undefined;
-    citations.push(citation.value);
+    const citation = citationOf(item);
+    if (citation === undefined) return undefined;
+    citations.push(citation);
   }
   return citations;
 }
 
-/** The excerpts of a header line, or undefined when the line is not a valid header. */
+/**
+ * The excerpts of a header line, or undefined when the line is not a valid header. A header
+ * written by renderDataBlock holds no raw `<` or `>` and no path with a marker look-alike.
+ */
 function headerExcerpts(line: string): Citation[] | undefined {
   if (!line.startsWith(DATA_BLOCK_OPEN) || !line.endsWith(DATA_BLOCK_CLOSE)) return undefined;
-  const header = parseJson(line.slice(DATA_BLOCK_OPEN.length, -DATA_BLOCK_CLOSE.length));
+  const json = line.slice(DATA_BLOCK_OPEN.length, -DATA_BLOCK_CLOSE.length);
+  if (/[<>]/.test(json)) return undefined;
+  const header = parseJson(json);
   if (!isRecord(header) || header['label'] !== DATA_BLOCK_LABEL) return undefined;
   const known = DATA_BLOCK_SOURCES.some((source) => source === header['source']);
   return known ? citationsOf(header['excerpts']) : undefined;

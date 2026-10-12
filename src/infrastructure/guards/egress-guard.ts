@@ -13,23 +13,26 @@ import type { Citation } from '../../domain/cards/citation.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { ProviderTarget } from '../providers/call-attempts.js';
-import { maskRequest, type MaskedRequest } from './mask-request.js';
+import { maskRequest } from './mask-request.js';
 import { requestExcerpts } from './request-excerpts.js';
 import type { TextMasker } from './secret-masker.js';
 
 // RF-141, RF-142, RF-143, RF-145, ADR-006, ADR-013, DEC-16, DEC-57: the decorator of LlmProvider
 // through which every model call leaves the machine (architecture section 7). In order, before
 // anything reaches the provider it wraps:
-//   1. a non-local provider is refused unless the run carries consent; the consent is fixed when
-//      the guard is built for the run, so nothing in a request can grant it (RF-143);
+//   1. a provider off this machine is refused unless the run carries consent; the consent is fixed
+//      when the guard is built for the run, so nothing in a request can grant it (RF-143);
 //   2. repository content must sit in labelled data blocks: a data block in the system prompt, a
 //      tool result that is not exactly one block, or a broken block is refused (RF-145);
-//   3. every message part is masked (RF-141); a masker failure blocks the call;
-//   4. the egress log gets the call's line: provider, model, role, agent task and the path and
-//      line range of every excerpt, never their text (RF-142);
-//   5. the run record gets the secrets first sent by this agent task, per kind (RF-141).
-// Every refusal is logged as a security event with its code, counted in the manifest as a blocked
-// call and thrown, so the agent task stops; the call is never sent (fail closed).
+//   3. every message part is masked (RF-141); the tool definitions are not: they come from code and
+//      must never carry repository text (the agent loop, P1-31, keeps it that way);
+//   4. the run record gets the secrets first sent by this agent task, per kind (RF-141);
+//   5. last, the egress log gets the call's line: provider, model, role, agent task and the path
+//      and line range of every excerpt, never their text (RF-142), so a line always means a call
+//      that was sent.
+// Every refusal and every failure of steps 3-5 takes one path: a security event with its code, one
+// more blocked call in the manifest, the error thrown so the agent task stops; the call is never
+// sent (fail closed). A failure without a code takes the code of its step.
 
 export interface EgressGuardOptions {
   readonly inner: LlmProvider;
@@ -44,13 +47,24 @@ export interface EgressGuardOptions {
 }
 
 const messages = {
-  consent: 'A call to a cloud provider was refused because the run has no consent for it.',
+  consent: 'A call to a provider off this machine was refused because the run has no consent.',
   masking: 'A model call was blocked because secret masking failed.',
+  record: 'A model call was blocked because the run record could not be updated.',
+  egressLog: 'A model call was blocked because its egress line could not be stored.',
+  uncounted: 'A blocked model call could not be counted in the run record.',
 } as const;
 
-function isMaskingFailure(error: unknown): boolean {
-  return error instanceof RosettaError && error.code === ERROR_CODES.secretMaskingFailed;
+interface Step {
+  /** The code of a failure that carries none. */
+  readonly code: ErrorCode;
+  readonly message: string;
 }
+
+const steps = {
+  masking: { code: ERROR_CODES.secretMaskingFailed, message: messages.masking },
+  record: { code: ERROR_CODES.runManifestFailed, message: messages.record },
+  egressLog: { code: ERROR_CODES.egressLogFailed, message: messages.egressLog },
+} as const satisfies Record<string, Step>;
 
 export class EgressGuard implements LlmProvider {
   private readonly options: EgressGuardOptions;
@@ -79,39 +93,32 @@ export class EgressGuard implements LlmProvider {
     return excerpts.value;
   }
 
-  /** Masks the request and records it; a masking failure blocks the call. */
+  /** Masks the request, then records it: the manifest counts first, the egress line last. */
   private async prepare(request: LlmRequest, excerpts: readonly Citation[]): Promise<LlmRequest> {
-    const { agentTaskId } = request.context;
+    const { masker, security, egressLog, clock, target } = this.options;
+    const { agentTaskId, callId, role } = request.context;
     const sentBefore = this.counted.get(agentTaskId) ?? 0;
-    try {
-      const masked = maskRequest(request, this.options.masker, sentBefore);
-      await this.record(request, excerpts, masked);
-      this.counted.set(agentTaskId, Math.max(sentBefore, request.messages.length));
-      return masked.request;
-    } catch (error) {
-      if (!isMaskingFailure(error)) throw error;
-      return this.block(request, ERROR_CODES.secretMaskingFailed, messages.masking, error);
-    }
+    const masked = await this.step(request, steps.masking, () =>
+      Promise.resolve(maskRequest(request, masker, sentBefore)),
+    );
+    await this.step(request, steps.record, () => security.addMasking(masked.firstSent));
+    this.counted.set(agentTaskId, Math.max(sentBefore, request.messages.length));
+    const at = clock.now().toISOString();
+    const line = { at, callId, provider: target.provider, model: request.model, role, agentTaskId };
+    await this.step(request, steps.egressLog, () =>
+      egressLog.append({ ...line, excerpts, maskedCounts: masked.counts }),
+    );
+    return masked.request;
   }
 
-  private async record(
-    request: LlmRequest,
-    excerpts: readonly Citation[],
-    masked: MaskedRequest,
-  ): Promise<void> {
-    const { egressLog, security, clock, target } = this.options;
-    const { callId, role, agentTaskId } = request.context;
-    await egressLog.append({
-      at: clock.now().toISOString(),
-      callId,
-      provider: target.provider,
-      model: request.model,
-      role,
-      agentTaskId,
-      excerpts,
-      maskedCounts: masked.counts,
-    });
-    await security.addMasking(masked.firstSent);
+  /** Runs one step; any failure blocks the call, with the failure's own code when it has one. */
+  private async step<T>(request: LlmRequest, step: Step, work: () => Promise<T>): Promise<T> {
+    try {
+      return await work();
+    } catch (error) {
+      const code = error instanceof RosettaError ? error.code : step.code;
+      return this.block(request, code, step.message, error);
+    }
   }
 
   /** Logs the security event, counts the blocked call and stops the task with the code. */
@@ -121,16 +128,35 @@ export class EgressGuard implements LlmProvider {
     message: string,
     cause?: unknown,
   ): Promise<never> {
-    const { logger, security, target } = this.options;
+    const { logger, target } = this.options;
     const { runId, agentTaskId, callId } = request.context;
+    const ids = { runId, agentTaskId, callId };
     await logger.securityEvent(code, {
       message,
-      runId,
-      agentTaskId,
-      callId,
+      ...ids,
       data: { provider: target.provider, kind: target.kind },
     });
-    await security.addBlockedCall();
+    await this.countBlocked(ids);
     throw new RosettaError(code, message, cause === undefined ? undefined : { cause });
+  }
+
+  /** A run record that cannot count the blocked call does not hide the call's own failure. */
+  private async countBlocked(ids: {
+    readonly runId: string;
+    readonly agentTaskId: string;
+    readonly callId: string;
+  }): Promise<void> {
+    try {
+      await this.options.security.addBlockedCall();
+    } catch (error) {
+      const code = error instanceof RosettaError ? error.code : ERROR_CODES.runManifestFailed;
+      await this.options.logger.log({
+        level: 'error',
+        logger: 'security',
+        message: messages.uncounted,
+        code,
+        ...ids,
+      });
+    }
   }
 }
