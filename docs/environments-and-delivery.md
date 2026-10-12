@@ -122,7 +122,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Format | `npm run format:check` (`prettier --check .`) | yes |
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
-| Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7) | yes |
+| Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; on Linux with a database also the Playwright e2e project, after `npx playwright install --with-deps chromium`) | yes |
 | Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
 | Secret scan | gitleaks action | yes |
 | Static analysis | CodeQL (`javascript-typescript`), on pull requests and weekly | yes, for high and critical alerts |
@@ -184,7 +184,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Commits | `@commitlint/cli`, `@commitlint/config-conventional` | 21.2 | `commit-msg` hook and CI on pull request titles |
 | Git hooks | `lefthook` | 2.2 | no install scripts in the hooks |
 | Front-end build | `vite`, `@preact/preset-vite` | 8.3 / 2.10 | builds `web/` into `dist/web/` (DEC-52); pinned 8.3.1 / 2.10.6 by P1-12, which also ran the preset with Preact 10.29 |
-| Browser tests | `@playwright/test`, `@axe-core/playwright` | 1.64 / 4.13 | the e2e project for the web UI and report; accessibility checks (RNF-010) |
+| Browser tests | `@playwright/test`, `@axe-core/playwright` | 1.64 / 4.13 (pinned 1.63.0 / 4.13.0 by P1-13: 1.64.0 was under two weeks old) | the e2e project for the web UI and report; accessibility checks (RNF-010) |
 | Component tests | `happy-dom`, `@testing-library/preact` | 20.14 / 3.2 | the `web` Vitest project (conventions section 7, DEC-112) |
 | Containers | Docker Engine, Docker Compose | 29.7 / v5.4 | on the owner's machine; base images `node:24-slim` and `postgres:17` pinned by digest |
 

@@ -161,7 +161,8 @@ prompts/                versioned prompts per role (reader/, verifier/, planner/
 tests/
   unit/                 mirrors src/
   integration/          mirrors src/
-  e2e/                  browser journeys with Playwright against the Compose stack or a test server
+  e2e/                  browser journeys with Playwright (`*.spec.ts`) against the Compose stack or a test server;
+                        support/ holds the test server, the network guard, the axe and sign-in helpers
   contracts/            contract suites per port
   recordings/           recorded provider responses (ADR-008)
   fixtures/             small legacy samples per stack
@@ -494,6 +495,21 @@ reached over HTTPS. The sample report is static files on GitHub Pages. Details:
 
 Test names start with the requirement id; failing tests are committed first (ADR-010). Rules:
 [conventions.md](conventions.md) section 7.
+
+**End-to-end harness (P1-13).** `playwright.config.ts` runs Chromium in four projects: the two viewports of the page
+walk (1280x800 for the web UI, 360x780 for the landing page, sign-in and report) in the light and the dark colour
+scheme. Playwright starts `tests/e2e/support/serve.ts`, the test server: it makes a disposable PostgreSQL schema
+(`rst_e2e_<port>`) in the database at `ROSETTA_TEST_DATABASE_URL`, sets `ROSETTA_TEST=1`, creates the seeded
+administrator through the bootstrap use case (RF-1102) and composes the application with `TestDoubles`, the only
+way the fake provider and the fake GitHub (`fetch` of the snapshot fetcher) reach the composition root; `TestDoubles.create`
+and `composeApplication` refuse them without `ROSETTA_TEST=1`, and `main.ts` never makes one. Outbound traffic is
+blocked on both sides: the server process imports `tests/support/block-network.ts`, and the browser resolves only
+127.0.0.1 while the `network` fixture aborts and records every other request and fails the test (the host rule is
+`tests/support/network-policy.ts`). `scripts/run-e2e.mjs` builds the front end and runs the project (`npm run test:e2e`;
+`npm run test:ci` runs it on Linux when a database is configured); `scripts/page-shots.mjs <path>` saves a PNG per viewport and
+colour scheme with the console errors for the verifier's page walk. The server answers a page request that no file
+answers with the built `index.html` (`/sign-in` without a session, every other page under the session rules), so the
+client router can draw it.
 
 ## 18. Open architecture questions
 
