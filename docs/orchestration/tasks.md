@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 78 | 20 | 44 | 14 | 0 | 31 | 39 | 8 | 22 | 0 |
+| P1 Milestone slice (M1) | 82 | 22 | 46 | 14 | 0 | 35 | 39 | 8 | 26 | 0 |
 | P2 Full understand | 14 | 1 | 10 | 3 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **104** | **22** | **63** | **19** | **0** | **34** | **59** | **11** | **22** | **0** |
+| **Total** | **108** | **24** | **65** | **19** | **0** | **38** | **59** | **11** | **26** | **0** |
 
 ## Conventions for every card
 
@@ -178,7 +178,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-07, P1-08
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md`; `docs/data-model.md` section 4 (`sessions`); `docs/architecture.md` section 10; `docs/security/threat-model.md`.
 - **Do**: `SessionStore` port with `PgSessionStore` and `MemorySessionStore` (256-bit id from `node:crypto`, only its SHA-256 stored, expiry min(idle 8 h, absolute 7 days), touch, end, end all for a user, hourly purge); `SignIn` (generic message, equal timing with a dummy hash for unknown users, five failures in 15 minutes lock for 15 minutes, audit and security events), `SignOut`; `@fastify/rate-limit` 10 sign-in attempts per minute per IP; the session cookie `__Host-rosetta_session` with the attributes of RF-1013; hooks: session (pages redirect to `/sign-in`, API 401), role guard, CSRF token through `@fastify/csrf-protection` in its cookie mode (`__Host-` cookie, `SameSite=Strict`; no secret in the database) and an `Origin` check against `ROSETTA_PUBLIC_URL` on every state-changing request (403 and a security event); the `Actor` passed to every use case; `tests/integration/access-matrix.test.ts` with rows anonymous, user, other user, administrator for every route that exists. The sign-in request, which has no session yet, is protected by the `Origin` check (DEC-112). Cap the password field (for example 1 024 characters) and the sign-in request body, and bound the hashing queue (or rely on the rate limit and say so), because the P1-08 hasher has no length limit and an unbounded queue (P1-08 verifier).
 - **Delivers**: the store, two use cases, the hooks, routes `POST /api/session`, `DELETE /api/session`, `GET /api/session`; integration tests for success, failure, lockout, rate limit, timing (statistical bound), expiry with a fixed clock, CSRF and Origin refusals; the access matrix.
@@ -216,7 +216,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: G-02
 - **Status**: Todo
 - **Reads**: `docs/design-system.md` sections 2-9, 12 and 13; `docs/design/tokens.css`; `docs/design/board/Main.dc.html`; DEC-52.
-- **Do**: `web/` with Vite and `@preact/preset-vite` building into `dist/web/` served by P1-07; `web/src/styles/tokens.css` identical to `docs/design/tokens.css`; the signed-in shell (header with the totals pill slot, navigation groups, main region) and the shared components of design-system section 5 that every page needs (buttons, fields with error text, status badges with glyphs for every value of every state list, error banner with code and next step, empty state); a text-only rendering helper for repository and model text (RF-507 rule 2: only `https://github.com/` links stay links); a typed API client that sends the CSRF token and maps error bodies; the router `web/src/app/routes.ts`; no inline scripts or styles (CSP of RF-1013); `.claude/launch.json` entry `rosetta-web` starting the dev server.
+- **Do**: `web/` with Vite and `@preact/preset-vite` building into `dist/web/` served by P1-07; `web/src/styles/tokens.css` identical to `docs/design/tokens.css`; the signed-in shell (header with the totals pill slot, navigation groups, main region) and the shared components of design-system section 5 that every page needs (buttons, fields with error text, status badges with glyphs for every value of every state list, error banner with code and next step, empty state); a text-only rendering helper for repository and model text (RF-507 rule 2: only `https://github.com/` links stay links); a typed API client that sends the CSRF token and maps error bodies; the router `web/src/app/routes.ts`; no inline scripts or styles (CSP of RF-1013); `.claude/launch.json` entry `rosetta-web` starting the dev server. Put every built file under `/assets/` (the P1-09 public paths are `/`, `/sign-in` and files under `/assets/`; a file at the root, such as a favicon, would need a session).
 - **Delivers**: the shell, components, client, router and launch entry; unit tests for the badge map over every state value, the link filter and the client's error mapping; a component gallery page under `/dev/gallery` built only in development.
 - **Done when**: the tokens comparison test passes; the verifier walks `/dev/gallery` at 1280x800 and 360x780, light and dark, and sees no console error; a lint test proves `innerHTML` and `dangerouslySetInnerHTML` are rejected; `npm run build` produces `dist/web/`.
 - **Refs**: RF-507, RF-1013, RNF-008, RNF-010, ADR-012, DEC-26, DEC-44, DEC-52, DEC-56, DEC-70, DEC-71.
@@ -286,7 +286,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-09, P1-16
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` sections 3.1 and 4 (`projects`); `docs/architecture.md` section 6.
 - **Do**: `ProjectRepository` with Pg and memory adapters (scoped by actor; unique on user, URL, ref, subpath); `CreateProject` (parse with P1-16, store with default settings from `templates/project-settings.json` and `templates/ignore-rules.txt`; an existing match is returned instead), `ListProjects`, `GetProject`, `UpdateProjectSettings` (zod schema of data-model 3.1: providers known, a model for every role, caps non-negative, price overrides, ignore rules, `scan.allowDenied`, `agents.parallelism`, `budget.allowUnpriced`; a `baseUrl` is refused; each problem returned with its field and code); new projects take their roles from the `defaultRoles` server setting (DEC-106), `OpenWorkspace` for the administrator with an audit row; routes under `/api/projects` and `/api/admin/users/:id/projects`; access-matrix rows.
 - **Delivers**: repository, use cases, templates, routes; unit tests for the settings schema; integration tests per scenario.
@@ -334,7 +334,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-18
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` sections 3.6, 3.9 and 4 (`runs`); `docs/architecture.md` sections 5 (`Run`, `RunQueueState`) and 7 (`RunIndex`, `RunEventSink`).
 - **Do**: domain `Run`, `RunManifest`, `RunEndState`, `RunEvent` types; `RunIndex` with Pg and memory adapters (scoped by actor); manifest written at start (version, stage, options, source URL, ref, commit, subpath, snapshot hash, settings, caps) and at end (end state set once, time); `RunEventSink` with `JsonlEventLog` (`seq` without gaps, `run.ended` last), `SseBroadcaster` (per user; late subscribers get stored events first) and `FanOutSink`; SSE route `/api/runs/:id/events` with the session check; the run queue (default 2 running, one per user, positions, cancel a queued run as `Interrupted`); on start-up, runs left `Running` are ended as `Interrupted`. `StopRun` with `POST /api/runs/:runId/stop` (aborts the run's signal); runs record `commit_sha` and `snapshot_key`; restart recovery runs through the `Scheduler` at start-up (running runs end `Interrupted`, queued runs keep their order).
 - **Delivers**: domain types, adapters, queue, routes; unit tests on the aggregate and queue rules; integration tests for the event log, SSE reconnect, queue with a fixed clock, an interrupted run.
@@ -346,7 +346,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-20, P1-22, P1-74
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/architecture.md` section 6 (`RunScan`); `docs/data-model.md` sections 2 and 3.6.
 - **Do**: `RunScan` use case: resolve and fetch the snapshot (P1-16), scan (P1-19..P1-21), write `codemap.json` and `scan-summary.md` into the run folder, publish run events, record the manifest; route `POST /api/projects/:id/runs` with stage `scan`; the run row's state through the queue.
 - **Delivers**: the use case and route; integration tests with the fake source fetcher and a fixture snapshot, including a failed fetch ending the run as `Failed` with its code.
@@ -1012,6 +1012,54 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the three document edits.
 - **Done when**: the documents match the code; the documentation tests pass; `npm run verify` green.
 - **Refs**: RF-1102, RF-1109, P1-08 (verifier-opus MINORs 6-8).
+
+### P1-79 - Follow-up: sign-in and request protection hardening
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P1-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/web/access-hooks.ts`, `session-routes.ts`; `src/application/use-cases/sign-in.ts`; RF-1303.
+- **Do**: skip the session lookup on public routes so `/healthz` answers 503 (not 500) while the database is down even with a session cookie; bound the `request.refused` audit rows written for Origin refusals (rate limit or sampling, with a security event); log a security event and an audit row for the 429 of the in-flight sign-in bound and for rate-limit hits; make a wrong password for a known user cost the same database work as an unknown user name and add a timing test on PostgreSQL; rotate or clear the CSRF secret cookie at sign-in and sign-out.
+- **Delivers**: the changes with tests.
+- **Done when**: `/healthz` answers 503 with the database down and a session cookie; a token issued before sign-out is refused after another sign-in; `npm run verify` green.
+- **Refs**: RF-1009, RF-1100, RF-1109, RF-1303, P1-09 (verifier-opus MINORs 1-5).
+
+### P1-80 - Follow-up: project settings upper bounds and workspace audit
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-18
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/projects/project-settings.ts`; `src/application/use-cases/open-workspace.ts`; `docs/data-model.md` 3.1.
+- **Do**: add upper bounds to the numeric settings (`agents.parallelism`, `scan.maxFileBytes`, token and cost caps) with the values the owner confirms (handoff question; until then the card waits); audit refused and unknown-id `OpenWorkspace` attempts.
+- **Delivers**: the bounds, the audit rows and their tests.
+- **Done when**: a value above each bound is refused with its field and code; a refused workspace open writes an audit row; `npm run verify` green.
+- **Refs**: RF-002, RF-1105, RF-1109, P1-18 (verifier MINORs 2 and 6).
+
+### P1-81 - Follow-up: run event delivery and queue shutdown hardening
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/web/event-stream.ts`, `run-routes.ts`; `src/infrastructure/events/jsonl-event-log.ts`; `src/application/runs/run-queue.ts`.
+- **Do**: cap the live events held for a page that stalls during replay (1 MiB, like live delivery) and drop the page so it reconnects with `Last-Event-ID`; get the last `seq` of a finished run without parsing the whole log (store it in the run index or read the tail); close the `RunQueue.shutDown` window in which a run launched mid-dispatch is neither aborted nor awaited.
+- **Delivers**: the changes with tests.
+- **Done when**: a stalled page is dropped once the held events pass the cap and the next reconnect replays the rest; a run launched during shutdown is aborted and awaited; `npm run verify` green.
+- **Refs**: RF-1006, RF-1108, RNF-002, P1-22 (verifier MINORs, rounds 1 and 2).
+
+### P1-82 - Follow-up: log the scan run fallbacks
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-23
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/run-scan.ts`; `src/infrastructure/scan/scan-pipeline.ts`.
+- **Do**: log a warning when `RunScan` falls back to the current project scan settings because the manifest holds none or an invalid `scanSettings`; log when `discard()` cannot remove an output file.
+- **Delivers**: the two log lines with tests.
+- **Done when**: both cases write one warning without secrets; `npm run verify` green.
+- **Refs**: RF-147, RNF-002, P1-23 (verifier MINORs, round 2).
 
 ---
 
