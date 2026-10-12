@@ -16,8 +16,10 @@ import { CreateUser } from '../application/use-cases/create-user.js';
 import { ListAudit } from '../application/use-cases/list-audit.js';
 import { ListUsers } from '../application/use-cases/list-users.js';
 import { GetCaps } from '../application/use-cases/get-caps.js';
+import { GetDefaultRoles } from '../application/use-cases/get-default-roles.js';
 import { GetOwnDailyCap } from '../application/use-cases/get-own-daily-cap.js';
 import { SetCaps } from '../application/use-cases/set-caps.js';
+import { SetDefaultRoles } from '../application/use-cases/set-default-roles.js';
 import { SetOwnDailyCap } from '../application/use-cases/set-own-daily-cap.js';
 import { ResetPassword } from '../application/use-cases/reset-password.js';
 import { UpdateUser } from '../application/use-cases/update-user.js';
@@ -46,6 +48,7 @@ import { DnsPublicHostCheck } from '../infrastructure/security/public-host-check
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import { composeProviders, type ProviderParts } from './compose-providers.js';
 import type { CapServices } from './web/cap-routes.js';
+import type { DefaultRoleServices } from './web/default-role-routes.js';
 import type { KeyServices } from './web/key-routes.js';
 import type { AccountServices, AuthServices } from './web/server.js';
 
@@ -131,12 +134,14 @@ function composeKeys(adapters: AccountAdapters): KeyServices {
 }
 
 // RF-1106, DEC-107: the server caps (administrator) and the user's own daily cap.
-function composeCaps(adapters: AccountAdapters): CapServices {
+function composeCaps(adapters: AccountAdapters): CapServices & DefaultRoleServices {
   const { pool, users, auditLog, logger, clock } = adapters;
   const settings = new PgServerSettings(pool);
   return {
     getCaps: new GetCaps({ settings }),
     setCaps: new SetCaps({ settings, auditLog, logger, clock }),
+    getDefaultRoles: new GetDefaultRoles({ settings }),
+    setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),
     getOwnDailyCap: new GetOwnDailyCap({ users }),
     setOwnDailyCap: new SetOwnDailyCap({ users, auditLog, logger, clock }),
   };

@@ -6,7 +6,7 @@ import type { ServerCaps } from '../../domain/budget/budget.js';
 // the same contract suite as PgServerSettings; the caps start at the defaults of migration 0004.
 
 export class MemoryServerSettings implements ServerSettings {
-  private readonly roles: DefaultRoles;
+  private roles: DefaultRoles;
   private stored: ServerCaps = {
     runMicros: 500_000n,
     userDayMicros: 1_000_000n,
@@ -19,6 +19,11 @@ export class MemoryServerSettings implements ServerSettings {
 
   defaultRoles(): Promise<DefaultRoles> {
     return Promise.resolve(this.roles);
+  }
+
+  saveDefaultRoles(roles: DefaultRoles): Promise<void> {
+    this.roles = roles;
+    return Promise.resolve();
   }
 
   caps(): Promise<ServerCaps> {

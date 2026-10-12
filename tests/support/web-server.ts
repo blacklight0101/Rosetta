@@ -12,10 +12,6 @@ import { SignIn } from '../../src/application/use-cases/sign-in.js';
 import { ResetPassword } from '../../src/application/use-cases/reset-password.js';
 import { SignOut } from '../../src/application/use-cases/sign-out.js';
 import { UpdateUser } from '../../src/application/use-cases/update-user.js';
-import { GetCaps } from '../../src/application/use-cases/get-caps.js';
-import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-cap.js';
-import { SetCaps } from '../../src/application/use-cases/set-caps.js';
-import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
 import type { TestProviders } from '../../src/application/use-cases/test-providers.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
@@ -49,6 +45,7 @@ import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
+import { capServices } from './cap-services.js';
 import { runServices } from './web-run-services.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
@@ -159,17 +156,6 @@ function keyServices(parts: AuthParts) {
     listProviderKeys: new ListProviderKeys({ keys }),
     saveProviderKey: new SaveProviderKey({ ...base, box: secretBox, hostCheck }),
     deleteProviderKey: new DeleteProviderKey(base),
-  };
-}
-
-/** RF-1106, DEC-107: the cap use cases over the memory server settings and accounts. */
-function capServices(parts: AuthParts) {
-  const { serverSettings: settings, users, auditLog, logger, clock } = parts;
-  return {
-    getCaps: new GetCaps({ settings }),
-    setCaps: new SetCaps({ settings, auditLog, logger, clock }),
-    getOwnDailyCap: new GetOwnDailyCap({ users }),
-    setOwnDailyCap: new SetOwnDailyCap({ users, auditLog, logger, clock }),
   };
 }
 

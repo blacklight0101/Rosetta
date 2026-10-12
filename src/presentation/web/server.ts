@@ -23,6 +23,7 @@ import { recordCsrfRefusal, registerAccessHooks } from './access-hooks.js';
 import { registerAccountRoutes } from './account-routes.js';
 import { registerAdminRoutes, type AdminServices } from './admin-routes.js';
 import { registerCapRoutes, type CapServices } from './cap-routes.js';
+import { registerDefaultRoleRoutes, type DefaultRoleServices } from './default-role-routes.js';
 import { registerKeyRoutes, type KeyServices } from './key-routes.js';
 import { registerProviderTestRoutes, type ProviderTestServices } from './provider-test-routes.js';
 import { toErrorReply } from './error-mapper.js';
@@ -42,7 +43,7 @@ import { registerSessionRoutes } from './session-routes.js';
  * administration routes.
  */
 export interface AccountServices
-  extends AdminServices, KeyServices, CapServices, ProviderTestServices {
+  extends AdminServices, KeyServices, CapServices, DefaultRoleServices, ProviderTestServices {
   readonly changePassword: ChangePassword;
 }
 
@@ -220,6 +221,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     registerProviderTestRoutes(instance, options.auth.accounts);
     registerAdminRoutes(instance, options.auth.accounts);
     registerCapRoutes(instance, options.auth.accounts);
+    registerDefaultRoleRoutes(instance, options.auth.accounts);
     registerProjectRoutes(instance, options.projects);
     registerRunRoutes(instance, options.runs);
     done();
