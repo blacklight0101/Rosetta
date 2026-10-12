@@ -69,3 +69,35 @@ describe('SecretMasker and the tail of a private key', () => {
     expect(result.counts['private-key']).toBe(1);
   });
 });
+
+describe('EgressGuard and the reads that follow an open private key', () => {
+  /** A read_file call and its result for the lines of one file. */
+  function read(id: string, path: string, startLine: number, text: string): LlmMessage[] {
+    const endLine = startLine + text.split('\n').length - 1;
+    const result = toolResult({ text, excerpts: [{ path, startLine, endLine }] });
+    return [
+      { role: 'assistant', content: '', toolCalls: [{ id, name: 'read_file', arguments: {} }] },
+      { ...result, toolCallId: id },
+    ];
+  }
+
+  it('RF-141 carries an open key into later reads of the same file only', async () => {
+    const split = splitKeyCases.find((item) => item.name === 'a key read in three pieces');
+    const [opening = '', middle = ''] = split?.pieces ?? [];
+    const readme = ['ProjectOverviewForNewDevelopers', 'Run the tests before a change'].join('\n');
+    const { guard, fake } = await egressHarness();
+
+    await guard.complete(
+      requestWith([
+        ...read('call-1', 'src/Web.config', 1, opening),
+        ...read('call-2', 'README.md', 1, readme),
+        ...read('call-3', 'src/Web.config', 3, middle),
+      ]),
+    );
+
+    const sent = JSON.stringify(fake.requests);
+    expect(sent).toContain('ProjectOverviewForNewDevelopers');
+    expect(sent).toContain('Run the tests before a change');
+    for (const value of split?.secrets.slice(0, 3) ?? []) expect(sent).not.toContain(value);
+  });
+});
