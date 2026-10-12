@@ -136,10 +136,11 @@ export class SnapshotScanPipeline implements ScanPipeline {
       ignoreRules: settings.ignoreRules,
       allowDenied: settings.allowDenied,
       logger,
+      maxFileBytes: settings.maxFileBytes,
     });
     await requireSubpath(request.root, source.subpath);
     signal.throwIfAborted();
-    const scan = await scanRepository(reader, { maxFileBytes: settings.maxFileBytes });
+    const scan = await scanRepository(reader, { maxFileBytes: settings.maxFileBytes, masker });
     signal.throwIfAborted();
     const packScan = await analyseWithPacks({
       files: scan.files,

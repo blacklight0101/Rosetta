@@ -27,6 +27,7 @@ import { registerDefaultRoleRoutes, type DefaultRoleServices } from './default-r
 import { registerKeyRoutes, type KeyServices } from './key-routes.js';
 import { registerProviderTestRoutes, type ProviderTestServices } from './provider-test-routes.js';
 import { toErrorReply } from './error-mapper.js';
+import { logRateLimited } from './rate-limit-log.js';
 import { registerProjectRoutes, type ProjectServices } from './project-routes.js';
 import { registerRunRoutes, type RunServices } from './run-routes.js';
 import { registerLandingRoute } from './landing-routes.js';
@@ -151,12 +152,7 @@ function registerSessionPlugins(server: FastifyInstance, logger: Logger): void {
   void server.register(fastifyRateLimit, {
     global: false,
     onExceeded: (request) => {
-      void Promise.allSettled([
-        logger.securityEvent(ERROR_CODES.rateLimited, {
-          message: `Rate limit reached: ${request.method} ${request.routeOptions.url ?? ''}`,
-          data: { ip: request.ip },
-        }),
-      ]);
+      logRateLimited(logger, request);
     },
   });
 }
@@ -218,7 +214,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     registerSessionRoutes(instance, options.auth);
     registerAccountRoutes(instance, options.auth.accounts);
     registerKeyRoutes(instance, options.auth.accounts);
-    registerProviderTestRoutes(instance, options.auth.accounts);
+    registerProviderTestRoutes(instance, options.auth.accounts, options.logger);
     registerAdminRoutes(instance, options.auth.accounts);
     registerCapRoutes(instance, options.auth.accounts);
     registerDefaultRoleRoutes(instance, options.auth.accounts);

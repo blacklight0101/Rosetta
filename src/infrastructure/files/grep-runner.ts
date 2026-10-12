@@ -4,8 +4,10 @@ import { Worker } from 'node:worker_threads';
 import { z } from 'zod';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { grepLimits } from './grep-limits.js';
 
-// RF-146: starts the grep worker and terminates it when the timeout passes.
+// RF-146: starts the grep worker and terminates it when the timeout passes. The worker stops one
+// match past the cap (P1-67), so a pattern that matches every line costs no more than the cap.
 
 export interface GrepFile {
   readonly path: string;
@@ -33,7 +35,9 @@ export function runGrep(
   timeoutMs: number,
 ): Promise<GrepOutcome> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(workerUrl, { workerData: { pattern, files } });
+    const worker = new Worker(workerUrl, {
+      workerData: { pattern, files, maxMatches: grepLimits.maxMatches },
+    });
     const timer = setTimeout(() => {
       resolve({ kind: 'timeout' });
       void worker.terminate();

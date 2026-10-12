@@ -6,6 +6,7 @@ import {
   type RunEstimate,
   type StartedRun,
 } from './estimate-schemas.js';
+import { runSchema, type RunRow } from './run-schemas.js';
 
 // RF-425, RF-1001, RF-143, RF-1108: the run calls of the start page. Every answer is parsed before
 // use; another user's project or run answers 404 like an unknown one.
@@ -60,4 +61,25 @@ export async function cancelRun(client: ApiClient, runId: string): Promise<ApiRe
     schema: stoppedRunSchema,
   });
   return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** One run of the signed-in user by its id (the UUID); another user's run answers 404 (RF-1105). */
+// RF-1002
+export function getRun(
+  client: ApiClient,
+  runId: string,
+  signal: AbortSignal,
+): Promise<ApiResult<RunRow>> {
+  return client.request({
+    method: 'GET',
+    path: `/api/runs/${encodeURIComponent(runId)}`,
+    schema: runSchema,
+    signal,
+  });
+}
+
+/** The address of a download of a finished run: the whole run folder, or its hand-off folder (RF-008). */
+export function runDownloadPath(runId: string, part: 'zip' | 'handoff'): string {
+  const file = part === 'zip' ? 'zip' : 'handoff.zip';
+  return `/api/runs/${encodeURIComponent(runId)}/${file}`;
 }

@@ -173,9 +173,18 @@ export class UnderstandSession {
         const check = this.latest.checks.find((each) => each.claimId === claim.claimId);
         if (check === undefined) continue;
         const reason = check.reason === undefined ? {} : { reason: check.reason };
+        // RF-1004: the text and cited lines let the live page list the claim without a card read.
+        const shown = {
+          text: claim.text,
+          citations: claim.citations.map(({ path, startLine, endLine }) => ({
+            path,
+            startLine,
+            endLine,
+          })),
+        };
         await events.emit(
           'verify.citation.checked',
-          { claimId: claim.claimId, ok: check.ok, ...reason },
+          { claimId: claim.claimId, ok: check.ok, ...reason, ...shown },
           agentTaskId,
         );
       }

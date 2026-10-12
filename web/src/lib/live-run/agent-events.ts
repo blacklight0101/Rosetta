@@ -1,0 +1,159 @@
+import type { RunEvent } from '../../api/run-events.js';
+import {
+  agentData,
+  agentEndedData,
+  cardData,
+  toolCalledData,
+  toolResultData,
+  turnData,
+  usageData,
+} from './event-data.js';
+import { readPathOf, toolText } from './tool-text.js';
+import type { AgentPanelState, AgentState, RunState } from './run-state.js';
+
+// RF-1002, RF-424: what the events of an agent change in its panel. An event without an agent task
+// id belongs to no panel and changes none.
+
+type Change = (agent: AgentPanelState) => AgentPanelState;
+
+const AGENT_STATES: readonly AgentState[] = [
+  'Planned',
+  'Running',
+  'Done',
+  'TurnLimitReached',
+  'InvalidOutput',
+  'Failed',
+  'StoppedByCap',
+];
+
+function blankAgent(agentTaskId: string): AgentPanelState {
+  return {
+    ...{ agentTaskId, area: '', role: 'reader', model: '', state: 'Planned', turn: 0 },
+    ...{ filesRead: [], tool: undefined, pendingRead: undefined, cards: [] },
+    ...{ inputTokens: 0, outputTokens: 0, costMicros: undefined },
+  };
+}
+
+/** The state with that agent changed, the agent added at the end when the page has not seen it. */
+function withAgent(state: RunState, event: RunEvent, change: Change): RunState {
+  const id = event.agentTaskId;
+  if (id === undefined) return state;
+  const known = state.agents.some((agent) => agent.agentTaskId === id);
+  const agents = known ? state.agents : [...state.agents, blankAgent(id)];
+  return {
+    ...state,
+    agents: agents.map((agent) => (agent.agentTaskId === id ? change(agent) : agent)),
+  };
+}
+
+/** The identity the event names, filled in only where the panel has none yet. */
+function named(agent: AgentPanelState, event: RunEvent): AgentPanelState {
+  const parsed = agentData.safeParse(event.data);
+  const data = parsed.success ? parsed.data : {};
+  return {
+    ...agent,
+    area: agent.area === '' ? (data.area ?? '') : agent.area,
+    role: data.role ?? agent.role,
+    model: agent.model === '' ? (data.model ?? '') : agent.model,
+  };
+}
+
+// RF-1002
+export function onPlanned(state: RunState, event: RunEvent): RunState {
+  return withAgent(state, event, (agent) => named(agent, event));
+}
+
+// RF-1002
+export function onStarted(state: RunState, event: RunEvent): RunState {
+  return withAgent(state, event, (agent) => ({ ...named(agent, event), state: 'Running' }));
+}
+
+// RF-1002, RF-1003
+export function onTurn(state: RunState, event: RunEvent): RunState {
+  const parsed = turnData.safeParse(event.data);
+  if (!parsed.success) return state;
+  const { turn, inputTokens = 0, outputTokens = 0 } = parsed.data;
+  return withAgent(state, event, (agent) => ({
+    ...agent,
+    turn: Math.max(agent.turn, turn ?? 0),
+    inputTokens: agent.inputTokens + inputTokens,
+    outputTokens: agent.outputTokens + outputTokens,
+  }));
+}
+
+// RF-1002
+export function onToolCalled(state: RunState, event: RunEvent): RunState {
+  const parsed = toolCalledData.safeParse(event.data);
+  if (!parsed.success || parsed.data.tool === undefined) return state;
+  const { tool, args } = parsed.data;
+  return withAgent(state, event, (agent) => ({
+    ...agent,
+    tool: { text: toolText(tool, args), status: 'running' },
+    pendingRead: readPathOf(tool, args),
+  }));
+}
+
+// RF-1002
+export function onToolResult(state: RunState, event: RunEvent): RunState {
+  const parsed = toolResultData.safeParse(event.data);
+  if (!parsed.success) return state;
+  const ok = parsed.data.ok === true;
+  return withAgent(state, event, (agent) => {
+    const path = agent.pendingRead;
+    const read = ok && path !== undefined && !agent.filesRead.includes(path);
+    return {
+      ...agent,
+      tool: agent.tool === undefined ? undefined : { ...agent.tool, status: ok ? 'ok' : 'failed' },
+      pendingRead: undefined,
+      filesRead: read ? [...agent.filesRead, path] : agent.filesRead,
+    };
+  });
+}
+
+// RF-1002
+export function onCardProposed(state: RunState, event: RunEvent): RunState {
+  const parsed = cardData.safeParse(event.data);
+  if (!parsed.success) return state;
+  const { cardId, type = '', title = '' } = parsed.data;
+  const card = { cardId, type, title };
+  const known = state.cards.some((each) => each.cardId === cardId);
+  const withCard = withAgent(state, event, (agent) =>
+    agent.cards.some((each) => each.cardId === cardId)
+      ? agent
+      : { ...agent, cards: [...agent.cards, card] },
+  );
+  return known ? withCard : { ...withCard, cards: [...withCard.cards, card] };
+}
+
+// RF-1002
+export function onAgentEnded(state: RunState, event: RunEvent): RunState {
+  const parsed = agentEndedData.safeParse(event.data);
+  if (!parsed.success) return state;
+  const given = AGENT_STATES.find((each) => each === parsed.data.state);
+  const { turns = 0 } = parsed.data;
+  return withAgent(state, event, (agent) => ({
+    ...agent,
+    state: given ?? 'Done',
+    turn: Math.max(agent.turn, turns),
+  }));
+}
+
+/** RF-424: cost per agent and per role, from the events that carry it. */
+export function onUsage(state: RunState, event: RunEvent): RunState {
+  const parsed = usageData.safeParse(event.data);
+  if (!parsed.success || parsed.data.costMicros === undefined) return state;
+  const { costMicros } = parsed.data;
+  const withAgentCost = withAgent(state, event, (agent) => ({
+    ...agent,
+    costMicros: (agent.costMicros ?? 0) + costMicros,
+  }));
+  const role =
+    parsed.data.role ??
+    withAgentCost.agents.find((agent) => agent.agentTaskId === event.agentTaskId)?.role;
+  if (role === undefined) return withAgentCost;
+  const before = withAgentCost.roleCostMicros[role] ?? 0;
+  return {
+    ...withAgentCost,
+    roleCostMicros: { ...withAgentCost.roleCostMicros, [role]: before + costMicros },
+  };
+}

@@ -1,7 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { exchangeSchema, FakeHttpServer, type RecordedExchange } from './fake-http-server.js';
+import {
+  exchangeSchema,
+  FakeHttpServer,
+  type FakeServerOptions,
+  type RecordedExchange,
+} from './fake-http-server.js';
 
 // ADR-008, RF-402: a fake OpenAI HTTP server on loopback that replays a recording of OpenAI's
 // wire answers: each `POST /v1/chat/completions` answers the next recorded exchange. The requests
@@ -36,8 +41,8 @@ function openAiRoute(recording: OpenAiRecording) {
 }
 
 export class FakeOpenAiServer extends FakeHttpServer {
-  constructor(recording: OpenAiRecording) {
-    super(openAiRoute(recording));
+  constructor(recording: OpenAiRecording, options: FakeServerOptions = {}) {
+    super(openAiRoute(recording), options);
   }
 
   /** The chat completion bodies received, in order. */
