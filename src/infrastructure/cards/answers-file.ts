@@ -1,6 +1,13 @@
-import type { AnswersFile, OpenQuestion } from '../../application/ports/answers-file.js';
+import type {
+  AnswerEntry,
+  AnswersFile,
+  OpenQuestion,
+  ProjectRef,
+  RecordedQuestion,
+} from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
 import { KeyedQueue } from '../../application/support/keyed-queue.js';
+import { ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
@@ -9,7 +16,9 @@ import type { TextMasker } from '../guards/secret-masker.js';
 // open question it found that the file does not hold yet (matched by the question text), after the
 // sections already there, which are kept byte for byte with their answers. Model text is masked
 // and written on one line, so it cannot start a heading, an answer line or a new section. Writes
-// to one project's file run one after another.
+// to one project's file run one after another. The page records the answers to one run's questions
+// (RF-1007): each answer is masked and written on its question's answer line, and nothing else in
+// the file changes.
 
 export interface FileAnswersFileOptions {
   readonly writer: OutputWriter;
@@ -19,7 +28,7 @@ export interface FileAnswersFileOptions {
 const TITLE = '# Answers to open questions';
 const heading = /^## \S+ - (.*)$/u;
 
-function fileOf(project: { readonly userId: string; readonly projectId: string }): WorkspaceFile {
+function fileOf(project: ProjectRef): WorkspaceFile {
   return { userId: project.userId, path: `${projectPath(project.projectId)}/answers.md` };
 }
 
@@ -42,10 +51,7 @@ export class FileAnswersFile implements AnswersFile {
   }
 
   // RF-240
-  addQuestions(
-    project: { readonly userId: string; readonly projectId: string },
-    questions: readonly OpenQuestion[],
-  ): Promise<void> {
+  addQuestions(project: ProjectRef, questions: readonly OpenQuestion[]): Promise<void> {
     const file = fileOf(project);
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
@@ -60,6 +66,22 @@ export class FileAnswersFile implements AnswersFile {
       const head = existing.trimEnd() === '' ? TITLE : existing.trimEnd();
       await this.write(file, `${[head, ...sections].join('\n\n')}\n`);
     });
+  }
+
+  // RF-1007 (not built yet)
+  questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]> {
+    void [project, runKey];
+    return Promise.resolve([]);
+  }
+
+  // RF-1007 (not built yet)
+  recordAnswers(
+    project: ProjectRef,
+    runKey: string,
+    answers: readonly AnswerEntry[],
+  ): Promise<Result<readonly RecordedQuestion[], 'unknown-question'>> {
+    void [project, runKey, answers];
+    return Promise.resolve(ok([]));
   }
 
   private section(question: OpenQuestion, text: string): string {
