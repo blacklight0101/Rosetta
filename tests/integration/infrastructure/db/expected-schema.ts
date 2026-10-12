@@ -126,7 +126,7 @@ export const expectedIndexes: readonly string[] = [
   'cost_ledger (user_id, at)',
   'cost_ledger UNIQUE (id)',
   'cost_reservations (user_id)',
-  'cost_reservations UNIQUE (call_id)',
+  'cost_reservations UNIQUE (user_id, run_id, call_id) NULLS NOT DISTINCT',
   'projects (user_id)',
   'projects UNIQUE (id)',
   'projects UNIQUE (id, user_id)',
