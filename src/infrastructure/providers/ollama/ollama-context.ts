@@ -18,6 +18,10 @@ export interface ContextChoice {
 export const CONTEXT_CEILING = 32_768;
 /** Q-23: `auto` never halves below this size. */
 export const CONTEXT_FLOOR = 4_096;
+/** P1-69: how long a fallback is reused before Ollama is probed again. */
+export const FALLBACK_BACKOFF_MS = 30_000;
+/** P1-69: the most an /api/show or /api/ps probe may take (a model load keeps the call timeout). */
+export const PROBE_TIMEOUT_MS = 10_000;
 /** data-model.md 3.1: the smallest fixed size accepted. */
 export const MIN_FIXED_CONTEXT = 1_024;
 

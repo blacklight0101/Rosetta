@@ -1,10 +1,16 @@
 import type { Logger, LogValue } from '../../../application/ports/logger.js';
-import { CONTEXT_CEILING, CONTEXT_FLOOR, type ContextChoice } from './ollama-context.js';
+import {
+  CONTEXT_CEILING,
+  CONTEXT_FLOOR,
+  FALLBACK_BACKOFF_MS,
+  type ContextChoice,
+} from './ollama-context.js';
 
 // RF-401, DEC-114, Q-23: the automatic Ollama context size. Ollama exposes no total GPU memory, so
 // the resolver loads the model at a size and reads /api/ps: while part of the model is outside GPU
 // memory (`size_vram < size`) it halves the size and loads again, down to the floor. The result is
-// cached per Ollama server and model digest for the life of the process; a fallback is not.
+// cached per Ollama server and model digest for the life of the process; a fallback is reused only
+// for a short back-off, then Ollama is probed again (P1-69).
 
 /** A model as Ollama knows it: the configured name and the digest from /api/tags. */
 export interface ModelRef {
@@ -33,12 +39,21 @@ export interface ContextProbe {
 export interface ContextCache {
   /** Automatic choices by server and digest; a pending entry is shared by concurrent calls. */
   readonly auto: Map<string, Promise<ContextChoice>>;
+  /** When a cached fallback stops being reused, in milliseconds since the epoch, by key. */
+  readonly retryAt: Map<string, number>;
   /** Server, digest and size of the fixed sizes already checked for a spill. */
   readonly fixedChecked: Set<string>;
 }
 
 export function newContextCache(): ContextCache {
-  return { auto: new Map(), fixedChecked: new Set() };
+  return { auto: new Map(), retryAt: new Map(), fixedChecked: new Set() };
+}
+
+/** Forgets every measurement, so a test harness starts each test from an empty cache. */
+export function clearContextCache(cache: ContextCache): void {
+  cache.auto.clear();
+  cache.retryAt.clear();
+  cache.fixedChecked.clear();
 }
 
 /** The cache every Ollama provider of this process shares (DEC-114: once per process). */
@@ -50,6 +65,8 @@ export interface ContextResolverDeps {
   readonly probe: ContextProbe;
   readonly logger: Logger;
   readonly cache: ContextCache;
+  /** The current time in milliseconds, for the back-off after a fallback. */
+  readonly now: () => number;
 }
 
 const spills = (residency: Residency): boolean => residency.sizeVram < residency.size;
@@ -62,15 +79,20 @@ export class OllamaContextResolver {
     this.deps = deps;
   }
 
-  /** The automatic size for `ref`; never rejects: a probe failure falls back with a warning. */
+  /**
+   * The automatic size for `ref`; never rejects: a probe failure falls back with a warning, and
+   * the fallback is reused until the back-off ends.
+   */
   auto(ref: ModelRef): Promise<ContextChoice> {
-    const { cache } = this.deps;
+    const { cache, now } = this.deps;
     const key = this.keyOf(ref);
     const known = cache.auto.get(key);
-    if (known !== undefined) return known;
+    const retryAt = cache.retryAt.get(key);
+    if (known !== undefined && (retryAt === undefined || now() < retryAt)) return known;
+    cache.retryAt.delete(key);
     const pending = this.measure(ref).then(
       (choice) => {
-        if (choice.source === 'auto-fallback') cache.auto.delete(key);
+        if (choice.source === 'auto-fallback') cache.retryAt.set(key, now() + FALLBACK_BACKOFF_MS);
         return choice;
       },
       (error: unknown) => {
@@ -101,6 +123,10 @@ export class OllamaContextResolver {
     }
   }
 
+  /**
+   * Halves from the start while the model spills. A probe failure before any spill falls back to
+   * the start; after a spill no size is known to fit, so it falls back to the floor (P1-69).
+   */
   private async measure(ref: ModelRef): Promise<ContextChoice> {
     const trained = await this.deps.probe.trainedContext(ref.model);
     if (!trained.ok) return this.fallback(ref, CONTEXT_CEILING, trained.reason);
@@ -108,7 +134,10 @@ export class OllamaContextResolver {
     const start = limit === undefined ? CONTEXT_CEILING : Math.min(limit, CONTEXT_CEILING);
     for (let tokens = start; ; tokens = Math.max(CONTEXT_FLOOR, Math.floor(tokens / 2))) {
       const residency = await this.loadedAt(ref, tokens);
-      if (!residency.ok) return this.fallback(ref, start, residency.reason);
+      if (!residency.ok) {
+        const safe = tokens === start ? start : CONTEXT_FLOOR;
+        return this.fallback(ref, safe, residency.reason);
+      }
       if (!spills(residency.value)) {
         const capped = tokens === limit && tokens < CONTEXT_CEILING;
         return { tokens, source: capped ? 'auto-model-limit' : 'auto-fit' };
@@ -132,7 +161,7 @@ export class OllamaContextResolver {
 
   private async fallback(ref: ModelRef, tokens: number, reason: string): Promise<ContextChoice> {
     await this.warn(
-      `Could not measure the context size for ${ref.model}; using ${String(tokens)} tokens and measuring again on the next call.`,
+      `Could not measure the context size for ${ref.model}; using ${String(tokens)} tokens and measuring again shortly.`,
       { model: ref.model, contextTokens: tokens, reason },
     );
     return { tokens, source: 'auto-fallback' };
