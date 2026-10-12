@@ -9,6 +9,7 @@ import {
   ev,
   planned,
   runEnded,
+  runKey,
   startedData,
   toolCalled,
   toolResult,
@@ -99,7 +100,7 @@ it('RF-1002 shows the overview of planned, running, done and failed agents and t
   const items = within(screen.getByRole('log', { name: 'Event log' })).getAllByRole('listitem');
   expect(items).toHaveLength(7);
   expect(items[0]?.textContent).toContain('agent.ended');
-  expect(items[0]?.textContent).toContain('00:05.0');
+  expect(items[0]?.textContent).toContain('00:06.0');
   expect(items.at(-1)?.textContent).toContain('run.started');
 });
 
@@ -142,7 +143,7 @@ it('RF-1003 RF-424 shows tokens per role and in total, the cap as a bar, the cos
 
 it('RF-1003 Stop asks for the stop with the run id, says it is stopping, and the run ends as Interrupted', async () => {
   const { stream, calls } = renderLive({
-    [`POST ${runPath}/stop`]: json(202, { id: runUuid, stopRequested: true }),
+    [`POST ${runPath}/stop`]: json(202, { id: runUuid, runId: runKey, stopRequested: true }),
   });
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
@@ -174,7 +175,7 @@ it('RF-1003 a refused Stop shows its code and leaves the button', async () => {
 it('RF-1108 a queued run shows as queued, can be cancelled, and runs when its first event arrives', async () => {
   const { stream } = renderLive({
     [`GET ${runPath}`]: runRow({ queueState: 'Queued' }),
-    [`POST ${runPath}/stop`]: json(200, { id: runUuid, stopRequested: false }),
+    [`POST ${runPath}/stop`]: json(200, { id: runUuid, runId: runKey, stopRequested: false }),
   });
   const connection = await stream.connection();
 

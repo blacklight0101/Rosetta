@@ -1,12 +1,14 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-import { gzipSync } from 'node:zlib';
+import { promisify } from 'node:util';
+import { gzip } from 'node:zlib';
 
 // RF-122, ADR-008: a folder of the repository packed as the archive GitHub serves for a commit (one
 // top-level folder, `<owner>-<repo>-<short sha>/`), so the end-to-end server can offer a fixture
 // repository to its fake GitHub. A small ustar writer, as in scripts/make-snapshot-fixtures.mjs;
 // paths stay under 100 bytes. Entries are sorted, so the archive is the same on every run.
 
+const gzipAsync = promisify(gzip);
 const BLOCK = 512;
 const FILE = '0' as const;
 const DIRECTORY = '5' as const;
@@ -72,7 +74,7 @@ export async function archiveOfFolder(folder: string, top: string): Promise<Buff
   }
   const parts = entries.flatMap((entry) => blocksOf(entry));
   parts.push(Buffer.alloc(BLOCK * 2));
-  return gzipSync(Buffer.concat(parts), { level: 9 });
+  return gzipAsync(Buffer.concat(parts), { level: 9 });
 }
 
 /** `a/b/c.cs` gives `a` and `a/b`. */

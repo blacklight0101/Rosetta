@@ -81,7 +81,9 @@ describe('GET /api/runs/:runId', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ queueState: 'Ended', endState: 'Completed' });
   });
+});
 
+describe('GET /api/runs/:runId and access', () => {
   it('RF-1105 answers 404 for another user run and for an id that is not a run', async () => {
     const { bob, running } = await setup();
 

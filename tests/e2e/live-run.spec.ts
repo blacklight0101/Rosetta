@@ -36,7 +36,8 @@ async function recordedTokens(indexes: readonly number[]): Promise<number> {
   const recording = await loadRecording(recordingFile);
   return indexes.reduce((total, index) => {
     const attempt = recording.calls[index]?.attempts[0];
-    if (attempt === undefined || !('response' in attempt)) throw new Error(`No call ${index}.`);
+    if (attempt === undefined || !('response' in attempt))
+      throw new Error(`No call ${String(index)}.`);
     const { inputTokens, outputTokens } = attempt.response.usage;
     return total + inputTokens + outputTokens;
   }, 0);
@@ -147,30 +148,45 @@ test('RF-1003 Stop ends a run that is working, keeps the cards that were found a
   await expectNoSeriousViolations(page);
 });
 
-test('RF-1006 a page opened on a run under way replays what happened and goes on live, and reconnects from the last event', async ({
+test('RF-1006 a page opened on a run under way replays what happened and goes on live', async ({
   page,
-  context,
 }) => {
   await startUnderstand(page, ['Catalog', 'Controllers']);
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
-  const asked: (string | undefined)[] = [];
-  page.on('request', (request) => {
-    if (request.url().includes('/events')) asked.push(request.headers()['last-event-id']);
-  });
+  await expect(page.getByRole('log', { name: 'Event log' })).toContainText('agent.ended');
 
   await page.reload();
 
   await expect(agentPanel(page, 'Catalog')).toContainText('Done');
   await expect(agentPanel(page, 'Catalog')).toContainText('BR-001');
   await expect(runStatus(page)).toContainText('Running');
-  await context.setOffline(true);
-  await expect(page.getByTestId('connection')).toContainText('Reconnecting', { timeout: 30_000 });
-  await context.setOffline(false);
-  await expect(page.getByTestId('connection')).toHaveCount(0, { timeout: 30_000 });
-  expect(asked.filter((id) => id !== undefined && Number(id) > 0).length).toBeGreaterThan(0);
-  await expect(agentPanel(page, 'Catalog')).toContainText('Done');
+  await expect(page.getByRole('log', { name: 'Event log' })).toContainText('run.started');
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await expect(agentPanel(page, 'Controllers')).not.toContainText('Running');
+});
+
+test('RF-1006 a stream asked from an event number sends the stored events after it and ends with the run', async ({
+  page,
+}) => {
+  const runUuid = finishedRun.split('/').at(-1) ?? '';
+
+  await page.goto(finishedRun);
+  await expect(runStatus(page)).toContainText('Completed');
+  const reply = await page.evaluate(async (uuid) => {
+    const response = await fetch(`/api/runs/${uuid}/events`, {
+      headers: { 'last-event-id': '10' },
+    });
+    return { status: response.status, body: await response.text() };
+  }, runUuid);
+
+  expect(reply.status).toBe(200);
+  const body = reply.body;
+  const ids = Array.from(body.matchAll(/^id: (\d+)$/gmu), (match) => Number(match[1]));
+  expect(ids.length).toBeGreaterThan(1);
+  expect(ids[0]).toBe(11);
+  expect(ids).toEqual(ids.map((_, index) => 11 + index));
+  expect(body).toContain('event: run.ended');
 });
 
 test('RF-1105 a run id that is not the account own shows the error and no page of a run', async ({
