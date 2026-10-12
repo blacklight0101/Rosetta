@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { InjectOptions } from 'fastify';
 import { fixturePassword } from '../support/account-fixtures.js';
+import { sampleProject, settingsWith } from '../support/project-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser, type TestUser } from '../support/test-browser.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
@@ -10,11 +11,17 @@ import { createTestServer, type TestServer } from '../support/web-server.js';
 // server itself (with the static front end mounted), so a new route without a row fails this test.
 
 type Column = 'anonymous' | 'user' | 'otherUser' | 'admin';
-type Method = 'GET' | 'HEAD' | 'POST' | 'DELETE';
+type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE';
+
+/** What the rows need to name: the project of the user column and a user id to open. */
+interface Context {
+  readonly projectId: string;
+  readonly userId: string;
+}
 
 interface Probe {
   readonly method: Method;
-  readonly url: string;
+  readonly url: string | ((context: Context) => string);
   /** The body, given the column's own credentials (undefined for anonymous). */
   readonly payload?: (user: TestUser | undefined) => InjectOptions['payload'];
   readonly expected: Readonly<Record<Column, number>>;
@@ -38,6 +45,25 @@ const ownCredentials = (user: TestUser | undefined): InjectOptions['payload'] =>
   password: user?.password ?? fixturePassword('Anonymous'),
 });
 
+/** A project of the "user" column: it answers its owner, and 404 to every other signed-in user. */
+const ownerOnly = (status: number): Record<Column, number> => ({
+  anonymous: 401,
+  user: status,
+  otherUser: 404,
+  admin: 404,
+});
+const unknownUser = '00000000-0000-4000-9000-00000000ffff';
+const projectUrl = (suffix: string) => (context: Context) =>
+  `/api/projects/${context.projectId}${suffix}`;
+const workspaceUrl = (userId: (context: Context) => string) => (context: Context) =>
+  `/api/admin/users/${userId(context)}/projects`;
+const adminOnly = (admin: number): Record<Column, number> => ({
+  anonymous: 401,
+  user: 403,
+  otherUser: 403,
+  admin,
+});
+
 /** One row per route (method and path as Fastify prints them), with one or more probes. */
 const matrix: Readonly<Record<string, readonly Probe[]>> = {
   'GET /healthz': [{ method: 'GET', url: '/healthz', expected: everyone(200) }],
@@ -55,6 +81,36 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   'GET /api/session': [{ method: 'GET', url: '/api/session', expected: signedIn(401, 200) }],
   'HEAD /api/session': [{ method: 'HEAD', url: '/api/session', expected: signedIn(401, 200) }],
   'DELETE /api/session': [{ method: 'DELETE', url: '/api/session', expected: signedIn(401, 204) }],
+  'POST /api/projects': [
+    {
+      method: 'POST',
+      url: '/api/projects',
+      payload: () => ({ url: 'https://github.com/owner/new-repo' }),
+      expected: signedIn(401, 201),
+    },
+  ],
+  'GET /api/projects': [{ method: 'GET', url: '/api/projects', expected: signedIn(401, 200) }],
+  'HEAD /api/projects': [{ method: 'HEAD', url: '/api/projects', expected: signedIn(401, 200) }],
+  'GET /api/projects/:id': [
+    { method: 'GET', url: projectUrl(''), expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/projects/not-a-uuid', expected: signedIn(401, 404) },
+  ],
+  'HEAD /api/projects/:id': [{ method: 'HEAD', url: projectUrl(''), expected: ownerOnly(200) }],
+  'PUT /api/projects/:id/settings': [
+    {
+      method: 'PUT',
+      url: projectUrl('/settings'),
+      payload: () => settingsWith({}),
+      expected: ownerOnly(200),
+    },
+  ],
+  'GET /api/admin/users/:id/projects': [
+    { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
+    { method: 'GET', url: workspaceUrl(() => unknownUser), expected: adminOnly(404) },
+  ],
+  'HEAD /api/admin/users/:id/projects': [
+    { method: 'HEAD', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
+  ],
   'GET *': [
     { method: 'GET', url: '/', expected: everyone(200) },
     { method: 'GET', url: '/index.html', expected: signedIn(302, 200) },
@@ -93,6 +149,7 @@ async function browserFor(
 ): Promise<{
   readonly browser: TestBrowser;
   readonly user: TestUser | undefined;
+  readonly context: Context;
 }> {
   const amy = await addUser(test, { userName: 'amy' });
   const bob = await addUser(test, { userName: 'bob' });
@@ -106,13 +163,15 @@ async function browserFor(
   const user = users[column];
   const browser =
     user === undefined ? new TestBrowser(test.server) : await signedInBrowser(test.server, user);
-  return { browser, user };
+  const project = sampleProject({ userId: amy.account.id });
+  await test.projects.insertOrFind(project);
+  return { browser, user, context: { projectId: project.id, userId: amy.account.id } };
 }
 
 const cases = Object.entries(matrix).flatMap(([route, probes]) =>
-  probes.flatMap((probe) =>
+  probes.flatMap((probe, index) =>
     (['anonymous', 'user', 'otherUser', 'admin'] as const).map(
-      (column) => [route, probe.url, column, probe] as const,
+      (column) => [route, String(index + 1), column, probe] as const,
     ),
   ),
 );
@@ -127,13 +186,13 @@ describe('access matrix', () => {
     expect(routes).toEqual(Object.keys(matrix).sort());
   });
 
-  it.each(cases)('RF-1105 %s (%s) as %s', async (_route, _url, column, probe) => {
+  it.each(cases)('RF-1105 %s probe %s as %s', async (_route, _url, column, probe) => {
     current = createTestServer({ staticRoot });
-    const { browser, user } = await browserFor(current, column);
+    const { browser, user, context } = await browserFor(current, column);
 
     const response = await browser.request({
       method: probe.method,
-      url: probe.url,
+      url: typeof probe.url === 'string' ? probe.url : probe.url(context),
       ...(probe.payload === undefined ? {} : { payload: probe.payload(user) }),
     });
 
