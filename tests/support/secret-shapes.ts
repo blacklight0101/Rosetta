@@ -111,6 +111,7 @@ export const moreInnocentTexts: readonly string[] = [
   '<PasswordBox x:Name="pwd" />',
   '<input type="password" name="pwd">',
   '<password/>',
+  'Usage: login <user> <password>, then `<password>` again',
   'mysql -u root -p -D catalog',
   'mysql -P 3306 -u app catalog',
   'ask-1234567890123456789012345 finished',
