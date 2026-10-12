@@ -41,8 +41,11 @@ export function toolTurn(calls: readonly Call[], turnUsage: TokenUsage = usage):
   };
 }
 
-export function textTurn(text: string): ScenarioOutcome {
-  return { response: { text, toolCalls: [], usage, finishReason: 'stop' }, retried: [] };
+export function textTurn(text: string, turnUsage: TokenUsage = usage): ScenarioOutcome {
+  return {
+    response: { text, toolCalls: [], usage: turnUsage, finishReason: 'stop' },
+    retried: [],
+  };
 }
 
 export const readOrder: Call = {

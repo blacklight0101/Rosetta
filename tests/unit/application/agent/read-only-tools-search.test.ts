@@ -109,3 +109,27 @@ describe('grep answers from the reader', () => {
     expect(blockOf(outcome.content).text).toContain('Lines were cut before the search.');
   });
 });
+
+describe('grep and the files the scan skipped', () => {
+  it('RF-201 grep leaves out the files the scan skipped', async () => {
+    const files = { ...agentFiles, 'src/Orders/logo.png': 'public class Logo' };
+    const { run } = toolsSetup({}, files);
+
+    const outcome = await run('grep', { pattern: 'public class' });
+    const block = blockOf(outcome.content);
+
+    expect(block.excerpts.map((excerpt) => excerpt.path)).not.toContain('src/Orders/logo.png');
+    expect(block.text).not.toContain('Logo');
+  });
+
+  it('RF-201 grep asks the reader to search only the code map files the scan read', async () => {
+    const files = { ...agentFiles, 'notes/unmapped.cs': 'public class Hidden' };
+    const { run, reader } = toolsSetup({}, files);
+
+    await run('grep', { pattern: 'public class' });
+
+    expect(reader.grepPaths).toEqual([
+      ['src/Billing/Invoice.cs', 'src/Orders/Order.cs', 'src/Orders/OrderService.cs'],
+    ]);
+  });
+});

@@ -8,23 +8,32 @@ import type {
   ReadRefusal,
   RepositoryReader,
 } from '../../src/application/ports/repository-reader.js';
-import { ERROR_CODES } from '../../src/domain/errors/codes.js';
 import { err, ok, type Result } from '../../src/domain/errors/result.js';
+import { refusal } from '../../src/infrastructure/files/read-refusals.js';
 
 // RF-201: a RepositoryReader over files held in memory, for unit tests of the agent tools. It
 // counts every call, so a test can prove a tool refused a request before it reached the reader.
+// Lines, ranges, path lists and refusals follow NodeRepositoryReader (the mirror contract, P1-90).
 
-const notFound: ReadRefusal = {
-  code: ERROR_CODES.fileNotFound,
-  reason: 'not-found',
-  message: 'There is no such file in the analysed repository; check the path and its case.',
-};
+const notFound = refusal('not-found');
+const invalidPattern = refusal('invalid-pattern');
+const invalidRange = refusal('invalid-range');
 
-const invalidPattern: ReadRefusal = {
-  code: ERROR_CODES.grepPatternInvalid,
-  reason: 'invalid-pattern',
-  message: 'The pattern is not a valid JavaScript regular expression.',
-};
+function splitLines(text: string): string[] {
+  const lines = text.split(/\r?\n/);
+  if (lines.at(-1) === '') lines.pop();
+  return lines;
+}
+
+function isValidRange({ startLine, endLine }: ReadLinesRequest, total: number): boolean {
+  return (
+    Number.isInteger(startLine) &&
+    Number.isInteger(endLine) &&
+    startLine >= 1 &&
+    startLine <= endLine &&
+    startLine <= total
+  );
+}
 
 export class MemoryRepositoryReader implements RepositoryReader {
   readonly liftedDenyPatterns: readonly string[] = [];
@@ -34,10 +43,14 @@ export class MemoryRepositoryReader implements RepositoryReader {
   readonly reads: string[] = [];
   /** The patterns of every grep call, in order. */
   readonly greps: string[] = [];
+  /** The path list of every grep call that sent one, in order. */
+  readonly grepPaths: (readonly string[])[] = [];
+  private readonly texts: ReadonlyMap<string, string>;
   private readonly files: ReadonlyMap<string, readonly string[]>;
 
   constructor(files: Readonly<Record<string, string>>) {
-    this.files = new Map(Object.entries(files).map(([path, text]) => [path, text.split('\n')]));
+    this.texts = new Map(Object.entries(files));
+    this.files = new Map(Object.entries(files).map(([path, text]) => [path, splitLines(text)]));
   }
 
   listFiles(): Promise<readonly string[]> {
@@ -48,6 +61,7 @@ export class MemoryRepositoryReader implements RepositoryReader {
     this.reads.push(request.path);
     const lines = this.files.get(request.path);
     if (lines === undefined) return Promise.resolve(err(notFound));
+    if (!isValidRange(request, lines.length)) return Promise.resolve(err(invalidRange));
     const endLine = Math.min(request.endLine, lines.length);
     return Promise.resolve(
       ok({
@@ -62,13 +76,17 @@ export class MemoryRepositoryReader implements RepositoryReader {
 
   grep(request: GrepRequest): Promise<Result<GrepResult, ReadRefusal>> {
     this.greps.push(request.pattern);
+    if (request.paths !== undefined) this.grepPaths.push(request.paths);
     let pattern: RegExp;
     try {
       pattern = new RegExp(request.pattern);
     } catch {
       return Promise.resolve(err(invalidPattern));
     }
-    const sorted = [...this.files.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
+    const wanted = request.paths === undefined ? undefined : new Set(request.paths);
+    const sorted = [...this.files.entries()]
+      .filter(([path]) => wanted === undefined || wanted.has(path))
+      .sort(([a], [b]) => (a < b ? -1 : 1));
     const matches = sorted.flatMap(([path, lines]) =>
       lines.flatMap((text, index) =>
         pattern.test(text) ? [{ path, line: index + 1, text, cut: false }] : [],
@@ -80,9 +98,9 @@ export class MemoryRepositoryReader implements RepositoryReader {
   }
 
   readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>> {
-    const lines = this.files.get(request.path);
-    if (lines === undefined) return Promise.resolve(err(notFound));
-    const bytes = new TextEncoder().encode(lines.join('\n'));
+    const text = this.texts.get(request.path);
+    if (text === undefined) return Promise.resolve(err(notFound));
+    const bytes = new TextEncoder().encode(text);
     return Promise.resolve(ok({ path: request.path, sizeBytes: bytes.length, bytes }));
   }
 }

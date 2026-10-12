@@ -154,7 +154,7 @@ export class NodeRepositoryReader implements RepositoryReader {
     if (isPatternTooLong(request.pattern)) {
       return this.#refuse('pattern-too-long', { patternLength: request.pattern.length });
     }
-    const files = await this.#searchedFiles(request.pathGlob);
+    const files = await this.#searchedFiles(request);
     const outcome = await runGrep(request.pattern, files, this.#state.timeoutMs);
     switch (outcome.kind) {
       case 'timeout':
@@ -166,8 +166,8 @@ export class NodeRepositoryReader implements RepositoryReader {
     }
   }
 
-  async #searchedFiles(pathGlob: string | undefined): Promise<SearchedFile[]> {
-    const selected = pathGlob === undefined ? () => true : pathFilter(pathGlob);
+  async #searchedFiles(request: GrepRequest): Promise<SearchedFile[]> {
+    const selected = searchSelector(request);
     const searched: SearchedFile[] = [];
     for (const path of await this.listFiles()) {
       if (!selected(path)) continue;
@@ -228,6 +228,15 @@ export class NodeRepositoryReader implements RepositoryReader {
     }
     return err(refused);
   }
+}
+
+/** Whether a listed file is searched: inside the request's path list and its path pattern. */
+function searchSelector(request: GrepRequest): (path: string) => boolean {
+  const { pathGlob, paths } = request;
+  const globbed = pathGlob === undefined ? () => true : pathFilter(pathGlob);
+  if (paths === undefined) return globbed;
+  const wanted = new Set(paths);
+  return (path) => wanted.has(path) && globbed(path);
 }
 
 /** Whether `path` is one of the folders in `folders`, or lies below one. */
