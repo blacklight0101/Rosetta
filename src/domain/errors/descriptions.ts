@@ -111,6 +111,12 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message: 'The scan could not build a valid code map from the repository.',
     nextStep: 'Run the scan again; if it fails again, report the repository and the run id.',
   },
+  'RST-1300': {
+    message:
+      'The agent did not return cards in the required format, even after one repair attempt.',
+    nextStep:
+      'Open the saved raw output of the task, then run the area again or choose a more capable model for the reader role.',
+  },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
     nextStep:

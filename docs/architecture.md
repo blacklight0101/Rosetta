@@ -101,7 +101,7 @@ src/
   domain/
     accounts/           User, Role, Session, ProviderKeyRef, UsageCap
     code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel; area grouping (folder buckets, linked sets); the code-unit comparator every sorted list uses
-    cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids
+    cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids, the claim transitions (`createCard`, `transitionClaim`, `assignCardIds`)
     budget/             Money, TokenUsage, Price, PriceTable, Budget, Cap
     runs/               Run (start and end transitions), RunManifest, RunEndState, RunQueueState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`); AgentTaskState joins with the agent cards
     sources/            GitHubRepoRef, CommitSha, Permalink
@@ -136,6 +136,7 @@ src/
                         list common-passwords.txt (SecLists, MIT; read at start-up from the repository root, so
                         the image ships this file), secret-box (AES-256-GCM), token generator
     scan/               universal/, packs/csharp/, codemap/ (build the code map, `codemap.json` writer and schema, `scan-summary.md`)
+    cards/              the card writers: `cards/<TYPE>/<ID>.md` (YAML header, generated body), `cards/index.json`, `spec.md`, the raw output of an `InvalidOutput` task; every citation a GitHub permalink, everything masked
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
     system/             clock, id generator, logger
@@ -154,7 +155,8 @@ templates/              default project settings and ignore rules (data-model.md
 scripts/                build and test helper scripts (test levels, page screenshots)
 .env.example            every environment variable with a safe example (RF-1305)
 prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/) and shared/
-                        (prompts every role may get, such as the text tool protocol of RF-205)
+                        (prompts every role may get, such as the text tool protocol of RF-205),
+                        cards/ (the card format an agent answers in and the repair request, RF-202)
                         and catalogue/ (principles, styles and practices for plan, ADR-018)
 tests/
   unit/                 mirrors src/

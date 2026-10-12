@@ -48,6 +48,7 @@ export const ERROR_CODES = {
   languagePackFailed: 'RST-1200',
   languagePackInvalid: 'RST-1201',
   codeMapInvalid: 'RST-1202',
+  cardOutputInvalid: 'RST-1300',
   fakeProviderRefused: 'RST-1500',
   providerCallCancelled: 'RST-1501',
   recordingInvalid: 'RST-1502',

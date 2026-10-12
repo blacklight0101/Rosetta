@@ -65,6 +65,7 @@ Folder names come from ids, never from request text.
           egress.log.jsonl
           cost.json, cost.md
           cards/<TYPE>/<CARD-ID>.md, cards/index.json
+          invalid-output/<agentTaskId>.txt  raw answers of a task that ended InvalidOutput (3.7)
           spec.md
           coverage.json, coverage.md
           transcripts/<agentTaskId>.jsonl
@@ -298,13 +299,25 @@ Header fields:
 | `questionState` | `OpenQuestionState` | `OQ` only (RF-241) |
 | `mergedFrom[]` | list | card ids merged by consolidation (RF-250) |
 
-A rejected or invalid claim is never removed; only its status and verdict change (RF-302).
+A rejected or invalid claim is never removed; only its status and verdict change (RF-302). The card files, the index
+and `spec.md` are written together: each file's previous content is read first, and when a write is refused or fails
+part-way every file already written gets its previous content back and a file that did not exist is removed
+(RNF-002); a file that cannot be put back is logged and the original refusal is returned.
+
+In the header a citation is the string `path:startLine-endLine`; absent optional fields are left out. Every string is a
+double-quoted scalar, so model text cannot add a key. `cards/index.json` has `schemaVersion` and `cards`, and its
+`claimCounts` always lists all five statuses.
+
+When a task's answer is still not valid after the one repair attempt (RF-202), the task ends `InvalidOutput` (RST-1300) and
+both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separated by `=== attempt n ===` lines.
 
 `cards/index.json` lists every card `{ id, type, title, area, path, claimCounts per status }`, sorted by `id`.
 
 ### 3.8 `spec.md`, `coverage.json`, `coverage.md`
 
-- `spec.md`: the cards per area as one readable specification with links to the card files (RF-204).
+- `spec.md`: the cards per area as one readable specification with links to the card files and, for every citation, to the
+  cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
+  is listed with its status, rejected ones included.
 - `coverage.json`: per area `{ area, files: [{ path, read: [{ startLine, endLine }] }], readTokenShare }`; feeds the
   web UI coverage map (RF-1005) and the report. `coverage.md` is its readable form (RF-230).
 
