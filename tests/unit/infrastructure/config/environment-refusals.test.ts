@@ -61,7 +61,6 @@ describe('environment: test-only variables', () => {
   it('RF-1305 accepts only 1 for the ROSETTA_TEST switch', () => {
     expect(failureOf(validSource({ ROSETTA_TEST: 'yes' })).message).toContain('ROSETTA_TEST');
   });
-
 });
 
 describe('environment: the result and the error never leak a value', () => {
