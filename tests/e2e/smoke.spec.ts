@@ -40,7 +40,9 @@ test.describe('smoke', () => {
 
     await expect(page).toHaveURL(/\/sign-in$/);
   });
+});
 
+test.describe('smoke accessibility', () => {
   test('RNF-010 the sign-in page has no serious or critical accessibility violation', async ({
     page,
   }) => {

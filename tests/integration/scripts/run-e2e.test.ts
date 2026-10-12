@@ -16,7 +16,7 @@ describe('scripts/run-e2e.mjs', () => {
   it('RNF-005 in CI mode it skips with a notice when no database is configured', async () => {
     const { stdout } = await run('node', [script, '--ci'], { env: withoutDatabase });
 
-    expect(stdout).toMatch(/end-to-end tests skipped/u);
+    expect(stdout).toMatch(/End-to-end tests skipped/u);
     expect(stdout).toContain('ROSETTA_TEST_DATABASE_URL');
   });
 

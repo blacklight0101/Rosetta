@@ -8,29 +8,24 @@ import { seededAdmin, signInAs } from './support/sign-in.js';
 
 test.describe('network guard', () => {
   test('RNF-005 blocks a request outside 127.0.0.1 and records it', async ({ page, network }) => {
-    await page.goto('/robots.txt');
+    const opening = page.goto('https://example.com/outside');
 
-    const outcome = await page.evaluate(() =>
-      fetch('https://example.com/outside').then(
-        () => 'reached',
-        () => 'blocked',
-      ),
-    );
-
-    expect(outcome).toBe('blocked');
+    await expect(opening).rejects.toThrow(/ERR_BLOCKED_BY_CLIENT/);
     expect(network.takeBlocked()).toEqual(['https://example.com/outside']);
   });
 
   test('RNF-005 a blocked request nobody expected fails the test', async ({ page }) => {
     test.fail();
-    await page.goto('/robots.txt');
 
-    await page.evaluate(() => fetch('https://example.com/unexpected').catch(() => 'blocked'));
+    await page.goto('https://example.com/unexpected').catch(() => undefined);
   });
 
-  test('RNF-005 requests to 127.0.0.1 and data URLs are not blocked', async ({ page, network }) => {
+  test('RNF-005 requests to 127.0.0.1 and inline data are not blocked', async ({
+    page,
+    network,
+  }) => {
     await page.goto('/');
-    await page.evaluate(() => fetch('data:text/plain,ok'));
+    await page.setContent('<!doctype html><title>t</title><img alt="" src="data:,">');
 
     expect(network.takeBlocked()).toEqual([]);
   });
@@ -61,9 +56,15 @@ test.describe('sign-in helper', () => {
   }) => {
     await signInAs(context, seededAdmin);
 
-    const response = await page.request.get('/api/session');
-    expect(response.status()).toBe(200);
-    expect(await response.json()).toMatchObject({ user: { userName: seededAdmin.userName } });
+    await page.goto('/robots.txt');
+    const session = await page.evaluate(async () => {
+      const response = await fetch('/api/session');
+      const body: unknown = await response.json();
+      return { status: response.status, body };
+    });
+
+    expect(session.status).toBe(200);
+    expect(session.body).toMatchObject({ user: { userName: seededAdmin.userName } });
   });
 
   test('RF-1009 a signed-in browser opens a page that needs a session', async ({
