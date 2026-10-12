@@ -1,6 +1,6 @@
-import { render } from '@testing-library/preact';
+import { render, type RenderResult } from '@testing-library/preact';
 import type { ComponentChildren } from 'preact';
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 import { createApiClient } from '../../../web/src/api/client.js';
 import type { Session } from '../../../web/src/api/schemas.js';
 import { AppContext } from '../../../web/src/app/app-context.js';
@@ -49,26 +49,39 @@ export const ana: Session['user'] = {
   state: 'Active',
 };
 
+function recordedCall(input: RequestInfo | URL, init: RequestInit | undefined): RecordedCall {
+  const path = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const text = typeof init?.body === 'string' ? init.body : undefined;
+  const body: unknown = text === undefined ? undefined : JSON.parse(text);
+  const csrf = new Headers(init?.headers).get('x-csrf-token');
+  return { method: init?.method ?? 'GET', path, csrf, body };
+}
+
+function answerTo(answers: Readonly<Record<string, Answer>>, call: RecordedCall): Response {
+  const answer = answers[`${call.method} ${call.path}`];
+  if (answer === undefined) return failure(404, 'RST-2003');
+  return typeof answer === 'function' ? answer(call) : answer.clone();
+}
+
+export interface RenderedPage extends RenderResult {
+  readonly calls: RecordedCall[];
+  readonly assign: Mock<(path: string) => void>;
+}
+
 export function renderPage(
   page: ComponentChildren,
   answers: Readonly<Record<string, Answer>>,
   user: Session['user'] = ana,
-) {
+): RenderedPage {
   const calls: RecordedCall[] = [];
   const fetchFn: typeof fetch = (input, init) => {
-    const path = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const method = init?.method ?? 'GET';
-    const text = typeof init?.body === 'string' ? init.body : undefined;
-    const body: unknown = text === undefined ? undefined : JSON.parse(text);
-    const call = { method, path, csrf: new Headers(init?.headers).get('x-csrf-token'), body };
+    const call = recordedCall(input, init);
     calls.push(call);
-    const answer = answers[`${method} ${path}`];
-    if (answer === undefined) return Promise.resolve(failure(404, 'RST-2003'));
-    return Promise.resolve(typeof answer === 'function' ? answer(call) : answer.clone());
+    return Promise.resolve(answerTo(answers, call));
   };
   const client = createApiClient({ fetch: fetchFn });
   client.setCsrfToken('csrf-0');
-  const assign = vi.fn();
+  const assign = vi.fn<(path: string) => void>();
   const view = render(
     <AppContext.Provider value={{ client, assign }}>
       <SessionContext.Provider value={user}>{page}</SessionContext.Provider>

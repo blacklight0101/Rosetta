@@ -42,3 +42,23 @@ export const sessionSchema = z.object({
 });
 
 export type Session = z.output<typeof sessionSchema>;
+
+/** RF-1104: the providers a user stores a key for. */
+const keyProviderSchema = z.enum(['openai', 'anthropic', 'openai-compatible']);
+
+export type KeyProvider = z.output<typeof keyProviderSchema>;
+
+/** RF-1104: a stored key as the server shows it; the key itself never comes back. */
+const keySummarySchema = z.object({
+  provider: keyProviderSchema,
+  last4: z.string(),
+  updatedAt: z.string(),
+});
+
+export type KeySummary = z.output<typeof keySummarySchema>;
+
+/** `GET /api/account/keys`. */
+export const keyListSchema = z.object({ keys: z.array(keySummarySchema) });
+
+/** `PUT /api/account/keys/:provider`. */
+export const keyAnswerSchema = z.object({ key: keySummarySchema });

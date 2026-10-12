@@ -1,0 +1,214 @@
+/* Page layouts of the hosted application (design-system.md section 14): sign in, change password,
+   settings and keys. Colours, radii, spacing and type come from the tokens. */
+
+.rst-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rst-header__error {
+  color: var(--rst-danger-ink);
+  font-size: var(--rst-fs-sm);
+}
+
+/* Sign in and change password: no shell, one centred card */
+
+.rst-auth {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.rst-auth__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+  min-height: 68px;
+  padding: 0 clamp(16px, 4vw, 64px);
+}
+
+.rst-auth__user {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-auth__user strong {
+  color: var(--rst-ink);
+}
+
+.rst-auth__main {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  padding: var(--rst-sp-5) var(--rst-sp-4) var(--rst-sp-8);
+}
+
+.rst-auth__main:focus {
+  outline: none;
+}
+
+.rst-auth__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-4);
+  inline-size: 100%;
+  max-inline-size: 400px;
+  padding: var(--rst-sp-6);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-lg);
+  background: var(--rst-surface);
+  box-shadow: var(--rst-shadow-2);
+}
+
+.rst-auth__card--wide {
+  max-inline-size: 440px;
+}
+
+.rst-auth__card .rst-field__control,
+.rst-auth__card .rst-button {
+  min-height: var(--rst-touch);
+}
+
+.rst-auth__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rst-auth__title {
+  font-size: var(--rst-fs-3xl);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.rst-auth__lead {
+  color: var(--rst-ink-soft);
+}
+
+.rst-auth__note {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+/* The rule checklist */
+
+.rst-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--rst-sp-2);
+  color: var(--rst-ink-muted);
+}
+
+.rst-rule[data-state='pass'] {
+  color: var(--rst-ok-ink);
+}
+
+.rst-rule[data-state='fail'] {
+  color: var(--rst-danger-ink);
+}
+
+/* Settings and keys */
+
+.rst-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-5);
+  max-inline-size: 66rem;
+}
+
+.rst-settings__lead,
+.rst-settings__note {
+  color: var(--rst-ink-muted);
+}
+
+.rst-settings__lead {
+  margin-block-start: var(--rst-sp-1);
+}
+
+.rst-settings__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  padding: var(--rst-sp-5);
+}
+
+.rst-settings__heading {
+  font-size: var(--rst-fs-lg);
+}
+
+.rst-settings__note {
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-settings__password {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rst-sp-3) var(--rst-sp-5);
+}
+
+.rst-key-row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(0, 3fr);
+  gap: var(--rst-sp-3) var(--rst-sp-5);
+  align-items: start;
+  padding: var(--rst-sp-4) 0;
+  border-block-start: 1px solid var(--rst-rule);
+}
+
+.rst-key-row__name {
+  font-size: var(--rst-fs-md);
+}
+
+.rst-key-row__hint {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-key-row__body,
+.rst-key-row__form,
+.rst-key-row__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-key-row__saved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
+
+.rst-key-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2);
+}
+
+@media (max-width: 40rem) {
+  .rst-key-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

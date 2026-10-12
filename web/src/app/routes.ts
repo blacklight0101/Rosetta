@@ -1,4 +1,7 @@
 import { GalleryPage } from '../gallery/GalleryPage.js';
+import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
+import { SettingsPage } from '../pages/SettingsPage.js';
+import { SignInPage } from '../pages/SignInPage.js';
 import { HomePage } from './HomePage.js';
 import type { RouteDefinition } from './route-types.js';
 
@@ -22,5 +25,21 @@ const developmentRoutes: readonly RouteDefinition[] = import.meta.env.DEV
 export const routes: readonly RouteDefinition[] = [
   // Replaced by the landing page of P1-15.
   { path: '/', title: 'Rosetta', access: 'public', chrome: 'bare', component: HomePage },
+  { path: '/sign-in', title: 'Sign in', access: 'public', chrome: 'bare', component: SignInPage },
+  {
+    path: '/account/password',
+    title: 'Change password',
+    access: 'user',
+    chrome: 'bare',
+    component: ChangePasswordPage,
+  },
+  {
+    path: '/settings',
+    title: 'Settings and keys',
+    access: 'user',
+    chrome: 'shell',
+    component: SettingsPage,
+    nav: { group: 'main', label: 'Settings and keys', order: 90 },
+  },
   ...developmentRoutes,
 ];

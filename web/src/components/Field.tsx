@@ -19,7 +19,7 @@ interface FieldBase {
   readonly id: string;
   readonly label: string;
   readonly help?: string;
-  readonly error?: FieldError;
+  readonly error?: FieldError | undefined;
   readonly disabled?: boolean;
 }
 
@@ -27,6 +27,8 @@ interface TextField extends FieldBase {
   readonly kind: 'text' | 'url' | 'password';
   readonly value: string;
   readonly placeholder?: string;
+  /** The browser's `autocomplete` token, for example `username` or `new-password`. */
+  readonly autoComplete?: string;
   readonly onInput: (value: string) => void;
 }
 
@@ -150,6 +152,7 @@ function Control(props: FieldProps): JSX.Element {
           type={props.kind}
           value={props.value}
           placeholder={props.placeholder}
+          autoComplete={props.autoComplete}
           onInput={(event) => {
             props.onInput(valueOf(event));
           }}

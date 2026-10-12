@@ -19,7 +19,7 @@ function ruleStates(): Record<string, string | null> {
   const list = screen.getByRole('list', { name: 'Password rules' });
   return Object.fromEntries(
     Array.from(list.querySelectorAll('li'), (item) => [
-      item.textContent.trim(),
+      item.querySelector('.rst-rule__label')?.textContent ?? '',
       item.getAttribute('data-state'),
     ]),
   );

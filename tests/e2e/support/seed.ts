@@ -95,20 +95,21 @@ export async function seedUsers(databaseUrl: string): Promise<void> {
       ip: 'e2e-seed',
     });
     if (!created.ok) throw new Error(`The seeded user was refused (${created.error}).`);
-    for (const project of e2eProjectNames) {
-      for (const kind of accountKinds) {
-        const { userName, password } = accountFor(kind, project);
-        const outcome = await createUser.execute({
-          actor: actorOf(admin),
-          userName,
-          displayName: `E2E ${kind}`,
-          role: kind === 'force-admin' ? 'admin' : 'user',
-          password,
-          mustChangePassword: kind.startsWith('force'),
-          ip: 'e2e-seed',
-        });
-        if (!outcome.ok) throw new Error(`The account ${userName} was refused (${outcome.error}).`);
-      }
+    const accounts = e2eProjectNames.flatMap((project) =>
+      accountKinds.map((kind) => ({ kind, project })),
+    );
+    for (const { kind, project } of accounts) {
+      const { userName, password } = accountFor(kind, project);
+      const outcome = await createUser.execute({
+        actor: actorOf(admin),
+        userName,
+        displayName: `E2E ${kind}`,
+        role: kind === 'force-admin' ? 'admin' : 'user',
+        password,
+        mustChangePassword: kind.startsWith('force'),
+        ip: 'e2e-seed',
+      });
+      if (!outcome.ok) throw new Error(`The account ${userName} was refused (${outcome.error}).`);
     }
   } finally {
     await pool.end();

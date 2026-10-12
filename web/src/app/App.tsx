@@ -1,14 +1,17 @@
 import type { JSX } from 'preact';
-import { useCallback, useEffect } from 'preact/hooks';
+import { useCallback, useEffect, useMemo } from 'preact/hooks';
 import type { ApiClient } from '../api/client.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Shell } from '../components/Shell.js';
+import { SignOutButton } from '../components/SignOutButton.js';
 import type { ThemePreference } from '../lib/theme.js';
+import { AppContext } from './app-context.js';
 import { NotFoundPage } from './NotFoundPage.js';
 import { buildNavigation } from './navigation.js';
 import { matchRoute, type RouteMatch } from './route-match.js';
 import type { RouteDefinition } from './route-types.js';
 import { useLocation } from './router.js';
+import { SessionContext } from './session-context.js';
 import { useSession } from './use-session.js';
 import { useTheme } from './use-theme.js';
 
@@ -56,7 +59,13 @@ function SignedInPage(props: SignedInProps): JSX.Element {
   const { user } = state.session;
   const denied = match.route.access === 'admin' && user.role !== 'admin';
   const Page = denied ? NotFoundPage : match.route.component;
-  if (match.route.chrome === 'bare' && !denied) return <Page />;
+  if (match.route.chrome === 'bare' && !denied) {
+    return (
+      <SessionContext.Provider value={user}>
+        <Page />
+      </SessionContext.Provider>
+    );
+  }
   const navigation = buildNavigation({
     routes,
     role: user.role,
@@ -64,14 +73,34 @@ function SignedInPage(props: SignedInProps): JSX.Element {
     path: location,
   });
   return (
-    <Shell user={user} navigation={navigation} theme={theme} onTheme={onTheme}>
-      <Page />
-    </Shell>
+    <SessionContext.Provider value={user}>
+      <Shell
+        user={user}
+        navigation={navigation}
+        theme={theme}
+        onTheme={onTheme}
+        actions={<SignOutButton />}
+      >
+        <Page />
+      </Shell>
+    </SessionContext.Provider>
   );
 }
 
 // RF-1009, RNF-010
 export function App(props: AppProps): JSX.Element {
+  const services = useMemo(
+    () => ({ client: props.client, assign: props.assign }),
+    [props.client, props.assign],
+  );
+  return (
+    <AppContext.Provider value={services}>
+      <Routed {...props} />
+    </AppContext.Provider>
+  );
+}
+
+function Routed(props: AppProps): JSX.Element {
   const location = useLocation();
   const [theme, onTheme] = useTheme();
   const match = matchRoute(location, props.routes);
