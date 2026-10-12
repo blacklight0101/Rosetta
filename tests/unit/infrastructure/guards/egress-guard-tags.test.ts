@@ -74,6 +74,44 @@ describe('EgressGuard and block tags', () => {
   });
 });
 
+describe('EgressGuard and a tag used by two blocks', () => {
+  const blockWith = (tag: string): string =>
+    renderDataBlock({ source: 'grep', excerpts: [], text: 'x' }, tag);
+
+  /** What the guard did with the read conversation followed by a user message. */
+  async function outcomeWithUser(content: string): Promise<unknown> {
+    const { guard, fake, logger, manifest } = await egressHarness();
+    const messages: LlmMessage[] = [
+      ...readConversation(resultOf(rendered)),
+      { role: 'user', content },
+    ];
+    const failure = await guard.complete(requestWith(messages)).then(
+      () => 'sent',
+      (error: unknown) => error,
+    );
+    return {
+      failure,
+      sent: fake.requests.length,
+      event: logger.entries[0],
+      blockedCalls: (await manifest())?.security.blockedCalls,
+    };
+  }
+
+  it('RF-145 refuses and logs a request whose later message repeats a block tag', async () => {
+    expect(await outcomeWithUser(blockWith(TAG))).toMatchObject(refused);
+  });
+
+  it('RF-145 refuses and logs a message with two blocks of one tag', async () => {
+    const content = `${blockWith(OTHER_TAG)}\n${blockWith(OTHER_TAG)}`;
+
+    expect(await outcomeWithUser(content)).toMatchObject(refused);
+  });
+
+  it('RF-145 sends a request whose blocks all carry different tags', async () => {
+    expect(await outcomeWithUser(blockWith(OTHER_TAG))).toMatchObject({ failure: 'sent', sent: 1 });
+  });
+});
+
 describe('EgressGuard and markers rendered into a tagged block', () => {
   it.each(wordForms)(
     'RF-145 sends %s in the content only defanged, inside the tagged block',
