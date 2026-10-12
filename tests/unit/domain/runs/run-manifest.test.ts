@@ -39,7 +39,9 @@ describe('run manifest', () => {
       error: 'already-ended',
     });
   });
+});
 
+describe('run manifest source', () => {
   it('RF-126 records the commit and the snapshot hash once the source is resolved', () => {
     const manifest = sampleManifest();
     const resolved = { commitSha: 'a'.repeat(40), snapshotHash: `sha256:${'b'.repeat(64)}` };

@@ -62,7 +62,9 @@ describe('acceptedManifest', () => {
       snapshotHash: null,
     });
   });
+});
 
+describe('acceptedManifest roles', () => {
   it('RNF-004 holds the provider kind, model and parameters of every role', () => {
     const manifest = acceptedManifest({
       run: sampleRun(),
@@ -90,7 +92,9 @@ describe('acceptedManifest', () => {
     expect(manifest.roles['verifier']).toMatchObject({ provider: 'openai', kind: 'openai' });
     expect(Object.keys(manifest.roles)).toEqual(['reader', 'verifier', 'planner', 'summariser']);
   });
+});
 
+describe('acceptedManifest caps and security', () => {
   it('RF-003 holds the caps in force: the run caps and the role caps that are set', () => {
     const manifest = acceptedManifest({
       run: sampleRun(),
