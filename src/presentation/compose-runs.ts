@@ -32,6 +32,7 @@ import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-gene
 import { StreamRegistry } from './web/event-stream.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { RunServices } from './web/run-routes.js';
+import type { StartUpSteps } from './start-up.js';
 
 // Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event
 // log with the live broadcaster, the manifest store, the run queue and the use cases behind the run
@@ -72,9 +73,12 @@ export interface RunComposition {
   /** Accepts a run into the queue; the stage routes call it. */
   readonly submitRun: SubmitRun;
   /**
-   * Start-up: deletes the partial snapshot folders an interrupted download left (RF-122), then ends
-   * the runs the earlier process left running and starts what can start (RF-1108).
+   * Start-up only, before the server listens: deletes the partial snapshot folders an interrupted
+   * download left (RF-122). A failure is a warning. Not part of `recover`, which the scheduler runs
+   * every minute while downloads may be in progress.
    */
+  discardPartialSnapshots(): Promise<void>;
+  /** Ends the runs the earlier process left running and starts what can start (RF-1108). */
   recover(): Promise<void>;
 }
 
@@ -150,8 +154,10 @@ function runServices(service: ServiceParts): RunServices {
 }
 
 // RF-122, P1-73: an interrupted download leaves a `.partial-*` folder in `<data>/sources/`; the
-// start-up discards them before the server accepts runs. A failure to discard is a warning and does
-// not stop the start-up (the next download uses a fresh partial folder of its own).
+// start-up discards them once, before the server listens and before the queue accepts runs; the
+// periodic queue sweep never does (a download running then would lose its folder). A failure to
+// discard is a warning (error code or name and the folder name only, no message text) and does not
+// stop the start-up (the next download uses a fresh partial folder of its own).
 async function discardPartialSnapshots(
   fetcher: GitHubSnapshotFetcher,
   logger: Logger,
@@ -162,10 +168,20 @@ async function discardPartialSnapshots(
     await logger.log({
       level: 'warn',
       logger: 'start-up',
-      message: `Partial snapshot folders could not be discarded: ${String(error)}`,
+      message: `Partial snapshot folders in sources/ could not be discarded (${error instanceof Error ? error.name : 'unknown error'})`,
       ...(error instanceof RosettaError ? { code: error.code } : {}),
     });
   }
+}
+
+/** The two run steps of the start-up sequence, in order: discard partial folders, then recover. */
+export function runStartUpSteps(
+  runs: RunComposition,
+): Pick<StartUpSteps, 'discardPartialSnapshots' | 'recoverRuns'> {
+  return {
+    discardPartialSnapshots: () => runs.discardPartialSnapshots(),
+    recoverRuns: () => runs.recover(),
+  };
 }
 
 // RF-1006, RF-1108
@@ -213,9 +229,7 @@ export function composeRuns(parts: RunParts): RunComposition {
       scans: composeScanResults({ dataDir, writer, manifests, logger }),
     }),
     submitRun,
-    async recover() {
-      await discardPartialSnapshots(scan.fetcher, logger);
-      await queue.recover();
-    },
+    discardPartialSnapshots: () => discardPartialSnapshots(scan.fetcher, logger),
+    recover: () => queue.recover(),
   };
 }
