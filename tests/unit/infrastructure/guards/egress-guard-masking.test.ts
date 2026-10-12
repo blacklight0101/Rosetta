@@ -1,4 +1,4 @@
-import { footerOf, TAG } from '../../../support/data-block-tags.js';
+import { footerOf, tagOf } from '../../../support/data-block-tags.js';
 import { describe, expect, it } from 'vitest';
 import type { LlmMessage } from '../../../../src/application/ports/llm-provider.js';
 import { scanDataBlocks } from '../../../../src/domain/egress/data-block-scan.js';
@@ -85,7 +85,7 @@ describe('EgressGuard keeps lines and frames while masking', () => {
     await guard.complete(requestWith(readConversation(toolResult({ text: cut?.text ?? '' }))));
 
     const sent = fake.requests[0]?.messages[2]?.content ?? '';
-    expect(sent.endsWith(`\n${footerOf(TAG)}`)).toBe(true);
+    expect(sent.endsWith(`\n${footerOf(tagOf(sent))}`)).toBe(true);
     expect(scanDataBlocks(sent)).toMatchObject({ ok: true, value: { blocks: 1 } });
   });
 });

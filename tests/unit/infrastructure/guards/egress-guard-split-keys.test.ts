@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TAG } from '../../../support/data-block-tags.js';
+import { freshTag } from '../../../support/data-block-tags.js';
 import type { LlmMessage } from '../../../../src/application/ports/llm-provider.js';
 import { renderDataBlock } from '../../../../src/domain/egress/data-block.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -27,7 +27,7 @@ function separateReads(split: SplitKeyCase): LlmMessage[] {
 /** Every piece as its own block in one user message. */
 function blocksInOneMessage(split: SplitKeyCase): LlmMessage[] {
   const blocks = split.pieces.map((text) =>
-    renderDataBlock({ source: 'read_file', excerpts: [], text }, TAG),
+    renderDataBlock({ source: 'read_file', excerpts: [], text }, freshTag()),
   );
   return [{ role: 'user', content: ['Files of the area:', ...blocks].join('\n') }];
 }

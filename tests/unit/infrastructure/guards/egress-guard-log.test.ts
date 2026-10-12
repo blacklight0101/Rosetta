@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TAG } from '../../../support/data-block-tags.js';
+import { OTHER_TAG } from '../../../support/data-block-tags.js';
 import { renderDataBlock } from '../../../../src/domain/egress/data-block.js';
 import {
   egressHarness,
@@ -53,7 +53,7 @@ describe('EgressGuard egress log excerpts', () => {
         excerpts: [{ path: 'src/Catalog.cs', startLine: 1, endLine: 80 }],
         text: 'src/Catalog.cs',
       },
-      TAG,
+      OTHER_TAG,
     );
     const grep = toolResult({
       source: 'grep',

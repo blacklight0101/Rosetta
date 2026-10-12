@@ -1,3 +1,5 @@
+import { SequenceIdGenerator } from './sequence-id-generator.js';
+
 // RF-145, ADR-013: fixed data-block tags for tests, so rendered blocks stay stable. A real tag is
 // 24 characters of lower-case base32 (a-z, 2-7) from the IdGenerator port; these have that shape.
 
@@ -17,4 +19,11 @@ export function footerOf(tag: string): string {
 /** The tag of the opening line of a rendered block, or '' when the line has none. */
 export function tagOf(content: string): string {
   return /^<<<ROSETTA-DATA ([a-z2-7]+) \{/.exec(content)?.[1] ?? '';
+}
+
+const sequence = new SequenceIdGenerator();
+
+/** A tag no earlier call returned: blocks of one request each need their own (DEC-129). */
+export function freshTag(): string {
+  return sequence.dataBlockTag();
 }

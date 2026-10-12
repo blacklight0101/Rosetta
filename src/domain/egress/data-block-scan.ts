@@ -23,6 +23,8 @@ export interface DataBlockScan {
   readonly blocks: number;
   /** The excerpts of every block, in order. */
   readonly excerpts: readonly Citation[];
+  /** The tag of every block, in order (DEC-129: each one fresh). */
+  readonly tags: readonly string[];
   /** Whether any non-blank text stands outside the blocks. */
   readonly textOutside: boolean;
   /**
@@ -106,6 +108,7 @@ interface ScanState {
   blocks: number;
   textOutside: boolean;
   readonly excerpts: Citation[];
+  readonly tags: string[];
   readonly parts: DataBlockPart[];
   pending: string[];
   /** The excerpts of the block the scan is inside. */
@@ -139,6 +142,7 @@ function takeLine(state: ScanState, line: string): boolean {
   if (header !== undefined) {
     state.current = header.excerpts;
     state.tag = header.tag;
+    state.tags.push(header.tag);
     state.excerpts.push(...header.excerpts);
     state.blocks += 1;
   }
@@ -153,6 +157,7 @@ export function scanDataBlocks(content: string): Result<DataBlockScan, DataBlock
     blocks: 0,
     textOutside: false,
     excerpts: [],
+    tags: [],
     parts: [],
     pending: [],
     current: [],
@@ -162,6 +167,6 @@ export function scanDataBlocks(content: string): Result<DataBlockScan, DataBlock
     if (!takeLine(state, line)) return err('malformed-block');
   }
   if (!flush(state) || state.inside) return err('malformed-block');
-  const { blocks, excerpts, textOutside, parts } = state;
-  return ok({ blocks, excerpts, textOutside, parts });
+  const { blocks, excerpts, tags, textOutside, parts } = state;
+  return ok({ blocks, excerpts, tags, textOutside, parts });
 }

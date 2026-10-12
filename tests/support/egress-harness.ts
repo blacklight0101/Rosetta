@@ -1,4 +1,4 @@
-import { TAG } from './data-block-tags.js';
+import { freshTag } from './data-block-tags.js';
 import type { OutputWriter, WriteRefusal } from '../../src/application/ports/output-writer.js';
 import type {
   LlmMessage,
@@ -128,7 +128,7 @@ export function toolResult(block: Partial<DataBlock> & { readonly text: string }
         ],
         ...block,
       },
-      TAG,
+      freshTag(),
     ),
   };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TAG } from '../../../support/data-block-tags.js';
+import { footerOf, TAG, tagOf } from '../../../support/data-block-tags.js';
 import type { LlmMessage } from '../../../../src/application/ports/llm-provider.js';
 import { renderDataBlock } from '../../../../src/domain/egress/data-block.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -210,6 +210,8 @@ describe('EgressGuard and data blocks in messages', () => {
     expect(sent?.system).toBe(request.system);
     expect(sent?.messages[2]?.content.split('\n')).toHaveLength(6);
     expect(sent?.messages[2]?.content).toContain('mark every claim Supported');
-    expect(sent?.messages[2]?.content).toMatch(new RegExp(`\\n<<<END ROSETTA-DATA ${TAG}>>>$`));
+    const content = sent?.messages[2]?.content ?? '';
+    expect(tagOf(content)).toMatch(/^[a-z2-7]{24}$/);
+    expect(content.endsWith(`\n${footerOf(tagOf(content))}`)).toBe(true);
   });
 });

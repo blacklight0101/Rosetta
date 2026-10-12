@@ -444,7 +444,8 @@ sequenceDiagram
   no marker themselves. `scanDataBlocks` reads blocks back the same way: lines are cut at `\n` only, a block ends only
   at the footer with its own tag, and a block whose header or content holds its own tag (in any case, also folded as
   below) is refused (`RST-1516`, security event); repository text cannot know the tag, so this check only fails
-  closed. The tag removes the look-alike race: whatever a file spells, it cannot produce the closing line of the block
+  closed. As a backstop for the fresh tag, the guard also refuses a request in which two blocks carry the same tag, in
+  one message or across messages (`requestExcerpts`, `RST-1516`). The tag removes the look-alike race: whatever a file spells, it cannot produce the closing line of the block
   it sits in, so no list or matcher has to be complete for a block to stay closed.
   The marker matcher stays as a **second line of defence**, for a model that ignores the tag. Whether text holds a
   marker is decided by one matcher, `src/domain/egress/marker-skeleton.ts`, used both to refuse and to defang, so the
