@@ -67,7 +67,12 @@ export class CSharpPack implements LanguagePack {
     const tree = this.parser.parse(file.text, null, {
       progressCallback: () => Date.now() > deadline || file.shouldStop?.() === true,
     });
-    if (tree === null) throw new RosettaError('RST-1200', 'Parsing the file took too long.');
+    if (tree === null) {
+      // A halted parse resumes on the next call unless the parser is reset; the next file must start
+      // from nothing, not from the text of this one.
+      this.parser.reset();
+      throw new RosettaError('RST-1200', 'Parsing the file took too long.');
+    }
     try {
       // A tree with errors would give partial data under map level `symbols`; the file stays coarse.
       if (tree.rootNode.hasError) {
