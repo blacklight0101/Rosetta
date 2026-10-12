@@ -37,7 +37,9 @@ interface DerivedKey {
 
 function derive(secret: string, variable: string): DerivedKey {
   const material = Buffer.from(secret, 'base64');
-  if (material.length !== SECRET_BYTES) {
+  // Node's decoder drops characters outside the alphabet and ignores non-zero unused bits, so a
+  // secret that does not encode back to itself is refused rather than decoded silently.
+  if (material.length !== SECRET_BYTES || material.toString('base64') !== secret) {
     // The message names the variable, never its value (RF-1305).
     throw new RosettaError(
       ERROR_CODES.configurationInvalid,

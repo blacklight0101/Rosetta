@@ -23,6 +23,16 @@ async function derived(secret: string): Promise<Buffer> {
   return Buffer.from(await promisify(hkdf)('sha256', ikm, Buffer.alloc(0), info, 32));
 }
 
+/** The error a secret box refuses to build with, or undefined when it builds. */
+function refusalOf(secret: string): unknown {
+  try {
+    new AesGcmSecretBox({ current: secret });
+  } catch (error) {
+    return error;
+  }
+  return undefined;
+}
+
 function flipped(bytes: Uint8Array, index = 0): Buffer {
   const copy = Buffer.from(bytes);
   copy[index] = (copy[index] ?? 0) ^ 0x01;
@@ -120,6 +130,36 @@ describe('AesGcmSecretBox refusals', () => {
       unreadable,
     );
     expect(box.open({ ...sealed, iv: sealed.iv.subarray(0, 8) }, amyOpenAi)).toEqual(unreadable);
+  });
+});
+
+describe('AesGcmSecretBox strict base64 secret', () => {
+  it.each([
+    [
+      'a character outside the base64 alphabet',
+      (valid: string) => `${valid.slice(0, 10)}*${valid.slice(10)}`,
+    ],
+    ['a line break', (valid: string) => `${valid}\n`],
+    [
+      'a non-canonical ending, whose unused bits are not zero',
+      (valid: string) => `${valid.slice(0, -2)}B=`,
+    ],
+  ])('RF-1104 refuses a server secret with %s, without naming its value', (_case, change) => {
+    const valid = fixtureSecret(7);
+
+    expect(refusalOf(change(valid))).toMatchObject({ code: ERROR_CODES.configurationInvalid });
+  });
+
+  it('RF-1104 refuses a server secret in the URL-safe alphabet, without naming its value', () => {
+    const standard = Buffer.alloc(32, 0xff).toString('base64');
+    const urlSafe = standard.replace(/\//g, '_');
+    expect(urlSafe).not.toBe(standard);
+
+    expect(refusalOf(urlSafe)).toMatchObject({ code: ERROR_CODES.configurationInvalid });
+  });
+
+  it('RF-1104 accepts the canonical base64 of 32 bytes', () => {
+    expect(() => new AesGcmSecretBox({ current: fixtureSecret(7) })).not.toThrow();
   });
 });
 

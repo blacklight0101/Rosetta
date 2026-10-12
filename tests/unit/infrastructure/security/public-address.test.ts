@@ -57,6 +57,23 @@ describe('isPublicAddress', () => {
   );
 });
 
+describe('isPublicAddress, the ranges added by P1-88', () => {
+  it.each([
+    ['3fff::1', 'documentation, 3fff::/20'],
+    ['3fff:fff::1', 'documentation, the last address of 3fff::/20'],
+    ['5f00::1', 'segment routing SIDs, 5f00::/16'],
+    ['5f00:ffff::1', 'segment routing SIDs, the last address of 5f00::/16'],
+    ['::ffff:0:0:1', 'IPv4-translated address, ::ffff:0:0:0/96'],
+    ['::ffff:0:102:304', 'IPv4-translated address in hexadecimal form'],
+  ])('RF-1104 %s is not public (%s)', (address) => {
+    expect(isPublicAddress(address)).toBe(false);
+  });
+
+  it.each(['3fff:1000::1', '5eff:ffff::1'])('RF-1104 %s is public', (address) => {
+    expect(isPublicAddress(address)).toBe(true);
+  });
+});
+
 describe('bareHost', () => {
   it.each([
     ['[::1]', '::1'],

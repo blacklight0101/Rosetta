@@ -64,9 +64,16 @@ export function parseBaseUrl(text: string): Result<BaseUrl, typeof ERROR_CODES.b
     return err(ERROR_CODES.baseUrlRejected);
   }
   const url = new URL(text);
-  const plain = url.username === '' && url.password === '' && url.search === '' && url.hash === '';
-  if (url.protocol !== 'https:' || !plain || url.hostname === '') {
+  if (url.protocol !== 'https:' || !isPlainUrl(url) || url.hostname === '') {
     return err(ERROR_CODES.baseUrlRejected);
   }
   return ok({ href: url.href, hostname: url.hostname });
+}
+
+/** No credentials and no query or fragment, not even a bare `?` or `#` (kept in `href` only). */
+function isPlainUrl(url: URL): boolean {
+  const bareMarker = url.href.endsWith('?') || url.href.endsWith('#');
+  const noParts =
+    url.username === '' && url.password === '' && url.search === '' && url.hash === '';
+  return noParts && !bareMarker;
 }

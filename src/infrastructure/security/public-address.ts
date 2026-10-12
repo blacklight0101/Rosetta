@@ -41,6 +41,11 @@ const IPV6_BLOCKED: readonly (readonly [string, number])[] = [
   ['fe80::', 10],
   ['fec0::', 10],
   ['ff00::', 8],
+  // Documentation (RFC 9637) and segment routing SIDs (RFC 9602): special-purpose, not public.
+  ['3fff::', 20],
+  ['5f00::', 16],
+  // IPv4-translated addresses (RFC 2765): the IPv4 address sits in the low 32 bits.
+  ['::ffff:0:0:0', 96],
 ];
 
 function blockList(ranges: readonly (readonly [string, number])[], type: 'ipv4' | 'ipv6') {
