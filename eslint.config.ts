@@ -89,8 +89,8 @@ export default defineConfig(
     rules: { 'no-console': 'off', '@typescript-eslint/explicit-module-boundary-types': 'off' },
   },
   {
-    // Tools load their configuration through a default export.
-    files: ['*.config.ts', 'web/vite.config.ts'],
+    // Tools load their configuration and Playwright its global teardown through a default export.
+    files: ['*.config.ts', 'web/vite.config.ts', 'tests/e2e/support/global-teardown.ts'],
     rules: { 'no-restricted-exports': 'off' },
   },
   prettier,

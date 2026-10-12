@@ -9,8 +9,14 @@ const levels = [
   { name: 'E2E', folder: 'e2e', target: 10 },
 ];
 const tolerance = 10;
-// A declaration is it(...), test(...) or it.each(...)(...); skipped and todo tests are not counted.
-const testDeclaration = /^\s*(?:it|test)(?:\.(?!skip\b|todo\b)\w+)*(?:\([^)]*\))?\(/u;
+// Vitest files are *.test.ts and Playwright files *.spec.ts (P1-13). A declaration is it(...),
+// test(...) or it.each(...)(...); skipped and todo tests are not counted, nor are the members of
+// Playwright's test that declare no test (describe, fail, fixme, slow, step, use, hooks, ...).
+const notATest = String.raw`skip|todo|describe|fail|fixme|slow|step|use|before\w*|after\w*|extend|info|setTimeout|expect`;
+const testDeclaration = new RegExp(
+  String.raw`^\s*(?:it|test)(?:\.(?!(?:${notATest})\b)\w+)*(?:\([^)]*\))?\(`,
+  'u',
+);
 const skippedSuite = /^\s*describe\.skip\(/u;
 
 const indentOf = (line) => line.length - line.trimStart().length;
@@ -36,7 +42,7 @@ function countInSource(source) {
 async function listTestFiles(folder) {
   const entries = await readdir(folder, { recursive: true, withFileTypes: true }).catch(() => []);
   return entries
-    .filter((entry) => entry.isFile() && /\.test\.[cm]?[jt]sx?$/u.test(entry.name))
+    .filter((entry) => entry.isFile() && /\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(entry.name))
     .map((entry) => join(entry.parentPath, entry.name));
 }
 
