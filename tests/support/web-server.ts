@@ -227,6 +227,16 @@ function runHarnessOf(
   });
 }
 
+/** The memory stores every test server starts with. */
+function memoryStores() {
+  return {
+    users: new MemoryUserRepository(),
+    sessions: new MemorySessionStore(),
+    usage: new MemoryAccountUsage(),
+    projects: new MemoryProjectRepository(),
+  };
+}
+
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
@@ -248,11 +258,8 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
   const health = new FakeDatabaseHealth(true);
-  const users = new MemoryUserRepository();
-  const sessions = new MemorySessionStore();
+  const { users, sessions, usage, projects } = memoryStores();
   const auditLog = new MemoryAuditLog(masker);
-  const usage = new MemoryAccountUsage();
-  const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
@@ -274,6 +281,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     runs: runServices(runs, { projects, keys: keys.keys }, route, outputs),
+    onRoute: recorder.onRoute,
     ...overrides,
   });
   return {

@@ -12,7 +12,13 @@ export interface RouteRecorder {
 }
 
 export function recordRoutes(): RouteRecorder {
-  return { onRoute: () => undefined, rows: () => [] };
+  const rows = new Set<string>();
+  return {
+    onRoute: (route) => {
+      for (const method of [route.method].flat()) rows.add(`${method} ${route.url}`);
+    },
+    rows: () => [...rows].sort(),
+  };
 }
 
 /** Records the routes of a bare server; call before registering any route. */
