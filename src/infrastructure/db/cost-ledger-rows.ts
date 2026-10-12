@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import type { LedgerEntry, Reservation } from '../../application/ports/cost-ledger.js';
+import type {
+  LedgerEntry,
+  Reservation,
+  ReservationKey,
+} from '../../application/ports/cost-ledger.js';
 import type { CapSpent } from '../../domain/budget/usage-cap.js';
 import { utcPeriodsOf } from '../../domain/budget/utc-periods.js';
 
@@ -45,7 +49,14 @@ export const INSERT_RESERVATION =
 export const INSERT_ENTRY =
   'INSERT INTO cost_ledger (at, user_id, project_id, run_id, agent_task_id, stage, role, provider, model, call_id, attempt, key_source, input_tokens, output_tokens, cached_input_tokens, usage_source, cost_micros, cost_known, currency, price_table_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)';
 
-export const DELETE_RESERVATION = 'DELETE FROM cost_reservations WHERE call_id = $1';
+/** The reservation of one call of one user's run: $1 call, $2 user, $3 run (null for a provider test). */
+export const DELETE_RESERVATION =
+  'DELETE FROM cost_reservations WHERE call_id = $1 AND user_id = $2 AND run_id IS NOT DISTINCT FROM $3';
+
+/** The parameters of DELETE_RESERVATION. */
+export function reservationKeyValues(key: ReservationKey): unknown[] {
+  return [key.callId, key.userId, key.runId];
+}
 
 export const DELETE_EXPIRED = 'DELETE FROM cost_reservations WHERE expires_at <= $1';
 

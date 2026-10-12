@@ -212,6 +212,14 @@ describe('POST /api/account/providers/test limit log', () => {
     );
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({ level: 'warn', data: { ip: '10.0.1.7' } });
+    // RF-1109: the refused press is also audited.
+    const rows = await test.audit.list({ since: 0, action: 'request.refused' });
+    expect(rows).toEqual([
+      expect.objectContaining({
+        ip: '10.0.1.7',
+        detail: { reason: 'rate-limit' },
+      }),
+    ]);
     const logged = JSON.stringify(events);
     for (const secret of [...amy.cookies.values(), amy.csrfToken ?? '']) {
       expect(secret).not.toBe('');

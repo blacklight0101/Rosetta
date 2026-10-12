@@ -123,6 +123,10 @@ conflict visibly; the codes already shown on the design board are reserved there
 
 - Vitest projects `unit`, `integration`, `e2e` under `tests/<level>/`; the level is the project, so every test has
   one. Split about 60 / 30 / 10 as a guideline that warns (DEC-30); a run with zero tests fails.
+- `npm run test:levels` (and the level step of `npm run test:ci`) counts the Vitest tests that ran, from the run's JSON
+  report (`test-results/vitest.json`): every passed or failed test counts once, so each `it.each` row counts, and a
+  contract suite from `tests/contracts/` counts at the level of the test file that runs it; a test that ran outside
+  the three level folders fails the report. Playwright specs are counted from their source (P1-61).
 - **Test names start with the requirement id** they prove, then the behaviour (ADR-010):
   `it('RF-422 stops the run when the next call would exceed the cap', ...)`. Tests for internal helpers name the
   requirement their caller serves.
