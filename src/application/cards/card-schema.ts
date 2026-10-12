@@ -21,7 +21,7 @@ const citationMessages: Readonly<Record<CitationProblem, string>> = {
 };
 
 const lineNumber = z.union([
-  z.number(),
+  z.number().int().max(cardLimits.maxLineNumber),
   z
     .string()
     .trim()
@@ -66,6 +66,8 @@ const card = z
   .object({
     type: ignoringCase(CARD_TYPES),
     title: text(cardLimits.maxTitleChars),
+    // Required by RF-202 but only checked, never used: a card gets the area of the task that
+    // produced it (assignCardIds), so a different area written here is ignored.
     area: text(cardLimits.maxAreaChars),
     summary: text(cardLimits.maxSummaryChars),
     confidence: ignoringCase(CONFIDENCES),

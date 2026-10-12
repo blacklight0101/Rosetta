@@ -3,15 +3,23 @@
 // The header is the authoritative data and is never parsed back by Rosetta.
 
 const plainKey = /^[A-Za-z_][A-Za-z0-9_]*$/;
-// Line breaks that JSON.stringify leaves as they are but that YAML readers may treat as one.
-const lineSeparators = [0x85, 0x2028, 0x2029].map((code) => String.fromCharCode(code));
+// Characters written as \uXXXX escapes (valid in a YAML double-quoted scalar, same value when read):
+// line breaks that JSON.stringify leaves as they are but YAML readers may treat as one, and the
+// characters a viewer that shows the header as Markdown could turn into a link, image, tag or
+// entity (RF-507).
+const escaped = new Set([0x85, 0x2028, 0x2029, ...'<>[]&'.split('').map((c) => c.charCodeAt(0))]);
+const schemeColon = /(https?|ftp|mailto):/gi;
+
+function hex(char: string): string {
+  return `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+}
 
 function quoted(text: string): string {
-  return lineSeparators.reduce(
-    (escaped, char) =>
-      escaped.replaceAll(char, `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`),
-    JSON.stringify(text),
-  );
+  return JSON.stringify(text)
+    .split('')
+    .map((char) => (escaped.has(char.charCodeAt(0)) ? hex(char) : char))
+    .join('')
+    .replace(schemeColon, (_all, scheme: string) => `${scheme}${hex(':')}`);
 }
 
 function scalar(value: unknown): string | undefined {

@@ -13,6 +13,8 @@ export const cardLimits = {
   maxClaimChars: 2000,
   maxQuestionChars: 1000,
   maxPathChars: 1024,
+  /** Largest line number, as a number or as nine digits of text. */
+  maxLineNumber: 999_999_999,
   /** Validation problems reported back to the model and the user. */
   maxProblems: 20,
   maxProblemChars: 300,

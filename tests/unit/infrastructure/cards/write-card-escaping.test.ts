@@ -28,7 +28,7 @@ const rules: readonly (readonly [string, RegExp])[] = [
   ['www autolink', /www\./i],
   ['image', /!\[/],
   ['link target', /\]\(/],
-  ['backtick', /`/],
+  ['backtick', /(^|[^\\])`/],
   ['tilde fence', /~~~/],
   ['e-mail autolink', /@/],
   ['live heading or list', /(^|[^\\])(# Heading|\* item)/],

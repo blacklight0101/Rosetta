@@ -1,4 +1,8 @@
-import type { OutputWriter, WriteRefusal } from '../../application/ports/output-writer.js';
+import type {
+  OutputWriter,
+  WorkspaceFile,
+  WriteRefusal,
+} from '../../application/ports/output-writer.js';
 import type { Card } from '../../domain/cards/card.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { writeRefusal } from '../files/workspace-guard.js';
@@ -31,17 +35,21 @@ interface PlannedFile {
   readonly text: string;
 }
 
+/** Writes the files in order; a refusal removes the files this call already wrote (RNF-002). */
 async function writeAll(
   writer: OutputWriter,
   target: CardOutputTarget,
   files: readonly PlannedFile[],
 ): Promise<Result<void, WriteRefusal>> {
+  const written: WorkspaceFile[] = [];
   for (const file of files) {
-    const written = await writer.writeText(
-      { userId: target.userId, path: `${target.folder}/${file.path}` },
-      file.text,
-    );
-    if (!written.ok) return written;
+    const workspaceFile = { userId: target.userId, path: `${target.folder}/${file.path}` };
+    const result = await writer.writeText(workspaceFile, file.text);
+    if (!result.ok) {
+      for (const done of written) await writer.remove(done);
+      return result;
+    }
+    written.push(workspaceFile);
   }
   return ok(undefined);
 }
@@ -71,7 +79,13 @@ export interface InvalidOutputInput {
   readonly masker: TextMasker;
 }
 
-const plainId = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
+const plainId = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9_-])?$/;
+// Windows device names are reserved with or without an extension.
+const reservedName = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
+
+function isPlainTaskId(id: string): boolean {
+  return plainId.test(id) && !reservedName.test(id);
+}
 
 // RF-202: the raw output of a task marked `InvalidOutput` is kept for the user, masked, in
 // `invalid-output/<agentTaskId>.txt`. The task id chooses the file name, so it must be a plain id.
@@ -80,7 +94,7 @@ export async function writeInvalidOutput(
   target: CardOutputTarget,
   input: InvalidOutputInput,
 ): Promise<Result<void, WriteRefusal>> {
-  if (!plainId.test(input.agentTaskId)) return err(writeRefusal('invalid-path'));
+  if (!isPlainTaskId(input.agentTaskId)) return err(writeRefusal('invalid-path'));
   const attempts = input.rawOutputs.map(
     (raw, index) => `=== attempt ${String(index + 1)} ===\n${raw}`,
   );

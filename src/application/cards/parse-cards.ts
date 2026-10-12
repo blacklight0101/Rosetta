@@ -3,7 +3,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { agentCardsSchema } from './card-schema.js';
 import { cardLimits } from './card-limits.js';
-import { jsonCandidates } from './extract-json.js';
+import { searchJson } from './extract-json.js';
 
 // RF-202: parses an agent's final answer into card drafts. Invalid output gets one repair attempt
 // with the located validation errors; a second failure ends the task as `InvalidOutput` and the
@@ -18,6 +18,17 @@ export interface OutputProblem {
 const noJson: OutputProblem = {
   path: '',
   message: 'No JSON found in the answer. Reply with one JSON object {"cards": [ ... ]}.',
+};
+
+const cutOff: OutputProblem = {
+  path: '',
+  message:
+    'The JSON in the answer is cut off or not valid JSON. Reply with one complete JSON object {"cards": [ ... ]}, shorter if needed.',
+};
+
+const capped: OutputProblem = {
+  path: '',
+  message: `The answer has many code blocks or JSON-like parts and only the first ${String(cardLimits.maxJsonCandidates)} were checked. Reply with one JSON object {"cards": [ ... ]} and nothing else.`,
 };
 
 const tooLong: OutputProblem = {
@@ -45,18 +56,21 @@ function validate(value: unknown): Result<readonly CardDraft[], readonly OutputP
   );
 }
 
-/** The first JSON value of the answer that is a valid card list, else the first one's problems. */
+/** The first JSON value of the answer that is a valid card list, else why there is none. */
 export function parseCardOutput(
   raw: string,
 ): Result<readonly CardDraft[], readonly OutputProblem[]> {
   if (raw.length > cardLimits.maxOutputChars) return err([tooLong]);
+  const search = searchJson(raw);
   let firstProblems: readonly OutputProblem[] | undefined;
-  for (const value of jsonCandidates(raw)) {
+  for (const value of search.values) {
     const checked = validate(value);
     if (checked.ok) return checked;
     firstProblems ??= checked.error;
   }
-  return err(firstProblems ?? [noJson]);
+  if (search.capped) return err(bounded([capped, ...(firstProblems ?? [])]));
+  if (search.truncated) return err([cutOff]);
+  return err(firstProblems ?? (search.looksLikeJson ? [cutOff] : [noJson]));
 }
 
 export interface ParsedCards {

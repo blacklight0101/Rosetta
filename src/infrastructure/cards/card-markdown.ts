@@ -2,7 +2,8 @@ import type { Card, Claim } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { maskDeep } from '../guards/mask-deep.js';
-import { citationLink, inlineText, type PermalinkSource } from './citation-link.js';
+import { citationLink, type PermalinkSource } from './citation-link.js';
+import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 import { renderYamlHeader } from './yaml-header.js';
 
 // RF-204, RF-125, data-model 3.7: `cards/<TYPE>/<CARD-ID>.md`. The YAML header is the data; the
@@ -14,14 +15,6 @@ const schemaVersion = 1;
 /** Where a card's file lives, relative to the run folder. */
 export function cardPath(card: Card): string {
   return `cards/${card.type}/${card.id}.md`;
-}
-
-/** Block quote: every line of model text starts with `> `. */
-function quoted(text: string): string {
-  return text
-    .split(/\r\n|\r|\n/)
-    .map((line) => `> ${line}`.trimEnd())
-    .join('\n');
 }
 
 function claimHeader(claim: Claim): Record<string, unknown> {
@@ -52,44 +45,55 @@ function headerOf(card: Card): Record<string, unknown> {
   };
 }
 
-function claimBody(claim: Claim, source: PermalinkSource): string[] {
-  const lines = [`### ${claim.claimId} (${claim.status})`, '', quoted(claim.text), '', 'Evidence:'];
+function claimBody(claim: Claim, source: PermalinkSource, esc: MarkdownEscaper): string[] {
+  const lines = [
+    `### ${claim.claimId} (${claim.status})`,
+    '',
+    esc.block(claim.text),
+    '',
+    'Evidence:',
+  ];
   lines.push(...claim.citations.map((citation) => `- ${citationLink(citation, source)}`));
   if (claim.verdict !== undefined) {
     const { step, model, at, reason } = claim.verdict;
-    lines.push('', `Verdict (${step}, ${inlineText(model)}, ${at}):`, '', quoted(reason));
+    lines.push(
+      '',
+      `Verdict (${step}, ${esc.inline(model)}, ${esc.label(at)}):`,
+      '',
+      esc.block(reason),
+    );
   }
   return [...lines, ''];
 }
 
-function questionBody(card: Card): string[] {
+function questionBody(card: Card, esc: MarkdownEscaper): string[] {
   if (card.question === undefined || card.whyItMatters === undefined) return [];
   return [
     '## Question',
     '',
-    quoted(card.question),
+    esc.block(card.question),
     '',
     'Why it matters:',
     '',
-    quoted(card.whyItMatters),
+    esc.block(card.whyItMatters),
     '',
     `State: ${card.questionState ?? 'Open'}`,
     '',
   ];
 }
 
-function bodyOf(card: Card, source: PermalinkSource): string {
+function bodyOf(card: Card, source: PermalinkSource, esc: MarkdownEscaper): string {
   return [
-    `# ${card.id} ${inlineText(card.title)}`,
+    `# ${card.id} ${esc.inline(card.title)}`,
     '',
-    quoted(card.summary),
+    esc.block(card.summary),
     '',
-    `Type: ${card.type} | Area: ${inlineText(card.area)} | Confidence: ${card.confidence}`,
+    `Type: ${card.type} | Area: ${esc.inline(card.area)} | Confidence: ${card.confidence}`,
     '',
-    ...questionBody(card),
+    ...questionBody(card, esc),
     '## Claims',
     '',
-    ...card.claims.flatMap((claim) => claimBody(claim, source)),
+    ...card.claims.flatMap((claim) => claimBody(claim, source, esc)),
   ].join('\n');
 }
 
@@ -99,6 +103,6 @@ function bodyOf(card: Card, source: PermalinkSource): string {
  */
 export function renderCardFile(card: Card, source: PermalinkSource, masker: TextMasker): string {
   const header = renderYamlHeader(maskDeep(headerOf(card), masker));
-  const text = `---\n${header}\n---\n\n${bodyOf(card, source)}`;
+  const text = `---\n${header}\n---\n\n${bodyOf(card, source, markdownEscaper(masker))}`;
   return `${masker.mask(text).text.trimEnd()}\n`;
 }

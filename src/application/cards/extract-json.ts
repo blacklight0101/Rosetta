@@ -42,27 +42,73 @@ function balancedEnd(text: string, start: number): number {
   return -1;
 }
 
-function* scanTexts(text: string): Generator<string> {
-  yield text.trim();
-  for (const block of text.matchAll(fence)) yield (block[1] ?? '').trim();
+interface Candidates {
+  readonly texts: string[];
+  /** More candidates existed than `maxJsonCandidates`; the rest were not looked at. */
+  capped: boolean;
+  /** A `{` or `[` was never closed, or a candidate that starts like JSON is not valid JSON. */
+  truncated: boolean;
+}
+
+function addFences(text: string, found: Candidates): void {
+  // The last block is the most likely final answer, so blocks are taken from the end.
+  const blocks = [...text.matchAll(fence)].reverse();
+  for (const block of blocks) {
+    if (found.texts.length >= cardLimits.maxJsonCandidates) {
+      found.capped = true;
+      return;
+    }
+    found.texts.push((block[1] ?? '').trim());
+  }
+}
+
+function addBraceGroups(text: string, found: Candidates): void {
   const opening = /[{[]/g;
-  for (let tries = 0; tries < cardLimits.maxJsonCandidates; tries += 1) {
-    const found = opening.exec(text);
-    if (found === null) return;
-    const end = balancedEnd(text, found.index);
-    if (end < 0) continue;
-    yield text.slice(found.index, end + 1);
+  for (let tries = 0; ; tries += 1) {
+    const start = opening.exec(text);
+    if (start === null) return;
+    if (
+      tries >= cardLimits.maxJsonCandidates ||
+      found.texts.length >= cardLimits.maxJsonCandidates
+    ) {
+      found.capped = true;
+      return;
+    }
+    const end = balancedEnd(text, start.index);
+    if (end < 0) {
+      found.truncated = true;
+      continue;
+    }
+    found.texts.push(text.slice(start.index, end + 1));
     opening.lastIndex = end + 1; // top-level values only, never the parts inside one
   }
 }
 
-/** Every JSON value found in the answer, at most `maxJsonCandidates` parse attempts. */
-export function* jsonCandidates(text: string): Generator {
-  let attempts = 0;
-  for (const candidate of scanTexts(text)) {
-    if (attempts >= cardLimits.maxJsonCandidates) return;
-    attempts += 1;
+/** What the answer holds that may be JSON, and whether the search was cut short. */
+export interface JsonSearch {
+  readonly values: readonly unknown[];
+  readonly capped: boolean;
+  /** Some JSON was started but is cut off or not valid. */
+  readonly truncated: boolean;
+  /** The answer has a bracket or brace at all, so it was probably meant as JSON. */
+  readonly looksLikeJson: boolean;
+}
+
+/** Every JSON value found in the answer, from at most `maxJsonCandidates` candidate texts. */
+export function searchJson(text: string): JsonSearch {
+  const found: Candidates = { texts: [text.trim()], capped: false, truncated: false };
+  addFences(text, found);
+  if (!found.capped) addBraceGroups(text, found);
+  const values: unknown[] = [];
+  for (const candidate of found.texts) {
     const parsed = safeParse(candidate);
-    if (parsed !== undefined) yield parsed.value;
+    if (parsed !== undefined) values.push(parsed.value);
+    else if (/^[{[]/.test(candidate)) found.truncated = true;
   }
+  return {
+    values,
+    capped: found.capped,
+    truncated: found.truncated,
+    looksLikeJson: /[{[]/.test(text),
+  };
 }

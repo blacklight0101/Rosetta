@@ -49,8 +49,11 @@ describe('writeCardOutputs masks secrets', () => {
   it('RF-141 secrets in model text are masked in every file', async () => {
     const { writer } = await writeCards(cardsOf(tasks));
 
-    for (const text of writer.files.values()) expect(text).not.toContain(fakeOpenAiKey);
-    expect(fileOf(writer, 'cards/FEAT/FEAT-001.md')).toContain('[MASKED:api-key]');
+    for (const text of writer.files.values()) {
+      expect(text).not.toContain(fakeOpenAiKey);
+      expect(text).not.toContain('FAKE0FAKE0');
+    }
+    expect(fileOf(writer, 'cards/FEAT/FEAT-001.md')).toContain('MASKED:api-key');
   });
 
   it('RF-141 a masker that fails writes nothing', async () => {
@@ -82,12 +85,17 @@ describe('writeCardOutputs treats model text as text', () => {
 
   it('RF-204 a YAML-looking claim text stays one quoted value', async () => {
     const claims = [
-      { text: 'a: b\n- c\n&anchor *ref', citations: [{ path: 'a.cs', startLine: 1, endLine: 1 }] },
+      {
+        text: 'a: b\n- c\n&anchor *ref',
+        citations: [{ path: 'a.cs', startLine: 1, endLine: 1 }],
+      },
     ];
     const tasks = [{ agentTaskId: 't', area: 'x', drafts: [draftOf({ claims })] }];
 
     const { writer } = await writeCards(cardsOf(tasks));
 
-    expect(fileOf(writer, 'cards/FEAT/FEAT-001.md')).toContain('text: "a: b\\n- c\\n&anchor *ref"');
+    expect(fileOf(writer, 'cards/FEAT/FEAT-001.md')).toContain(
+      'text: "a: b\\n- c\\n\\u0026anchor *ref"',
+    );
   });
 });
