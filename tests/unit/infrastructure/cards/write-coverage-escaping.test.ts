@@ -63,7 +63,9 @@ describe('coverage.md with hostile paths and area names', () => {
     expect(markdown).toContain('## Area: &lt;img src\\=x onerror\\=1&gt; \\# H');
     expect(markdown).toContain('| &lt;img src\\=x onerror\\=1&gt; \\# H | 1 of 3 | 50.0% |');
   });
+});
 
+describe('coverage.md structure with hostile paths and area names', () => {
   it('RF-230 RF-507 never lets a name start a heading of its own or break a table row', async () => {
     const { markdown } = await render();
 
