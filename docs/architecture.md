@@ -103,7 +103,7 @@ src/
     code-map/           CodeMap, FileEntry, Area, Artefact, MapLevel; area grouping (folder buckets, linked sets); the code-unit comparator every sorted list uses
     cards/              Card, CardType, Claim, Citation, ClaimStatus, Verdict, card ids, the claim transitions (`createCard`, `transitionClaim`, `assignCardIds`)
     budget/             Money, TokenUsage, Price, PriceTable, Budget, Cap
-    runs/               Run (start and end transitions), RunManifest, RunEndState, RunQueueState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`); AgentTaskState joins with the agent cards
+    runs/               Run (start and end transitions), RunManifest (with `recordPromptVersions`, RNF-004), RunEndState, RunQueueState, AgentTaskState, RunEvent types, the queue rules (`runsToStart`, `queuePositions`)
     sources/            GitHubRepoRef, CommitSha, Permalink
     planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018)
     egress/             the labelled data block of repository content (`renderDataBlock`, `scanDataBlocks`, RF-145)
@@ -114,7 +114,11 @@ src/
     support/            helpers the use cases share (KeyedQueue: sign-in attempts per user name one at a time)
     runs/               the run queue (`RunQueue`), the run lifecycle (manifest start and end, `run.started`, `run.ended`), the event publisher, the accepted manifest, the event and manifest schemas, the manifest security recorder (mask counts and blocked calls)
     providers/          provider rules the use cases share: which kinds need cloud consent (`needsCloudConsent`, RF-143)
-    agent/              agent loop, tool definitions, orchestrator, card parsing and repair
+    agent/              the agent loop (`runAgentTask`, its end states and reasons), the read-only tools
+                        (`ReadOnlyTools`: definitions, zod-checked arguments, code-map lookup by exact
+                        case, result limits), the reader prompt set (`ReaderPrompts`, `promptVersionsOf`);
+                        the orchestrator joins here (P1-33)
+    cards/              the card schema, parsing with one repair attempt, the repair request (RF-202)
     verifier/           citation check, judgement step
     estimate/           cost estimator
     contracts/          event and API contract types shared with the front end in web/
@@ -145,6 +149,7 @@ src/
     cards/              the card writers: `cards/<TYPE>/<ID>.md` (YAML header, generated body), `cards/index.json`, `spec.md`, the raw output of an `InvalidOutput` task; every citation a GitHub permalink, everything masked
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
+    prompts/            prompt files read with their version and SHA-256 (`loadReaderPrompts`, RNF-004)
     system/             clock, id generator, logger
   presentation/
     web/                Fastify server, plugins, auth hooks, API routes, server-sent events, error-to-status mapping
@@ -171,7 +176,7 @@ tests/
                         support/ holds the test server, the network guard, the axe and sign-in helpers
   contracts/            contract suites per port
   recordings/           recorded provider responses (ADR-008)
-  fixtures/             small legacy samples per stack
+  fixtures/             small legacy samples per stack, and `repos/injection/` (planted instructions, RF-145)
   support/              test helpers: database, fixed clock, sequence ids, servers
 eval/                   golden set and the evaluation runner (RNF-006); results go to the git-ignored eval-out/
 site/                   published sample report (RF-800)
@@ -331,7 +336,32 @@ sequenceDiagram
 ```
 
 - **Tools** (RF-201): `list_area_files`, `read_file(path, startLine, endLine)`, `grep(pattern, pathGlob)`,
-  `codemap_query(symbol | path)`. Arguments are validated; invalid calls return an error result the model can correct.
+  `codemap_query(symbol | path)` (`src/application/agent/read-only-tools.ts`). Arguments are model output and are
+  checked with zod first (a line number sent as a numeric string counts as a number; a read range at most
+  `scan.excerptMaxLines` lines; a pattern, glob or symbol at most 200 characters; a path at most 512); an invalid call,
+  an unknown tool (the error names the valid ones), a path the code map does not list and a file the scan skipped
+  each return an error result (`RST-1301`, `RST-1302`, `RST-1104`, `RST-1306`) that the model can correct, and every
+  error is logged. The tools read only files the code map lists, through the `RepositoryReader`; a path the model
+  writes in another letter case resolves to the code map's spelling, so the egress guard sees one spelling per file;
+  a path that is not plain and relative (`..`, absolute, backslashes) is refused before any read and logged as a
+  security event (`RST-1100`, `RST-1101`). Results are bounded (`ToolLimits`): lines longer than 2 000 characters
+  are cut, a result holds at most 40 000 characters (a read stops at the last whole line that fits and cites only
+  the lines it returns), grep at most 100 matches and listings at most 200 entries, each with a notice.
+- **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v1.md` with the area's file list as a
+  data block; after each tool turn a user message from `prompts/reader/turns-left.v1.md` gives the turns left. The
+  task ends `Done` (final answer parsed with one repair, RF-202), `InvalidOutput`, `TurnLimitReached` (the
+  configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
+  model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again) or
+  names unknown tools three times (`RST-1302`), a stop through the shared signal (checked before every turn and
+  every tool call, `RST-1501`), or a provider or guard failure with its code. It never throws for a model's
+  behaviour; the end, its reason and the turns are logged and returned with the cards, usage, model version and
+  conversation. `StoppedByCap` arrives with the budget guard's refusal codes (P1-27).
+- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v1.md` followed by
+  `prompts/cards/card-format.v1.md`; `loadReaderPrompts` reads the five files it uses (the two above, the task, the
+  turns-left notice and `prompts/cards/repair.v1.md`), refuses a template without its one placeholder or a file
+  that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
+  them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
+  text inside data blocks is data, never instructions (unit test over `prompts/<role>/`).
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,
@@ -353,6 +383,7 @@ sequenceDiagram
   (paths with their markers defanged, every `<` and `>` of the JSON written as `\u003c`/`\u003e`, a line break in a
   path escaped by JSON, so no header text can read as a frame), the content with every marker look-alike defanged (`<<<` becomes `<<-<`, lines kept), and the footer
   `<<<END ROSETTA-DATA>>>`; the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
+  An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`.
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.
 
