@@ -25,7 +25,7 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
 import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './compose-accounts.js';
 import type { Auth } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
-import { composeRuns, type RunComposition } from './compose-runs.js';
+import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
 import { closePool } from './bounded-close.js';
 import { startUp } from './start-up.js';
 import { TestDoubles } from './test-doubles.js';
@@ -280,7 +280,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         reEncryptKeys: () => reEncryptProviderKeys({ pool, logger, secretBox }),
         bootstrapAdmin: () =>
           bootstrapAdministrator({ environment, pool, logger, clock, masker, hasher }),
-        recoverRuns: () => runs.recover(),
+        ...runStartUpSteps(runs),
         listen: async () => {
           address = await server.listen(options.listen);
         },

@@ -7,7 +7,13 @@ import { startUp } from '../../../src/presentation/start-up.js';
 // process end as interrupted before the server listens. RF-1104, DEC-112: provider keys sealed
 // under ROSETTA_SECRET_KEY_PREVIOUS are re-encrypted right after the migrations.
 
-type Step = 'migrate' | 'reEncryptKeys' | 'bootstrapAdmin' | 'recoverRuns' | 'listen';
+type Step =
+  | 'migrate'
+  | 'reEncryptKeys'
+  | 'bootstrapAdmin'
+  | 'discardPartialSnapshots'
+  | 'recoverRuns'
+  | 'listen';
 
 function recordingSteps(failAt?: Step): {
   readonly calls: string[];
@@ -24,6 +30,7 @@ function recordingSteps(failAt?: Step): {
       migrate: step('migrate'),
       reEncryptKeys: step('reEncryptKeys'),
       bootstrapAdmin: step('bootstrapAdmin'),
+      discardPartialSnapshots: step('discardPartialSnapshots'),
       recoverRuns: step('recoverRuns'),
       listen: step('listen'),
       startScheduler: () => {
@@ -34,7 +41,7 @@ function recordingSteps(failAt?: Step): {
 }
 
 describe('start-up', () => {
-  it('RF-1302 RF-1104 RF-1102 RF-1108 migrates, re-encrypts keys, creates the bootstrap admin, recovers runs, listens, then starts the scheduler', async () => {
+  it('RF-1302 RF-1104 RF-1102 RF-1108 migrates, re-encrypts keys, creates the bootstrap admin, discards partial snapshots, recovers runs, listens, then starts the scheduler', async () => {
     const { calls, steps } = recordingSteps();
 
     await startUp(steps);
@@ -43,6 +50,7 @@ describe('start-up', () => {
       'migrate',
       'reEncryptKeys',
       'bootstrapAdmin',
+      'discardPartialSnapshots',
       'recoverRuns',
       'listen',
       'startScheduler',
@@ -80,7 +88,14 @@ describe('start-up failures', () => {
 
     await expect(startUp(steps)).rejects.toThrow('listen failed');
 
-    expect(calls).toEqual(['migrate', 'reEncryptKeys', 'bootstrapAdmin', 'recoverRuns', 'listen']);
+    expect(calls).toEqual([
+      'migrate',
+      'reEncryptKeys',
+      'bootstrapAdmin',
+      'discardPartialSnapshots',
+      'recoverRuns',
+      'listen',
+    ]);
   });
 
   it('RNF-002 a failing run recovery stops the start-up before the server listens', async () => {
@@ -88,6 +103,12 @@ describe('start-up failures', () => {
 
     await expect(startUp(steps)).rejects.toThrow('recoverRuns failed');
 
-    expect(calls).toEqual(['migrate', 'reEncryptKeys', 'bootstrapAdmin', 'recoverRuns']);
+    expect(calls).toEqual([
+      'migrate',
+      'reEncryptKeys',
+      'bootstrapAdmin',
+      'discardPartialSnapshots',
+      'recoverRuns',
+    ]);
   });
 });

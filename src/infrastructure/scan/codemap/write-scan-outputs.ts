@@ -18,6 +18,8 @@ export interface ScanOutputTarget {
 export interface ScanOutputInput {
   readonly codeMap: CodeMap;
   readonly durationMs: number;
+  /** Files past the scan-wide parse budget, for the summary (P1-75). */
+  readonly overParseBudget?: number;
   /** The summary is masked once more as a last guard (RF-141). */
   readonly masker: TextMasker;
 }
@@ -37,7 +39,11 @@ export async function writeScanOutputs(
   // leaves no file behind (RF-141).
   const codeMapText = serialiseCodeMap(input.codeMap);
   const summary = input.masker.mask(
-    renderScanSummary({ codeMap: input.codeMap, durationMs: input.durationMs }),
+    renderScanSummary({
+      codeMap: input.codeMap,
+      durationMs: input.durationMs,
+      ...(input.overParseBudget === undefined ? {} : { overParseBudget: input.overParseBudget }),
+    }),
   ).text;
   const codeMap = await writer.writeText(
     { userId: target.userId, path: `${target.folder}/codemap.json` },
