@@ -14,7 +14,8 @@ import { runView } from './run-view.js';
 // RF-1006, RF-1108, RF-1105: the run routes.
 // - POST /api/projects/:id/runs starts a run of one stage of the user's project: 202 with the run
 //   and its queue position (null when it started); a stage that cannot be started yet answers 409
-//   (RST-2305), another user's project 404.
+//   (RST-2305), another user's project 404. An understand run takes `areas` and `cloudConsent`;
+//   one whose roles need the consent and lack it answers 400 (RST-1515, RF-143).
 // - GET /api/runs/:runId/events streams the run's events as server-sent events: the stored events
 //   after `Last-Event-ID` (or `?after=`), then the live ones, closing after `run.ended`. Another
 //   user's run id answers 404 like an unknown one.
@@ -35,7 +36,15 @@ const START_BODY_LIMIT_BYTES = 1024;
 const KEEP_ALIVE_MS = 15_000;
 const SEQ = /^\d{1,15}$/;
 
-const startBody = z.strictObject({ stage: z.enum(RUN_STAGES) });
+const MAX_AREAS = 200;
+const MAX_AREA_NAME = 1024;
+
+/** RF-200, RF-143: the stage, and for understand the areas to read and the cloud consent. */
+const startBody = z.strictObject({
+  stage: z.enum(RUN_STAGES),
+  areas: z.array(z.string().min(1).max(MAX_AREA_NAME)).max(MAX_AREAS).optional(),
+  cloudConsent: z.boolean().optional(),
+});
 
 interface EventsRequest {
   readonly Params: { readonly runId: string };
@@ -136,10 +145,13 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
     async (request, reply) => {
       const body = startBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
+      const { stage, areas, cloudConsent } = body.data;
       const outcome = await services.startRun.execute({
         actor: signedInOf(request).actor,
         projectId: request.params.id,
-        stage: body.data.stage,
+        stage,
+        ...(areas === undefined ? {} : { areas }),
+        ...(cloudConsent === undefined ? {} : { cloudConsent }),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       const { run, position } = outcome.value;

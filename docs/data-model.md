@@ -257,7 +257,7 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | `resumedFrom` | string | the earlier `runId` when resumed (RF-006) |
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
-| `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121) |
+| `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request named some (none means every area), `cloudConsent` always (P1-33, RF-143) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
 | `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v1.md`), its version (`v1`) and the SHA-256 of its bytes, names in code-unit order |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
@@ -265,7 +265,7 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | `caps` | object | run and role caps in force |
 | `masking` | object | count per secret kind (RF-141): `api-key`, `bearer-token`, `connection-string`, `password`, `private-key` (the kinds of `SecretMasker`, `src/infrastructure/guards/secret-masker.ts`), kinds in name order; the egress guard adds the secrets of content an agent task sends for the first time, so a message repeated by later calls counts once. The counts are numbers and are stored unmasked |
 | `totals` | object | `{ inputTokens, outputTokens, cachedInputTokens, costMicros, calls }` |
-| `agentTasks[]` | list | `{ agentTaskId, area, role, state (AgentTaskState), turns, cards }` |
+| `agentTasks[]` | list | `{ agentTaskId, area, role, state (AgentTaskState), turns, cards }`; every planned task is listed `Planned` before the first starts and updated in place, so the list keeps the area order; a task the run never started stays `Planned`. The agent tasks, the budget guard's totals and the egress guard's counts update the file through one queue per run, so none overwrites another (P1-33) |
 
 A field that is not known yet is `null` (or `{}` / `[]` for objects and lists), never absent, so the file always has the
 same fields; `source.commitSha` and `source.snapshotHash` are `null` until the source is resolved, and `roles[].modelVersion`
@@ -303,7 +303,12 @@ Header fields:
 A rejected or invalid claim is never removed; only its status and verdict change (RF-302). The card files, the index
 and `spec.md` are written together: each file's previous content is read first, and when a write is refused or fails
 part-way every file already written gets its previous content back and a file that did not exist is removed
-(RNF-002); a file that cannot be put back is logged and the original refusal is returned.
+(RNF-002); a file that cannot be put back is logged and the original refusal is returned. An understand run rewrites
+the whole set after each task ends (the cards of every ended task, ids given in area order), one write at a time per
+run folder, so a run that stops keeps the cards of the tasks that ended (P1-33). Every claim passes the citation check
+(verifier step 1) before it is written: a citation of a path that is not a file of the code map, or a range that ends
+after the file's last line, makes the claim `CitationInvalid` with the reason in its verdict
+(`{ step: citation, model: citation-check }`); a claim that passes stays `Proposed` until the judgement step (DEC-103).
 
 In the header a citation is the string `path:startLine-endLine`; absent optional fields are left out. Every string is a
 double-quoted scalar, so model text cannot add a key. `cards/index.json` has `schemaVersion` and `cards`, and its
@@ -318,7 +323,8 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
 
 - `spec.md`: the cards per area as one readable specification with links to the card files and, for every citation, to the
   cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
-  is listed with its status, rejected ones included.
+  is listed with its status, rejected ones included. A last section, `## Areas without cards`, names every area whose
+  reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
 - `coverage.json`: per area `{ area, files: [{ path, read: [{ startLine, endLine }] }], readTokenShare }`; feeds the
   web UI coverage map (RF-1005) and the report. `coverage.md` is its readable form (RF-230).
 
@@ -498,7 +504,10 @@ Generated skeleton, then edited by the user on the answers page (RF-240, RF-1007
 ```
 
 The heading carries the card id and the run, so a later run matches answers by card id and question text; an
-existing answer is never overwritten.
+existing answer is never overwritten. `RunUnderstand` adds the `OQ` cards of the run when it ends (stopped runs
+included): a question whose heading text is already in the file is skipped, new sections are appended after the
+existing ones, the question and context are one line each and masked, and the context is the card's first citation
+followed by its first claim (P1-33, DEC-98).
 
 ### 3.17 Report and hand-off folders
 

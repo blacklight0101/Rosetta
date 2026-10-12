@@ -23,11 +23,12 @@ import { SystemClock } from '../infrastructure/system/system-clock.js';
 import { AesGcmSecretBox } from '../infrastructure/security/aes-gcm-secret-box.js';
 import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password-hasher.js';
 import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './compose-accounts.js';
+import type { Auth } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
 import { composeRuns, type RunComposition } from './compose-runs.js';
 import { startUp } from './start-up.js';
 import { TestDoubles } from './test-doubles.js';
-import { buildServer, type AuthServices } from './web/server.js';
+import { buildServer } from './web/server.js';
 
 // Architecture section 2: the only place that creates adapters and wires them together. This file
 // is at the same depth in `src/` and in the built `dist/`, so `../../` is the repository root (the
@@ -166,7 +167,7 @@ interface ServerParts {
   readonly environment: Environment;
   readonly logger: Logger;
   readonly pool: DatabasePool;
-  readonly auth: AuthServices;
+  readonly auth: Auth;
   readonly clock: Clock;
   readonly masker: TextMasker;
   readonly doubles: TestDoubles | undefined;
@@ -180,16 +181,16 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
   const runs = composeRuns({
     ...{ pool, logger, clock, masker, version },
     dataDir: environment.dataDir,
-    githubToken: environment.githubToken,
+    ...{ githubToken: environment.githubToken, ollamaUrl: environment.ollamaUrl },
     ...(doubles?.fetch === undefined ? {} : { fetch: doubles.fetch }),
-    ...(doubles?.provider === undefined ? {} : { provider: doubles.provider }),
+    providers: auth.providers,
     packs: await composeLanguagePacks(),
   });
   const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });
   const server = buildServer({
     logger,
     databaseHealth: new PgDatabaseHealth(pool),
-    auth,
+    auth: auth.services,
     projects,
     runs: runs.services,
     version,
@@ -268,7 +269,7 @@ export function composeApplication(options: ApplicationOptions): Application {
       const auth = await composeAuth(options, { pool, logger, clock, masker, hasher, secretBox });
       const { server, runs } = await createServer({
         ...{ environment, logger, pool, clock, masker, doubles },
-        auth: auth.services,
+        auth,
       });
       close = closer({ server, runs });
       const tasks = scheduledTasks({ file, auth, pool, clock, runs: runs.queue });

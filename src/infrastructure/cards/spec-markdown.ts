@@ -30,10 +30,24 @@ function areasInOrder(cards: readonly Card[]): Map<string, Card[]> {
   return areas;
 }
 
+/** RF-202, P1-33: areas whose task answered no card are named, so an empty answer is seen. */
+function withoutCards(areas: readonly string[], esc: MarkdownEscaper): string[] {
+  if (areas.length === 0) return [];
+  return [
+    '## Areas without cards',
+    '',
+    'The reader of each of these areas finished without a card; check its transcript.',
+    '',
+    ...areas.map((area) => `- ${esc.inline(area)}`),
+    '',
+  ];
+}
+
 export function renderSpec(
   cards: readonly Card[],
   source: PermalinkSource,
   masker: TextMasker,
+  areasWithoutCards: readonly string[] = [],
 ): string {
   const esc = markdownEscaper(masker);
   const lines = ['# Specification', ''];
@@ -41,5 +55,6 @@ export function renderSpec(
     lines.push(`## Area: ${esc.inline(area)}`, '');
     lines.push(...inArea.flatMap((card) => cardSection(card, source, esc)));
   }
+  lines.push(...withoutCards(areasWithoutCards, esc));
   return `${masker.mask(lines.join('\n')).text.trimEnd()}\n`;
 }

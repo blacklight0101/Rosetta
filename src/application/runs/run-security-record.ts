@@ -7,6 +7,7 @@ import {
 } from '../../domain/runs/run-manifest.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { RunScope } from '../ports/run-events.js';
+import type { KeyedQueue } from '../support/keyed-queue.js';
 
 // RF-141, RF-009, data-model.md section 3.6: what the egress guard adds to a run's manifest: the
 // secrets masked per kind and the calls a guard blocked. One recorder serves every provider of a
@@ -24,6 +25,8 @@ export interface RunSecurityRecorder {
 export interface ManifestSecurityRecorderOptions {
   readonly manifests: RunManifestStore;
   readonly scope: RunScope;
+  /** The queue every writer of the run's manifest shares (see ManifestCostRecorderOptions). */
+  readonly queue?: KeyedQueue;
 }
 
 type ManifestChange = (manifest: RunManifest) => Result<RunManifest, ManifestProblem>;
@@ -47,13 +50,15 @@ export class ManifestSecurityRecorder implements RunSecurityRecorder {
   }
 
   private update(change: ManifestChange): Promise<void> {
-    const result = this.tail.then(async () => {
-      const { manifests, scope } = this.options;
+    const { manifests, scope, queue } = this.options;
+    const update = async (): Promise<void> => {
       const stored = await manifests.read(scope);
       if (stored === undefined) return;
       const changed = change(stored);
       if (changed.ok) await manifests.write(scope, changed.value);
-    });
+    };
+    if (queue !== undefined) return queue.run(scope.id, update);
+    const result = this.tail.then(update);
     this.tail = result.catch(() => undefined);
     return result;
   }

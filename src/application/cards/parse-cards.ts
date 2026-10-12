@@ -43,8 +43,16 @@ function bounded(problems: readonly OutputProblem[]): readonly OutputProblem[] {
   }));
 }
 
+/**
+ * A bare list counts as the card list only when it holds something: a stray `[]` in prose would
+ * otherwise read as "no cards", so an empty answer needs the explicit `{"cards": []}` (P1-33).
+ */
+function asCardList(value: unknown): unknown {
+  return Array.isArray(value) && value.length > 0 ? { cards: value } : value;
+}
+
 function validate(value: unknown): Result<readonly CardDraft[], readonly OutputProblem[]> {
-  const parsed = agentCardsSchema.safeParse(Array.isArray(value) ? { cards: value } : value);
+  const parsed = agentCardsSchema.safeParse(asCardList(value));
   if (parsed.success) return ok(parsed.data.cards);
   return err(
     bounded(

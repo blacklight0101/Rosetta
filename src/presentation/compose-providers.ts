@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { SecretBox } from '../application/ports/secret-box.js';
+import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { TestProviders } from '../application/use-cases/test-providers.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { loadPriceTable } from '../infrastructure/budget/price-file.js';
@@ -57,8 +58,15 @@ async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
   });
 }
 
+export interface ComposedProviders {
+  /** The use case behind the Test button (RF-407). */
+  readonly testProviders: TestProviders;
+  /** The only way a run gets a provider (ADR-003); the understand run uses it (P1-33). */
+  readonly factory: ProviderSetFactory;
+}
+
 // RF-407
-export async function composeProviders(parts: ProviderParts): Promise<TestProviders> {
+export async function composeProviders(parts: ProviderParts): Promise<ComposedProviders> {
   const { environment, pool, logger, clock, masker, secretBox } = parts;
   const ids = new TimestampIdGenerator(clock);
   const serverSettings = new PgServerSettings(pool);
@@ -74,7 +82,7 @@ export async function composeProviders(parts: ProviderParts): Promise<TestProvid
     adapters: await adaptersFor(parts),
     ...{ clock, ids, logger },
   });
-  return new TestProviders({
+  const testProviders = new TestProviders({
     users: new PgUserRepository(pool),
     serverSettings,
     template: await loadProjectTemplate(templatesFolder),
@@ -83,4 +91,5 @@ export async function composeProviders(parts: ProviderParts): Promise<TestProvid
     unrecorded: unrecordedSinks(),
     signals: new SystemTimeoutSignals(),
   });
+  return { testProviders, factory };
 }

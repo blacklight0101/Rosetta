@@ -113,6 +113,10 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message: 'The scan could not build a valid code map from the repository.',
     nextStep: 'Run the scan again; if it fails again, report the repository and the run id.',
   },
+  'RST-1203': {
+    message: 'The project has no completed scan, so there is no code map to understand.',
+    nextStep: 'Run a scan of the project first, then start understand again.',
+  },
   'RST-1300': {
     message:
       'The agent did not return cards in the required format, even after one repair attempt.',
@@ -149,6 +153,11 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
   'RST-1306': {
     message: 'The file was skipped by the scan (binary or too large), so the agent cannot read it.',
     nextStep: 'No action needed; raise scan.maxFileBytes and scan again if the file must be read.',
+  },
+  'RST-1307': {
+    message: 'An area named in the request is not in the code map of the latest scan.',
+    nextStep:
+      'Choose areas from the list the run log names, or start the run without areas to read every area.',
   },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',

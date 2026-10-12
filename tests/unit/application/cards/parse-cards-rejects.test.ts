@@ -61,4 +61,9 @@ describe('parseCardOutput rejects answers that are not cards', () => {
   it('RF-202 an empty card list inside a wrong object is not taken for an answer', () => {
     expect(problemsOf('{"findings": [], "notes": {"cards": 3}}').length).toBeGreaterThan(0);
   });
+
+  it('RF-202 a stray [] in prose is not read as zero cards: an empty answer needs the cards key', () => {
+    expect(problemsOf('Nothing to report here [] for this area.').length).toBeGreaterThan(0);
+    expect(problemsOf('```json\n[]\n```').length).toBeGreaterThan(0);
+  });
 });
