@@ -5,7 +5,7 @@ import type { Run } from './run.js';
 // user's second run waits without holding up the next user's first run.
 
 /** Queue order: the time the run was queued, then its id so that two runs never tie. */
-function inQueueOrder(left: Run, right: Run): number {
+export function inQueueOrder(left: Run, right: Run): number {
   if (left.queuedAt !== right.queuedAt) return left.queuedAt - right.queuedAt;
   if (left.id === right.id) return 0;
   return left.id < right.id ? -1 : 1;
