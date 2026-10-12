@@ -89,8 +89,7 @@ describe('POST /api/runs/:runId/report', () => {
 describe('POST /api/runs/:runId/report and the coverage report', () => {
   it('RF-504 links coverage.md when the run wrote one, and the link resolves to that file', async () => {
     const { amy, run } = await setup();
-    await writeFile(join(runFolderOf(data.path, scopeOf(run)), 'coverage.md'), '# Coverage
-');
+    await writeFile(join(runFolderOf(data.path, scopeOf(run)), 'coverage.md'), '# Coverage');
     await amy.request({ method: 'POST', url: reportUrl(run) });
 
     const report = await amy.request({ method: 'GET', url: fileUrl(run, 'report.md') });
@@ -99,8 +98,7 @@ describe('POST /api/runs/:runId/report and the coverage report', () => {
     expect(report.body).toContain('(../coverage.md)');
     expect(report.body).not.toContain('Coverage: not available');
     expect(linked.statusCode).toBe(200);
-    expect(linked.body).toBe('# Coverage
-');
+    expect(linked.body).toBe('# Coverage');
   });
 });
 
