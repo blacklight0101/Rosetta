@@ -4,6 +4,7 @@ import type { InjectOptions } from 'fastify';
 import { actorOf } from '../../src/domain/accounts/actor.js';
 import { fixturePassword } from '../support/account-fixtures.js';
 import { sampleProject, settingsWith } from '../support/project-fixtures.js';
+import { fixtureKey, sampleKeyRecord } from '../support/provider-key-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser, type TestUser } from '../support/test-browser.js';
 import {
   active,
@@ -62,6 +63,7 @@ const runUrl = (suffix: string, pick: (context: Context) => string) => (context:
 const adminUserUrl = (suffix: string, userId: (context: Context) => string) => (context: Context) =>
   `/api/admin/users/${userId(context)}${suffix}`;
 const newPassword = fixturePassword('Renewed');
+const keysUrl = '/api/account/keys';
 
 /** One row per route (method and path as Fastify prints them), with one or more probes. */
 const matrix: Readonly<Record<string, readonly Probe[]>> = {
@@ -139,6 +141,25 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
       payload: (user) => ({ currentPassword: user?.password ?? newPassword, newPassword }),
       expected: signedIn(401, 200),
     },
+  ],
+  'GET /api/account/keys': [{ method: 'GET', url: keysUrl, expected: active(401, 200) }],
+  'HEAD /api/account/keys': [{ method: 'HEAD', url: keysUrl, expected: active(401, 200) }],
+  'PUT /api/account/keys/:provider': [
+    {
+      method: 'PUT',
+      url: `${keysUrl}/openai`,
+      payload: () => ({ key: fixtureKey('Matrix01') }),
+      expected: active(401, 200),
+    },
+    {
+      method: 'PUT',
+      url: `${keysUrl}/ollama`,
+      payload: () => ({ key: fixtureKey('Matrix02') }),
+      expected: active(401, 404),
+    },
+  ],
+  'DELETE /api/account/keys/:provider': [
+    { method: 'DELETE', url: '/api/account/keys/anthropic', expected: active(401, 204) },
   ],
   'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
   'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],
@@ -226,6 +247,8 @@ async function browserFor(
     mustChange: mia,
   };
   const user = users[column];
+  // RF-1104: each signed-in column has its own key to delete.
+  if (user !== undefined) await test.keys.upsert(sampleKeyRecord(user.account.id, 'anthropic'));
   const browser =
     user === undefined ? new TestBrowser(test.server) : await signedInBrowser(test.server, user);
   const project = sampleProject({ userId: amy.account.id });

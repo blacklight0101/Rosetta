@@ -1,9 +1,14 @@
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { PasswordHasher } from '../application/ports/password-hasher.js';
+import type { SecretBox } from '../application/ports/secret-box.js';
 import type { SessionStore } from '../application/ports/session-store.js';
 import { BootstrapAdmin } from '../application/use-cases/bootstrap-admin.js';
 import { ChangePassword } from '../application/use-cases/change-password.js';
+import { DeleteProviderKey } from '../application/use-cases/delete-provider-key.js';
+import { ListProviderKeys } from '../application/use-cases/list-provider-keys.js';
+import { ReEncryptProviderKeys } from '../application/use-cases/re-encrypt-provider-keys.js';
+import { SaveProviderKey } from '../application/use-cases/save-provider-key.js';
 import { CreateUser } from '../application/use-cases/create-user.js';
 import { ListAudit } from '../application/use-cases/list-audit.js';
 import { ListUsers } from '../application/use-cases/list-users.js';
@@ -19,6 +24,7 @@ import { RosettaError } from '../domain/errors/rosetta-error.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
 import { PgAuditLog } from '../infrastructure/db/pg-audit-log.js';
+import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import { PgSessionStore } from '../infrastructure/db/pg-session-store.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
@@ -28,7 +34,9 @@ import {
   loadCommonPasswords,
 } from '../infrastructure/security/common-passwords.js';
 import { createDummyHash } from '../infrastructure/security/dummy-password-hash.js';
+import { DnsPublicHostCheck } from '../infrastructure/security/public-host-check.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import type { KeyServices } from './web/key-routes.js';
 import type { AccountServices, AuthServices } from './web/server.js';
 
 // Architecture section 2 (composition root), RF-1102, RF-1100, RF-1101: the account adapters, the
@@ -82,6 +90,7 @@ export interface Auth {
 
 interface AccountAdapters {
   readonly pool: DatabasePool;
+  readonly secretBox: SecretBox;
   readonly users: PgUserRepository;
   readonly sessions: PgSessionStore;
   readonly auditLog: PgAuditLog;
@@ -90,7 +99,24 @@ interface AccountAdapters {
   readonly clock: Clock;
 }
 
-// RF-1102, RF-1103, RF-1109: the account and administration use cases. They share the one hasher.
+// RF-1104: the key use cases. Base URLs are checked through node:dns on save (DEC-112).
+function composeKeys(adapters: AccountAdapters): KeyServices {
+  const { pool, secretBox, auditLog, logger, clock } = adapters;
+  const keys = new PgProviderKeyRepository(pool);
+  const base = { keys, auditLog, logger, clock };
+  return {
+    listProviderKeys: new ListProviderKeys({ keys }),
+    saveProviderKey: new SaveProviderKey({
+      ...base,
+      box: secretBox,
+      hostCheck: new DnsPublicHostCheck(),
+    }),
+    deleteProviderKey: new DeleteProviderKey(base),
+  };
+}
+
+// RF-1102, RF-1103, RF-1104, RF-1109: the account and administration use cases. They share the one
+// hasher.
 async function composeAccounts(adapters: AccountAdapters): Promise<AccountServices> {
   const { pool, users, sessions, auditLog, hasher, logger, clock } = adapters;
   const commonPasswords = await loadCommonPasswords(commonPasswordsFile);
@@ -107,12 +133,18 @@ async function composeAccounts(adapters: AccountAdapters): Promise<AccountServic
     resetPassword: new ResetPassword({ ...base, hasher, sessions, commonPasswords }),
     listUsers: new ListUsers({ users, usage: new PgAccountUsage(pool), clock }),
     listAudit: new ListAudit({ auditLog, clock }),
+    ...composeKeys(adapters),
   };
 }
 
+export interface AuthParts extends Omit<AccountParts, 'environment'> {
+  /** RF-1104: seals the provider keys under ROSETTA_SECRET_KEY. */
+  readonly secretBox: SecretBox;
+}
+
 // RF-1009, RF-1100, RF-1101
-export async function composeAuth(parts: Omit<AccountParts, 'environment'>): Promise<Auth> {
-  const { pool, logger, clock, masker, hasher } = parts;
+export async function composeAuth(parts: AuthParts): Promise<Auth> {
+  const { pool, logger, clock, masker, hasher, secretBox } = parts;
   const users = new PgUserRepository(pool);
   const sessions = new PgSessionStore(pool);
   const auditLog = new PgAuditLog(pool, masker);
@@ -120,11 +152,23 @@ export async function composeAuth(parts: Omit<AccountParts, 'environment'>): Pro
   return {
     sessions,
     services: {
-      accounts: await composeAccounts({ pool, users, sessions, auditLog, hasher, logger, clock }),
+      accounts: await composeAccounts({
+        ...{ pool, secretBox, users, sessions, auditLog, hasher, logger, clock },
+      }),
       signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
       signOut: new SignOut({ sessions, auditLog, logger, clock }),
       resolveSession: new ResolveSession({ sessions, users, logger, clock }),
       refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
     },
   };
+}
+
+// RF-1104, DEC-112: the start-up step that re-encrypts the keys sealed under
+// ROSETTA_SECRET_KEY_PREVIOUS; rows it cannot read are kept and reported in the log.
+export async function reEncryptProviderKeys(
+  parts: Pick<AuthParts, 'pool' | 'logger' | 'secretBox'>,
+): Promise<void> {
+  const { pool, logger, secretBox } = parts;
+  const keys = new PgProviderKeyRepository(pool);
+  await new ReEncryptProviderKeys({ keys, box: secretBox, logger }).execute();
 }

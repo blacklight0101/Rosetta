@@ -22,6 +22,7 @@ import {
 import { recordCsrfRefusal, registerAccessHooks } from './access-hooks.js';
 import { registerAccountRoutes } from './account-routes.js';
 import { registerAdminRoutes, type AdminServices } from './admin-routes.js';
+import { registerKeyRoutes, type KeyServices } from './key-routes.js';
 import { toErrorReply } from './error-mapper.js';
 import { registerProjectRoutes, type ProjectServices } from './project-routes.js';
 import { registerRunRoutes, type RunServices } from './run-routes.js';
@@ -33,8 +34,8 @@ import { registerSessionRoutes } from './session-routes.js';
 
 // ADR-017: the Fastify server. Plugins and hooks are registered here; routes call use cases only.
 
-/** RF-1102, RF-1103, RF-1109: the use cases behind the account and administration routes. */
-export interface AccountServices extends AdminServices {
+/** RF-1102, RF-1103, RF-1104, RF-1109: the use cases behind the account and administration routes. */
+export interface AccountServices extends AdminServices, KeyServices {
   readonly changePassword: ChangePassword;
 }
 
@@ -205,6 +206,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   void server.register((instance, _options, done) => {
     registerSessionRoutes(instance, options.auth);
     registerAccountRoutes(instance, options.auth.accounts);
+    registerKeyRoutes(instance, options.auth.accounts);
     registerAdminRoutes(instance, options.auth.accounts);
     registerProjectRoutes(instance, options.projects);
     registerRunRoutes(instance, options.runs);

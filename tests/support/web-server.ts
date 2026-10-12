@@ -19,14 +19,22 @@ import { UpdateProjectSettings } from '../../src/application/use-cases/update-pr
 import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
+import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
+import { DnsPublicHostCheck } from '../../src/infrastructure/security/public-host-check.js';
+import { DeleteProviderKey } from '../../src/application/use-cases/delete-provider-key.js';
+import { ListProviderKeys } from '../../src/application/use-cases/list-provider-keys.js';
+import { SaveProviderKey } from '../../src/application/use-cases/save-provider-key.js';
 import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
+import { FakeHostResolver } from './fake-host-resolver.js';
+import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
@@ -59,6 +67,11 @@ export interface TestServer {
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
   readonly streams: StreamRegistry;
+  /** RF-1104: the stored provider keys, sealed by `secretBox`. */
+  readonly keys: MemoryProviderKeyRepository;
+  readonly secretBox: AesGcmSecretBox;
+  /** RF-1104: the DNS stand-in of the base-URL check; a test gives each host its addresses. */
+  readonly resolver: FakeHostResolver;
 }
 
 export interface TestServerOptions extends Partial<
@@ -96,6 +109,7 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
 }
 
 interface AuthParts {
+  readonly keys: KeyParts;
   readonly usage: MemoryAccountUsage;
   readonly users: MemoryUserRepository;
   readonly hasher: PasswordHasher;
@@ -106,7 +120,25 @@ interface AuthParts {
   readonly dummyHash: string;
 }
 
-/** RF-1102, RF-1103, RF-1109: the account use cases over memory adapters. */
+interface KeyParts {
+  readonly keys: MemoryProviderKeyRepository;
+  readonly secretBox: AesGcmSecretBox;
+  readonly resolver: FakeHostResolver;
+}
+
+/** RF-1104: the key use cases over memory adapters and the fake resolver. */
+function keyServices(parts: AuthParts) {
+  const { keys, secretBox, resolver } = parts.keys;
+  const base = { keys, auditLog: parts.auditLog, logger: parts.logger, clock: parts.clock };
+  const hostCheck = new DnsPublicHostCheck({ resolver: resolver.resolve });
+  return {
+    listProviderKeys: new ListProviderKeys({ keys }),
+    saveProviderKey: new SaveProviderKey({ ...base, box: secretBox, hostCheck }),
+    deleteProviderKey: new DeleteProviderKey(base),
+  };
+}
+
+/** RF-1102, RF-1103, RF-1104, RF-1109: the account use cases over memory adapters. */
 function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
   const { users, hasher, sessions, auditLog, logger, clock, usage } = parts;
   const base = { users, auditLog, logger, clock };
@@ -122,6 +154,7 @@ function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
     resetPassword: new ResetPassword({ ...base, hasher, sessions, commonPasswords }),
     listUsers: new ListUsers({ users, usage, clock }),
     listAudit: new ListAudit({ auditLog, clock }),
+    ...keyServices(parts),
   };
 }
 
@@ -180,19 +213,26 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
   });
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
+  const keys = {
+    keys: new MemoryProviderKeyRepository(),
+    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
+    resolver: new FakeHostResolver(),
+  };
   const server = buildServer({
     logger,
     databaseHealth: health,
     version: testVersion,
     publicUrl: testPublicUrl,
     trustProxy: 0,
-    auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage }),
+    auth: authServices({
+      ...{ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage, keys },
+    }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     runs: runServices(runs, projects, route),
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit, hasher, usage, projects },
-    ...{ serverSettings, runs, ...route },
+    ...{ serverSettings, runs, ...route, ...keys },
   };
 }

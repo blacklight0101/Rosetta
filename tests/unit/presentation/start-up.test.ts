@@ -4,9 +4,10 @@ import { startUp } from '../../../src/presentation/start-up.js';
 // RF-1302: migrations are applied before the server accepts requests; the scheduler starts after.
 // RF-1102: the bootstrap administrator is created after the migrations and before the server
 // listens (architecture section 4, main.ts). RF-1108, RNF-002: runs left running by the earlier
-// process end as interrupted before the server listens.
+// process end as interrupted before the server listens. RF-1104, DEC-112: provider keys sealed
+// under ROSETTA_SECRET_KEY_PREVIOUS are re-encrypted right after the migrations.
 
-type Step = 'migrate' | 'bootstrapAdmin' | 'recoverRuns' | 'listen';
+type Step = 'migrate' | 'reEncryptKeys' | 'bootstrapAdmin' | 'recoverRuns' | 'listen';
 
 function recordingSteps(failAt?: Step): {
   readonly calls: string[];
@@ -21,6 +22,7 @@ function recordingSteps(failAt?: Step): {
     calls,
     steps: {
       migrate: step('migrate'),
+      reEncryptKeys: step('reEncryptKeys'),
       bootstrapAdmin: step('bootstrapAdmin'),
       recoverRuns: step('recoverRuns'),
       listen: step('listen'),
@@ -32,20 +34,37 @@ function recordingSteps(failAt?: Step): {
 }
 
 describe('start-up', () => {
-  it('RF-1302 RF-1102 RF-1108 migrates, creates the bootstrap admin, recovers runs, listens, then starts the scheduler', async () => {
+  it('RF-1302 RF-1104 RF-1102 RF-1108 migrates, re-encrypts keys, creates the bootstrap admin, recovers runs, listens, then starts the scheduler', async () => {
     const { calls, steps } = recordingSteps();
 
     await startUp(steps);
 
-    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'recoverRuns', 'listen', 'startScheduler']);
+    expect(calls).toEqual([
+      'migrate',
+      'reEncryptKeys',
+      'bootstrapAdmin',
+      'recoverRuns',
+      'listen',
+      'startScheduler',
+    ]);
   });
 
+  it('RF-1104 a failing key re-encryption stops the start-up before the server listens', async () => {
+    const { calls, steps } = recordingSteps('reEncryptKeys');
+
+    await expect(startUp(steps)).rejects.toThrow('reEncryptKeys failed');
+
+    expect(calls).toEqual(['migrate', 'reEncryptKeys']);
+  });
+});
+
+describe('start-up failures', () => {
   it('RF-1102 a refused bootstrap administrator stops the start-up before the server listens', async () => {
     const { calls, steps } = recordingSteps('bootstrapAdmin');
 
     await expect(startUp(steps)).rejects.toThrow('bootstrapAdmin failed');
 
-    expect(calls).toEqual(['migrate', 'bootstrapAdmin']);
+    expect(calls).toEqual(['migrate', 'reEncryptKeys', 'bootstrapAdmin']);
   });
 
   it('RF-1302 a failing migration stops the start-up before the server listens', async () => {
@@ -61,7 +80,7 @@ describe('start-up', () => {
 
     await expect(startUp(steps)).rejects.toThrow('listen failed');
 
-    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'recoverRuns', 'listen']);
+    expect(calls).toEqual(['migrate', 'reEncryptKeys', 'bootstrapAdmin', 'recoverRuns', 'listen']);
   });
 
   it('RNF-002 a failing run recovery stops the start-up before the server listens', async () => {
@@ -69,6 +88,6 @@ describe('start-up', () => {
 
     await expect(startUp(steps)).rejects.toThrow('recoverRuns failed');
 
-    expect(calls).toEqual(['migrate', 'bootstrapAdmin', 'recoverRuns']);
+    expect(calls).toEqual(['migrate', 'reEncryptKeys', 'bootstrapAdmin', 'recoverRuns']);
   });
 });
