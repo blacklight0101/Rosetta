@@ -295,4 +295,5 @@ Components these screens add to section 5:
 | Totals pill | every signed-in header | "Your total" for users, "Server, this month" against the cap for the administrator (RF-1010, RF-1106) |
 | Cap banner | administration pages | warning bar at 80% of the server's monthly cap (RF-1106) |
 | Queue notice | projects | info callout with the queue position and Cancel queued run (RF-1108) |
+| Callout tones | start run | `rst-callout--warn` (cloud notice, cap warning) and `rst-callout--info` (queue notice) beside the default error tone; the cap meter is `role="meter"` with the high estimate as a marker (P1-34) |
 | Rule checklist | change password | each password rule with a pass or fail glyph and text, updated as the user types (RF-1103) |
