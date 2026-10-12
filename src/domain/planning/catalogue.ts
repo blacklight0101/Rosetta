@@ -64,16 +64,41 @@ export function isArchitectureStyleId(id: string): id is ArchitectureStyleId {
   return architectureStyleIds.some((style) => style === id);
 }
 
+/** Whether an entry is one of the six architecture styles with its selection criteria. */
+export function isArchitectureStyle(entry: CatalogueEntry): entry is ArchitectureStyle {
+  return isArchitectureStyleId(entry.id) && 'chooseWhen' in entry && 'avoidWhen' in entry;
+}
+
+function repeatedIds(entries: readonly CatalogueEntry[]): string[] {
+  const seen = new Set<string>();
+  const repeated = new Set<string>();
+  for (const { id } of entries) {
+    if (seen.has(id)) repeated.add(id);
+    seen.add(id);
+  }
+  return [...repeated];
+}
+
 /** What is wrong with a set of entries: a repeated id, an empty group, a missing style. */
-// RF-606
+// RF-606, RF-608
 export function catalogueProblems(entries: readonly CatalogueEntry[]): string[] {
-  void entries;
-  return [];
+  const styles = new Set(entries.filter(isArchitectureStyle).map((entry) => entry.id));
+  return [
+    ...repeatedIds(entries).map((id) => `The entry ${id} appears more than once.`),
+    ...catalogueGroups
+      .filter((group) => !entries.some((entry) => entry.group === group))
+      .map((group) => `The group ${group} has no entry.`),
+    ...architectureStyleIds
+      .filter((id) => !styles.has(id))
+      .map((id) => `The architecture style ${id} is missing.`),
+  ];
 }
 
 /** The entry ids a new planning brief switches on (RF-606, DEC-74), sorted. */
 // RF-606
 export function defaultPrinciples(catalogue: Catalogue): string[] {
-  void catalogue;
-  return [];
+  return catalogue.entries
+    .filter((entry) => entry.defaultOn)
+    .map((entry) => entry.id)
+    .sort();
 }

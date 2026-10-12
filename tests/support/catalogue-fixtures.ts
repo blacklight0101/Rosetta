@@ -8,11 +8,7 @@ import {
 
 // RF-606: catalogue entries and catalogue file texts for the catalogue tests.
 
-export function sampleEntry(
-  id: string,
-  group: CatalogueGroup,
-  defaultOn = false,
-): CatalogueEntry {
+export function sampleEntry(id: string, group: CatalogueGroup, defaultOn = false): CatalogueEntry {
   return {
     id,
     group,

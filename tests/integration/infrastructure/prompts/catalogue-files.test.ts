@@ -67,7 +67,9 @@ describe('the shipped catalogue', () => {
       expect(style.avoidWhen.length).toBeGreaterThanOrEqual(2);
     }
   });
+});
 
+describe('the shipped catalogue defaults and version', () => {
   it('RF-606 a new brief switches on exactly the DEC-74 defaults', () => {
     expect(defaultPrinciples(shipped)).toEqual([
       'adrs',

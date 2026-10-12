@@ -41,11 +41,16 @@ describe('parseCatalogueEntry', () => {
       avoidWhen: ['Parts scale apart.', 'Teams deploy apart.'],
     });
   });
+});
 
+describe('parseCatalogueEntry refusals', () => {
   it.each([
     ['an unknown group', { frontMatter: 'id: solid\ngroup: fashion\ntitle: SOLID\ndefault: true' }],
     ['an unknown key', { frontMatter: 'id: solid\ngroup: method\ntitle: S\ndefault: true\nx: 1' }],
-    ['an id unlike its file name', { frontMatter: 'id: dry\ngroup: method\ntitle: S\ndefault: true' }],
+    [
+      'an id unlike its file name',
+      { frontMatter: 'id: dry\ngroup: method\ntitle: S\ndefault: true' },
+    ],
     ['a rule over two lines', { rule: 'Give every module\none reason to change.' }],
     ['an empty rule', { rule: '' }],
     ['an unknown section', { extra: '\n## Notes\n\nMore.\n' }],
@@ -69,7 +74,8 @@ describe('parseCatalogueEntry', () => {
   });
 
   it('RF-606 refuses a criteria section that is not a bullet list', () => {
-    const criteria = '## Choose it when\n\nAlways.\n\n## Look elsewhere when\n\n- Never.\n- Rarely.\n';
+    const criteria =
+      '## Choose it when\n\nAlways.\n\n## Look elsewhere when\n\n- Never.\n- Rarely.\n';
 
     expect(failureOfParse('layered.v1.md', styleFileText(criteria))).toMatchObject(refused);
   });
