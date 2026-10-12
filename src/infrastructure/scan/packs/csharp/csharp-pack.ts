@@ -10,7 +10,8 @@ import { createCSharpParser } from './csharp-grammar.js';
 import { codeBehindReference } from './webforms-directive.js';
 
 // RF-111, ADR-004: the C# pack. C# files are parsed with tree-sitter; WebForms pages only have their
-// directive read. Both caps below keep one hostile file from costing the scan more than a moment.
+// directive read. Both caps below keep one hostile file from costing the scan more than a moment;
+// the scan-wide parse budget (P1-75) also stops a parse through `PackFile.shouldStop`.
 
 const maxSourceCharacters = 2_000_000;
 const defaultParseBudgetMs = 5000;
@@ -64,7 +65,7 @@ export class CSharpPack implements LanguagePack {
   private analyseCode(file: PackFile): PackAnalysis {
     const deadline = Date.now() + this.parseBudgetMs;
     const tree = this.parser.parse(file.text, null, {
-      progressCallback: () => Date.now() > deadline,
+      progressCallback: () => Date.now() > deadline || file.shouldStop?.() === true,
     });
     if (tree === null) throw new RosettaError('RST-1200', 'Parsing the file took too long.');
     try {

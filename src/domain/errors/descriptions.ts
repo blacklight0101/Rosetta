@@ -117,6 +117,12 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message: 'The project has no completed scan, so there is no code map to understand.',
     nextStep: 'Run a scan of the project first, then start understand again.',
   },
+  'RST-1204': {
+    message:
+      'The scan reached its total parse time budget, so the remaining files were not analysed by a language pack.',
+    nextStep:
+      'No action needed; those files stay at the coarse map level. Narrow the scan with a subpath or ignore rules to map them.',
+  },
   'RST-1300': {
     message:
       'The agent did not return cards in the required format, even after one repair attempt.',

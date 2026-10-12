@@ -9,18 +9,20 @@ import type {
 } from '../../../application/ports/language-pack.js';
 import type { Logger } from '../../../application/ports/logger.js';
 import type { RepositoryReader } from '../../../application/ports/repository-reader.js';
-import type { ErrorCode } from '../../../domain/errors/codes.js';
+import { ERROR_CODES, type ErrorCode } from '../../../domain/errors/codes.js';
 import { RosettaError } from '../../../domain/errors/rosetta-error.js';
 import { byCodeUnit } from '../../../domain/code-map/code-unit-order.js';
 import type { MapLevel } from '../../../domain/code-map/map-level.js';
 import { decodeText } from '../universal/binary-detect.js';
 import type { ScannedFile } from '../universal/scan-types.js';
 import type { LanguagePackRegistry } from './pack-registry.js';
+import { ParseTimer, type ParseBudget } from './parse-budget.js';
 
 // RF-110, RF-112, ADR-004: the second layer of the scan. For every file a pack claims, the pack adds
 // symbols, links, routes and entities and the file gets map level `symbols`; a file no pack claims,
 // a skipped file and a file the pack fails on stay `coarse`. A failing pack never stops the scan.
-// Files are read one at a time through the RepositoryReader port.
+// Files are read one at a time through the RepositoryReader port. Once the scan-wide parse budget
+// is spent (P1-75), the remaining files a pack claims stay `coarse` with an RST-1204 warning.
 
 export interface PackScanInput {
   /** The files of the universal scan, sorted by path. */
@@ -30,6 +32,8 @@ export interface PackScanInput {
   readonly logger: Logger;
   /** The `scan.maxFileBytes` the universal scan used. */
   readonly maxFileBytes: number;
+  /** The total time the packs may spend on this scan; `defaultParseBudgetMs` when absent. */
+  readonly parseBudget?: ParseBudget;
 }
 
 interface FileLevel {
@@ -113,11 +117,13 @@ interface Mapped {
   readonly warnings: PackWarning[];
   /** Names of the packs that mapped at least one file. */
   readonly used: Set<string>;
+  readonly timer: ParseTimer;
 }
 
 async function mapFile(input: PackScanInput, file: ScannedFile, mapped: Mapped): Promise<void> {
   const pack = file.skipped === undefined ? input.registry.packFor(file.path) : undefined;
-  const outcome: Outcome = pack === undefined ? {} : await analyseOne(input, file, pack);
+  const outcome: Outcome =
+    pack === undefined ? {} : await analyseOne({ input, file, pack, timer: mapped.timer });
   if (outcome.analysis !== undefined && pack !== undefined) {
     mapped.used.add(pack.name);
     collect(mapped.collected, outcome.analysis);
@@ -136,6 +142,7 @@ export async function analyseWithPacks(input: PackScanInput): Promise<PackScan> 
     fileLevels: [],
     warnings: [],
     used: new Set<string>(),
+    timer: new ParseTimer(input.parseBudget),
   };
   for (const file of files) {
     await mapFile(input, file, mapped);
@@ -143,7 +150,7 @@ export async function analyseWithPacks(input: PackScanInput): Promise<PackScan> 
   }
   const { collected, used } = mapped;
   const warnings = mapped.warnings.sort((a, b) => byCodeUnit(a.path, b.path));
-  for (const warning of warnings) await logWarning(logger, warning);
+  await logWarnings(logger, warnings, mapped.timer.totalMs);
   const { links, dropped } = resolveLinks(collected.references, pathResolver(files));
   if (dropped > 0) await logDropped(logger, dropped);
   return {
@@ -171,22 +178,52 @@ interface Outcome {
   readonly warning?: PackWarning;
 }
 
-async function analyseOne(
-  input: PackScanInput,
-  file: ScannedFile,
-  pack: LanguagePack,
-): Promise<Outcome> {
+interface PackCall {
+  readonly input: PackScanInput;
+  readonly file: ScannedFile;
+  readonly pack: LanguagePack;
+  readonly timer: ParseTimer;
+}
+
+async function analyseOne({ input, file, pack, timer }: PackCall): Promise<Outcome> {
   const warning = (code: ErrorCode): Outcome => ({
     warning: { path: file.path, pack: pack.name, code },
   });
+  if (timer.exhausted()) return warning(ERROR_CODES.parseBudgetReached);
   const read = await input.reader.readBytes({ path: file.path, maxBytes: input.maxFileBytes });
   if (!read.ok) return warning(read.error.code);
   if (read.value.bytes === undefined) return warning('RST-1200');
+  const packFile = {
+    path: file.path,
+    text: decodeText(read.value.bytes),
+    shouldStop: timer.exhausted,
+  };
   try {
-    return { analysis: pack.analyse({ path: file.path, text: decodeText(read.value.bytes) }) };
+    return { analysis: timer.measure(() => pack.analyse(packFile)) };
   } catch (error) {
-    return warning(failureCode(error));
+    // A pack stopped by the budget usually throws its own "took too long"; the budget is the reason.
+    return warning(timer.exhausted() ? ERROR_CODES.parseBudgetReached : failureCode(error));
   }
+}
+
+/** One warning per failed file, and one for all the files past the parse budget together. */
+async function logWarnings(
+  logger: Logger,
+  warnings: readonly PackWarning[],
+  budgetMs: number,
+): Promise<void> {
+  const overBudget = warnings.filter((warning) => warning.code === ERROR_CODES.parseBudgetReached);
+  for (const warning of warnings) {
+    if (warning.code !== ERROR_CODES.parseBudgetReached) await logWarning(logger, warning);
+  }
+  if (overBudget.length === 0) return;
+  await logger.log({
+    level: 'warn',
+    logger: 'scan',
+    code: ERROR_CODES.parseBudgetReached,
+    message: 'The scan reached its parse budget; the remaining files a pack claims stay coarse.',
+    data: { budgetMs, files: overBudget.length },
+  });
 }
 
 async function logWarning(logger: Logger, warning: PackWarning): Promise<void> {
