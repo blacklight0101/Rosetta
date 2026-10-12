@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 82 | 22 | 46 | 14 | 0 | 35 | 39 | 8 | 26 | 0 |
+| P1 Milestone slice (M1) | 87 | 26 | 47 | 14 | 0 | 40 | 39 | 8 | 31 | 0 |
 | P2 Full understand | 14 | 1 | 10 | 3 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **108** | **24** | **65** | **19** | **0** | **38** | **59** | **11** | **26** | **0** |
+| **Total** | **113** | **28** | **66** | **19** | **0** | **43** | **59** | **11** | **31** | **0** |
 
 ## Conventions for every card
 
@@ -190,7 +190,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/architecture.md` section 6 (account use cases); `docs/data-model.md` section 4 (`users`, `audit_events`, `cost_ledger`).
 - **Do**: `ChangePassword` (current password, rules of P1-08, ends the user's other sessions, clears `MustChangePassword`); `CreateUser` (user name, display name, role, initial password, option `mustChangePassword` default true so the teacher account can be created without it, RF-1107), `UpdateUser` (disable, enable; disabling ends sessions), `ResetPassword` (ends sessions, sets `MustChangePassword`), `ListUsers` (last sign-in, project count, month-to-date cost from a read-only sum over `cost_ledger`), `ListAudit` (last 30 days, filter by user and action); routes under `/api/account/` and `/api/admin/` with role checks; an audit row for every change; a signed-in user in `MustChangePassword` is limited to the change-password route.
 - **Delivers**: the use cases, routes and access-matrix rows; integration tests per action and per refusal.
@@ -214,7 +214,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-07
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design-system.md` sections 2-9, 12 and 13; `docs/design/tokens.css`; `docs/design/board/Main.dc.html`; DEC-52.
 - **Do**: `web/` with Vite and `@preact/preset-vite` building into `dist/web/` served by P1-07; `web/src/styles/tokens.css` identical to `docs/design/tokens.css`; the signed-in shell (header with the totals pill slot, navigation groups, main region) and the shared components of design-system section 5 that every page needs (buttons, fields with error text, status badges with glyphs for every value of every state list, error banner with code and next step, empty state); a text-only rendering helper for repository and model text (RF-507 rule 2: only `https://github.com/` links stay links); a typed API client that sends the CSRF token and maps error bodies; the router `web/src/app/routes.ts`; no inline scripts or styles (CSP of RF-1013); `.claude/launch.json` entry `rosetta-web` starting the dev server. Put every built file under `/assets/` (the P1-09 public paths are `/`, `/sign-in` and files under `/assets/`; a file at the root, such as a favicon, would need a session).
 - **Delivers**: the shell, components, client, router and launch entry; unit tests for the badge map over every state value, the link filter and the client's error mapping; a component gallery page under `/dev/gallery` built only in development.
@@ -226,7 +226,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-09, P1-12, P1-16, P1-24
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/architecture.md` section 17; `docs/conventions.md` section 7; `docs/data-model.md` section 8.
 - **Do**: `playwright.config.ts` (Chromium, the two viewports of README section 1, light and dark projects); `tests/e2e/support/`: a test server started with a disposable database, `ROSETTA_TEST=1`, the fake provider and fake GitHub injection points in the composition root (test-only factory), seeded users through the use cases, a sign-in helper, an axe helper failing on serious and critical violations; one smoke spec (health, robots, sign-in page reachable). `scripts/page-shots.mjs`: opens a page of the test server at each viewport and colour scheme of README section 1 and saves PNG screenshots and the console errors, for the verifier's page walk.
 - **Delivers**: the configuration, support files and the smoke spec; the e2e project wired into `npm run test:ci` on Linux.
@@ -454,7 +454,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-03, P1-17
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md`; `docs/data-model.md` sections 3.7 and 3.8.
 - **Do**: domain `Card`, `CardType`, `Claim`, `Citation`, `ClaimStatus` (transitions of architecture section 5; a claim is never removed), `Confidence`; the card zod schema and a parser that returns validation errors for one repair attempt (raw output saved and the task marked `InvalidOutput` after a second failure); ids `FEAT-001`, `BR-001`, `ENT-001`, `INT-001`, `OQ-001` in area and appearance order; writers for `cards/<TYPE>/<ID>.md` with a YAML header, `cards/index.json` and `spec.md` per area with permalinks (P1-16 builder).
 - **Delivers**: domain types, schema, parser, id assignment, writers; unit tests on the schema, transitions and ids; snapshot tests of the written files.
@@ -468,7 +468,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/architecture.md` sections 6 and 8; `docs/data-model.md` sections 3.6, 3.7, 3.12 and 3.16.
-- **Do**: `RunUnderstand`: one reader task per area or only the named areas (unknown names stop with a code listing valid names); configurable parallelism with one abort signal; task states of architecture section 5; partial cards saved on stop; step 1 of the verifier (`src/application/verifier/citation-check.ts`): every citation's file in the code map and its range inside the file, otherwise `CitationInvalid` with the reason; claims never deleted; the cost report at the end (P1-27 writer); `answers.md` generated from `OQ` cards keeping existing answers (DEC-98); run events for every step; route `POST /api/projects/:id/runs` with stage `understand`, area list and consent flag (a cloud run without consent is refused, RF-143).
+- **Do**: `RunUnderstand`: one reader task per area or only the named areas (unknown names stop with a code listing valid names); configurable parallelism with one abort signal; task states of architecture section 5; partial cards saved on stop; step 1 of the verifier (`src/application/verifier/citation-check.ts`): every citation's file in the code map and its range inside the file, otherwise `CitationInvalid` with the reason; claims never deleted; the cost report at the end (P1-27 writer); `answers.md` generated from `OQ` cards keeping existing answers (DEC-98); run events for every step; route `POST /api/projects/:id/runs` with stage `understand`, area list and consent flag (a cloud run without consent is refused, RF-143). Notes from P1-32 and P1-13: queue card writes per run folder (two `writeOrRestore` calls on one folder can lose an update); pass `assignCardIds` the tasks in area order; pass a `Logger` to the card writers; treat an area with zero cards as suspicious and show it in the run summary and coverage (a stray `[]` in prose parses as zero cards); consume `RunParts.provider` for the test doubles.
 - **Delivers**: the use case, citation check, answers writer, route; integration tests with recorded responses: a full run on the C# fixture, an unknown area, a cap reached mid-run, an interrupted run, consent refused; a hash of the snapshot before and after the run.
 - **Done when**: every RF-200, RF-240, RF-300 and RF-302 scenario and the RF-143 API scenario have passing tests; RNF-002 and RF-005 tests pass on an understand run; `npm run verify` green.
 - **Refs**: RF-005, RF-143, RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007, DEC-15, DEC-19, DEC-98.
@@ -816,7 +816,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/data-model.md` sections 3.6 and 3.14; `docs/security/threat-model.md`.
-- **Do**: extend `SecretMasker` to `Authorization: Basic` and `token` schemes, AWS `ASIA` keys, XML `<password>` elements, `mysql -p<pw>` and `sk-` after an underscore; in the log formatter, mask the whole value of any data key that matches `password|passwd|pwd|secret|token|api[_-]?key`; keep linear time (extend the hostile-input suite); lift or document the 512-character bound on connection-string values (P1-04 scope).
+- **Do**: extend `SecretMasker` to `Authorization: Basic` and `token` schemes, AWS `ASIA` keys, XML `<password>` elements, `mysql -p<pw>` and `sk-` after an underscore; in the log formatter, mask the whole value of any data key that matches `password|passwd|pwd|secret|token|api[_-]?key`; keep linear time (extend the hostile-input suite); lift or document the 512-character bound on connection-string values (P1-04 scope); mask Stripe-style keys such as `api_key = "sk_live_..."` (P1-32 verifier).
 - **Delivers**: the masker and formatter changes with fixture cases and hostile-input cases.
 - **Done when**: every new shape is masked in a fixture test; a fake key under a `password` data key never appears in any logger output; the hostile-input suite stays within budget; `npm run verify` green.
 - **Refs**: RF-009, RF-141, RNF-003, ADR-013, P1-04 (verifier MINOR 5 and open question).
@@ -1060,6 +1060,66 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the two log lines with tests.
 - **Done when**: both cases write one warning without secrets; `npm run verify` green.
 - **Refs**: RF-147, RNF-002, P1-23 (verifier MINORs, round 2).
+
+### P1-83 - Follow-up: card writer logging and serialised writes
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-32
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/cards/write-or-restore.ts`; `docs/data-model.md` 3.7.
+- **Do**: a logger that throws while reporting a failed restore must not replace the original refusal (catch and keep the refusal); state in the doc comment and data-model 3.7 that card writes to one run folder must be serialised by the caller.
+- **Delivers**: the change and its test.
+- **Done when**: with a throwing logger the original refusal is returned; `npm run verify` green.
+- **Refs**: RNF-002, RF-302, P1-32 (verifier-opus MINORs 1 and 2, round 3).
+
+### P1-84 - Follow-up: web and end-to-end harness hardening
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-12, P1-13
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web-lint.config.ts`; `web/src/api/client.ts`; `eslint.config.ts`; `tests/e2e/support/serve.ts`.
+- **Do**: add `setHTMLUnsafe`, `createContextualFragment`, `parseHTMLUnsafe` and `srcdoc` to the RF-507 lint selectors; make `client.ts` match its "never throws" header for paths outside `/api/` (return a typed error); give client network failures their own catalogue code instead of reusing RST-2006; block a dynamic `import()` and a default import of `@playwright/test` in e2e specs; clean the e2e data folder with the writable-temp-root helper.
+- **Delivers**: the changes with tests.
+- **Done when**: each new lint case fails in a fixture; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-507, RNF-005, RNF-008, P1-12 and P1-13 (verifier MINORs).
+
+### P1-85 - Follow-up: move the front end to Preact 11
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-12
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/environments-and-delivery.md` package baseline; `web/`.
+- **Do**: once Preact 11.0.x is at least two weeks old (11.0.0 was published 2026-09-30), pin it exactly, update the baseline row and fix any breaking change.
+- **Delivers**: the upgrade.
+- **Done when**: `npm run verify` and `npm run test:e2e` green on the new pin.
+- **Refs**: DEC-52, P1-12 (builder note).
+
+### P1-86 - Follow-up: atomic sign-in failure counters
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-10
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/sign-in.ts`, `change-password.ts`; `src/infrastructure/db/pg-user-repository.ts`; DEC-112.
+- **Do**: record sign-in and change-password failures with an atomic update (an incrementing guarded `UPDATE`) so parallel wrong guesses each count and a failure write never undoes a concurrent disable or reset; add `password_hash` to the `updateIfCurrent` guard.
+- **Delivers**: the changes with PostgreSQL tests.
+- **Done when**: eight parallel wrong passwords count eight failures; a sign-in failure racing a disable leaves the account Disabled; `npm run verify` green.
+- **Refs**: RF-1100, RF-1102, RF-1103, DEC-112, P1-10 (verifier-opus MINORs, round 2).
+
+### P1-87 - Follow-up: lockfile health on newer npm
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `package-lock.json`; `docs/conventions.md` (install).
+- **Do**: with npm 11.19 on Linux `npm ci` reports a missing `@emnapi` entry (also on `main`); find the cause, regenerate the lockfile so `npm ci --ignore-scripts` passes on the npm version CI uses and on the latest npm 11, and pin the npm version CI uses if needed.
+- **Delivers**: the lockfile fix.
+- **Done when**: `npm ci --ignore-scripts` passes on Linux with npm 11.19 and in CI; `npm run verify` green.
+- **Refs**: RNF-005, P1-13 (verifier note).
 
 ---
 
