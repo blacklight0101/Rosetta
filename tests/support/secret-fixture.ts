@@ -156,6 +156,8 @@ export const secretCases: readonly SecretCase[] = [
     masked: 'database:\n  password: [MASKED:password]\n  user: app',
     secrets: [fakePassword],
   },
+  // Before the key blocks: the unterminated one masks everything after it in the whole fixture.
+  ...moreSecretCases,
   {
     name: 'a multi-line private key block',
     kind: 'private-key',
@@ -177,7 +179,6 @@ export const secretCases: readonly SecretCase[] = [
     masked: ['config', '[MASKED:private-key]', '', '', ''].join('\r\n'),
     secrets: keyLines,
   },
-  ...moreSecretCases,
 ];
 
 /** Text that looks close to a secret but is not one; the masker leaves it unchanged. */
