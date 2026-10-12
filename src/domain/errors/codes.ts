@@ -81,6 +81,7 @@ export const ERROR_CODES = {
   outputLimitMissing: 'RST-1603',
   costRecordFailed: 'RST-1604',
   runInProgress: 'RST-1700',
+  reportWriteFailed: 'RST-1701',
   githubUrlInvalid: 'RST-1900',
   githubRefNotFound: 'RST-1901',
   githubRateLimited: 'RST-1902',

@@ -246,6 +246,11 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message: 'This run is still in progress, so it cannot be downloaded yet.',
     nextStep: 'Wait until the run has ended, then download it again.',
   },
+  'RST-1701': {
+    message: 'The report of this run could not be written.',
+    nextStep:
+      'Try building the report again; if it keeps failing, check the free space of the data folder.',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

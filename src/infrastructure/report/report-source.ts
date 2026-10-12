@@ -13,12 +13,13 @@ export interface SourceLink {
 export function sourceLink(
   source: { readonly url: string; readonly commitSha: string | null } | null,
 ): SourceLink | undefined {
-  if (source === null || source.commitSha === null) return undefined;
-  if (!COMMIT.test(source.commitSha)) return undefined;
-  const match = REPOSITORY.exec(source.url);
+  if (source === null) return undefined;
+  const { url, commitSha } = source;
+  if (commitSha === null || !COMMIT.test(commitSha)) return undefined;
+  const match = REPOSITORY.exec(url);
   if (match === null) return undefined;
   return {
-    label: `${match[1] ?? ''}/${match[2] ?? ''} @ ${source.commitSha.slice(0, 12)}`,
-    href: `${source.url}/tree/${source.commitSha}`,
+    label: `${match[1] ?? ''}/${match[2] ?? ''} @ ${commitSha.slice(0, 12)}`,
+    href: `${url}/tree/${commitSha}`,
   };
 }
