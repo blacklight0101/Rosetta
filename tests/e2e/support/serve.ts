@@ -53,7 +53,8 @@ type Composer = (port: number) => ReturnType<typeof composeApplication>;
 /** Composes the application with the fake provider and the fake GitHub, on a given port. */
 async function composer(environment: ReturnType<typeof loadEnvironment>): Promise<Composer> {
   // RF-407: every role answers, except the summariser, whose call fails with RST-1506.
-  const provider = new AnsweringProvider(['summariser']);
+  // P1-34: the reader of an understand run is held for a few seconds so the queue can be shown.
+  const provider = new AnsweringProvider(['summariser'], 8000);
   const github = await demoGitHub();
   return (port) =>
     composeApplication({

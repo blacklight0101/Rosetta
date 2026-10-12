@@ -18,7 +18,7 @@ export async function expectNoSeriousViolations(page: Page): Promise<void> {
   if (failing.length === 0) return;
   const lines = failing.map(
     (violation) =>
-      `${String(violation.impact)} ${violation.id}: ${violation.help} (${String(violation.nodes.length)} node(s))`,
+      `${String(violation.impact)} ${violation.id}: ${violation.help} (${String(violation.nodes.length)} node(s): ${violation.nodes.map((node) => `${node.target.join(' ')} ${node.any.map((check) => check.message).join(' ')}`).join('; ')})`,
   );
   throw new Error(`Accessibility violations on ${page.url()}:\n${lines.join('\n')}`);
 }

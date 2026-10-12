@@ -1,0 +1,63 @@
+import type { ApiClient, ApiResult } from './client.js';
+import {
+  estimateSchema,
+  startedRunSchema,
+  stoppedRunSchema,
+  type RunEstimate,
+  type StartedRun,
+} from './estimate-schemas.js';
+
+// RF-425, RF-1001, RF-143, RF-1108: the run calls of the start page. Every answer is parsed before
+// use; another user's project or run answers 404 like an unknown one.
+
+export type RunStageChoice = 'scan' | 'understand';
+
+export interface StartRequest {
+  readonly stage: RunStageChoice;
+  /** `understand` only: the areas to read. */
+  readonly areas?: readonly string[];
+  /** `understand` only: the consent to send code to the cloud providers the roles use. */
+  readonly cloudConsent?: boolean;
+}
+
+/** The estimate of an understand run; `areas` names the ones to estimate, every area when absent. */
+// RF-425
+export function getEstimate(
+  client: ApiClient,
+  projectId: string,
+  areas: readonly string[] | undefined,
+  signal: AbortSignal,
+): Promise<ApiResult<RunEstimate>> {
+  const query = new URLSearchParams((areas ?? []).map((area) => ['areas', area]));
+  const suffix = query.size === 0 ? '' : `?${query.toString()}`;
+  return client.request({
+    method: 'GET',
+    path: `/api/projects/${encodeURIComponent(projectId)}/estimate${suffix}`,
+    schema: estimateSchema,
+    signal,
+  });
+}
+
+// RF-1001, RF-143
+export function startRun(
+  client: ApiClient,
+  projectId: string,
+  request: StartRequest,
+): Promise<ApiResult<StartedRun>> {
+  return client.request({
+    method: 'POST',
+    path: `/api/projects/${encodeURIComponent(projectId)}/runs`,
+    body: request,
+    schema: startedRunSchema,
+  });
+}
+
+/** Cancels a queued run (RF-1108); `runId` is the `id` the start answered, not its folder name. */
+export async function cancelRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
+  const result = await client.request({
+    method: 'POST',
+    path: `/api/runs/${encodeURIComponent(runId)}/stop`,
+    schema: stoppedRunSchema,
+  });
+  return result.ok ? { ok: true, value: undefined } : result;
+}

@@ -67,9 +67,9 @@ test('RF-010 creating the same address again opens the existing project', async 
 
   await page.getByRole('button', { name: 'Create project' }).click();
 
-  await expect(page).toHaveURL(/\/projects\/[^/]+\/settings$/u);
-  await expect(page.getByRole('heading', { name: 'Project settings' })).toBeVisible();
-  await expect(page.getByText('octo/demo')).toBeVisible();
+  await expect(page).toHaveURL(/\/projects\/[^/]+\/start$/u);
+  await expect(page.getByRole('heading', { name: 'Start a run' })).toBeVisible();
+  await expect(page.getByLabel('GitHub repository URL')).toHaveValue(demoUrl);
   await page.goto('/projects');
   await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
 });

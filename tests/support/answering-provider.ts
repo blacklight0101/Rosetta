@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises';
 import type {
   LlmProvider,
   LlmRequest,
@@ -13,20 +14,29 @@ import { ProviderCallError } from '../../src/infrastructure/providers/provider-c
 export class AnsweringProvider implements LlmProvider {
   private readonly failing: ReadonlySet<string>;
 
-  constructor(failing: readonly string[] = []) {
+  private readonly holdUnderstandMs: number;
+
+  constructor(failing: readonly string[] = [], holdUnderstandMs = 0) {
     this.failing = new Set(failing);
+    this.holdUnderstandMs = holdUnderstandMs;
   }
 
-  complete(request: LlmRequest): Promise<LlmResponse> {
-    if (this.failing.has(request.context.role)) {
-      return Promise.reject(new ProviderCallError({ code: ERROR_CODES.providerCallFailed }));
+  async complete(request: LlmRequest): Promise<LlmResponse> {
+    const { role, runId } = request.context;
+    if (this.holdUnderstandMs > 0 && role === 'reader' && runId.endsWith('-understand')) {
+      await sleep(this.holdUnderstandMs, undefined, { signal: request.signal }).catch(
+        () => undefined,
+      );
     }
-    return Promise.resolve({
+    if (this.failing.has(request.context.role)) {
+      throw new ProviderCallError({ code: ERROR_CODES.providerCallFailed });
+    }
+    return {
       text: 'OK',
       toolCalls: [],
       usage: { inputTokens: 24, outputTokens: 2, cachedInputTokens: 0, usageSource: 'reported' },
       finishReason: 'stop',
       modelVersion: 'answering-provider-1',
-    });
+    };
   }
 }
