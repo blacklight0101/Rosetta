@@ -3,6 +3,8 @@
 // Shared by the masker tests (RF-141), the logger tests (RF-009) and the egress guard (P1-28).
 
 import type { SecretKind } from '../../src/infrastructure/guards/secret-masker.js';
+import { fakeValue } from './fake-value.js';
+import { moreAdversarialPieces, moreInnocentTexts, moreSecretCases } from './secret-shapes.js';
 
 export interface SecretCase {
   readonly name: string;
@@ -13,11 +15,6 @@ export interface SecretCase {
   readonly masked: string;
   /** The fake values that must never appear after masking. */
   readonly secrets: readonly string[];
-}
-
-/** A fake value of the given length made of "FAKE0" repeated. */
-function fakeValue(length: number): string {
-  return 'FAKE0'.repeat(Math.ceil(length / 5)).slice(0, length);
 }
 
 const dash = '-';
@@ -180,6 +177,7 @@ export const secretCases: readonly SecretCase[] = [
     masked: ['config', '[MASKED:private-key]', '', '', ''].join('\r\n'),
     secrets: keyLines,
   },
+  ...moreSecretCases,
 ];
 
 /** Text that looks close to a secret but is not one; the masker leaves it unchanged. */
@@ -191,6 +189,7 @@ export const innocentTexts: readonly string[] = [
   'The bearer of this note may pass.',
   'See https://example.com/docs:8080/path for details.',
   'AKIA is not a key on its own',
+  ...moreInnocentTexts,
 ];
 
 /**
@@ -223,6 +222,7 @@ export const adversarialPieces: readonly string[] = [
   ['"password"', '"'].join(':'),
   ['pwd', "'a\\'"].join('='),
   ['pwd', '"\\"'].join('='),
+  ...moreAdversarialPieces,
 ];
 
 export interface KeyedSecretCase {
