@@ -17,7 +17,8 @@ import type { TextMasker } from '../guards/secret-masker.js';
 import { buildCodeMap } from './codemap/build-code-map.js';
 import { writeScanOutputs } from './codemap/write-scan-outputs.js';
 import type { LanguagePackRegistry } from './packs/pack-registry.js';
-import { analyseWithPacks } from './packs/pack-scan.js';
+import { analyseWithPacks, type PackScan } from './packs/pack-scan.js';
+import type { ParseBudget } from './packs/parse-budget.js';
 import { scanRepository } from './universal/universal-scan.js';
 
 // RF-100, RF-104, RF-105, RF-141, ADR-004: the scan of one snapshot. It reads the snapshot only
@@ -30,6 +31,19 @@ export interface SnapshotScanPipelineOptions {
   readonly masker: TextMasker;
   readonly logger: Logger;
   readonly packs: LanguagePackRegistry;
+  /** The scan-wide parse budget of the language packs (P1-75); the default when absent. */
+  readonly parseBudget?: ParseBudget;
+}
+
+/** The code map and the number of files the packs left coarse because the parse budget was spent. */
+interface Mapped {
+  readonly codeMap: CodeMap;
+  readonly overParseBudget: number;
+}
+
+function overParseBudget(packScan: PackScan): number {
+  return packScan.warnings.filter((warning) => warning.code === ERROR_CODES.parseBudgetReached)
+    .length;
 }
 
 function mapLevels(map: CodeMap): ScanReport['mapLevels'] {
@@ -61,9 +75,10 @@ export class SnapshotScanPipeline implements ScanPipeline {
   // RF-100, RF-105
   async scan(request: ScanRequest): Promise<ScanReport> {
     const began = Date.now();
-    const codeMap = await this.map(request);
+    const mapped = await this.map(request);
+    const { codeMap } = mapped;
     request.signal.throwIfAborted();
-    const codeMapHash = await this.write(request, codeMap, Date.now() - began);
+    const codeMapHash = await this.write(request, mapped, Date.now() - began);
     return {
       codeMapHash,
       files: codeMap.files.length,
@@ -95,13 +110,13 @@ export class SnapshotScanPipeline implements ScanPipeline {
   }
 
   /** Writes both files; a refusal, a failure or a stop in between leaves neither of them. */
-  private async write(request: ScanRequest, codeMap: CodeMap, durationMs: number): Promise<string> {
+  private async write(request: ScanRequest, mapped: Mapped, durationMs: number): Promise<string> {
     const { scope, signal } = request;
     try {
       const written = await writeScanOutputs(
         this.options.writer,
         { userId: scope.userId, folder: runPath(scope.projectId, scope.runKey) },
-        { codeMap, durationMs, masker: this.options.masker },
+        { ...mapped, durationMs, masker: this.options.masker },
       );
       if (!written.ok) throw new RosettaError(written.error.code, written.error.message);
       signal.throwIfAborted();
@@ -112,9 +127,9 @@ export class SnapshotScanPipeline implements ScanPipeline {
     }
   }
 
-  private async map(request: ScanRequest): Promise<CodeMap> {
+  private async map(request: ScanRequest): Promise<Mapped> {
     const { settings, source, signal } = request;
-    const { logger, packs, masker } = this.options;
+    const { logger, packs, masker, parseBudget } = this.options;
     const reader = await NodeRepositoryReader.open({
       root: request.root,
       subpath: source.subpath,
@@ -132,6 +147,7 @@ export class SnapshotScanPipeline implements ScanPipeline {
       registry: packs,
       logger,
       maxFileBytes: settings.maxFileBytes,
+      ...(parseBudget === undefined ? {} : { parseBudget }),
     });
     signal.throwIfAborted();
     const built = buildCodeMap({
@@ -148,6 +164,6 @@ export class SnapshotScanPipeline implements ScanPipeline {
         `The scan could not build a valid code map (${built.error}).`,
       );
     }
-    return built.value;
+    return { codeMap: built.value, overParseBudget: overParseBudget(packScan) };
   }
 }
