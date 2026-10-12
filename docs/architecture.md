@@ -207,7 +207,10 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 
 | Use case | Web action (HTTP API) | Requirements |
 |---|---|---|
-| `CreateProject` | New project form (`POST /api/projects`) | RF-010 |
+| `CreateProject` | New project form (`POST /api/projects`): parses the address with the P1-16 parser (no network call), stores the project with the template settings and the server's `defaultRoles`, or answers the existing project | RF-010 |
+| `ListProjects`, `GetProject` | project list and page (`GET /api/projects`, `GET /api/projects/:id`); another user's id answers 404 | RF-010, RF-1105 |
+| `UpdateProjectSettings` | project settings page (`PUT /api/projects/:id/settings`): the whole document is checked by the settings schema (`src/application/projects/project-settings.ts`) and each problem is returned with its field and code | RF-002, RF-405 |
+| `OpenWorkspace` | administration page, open a user's workspace (`GET /api/admin/users/:id/projects`); writes the `admin.workspace_opened` audit row | RF-1105, RF-1109 |
 | `RunScan` | Scan (`POST /api/projects/:id/runs` with stage `scan`) | RF-100..RF-112 |
 | `EstimateRun` | estimate on the start page (`GET /api/projects/:id/estimate`) | RF-425 |
 | `RunUnderstand` | Start understand, with area, resume and answers options | RF-200..RF-250, RF-006 |
@@ -255,7 +258,8 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `PasswordHasher` | hash and verify passwords (ADR-015): `scrypt$N$r$p$salt$hash`, verified with the stored parameters in constant time; an unreadable stored hash is `RST-2209` | `ScryptPasswordHasher` |
 | `SecretBox` | encrypt and decrypt provider keys with a key version (RF-1104) | `AesGcmSecretBox` |
 | `ProviderKeyRepository` | encrypted keys per user and provider | `PgProviderKeyRepository`, `MemoryProviderKeyRepository` |
-| `ProjectRepository` | projects and their settings per user (RF-010) | `PgProjectRepository`, `MemoryProjectRepository` |
+| `ProjectRepository` | projects and their settings per user (RF-010): every operation takes the owner's id and sees only that user's rows; `insertOrFind` returns the owner's existing project with the same source URL, ref and subpath; settings are parsed with their zod schema on every read (a row that no longer fits is an error) | `PgProjectRepository`, `MemoryProjectRepository` |
+| `ServerSettings` | the settings the administrator keeps for the server; this release reads `defaultRoles` (DEC-106), `{}` until it is set, and refuses a value of an unknown shape | `PgServerSettings`, `MemoryServerSettings` |
 | `RunIndex` | run rows: owner, stage, state, queue position, folder, totals (RF-1108) | `PgRunIndex`, `MemoryRunIndex` |
 | `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
 | `AuditLog` | security audit rows (RF-1109); the detail passes `maskDeep` (keys and values, P1-04 masking) before it is stored and is withheld whole when masking fails; listed newest first by time, actor and action | `PgAuditLog`, `MemoryAuditLog` |

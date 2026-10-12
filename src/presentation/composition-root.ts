@@ -12,7 +12,7 @@ import { PgMigrator } from '../infrastructure/db/pg-migrator.js';
 import { createAppPool, createMigratorPool, type DatabasePool } from '../infrastructure/db/pool.js';
 import { CSharpPack } from '../infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
-import { SecretMasker } from '../infrastructure/guards/secret-masker.js';
+import { SecretMasker, type TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { FanOutLogger } from '../infrastructure/system/fan-out-logger.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { JsonlFileLogger } from '../infrastructure/system/jsonl-file-logger.js';
@@ -20,6 +20,7 @@ import { StdoutJsonLogger } from '../infrastructure/system/stdout-json-logger.js
 import { SystemClock } from '../infrastructure/system/system-clock.js';
 import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password-hasher.js';
 import { bootstrapAdministrator, composeAuth } from './compose-accounts.js';
+import { composeProjects } from './compose-projects.js';
 import { startUp } from './start-up.js';
 import { buildServer, type AuthServices } from './web/server.js';
 
@@ -30,6 +31,7 @@ import { buildServer, type AuthServices } from './web/server.js';
 const repositoryRoot = new URL('../../', import.meta.url);
 const migrationsFolder = fileURLToPath(new URL('db/migrations/', repositoryRoot));
 const staticRoot = fileURLToPath(new URL('dist/web/', repositoryRoot));
+const templatesFolder = fileURLToPath(new URL('templates/', repositoryRoot));
 
 export interface ApplicationOptions {
   readonly environment: Environment;
@@ -141,16 +143,20 @@ interface ServerParts {
   readonly logger: Logger;
   readonly pool: DatabasePool;
   readonly auth: AuthServices;
+  readonly clock: Clock;
+  readonly masker: TextMasker;
 }
 
 // ADR-017, RF-1303, RF-1009: the HTTP server with the database probe, the session use cases and
 // the shipped version.
 async function createServer(parts: ServerParts): Promise<ReturnType<typeof buildServer>> {
-  const { environment, logger, pool, auth } = parts;
+  const { environment, logger, pool, auth, clock, masker } = parts;
+  const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });
   return buildServer({
     logger,
     databaseHealth: new PgDatabaseHealth(pool),
     auth,
+    projects,
     version: await readAppVersion(),
     publicUrl: environment.publicUrl,
     trustProxy: environment.trustProxy,
@@ -170,16 +176,25 @@ function createScheduler(logger: Logger): IntervalScheduler {
   });
 }
 
+/** Starts every task on its interval; returns the functions that cancel them. */
+function scheduleAll(logger: Logger, tasks: readonly ScheduledTask[]): (() => void)[] {
+  const scheduler = createScheduler(logger);
+  return tasks.map((task) => scheduler.every(task.intervalMs, task.job));
+}
+
+function openPool(environment: Environment, logger: Logger): DatabasePool {
+  return createAppPool(environment, (error) => {
+    logSettled(logger, { level: 'warn', logger: 'db', message: error.message });
+  });
+}
+
 // Architecture section 2
 export function composeApplication(options: ApplicationOptions): Application {
   const { environment } = options;
   const clock = new SystemClock();
   const { file, logger, masker } = createLoggers(options, clock);
   const hasher = new ScryptPasswordHasher();
-  const pool = createAppPool(environment, (error) => {
-    logSettled(logger, { level: 'warn', logger: 'db', message: error.message });
-  });
-  const scheduler = createScheduler(logger);
+  const pool = openPool(environment, logger);
   const cancels: (() => void)[] = [];
   let close: () => Promise<void> = () => Promise.resolve();
 
@@ -193,7 +208,10 @@ export function composeApplication(options: ApplicationOptions): Application {
     try {
       await file.applyRetention();
       const auth = await composeAuth({ pool, logger, clock, masker, hasher });
-      const server = await createServer({ environment, logger, pool, auth: auth.services });
+      const server = await createServer({
+        ...{ environment, logger, pool, clock, masker },
+        auth: auth.services,
+      });
       close = () => server.close();
       let address = '';
       await startUp({
@@ -205,9 +223,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         },
         startScheduler: () => {
           cancels.push(
-            ...scheduledTasks({ file, sessions: auth.sessions, clock }).map((task) =>
-              scheduler.every(task.intervalMs, task.job),
-            ),
+            ...scheduleAll(logger, scheduledTasks({ file, sessions: auth.sessions, clock })),
           );
         },
       });

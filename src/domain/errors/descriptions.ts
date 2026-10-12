@@ -14,6 +14,33 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Set the variables named in the message in the environment or .env, then start again.',
   },
+  'RST-1001': {
+    message: 'The provider is not one Rosetta knows, or the project does not define it.',
+    nextStep:
+      'Use ollama, openai, openai-compatible, anthropic or fake, and name only providers listed under providers.',
+  },
+  'RST-1002': {
+    message: 'A role has no model.',
+    nextStep:
+      'Give the reader, verifier, planner and summariser roles each a provider and a model.',
+  },
+  'RST-1003': {
+    message: 'A cap or price is below zero.',
+    nextStep: 'Use zero or a positive whole number.',
+  },
+  'RST-1004': {
+    message: 'A base URL cannot be set in the project settings.',
+    nextStep:
+      'Save an OpenAI-compatible base URL with your key in your account settings; Ollama uses the server address.',
+  },
+  'RST-1005': {
+    message: 'The project settings are not valid, so nothing was saved.',
+    nextStep: 'Correct the fields listed with this error and save again.',
+  },
+  'RST-1006': {
+    message: 'This setting has a value that is not allowed, or is not a setting.',
+    nextStep: 'Check the name and the value against the settings page and try again.',
+  },
   'RST-1100': {
     message: 'The path points outside the analysed repository folder, so it was not read.',
     nextStep: 'Use a path relative to the repository root, inside the analysed folder.',

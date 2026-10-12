@@ -4,7 +4,14 @@ import { RecordRefusedRequest } from '../../src/application/use-cases/record-ref
 import { ResolveSession } from '../../src/application/use-cases/resolve-session.js';
 import { SignIn } from '../../src/application/use-cases/sign-in.js';
 import { SignOut } from '../../src/application/use-cases/sign-out.js';
+import { CreateProject } from '../../src/application/use-cases/create-project.js';
+import { GetProject } from '../../src/application/use-cases/get-project.js';
+import { ListProjects } from '../../src/application/use-cases/list-projects.js';
+import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
+import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
+import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
+import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
@@ -13,6 +20,8 @@ import { FakePasswordHasher } from './account-fixtures.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
+import { templateSettings } from './project-fixtures.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
 export const testVersion = '1.2.3-test';
@@ -28,14 +37,39 @@ export interface TestServer {
   readonly users: MemoryUserRepository;
   readonly sessions: MemorySessionStore;
   readonly audit: MemoryAuditLog;
+  readonly projects: MemoryProjectRepository;
+  readonly serverSettings: MemoryServerSettings;
   readonly hasher: PasswordHasher;
 }
 
-export interface TestServerOptions extends Partial<Omit<ServerOptions, 'auth'>> {
+export interface TestServerOptions extends Partial<Omit<ServerOptions, 'auth' | 'projects'>> {
   /** The password hasher of sign-in; the fast fake by default. */
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
   readonly dummyHash?: string;
+}
+
+interface ProjectParts {
+  readonly projects: MemoryProjectRepository;
+  readonly serverSettings: MemoryServerSettings;
+  readonly users: MemoryUserRepository;
+  readonly auditLog: MemoryAuditLog;
+  readonly logger: MemoryLogger;
+  readonly clock: FixedClock;
+}
+
+/** RF-010, RF-1105: the project use cases over memory adapters and predictable ids. */
+function projectServices(parts: ProjectParts): ServerOptions['projects'] {
+  const { projects, serverSettings, users, auditLog, logger, clock } = parts;
+  const ids = new SequenceIdGenerator();
+  const template = templateSettings;
+  return {
+    createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
+    listProjects: new ListProjects({ projects }),
+    getProject: new GetProject({ projects }),
+    updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
+    openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
+  };
 }
 
 /**
@@ -53,6 +87,8 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const sessions = new MemorySessionStore();
   const audit = new MemoryAuditLog(masker);
   const auditLog = audit;
+  const projects = new MemoryProjectRepository();
+  const serverSettings = new MemoryServerSettings({});
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -65,7 +101,19 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       resolveSession: new ResolveSession({ sessions, users, logger, clock }),
       refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
     },
+    projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     ...overrides,
   });
-  return { server, logger, health, clock, users, sessions, audit, hasher };
+  return {
+    server,
+    logger,
+    health,
+    clock,
+    users,
+    sessions,
+    audit,
+    hasher,
+    projects,
+    serverSettings,
+  };
 }

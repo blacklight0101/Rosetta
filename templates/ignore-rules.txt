@@ -1,0 +1,49 @@
+# Default ignore rules of a new project (gitignore syntax, RF-140). Paths that match are never
+# scanned, read or sent to a provider. Edit them in the project settings.
+
+# Secrets and key material (the built-in deny list of RF-147 always applies as well)
+*.pfx
+*.p12
+*.key
+*.pem
+*.env
+.env*
+id_rsa*
+*.kdbx
+secrets.json
+appsettings.*.json
+
+# Databases and dumps
+*.mdf
+*.ldf
+*.bak
+*.sqlite
+*.db
+
+# Binary, build and package output
+bin/
+obj/
+node_modules/
+packages/
+*.dll
+*.exe
+*.pdb
+*.zip
+*.7z
+*.tar
+*.gz
+*.jar
+
+# Images, media and fonts
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.bmp
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.mp3
+*.mp4

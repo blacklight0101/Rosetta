@@ -1,5 +1,6 @@
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { describeError } from '../../domain/errors/descriptions.js';
+import { FieldProblemsError, type FieldProblem } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 // RF-007, RNF-008: every error becomes an HTTP status of its cause and a body with the `RST`
@@ -12,6 +13,13 @@ interface ErrorBody {
   readonly code: ErrorCode;
   readonly message: string;
   readonly nextStep: string;
+  /** RF-002, RF-010: the fields a refusal points at, each with its own code. */
+  readonly problems?: readonly ProblemBody[];
+}
+
+interface ProblemBody extends ErrorBody {
+  readonly field: string;
+  readonly reason?: string;
 }
 
 export interface ErrorReply {
@@ -24,6 +32,8 @@ export interface ErrorReply {
 /** The status of each code that has an HTTP cause; any other code answers 500. */
 const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.requestInvalid]: 400,
+  [ERROR_CODES.githubUrlInvalid]: 400,
+  [ERROR_CODES.settingsInvalid]: 400,
   [ERROR_CODES.notSignedIn]: 401,
   [ERROR_CODES.notAllowed]: 403,
   [ERROR_CODES.originRefused]: 403,
@@ -64,9 +74,20 @@ function codeOf(error: unknown): ErrorCode {
   return codeOfFrameworkStatus[status] ?? ERROR_CODES.requestInvalid;
 }
 
+function problemBody(problem: FieldProblem): ProblemBody {
+  const { field, code, reason } = problem;
+  return { field, code, ...describeError(code), ...(reason === undefined ? {} : { reason }) };
+}
+
 // RF-007
 export function toErrorReply(error: unknown): ErrorReply {
   const code = codeOf(error);
   const status = statusOfCode[code] ?? 500;
-  return { status, body: { code, ...describeError(code) }, unexpected: status === 500 };
+  const problems =
+    error instanceof FieldProblemsError ? { problems: error.problems.map(problemBody) } : {};
+  return {
+    status,
+    body: { code, ...describeError(code), ...problems },
+    unexpected: status === 500,
+  };
 }

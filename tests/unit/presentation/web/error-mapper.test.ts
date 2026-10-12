@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES, type ErrorCode } from '../../../../src/domain/errors/codes.js';
 import { describeError } from '../../../../src/domain/errors/descriptions.js';
+import { FieldProblemsError } from '../../../../src/domain/errors/field-problems.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { toErrorReply } from '../../../../src/presentation/web/error-mapper.js';
 
@@ -18,6 +19,8 @@ function bodyOf(code: ErrorCode): { code: ErrorCode; message: string; nextStep: 
 describe('error mapper: Rosetta errors', () => {
   it.each([
     [ERROR_CODES.requestInvalid, 400],
+    [ERROR_CODES.githubUrlInvalid, 400],
+    [ERROR_CODES.settingsInvalid, 400],
     [ERROR_CODES.notSignedIn, 401],
     [ERROR_CODES.notAllowed, 403],
     [ERROR_CODES.originRefused, 403],
@@ -98,5 +101,33 @@ describe('error mapper: unexpected failures', () => {
   it('RF-007 marks 500 replies as unexpected so the caller logs them, and 4xx as expected', () => {
     expect(toErrorReply(new Error('boom')).unexpected).toBe(true);
     expect(toErrorReply(new RosettaError(ERROR_CODES.notFound)).unexpected).toBe(false);
+  });
+});
+
+describe('error mapper: errors with field problems', () => {
+  it('RF-002 the body lists each problem with its field, code, message and next step', () => {
+    const error = new FieldProblemsError(ERROR_CODES.settingsInvalid, [
+      { field: 'budget.run.maxTokens', code: ERROR_CODES.settingsCapNegative },
+      {
+        field: 'url',
+        code: ERROR_CODES.githubUrlInvalid,
+        reason: 'The address is not on github.com.',
+      },
+    ]);
+
+    const reply = toErrorReply(error);
+
+    expect(reply.status).toBe(400);
+    expect(reply.body).toEqual({
+      ...bodyOf(ERROR_CODES.settingsInvalid),
+      problems: [
+        { field: 'budget.run.maxTokens', ...bodyOf(ERROR_CODES.settingsCapNegative) },
+        {
+          field: 'url',
+          ...bodyOf(ERROR_CODES.githubUrlInvalid),
+          reason: 'The address is not on github.com.',
+        },
+      ],
+    });
   });
 });
