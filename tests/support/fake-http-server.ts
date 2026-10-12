@@ -28,6 +28,11 @@ export interface ReceivedRequest {
 /** Chooses the exchange that answers a request; undefined answers 404. */
 export type Route = (method: string, path: string) => RecordedExchange | undefined;
 
+export interface FakeServerOptions {
+  /** False starts a loopback server that the test-mode check must not trust (default true). */
+  readonly registerPort?: boolean;
+}
+
 async function bodyOf(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
@@ -59,12 +64,14 @@ function portOf(address: AddressInfo | string | null): number {
 export class FakeHttpServer {
   readonly received: ReceivedRequest[] = [];
   private readonly route: Route;
+  private readonly registerPort: boolean;
   private readonly server = createServer((request, response) => {
     void this.answer(request, response);
   });
 
-  constructor(route: Route) {
+  constructor(route: Route, options: FakeServerOptions = {}) {
     this.route = route;
+    this.registerPort = options.registerPort ?? true;
   }
 
   /** Starts on a free loopback port and returns its base URL. */

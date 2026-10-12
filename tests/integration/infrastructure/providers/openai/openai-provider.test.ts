@@ -216,17 +216,6 @@ describe('OpenAiProvider answers it cannot use', () => {
   });
 });
 
-describe('OpenAiProvider in automated tests', () => {
-  it('RNF-005 refuses to call the real OpenAI when ROSETTA_TEST=1', async () => {
-    const { provider, server } = await start('contract-text', { fakeServer: false });
-
-    const error = await failureOf(provider.complete(contractRequest()));
-
-    expect(error).toMatchObject({ code: ERROR_CODES.realProviderRefusedInTests });
-    expect(server.received).toEqual([]);
-  });
-});
-
 describe('OpenAiProvider keys', () => {
   const pieces = [fakeOpenAiKey.slice(0, 12), fakeOpenAiKey.slice(12)];
 

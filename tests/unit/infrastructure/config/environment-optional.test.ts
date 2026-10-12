@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { loadEnvironment } from '../../../../src/infrastructure/config/environment.js';
 
@@ -103,6 +104,20 @@ describe('environment: log level, retention, proxy and URLs', () => {
       expect(failureOf(validSource({ ROSETTA_TRUST_PROXY: value })).message).toContain(
         'ROSETTA_TRUST_PROXY',
       );
+    }
+  });
+
+  it('RF-401 refuses an Ollama URL with userinfo with RST-1000 and never echoes it', () => {
+    for (const url of [
+      'http://user:fake-pass@127.0.0.1:11434',
+      'http://user@127.0.0.1:11434',
+      'https://:fake-pass@ollama.example.test',
+    ]) {
+      const error = failureOf(validSource({ ROSETTA_OLLAMA_URL: url }));
+
+      expect(error.code).toBe(ERROR_CODES.configurationInvalid);
+      expect(error.message).toContain('ROSETTA_OLLAMA_URL');
+      expect(error.message).not.toContain('fake-pass');
     }
   });
 

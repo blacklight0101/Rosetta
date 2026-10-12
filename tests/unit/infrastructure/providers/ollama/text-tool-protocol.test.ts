@@ -23,6 +23,49 @@ describe('thinking text', () => {
   it('RF-205 text without thinking is unchanged', () => {
     expect(stripThinking('No thinking here.')).toBe('No thinking here.');
   });
+
+  it('RF-205 a 300 KB unclosed think made of opening tags is stripped in under 50 ms', () => {
+    const content = `Answer.<think>${'<think>'.repeat(300_000 / 7)}`;
+
+    const started = performance.now();
+    const stripped = stripThinking(content);
+    const elapsed = performance.now() - started;
+
+    expect(stripped).toBe('Answer.');
+    expect(elapsed).toBeLessThan(50);
+  });
+
+  it('RF-205 a 300 KB unclosed think with text is stripped in under 50 ms', () => {
+    const content = `<think>${'<think>plan '.repeat(300_000 / 12)}`;
+
+    const started = performance.now();
+    const stripped = stripThinking(content);
+    const elapsed = performance.now() - started;
+
+    expect(stripped).toBe('');
+    expect(elapsed).toBeLessThan(50);
+  });
+
+  it('RF-205 the text before an orphan closing tag is thinking and never reaches the answer', () => {
+    expect(stripThinking('plan the answer</think>Answer.')).toBe('Answer.');
+    expect(stripThinking('plan</thinking>Answer.')).toBe('Answer.');
+  });
+
+  it('RF-205 thinking tags in any letter case are stripped', () => {
+    expect(stripThinking('<THINK>plan</THINK>Answer.')).toBe('Answer.');
+    expect(stripThinking('<Think>plan</think>Answer.')).toBe('Answer.');
+    expect(stripThinking('Answer.<THINK>still thinking')).toBe('Answer.');
+  });
+
+  it('RF-205 the thinking form of the tag is stripped', () => {
+    expect(stripThinking('<thinking>plan</thinking>Answer.')).toBe('Answer.');
+    expect(stripThinking('<Thinking>plan</THINKING>Answer.')).toBe('Answer.');
+    expect(stripThinking('Answer.<thinking>still thinking')).toBe('Answer.');
+  });
+
+  it('RF-205 text between two thinking blocks is kept', () => {
+    expect(stripThinking('<think>a</think>One.<thinking>b</thinking> Two.')).toBe('One. Two.');
+  });
 });
 
 describe('parsing a text answer', () => {
@@ -63,6 +106,17 @@ describe('parsing a text answer', () => {
     const content = `${fence}tool_call\n{"arguments": {"path": "a.cs"}}\n${fence}`;
 
     expect(parseTextAnswer(content).calls).toEqual([]);
+  });
+
+  it('RF-205 a tool call inside upper-case or thinking-form tags is ignored', () => {
+    const call = `${fence}tool_call\n{"name": "grep", "arguments": {}}\n${fence}`;
+
+    expect(parseTextAnswer(`<THINK>${call}</THINK>Done.`)).toEqual({ text: 'Done.', calls: [] });
+    expect(parseTextAnswer(`<thinking>${call}</thinking>Done.`)).toEqual({
+      text: 'Done.',
+      calls: [],
+    });
+    expect(parseTextAnswer(`${call}</think>Done.`)).toEqual({ text: 'Done.', calls: [] });
   });
 
   it('RF-205 a tool call inside thinking text is ignored', () => {
