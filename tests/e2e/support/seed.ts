@@ -45,7 +45,8 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * (`force-admin` as an administrator, like the bootstrap account, which other specs need unchanged),
  * `cap` sets the daily cap on its own keys (DEC-107), `providers` presses the Test button (RF-407),
  * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
- * password and runs the administration pages (RF-1102, P1-42), and `project-settings` edits one project's settings (RF-002), and `replay` owns a recorded run
+ * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
+ * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001), and `replay` owns a recorded run
  * (seed-replay.ts) whose report and replay page it opens (RF-506).
  */
 export type E2eAccountKind =
@@ -57,6 +58,7 @@ export type E2eAccountKind =
   | 'providers'
   | 'projects'
   | 'project-settings'
+  | 'start-run'
   | 'admin'
   | 'replay';
 
@@ -69,6 +71,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'providers',
   'projects',
   'project-settings',
+  'start-run',
   'admin',
   'replay',
 ];
