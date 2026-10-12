@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { CLAIM_STATUSES } from '../../domain/cards/card-vocabulary.js';
 import type { ReplayModel } from './replay-model.js';
 
@@ -44,14 +45,53 @@ export interface ReportModel {
   readonly replay: ReplayModel;
 }
 
-/** The cards of a `cards/index.json` text; none when it is missing or is not a version 1 index. */
+const CARD_FILE = /^cards\/[A-Z]+\/[A-Z]+-\d+\.md$/u;
+
+const indexSchema = z.object({
+  schemaVersion: z.literal(1),
+  cards: z.array(
+    z.object({
+      id: z.string().min(1),
+      type: z.string().min(1),
+      title: z.string(),
+      area: z.string(),
+      path: z.string(),
+      claimCounts: z.record(z.string(), z.number().int().min(0)),
+    }),
+  ),
+});
+
+function parsedJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    // A torn or foreign file is no index: the report then lists no cards.
+    return undefined;
+  }
+}
+
+/**
+ * The cards of a `cards/index.json` text; none when it is missing or is not a version 1 index. A
+ * card whose path is not the layout of a card file keeps its row and loses its path, so no link
+ * is built from it.
+ */
 export function parseCardIndex(text: string | undefined): readonly ReportCard[] {
-  void text;
-  return [];
+  if (text === undefined) return [];
+  const parsed = indexSchema.safeParse(parsedJson(text));
+  if (!parsed.success) return [];
+  return parsed.data.cards.map((card) => ({
+    ...card,
+    path: CARD_FILE.test(card.path) ? card.path : '',
+  }));
 }
 
 /** The claims of all cards, per status, every status listed. */
 export function claimTotals(cards: readonly ReportCard[]): Readonly<Record<string, number>> {
-  void cards;
-  return Object.fromEntries(CLAIM_STATUSES.map((status) => [status, 0]));
+  const totals = Object.fromEntries(CLAIM_STATUSES.map((status) => [status, 0]));
+  for (const card of cards) {
+    for (const status of CLAIM_STATUSES) {
+      totals[status] = (totals[status] ?? 0) + (card.claimCounts[status] ?? 0);
+    }
+  }
+  return totals;
 }

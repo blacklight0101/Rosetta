@@ -67,7 +67,7 @@ describe('renderReportMarkdown documents and cards', () => {
   });
 
   it('RF-504 links every card and sorts nothing away', () => {
-    const second = { ...plainCard, id: 'BR-002', title: 'Second' };
+    const second = { ...plainCard, id: 'BR-002', title: 'Second', path: 'cards/BR/BR-002.md' };
     const markdown = renderReportMarkdown(reportModel({ cards: [plainCard, second] }), masker);
 
     expect(markdown).toContain('2 cards, 2 claims: 2 Supported.');
@@ -84,7 +84,7 @@ describe('renderReportMarkdown documents and cards', () => {
 
     expect(none).toContain('No cards.');
     expect(unlinked).toContain('| BR-001 | BR |');
-    expect(unlinked).not.toContain('](../');
+    expect(unlinked).not.toContain('](../cards/');
   });
 
   it('RF-504 leaves out the fields a run that has not ended does not have', () => {
