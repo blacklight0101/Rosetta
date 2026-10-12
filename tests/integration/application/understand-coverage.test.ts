@@ -8,6 +8,7 @@ import {
   readJson,
   UNDERSTAND_TIMEOUT,
 } from '../../support/understand-full-run.js';
+import { createUnderstandHarness } from '../../support/understand-run-harness.js';
 
 // RF-230, ADR-005, ADR-008: the coverage of every area of an understand run on the C# fixture,
 // with the recorded reader: (root) reads Default.aspx.cs:1-14, Services reads
@@ -87,5 +88,44 @@ describe('an understand run on the C# fixture: coverage', UNDERSTAND_TIMEOUT, ()
     expect(text).toContain('| Services | 1 of 1 | 100.0% |');
     expect(text).toContain('| Catalog | 0 of ');
     expect(text).toContain('| Default.aspx.cs | 1\\-14 |');
+  });
+});
+
+describe('an understand run whose tasks end early: coverage', UNDERSTAND_TIMEOUT, () => {
+  it('RF-230 an InvalidOutput task and a task of a stopped run keep the coverage of the lines they read', async () => {
+    const h = await createUnderstandHarness({
+      dataDir: temp.path,
+      recording: 'understand-coverage-early-ends.json',
+      beforeCall: async (call, harness) => {
+        if (call === 6) await harness.stopRunning();
+      },
+    });
+    await h.scan();
+
+    const run = await h.understand({ areas: ['Catalog', 'Services'] });
+
+    expect(run.endState).toBe('Interrupted');
+    const manifest = await h.manifestOf(run);
+    expect(manifest.agentTasks.map((task) => [task.area, task.state])).toEqual([
+      ['Catalog', 'InvalidOutput'],
+      ['Services', 'Failed'],
+    ]);
+    const coverage = await coverageOf(h.runFolder(run));
+    expect(coverage.areas.map((entry) => [entry.area, entry.files])).toEqual([
+      [
+        'Catalog',
+        [
+          { path: 'Catalog/Details.aspx', read: [{ startLine: 2, endLine: 2 }] },
+          {
+            path: 'Catalog/Details.aspx.cs',
+            read: [
+              { startLine: 1, endLine: 4 },
+              { startLine: 7, endLine: 7 },
+            ],
+          },
+        ],
+      ],
+      ['Services', [{ path: 'Services/CatalogService.cs', read: [{ startLine: 1, endLine: 6 }] }]],
+    ]);
   });
 });

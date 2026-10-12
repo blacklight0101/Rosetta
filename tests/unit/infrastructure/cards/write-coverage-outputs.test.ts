@@ -137,3 +137,30 @@ describe('writeCoverageOutputs coverage.md', () => {
     expect(writer.writes).toEqual([]);
   });
 });
+
+describe('writeCoverageOutputs untrusted text', () => {
+  const hostilePath = 'a/[x](http://evil.test)|<b>.cs';
+  const hostileArea = '<img src=x onerror=1>\n# H';
+  const hostile: AreaCoverage = {
+    area: hostileArea,
+    files: [{ path: hostilePath, read: [{ startLine: 1, endLine: 2 }] }],
+    tokens: 10,
+    readTokens: 10,
+    readTokenShare: 1,
+  };
+
+  it('RF-230 RF-507 a hostile path or area name is shown as text in coverage.md and kept verbatim in coverage.json', async () => {
+    const writer = await written([hostile]);
+
+    const text = fileOf(writer, 'coverage.md');
+    expect(text).not.toContain('<');
+    expect(text).not.toContain('](');
+    expect(text).not.toMatch(/^# H/mu);
+    const rows = text.split('\n').filter((line) => line.includes('evil'));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.replaceAll('\\|', '').split('|')).toHaveLength(4);
+    expect(jsonOf(writer)).toMatchObject({
+      areas: [{ area: hostileArea, files: [{ path: hostilePath }] }],
+    });
+  });
+});
