@@ -1,0 +1,374 @@
+/* Live run page (P1-35, design-system.md section 14, artboard LiveRun.dc.html). Every class here
+   starts with rst-live so the page owns its styles; colours, spacing and type come from the tokens. */
+
+.rst-live {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-4);
+  min-inline-size: 0;
+}
+
+/* Head: title, run folder name, stage, state, Stop */
+
+.rst-live-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+}
+
+.rst-live-head__key {
+  color: var(--rst-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.rst-live-head__stage {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-sm);
+  text-transform: capitalize;
+}
+
+.rst-live-head__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
+
+.rst-live-head__note {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-live-head__spacer {
+  flex: 1 1 auto;
+}
+
+.rst-live-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
+}
+
+.rst-root .rst-live-downloads a.rst-button {
+  text-decoration: none;
+}
+
+/* Overview tiles */
+
+.rst-live-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
+  gap: var(--rst-sp-3);
+}
+
+.rst-live-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-1);
+  padding: var(--rst-sp-4);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-lg);
+  background: var(--rst-surface);
+  box-shadow: var(--rst-shadow-1);
+}
+
+.rst-live-tile__title {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-live-tile__figure {
+  font-size: var(--rst-fs-2xl);
+  font-weight: var(--rst-fw-head);
+  line-height: var(--rst-lh-head);
+}
+
+.rst-live-tile__note {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-live-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--rst-sp-2);
+  margin: 0;
+}
+
+.rst-live-counts dt {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-live-counts dd {
+  margin: 0;
+  font-size: var(--rst-fs-xl);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-live-section__title {
+  font-size: var(--rst-fs-lg);
+  font-weight: var(--rst-fw-head);
+}
+
+/* Run meter */
+
+.rst-live-meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-live-meter__bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--rst-sp-4);
+}
+
+.rst-live-meter__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-1);
+}
+
+.rst-live-meter__figures {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--rst-sp-2);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-live-meter__fill--warn {
+  background: var(--rst-warn-solid);
+}
+
+.rst-live-meter__estimate {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+/* Agent panels */
+
+.rst-live-agents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-live-agents__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.75rem), 1fr));
+  gap: var(--rst-sp-3);
+}
+
+.rst-live-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  min-inline-size: 0;
+  padding: var(--rst-sp-4);
+  border: 1px solid var(--rst-rule);
+  border-inline-start: 4px solid var(--rst-role-reader);
+  border-radius: var(--rst-radius-lg);
+  background: var(--rst-surface);
+  box-shadow: var(--rst-shadow-1);
+}
+
+.rst-live-panel--verifier {
+  border-inline-start-color: var(--rst-role-verifier);
+}
+
+.rst-live-panel--planner {
+  border-inline-start-color: var(--rst-role-planner);
+}
+
+.rst-live-panel--summariser {
+  border-inline-start-color: var(--rst-role-summariser);
+}
+
+.rst-live-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
+
+.rst-live-panel__area {
+  font-size: var(--rst-fs-md);
+  overflow-wrap: anywhere;
+}
+
+.rst-live-panel__role {
+  flex: 1 1 auto;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-live-panel__model {
+  margin: 0;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  overflow-wrap: anywhere;
+}
+
+.rst-live-panel__now {
+  min-block-size: 2.25rem;
+  margin: 0;
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-2);
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-xs);
+  overflow-wrap: anywhere;
+}
+
+.rst-live-panel__status {
+  color: var(--rst-ink-muted);
+}
+
+.rst-live-panel__facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--rst-sp-2);
+  margin: 0;
+}
+
+.rst-live-panel__facts dt {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-live-panel__facts dd {
+  margin: 0;
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-live-panel__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-live-chip {
+  display: inline-flex;
+  align-items: center;
+  block-size: 22px;
+  padding-inline: var(--rst-sp-2);
+  border-radius: var(--rst-radius-sm);
+  background: var(--rst-surface-2);
+  color: var(--rst-ink-soft);
+  font-family: var(--rst-mono);
+  font-size: 11px;
+}
+
+/* Claims */
+
+.rst-live-claims__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-live-claim {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-1);
+  padding-block: var(--rst-sp-3);
+  border-block-end: 1px solid var(--rst-rule);
+}
+
+.rst-live-claim__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2) var(--rst-sp-3);
+}
+
+.rst-live-claim__id {
+  color: var(--rst-ink-soft);
+}
+
+.rst-live-claim__text,
+.rst-live-claim__reason {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rst-live-claim__reason {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-live-claim__lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  margin: 0;
+  padding: 0;
+  font-size: var(--rst-fs-sm);
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+/* Event log */
+
+.rst-live-log__scroll {
+  max-block-size: 28rem;
+  overflow: auto;
+}
+
+.rst-live-log__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-xs);
+  list-style: none;
+}
+
+.rst-live-log__item {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--rst-sp-2);
+  padding-block: var(--rst-sp-2);
+  border-block-end: 1px solid var(--rst-rule);
+}
+
+.rst-live-log__time {
+  color: var(--rst-ink-muted);
+}
+
+.rst-live-log__body {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.rst-live-log__type {
+  color: var(--rst-info-ink);
+}
+
+.rst-live-log__type--brand {
+  color: var(--rst-brand);
+}
+
+.rst-live-log__type--ok {
+  color: var(--rst-ok-ink);
+}
+
+.rst-live-log__type--warn {
+  color: var(--rst-warn-ink);
+}
+
+.rst-live-log__text {
+  color: var(--rst-ink-soft);
+  overflow-wrap: anywhere;
+}

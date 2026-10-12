@@ -80,6 +80,28 @@ describe('an understand run: events', UNDERSTAND_TIMEOUT, () => {
     });
     expect(events.at(-1)?.type).toBe('run.ended');
   });
+
+  it('RF-1004 the citation check of a claim carries its text and cited lines, with the reason when it fails', async () => {
+    const { h, run } = await fullUnderstandRun(temp.path);
+
+    const checks = (await h.eventsOf(run)).filter(
+      (event) => event.type === 'verify.citation.checked',
+    );
+
+    expect(checks.map((event) => event.data)).toContainEqual({
+      claimId: 'FEAT-001.c1',
+      ok: true,
+      text: 'The page loads every catalog item into the grid when it opens.',
+      citations: [{ path: 'Default.aspx.cs', startLine: 8, endLine: 12 }],
+    });
+    const invalid = checks.find((event) => event.data['claimId'] === 'BR-001.c3');
+    expect(invalid?.data).toMatchObject({
+      ok: false,
+      text: 'A missing helper formats the name.',
+      citations: [{ path: 'Catalog/Missing.cs', startLine: 1, endLine: 2 }],
+    });
+    expect(typeof invalid?.data['reason']).toBe('string');
+  });
 });
 
 describe('an understand run and the snapshot', UNDERSTAND_TIMEOUT, () => {
