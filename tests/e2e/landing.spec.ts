@@ -1,4 +1,3 @@
-import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { e2eContactEmail } from './support/server-config.js';
@@ -9,13 +8,6 @@ import { seededUser, signInAs } from './support/sign-in.js';
 // and in both colour schemes against the running server, with JavaScript on and off.
 
 const backgrounds = { light: 'rgb(244, 246, 246)', dark: 'rgb(13, 20, 19)' } as const;
-
-async function stylesOf(page: Page, selector: string, property: string): Promise<string> {
-  return await page
-    .locator(selector)
-    .first()
-    .evaluate((element, name) => getComputedStyle(element).getPropertyValue(name), property);
-}
 
 test.describe('landing page', () => {
   test.beforeEach(async ({ page }) => {
@@ -64,23 +56,29 @@ test.describe('landing page', () => {
     await expect(stage.getByRole('list', { name: 'Event stream' })).toBeVisible();
     await expect(page.getByText('Sample run of Microsoft')).toBeVisible();
   });
+});
+
+test.describe('landing page replay and theme', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
 
   test('RF-1200 plays the replay once per 10 s cycle and pauses it on hover and on focus', async ({
     page,
   }) => {
-    expect(await stylesOf(page, '.seg', 'animation-duration')).toBe('10s');
-    expect(await stylesOf(page, '.seg', 'animation-iteration-count')).toBe('infinite');
-    expect(await stylesOf(page, '.seg', 'animation-play-state')).toBe('running');
+    await expect(page.locator('.seg').first()).toHaveCSS('animation-duration', '10s');
+    await expect(page.locator('.seg').first()).toHaveCSS('animation-iteration-count', 'infinite');
+    await expect(page.locator('.seg').first()).toHaveCSS('animation-play-state', 'running');
 
     await page.locator('.stage').hover();
-    expect(await stylesOf(page, '.seg', 'animation-play-state')).toBe('paused');
-    expect(await stylesOf(page, '.ev', 'animation-play-state')).toBe('paused');
-    expect(await stylesOf(page, '.fill', 'animation-play-state')).toBe('paused');
+    await expect(page.locator('.seg').first()).toHaveCSS('animation-play-state', 'paused');
+    await expect(page.locator('.ev').first()).toHaveCSS('animation-play-state', 'paused');
+    await expect(page.locator('.fill').first()).toHaveCSS('animation-play-state', 'paused');
 
     await page.mouse.move(0, 0);
-    expect(await stylesOf(page, '.seg', 'animation-play-state')).toBe('running');
+    await expect(page.locator('.seg').first()).toHaveCSS('animation-play-state', 'running');
     await page.locator('.stage').focus();
-    expect(await stylesOf(page, '.seg', 'animation-play-state')).toBe('paused');
+    await expect(page.locator('.seg').first()).toHaveCSS('animation-play-state', 'paused');
   });
 
   test('RF-1200 shows the finished replay without motion under prefers-reduced-motion', async ({
@@ -89,16 +87,22 @@ test.describe('landing page', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
 
     for (const selector of ['.seg', '.ev', '.fill', '.swap-a', '.swap-b']) {
-      expect(await stylesOf(page, selector, 'animation-name')).toBe('none');
+      await expect(page.locator(selector).first()).toHaveCSS('animation-name', 'none');
     }
-    expect(await stylesOf(page, '.swap-b', 'opacity')).toBe('1');
-    expect(await stylesOf(page, '.swap-a', 'opacity')).toBe('0');
+    await expect(page.locator('.swap-b').first()).toHaveCSS('opacity', '1');
+    await expect(page.locator('.swap-a').first()).toHaveCSS('opacity', '0');
   });
 
   test('RNF-010 follows the colour scheme of the browser', async ({ page }, info) => {
     const scheme = info.project.use.colorScheme === 'dark' ? 'dark' : 'light';
 
-    expect(await stylesOf(page, 'body', 'background-color')).toBe(backgrounds[scheme]);
+    await expect(page.locator('body')).toHaveCSS('background-color', backgrounds[scheme]);
+  });
+});
+
+test.describe('landing page accessibility and layout', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
   });
 
   test('RNF-010 has no serious or critical accessibility violation', async ({ page }) => {
@@ -106,11 +110,11 @@ test.describe('landing page', () => {
   });
 
   test('RNF-010 never scrolls sideways', async ({ page }) => {
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    const overflow: unknown = await page.evaluate(
+      'document.documentElement.scrollWidth - document.documentElement.clientWidth',
     );
 
-    expect(overflow).toBeLessThanOrEqual(0);
+    expect(Number(overflow)).toBeLessThanOrEqual(0);
   });
 
   test('RF-1200 loads without a console error or a policy violation', async ({ page }) => {

@@ -25,8 +25,8 @@ function blockAfter(source: string, opening: string): string {
 }
 
 const declarations = (block: string): string[] =>
-  [...block.matchAll(/(--rst-[a-z0-9-]+)\s*:\s*([^;]+);/g)].map(
-    (match) => `${match[1] ?? ''}: ${(match[2] ?? '').trim()}`,
+  [...block.matchAll(/(--rst-[a-z0-9-]+)\s*:\s*([^;]+);/g)].map((match) =>
+    `${match[1] ?? ''}: ${(match[2] ?? '').trim()}`.toLowerCase(),
   );
 
 describe('landing style sheet', () => {

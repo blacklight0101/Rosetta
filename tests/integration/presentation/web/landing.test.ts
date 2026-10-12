@@ -66,7 +66,9 @@ describe('landing page content', () => {
     expect(html.match(/class="lane"/g)).toHaveLength(5);
     expect(html).toContain('Event stream');
   });
+});
 
+describe('landing page sections', () => {
   it('RF-1200 shows an evidence card with its cited lines and a rejected claim kept and marked', async () => {
     const { html } = await landing();
 
@@ -151,7 +153,7 @@ describe('landing page for a signed-in visitor', () => {
     const response = await browser.request({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(302);
-    expect(response.headers['location']).toBe('/projects');
+    expect(response.headers.location).toBe('/projects');
   });
 
   it('RF-1200 sends an administrator who must change the password to their projects as well', async () => {
@@ -166,7 +168,7 @@ describe('landing page for a signed-in visitor', () => {
     const response = await browser.request({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(302);
-    expect(response.headers['location']).toBe('/projects');
+    expect(response.headers.location).toBe('/projects');
   });
 
   it('RF-1200 shows the page to a visitor whose cookie is unknown', async () => {

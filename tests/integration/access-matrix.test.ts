@@ -192,7 +192,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   ],
   'GET /api/admin/audit': [{ method: 'GET', url: '/api/admin/audit', expected: adminOnly(200) }],
   'HEAD /api/admin/audit': [{ method: 'HEAD', url: '/api/admin/audit', expected: adminOnly(200) }],
-  'GET *': [
+  'GET /*': [
     { method: 'GET', url: '/index.html', expected: active(302, 200) },
     { method: 'GET', url: '/sign-in', expected: everyone(200) },
     { method: 'GET', url: '/account/password', expected: signedIn(302, 200) },
@@ -204,7 +204,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'GET', url: '/api%2fx', expected: active(302, 200) },
     { method: 'GET', url: '/api/missing', expected: active(401, 404) },
   ],
-  'HEAD *': [
+  'HEAD /*': [
     { method: 'HEAD', url: '/index.html', expected: active(302, 200) },
     { method: 'HEAD', url: '/sign-in', expected: everyone(200) },
     { method: 'HEAD', url: '/account/password', expected: signedIn(302, 200) },
