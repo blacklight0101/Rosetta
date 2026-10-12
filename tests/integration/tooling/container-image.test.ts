@@ -73,11 +73,14 @@ describe('Dockerfile', () => {
 });
 
 describe('Dockerfile runtime stage', () => {
-  it('RF-1300 the runtime stage installs production dependencies only, without install scripts', async () => {
-    const lines = instructions((await stages()).at(-1)).join('\n');
+  it('RF-1300 the runtime stage takes production dependencies only, installed without install scripts', async () => {
+    const found = await stages();
+    const install = instructions(named(found, 'deps')).join('\n');
+    const runtime = instructions(found.at(-1)).join('\n');
 
-    expect(lines).toMatch(/npm ci --omit=dev --ignore-scripts/u);
-    expect(lines).not.toMatch(/npm run build|tsc|vite/u);
+    expect(install).toMatch(/npm ci --omit=dev --ignore-scripts/u);
+    expect(runtime).toMatch(/COPY --from=deps \S*\/node_modules/u);
+    expect(runtime).not.toMatch(/npm ci|npm run build|tsc|vite/u);
   });
 
   it('RF-1300 the runtime stage ships the built server, the front end, migrations, prompts, prices, templates and the password list', async () => {

@@ -136,3 +136,50 @@ jobs:
       - run: printf '%s\n' "$TITLE" | npx --no-install commitlint
         env:
           TITLE: ${{ github.event.pull_request.title }}
+
+  image:
+    name: image (build, container test, trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ROSETTA_IMAGE: rosetta:ci
+    services:
+      # Disposable database for the container test; the credentials are throwaway (P1-44).
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rosetta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # The runtime image is the default target; the test image must build too (compose.ci.yaml, P1-45).
+      - run: docker build --tag "$ROSETTA_IMAGE" .
+      - run: docker build --target test --tag rosetta:ci-test .
+      # Starts the image against the service database and calls /healthz (RF-1300, Linux only).
+      - run: npx vitest run --project integration tests/integration/image
+        env:
+          ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
+      # High and critical findings that have a fix fail the job (RF-1300, environments-and-delivery.md section 6).
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: rosetta:ci
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          exit-code: '1'

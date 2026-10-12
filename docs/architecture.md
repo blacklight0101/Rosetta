@@ -164,7 +164,8 @@ src/
     composition-root.ts
 web/                    front-end source of the landing page, web UI and report components (Preact + Vite, DEC-52): src/app (router table `routes.ts`, navigation, App, the contexts that hand the API client and the signed-in user to a page), src/api (typed client, wire schemas), src/components (shared components, one per file), src/lib (text-only renderer, theme), src/styles (tokens.css copied from docs/design/, base.css, components.css), src/pages (sign-in, change-password and settings pages, P1-14), src/gallery (development only); `npm run build` writes dist/web/ (index.html plus files under assets/ only, because the server answers only / , /sign-in and /assets/ without a session)
 db/migrations/          numbered SQL migrations (ADR-016, data-model.md section 7)
-Dockerfile              multi-stage image (RF-1300)
+Dockerfile              multi-stage image (RF-1300): stages `build`, `deps`, `test` (fakes, compose.ci.yaml only) and `runtime` (the default target; production dependencies, `dist/`, migrations, prompts, prices, templates, the password list; user `node`, port 8080, `HEALTHCHECK` on /healthz)
+.dockerignore           keeps .env files, history, maps, docs and tool configuration out of the build context (RNF-003)
 compose.yaml            local deployment: app + PostgreSQL (RF-1301)
 compose.ci.yaml         CI overlay: the image's test stage, fake provider and fake GitHub (RF-1301)
 db/init/                Compose init script that creates the database roles (data-model.md section 6)
@@ -569,7 +570,8 @@ flowchart LR
 One image, two places (ADR-014): locally `compose.yaml` runs the app and PostgreSQL with named volumes and publishes
 the app on `127.0.0.1:8080`; hosted, the same image runs behind the host's HTTPS with managed PostgreSQL and a
 persistent disk. Migrations run at start-up before the server listens (RF-1302). GitHub and cloud providers are
-reached over HTTPS. The sample report is static files on GitHub Pages. Details:
+reached over HTTPS. The `image` job of CI builds the image, starts it against a disposable PostgreSQL
+(`tests/integration/image/`) and scans it with Trivy (high and critical findings with a fix fail). The sample report is static files on GitHub Pages. Details:
 [environments-and-delivery.md](environments-and-delivery.md).
 
 ## 16. Quality attributes
