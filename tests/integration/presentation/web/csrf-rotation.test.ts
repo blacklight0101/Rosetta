@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { CSRF_COOKIE } from '../../../../src/presentation/web/session-cookies.js';
+import { fixturePassword } from '../../../support/account-fixtures.js';
 import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
 // RF-1009, RF-1101: the CSRF secret lives in the `__Host-rosetta_csrf` cookie. Sign-out clears it
-// and sign-in replaces it, so a token issued to an earlier session is refused once the browser has
+// and sign-in and a password change replace it, so a token issued to an earlier session is refused once the browser has
 // signed in again.
 
 let current: TestServer | undefined;
@@ -71,5 +72,28 @@ describe('CSRF secret at sign-in and sign-out', () => {
     expect(browser.cookies.get(CSRF_COOKIE)).toBeDefined();
     expect(browser.cookies.get(CSRF_COOKIE)).not.toBe(earlierSecret);
     expect(stale.statusCode).toBe(403);
+  });
+
+  it('RF-1103 a password change replaces the CSRF secret and refuses an earlier token', async () => {
+    const test = serve();
+    const amy = await addUser(test, { userName: 'amy' });
+    const browser = await signedInBrowser(test.server, amy);
+    const earlierSecret = browser.cookies.get(CSRF_COOKIE);
+    const earlier = browser.csrfToken ?? '';
+
+    const changed = await browser.request({
+      method: 'POST',
+      url: '/api/account/password',
+      payload: { currentPassword: amy.password, newPassword: fixturePassword('Renewed') },
+    });
+    const stale = await browser.request({ method: 'POST', url: '/api/probe', csrf: earlier });
+    const fresh = await browser.request({ method: 'POST', url: '/api/probe' });
+
+    expect(changed.statusCode).toBe(200);
+    expect(browser.cookies.get(CSRF_COOKIE)).toBeDefined();
+    expect(browser.cookies.get(CSRF_COOKIE)).not.toBe(earlierSecret);
+    expect(stale.statusCode).toBe(403);
+    expect(stale.json()).toMatchObject({ code: ERROR_CODES.csrfTokenInvalid });
+    expect(fresh.statusCode).toBe(200);
   });
 });
