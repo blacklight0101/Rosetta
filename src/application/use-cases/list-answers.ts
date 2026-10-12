@@ -1,5 +1,5 @@
 import type { Actor } from '../../domain/accounts/actor.js';
-import { err, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { AnswersFile, RecordedQuestion } from '../ports/answers-file.js';
 import type { RunIndex } from '../ports/run-index.js';
 
@@ -20,11 +20,13 @@ export class ListAnswers {
   }
 
   // RF-1007, RF-1105
-  execute(request: {
+  async execute(request: {
     readonly actor: Actor;
     readonly runId: string;
   }): Promise<Result<readonly RecordedQuestion[], 'not-found'>> {
-    void request;
-    return Promise.resolve(err('not-found'));
+    const run = await this.deps.runs.find(request.actor.userId, request.runId);
+    if (run === undefined) return err('not-found');
+    const project = { userId: run.userId, projectId: run.projectId };
+    return ok(await this.deps.answers.questionsOf(project, run.runKey));
   }
 }

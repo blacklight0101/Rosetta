@@ -23,12 +23,14 @@ export class RecordAnswers {
   }
 
   // RF-1007, RF-1105
-  execute(request: {
+  async execute(request: {
     readonly actor: Actor;
     readonly runId: string;
     readonly answers: readonly AnswerEntry[];
   }): Promise<Result<readonly RecordedQuestion[], RecordAnswersProblem>> {
-    void request;
-    return Promise.resolve(err('not-found'));
+    const run = await this.deps.runs.find(request.actor.userId, request.runId);
+    if (run === undefined) return err('not-found');
+    const project = { userId: run.userId, projectId: run.projectId };
+    return this.deps.answers.recordAnswers(project, run.runKey, request.answers);
   }
 }

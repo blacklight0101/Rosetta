@@ -12,7 +12,7 @@ import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-r
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
-import type { AnswerServices } from './answer-routes.js';
+import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
 import { EventStream, type StreamRegistry } from './event-stream.js';
 import { signedInOf } from './request-actor.js';
 import { estimateView } from './estimate-view.js';
@@ -265,4 +265,5 @@ export function registerRunRoutes(server: FastifyInstance, services: RunServices
   registerStop(server, services);
   registerStart(server, services);
   registerEstimate(server, services);
+  registerAnswerRoutes(server, services);
 }

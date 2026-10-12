@@ -7,10 +7,11 @@ import type {
 } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
 import { KeyedQueue } from '../../application/support/keyed-queue.js';
-import { ok, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
+import { questionsOfRun, withAnswers } from './answers-sections.js';
 
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
@@ -68,20 +69,26 @@ export class FileAnswersFile implements AnswersFile {
     });
   }
 
-  // RF-1007 (not built yet)
-  questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]> {
-    void [project, runKey];
-    return Promise.resolve([]);
+  // RF-1007
+  async questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]> {
+    return questionsOfRun(await this.read(fileOf(project)), runKey);
   }
 
-  // RF-1007 (not built yet)
+  // RF-1007
   recordAnswers(
     project: ProjectRef,
     runKey: string,
     answers: readonly AnswerEntry[],
   ): Promise<Result<readonly RecordedQuestion[], 'unknown-question'>> {
-    void [project, runKey, answers];
-    return Promise.resolve(ok([]));
+    const file = fileOf(project);
+    return this.queue.run(`${file.userId}/${file.path}`, async () => {
+      const existing = await this.read(file);
+      const lines = answers.map((entry) => ({ ...entry, answer: this.line(entry.answer) }));
+      const text = withAnswers(existing, runKey, lines);
+      if (text === undefined) return err('unknown-question');
+      if (text !== existing) await this.write(file, text);
+      return ok(questionsOfRun(text, runKey));
+    });
   }
 
   private section(question: OpenQuestion, text: string): string {

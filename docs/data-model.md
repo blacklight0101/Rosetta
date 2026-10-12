@@ -511,6 +511,12 @@ included): a question whose heading text is already in the file is skipped, new 
 existing ones, the question and context are one line each and masked, and the context is the card's first citation
 followed by its first claim (P1-33, DEC-98).
 
+The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question belongs to the run its `- Card:` line
+names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
+line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
+never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
+and writes to one project's file run one after another.
+
 ### 3.17 Report and hand-off folders
 
 `report/` (static site, RF-500..RF-506) and `handoff/` (RF-600..RF-699) are generated from the files above. Their
