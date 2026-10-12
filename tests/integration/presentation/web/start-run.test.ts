@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { settingsFor } from '../../../support/provider-factory-harness.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
@@ -76,7 +77,7 @@ describe('POST /api/projects/:id/runs and refused requests', () => {
     const response = await amy.request({
       method: 'POST',
       url: startUrl(project.id),
-      payload: { stage: 'understand' },
+      payload: { stage: 'report' },
     });
 
     expect(response.statusCode).toBe(409);
@@ -103,6 +104,57 @@ describe('POST /api/projects/:id/runs and refused requests', () => {
       expect(response.statusCode).toBe(400);
       expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
     }
+  });
+});
+
+describe('POST /api/projects/:id/runs for understand', () => {
+  const cloudReader = settingsFor({ reader: { provider: 'openai', model: 'gpt-5-mini' } });
+
+  it('RF-200 accepts an understand run with its areas and the consent field', async () => {
+    const { test, amy, project } = await setup();
+
+    const response = await amy.request({
+      method: 'POST',
+      url: startUrl(project.id),
+      payload: { stage: 'understand', areas: ['Catalog'], cloudConsent: false },
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({ stage: 'understand' });
+    expect(test.runs.executor.started[0]?.manifest.options).toEqual({
+      areas: ['Catalog'],
+      cloudConsent: false,
+    });
+  });
+
+  it('RF-143 refuses a cloud run without the consent field with RST-1515 (400) and starts nothing', async () => {
+    const { test, amy, amyActor } = await setup();
+    const cloud = sampleProject({ userId: amyActor.userId, settings: cloudReader });
+    await test.projects.insertOrFind(cloud);
+
+    const response = await amy.request({
+      method: 'POST',
+      url: startUrl(cloud.id),
+      payload: { stage: 'understand' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.cloudConsentMissing });
+    expect(test.runs.executor.started).toHaveLength(0);
+    expect(await test.runs.runs.list(amyActor.userId, cloud.id)).toEqual([]);
+  });
+
+  it('RF-200 refuses an area list that is not a list of names with RST-2000 (400)', async () => {
+    const { amy, project } = await setup();
+
+    const response = await amy.request({
+      method: 'POST',
+      url: startUrl(project.id),
+      payload: { stage: 'understand', areas: 'Catalog' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
   });
 });
 

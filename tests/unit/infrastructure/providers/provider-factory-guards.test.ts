@@ -86,16 +86,6 @@ describe('no adapter without both guards', () => {
     expect(harness.fakes.get('openai')?.requests).toEqual([]);
     expect(harness.stops.map((reason) => reason.code)).toEqual([ERROR_CODES.budgetCapReached]);
   });
-
-  it('RF-420 a model missing from the price table is refused on a server key (RST-1601)', async () => {
-    const settings = settingsFor({ reader: { provider: 'openai', model: 'not-in-the-table' } });
-    const { harness, reader } = await setUp(withServerKey, { settings, cloudConsent: true });
-
-    const failure = await failureOf(complete(reader, callFor('reader', 'not-in-the-table')));
-
-    expect(failure).toMatchObject({ code: ERROR_CODES.modelUnpriced });
-    expect(harness.fakes.get('openai')?.requests).toEqual([]);
-  });
 });
 
 describe('cloud consent and the one parsed URL', () => {

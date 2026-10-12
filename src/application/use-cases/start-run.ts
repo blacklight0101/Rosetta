@@ -15,7 +15,24 @@ const STARTABLE_STAGES: readonly RunStage[] = ['scan'];
 export interface StartRunDependencies {
   readonly projects: ProjectRepository;
   readonly submit: SubmitRun;
+  /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
+  readonly ollamaHost?: string;
 }
+
+export interface StartRunRequest {
+  readonly actor: Actor;
+  readonly projectId: string;
+  readonly stage: RunStage;
+  /** `understand`: only these areas (RF-200); every area when absent. */
+  readonly areas?: readonly string[];
+  /** RF-143: the consent to send code to the cloud providers the run's roles use. */
+  readonly cloudConsent?: boolean;
+}
+
+export type StartRunProblem =
+  | typeof ERROR_CODES.notFound
+  | typeof ERROR_CODES.runStageNotAvailable
+  | typeof ERROR_CODES.cloudConsentMissing;
 
 export class StartRun {
   private readonly deps: StartRunDependencies;
@@ -25,13 +42,7 @@ export class StartRun {
   }
 
   // RF-1108, RF-1105
-  async execute(request: {
-    readonly actor: Actor;
-    readonly projectId: string;
-    readonly stage: RunStage;
-  }): Promise<
-    Result<SubmittedRun, typeof ERROR_CODES.notFound | typeof ERROR_CODES.runStageNotAvailable>
-  > {
+  async execute(request: StartRunRequest): Promise<Result<SubmittedRun, StartRunProblem>> {
     const { actor, projectId, stage } = request;
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
