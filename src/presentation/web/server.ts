@@ -25,6 +25,7 @@ import { registerRunRoutes, type RunServices } from './run-routes.js';
 import { registerPublicRoutes } from './public-routes.js';
 import { robotsTag, securityHeaderOptions } from './security-headers.js';
 import { CSRF_COOKIE, CSRF_HEADER, secureCookie } from './session-cookies.js';
+import { isShellRequest } from './route-access.js';
 import { registerSessionRoutes } from './session-routes.js';
 
 // ADR-017: the Fastify server. Plugins and hooks are registered here; routes call use cases only.
@@ -140,7 +141,9 @@ function registerSessionPlugins(server: FastifyInstance, logger: Logger): void {
   });
 }
 
-// RF-007: every failure answers { code, message, nextStep } with the status of its cause.
+// RF-007: every failure answers { code, message, nextStep } with the status of its cause. With a
+// front end mounted, a page request no file answers gets index.html (RF-1009, P1-13): the access
+// hooks have already redirected a visitor without a session, except for /sign-in.
 function registerErrorHandlers(server: FastifyInstance, options: ServerOptions): void {
   const { logger, auth } = options;
   server.setErrorHandler(async (error, request, reply) => {
@@ -151,7 +154,9 @@ function registerErrorHandlers(server: FastifyInstance, options: ServerOptions):
     }
     return reply.status(errorReply.status).send(errorReply.body);
   });
-  server.setNotFoundHandler((_request, reply) => {
+  const hasShell = options.staticRoot !== undefined;
+  server.setNotFoundHandler((request, reply) => {
+    if (hasShell && isShellRequest(request)) return reply.sendFile('index.html');
     const errorReply = toErrorReply(new RosettaError(ERROR_CODES.notFound));
     return reply.status(errorReply.status).send(errorReply.body);
   });

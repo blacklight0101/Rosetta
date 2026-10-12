@@ -47,3 +47,14 @@ export function isPageRequest(request: FastifyRequest): boolean {
   const api = path === '/api' || path.startsWith('/api/');
   return !api && (request.method === 'GET' || request.method === 'HEAD');
 }
+
+/**
+ * A request for a page of the front end that has no file of its own: a page request outside
+ * /assets/. It is answered with index.html so the client router draws the page (P1-13).
+ */
+// RF-1009
+export function isShellRequest(request: FastifyRequest): boolean {
+  const path = requestPath(request);
+  const asset = path === '/assets' || path.startsWith('/assets/');
+  return isPageRequest(request) && !asset;
+}
