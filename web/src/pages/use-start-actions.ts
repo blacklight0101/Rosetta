@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import type { ApiClient, ApiFailure } from '../api/client.js';
 import type { Project } from '../api/project-schemas.js';
-import { createProject, saveProjectSettings } from '../api/projects.js';
+import { createProject, getProject, saveProjectSettings } from '../api/projects.js';
 import { problemFor } from '../api/problems.js';
 import { cancelRun, startRun, type RunStageChoice, type StartRequest } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
@@ -84,10 +84,14 @@ async function resolveUrl({ client, inputs, refuse }: Steps): Promise<boolean> {
 
 /** Saves a changed run cap with the project settings; true when the run must not start. */
 async function saveCap({ client, inputs, refuse }: Steps): Promise<boolean> {
-  const { project } = inputs;
   const micros = dollarsToMicros(inputs.capText);
   if (micros === undefined) return refuse({ cap: notAnAmount });
-  if (Number(micros) === project.settings.budget.run.maxCostMicros) return false;
+  if (Number(micros) === inputs.project.settings.budget.run.maxCostMicros) return false;
+  // A save replaces the whole document, so it starts from the settings as they are now: what
+  // another session changed since this page opened stays (only the cap is ours to change).
+  const read = await getProject(client, inputs.project.id, new AbortController().signal);
+  if (!read.ok) return refuse({ start: read.error });
+  const project = read.value;
   const saved = await saveProjectSettings(client, project.id, settingsWithCap(project, micros));
   if (saved.ok) {
     inputs.onSaved(saved.value);
@@ -109,11 +113,11 @@ async function requestRun(steps: Steps): Promise<boolean> {
     if (result.error.code === NO_CONSENT) inputs.onConsentRefused();
     return refuse(refusalOf(result.error));
   }
-  const { runId, position, stage } = result.value;
+  const { id, position, stage } = result.value;
   show(
     position === null
       ? { kind: 'started', stage }
-      : { kind: 'queued', runKey: runId, position, cancelError: undefined },
+      : { kind: 'queued', runId: id, position, cancelError: undefined },
   );
   return false;
 }
@@ -150,7 +154,7 @@ export function useStartActions(inputs: ActionInputs): StartActions {
   const cancel = async (): Promise<void> => {
     if (notice?.kind !== 'queued') return;
     setBusy(true);
-    const result = await cancelRun(client, notice.runKey);
+    const result = await cancelRun(client, notice.runId);
     setBusy(false);
     setNotice(result.ok ? { kind: 'cancelled' } : { ...notice, cancelError: result.error });
   };

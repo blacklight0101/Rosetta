@@ -42,6 +42,8 @@ export type RunEstimate = z.output<typeof estimateSchema>;
 
 /** `POST /api/projects/:id/runs`: the run and its place in the queue (null when it started). */
 export const startedRunSchema = z.looseObject({
+  /** The run's id, which Cancel names; `runId` is its folder name, which the events use. */
+  id: z.string(),
   runId: z.string(),
   stage: z.string(),
   queueState: z.string(),

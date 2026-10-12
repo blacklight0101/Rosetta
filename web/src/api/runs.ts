@@ -52,11 +52,11 @@ export function startRun(
   });
 }
 
-/** Cancels a queued run (RF-1108); `runKey` is the `runId` the start answered. */
-export async function cancelRun(client: ApiClient, runKey: string): Promise<ApiResult<undefined>> {
+/** Cancels a queued run (RF-1108); `runId` is the `id` the start answered, not its folder name. */
+export async function cancelRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
   const result = await client.request({
     method: 'POST',
-    path: `/api/runs/${encodeURIComponent(runKey)}/stop`,
+    path: `/api/runs/${encodeURIComponent(runId)}/stop`,
     schema: stoppedRunSchema,
   });
   return result.ok ? { ok: true, value: undefined } : result;

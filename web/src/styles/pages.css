@@ -396,7 +396,7 @@
 
 .rst-start__columns {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: var(--rst-sp-5);
   align-items: start;
 }
@@ -488,6 +488,12 @@
   color: var(--rst-ink);
   font-size: var(--rst-fs-sm);
   font-weight: var(--rst-fw-body);
+}
+
+.rst-table td.rst-table__wrap {
+  min-inline-size: 7rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .rst-table__sub {

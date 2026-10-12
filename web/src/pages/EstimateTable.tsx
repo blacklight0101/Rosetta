@@ -26,7 +26,7 @@ function RoleRow({ role }: { readonly role: RoleEstimate }): JSX.Element {
   return (
     <tr>
       <th scope="row">{role.role}</th>
-      <td>
+      <td class="rst-table__wrap">
         <span class="rst-mono">
           {role.provider} / {role.model}
         </span>

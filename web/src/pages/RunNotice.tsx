@@ -12,7 +12,7 @@ export type RunNoticeState =
   | { readonly kind: 'started'; readonly stage: string }
   | {
       readonly kind: 'queued';
-      readonly runKey: string;
+      readonly runId: string;
       readonly position: number;
       readonly cancelError: ApiFailure | undefined;
     }
