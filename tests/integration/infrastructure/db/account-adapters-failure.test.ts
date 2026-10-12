@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
+import { PgAccountUsage } from '../../../../src/infrastructure/db/pg-account-usage.js';
 import { PgAuditLog } from '../../../../src/infrastructure/db/pg-audit-log.js';
 import { PgUserRepository } from '../../../../src/infrastructure/db/pg-user-repository.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -52,12 +53,24 @@ describe.skipIf(!hasTestDatabase)('account adapters when the database fails', ()
 
     const failures = await Promise.all([
       failureOf(audit.record(event)),
-      failureOf(audit.list({ since: testClock.now() })),
+      failureOf(audit.list({ since: testClock.now().getTime() })),
     ]);
 
     for (const failure of failures) {
       expect(failure).toMatchObject({ code: ERROR_CODES.databaseQueryFailed });
     }
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('account usage when the database fails', () => {
+  const database = useTestDatabase();
+
+  it('RF-1102 PgAccountUsage fails with RST-2404', async () => {
+    const { pool } = await database.createSchema({ migrate: false });
+
+    const failure = await failureOf(new PgAccountUsage(pool).byUser(0));
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.databaseQueryFailed });
   });
 });
 

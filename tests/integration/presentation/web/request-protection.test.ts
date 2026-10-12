@@ -24,7 +24,7 @@ function serve(): TestServer {
 }
 
 async function refusedRows(test: TestServer): Promise<readonly unknown[]> {
-  return (await test.audit.list({ since: new Date(0), action: 'request.refused' })).map(
+  return (await test.audit.list({ since: 0, action: 'request.refused' })).map(
     (event) => event.detail,
   );
 }
@@ -207,7 +207,7 @@ describe('role guard', () => {
 
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.notAllowed });
-    const [refused] = await test.audit.list({ since: new Date(0), action: 'request.refused' });
+    const [refused] = await test.audit.list({ since: 0, action: 'request.refused' });
     expect(refused).toMatchObject({ actorUserId: amy.account.id, detail: { reason: 'role' } });
   });
 

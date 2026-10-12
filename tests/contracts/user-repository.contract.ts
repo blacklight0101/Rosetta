@@ -127,8 +127,46 @@ function updatingTests(name: string, fresh: () => Promise<UserRepository>): void
   });
 }
 
+function conditionalTests(name: string, fresh: () => Promise<UserRepository>): void {
+  it(`RF-1103 ${name} saves an account that is still as it was read`, async () => {
+    const users = await fresh();
+    const account = sampleAccount({ state: 'MustChangePassword' });
+    await users.insert(account);
+    const changed = { ...account, state: 'Active' as const, updatedAt: fixtureNow + minutes(1) };
+
+    const saved = await users.updateIfCurrent(changed, account);
+
+    expect(saved).toBe(true);
+    expect(await users.findById(account.id)).toEqual(changed);
+  });
+
+  it.each([
+    ['its state changed', { state: 'Disabled' as const }],
+    ['it was updated since', { updatedAt: fixtureNow + minutes(5) }],
+  ])(`RF-1102 ${name} keeps an account whose %s`, async (_case, meanwhile) => {
+    const users = await fresh();
+    const account = sampleAccount();
+    await users.insert(account);
+    const other = { ...account, ...meanwhile };
+    await users.update(other);
+
+    const saved = await users.updateIfCurrent({ ...account, passwordHash: 'fake$new' }, account);
+
+    expect(saved).toBe(false);
+    expect(await users.findById(account.id)).toEqual(other);
+  });
+
+  it(`RF-1102 ${name} reports a conditional update of an unknown account`, async () => {
+    const users = await fresh();
+    const account = sampleAccount();
+
+    expect(await users.updateIfCurrent(account, account)).toBe(false);
+  });
+}
+
 export function userRepositoryContract(name: string, fresh: () => Promise<UserRepository>): void {
   storingTests(name, fresh);
   listingTests(name, fresh);
   updatingTests(name, fresh);
+  conditionalTests(name, fresh);
 }

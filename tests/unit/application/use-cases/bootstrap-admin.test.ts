@@ -95,7 +95,9 @@ describe('BootstrapAdmin secrecy and audit', () => {
 
     await bootstrap.execute({ userName: adminName, password });
     await bootstrap.execute({ userName: adminName, password });
-    const rows = await audit.list({ since: new FixedClock('2026-10-11T00:00:00.000Z').now() });
+    const rows = await audit.list({
+      since: new FixedClock('2026-10-11T00:00:00.000Z').now().getTime(),
+    });
 
     expect(logger.records.length).toBeGreaterThan(0);
     expect(logger.text()).not.toContain(password);
@@ -109,7 +111,9 @@ describe('BootstrapAdmin secrecy and audit', () => {
 
     await bootstrap.execute({ userName: adminName, password: fixturePassword('Audit') });
     const [admin] = await users.list();
-    const rows = await audit.list({ since: new FixedClock('2026-10-11T00:00:00.000Z').now() });
+    const rows = await audit.list({
+      since: new FixedClock('2026-10-11T00:00:00.000Z').now().getTime(),
+    });
 
     expect(rows).toHaveLength(1);
     expect(rows[0]?.detail).toEqual({ role: 'admin', source: 'environment' });

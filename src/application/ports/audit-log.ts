@@ -1,3 +1,4 @@
+import type { EpochMs } from '../../domain/accounts/user.js';
 import type { LogValue } from './logger.js';
 
 // Architecture section 7, RF-1109: the security audit trail. Rows are only inserted and read,
@@ -27,13 +28,19 @@ export interface AuditEvent extends AuditEventInput {
 }
 
 export interface AuditFilter {
-  readonly since: Date;
+  /** The oldest instant listed, in epoch milliseconds (the domain's instants). */
+  readonly since: EpochMs;
   readonly actorUserId?: string;
   readonly action?: string;
+  /** At most this many events, the newest; every match when left out. */
+  readonly limit?: number;
 }
 
 export interface AuditLog {
   record(event: AuditEventInput): Promise<void>;
-  /** Events at or after `since`, newest first, optionally of one actor and one action. */
+  /**
+   * Events at or after `since`, newest first, optionally of one actor and one action, at most
+   * `limit` of them.
+   */
   list(filter: AuditFilter): Promise<readonly AuditEvent[]>;
 }

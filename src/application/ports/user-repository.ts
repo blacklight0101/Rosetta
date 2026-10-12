@@ -21,4 +21,10 @@ export interface UserRepository {
   list(): Promise<readonly User[]>;
   /** Saves everything but the id, user name and creation time; false for an unknown id. */
   update(account: UserAccount): Promise<boolean>;
+  /**
+   * Saves like `update`, but only while the stored account still has the state and update time
+   * of `read` (the account as the caller read it); false otherwise, so a concurrent change by an
+   * administrator is never overwritten (RF-1102).
+   */
+  updateIfCurrent(account: UserAccount, read: Pick<User, 'state' | 'updatedAt'>): Promise<boolean>;
 }

@@ -49,7 +49,7 @@ export class MemoryAuditLog implements AuditLog {
   list(filter: AuditFilter): Promise<readonly AuditEvent[]> {
     const matching = this.events.filter(
       ({ event }) =>
-        event.at.getTime() >= filter.since.getTime() &&
+        event.at.getTime() >= filter.since &&
         (filter.actorUserId === undefined || event.actorUserId === filter.actorUserId) &&
         (filter.action === undefined || event.action === filter.action),
     );
@@ -57,6 +57,7 @@ export class MemoryAuditLog implements AuditLog {
       (left, right) =>
         right.event.at.getTime() - left.event.at.getTime() || right.sequence - left.sequence,
     );
-    return Promise.resolve(newestFirst.map((stored) => toAuditEvent(stored.row)));
+    const limited = newestFirst.slice(0, filter.limit ?? newestFirst.length);
+    return Promise.resolve(limited.map((stored) => toAuditEvent(stored.row)));
   }
 }

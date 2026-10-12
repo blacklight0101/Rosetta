@@ -1,10 +1,12 @@
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
-import { seededAdmin, signInAs } from './support/sign-in.js';
+import { seededAdmin, seededUser, signInAs } from './support/sign-in.js';
 
 // RNF-005, RNF-010, RF-1100, ADR-008, P1-13: the harness itself. A request outside 127.0.0.1 is
 // blocked and fails the test; the axe helper fails on a critical violation; the sign-in helper
-// opens a session of the seeded administrator in the browser context.
+// opens a session of a seeded account in the browser context. RF-1102: the bootstrap administrator
+// must change its password first, so its pages lead to the change-password page; the seeded user
+// (created through CreateUser without a forced change) opens pages that need a session.
 
 test.describe('network guard', () => {
   test('RNF-005 blocks a request outside 127.0.0.1 and records it', async ({ page, network }) => {
@@ -111,11 +113,25 @@ test.describe('sign-in helper', () => {
     context,
     page,
   }) => {
-    await signInAs(context, seededAdmin);
+    await signInAs(context, seededUser);
 
     const response = await page.goto('/projects');
 
     expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/projects$/);
+  });
+
+  test('RF-1102 an account that must change its password is sent to the change-password page', async ({
+    context,
+    page,
+  }) => {
+    await signInAs(context, seededAdmin);
+
+    const response = await page.goto('/projects');
+    const projects = await page.evaluate(async () => (await fetch('/api/projects')).status);
+
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/account\/password$/);
+    expect(projects).toBe(403);
   });
 });

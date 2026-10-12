@@ -9,7 +9,14 @@ import type {
 } from '../../application/use-cases/resolve-session.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { accessOf, isPageRequest, isStateChanging, requestPath } from './route-access.js';
+import {
+  accessOf,
+  allowedDuringPasswordChange,
+  CHANGE_PASSWORD_PAGE,
+  isPageRequest,
+  isStateChanging,
+  requestPath,
+} from './route-access.js';
 import { SESSION_COOKIE } from './session-cookies.js';
 
 // RF-1009, RF-1101, RF-1102, RF-1109, DEC-112: the request hooks, in this order.
@@ -17,7 +24,10 @@ import { SESSION_COOKIE } from './session-cookies.js';
 //    missing) is refused with 403 RST-2007; this also protects sign-in, which has no session yet.
 // 2. Session: the `__Host-rosetta_session` cookie becomes `request.signedIn` (or null).
 // 3. Access: without a session a page redirects to /sign-in and anything else answers 401; a
-//    `user` on an administrator route answers 403.
+//    `user` on an administrator route answers 403. A user whose password must be changed
+//    (MustChangePassword, RF-1102) reaches only the session API, the change-password route and
+//    the change-password page: another page redirects to /account/password and anything else
+//    answers 403 RST-2212.
 // 4. CSRF: a state-changing request on a non-public route needs the token of
 //    @fastify/csrf-protection in the `x-csrf-token` header (403 RST-2008, recorded by the error
 //    handler through `recordCsrfRefusal`).
@@ -76,7 +86,20 @@ async function checkAccess(
     await refuse(refusals, request, 'role');
     throw new RosettaError(ERROR_CODES.notAllowed);
   }
-  return undefined;
+  return checkPasswordChange(refusals, request, reply);
+}
+
+// RF-1102
+async function checkPasswordChange(
+  refusals: RecordRefusedRequest,
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<FastifyReply | undefined> {
+  if (request.signedIn?.user.state !== 'MustChangePassword') return undefined;
+  if (allowedDuringPasswordChange(request)) return undefined;
+  if (isPageRequest(request)) return reply.redirect(CHANGE_PASSWORD_PAGE, 302);
+  await refuse(refusals, request, 'password-change');
+  throw new RosettaError(ERROR_CODES.passwordChangeRequired);
 }
 
 // RF-1009

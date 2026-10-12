@@ -634,7 +634,7 @@ of another shape is refused at read time.
 | `id` | `bigint` | identity primary key |
 | `at` | `timestamptz` | indexed |
 | `actor_user_id` | `uuid` null | null for anonymous sign-in attempts |
-| `action` | `text` | for example `auth.sign_in`, `auth.locked`, `user.created`, `key.saved`, `admin.workspace_opened`, `request.refused` |
+| `action` | `text` | for example `auth.sign_in`, `auth.locked`, `user.created`, `user.password_changed`, `user.password_reset`, `user.disabled`, `user.enabled`, `key.saved`, `admin.workspace_opened`, `request.refused` |
 | `target_type`, `target_id` | `text` null | |
 | `ip` | `text` | |
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |

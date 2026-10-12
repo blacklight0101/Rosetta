@@ -76,7 +76,7 @@ describe('sign-out and disabled accounts', () => {
     ]);
     expect(test.sessions.storedKeys()).toEqual([]);
     expect(replayed.statusCode).toBe(401);
-    const actions = (await test.audit.list({ since: new Date(0) })).map((event) => event.action);
+    const actions = (await test.audit.list({ since: 0 })).map((event) => event.action);
     expect(actions).toContain('auth.sign_out');
   });
 

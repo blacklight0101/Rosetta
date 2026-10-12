@@ -31,6 +31,7 @@ const LIST = 'SELECT ' + USER_COLUMNS + ' FROM users ORDER BY user_name COLLATE 
 const UPDATE =
   'UPDATE users SET display_name = $2, role = $3, state = $4, password_hash = $5, failed_sign_ins = $6, first_failed_at = $7, locked_until = $8, server_keys_allowed = $9, daily_cap_micros = $10, own_daily_cap_micros = $11, updated_at = $12, last_sign_in_at = $13 WHERE id = $1';
 
+const UPDATE_IF_CURRENT = UPDATE + ' AND state = $14 AND updated_at = $15';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UNIQUE_VIOLATION = '23505';
 const foundRow = z.object({ found: z.boolean() });
@@ -101,6 +102,20 @@ export class PgUserRepository implements UserRepository {
     if (!UUID.test(account.id)) return false;
     try {
       const result = await this.pool.query(UPDATE, updateValues(account));
+      return result.rowCount === 1;
+    } catch (error) {
+      throw queryFailed(error);
+    }
+  }
+
+  async updateIfCurrent(
+    account: UserAccount,
+    read: Pick<User, 'state' | 'updatedAt'>,
+  ): Promise<boolean> {
+    if (!UUID.test(account.id)) return false;
+    const values = [...updateValues(account), read.state, new Date(read.updatedAt)];
+    try {
+      const result = await this.pool.query(UPDATE_IF_CURRENT, values);
       return result.rowCount === 1;
     } catch (error) {
       throw queryFailed(error);

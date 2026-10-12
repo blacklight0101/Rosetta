@@ -49,7 +49,7 @@ function recordingTests(name: string, fresh: () => Promise<AuditLog>): void {
     const input = event({ detail: { reason: 'first sign-in', attempts: 1 } });
 
     await audit.record(input);
-    const listed = await audit.list({ since: minutesAfterStart(-1) });
+    const listed = await audit.list({ since: minutesAfterStart(-1).getTime() });
 
     expect(listed).toHaveLength(1);
     expect(withoutId(listed[0])).toEqual(input);
@@ -65,7 +65,7 @@ function recordingTests(name: string, fresh: () => Promise<AuditLog>): void {
     });
 
     await audit.record(input);
-    const listed = await audit.list({ since: minutesAfterStart(-1) });
+    const listed = await audit.list({ since: minutesAfterStart(-1).getTime() });
 
     expect(listed.map(withoutId)).toEqual([input]);
   });
@@ -77,7 +77,7 @@ function recordingTests(name: string, fresh: () => Promise<AuditLog>): void {
     await audit.record(
       event({ detail: { password, note: `password=${password}`, nested: [{ pwd: password }] } }),
     );
-    const listed = await audit.list({ since: minutesAfterStart(-1) });
+    const listed = await audit.list({ since: minutesAfterStart(-1).getTime() });
 
     expect(JSON.stringify(listed)).not.toContain(password);
     expect(listed[0]?.detail).toEqual({
@@ -96,7 +96,7 @@ function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
     await audit.record(event({ at: minutesAfterStart(2), action: 'auth.sign_out' }));
     await audit.record(event({ at: minutesAfterStart(3), actorUserId: userB }));
 
-    const since = minutesAfterStart(0);
+    const since = minutesAfterStart(0).getTime();
     const all = await audit.list({ since });
     const byUser = await audit.list({ since, actorUserId: userA });
     const byAction = await audit.list({ since, action: 'auth.sign_in' });
@@ -111,9 +111,20 @@ function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
     await audit.record(event({ action: 'auth.sign_in' }));
     await audit.record(event({ action: 'auth.locked' }));
 
-    const listed = await audit.list({ since: minutesAfterStart(-1) });
+    const listed = await audit.list({ since: minutesAfterStart(-1).getTime() });
 
     expect(listed.map((row) => row.action)).toEqual(['auth.locked', 'auth.sign_in']);
+  });
+
+  it(`RF-1109 ${name} lists at most the limit, the newest first`, async () => {
+    const audit = await fresh();
+    for (const minute of [1, 2, 3]) {
+      await audit.record(event({ at: minutesAfterStart(minute) }));
+    }
+
+    const listed = await audit.list({ since: minutesAfterStart(0).getTime(), limit: 2 });
+
+    expect(listed.map((row) => row.at)).toEqual([3, 2].map(minutesAfterStart));
   });
 }
 
