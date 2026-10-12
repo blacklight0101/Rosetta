@@ -194,9 +194,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     auth: auth.services,
     projects,
     runs: runs.services,
-    version,
-    publicUrl: environment.publicUrl,
-    trustProxy: environment.trustProxy,
+    ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,
     staticRoot,
   });
