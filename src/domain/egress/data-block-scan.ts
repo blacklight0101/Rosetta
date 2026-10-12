@@ -71,12 +71,13 @@ function citationsOf(value: unknown): Citation[] | undefined {
 
 /**
  * The excerpts of a header line, or undefined when the line is not a valid header. A header
- * written by renderDataBlock holds no raw `<` or `>` and no path with a marker look-alike.
+ * written by renderDataBlock is printable ASCII with no raw `<` or `>` (so no look-alike of a
+ * frame bracket either) and no path with a marker look-alike.
  */
 function headerExcerpts(line: string): Citation[] | undefined {
   if (!line.startsWith(DATA_BLOCK_OPEN) || !line.endsWith(DATA_BLOCK_CLOSE)) return undefined;
   const json = line.slice(DATA_BLOCK_OPEN.length, -DATA_BLOCK_CLOSE.length);
-  if (/[<>]/.test(json)) return undefined;
+  if (/[<>]|[^\x20-\x7E]/.test(json)) return undefined;
   const header = parseJson(json);
   if (!isRecord(header) || header['label'] !== DATA_BLOCK_LABEL) return undefined;
   const known = DATA_BLOCK_SOURCES.some((source) => source === header['source']);
