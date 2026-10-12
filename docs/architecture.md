@@ -293,12 +293,15 @@ The egress guard and the budget guard are **decorators** of `LlmProvider`: the c
 provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`, so no call can bypass them (ADR-006, ADR-007);
 the budget guard records a refused call itself through `ProviderCallRecorder` (status `refused-by-cap`). The egress guard
 is built per run with the run's recorded cloud consent, its `JsonlEgressLog` and a `ManifestSecurityRecorder`; in
-order it refuses a non-local provider kind (`needsCloudConsent`: everything but `ollama` and `fake`) without that
-consent (`RST-1515`), refuses a request whose system prompt holds a data block, whose tool result is not exactly one
-data block or whose message holds a broken one (`RST-1516`), masks every message part (a masker failure is
-`RST-2101`), appends the egress line and adds the secrets first sent by the agent task to the manifest. Every refusal
-is a `security` log entry and a blocked call in the manifest, and is thrown so the agent task stops; the call is never
-sent (RF-141..RF-143, RF-145, DEC-57). Nothing in a request can grant consent. The budget
+order it refuses a provider off this machine (`needsCloudConsent`: everything but `fake` and an `ollama` whose host is
+loopback or `host.docker.internal`) without that consent (`RST-1515`), refuses a request whose system prompt holds a data block, whose tool result is not exactly one
+data block or whose message holds a broken one (`RST-1516`), masks every message part (a private key read in pieces
+included: an END line without its BEGIN masks the key body above it, and a key left open by one piece of repository
+text masks the start of the next), adds the secrets first sent by the agent task to the manifest and, last, appends
+the egress line, so a line always means a sent call. Every refusal and every failure of those steps (masking
+`RST-2101`, manifest `RST-2106`, egress log `RST-2107`, or the code the failure carries) is a `security` log entry
+and a blocked call in the manifest, and is thrown so the agent task stops; the call is never sent (RF-141..RF-143,
+RF-145, DEC-57). Tool definitions are not masked: they come from code and must never carry repository text. Nothing in a request can grant consent. The budget
 guard checks the run cap and, for server keys, the user-day and server-month caps in the same database transaction
 that inserts the call's worst-case reservation into `cost_reservations`; after the call it writes the ledger row and
 deletes the reservation (RF-1106, data-model.md section 4). Every port has a
@@ -345,8 +348,9 @@ sequenceDiagram
 - **Untrusted content** (ADR-013): tool results enter the conversation only inside delimited repository-content
   blocks, never in the system prompt (RF-145): the loop wraps each tool result with `renderDataBlock`
   (`src/domain/egress/data-block.ts`) as one tool message; a header line
-  `<<<ROSETTA-DATA {"label":"repository-content","note":...,"source":<tool>,"excerpts":["path:a-b"]}>>>`, the
-  content with every marker look-alike defanged (`<<<` becomes `<<-<`, lines kept), and the footer
+  `<<<ROSETTA-DATA {"label":"repository-content","note":...,"source":<tool>,"excerpts":[{"path","startLine","endLine"}]}>>>`
+  (paths with their markers defanged, every `<` and `>` of the JSON written as `\u003c`/`\u003e`, a line break in a
+  path escaped by JSON, so no header text can read as a frame), the content with every marker look-alike defanged (`<<<` becomes `<<-<`, lines kept), and the footer
   `<<<END ROSETTA-DATA>>>`; the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.

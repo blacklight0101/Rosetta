@@ -22,10 +22,12 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 - The composition root wraps every adapter as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`. The
   `ObservedProvider` writes one `provider-calls.jsonl` record per attempt and the masked transcript of each agent task
   (RF-408, data-model.md sections 3.10 and 3.15).
-- The `EgressGuard` (`src/infrastructure/guards/egress-guard.ts`) decides locality by provider kind, never by
-  address: `ollama` (on the host or next to Rosetta) and `fake` are local; `openai`, `openai-compatible` (its base URL
-  must be public) and `anthropic` need the run's cloud consent (RF-143). An Ollama server that `ROSETTA_OLLAMA_URL`
-  points at another machine still counts as local. The guard masks every message part, writes `egress.log.jsonl` and
+- The `EgressGuard` (`src/infrastructure/guards/egress-guard.ts`) sends code without the run's consent only to a
+  provider on this machine (RF-143, `needsCloudConsent` in `src/application/providers/cloud-consent.ts`): `fake`
+  always, and `ollama` only when the host it connects to is `localhost`, a loopback address (127.0.0.0/8, `::1`) or
+  the Docker host gateway `host.docker.internal` (the documented `ROSETTA_OLLAMA_URL`). An Ollama server on any other
+  host needs the run's consent like `openai`, `openai-compatible` (its base URL must be public) and `anthropic`;
+  without it the call is refused with `RST-1515`. The guard masks every message part, writes `egress.log.jsonl` and
   refuses repository content outside its data blocks (RF-141, RF-142, RF-145, architecture section 7).
 - `FakeProvider.requests` keeps every request the fake received, so a test can prove what was (and was not) sent.
 - Every adapter passes the contract suite `tests/contracts/llm-provider.contract.ts`: its test arranges recordings so

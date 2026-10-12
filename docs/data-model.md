@@ -418,7 +418,7 @@ the OpenTelemetry GenAI semantic conventions so an exporter can be added later w
 | | |
 |---|---|
 | Purpose | exactly what left the machine and where: one line per model call the egress guard let through (RF-142) |
-| Writer | the `EgressGuard` through `JsonlEgressLog` (the `EgressLog` port), before the call is sent; a line that cannot be stored stops the call (`RST-2107`) |
+| Writer | the `EgressGuard` through `JsonlEgressLog` (the `EgressLog` port), as the last step before the call is sent (after masking and the manifest counts), so a line always means a sent call; a line that cannot be stored blocks the call (`RST-2107`) |
 | Readers | the user (audit), export |
 | Spec | RF-141, RF-142, RNF-003 |
 
@@ -429,7 +429,7 @@ the OpenTelemetry GenAI semantic conventions so an exporter can be added later w
 | `at` | instant | when the guard let the call through |
 | `callId` | string | the call's id, as in `provider-calls.jsonl` |
 | `provider`, `model`, `role`, `agentTaskId` | string | the provider's name in the project settings |
-| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order; each call repeats the earlier messages, so it lists their excerpts again |
+| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with it broken, `<<<` as `<<-<`); each call repeats the earlier messages, so it lists their excerpts again |
 | `maskedCounts` | object | the secrets masked in this call's request, per kind of section 3.6 (every kind, zero included) |
 
 Content is never copied here: no excerpt text, no message text, no secret. The line is masked like every file
