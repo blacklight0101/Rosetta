@@ -6,6 +6,7 @@ import { createTestServer, type TestServer } from '../../../support/web-server.j
 
 // RF-1100: sign-in is also rate limited to 10 attempts per minute per IP address
 // (@fastify/rate-limit); the 11th answers 429 RST-2005 and is logged as a security event.
+// RF-1109: the refused attempt also writes a `request.refused` audit row.
 
 let current: TestServer | undefined;
 
@@ -40,6 +41,15 @@ describe('sign-in rate limit', () => {
     expect(current.logger.entries).toContainEqual(
       expect.objectContaining({ level: 'warn', logger: 'security', code: ERROR_CODES.rateLimited }),
     );
+    const refused = await current.audit.list({ since: 0, action: 'request.refused' });
+    expect(refused).toEqual([
+      expect.objectContaining({
+        targetId: 'POST /api/session',
+        ip: '203.0.113.20',
+        outcome: 'refused',
+        detail: { reason: 'rate-limit' },
+      }),
+    ]);
   });
 
   it('RF-1100 other routes are not limited by the sign-in limit', async () => {
