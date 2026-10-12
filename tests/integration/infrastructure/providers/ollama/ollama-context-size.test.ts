@@ -1,24 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
+import { FALLBACK_BACKOFF_MS } from '../../../../../src/infrastructure/providers/ollama/ollama-context.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { observedHarness } from '../../../../support/observed-harness.js';
-import { useFakeOllama } from '../../../../support/ollama-harness.js';
+import { numCtx, useFakeOllama } from '../../../../support/ollama-harness.js';
 import type { RecordingLogger } from '../../../../support/recording-logger.js';
 
 // RF-401, DEC-114, Q-23: the Ollama context size against a fake Ollama server (ADR-008).
 
 const start = useFakeOllama();
-
-function numCtx(bodies: unknown[]): unknown[] {
-  return bodies.map((body) => {
-    const options: unknown =
-      typeof body === 'object' && body !== null ? Reflect.get(body, 'options') : undefined;
-    const value: unknown =
-      typeof options === 'object' && options !== null ? Reflect.get(options, 'num_ctx') : undefined;
-    return value;
-  });
-}
 
 const warnings = (logger: RecordingLogger) => logger.records.filter((r) => r.level === 'warn');
 
@@ -105,10 +96,13 @@ describe('OllamaProvider with contextTokens auto when Ollama cannot be probed', 
     expect(warnings(logger)).toHaveLength(1);
   });
 
-  it('RF-401 does not keep a fallback: the next call probes again', async () => {
-    const { provider, server } = await start('context-ps-unavailable');
+  it('RF-401 does not keep a fallback: a call after the back-off probes again', async () => {
+    const clock = { ms: 1_000_000 };
+    const overrides = { now: () => clock.ms };
+    const { provider, server } = await start('context-ps-unavailable', overrides);
 
     await provider.complete(contractRequest());
+    clock.ms += FALLBACK_BACKOFF_MS;
     await provider.complete(contractRequest());
 
     expect(server.bodiesOf('/api/show')).toHaveLength(2);

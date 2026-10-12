@@ -63,3 +63,14 @@ export function useFakeOllama(): (
     return { provider: create(), server, waits, logger, another: create };
   };
 }
+
+/** The `options.num_ctx` of each request body, in order (RF-401, DEC-114). */
+export function numCtx(bodies: unknown[]): unknown[] {
+  return bodies.map((body) => {
+    const options: unknown =
+      typeof body === 'object' && body !== null ? Reflect.get(body, 'options') : undefined;
+    const value: unknown =
+      typeof options === 'object' && options !== null ? Reflect.get(options, 'num_ctx') : undefined;
+    return value;
+  });
+}
