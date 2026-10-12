@@ -9,6 +9,7 @@ export interface ButtonProps {
   readonly children: ComponentChildren;
   readonly variant?: ButtonVariant;
   readonly type?: 'button' | 'submit';
+  readonly id?: string;
   readonly busy?: boolean;
   /** Why the button cannot be used; its presence disables the button. */
   readonly disabledReason?: string;
@@ -21,6 +22,7 @@ export function Button(props: ButtonProps): JSX.Element {
   const disabled = props.disabledReason !== undefined;
   return (
     <button
+      id={props.id}
       class={`rst-button rst-button--${variant}`}
       data-testid="button"
       type={type}

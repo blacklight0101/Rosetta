@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { BrowserContext } from '@playwright/test';
 import { z } from 'zod';
+import { clientAddressFor } from './client-address.js';
+import type { Credentials } from './seed.js';
 import { e2eOrigin, e2ePort } from './server-config.js';
 
 // RF-1100, RF-1009: a browser context signed in through the API, as a person would through the
@@ -12,11 +14,6 @@ import { e2eOrigin, e2ePort } from './server-config.js';
 // signs in once per run, not once per worker. The test server empties the folder when it starts.
 
 export { seededAdmin, seededUser } from './seed.js';
-
-export interface Credentials {
-  readonly userName: string;
-  readonly password: string;
-}
 
 const cookie = z.object({
   name: z.string(),
@@ -61,7 +58,10 @@ async function keptCookies(userName: string): Promise<Cookies | undefined> {
 async function openSession(context: BrowserContext, credentials: Credentials): Promise<Cookies> {
   const response = await context.request.post('/api/session', {
     data: { userName: credentials.userName, password: credentials.password },
-    headers: { origin: e2eOrigin() },
+    headers: {
+      origin: e2eOrigin(),
+      'x-forwarded-for': clientAddressFor(`sign-in:${credentials.userName}`),
+    },
   });
   if (!response.ok()) {
     throw new Error(`Sign-in of ${credentials.userName} answered ${String(response.status())}`);

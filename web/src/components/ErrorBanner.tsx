@@ -11,18 +11,38 @@ export interface ErrorBannerProps {
     readonly nextStep: string;
     readonly problems?: readonly ApiProblem[] | undefined;
   };
+  /** Shows the code after the message, as the sign-in artboard does. */
+  readonly codeAfter?: boolean;
+}
+
+function Code({ code }: { readonly code: string }): JSX.Element {
+  return (
+    <span class="rst-mono rst-callout__code" data-testid="error-banner-code">
+      {code}
+    </span>
+  );
 }
 
 // RNF-008
-export function ErrorBanner({ error }: ErrorBannerProps): JSX.Element {
+export function ErrorBanner({ error, codeAfter = false }: ErrorBannerProps): JSX.Element {
   const problems = error.problems ?? [];
   return (
-    <section class="rst-callout rst-callout--error" role="alert" data-testid="error-banner">
+    <section
+      class="rst-callout rst-callout--error"
+      role="alert"
+      tabIndex={-1}
+      data-testid="error-banner"
+    >
       <p class="rst-callout__message">
-        <span class="rst-mono rst-callout__code" data-testid="error-banner-code">
-          {error.code}
-        </span>{' '}
+        {codeAfter ? null : <Code code={error.code} />}
+        {codeAfter ? null : ' '}
         {error.message}
+        {codeAfter ? (
+          <>
+            {' '}
+            (<Code code={error.code} />)
+          </>
+        ) : null}
       </p>
       <p class="rst-callout__next-step" data-testid="error-banner-next-step">
         {error.nextStep}

@@ -137,7 +137,7 @@ conflict visibly; the codes already shown on the design board are reserved there
   `network` fixture aborts every request and WebSocket outside 127.0.0.1 and fails the test unless the test asserts on it with
   `network.takeBlocked()`. `npm run test:e2e` runs the project against a disposable PostgreSQL
   (`ROSETTA_TEST_DATABASE_URL`) with Chromium installed by `npx playwright install chromium`; `ROSETTA_E2E_PORT` moves the
-  test server (default 18080). A page card adds an axe check (`expectNoSeriousViolations`) to its spec.
+  test server (default 18080); the test server trusts one proxy hop and the `clientAddress` fixture gives every test an address of its own in `X-Forwarded-For`, so the per-address rate limits of sign-in and password change never couple tests, and `accountFor(kind, project)` gives each Playwright project accounts of its own (`tests/e2e/support/seed.ts`). A page card adds an axe check (`expectNoSeriousViolations`) to its spec.
 - No real provider calls: the test setup sets `ROSETTA_TEST=1` and blocks outbound network; providers are the fake
   provider with recordings in `tests/recordings/` (ADR-008).
 - Every port has a contract test suite that the real adapters and the fakes both pass.

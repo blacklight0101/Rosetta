@@ -89,6 +89,9 @@ async function main(): Promise<void> {
     ROSETTA_DATA_DIR: dataDir,
     ROSETTA_ADMIN_USER: seededAdmin.userName,
     ROSETTA_ADMIN_PASSWORD: seededAdmin.password,
+    // One hop: the test server trusts X-Forwarded-For from the browser, so each test has an
+    // address of its own and the sign-in rate limit (10 a minute per address) never couples tests.
+    ROSETTA_TRUST_PROXY: '1',
     ROSETTA_LOG_LEVEL: 'error',
     ROSETTA_TEST: '1',
     ROSETTA_TEST_DATABASE_URL: databaseUrl,

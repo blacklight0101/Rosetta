@@ -5,7 +5,9 @@
 //   <path>       the page, for example /sign-in
 //   --out        where the files go; default test-results/page-shots (git-ignored)
 //   --port       the test server's port; default ROSETTA_E2E_PORT plus one
-//   --signed-in  signs in as the seeded administrator first, for pages that need a session
+//   --signed-in  signs in first, for pages that need a session (the seeded administrator, who must
+//                change the password, so only /account/password opens; see --as)
+//   --as user    with --signed-in: the seeded user instead, whose pages open (settings and keys)
 // Needs ROSETTA_TEST_DATABASE_URL and the Chromium of `npx playwright install chromium`. Output is
 // <slug>-<device>-<scheme>.png and console-errors.json; nothing is committed.
 import { spawn } from 'node:child_process';
@@ -24,22 +26,36 @@ const viewports = [
 const schemes = ['light', 'dark'];
 const startTimeoutMs = 60_000;
 
+// Each option that takes a value, and the flag that does not.
+const valueFlags = {
+  '--out': (options, value) => {
+    options.out = value ?? '';
+  },
+  '--port': (options, value) => {
+    options.port = Number(value);
+  },
+  '--as': (options, value) => {
+    options.as = value ?? '';
+  },
+};
+
 function parseArguments(argv) {
   const options = {
     path: undefined,
     out: 'test-results/page-shots',
     port: undefined,
     signedIn: false,
+    as: 'admin',
   };
   for (let i = 0; i < argv.length; i += 1) {
     const argument = argv[i];
-    if (argument === '--out') options.out = argv[++i] ?? '';
-    else if (argument === '--port') options.port = Number(argv[++i]);
-    else if (argument === '--signed-in') options.signedIn = true;
+    if (argument === '--signed-in') options.signedIn = true;
+    else if (Object.hasOwn(valueFlags, argument)) valueFlags[argument](options, argv[++i]);
     else if (argument?.startsWith('/')) options.path = argument;
     else throw new Error(`Unknown argument ${String(argument)}`);
   }
   if (options.path === undefined) throw new Error('Give the page path, for example /sign-in.');
+  if (!['admin', 'user'].includes(options.as)) throw new Error('--as is admin or user.');
   return options;
 }
 
@@ -73,7 +89,7 @@ function slugOf(path) {
 }
 
 async function shoot(browser, shot) {
-  const { origin, path, outDir, policy, seed, signedIn } = shot;
+  const { origin, path, outDir, policy, seed, signedIn, as } = shot;
   const errors = [];
   const names = [];
   for (const { device, width, height } of viewports) {
@@ -87,7 +103,7 @@ async function shoot(browser, shot) {
       );
       if (signedIn) {
         await context.request.post(`${origin}/api/session`, {
-          data: seed.seededAdmin,
+          data: as === 'user' ? seed.seededUser : seed.seededAdmin,
           headers: { origin },
         });
       }
@@ -158,6 +174,7 @@ async function main() {
         ...{ origin, outDir, policy, seed },
         path: options.path,
         signedIn: options.signedIn,
+        as: options.as,
       });
       const report = { path: options.path, screenshots: names.sort(), errors };
       await writeFile(join(outDir, 'console-errors.json'), `${JSON.stringify(report, null, 2)}\n`);
