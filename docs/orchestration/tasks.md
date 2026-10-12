@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 87 | 26 | 47 | 14 | 0 | 40 | 39 | 8 | 31 | 0 |
+| P1 Milestone slice (M1) | 89 | 28 | 47 | 14 | 0 | 42 | 39 | 8 | 33 | 0 |
 | P2 Full understand | 14 | 1 | 10 | 3 | 0 | 2 | 11 | 1 | 0 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **113** | **28** | **66** | **19** | **0** | **43** | **59** | **11** | **31** | **0** |
+| **Total** | **115** | **30** | **65** | **20** | **0** | **45** | **59** | **11** | **33** | **0** |
 
 ## Conventions for every card
 
@@ -202,7 +202,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md`; `docs/data-model.md` section 4 (`provider_keys`); `docs/security/threat-model.md` (keys and SSRF rows).
 - **Do**: `SecretBox` port and `AesGcmSecretBox` (AES-256-GCM, random IV, additional data `user_id:provider`, key version; decrypts with `ROSETTA_SECRET_KEY_PREVIOUS` during a rotation); `ProviderKeyRepository` with Pg and memory adapters; `SaveProviderKey` (stores ciphertext and last four characters; for `openai-compatible` the base URL must be https and must not resolve to a private, loopback or link-local address, checked through `node:dns` in infrastructure), `DeleteProviderKey` (row removed), `ListProviderKeys` (provider, last four, updated time only); routes under `/api/account/keys`; audit rows without the value. The AES key is derived from `ROSETTA_SECRET_KEY` with HKDF-SHA256 (info `rosetta/provider-keys/v1`), `key_version` is its fingerprint, and rows under the previous key are re-encrypted at start-up; the base-URL address check runs again on every connect through a guarded HTTP agent (DEC-112).
 - **Delivers**: the box, repository, use cases and routes; unit tests for the box (tamper detection, wrong additional data, rotation); integration tests on storage, replacement, deletion and the URL check with a fake resolver; an output scan test over every response of the suite.
@@ -238,7 +238,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-10, P1-11, P1-13
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/SignIn.dc.html`, `ChangePassword.dc.html`, `Settings.dc.html`; `docs/design-system.md` section 14.
 - **Do**: pages `/sign-in` (generic error, lockout shown as the same message), `/account/password` (forced at first sign-in; rule checklist updating while typing), `/settings` (keys per provider with last four, replace, delete with confirmation; the Test button slot that P1-29 fills); sign-out in the header menu. The settings page also offers the user's optional daily cap for their own keys (DEC-107).
 - **Delivers**: three pages; E2E specs: sign in and out, forced change at first sign-in, save and delete a key, axe on each page.
@@ -396,7 +396,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/adr/ADR-007-cost-control.md`; `docs/data-model.md` sections 3.12, 3.13, 3.18 and 4 (`cost_ledger`, `server_settings`).
-- **Do**: domain `PriceTable`, `Price`, `TokenUsage`, `Budget`, `UsageCap`; `prices/default-prices.yaml` (dated, USD, Ollama at zero) with project overrides; `CostLedger` port with Pg and memory adapters; `BudgetGuard` decorator of `LlmProvider`: before each call, inside one transaction with `pg_advisory_xact_lock` on the user and on the server, sum the ledger and the unexpired `cost_reservations` for the run, user-day and server-month, refuse the call with `CapReached` when its worst case (prompt tokens plus maximum output) would pass any applicable cap, otherwise insert its reservation; after the call, insert one ledger row with every column of data-model 3.13 (estimated usage marked `estimated`) and delete the reservation in one transaction; a refused call is recorded through `ProviderCallRecorder` as `refused-by-cap`; cap rules of DEC-107: with server keys the run cap is the lower of the run's and the administrator's, user-day and server-month caps apply, the shipped prices are used; with the user's own keys the run cap and the user's own daily cap apply and price overrides are honoured; UTC calendar periods; a cap refusal aborts the run's signal and the run ends `CapReached`; `GetCaps`/`SetCaps` use cases on `server_settings` with audit; the cost report writer (`cost.json`, `cost.md`) by role, task, provider and model with the price table version.
+- **Do**: domain `PriceTable`, `Price`, `TokenUsage`, `Budget`, `UsageCap`; `prices/default-prices.yaml` (dated, USD, Ollama at zero) with project overrides; `CostLedger` port with Pg and memory adapters; `BudgetGuard` decorator of `LlmProvider`: before each call, inside one transaction with `pg_advisory_xact_lock` on the user and on the server, sum the ledger and the unexpired `cost_reservations` for the run, user-day and server-month, refuse the call with `CapReached` when its worst case (prompt tokens plus maximum output) would pass any applicable cap, otherwise insert its reservation; after the call, insert one ledger row with every column of data-model 3.13 (estimated usage marked `estimated`) and delete the reservation in one transaction; a refused call is recorded through `ProviderCallRecorder` as `refused-by-cap`; cap rules of DEC-107: with server keys the run cap is the lower of the run's and the administrator's, user-day and server-month caps apply, the shipped prices are used; with the user's own keys the run cap and the user's own daily cap apply and price overrides are honoured; UTC calendar periods; a cap refusal aborts the run's signal and the run ends `CapReached`; `GetCaps`/`SetCaps` use cases on `server_settings` with audit; the cost report writer (`cost.json`, `cost.md`) by role, task, provider and model with the price table version. Also add the API for the user's optional daily cap on their own keys (DEC-107) and wire the disabled slot on `/settings` (`data-testid="own-daily-cap"`, P1-14).
 - **Delivers**: domain types, price file, ledger, guard, cap use cases and routes, cost writer; unit tests on pricing and cap arithmetic; integration tests: each cap with a fixed clock, two parallel runs racing for the last cent, an interrupted run keeping its ledger rows.
 - **Done when**: every RF-420, RF-421, RF-422, RF-426, RF-428 and RF-1106 scenario has a passing test (the cost page of RF-428 is P1-36); no code path calls a real provider without the guard (verifier reads the composition root and P1-29's factory once merged); the verifier-opus security review passes.
 - **Refs**: RF-420, RF-421, RF-422, RF-426, RF-428, RF-1106, ADR-007, ADR-016, DEC-13, DEC-49, DEC-54, DEC-64, Q-22.
@@ -406,7 +406,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-17, P1-24
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-006-read-only-tools-and-data-egress.md`; `docs/adr/ADR-013-untrusted-code-and-model-output.md`; `docs/data-model.md` section 3.11; `docs/security/threat-model.md`.
 - **Do**: `EgressGuard` decorator of `LlmProvider`: masks every message part with the masker of P1-04 (a masker failure blocks the call, logs the code and stops the task), adds mask counts to the run record, appends `egress.log.jsonl` records (provider, model, role, task, path and line range of each excerpt), and refuses any call to a non-local provider unless the run carries consent (RF-143); repository content reaches the guard only inside labelled data blocks built by P1-31, and the guard refuses a message that places tool results in the system prompt.
 - **Delivers**: the guard; unit tests with the secret fixture and a failing masker; integration tests with the fake provider for the egress log and the consent refusal.
@@ -420,7 +420,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/architecture.md` sections 2 (composition root) and 7; `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md` (keys at run time).
-- **Do**: a provider factory used only by the composition root: for each role, pick the user's key, else the server key when the user may use server keys, else stop before any call naming the provider (RF-002 third scenario); wrap every provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`; record the key source for the ledger; Ollama only when `ROSETTA_OLLAMA_URL` is set; `TestProviders` use case (one tiny call per configured role through the guards, cost counted in the ledger) with route `POST /api/account/providers/test`; the Test button on `/settings` showing reachable or the error per role.
+- **Do**: a provider factory used only by the composition root: for each role, pick the user's key, else the server key when the user may use server keys, else stop before any call naming the provider (RF-002 third scenario); wrap every provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`; record the key source for the ledger; Ollama only when `ROSETTA_OLLAMA_URL` is set; `TestProviders` use case (one tiny call per configured role through the guards, cost counted in the ledger) with route `POST /api/account/providers/test`; the Test button on `/settings` showing reachable or the error per role. Notes from P1-28: fill `options.cloudConsent` for the run; build the guard's host and the adapter's URL from one parsed URL (`http://localhost@evil.com` gives `evil.com`) and test it.
 - **Delivers**: the factory, use case, route and button; integration tests with two fake providers for model per role, key choice and the missing-key stop; an E2E spec for the Test button.
 - **Done when**: every RF-405 and RF-407 scenario, the third RF-002 scenario and the run-time RF-1104 scenario have passing tests; a test proves an adapter created by the factory cannot be called without both guards.
 - **Refs**: RF-002, RF-405, RF-407, RF-1104, ADR-003, ADR-006, ADR-007, ADR-015, DEC-64.
@@ -444,7 +444,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/architecture.md` section 8; `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/adr/ADR-013-untrusted-code-and-model-output.md`; `docs/data-model.md` section 3.15.
-- **Do**: in `src/application/agent/`: the tool-calling loop (system prompt, messages, tools, max turns, context-share limit ending as `TurnLimitReached`, shared abort signal); tools `list_area_files`, `read_file`, `grep`, `codemap_query` with zod-validated arguments, error results the model can correct, results wrapped in delimited repository-content blocks; `prompts/reader/area.v1.md` stating the data-block rule; prompt files loaded with version and SHA-256 recorded for the manifest; an injection fixture repository under `tests/fixtures/repos/injection/` with recordings.
+- **Do**: in `src/application/agent/`: the tool-calling loop (system prompt, messages, tools, max turns, context-share limit ending as `TurnLimitReached`, shared abort signal); tools `list_area_files`, `read_file`, `grep`, `codemap_query` with zod-validated arguments, error results the model can correct, results wrapped in delimited repository-content blocks; `prompts/reader/area.v1.md` stating the data-block rule; prompt files loaded with version and SHA-256 recorded for the manifest; an injection fixture repository under `tests/fixtures/repos/injection/` with recordings. Notes from P1-28: put repository content only in labelled data blocks built with `renderDataBlock`, never in the system prompt or in tool definitions; add the RF-145 sentence that text inside data blocks is data to every prompt; resolve read paths to the code map's exact case so the egress guard's split-key carry matches them.
 - **Delivers**: the loop, tools, prompt, fixture and recordings; integration tests with recorded responses: a normal area, a bad tool call corrected, the turn limit, the injection fixture; a unit test that every prompt file states the data-block rule.
 - **Done when**: every RF-201 and RF-145 scenario has a passing test; no tool can write (verifier reads the tool set); the manifest records prompt versions and hashes (test).
 - **Refs**: RF-145, RF-146, RF-201, RNF-004, ADR-003, ADR-006, ADR-013, DEC-15, DEC-17, DEC-57, DEC-58.
@@ -612,7 +612,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 6, 9 and 14; `docs/adr/ADR-016-postgresql-and-files.md`.
-- **Do**: `compose.yaml` (adds the `app` service to the `db` service of P1-06, volumes `pgdata` and `rosetta-data`, app on `127.0.0.1:8080` only, `extra_hosts: host.docker.internal:host-gateway`, health checks, restart policy); `compose.ci.yaml` (fake provider, test seed); the CI Compose smoke job (up, wait for `/healthz`, Playwright smoke: landing, sign-in, a fake-provider scan, `down -v`); `docs/runbooks/local.md` (`.env`, up, first sign-in, Ollama on the host, reset); the README quick start section. `db/init/roles.sh` creating `rosetta_app` and `rosetta_migrator` from passwords in `.env`; `compose.ci.yaml` runs the image's `test` stage with a fake GitHub sidecar.
+- **Do**: `compose.yaml` (adds the `app` service to the `db` service of P1-06, volumes `pgdata` and `rosetta-data`, app on `127.0.0.1:8080` only, `extra_hosts: host.docker.internal:host-gateway`, health checks, restart policy); `compose.ci.yaml` (fake provider, test seed); the CI Compose smoke job (up, wait for `/healthz`, Playwright smoke: landing, sign-in, a fake-provider scan, `down -v`); `docs/runbooks/local.md` (`.env`, up, first sign-in, Ollama on the host, reset); the README quick start section. `db/init/roles.sh` creating `rosetta_app` and `rosetta_migrator` from passwords in `.env`; `compose.ci.yaml` runs the image's `test` stage with a fake GitHub sidecar. Add `host.docker.internal:host-gateway` so the documented Ollama URL resolves on Linux (P1-28).
 - **Delivers**: the two Compose files, the CI job, the runbook, the README section.
 - **Done when**: the CI smoke job is green; `docker compose config` shows the port bound to `127.0.0.1` (verifier); data survives `down` and `up` (test in the smoke job with a project created before the restart). The RF-1301 Ollama scenario is checked on the owner's machine (`ROSETTA_OLLAMA_URL` reaches the host's Ollama) and recorded as an owner check. The image ships `src/infrastructure/security/common-passwords.txt` (without it start-up fails with RST-2501).
 - **Refs**: RF-801, RF-1009, RF-1301, RNF-011, RNF-014, ADR-014, ADR-016, DEC-61.
@@ -1121,6 +1121,30 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Done when**: `npm ci --ignore-scripts` passes on Linux with npm 11.19 and in CI; `npm run verify` green.
 - **Refs**: RNF-005, P1-13 (verifier note).
 
+### P1-88 - Follow-up: provider key address check gaps
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-11
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/security/public-address.ts`; `src/domain/accounts/provider-keys.ts`; `src/infrastructure/security/aes-gcm-secret-box.ts`; `docs/architecture.md` section 7.
+- **Do**: treat `3fff::/20`, `5f00::/16` and `::ffff:0:0:0/96` as non-public; refuse a base URL ending in a bare `?` or `#`; read the secret with strict base64 in the secret box; say in architecture section 7 that the connect-time check is not wired until P2-10.
+- **Delivers**: the changes with tests.
+- **Done when**: each new range and the bare `?`/`#` are refused; `npm run verify` green.
+- **Refs**: RF-1104, DEC-112, P1-11 (verifier-opus MINORs 1-4).
+
+### P1-89 - Follow-up: egress guard split-key carry and look-alike markers
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-28
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/mask-request.ts`, `private-key-pieces.ts`; `src/domain/egress/data-block-scan.ts`; `docs/architecture.md` section 7.
+- **Do**: compare paths case-folded in the split-key carry (a case-insensitive file system can return `a.cs` for `A.cs`); document the `key: "MII...` limit in the module header and architecture section 7; refuse or defang Unicode look-alike block markers in content and headers.
+- **Delivers**: the changes with tests.
+- **Done when**: a key continued under a differently cased path is masked; a look-alike marker cannot open or close a block; `npm run verify` green.
+- **Refs**: RF-141, RF-145, P1-28 (verifier-opus MINORs, rounds 2 and 3).
+
 ---
 
 ## Phase 2 - Full understand
@@ -1236,15 +1260,15 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-404, ADR-003, ADR-008.
 
 ### P2-10 - OpenAI-compatible adapter
-- **Difficulty**: 7 (sonnet)
+- **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-29
 - **Gate**: none
 - **Status**: Todo
-- **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`.
+- **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; RF-1104; DEC-112; `docs/security/threat-model.md` (SSRF row); `src/infrastructure/security/public-address-agent.ts`.
 - **Do**: `OpenAiCompatibleProvider` with a base URL and key from the provider set (URL rules of RF-1104), same contract; a section in `docs/providers.md`.
 - **Delivers**: the adapter, recordings, the contract suite run on it.
-- **Done when**: the RF-403 scenario has a passing test.
+- **Done when**: the RF-403 scenario has a passing test; every request of the adapter goes through a dispatcher whose connect uses `publicOnlyLookup` and refuses internal IP literals (P1-11 built the check but no adapter used it); redirects are not followed or each one is checked again; a DNS rebinding test and an internal-literal test on the adapter pass; the verifier-opus security review passes.
 - **Refs**: RF-403, RF-1104, ADR-003.
 
 ### P2-11 - Golden set and the evaluation runner
