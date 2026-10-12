@@ -8,9 +8,8 @@ import { transitionsDone } from './support/transitions.js';
 // RF-1001, RF-143, RF-425, RF-1108, DEC-108, P1-34: the start page of a project, driven against
 // the test server (fake GitHub for octo/demo, the answering provider for every model call). A scan
 // and an understand run start from the page, the cloud notice needs its consent, a wrong address
-// is refused next to its field, a likely estimate above the cap warns, and a queued run shows its
-// position (the queue answer is made by the test: one run finishes before a second can wait on
-// this server). The account belongs to the project (seed.ts); the steps run in order because they
+// is refused next to its field, a likely estimate above the cap warns, and a second run waits in
+// the real queue, shows its position and is cancelled by its id. The account belongs to the project (seed.ts); the steps run in order because they
 // share its project and its runs.
 
 const demoUrl = 'https://github.com/octo/demo';
@@ -54,7 +53,7 @@ test('RF-1001 starts a scan from the page before there is a code map and passes 
   await expectNoSeriousViolations(page);
   await page.getByRole('button', startButton).click();
 
-  await expect(page.getByTestId('run-notice')).toContainText('Run started');
+  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
   await expectNoSeriousViolations(page);
   const estimate = `/api/projects/${projectIdOf(page)}/estimate`;
   // The estimate answers once the scan has completed and left its code map.
@@ -86,6 +85,28 @@ test('RF-1001 shows the estimate and starts an understand run for the chosen are
 
   await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
   await expectNoSeriousViolations(page);
+});
+
+test('RF-1108 a second run waits in the queue, shows its position and can be cancelled', async ({
+  page,
+}) => {
+  // The test server holds the reader of an understand run for a few seconds (serve.ts), and one
+  // user has at most one running run, so the second request really waits in the queue.
+  await openStartPage(page);
+  await page.getByRole('button', startButton).click();
+  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+  await openStartPage(page);
+  await page.getByLabel('Scan only').check();
+
+  await page.getByRole('button', startButton).click();
+
+  const notice = page.getByTestId('run-notice');
+  await expect(notice).toContainText('Queued');
+  await expect(notice).toContainText(/position \d+/u);
+  await expectNoSeriousViolations(page);
+  await notice.getByRole('button', { name: 'Cancel queued run' }).click();
+  await expect(notice).toContainText('cancelled');
+  await expect(page.getByRole('button', startButton)).toBeEnabled();
 });
 
 test('RF-143 a cloud reader needs the consent before Start and the notice names the provider', async ({
@@ -145,37 +166,4 @@ test('RF-1001 an invalid address is refused next to the field with its code and 
   await expect(url).toBeFocused();
   await expect(page.getByTestId('run-notice')).toHaveCount(0);
   await expectNoSeriousViolations(page);
-});
-
-test('RF-1108 a queued run shows its position and can be cancelled', async ({ page }) => {
-  await page.route('**/api/projects/*/runs', async (route) => {
-    await route.fulfill({
-      status: 202,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ...{ id: 'r-1', projectId: 'p-1', runId: '20261012-100000-scan', stage: 'scan' },
-        ...{ queueState: 'Queued', endState: null, queuedAt: '2026-10-12T10:00:00.000Z' },
-        ...{ startedAt: null, endedAt: null, commitSha: null, position: 2 },
-        totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
-      }),
-    });
-  });
-  await page.route('**/api/runs/20261012-100000-scan/stop', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ runId: '20261012-100000-scan', queueState: 'Ended' }),
-    });
-  });
-  await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-
-  await page.getByRole('button', startButton).click();
-
-  const notice = page.getByTestId('run-notice');
-  await expect(notice).toContainText('Queued');
-  await expect(notice).toContainText('position 2');
-  await expectNoSeriousViolations(page);
-  await notice.getByRole('button', { name: 'Cancel queued run' }).click();
-  await expect(notice).toContainText('cancelled');
 });
