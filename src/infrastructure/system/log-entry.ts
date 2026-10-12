@@ -35,12 +35,28 @@ function maskValue(value: LogValue, masker: TextMasker): LogValue {
   return value;
 }
 
+// RF-009, RNF-003: a data key that names a secret hides its whole value, whatever its type, so a
+// secret the text masker cannot recognise (plain words, a number) never reaches a log. The first
+// matching name gives the marker.
+const secretKeyNames: readonly { readonly name: RegExp; readonly marker: string }[] = [
+  { name: /api[_-]?key/i, marker: '[MASKED:api-key]' },
+  { name: /token/i, marker: '[MASKED:bearer-token]' },
+  { name: /password|passwd|pwd|secret/i, marker: '[MASKED:password]' },
+];
+
+function secretMarkerOf(key: string): string | undefined {
+  return secretKeyNames.find(({ name }) => name.test(key))?.marker;
+}
+
 function maskData(
   data: Readonly<Record<string, LogValue>>,
   masker: TextMasker,
 ): Record<string, LogValue> {
   return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [masker.mask(key).text, maskValue(value, masker)]),
+    Object.entries(data).map(([key, value]) => [
+      masker.mask(key).text,
+      secretMarkerOf(key) ?? maskValue(value, masker),
+    ]),
   );
 }
 

@@ -27,9 +27,14 @@ export interface MaskRule {
 
 // A value that an earlier rule already replaced is never masked again.
 const notMasked = String.raw`(?!\[MASKED:)`;
-// RF-141: anchored on the keyword (no open-ended prefix) so no pattern rescans the input from
-// every position; every repetition that could meet a long run of matching text is bounded.
-const passwordKey = String.raw`(?:password|passwd|pwd)["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}`;
+// RF-141: anchored on a keyword or a delimiter (no open-ended prefix) so no pattern rescans the
+// input from every position. A prefix is bounded; a secret value runs to a delimiter its own class
+// excludes (whitespace, a quote, `/`, `;`, `<`), so a value has no length limit and is still read
+// once, and it ends where the next anchor could start.
+const passwordName = '(?:password|passwd|pwd)';
+const passwordKey = String.raw`${passwordName}["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}`;
+// Not preceded by a letter or digit: an underscore before the key is allowed (`prod_sk-...`).
+const keyStart = '(?<![A-Za-z0-9])';
 
 // The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
 // whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
@@ -42,7 +47,15 @@ const defaultRules: readonly MaskRule[] = [
   {
     kind: 'api-key',
     pattern:
-      /\b(?:sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,}|AKIA[0-9A-Z]{16}(?![A-Za-z0-9]))/g,
+      /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,}|(?:AKIA|ASIA)[0-9A-Z]{16}(?![A-Za-z0-9]))/g,
+  },
+  {
+    // OpenAI and Anthropic keys, and Stripe-style secret and restricted keys (`sk_live_`, `rk_test_`).
+    kind: 'api-key',
+    pattern: new RegExp(
+      String.raw`${keyStart}(?:sk-[A-Za-z0-9_-]{20,}|[rs]k_(?:live|test)_[A-Za-z0-9]{16,})`,
+      'g',
+    ),
   },
   {
     kind: 'bearer-token',
@@ -52,11 +65,19 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
   {
+    // The Basic and token schemes of an Authorization header (`Authorization: Basic <base64>`).
+    kind: 'bearer-token',
+    pattern: new RegExp(
+      String.raw`(?<keep>\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?(?:Basic|token)[ \t]{1,16})${notMasked}[A-Za-z0-9._~+/=-]{4,}`,
+      'gi',
+    ),
+  },
+  {
     // The user may be empty (`redis://:secret@host`); the password runs to the last `@` of the
     // authority, so a password that contains `@` is masked whole.
     kind: 'connection-string',
     pattern: new RegExp(
-      String.raw`(?<keep>\b[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s:/@"'[\]]{0,256}:)${notMasked}[^\s/"']{1,512}(?=@)`,
+      String.raw`(?<keep>\b[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s:/@"'[\]]{0,256}:)${notMasked}[^\s/"']+(?=@)`,
       'g',
     ),
   },
@@ -78,6 +99,25 @@ const defaultRules: readonly MaskRule[] = [
   {
     kind: 'password',
     pattern: new RegExp(String.raw`(?<keep>${passwordKey})${notMasked}(?![="'])[^\s;,&"']+`, 'gi'),
+  },
+  {
+    // An XML element whose name ends in a password name, with an optional prefix and attributes;
+    // the value runs to its closing tag on the same line, so a `<password>` placeholder in prose
+    // is left alone.
+    kind: 'password',
+    pattern: new RegExp(
+      String.raw`(?<keep><[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>)${notMasked}[^<\s][^<\r\n]*(?=</)`,
+      'gi',
+    ),
+  },
+  {
+    // `mysql -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and is left alone.
+    // The options before `-p` are bounded to 128 characters, so a `mysql` is never followed further.
+    kind: 'password',
+    pattern: new RegExp(
+      String.raw`(?<keep>\bmysql(?:admin|dump)?[ \t][^\r\n]{0,128}?[ \t]-p)${notMasked}[^\s]+`,
+      'g',
+    ),
   },
 ];
 

@@ -486,6 +486,10 @@ output as JSON lines at `ROSETTA_LOG_LEVEL` and above. One file per UTC day; fil
 start-up and daily (RF-009): a file is deleted when its UTC day is more than that many days before today, and
 only files named `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the secret masking: `logger`,
 `message`, the ids and every key and string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept.
+A `data` key at any depth whose name contains `password`, `passwd`, `pwd`, `secret`, `token` or `api key`
+(`api[_-]?key`), in any case, has its whole value replaced, whatever its type: `[MASKED:api-key]` for an API key
+name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count such as
+`inputTokens` is therefore never written under such a name.
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
@@ -498,10 +502,11 @@ Content is exactly what was sent after masking, so it may contain excerpts of th
 `ObservedProvider` through `ProviderCallRecorder` (RF-408): the system prompt on the task's first call, then each
 call's new messages before it is sent and its answer after. The messages of a task are append-only (each call repeats
 the earlier ones unchanged), so only the new ones are written. Every key and string is masked, and every value is
-masked again together with its property name, so a secret held under a key such as `password` is masked too;
-when masking fails nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file
-name. `seq` continues after the lines a file already holds, so a resumed run (RF-006) never repeats a number; the
-same holds for `provider-calls.jsonl`.
+masked again together with its property name, so a secret held under a key such as `password` is masked too, and so
+is each item of an array held under such a key; when masking fails nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file
+name. `seq` continues after the lines a file already holds, so a resumed run (RF-006) never repeats a number; a
+partial last line left by a crash mid-append is counted and kept as it is, and the next record starts on a new line.
+The same holds for `provider-calls.jsonl`.
 
 ### 3.16 `answers.md`
 
@@ -520,6 +525,12 @@ existing answer is never overwritten. `RunUnderstand` adds the `OQ` cards of the
 included): a question whose heading text is already in the file is skipped, new sections are appended after the
 existing ones, the question and context are one line each and masked, and the context is the card's first citation
 followed by its first claim (P1-33, DEC-98).
+
+The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question belongs to the run its `- Card:` line
+names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
+line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
+never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
+and writes to one project's file run one after another.
 
 ### 3.17 Report and hand-off folders
 
