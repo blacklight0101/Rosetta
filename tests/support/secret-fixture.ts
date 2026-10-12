@@ -23,7 +23,8 @@ function fakeValue(length: number): string {
 const dash = '-';
 /** A FAKE OpenAI project key, for the OpenAI adapter tests (RF-402). */
 export const fakeOpenAiKey = ['sk', 'proj', fakeValue(40)].join(dash);
-const anthropicKey = ['sk', 'ant', 'api03', fakeValue(48)].join(dash);
+/** A FAKE Anthropic key, for the Anthropic adapter tests (RF-404). */
+export const fakeAnthropicKey = ['sk', 'ant', 'api03', fakeValue(48)].join(dash);
 const githubToken = ['ghp', fakeValue(36)].join('_');
 const githubPat = ['github', 'pat', fakeValue(30)].join('_');
 const awsKeyId = ['AK', 'IA', fakeValue(16)].join('');
@@ -49,9 +50,9 @@ export const secretCases: readonly SecretCase[] = [
   {
     name: 'an Anthropic key (sk-ant-) in source code',
     kind: 'api-key',
-    text: `const client = new Client({ apiKey: "${anthropicKey}" });`,
+    text: `const client = new Client({ apiKey: "${fakeAnthropicKey}" });`,
     masked: 'const client = new Client({ apiKey: "[MASKED:api-key]" });',
-    secrets: [anthropicKey],
+    secrets: [fakeAnthropicKey],
   },
   {
     name: 'a GitHub token (ghp_)',

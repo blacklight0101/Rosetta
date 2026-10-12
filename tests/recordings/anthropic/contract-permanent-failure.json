@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. The permanent-failure scenario: a 401 for a rejected key, not retried. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 401,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000401"
+      },
+      "body": {
+        "type": "error",
+        "error": {
+          "type": "authentication_error",
+          "message": "invalid x-api-key"
+        }
+      }
+    }
+  ]
+}

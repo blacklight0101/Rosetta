@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A 529 overloaded error with a request id, then the text answer. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 529,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000529"
+      },
+      "body": {
+        "type": "error",
+        "error": {
+          "type": "overloaded_error",
+          "message": "Overloaded"
+        }
+      }
+    },
+    {
+      "status": 200,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000001"
+      },
+      "body": {
+        "id": "msg_FAKE00000000000000000001",
+        "type": "message",
+        "role": "assistant",
+        "model": "contract-model-20260807",
+        "content": [
+          {
+            "type": "text",
+            "text": "The Catalog area lists products from the database."
+          }
+        ],
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 176,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 1024,
+          "output_tokens": 80,
+          "service_tier": "standard"
+        }
+      }
+    }
+  ]
+}
