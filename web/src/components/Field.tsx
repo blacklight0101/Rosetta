@@ -18,8 +18,10 @@ interface FieldBase {
   /** Unique in the page; the help and error ids derive from it. */
   readonly id: string;
   readonly label: string;
-  readonly help?: string;
+  readonly help?: string | undefined;
   readonly error?: FieldError | undefined;
+  /** The id of other text that describes the control, for example a rule checklist. */
+  readonly describedBy?: string;
   readonly disabled?: boolean;
 }
 
@@ -63,6 +65,7 @@ function describedBy(props: FieldBase): string | undefined {
   const ids = [
     props.help === undefined ? '' : `${props.id}-help`,
     props.error === undefined ? '' : `${props.id}-error`,
+    props.describedBy ?? '',
   ].filter((id) => id !== '');
   return ids.length === 0 ? undefined : ids.join(' ');
 }
@@ -187,7 +190,7 @@ export function Field(props: FieldProps): JSX.Element {
         </p>
       )}
       {props.error === undefined ? null : (
-        <p id={`${props.id}-error`} class="rst-field__error" data-testid="field-error">
+        <p id={`${props.id}-error`} class="rst-field__error" role="alert" data-testid="field-error">
           {props.error.code === undefined ? '' : `${props.error.code} · `}
           {props.error.message}
         </p>

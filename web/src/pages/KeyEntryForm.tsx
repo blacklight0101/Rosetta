@@ -1,5 +1,5 @@
-import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import type { JSX, RefObject } from 'preact';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { saveKey } from '../api/account.js';
 import type { ApiFailure } from '../api/client.js';
 import { namesAField, problemFor } from '../api/problems.js';
@@ -8,6 +8,7 @@ import { useApp } from '../app/app-context.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
+import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import type { ProviderMeta } from './provider-meta.js';
 
 // RF-1104: the fields that save a key for one provider (an OpenAI-compatible key also takes its
@@ -20,6 +21,10 @@ export interface KeyEntryFormProps {
   readonly onSaved: (summary: KeySummary) => void;
   /** Present when the form can be dismissed (a replacement, not a first key). */
   readonly onCancel?: () => void;
+  /** Text that describes the key field, for example what a replacement removes. */
+  readonly note?: string;
+  /** Moves focus to the key field when the form appears. */
+  readonly focusOnShow?: boolean;
 }
 
 interface KeyEntry {
@@ -59,13 +64,29 @@ function useKeyEntry(props: KeyEntryFormProps): KeyEntry {
   return { key, baseUrl, busy, failure, setKey, setBaseUrl, submit };
 }
 
+/** RNF-010: focus goes to the key field when asked, and to the first invalid field on a refusal. */
+function useKeyFocus(
+  failure: ApiFailure | undefined,
+  focusOnShow: boolean,
+  providerId: string,
+): RefObject<HTMLFormElement> {
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefusalFocus(formRef, failure);
+  useEffect(() => {
+    if (focusOnShow) document.getElementById(`key-${providerId}`)?.focus();
+  }, [focusOnShow, providerId]);
+  return formRef;
+}
+
 // RF-1104
 export function KeyEntryForm(props: KeyEntryFormProps): JSX.Element {
-  const { provider, submitLabel, onCancel } = props;
+  const { provider, submitLabel, onCancel, note, focusOnShow = false } = props;
   const entry = useKeyEntry(props);
   const { failure } = entry;
+  const formRef = useKeyFocus(failure, focusOnShow, provider.id);
   return (
     <form
+      ref={formRef}
       class="rst-key-row__form"
       noValidate
       onSubmit={(event) => {
@@ -92,6 +113,7 @@ export function KeyEntryForm(props: KeyEntryFormProps): JSX.Element {
         id={`key-${provider.id}`}
         label="API key"
         autoComplete="off"
+        help={note}
         value={entry.key}
         error={problemFor(failure, 'key')}
         onInput={entry.setKey}

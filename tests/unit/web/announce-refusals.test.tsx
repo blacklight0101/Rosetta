@@ -119,10 +119,7 @@ it('RNF-010 focuses the password field after a failed sign-in, with the code aft
   await waitFor(() => {
     expect(document.activeElement).toBe(screen.getByLabelText('Password'));
   });
-  expect(banner.textContent?.indexOf('Message of RST-2201.')).toBeLessThan(
-    banner.textContent?.indexOf('RST-2201') ?? -1,
-  );
-  expect(banner.textContent).toContain('(RST-2201)');
+  expect(banner.textContent).toMatch(/Message of RST-2201..*(RST-2201)/su);
 });
 
 it('RNF-010 focuses the invalid field of a refused key and announces the error', async () => {

@@ -7,6 +7,8 @@ import { Glyph, type GlyphName } from './Glyph.js';
 
 export interface RuleChecklistProps {
   readonly rules: readonly RuleResult[];
+  /** The list's id, so a password field can point at it with aria-describedby. */
+  readonly id: string;
 }
 
 const glyphOf: Readonly<Record<RuleState, GlyphName>> = {
@@ -22,9 +24,9 @@ const spokenState: Readonly<Record<RuleState, string>> = {
 };
 
 // RF-1103
-export function RuleChecklist({ rules }: RuleChecklistProps): JSX.Element {
+export function RuleChecklist({ rules, id }: RuleChecklistProps): JSX.Element {
   return (
-    <ul class="rst-rules" aria-label="Password rules">
+    <ul id={id} class="rst-rules" aria-label="Password rules" aria-live="polite">
       {rules.map((rule) => (
         <li key={rule.id} class="rst-rule" data-state={rule.state}>
           <Glyph name={glyphOf[rule.state]} />

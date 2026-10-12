@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { useRef } from 'preact/hooks';
 import { namesAField, problemFor } from '../api/problems.js';
 import { useUser } from '../app/session-context.js';
 import { AuthLayout } from '../components/AuthLayout.js';
@@ -7,6 +8,7 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { RuleChecklist } from '../components/RuleChecklist.js';
 import { SignOutButton } from '../components/SignOutButton.js';
+import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { usePasswordChange, type PasswordChange } from './use-password-change.js';
 
 // RF-1103, RF-1102, design-system.md section 14: forced at the first sign-in (the account is in
@@ -35,6 +37,8 @@ const fromSettings: Wording = {
   submit: 'Change password',
 };
 
+const rulesId = 'change-password-rules';
+
 function PasswordFields(props: {
   readonly form: PasswordChange;
   readonly currentLabel: string;
@@ -58,9 +62,10 @@ function PasswordFields(props: {
         autoComplete="new-password"
         value={form.next}
         error={problemFor(form.failure, 'newPassword')}
+        describedBy={rulesId}
         onInput={form.setNext}
       />
-      <RuleChecklist rules={form.rules} />
+      <RuleChecklist rules={form.rules} id={rulesId} />
       <Field
         kind="password"
         id="change-password-repeat"
@@ -80,6 +85,8 @@ export function ChangePasswordPage(): JSX.Element {
   const form = usePasswordChange(user.userName);
   const wording = user.state === 'MustChangePassword' ? firstSignIn : fromSettings;
   const { failure } = form;
+  const formRef = useRef<HTMLFormElement>(null);
+  useRefusalFocus(formRef, form.refusals);
   return (
     <AuthLayout
       end={
@@ -92,6 +99,7 @@ export function ChangePasswordPage(): JSX.Element {
       }
     >
       <form
+        ref={formRef}
         class="rst-auth__card rst-auth__card--wide"
         aria-labelledby="change-password-title"
         noValidate

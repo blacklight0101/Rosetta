@@ -1,5 +1,5 @@
-import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import type { JSX, RefObject } from 'preact';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { deleteKey } from '../api/account.js';
 import type { ApiFailure } from '../api/client.js';
 import type { KeyProvider, KeySummary } from '../api/schemas.js';
@@ -7,6 +7,7 @@ import { useApp } from '../app/app-context.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Glyph } from '../components/Glyph.js';
+import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { KeyEntryForm } from './KeyEntryForm.js';
 import type { ProviderMeta } from './provider-meta.js';
 
@@ -25,6 +26,37 @@ type Mode = 'view' | 'replace' | 'delete';
 
 const savedOn = (updatedAt: string): string => updatedAt.slice(0, 'YYYY-MM-DD'.length);
 
+/** RNF-010: the confirmation takes focus when it appears, so it is read out; a failure, the banner. */
+function useConfirmationFocus(failure: ApiFailure | undefined): RefObject<HTMLDivElement> {
+  const group = useRef<HTMLDivElement>(null);
+  useRefusalFocus(group, failure);
+  useEffect(() => {
+    group.current?.focus();
+  }, []);
+  return group;
+}
+
+function DeleteButtons(props: {
+  readonly busy: boolean;
+  readonly onConfirm: () => Promise<void>;
+  readonly onCancel: () => void;
+}): JSX.Element {
+  return (
+    <div class="rst-key-row__actions">
+      <Button
+        variant="danger"
+        busy={props.busy}
+        onClick={() => {
+          void props.onConfirm();
+        }}
+      >
+        Delete key
+      </Button>
+      <Button onClick={props.onCancel}>Cancel</Button>
+    </div>
+  );
+}
+
 function DeleteConfirmation(props: {
   readonly provider: ProviderMeta;
   readonly saved: KeySummary;
@@ -35,6 +67,7 @@ function DeleteConfirmation(props: {
   const { client } = useApp();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<ApiFailure | undefined>();
+  const group = useConfirmationFocus(failure);
 
   const confirm = async (): Promise<void> => {
     setBusy(true);
@@ -49,24 +82,19 @@ function DeleteConfirmation(props: {
   };
 
   return (
-    <div class="rst-key-row__confirm">
+    <div
+      ref={group}
+      class="rst-key-row__confirm"
+      role="group"
+      aria-labelledby={`delete-question-${provider.id}`}
+      tabIndex={-1}
+    >
       {failure === undefined ? null : <ErrorBanner error={failure} />}
-      <p>
+      <p id={`delete-question-${provider.id}`}>
         Delete the key ending {saved.last4}? Your runs then use the server keys if the administrator
         allows them for your account.
       </p>
-      <div class="rst-key-row__actions">
-        <Button
-          variant="danger"
-          busy={busy}
-          onClick={() => {
-            void confirm();
-          }}
-        >
-          Delete key
-        </Button>
-        <Button onClick={onCancel}>Cancel</Button>
-      </div>
+      <DeleteButtons busy={busy} onConfirm={confirm} onCancel={onCancel} />
     </div>
   );
 }
@@ -85,10 +113,14 @@ function SavedSummary({ saved }: { readonly saved: KeySummary }): JSX.Element {
   );
 }
 
-function KeyActions(props: { readonly onMode: (mode: Mode) => void }): JSX.Element {
+function KeyActions(props: {
+  readonly provider: ProviderMeta;
+  readonly onMode: (mode: Mode) => void;
+}): JSX.Element {
   return (
     <div class="rst-key-row__actions">
       <Button
+        id={`replace-${props.provider.id}`}
         onClick={() => {
           props.onMode('replace');
         }}
@@ -96,6 +128,7 @@ function KeyActions(props: { readonly onMode: (mode: Mode) => void }): JSX.Eleme
         Replace
       </Button>
       <Button
+        id={`delete-${props.provider.id}`}
         variant="danger-outline"
         onClick={() => {
           props.onMode('delete');
@@ -110,19 +143,26 @@ function KeyActions(props: { readonly onMode: (mode: Mode) => void }): JSX.Eleme
 function SavedKey(props: KeyRowProps & { readonly saved: KeySummary }): JSX.Element {
   const { provider, saved, onSaved, onRemoved } = props;
   const [mode, setMode] = useState<Mode>('view');
+  const [returnTo, setReturnTo] = useState<string | undefined>();
   const backToView = (): void => {
+    setReturnTo(`${mode}-${provider.id}`);
     setMode('view');
   };
+  // RNF-010: leaving a confirmation puts focus back on the button that opened it.
+  useEffect(() => {
+    if (mode === 'view' && returnTo !== undefined) document.getElementById(returnTo)?.focus();
+  }, [mode, returnTo]);
   return (
     <>
       <SavedSummary saved={saved} />
-      {mode === 'view' ? <KeyActions onMode={setMode} /> : null}
+      {mode === 'view' ? <KeyActions provider={provider} onMode={setMode} /> : null}
       {mode === 'replace' ? (
         <>
-          <p>The saved key ending {saved.last4} is removed once the new one is saved.</p>
           <KeyEntryForm
             provider={provider}
             submitLabel="Replace key"
+            note={`The saved key ending ${saved.last4} is removed once the new one is saved.`}
+            focusOnShow
             onSaved={(summary) => {
               backToView();
               onSaved(summary);
@@ -149,6 +189,15 @@ function SavedKey(props: KeyRowProps & { readonly saved: KeySummary }): JSX.Elem
 // RF-1104
 export function KeyRow(props: KeyRowProps): JSX.Element {
   const { provider, saved, onSaved } = props;
+  const had = useRef(saved !== undefined);
+  // RNF-010: when the row changes between "no key" and "saved" the control that had focus is gone;
+  // focus moves to the one that took its place.
+  useEffect(() => {
+    const has = saved !== undefined;
+    if (has === had.current) return;
+    had.current = has;
+    document.getElementById(has ? `replace-${provider.id}` : `key-${provider.id}`)?.focus();
+  }, [saved, provider.id]);
   return (
     <div class="rst-key-row" data-testid="key-row">
       <div>

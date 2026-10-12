@@ -17,6 +17,8 @@ export interface PasswordChange {
   readonly next: string;
   readonly repeat: string;
   readonly mismatch: boolean;
+  /** Counts refusals (a repeat that differs or an answer of the server), to move focus on each. */
+  readonly refusals: number;
   readonly busy: boolean;
   readonly failure: ApiFailure | undefined;
   readonly rules: readonly RuleResult[];
@@ -24,6 +26,17 @@ export interface PasswordChange {
   readonly setNext: (value: string) => void;
   readonly setRepeat: (value: string) => void;
   readonly submit: () => Promise<void>;
+}
+
+/** A setter that also withdraws the "do not match" message, because the person is typing again. */
+function clearing(
+  set: (value: string) => void,
+  setMismatch: (mismatch: boolean) => void,
+): (value: string) => void {
+  return (value) => {
+    set(value);
+    setMismatch(false);
+  };
 }
 
 // RF-1103
@@ -34,6 +47,7 @@ export function usePasswordChange(userName: string): PasswordChange {
   const [repeat, setRepeatValue] = useState('');
   const [mismatch, setMismatch] = useState(false);
   const [refusedAsCommon, setRefusedAsCommon] = useState<string | undefined>();
+  const [refusals, setRefusals] = useState(0);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<ApiFailure | undefined>();
 
@@ -41,6 +55,7 @@ export function usePasswordChange(userName: string): PasswordChange {
     setFailure(undefined);
     if (repeat !== next) {
       setMismatch(true);
+      setRefusals((count) => count + 1);
       return;
     }
     setBusy(true);
@@ -51,6 +66,7 @@ export function usePasswordChange(userName: string): PasswordChange {
     }
     if (problemFor(result.error, 'newPassword')?.code === tooCommon) setRefusedAsCommon(next);
     setFailure(result.error);
+    setRefusals((count) => count + 1);
     setBusy(false);
   };
 
@@ -59,18 +75,13 @@ export function usePasswordChange(userName: string): PasswordChange {
     next,
     repeat,
     mismatch,
+    refusals,
     busy,
     failure,
     rules: evaluateRules({ password: next, userName, refusedAsCommon: refusedAsCommon === next }),
     setCurrent,
-    setNext: (value) => {
-      setNextValue(value);
-      setMismatch(false);
-    },
-    setRepeat: (value) => {
-      setRepeatValue(value);
-      setMismatch(false);
-    },
+    setNext: clearing(setNextValue, setMismatch),
+    setRepeat: clearing(setRepeatValue, setMismatch),
     submit,
   };
 }

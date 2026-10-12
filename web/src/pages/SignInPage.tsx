@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { signIn } from '../api/account.js';
 import type { ApiFailure } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
@@ -47,6 +47,10 @@ function useSignIn(): SignInForm {
     setFailure(result.error);
     setBusy(false);
   };
+  // RNF-010: after a refusal the password field, now empty, takes focus; the banner is announced.
+  useEffect(() => {
+    if (failure !== undefined) document.getElementById('sign-in-password')?.focus();
+  }, [failure]);
   return { userName, password, busy, failure, setUserName, setPassword, submit };
 }
 
@@ -70,7 +74,7 @@ export function SignInPage(): JSX.Element {
           </h1>
           <p class="rst-auth__lead">Use the account the administrator created for you.</p>
         </div>
-        {form.failure === undefined ? null : <ErrorBanner error={form.failure} />}
+        {form.failure === undefined ? null : <ErrorBanner error={form.failure} codeAfter />}
         <Field
           kind="text"
           id="sign-in-user"
