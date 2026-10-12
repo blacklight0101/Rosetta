@@ -1,5 +1,6 @@
 import type { Logger } from '../../application/ports/logger.js';
 import type { AdapterBuilder } from './adapter-spec.js';
+import { AnthropicProvider } from './anthropic/anthropic-provider.js';
 import { OllamaProvider } from './ollama/ollama-provider.js';
 import { OpenAiProvider } from './openai/openai-provider.js';
 
@@ -20,7 +21,7 @@ export interface RealAdapterParts {
   readonly logger: Logger;
 }
 
-// RF-401, RF-402
+// RF-401, RF-402, RF-404
 export function realAdapters(parts: RealAdapterParts): AdapterBuilder {
   const { testMode, textProtocolPrompt, logger } = parts;
   return (spec) => {
@@ -39,6 +40,11 @@ export function realAdapters(parts: RealAdapterParts): AdapterBuilder {
           apiKey: spec.apiKey,
         });
       case 'anthropic':
+        if (spec.apiKey === undefined) return undefined;
+        return new AnthropicProvider({
+          ...{ baseUrl, timeoutSeconds, maxRetries, testMode },
+          apiKey: spec.apiKey,
+        });
       case 'openai-compatible':
       case 'fake':
         return undefined;
