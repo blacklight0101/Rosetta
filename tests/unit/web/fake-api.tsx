@@ -9,7 +9,7 @@ import { SessionContext } from '../../../web/src/app/session-context.js';
 // A page under test: the real API client over a fake `fetch`, the recorded calls, and the
 // providers the pages read (the client with `assign`, and the signed-in user).
 
-export interface RecordedCall {
+interface RecordedCall {
   readonly method: string;
   readonly path: string;
   readonly csrf: string | null;

@@ -37,14 +37,7 @@ export interface Credentials {
 }
 
 /** The Playwright projects (playwright.config.ts); each gets accounts of its own, as they run in parallel. */
-export const e2eProjectNames = [
-  'desktop-light',
-  'desktop-dark',
-  'phone-light',
-  'phone-dark',
-] as const;
-
-export type E2eProjectName = (typeof e2eProjectNames)[number];
+const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-dark'] as const;
 
 /**
  * The accounts the page specs of P1-14 use, one set per project: `keys` stores and deletes keys,

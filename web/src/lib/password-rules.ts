@@ -3,7 +3,7 @@
 // list of common passwords stays on the server: that rule stays open until the server refuses the
 // password, and only that password.
 
-export type RuleId = 'length' | 'common' | 'user-name';
+type RuleId = 'length' | 'common' | 'user-name';
 export type RuleState = 'pending' | 'pass' | 'fail';
 
 export interface RuleResult {

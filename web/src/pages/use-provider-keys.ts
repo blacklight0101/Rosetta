@@ -6,7 +6,7 @@ import type { KeyProvider, KeySummary } from '../api/schemas.js';
 // RF-1104: the user's saved keys as the settings page shows them. Only provider, last four
 // characters and update time ever arrive; the page keeps nothing else.
 
-export type KeysState =
+type KeysState =
   | { readonly status: 'loading' }
   | { readonly status: 'ready'; readonly keys: readonly KeySummary[] }
   | { readonly status: 'failed'; readonly error: ApiFailure };
