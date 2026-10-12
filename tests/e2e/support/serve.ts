@@ -13,6 +13,7 @@ import { FIXTURE_SHA, fixtureArchive } from '../../support/snapshot-fixtures.js'
 import { createDisposableSchema } from './database.js';
 import { e2eContactEmail, e2ePort } from './server-config.js';
 import { seededAdmin, seedUsers } from './seed.js';
+import { seedReplayRuns } from './seed-replay.js';
 import { clearSessions } from './sign-in.js';
 
 // RNF-005, ADR-008, P1-13: the end-to-end test server. Usage (from the repository root):
@@ -99,6 +100,7 @@ async function main(): Promise<void> {
   await preparation.start();
   await preparation.stop();
   await seedUsers(schema.url);
+  await seedReplayRuns(schema.url, dataDir);
   const application = compose(port);
   const shutDown = (): void => {
     void (async () => {
