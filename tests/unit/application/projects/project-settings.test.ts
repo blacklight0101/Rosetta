@@ -206,3 +206,29 @@ describe('parseProjectSettings: several problems and wrong shapes', () => {
     expect(problemsOf(input)).toEqual([{ field: '', code: ERROR_CODES.settingValueInvalid }]);
   });
 });
+
+describe('parseProjectSettings: names that exist on every object', () => {
+  const reserved = ['constructor', 'toString', '__proto__', 'hasOwnProperty', 'valueOf'];
+
+  it.each(reserved)('RF-002 a role naming the provider %s is RST-1001, not accepted', (name) => {
+    const input = settingsWith({ 'roles.reader.provider': name });
+
+    expect(problemsOf(input)).toEqual([
+      { field: 'roles.reader.provider', code: ERROR_CODES.settingsProviderUnknown },
+    ]);
+  });
+
+  it.each(reserved)('RF-002 a provider named %s is refused at that name', (name) => {
+    const provider = JSON.stringify(templateSettings.providers['ollama']);
+    const text = JSON.stringify(settingsWith({})).replace(
+      '"providers":{',
+      `"providers":{${JSON.stringify(name)}:${provider},`,
+    );
+
+    const parsed: unknown = JSON.parse(text);
+    const [first] = problemsOf(parsed);
+
+    expect(first?.code).toBe(ERROR_CODES.settingValueInvalid);
+    expect(first?.field.startsWith('providers')).toBe(true);
+  });
+});
