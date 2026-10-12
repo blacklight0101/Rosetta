@@ -29,8 +29,14 @@ export function accountBody(
   };
 }
 
-export const cap = (runMicros: string, userDayMicros: string, serverMonthMicros: string) => ({
+export const cap = (
+  runMicros: string,
+  userDayMicros: string,
+  serverMonthMicros: string,
+): { readonly caps: Record<string, string> } => ({
   caps: { runMicros, userDayMicros, serverMonthMicros },
 });
 
-export const spent = (costMicros: string) => [{ currency: 'USD', costMicros }];
+export const spent = (costMicros: string): readonly { currency: string; costMicros: string }[] => [
+  { currency: 'USD', costMicros },
+];

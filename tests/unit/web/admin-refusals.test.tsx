@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { AdminUsersPage } from '../../../web/src/pages/AdminUsersPage.js';
 import { accountBody, cap, root } from './admin-fixtures.js';
@@ -27,8 +27,10 @@ it('RNF-010 focuses the invalid field of the create form and does not announce i
 
   fireEvent.click(form.getByRole('button', { name: 'Create account' }));
 
-  const field = await form.findByLabelText('Initial password');
-  expect(document.activeElement).toBe(field);
+  const field = form.getByLabelText('Initial password');
+  await waitFor(() => {
+    expect(document.activeElement).toBe(field);
+  });
   expect(screen.getByTestId('field-error').getAttribute('role')).toBeNull();
 });
 
