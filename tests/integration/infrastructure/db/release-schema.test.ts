@@ -49,8 +49,11 @@ async function actualColumns(pool: DatabasePool): Promise<Map<string, string[]>>
 }
 
 function describeIndex(table: string, definition: string): string {
-  const match = /^CREATE (UNIQUE )?INDEX \S+ ON \S+ USING btree \((.*)\)$/.exec(definition);
-  return `${table} ${match?.[1] ?? ''}(${match?.[2] ?? definition})`;
+  const match =
+    /^CREATE (UNIQUE )?INDEX \S+ ON \S+ USING btree \((.*)\)( NULLS NOT DISTINCT)?$/.exec(
+      definition,
+    );
+  return `${table} ${match?.[1] ?? ''}(${match?.[2] ?? definition})${match?.[3] ?? ''}`;
 }
 
 describe.skipIf(!hasTestDatabase)('release-1 schema', () => {
