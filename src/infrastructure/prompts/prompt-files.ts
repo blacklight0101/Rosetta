@@ -27,7 +27,7 @@ function invalid(name: string, problem: string): RosettaError {
   return new RosettaError(ERROR_CODES.configurationInvalid, `The prompt ${name} ${problem}.`);
 }
 
-/** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v1.md`). */
+/** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v2.md`). */
 export async function loadPromptFile(promptsFolder: string, name: string): Promise<PromptFile> {
   const version = versionPattern.exec(name)?.[1];
   if (version === undefined) throw invalid(name, 'has no version in its file name');
