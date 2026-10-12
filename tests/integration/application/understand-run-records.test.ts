@@ -43,12 +43,12 @@ describe('an understand run: cost and prompts', UNDERSTAND_TIMEOUT, () => {
     expect(Object.keys(manifest.promptVersions)).toEqual([
       'cards/card-format.v1.md',
       'cards/repair.v1.md',
-      'reader/area.v1.md',
-      'reader/task.v1.md',
-      'reader/turns-left.v1.md',
+      'reader/area.v2.md',
+      'reader/task.v2.md',
+      'reader/turns-left.v2.md',
     ]);
-    expect(manifest.promptVersions['reader/area.v1.md']?.version).toBe('v1');
-    expect(manifest.promptVersions['reader/area.v1.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(manifest.promptVersions['reader/area.v2.md']?.version).toBe('v2');
+    expect(manifest.promptVersions['reader/area.v2.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.roles['reader']?.modelVersion).toBe('fake-model-2026-10-01');
   });
 });

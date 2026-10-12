@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TAG } from '../../../support/data-block-tags.js';
 import { renderDataBlock } from '../../../../src/domain/egress/data-block.js';
 import {
   egressHarness,
@@ -46,11 +47,14 @@ describe('EgressGuard egress log', () => {
 describe('EgressGuard egress log excerpts', () => {
   it('RF-142 lists the excerpts of every block in message order', async () => {
     const { guard, egressLines } = await egressHarness();
-    const codeMap = renderDataBlock({
-      source: 'list_area_files',
-      excerpts: [{ path: 'src/Catalog.cs', startLine: 1, endLine: 80 }],
-      text: 'src/Catalog.cs',
-    });
+    const codeMap = renderDataBlock(
+      {
+        source: 'list_area_files',
+        excerpts: [{ path: 'src/Catalog.cs', startLine: 1, endLine: 80 }],
+        text: 'src/Catalog.cs',
+      },
+      TAG,
+    );
     const grep = toolResult({
       source: 'grep',
       excerpts: [

@@ -17,6 +17,13 @@ describe('SequenceIdGenerator', () => {
     expect(ids.runId('plan')).toBe('20260101-000003-plan');
   });
 
+  it('RF-145 yields predictable data-block tags in order', () => {
+    const ids = new SequenceIdGenerator();
+
+    expect(ids.dataBlockTag()).toBe('aaaaaaaaaaaaaaaaaaaaaaab');
+    expect(ids.dataBlockTag()).toBe('aaaaaaaaaaaaaaaaaaaaaaac');
+  });
+
   it('RNF-004 two generators repeat the same sequence', () => {
     expect(new SequenceIdGenerator().uuid()).toBe(new SequenceIdGenerator().uuid());
   });

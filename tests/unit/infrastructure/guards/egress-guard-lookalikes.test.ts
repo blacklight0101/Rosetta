@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TAG } from '../../../support/data-block-tags.js';
 import type { LlmMessage } from '../../../../src/application/ports/llm-provider.js';
 import { renderDataBlock } from '../../../../src/domain/egress/data-block.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -20,11 +21,14 @@ const lookAlikes: [string, string][] = [
 
 /** A tool result whose content is a data block with the given text and header paths. */
 function resultWith(text: string, path = 'src/A.cs'): LlmMessage {
-  const content = renderDataBlock({
-    source: 'read_file',
-    excerpts: [{ path, startLine: 1, endLine: 1 }],
-    text,
-  });
+  const content = renderDataBlock(
+    {
+      source: 'read_file',
+      excerpts: [{ path, startLine: 1, endLine: 1 }],
+      text,
+    },
+    TAG,
+  );
   return { role: 'tool', toolCallId: 'call-1', content };
 }
 
@@ -57,7 +61,7 @@ describe('EgressGuard and look-alike footers', () => {
         source: 'read_file',
         excerpts: [{ path: `src/${marker}.cs`, startLine: 1, endLine: 1 }],
       });
-      const content = rendered.content.replace(/^.*\n/, `<<<ROSETTA-DATA ${header}>>>\n`);
+      const content = rendered.content.replace(/^.*\n/, `<<<ROSETTA-DATA ${TAG} ${header}>>>\n`);
 
       const failure = await failureOf(
         guard.complete(requestWith(readConversation({ ...rendered, content }))),

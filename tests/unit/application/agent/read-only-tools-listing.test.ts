@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SequenceIdGenerator } from '../../../support/sequence-id-generator.js';
 import { ReadOnlyTools } from '../../../../src/application/agent/read-only-tools.js';
 import { createCodeMap, type CodeMap } from '../../../../src/domain/code-map/code-map.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -51,6 +52,7 @@ function listing(count: number): Promise<string> {
     codeMap,
     area,
     logger: new MemoryLogger(new FixedClock('2026-10-12T09:00:00.000Z'), new SecretMasker()),
+    ids: new SequenceIdGenerator(),
   });
   const ids = { runId: 'run-1', agentTaskId: 'task-big', callId: 'run-1#1' };
   return tools
