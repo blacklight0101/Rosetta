@@ -8,6 +8,7 @@ import './styles/components.css';
 import './styles/pages.css';
 import './styles/live-run.css';
 import './styles/run-answers.css';
+import './styles/cost.css';
 
 // P1-12: mounts the application. No inline script or style anywhere (RF-1013).
 
