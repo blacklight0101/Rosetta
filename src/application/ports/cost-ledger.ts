@@ -54,6 +54,13 @@ export interface Reservation {
   readonly expiresAt: Date;
 }
 
+/**
+ * What names one reservation: the call of one user's run. A call id alone is not enough, because
+ * it is `<runKey>#<n>` and a run key is unique only within a project, so two users' runs (or two
+ * projects of one user) can share it.
+ */
+export type ReservationKey = Pick<Reservation, 'callId' | 'userId' | 'runId'>;
+
 export interface ReservationRequest {
   readonly reservation: Reservation;
   /** The caps that apply to the call (DEC-107). */
@@ -69,10 +76,10 @@ export interface CostLedger {
    * would pass, and otherwise stores its reservation, all as one step.
    */
   reserve(request: ReservationRequest): Promise<Result<void, CapBreach>>;
-  /** Inserts the call's ledger row and deletes its reservation as one step. */
+  /** Inserts the call's ledger row and deletes its reservation (same user, run, call) in one step. */
   settle(entry: LedgerEntry): Promise<void>;
   /** Deletes the reservation of a call that was never sent. */
-  release(callId: string): Promise<void>;
+  release(key: ReservationKey): Promise<void>;
   /** The rows of one of the user's runs, in the order they were written (RF-426, RF-1105). */
   runEntries(userId: string, runId: string): Promise<readonly LedgerEntry[]>;
   /** Deletes the reservations that expired before `at`; answers how many. */
