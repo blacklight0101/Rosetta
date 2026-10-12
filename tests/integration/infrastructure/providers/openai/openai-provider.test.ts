@@ -244,3 +244,31 @@ describe('OpenAiProvider keys', () => {
     expect(error instanceof Error ? error.cause : undefined).toBeUndefined();
   });
 });
+
+describe('OpenAiProvider keys beyond Latin-1', () => {
+  const pieces = [fakeOpenAiKey.slice(0, 12), fakeOpenAiKey.slice(12)];
+  const zeroWidthSpace = String.fromCodePoint(0x200b);
+  const emoji = String.fromCodePoint(0x1f511);
+  const firstAboveLatin1 = String.fromCodePoint(0x100);
+
+  it.each([
+    ['a zero-width space', pieces.join(zeroWidthSpace)],
+    ['an emoji', pieces.join(emoji)],
+    ['the first character above U+00FF', pieces.join(firstAboveLatin1)],
+  ])('RNF-003 a key with %s is refused at construction with RST-1511', async (_n, apiKey) => {
+    const logged = (['log', 'info', 'warn', 'error', 'debug'] as const).map((method) =>
+      vi.spyOn(console, method).mockImplementation(() => undefined),
+    );
+
+    const error = await start('contract-text', { apiKey }).then(
+      () => undefined,
+      (failure: unknown) => failure,
+    );
+
+    expect(error).toMatchObject({ code: ERROR_CODES.openAiKeyRejected });
+    const shown = JSON.stringify(error, Object.getOwnPropertyNames(error));
+    for (const part of pieces) expect(shown).not.toContain(part);
+    expect(error instanceof Error ? error.cause : undefined).toBeUndefined();
+    for (const spy of logged) expect(spy).not.toHaveBeenCalled();
+  });
+});

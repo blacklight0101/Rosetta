@@ -10,6 +10,8 @@ import { insertValues, toUser, toUserAccount, updateValues, USER_COLUMNS } from 
 // Architecture section 7, ADR-016, RF-1100..RF-1103: accounts in PostgreSQL with parameterised SQL
 // only. The unique index on lower(user_name) makes names unique case-insensitively; the list query
 // never selects password_hash. A database failure is thrown as RST-2404 with the cause.
+// P1-77, RNF-003: the cause keeps only the SQLSTATE and the message, with the hash masked;
+// PostgreSQL quotes the failing row (password_hash included) in the detail, which is dropped.
 
 const INSERT_COLUMNS =
   'id, user_name, display_name, role, state, password_hash, failed_sign_ins, first_failed_at, locked_until, server_keys_allowed, daily_cap_micros, own_daily_cap_micros, created_at, updated_at, last_sign_in_at';
@@ -40,8 +42,31 @@ function isUniqueViolation(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === UNIQUE_VIOLATION;
 }
 
-function queryFailed(error: unknown): RosettaError {
-  return new RosettaError(ERROR_CODES.databaseQueryFailed, undefined, { cause: error });
+/** A database failure as the cause of RST-2404, without the row data PostgreSQL attaches. */
+class DatabaseFailure extends Error {
+  readonly sqlState: string | undefined;
+
+  constructor(message: string, sqlState: string | undefined) {
+    super(message);
+    this.name = 'DatabaseFailure';
+    this.sqlState = sqlState;
+  }
+}
+
+function sqlStateOf(error: unknown): string | undefined {
+  return error instanceof Error && 'code' in error && typeof error.code === 'string'
+    ? error.code
+    : undefined;
+}
+
+function queryFailed(error: unknown, passwordHash?: string): RosettaError {
+  const message = error instanceof Error ? error.message : 'The database query failed';
+  const masked =
+    passwordHash === undefined || passwordHash === ''
+      ? message
+      : message.replaceAll(passwordHash, '[MASKED:password]');
+  const cause = new DatabaseFailure(masked, sqlStateOf(error));
+  return new RosettaError(ERROR_CODES.databaseQueryFailed, undefined, { cause });
 }
 
 export class PgUserRepository implements UserRepository {
@@ -57,7 +82,7 @@ export class PgUserRepository implements UserRepository {
       return ok(account);
     } catch (error) {
       if (isUniqueViolation(error)) return err(ERROR_CODES.userNameTaken);
-      throw queryFailed(error);
+      throw queryFailed(error, account.passwordHash);
     }
   }
 
@@ -71,7 +96,7 @@ export class PgUserRepository implements UserRepository {
       return result.rowCount === 1;
     } catch (error) {
       await client.query('ROLLBACK').catch(() => undefined);
-      throw queryFailed(error);
+      throw queryFailed(error, account.passwordHash);
     } finally {
       client.release();
     }
@@ -104,7 +129,7 @@ export class PgUserRepository implements UserRepository {
       const result = await this.pool.query(UPDATE, updateValues(account));
       return result.rowCount === 1;
     } catch (error) {
-      throw queryFailed(error);
+      throw queryFailed(error, account.passwordHash);
     }
   }
 
@@ -118,7 +143,7 @@ export class PgUserRepository implements UserRepository {
       const result = await this.pool.query(UPDATE_IF_CURRENT, values);
       return result.rowCount === 1;
     } catch (error) {
-      throw queryFailed(error);
+      throw queryFailed(error, account.passwordHash);
     }
   }
 

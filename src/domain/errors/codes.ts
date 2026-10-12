@@ -50,6 +50,7 @@ export const ERROR_CODES = {
   languagePackInvalid: 'RST-1201',
   codeMapInvalid: 'RST-1202',
   codeMapMissing: 'RST-1203',
+  parseBudgetReached: 'RST-1204',
   cardOutputInvalid: 'RST-1300',
   toolArgumentsInvalid: 'RST-1301',
   toolUnknown: 'RST-1302',
