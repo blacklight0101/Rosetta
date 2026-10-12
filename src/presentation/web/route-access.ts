@@ -13,6 +13,11 @@ declare module 'fastify' {
     access?: RouteAccess;
     /** RF-1102: true for the routes a user whose password must be changed may still use. */
     duringPasswordChange?: boolean;
+    /**
+     * RF-1009, RF-1303: true for a public route that reads `request.signedIn` (the landing page).
+     * Every other public request skips the session lookup, so a database outage cannot fail it.
+     */
+    readsSession?: boolean;
   }
 }
 
@@ -49,6 +54,12 @@ export function allowedDuringPasswordChange(request: FastifyRequest): boolean {
   if (accessOf(request) === 'public') return true;
   if (request.routeOptions.config.duringPasswordChange === true) return true;
   return isPageRequest(request) && requestPath(request) === CHANGE_PASSWORD_PAGE;
+}
+
+/** RF-1009: false for a public request whose route does not read the session (RF-1303). */
+// RF-1009
+export function needsSession(request: FastifyRequest): boolean {
+  return accessOf(request) !== 'public' || request.routeOptions.config.readsSession === true;
 }
 
 /** POST, PUT, PATCH, DELETE and any other method that is not safe (RF-1009). */

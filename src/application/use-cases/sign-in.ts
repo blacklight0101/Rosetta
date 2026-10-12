@@ -19,7 +19,9 @@ import { KeyedQueue } from '../support/keyed-queue.js';
 // RF-1100, RF-1101, RF-1109, ADR-015: sign-in with a user name and password. Every refusal is the
 // same RST-2201 ("User name or password is incorrect"), whether the user is unknown, the password
 // wrong, the account locked or disabled. An unknown user name is verified against a dummy hash, so
-// every attempt costs one scrypt derivation and takes the same time. The fifth failure within 15
+// every attempt costs one scrypt derivation and takes the same time. A wrong password counts the
+// failure with one account write; an unknown, disabled or locked name makes the same write to an
+// id no account has, so every refusal costs the same database work too. The fifth failure within 15
 // minutes locks the account for 15 minutes (DEC-112). A success rotates the session: the previous
 // id is ended and a new one is created. Attempts on one user name run one after another, so
 // parallel attempts cannot all read the same failure count and slip past the lock.
@@ -61,6 +63,31 @@ interface Refusal {
   readonly account?: UserAccount;
 }
 
+/** No account has this id (ids are random version 4 UUIDs), so a write to it changes nothing. */
+const NO_ACCOUNT_ID = '00000000-0000-0000-0000-000000000000';
+
+/** The failure count a refusal without a counted failure writes to no account (equal work). */
+function uncountedFailure(now: Date): UserAccount {
+  const at = now.getTime();
+  return {
+    id: NO_ACCOUNT_ID,
+    userName: '',
+    displayName: '',
+    role: 'user',
+    state: 'Active',
+    passwordHash: '',
+    failedSignIns: 1,
+    firstFailedAt: at,
+    lockedUntil: null,
+    serverKeysAllowed: false,
+    dailyCapMicros: null,
+    ownDailyCapMicros: null,
+    createdAt: at,
+    updatedAt: at,
+    lastSignInAt: null,
+  };
+}
+
 const SECURITY_CODES: Readonly<Record<RefusalReason, ErrorCode>> = {
   'unknown-user': ERROR_CODES.invalidCredentials,
   'wrong-password': ERROR_CODES.invalidCredentials,
@@ -89,10 +116,14 @@ export class SignIn {
     const account = await this.find(key);
     const matches = await this.verify(request.password, account);
     const now = this.deps.clock.now();
-    if (account === undefined) return this.refuse({ request, reason: 'unknown-user', now });
+    if (account === undefined)
+      return this.refuseUncounted({ request, reason: 'unknown-user', now });
     const state = accountState(account, now.getTime());
-    if (state === 'Disabled') return this.refuse({ request, reason: 'disabled', now, account });
-    if (state === 'Locked') return this.refuse({ request, reason: 'locked', now, account });
+    if (state === 'Disabled') {
+      return this.refuseUncounted({ request, reason: 'disabled', now, account });
+    }
+    if (state === 'Locked')
+      return this.refuseUncounted({ request, reason: 'locked', now, account });
     if (!matches) return this.fail(account, request, now);
     return ok(await this.succeed(account, request, now));
   }
@@ -131,6 +162,12 @@ export class SignIn {
     const refused = await this.refuse({ request, reason: 'wrong-password', now, account });
     if (failed.locked) await this.recordLock(account, request, now);
     return refused;
+  }
+
+  /** RF-1100: a refusal that counts no failure still makes the account write `fail` makes. */
+  private async refuseUncounted(refusal: Refusal): Promise<Result<never, SignInProblem>> {
+    await this.deps.users.update(uncountedFailure(refusal.now));
+    return this.refuse(refusal);
   }
 
   private async recordLock(account: UserAccount, request: SignInRequest, now: Date): Promise<void> {

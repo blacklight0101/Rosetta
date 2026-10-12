@@ -458,7 +458,9 @@ sequenceDiagram
 - **Request protection** (`presentation/web/access-hooks.ts`, P1-09), in this order on every request: (1) a
   state-changing request (any method but GET, HEAD, OPTIONS) whose `Origin` is missing or differs from
   `ROSETTA_PUBLIC_URL` answers 403 `RST-2007` (this also protects `POST /api/session`, DEC-112); (2) the
-  `__Host-rosetta_session` cookie becomes `request.signedIn` (actor, user) through `ResolveSession`; (3) a route
+  `__Host-rosetta_session` cookie becomes `request.signedIn` (actor, user) through `ResolveSession`, except on a
+  public route that does not read the session (only the landing page sets `config.readsSession`), so `/healthz`
+  answers 503 with a session cookie while the database is down (RF-1303); (3) a route
   states its access in `config.access` (`public`, `user` by default, `admin`); a request no route claims (the
   static front end and the not-found handler) is public only for `/`, `/sign-in` and plain file names under
   `/assets/`; without a session a page (GET or HEAD outside `/api/`) redirects to `/sign-in` and anything else
@@ -470,9 +472,14 @@ sequenceDiagram
   the database) in the `x-csrf-token` header, else 403 `RST-2008`. Every 403 writes a `request.refused` audit row
   and a security event. `POST /api/session` and `GET /api/session` answer the user and a CSRF token; the front end
   sends the token back on every state-changing request; `POST /api/account/password` answers a new session cookie
-  and token in the same way. Sign-in is limited to 10 attempts per minute per address
-  (`@fastify/rate-limit`), its body to 4 KiB and its password to 1,024 characters, and at most eight sign-ins are
-  verified at a time (429 beyond), which bounds the scrypt queue. Attempts on one user name run one after another,
+  and token in the same way. Sign-in issues the token under a new CSRF secret and sign-out clears the secret
+  cookie, so a token issued before a sign-out or another sign-in is refused. Sign-in is limited to 10 attempts per
+  minute per address (`@fastify/rate-limit`), its body to 4 KiB and its password to 1,024 characters, and at most
+  eight sign-ins are verified at a time (429 beyond), which bounds the scrypt queue. Every 429 of a rate limit or
+  of that bound also writes a `request.refused` audit row (reason `rate-limit`) and a security event `RST-2005`.
+  A refused sign-in costs the same work whether or not the user exists: one scrypt derivation (a dummy hash for an
+  unknown name) and one account write (the failure count, or for an unknown, disabled or locked name the same
+  write to an id no account has). Attempts on one user name run one after another,
   so parallel failures cannot slip past the lockout. `POST /api/account/password` has the same body, password, rate
   and concurrency caps; the administrator routes that take a password cap the body at 4 KiB and the password at
   1,024 characters.
