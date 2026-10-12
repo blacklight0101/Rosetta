@@ -5,7 +5,7 @@ import {
   resolveTheme,
   saveThemePreference,
   type ThemeStorage,
-} from '../../../web/src/lib/theme';
+} from '../../../web/src/lib/theme.js';
 
 // design-system.md section 2: themes follow the operating system unless the header toggle
 // overrides them per browser (kept in localStorage, which may be unavailable).

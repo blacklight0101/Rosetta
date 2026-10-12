@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildNavigation } from '../../../web/src/app/navigation';
-import { matchRoute } from '../../../web/src/app/route-match';
-import type { RouteDefinition } from '../../../web/src/app/route-types';
-import { routes } from '../../../web/src/app/routes';
+import { buildNavigation } from '../../../web/src/app/navigation.js';
+import { matchRoute } from '../../../web/src/app/route-match.js';
+import type { RouteDefinition } from '../../../web/src/app/route-types.js';
+import { routes } from '../../../web/src/app/routes.js';
 
 // P1-12: the router table of web/src/app/routes.ts, its matcher and the navigation built from it.
 

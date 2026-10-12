@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
+// Vitest runs from the repository root.
 const read = async (path: string): Promise<string> =>
-  await readFile(new URL(path, import.meta.url), 'utf8');
-const designTokens = await read('../../../docs/design/tokens.css');
-const webTokens = await read('../../../web/src/styles/tokens.css');
+  await readFile(resolve(process.cwd(), path), 'utf8');
+const designTokens = await read('docs/design/tokens.css');
+const webTokens = await read('web/src/styles/tokens.css');
 
 // design-system.md sections 2 and 13: the web copy of the token file equals the design copy.
 

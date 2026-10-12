@@ -1,6 +1,6 @@
 import { render } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { RenderedText } from '../../../web/src/components/RenderedText';
+import { RenderedText } from '../../../web/src/components/RenderedText.js';
 
 // RF-507 rule 3: a fixture card containing <script>, an onerror attribute and a javascript: link.
 // The browser end-to-end test repeats this in a real browser (P1-13); here the DOM is inspected.

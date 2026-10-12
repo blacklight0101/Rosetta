@@ -1,9 +1,11 @@
+import { execFile } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { promisify } from 'node:util';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, relative, sep } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { build } from 'vite';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createTestServer, type TestServer } from '../../support/web-server.js';
 
 // RF-1013, RF-1009, P1-12: `npm run build` builds the front end into dist/web/. The server answers
@@ -12,6 +14,13 @@ import { createTestServer, type TestServer } from '../../support/web-server.js';
 // assets/ and leave no inline code. The build runs here into a temporary folder.
 
 const configFile = fileURLToPath(new URL('../../../web/vite.config.ts', import.meta.url));
+const run = promisify(execFile);
+// The real build, as `npm run build` runs it: production mode, in its own process.
+const viteCli = join(
+  dirname(createRequire(import.meta.url).resolve('vite/package.json')),
+  'bin',
+  'vite.js',
+);
 let outDir = '';
 let files: string[] = [];
 let current: TestServer | undefined;
@@ -28,7 +37,11 @@ const textOf = async (path: string): Promise<string> => await readFile(join(outD
 
 beforeAll(async () => {
   outDir = await mkdtemp(join(tmpdir(), 'rosetta-web-build-'));
-  await build({ configFile, logLevel: 'silent', build: { outDir, emptyOutDir: true } });
+  await run(
+    process.execPath,
+    [viteCli, 'build', '--config', configFile, '--outDir', outDir, '--emptyOutDir'],
+    { env: { ...process.env, NODE_ENV: 'production' } },
+  );
   files = await listFiles(outDir);
 }, 120_000);
 
@@ -37,61 +50,61 @@ afterAll(async () => {
   await rm(outDir, { recursive: true, force: true });
 });
 
-describe('RF-1013 front end build', () => {
-  it('RF-1013 puts every built file except index.html under assets/', () => {
-    expect(files).toContain('index.html');
-    expect(files.filter((file) => file !== 'index.html' && !file.startsWith('assets/'))).toEqual(
-      [],
-    );
-    expect(files.some((file) => file.endsWith('.js'))).toBe(true);
-    expect(files.some((file) => file.endsWith('.css'))).toBe(true);
-  });
+it('RF-1013 puts every built file except index.html under assets/', () => {
+  expect(files).toContain('index.html');
+  expect(files.filter((file) => file !== 'index.html' && !file.startsWith('assets/'))).toEqual([]);
+  expect(files.some((file) => file.endsWith('.js'))).toBe(true);
+  expect(files.some((file) => file.endsWith('.css'))).toBe(true);
+});
 
-  it('RF-1013 writes no source map and no file whose name the public path would refuse', () => {
-    expect(files.filter((file) => file.endsWith('.map'))).toEqual([]);
-    for (const file of files.filter((name) => name.startsWith('assets/'))) {
-      expect(file).toMatch(/^assets\/[A-Za-z0-9_-][A-Za-z0-9._-]*$/);
-    }
-  });
+it('RF-1013 writes no source map and no file whose name the public path would refuse', () => {
+  expect(files.filter((file) => file.endsWith('.map'))).toEqual([]);
+  for (const file of files.filter((name) => name.startsWith('assets/'))) {
+    expect(file).toMatch(/^assets\/[A-Za-z0-9_-][A-Za-z0-9._-]*$/);
+  }
+});
 
-  it('RF-1013 has no inline script, inline style, style attribute or event handler in index.html', async () => {
-    const html = await textOf('index.html');
-    expect(html).not.toMatch(/<script(?![^>]*\ssrc=)[^>]*>/i);
-    expect(html).not.toMatch(/<style[\s>]/i);
-    expect(html).not.toMatch(/\sstyle\s*=/i);
-    expect(html).not.toMatch(/\son[a-z]+\s*=/i);
-    expect(html).toMatch(/<html lang="en"/);
-    expect(html).toContain('id="root"');
-  });
+it('RF-1013 has no inline script, inline style, style attribute or event handler in index.html', async () => {
+  const html = await textOf('index.html');
+  expect(html).not.toMatch(/<script(?![^>]*\ssrc=)[^>]*>/i);
+  expect(html).not.toMatch(/<style[\s>]/i);
+  expect(html).not.toMatch(/\sstyle\s*=/i);
+  expect(html).not.toMatch(/\son[a-z]+\s*=/i);
+  expect(html).toMatch(/<html lang="en"/);
+  expect(html).toContain('id="root"');
+});
 
-  it('RF-1013 loads nothing from another origin: no font, script, style or image URL', async () => {
-    const html = await textOf('index.html');
-    const css = await Promise.all(files.filter((f) => f.endsWith('.css')).map(textOf));
-    expect(html).not.toMatch(/(?:src|href)="(?:https?:)?\/\//i);
-    for (const sheet of css) {
-      expect(sheet).not.toMatch(/@import|url\(\s*["']?(?:https?:)?\/\//i);
-    }
-  });
+it('RF-1013 loads nothing from another origin: no font, script, style or image URL', async () => {
+  const html = await textOf('index.html');
+  const css = await Promise.all(files.filter((f) => f.endsWith('.css')).map(textOf));
+  expect(html).not.toMatch(/(?:src|href)="(?:https?:)?\/\//i);
+  for (const sheet of css) {
+    expect(sheet).not.toMatch(/@import|url\(\s*["']?(?:https?:)?\/\//i);
+  }
+});
 
-  it('RF-1013 serves the page and its assets without a session and the root files only with one', async () => {
-    current = createTestServer({ staticRoot: outDir });
-    const { server } = current;
+it('RF-1013 serves the page and its assets without a session and the root files only with one', async () => {
+  current = createTestServer({ staticRoot: outDir });
+  const { server } = current;
 
-    const page = await server.inject({ method: 'GET', url: '/' });
-    expect(page.statusCode).toBe(200);
-    expect(page.headers['content-type']).toContain('text/html');
-    expect(String(page.headers['content-security-policy'])).toContain("default-src 'self'");
+  const page = await server.inject({ method: 'GET', url: '/' });
+  expect(page.statusCode).toBe(200);
+  expect(page.headers['content-type']).toContain('text/html');
+  expect(String(page.headers['content-security-policy'])).toContain("default-src 'self'");
 
-    for (const file of files.filter((name) => name.startsWith('assets/'))) {
-      const asset = await server.inject({ method: 'GET', url: `/${file}` });
-      expect(asset.statusCode, file).toBe(200);
-    }
-    const root = await server.inject({ method: 'GET', url: '/index.html' });
-    expect(root.statusCode).not.toBe(200);
-  });
+  const assets = files.filter((name) => name.startsWith('assets/'));
+  const refused = [];
+  for (const file of assets) {
+    const asset = await server.inject({ method: 'GET', url: `/${file}` });
+    if (asset.statusCode !== 200) refused.push(file);
+  }
+  expect(refused).toEqual([]);
+  expect(assets.length).toBeGreaterThan(0);
+  const root = await server.inject({ method: 'GET', url: '/index.html' });
+  expect(root.statusCode).not.toBe(200);
+});
 
-  it('P1-12 leaves the component gallery out of the production build', async () => {
-    const scripts = await Promise.all(files.filter((f) => f.endsWith('.js')).map(textOf));
-    expect(scripts.join('\n')).not.toContain('Component gallery');
-  });
+it('P1-12 leaves the component gallery out of the production build', async () => {
+  const scripts = await Promise.all(files.filter((f) => f.endsWith('.js')).map(textOf));
+  expect(scripts.join('\n')).not.toContain('Component gallery');
 });

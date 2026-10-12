@@ -12,7 +12,7 @@
     "build": "tsc -p tsconfig.build.json && vite build --config web/vite.config.ts",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "dev:web": "vite --config web/vite.config.ts",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json && tsc --noEmit -p tests/unit/web/tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

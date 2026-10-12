@@ -22,6 +22,7 @@ export default defineConfig({
           ...offline,
           name: 'web',
           environment: 'happy-dom',
+          setupFiles: ['tests/support/block-network.ts', 'tests/unit/web/setup.ts'],
           include: ['tests/unit/web/**/*.test.{ts,tsx}'],
         },
       },

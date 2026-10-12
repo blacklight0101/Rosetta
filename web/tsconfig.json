@@ -9,5 +9,5 @@
     "jsxImportSource": "preact",
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts", "../tests/unit/web"]
+  "include": ["src", "vite.config.ts"]
 }

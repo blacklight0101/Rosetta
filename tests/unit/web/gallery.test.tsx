@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GalleryPage } from '../../../web/src/gallery/GalleryPage';
-import { stateLists } from '../../../web/src/components/badge-specs';
+import { GalleryPage } from '../../../web/src/gallery/GalleryPage.js';
+import { stateLists } from '../../../web/src/components/badge-specs.js';
 
 // P1-12 "Delivers": a component gallery page that renders every component in every state.
 
