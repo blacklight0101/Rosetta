@@ -12,6 +12,7 @@ import {
 } from '../support/reader-harness.js';
 import { bytesContract } from './repository-reader-bytes.contract.js';
 import { grepContract } from './repository-reader-grep.contract.js';
+import { mirrorContract } from './repository-reader-mirror.contract.js';
 
 const basic: ReaderFixture = {
   files: {
@@ -271,6 +272,7 @@ export function repositoryReaderContract(name: string, create: RepositoryReaderF
     ignoreTests(newReader);
     denyTests(newReader);
     grepContract(newReader);
+    mirrorContract(newReader);
     bytesContract(newReader);
     readOnlyTests(newReader);
     skippedNameTests(newReader);
