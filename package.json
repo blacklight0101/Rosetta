@@ -36,7 +36,7 @@
     "@playwright/test": "1.63.0",
     "@preact/preset-vite": "2.10.6",
     "@testing-library/preact": "3.2.4",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.4",
     "@types/pg": "^8.23.1",
     "@types/yazl": "3.3.0",
     "@vitest/coverage-v8": "^5.0.3",
