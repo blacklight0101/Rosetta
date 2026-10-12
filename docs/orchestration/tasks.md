@@ -13,9 +13,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P1 Milestone slice (M1) | 99 | 35 | 49 | 15 | 0 | 49 | 42 | 8 | 42 | 0 |
-| P2 Full understand | 15 | 2 | 9 | 4 | 0 | 3 | 11 | 1 | 1 | 0 |
+| P2 Full understand | 16 | 2 | 9 | 5 | 0 | 3 | 12 | 1 | 2 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **126** | **38** | **67** | **21** | **0** | **53** | **62** | **11** | **43** | **0** |
+| **Total** | **127** | **38** | **67** | **22** | **0** | **53** | **63** | **11** | **44** | **0** |
 
 ## Conventions for every card
 
@@ -1558,6 +1558,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the sliders, their warnings and tests.
 - **Done when**: every numeric setting has a slider bounded by its range; a value away from the default shows the warning; the accessibility checks pass; `npm run verify` green.
 - **Refs**: DEC-116, DEC-117, RF-002.
+
+### P2-16 - Follow-up: price Anthropic cache writes
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P2-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `prices/default-prices.yaml` and its schema; `src/infrastructure/budget/`; `src/infrastructure/providers/anthropic/`; `docs/data-model.md` (cost ledger, cost report) and section 7 (migrations); ADR-007; verdict comment 6132492790 on pull request #210.
+- **Do**: Anthropic bills prompt-cache writes at 1.25 times the input price, but the price table has no cache-write price, so the adapter counts cache-write tokens as plain input and the ledger understates the cost of those calls. Add a cache-write price per model to the price table (`prices/default-prices.yaml` and its schema); carry cache-write tokens through the usage record and the ledger (new columns through a new migration with the next free number of the release block, and `docs/data-model.md` in the same change); price them in the budget guard's worst case and in the settled cost; show them in the cost report.
+- **Delivers**: the price field, the migration, the usage and ledger changes, the guard pricing and the report column, with unit, integration and contract tests.
+- **Done when**: a recorded Anthropic call with cache-write tokens settles at the cache-write price and the reserved worst case covers it; a model without a cache-write price is handled as the price table rules say for a missing price; the cost report lists the cache-write tokens and cost; `npm run verify` green.
+- **Refs**: RF-428, RF-404, ADR-007, P2-09 (verdict comment 6132492790 on #210; owner-approved 2026-10-12).
 
 ---
 
