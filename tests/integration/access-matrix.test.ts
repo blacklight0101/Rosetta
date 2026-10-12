@@ -17,7 +17,7 @@ import {
   signedIn,
   type Column,
 } from '../support/access-columns.js';
-import { budgetRoutes, type Context, type Probe } from '../support/access-probes.js';
+import { budgetRoutes, exportRoutes, type Context, type Probe } from '../support/access-probes.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the
@@ -42,6 +42,8 @@ const runUrl = (suffix: string, pick: (context: Context) => string) => (context:
   `/api/runs/${pick(context)}${suffix}`;
 const adminUserUrl = (suffix: string, userId: (context: Context) => string) => (context: Context) =>
   `/api/admin/users/${userId(context)}${suffix}`;
+// RF-1200: the landing page shows itself to a visitor and sends every signed-in user to /projects.
+const landing = { ...everyone(302), anonymous: 200 };
 const newPassword = fixturePassword('Renewed');
 const keysUrl = '/api/account/keys';
 
@@ -49,6 +51,8 @@ const keysUrl = '/api/account/keys';
 const matrix: Readonly<Record<string, readonly Probe[]>> = {
   'GET /healthz': [{ method: 'GET', url: '/healthz', expected: everyone(200) }],
   'HEAD /healthz': [{ method: 'HEAD', url: '/healthz', expected: everyone(200) }],
+  'GET /': [{ method: 'GET', url: '/', expected: landing }],
+  'HEAD /': [{ method: 'HEAD', url: '/', expected: landing }],
   'GET /robots.txt': [{ method: 'GET', url: '/robots.txt', expected: everyone(200) }],
   'HEAD /robots.txt': [{ method: 'HEAD', url: '/robots.txt', expected: everyone(200) }],
   'POST /api/session': [
@@ -152,6 +156,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'POST', url: '/api/account/providers/test', expected: active(401, 200) },
   ],
   ...budgetRoutes,
+  ...exportRoutes,
   'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
   'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],
   'POST /api/admin/users': [
@@ -188,8 +193,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   ],
   'GET /api/admin/audit': [{ method: 'GET', url: '/api/admin/audit', expected: adminOnly(200) }],
   'HEAD /api/admin/audit': [{ method: 'HEAD', url: '/api/admin/audit', expected: adminOnly(200) }],
-  'GET *': [
-    { method: 'GET', url: '/', expected: everyone(200) },
+  'GET /*': [
     { method: 'GET', url: '/index.html', expected: active(302, 200) },
     { method: 'GET', url: '/sign-in', expected: everyone(200) },
     { method: 'GET', url: '/account/password', expected: signedIn(302, 200) },
@@ -201,8 +205,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'GET', url: '/api%2fx', expected: active(302, 200) },
     { method: 'GET', url: '/api/missing', expected: active(401, 404) },
   ],
-  'HEAD *': [
-    { method: 'HEAD', url: '/', expected: everyone(200) },
+  'HEAD /*': [
     { method: 'HEAD', url: '/index.html', expected: active(302, 200) },
     { method: 'HEAD', url: '/sign-in', expected: everyone(200) },
     { method: 'HEAD', url: '/account/password', expected: signedIn(302, 200) },
@@ -250,6 +253,10 @@ async function browserFor(
   const ended = await test.runs.start(owner);
   test.runs.executor.settle(ended.id, { endState: 'Completed' });
   await test.runs.ended(ended);
+  test.archives.seed(test.runs.scopeOf(ended), {
+    'manifest.json': '{}',
+    'handoff/README.md': '# Hand-off',
+  });
   const running = await test.runs.start(owner);
   const context = {
     projectId: project.id,

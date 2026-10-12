@@ -28,6 +28,7 @@ import { registerProviderTestRoutes, type ProviderTestServices } from './provide
 import { toErrorReply } from './error-mapper.js';
 import { registerProjectRoutes, type ProjectServices } from './project-routes.js';
 import { registerRunRoutes, type RunServices } from './run-routes.js';
+import { registerLandingRoute } from './landing-routes.js';
 import { registerPublicRoutes } from './public-routes.js';
 import { robotsTag, securityHeaderOptions } from './security-headers.js';
 import { CSRF_COOKIE, CSRF_HEADER, secureCookie } from './session-cookies.js';
@@ -69,6 +70,8 @@ export interface ServerOptions {
   readonly publicUrl: string;
   /** `ROSETTA_TRUST_PROXY`: proxy hops trusted for the client address; 0 trusts none. */
   readonly trustProxy: number;
+  /** `ROSETTA_CONTACT_EMAIL`: the address behind the landing page's Request access link (RF-1201). */
+  readonly contactEmail?: string | undefined;
   /** The folder of the built front end; no static files are served without it. */
   readonly staticRoot?: string;
 }
@@ -208,6 +211,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerAccessHooks(server, { publicUrl: options.publicUrl, ...options.auth });
   registerErrorHandlers(server, options);
   registerPublicRoutes(server, options);
+  registerLandingRoute(server, { contactEmail: options.contactEmail });
   // Registered as a plugin, so the rate-limit plugin (loaded first) sees these routes.
   void server.register((instance, _options, done) => {
     registerSessionRoutes(instance, options.auth);
@@ -221,7 +225,8 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     done();
   });
   if (options.staticRoot !== undefined) {
-    void server.register(fastifyStatic, { root: options.staticRoot });
+    // The index is the shell the not-found handler sends; `/` is the landing page route (RF-1200).
+    void server.register(fastifyStatic, { root: options.staticRoot, index: false });
   }
   return server;
 }

@@ -2,11 +2,12 @@ import preact from '@preact/preset-vite';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
-// P1-12, RF-1013: the front end builds into dist/web/ for the Fastify static server (P1-07). The
+// P1-12, P1-15, RF-1013: the front end builds into dist/web/ for the Fastify static server (P1-07). The
 // server answers only `/`, `/sign-in` and files under `/assets/` without a session (P1-09), so
 // every built file except index.html lands under `assets/`: there is no public folder (a
 // favicon or robots file at the root would need a session) and no inline script or style (the
-// content security policy allows neither).
+// content security policy allows neither). The landing page (P1-15) is written by the server, which
+// links its style sheet as /assets/landing.css, so that one file keeps a name without a hash.
 const webRoot = fileURLToPath(new URL('.', import.meta.url));
 const apiTarget = 'http://127.0.0.1:8080';
 
@@ -21,6 +22,18 @@ export default defineConfig({
     sourcemap: false,
     // The preload polyfill is extra code the front end does not need in current browsers.
     modulePreload: { polyfill: false },
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        landing: fileURLToPath(new URL('src/landing/landing.css', import.meta.url)),
+      },
+      output: {
+        assetFileNames: (asset) =>
+          asset.names.includes('landing.css')
+            ? 'assets/landing.css'
+            : 'assets/[name]-[hash][extname]',
+      },
+    },
   },
   server: {
     host: '127.0.0.1',

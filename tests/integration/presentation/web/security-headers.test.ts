@@ -79,7 +79,7 @@ describe('security headers', () => {
   it('RF-1013 serves the built front end from the static folder', async () => {
     const { server } = serverFor('http://127.0.0.1:8080');
 
-    const response = await server.inject({ method: 'GET', url: '/' });
+    const response = await server.inject({ method: 'GET', url: '/sign-in' });
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain('Static front-end fixture');

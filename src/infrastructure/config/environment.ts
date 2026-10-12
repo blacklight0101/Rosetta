@@ -31,7 +31,6 @@ export interface Environment {
   readonly dbAdminPassword: string | undefined;
   readonly test: boolean;
   readonly testDatabaseUrl: string | undefined;
-  readonly gallery: boolean;
 }
 
 const DEFAULT_LOG_LEVEL: LogLevel = 'info';
@@ -41,7 +40,7 @@ const SECRET_KEY_BYTES = 32;
 
 // Variables that exist only for tests and development; an https public URL means a real
 // deployment, where they are refused (RNF-014).
-const TEST_ONLY_VARIABLES = ['ROSETTA_TEST', 'ROSETTA_TEST_DATABASE_URL', 'ROSETTA_GALLERY'];
+const TEST_ONLY_VARIABLES = ['ROSETTA_TEST', 'ROSETTA_TEST_DATABASE_URL'];
 
 function isPostgresUrl(value: string): boolean {
   return URL.canParse(value) && ['postgres:', 'postgresql:'].includes(new URL(value).protocol);
@@ -120,7 +119,6 @@ const SCHEMA = z.object({
   ROSETTA_DB_ADMIN_PASSWORD: text().optional(),
   ROSETTA_TEST: switchOn.optional(),
   ROSETTA_TEST_DATABASE_URL: text(postgresUrl).optional(),
-  ROSETTA_GALLERY: switchOn.optional(),
 });
 
 type Parsed = z.output<typeof SCHEMA>;
@@ -166,7 +164,6 @@ function toEnvironment(parsed: Parsed): Environment {
     dbAdminPassword: parsed.ROSETTA_DB_ADMIN_PASSWORD,
     test: parsed.ROSETTA_TEST !== undefined,
     testDatabaseUrl: parsed.ROSETTA_TEST_DATABASE_URL,
-    gallery: parsed.ROSETTA_GALLERY !== undefined,
   });
 }
 

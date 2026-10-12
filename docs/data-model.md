@@ -71,7 +71,7 @@ Folder names come from ids, never from request text.
           transcripts/<agentTaskId>.jsonl
           report/                     static report (RF-500..RF-506)
           handoff/                    hand-off package (RF-600..RF-699)
-      exports/<runId>.zip             zip exports (RF-008)
+      exports/<runId>.zip             reserved; the zip export is streamed and writes nothing here (RF-008, architecture `ExportZip`)
 ```
 
 `<userId>` and `<projectId>` are the UUIDs of their rows (section 4). `<runId>` is `yyyyMMdd-HHmmss-<stage>` in UTC

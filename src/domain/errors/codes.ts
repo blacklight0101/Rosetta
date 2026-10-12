@@ -80,6 +80,7 @@ export const ERROR_CODES = {
   priceTableInvalid: 'RST-1602',
   outputLimitMissing: 'RST-1603',
   costRecordFailed: 'RST-1604',
+  runInProgress: 'RST-1700',
   githubUrlInvalid: 'RST-1900',
   githubRefNotFound: 'RST-1901',
   githubRateLimited: 'RST-1902',

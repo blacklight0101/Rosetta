@@ -1,9 +1,9 @@
 import type { InjectOptions } from 'fastify';
-import { active, adminOnly, type Column } from './access-columns.js';
+import { active, adminOnly, ownerOnly, type Column } from './access-columns.js';
 import type { TestUser } from './test-browser.js';
 
 // RF-1105, RF-1009: the shape of a row of the access matrix (tests/integration/access-matrix.test.ts)
-// and the rows of the budget routes (RF-1106, DEC-107), kept here so the matrix file stays inside
+// and the rows of the budget routes (RF-1106, DEC-107) and of the zip downloads (RF-008), kept here so the matrix file stays inside
 // the size limit.
 
 type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE';
@@ -50,3 +50,18 @@ export const budgetRoutes: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'PUT', url: capsUrl, payload: () => caps, expected: adminOnly(200) },
   ],
 };
+
+const runUrl = (suffix: string, pick: (context: Context) => string) => (context: Context) =>
+  `/api/runs/${pick(context)}${suffix}`;
+
+/** RF-008, RF-1105: the zip downloads answer the owner of a finished run, 409 while it runs. */
+export const exportRoutes: Readonly<Record<string, readonly Probe[]>> = Object.fromEntries(
+  ['zip', 'handoff.zip'].map((name) => [
+    `GET /api/runs/:runId/${name}`,
+    [
+      { method: 'GET', url: runUrl(`/${name}`, (c) => c.endedRunId), expected: ownerOnly(200) },
+      { method: 'GET', url: runUrl(`/${name}`, (c) => c.runningRunId), expected: ownerOnly(409) },
+      { method: 'GET', url: () => `/api/runs/not-a-uuid/${name}`, expected: active(401, 404) },
+    ],
+  ]),
+);

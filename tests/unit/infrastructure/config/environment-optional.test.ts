@@ -35,7 +35,7 @@ describe('environment: optional values and defaults', () => {
     expect(environment.logRetentionDays).toBe(14);
     expect(environment.trustProxy).toBe(0);
     expect(environment.test).toBe(false);
-    expect(environment.gallery).toBe(false);
+    expect(environment).not.toHaveProperty('gallery');
     expect(environment.openaiApiKey).toBeUndefined();
     expect(environment.anthropicApiKey).toBeUndefined();
     expect(environment.githubToken).toBeUndefined();

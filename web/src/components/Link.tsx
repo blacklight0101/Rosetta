@@ -2,7 +2,9 @@ import type { ComponentChildren, JSX } from 'preact';
 import { navigate } from '../app/router.js';
 
 // A link to a page of this application. A plain click moves within the page; a click with a
-// modifier key, a middle click or a new-window target keeps the browser's own behaviour.
+// modifier key, a middle click or a new-window target keeps the browser's own behaviour, and so does
+// a link to `/`: the landing page is written by the server, which also sends a signed-in visitor to
+// their projects (RF-1200).
 
 export interface LinkProps {
   readonly href: string;
@@ -14,6 +16,8 @@ export interface LinkProps {
 const isPlainClick = (event: MouseEvent): boolean =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
+const isPageOfThisApp = (href: string): boolean => href.startsWith('/') && href !== '/';
+
 export function Link(props: LinkProps): JSX.Element {
   return (
     <a
@@ -21,7 +25,7 @@ export function Link(props: LinkProps): JSX.Element {
       class={props.class}
       aria-current={props.current === true ? 'page' : undefined}
       onClick={(event) => {
-        if (!isPlainClick(event) || !props.href.startsWith('/')) return;
+        if (!isPlainClick(event) || !isPageOfThisApp(props.href)) return;
         event.preventDefault();
         navigate(props.href);
       }}
