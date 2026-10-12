@@ -6,8 +6,8 @@ import { loadEnvironment } from '../../../src/infrastructure/config/environment.
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { TestDoubles } from '../../../src/presentation/test-doubles.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
-import { demoGitHub } from '../../support/snapshot-fetcher-harness.js';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { demoGitHub } from '../../support/snapshot-fetcher-harness.js';
 
 // RNF-005, ADR-008: a scan run started through the HTTP API fetches from the fake GitHub injected
 // through the test doubles, so the end-to-end journeys never reach github.com.
@@ -20,12 +20,9 @@ afterAll(async () => {
   await Promise.all(folders.map((folder) => rm(folder, { recursive: true, force: true })));
 });
 
-async function postJson(
-  address: string,
-  path: string,
-  body: unknown,
-  headers: Record<string, string>,
-): Promise<Response> {
+type Headers = Record<string, string>;
+
+async function postJson(address: string, path: string, body: unknown, headers: Headers) {
   return await fetch(`${address}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', origin: 'http://127.0.0.1:8080', ...headers },
@@ -36,19 +33,35 @@ async function postJson(
 
 /** A string member of a parsed JSON answer; throws when it is missing. */
 function stringField(body: unknown, key: string): string {
-  const value: unknown =
-    typeof body === 'object' && body !== null ? Reflect.get(body, key) : undefined;
+  const value: unknown = typeof body === 'object' && body !== null ? Reflect.get(body, key) : null;
   if (typeof value !== 'string') throw new Error(`The answer has no string "${key}".`);
   return value;
 }
 
-async function waitForEnd(query: () => Promise<string | undefined>): Promise<string | undefined> {
+/** The cookie and CSRF headers of a signed-in session. */
+async function signIn(address: string, password: string): Promise<Headers> {
+  const response = await postJson(address, '/api/session', { userName: adminName, password }, {});
+  const cookies = response.headers.getSetCookie().map((line) => line.split(';')[0] ?? '');
+  return {
+    cookie: cookies.join('; '),
+    'x-csrf-token': stringField(await response.json(), 'csrfToken'),
+  };
+}
+
+async function startScan(address: string, auth: Headers): Promise<number> {
+  const url = 'https://github.com/octo/demo';
+  const created = await postJson(address, '/api/projects', { url }, auth);
+  const id = stringField(await created.json(), 'id');
+  return (await postJson(address, `/api/projects/${id}/runs`, { stage: 'scan' }, auth)).status;
+}
+
+async function endState(query: () => Promise<string | null | undefined>): Promise<string | null> {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     const state = await query();
-    if (state !== undefined && state !== null) return state;
+    if (typeof state === 'string') return state;
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  return undefined;
+  return null;
 }
 
 describe.skipIf(!hasTestDatabase)('test doubles in the composed application', () => {
@@ -78,42 +91,15 @@ describe.skipIf(!hasTestDatabase)('test doubles in the composed application', ()
 
     try {
       const address = await application.start();
-      const signIn = await postJson(
-        address,
-        '/api/session',
-        {
-          userName: adminName,
-          password,
-        },
-        {},
-      );
-      const csrfToken = stringField(await signIn.json(), 'csrfToken');
-      const cookie = signIn.headers
-        .getSetCookie()
-        .map((line) => line.split(';')[0] ?? '')
-        .join('; ');
-      const auth = { cookie, 'x-csrf-token': csrfToken };
-      const created = await postJson(
-        address,
-        '/api/projects',
-        { url: 'https://github.com/octo/demo' },
-        auth,
-      );
-      const projectId = stringField(await created.json(), 'id');
-      const started = await postJson(
-        address,
-        `/api/projects/${projectId}/runs`,
-        { stage: 'scan' },
-        auth,
-      );
-      const ended = await waitForEnd(async () => {
+      const status = await startScan(address, await signIn(address, password));
+      const ended = await endState(async () => {
         const rows = await schema.pool.query<{ end_state: string | null }>(
           'SELECT end_state FROM runs',
         );
-        return rows.rows[0]?.end_state ?? undefined;
+        return rows.rows[0]?.end_state;
       });
 
-      expect(started.status).toBe(202);
+      expect(status).toBe(202);
       expect(ended).toBe('Completed');
       expect(github.requests.length).toBeGreaterThan(0);
     } finally {

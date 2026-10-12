@@ -24,6 +24,7 @@ import { bootstrapAdministrator, composeAuth } from './compose-accounts.js';
 import { composeProjects } from './compose-projects.js';
 import { composeRuns, type RunComposition } from './compose-runs.js';
 import { startUp } from './start-up.js';
+import { TestDoubles } from './test-doubles.js';
 import { buildServer, type AuthServices } from './web/server.js';
 
 // Architecture section 2: the only place that creates adapters and wires them together. This file
@@ -41,6 +42,8 @@ export interface ApplicationOptions {
   readonly listen: { readonly host: string; readonly port: number };
   /** Standard output for the JSON log lines. */
   readonly output: { write(text: string): unknown };
+  /** The fake GitHub and fake provider of the end-to-end tests; refused without ROSETTA_TEST=1. */
+  readonly doubles?: TestDoubles;
 }
 
 export interface Application {
@@ -156,17 +159,20 @@ interface ServerParts {
   readonly auth: AuthServices;
   readonly clock: Clock;
   readonly masker: TextMasker;
+  readonly doubles: TestDoubles | undefined;
 }
 
 // ADR-017, RF-1303, RF-1009: the HTTP server with the database probe, the session use cases and
 // the shipped version.
 async function createServer(parts: ServerParts): Promise<CreatedServer> {
-  const { environment, logger, pool, auth, clock, masker } = parts;
+  const { environment, logger, pool, auth, clock, masker, doubles } = parts;
   const version = await readAppVersion();
   const runs = composeRuns({
     ...{ pool, logger, clock, masker, version },
     dataDir: environment.dataDir,
     githubToken: environment.githubToken,
+    ...(doubles?.fetch === undefined ? {} : { fetch: doubles.fetch }),
+    ...(doubles?.provider === undefined ? {} : { provider: doubles.provider }),
     packs: await composeLanguagePacks(),
   });
   const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });
@@ -219,7 +225,8 @@ function openPool(environment: Environment, logger: Logger): DatabasePool {
 
 // Architecture section 2
 export function composeApplication(options: ApplicationOptions): Application {
-  const { environment } = options;
+  const { environment, doubles } = options;
+  if (doubles !== undefined) TestDoubles.requireTestMode(environment);
   const clock = new SystemClock();
   const { file, logger, masker } = createLoggers(options, clock);
   const hasher = new ScryptPasswordHasher();
@@ -238,7 +245,7 @@ export function composeApplication(options: ApplicationOptions): Application {
       await file.applyRetention();
       const auth = await composeAuth({ pool, logger, clock, masker, hasher });
       const { server, runs } = await createServer({
-        ...{ environment, logger, pool, clock, masker },
+        ...{ environment, logger, pool, clock, masker, doubles },
         auth: auth.services,
       });
       close = closer({ server, runs });
