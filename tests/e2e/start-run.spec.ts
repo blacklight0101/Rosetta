@@ -3,6 +3,7 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
+import { transitionsDone } from './support/transitions.js';
 
 // RF-1001, RF-143, RF-425, RF-1108, DEC-108, P1-34: the start page of a project, driven against
 // the test server (fake GitHub for octo/demo, the answering provider for every model call). A scan
@@ -106,6 +107,7 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
   await expectNoSeriousViolations(page);
   await page.getByLabel(consent).check();
   await expect(start).toBeEnabled();
+  await transitionsDone(page);
   await expectNoSeriousViolations(page);
   await start.click();
 
@@ -124,6 +126,7 @@ test('RF-1001 a likely estimate above the run cap warns, names the cap and Start
   await expect(warning).toContainText('run cap');
   await expect(warning).toContainText('$0.000001');
   await expect(page.getByRole('button', startButton)).toBeEnabled();
+  await transitionsDone(page);
   await expectNoSeriousViolations(page);
 });
 
