@@ -7,6 +7,7 @@ import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
 import { ProjectsPage } from '../pages/ProjectsPage.js';
 import { SettingsPage } from '../pages/SettingsPage.js';
 import { SignInPage } from '../pages/SignInPage.js';
+import { StartRunPage } from '../pages/StartRunPage.js';
 import type { RouteDefinition } from './route-types.js';
 
 // The router table. Each page card adds its rows here (landing page, sign-in, projects, ...); a row
@@ -43,6 +44,14 @@ export const routes: readonly RouteDefinition[] = [
     chrome: 'shell',
     component: ProjectsPage,
     nav: { group: 'main', label: 'Projects', order: 10 },
+  },
+  {
+    path: '/projects/:projectId/start',
+    title: 'Start a run',
+    access: 'user',
+    chrome: 'shell',
+    component: StartRunPage,
+    nav: { group: 'project', label: 'Start a run', order: 10 },
   },
   {
     path: '/projects/:projectId/settings',

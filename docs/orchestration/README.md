@@ -32,7 +32,7 @@ Every rule below refers to these settings by name, so a stack change is made her
 | Commit message | Conventional Commits, `type(scope): subject`, a `Refs:` footer with the card, RF, ADR and DEC ids, and the attribution line given by the session instructions |
 | Issue and pull request | one GitHub issue per card (title `<id> <title>`, milestone of the phase, labels `difficulty:<n>` and `builder:<model>`); one pull request per card from `.github/pull_request_template.md`, closing its issue (DEC-35) |
 | Merge | by the orchestrator, squash only, under the merge rules of section 3.1 (DEC-96); pull requests labelled `needs-owner` are merged only by the owner |
-| Agents in flight | one plan agent at a time under the usage throttle of section 8.1 (DEC-115), plus at most one verifier billed to the owner's Anthropic API key (DEC-128) |
+| Agents in flight | up to two (three after a usage reset) plan builders, as many local verifiers as pull requests are ready, an API-billed builder or verifier when the key has credit, and cards in the owner's cloud sessions, under the usage bands of section 8.1 (DEC-115, DEC-128, DEC-130) |
 | Serialized resources | `db/migrations/`; `src/presentation/composition-root.ts` and `src/presentation/main.ts`; `package.json` and `package-lock.json`; `.github/workflows/`; `web/src/app/routes.ts`; `tests/integration/access-matrix.test.ts` |
 | Requirement comment | `// RF-nnn` (or `RNF-nnn`) on the line above each implementing class or function |
 
