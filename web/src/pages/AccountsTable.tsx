@@ -3,6 +3,7 @@ import type { ListedAccount } from '../api/admin-schemas.js';
 import { Button } from '../components/Button.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { costText, signInText } from './admin-format.js';
+import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1102, RF-1105, design-system.md section 14 (administration: users): every account with its
 // role, state, last sign-in, projects and month-to-date cost, and the actions. The own account
@@ -72,7 +73,7 @@ function AccountRow(props: RowProps): JSX.Element {
       <td>{signInText(user.lastSignInAt)}</td>
       <td class="rst-table__num">{user.projects}</td>
       <td class="rst-table__num">{costText(user.monthToDate)}</td>
-      <td>
+      <td class="rst-table__actions-cell">
         <RowActions {...props} />
       </td>
     </tr>
@@ -82,7 +83,7 @@ function AccountRow(props: RowProps): JSX.Element {
 // RF-1102
 export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Element {
   return (
-    <div class="rst-table-scroll">
+    <ScrollRegion label="Accounts table">
       <table class="rst-table">
         <caption class="rst-visually-hidden">Accounts</caption>
         <thead>
@@ -108,6 +109,6 @@ export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Eleme
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }

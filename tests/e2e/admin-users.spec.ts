@@ -1,4 +1,4 @@
-import type { APIRequestContext, Page } from '@playwright/test';
+import type { Browser, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { accountRow, createAccount } from './support/admin-page.js';
 import { expectNoSeriousViolations } from './support/axe.js';
@@ -23,19 +23,25 @@ const created = (project: string, kind: string): Credentials => ({
   password: fixturePassword(`New${kind}`),
 });
 
-async function sessionOf(
-  playwright: { request: { newContext: (options: object) => Promise<APIRequestContext> } },
-  who: Credentials,
-): Promise<APIRequestContext> {
-  const request = await playwright.request.newContext({
-    baseURL: e2eOrigin(),
-    extraHTTPHeaders: { origin: e2eOrigin(), 'x-forwarded-for': clientAddressFor(who.userName) },
-  });
-  const answer = await request.post('/api/session', {
+/**
+ * A page of a second browser context signed in as `who`. The session cookie is `Secure`, which only
+ * a browser page sends to the plain-http test server (the context's request object does not).
+ */
+async function sessionPageOf(browser: Browser, who: Credentials): Promise<Page> {
+  const context = await browser.newContext({ baseURL: e2eOrigin() });
+  const answer = await context.request.post('/api/session', {
     data: { userName: who.userName, password: who.password },
+    headers: { origin: e2eOrigin(), 'x-forwarded-for': clientAddressFor(who.userName) },
   });
   expect(answer.ok()).toBe(true);
-  return request;
+  const page = await context.newPage();
+  await page.goto('/healthz');
+  return page;
+}
+
+/** The status `GET /api/session` answers to the page's cookies. */
+function sessionStatus(page: Page): Promise<number> {
+  return page.evaluate(async () => (await fetch('/api/session')).status);
 }
 
 /** Signs in as another account in this browser, which still holds the administrator cookies. */
@@ -62,7 +68,8 @@ test('RF-1102 lists every account with role, state, last sign-in, projects and c
   await expect(row).not.toContainText('never');
   await expect(row).toContainText('$0.00');
   await expect(row.getByRole('button', { name: /^Disable/u })).toHaveCount(0);
-  await expect(accountRow(page, seededUser.userName)).toContainText('never');
+  await expect(page.getByRole('columnheader', { name: 'Last sign-in (UTC)' })).toBeVisible();
+  await expect(accountRow(page, seededUser.userName)).toContainText('Active');
   await expectNoSeriousViolations(page);
 });
 
@@ -75,6 +82,7 @@ test('RF-1102 creates an account that must change its password at first sign-in'
 
   await expect(page.getByRole('status').filter({ hasText: 'Created account' })).toBeVisible();
   await expect(accountRow(page, account.userName)).toContainText('Must change password');
+  await expect(accountRow(page, account.userName)).toContainText('never');
   await page.reload();
   await expect(accountRow(page, account.userName)).toContainText('Must change password');
   await signInAsOther(page, account);
@@ -94,25 +102,25 @@ test('RF-1102 refuses a password that is too short next to its field', async ({ 
 
 test('RF-1102 disabling an account ends its session at once, enabling lets it back in', async ({
   page,
-  playwright,
+  browser,
 }, info) => {
   const account = created(info.project.name, 'live');
   await createAccount(page, { ...account, mustChange: false });
   await expect(accountRow(page, account.userName)).toContainText('Active');
-  const session = await sessionOf(playwright, account);
-  expect((await session.get('/api/session')).status()).toBe(200);
+  const session = await sessionPageOf(browser, account);
+  expect(await sessionStatus(session)).toBe(200);
 
   await accountRow(page, account.userName)
     .getByRole('button', { name: /^Disable/u })
     .click();
 
   await expect(accountRow(page, account.userName)).toContainText('Disabled');
-  expect((await session.get('/api/session')).status()).toBe(401);
+  expect(await sessionStatus(session)).toBe(401);
   await accountRow(page, account.userName)
     .getByRole('button', { name: /^Enable/u })
     .click();
   await expect(accountRow(page, account.userName)).toContainText('Active');
-  await session.dispose();
+  await session.context().close();
 });
 
 test('RF-1102 resets a password and the account must choose another', async ({ page }, info) => {

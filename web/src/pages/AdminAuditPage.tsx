@@ -13,6 +13,7 @@ import { secondsText } from './admin-format.js';
 import { auditActions } from './audit-actions.js';
 import { CapBanner } from './CapBanner.js';
 import { useAdminOverview } from './use-admin-overview.js';
+import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1109, design-system.md section 14 (administration: audit): the last 30 days of the audit
 // trail, newest first, filtered by user and action. The actor and the target of a row are shown by
@@ -101,7 +102,7 @@ function Events(props: { readonly page: AuditPage; readonly users: readonly List
   }
   return (
     <>
-      <div class="rst-table-scroll">
+      <ScrollRegion label="Audit events table">
         <table class="rst-table">
           <caption class="rst-visually-hidden">Audit events</caption>
           <thead>
@@ -120,7 +121,7 @@ function Events(props: { readonly page: AuditPage; readonly users: readonly List
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollRegion>
       <p class="rst-settings__note">
         {page.truncated
           ? `Showing the newest ${plural(page.events.length)} of the last 30 days. Narrow the filters to see older ones.`

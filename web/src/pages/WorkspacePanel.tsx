@@ -6,6 +6,7 @@ import type { ApiFailure } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
+import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1105, RF-1109: the projects of another account, read only. Opening a workspace writes an
 // `admin.workspace_opened` audit row on the server; the page has no way to change what it shows.
@@ -41,7 +42,7 @@ function ProjectList({ workspace }: { readonly workspace: Workspace }): JSX.Elem
     return <p>{`${workspace.owner.displayName} has no projects yet.`}</p>;
   }
   return (
-    <div class="rst-table-scroll">
+    <ScrollRegion label="Projects table">
       <table class="rst-table">
         <caption class="rst-visually-hidden">Projects of this account</caption>
         <thead>
@@ -65,7 +66,7 @@ function ProjectList({ workspace }: { readonly workspace: Workspace }): JSX.Elem
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }
 
