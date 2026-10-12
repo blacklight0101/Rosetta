@@ -5,15 +5,13 @@ import type { ProviderKind } from '../ports/llm-provider.js';
 // role as a low, likely and high figure, with the assumptions behind them. Costs are bigint
 // micro-dollars like the ledger (DEC-54); tokens are whole numbers.
 
-export const SCENARIOS = ['low', 'likely', 'high'] as const;
-export type Scenario = (typeof SCENARIOS)[number];
+export type Scenario = 'low' | 'likely' | 'high';
 
 /** One value per scenario. */
 export type ByScenario<T> = Readonly<Record<Scenario, T>>;
 
 /** The roles an understand run is estimated for: the readers and the verifier share (ADR-005). */
-export const ESTIMATE_ROLES = ['reader', 'verifier'] as const;
-export type EstimateRole = (typeof ESTIMATE_ROLES)[number];
+export type EstimateRole = 'reader' | 'verifier';
 
 export interface EstimatePoint {
   readonly inputTokens: number;
@@ -55,7 +53,7 @@ export interface EstimateAssumptions {
   readonly cachedInputPercent: 0;
 }
 
-export interface EstimatedArea {
+interface EstimatedArea {
   readonly name: string;
   readonly estimatedTokens: number;
 }

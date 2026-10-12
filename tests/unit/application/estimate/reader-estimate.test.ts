@@ -49,7 +49,8 @@ describe('assumptions of the estimate', () => {
 
   it('DEC-117 uses the reader default of 12 turns when the settings name none', () => {
     const base = readerSettings({ maxTurns: 10, maxOutputTokens: 1000 });
-    const { maxTurns: _unused, ...reader } = base.roles.reader;
+    const { provider, model, maxOutputTokens } = base.roles.reader;
+    const reader = { provider, model, maxOutputTokens };
 
     const assumptions = assumptionsOf({ ...base, roles: { ...base.roles, reader } });
 

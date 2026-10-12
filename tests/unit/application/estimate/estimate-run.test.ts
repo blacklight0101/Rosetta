@@ -94,7 +94,9 @@ describe('RF-425 estimate before running', () => {
       costMicros: 29_184n,
     });
   });
+});
 
+describe('RF-425 the range and the roles', () => {
   it('RF-425 the range rises from low to likely to high in tokens and cost', async () => {
     const estimate = await estimateOf(createEstimateHarness(), cloud);
 
@@ -154,7 +156,9 @@ describe('RF-425 local and unpriced models', () => {
     expect(estimate.total.high.costMicros).toBe(0n);
     expect(estimate.total.high.inputTokens).toBeGreaterThan(0);
   });
+});
 
+describe('RF-427 and DEC-107 prices', () => {
   it('RF-427 a cloud model without a price shows its tokens and an unknown cost', async () => {
     const unpriced = limited(
       settingsFor({
@@ -202,7 +206,7 @@ describe('RF-425 local and unpriced models', () => {
   });
 });
 
-describe('RF-425 refusals', () => {
+describe('RF-1105 and RST-1307 refusals', () => {
   it('RF-1105 another user project answers not found, like an unknown id', async () => {
     const harness = createEstimateHarness();
     const project = await projectWithScan(harness, userAmy.userId, cloud);
@@ -229,7 +233,9 @@ describe('RF-425 refusals', () => {
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.areaUnknown });
   });
+});
 
+describe('RST-1203 scans', () => {
   it('RST-1203 a project without a completed scan has no code map to estimate from', async () => {
     const harness = createEstimateHarness();
     const project = await projectWithScan(harness, userAmy.userId, cloud, false);

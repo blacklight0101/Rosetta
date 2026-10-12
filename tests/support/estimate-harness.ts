@@ -3,6 +3,7 @@ import type { ProjectSettings } from '../../src/application/projects/project-set
 import type { ScannedSource, ScanResults } from '../../src/application/ports/scan-results.js';
 import type { Area } from '../../src/domain/code-map/area.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
+import type { Project } from '../../src/application/projects/project.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -102,7 +103,7 @@ export async function projectWithScan(
   userId: string,
   settings: ProjectSettings,
   scanned = true,
-) {
+): Promise<Project> {
   const project = sampleProject({ userId, settings });
   await harness.projects.insertOrFind(project);
   if (scanned) await harness.runs.insert(completedScan(project.id, userId));
