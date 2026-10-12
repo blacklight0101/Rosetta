@@ -8,7 +8,7 @@ import { performance } from 'node:perf_hooks';
 const defaultParseBudgetMs = 120_000;
 
 export interface ParseBudget {
-  /** The total milliseconds the packs may spend on one scan. */
+  /** The total milliseconds the packs may spend on one scan; not finite or negative means the default. */
   readonly totalMs: number;
   /** A monotonic clock in milliseconds; `performance.now` when absent. Tests pass a fake one. */
   readonly now?: () => number;
@@ -22,7 +22,9 @@ export class ParseTimer {
   private startedAt: number | undefined;
 
   constructor(budget: ParseBudget = { totalMs: defaultParseBudgetMs }) {
-    this.totalMs = budget.totalMs;
+    // NaN would never trip and a negative value would skip every file: both fall back to the default.
+    const valid = Number.isFinite(budget.totalMs) && budget.totalMs >= 0;
+    this.totalMs = valid ? budget.totalMs : defaultParseBudgetMs;
     this.now = budget.now ?? (() => performance.now());
   }
 
