@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 94 | 33 | 47 | 14 | 0 | 47 | 39 | 8 | 38 | 0 |
+| P1 Milestone slice (M1) | 99 | 35 | 49 | 15 | 0 | 49 | 42 | 8 | 42 | 0 |
 | P2 Full understand | 15 | 2 | 9 | 4 | 0 | 3 | 11 | 1 | 1 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **121** | **36** | **65** | **20** | **0** | **51** | **59** | **11** | **39** | **0** |
+| **Total** | **126** | **38** | **67** | **21** | **0** | **53** | **62** | **11** | **43** | **0** |
 
 ## Conventions for every card
 
@@ -250,7 +250,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-13
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/Landing.dc.html`; `.impeccable/surfaces/` (landing direction contract); `docs/design-system.md` section 14 (replay stage, pipeline rail).
 - **Do**: the public page at `/` exactly as the approved artboard: hero, "Watch it work" replay stage with a static sample run labelled "Sample run" (animation once per 10 s cycle, paused on hover or focus, static under reduced motion), pipeline rail, evidence cards, cost control, security and privacy, technology, about the project; Sign in button; "Request access" mail link only when `ROSETTA_CONTACT_EMAIL` is set; a signed-in visitor is redirected to `/projects`; works without JavaScript from 360 px.
 - **Delivers**: the page and its assets; E2E specs: page with JavaScript disabled, at 360 px, axe in both schemes, redirect when signed in, link present or absent by configuration.
@@ -430,7 +430,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-18, P1-20, P1-27
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-007-cost-control.md`; `docs/architecture.md` section 6 (`EstimateRun`).
 - **Do**: `EstimateRun` in `src/application/estimate/`: from the code map, the chosen areas, the models per role and the price table, compute tokens and cost per role as low, likely and high with the assumptions stated (turns per area, output per turn, verifier share); route `GET /api/projects/:id/estimate`; the confirmation threshold of RF-425's second scenario stays in P2-08 (DEC-97).
 - **Delivers**: the estimator and route; unit tests on fixed code maps and price tables.
@@ -466,7 +466,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-23, P1-29, P1-31, P1-32
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/architecture.md` sections 6 and 8; `docs/data-model.md` sections 3.6, 3.7, 3.12 and 3.16.
 - **Do**: `RunUnderstand`: one reader task per area or only the named areas (unknown names stop with a code listing valid names); configurable parallelism with one abort signal; task states of architecture section 5; partial cards saved on stop; step 1 of the verifier (`src/application/verifier/citation-check.ts`): every citation's file in the code map and its range inside the file, otherwise `CitationInvalid` with the reason; claims never deleted; the cost report at the end (P1-27 writer); `answers.md` generated from `OQ` cards keeping existing answers (DEC-98); run events for every step; route `POST /api/projects/:id/runs` with stage `understand`, area list and consent flag (a cloud run without consent is refused, RF-143). Notes from P1-32 and P1-13: queue card writes per run folder (two `writeOrRestore` calls on one folder can lose an update); pass `assignCardIds` the tasks in area order; pass a `Logger` to the card writers; treat an area with zero cards as suspicious and show it in the run summary and coverage (a stray `[]` in prose parses as zero cards); consume `RunParts.provider` for the test doubles. Notes from P1-27, P1-29, P1-31 and P1-32: build one guard set per run through the provider factory and wire it to the run's stop; refuse an unpriced model at run start (RF-427); write the cost report at every end state, `StoppedByCap` and `CapReached` included; run the prompt-injection fixture through the citation check; assign card ids in area order, show a zero-card area in the run summary and coverage, and treat it as suspicious (require an explicit cards key); serialise card writes per run folder; pass a Logger to the card writers; load and hash the prompts; take the reader limits from the project settings.
 - **Delivers**: the use case, citation check, answers writer, route; integration tests with recorded responses: a full run on the C# fixture, an unknown area, a cap reached mid-run, an interrupted run, consent refused; a hash of the snapshot before and after the run.
@@ -478,7 +478,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-30, P1-33, P1-41
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/StartRun.dc.html`; `docs/design-system.md` section 14 (queue notice).
 - **Do**: `/projects/:id/start`: stage and areas, the estimate (P1-30) with low, likely and high, the cloud notice naming the providers with the consent checkbox (Start disabled until checked when a cloud provider is involved), the editable run cap with its meter, Start; the queued state with position and Cancel; errors next to their fields. When the likely estimate exceeds the cap that remains (run, today or this month), show a warning naming the cap; Start stays available (DEC-108).
 - **Delivers**: the page; E2E specs: start a scan and an understand run with the fake provider, consent required, invalid URL error, queued run shown.
@@ -490,7 +490,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-34
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/LiveRun.dc.html`; `docs/data-model.md` section 3.9.
 - **Do**: `/runs/:id`: subscribes to the SSE stream (stored events first); one panel per agent with area, role, model, state, turn count, tool call in progress, files read, cards so far, tokens and cost; the overview (planned, running, done, failed) and the verbose event log; the run meter (tokens and cost per role and total, cap bar, estimate for comparison) and Stop (`POST /api/runs/:runId/stop`, P1-22); the claims list with live status and reason and a link to the cited lines (RF-1004: in P1 a claim that passed the citation check is labelled "awaiting model verification", DEC-103); works after reconnect.
 - **Delivers**: the page; E2E specs driven by recorded events: panels update, Stop ends the run, reconnect replays, claims change status.
@@ -562,7 +562,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-14, P1-18, P1-22
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/Projects.dc.html`.
 - **Do**: `/projects` (the user's projects with last run and totals, New project form with the URL error next to the field, queue notice); `/projects/:id/settings` (models per role, caps, ignore rules, price overrides) with field errors from the API.
 - **Delivers**: two pages; E2E specs: create a project from a fake GitHub URL, duplicate opens the existing one, invalid URL error, save settings with an error.
@@ -574,7 +574,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-10, P1-14, P1-18, P1-27
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/AdminUsers.dc.html`, `AdminAudit.dc.html`.
 - **Do**: `/admin/users` (accounts with role, state, last sign-in, month-to-date cost; create, disable, enable, reset; open a workspace; caps form; server-month meter and the 80% banner); `/admin/audit` (filter by user and action, last 30 days); the default models per role for new projects (`defaultRoles`, DEC-106).
 - **Delivers**: three pages; E2E specs: create a user who must change the password, disable ends the session, caps saved, audit filter.
@@ -598,7 +598,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-02, P1-07, P1-12, P1-18, P1-27, P1-31
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-014-container-image-local-and-hosted.md`; `docs/environments-and-delivery.md` sections 2 and 8.1.
 - **Do**: multi-stage `Dockerfile` from `node:24-slim` pinned by digest: build stage (`npm ci`, `npm run build`), runtime stage with production dependencies, built server and front end, `db/migrations/`, `prompts/`, `prices/`, `templates/`, non-root user, port 8080, `HEALTHCHECK` on `/healthz`; `.dockerignore` excluding `.env*`, tests, source maps of server code and build tools; a CI job building the image and running Trivy (high and critical with a fix fail); an integration test starting the container and calling `/healthz` (Linux CI only). A separate `test` stage adds the fake provider and fake GitHub for `compose.ci.yaml`; the production stage contains no fakes.
 - **Delivers**: `Dockerfile`, `.dockerignore`, the CI job, the test.
@@ -610,7 +610,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-14, P1-15, P1-23, P1-44
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 6, 9 and 14; `docs/adr/ADR-016-postgresql-and-files.md`.
 - **Do**: `compose.yaml` (adds the `app` service to the `db` service of P1-06, volumes `pgdata` and `rosetta-data`, app on `127.0.0.1:8080` only, `extra_hosts: host.docker.internal:host-gateway`, health checks, restart policy); `compose.ci.yaml` (fake provider, test seed); the CI Compose smoke job (up, wait for `/healthz`, Playwright smoke: landing, sign-in, a fake-provider scan, `down -v`); `docs/runbooks/local.md` (`.env`, up, first sign-in, Ollama on the host, reset); the README quick start section. `db/init/roles.sh` creating `rosetta_app` and `rosetta_migrator` from passwords in `.env`; `compose.ci.yaml` runs the image's `test` stage with a fake GitHub sidecar. Add `host.docker.internal:host-gateway` so the documented Ollama URL resolves on Linux (P1-28).
 - **Delivers**: the two Compose files, the CI job, the runbook, the README section.
@@ -620,7 +620,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 ### P1-46 - Milestone end-to-end journeys
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
-- **Depends on**: P1-15, P1-35, P1-56, P1-42, P1-43
+- **Depends on**: P1-15, P1-35, P1-56, P1-42, P1-43, P1-97
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/process-flows.md` flows 1, 2, 4 and 5; `docs/architecture.md` section 17.
@@ -742,7 +742,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-17, P1-22
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 2; `docs/architecture.md` section 6 (`ExportZip`).
 - **Do**: `ArchiveWriter` port and `YazlArchiveWriter`; `ExportZip`: the full run folder, or only `handoff/`, streamed, refused with 409 while the run is in progress; routes `GET /api/runs/:runId/zip` and `GET /api/runs/:runId/handoff.zip` (owner-scoped); the Download zip button on the run page.
 - **Delivers**: the port, adapter, use case, routes and button; integration tests that unzip and compare the tree with the run folder; an access-matrix row.
@@ -862,7 +862,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-25
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/ollama/`; `src/infrastructure/config/environment.ts`; `docs/providers.md` section 2.
 - **Do**: strip thinking in linear time and also for an orphan closing tag, any letter case and `<thinking>`; refuse userinfo in `ROSETTA_OLLAMA_URL` at parse time; let the fake Ollama server register its port so the test-mode check trusts that port, not the caller flag; make the text-tool-protocol loader return `{ version, sha256, text }` for the manifest.
 - **Delivers**: the changes with tests.
@@ -910,7 +910,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-26
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/openai/openai-provider.ts`.
 - **Do**: refuse a key holding any character above U+00FF at construction with RST-1511, so a deterministic SDK failure is not retried.
 - **Delivers**: the check and its test.
@@ -946,7 +946,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-07, P1-16
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/composition-root.ts`; RF-122; `docs/architecture.md` section 4.
 - **Do**: call `discardPartialFolders()` of the snapshot store in the start-up sequence, before the server accepts runs.
 - **Delivers**: the start-up step and its test.
@@ -970,7 +970,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/scan/packs/`; `src/infrastructure/scan/codemap/`.
 - **Do**: bound the total tree-sitter parse time of a scan (a scan-wide budget, or parsing in a worker that can be stopped); files past the budget are recorded as not analysed with a reason instead of blocking the event loop.
 - **Delivers**: the budget and its tests.
@@ -982,7 +982,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-74
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/scan/universal/sql-script.ts`; `src/infrastructure/guards/`.
 - **Do**: a `-----BEGIN ... PRIVATE KEY-----` marker with no END (for example a comment that only mentions it) masks to the end of the file, so every later statement silently leaves the code map; bound the masked span or record a notice in the scan summary that statements were hidden by masking; use the injected `SecretMasker` instead of the module-level one.
 - **Delivers**: the change and its tests.
@@ -994,7 +994,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-08
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/security/scrypt-password-hasher.ts`; `src/infrastructure/db/pg-audit-log.ts`, `audit-rows.ts`, `pg-user-repository.ts`; `tests/contracts/`.
 - **Do**: bound the parameters of a stored hash (N, r, p, key and salt lengths) and map every parse or scrypt failure, including `RangeError`, to RST-2209; keep the password hash out of any error cause from the user repository; strip or escape NUL in audit `detail`, `ip` and `action` before the insert; widen audit detail masking to keys `secret`, `pass`, `pw`, `value` and free text such as "password is"; make the audit filter with an invalid user id behave the same in both adapters (contract case); add a concurrent bootstrap test on PostgreSQL that fails without the advisory lock.
 - **Delivers**: the changes with tests.
@@ -1054,7 +1054,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-23
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/run-scan.ts`; `src/infrastructure/scan/scan-pipeline.ts`.
 - **Do**: log a warning when `RunScan` falls back to the current project scan settings because the manifest holds none or an invalid `scanSettings`; log when `discard()` cannot remove an output file.
 - **Delivers**: the two log lines with tests.
@@ -1115,8 +1115,8 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Depends on**: P1-01
 - **Gate**: none
 - **Status**: Todo
-- **Reads**: `package-lock.json`; `docs/conventions.md` (install).
-- **Do**: with npm 11.19 on Linux `npm ci` reports a missing `@emnapi` entry (also on `main`); find the cause, regenerate the lockfile so `npm ci --ignore-scripts` passes on the npm version CI uses and on the latest npm 11, and pin the npm version CI uses if needed.
+- **Reads**: `package-lock.json`; `docs/conventions.md` (install); `Dockerfile`.
+- **Do**: with npm 11.19 on Linux `npm ci` reports a missing `@emnapi` entry (also on `main`); find the cause, regenerate the lockfile so `npm ci --ignore-scripts` passes on the npm version CI uses and on the latest npm 11, and pin the npm version CI uses if needed. Then drop the `npm@11.6.2` pin and its comment from the `Dockerfile` (P1-44 pinned it because the lock file was written by the npm of Node.js 24.11.1) and check that both stages still pass `npm ci`.
 - **Delivers**: the lockfile fix.
 - **Done when**: `npm ci --ignore-scripts` passes on Linux with npm 11.19 and in CI; `npm run verify` green.
 - **Refs**: RNF-005, P1-13 (verifier note).
@@ -1126,7 +1126,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-11
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/security/public-address.ts`; `src/domain/accounts/provider-keys.ts`; `src/infrastructure/security/aes-gcm-secret-box.ts`; `docs/architecture.md` section 7.
 - **Do**: treat `3fff::/20`, `5f00::/16` and `::ffff:0:0:0/96` as non-public; refuse a base URL ending in a bare `?` or `#`; read the secret with strict base64 in the secret box; say in architecture section 7 that the connect-time check is not wired until P2-10.
 - **Delivers**: the changes with tests.
@@ -1150,7 +1150,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-31
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/understand/`; `src/infrastructure/understand/`; `prompts/`; RF-145.
 - **Do**: make the memory reader answer a read past the end of a file the same way as the file reader; make `grep` skip the files the scan skipped; make the repair turn respect the turn cap, the context limit and the abort signal; add tests for an abort between tool calls and a 200-entry listing; make the RF-145 prompt test scan every folder under `prompts/`.
 - **Delivers**: the changes with tests.
@@ -1164,7 +1164,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `src/infrastructure/budget/`; `src/application/budget/`; `src/web/`; `docs/data-model.md`; `scripts/openai-live-check.mjs`; `package.json`.
-- **Do**: add a race test for the per-user lock; check that cost report sums stay below 2^53 or keep them as bigint; save `SetCaps` in one transaction; make the web dollar parser refuse `1,2,3` and values above the DEC-117 cost range; list the migration 0005 indexes in the data model; make `live:openai` load `.env` itself.
+- **Do**: add a race test for the per-user lock; check that cost report sums stay below 2^53 or keep them as bigint; save `SetCaps` in one transaction; make the web dollar parser refuse `1,2,3` and values above the DEC-117 cost range; list the migration 0005 indexes in the data model; make `live:openai` load `.env` itself. Also test the comma cases of `web/src/lib/usd.ts` (`dollarsToMicros` strips every comma, so `1,5` becomes 15 and `1,2,3` becomes 123: refuse them), a `.5` input and more than six decimals, and give a negative dollar cap an `RST` code instead of a local refusal without one (P1-41 verifier MINORs).
 - **Delivers**: the changes with tests.
 - **Done when**: each item has a test or a document edit; `npm run live:openai` works without extra flags; `npm run verify` green.
 - **Refs**: RF-420, RF-428, DEC-117, P1-27 (verifier MINORs).
@@ -1174,7 +1174,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-12
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/config/environment.ts`; `.env.example`; tests naming `ROSETTA_GALLERY`.
 - **Do**: remove `ROSETTA_GALLERY` from the environment loader, `.env.example` and the tests; the gallery is served at `/dev/gallery` in development only (DEC-126).
 - **Delivers**: the removal with its tests.
@@ -1200,10 +1200,178 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `tests/`; `vitest.config.ts`.
-- **Do**: find why `jsonl-event-log.test.ts`, `architecture-rules.test.ts` and the run-scan tests time out under full-suite load on Windows (EBUSY temp-directory cleanup, depcruise runs); fix the slow path or give those files their own timeout with a comment saying why.
+- **Do**: find why `jsonl-event-log.test.ts`, `architecture-rules.test.ts` and the run-scan tests time out under full-suite load on Windows (EBUSY temp-directory cleanup, depcruise runs); fix the slow path or give those files their own timeout with a comment saying why. Set a default `maxWorkers` for the local Vitest run that keeps a Windows machine below the load that causes the flakes, so agents need not pass `--maxWorkers`.
 - **Delivers**: the fix.
 - **Done when**: three consecutive full `npm run verify` runs on Windows pass without a timeout.
 - **Refs**: RNF-002, P1-29 and P1-31 builder and verifier notes.
+
+### P1-95 - Live run page: stage stepper, Pause updates and the run meter in the top bar
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P1-35
+- **Gate**: G-02
+- **Status**: Todo
+- **Reads**: `docs/design/board/LiveRun.dc.html` and `Main.dc.html` (the "This run" meter in the top bar); `docs/design-system.md` sections 1 (principles 2 and 6), 4 (Pause updates) and 5 (Pipeline stepper, Header totals, Cost meter); `web/src/pages/LiveRunPage.tsx`; `web/src/components/Header.tsx`; pull request #211 and its verdict.
+- **Do**: add the three parts of the live run artboard that P1-35 left out. (1) A stage stepper above the panels: an ordered list Snapshot, Scan, Understand, Verify, Report with each step done, current (`aria-current="step"`) or waiting, and the counts the board shows (files and areas scanned, agents done of planned, claims checked of proposed) taken from the run events and the run row; a stage the run does not include stays waiting. (2) A "Pause updates" button that freezes the agent panels, overview and event log for reading while the stream keeps filling a buffer; a counter shows how many events wait, the button then reads "Resume" and applies them in order; Stop run stays usable, nothing moves under the pointer, and the state is announced through the page's one polite status. (3) The "This run" meter in the top bar next to the project totals: `role="meter"` with a label, spent of cap and share, the warning states at 80% and 95% (design-system.md section 5), shown only while the run is active and updated from the run total the page already reads. The classes carry their own prefixes (`rst-live-stepper-`, `rst-live-pause-`, `rst-topbar-runmeter-`) in their own stylesheet and reuse no class of another page card, because parallel page cards collided on `.rst-meter` (P1-34, P1-42).
+- **Delivers**: the three components, their styles and unit tests; E2E specs against the real server with the fake provider and no mocked API or event stream (no `page.route`): the stepper moves through the stages of a recorded run, Pause holds the panels while the counter rises and Resume applies the held events in order, the top-bar meter shows the cap share while the run is active and leaves when it ends; axe passes in light and dark at desktop and phone width.
+- **Done when**: the RF-1002, RF-1003 and RF-1010 scenarios that name the stepper, the pause and the run meter have passing E2E tests; the verifier walks the page at 1280x800 in both schemes against the artboard; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1002, RF-1003, RF-424, RF-1010, RF-1006, DEC-46, DEC-49, DEC-71, P1-35 (verdict on #211; builder question answered by the owner 2026-10-12: build them).
+
+### P1-96 - Follow-up: live cost per role from usage and budget events
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-27, P1-33, P1-35
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/budget/`; `src/application/budget/`; `src/application/understand/`; `docs/data-model.md` event table (`usage.recorded`, `budget.warning`, `budget.capReached`); `web/src/lib/live-run/`; ADR-007.
+- **Do**: make the budget guard of a run report to the run's event sink: `usage.recorded` after every recorded call with the fields of the data model (call id, role, provider, model, tokens, cost, run totals, project totals), `budget.warning` at 50, 80 and 95 percent of a cap and `budget.capReached` when a cap stops the run; the events never carry prompts, answers or keys, and a failing sink never fails the call or lets a call skip the guard. On the live run page show tokens and cost per role and per agent from `usage.recorded` instead of a dash, keep the total re-read from the run as the check, and remove the page note that says per-role cost is missing (P1-35).
+- **Delivers**: the guard reporting, the page change and their tests, including a recorded understand run whose events give a cost for each role.
+- **Done when**: a recorded run shows a cost per role and per agent on the page; each warning level and the cap stop emit one event; removing the emission from the guard fails a test; a throwing sink does not change the guard's decision; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-421, RF-422, RF-424, RF-1003, RF-1010, ADR-007, P1-33 (not done: usage and budget events), P1-35 (verdict: per-role cost).
+
+### P1-97 - Follow-up: build the report from the run page and check the replay without JavaScript
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-35, P1-43
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/web/run-file-routes.ts`; `web/src/pages/LiveRunPage.tsx`; `templates/report/`; `Dockerfile`; DEC-131; the verdict comments on #197.
+- **Do**: add a "Build report" control to the page of an ended run that calls `POST /api/runs/:runId/report` (DEC-131: built when the owner asks, never while the run is queued or running, 409 `runInProgress` shown as a plain sentence, 404 for another user's run) and then links the report and the replay page; P1-46 needs it for its journey. Also: run axe on the replay page with JavaScript off (P1-43 ran it with JavaScript on only); add a test that the image ships `templates/report/` with its CSS and JavaScript files; make a report that fails part-way leave every file whole (write each to a temporary name and rename, as `writeText` does) and say in `docs/data-model.md` 3.17 that the set of files is not written atomically; add a route test that a report build on a run with no events answers `RST-1701`; write down in `docs/data-model.md` 3.17 that the meta CSP of the report carries no `frame-ancestors` because only the header can (the header sets it).
+- **Delivers**: the control, the checks and the document lines, with tests and an E2E spec that builds a report from the page of a finished recorded run.
+- **Done when**: a finished run builds its report from the page and shows the links; a running run shows the control disabled with the reason; axe passes on the replay page with JavaScript off; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-504, RF-506, RF-507, RF-1013, RF-1008, DEC-131, P1-43 (verdict on #197: round 1 and 2 MINORs and builder questions).
+
+### P1-98 - Follow-up: citation range check and stable ids in the understand run
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-33
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/verifier/citation-check.ts`; `src/application/use-cases/run-understand.ts`; `docs/data-model.md` 3.6; RF-200, RF-203, RF-300.
+- **Do**: make the citation check refuse a citation whose start or end is not an integer or that breaks `1 <= start <= end`, with the reason `CitationInvalid`; add an integration test that a second understand run on the same snapshot re-checks the card ids and area names of the first (RF-203); say in the data model and the request documentation that an empty `areas` list means every area.
+- **Delivers**: the check, the test and the document lines.
+- **Done when**: a citation `src/A.cs:0-3`, `:5-2` or `:1.5-3` is marked `CitationInvalid` with its reason and never deleted; the RF-203 re-run test passes; `npm run verify` green.
+- **Refs**: RF-203, RF-300, RF-200, P1-33 (verifier MINORs).
+
+### P1-99 - Follow-up: parse budget validation and configuration
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-75
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/scan/packs/`; `src/application/use-cases/compose-runs.ts`; `src/infrastructure/config/environment.ts`; `docs/environments-and-delivery.md`; `.env.example`.
+- **Do**: validate the parse budget `totalMs` (a positive whole number within a stated maximum; `NaN`, zero and negative values never silently mean "no budget" or "already spent") and read it from the configuration loader with the present 2 minutes as the default, listed in `docs/environments-and-delivery.md` and `.env.example`, instead of the fixed value in `compose-runs.ts`; test and document that a language pack that cannot be stopped overruns the budget by at most the file it is parsing. The time-based budget against the deterministic scan of RF-106 is an open owner question (handoff 2026-10-12); this card keeps the budget as built.
+- **Delivers**: the validation, the wiring, the document lines and tests.
+- **Done when**: an invalid value is refused at start-up with a code and the field; a changed value changes the budget in a run; the overrun test passes; `npm run verify` green.
+- **Refs**: RF-110, RF-106, RNF-004, P1-75 (verifier MINORs).
+
+### P1-100 - Follow-up: statements hidden after an unterminated key marker
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-76
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/scan/universal/sql-script.ts`; the tests of the SQL script scan.
+- **Do**: finish the two cases P1-76 left: a bare statement verb on a line after an unterminated `BEGIN ... PRIVATE KEY` marker is masked as key text and its statement is lost (no leak, but it is lost), and an unterminated marker before a later complete key hides the statements between them (only the span after the last END is bounded). Keep each of these statements in the code map or record the notice that statements were hidden by masking, and never let a key body through. The trade-off for a bare `SELECT` line is an open owner question (handoff 2026-10-12); until it is answered keep the behaviour as built and add the tests that pin it.
+- **Delivers**: the change with fixture tests.
+- **Done when**: a file with an unterminated marker before a complete key keeps the statements between them or records the notice; no key body appears in `codemap.json` in any fixture; `npm run verify` green.
+- **Refs**: RNF-003, RF-104, P1-76 (verifier MINORs, round 2).
+
+### P1-101 - Follow-up: audit filters, free-text masking and the cost bound
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-77
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/db/pg-audit-log.ts`, `audit-rows.ts`; the memory audit log; `tests/contracts/`; ADR-015.
+- **Do**: make the PostgreSQL and the memory audit log agree on a filter with an upper-case user id and on a NUL in the action filter (RST-2404 on one and an empty result on the other today) and cover both in the contract suite; mask the words after the first in a quoted multi-word "password is ..." sentence; take the hard-coded cost bound of 2^17 from the scrypt cost N that ADR-015 names instead of repeating the number.
+- **Delivers**: the changes with contract and unit tests.
+- **Done when**: both audit adapters give the same answer for the two filters; "password is a long phrase" leaves no word of the phrase in a stored row; the bound follows the ADR value; `npm run verify` green.
+- **Refs**: RF-1109, RNF-003, ADR-015, P1-77 (verifier MINORs).
+
+### P1-102 - Follow-up: test and document gaps from P1-70, P1-73, P1-90 and P1-92
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-70, P1-73, P1-90, P1-92
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/openai/openai-provider.ts`; `docs/providers.md`; `src/application/use-cases/compose-runs.ts`; `src/infrastructure/understand/tool-reads.ts`; the gallery route and its tests.
+- **Do**: add the tests the verifiers found missing: a key with U+00FF is accepted; the `RosettaError` code is kept when `compose-runs.ts` spreads an error; the post-filter of `tool-reads.ts` has a test; the mirror contract covers case, `..` and backslash paths; a leftover `ROSETTA_GALLERY` in the environment is ignored; and fix two lines: the RST-1511 row of `docs/providers.md` lists only 401 but the code also uses it for a refused key, and `/dev/gallery` answers a literal 404 in production (or the documentation says what it answers).
+- **Delivers**: the tests and the two document or route lines.
+- **Done when**: each listed gap has a test that fails when its guard is removed; `npm run verify` green.
+- **Refs**: RF-402, RF-145, DEC-126, P1-70, P1-73, P1-90, P1-92 (verifier MINORs).
+
+### P1-103 - Follow-up: Ollama and OpenAI adapter gaps found in P1-66
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P1-66
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/ollama/text-tool-protocol.ts`; `src/infrastructure/providers/openai/`; `docs/providers.md`; the run manifest writer.
+- **Do**: make the fenced-block parser of `parseTextAnswer` linear (a 2.5 MB answer takes 3.2 s today); pass `redirect: 'error'` for the fetch of the Ollama and the OpenAI adapters so a redirect never leads the call to another address; record the `sha256` that the text-tool-protocol loader returns next to its version in the run manifest; widen the margin of the "opening tags with text" growth test.
+- **Delivers**: the changes with tests.
+- **Done when**: a 2.5 MB fenced answer parses in under 100 ms; a 302 from the fake server is an error and the second address is never called; the manifest lists the protocol file hash; `npm run verify` green.
+- **Refs**: RF-205, RF-401, RF-402, RNF-004, ADR-013, P1-66 (verifier MINORs, rounds 1 and 2).
+
+### P1-104 - Follow-up: Ollama tool results as framed data blocks
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P1-89, P1-25
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/ollama/`; `src/domain/egress/`; ADR-013; DEC-129; `docs/providers.md` section 2.
+- **Do**: the Ollama adapter sends tool results as JSON-stringified text, so the lines of a data-block frame reach the model as an escaped `\n` string and not as lines; send the result text as the content of the tool message so the opening and closing markers with their random tag (DEC-129) stand on their own lines, and add a contract test on the fake Ollama server that the request it receives holds the frame on separate lines; check that the OpenAI adapter does the same. This card depends on P1-89 because the tag comes from it.
+- **Delivers**: the change and the contract test.
+- **Done when**: the body the fake Ollama server receives holds each marker alone on its line; the egress guard still passes the request; `npm run verify` green.
+- **Refs**: RF-145, RF-205, ADR-013, DEC-129, P1-89 (builder note).
+
+### P1-105 - Follow-up: run list read API and the Projects page run columns
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P1-41, P1-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/web/run-routes.ts`; `web/src/pages/ProjectsPage.tsx`; `docs/design/board/Projects.dc.html`; RF-1108.
+- **Do**: add a read API for a signed-in user's projects with, for each, the project totals, the latest run with its state and the queue position of a queued run, then use it on the Projects page for the columns and the queue notice; add "Cancel queued run" (RF-1108). The access matrix and the owner scope apply to every row.
+- **Delivers**: the route, the page columns, the queue notice with Cancel, integration and E2E tests against the real server.
+- **Done when**: the Projects page shows totals, last run and queue position from the server; a queued run can be cancelled and another user's run answers 404; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1001, RF-1008, RF-1108, RF-1105, P1-41 (verifier note).
+
+### P1-106 - Follow-up: cap, spend and queue read APIs and a settings version check
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P1-34, P1-42
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/web/`; `src/application/budget/`; `web/src/pages/EstimateSection.tsx`, `StageAreasSection.tsx`, `ServerMeter.tsx`; DEC-108; check P1-36 first.
+- **Do**: add the read APIs the start page and the administration page lack: the caps and spend remaining for the user's day and the server's month, for the estimate warning of DEC-108 (reuse the totals of P1-36 when they have landed instead of a second source; own-key spend stays out of the server total, RF-1106); the position of a queued run with polling on the start page; and a version check (`If-Match` or a version field) on the project settings `PUT` so two tabs or a cap edit and a settings save cannot overwrite each other.
+- **Delivers**: the routes, the client changes and tests including a lost-update race test on PostgreSQL.
+- **Done when**: the start page warning names the real remaining cap; a stale settings save is refused with a code; the server month meter excludes own-key spend; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1001, RF-1106, RF-1108, RF-428, DEC-108, P1-34 and P1-42 (verifier MINORs and builder notes).
+
+### P1-107 - Follow-up: start run and administration page polish
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-34, P1-42, P1-41
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/pages/`; `docs/design/board/StartRun.dc.html`, `AdminUsers.dc.html`, `AdminAudit.dc.html`; `web/src/pages/provider-choices.ts`; `templates/project-settings.json`.
+- **Do**: start page: show a model without a price as "unknown" and flag that the estimate total excludes it; warn that a run on the server key may be refused when the server has no key (`providerKeyMissing`); open the start page when a project URL is already known; refuse unknown estimate query parameters such as `?areas[]=` with a clear message instead of ignoring them; take the provider defaults from the project settings template (serve it, or test the two stay in step). Administration: one line for the row actions, a name filter, a server keys column or checkbox, unlock and an account filter, period and outcome filters on the audit page, the cap banner in the shell slot, and the status an `/admin/*` page answers (403 or the shell). Classes keep the prefix of their page.
+- **Delivers**: the page changes with E2E specs against the real server.
+- **Done when**: each item has a passing E2E or unit test; axe passes at desktop and phone width in both schemes; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1001, RF-1100, RF-1106, RF-1109, DEC-71, P1-34, P1-41, P1-42 (verifier MINORs and builder notes).
+
+### P1-108 - Follow-up: configuration, image and README gaps from P1-15, P1-44 and P1-45
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-15, P1-44, P1-45
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/config/environment.ts`; `Dockerfile`; `compose.yaml`; `README.md`; `docs/runbooks/`; the surface contract text in `docs/design/`.
+- **Do**: refuse a malformed contact address (`isEmail` accepts `?cc=` and quotes) and refuse a known or all-zero `ROSETTA_SECRET_KEY` at start-up with a code; fix the stale status line of `README.md` ("documentation phase (P0)"); change the wording "no fakes" in the image documentation to say that no tests or scripts ship and the compiled fakes in `dist` are reachable only with `ROSETTA_TEST=1`; align the cap text of the surface contract with the 0.50 default (it says 2.00); remove the runtime `apt-get upgrade` from the image once Dependabot has moved the base image digest; document the rotation of the database role passwords in the runbook.
+- **Delivers**: the checks, the document edits and tests.
+- **Done when**: an all-zero secret key stops start-up with a code and no value in the log; the README states the real phase; `npm run verify` green and the compose smoke job green.
+- **Refs**: RNF-003, RF-1301, RF-1302, RF-1303, P1-15, P1-44, P1-45 (verifier MINORs and builder notes).
 
 ---
 
