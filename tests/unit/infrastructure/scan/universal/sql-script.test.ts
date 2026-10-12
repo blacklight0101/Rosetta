@@ -183,15 +183,15 @@ describe('comment lines inside a SQL statement', () => {
   });
 });
 
-describe('an unterminated private key marker in a SQL script', () => {
-  const begin = ['-----BEGIN', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
-  const body = ['Qp4Rt8', 'Vn2Ky6', 'Hj5Wd3'].map((part) => part.repeat(11));
-  const statements = [
-    'INSERT INTO Item (Id) VALUES (1);',
-    'UPDATE Item SET Id = 2 WHERE Id = 1;',
-    'DELETE FROM Item WHERE Id = 2;',
-  ];
+const begin = ['-----BEGIN', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
+const body = ['Qp4Rt8', 'Vn2Ky6', 'Hj5Wd3'].map((part) => part.repeat(11));
+const statements = [
+  'INSERT INTO Item (Id) VALUES (1);',
+  'UPDATE Item SET Id = 2 WHERE Id = 1;',
+  'DELETE FROM Item WHERE Id = 2;',
+];
 
+describe('an unterminated private key marker in a SQL script', () => {
   it('RF-104 a comment that only mentions the marker keeps the three statements after it', () => {
     const lines = [`-- the service key file starts with ${begin}`, ...statements];
     const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
@@ -218,8 +218,26 @@ describe('an unterminated private key marker in a SQL script', () => {
       begin,
       'Proc-Type: 4,ENCRYPTED',
       'DEK-Info: AES-128-CBC,0011',
-      '',
       ...body,
+      "');",
+      ...statements,
+    ];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+    const text = JSON.stringify(found);
+
+    for (const part of body) expect(text).not.toContain(part.slice(0, 20));
+    expect(found.slice(-3).map((s) => s.text)).toEqual(statements);
+  });
+});
+
+describe('an unterminated private key marker, verb word in the key body', () => {
+  it('RNF-003 a key body line that is only a SQL verb word does not end the masked span', () => {
+    const lines = [
+      "INSERT INTO Keys (Pem) VALUES ('",
+      begin,
+      ...body.slice(0, 1),
+      'Select',
+      ...body.slice(1),
       "');",
       ...statements,
     ];
