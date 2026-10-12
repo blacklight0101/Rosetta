@@ -9,7 +9,11 @@ import { FieldProblemsError } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { signedInOf } from './request-actor.js';
 import { secureCookie, SESSION_COOKIE } from './session-cookies.js';
-import { MAX_PASSWORD_LENGTH, PASSWORD_BODY_LIMIT_BYTES, PASSWORD_RATE } from './session-routes.js';
+import {
+  MAX_PASSWORD_LENGTH,
+  PASSWORD_BODY_LIMIT_BYTES,
+  PASSWORD_RATE,
+} from './password-limits.js';
 
 // RF-1103, RF-1102: the signed-in user's own account.
 // - POST /api/account/password changes the password with the current one. It is the one route

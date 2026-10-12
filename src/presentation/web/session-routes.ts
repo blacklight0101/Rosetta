@@ -4,6 +4,11 @@ import type { SignIn } from '../../application/use-cases/sign-in.js';
 import type { SignOut } from '../../application/use-cases/sign-out.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import {
+  MAX_PASSWORD_LENGTH,
+  PASSWORD_BODY_LIMIT_BYTES,
+  PASSWORD_RATE,
+} from './password-limits.js';
 import { signedInOf } from './request-actor.js';
 import { secureCookie, SESSION_COOKIE } from './session-cookies.js';
 
@@ -22,15 +27,8 @@ export interface SessionRouteOptions {
   readonly signOut: SignOut;
 }
 
-/** The body and password caps of every route that takes a password (P1-09, P1-10). */
-export const PASSWORD_BODY_LIMIT_BYTES = 4096;
-export const MAX_PASSWORD_LENGTH = 1024;
-const SIGN_IN_BODY_LIMIT_BYTES = PASSWORD_BODY_LIMIT_BYTES;
 const MAX_USER_NAME_LENGTH = 200;
 const MAX_PENDING_SIGN_INS = 8;
-/** Attempts per minute per address on the routes that verify a password (RF-1100). */
-export const PASSWORD_RATE = { max: 10, timeWindow: 60_000 } as const;
-const SIGN_IN_RATE = PASSWORD_RATE;
 
 const signInBody = z
   .object({
@@ -50,8 +48,8 @@ function registerSignIn(server: FastifyInstance, signIn: SignIn): void {
   server.post(
     '/api/session',
     {
-      bodyLimit: SIGN_IN_BODY_LIMIT_BYTES,
-      config: { access: 'public', rateLimit: SIGN_IN_RATE },
+      bodyLimit: PASSWORD_BODY_LIMIT_BYTES,
+      config: { access: 'public', rateLimit: PASSWORD_RATE },
     },
     async (request, reply) => {
       const body = parseSignIn(request.body);

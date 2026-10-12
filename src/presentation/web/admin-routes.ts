@@ -13,7 +13,7 @@ import { FieldProblemsError } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { formatInstant } from '../../infrastructure/system/instant.js';
 import { signedInOf } from './request-actor.js';
-import { MAX_PASSWORD_LENGTH, PASSWORD_BODY_LIMIT_BYTES } from './session-routes.js';
+import { MAX_PASSWORD_LENGTH, PASSWORD_BODY_LIMIT_BYTES } from './password-limits.js';
 
 // RF-1102, RF-1107, RF-1109: the account administration API; every route needs the `admin` role
 // (a `user` gets 403, access matrix).
