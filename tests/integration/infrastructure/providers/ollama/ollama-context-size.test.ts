@@ -98,8 +98,7 @@ describe('OllamaProvider with contextTokens auto when Ollama cannot be probed', 
 
   it('RF-401 does not keep a fallback: a call after the back-off probes again', async () => {
     const clock = { ms: 1_000_000 };
-    const overrides = { now: () => clock.ms };
-    const { provider, server } = await start('context-ps-unavailable', overrides);
+    const { provider, server } = await start('context-ps-unavailable', { now: () => clock.ms });
 
     await provider.complete(contractRequest());
     clock.ms += FALLBACK_BACKOFF_MS;

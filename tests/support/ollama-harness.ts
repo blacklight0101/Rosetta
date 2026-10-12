@@ -4,6 +4,10 @@ import {
   OllamaProvider,
   type OllamaProviderOptions,
 } from '../../src/infrastructure/providers/ollama/ollama-provider.js';
+import {
+  clearContextCache,
+  processContextCache,
+} from '../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { FakeOllamaServer, loadOllamaRecording } from './fake-ollama-server.js';
 import { RecordingLogger } from './recording-logger.js';
@@ -36,6 +40,7 @@ export function useFakeOllama(): (
   const servers: FakeOllamaServer[] = [];
   afterEach(async () => {
     await Promise.all(servers.splice(0).map((server) => server.stop()));
+    clearContextCache(processContextCache);
   });
   return async (recording, overrides = {}) => {
     const server = new FakeOllamaServer(await loadOllamaRecording(recording));

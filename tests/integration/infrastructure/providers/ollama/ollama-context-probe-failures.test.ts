@@ -61,8 +61,10 @@ describe('OllamaProvider context size on retried attempts', () => {
 
 describe('OllamaProvider context probe timeouts', () => {
   it('RF-401 a hanging /api/show costs at most the probe timeout', async () => {
-    const overrides = { timeoutSeconds: 3, probeTimeoutSeconds: 0.2 };
-    const { provider, server } = await start('context-show-hangs', overrides);
+    const { provider, server } = await start('context-show-hangs', {
+      timeoutSeconds: 3,
+      probeTimeoutSeconds: 0.2,
+    });
     const startedAt = performance.now();
 
     const response = await provider.complete(contractRequest());
@@ -73,8 +75,10 @@ describe('OllamaProvider context probe timeouts', () => {
   }, 10_000);
 
   it('RF-401 stopping one of two callers sharing a measurement leaves the other to finish', async () => {
-    const overrides = { timeoutSeconds: 3, probeTimeoutSeconds: 0.2 };
-    const { provider, server, another } = await start('context-show-hangs', overrides);
+    const { provider, server, another } = await start('context-show-hangs', {
+      timeoutSeconds: 3,
+      probeTimeoutSeconds: 0.2,
+    });
     const controller = new AbortController();
 
     const stopped = failureOf(provider.complete(contractRequest(controller.signal)));
