@@ -76,12 +76,22 @@ export const ERROR_CODES = {
   logFileFailed: 'RST-2102',
   providerCallLogFailed: 'RST-2103',
   invalidCredentials: 'RST-2201',
+  passwordTooShort: 'RST-2202',
+  passwordTooCommon: 'RST-2203',
+  passwordContainsUserName: 'RST-2204',
+  userNameTaken: 'RST-2205',
+  userNameInvalid: 'RST-2206',
+  displayNameInvalid: 'RST-2207',
+  accountStateInvalid: 'RST-2208',
+  passwordHashInvalid: 'RST-2209',
   baseUrlRejected: 'RST-2304',
   migrationFileInvalid: 'RST-2400',
   migrationChanged: 'RST-2401',
   migrationUnknown: 'RST-2402',
   migrationFailed: 'RST-2403',
+  databaseQueryFailed: 'RST-2404',
   versionUnreadable: 'RST-2500',
+  commonPasswordsUnreadable: 'RST-2501',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

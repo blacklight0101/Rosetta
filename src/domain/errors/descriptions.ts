@@ -1,10 +1,14 @@
 import type { ErrorCode, ErrorDescription } from './codes.js';
+import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descriptions.js';
 
 // RF-007: the plain message and the next step of every code in ERROR_CODES, in numeric order. The
 // codes themselves live in codes.ts (which imports nothing); a new code adds its entry here in
-// the same change, and describeError is the only way to read the table.
+// the same change, and describeError is the only way to read the table. The codes from RST-2000
+// on live in server-descriptions.ts, so neither file passes the size limit.
 
-const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
+const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
+  Record<Exclude<ErrorCode, ServerErrorCode>, ErrorDescription>
+> = {
   'RST-1000': {
     message: 'The server configuration is missing or invalid.',
     nextStep:
@@ -183,74 +187,11 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
     message: 'The snapshot could not be written to the data folder.',
     nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
   },
-  'RST-2000': {
-    message: 'The request is not valid.',
-    nextStep: 'Check the values you sent and try again.',
-  },
-  'RST-2001': {
-    message: 'You are not signed in.',
-    nextStep: 'Sign in and try again.',
-  },
-  'RST-2002': {
-    message: 'You are not allowed to do this.',
-    nextStep: 'Ask an administrator if you need access.',
-  },
-  'RST-2003': {
-    message: 'The page or item was not found.',
-    nextStep: 'Check the address, or go back to your projects.',
-  },
-  'RST-2004': {
-    message: 'The request conflicts with the current state.',
-    nextStep: 'Reload the page to see the latest state, then try again.',
-  },
-  'RST-2005': {
-    message: 'Too many requests.',
-    nextStep: 'Wait a minute and try again.',
-  },
-  'RST-2006': {
-    message: 'Something unexpected went wrong.',
-    nextStep: 'Try again; if it keeps failing, ask the operator to check the application log.',
-  },
-  'RST-2101': {
-    message: 'Secret masking failed, so the content was withheld.',
-    nextStep: 'Nothing was sent or logged unmasked; check the application log and try again.',
-  },
-  'RST-2102': {
-    message: 'The application log folder could not be written.',
-    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
-  },
-  'RST-2103': {
-    message: 'The provider call log or a transcript could not be written.',
-    nextStep: 'Check that the data folder exists, has free space and is writable by Rosetta.',
-  },
-  'RST-2201': {
-    message: 'User name or password is incorrect.',
-    nextStep: 'Check both and try again.',
-  },
-  'RST-2304': {
-    message: 'The URL must use https and a public address.',
-    nextStep: 'Enter an https address that is reachable from the internet.',
-  },
-  'RST-2400': {
-    message: 'A database migration file has an invalid name or a duplicate number.',
-    nextStep: 'Name each file NNNN_snake_name.sql with a number used once, then start again.',
-  },
-  'RST-2401': {
-    message: 'A database migration that was already applied has been changed.',
-    nextStep: 'Restore the original file and put the change in a new numbered migration.',
-  },
-  'RST-2402': {
-    message: 'The database has a migration that this version of Rosetta does not know.',
-    nextStep: 'Run the Rosetta version that applied it, or restore the database from a backup.',
-  },
-  'RST-2403': {
-    message: 'A database migration failed; the previous schema was kept.',
-    nextStep: 'Read the cause in the log, fix the migration and start again.',
-  },
-  'RST-2500': {
-    message: 'The Rosetta version could not be read from package.json.',
-    nextStep: 'Rebuild or reinstall Rosetta so that package.json ships next to the server.',
-  },
+};
+
+const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
+  ...PIPELINE_ERROR_DESCRIPTIONS,
+  ...SERVER_ERROR_DESCRIPTIONS,
 };
 
 export function describeError(code: ErrorCode): ErrorDescription {
