@@ -167,7 +167,11 @@ describe('YazlArchiveWriter and large runs', () => {
     for (let tick = 0; tick < 50; tick += 1) await nextTick();
     const buffered = stream.readableLength;
     stream.destroy();
+    // Closing the download early must leave no error behind and no file open (the temporary
+    // folder is removed after the test).
+    for (let tick = 0; tick < 50; tick += 1) await nextTick();
 
     expect(buffered).toBeLessThan(1024 * 1024);
+    expect(stream.destroyed).toBe(true);
   });
 });

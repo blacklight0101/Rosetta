@@ -1,8 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { Readable } from 'node:stream';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { ArchiveWriter } from '../../../../src/application/ports/archive-writer.js';
 import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { ok } from '../../../../src/domain/errors/result.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { YazlArchiveWriter } from '../../../../src/infrastructure/files/yazl-archive-writer.js';
 import { treeOf, treeOfEntries } from '../../../support/folder-tree.js';
@@ -21,6 +24,11 @@ afterEach(async () => {
   await current?.server.close();
   current = undefined;
 });
+
+/** Archives any run as the same few bytes; the name under test does not depend on the content. */
+const anyArchive: ArchiveWriter = {
+  archive: () => Promise.resolve(ok(Readable.from([Buffer.from('PK')]))),
+};
 
 const files = {
   'manifest.json': '{"schemaVersion":1}\n',
@@ -173,7 +181,7 @@ describe('GET /api/runs/:runId/handoff.zip', () => {
 
 describe('the download file name', () => {
   it('RF-008 never carries a quote, a line break or a path in Content-Disposition', async () => {
-    const { test, amy, amyId } = await setup();
+    const { test, amy, amyId } = await setup({ archiveWriter: anyArchive });
     const hostile = sampleRun({
       userId: amyId,
       runKey: '20261012-100000-scan"\r\nSet-Cookie: x=1; /../',
@@ -183,7 +191,6 @@ describe('the download file name', () => {
       endedAt: 2,
     });
     await test.runs.runs.insert(hostile);
-    test.archives.seed(test.runs.scopeOf(hostile), files);
 
     const response = await amy.request({ method: 'GET', url: zipUrl(hostile) });
 

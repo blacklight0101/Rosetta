@@ -9,7 +9,7 @@ import { collectBytes, filesOf, readZip } from '../support/zip-reader.js';
 // archive only `handoff/`; a run without that folder is refused; RF-1105: the owner is part of
 // the scope, so another user's scope finds nothing.
 
-export interface ArchiveFixture {
+interface ArchiveFixture {
   readonly writer: ArchiveWriter;
   /** Gives the run a folder with these files (`path` relative to the run folder). */
   readonly seed: (scope: RunScope, files: Readonly<Record<string, string>>) => Promise<void>;

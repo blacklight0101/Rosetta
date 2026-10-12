@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { EstimateRun } from '../../application/estimate/estimate-run.js';
+import { Readable } from 'node:stream';
+import type { ArchivePart } from '../../application/ports/archive-writer.js';
 import type { Scheduler } from '../../application/ports/scheduler.js';
 import type { ExportZip } from '../../application/use-cases/export-zip.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
@@ -26,6 +28,9 @@ import { runView } from './run-view.js';
 // - GET /api/runs/:runId/events streams the run's events as server-sent events: the stored events
 //   after `Last-Event-ID` (or `?after=`), then the live ones, closing after `run.ended`. Another
 //   user's run id answers 404 like an unknown one.
+// - GET /api/runs/:runId/zip and /api/runs/:runId/handoff.zip stream the run folder, or only its
+//   handoff/ folder, as a zip download (RF-008): 409 (RST-1700) while the run is queued or
+//   running, 404 for another user's run id, an unknown id and a run without that folder.
 // - POST /api/runs/:runId/stop aborts a running run (202, it ends as Interrupted when its work
 //   stops) or cancels a queued one (200); a run that has ended answers 409.
 
@@ -137,6 +142,37 @@ function registerEvents(server: FastifyInstance, services: RunServices): void {
   );
 }
 
+/** Streams one part of a run as an attachment; the file name comes from the run key, cleaned. */
+function registerDownload(
+  server: FastifyInstance,
+  services: RunServices,
+  route: { readonly url: string; readonly part: ArchivePart },
+): void {
+  server.get<{ Params: { runId: string } }>(
+    route.url,
+    // A HEAD request would build the whole archive to throw it away; the route has no HEAD form.
+    { exposeHeadRoute: false, config: { access: 'user' } },
+    async (request, reply) => {
+      const outcome = await services.exportZip.execute({
+        actor: signedInOf(request).actor,
+        runId: request.params.runId,
+        part: route.part,
+      });
+      if (!outcome.ok) {
+        throw new RosettaError(
+          outcome.error === 'in-progress' ? ERROR_CODES.runInProgress : ERROR_CODES.notFound,
+        );
+      }
+      const { fileName, body } = outcome.value;
+      return reply
+        .header('content-type', 'application/zip')
+        .header('content-disposition', `attachment; filename="${fileName}"`)
+        .header('cache-control', 'no-store')
+        .send(Readable.from(body));
+    },
+  );
+}
+
 function registerStop(server: FastifyInstance, services: RunServices): void {
   server.post<{ Params: { runId: string } }>(
     '/api/runs/:runId/stop',
@@ -201,6 +237,8 @@ function registerEstimate(server: FastifyInstance, services: RunServices): void 
 // RF-1006, RF-1108, RF-1105
 export function registerRunRoutes(server: FastifyInstance, services: RunServices): void {
   registerEvents(server, services);
+  registerDownload(server, services, { url: '/api/runs/:runId/zip', part: 'run' });
+  registerDownload(server, services, { url: '/api/runs/:runId/handoff.zip', part: 'handoff' });
   registerStop(server, services);
   registerStart(server, services);
   registerEstimate(server, services);
