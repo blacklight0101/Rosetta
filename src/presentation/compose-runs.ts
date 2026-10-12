@@ -7,6 +7,7 @@ import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
 import { BuildReport } from '../application/use-cases/build-report.js';
 import { ExportZip } from '../application/use-cases/export-zip.js';
+import { GetRun } from '../application/use-cases/get-run.js';
 import { ReadRunFile } from '../application/use-cases/read-run-file.js';
 import { RunScan } from '../application/use-cases/run-scan.js';
 import { StartRun } from '../application/use-cases/start-run.js';
@@ -157,6 +158,7 @@ function runServices(service: ServiceParts): RunServices {
       keys: new PgProviderKeyRepository(parts.pool),
       priceTable: parts.priceTable,
     }),
+    getRun: new GetRun({ runs }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),

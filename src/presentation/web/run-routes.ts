@@ -5,6 +5,7 @@ import { Readable } from 'node:stream';
 import type { ArchivePart } from '../../application/ports/archive-writer.js';
 import type { Scheduler } from '../../application/ports/scheduler.js';
 import type { ExportZip } from '../../application/use-cases/export-zip.js';
+import type { GetRun } from '../../application/use-cases/get-run.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
 import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-run-events.js';
@@ -26,6 +27,9 @@ import { runView } from './run-view.js';
 //   per role as low, likely and high, with the assumptions. `areas` (repeated) names the areas to
 //   estimate; one the code map does not have answers 400 (RST-1307), a project without a completed
 //   scan 409 (RST-1203), another user's project 404.
+// - GET /api/runs/:runId gives the run as the start answered it (stage, queue and end state, project,
+//   totals so far): the live run page reads it for a run that has no event yet. Another user's run
+//   id answers 404 like an unknown one.
 // - GET /api/runs/:runId/events streams the run's events as server-sent events: the stored events
 //   after `Last-Event-ID` (or `?after=`), then the live ones, closing after `run.ended`. Another
 //   user's run id answers 404 like an unknown one.
@@ -38,6 +42,7 @@ import { runView } from './run-view.js';
 export interface RunServices extends RunFileServices {
   readonly startRun: StartRun;
   readonly estimateRun: EstimateRun;
+  readonly getRun: GetRun;
   readonly subscribeRunEvents: SubscribeRunEvents;
   readonly stopRun: StopRun;
   readonly exportZip: ExportZip;
@@ -194,6 +199,21 @@ function registerStop(server: FastifyInstance, services: RunServices): void {
   );
 }
 
+function registerGet(server: FastifyInstance, services: RunServices): void {
+  server.get<{ Params: { runId: string } }>(
+    '/api/runs/:runId',
+    { exposeHeadRoute: false, config: { access: 'user' } },
+    async (request, reply) => {
+      const outcome = await services.getRun.execute({
+        actor: signedInOf(request).actor,
+        runId: request.params.runId,
+      });
+      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
+      return reply.status(200).send(runView(outcome.value));
+    },
+  );
+}
+
 function registerStart(server: FastifyInstance, services: RunServices): void {
   server.post<{ Params: { id: string } }>(
     '/api/projects/:id/runs',
@@ -237,6 +257,7 @@ function registerEstimate(server: FastifyInstance, services: RunServices): void 
 
 // RF-1006, RF-1108, RF-1105
 export function registerRunRoutes(server: FastifyInstance, services: RunServices): void {
+  registerGet(server, services);
   registerEvents(server, services);
   registerDownload(server, services, { url: '/api/runs/:runId/zip', part: 'run' });
   registerDownload(server, services, { url: '/api/runs/:runId/handoff.zip', part: 'handoff' });

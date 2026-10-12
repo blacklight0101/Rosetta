@@ -19,12 +19,9 @@ import {
 import { budgetRoutes, outputRoutes, type Context, type Probe } from '../support/access-probes.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
-// RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the
-// answer for anonymous, a user, another user, an administrator and an administrator whose password
-// must be changed (RF-1102: only the session API, the change-password route and page, and public
-// routes answer; other pages redirect to /account/password and other API routes answer 403). The
-// routes are read from the server itself (with the static front end mounted), so a new route
-// without a row fails this test.
+// RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the answer
+// for anonymous, a user, another user, an administrator and an administrator whose password must be
+// changed (RF-1102). The routes are read from the server itself, so a route without a row fails.
 
 const staticRoot = fileURLToPath(new URL('../fixtures/static-site/', import.meta.url));
 const ownCredentials = (user: TestUser | undefined): InjectOptions['payload'] => ({
@@ -115,6 +112,10 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   ],
   'HEAD /api/admin/users/:id/projects': [
     { method: 'HEAD', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
+  ],
+  'GET /api/runs/:runId': [
+    { method: 'GET', url: runUrl('', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid', expected: active(401, 404) },
   ],
   'GET /api/runs/:runId/events': [
     { method: 'GET', url: runUrl('/events', (c) => c.endedRunId), expected: ownerOnly(200) },

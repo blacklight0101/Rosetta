@@ -116,7 +116,7 @@ async function requestRun(steps: Steps): Promise<boolean> {
   const { id, position, stage } = result.value;
   show(
     position === null
-      ? { kind: 'started', stage }
+      ? { kind: 'started', stage, runId: id }
       : { kind: 'queued', runId: id, position, cancelError: undefined },
   );
   return false;

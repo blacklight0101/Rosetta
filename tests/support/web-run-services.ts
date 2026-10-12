@@ -6,6 +6,7 @@ import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
 import { BuildReport } from '../../src/application/use-cases/build-report.js';
 import { ReadRunFile } from '../../src/application/use-cases/read-run-file.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
+import { GetRun } from '../../src/application/use-cases/get-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -71,6 +72,7 @@ export function runServices(
 ): ServerOptions['runs'] {
   const { projects, keys } = stores;
   return {
+    getRun: new GetRun({ runs: runs.runs }),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),

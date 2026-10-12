@@ -62,7 +62,7 @@ every variable with a comment and a safe example.
 | `ROSETTA_DATA_DIR` | yes | no | `/data` in the image |
 | `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` | first start | yes | bootstrap administrator (RF-1102) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | no | yes | server keys (DEC-64) |
-| `ROSETTA_OLLAMA_URL` | no | no | `http://host.docker.internal:11434` locally; unset when hosted; the only source of the Ollama URL (DEC-112) |
+| `ROSETTA_OLLAMA_URL` | no | no | `http://host.docker.internal:11434` locally; unset when hosted; the only source of the Ollama URL (DEC-112); a user name or password in it is refused (`RST-1000`) |
 | `ROSETTA_CONTACT_EMAIL` | no | no | the landing page's "Request access" address (Q-20) |
 | `ROSETTA_LOG_LEVEL`, `ROSETTA_LOG_RETENTION_DAYS` | no | no | `info`, 14 |
 | `GITHUB_TOKEN` | no | yes | raises GitHub rate limits for snapshot downloads (RF-123) |

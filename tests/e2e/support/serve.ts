@@ -7,10 +7,11 @@ import '../../support/block-network.js';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { TestDoubles } from '../../../src/presentation/test-doubles.js';
-import { AnsweringProvider } from '../../support/answering-provider.js';
 import { FakeGitHub } from '../../support/fake-github.js';
+import { archiveOfFolder } from '../../support/tree-archive.js';
 import { FIXTURE_SHA, fixtureArchive } from '../../support/snapshot-fixtures.js';
 import { createDisposableSchema } from './database.js';
+import { createE2eProvider } from './e2e-provider.js';
 import { e2eContactEmail, e2ePort } from './server-config.js';
 import { seededAdmin, seedUsers } from './seed.js';
 import { seedReplayRuns } from './seed-replay.js';
@@ -36,8 +37,25 @@ async function requireFrontEnd(): Promise<void> {
   }
 }
 
+// P1-35: `octo/webforms` is the C# fixture repository, whose recorded understand run the live run
+// page journeys replay (e2e-provider.ts).
+async function webformsRepository(): Promise<ConstructorParameters<typeof FakeGitHub>[0][number]> {
+  return {
+    owner: 'octo',
+    repo: 'webforms',
+    defaultBranch: 'main',
+    refs: { main: FIXTURE_SHA },
+    archive: await archiveOfFolder(
+      join('tests', 'fixtures', 'repos', 'webforms-csharp'),
+      `octo-webforms-${FIXTURE_SHA.slice(0, 7)}`,
+    ),
+    licence: 'MIT',
+  };
+}
+
 async function demoGitHub(): Promise<FakeGitHub> {
   return new FakeGitHub([
+    await webformsRepository(),
     {
       owner: 'octo',
       repo: 'demo',
@@ -53,9 +71,8 @@ type Composer = (port: number) => ReturnType<typeof composeApplication>;
 
 /** Composes the application with the fake provider and the fake GitHub, on a given port. */
 async function composer(environment: ReturnType<typeof loadEnvironment>): Promise<Composer> {
-  // RF-407: every role answers, except the summariser, whose call fails with RST-1506.
-  // P1-34: the reader of an understand run is held for a few seconds so the queue can be shown.
-  const provider = new AnsweringProvider(['summariser'], 8000);
+  // RF-407, P1-34, P1-35: see e2e-provider.ts.
+  const provider = await createE2eProvider();
   const github = await demoGitHub();
   return (port) =>
     composeApplication({

@@ -366,7 +366,7 @@ Event types (canonical list):
 | `agent.tool.result` | `{ turn, tool, ok, linesReturned?, refusedReason? }` |
 | `agent.card.proposed` | `{ cardId, type, title, claims }` |
 | `agent.ended` | `{ state (AgentTaskState), turns, cards }` |
-| `verify.citation.checked` | `{ claimId, ok, reason? }` |
+| `verify.citation.checked` | `{ claimId, ok, reason?, text?, citations? }` where `text` is the claim text and `citations` its cited lines `[{ path, startLine, endLine }]`, so the live run page can list the claim and link its lines (RF-1004); readers that predate the two fields ignore them |
 | `verify.claim.judged` | `{ claimId, status, reason }` |
 | `usage.recorded` | `{ callId, role, provider, model, tokens, costMicros, runTotals, projectTotals }` (RF-1003, RF-1010) |
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent |
