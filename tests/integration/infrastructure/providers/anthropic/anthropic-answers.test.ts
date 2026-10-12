@@ -160,6 +160,16 @@ describe('AnthropicProvider keys', () => {
   });
 });
 
+function providerWith(apiKey: string, baseUrl: string): AnthropicProvider {
+  return new AnthropicProvider({
+    apiKey,
+    baseUrl,
+    timeoutSeconds: 5,
+    maxRetries: 3,
+    testMode: true,
+  });
+}
+
 describe('AnthropicProvider keys beyond Latin-1', () => {
   const pieces = [fakeAnthropicKey.slice(0, 12), fakeAnthropicKey.slice(12)];
   const zeroWidthSpace = String.fromCodePoint(0x200b);
@@ -181,18 +191,7 @@ describe('AnthropicProvider keys beyond Latin-1', () => {
       const baseUrl = await server.start();
 
       try {
-        const error = await failureOf(
-          Promise.resolve().then(
-            () =>
-              new AnthropicProvider({
-                apiKey,
-                baseUrl,
-                timeoutSeconds: 5,
-                maxRetries: 3,
-                testMode: true,
-              }),
-          ),
-        );
+        const error = await failureOf(Promise.resolve().then(() => providerWith(apiKey, baseUrl)));
 
         expect(error).toMatchObject({ code: ERROR_CODES.anthropicKeyRejected });
         const shown = JSON.stringify(error, Object.getOwnPropertyNames(error));
