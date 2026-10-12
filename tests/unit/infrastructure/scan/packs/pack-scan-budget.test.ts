@@ -165,3 +165,23 @@ describe('analysis with language packs (parse budget details)', () => {
     expect(result.warnings).toEqual([{ path: 'a.tst', pack: 'test', code: 'RST-1200' }]);
   });
 });
+
+describe('analysis with language packs (invalid parse budget)', () => {
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1])(
+    'RF-110 uses the default budget when the given one is %s',
+    async (totalMs) => {
+      const ticks = new FakeTicks();
+      const paths = ['a.tst', 'b.tst', 'c.tst'];
+      const { run } = setup(new CostlyPack(ticks, 70_000), ticks, totalMs, paths);
+
+      const result = await run();
+
+      // The two-minute default: a and b start inside it, c starts after it.
+      expect(result.fileLevels.map((level) => level.mapLevel)).toEqual([
+        'symbols',
+        'symbols',
+        'coarse',
+      ]);
+    },
+  );
+});
