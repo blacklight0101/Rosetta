@@ -187,3 +187,43 @@ describe('POST /api/account/providers/test limits', () => {
     expect(other.statusCode).toBe(200);
   });
 });
+
+describe('POST /api/account/providers/test limit log', () => {
+  it('RF-009 a press refused by the per-user limit writes one security log entry without secrets', async () => {
+    test = createTestServer();
+    const amy = await signedIn('amy');
+    for (let n = 1; n <= 6; n += 1) {
+      await amy.request({
+        method: 'POST',
+        url: '/api/account/providers/test',
+        remoteAddress: `10.0.1.${String(n)}`,
+      });
+    }
+
+    const refused = await amy.request({
+      method: 'POST',
+      url: '/api/account/providers/test',
+      remoteAddress: '10.0.1.7',
+    });
+
+    expect(refused.statusCode).toBe(429);
+    const events = test.logger.entries.filter(
+      (entry) => entry.logger === 'security' && entry.code === ERROR_CODES.rateLimited,
+    );
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ level: 'warn', data: { ip: '10.0.1.7' } });
+    // RF-1109: the refused press is also audited.
+    const rows = await test.audit.list({ since: 0, action: 'request.refused' });
+    expect(rows).toEqual([
+      expect.objectContaining({
+        ip: '10.0.1.7',
+        detail: { reason: 'rate-limit' },
+      }),
+    ]);
+    const logged = JSON.stringify(events);
+    for (const secret of [...amy.cookies.values(), amy.csrfToken ?? '']) {
+      expect(secret).not.toBe('');
+      expect(logged).not.toContain(secret);
+    }
+  });
+});

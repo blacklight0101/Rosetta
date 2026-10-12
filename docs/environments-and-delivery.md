@@ -157,7 +157,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Schema validation | `zod` | 4.6 | configuration, cards, code map, model output and tool arguments are parsed, never cast |
 | YAML | `yaml` | 2.9 | card headers and the price table (DEC-25) |
 | OpenAI and OpenAI-compatible | `openai` | 7.32 | infrastructure adapter only (ADR-003) |
-| Anthropic | `@anthropic-ai/sdk` | 0.133 | infrastructure adapter only, P2 |
+| Anthropic | `@anthropic-ai/sdk` | 0.128 (0.128.0, pinned exact) | `src/infrastructure/providers/anthropic/` only (ADR-003, dependency-cruiser rule `anthropic-sdk-only-in-anthropic-adapter`); 0.133.0 was published 2026-10-09, inside the two-week rule (DEC-125), so P2-09 pins 0.128.0 (published 2026-09-22) by the owner's choice of 2026-10-12 and a follow-up may move to 0.133 once it is two weeks old |
 | Ollama | Node.js `fetch` against the Ollama HTTP API | built in | no SDK needed; decided in the provider card |
 | Language packs | `web-tree-sitter` + `tree-sitter-c-sharp` (WebAssembly grammar) | 0.27 / 0.23 | WebAssembly avoids native builds on Windows (ADR-004) |
 | Zip export | `yazl` | 3.3 | streaming zip writer (RF-008) |

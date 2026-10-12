@@ -161,6 +161,51 @@ function keyedMaskingTests(newHarness: NewHarness): void {
   );
 }
 
+// P1-65: fake values built from pieces at run time, never a literal secret in the file.
+const arrayPassword = (tag: string): string => ['Pw', tag, 'q7Zx', '91Lm', 'Tr4k'].join('');
+
+/** RNF-003: primitive items of an array held by a secret-named key. */
+const keyedArrayCases = [
+  {
+    name: 'every string of an array under a password key',
+    arguments: { password: [arrayPassword('A'), arrayPassword('B')] },
+    secrets: [arrayPassword('A'), arrayPassword('B')],
+  },
+  {
+    name: 'numbers of an array under a pwd key',
+    arguments: { pwd: [73915820] },
+    secrets: ['73915820'],
+  },
+  {
+    name: 'an array nested in an array under a password key',
+    arguments: { db: { password: [[arrayPassword('C')], 'x'] } },
+    secrets: [arrayPassword('C')],
+  },
+] as const;
+
+function keyedArrayMaskingTests(newHarness: NewHarness): void {
+  it.each(keyedArrayCases)(
+    'RNF-003 masks $name and keeps valid JSON',
+    async ({ arguments: args, secrets }) => {
+      const harness = await newHarness();
+      await harness.recorder.transcript('task-1', [
+        {
+          ...sampleEntry,
+          role: 'assistant',
+          toolCalls: [{ id: 'c1', name: 'x', arguments: args }],
+        },
+      ]);
+
+      const written = await harness.transcript('task-1');
+      expect(linesOf(written)).toHaveLength(1);
+      expect(written).toContain('[MASKED:');
+      for (const secret of secrets) {
+        expect(written).not.toContain(secret);
+      }
+    },
+  );
+}
+
 function failClosedTests(newHarness: NewHarness): void {
   it('RF-141 fails closed with RST-2101 and writes nothing when masking fails', async () => {
     const harness = await newHarness(new FailingMasker());
@@ -183,6 +228,7 @@ export function providerCallRecorderContract(name: string, create: RecorderFacto
     recordTests(newHarness);
     maskingTests(newHarness);
     keyedMaskingTests(newHarness);
+    keyedArrayMaskingTests(newHarness);
     failClosedTests(newHarness);
   });
 }

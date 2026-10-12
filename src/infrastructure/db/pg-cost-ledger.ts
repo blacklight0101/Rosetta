@@ -1,6 +1,7 @@
 import type {
   CostLedger,
   LedgerEntry,
+  ReservationKey,
   ReservationRequest,
 } from '../../application/ports/cost-ledger.js';
 import { checkCaps, type CapBreach } from '../../domain/budget/usage-cap.js';
@@ -15,6 +16,7 @@ import {
   INSERT_RESERVATION,
   LOCK_SERVER,
   LOCK_USER,
+  reservationKeyValues,
   reservationValues,
   RUN_ENTRIES,
   SPENT,
@@ -62,13 +64,13 @@ export class PgCostLedger implements CostLedger {
   settle(entry: LedgerEntry): Promise<void> {
     return this.transaction(async (client) => {
       await client.query(INSERT_ENTRY, entryValues(entry));
-      await client.query(DELETE_RESERVATION, [entry.callId]);
+      await client.query(DELETE_RESERVATION, reservationKeyValues(entry));
     });
   }
 
-  async release(callId: string): Promise<void> {
+  async release(key: ReservationKey): Promise<void> {
     try {
-      await this.pool.query(DELETE_RESERVATION, [callId]);
+      await this.pool.query(DELETE_RESERVATION, reservationKeyValues(key));
     } catch (error) {
       throw queryFailed(error);
     }

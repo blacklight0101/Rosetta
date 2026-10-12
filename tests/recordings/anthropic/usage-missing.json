@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. An answer without usage, so the usage is estimated. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 200,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000001"
+      },
+      "body": {
+        "id": "msg_FAKE00000000000000000001",
+        "type": "message",
+        "role": "assistant",
+        "model": "contract-model-20260807",
+        "content": [
+          {
+            "type": "text",
+            "text": "The Catalog area lists products."
+          }
+        ],
+        "stop_reason": "end_turn",
+        "stop_sequence": null
+      }
+    }
+  ]
+}

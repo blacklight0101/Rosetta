@@ -1,8 +1,10 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { RecordRefusedRequest } from '../../application/use-cases/record-refused-request.js';
 import type { RoleTestResult, TestProviders } from '../../application/use-cases/test-providers.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { describeError } from '../../domain/errors/descriptions.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { recordRateLimited } from './rate-limit-log.js';
 import { signedInOf } from './request-actor.js';
 
 // RF-407, RF-1009: the Test button of the settings page. POST /api/account/providers/test checks
@@ -36,16 +38,21 @@ function roleView(result: RoleTestResult): Record<string, string> {
 export function registerProviderTestRoutes(
   server: FastifyInstance,
   services: ProviderTestServices,
+  refusals: RecordRefusedRequest,
 ): void {
   // The session is resolved by the access hook before the handlers run, so the per-user limit is
-  // a pre-handler that keys on the signed-in user (the per-address one runs before it).
+  // a pre-handler that keys on the signed-in user (the per-address one runs before it). Its refusal
+  // is recorded like the per-address one (RF-009, RF-1109), since the plugin's onExceeded does not
+  // see it.
   const perUser = server.createRateLimit({
     ...USER_RATE,
     keyGenerator: (request) => `provider-test:${request.signedIn?.actor.userId ?? request.ip}`,
   });
   const limitUser = async (request: FastifyRequest): Promise<void> => {
     const verdict = await perUser(request);
-    if (!verdict.isAllowed && verdict.isExceeded) throw new RosettaError(ERROR_CODES.rateLimited);
+    if (verdict.isAllowed || !verdict.isExceeded) return;
+    await recordRateLimited(refusals, request);
+    throw new RosettaError(ERROR_CODES.rateLimited);
   };
   server.post(
     '/api/account/providers/test',

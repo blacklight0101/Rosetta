@@ -61,6 +61,7 @@ describe('provider factory boundary', () => {
     const constructing = await filesConstructing([
       'OllamaProvider',
       'OpenAiProvider',
+      'AnthropicProvider',
       'FakeProvider',
     ]);
 
