@@ -216,6 +216,15 @@ describe('C# pack on hostile input', () => {
     );
   });
 
+  it('RF-110 maps the next file from its own text after a parse was stopped', async () => {
+    const fresh = await CSharpPack.create();
+    expect(() => fresh.analyse({ path: 'A.cs', text: sample, shouldStop: () => true })).toThrow();
+
+    const { symbols } = fresh.analyse({ path: 'B.cs', text: 'class Basket { }' });
+
+    expect(symbols.map((symbol) => symbol.name)).toEqual(['Basket']);
+  });
+
   it('RNF-001 reports no secret from a string literal in a symbol name', () => {
     const { symbols } = analyse(
       'class C { string Key = "' + ['AK', 'IA', 'ABCDEFGHIJKLMNOP'].join('') + '"; void M() { } }',
