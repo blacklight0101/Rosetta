@@ -49,6 +49,26 @@ describe('scripts/test-levels.mjs', () => {
   });
 });
 
+describe('scripts/test-levels.mjs Playwright specs', () => {
+  const tmp = useTempRoot('rosetta-levels-spec-');
+
+  it('RNF-005 counts the tests of *.spec.ts files in the e2e folder', async () => {
+    const folder = join(tmp.path, 'tests', 'e2e');
+    await mkdir(folder, { recursive: true });
+    const lines = [
+      "test.describe('smoke', () => {",
+      "  test('RNF-005 first', async ({ page }) => {});",
+      "  test('RNF-005 second', async ({ page }) => {});",
+      '});',
+    ];
+    await writeFile(join(folder, 'smoke.spec.ts'), lines.join('\n'));
+
+    const { stdout } = await run('node', [script, tmp.path]);
+
+    expect(stdout).toContain('Unit 0 / Integration 0 / E2E 2');
+  });
+});
+
 describe('scripts/test-levels.mjs skipped tests', () => {
   const tmp = useTempRoot('rosetta-levels-skip-');
 
