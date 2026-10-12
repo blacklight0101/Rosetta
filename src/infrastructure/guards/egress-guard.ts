@@ -36,6 +36,11 @@ import type { TextMasker } from './secret-masker.js';
 
 export interface EgressGuardOptions {
   readonly inner: LlmProvider;
+  /**
+   * RF-143: where the provider connects. Its endpointHost must come from the same parsed URL the
+   * adapter connects to (one `new URL(...).hostname`, so `http://localhost@evil.com` gives
+   * `evil.com`); the provider factory (P1-29) builds both from one parse.
+   */
   readonly target: ProviderTarget;
   /** RF-143: the consent the run recorded when it was started; never read from a request. */
   readonly cloudConsent: boolean;

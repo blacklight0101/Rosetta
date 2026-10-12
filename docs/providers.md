@@ -27,7 +27,9 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   always, and `ollama` only when the host it connects to is `localhost`, a loopback address (127.0.0.0/8, `::1`) or
   the Docker host gateway `host.docker.internal` (the documented `ROSETTA_OLLAMA_URL`). An Ollama server on any other
   host needs the run's consent like `openai`, `openai-compatible` (its base URL must be public) and `anthropic`;
-  without it the call is refused with `RST-1515`. The guard masks every message part, writes `egress.log.jsonl` and
+  without it the call is refused with `RST-1515`. The guard's `target.endpointHost` and the URL the adapter connects to
+  must come from one parsed URL (`new URL(ROSETTA_OLLAMA_URL).hostname`, so `http://localhost@evil.com` gives
+  `evil.com`); the provider factory (P1-29) builds both from that one parse and tests it. The guard masks every message part, writes `egress.log.jsonl` and
   refuses repository content outside its data blocks (RF-141, RF-142, RF-145, architecture section 7).
 - `FakeProvider.requests` keeps every request the fake received, so a test can prove what was (and was not) sent.
 - Every adapter passes the contract suite `tests/contracts/llm-provider.contract.ts`: its test arranges recordings so

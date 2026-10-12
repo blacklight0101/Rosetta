@@ -296,8 +296,9 @@ is built per run with the run's recorded cloud consent, its `JsonlEgressLog` and
 order it refuses a provider off this machine (`needsCloudConsent`: everything but `fake` and an `ollama` whose host is
 loopback or `host.docker.internal`) without that consent (`RST-1515`), refuses a request whose system prompt holds a data block, whose tool result is not exactly one
 data block or whose message holds a broken one (`RST-1516`), masks every message part (a private key read in pieces
-included: an END line without its BEGIN masks the key body above it, and a key left open by one piece of repository
-text masks the start of the next), adds the secrets first sent by the agent task to the manifest and, last, appends
+included, read line by line so a key written as string literals in code counts too: an END line without its BEGIN
+masks the key lines above it, and a key left open by one read masks the key lines that start the next read of the same
+file), adds the secrets first sent by the agent task to the manifest and, last, appends
 the egress line, so a line always means a sent call. Every refusal and every failure of those steps (masking
 `RST-2101`, manifest `RST-2106`, egress log `RST-2107`, or the code the failure carries) is a `security` log entry
 and a blocked call in the manifest, and is thrown so the agent task stops; the call is never sent (RF-141..RF-143,
