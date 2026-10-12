@@ -51,8 +51,44 @@ export interface RunComposition {
   readonly queue: RunQueue;
   /** Accepts a run into the queue; the stage routes call it. */
   readonly submitRun: SubmitRun;
-  /** Start-up: deletes the partial snapshot folders an interrupted download left (RF-122). */
-  discardPartialSnapshots(): Promise<void>;
+  /**
+   * Start-up: deletes the partial snapshot folders an interrupted download left (RF-122), then ends
+   * the runs the earlier process left running and starts what can start (RF-1108).
+   */
+  recover(): Promise<void>;
+}
+
+interface ScanParts {
+  readonly executor: RunScan;
+  readonly fetcher: GitHubSnapshotFetcher;
+}
+
+/** The scan stage: the snapshot fetcher and the executor that fetches, scans and records. */
+function composeScan(
+  parts: RunParts,
+  stores: { readonly writer: NodeOutputWriter; readonly manifests: FileRunManifestStore },
+  projects: PgProjectRepository,
+): ScanParts {
+  const { logger, clock, masker, dataDir } = parts;
+  const fetcher = new GitHubSnapshotFetcher({
+    ...{ dataDir, clock, logger, idGenerator: new TimestampIdGenerator(clock) },
+    githubToken: parts.githubToken,
+  });
+  const pipeline = new SnapshotScanPipeline({
+    ...{ writer: stores.writer, masker, logger, packs: parts.packs },
+  });
+  const { manifests } = stores;
+  return { fetcher, executor: new RunScan({ fetcher, projects, pipeline, manifests, clock }) };
+}
+
+function keepAliveScheduler(logger: Logger): IntervalScheduler {
+  return new IntervalScheduler((error) => {
+    void logger.log({
+      level: 'warn',
+      logger: 'runs',
+      message: `Keep-alive failed: ${String(error)}`,
+    });
+  });
 }
 
 // RF-1006, RF-1108
@@ -73,32 +109,14 @@ export function composeRuns(parts: RunParts): RunComposition {
     logger,
   });
   const projects = new PgProjectRepository(pool);
-  const fetcher = new GitHubSnapshotFetcher({
-    ...{ dataDir, clock, logger, idGenerator: ids },
-    githubToken: parts.githubToken,
-  });
+  const scan = composeScan(parts, { writer, manifests }, projects);
   const queue = new RunQueue({
     runs,
     lifecycle,
-    executors: {
-      scan: new RunScan({
-        fetcher,
-        projects,
-        pipeline: new SnapshotScanPipeline({ writer, masker, logger, packs: parts.packs }),
-        manifests,
-        clock,
-      }),
-    },
+    executors: { scan: scan.executor },
     clock,
     logger,
     maxRunning: DEFAULT_MAX_RUNNING_RUNS,
-  });
-  const heartbeat = new IntervalScheduler((error) => {
-    void logger.log({
-      level: 'warn',
-      logger: 'runs',
-      message: `Keep-alive failed: ${String(error)}`,
-    });
   });
   const submitRun = new SubmitRun({
     runs,
@@ -114,12 +132,13 @@ export function composeRuns(parts: RunParts): RunComposition {
       startRun: new StartRun({ projects, submit: submitRun }),
       subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
       stopRun: new StopRun({ queue }),
-      heartbeat,
+      heartbeat: keepAliveScheduler(logger),
       streams: new StreamRegistry(),
     },
     submitRun,
-    async discardPartialSnapshots() {
-      await fetcher.discardPartialFolders();
+    async recover() {
+      await scan.fetcher.discardPartialFolders();
+      await queue.recover();
     },
   };
 }

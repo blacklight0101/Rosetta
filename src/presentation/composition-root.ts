@@ -248,10 +248,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         migrate: () => migrate(environment, clock, logger),
         bootstrapAdmin: () =>
           bootstrapAdministrator({ environment, pool, logger, clock, masker, hasher }),
-        recoverRuns: async () => {
-          await runs.discardPartialSnapshots();
-          await runs.queue.recover();
-        },
+        recoverRuns: () => runs.recover(),
         listen: async () => {
           address = await server.listen(options.listen);
         },

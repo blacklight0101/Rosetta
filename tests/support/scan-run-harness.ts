@@ -64,7 +64,7 @@ export interface ScanRunHarness {
 }
 
 /** A fetcher that knows `octo/demo` and serves the C# fixture repository as its snapshot. */
-export function fixtureFetcher(clock: FixedClock): FakeSourceFetcher {
+function fixtureFetcher(clock: FixedClock): FakeSourceFetcher {
   return new FakeSourceFetcher(
     [
       {
@@ -105,6 +105,19 @@ interface Parts {
   readonly queue: RunQueue;
 }
 
+async function projectOf(
+  options: ScanRunHarnessOptions,
+): Promise<{ readonly projects: MemoryProjectRepository; readonly project: Project }> {
+  const projects = new MemoryProjectRepository();
+  const project = sampleProject({
+    userId: scanActor.userId,
+    sourceUrl: 'https://github.com/octo/demo',
+    ...options.project,
+  });
+  if (options.registerProject !== false) await projects.insertOrFind(project);
+  return { projects, project };
+}
+
 async function assemble(
   options: ScanRunHarnessOptions,
   fixture: FakeSourceFetcher,
@@ -116,13 +129,7 @@ async function assemble(
   const manifests = new FileRunManifestStore({ writer, masker });
   const log = new JsonlEventLog({ writer, masker });
   const runs = new MemoryRunIndex();
-  const projects = new MemoryProjectRepository();
-  const project = sampleProject({
-    userId: scanActor.userId,
-    sourceUrl: 'https://github.com/octo/demo',
-    ...options.project,
-  });
-  if (options.registerProject !== false) await projects.insertOrFind(project);
+  const { projects, project } = await projectOf(options);
   const pipeline =
     options.pipeline ??
     new SnapshotScanPipeline({

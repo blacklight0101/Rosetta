@@ -27,6 +27,11 @@ export interface RunScanDependencies {
 
 const INTERRUPTED: RunOutcome = { endState: 'Interrupted' };
 
+/** A function, because the signal can be aborted while a step awaits and the compiler cannot know. */
+function isStopped(signal: AbortSignal): boolean {
+  return signal.aborted;
+}
+
 export class RunScan implements RunExecutor {
   private readonly deps: RunScanDependencies;
 
@@ -40,7 +45,7 @@ export class RunScan implements RunExecutor {
       return await this.scan(execution);
     } catch (error) {
       // A stop can surface as the abort error of the step it interrupted.
-      if (execution.signal.aborted) return INTERRUPTED;
+      if (isStopped(execution.signal)) return INTERRUPTED;
       if (error instanceof RosettaError) return { endState: 'Failed', errorCode: error.code };
       throw error;
     }
@@ -51,7 +56,7 @@ export class RunScan implements RunExecutor {
     const project = await this.deps.projects.find(run.userId, run.projectId);
     if (project === undefined) return { endState: 'Failed', errorCode: ERROR_CODES.notFound };
     const snapshot = await this.fetch(execution);
-    if (signal.aborted) return INTERRUPTED;
+    if (isStopped(signal)) return INTERRUPTED;
     const { subpath } = execution.manifest.source;
     const report = await this.deps.pipeline.scan({
       scope: scopeOf(run),
@@ -65,7 +70,7 @@ export class RunScan implements RunExecutor {
       settings: project.settings.scan,
       signal,
     });
-    if (signal.aborted) return INTERRUPTED;
+    if (isStopped(signal)) return INTERRUPTED;
     await this.recordScan(run, report.codeMapHash, snapshot.skippedLinks);
     await execution.events.emit('scan.completed', {
       files: report.files,

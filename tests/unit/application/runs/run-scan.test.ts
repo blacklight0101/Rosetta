@@ -13,7 +13,7 @@ import { useTempRoot } from '../../../support/temp-root.js';
 
 const temp = useTempRoot('rosetta-run-scan-');
 
-describe('RunScan', () => {
+describe('RunScan manifest', () => {
   it('RF-126 records the commit, the snapshot hash and the snapshot folder of the run', async () => {
     const h = await createScanRunHarness({ dataDir: temp.path, pipeline: new RecordingPipeline() });
 
@@ -48,7 +48,9 @@ describe('RunScan', () => {
     });
     expect(manifest.endedAt).not.toBeNull();
   });
+});
 
+describe('RunScan events', () => {
   it('RF-1006 publishes the source and scan events between run.started and run.ended', async () => {
     const h = await createScanRunHarness({ dataDir: temp.path, pipeline: new RecordingPipeline() });
 
@@ -70,7 +72,9 @@ describe('RunScan', () => {
     expect(events[2]?.data).toMatchObject({ fileCount: 20, totalBytes: 4096, cached: false });
     expect(events[3]?.data).toEqual({ files: 3, areas: 1, mapLevels: { coarse: 2, symbols: 1 } });
   });
+});
 
+describe('RunScan requests', () => {
   it('RF-100 hands the pipeline the snapshot folder, the subpath and the project scan settings', async () => {
     const pipeline = new RecordingPipeline();
     const h = await createScanRunHarness({
@@ -102,7 +106,7 @@ describe('RunScan', () => {
   });
 });
 
-describe('RunScan failures and stops', () => {
+describe('RunScan failures', () => {
   it('RF-121 ends a run whose fetch fails as Failed with the code of the failure', async () => {
     const pipeline = new RecordingPipeline();
     const h = await createScanRunHarness({
@@ -138,7 +142,9 @@ describe('RunScan failures and stops', () => {
     expect((await h.eventsOf(run)).at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.notFound });
     expect(pipeline.requests).toHaveLength(0);
   });
+});
 
+describe('RunScan stops', () => {
   it('RNF-002 checks the abort signal after the fetch: a run stopped then is Interrupted and never scans', async () => {
     const pipeline = new RecordingPipeline();
     const holder: { stop: () => Promise<void> } = { stop: () => Promise.resolve() };

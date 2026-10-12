@@ -17,7 +17,7 @@ function runFolder(projectId: string, runKey: string): string {
   return join(temp.path, 'users', scanActor.userId, 'projects', projectId, 'runs', runKey);
 }
 
-describe('a scan run on the C# fixture', () => {
+describe('a scan run on the C# fixture: outputs', () => {
   it('RF-105 writes a valid code map and the scan summary into the run folder', async () => {
     const h = await createScanRunHarness({ dataDir: temp.path });
 
@@ -49,14 +49,16 @@ describe('a scan run on the C# fixture', () => {
       ref: '',
       commitSha: FAKE_COMMIT,
       subpath: '',
-      snapshotHash: expect.stringMatching(/^sha256:[0-9a-f]{64}$/u),
     });
+    expect(manifest.source.snapshotHash).toMatch(/^sha256:[0-9a-f]{64}$/u);
     const bytes = await readFile(join(runFolder(run.projectId, run.runKey), 'codemap.json'));
     const { createHash } = await import('node:crypto');
     expect(manifest.codemapHash).toBe(createHash('sha256').update(bytes).digest('hex'));
     expect(manifest.endState).toBe('Completed');
   });
+});
 
+describe('a scan run on the C# fixture: snapshot and subpath', () => {
   it('RF-005 leaves the snapshot unchanged and writes only inside the user workspace', async () => {
     const before = await hashTree(fixtureRoot('webforms-csharp'));
     const h = await createScanRunHarness({ dataDir: temp.path });

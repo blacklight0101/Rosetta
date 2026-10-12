@@ -67,7 +67,9 @@ describe('POST /api/projects/:id/runs', () => {
     expect(response.statusCode).toBe(202);
     expect(response.json()).toMatchObject({ queueState: 'Queued', position: 1 });
   });
+});
 
+describe('POST /api/projects/:id/runs and refused requests', () => {
   it('RF-1108 refuses a stage whose use case has not landed with RST-2305 (409)', async () => {
     const { test, amy, project } = await setup();
 

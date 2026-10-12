@@ -10,7 +10,7 @@ import type { SubmitRun, SubmittedRun } from './submit-run.js';
 // of a stage whose use case exists. Each stage card adds its stage to `STARTABLE_STAGES`.
 
 /** The stages that can be started through the API: `scan` (P1-23). */
-export const STARTABLE_STAGES: readonly RunStage[] = ['scan'];
+const STARTABLE_STAGES: readonly RunStage[] = ['scan'];
 
 export interface StartRunDependencies {
   readonly projects: ProjectRepository;
