@@ -31,6 +31,37 @@ export const seededUser = {
   password: fixturePassword('E2eUser'),
 } as const;
 
+export interface Credentials {
+  readonly userName: string;
+  readonly password: string;
+}
+
+/** The Playwright projects (playwright.config.ts); each gets accounts of its own, as they run in parallel. */
+export const e2eProjectNames = [
+  'desktop-light',
+  'desktop-dark',
+  'phone-light',
+  'phone-dark',
+] as const;
+
+export type E2eProjectName = (typeof e2eProjectNames)[number];
+
+/**
+ * The accounts the page specs of P1-14 use, one set per project: `keys` stores and deletes keys,
+ * `lock` is locked out, `force` and `force-admin` must change their password at first sign-in
+ * (`force-admin` as an administrator, like the bootstrap account, which other specs need unchanged).
+ */
+export type E2eAccountKind = 'keys' | 'lock' | 'force' | 'force-admin';
+
+const accountKinds: readonly E2eAccountKind[] = ['keys', 'lock', 'force', 'force-admin'];
+
+export function accountFor(kind: E2eAccountKind, project: string): Credentials {
+  return {
+    userName: ['e2e', kind, project].join('-'),
+    password: fixturePassword(`Acct${kind}`),
+  };
+}
+
 const quiet: Logger = {
   log: () => Promise.resolve(),
   securityEvent: () => Promise.resolve(),
@@ -64,6 +95,21 @@ export async function seedUsers(databaseUrl: string): Promise<void> {
       ip: 'e2e-seed',
     });
     if (!created.ok) throw new Error(`The seeded user was refused (${created.error}).`);
+    for (const project of e2eProjectNames) {
+      for (const kind of accountKinds) {
+        const { userName, password } = accountFor(kind, project);
+        const outcome = await createUser.execute({
+          actor: actorOf(admin),
+          userName,
+          displayName: `E2E ${kind}`,
+          role: kind === 'force-admin' ? 'admin' : 'user',
+          password,
+          mustChangePassword: kind.startsWith('force'),
+          ip: 'e2e-seed',
+        });
+        if (!outcome.ok) throw new Error(`The account ${userName} was refused (${outcome.error}).`);
+      }
+    }
   } finally {
     await pool.end();
   }

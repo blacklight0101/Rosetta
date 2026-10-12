@@ -1,4 +1,5 @@
 import { expect, test as base } from '@playwright/test';
+import { clientAddressFor } from './client-address.js';
 import { isAllowedRequestUrl } from './request-policy.js';
 
 // RNF-005, ADR-008: the test every spec imports. Besides Playwright's own fixtures it adds the
@@ -21,7 +22,17 @@ export class NetworkGuard {
   }
 }
 
-export const test = base.extend<{ network: NetworkGuard }>({
+export const test = base.extend<{ network: NetworkGuard; clientAddress: string }>({
+  // Every test browses from an address of its own (see serve.ts, ROSETTA_TRUST_PROXY), so the
+  // per-address rate limits of sign-in and password change count that test only.
+  clientAddress: [
+    async ({ context }, use, testInfo) => {
+      const address = clientAddressFor(`${testInfo.project.name}:${testInfo.testId}`);
+      await context.setExtraHTTPHeaders({ 'x-forwarded-for': address });
+      await use(address);
+    },
+    { auto: true },
+  ],
   network: [
     async ({ context }, use) => {
       const guard = new NetworkGuard();
