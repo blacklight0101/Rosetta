@@ -1,13 +1,16 @@
-# Local deployment (RF-1301, environments-and-delivery.md section 9). This file holds the `db`
-# service for local development and database tests; the `app` service is added by card P1-45.
-# Secrets come from the git-ignored .env next to this file; nothing secret is written here.
+# Local deployment (RF-1301, ADR-014, environments-and-delivery.md section 9): the same image that
+# runs hosted, with its PostgreSQL, on this machine only. Secrets come from the git-ignored .env next
+# to this file (copy .env.example); nothing secret is written here. The runbook is docs/runbooks/local.md.
 #
-#   docker compose up -d db
+#   docker compose up -d --build     build the image, start the database and the app
+#   docker compose down              stop (the volumes stay)
+#   docker compose down -v           stop and delete the database and the data folder
 #
-# The image is pinned by digest (postgres:17, PostgreSQL 17.11).
-# On the first start of an empty pgdata volume the image creates its bootstrap superuser postgres
-# with ROSETTA_DB_ADMIN_PASSWORD and the empty rosetta database. The application and migration
-# roles come from db/init/roles.sh (card P1-45); until then local development connects as postgres.
+# The db image is pinned by digest (postgres:17, PostgreSQL 17.11). On the first start of an empty
+# pgdata volume the image creates its bootstrap superuser postgres with ROSETTA_DB_ADMIN_PASSWORD and
+# the empty rosetta database, then db/init/roles.sh creates rosetta_migrator and rosetta_app. The app
+# applies the migrations as rosetta_migrator before it listens, then serves as rosetta_app.
+# The passwords sit in database URLs, so use URL-safe ones (for example `openssl rand -hex 24`).
 
 name: rosetta
 
@@ -17,8 +20,12 @@ services:
     environment:
       POSTGRES_PASSWORD: ${ROSETTA_DB_ADMIN_PASSWORD:?Set ROSETTA_DB_ADMIN_PASSWORD in .env}
       POSTGRES_DB: rosetta
+      # Read by db/init/roles.sh, which creates the application roles on the first start.
+      ROSETTA_APP_DB_PASSWORD: ${ROSETTA_APP_DB_PASSWORD:?Set ROSETTA_APP_DB_PASSWORD in .env}
+      ROSETTA_MIGRATOR_DB_PASSWORD: ${ROSETTA_MIGRATOR_DB_PASSWORD:?Set ROSETTA_MIGRATOR_DB_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     ports:
       # Reachable from this machine only (RNF-014).
       - '127.0.0.1:5432:5432'
@@ -29,5 +36,52 @@ services:
       retries: 10
     restart: unless-stopped
 
+  app:
+    build:
+      context: .
+      target: runtime
+    image: rosetta:local
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://rosetta_app:${ROSETTA_APP_DB_PASSWORD:?Set ROSETTA_APP_DB_PASSWORD in .env}@db:5432/rosetta
+      DATABASE_MIGRATOR_URL: postgres://rosetta_migrator:${ROSETTA_MIGRATOR_DB_PASSWORD:?Set ROSETTA_MIGRATOR_DB_PASSWORD in .env}@db:5432/rosetta
+      ROSETTA_SECRET_KEY: ${ROSETTA_SECRET_KEY:?Set ROSETTA_SECRET_KEY in .env (openssl rand -base64 32)}
+      ROSETTA_SECRET_KEY_PREVIOUS: ${ROSETTA_SECRET_KEY_PREVIOUS:-}
+      ROSETTA_PUBLIC_URL: http://127.0.0.1:8080
+      ROSETTA_DATA_DIR: /data
+      ROSETTA_ADMIN_USER: ${ROSETTA_ADMIN_USER:-admin}
+      ROSETTA_ADMIN_PASSWORD: ${ROSETTA_ADMIN_PASSWORD:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      # The Ollama of the host, through the host-gateway entry below (RF-1301).
+      ROSETTA_OLLAMA_URL: ${ROSETTA_OLLAMA_URL:-http://host.docker.internal:11434}
+      ROSETTA_CONTACT_EMAIL: ${ROSETTA_CONTACT_EMAIL:-}
+      ROSETTA_LOG_LEVEL: ${ROSETTA_LOG_LEVEL:-info}
+      ROSETTA_LOG_RETENTION_DAYS: ${ROSETTA_LOG_RETENTION_DAYS:-14}
+      ROSETTA_TRUST_PROXY: ${ROSETTA_TRUST_PROXY:-0}
+    volumes:
+      - rosetta-data:/data
+    ports:
+      # Reachable from this machine only (RF-1301, RNF-014).
+      - '127.0.0.1:8080:8080'
+    extra_hosts:
+      # Resolves host.docker.internal on Linux too (Docker Desktop defines it already).
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/healthz', { signal: AbortSignal.timeout(4000) }).then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  rosetta-data:
