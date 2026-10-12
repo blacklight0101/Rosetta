@@ -25,6 +25,7 @@ import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
+import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
@@ -43,6 +44,7 @@ import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
+import { MemoryOutputWriter } from './memory-output-writer.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
@@ -73,6 +75,9 @@ export interface TestServer {
   readonly runs: RunHarness;
   /** RF-008: the run folders the default export reads; give a run its folder with `seed`. */
   readonly archives: MemoryArchiveWriter;
+  /** RF-1007: the projects' answers.md files the answer routes read and write, in `answerFiles`. */
+  readonly answers: FileAnswersFile;
+  readonly answerFiles: MemoryOutputWriter;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
@@ -205,6 +210,21 @@ function runHarnessOf(
   });
 }
 
+/** RF-1104: the key store, its sealing box and the DNS stand-in of the base-URL check. */
+function keyParts(): KeyParts {
+  return {
+    keys: new MemoryProviderKeyRepository(),
+    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
+    resolver: new FakeHostResolver(),
+  };
+}
+
+/** RF-1007: the answers.md adapter over memory files. */
+function answerStore(masker: SecretMasker): Pick<TestServer, 'answers' | 'answerFiles'> {
+  const answerFiles = new MemoryOutputWriter();
+  return { answerFiles, answers: new FileAnswersFile({ writer: answerFiles, masker }) };
+}
+
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
@@ -232,12 +252,10 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
   const archives = new MemoryArchiveWriter();
+  const files = answerStore(masker);
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
-  const keys = {
-    keys: new MemoryProviderKeyRepository(),
-    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
-    resolver: new FakeHostResolver(),
-  };
+  const keys = keyParts();
+  const stores = { projects, keys: keys.keys, answers: files.answers };
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
@@ -252,11 +270,11 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ serverSettings, testProviders },
     }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: runServices(runs, { projects, keys: keys.keys }, route, archiveWriter ?? archives),
+    runs: runServices(runs, stores, route, archiveWriter ?? archives),
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
-    ...{ serverSettings, runs, archives, ...route, ...keys, providers, providerLedger },
+    ...{ serverSettings, runs, archives, ...files, ...route, ...keys, providers, providerLedger },
   };
 }
