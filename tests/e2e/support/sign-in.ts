@@ -5,7 +5,7 @@ import { e2eOrigin } from './server-config.js';
 // sign-in page. The server limits sign-ins to 10 a minute per address, so a worker signs in once
 // per account and reuses the cookies for its other tests.
 
-export { seededAdmin } from './seed.js';
+export { seededAdmin, seededUser } from './seed.js';
 
 export interface Credentials {
   readonly userName: string;

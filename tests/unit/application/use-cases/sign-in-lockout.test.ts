@@ -20,7 +20,7 @@ describe('SignIn lockout', () => {
     const locked = await signIn.execute({ userName: 'amy', password, ...request });
 
     expect(locked).toEqual({ ok: false, error: ERROR_CODES.invalidCredentials });
-    const actions = (await auditLog.list({ since: new Date(0) })).map((event) => event.action);
+    const actions = (await auditLog.list({ since: 0 })).map((event) => event.action);
     expect(actions.filter((action) => action === 'auth.locked')).toHaveLength(1);
     const lockEvents = logger.records.filter((record) => record.code === ERROR_CODES.accountLocked);
     expect(lockEvents).toHaveLength(2);
@@ -70,7 +70,7 @@ describe('SignIn lockout under load', () => {
     await signIn.execute({ userName: 'amy', password: wrong, ...request });
     await signIn.execute({ userName: 'amy', password, ...request });
 
-    const trail = JSON.stringify(await auditLog.list({ since: new Date(0) })) + logger.text();
+    const trail = JSON.stringify(await auditLog.list({ since: 0 })) + logger.text();
     expect(trail).not.toContain(password);
     expect(trail).not.toContain(wrong);
   });

@@ -106,7 +106,7 @@ describe('SignOut', () => {
     });
 
     expect(parts.sessions.storedKeys()).toEqual([]);
-    const [audited] = await parts.auditLog.list({ since: new Date(0) });
+    const [audited] = await parts.auditLog.list({ since: 0 });
     expect(audited).toMatchObject({
       action: 'auth.sign_out',
       outcome: 'ok',
@@ -133,7 +133,7 @@ describe('RecordRefusedRequest', () => {
         ip: '203.0.113.7',
       });
 
-      const [audited] = await parts.auditLog.list({ since: new Date(0) });
+      const [audited] = await parts.auditLog.list({ since: 0 });
       expect(audited).toMatchObject({
         action: 'request.refused',
         outcome: 'refused',

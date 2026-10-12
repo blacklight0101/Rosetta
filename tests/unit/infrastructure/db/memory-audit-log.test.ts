@@ -25,7 +25,7 @@ describe('MemoryAuditLog', () => {
       outcome: 'failed',
       detail: { password },
     });
-    const listed = await audit.list({ since: at });
+    const listed = await audit.list({ since: at.getTime() });
 
     expect(JSON.stringify(listed)).not.toContain(password);
     expect(listed[0]?.detail).toEqual({ withheld: 'secret masking failed' });

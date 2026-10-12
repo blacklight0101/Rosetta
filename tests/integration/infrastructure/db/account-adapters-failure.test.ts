@@ -52,7 +52,7 @@ describe.skipIf(!hasTestDatabase)('account adapters when the database fails', ()
 
     const failures = await Promise.all([
       failureOf(audit.record(event)),
-      failureOf(audit.list({ since: testClock.now() })),
+      failureOf(audit.list({ since: testClock.now().getTime() })),
     ]);
 
     for (const failure of failures) {

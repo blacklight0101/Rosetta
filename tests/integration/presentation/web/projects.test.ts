@@ -263,7 +263,7 @@ describe('GET /api/admin/users/:id/projects', () => {
       owner: { id: amyId, userName: 'amy' },
       projects: [{ id, name: 'owner/repo' }],
     });
-    const events = await test.audit.list({ since: new Date(0), action: 'admin.workspace_opened' });
+    const events = await test.audit.list({ since: 0, action: 'admin.workspace_opened' });
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({ targetId: amyId, ip: '203.0.113.5', outcome: 'ok' });
   });
@@ -277,7 +277,7 @@ describe('GET /api/admin/users/:id/projects', () => {
     });
 
     expect(response.statusCode).toBe(403);
-    const events = await test.audit.list({ since: new Date(0), action: 'admin.workspace_opened' });
+    const events = await test.audit.list({ since: 0, action: 'admin.workspace_opened' });
     expect(events).toEqual([]);
   });
 

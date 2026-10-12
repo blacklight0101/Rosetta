@@ -1,15 +1,22 @@
 import type { FastifyInstance } from 'fastify';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
+import { ChangePassword } from '../../src/application/use-cases/change-password.js';
+import { CreateUser } from '../../src/application/use-cases/create-user.js';
+import { ListAudit } from '../../src/application/use-cases/list-audit.js';
+import { ListUsers } from '../../src/application/use-cases/list-users.js';
 import { RecordRefusedRequest } from '../../src/application/use-cases/record-refused-request.js';
 import { ResolveSession } from '../../src/application/use-cases/resolve-session.js';
 import { SignIn } from '../../src/application/use-cases/sign-in.js';
+import { ResetPassword } from '../../src/application/use-cases/reset-password.js';
 import { SignOut } from '../../src/application/use-cases/sign-out.js';
+import { UpdateUser } from '../../src/application/use-cases/update-user.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
+import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
@@ -18,7 +25,7 @@ import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-re
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
-import { FakePasswordHasher } from './account-fixtures.js';
+import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
@@ -44,6 +51,8 @@ export interface TestServer {
   readonly projects: MemoryProjectRepository;
   readonly serverSettings: MemoryServerSettings;
   readonly hasher: PasswordHasher;
+  /** RF-1102: the projects and month-to-date spend the administration list shows. */
+  readonly usage: MemoryAccountUsage;
   /** RF-1006, RF-1108: the run queue, its stores and the executor the test controls. */
   readonly runs: RunHarness;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
@@ -87,6 +96,7 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
 }
 
 interface AuthParts {
+  readonly usage: MemoryAccountUsage;
   readonly users: MemoryUserRepository;
   readonly hasher: PasswordHasher;
   readonly sessions: MemorySessionStore;
@@ -96,10 +106,30 @@ interface AuthParts {
   readonly dummyHash: string;
 }
 
+/** RF-1102, RF-1103, RF-1109: the account use cases over memory adapters. */
+function accountServices(parts: AuthParts): ServerOptions['auth']['accounts'] {
+  const { users, hasher, sessions, auditLog, logger, clock, usage } = parts;
+  const base = { users, auditLog, logger, clock };
+  return {
+    changePassword: new ChangePassword({ ...base, hasher, sessions, commonPasswords }),
+    createUser: new CreateUser({
+      ...base,
+      hasher,
+      ids: new SequenceIdGenerator(),
+      commonPasswords,
+    }),
+    updateUser: new UpdateUser({ ...base, sessions }),
+    resetPassword: new ResetPassword({ ...base, hasher, sessions, commonPasswords }),
+    listUsers: new ListUsers({ users, usage, clock }),
+    listAudit: new ListAudit({ auditLog, clock }),
+  };
+}
+
 /** RF-1009, RF-1100, RF-1101: the session use cases over memory adapters. */
 function authServices(parts: AuthParts): ServerOptions['auth'] {
   const { users, hasher, sessions, auditLog, logger, clock, dummyHash } = parts;
   return {
+    accounts: accountServices(parts),
     signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
     signOut: new SignOut({ sessions, auditLog, logger, clock }),
     resolveSession: new ResolveSession({ sessions, users, logger, clock }),
@@ -141,6 +171,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const sessions = new MemorySessionStore();
   const audit = new MemoryAuditLog(masker);
   const auditLog = audit;
+  const usage = new MemoryAccountUsage();
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings({});
   const runs = createRunHarness({
@@ -155,7 +186,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     version: testVersion,
     publicUrl: testPublicUrl,
     trustProxy: 0,
-    auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
+    auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     runs: runServices(runs, projects, route),
     ...overrides,
@@ -169,6 +200,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     sessions,
     audit,
     hasher,
+    usage,
     projects,
     serverSettings,
     runs,

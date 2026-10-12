@@ -108,7 +108,7 @@ describe('POST /api/session failures', () => {
         code: ERROR_CODES.accountLocked,
       }),
     );
-    const actions = (await test.audit.list({ since: new Date(0) })).map((event) => event.action);
+    const actions = (await test.audit.list({ since: 0 })).map((event) => event.action);
     expect(actions).toContain('auth.locked');
   });
 });
@@ -139,7 +139,7 @@ describe('POST /api/session rotation and audit', () => {
     await browser.signIn('amy', fixturePassword('Wrong'), { remoteAddress: '203.0.113.9' });
     await browser.signIn('amy', amy.password, { remoteAddress: '203.0.113.9' });
 
-    const events = await test.audit.list({ since: new Date(0), action: 'auth.sign_in' });
+    const events = await test.audit.list({ since: 0, action: 'auth.sign_in' });
     expect(events.map((event) => [event.outcome, event.ip])).toEqual([
       ['ok', '203.0.113.9'],
       ['refused', '203.0.113.9'],

@@ -12,14 +12,17 @@ import { FakeGitHub } from '../../support/fake-github.js';
 import { FIXTURE_SHA, fixtureArchive } from '../../support/snapshot-fixtures.js';
 import { createDisposableSchema } from './database.js';
 import { e2ePort } from './server-config.js';
-import { seededAdmin } from './seed.js';
+import { seededAdmin, seedUsers } from './seed.js';
 
 // RNF-005, ADR-008, P1-13: the end-to-end test server. Usage (from the repository root):
 //   node --import ./scripts/register-ts.mjs tests/e2e/support/serve.ts
 // It needs ROSETTA_TEST_DATABASE_URL, the built front end (`npm run build:web`) and the fixture
 // archives; it makes a disposable schema, ROSETTA_TEST=1, the fake provider and a fake GitHub that
-// knows octo/demo, creates the seeded administrator through the bootstrap use case, listens on
-// 127.0.0.1 at ROSETTA_E2E_PORT and removes everything on SIGTERM or SIGINT.
+// knows octo/demo, creates the seeded administrator through the bootstrap use case and the seeded
+// user through CreateUser, listens on 127.0.0.1 at ROSETTA_E2E_PORT and removes everything on
+// SIGTERM or SIGINT. The accounts exist before the port answers: a first start on a free port
+// applies the migrations and bootstraps the administrator, the user is seeded, and only then the
+// server starts on the port Playwright waits for.
 
 const frontEnd = fileURLToPath(new URL('../../../dist/web/index.html', import.meta.url));
 
@@ -75,12 +78,18 @@ async function main(): Promise<void> {
     },
   });
   const github = await demoGitHub();
-  const application = composeApplication({
-    environment,
-    listen: { host: '127.0.0.1', port },
-    output: { write: () => true },
-    doubles: TestDoubles.create(environment, { fetch: github.fetch, provider }),
-  });
+  const compose = (listenPort: number) =>
+    composeApplication({
+      environment,
+      listen: { host: '127.0.0.1', port: listenPort },
+      output: { write: () => true },
+      doubles: TestDoubles.create(environment, { fetch: github.fetch, provider }),
+    });
+  const preparation = compose(0);
+  await preparation.start();
+  await preparation.stop();
+  await seedUsers(schema.url);
+  const application = compose(port);
   const shutDown = (): void => {
     void (async () => {
       await application.stop();

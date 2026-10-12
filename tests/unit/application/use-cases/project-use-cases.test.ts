@@ -246,7 +246,7 @@ describe('OpenWorkspace', () => {
 
     expect(outcome.ok && outcome.value.projects).toHaveLength(1);
     expect(outcome.ok && outcome.value.owner.userName).toBe('amy');
-    const [event, ...rest] = await test.audit.list({ since: new Date(0) });
+    const [event, ...rest] = await test.audit.list({ since: 0 });
     expect(rest).toEqual([]);
     expect(event).toMatchObject({
       actorUserId: root.userId,
@@ -271,7 +271,7 @@ describe('OpenWorkspace: refusals', () => {
     });
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.notAllowed });
-    expect(await test.audit.list({ since: new Date(0) })).toEqual([]);
+    expect(await test.audit.list({ since: 0 })).toEqual([]);
   });
 
   it('RF-1105 an unknown user id is not found and writes no audit event', async () => {
@@ -284,6 +284,6 @@ describe('OpenWorkspace: refusals', () => {
     });
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.notFound });
-    expect(await test.audit.list({ since: new Date(0) })).toEqual([]);
+    expect(await test.audit.list({ since: 0 })).toEqual([]);
   });
 });

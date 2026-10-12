@@ -10,6 +10,17 @@ export function fixturePassword(tag: string): string {
   return ['Rst', tag, 'fixture', 'phrase', '2026'].join('-');
 }
 
+/**
+ * A tiny common-passwords list for tests (lower case, as the password rules expect), built from
+ * pieces at run time like every fixture password.
+ */
+export const commonPasswords: ReadonlySet<string> = new Set(
+  [
+    ['pass', 'word', '1234'],
+    ['qwerty', 'uiop', '12'],
+  ].map((pieces) => pieces.join('')),
+);
+
 /** A fixed instant (2026-10-11T09:00:00.000Z) in epoch milliseconds. */
 export const fixtureNow = Date.UTC(2026, 9, 11, 9, 0, 0, 0);
 

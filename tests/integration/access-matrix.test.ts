@@ -8,16 +8,22 @@ import { addUser, signedInBrowser, TestBrowser, type TestUser } from '../support
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the
-// answer for anonymous, a user, another user and an administrator. The routes are read from the
-// server itself (with the static front end mounted), so a new route without a row fails this test.
+// answer for anonymous, a user, another user, an administrator and an administrator whose password
+// must be changed (RF-1102: only the session API, the change-password route and page, and public
+// routes answer; other pages redirect to /account/password and other API routes answer 403). The
+// routes are read from the server itself (with the static front end mounted), so a new route
+// without a row fails this test.
 
-type Column = 'anonymous' | 'user' | 'otherUser' | 'admin';
+type Column = 'anonymous' | 'user' | 'otherUser' | 'admin' | 'mustChange';
+const columns = ['anonymous', 'user', 'otherUser', 'admin', 'mustChange'] as const;
 type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE';
 
 /** What the rows need to name: the project and runs of the user column and a user id to open. */
 interface Context {
   readonly projectId: string;
   readonly userId: string;
+  /** A disabled account, for the enable route. */
+  readonly disabledUserId: string;
   /** A run of that user that has ended, so its event stream closes by itself. */
   readonly endedRunId: string;
   /** A run of that user that is running. */
@@ -38,12 +44,20 @@ const everyone = (status: number): Record<Column, number> => ({
   user: status,
   otherUser: status,
   admin: status,
+  mustChange: status,
 });
+/** A route every signed-in user reaches, also while the password must be changed. */
 const signedIn = (anonymous: number, status: number): Record<Column, number> => ({
   anonymous,
   user: status,
   otherUser: status,
   admin: status,
+  mustChange: status,
+});
+/** A route every signed-in user reaches once the password no longer must be changed. */
+const active = (anonymous: number, status: number): Record<Column, number> => ({
+  ...signedIn(anonymous, status),
+  mustChange: anonymous === 302 ? 302 : 403,
 });
 const ownCredentials = (user: TestUser | undefined): InjectOptions['payload'] => ({
   userName: user?.account.userName ?? 'nobody',
@@ -56,6 +70,7 @@ const ownerOnly = (status: number): Record<Column, number> => ({
   user: status,
   otherUser: 404,
   admin: 404,
+  mustChange: 403,
 });
 const unknownUser = '00000000-0000-4000-9000-00000000ffff';
 const projectUrl = (suffix: string) => (context: Context) =>
@@ -69,7 +84,11 @@ const adminOnly = (admin: number): Record<Column, number> => ({
   user: 403,
   otherUser: 403,
   admin,
+  mustChange: 403,
 });
+const adminUserUrl = (suffix: string, userId: (context: Context) => string) => (context: Context) =>
+  `/api/admin/users/${userId(context)}${suffix}`;
+const newPassword = fixturePassword('Renewed');
 
 /** One row per route (method and path as Fastify prints them), with one or more probes. */
 const matrix: Readonly<Record<string, readonly Probe[]>> = {
@@ -93,14 +112,14 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
       method: 'POST',
       url: '/api/projects',
       payload: () => ({ url: 'https://github.com/owner/new-repo' }),
-      expected: signedIn(401, 201),
+      expected: active(401, 201),
     },
   ],
-  'GET /api/projects': [{ method: 'GET', url: '/api/projects', expected: signedIn(401, 200) }],
-  'HEAD /api/projects': [{ method: 'HEAD', url: '/api/projects', expected: signedIn(401, 200) }],
+  'GET /api/projects': [{ method: 'GET', url: '/api/projects', expected: active(401, 200) }],
+  'HEAD /api/projects': [{ method: 'HEAD', url: '/api/projects', expected: active(401, 200) }],
   'GET /api/projects/:id': [
     { method: 'GET', url: projectUrl(''), expected: ownerOnly(200) },
-    { method: 'GET', url: () => '/api/projects/not-a-uuid', expected: signedIn(401, 404) },
+    { method: 'GET', url: () => '/api/projects/not-a-uuid', expected: active(401, 404) },
   ],
   'HEAD /api/projects/:id': [{ method: 'HEAD', url: projectUrl(''), expected: ownerOnly(200) }],
   'PUT /api/projects/:id/settings': [
@@ -122,7 +141,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
       method: 'POST',
       url: () => '/api/projects/not-a-uuid/runs',
       payload: () => ({ stage: 'scan' }),
-      expected: signedIn(401, 404),
+      expected: active(401, 404),
     },
   ],
   'GET /api/admin/users/:id/projects': [
@@ -134,29 +153,75 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   ],
   'GET /api/runs/:runId/events': [
     { method: 'GET', url: runUrl('/events', (c) => c.endedRunId), expected: ownerOnly(200) },
-    { method: 'GET', url: () => '/api/runs/not-a-uuid/events', expected: signedIn(401, 404) },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid/events', expected: active(401, 404) },
   ],
   'POST /api/runs/:runId/stop': [
     { method: 'POST', url: runUrl('/stop', (c) => c.runningRunId), expected: ownerOnly(202) },
-    { method: 'POST', url: () => '/api/runs/not-a-uuid/stop', expected: signedIn(401, 404) },
+    { method: 'POST', url: () => '/api/runs/not-a-uuid/stop', expected: active(401, 404) },
   ],
+  'POST /api/account/password': [
+    {
+      method: 'POST',
+      url: '/api/account/password',
+      payload: (user) => ({ currentPassword: user?.password ?? newPassword, newPassword }),
+      expected: signedIn(401, 200),
+    },
+  ],
+  'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
+  'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],
+  'POST /api/admin/users': [
+    {
+      method: 'POST',
+      url: '/api/admin/users',
+      payload: () => ({
+        userName: 'newcomer',
+        displayName: 'Newcomer',
+        role: 'user',
+        password: fixturePassword('Fresh'),
+      }),
+      expected: adminOnly(201),
+    },
+  ],
+  'POST /api/admin/users/:id/disable': [
+    { method: 'POST', url: adminUserUrl('/disable', (c) => c.userId), expected: adminOnly(200) },
+    { method: 'POST', url: adminUserUrl('/disable', () => unknownUser), expected: adminOnly(404) },
+  ],
+  'POST /api/admin/users/:id/enable': [
+    {
+      method: 'POST',
+      url: adminUserUrl('/enable', (c) => c.disabledUserId),
+      expected: adminOnly(200),
+    },
+  ],
+  'POST /api/admin/users/:id/password': [
+    {
+      method: 'POST',
+      url: adminUserUrl('/password', (c) => c.userId),
+      payload: () => ({ password: fixturePassword('Reset') }),
+      expected: adminOnly(200),
+    },
+  ],
+  'GET /api/admin/audit': [{ method: 'GET', url: '/api/admin/audit', expected: adminOnly(200) }],
+  'HEAD /api/admin/audit': [{ method: 'HEAD', url: '/api/admin/audit', expected: adminOnly(200) }],
   'GET *': [
     { method: 'GET', url: '/', expected: everyone(200) },
-    { method: 'GET', url: '/index.html', expected: signedIn(302, 200) },
+    { method: 'GET', url: '/index.html', expected: active(302, 200) },
     { method: 'GET', url: '/sign-in', expected: everyone(200) },
-    { method: 'GET', url: '/missing-page', expected: signedIn(302, 200) },
-    { method: 'GET', url: '/projects/a1b2/runs', expected: signedIn(302, 200) },
+    { method: 'GET', url: '/account/password', expected: signedIn(302, 200) },
+    { method: 'GET', url: '/missing-page', expected: active(302, 200) },
+    { method: 'GET', url: '/projects/a1b2/runs', expected: active(302, 200) },
     { method: 'GET', url: '/assets/missing.js', expected: everyone(404) },
-    { method: 'GET', url: '/ASSETS/x.js', expected: signedIn(302, 200) },
-    { method: 'GET', url: '/assets%2fnope.js', expected: signedIn(302, 200) },
-    { method: 'GET', url: '/api%2fx', expected: signedIn(302, 200) },
-    { method: 'GET', url: '/api/missing', expected: signedIn(401, 404) },
+    { method: 'GET', url: '/ASSETS/x.js', expected: active(302, 200) },
+    { method: 'GET', url: '/assets%2fnope.js', expected: active(302, 200) },
+    { method: 'GET', url: '/api%2fx', expected: active(302, 200) },
+    { method: 'GET', url: '/api/missing', expected: active(401, 404) },
   ],
   'HEAD *': [
     { method: 'HEAD', url: '/', expected: everyone(200) },
-    { method: 'HEAD', url: '/index.html', expected: signedIn(302, 200) },
+    { method: 'HEAD', url: '/index.html', expected: active(302, 200) },
     { method: 'HEAD', url: '/sign-in', expected: everyone(200) },
-    { method: 'HEAD', url: '/missing-page', expected: signedIn(302, 200) },
+    { method: 'HEAD', url: '/account/password', expected: signedIn(302, 200) },
+    { method: 'HEAD', url: '/missing-page', expected: active(302, 200) },
   ],
 };
 
@@ -199,11 +264,14 @@ async function browserFor(
   const amy = await addUser(test, { userName: 'amy' });
   const bob = await addUser(test, { userName: 'bob' });
   const root = await addUser(test, { userName: 'root', role: 'admin' });
+  const mia = await addUser(test, { userName: 'mia', role: 'admin', state: 'MustChangePassword' });
+  const dan = await addUser(test, { userName: 'dan', state: 'Disabled' });
   const users: Record<Column, TestUser | undefined> = {
     anonymous: undefined,
     user: amy,
     otherUser: bob,
     admin: root,
+    mustChange: mia,
   };
   const user = users[column];
   const browser =
@@ -218,6 +286,7 @@ async function browserFor(
   const context = {
     projectId: project.id,
     userId: amy.account.id,
+    disabledUserId: dan.account.id,
     endedRunId: ended.id,
     runningRunId: running.id,
   };
@@ -226,9 +295,7 @@ async function browserFor(
 
 const cases = Object.entries(matrix).flatMap(([route, probes]) =>
   probes.flatMap((probe, index) =>
-    (['anonymous', 'user', 'otherUser', 'admin'] as const).map(
-      (column) => [route, String(index + 1), column, probe] as const,
-    ),
+    columns.map((column) => [route, String(index + 1), column, probe] as const),
   ),
 );
 

@@ -43,7 +43,7 @@ describe('SignIn success', () => {
       firstFailedAt: null,
       lastSignInAt: fixtureNow,
     });
-    const [audited] = await auditLog.list({ since: new Date(0) });
+    const [audited] = await auditLog.list({ since: 0 });
     expect(audited).toMatchObject({
       action: 'auth.sign_in',
       outcome: 'ok',
@@ -103,7 +103,7 @@ describe('SignIn refusals', () => {
       failedSignIns: 1,
       firstFailedAt: fixtureNow,
     });
-    const [audited] = await auditLog.list({ since: new Date(0) });
+    const [audited] = await auditLog.list({ since: 0 });
     expect(audited).toMatchObject({
       action: 'auth.sign_in',
       outcome: 'refused',
@@ -140,7 +140,7 @@ describe('SignIn unknown user names', () => {
     expect(unknown).toEqual({ ok: false, error: ERROR_CODES.invalidCredentials });
     expect(invalidName).toEqual(unknown);
     expect(hasher.verified).toEqual([dummyHash, dummyHash]);
-    const audited = await auditLog.list({ since: new Date(0) });
+    const audited = await auditLog.list({ since: 0 });
     expect(audited[0]).toMatchObject({ targetId: null, detail: { reason: 'unknown-user' } });
     expect(sessions.storedKeys()).toEqual([]);
   });
@@ -161,7 +161,7 @@ describe('SignIn refusals by account state', () => {
     const outcome = await signIn.execute({ userName: 'amy', password, ...request });
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.invalidCredentials });
-    expect((await auditLog.list({ since: new Date(0) }))[0]?.detail).toEqual({
+    expect((await auditLog.list({ since: 0 }))[0]?.detail).toEqual({
       reason: 'disabled',
     });
   });
