@@ -64,10 +64,12 @@ describe('app shell fallback', () => {
       const response = await new TestBrowser(test.server).request({ method: 'GET', url });
 
       expect(response.statusCode).toBe(302);
-      expect(response.headers['location']).toBe('/sign-in');
+      expect(response.headers.location).toBe('/sign-in');
     },
   );
+});
 
+describe('app shell fallback for a signed-in user', () => {
   it.each(['/projects', '/projects/0b9d1f0a/runs', '/missing-page'])(
     'RF-1009 serves %s to a signed-in user so the router can draw it',
     async (url) => {
@@ -80,7 +82,9 @@ describe('app shell fallback', () => {
       expect(response.body).toContain(shellMarker);
     },
   );
+});
 
+describe('app shell fallback limits', () => {
   it.each(['/sign-in', '/projects'])(
     'RF-1013 %s carries the content security policy, nosniff and noindex',
     async (url) => {
