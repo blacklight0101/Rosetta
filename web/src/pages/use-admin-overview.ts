@@ -8,7 +8,7 @@ import { useApp } from '../app/app-context.js';
 // accounts give the month to date for the meter and the banner, and the names the audit page shows;
 // the caps give the monthly limit.
 
-export type Overview =
+type Overview =
   | { readonly status: 'loading' }
   | { readonly status: 'failed'; readonly error: ApiFailure }
   | { readonly status: 'ready'; readonly users: readonly ListedAccount[]; readonly caps: Caps };

@@ -13,7 +13,7 @@ const money = z.object({ currency: z.string(), costMicros: micros });
 export type Money = z.output<typeof money>;
 
 /** An account as every change answers it: never a hash or a lockout counter. */
-export const accountSchema = z.object({
+const accountSchema = z.object({
   id: z.string(),
   userName: z.string(),
   displayName: z.string(),
