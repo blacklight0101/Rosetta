@@ -243,8 +243,7 @@ function providerTestRunsContract(name: string, fresh: Fresh): void {
 }
 
 function sharedCallIdContract(name: string, fresh: Fresh): void {
-  // Call ids are `<runKey>#<n>` and a run key is unique only within a project, so two users'
-  // calls can carry the same call id: a reservation is the call of one user's run, not of an id.
+  // Call ids are `<runKey>#<n>`, unique only within a project: two users' calls can share one.
   async function twoUsersOneCallId() {
     const { fixture, ledger, ids } = await setUp(fresh);
     const other = { userId: await fixture.addUser(), runId: fixture.newRunId() };
