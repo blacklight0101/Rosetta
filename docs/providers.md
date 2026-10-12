@@ -294,7 +294,7 @@ The back-off is the same as Ollama's (section 2.4).
 ### 4.4 Tests and the manual live check
 
 - Automated tests never call Anthropic (ADR-008): under `ROSETTA_TEST=1` the adapter refuses every call with
-  `RST-1509` unless it was built for a loopback fake server (`fakeServer: true`). The tests run it against
+  `RST-1509` unless its base URL is a loopback address whose port a fake server registered (section 2.5). The tests run it against
   `tests/support/fake-anthropic-server.ts`, which replays the hand-written recordings under
   `tests/recordings/anthropic/` with a FAKE key, and run the contract suite on it.
 - Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key as `ANTHROPIC_API_KEY` in `.env`:

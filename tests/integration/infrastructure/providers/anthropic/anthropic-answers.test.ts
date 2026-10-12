@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
+import { AnthropicProvider } from '../../../../../src/infrastructure/providers/anthropic/anthropic-provider.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
 import { useFakeAnthropic } from '../../../../support/anthropic-harness.js';
+import {
+  FakeAnthropicServer,
+  loadAnthropicRecording,
+} from '../../../../support/fake-anthropic-server.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { fakeAnthropicKey } from '../../../../support/secret-fixture.js';
 
@@ -111,8 +116,23 @@ describe('AnthropicProvider answers it cannot use', () => {
 });
 
 describe('AnthropicProvider in automated tests', () => {
-  it('RNF-005 refuses to call the real Anthropic API when ROSETTA_TEST=1', async () => {
-    const { provider, server } = await start('contract-text', { fakeServer: false });
+  const servers: FakeAnthropicServer[] = [];
+  afterEach(async () => {
+    await Promise.all(servers.splice(0).map((server) => server.stop()));
+  });
+
+  it('RNF-005 refuses a loopback server that did not register its port', async () => {
+    const server = new FakeAnthropicServer(await loadAnthropicRecording('contract-text'), {
+      registerPort: false,
+    });
+    servers.push(server);
+    const provider = new AnthropicProvider({
+      apiKey: fakeAnthropicKey,
+      baseUrl: await server.start(),
+      timeoutSeconds: 5,
+      maxRetries: 0,
+      testMode: true,
+    });
 
     const error = await failureOf(provider.complete(contractRequest()));
 

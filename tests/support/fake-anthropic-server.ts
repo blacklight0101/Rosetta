@@ -1,7 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { exchangeSchema, FakeHttpServer, type RecordedExchange } from './fake-http-server.js';
+import {
+  exchangeSchema,
+  FakeHttpServer,
+  type FakeServerOptions,
+  type RecordedExchange,
+} from './fake-http-server.js';
 
 // ADR-008, RF-404: a fake Anthropic HTTP server on loopback that replays a recording of
 // Anthropic's wire answers: each `POST /v1/messages` answers the next recorded exchange. The
@@ -36,8 +41,8 @@ function anthropicRoute(recording: AnthropicRecording) {
 }
 
 export class FakeAnthropicServer extends FakeHttpServer {
-  constructor(recording: AnthropicRecording) {
-    super(anthropicRoute(recording));
+  constructor(recording: AnthropicRecording, options: FakeServerOptions = {}) {
+    super(anthropicRoute(recording), options);
   }
 
   /** The message bodies received, in order. */

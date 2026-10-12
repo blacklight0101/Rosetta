@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type {
   LlmAttemptFailure,
   LlmAttemptObserver,
@@ -7,7 +7,7 @@ import { ERROR_CODES } from '../../../../../src/domain/errors/codes.js';
 import { AnthropicProvider } from '../../../../../src/infrastructure/providers/anthropic/anthropic-provider.js';
 import { contractRequest } from '../../../../contracts/llm-provider.contract.js';
 import { useFakeAnthropic } from '../../../../support/anthropic-harness.js';
-import { closedLoopbackUrl } from '../../../../support/fake-http-server.js';
+import { closedLoopbackUrl, releaseClosedLoopbackUrls } from '../../../../support/fake-http-server.js';
 import { failureOf } from '../../../../support/failure-of.js';
 import { fakeAnthropicKey } from '../../../../support/secret-fixture.js';
 
@@ -16,6 +16,10 @@ import { fakeAnthropicKey } from '../../../../support/secret-fixture.js';
 // key, unknown model, no credit) at once with a coded error that names the fix (ADR-008).
 
 const start = useFakeAnthropic();
+
+afterEach(() => {
+  releaseClosedLoopbackUrls();
+});
 
 class Attempts implements LlmAttemptObserver {
   started = 0;
@@ -97,7 +101,6 @@ describe('AnthropicProvider retry hints and connections', () => {
       timeoutSeconds: 5,
       maxRetries: 1,
       testMode: true,
-      fakeServer: true,
       sleep: () => Promise.resolve(),
     });
     const attempts = new Attempts();
