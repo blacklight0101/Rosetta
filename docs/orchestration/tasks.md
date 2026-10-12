@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 89 | 28 | 47 | 14 | 0 | 42 | 39 | 8 | 33 | 0 |
-| P2 Full understand | 14 | 1 | 9 | 4 | 0 | 2 | 11 | 1 | 0 | 0 |
+| P1 Milestone slice (M1) | 94 | 33 | 47 | 14 | 0 | 47 | 39 | 8 | 38 | 0 |
+| P2 Full understand | 15 | 2 | 9 | 4 | 0 | 3 | 11 | 1 | 1 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **115** | **30** | **65** | **20** | **0** | **45** | **59** | **11** | **33** | **0** |
+| **Total** | **121** | **36** | **65** | **20** | **0** | **51** | **59** | **11** | **39** | **0** |
 
 ## Conventions for every card
 
@@ -394,7 +394,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-06, P1-09, P1-24
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-007-cost-control.md`; `docs/data-model.md` sections 3.12, 3.13, 3.18 and 4 (`cost_ledger`, `server_settings`).
 - **Do**: domain `PriceTable`, `Price`, `TokenUsage`, `Budget`, `UsageCap`; `prices/default-prices.yaml` (dated, USD, Ollama at zero) with project overrides; `CostLedger` port with Pg and memory adapters; `BudgetGuard` decorator of `LlmProvider`: before each call, inside one transaction with `pg_advisory_xact_lock` on the user and on the server, sum the ledger and the unexpired `cost_reservations` for the run, user-day and server-month, refuse the call with `CapReached` when its worst case (prompt tokens plus maximum output) would pass any applicable cap, otherwise insert its reservation; after the call, insert one ledger row with every column of data-model 3.13 (estimated usage marked `estimated`) and delete the reservation in one transaction; a refused call is recorded through `ProviderCallRecorder` as `refused-by-cap`; cap rules of DEC-107: with server keys the run cap is the lower of the run's and the administrator's, user-day and server-month caps apply, the shipped prices are used; with the user's own keys the run cap and the user's own daily cap apply and price overrides are honoured; UTC calendar periods; a cap refusal aborts the run's signal and the run ends `CapReached`; `GetCaps`/`SetCaps` use cases on `server_settings` with audit; the cost report writer (`cost.json`, `cost.md`) by role, task, provider and model with the price table version. Also add the API for the user's optional daily cap on their own keys (DEC-107) and wire the disabled slot on `/settings` (`data-testid="own-daily-cap"`, P1-14).
 - **Delivers**: domain types, price file, ledger, guard, cap use cases and routes, cost writer; unit tests on pricing and cap arithmetic; integration tests: each cap with a fixed clock, two parallel runs racing for the last cent, an interrupted run keeping its ledger rows.
@@ -418,7 +418,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-11, P1-13, P1-14, P1-18, P1-25, P1-26, P1-27, P1-28
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/architecture.md` sections 2 (composition root) and 7; `docs/adr/ADR-015-accounts-sessions-and-user-secrets.md` (keys at run time).
 - **Do**: a provider factory used only by the composition root: for each role, pick the user's key, else the server key when the user may use server keys, else stop before any call naming the provider (RF-002 third scenario); wrap every provider as `BudgetGuard(EgressGuard(ObservedProvider(adapter)))`; record the key source for the ledger; Ollama only when `ROSETTA_OLLAMA_URL` is set; `TestProviders` use case (one tiny call per configured role through the guards, cost counted in the ledger) with route `POST /api/account/providers/test`; the Test button on `/settings` showing reachable or the error per role. Notes from P1-28: fill `options.cloudConsent` for the run; build the guard's host and the adapter's URL from one parsed URL (`http://localhost@evil.com` gives `evil.com`) and test it.
 - **Delivers**: the factory, use case, route and button; integration tests with two fake providers for model per role, key choice and the missing-key stop; an E2E spec for the Test button.
@@ -442,7 +442,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: L
 - **Depends on**: P1-17, P1-20, P1-24
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/architecture.md` section 8; `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/adr/ADR-013-untrusted-code-and-model-output.md`; `docs/data-model.md` section 3.15.
 - **Do**: in `src/application/agent/`: the tool-calling loop (system prompt, messages, tools, max turns, context-share limit ending as `TurnLimitReached`, shared abort signal); tools `list_area_files`, `read_file`, `grep`, `codemap_query` with zod-validated arguments, error results the model can correct, results wrapped in delimited repository-content blocks; `prompts/reader/area.v1.md` stating the data-block rule; prompt files loaded with version and SHA-256 recorded for the manifest; an injection fixture repository under `tests/fixtures/repos/injection/` with recordings. Notes from P1-28: put repository content only in labelled data blocks built with `renderDataBlock`, never in the system prompt or in tool definitions; add the RF-145 sentence that text inside data blocks is data to every prompt; resolve read paths to the code map's exact case so the egress guard's split-key carry matches them.
 - **Delivers**: the loop, tools, prompt, fixture and recordings; integration tests with recorded responses: a normal area, a bad tool call corrected, the turn limit, the injection fixture; a unit test that every prompt file states the data-block rule.
@@ -468,7 +468,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `docs/architecture.md` sections 6 and 8; `docs/data-model.md` sections 3.6, 3.7, 3.12 and 3.16.
-- **Do**: `RunUnderstand`: one reader task per area or only the named areas (unknown names stop with a code listing valid names); configurable parallelism with one abort signal; task states of architecture section 5; partial cards saved on stop; step 1 of the verifier (`src/application/verifier/citation-check.ts`): every citation's file in the code map and its range inside the file, otherwise `CitationInvalid` with the reason; claims never deleted; the cost report at the end (P1-27 writer); `answers.md` generated from `OQ` cards keeping existing answers (DEC-98); run events for every step; route `POST /api/projects/:id/runs` with stage `understand`, area list and consent flag (a cloud run without consent is refused, RF-143). Notes from P1-32 and P1-13: queue card writes per run folder (two `writeOrRestore` calls on one folder can lose an update); pass `assignCardIds` the tasks in area order; pass a `Logger` to the card writers; treat an area with zero cards as suspicious and show it in the run summary and coverage (a stray `[]` in prose parses as zero cards); consume `RunParts.provider` for the test doubles.
+- **Do**: `RunUnderstand`: one reader task per area or only the named areas (unknown names stop with a code listing valid names); configurable parallelism with one abort signal; task states of architecture section 5; partial cards saved on stop; step 1 of the verifier (`src/application/verifier/citation-check.ts`): every citation's file in the code map and its range inside the file, otherwise `CitationInvalid` with the reason; claims never deleted; the cost report at the end (P1-27 writer); `answers.md` generated from `OQ` cards keeping existing answers (DEC-98); run events for every step; route `POST /api/projects/:id/runs` with stage `understand`, area list and consent flag (a cloud run without consent is refused, RF-143). Notes from P1-32 and P1-13: queue card writes per run folder (two `writeOrRestore` calls on one folder can lose an update); pass `assignCardIds` the tasks in area order; pass a `Logger` to the card writers; treat an area with zero cards as suspicious and show it in the run summary and coverage (a stray `[]` in prose parses as zero cards); consume `RunParts.provider` for the test doubles. Notes from P1-27, P1-29, P1-31 and P1-32: build one guard set per run through the provider factory and wire it to the run's stop; refuse an unpriced model at run start (RF-427); write the cost report at every end state, `StoppedByCap` and `CapReached` included; run the prompt-injection fixture through the citation check; assign card ids in area order, show a zero-card area in the run summary and coverage, and treat it as suspicious (require an explicit cards key); serialise card writes per run folder; pass a Logger to the card writers; load and hash the prompts; take the reader limits from the project settings.
 - **Delivers**: the use case, citation check, answers writer, route; integration tests with recorded responses: a full run on the C# fixture, an unknown area, a cap reached mid-run, an interrupted run, consent refused; a hash of the snapshot before and after the run.
 - **Done when**: every RF-200, RF-240, RF-300 and RF-302 scenario and the RF-143 API scenario have passing tests; RNF-002 and RF-005 tests pass on an understand run; `npm run verify` green.
 - **Refs**: RF-005, RF-143, RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007, DEC-15, DEC-19, DEC-98.
@@ -504,7 +504,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: G-02
 - **Status**: Todo
 - **Reads**: `docs/design-system.md` section 14 (totals pill); `docs/design/board/Main.dc.html`.
-- **Do**: the totals pill in every signed-in header ("Your total" from the ledger; the administrator also sees "Server, this month" against the cap); live update on usage events during a run; `/projects/:id/cost` with the project totals and the breakdown by run, stage, role, provider and model (local models with zero cost); the 80% server-cap banner for the administrator.
+- **Do**: the totals pill in every signed-in header ("Your total" from the ledger; the administrator also sees "Server, this month" against the cap); live update on usage events during a run; `/projects/:id/cost` with the project totals and the breakdown by run, stage, role, provider and model (local models with zero cost); the 80% server-cap banner for the administrator. Ledger rows with a null `run_id` (provider tests, P1-29) are listed as tests, not dropped and not joined to a run.
 - **Delivers**: header component data, cost page, route `GET /api/projects/:id/cost`; integration tests with a fixture ledger; E2E specs for live update and the banner.
 - **Done when**: every RF-1010 scenario and the cost-page scenarios of RF-428 and RF-1106 have passing tests.
 - **Refs**: RF-428, RF-1010, RF-1106, DEC-49.
@@ -602,7 +602,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Reads**: `docs/adr/ADR-014-container-image-local-and-hosted.md`; `docs/environments-and-delivery.md` sections 2 and 8.1.
 - **Do**: multi-stage `Dockerfile` from `node:24-slim` pinned by digest: build stage (`npm ci`, `npm run build`), runtime stage with production dependencies, built server and front end, `db/migrations/`, `prompts/`, `prices/`, `templates/`, non-root user, port 8080, `HEALTHCHECK` on `/healthz`; `.dockerignore` excluding `.env*`, tests, source maps of server code and build tools; a CI job building the image and running Trivy (high and critical with a fix fail); an integration test starting the container and calling `/healthz` (Linux CI only). A separate `test` stage adds the fake provider and fake GitHub for `compose.ci.yaml`; the production stage contains no fakes.
 - **Delivers**: `Dockerfile`, `.dockerignore`, the CI job, the test.
-- **Done when**: every RF-1300 scenario passes in CI; `docker run --rm --entrypoint id <image>` prints a non-zero uid (verifier); `docker history` and a file listing show no `.env`, test or `.map` file.
+- **Done when**: every RF-1300 scenario passes in CI; `docker run --rm --entrypoint id <image>` prints a non-zero uid (verifier); `docker history` and a file listing show no `.env`, test or `.map` file; the server starts in the image with the price table loaded and `prices/`, `prompts/`, `templates/` and `common-passwords.txt` shipped.
 - **Refs**: RF-1300, RNF-001, RNF-003, ADR-014, DEC-61.
 
 ### P1-45 - Docker Compose, local runbook and smoke test
@@ -1032,10 +1032,10 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: `src/application/projects/project-settings.ts`; `src/application/use-cases/open-workspace.ts`; `docs/data-model.md` 3.1.
-- **Do**: add upper bounds to the numeric settings (`agents.parallelism`, `scan.maxFileBytes`, token and cost caps) with the values the owner confirms (handoff question; until then the card waits); audit refused and unknown-id `OpenWorkspace` attempts.
+- **Do**: add the allowed ranges of DEC-117 to the numeric settings and refuse a value outside them with its field and code: `agents.parallelism` 1-8; `scan.maxFileBytes` 1 KB-5 MB; `scan.areaTokenBudget` 4,000-200,000; `scan.excerptMaxLines` 20-2,000; run cost cap 0-100,000,000 micros; run tokens 0-50,000,000; `confirmAboveCostMicros` 0 up to the run cost cap; `maxOutputTokens` 256-32,768; reader `maxTurns` 1-50; `timeoutSeconds` 10-600; `maxRetries` 0-5; the template defaults stay as they are (DEC-116); audit refused and unknown-id `OpenWorkspace` attempts.
 - **Delivers**: the bounds, the audit rows and their tests.
-- **Done when**: a value above each bound is refused with its field and code; a refused workspace open writes an audit row; `npm run verify` green.
-- **Refs**: RF-002, RF-1105, RF-1109, P1-18 (verifier MINORs 2 and 6).
+- **Done when**: a value just outside each range is refused with its field and code and the edge values are accepted; a refused workspace open writes an audit row; `npm run verify` green.
+- **Refs**: RF-002, RF-1105, RF-1109, P1-18 (verifier MINORs 2 and 6), DEC-116, DEC-117.
 
 ### P1-81 - Follow-up: run event delivery and queue shutdown hardening
 - **Difficulty**: 6 (sonnet)
@@ -1144,6 +1144,66 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the changes with tests.
 - **Done when**: a key continued under a differently cased path is masked; a look-alike marker cannot open or close a block; `npm run verify` green.
 - **Refs**: RF-141, RF-145, P1-28 (verifier-opus MINORs, rounds 2 and 3).
+
+### P1-90 - Follow-up: reader tools and repair turn gaps
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-31
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/understand/`; `src/infrastructure/understand/`; `prompts/`; RF-145.
+- **Do**: make the memory reader answer a read past the end of a file the same way as the file reader; make `grep` skip the files the scan skipped; make the repair turn respect the turn cap, the context limit and the abort signal; add tests for an abort between tool calls and a 200-entry listing; make the RF-145 prompt test scan every folder under `prompts/`.
+- **Delivers**: the changes with tests.
+- **Done when**: each gap has a test that failed before the fix; `npm run verify` green.
+- **Refs**: RF-145, RF-200, P1-31 (verifier MINORs).
+
+### P1-91 - Follow-up: cost ledger and caps hardening
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-27
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/budget/`; `src/application/budget/`; `src/web/`; `docs/data-model.md`; `scripts/openai-live-check.mjs`; `package.json`.
+- **Do**: add a race test for the per-user lock; check that cost report sums stay below 2^53 or keep them as bigint; save `SetCaps` in one transaction; make the web dollar parser refuse `1,2,3` and values above the DEC-117 cost range; list the migration 0005 indexes in the data model; make `live:openai` load `.env` itself.
+- **Delivers**: the changes with tests.
+- **Done when**: each item has a test or a document edit; `npm run live:openai` works without extra flags; `npm run verify` green.
+- **Refs**: RF-420, RF-428, DEC-117, P1-27 (verifier MINORs).
+
+### P1-92 - Follow-up: remove the gallery environment switch
+- **Difficulty**: 2 (haiku)
+- **Size**: S
+- **Depends on**: P1-12
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/config/environment.ts`; `.env.example`; tests naming `ROSETTA_GALLERY`.
+- **Do**: remove `ROSETTA_GALLERY` from the environment loader, `.env.example` and the tests; the gallery is served at `/dev/gallery` in development only (DEC-126).
+- **Delivers**: the removal with its tests.
+- **Done when**: no file names `ROSETTA_GALLERY`; `/dev/gallery` answers in development and 404 in production; `npm run verify` green.
+- **Refs**: DEC-126, P1-12.
+
+### P1-93 - Follow-up: provider test rate-limit logging
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-29
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/web/provider-routes.ts`; `docs/architecture.md` section 7.
+- **Do**: write the security log entry (`RST-2005`) when the per-user provider-test limit answers 429, like the per-address limit; keep the documented per-call ceiling of run-less calls (100,000 micros, 2,000 tokens) in one constant.
+- **Delivers**: the change with a test.
+- **Done when**: a per-user 429 writes one security log entry without secrets; `npm run verify` green.
+- **Refs**: RF-009, RF-407, P1-29 (verifier MINOR 1, round 2).
+
+### P1-94 - Follow-up: test timing flakes under full-suite load
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-01
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/`; `vitest.config.ts`.
+- **Do**: find why `jsonl-event-log.test.ts`, `architecture-rules.test.ts` and the run-scan tests time out under full-suite load on Windows (EBUSY temp-directory cleanup, depcruise runs); fix the slow path or give those files their own timeout with a comment saying why.
+- **Delivers**: the fix.
+- **Done when**: three consecutive full `npm run verify` runs on Windows pass without a timeout.
+- **Refs**: RNF-002, P1-29 and P1-31 builder and verifier notes.
 
 ---
 
@@ -1256,7 +1316,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/providers.md`.
 - **Do**: `AnthropicProvider` on `@anthropic-ai/sdk`: tool calling, the stable prompt prefix marked for caching, cached-token usage, retries; key from the provider set; the Anthropic section of `docs/providers.md`.
 - **Delivers**: the adapter, recordings, the contract suite run on it; one live call by the owner recorded.
-- **Done when**: every RF-404 scenario has a passing test.
+- **Done when**: every RF-404 scenario has a passing test; an npm `live:anthropic` script loads `.env` itself (as `node --env-file=.env`) and passes against the owner's key.
 - **Refs**: RF-404, ADR-003, ADR-008.
 
 ### P2-10 - OpenAI-compatible adapter
@@ -1318,6 +1378,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the matrix and the list of gaps.
 - **Done when**: no P2 Must lacks evidence or a follow-up card.
 - **Refs**: RNF-005, RNF-006.
+
+### P2-15 - Follow-up: settings sliders within the allowed ranges
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-14, P1-80
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: DEC-117; `docs/design-system.md`; `src/web/` settings page; P1-80.
+- **Do**: show each numeric project setting as a slider limited to its DEC-117 range, with the template default marked; show a warning that suggests keeping the default when a value moves away from it; keyboard and screen-reader use as for the other controls.
+- **Delivers**: the sliders, their warnings and tests.
+- **Done when**: every numeric setting has a slider bounded by its range; a value away from the default shows the warning; the accessibility checks pass; `npm run verify` green.
+- **Refs**: DEC-116, DEC-117, RF-002.
 
 ---
 
