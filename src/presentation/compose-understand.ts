@@ -52,17 +52,27 @@ export function ollamaHostOf(url: string | undefined): string | undefined {
   }
 }
 
+/** RF-200, RF-425: the code map and snapshot of a completed scan, read from the run folder. */
+export function composeScanResults(
+  parts: Pick<UnderstandParts, 'dataDir' | 'writer' | 'manifests' | 'logger'>,
+): FileScanResults {
+  const { dataDir, writer, manifests, logger } = parts;
+  const snapshots = new SnapshotStore(dataDir);
+  return new FileScanResults({
+    writer,
+    manifests,
+    logger,
+    snapshotRoot: (key) => snapshots.filesDir(key),
+  });
+}
+
 // RF-200
 export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
   const { pool, logger, clock, masker, dataDir, writer, manifests } = parts;
-  const snapshots = new SnapshotStore(dataDir);
   return new RunUnderstand({
     ...{ projects: parts.projects, runs: parts.runs, manifests, clock, logger },
     users: new PgUserRepository(pool),
-    scans: new FileScanResults({
-      ...{ writer, manifests, logger },
-      snapshotRoot: (key) => snapshots.filesDir(key),
-    }),
+    scans: composeScanResults(parts),
     providers: parts.providers,
     runSinks: (scope) => ({
       recorder: new JsonlProviderCallLog({

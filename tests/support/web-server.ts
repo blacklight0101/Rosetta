@@ -15,6 +15,7 @@ import { GetCaps } from '../../src/application/use-cases/get-caps.js';
 import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-cap.js';
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
 import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
+import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { TestProviders } from '../../src/application/use-cases/test-providers.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
@@ -44,6 +45,7 @@ import { FakeHostResolver } from './fake-host-resolver.js';
 import type { FakeAdapters, SpyLedger } from './provider-fakes.js';
 import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
+import { estimatePrices, FixedScans, catalogAreas } from './estimate-harness.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
@@ -204,13 +206,25 @@ function authServices(parts: AuthParts): ServerOptions['auth'] {
 /** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
 function runServices(
   runs: RunHarness,
-  projects: MemoryProjectRepository,
+  stores: {
+    readonly projects: MemoryProjectRepository;
+    readonly keys: MemoryProviderKeyRepository;
+  },
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
 ): ServerOptions['runs'] {
+  const { projects, keys } = stores;
   return {
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
     startRun: new StartRun({ projects, submit: runs.submit }),
+    // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
+    estimateRun: new EstimateRun({
+      projects,
+      runs: runs.runs,
+      scans: new FixedScans(catalogAreas),
+      keys,
+      priceTable: estimatePrices,
+    }),
     ...route,
   };
 }
@@ -273,7 +287,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ serverSettings, testProviders },
     }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: runServices(runs, projects, route),
+    runs: runServices(runs, { projects, keys: keys.keys }, route),
     ...overrides,
   });
   return {

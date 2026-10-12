@@ -1,3 +1,4 @@
+import { EstimateRun } from '../application/estimate/estimate-run.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
@@ -8,7 +9,9 @@ import { StartRun } from '../application/use-cases/start-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
+import type { PriceTable } from '../domain/budget/price-table.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
+import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
@@ -24,7 +27,7 @@ import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import { StreamRegistry } from './web/event-stream.js';
-import { composeUnderstand, ollamaHostOf } from './compose-understand.js';
+import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { RunServices } from './web/run-routes.js';
 
 // Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event
@@ -55,6 +58,8 @@ export interface RunParts {
   readonly providers: ProviderSetFactory;
   /** `ROSETTA_OLLAMA_URL`; an Ollama on another host needs the cloud consent (RF-143). */
   readonly ollamaUrl: string | undefined;
+  /** The shipped price table the estimate prices the roles with (RF-425). */
+  readonly priceTable: PriceTable;
 }
 
 export interface RunComposition {
@@ -112,17 +117,23 @@ interface ServiceParts {
   readonly projects: PgProjectRepository;
   readonly submitRun: SubmitRun;
   readonly queue: RunQueue;
+  readonly scans: ReturnType<typeof composeScanResults>;
 }
 
 /** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
 function runServices(service: ServiceParts): RunServices {
-  const { parts, runs, log, broadcaster, projects, submitRun, queue } = service;
+  const { parts, runs, log, broadcaster, projects, submitRun, queue, scans } = service;
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   return {
     startRun: new StartRun({
       projects,
       submit: submitRun,
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
+    }),
+    estimateRun: new EstimateRun({
+      ...{ projects, runs, scans },
+      keys: new PgProviderKeyRepository(parts.pool),
+      priceTable: parts.priceTable,
     }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
@@ -171,7 +182,10 @@ export function composeRuns(parts: RunParts): RunComposition {
   });
   return {
     queue,
-    services: runServices({ parts, runs, log, broadcaster, projects, submitRun, queue }),
+    services: runServices({
+      ...{ parts, runs, log, broadcaster, projects, submitRun, queue },
+      scans: composeScanResults({ dataDir, writer, manifests, logger }),
+    }),
     submitRun,
     async recover() {
       await scan.fetcher.discardPartialFolders();

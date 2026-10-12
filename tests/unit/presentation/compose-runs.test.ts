@@ -31,6 +31,7 @@ describe('composeRuns', () => {
       packs: new LanguagePackRegistry([]),
       providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
       ollamaUrl: undefined,
+      priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
     });
 
     // The database is unreachable, so the queue step that follows rejects; the discard comes first.

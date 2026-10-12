@@ -5,6 +5,7 @@ import type { ScheduledJob } from '../application/ports/scheduler.js';
 import type { RunQueue } from '../application/runs/run-queue.js';
 import type { SessionStore } from '../application/ports/session-store.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
+import { loadPriceTable } from '../infrastructure/budget/price-file.js';
 import { readAppVersion } from '../infrastructure/config/app-version.js';
 import type { Environment } from '../infrastructure/config/environment.js';
 import { readMigrationFiles } from '../infrastructure/db/migration-files.js';
@@ -37,6 +38,7 @@ const repositoryRoot = new URL('../../', import.meta.url);
 const migrationsFolder = fileURLToPath(new URL('db/migrations/', repositoryRoot));
 const staticRoot = fileURLToPath(new URL('dist/web/', repositoryRoot));
 const templatesFolder = fileURLToPath(new URL('templates/', repositoryRoot));
+const priceFile = fileURLToPath(new URL('prices/default-prices.yaml', repositoryRoot));
 
 export interface ApplicationOptions {
   readonly environment: Environment;
@@ -184,6 +186,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     ...{ githubToken: environment.githubToken, ollamaUrl: environment.ollamaUrl },
     ...(doubles?.fetch === undefined ? {} : { fetch: doubles.fetch }),
     providers: auth.providers,
+    priceTable: await loadPriceTable(priceFile),
     packs: await composeLanguagePacks(),
   });
   const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });

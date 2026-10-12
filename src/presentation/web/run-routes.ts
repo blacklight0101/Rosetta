@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import type { EstimateRun } from '../../application/estimate/estimate-run.js';
 import type { Scheduler } from '../../application/ports/scheduler.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
@@ -24,6 +25,7 @@ import { runView } from './run-view.js';
 
 export interface RunServices {
   readonly startRun: StartRun;
+  readonly estimateRun: EstimateRun;
   readonly subscribeRunEvents: SubscribeRunEvents;
   readonly stopRun: StopRun;
   /** Drives the keep-alive comment of every open stream. */

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { InjectOptions } from 'fastify';
 import { actorOf } from '../../src/domain/accounts/actor.js';
 import { fixturePassword } from '../support/account-fixtures.js';
+import { completedScan } from '../support/estimate-harness.js';
 import { sampleProject, settingsWith } from '../support/project-fixtures.js';
 import { fixtureKey, sampleKeyRecord } from '../support/provider-key-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser, type TestUser } from '../support/test-browser.js';
@@ -97,6 +98,13 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
       payload: () => ({ stage: 'scan' }),
       expected: active(401, 404),
     },
+  ],
+  'GET /api/projects/:id/estimate': [
+    { method: 'GET', url: projectUrl('/estimate'), expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/projects/not-a-uuid/estimate', expected: active(401, 404) },
+  ],
+  'HEAD /api/projects/:id/estimate': [
+    { method: 'HEAD', url: projectUrl('/estimate'), expected: ownerOnly(200) },
   ],
   'GET /api/admin/users/:id/projects': [
     { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
@@ -236,6 +244,8 @@ async function browserFor(
     user === undefined ? new TestBrowser(test.server) : await signedInBrowser(test.server, user);
   const project = sampleProject({ userId: amy.account.id });
   await test.projects.insertOrFind(project);
+  // RF-425: the estimate reads the code map of the project's latest completed scan.
+  await test.runs.runs.insert(completedScan(project.id, amy.account.id));
   const owner = actorOf(amy.account);
   const ended = await test.runs.start(owner);
   test.runs.executor.settle(ended.id, { endState: 'Completed' });
