@@ -133,31 +133,7 @@ describe('AesGcmSecretBox refusals', () => {
   });
 });
 
-describe('AesGcmSecretBox rotation', () => {
-  it('RF-1104 opens a value sealed under ROSETTA_SECRET_KEY_PREVIOUS and seals new ones under the current key', () => {
-    const old = new AesGcmSecretBox({ current: fixtureSecret(10) });
-    const sealedOld = old.seal(fixtureKey('Rotate1'), amyOpenAi);
-    const box = new AesGcmSecretBox({ current: fixtureSecret(11), previous: fixtureSecret(10) });
-
-    const resealed = box.seal(fixtureKey('Rotate1'), amyOpenAi);
-
-    expect(box.open(sealedOld, amyOpenAi)).toEqual({ ok: true, value: fixtureKey('Rotate1') });
-    expect(sealedOld.keyVersion).toBe(old.keyVersion);
-    expect(resealed.keyVersion).toBe(box.keyVersion);
-    expect(box.keyVersion).not.toBe(old.keyVersion);
-    expect(box.knows(old.keyVersion)).toBe(true);
-  });
-
-  it('RF-1104 refuses a value under a key version it does not hold', () => {
-    const stranger = new AesGcmSecretBox({ current: fixtureSecret(12) });
-    const box = new AesGcmSecretBox({ current: fixtureSecret(11), previous: fixtureSecret(10) });
-    const sealed = stranger.seal(fixtureKey('Unknown1'), amyOpenAi);
-
-    expect(box.open(sealed, amyOpenAi)).toEqual(unreadable);
-    expect(box.knows(stranger.keyVersion)).toBe(false);
-    expect(box.open({ ...sealed, keyVersion: box.keyVersion }, amyOpenAi)).toEqual(unreadable);
-  });
-
+describe('AesGcmSecretBox strict base64 secret', () => {
   it.each([
     [
       'a character outside the base64 alphabet',
@@ -184,6 +160,32 @@ describe('AesGcmSecretBox rotation', () => {
 
   it('RF-1104 accepts the canonical base64 of 32 bytes', () => {
     expect(() => new AesGcmSecretBox({ current: fixtureSecret(7) })).not.toThrow();
+  });
+});
+
+describe('AesGcmSecretBox rotation', () => {
+  it('RF-1104 opens a value sealed under ROSETTA_SECRET_KEY_PREVIOUS and seals new ones under the current key', () => {
+    const old = new AesGcmSecretBox({ current: fixtureSecret(10) });
+    const sealedOld = old.seal(fixtureKey('Rotate1'), amyOpenAi);
+    const box = new AesGcmSecretBox({ current: fixtureSecret(11), previous: fixtureSecret(10) });
+
+    const resealed = box.seal(fixtureKey('Rotate1'), amyOpenAi);
+
+    expect(box.open(sealedOld, amyOpenAi)).toEqual({ ok: true, value: fixtureKey('Rotate1') });
+    expect(sealedOld.keyVersion).toBe(old.keyVersion);
+    expect(resealed.keyVersion).toBe(box.keyVersion);
+    expect(box.keyVersion).not.toBe(old.keyVersion);
+    expect(box.knows(old.keyVersion)).toBe(true);
+  });
+
+  it('RF-1104 refuses a value under a key version it does not hold', () => {
+    const stranger = new AesGcmSecretBox({ current: fixtureSecret(12) });
+    const box = new AesGcmSecretBox({ current: fixtureSecret(11), previous: fixtureSecret(10) });
+    const sealed = stranger.seal(fixtureKey('Unknown1'), amyOpenAi);
+
+    expect(box.open(sealed, amyOpenAi)).toEqual(unreadable);
+    expect(box.knows(stranger.keyVersion)).toBe(false);
+    expect(box.open({ ...sealed, keyVersion: box.keyVersion }, amyOpenAi)).toEqual(unreadable);
   });
 
   it('RF-1305 refuses a server secret that is not 32 bytes, without naming its value', () => {
