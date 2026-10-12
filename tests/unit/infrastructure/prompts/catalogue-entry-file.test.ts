@@ -53,6 +53,7 @@ describe('parseCatalogueEntry refusals', () => {
     ],
     ['a rule over two lines', { rule: 'Give every module\none reason to change.' }],
     ['an empty rule', { rule: '' }],
+    ['a rule over 200 characters', { rule: 'x'.repeat(201) }],
     ['an unknown section', { extra: '\n## Notes\n\nMore.\n' }],
     ['style criteria on a principle', { extra: '\n## Choose it when\n\n- Always.\n- Often.\n' }],
   ])('RF-606 refuses a principle file with %s', (_problem, parts) => {
@@ -68,9 +69,21 @@ describe('parseCatalogueEntry refusals', () => {
 
     expect(failureOfParse('solid.v1.md', text)).toMatchObject(refused);
   });
+});
 
+describe('parseCatalogueEntry style refusals', () => {
   it('RF-606 refuses a style without its selection criteria', () => {
     expect(failureOfParse('layered.v1.md', styleFileText(''))).toMatchObject(refused);
+  });
+
+  it.each([
+    ['one bullet', 1],
+    ['nine bullets', 9],
+  ])('RF-608 refuses a style whose choose-when list has %s', (_count, length) => {
+    const items = Array.from({ length }, (_item, index) => `- Reason ${String(index)}.`);
+    const criteria = `## Choose it when\n\n${items.join('\n')}\n\n## Look elsewhere when\n\n- A.\n- B.\n`;
+
+    expect(failureOfParse('layered.v1.md', styleFileText(criteria))).toMatchObject(refused);
   });
 
   it('RF-606 refuses a criteria section that is not a bullet list', () => {
