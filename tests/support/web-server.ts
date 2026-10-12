@@ -4,6 +4,7 @@ import { RecordRefusedRequest } from '../../src/application/use-cases/record-ref
 import { ResolveSession } from '../../src/application/use-cases/resolve-session.js';
 import { SignIn } from '../../src/application/use-cases/sign-in.js';
 import { SignOut } from '../../src/application/use-cases/sign-out.js';
+import { StartRun } from '../../src/application/use-cases/start-run.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
@@ -142,7 +143,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     trustProxy: 0,
     auth: authServices({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, ...route },
+    runs: {
+      subscribeRunEvents: runs.subscribe,
+      stopRun: runs.stop,
+      startRun: new StartRun({ projects, submit: runs.submit }),
+      ...route,
+    },
     ...overrides,
   });
   return {

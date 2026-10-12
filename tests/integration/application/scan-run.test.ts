@@ -28,7 +28,11 @@ describe('a scan run on the C# fixture', () => {
     const parsed = parseCodeMap(await readFile(join(folder, 'codemap.json'), 'utf8'));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.value.source).toMatchObject({ owner: 'octo', repo: 'demo', commitSha: FAKE_COMMIT });
+    expect(parsed.value.source).toMatchObject({
+      owner: 'octo',
+      repo: 'demo',
+      commitSha: FAKE_COMMIT,
+    });
     expect(parsed.value.files.length).toBeGreaterThan(5);
     expect(parsed.value.languagePacks.map((pack) => pack.name)).toContain('csharp');
     expect(await readFile(join(folder, 'scan-summary.md'), 'utf8')).toContain('octo/demo');

@@ -47,6 +47,7 @@ export const ERROR_CODES = {
   byteLimitInvalid: 'RST-1113',
   languagePackFailed: 'RST-1200',
   languagePackInvalid: 'RST-1201',
+  codeMapInvalid: 'RST-1202',
   fakeProviderRefused: 'RST-1500',
   providerCallCancelled: 'RST-1501',
   recordingInvalid: 'RST-1502',

@@ -1,5 +1,9 @@
 import { vi } from 'vitest';
-import type { ScanPipeline, ScanReport, ScanRequest } from '../../src/application/ports/scan-pipeline.js';
+import type {
+  ScanPipeline,
+  ScanReport,
+  ScanRequest,
+} from '../../src/application/ports/scan-pipeline.js';
 import type { SourceFetcher } from '../../src/application/ports/source-fetcher.js';
 import type { Project } from '../../src/application/projects/project.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
@@ -101,7 +105,10 @@ interface Parts {
   readonly queue: RunQueue;
 }
 
-async function assemble(options: ScanRunHarnessOptions, fixture: FakeSourceFetcher): Promise<Parts & ReadParts> {
+async function assemble(
+  options: ScanRunHarnessOptions,
+  fixture: FakeSourceFetcher,
+): Promise<Parts & ReadParts> {
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -169,6 +176,9 @@ export async function createScanRunHarness(
     await vi.waitFor(async () => {
       latest = await runs.find(run.userId, run.id);
       if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
+      // The index records the end first; the manifest and `run.ended` follow.
+      const events = await log.read(scopeOf(latest), 0);
+      if (events.at(-1)?.type !== 'run.ended') throw new Error('The run has not published its end');
     });
     if (latest === undefined) throw new Error('The run vanished');
     return latest;
