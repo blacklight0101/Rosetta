@@ -1,4 +1,4 @@
-import { lstat, open, readFile, realpath, stat } from 'node:fs/promises';
+import { lstat, readFile, realpath, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Logger, LogValue } from '../../application/ports/logger.js';
 import type {
@@ -14,15 +14,17 @@ import type {
   SkippedPaths,
 } from '../../application/ports/repository-reader.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { readTextUpTo, readUpTo } from './bounded-read.js';
 import { cutLine, grepLimits, isPatternTooLong } from './grep-limits.js';
-import { runGrep, type GrepFile } from './grep-runner.js';
+import { grepResult, type SearchedFile, type SearchedFiles } from './grep-result.js';
+import { runGrep } from './grep-runner.js';
 import { IgnoreRules, pathFilter } from './ignore-rules.js';
-import { cutNotice, isSecurityRefusal, refusal } from './read-refusals.js';
+import { isSecurityRefusal, refusal } from './read-refusals.js';
 import { checkRepositoryPath, isInside } from './repository-path.js';
 import { indexSnapshot, type SnapshotIndex } from './snapshot-index.js';
 import { checkedScope } from './snapshot-scope.js';
 
-// RF-005, RF-140, RF-146, RF-147, ADR-006, ADR-013: read-only access to one snapshot.
+// RF-005, RF-140, RF-144, RF-146, RF-147, ADR-006, ADR-013: read-only access to one snapshot.
 
 export interface NodeRepositoryReaderOptions {
   /** The snapshot's repository tree (`<data>/sources/<owner>__<repo>@<sha>/files`). */
@@ -36,6 +38,8 @@ export interface NodeRepositoryReaderOptions {
   readonly logger: Logger;
   /** RF-146: defaults to 2 s. */
   readonly grepTimeoutMs?: number;
+  /** The project's `scan.maxFileBytes`: larger files are never read or searched (RF-144, RF-146). */
+  readonly maxFileBytes?: number;
 }
 
 interface ReaderState {
@@ -47,7 +51,11 @@ interface ReaderState {
   readonly linkSet: ReadonlySet<string>;
   readonly logger: Logger;
   readonly timeoutMs: number;
+  readonly maxFileBytes: number;
 }
+
+/** The default of `scan.maxFileBytes` (data-model.md 3.1), for a caller that has no settings. */
+const defaultMaxFileBytes = 1_000_000;
 
 const repositoryIgnoreFile = '.rosettaignore';
 
@@ -98,6 +106,7 @@ export class NodeRepositoryReader implements RepositoryReader {
       linkSet: new Set(index.links),
       logger: options.logger,
       timeoutMs: options.grepTimeoutMs ?? grepLimits.timeoutMs,
+      maxFileBytes: options.maxFileBytes ?? defaultMaxFileBytes,
     };
     await NodeRepositoryReader.#recordLifted(options.logger, rules.liftedDenyPatterns);
     return new NodeRepositoryReader(state);
@@ -121,7 +130,9 @@ export class NodeRepositoryReader implements RepositoryReader {
   async readLines(request: ReadLinesRequest): Promise<Result<LineRange, ReadRefusal>> {
     const access = await this.#access(request.path);
     if (!access.ok) return access;
-    const lines = splitLines(await readFile(access.value, 'utf8'));
+    const text = await readTextUpTo(access.value, this.#state.maxFileBytes);
+    if (text === undefined) return this.#refuse('too-large', { path: request.path });
+    const lines = splitLines(text);
     const { startLine, endLine } = request;
     const valid =
       Number.isInteger(startLine) &&
@@ -154,33 +165,31 @@ export class NodeRepositoryReader implements RepositoryReader {
     if (isPatternTooLong(request.pattern)) {
       return this.#refuse('pattern-too-long', { patternLength: request.pattern.length });
     }
-    const files = await this.#searchedFiles(request);
-    const outcome = await runGrep(request.pattern, files, this.#state.timeoutMs);
+    const searched = await this.#searchedFiles(request);
+    const outcome = await runGrep(request.pattern, searched.files, this.#state.timeoutMs);
     switch (outcome.kind) {
       case 'timeout':
         return this.#refuse('timeout', { timeoutMs: this.#state.timeoutMs });
       case 'invalid-pattern':
         return this.#refuse('invalid-pattern', { detail: outcome.detail });
       case 'matches':
-        return ok(grepResult(files, outcome.matches));
+        return ok(grepResult(searched, outcome.matches));
     }
   }
 
-  async #searchedFiles(request: GrepRequest): Promise<SearchedFile[]> {
+  async #searchedFiles(request: GrepRequest): Promise<SearchedFiles> {
     const selected = searchSelector(request);
-    const searched: SearchedFile[] = [];
+    const files: SearchedFile[] = [];
+    let tooLarge = 0;
     for (const path of await this.listFiles()) {
       if (!selected(path)) continue;
       const absolute = await this.#realFile(path);
       if (absolute === undefined) continue;
-      const cut = splitLines(await readFile(absolute, 'utf8')).map(cutLine);
-      searched.push({
-        path,
-        lines: cut.map((line) => line.text),
-        cut: cut.map((line) => line.cut),
-      });
+      const text = await readTextUpTo(absolute, this.#state.maxFileBytes);
+      if (text === undefined) tooLarge += 1;
+      else files.push(searchedFile(path, text));
     }
-    return searched;
+    return { files, tooLarge };
   }
 
   /**
@@ -246,45 +255,7 @@ function isUnderAny(path: string, folders: ReadonlySet<string>): boolean {
   return parts.some((_, index) => folders.has(parts.slice(0, index + 1).join('/')));
 }
 
-/**
- * The bytes of a file measured at `size` (at most `limit`), or undefined when it has grown since.
- * The buffer holds `size + 1` bytes, so its cost follows the file, never the limit.
- */
-async function readUpTo(
-  path: string,
-  size: number,
-  limit: number,
-): Promise<Uint8Array | undefined> {
-  const handle = await open(path, 'r');
-  try {
-    const buffer = Buffer.alloc(Math.min(size, limit) + 1);
-    let filled = 0;
-    for (let read = 1; read > 0 && filled < buffer.length; filled += read) {
-      ({ bytesRead: read } = await handle.read(buffer, filled, buffer.length - filled, filled));
-    }
-    return filled >= buffer.length
-      ? undefined
-      : new Uint8Array(buffer.buffer, buffer.byteOffset, filled);
-  } finally {
-    await handle.close();
-  }
-}
-
-interface SearchedFile extends GrepFile {
-  readonly cut: readonly boolean[];
-}
-
-function grepResult(
-  files: readonly SearchedFile[],
-  matches: readonly { readonly path: string; readonly line: number }[],
-): GrepResult {
-  const byPath = new Map(files.map((file) => [file.path, file]));
-  const found = matches.map(({ path, line }) => {
-    const file = byPath.get(path);
-    return { path, line, text: file?.lines[line - 1] ?? '', cut: file?.cut[line - 1] ?? false };
-  });
-  const cutLines = files.reduce((total, file) => total + file.cut.filter(Boolean).length, 0);
-  return cutLines === 0
-    ? { matches: found, cutLines }
-    : { matches: found, cutLines, notice: cutNotice };
+function searchedFile(path: string, text: string): SearchedFile {
+  const cut = splitLines(text).map(cutLine);
+  return { path, lines: cut.map((line) => line.text), cut: cut.map((line) => line.cut) };
 }

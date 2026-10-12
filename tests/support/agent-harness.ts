@@ -30,7 +30,7 @@ async function mapFixture(root: string, logger: MemoryLogger) {
     allowDenied: [],
     logger,
   });
-  const scan = await scanRepository(reader, { maxFileBytes });
+  const scan = await scanRepository(reader, { maxFileBytes, masker });
   const packs = await analyseWithPacks({
     files: scan.files,
     reader,

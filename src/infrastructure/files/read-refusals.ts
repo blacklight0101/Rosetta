@@ -59,6 +59,12 @@ const refusals: Readonly<Record<ReadRefusalReason, RefusalText>> = {
     message: 'The pattern is not a valid JavaScript regular expression.',
     security: false,
   },
+  'too-large': {
+    code: ERROR_CODES.fileTooLarge,
+    message:
+      "The file is larger than the project's scan.maxFileBytes, so it was not read; read a smaller file.",
+    security: false,
+  },
   timeout: {
     code: ERROR_CODES.grepTimedOut,
     message: 'The search took longer than its time limit and was stopped; use a simpler pattern.',
@@ -74,5 +80,11 @@ export function refusal(reason: ReadRefusalReason): ReadRefusal {
 export function isSecurityRefusal(reason: ReadRefusalReason): boolean {
   return refusals[reason].security;
 }
+
+export function tooLargeNotice(files: number): string {
+  return `${String(files)} file(s) larger than the project's scan.maxFileBytes were not searched.`;
+}
+
+export const matchCapNotice = `The search stopped at ${String(grepLimits.maxMatches)} matches; narrow the pattern or the pathGlob.`;
 
 export const cutNotice = `Lines longer than ${String(grepLimits.maxLineLength)} characters were cut to that length before the search.`;

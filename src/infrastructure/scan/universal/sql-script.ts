@@ -1,5 +1,6 @@
 import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
-import { SecretMasker } from '../../guards/secret-masker.js';
+import { leavesKeyOpen } from '../../guards/private-key-pieces.js';
+import type { TextMasker } from '../../guards/secret-masker.js';
 import type { SqlStatement } from './scan-types.js';
 import {
   cutLine,
@@ -79,24 +80,66 @@ function isComment(line: string): boolean {
   return line.startsWith('--') || line.startsWith('/*') || line.startsWith('*');
 }
 
-const masker = new SecretMasker();
+// The END line of a private key block, as the private-key rule of the SecretMasker spells it.
+const keyEnd = /-----END (?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY(?: BLOCK)?-----/;
+
+/** A verb word followed by more text. A line that is only a verb word is key text, not a statement. */
+function startsStatement(line: string): boolean {
+  return leadingVerb(line) !== undefined && /^[A-Za-z]+[\s(]\s*\S/u.test(line.trimStart());
+}
+
+/**
+ * RF-141, RNF-003: where the script is cut before masking. The masker masks a BEGIN marker with no
+ * END after it to the end of its text, which would hide every later statement (a comment that only
+ * names the marker is enough). Such a marker can only follow the last END line, so from there the
+ * span it opens is bounded at the next line that starts a statement: a key body or its header lines
+ * never start with a SQL verb followed by a space and more text. Everything before the cut is still
+ * masked.
+ */
+function cutsAfterOpenKeys(lines: readonly string[]): readonly number[] {
+  const cuts: number[] = [];
+  let open = false;
+  for (
+    let index = Math.max(
+      lines.findLastIndex((line) => keyEnd.test(line)),
+      0,
+    );
+    index < lines.length;
+    index += 1
+  ) {
+    const line = cutLine(lines[index] ?? '');
+    if (open && startsStatement(line)) {
+      cuts.push(index);
+      open = false;
+    }
+    if (!open) open = leavesKeyOpen(line);
+  }
+  return cuts;
+}
 
 /**
  * RF-141: the raw text is masked before comments are dropped, so a private key block is masked
  * whatever comment syntax surrounds its marker lines (`-----BEGIN` starts with `--`, `/* -----BEGIN`
  * opens a block comment). Masking keeps the line breaks of a block, so line numbers do not move.
  */
-function maskedLines(lines: readonly string[]): readonly string[] {
-  return masker.mask(lines.join('\n')).text.split('\n');
+function maskedLines(lines: readonly string[], masker: TextMasker): readonly string[] {
+  const masked: string[] = [];
+  let start = 0;
+  for (const end of [...cutsAfterOpenKeys(lines), lines.length]) {
+    masked.push(...masker.mask(lines.slice(start, end).join('\n')).text.split('\n'));
+    start = end;
+  }
+  return masked;
 }
 
 /** The statements of a script, in file order. `lines` hold no line breaks. */
 export function extractScriptStatements(
   path: string,
   lines: readonly string[],
+  masker: TextMasker,
 ): readonly SqlStatement[] {
   const reader = new ScriptReader(path);
-  maskedLines(lines).forEach((line, index) => {
+  maskedLines(lines, masker).forEach((line, index) => {
     reader.feed(index + 1, line);
   });
   return reader.finish();

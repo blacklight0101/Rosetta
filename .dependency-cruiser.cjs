@@ -65,6 +65,14 @@ module.exports = {
       to: { path: '^tests/' },
     },
     {
+      name: 'fake-server-registry-test-only',
+      comment:
+        'only fake-server-ports.ts (a reader) imports the fake server port registry from src; writers live in tests/support (RNF-005, ADR-008)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/infrastructure/providers/fake-server-ports[.]ts$' },
+      to: { path: '^src/infrastructure/providers/fake-server-port-registry[.]ts$' },
+    },
+    {
       name: 'sdks-only-in-infrastructure',
       comment: 'provider SDKs, web-tree-sitter, yazl and pg only from src/infrastructure',
       severity: 'error',

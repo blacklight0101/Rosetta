@@ -25,6 +25,35 @@ describe('thinking text', () => {
   });
 });
 
+describe('thinking tags', () => {
+  it('RF-205 the text before an orphan closing tag is thinking and never reaches the answer', () => {
+    expect(stripThinking('plan the answer</think>Answer.')).toBe('Answer.');
+    expect(stripThinking('plan</thinking>Answer.')).toBe('Answer.');
+  });
+
+  it('RF-205 visible text before an orphan closing tag is hidden with the thinking', () => {
+    expect(stripThinking('A<think>x</think>B</think>C')).toBe('C');
+    expect(stripThinking('<think>a</think>keep</think>z')).toBe('z');
+    expect(stripThinking('Part one.</think>Part two.')).toBe('Part two.');
+  });
+
+  it('RF-205 thinking tags in any letter case are stripped', () => {
+    expect(stripThinking('<THINK>plan</THINK>Answer.')).toBe('Answer.');
+    expect(stripThinking('<Think>plan</think>Answer.')).toBe('Answer.');
+    expect(stripThinking('Answer.<THINK>still thinking')).toBe('Answer.');
+  });
+
+  it('RF-205 the thinking form of the tag is stripped', () => {
+    expect(stripThinking('<thinking>plan</thinking>Answer.')).toBe('Answer.');
+    expect(stripThinking('<Thinking>plan</THINKING>Answer.')).toBe('Answer.');
+    expect(stripThinking('Answer.<thinking>still thinking')).toBe('Answer.');
+  });
+
+  it('RF-205 text between two thinking blocks is kept', () => {
+    expect(stripThinking('<think>a</think>One.<thinking>b</thinking> Two.')).toBe('One. Two.');
+  });
+});
+
 describe('parsing a text answer', () => {
   it('RF-205 a tool_call block becomes a tool call and leaves the prose as text', () => {
     const answer = parseTextAnswer(
@@ -63,6 +92,19 @@ describe('parsing a text answer', () => {
     const content = `${fence}tool_call\n{"arguments": {"path": "a.cs"}}\n${fence}`;
 
     expect(parseTextAnswer(content).calls).toEqual([]);
+  });
+});
+
+describe('thinking in a text answer', () => {
+  it('RF-205 a tool call inside upper-case or thinking-form tags is ignored', () => {
+    const call = `${fence}tool_call\n{"name": "grep", "arguments": {}}\n${fence}`;
+
+    expect(parseTextAnswer(`<THINK>${call}</THINK>Done.`)).toEqual({ text: 'Done.', calls: [] });
+    expect(parseTextAnswer(`<thinking>${call}</thinking>Done.`)).toEqual({
+      text: 'Done.',
+      calls: [],
+    });
+    expect(parseTextAnswer(`${call}</think>Done.`)).toEqual({ text: 'Done.', calls: [] });
   });
 
   it('RF-205 a tool call inside thinking text is ignored', () => {
