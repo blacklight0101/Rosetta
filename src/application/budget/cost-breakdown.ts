@@ -146,3 +146,9 @@ export function breakdownOf(groups: readonly LedgerGroup[]): CostBreakdown {
     byModel: modelLines(groups),
   };
 }
+
+/** The user's provider tests as one line, or null when there are none (RF-407). */
+// RF-428
+export function providerTestsOf(groups: readonly LedgerGroup[]): BreakdownLine | null {
+  return groups.length === 0 ? null : lineOf(TESTS_KEY, groups);
+}

@@ -16,6 +16,8 @@ const GROUPS = (scope: string): string =>
 
 const USER_GROUPS = GROUPS('user_id = $1');
 const PROJECT_GROUPS = GROUPS('user_id = $1 AND project_id = $2');
+/** A provider test is the only row of no project (RF-407, data-model.md 3.13). */
+const PROVIDER_TEST_GROUPS = GROUPS('user_id = $1 AND project_id IS NULL');
 
 const integerText = z.string().regex(/^-?\d+$/u);
 const count = integerText.transform(Number);
@@ -77,8 +79,8 @@ export class PgCostTotals implements CostTotals {
   }
 
   // RF-428
-  providerTestGroups(_userId: string): Promise<readonly LedgerGroup[]> {
-    return Promise.resolve([]);
+  providerTestGroups(userId: string): Promise<readonly LedgerGroup[]> {
+    return this.groups(PROVIDER_TEST_GROUPS, [userId]);
   }
 
   private async groups(sql: string, params: unknown[]): Promise<readonly LedgerGroup[]> {

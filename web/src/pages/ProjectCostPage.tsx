@@ -11,7 +11,8 @@ import { useProjectCost } from './use-project-cost.js';
 
 // RF-428, RF-1010, RF-1105, DEC-49: `/projects/:projectId/cost`, every model call of every run on
 // the project from the cost ledger: the totals and the breakdown by run, stage, role, provider and
-// model. The provider tests belong to no run and are listed as such. Another user's project answers
+// model. The user's provider tests belong to no project and no run: they are listed after the
+// breakdown, outside the project totals, as the part of "Your total" no project explains. Another user's project answers
 // 404 like an unknown one, and the page shows that error and no table.
 
 function Totals({ totals }: { readonly totals: UsageTotals }): JSX.Element {
@@ -68,6 +69,24 @@ function modelRows(cost: ProjectCost): CostRow[] {
   }));
 }
 
+/** RF-407: the user's provider tests belong to no project and no run; they count in "Your total". */
+function ProviderTests({ line }: { readonly line: CostLine }): JSX.Element {
+  return (
+    <div>
+      <CostTable
+        caption="Provider tests"
+        firstColumn="Calls of"
+        rows={[{ ...line, name: 'Provider tests' }]}
+      />
+      <p class="rst-settings__note">
+        The Test button on the settings page makes these calls. They belong to no project and no
+        run, so they are not part of this project's totals; they are part of your total in the
+        header.
+      </p>
+    </div>
+  );
+}
+
 function Breakdown({ cost }: { readonly cost: ProjectCost }): JSX.Element {
   return (
     <>
@@ -77,6 +96,7 @@ function Breakdown({ cost }: { readonly cost: ProjectCost }): JSX.Element {
       <CostTable caption="By role" firstColumn="Role" rows={plainRows(cost.byRole)} />
       <CostTable caption="By provider" firstColumn="Provider" rows={plainRows(cost.byProvider)} />
       <CostTable caption="By model" firstColumn="Model" rows={modelRows(cost)} />
+      {cost.providerTests === null ? null : <ProviderTests line={cost.providerTests} />}
     </>
   );
 }

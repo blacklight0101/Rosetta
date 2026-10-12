@@ -56,7 +56,10 @@ export class MemoryCostTotals implements CostTotals {
     return Promise.resolve(groupsOf(mine));
   }
 
-  providerTestGroups(_userId: string): Promise<readonly LedgerGroup[]> {
-    return Promise.resolve([]);
+  providerTestGroups(userId: string): Promise<readonly LedgerGroup[]> {
+    const mine = this.entries.filter(
+      (entry) => entry.userId === userId && entry.projectId === null,
+    );
+    return Promise.resolve(groupsOf(mine));
   }
 }

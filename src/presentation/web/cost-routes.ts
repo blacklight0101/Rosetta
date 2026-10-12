@@ -18,8 +18,9 @@ import { signedInOf } from './request-actor.js';
 //   ledger rows; `server` is the caps and the server-key spend of this UTC month for the
 //   administrator, null for anyone else.
 // - GET /api/projects/:id/cost: the totals of one of the user's projects and the breakdown by run
-//   (a null `runId` is the provider tests), stage, role, provider and model; another user's id
-//   answers 404 like an unknown one.
+//   (a null `runId` is the provider tests), stage, role, provider and model, and `providerTests`,
+//   the user's provider tests, which belong to no project and are outside the project totals (null
+//   when there are none); another user's id answers 404 like an unknown one.
 
 export interface CostServices {
   readonly getProjectCost: GetProjectCost;
@@ -93,11 +94,11 @@ export function registerCostRoutes(server: FastifyInstance, services: CostServic
         projectId: request.params.id,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      const { project, breakdown } = outcome.value;
+      const { project, breakdown, providerTests } = outcome.value;
       return reply.status(200).send({
         project: { id: project.id, name: project.name },
         ...breakdownView(breakdown),
-        providerTests: null,
+        providerTests: providerTests === null ? null : lineView(providerTests),
       });
     },
   );
