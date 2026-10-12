@@ -180,3 +180,49 @@ describe('GitHub Actions workflows: limits', () => {
     expect(found).toEqual([]);
   });
 });
+
+describe('GitHub Actions workflows: compose smoke job', () => {
+  const stack = 'docker compose -f compose.yaml -f compose.ci.yaml';
+
+  async function smoke(): Promise<string> {
+    const lines = (await load()).find((workflow) => workflow.name === 'ci.yml')?.lines ?? [];
+    const job = jobs(lines).find((entry) => entry.id === 'compose-smoke');
+    return (job?.body ?? []).join('\n');
+  }
+
+  it('RF-1301 starts the stack with the CI overlay and waits for /healthz', async () => {
+    const text = await smoke();
+
+    expect(text).toContain('runs-on: ubuntu-latest');
+    expect(text).toContain(`${stack} up -d --build --wait`);
+    expect(text).toContain('/healthz');
+  });
+
+  it('RF-1301 runs the Playwright smoke before and after a restart of the stack, then removes the volumes', async () => {
+    const text = await smoke();
+    const before = text.indexOf('playwright.compose.config.ts smoke');
+    const restart = text.indexOf(`${stack} down\n`);
+    const after = text.indexOf('playwright.compose.config.ts persistence');
+    const cleanup = text.indexOf('down -v');
+
+    expect(before).toBeGreaterThan(-1);
+    expect(restart).toBeGreaterThan(before);
+    expect(after).toBeGreaterThan(restart);
+    expect(cleanup).toBeGreaterThan(after);
+  });
+
+  it('RNF-003 removes the stack and its volumes even when a step failed, and writes the .env at run time', async () => {
+    const text = await smoke();
+
+    expect(text).toMatch(/if: always\(\)\n\s+run: docker compose [^\n]*down -v/u);
+    expect(text).toContain('openssl rand');
+    expect(text).toContain('> .env');
+  });
+
+  it('RNF-005 installs Chromium for the smoke and has a timeout', async () => {
+    const text = await smoke();
+
+    expect(text).toContain('npx playwright install --with-deps chromium');
+    expect(text).toMatch(/timeout-minutes: \d+/u);
+  });
+});
