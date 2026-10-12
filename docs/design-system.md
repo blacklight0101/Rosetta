@@ -153,14 +153,14 @@ from tokens, and English text (DEC-45).
 |---|---|---|---|---|
 | Header totals | project only; project + run meter | idle, live | totals are a labelled group; the run meter is `role="meter"` | always on screen (RF-1010); Breakdown opens per run, stage, provider and model |
 | Button | primary, secondary, ghost, danger, danger-outline | default, hover, focus, active, disabled (with reason), busy | native `button`; disabled ones keep a `title` with the reason | Stop run and Delete are the only danger buttons |
-| Field | URL, text, select, radio, checkbox | default, focus, invalid, disabled | label bound to input; `aria-describedby` for help and the error | URL errors show the `RST` code and a plain sentence |
+| Field | URL, text, number, textarea, select, radio, checkbox | default, focus, invalid, disabled | label bound to input; `aria-describedby` for help and the error | URL errors show the `RST` code and a plain sentence; the error is a live region (`role="alert"`) unless the page moves focus to the invalid control after a refusal, which reads the error through `aria-describedby`, so it is not said twice |
 | Status badge | tint, solid | per section 6 | glyph is `aria-hidden`, the word is the label | one component for every state list |
 | Pipeline stepper | - | done, current (live), waiting | ordered list; current step `aria-current="step"` | Snapshot, Scan, Understand, Verify, Report |
 | Stat card | - | - | - | label, big number, caption; numbers tabular |
 | Agent panel | reader, verifier, planner, summariser | planned, running, done, failed and the other `AgentTaskState` values | `article` with the area as heading | role dot, area, model, current tool call, turn, files read, tokens, cost, read bar, card chips |
 | Timeline | live, replay | - | lanes are a list; each bar has a text alternative | one lane per agent, coloured by role; time axis |
 | Event stream | live, replay | - | `aria-live="polite"`, throttled | time, event type coloured by kind, one-line text; newest first |
-| Data table | calls, runs, snapshots, cards | default, highlighted (error), selected | real `table` with headers; wide tables scroll inside a box | filter bar above; numeric columns right-aligned |
+| Data table | calls, runs, snapshots, cards, projects | default, highlighted (error), selected | real `table` with headers; wide tables scroll inside a box | filter bar above; numeric columns right-aligned |
 | Cost meter | run, role | under 80%, 80-95% (warn), 95%+ (danger) | `role="meter"` with value and label | marker at the likely estimate |
 | Callout | warning, error, info | - | `role="alert"` for the cloud warning and errors | cloud warning includes the consent checkbox (RF-143) |
 | Dialog | confirm, destructive confirm | open | `role="dialog"`, `aria-modal`, focus trapped and restored | destructive confirm names the target, space freed, and what is kept |

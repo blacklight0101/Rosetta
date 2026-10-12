@@ -2,7 +2,8 @@ import type { JSX } from 'preact';
 
 // design-system.md section 5: a labelled form field with help and error text. The label is bound
 // to the control, the help and the error through aria-describedby, and the error carries the
-// `RST` code when there is one (section 7). Text, URL, password, select, radio and checkbox.
+// `RST` code when there is one (section 7). Text, URL, password, number, textarea, select, radio
+// and checkbox.
 
 interface FieldError {
   readonly code?: string;
@@ -23,14 +24,26 @@ interface FieldBase {
   /** The id of other text that describes the control, for example a rule checklist. */
   readonly describedBy?: string;
   readonly disabled?: boolean;
+  /**
+   * False when the page moves focus to the invalid control after a refusal: the control already
+   * reads its error through aria-describedby, so a live region would say it a second time.
+   */
+  readonly announce?: boolean;
 }
 
 interface TextField extends FieldBase {
-  readonly kind: 'text' | 'url' | 'password';
+  readonly kind: 'text' | 'url' | 'password' | 'number';
   readonly value: string;
   readonly placeholder?: string;
   /** The browser's `autocomplete` token, for example `username` or `new-password`. */
   readonly autoComplete?: string;
+  readonly onInput: (value: string) => void;
+}
+
+interface TextareaField extends FieldBase {
+  readonly kind: 'textarea';
+  readonly value: string;
+  readonly rows?: number;
   readonly onInput: (value: string) => void;
 }
 
@@ -54,10 +67,12 @@ interface RadioField extends FieldBase {
   readonly onChange: (value: string) => void;
 }
 
-export type FieldProps = TextField | SelectField | CheckboxField | RadioField;
+export type FieldProps = TextField | TextareaField | SelectField | CheckboxField | RadioField;
 
 const valueOf = (event: Event): string =>
-  event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement
+  event.target instanceof HTMLInputElement ||
+  event.target instanceof HTMLSelectElement ||
+  event.target instanceof HTMLTextAreaElement
     ? event.target.value
     : '';
 
@@ -127,6 +142,37 @@ function SelectControl(props: SelectField): JSX.Element {
   );
 }
 
+function InputControl(props: TextField): JSX.Element {
+  return (
+    <input
+      {...commonAttributes(props)}
+      class={props.kind === 'url' ? 'rst-field__control rst-mono' : 'rst-field__control'}
+      type={props.kind}
+      value={props.value}
+      placeholder={props.placeholder}
+      autoComplete={props.autoComplete}
+      onInput={(event) => {
+        props.onInput(valueOf(event));
+      }}
+    />
+  );
+}
+
+function TextareaControl(props: TextareaField): JSX.Element {
+  return (
+    <textarea
+      {...commonAttributes(props)}
+      class="rst-field__control rst-field__control--multiline rst-mono"
+      rows={props.rows ?? 8}
+      value={props.value}
+      spellcheck={false}
+      onInput={(event) => {
+        props.onInput(valueOf(event));
+      }}
+    />
+  );
+}
+
 function Control(props: FieldProps): JSX.Element {
   switch (props.kind) {
     case 'select':
@@ -145,22 +191,13 @@ function Control(props: FieldProps): JSX.Element {
       );
     case 'radio':
       return <RadioGroup {...props} />;
+    case 'textarea':
+      return <TextareaControl {...props} />;
     case 'text':
+    case 'number':
     case 'url':
     case 'password':
-      return (
-        <input
-          {...commonAttributes(props)}
-          class={props.kind === 'url' ? 'rst-field__control rst-mono' : 'rst-field__control'}
-          type={props.kind}
-          value={props.value}
-          placeholder={props.placeholder}
-          autoComplete={props.autoComplete}
-          onInput={(event) => {
-            props.onInput(valueOf(event));
-          }}
-        />
-      );
+      return <InputControl {...props} />;
   }
 }
 
@@ -190,7 +227,12 @@ export function Field(props: FieldProps): JSX.Element {
         </p>
       )}
       {props.error === undefined ? null : (
-        <p id={`${props.id}-error`} class="rst-field__error" role="alert" data-testid="field-error">
+        <p
+          id={`${props.id}-error`}
+          class="rst-field__error"
+          role={props.announce === false ? undefined : 'alert'}
+          data-testid="field-error"
+        >
           {props.error.code === undefined ? '' : `${props.error.code} · `}
           {props.error.message}
         </p>

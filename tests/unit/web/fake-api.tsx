@@ -4,6 +4,7 @@ import { vi, type Mock } from 'vitest';
 import { createApiClient } from '../../../web/src/api/client.js';
 import type { Session } from '../../../web/src/api/schemas.js';
 import { AppContext } from '../../../web/src/app/app-context.js';
+import { RouteParamsContext } from '../../../web/src/app/route-params.js';
 import { SessionContext } from '../../../web/src/app/session-context.js';
 
 // A page under test: the real API client over a fake `fetch`, the recorded calls, and the
@@ -72,6 +73,7 @@ export function renderPage(
   page: ComponentChildren,
   answers: Readonly<Record<string, Answer>>,
   user: Session['user'] = ana,
+  params: Readonly<Record<string, string>> = {},
 ): RenderedPage {
   const calls: RecordedCall[] = [];
   const fetchFn: typeof fetch = (input, init) => {
@@ -84,7 +86,9 @@ export function renderPage(
   const assign = vi.fn<(path: string) => void>();
   const view = render(
     <AppContext.Provider value={{ client, assign }}>
-      <SessionContext.Provider value={user}>{page}</SessionContext.Provider>
+      <SessionContext.Provider value={user}>
+        <RouteParamsContext.Provider value={params}>{page}</RouteParamsContext.Provider>
+      </SessionContext.Provider>
     </AppContext.Provider>,
   );
   return { calls, assign, ...view };
