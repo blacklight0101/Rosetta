@@ -80,7 +80,17 @@ const defaultRules: readonly MaskRule[] = [
   },
 ];
 
-function emptyCounts(): Record<SecretKind, number> {
+/** Every kind, in name order. */
+export const SECRET_KINDS: readonly SecretKind[] = [
+  'api-key',
+  'bearer-token',
+  'connection-string',
+  'password',
+  'private-key',
+];
+
+/** A zero count for every kind, in name order. */
+export function emptyCounts(): Record<SecretKind, number> {
   return {
     'api-key': 0,
     'bearer-token': 0,

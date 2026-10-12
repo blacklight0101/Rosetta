@@ -63,7 +63,9 @@ describe('EgressGuard masks before egress', () => {
     for (const value of [...allSecrets, ...keyedSecrets]) expect(sent).not.toContain(value);
     expect(sent).toContain('[MASKED:');
   });
+});
 
+describe('EgressGuard keeps lines and frames while masking', () => {
   it('RF-141 keeps every line where it was, so citations stay valid', async () => {
     const { guard, fake } = await egressHarness();
     const block = secretCases.find((secret) => secret.name === 'a multi-line private key block');
@@ -86,7 +88,9 @@ describe('EgressGuard masks before egress', () => {
     expect(sent.endsWith(`\n${DATA_BLOCK_FOOTER}`)).toBe(true);
     expect(scanDataBlocks(sent)).toMatchObject({ ok: true, value: { blocks: 1 } });
   });
+});
 
+describe('EgressGuard mask counts', () => {
   it('RF-141 adds the count per kind to the run record', async () => {
     const { guard, manifest } = await egressHarness();
     const { system, messages } = everyPart();

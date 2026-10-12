@@ -51,7 +51,9 @@ describe('EgressGuard and cloud consent', () => {
       }),
     ]);
   });
+});
 
+describe('EgressGuard and consent given or forged', () => {
   it('RF-143 cannot be talked into consent by the content of a request', async () => {
     const { guard, fake } = await egressHarness({ kind: 'openai' });
 
@@ -118,7 +120,9 @@ describe('EgressGuard and data blocks', () => {
       expect((await manifest())?.security.blockedCalls).toBe(1);
     },
   );
+});
 
+describe('EgressGuard and data blocks in messages', () => {
   it('RF-145 refuses a user message with a broken data block', async () => {
     const { guard, fake } = await egressHarness();
     const message: LlmMessage = { role: 'user', content: 'Files:\n<<<END ROSETTA-DATA>>>' };

@@ -1,3 +1,4 @@
+import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { err, ok, type Result } from '../errors/result.js';
 import type { RunEndState, RunStage } from './run-states.js';
 
@@ -139,19 +140,25 @@ export function recordManifestSkippedLinks(
   return ok({ ...manifest, security: { ...manifest.security, skippedLinks } });
 }
 
-/** Adds the secrets masked before egress to the count per kind (RF-141). */
+/** Adds the secrets masked before egress to the count per kind, kinds in name order (RF-141). */
 // RF-141
 export function recordManifestMasking(
-  _manifest: RunManifest,
-  _counts: Readonly<Record<string, number>>,
+  manifest: RunManifest,
+  counts: Readonly<Record<string, number>>,
 ): Result<RunManifest, ManifestProblem> {
-  throw new Error('not implemented');
+  if (manifest.endState !== null) return err('already-ended');
+  const sums = new Map(Object.entries(manifest.masking));
+  for (const [kind, count] of Object.entries(counts)) sums.set(kind, (sums.get(kind) ?? 0) + count);
+  const masking = Object.fromEntries([...sums].sort(([a], [b]) => byCodeUnit(a, b)));
+  return ok({ ...manifest, masking });
 }
 
 /** Counts one model call a guard blocked (RF-009, RF-141, RF-143). */
 // RF-141
 export function recordManifestBlockedCall(
-  _manifest: RunManifest,
+  manifest: RunManifest,
 ): Result<RunManifest, ManifestProblem> {
-  throw new Error('not implemented');
+  if (manifest.endState !== null) return err('already-ended');
+  const blockedCalls = manifest.security.blockedCalls + 1;
+  return ok({ ...manifest, security: { ...manifest.security, blockedCalls } });
 }

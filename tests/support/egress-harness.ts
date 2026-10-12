@@ -1,7 +1,6 @@
 import type { OutputWriter, WriteRefusal } from '../../src/application/ports/output-writer.js';
 import type {
   LlmMessage,
-  LlmProvider,
   LlmRequest,
   ProviderKind,
 } from '../../src/application/ports/llm-provider.js';
@@ -32,7 +31,7 @@ import { sampleManifest } from './run-fixtures.js';
 export const egressInstant = '2026-10-11T09:05:03.007Z';
 /** The run of the contract request's context. */
 export const egressScope: RunScope = scopeFor('20261011-090503-understand');
-export const egressLogPath = `${runPath(egressScope.projectId, egressScope.runKey)}/egress.log.jsonl`;
+const egressLogPath = `${runPath(egressScope.projectId, egressScope.runKey)}/egress.log.jsonl`;
 
 export interface EgressHarnessOptions {
   readonly kind?: ProviderKind;
@@ -54,7 +53,7 @@ export interface EgressHarness {
 }
 
 /** Answers every call with the contract's text answer, `calls` times. */
-export function textRecording(calls = 3): Recording {
+function textRecording(calls = 3): Recording {
   return recordingOf(...Array.from({ length: calls }, () => contractScenarios.text));
 }
 

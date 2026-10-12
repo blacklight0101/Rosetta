@@ -47,7 +47,14 @@ export class FileRunManifestStore implements RunManifestStore {
   }
 
   async write(scope: RunScope, manifest: RunManifest): Promise<void> {
-    const masked = parseRunManifest(maskDeep(manifest, this.options.masker));
+    // The mask counts are numbers under the masker's own kind names: masked with their keys,
+    // `"password": 3` would read as a password setting, so they are kept as they are (RF-141).
+    const { masking, ...rest } = manifest;
+    const maskedRest = maskDeep(rest, this.options.masker);
+    const masked =
+      maskedRest !== null && typeof maskedRest === 'object'
+        ? parseRunManifest({ ...maskedRest, masking })
+        : undefined;
     if (masked === undefined) throw new RosettaError(ERROR_CODES.secretMaskingFailed);
     const written = await this.options.writer.writeText(
       fileOf(scope),

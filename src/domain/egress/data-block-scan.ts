@@ -1,7 +1,17 @@
-import type { Citation } from '../cards/citation.js';
-import type { Result } from '../errors/result.js';
+import { parseCitation, type Citation } from '../cards/citation.js';
+import { err, ok, type Result } from '../errors/result.js';
+import {
+  DATA_BLOCK_CLOSE,
+  DATA_BLOCK_FOOTER,
+  DATA_BLOCK_LABEL,
+  DATA_BLOCK_OPEN,
+  DATA_BLOCK_SOURCES,
+  holdsDataMarker,
+} from './data-block.js';
 
-// RF-142, RF-145: reads the data blocks of a message back (see data-block.ts).
+// RF-142, RF-145: reads the data blocks of a message back (see data-block.ts). A block is a header
+// line, content lines and a footer line. Anything that looks like a marker but is not a complete,
+// valid frame is refused, so content can neither close a block early nor forge one.
 
 export interface DataBlockScan {
   /** How many well-formed blocks the text holds. */
@@ -17,7 +27,7 @@ export interface DataBlockScan {
   readonly parts: readonly DataBlockPart[];
 }
 
-export interface DataBlockPart {
+interface DataBlockPart {
   /** A header or footer line. */
   readonly frame: boolean;
   readonly text: string;
@@ -25,7 +35,92 @@ export interface DataBlockPart {
 
 export type DataBlockProblem = 'malformed-block';
 
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+function citationsOf(value: unknown): Citation[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const citations: Citation[] = [];
+  for (const item of value) {
+    if (typeof item !== 'string') return undefined;
+    const citation = parseCitation(item);
+    if (!citation.ok) return undefined;
+    citations.push(citation.value);
+  }
+  return citations;
+}
+
+/** The excerpts of a header line, or undefined when the line is not a valid header. */
+function headerExcerpts(line: string): Citation[] | undefined {
+  if (!line.startsWith(DATA_BLOCK_OPEN) || !line.endsWith(DATA_BLOCK_CLOSE)) return undefined;
+  const header = parseJson(line.slice(DATA_BLOCK_OPEN.length, -DATA_BLOCK_CLOSE.length));
+  if (!isRecord(header) || header['label'] !== DATA_BLOCK_LABEL) return undefined;
+  const known = DATA_BLOCK_SOURCES.some((source) => source === header['source']);
+  return known ? citationsOf(header['excerpts']) : undefined;
+}
+
+/** The scan so far: the lines between frames wait in `pending` until a frame or the end. */
+interface ScanState {
+  inside: boolean;
+  blocks: number;
+  textOutside: boolean;
+  readonly excerpts: Citation[];
+  readonly parts: DataBlockPart[];
+  pending: string[];
+}
+
+/** Closes the pending lines as one part; refuses a marker in them. */
+function flush(state: ScanState): boolean {
+  if (state.pending.length === 0) return true;
+  const text = state.pending.join('\n');
+  if (holdsDataMarker(text)) return false;
+  if (!state.inside && text.trim() !== '') state.textOutside = true;
+  state.parts.push({ frame: false, text });
+  state.pending = [];
+  return true;
+}
+
+/** Takes one line; false when the text cannot be a set of well-formed blocks. */
+function takeLine(state: ScanState, line: string): boolean {
+  const excerpts = state.inside ? undefined : headerExcerpts(line);
+  const footer = state.inside && line === DATA_BLOCK_FOOTER;
+  if (excerpts === undefined && !footer) {
+    state.pending.push(line);
+    return true;
+  }
+  if (!flush(state)) return false;
+  state.parts.push({ frame: true, text: line });
+  if (excerpts !== undefined) {
+    state.excerpts.push(...excerpts);
+    state.blocks += 1;
+  }
+  state.inside = !state.inside;
+  return true;
+}
+
 // RF-145
-export function scanDataBlocks(_content: string): Result<DataBlockScan, DataBlockProblem> {
-  throw new Error('not implemented');
+export function scanDataBlocks(content: string): Result<DataBlockScan, DataBlockProblem> {
+  const state: ScanState = {
+    inside: false,
+    blocks: 0,
+    textOutside: false,
+    excerpts: [],
+    parts: [],
+    pending: [],
+  };
+  for (const line of content.split('\n')) {
+    if (!takeLine(state, line)) return err('malformed-block');
+  }
+  if (!flush(state) || state.inside) return err('malformed-block');
+  const { blocks, excerpts, textOutside, parts } = state;
+  return ok({ blocks, excerpts, textOutside, parts });
 }

@@ -37,6 +37,7 @@ export class FakeProvider implements LlmProvider {
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
     throwIfAborted(request.signal);
+    this.requests.push(request);
     const call = this.calls[this.next];
     if (call === undefined) throw new RosettaError(ERROR_CODES.recordingExhausted);
     this.next += 1;

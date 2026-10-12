@@ -80,7 +80,9 @@ describe('EgressGuard on a data folder', () => {
     expect(lines[0]).toBe(earlier);
     expect(JSON.parse(lines[1] ?? '')).toMatchObject({ seq: 2 });
   });
+});
 
+describe('EgressGuard on a data folder with secrets', () => {
   it('RF-141 never lets a fixture secret reach the provider, the egress log or the manifest', async () => {
     const { guard, fake } = await egressHarness(onDisk());
 

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
   OutputWriter,
-  WorkspaceFile,
   WriteRefusal,
 } from '../../../../src/application/ports/output-writer.js';
 import { renderDataBlock } from '../../../../src/domain/egress/data-block.js';
@@ -31,7 +30,7 @@ const noMasks = {
 
 /** A writer whose appends fail, as a full disk would. */
 class FullDiskWriter extends MemoryOutputWriter implements OutputWriter {
-  override appendLine(_file: WorkspaceFile, _line: string): Promise<Result<void, WriteRefusal>> {
+  override appendLine(): Promise<Result<void, WriteRefusal>> {
     return Promise.resolve(
       err({ code: ERROR_CODES.writeOutsideWorkspace, reason: 'invalid-path', message: 'full' }),
     );
@@ -59,7 +58,9 @@ describe('EgressGuard egress log', () => {
       },
     ]);
   });
+});
 
+describe('EgressGuard egress log excerpts', () => {
   it('RF-142 lists the excerpts of every block in message order', async () => {
     const { guard, egressLines } = await egressHarness();
     const codeMap = renderDataBlock({
@@ -92,7 +93,9 @@ describe('EgressGuard egress log', () => {
       ],
     });
   });
+});
 
+describe('EgressGuard egress log content and order', () => {
   it('RF-142 never copies excerpt text or a secret into the egress log', async () => {
     const { guard, egressLines } = await egressHarness();
     const text = ['UniqueExcerptMarker42', ...secretCases.map((secret) => secret.text)].join('\n');
