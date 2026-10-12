@@ -11,7 +11,8 @@ export function scopeFor(
   runKey = '20261012-100000-scan',
   overrides: Partial<RunScope> = {},
 ): RunScope {
-  const digits = runKey.replaceAll(/\D/g, '').padEnd(12, '0').slice(-12);
+  const hex = Array.from(runKey, (char) => (char.codePointAt(0) ?? 0).toString(16));
+  const digits = hex.join('').slice(-12);
   return { id: `00000000-0000-4000-b000-${digits}`, userId, projectId, runKey, ...overrides };
 }
 

@@ -81,7 +81,9 @@ describe('JsonlEventLog', () => {
     const lines = (await readFile(eventsFile(), 'utf8')).trimEnd().split('\n');
     expect(lines.map((line) => (JSON.parse(line) as { seq: number }).seq)).toEqual([1, 2, 3]);
   });
+});
 
+describe('JsonlEventLog after a crash', () => {
   it('RNF-002 a run that ended before a crash still refuses events after run.ended', async () => {
     await openLog().publish(scope, eventFor(scope, 1, 'run.ended', { endState: 'Failed' }));
 

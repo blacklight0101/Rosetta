@@ -17,7 +17,7 @@ export type FreshEventStore = () => Promise<EventStore>;
 const scope = scopeFor('20261012-100000-scan');
 const otherScope = scopeFor('20261012-100000-understand');
 
-export function runEventStoreContract(name: string, fresh: FreshEventStore): void {
+function readingTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} stores events in order and reads the ones after a sequence number`, async () => {
     const { sink, history } = await fresh();
     for (const seq of [1, 2, 3, 4]) await sink.publish(scope, eventFor(scope, seq));
@@ -46,7 +46,9 @@ export function runEventStoreContract(name: string, fresh: FreshEventStore): voi
 
     expect(await history.lastSeq(scope)).toBe(2);
   });
+}
 
+function refusalTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} refuses an event that leaves a gap or repeats a sequence number`, async () => {
     const { sink, history } = await fresh();
     await sink.publish(scope, eventFor(scope, 1));
@@ -88,7 +90,9 @@ export function runEventStoreContract(name: string, fresh: FreshEventStore): voi
       code: ERROR_CODES.runEventRefused,
     });
   });
+}
 
+function isolationTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} keeps the events of two runs apart`, async () => {
     const { sink, history } = await fresh();
     await sink.publish(scope, eventFor(scope, 1));
@@ -97,9 +101,9 @@ export function runEventStoreContract(name: string, fresh: FreshEventStore): voi
 
     expect(await history.lastSeq(scope)).toBe(1);
     expect(await history.lastSeq(otherScope)).toBe(2);
-    expect((await history.read(otherScope, 0)).every((event) => event.runId === otherScope.runKey)).toBe(
-      true,
-    );
+    expect(
+      (await history.read(otherScope, 0)).every((event) => event.runId === otherScope.runKey),
+    ).toBe(true);
   });
 
   it(`RF-1006 ${name} keeps the order of events published without waiting for each other`, async () => {
@@ -110,4 +114,10 @@ export function runEventStoreContract(name: string, fresh: FreshEventStore): voi
 
     expect((await history.read(scope, 0)).map((event) => event.seq)).toEqual(seqs);
   });
+}
+
+export function runEventStoreContract(name: string, fresh: FreshEventStore): void {
+  readingTests(name, fresh);
+  refusalTests(name, fresh);
+  isolationTests(name, fresh);
 }

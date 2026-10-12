@@ -51,7 +51,9 @@ describe('RunEventPublisher', () => {
 
     expect(event.seq).toBe(3);
   });
+});
 
+describe('RunEventPublisher ordering', () => {
   it('RF-1006 keeps the numbers in the order of the calls when events are emitted without waiting', async () => {
     const sink = new MemoryEventSink();
     const clock = new FixedClock('2026-10-12T10:00:00.000Z');

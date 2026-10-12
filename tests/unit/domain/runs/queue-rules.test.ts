@@ -45,10 +45,20 @@ describe('runsToStart', () => {
 
     expect(runsToStart([waiting, other], [running], 3)).toEqual([other]);
   });
+});
 
+describe('runsToStart tie and limit', () => {
   it('RF-1108 breaks a tie on the queue time by run id', () => {
-    const later = sampleRun({ userId: amy, queuedAt: 5, id: '00000000-0000-4000-b000-0000000000bb' });
-    const earlier = sampleRun({ userId: bob, queuedAt: 5, id: '00000000-0000-4000-b000-0000000000aa' });
+    const later = sampleRun({
+      userId: amy,
+      queuedAt: 5,
+      id: '00000000-0000-4000-b000-0000000000bb',
+    });
+    const earlier = sampleRun({
+      userId: bob,
+      queuedAt: 5,
+      id: '00000000-0000-4000-b000-0000000000aa',
+    });
 
     expect(runsToStart([later, earlier], [], 1)).toEqual([earlier]);
   });

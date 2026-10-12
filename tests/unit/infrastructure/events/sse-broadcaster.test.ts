@@ -42,7 +42,9 @@ describe('SseBroadcaster', () => {
     expect(stranger.events).toEqual([]);
     expect(elsewhere.events).toEqual([]);
   });
+});
 
+describe('SseBroadcaster subscriptions', () => {
   it('RF-1006 stops delivering to a page that unsubscribed, and frees it', async () => {
     const broadcaster = new SseBroadcaster(new SecretMasker());
     const page = collect();
@@ -77,7 +79,9 @@ describe('SseBroadcaster', () => {
 
     expect(JSON.stringify(page.events)).not.toContain(fakeOpenAiKey);
   });
+});
 
+describe('SseBroadcaster failures', () => {
   it('RF-1006 a listener that throws does not stop the others or the publisher', async () => {
     const broadcaster = new SseBroadcaster(new SecretMasker());
     const page = collect();
@@ -93,7 +97,11 @@ describe('SseBroadcaster', () => {
   });
 
   it('RNF-003 delivers nothing when masking fails', async () => {
-    const failing = { mask: vi.fn(() => { throw new Error('masker failed'); }) };
+    const failing = {
+      mask: vi.fn(() => {
+        throw new Error('masker failed');
+      }),
+    };
     const broadcaster = new SseBroadcaster(failing);
     const page = collect();
     broadcaster.subscribe(scope.userId, scope.id, page.listener);

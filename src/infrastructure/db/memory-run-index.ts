@@ -78,7 +78,7 @@ export class MemoryRunIndex implements RunIndex {
 
   /** Stores the result of a transition when it was allowed. */
   private keep(result: Result<Run, unknown> | undefined): Run | undefined {
-    if (result === undefined || !result.ok) return undefined;
+    if (!result?.ok) return undefined;
     this.runs.set(result.value.id, result.value);
     return result.value;
   }
