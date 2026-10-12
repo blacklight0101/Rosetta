@@ -299,7 +299,10 @@ Header fields:
 | `questionState` | `OpenQuestionState` | `OQ` only (RF-241) |
 | `mergedFrom[]` | list | card ids merged by consolidation (RF-250) |
 
-A rejected or invalid claim is never removed; only its status and verdict change (RF-302).
+A rejected or invalid claim is never removed; only its status and verdict change (RF-302). The card files, the index
+and `spec.md` are written together: each file's previous content is read first, and when a write is refused or fails
+part-way every file already written gets its previous content back and a file that did not exist is removed
+(RNF-002); a file that cannot be put back is logged and the original refusal is returned.
 
 In the header a citation is the string `path:startLine-endLine`; absent optional fields are left out. Every string is a
 double-quoted scalar, so model text cannot add a key. `cards/index.json` has `schemaVersion` and `cards`, and its
