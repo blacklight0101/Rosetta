@@ -1,8 +1,15 @@
+import fastifyCookie from '@fastify/cookie';
+import fastifyCsrfProtection from '@fastify/csrf-protection';
 import fastifyHelmet from '@fastify/helmet';
+import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import type { DatabaseHealth } from '../../application/ports/database-health.js';
 import type { Logger, LogRecord } from '../../application/ports/logger.js';
+import type { RecordRefusedRequest } from '../../application/use-cases/record-refused-request.js';
+import type { ResolveSession } from '../../application/use-cases/resolve-session.js';
+import type { SignIn } from '../../application/use-cases/sign-in.js';
+import type { SignOut } from '../../application/use-cases/sign-out.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import {
@@ -11,16 +18,28 @@ import {
   expectationHandler,
   frameworkErrorHandler,
 } from './early-errors.js';
+import { recordCsrfRefusal, registerAccessHooks } from './access-hooks.js';
 import { toErrorReply } from './error-mapper.js';
 import { registerPublicRoutes } from './public-routes.js';
 import { robotsTag, securityHeaderOptions } from './security-headers.js';
+import { CSRF_COOKIE, CSRF_HEADER, secureCookie } from './session-cookies.js';
+import { registerSessionRoutes } from './session-routes.js';
 
 // ADR-017: the Fastify server. Plugins and hooks are registered here; routes call use cases only.
+
+/** RF-1009, RF-1100, RF-1101: the use cases behind the session hooks and routes. */
+export interface AuthServices {
+  readonly signIn: SignIn;
+  readonly signOut: SignOut;
+  readonly resolveSession: ResolveSession;
+  readonly refusals: RecordRefusedRequest;
+}
 
 export interface ServerOptions {
   /** RF-009: request and error entries; the logger masks every value. */
   readonly logger: Logger;
   readonly databaseHealth: DatabaseHealth;
+  readonly auth: AuthServices;
   /** The Rosetta version reported by /healthz. */
   readonly version: string;
   /** `ROSETTA_PUBLIC_URL`; https turns HSTS on (RF-1013). */
@@ -88,11 +107,42 @@ function registerHooks(server: FastifyInstance, logger: Logger): void {
   server.addHook('onResponse', (request, reply) => logResponse(logger, request, reply));
 }
 
+// RF-1009, RF-1100: cookies, the CSRF token in its cookie mode (the secret lives only in the
+// `__Host-rosetta_csrf` cookie, never in the database) and the per-route rate limit; reaching the
+// limit is a security event (RF-009).
+function registerSessionPlugins(server: FastifyInstance, logger: Logger): void {
+  void server.register(fastifyCookie);
+  void server.register(fastifyCsrfProtection, {
+    sessionPlugin: '@fastify/cookie',
+    cookieKey: CSRF_COOKIE,
+    cookieOpts: secureCookie,
+    getToken: (request) => {
+      const token = request.headers[CSRF_HEADER];
+      return typeof token === 'string' ? token : undefined;
+    },
+  });
+  void server.register(fastifyRateLimit, {
+    global: false,
+    onExceeded: (request) => {
+      void Promise.allSettled([
+        logger.securityEvent(ERROR_CODES.rateLimited, {
+          message: `Rate limit reached: ${request.method} ${request.routeOptions.url ?? ''}`,
+          data: { ip: request.ip },
+        }),
+      ]);
+    },
+  });
+}
+
 // RF-007: every failure answers { code, message, nextStep } with the status of its cause.
-function registerErrorHandlers(server: FastifyInstance, logger: Logger): void {
+function registerErrorHandlers(server: FastifyInstance, options: ServerOptions): void {
+  const { logger, auth } = options;
   server.setErrorHandler(async (error, request, reply) => {
     const errorReply = toErrorReply(error);
     if (errorReply.unexpected) await logUnexpected(logger, request, error);
+    if (errorReply.body.code === ERROR_CODES.csrfTokenInvalid) {
+      await recordCsrfRefusal(auth.refusals, request);
+    }
     return reply.status(errorReply.status).send(errorReply.body);
   });
   server.setNotFoundHandler((_request, reply) => {
@@ -101,7 +151,10 @@ function registerErrorHandlers(server: FastifyInstance, logger: Logger): void {
   });
 }
 
-/** RF-1013, RF-1201, RF-1303, RF-007: the server with its plugins, hooks and public routes. */
+/**
+ * RF-1013, RF-1201, RF-1303, RF-007, RF-1009, RF-1100, RF-1101: the server with its plugins, hooks,
+ * public routes and the session API.
+ */
 export function buildServer(options: ServerOptions): FastifyInstance {
   const server = Fastify({
     logger: false,
@@ -124,8 +177,15 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   server.server.on('connect', connectHandler(options.logger, options.publicUrl));
   void server.register(fastifyHelmet, securityHeaderOptions(options.publicUrl));
   registerHooks(server, options.logger);
-  registerErrorHandlers(server, options.logger);
+  registerSessionPlugins(server, options.logger);
+  registerAccessHooks(server, { publicUrl: options.publicUrl, ...options.auth });
+  registerErrorHandlers(server, options);
   registerPublicRoutes(server, options);
+  // Registered as a plugin, so the rate-limit plugin (loaded first) sees these routes.
+  void server.register((instance, _options, done) => {
+    registerSessionRoutes(instance, options.auth);
+    done();
+  });
   if (options.staticRoot !== undefined) {
     void server.register(fastifyStatic, { root: options.staticRoot });
   }

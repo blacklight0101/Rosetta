@@ -26,6 +26,9 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.requestInvalid]: 400,
   [ERROR_CODES.notSignedIn]: 401,
   [ERROR_CODES.notAllowed]: 403,
+  [ERROR_CODES.originRefused]: 403,
+  [ERROR_CODES.csrfTokenInvalid]: 403,
+  [ERROR_CODES.invalidCredentials]: 401,
   [ERROR_CODES.notFound]: 404,
   [ERROR_CODES.conflict]: 409,
   [ERROR_CODES.rateLimited]: 429,
@@ -46,9 +49,16 @@ function frameworkStatus(error: Error): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
+/** RF-1009: the errors @fastify/csrf-protection sends for a missing secret or a wrong token. */
+const CSRF_ERRORS: ReadonlySet<unknown> = new Set([
+  'FST_CSRF_MISSING_SECRET',
+  'FST_CSRF_INVALID_TOKEN',
+]);
+
 function codeOf(error: unknown): ErrorCode {
   if (error instanceof RosettaError) return error.code;
   if (!(error instanceof Error)) return ERROR_CODES.unexpected;
+  if (CSRF_ERRORS.has(Reflect.get(error, 'code'))) return ERROR_CODES.csrfTokenInvalid;
   const status = frameworkStatus(error);
   if (status === undefined || status < 400 || status >= 500) return ERROR_CODES.unexpected;
   return codeOfFrameworkStatus[status] ?? ERROR_CODES.requestInvalid;

@@ -107,17 +107,22 @@ describe.skipIf(!hasTestDatabase)('composition root', () => {
 describe.skipIf(!hasTestDatabase)('composition root static files', () => {
   const database = useTestDatabase();
 
-  it('RF-1013 serves the built front end from dist/web/', async () => {
+  it('RF-1013 serves the built front end from dist/web/ (assets need no session, RF-1009)', async () => {
+    const assetsFolder = join(frontEndFolder, 'assets');
     const createdFolder = !(await exists(frontEndFolder));
-    await mkdir(frontEndFolder, { recursive: true });
+    const createdAssets = !(await exists(assetsFolder));
+    await mkdir(assetsFolder, { recursive: true });
     const name = `rst-static-${String(process.pid)}.txt`;
-    cleanups.push(createdFolder ? frontEndFolder : join(frontEndFolder, name));
-    await writeFile(join(frontEndFolder, name), 'served from dist/web\n', 'utf8');
+    const createdPath = createdAssets ? assetsFolder : join(assetsFolder, name);
+    cleanups.push(createdFolder ? frontEndFolder : createdPath);
+    await writeFile(join(assetsFolder, name), 'served from dist/web\n', 'utf8');
     const { application } = await composed(database);
 
     try {
       const address = await application.start();
-      const response = await fetch(`${address}/${name}`, { signal: AbortSignal.timeout(5000) });
+      const response = await fetch(`${address}/assets/${name}`, {
+        signal: AbortSignal.timeout(5000),
+      });
 
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('served from dist/web\n');

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES, type ErrorCode } from '../../../../src/domain/errors/codes.js';
 import { describeError } from '../../../../src/domain/errors/descriptions.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
-import { createTestServer, type TestServer } from '../../../support/web-server.js';
+import { createTestServer, testPublicUrl, type TestServer } from '../../../support/web-server.js';
 
 // RF-007, RNF-008: every API error is { code, message, nextStep } with the status of its cause and
 // never a stack trace; one route per status through fastify.inject.
@@ -11,10 +11,12 @@ let current: TestServer | undefined;
 
 function serverThrowing(error: unknown): TestServer {
   current = createTestServer();
-  current.server.get('/test/failure', () => {
+  current.server.get('/test/failure', { config: { access: 'public' } }, () => {
     throw error;
   });
-  current.server.post('/test/echo', (request) => ({ received: request.body }));
+  current.server.post('/test/echo', { config: { access: 'public' } }, (request) => ({
+    received: request.body,
+  }));
   return current;
 }
 
@@ -55,7 +57,7 @@ describe('error responses from the framework', () => {
     const response = await server.inject({
       method: 'POST',
       url: '/test/echo',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', origin: testPublicUrl },
       payload: '{ "name": ',
     });
 
@@ -69,7 +71,7 @@ describe('error responses from the framework', () => {
     const response = await server.inject({
       method: 'POST',
       url: '/test/echo',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', origin: testPublicUrl },
       payload: JSON.stringify({ text: 'x'.repeat(1_100_000) }),
     });
 
@@ -80,7 +82,7 @@ describe('error responses from the framework', () => {
   it('RF-007 an unknown address answers 404 with RST-2003', async () => {
     const { server } = serverThrowing(new Error('unused'));
 
-    const response = await server.inject({ method: 'GET', url: '/api/no-such-thing' });
+    const response = await server.inject({ method: 'GET', url: '/assets/no-such-file.js' });
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({

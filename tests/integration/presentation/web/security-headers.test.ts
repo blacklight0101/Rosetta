@@ -25,13 +25,13 @@ function directives(header: unknown): string[] {
 }
 
 /** One response of each kind: a route, a text file, a static file, a 404 and a 500. */
-const responses = ['/healthz', '/robots.txt', '/index.html', '/no-such-page', '/test/failure'];
+const responses = ['/healthz', '/robots.txt', '/', '/assets/no-such-file.js', '/test/failure'];
 
 let current: TestServer | undefined;
 
 function serverFor(publicUrl: string): TestServer {
   current = createTestServer({ publicUrl, staticRoot });
-  current.server.get('/test/failure', () => {
+  current.server.get('/test/failure', { config: { access: 'public' } }, () => {
     throw new Error('the failure route always fails');
   });
   return current;
@@ -79,7 +79,7 @@ describe('security headers', () => {
   it('RF-1013 serves the built front end from the static folder', async () => {
     const { server } = serverFor('http://127.0.0.1:8080');
 
-    const response = await server.inject({ method: 'GET', url: '/index.html' });
+    const response = await server.inject({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain('Static front-end fixture');

@@ -15,13 +15,13 @@ export interface PublicRouteOptions {
 export function registerPublicRoutes(server: FastifyInstance, options: PublicRouteOptions): void {
   const { databaseHealth, version } = options;
 
-  server.get('/healthz', async (_request, reply) => {
+  server.get('/healthz', { config: { access: 'public' } }, async (_request, reply) => {
     const reachable = await databaseHealth.isReachable().catch(() => false);
     if (!reachable) return reply.status(503).send();
     return reply.status(200).send({ status: 'ok', version });
   });
 
-  server.get('/robots.txt', (_request, reply) =>
+  server.get('/robots.txt', { config: { access: 'public' } }, (_request, reply) =>
     reply.status(200).type('text/plain; charset=utf-8').send(robotsTxt),
   );
 }

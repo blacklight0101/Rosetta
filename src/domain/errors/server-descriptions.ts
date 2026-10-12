@@ -35,6 +35,14 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'Something unexpected went wrong.',
     nextStep: 'Try again; if it keeps failing, ask the operator to check the application log.',
   },
+  'RST-2007': {
+    message: 'The request did not come from a Rosetta page, so it was refused.',
+    nextStep: 'Open Rosetta at its own address and try again from there.',
+  },
+  'RST-2008': {
+    message: 'The security token of the request is missing or no longer valid.',
+    nextStep: 'Reload the page and try again.',
+  },
   'RST-2101': {
     message: 'Secret masking failed, so the content was withheld.',
     nextStep: 'Nothing was sent or logged unmasked; check the application log and try again.',
@@ -83,6 +91,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
   'RST-2209': {
     message: 'A stored password hash could not be read.',
     nextStep: 'Ask an administrator to reset the password of the account.',
+  },
+  'RST-2210': {
+    message: 'The account is locked for 15 minutes after five failed sign-ins.',
+    nextStep: 'Wait 15 minutes, or ask an administrator to check the audit trail.',
   },
   'RST-2304': {
     message: 'The URL must use https and a public address.',
