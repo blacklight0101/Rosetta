@@ -34,6 +34,10 @@ interface Sent {
   readonly values: number;
 }
 
+function boundCount(values: unknown): number {
+  return Array.isArray(values) ? values.length : 0;
+}
+
 /** The statements one sign-in sends to the pool, in order, with their bound value counts. */
 async function statementsOf(setup: Setup, userName: string): Promise<readonly Sent[]> {
   const query = vi.spyOn(setup.pool, 'query');
@@ -46,7 +50,7 @@ async function statementsOf(setup: Setup, userName: string): Promise<readonly Se
     expect(outcome.ok).toBe(false);
     return query.mock.calls.map(([statement, values]) => ({
       statement: typeof statement === 'string' ? statement : 'config',
-      values: Array.isArray(values) ? values.length : 0,
+      values: boundCount(values),
     }));
   } finally {
     query.mockRestore();
