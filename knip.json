@@ -7,7 +7,8 @@
     "tests/**/*.test.ts",
     "src/infrastructure/files/grep-worker.ts",
     "tests/compose/*.spec.ts",
-    "tests/compose/serve.ts"
+    "tests/compose/serve.ts",
+    "tests/support/frozen-database-harness.ts"
   ],
   "project": ["src/**/*.ts", "tests/**/*.{ts,tsx}", "scripts/**/*.mjs", "web/**/*.{ts,tsx}"]
 }
