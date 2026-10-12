@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 99 | 35 | 49 | 15 | 0 | 49 | 42 | 8 | 42 | 0 |
+| P1 Milestone slice (M1) | 108 | 37 | 56 | 15 | 0 | 54 | 46 | 8 | 51 | 0 |
 | P2 Full understand | 16 | 2 | 9 | 5 | 0 | 3 | 12 | 1 | 2 | 0 |
 | P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **127** | **38** | **67** | **22** | **0** | **53** | **63** | **11** | **44** | **0** |
+| **Total** | **136** | **40** | **74** | **22** | **0** | **58** | **67** | **11** | **53** | **0** |
 
 ## Conventions for every card
 
