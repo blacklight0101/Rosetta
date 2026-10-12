@@ -6,6 +6,7 @@ import { err, type Result } from '../../domain/errors/result.js';
 import { writeRefusal } from '../files/workspace-guard.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { serialiseCardIndex } from './card-index.js';
+import { renderCoverage, serialiseCoverage } from './coverage-files.js';
 import { cardPath, renderCardFile } from './card-markdown.js';
 import type { PermalinkSource } from './citation-link.js';
 import { renderSpec } from './spec-markdown.js';
@@ -78,12 +79,17 @@ export interface CoverageOutputInput {
 }
 
 // RF-230: `coverage.json` and `coverage.md`, both made and masked before the first write.
-export function writeCoverageOutputs(
+export async function writeCoverageOutputs(
   writer: OutputWriter,
   target: CardOutputTarget,
   input: CoverageOutputInput,
 ): Promise<Result<void, WriteRefusal>> {
-  return writeAll(writer, target, [], input.logger);
+  const { coverage, masker, logger } = input;
+  const files: PlannedFile[] = [
+    { path: 'coverage.json', text: serialiseCoverage(coverage, masker) },
+    { path: 'coverage.md', text: renderCoverage(coverage, masker) },
+  ];
+  return writeAll(writer, target, files, logger);
 }
 
 export interface InvalidOutputInput {
