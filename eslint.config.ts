@@ -65,6 +65,25 @@ export default defineConfig(
     },
   },
   {
+    // The network guard lives in the `test` of the fixtures file; a spec must use that one.
+    files: ['tests/e2e/**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@playwright/test',
+              importNames: ['test', 'expect'],
+              message:
+                'Import test and expect from tests/e2e/support/fixtures.js: its test carries the network guard (RNF-005).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/infrastructure/db/**'],
     rules: {
       'no-restricted-syntax': [

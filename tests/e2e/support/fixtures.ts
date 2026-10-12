@@ -31,6 +31,16 @@ export const test = base.extend<{ network: NetworkGuard }>({
         guard.record(url);
         return route.abort('blockedbyclient');
       });
+      // A WebSocket is not an HTTP request to the route above: the same policy decides.
+      await context.routeWebSocket(/.*/u, (socket) => {
+        const url = socket.url();
+        if (isAllowedRequestUrl(url)) {
+          socket.connectToServer();
+          return;
+        }
+        guard.record(url);
+        void socket.close();
+      });
       await use(guard);
       expect(guard.takeBlocked(), 'RNF-005: requests outside 127.0.0.1 are blocked').toEqual([]);
     },
