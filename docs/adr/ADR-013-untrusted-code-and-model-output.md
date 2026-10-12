@@ -1,7 +1,7 @@
 # ADR-013: Treat analysed code and model output as untrusted input
 
 **Date**: 2026-10-11
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -68,3 +68,9 @@ We choose option 1.
 - 2026-10-11: DEC-69 adds the trust boundaries of a hosted application (browser to server over the internet,
   server to PostgreSQL, stored secrets) to the threat model; the controls are in ADR-015 and ADR-017. The decisions
   of this ADR are unchanged.
+- 2026-10-12: DEC-129 amends how a data block is delimited. Every block rendered for a model carries a fresh random tag
+  (at least 96 bits from the injected randomness port) in both its opening and its closing marker, and every prompt
+  tells the model that a block ends only at the closing marker carrying the same tag; any other marker-like text,
+  with a missing or different tag, is data. Content that contains its own block's tag is refused with RST-1516.
+  The look-alike marker check of P1-89 stays as a second line of defence. Reason: three verifier rounds showed that
+  refusing spellings of a fixed marker cannot be made complete; an attacker cannot forge a tag it never sees.

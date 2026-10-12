@@ -129,4 +129,18 @@ describe('scan-summary.md (details)', () => {
 
     expect(text).toContain('| We\\|b | 3 | 150 |');
   });
+
+  it('RF-110 counts the files past the parse budget on the files line, like skipped files', () => {
+    const text = renderScanSummary({ codeMap: sample(), durationMs: 10, overParseBudget: 2 });
+
+    expect(text).toContain(
+      '- Files: 6 (1 skipped as too large, 1 skipped as binary, 2 not analysed: parse budget reached)\n',
+    );
+  });
+
+  it('RF-110 leaves the files line unchanged when no file was past the parse budget', () => {
+    const text = renderScanSummary({ codeMap: sample(), durationMs: 10, overParseBudget: 0 });
+
+    expect(text).toContain('- Files: 6 (1 skipped as too large, 1 skipped as binary)\n');
+  });
 });
