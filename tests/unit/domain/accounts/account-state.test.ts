@@ -74,7 +74,9 @@ describe('createAccount', () => {
 
     expect(created.ok && created.value.state).toBe('Active');
   });
+});
 
+describe('createAccount refusals', () => {
   it.each([
     ['userName', 'no', ERROR_CODES.userNameInvalid],
     ['displayName', '', ERROR_CODES.displayNameInvalid],
@@ -114,7 +116,9 @@ describe('account state transitions', () => {
       error: ERROR_CODES.accountStateInvalid,
     });
   });
+});
 
+describe('disabling and enabling accounts', () => {
   it.each(['Active', 'MustChangePassword', 'Disabled'] as const)(
     'RF-1102 an administrator can disable an account that is %s',
     (state) => {
@@ -155,7 +159,9 @@ describe('account state transitions', () => {
       error: ERROR_CODES.accountStateInvalid,
     });
   });
+});
 
+describe('password resets', () => {
   it('RF-1102 resetting a password sets MustChangePassword and the new hash', () => {
     const reset = resetPassword(sampleAccount(), 'fake$reset', fixtureNow);
 
@@ -207,7 +213,9 @@ describe('sign-in failures and the lock', () => {
     expect(late.account.failedSignIns).toBe(1);
     expect(late.account.firstFailedAt).toBe(fixtureNow + minutes(15));
   });
+});
 
+describe('the end of a failure window', () => {
   it('RF-1100 a failure while the account is locked changes nothing', () => {
     const locked = failTimes(sampleAccount(), 5);
 

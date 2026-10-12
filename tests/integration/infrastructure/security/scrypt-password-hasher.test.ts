@@ -39,7 +39,9 @@ describe('ScryptPasswordHasher', () => {
     expect(await hasher.verify(password, stored)).toBe(true);
     expect(await hasher.verify(fixturePassword('Other'), stored)).toBe(false);
   });
+});
 
+describe('ScryptPasswordHasher verification', () => {
   it('RF-1100 uses a new salt for every hash', async () => {
     const hasher = new ScryptPasswordHasher({ parameters: fast });
     const password = fixturePassword('Salt');
@@ -56,7 +58,9 @@ describe('ScryptPasswordHasher', () => {
 
     expect(await new ScryptPasswordHasher().verify(password, older)).toBe(true);
   });
+});
 
+describe('ScryptPasswordHasher stored hashes and limits', () => {
   it.each([
     ['another scheme', 'bcrypt$16384$8$1$c2FsdHNhbHRzYWx0c2FsdA==$aGFzaGhhc2hoYXNoaGFzaA=='],
     ['a missing part', 'scrypt$16384$8$1$c2FsdHNhbHRzYWx0c2FsdA=='],

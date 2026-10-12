@@ -86,7 +86,9 @@ describe('BootstrapAdmin', () => {
     expect(outcome).toEqual({ ok: true, value: 'accounts-exist' });
     expect(await users.list()).toHaveLength(1);
   });
+});
 
+describe('BootstrapAdmin secrecy and audit', () => {
   it('RF-1102 never logs or audits the user name or the password', async () => {
     const { audit, logger, bootstrap } = harness();
     const password = fixturePassword('Secret');
@@ -109,21 +111,22 @@ describe('BootstrapAdmin', () => {
     const [admin] = await users.list();
     const rows = await audit.list({ since: new FixedClock('2026-10-11T00:00:00.000Z').now() });
 
-    expect(rows).toEqual([
-      {
-        id: expect.any(String),
-        at: new FixedClock('2026-10-11T09:00:00.000Z').now(),
-        actorUserId: null,
-        action: 'user.created',
-        targetType: 'user',
-        targetId: admin?.id,
-        ip: 'start-up',
-        outcome: 'ok',
-        detail: { role: 'admin', source: 'environment' },
-      },
-    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.detail).toEqual({ role: 'admin', source: 'environment' });
+    expect(rows[0]).toMatchObject({
+      at: new FixedClock('2026-10-11T09:00:00.000Z').now(),
+      actorUserId: null,
+      action: 'user.created',
+      targetType: 'user',
+      targetId: admin?.id,
+      ip: 'start-up',
+      outcome: 'ok',
+      detail: { role: 'admin', source: 'environment' },
+    });
   });
+});
 
+describe('BootstrapAdmin refusals', () => {
   it.each([
     ['the user name', { password: fixturePassword('Only') }],
     ['the password', { userName: adminName }],

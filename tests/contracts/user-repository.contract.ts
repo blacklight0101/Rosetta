@@ -14,7 +14,7 @@ function jsonOf(value: unknown): string {
   );
 }
 
-export function userRepositoryContract(name: string, fresh: () => Promise<UserRepository>): void {
+function storingTests(name: string, fresh: () => Promise<UserRepository>): void {
   it(`RF-1102 ${name} stores an account and finds it by id and by user name`, async () => {
     const users = await fresh();
     const account = sampleAccount({ userName: 'teacher', dailyCapMicros: 2_500_000n });
@@ -50,7 +50,9 @@ export function userRepositoryContract(name: string, fresh: () => Promise<UserRe
     expect(await users.findById('00000000-0000-4000-8000-00000000ffff')).toBeUndefined();
     expect(await users.findByUserName('nobody')).toBeUndefined();
   });
+}
 
+function listingTests(name: string, fresh: () => Promise<UserRepository>): void {
   it(`RF-1102 ${name} lists every account by user name without the password hash`, async () => {
     const users = await fresh();
     const second = sampleAccount({ userName: 'zed', passwordHash: 'fake$hash-of-zed' });
@@ -89,7 +91,9 @@ export function userRepositoryContract(name: string, fresh: () => Promise<UserRe
     expect(again).toBe(false);
     expect(await users.list()).toHaveLength(1);
   });
+}
 
+function updatingTests(name: string, fresh: () => Promise<UserRepository>): void {
   it(`RF-1100 ${name} saves the changed state, hash and counters of an account`, async () => {
     const users = await fresh();
     const account = sampleAccount({ state: 'MustChangePassword' });
@@ -121,4 +125,10 @@ export function userRepositoryContract(name: string, fresh: () => Promise<UserRe
 
     expect(await users.update(sampleAccount())).toBe(false);
   });
+}
+
+export function userRepositoryContract(name: string, fresh: () => Promise<UserRepository>): void {
+  storingTests(name, fresh);
+  listingTests(name, fresh);
+  updatingTests(name, fresh);
 }

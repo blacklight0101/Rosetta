@@ -20,7 +20,7 @@ export function minutes(count: number): number {
 
 /** Characters of the text as hexadecimal code units, so a fake hash never holds the password. */
 function hexOf(text: string): string {
-  return [...text].map((character) => (character.codePointAt(0) ?? 0).toString(16)).join('.');
+  return Array.from(text, (character) => (character.codePointAt(0) ?? 0).toString(16)).join('.');
 }
 
 /**

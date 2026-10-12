@@ -1,5 +1,9 @@
 import { expect, it } from 'vitest';
-import type { AuditEventInput, AuditLog } from '../../src/application/ports/audit-log.js';
+import type {
+  AuditEvent,
+  AuditEventInput,
+  AuditLog,
+} from '../../src/application/ports/audit-log.js';
 import { fixturePassword } from '../support/account-fixtures.js';
 import { FixedClock } from '../support/fixed-clock.js';
 
@@ -31,7 +35,15 @@ function minutesAfterStart(count: number): Date {
   return moved.now();
 }
 
-export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): void {
+/** The event without its generated id, which must be a string. */
+function withoutId(row: AuditEvent | undefined): AuditEventInput | undefined {
+  if (row === undefined) return undefined;
+  const { id, ...rest } = row;
+  expect(typeof id).toBe('string');
+  return rest;
+}
+
+function recordingTests(name: string, fresh: () => Promise<AuditLog>): void {
   it(`RF-1109 ${name} stores time, actor, action, target, IP address and outcome`, async () => {
     const audit = await fresh();
     const input = event({ detail: { reason: 'first sign-in', attempts: 1 } });
@@ -40,7 +52,7 @@ export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): 
     const listed = await audit.list({ since: minutesAfterStart(-1) });
 
     expect(listed).toHaveLength(1);
-    expect(listed[0]).toEqual({ ...input, id: expect.any(String) });
+    expect(withoutId(listed[0])).toEqual(input);
   });
 
   it(`RF-1109 ${name} stores an anonymous refused attempt without target`, async () => {
@@ -53,10 +65,9 @@ export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): 
     });
 
     await audit.record(input);
+    const listed = await audit.list({ since: minutesAfterStart(-1) });
 
-    expect(await audit.list({ since: minutesAfterStart(-1) })).toEqual([
-      { ...input, id: expect.any(String) },
-    ]);
+    expect(listed.map(withoutId)).toEqual([input]);
   });
 
   it(`RF-1109 ${name} masks a password in the detail before it is stored`, async () => {
@@ -75,7 +86,9 @@ export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): 
       nested: [{ pwd: '[MASKED:password]' }],
     });
   });
+}
 
+function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
   it(`RF-1109 ${name} lists the newest first, from a time, by user and by action`, async () => {
     const audit = await fresh();
     await audit.record(event({ at: minutesAfterStart(-60), action: 'user.created' }));
@@ -102,4 +115,9 @@ export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): 
 
     expect(listed.map((row) => row.action)).toEqual(['auth.locked', 'auth.sign_in']);
   });
+}
+
+export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): void {
+  recordingTests(name, fresh);
+  listingTests(name, fresh);
 }
