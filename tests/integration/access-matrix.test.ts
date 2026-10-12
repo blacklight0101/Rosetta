@@ -13,7 +13,6 @@ import {
   columns,
   everyone,
   ownerOnly,
-  routesOf,
   signedIn,
   type Column,
 } from '../support/access-columns.js';
@@ -280,7 +279,7 @@ describe('access matrix', () => {
     current = createTestServer({ staticRoot });
     await current.server.ready();
 
-    const routes = routesOf(current.server, Object.keys(matrix));
+    const routes = current.routes();
 
     expect(routes).toEqual(Object.keys(matrix).sort());
   });

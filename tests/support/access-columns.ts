@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 // RF-1105, RF-1009, RF-1102: the columns of the access matrix (tests/integration/access-matrix.test.ts)
 // and the expected statuses of the usual kinds of route, so the matrix itself stays a table.
 
@@ -50,38 +49,3 @@ export const adminOnly = (admin: number): Statuses => ({
   admin,
   mustChange: 403,
 });
-
-/**
- * "METHOD path" for every route of the server, from Fastify's route listing. The listing is a tree
- * (four characters of indentation per level): a node's path is its own text after those of its
- * parents, and only nodes that end in a method list are routes. The listing drops the path before a
- * wildcard (`/files/*` is printed as `*`), so a wildcard row of the matrix counts as listed when the
- * server says it has that route.
- */
-export function routesOf(
-  server: Pick<FastifyInstance, 'printRoutes' | 'hasRoute'>,
-  matrixRows: readonly string[],
-): readonly string[] {
-  const listing = server.printRoutes({ commonPrefix: false });
-  const parents: string[] = [];
-  const routes: string[] = [];
-  for (const line of listing.split('\n')) {
-    const match = /^((?:│ {3}| {4})*)[├└]── (\S+)(?: \(([A-Z, ]+)\))?$/u.exec(line);
-    if (match === null) continue;
-    const depth = (match[1] ?? '').length / 4;
-    parents.length = depth;
-    parents.push(match[2] ?? '');
-    // `/*` is the real catch-all; any other wildcard has lost its path in the listing.
-    if (match[2] === '*' && parents.join('') !== '/*') continue;
-    for (const method of (match[3] ?? '').split(', ').filter((name) => name !== '')) {
-      routes.push(`${method} ${parents.join('')}`);
-    }
-  }
-  const wildcards = matrixRows.filter(
-    (row) =>
-      row.includes('*') &&
-      !routes.includes(row) &&
-      server.hasRoute({ method: 'GET', url: row.slice(4) }),
-  );
-  return [...routes, ...wildcards].sort();
-}

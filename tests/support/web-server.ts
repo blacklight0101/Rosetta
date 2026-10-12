@@ -50,6 +50,7 @@ import { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
 import { runOutputs, runServices, type RunOutputGiven } from './web-run-services.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
+import { recordRoutes } from './route-recorder.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
@@ -69,6 +70,8 @@ export interface TestServer {
   readonly projects: MemoryProjectRepository;
   readonly serverSettings: MemoryServerSettings;
   readonly hasher: PasswordHasher;
+  /** RF-1105: every route the server registered, as "METHOD url" (see route-recorder.ts). */
+  readonly routes: () => readonly string[];
   /** RF-1102: the projects and month-to-date spend the administration list shows. */
   readonly usage: MemoryAccountUsage;
   /** RF-1006, RF-1108: the run queue, its stores and the executor the test controls. */
@@ -258,6 +261,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
   const { outputs, doubles } = runOutputs({ archiveWriter, runFileReader, report });
+  const recorder = recordRoutes();
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -274,7 +278,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
-    ...{ serverSettings, runs, ...doubles, ...route, ...keys },
+    ...{ serverSettings, runs, ...doubles, ...route, ...keys, routes: () => recorder.rows() },
     ...{ providers, providerLedger },
   };
 }
