@@ -17,7 +17,7 @@ import {
   signedIn,
   type Column,
 } from '../support/access-columns.js';
-import { budgetRoutes, type Context, type Probe } from '../support/access-probes.js';
+import { budgetRoutes, exportRoutes, type Context, type Probe } from '../support/access-probes.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the
@@ -121,16 +121,6 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'GET', url: runUrl('/events', (c) => c.endedRunId), expected: ownerOnly(200) },
     { method: 'GET', url: () => '/api/runs/not-a-uuid/events', expected: active(401, 404) },
   ],
-  'GET /api/runs/:runId/zip': [
-    { method: 'GET', url: runUrl('/zip', (c) => c.endedRunId), expected: ownerOnly(200) },
-    { method: 'GET', url: runUrl('/zip', (c) => c.runningRunId), expected: ownerOnly(409) },
-    { method: 'GET', url: () => '/api/runs/not-a-uuid/zip', expected: active(401, 404) },
-  ],
-  'GET /api/runs/:runId/handoff.zip': [
-    { method: 'GET', url: runUrl('/handoff.zip', (c) => c.endedRunId), expected: ownerOnly(200) },
-    { method: 'GET', url: runUrl('/handoff.zip', (c) => c.runningRunId), expected: ownerOnly(409) },
-    { method: 'GET', url: () => '/api/runs/not-a-uuid/handoff.zip', expected: active(401, 404) },
-  ],
   'POST /api/runs/:runId/stop': [
     { method: 'POST', url: runUrl('/stop', (c) => c.runningRunId), expected: ownerOnly(202) },
     { method: 'POST', url: () => '/api/runs/not-a-uuid/stop', expected: active(401, 404) },
@@ -166,6 +156,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'POST', url: '/api/account/providers/test', expected: active(401, 200) },
   ],
   ...budgetRoutes,
+  ...exportRoutes,
   'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
   'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],
   'POST /api/admin/users': [

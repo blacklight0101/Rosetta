@@ -1,10 +1,9 @@
 import type { FastifyInstance } from 'fastify';
+import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import { ChangePassword } from '../../src/application/use-cases/change-password.js';
 import { CreateUser } from '../../src/application/use-cases/create-user.js';
-import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
-import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { ListAudit } from '../../src/application/use-cases/list-audit.js';
 import { ListUsers } from '../../src/application/use-cases/list-users.js';
 import { RecordRefusedRequest } from '../../src/application/use-cases/record-refused-request.js';
@@ -17,8 +16,6 @@ import { GetCaps } from '../../src/application/use-cases/get-caps.js';
 import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-cap.js';
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
 import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
-import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
-import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { TestProviders } from '../../src/application/use-cases/test-providers.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
@@ -48,11 +45,11 @@ import { FakeHostResolver } from './fake-host-resolver.js';
 import type { FakeAdapters, SpyLedger } from './provider-fakes.js';
 import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
-import { estimatePrices, FixedScans, catalogAreas } from './estimate-harness.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
+import { runServices } from './web-run-services.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
@@ -207,34 +204,6 @@ function authServices(parts: AuthParts): ServerOptions['auth'] {
     signOut: new SignOut({ sessions, auditLog, logger, clock }),
     resolveSession: new ResolveSession({ sessions, users, logger, clock }),
     refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
-  };
-}
-
-/** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
-function runServices(
-  runs: RunHarness,
-  stores: {
-    readonly projects: MemoryProjectRepository;
-    readonly keys: MemoryProviderKeyRepository;
-  },
-  route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
-  archives: ArchiveWriter,
-): ServerOptions['runs'] {
-  const { projects, keys } = stores;
-  return {
-    subscribeRunEvents: runs.subscribe,
-    stopRun: runs.stop,
-    exportZip: new ExportZip({ runs: runs.runs, archives }),
-    startRun: new StartRun({ projects, submit: runs.submit }),
-    // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
-    estimateRun: new EstimateRun({
-      projects,
-      runs: runs.runs,
-      scans: new FixedScans(catalogAreas),
-      keys,
-      priceTable: estimatePrices,
-    }),
-    ...route,
   };
 }
 
