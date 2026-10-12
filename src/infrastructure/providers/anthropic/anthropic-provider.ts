@@ -38,12 +38,15 @@ export interface AnthropicProviderOptions {
 
 const defaultBaseUrl = 'https://api.anthropic.com';
 
-/** A key is one run of visible characters: a pasted newline or space would break the header. */
+/**
+ * A key is one run of visible Latin-1 characters: a pasted newline or space, or a character above
+ * U+00FF, would make the HTTP header fail (a permanent error that retrying cannot fix).
+ */
 function isUsableKey(key: string): boolean {
   if (key === '') return false;
   for (const char of key) {
     const code = char.codePointAt(0) ?? 0;
-    if (code <= 32 || (code >= 127 && code <= 160)) return false;
+    if (code <= 32 || (code >= 127 && code <= 160) || code > 255) return false;
   }
   return true;
 }
@@ -67,7 +70,7 @@ export class AnthropicProvider implements LlmProvider {
       // The message never holds the key: not even a part of it (RNF-003).
       throw new RosettaError(
         ERROR_CODES.anthropicKeyRejected,
-        'The Anthropic API key is empty or holds spaces or control characters.',
+        'The Anthropic API key is empty or holds spaces, control characters or characters above U+00FF.',
       );
     }
     this.options = options;
