@@ -6,6 +6,14 @@ import { cardLimits } from './card-limits.js';
 
 const forbiddenKeys = new Set(['__proto__', 'constructor', 'prototype']);
 const fence = /```[A-Za-z0-9_-]*[ \t]*\r?\n([\s\S]*?)```/g;
+// A brace or bracket followed by a quote, another brace or bracket, or the end: the start of an
+// object or list a model meant as JSON. `{x}` or `[a]` in prose is not.
+const jsonStart = /[{[]\s*(?:["{[\]}]|$)/y;
+
+function startsLikeJson(text: string, at: number): boolean {
+  jsonStart.lastIndex = at;
+  return jsonStart.test(text);
+}
 
 function safeParse(text: string): { readonly value: unknown } | undefined {
   try {
@@ -46,7 +54,7 @@ interface Candidates {
   readonly texts: string[];
   /** More candidates existed than `maxJsonCandidates`; the rest were not looked at. */
   capped: boolean;
-  /** A `{` or `[` was never closed, or a candidate that starts like JSON is not valid JSON. */
+  /** JSON was started (see `startsLikeJson`) but never closed, or is not valid JSON. */
   truncated: boolean;
 }
 
@@ -76,7 +84,7 @@ function addBraceGroups(text: string, found: Candidates): void {
     }
     const end = balancedEnd(text, start.index);
     if (end < 0) {
-      found.truncated = true;
+      found.truncated ||= startsLikeJson(text, start.index);
       continue;
     }
     found.texts.push(text.slice(start.index, end + 1));
@@ -88,10 +96,8 @@ function addBraceGroups(text: string, found: Candidates): void {
 export interface JsonSearch {
   readonly values: readonly unknown[];
   readonly capped: boolean;
-  /** Some JSON was started but is cut off or not valid. */
+  /** Some JSON was started but is cut off or not valid; braces in prose do not count. */
   readonly truncated: boolean;
-  /** The answer has a bracket or brace at all, so it was probably meant as JSON. */
-  readonly looksLikeJson: boolean;
 }
 
 /** Every JSON value found in the answer, from at most `maxJsonCandidates` candidate texts. */
@@ -103,12 +109,7 @@ export function searchJson(text: string): JsonSearch {
   for (const candidate of found.texts) {
     const parsed = safeParse(candidate);
     if (parsed !== undefined) values.push(parsed.value);
-    else if (/^[{[]/.test(candidate)) found.truncated = true;
+    else if (startsLikeJson(candidate, 0)) found.truncated = true;
   }
-  return {
-    values,
-    capped: found.capped,
-    truncated: found.truncated,
-    looksLikeJson: /[{[]/.test(text),
-  };
+  return { values, capped: found.capped, truncated: found.truncated };
 }

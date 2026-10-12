@@ -10,9 +10,12 @@ function entities(text: string): string {
   return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-/** Every Markdown punctuation character that can start syntax gets a backslash. */
+/**
+ * Every Markdown punctuation character that can start syntax gets a backslash; `=` and `-` too,
+ * so a line of them cannot underline the line above as a setext heading.
+ */
 function punctuation(text: string): string {
-  return text.replace(/[\\`*_{}[\]()#+\-!|~]/g, '\\$&');
+  return text.replace(/[\\`*_{}[\]()#+\-=!|~]/g, '\\$&');
 }
 
 /** Bare URLs, `www.` hosts and e-mail addresses would be linked by many viewers. */

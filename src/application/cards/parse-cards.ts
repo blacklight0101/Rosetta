@@ -70,7 +70,7 @@ export function parseCardOutput(
   }
   if (search.capped) return err(bounded([capped, ...(firstProblems ?? [])]));
   if (search.truncated) return err([cutOff]);
-  return err(firstProblems ?? (search.looksLikeJson ? [cutOff] : [noJson]));
+  return err(firstProblems ?? [noJson]);
 }
 
 export interface ParsedCards {

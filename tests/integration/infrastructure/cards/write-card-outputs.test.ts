@@ -50,6 +50,20 @@ describe('card writers on the real output writer', () => {
     expect(card.ok && card.value).toContain('Which roles may cancel a paid order?');
   });
 
+  it('RF-005 a folder that leaves the workspace is refused', async () => {
+    const result = await writeCardOutputs(
+      openWriter(data.path),
+      { userId, folder: '../other' },
+      inputOf(),
+    );
+
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe('a refused card rewrite on the real output writer', () => {
+  const data = useTempRoot('rosetta-cards-');
+
   it('RF-302 a rewrite refused at the third write leaves the four earlier files byte-identical', async () => {
     const outputs = openWriter(data.path);
     const first = await writeCardOutputs(outputs, { userId, folder }, inputOf(smallRun()));
@@ -85,15 +99,5 @@ describe('card writers on the real output writer', () => {
 
     expect(rewrite.ok).toBe(false);
     expect(await snapshotOf(data.path)).toEqual(before);
-  });
-
-  it('RF-005 a folder that leaves the workspace is refused', async () => {
-    const result = await writeCardOutputs(
-      openWriter(data.path),
-      { userId, folder: '../other' },
-      inputOf(),
-    );
-
-    expect(result.ok).toBe(false);
   });
 });

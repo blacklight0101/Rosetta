@@ -47,7 +47,9 @@ describe('writeCardOutputs when the writer refuses part-way', () => {
 
     expect(!result.ok && result.error.reason).toBe('outside-workspace');
   });
+});
 
+describe('writeCardOutputs when a rewrite is refused part-way', () => {
   it.each([1, 2, 3, 4])(
     'RF-302 a rewrite refused at write %i leaves every earlier file exactly as it was',
     async (n) => {

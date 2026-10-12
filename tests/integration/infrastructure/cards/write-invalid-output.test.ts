@@ -34,7 +34,12 @@ describe('writeInvalidOutput on the real output writer', () => {
     const result = await writeInvalidOutput(
       openWriter(data.path),
       { userId, folder },
-      { agentTaskId: '../../escape', rawOutputs: ['x'], masker: new SecretMasker(), logger: cardLogger() },
+      {
+        agentTaskId: '../../escape',
+        rawOutputs: ['x'],
+        masker: new SecretMasker(),
+        logger: cardLogger(),
+      },
     );
 
     expect(result.ok).toBe(false);

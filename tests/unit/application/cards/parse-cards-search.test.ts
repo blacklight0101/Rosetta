@@ -6,21 +6,7 @@ import { cardObject, cardsJson, problemsOf } from '../../../support/card-output.
 
 const junkFence = '```\nnot json\n```\n';
 
-describe('parseCardOutput says why it found no cards', () => {
-  it('RF-202 a truncated answer is reported as cut off, not as missing JSON', () => {
-    const cut = cardsJson().slice(0, -15);
-
-    const messages = problemsOf(`Here you go:\n${cut}`).map((problem) => problem.message);
-
-    expect(messages).toHaveLength(1);
-    expect(messages[0]).toMatch(/cut off|not valid/i);
-    expect(messages[0]).not.toMatch(/No JSON found/);
-  });
-
-  it('RF-202 an answer without any bracket is reported as holding no JSON', () => {
-    expect(problemsOf('Nothing to report.')[0]?.message).toMatch(/No JSON found/);
-  });
-
+describe('parseCardOutput tells prose braces from cut-off JSON', () => {
   it.each(['use {x} here', 'set [a] and {b, c} first', 'a {broken thought'])(
     'RF-202 prose with only braces (%s) is reported as holding no JSON, not as cut off',
     (raw) => {
@@ -34,6 +20,22 @@ describe('parseCardOutput says why it found no cards', () => {
   it('RF-202 a JSON object cut off right after its opening brace is reported as cut off', () => {
     expect(problemsOf('Here: {"cards": [{"type"')[0]?.message).toMatch(/cut off/);
     expect(problemsOf('```json\n{\n```')[0]?.message).toMatch(/cut off/);
+  });
+});
+
+describe('parseCardOutput says why it found no cards', () => {
+  it('RF-202 a truncated answer is reported as cut off, not as missing JSON', () => {
+    const cut = cardsJson().slice(0, -15);
+
+    const messages = problemsOf(`Here you go:\n${cut}`).map((problem) => problem.message);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatch(/cut off|not valid/i);
+    expect(messages[0]).not.toMatch(/No JSON found/);
+  });
+
+  it('RF-202 an answer without any bracket is reported as holding no JSON', () => {
+    expect(problemsOf('Nothing to report.')[0]?.message).toMatch(/No JSON found/);
   });
 
   it('RF-202 hitting the candidate cap is reported as such, not as missing JSON', () => {

@@ -33,7 +33,9 @@ export function cardLogger(): MemoryLogger {
 /** Two cards of one area (four files: two cards, the index and spec.md), or three with `extra`. */
 export function smallRun(extra = false): readonly Card[] {
   const more = extra ? [draftOf({ title: 'Order cancellation' })] : [];
-  return cardsOf([{ agentTaskId: 'task-orders', area: 'orders', drafts: [draftOf(), ...more, oqDraft()] }]);
+  return cardsOf([
+    { agentTaskId: 'task-orders', area: 'orders', drafts: [draftOf(), ...more, oqDraft()] },
+  ]);
 }
 
 /** The first card with its first claim rejected, followed by the others. */
