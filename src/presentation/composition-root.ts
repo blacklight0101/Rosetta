@@ -17,6 +17,7 @@ import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.j
 import { JsonlFileLogger } from '../infrastructure/system/jsonl-file-logger.js';
 import { StdoutJsonLogger } from '../infrastructure/system/stdout-json-logger.js';
 import { SystemClock } from '../infrastructure/system/system-clock.js';
+import { bootstrapAdministrator } from './compose-accounts.js';
 import { startUp } from './start-up.js';
 import { buildServer } from './web/server.js';
 
@@ -73,6 +74,7 @@ function logSettled(logger: Logger, record: LogRecord): void {
 interface Loggers {
   readonly file: JsonlFileLogger;
   readonly logger: Logger;
+  readonly masker: SecretMasker;
 }
 
 // RF-009: masked JSON lines to standard output and to the daily file.
@@ -86,7 +88,7 @@ function createLoggers(options: ApplicationOptions, clock: Clock): Loggers {
     retentionDays: environment.logRetentionDays,
   });
   const stdout = new StdoutJsonLogger({ output, clock, masker, minLevel: environment.logLevel });
-  return { file, logger: new FanOutLogger([stdout, file]) };
+  return { file, logger: new FanOutLogger([stdout, file]), masker };
 }
 
 // RF-1302: migrations run as `rosetta_migrator` on a pool of their own, closed afterwards.
@@ -147,7 +149,7 @@ export async function composeLanguagePacks(): Promise<LanguagePackRegistry> {
 export function composeApplication(options: ApplicationOptions): Application {
   const { environment } = options;
   const clock = new SystemClock();
-  const { file, logger } = createLoggers(options, clock);
+  const { file, logger, masker } = createLoggers(options, clock);
   const pool = createAppPool(environment, (error) => {
     logSettled(logger, { level: 'warn', logger: 'db', message: error.message });
   });
@@ -171,6 +173,7 @@ export function composeApplication(options: ApplicationOptions): Application {
       let address = '';
       await startUp({
         migrate: () => migrate(environment, clock, logger),
+        bootstrapAdmin: () => bootstrapAdministrator({ environment, pool, logger, clock, masker }),
         listen: async () => {
           address = await server.listen(options.listen);
         },
