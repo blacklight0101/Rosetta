@@ -62,10 +62,10 @@ describe.skipIf(!hasTestDatabase)('PgUserRepository error causes', () => {
 const BOOTSTRAP_KEY = "hashtext('rosetta.bootstrap-admin')";
 const STARTS = 6;
 
-/** Waits until `count` sessions wait for the bootstrap lock; false after about five seconds. */
+/** Waits until `count` sessions wait for the bootstrap lock; false after about two seconds. */
 async function waitForLockWaiters(pool: DatabasePool, count: number): Promise<boolean> {
   const sql = `SELECT count(*)::int AS waiting FROM pg_locks WHERE locktype = 'advisory' AND NOT granted AND objid = ${BOOTSTRAP_KEY}::oid`;
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
     const result = await pool.query<{ waiting: number }>(sql);
     if ((result.rows[0]?.waiting ?? 0) >= count) return true;
     await new Promise((resolve) => setTimeout(resolve, 50));
