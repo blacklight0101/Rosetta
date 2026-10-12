@@ -31,13 +31,8 @@ async function tokensOf(pill: Locator): Promise<number> {
   return Number((match?.[1] ?? 'NaN').replaceAll(',', ''));
 }
 
-/** Starts an understand run of the Catalog area and follows the notice to the live page. */
-async function startCatalogRun(page: Page): Promise<void> {
-  const areas = page.getByRole('group', { name: 'Areas from the code map' });
-  await expect(areas.locator('label').first()).toBeVisible();
-  for (const label of await areas.locator('label').allTextContents()) {
-    await areas.getByLabel(label.trim(), { exact: true }).setChecked(label.trim() === 'Catalog');
-  }
+/** Presses Start and follows the notice to the live page. */
+async function startAndFollow(page: Page): Promise<void> {
   await waitForOwnOddSecond();
   await page.getByRole('button', { name: /^Start run/u }).click();
   const notice = page.getByTestId('run-notice');
@@ -46,12 +41,40 @@ async function startCatalogRun(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
 }
 
+/** Opens the start page of the account's project, after a scan when it has no code map yet. */
+async function openScannedStartPage(page: Page): Promise<void> {
+  await openStartPage(page);
+  const understand = page.getByLabel('Understand');
+  const scanFirst = page.getByText('Run a scan first');
+  const areas = page.getByRole('group', { name: 'Areas from the code map' }).locator('label');
+  await expect(scanFirst.or(areas.first())).toBeVisible({ timeout: 15_000 });
+  if (await understand.isEnabled()) return;
+  await page.getByLabel('Scan only').check();
+  await startAndFollow(page);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await openStartPage(page);
+  await expect(understand).toBeEnabled({ timeout: 15_000 });
+}
+
+/** Starts an understand run of the Catalog area and follows the notice to the live page. */
+async function startCatalogRun(page: Page): Promise<void> {
+  await page.getByLabel('Understand').check();
+  const areas = page.getByRole('group', { name: 'Areas from the code map' });
+  await expect(areas.locator('label').first()).toBeVisible();
+  for (const label of await areas.locator('label').allTextContents()) {
+    await areas.getByLabel(label.trim(), { exact: true }).setChecked(label.trim() === 'Catalog');
+  }
+  await startAndFollow(page);
+}
+
 test('RF-1010 the header totals follow a run live without a reload, with the breakdown one click away', async ({
   context,
   page,
 }, info) => {
+  // A scan when the project has none yet, then an understand run: longer than the default 30 s.
+  test.setTimeout(150_000);
   await signInAs(context, costAccountFor('cost', info.project.name));
-  await openStartPage(page);
+  await openScannedStartPage(page);
   const pill = page.getByTestId('header-totals');
   await expect(pill).toContainText('Your total');
   await expect(pill).toContainText(/\d tokens/u);

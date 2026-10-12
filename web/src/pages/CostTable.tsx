@@ -2,6 +2,7 @@ import type { ComponentChildren, JSX } from 'preact';
 import type { UsageTotals } from '../api/cost-schemas.js';
 import { tokensLabel } from '../lib/live-run/format.js';
 import { totalCostText } from '../lib/cost-text.js';
+import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-428, design-system.md section 5 (table): one breakdown of a project's cost page. Each line
 // keeps the cost fixed when its calls were made and names the price table versions they used; a
@@ -42,7 +43,7 @@ function Row({ row }: { readonly row: CostRow }): JSX.Element {
 // RF-428
 export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.Element {
   return (
-    <div class="rst-table-scroll">
+    <ScrollRegion label={`Cost ${caption.toLowerCase()} table`}>
       <table class="rst-table rst-p136-table">
         <caption class="rst-p136-caption">{caption}</caption>
         <thead>
@@ -72,6 +73,6 @@ export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.E
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }
