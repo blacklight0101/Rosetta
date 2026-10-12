@@ -25,7 +25,12 @@ export function readerParallelism(settings: ProjectSettings): number {
   return clamp(settings.agents.parallelism, PARALLELISM);
 }
 
-function contextTokensOf(settings: ProjectSettings, role: RoleProvider): number {
+/** What the limits need of a role; the estimate (RF-425) knows a role by its settings alone. */
+export type ReaderRole = Pick<RoleProvider, 'name' | 'kind' | 'model' | 'maxOutputTokens'> & {
+  readonly temperature?: number | undefined;
+};
+
+function contextTokensOf(settings: ProjectSettings, role: ReaderRole): number {
   const configured = settings.providers[role.name]?.contextTokens;
   if (typeof configured === 'number') return configured;
   return role.kind === 'ollama' ? OLLAMA_CONTEXT_TOKENS : CLOUD_CONTEXT_TOKENS;
@@ -34,7 +39,7 @@ function contextTokensOf(settings: ProjectSettings, role: RoleProvider): number 
 // RF-201
 export function readerTaskSettings(
   settings: ProjectSettings,
-  role: RoleProvider,
+  role: ReaderRole,
 ): AgentTaskRequest['settings'] {
   const maxTurns = clamp(settings.roles.reader.maxTurns ?? MAX_TURNS.fallback, MAX_TURNS);
   return {

@@ -184,6 +184,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     ...{ githubToken: environment.githubToken, ollamaUrl: environment.ollamaUrl },
     ...(doubles?.fetch === undefined ? {} : { fetch: doubles.fetch }),
     providers: auth.providers,
+    priceTable: auth.priceTable,
     packs: await composeLanguagePacks(),
   });
   const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });

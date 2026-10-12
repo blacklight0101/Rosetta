@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { SecretBox } from '../application/ports/secret-box.js';
+import type { PriceTable } from '../domain/budget/price-table.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { TestProviders } from '../application/use-cases/test-providers.js';
 import type { Environment } from '../infrastructure/config/environment.js';
@@ -63,6 +64,8 @@ export interface ComposedProviders {
   readonly testProviders: TestProviders;
   /** The only way a run gets a provider (ADR-003); the understand run uses it (P1-33). */
   readonly factory: ProviderSetFactory;
+  /** The shipped price table, loaded once; the run estimate prices the roles with it (RF-425). */
+  readonly priceTable: PriceTable;
 }
 
 // RF-407
@@ -70,6 +73,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
   const { environment, pool, logger, clock, masker, secretBox } = parts;
   const ids = new TimestampIdGenerator(clock);
   const serverSettings = new PgServerSettings(pool);
+  const priceTable = await loadPriceTable(priceFile);
   const factory = new GuardedProviderFactory({
     keys: new PgProviderKeyRepository(pool),
     box: secretBox,
@@ -77,7 +81,7 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     ollamaUrl: environment.ollamaUrl,
     serverSettings,
     ledger: new PgCostLedger(pool),
-    priceTable: await loadPriceTable(priceFile),
+    priceTable,
     masker,
     adapters: await adaptersFor(parts),
     ...{ clock, ids, logger },
@@ -91,5 +95,5 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     unrecorded: unrecordedSinks(),
     signals: new SystemTimeoutSignals(),
   });
-  return { testProviders, factory };
+  return { testProviders, factory, priceTable };
 }

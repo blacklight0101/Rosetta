@@ -12,9 +12,9 @@ import type {
 import type { SecretBox } from '../../application/ports/secret-box.js';
 import type { ServerSettings } from '../../application/ports/server-settings.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
+import { priceOverridesOf } from '../../application/projects/price-overrides.js';
 import type { ProviderSet, RoleProvider } from '../../application/providers/provider-set.js';
 import { capsFor, type ServerCaps } from '../../domain/budget/budget.js';
-import type { Price } from '../../domain/budget/price.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
@@ -60,7 +60,6 @@ interface WrapParts {
   readonly adapter: LlmProvider;
   readonly caps: readonly UsageCap[];
 }
-type PriceSetting = NonNullable<ProjectSettings['budget']['prices']>[number];
 
 /** RF-407: the most one provider test call may cost or use, whoever pays (worst case, before the call). */
 const testCeiling = { costMicros: 100_000n, tokens: 2_000n } as const;
@@ -69,17 +68,6 @@ function providerTestCeiling(cap: UsageCap): bigint {
   if (cap.kind === 'run-cost') return testCeiling.costMicros;
   if (cap.kind === 'run-tokens') return testCeiling.tokens;
   return cap.limit;
-}
-
-function priceOf(price: PriceSetting): Price {
-  return {
-    provider: price.provider,
-    model: price.model,
-    inputPerMillionMicros: BigInt(price.inputPerMillionMicros),
-    outputPerMillionMicros: BigInt(price.outputPerMillionMicros),
-    cachedInputPerMillionMicros: BigInt(price.cachedInputPerMillionMicros),
-    currency: 'USD',
-  };
 }
 
 export class GuardedProviderFactory implements ProviderSetFactory {
@@ -176,7 +164,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const { budget } = request.settings;
     return {
       table: this.options.priceTable,
-      overrides: (budget.prices ?? []).map(priceOf),
+      overrides: priceOverridesOf(request.settings),
       allowUnpriced: budget.allowUnpriced,
     };
   }
