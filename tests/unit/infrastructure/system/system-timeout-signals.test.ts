@@ -9,7 +9,9 @@ describe('SystemTimeoutSignals', () => {
     expect(signal.aborted).toBe(false);
 
     await new Promise<void>((resolve) => {
-      signal.addEventListener('abort', () => resolve());
+      signal.addEventListener('abort', () => {
+        resolve();
+      });
     });
 
     expect(signal.aborted).toBe(true);

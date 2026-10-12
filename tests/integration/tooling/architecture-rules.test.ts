@@ -183,14 +183,19 @@ describe('dependency-cruiser layer rule: the adapter builder', () => {
     'src/infrastructure/providers/adapter-builder.ts': 'export const realAdapters = () => 1;\n',
   };
 
-  it.each([
-    ['src/presentation/sneaky.ts', '../infrastructure/providers/adapter-builder.js'],
-    ['src/infrastructure/providers/provider-factory.ts', './adapter-builder.js'],
-    ['src/infrastructure/guards/other.ts', '../providers/adapter-builder.js'],
-    ['src/application/use.ts', '../infrastructure/providers/adapter-builder.js'],
-  ])('ADR-003 %s importing %s is reported', async (file, module) => {
-    const report = await cruise(root.path, { ...builder, [file]: importing(module) });
+  it('ADR-003 any file but the provider composition importing the builder is reported', async () => {
+    const importers = {
+      'src/presentation/sneaky.ts': '../infrastructure/providers/adapter-builder.js',
+      'src/infrastructure/providers/provider-factory.ts': './adapter-builder.js',
+      'src/infrastructure/guards/other.ts': '../providers/adapter-builder.js',
+      'src/application/use.ts': '../infrastructure/providers/adapter-builder.js',
+    };
+    const sources: Record<string, string> = { ...builder };
+    for (const [file, module] of Object.entries(importers)) sources[file] = importing(module);
 
+    const report = await cruise(root.path, sources);
+
+    for (const file of Object.keys(importers)) expect(report).toContain(file);
     expect(report).toContain('adapter-builder-only-in-compose-providers');
   });
 
