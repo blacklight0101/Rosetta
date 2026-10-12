@@ -105,7 +105,6 @@ describe('OpenAiProvider retry hints and connections', () => {
       timeoutSeconds: 5,
       maxRetries: 1,
       testMode: true,
-      fakeServer: true,
       sleep: () => Promise.resolve(),
     });
     const attempts = new Attempts();

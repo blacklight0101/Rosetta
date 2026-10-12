@@ -23,7 +23,9 @@ describe('thinking text', () => {
   it('RF-205 text without thinking is unchanged', () => {
     expect(stripThinking('No thinking here.')).toBe('No thinking here.');
   });
+});
 
+describe('thinking text in linear time', () => {
   it('RF-205 a 300 KB unclosed think made of opening tags is stripped in under 50 ms', () => {
     const content = `Answer.<think>${'<think>'.repeat(300_000 / 7)}`;
 
@@ -45,7 +47,9 @@ describe('thinking text', () => {
     expect(stripped).toBe('');
     expect(elapsed).toBeLessThan(50);
   });
+});
 
+describe('thinking tags', () => {
   it('RF-205 the text before an orphan closing tag is thinking and never reaches the answer', () => {
     expect(stripThinking('plan the answer</think>Answer.')).toBe('Answer.');
     expect(stripThinking('plan</thinking>Answer.')).toBe('Answer.');
@@ -107,7 +111,9 @@ describe('parsing a text answer', () => {
 
     expect(parseTextAnswer(content).calls).toEqual([]);
   });
+});
 
+describe('thinking in a text answer', () => {
   it('RF-205 a tool call inside upper-case or thinking-form tags is ignored', () => {
     const call = `${fence}tool_call\n{"name": "grep", "arguments": {}}\n${fence}`;
 

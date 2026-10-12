@@ -105,7 +105,6 @@ describe('OllamaProvider when Ollama or the model is missing', () => {
       maxRetries: 3,
       textProtocolPrompt: '{{tools}}',
       testMode: true,
-      fakeServer: true,
       logger: new RecordingLogger(),
     });
 
@@ -127,32 +126,31 @@ describe('OllamaProvider when Ollama or the model is missing', () => {
   });
 });
 
-describe('OllamaProvider in automated tests', () => {
-  const servers: FakeOllamaServer[] = [];
-  afterEach(async () => {
-    await Promise.all(servers.splice(0).map((server) => server.stop()));
+const servers: FakeOllamaServer[] = [];
+afterEach(async () => {
+  await Promise.all(servers.splice(0).map((server) => server.stop()));
+});
+
+async function startServer(registerPort: boolean): Promise<FakeOllamaServer> {
+  const recording = await loadOllamaRecording('contract-text');
+  const server = new FakeOllamaServer(recording, { registerPort });
+  servers.push(server);
+  return server;
+}
+
+function providerOn(baseUrl: string): OllamaProvider {
+  return new OllamaProvider({
+    baseUrl,
+    toolMode: 'native',
+    timeoutSeconds: 5,
+    maxRetries: 0,
+    textProtocolPrompt: '{{tools}}',
+    testMode: true,
+    logger: new RecordingLogger(),
   });
+}
 
-  async function startServer(registerPort: boolean): Promise<FakeOllamaServer> {
-    const recording = await loadOllamaRecording('contract-text');
-    const server = new FakeOllamaServer(recording, { registerPort });
-    servers.push(server);
-    return server;
-  }
-
-  function providerOn(baseUrl: string, fakeServer?: boolean): OllamaProvider {
-    return new OllamaProvider({
-      baseUrl,
-      toolMode: 'native',
-      timeoutSeconds: 5,
-      maxRetries: 0,
-      textProtocolPrompt: '{{tools}}',
-      testMode: true,
-      ...(fakeServer === undefined ? {} : { fakeServer }),
-      logger: new RecordingLogger(),
-    });
-  }
-
+describe('OllamaProvider in automated tests', () => {
   it('RNF-005 trusts the port the fake server registered, without a flag from the caller', async () => {
     const server = await startServer(true);
     const provider = providerOn(await server.start());
@@ -163,9 +161,9 @@ describe('OllamaProvider in automated tests', () => {
     expect(server.chatBodies()).toHaveLength(1);
   });
 
-  it('RNF-005 refuses a loopback server that did not register its port, whatever the caller says', async () => {
+  it('RNF-005 refuses a loopback server that did not register its port', async () => {
     const server = await startServer(false);
-    const provider = providerOn(await server.start(), true);
+    const provider = providerOn(await server.start());
 
     const error = await failureOf(provider.complete(contractRequest()));
 
@@ -174,16 +172,7 @@ describe('OllamaProvider in automated tests', () => {
   });
 
   it('RNF-005 calls a fake server only on a loopback address', async () => {
-    const provider = new OllamaProvider({
-      baseUrl: 'http://ollama.example.test:11434',
-      toolMode: 'native',
-      timeoutSeconds: 5,
-      maxRetries: 0,
-      textProtocolPrompt: '{{tools}}',
-      testMode: true,
-      fakeServer: true,
-      logger: new RecordingLogger(),
-    });
+    const provider = providerOn('http://ollama.example.test:11434');
 
     const error = await failureOf(provider.complete(contractRequest()));
 

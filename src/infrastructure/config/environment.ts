@@ -50,6 +50,13 @@ function isHttpUrl(value: string): boolean {
   return URL.canParse(value) && ['http:', 'https:'].includes(new URL(value).protocol);
 }
 
+/** An http(s) URL without `user:password@`, which would reach logs and the provider's headers. */
+function isHttpUrlWithoutUserinfo(value: string): boolean {
+  if (!isHttpUrl(value)) return false;
+  const url = new URL(value);
+  return url.username === '' && url.password === '';
+}
+
 function isHttpOrigin(value: string): boolean {
   return isHttpUrl(value) && new URL(value).origin === value;
 }
@@ -99,7 +106,10 @@ const SCHEMA = z.object({
   OPENAI_API_KEY: text().optional(),
   ANTHROPIC_API_KEY: text().optional(),
   GITHUB_TOKEN: text().optional(),
-  ROSETTA_OLLAMA_URL: text({ check: isHttpUrl, message: 'must be an http(s) URL' }).optional(),
+  ROSETTA_OLLAMA_URL: text({
+    check: isHttpUrlWithoutUserinfo,
+    message: 'must be an http(s) URL without a user name or password',
+  }).optional(),
   ROSETTA_CONTACT_EMAIL: text({ check: isEmail, message: 'must be an email address' }).optional(),
   ROSETTA_LOG_LEVEL: z
     .enum(['debug', 'info', 'warn', 'error'], { error: 'must be debug, info, warn or error' })

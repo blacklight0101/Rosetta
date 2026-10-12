@@ -36,12 +36,10 @@ export interface OllamaProviderOptions {
   readonly timeoutSeconds: number;
   /** `providers.<name>.maxRetries` (RF-406). */
   readonly maxRetries: number;
-  /** The text of prompts/shared/text-tool-protocol.v1.md (loadTextToolProtocol). */
+  /** The text of prompts/shared/text-tool-protocol.v1.md (`loadTextToolProtocol(...).text`). */
   readonly textProtocolPrompt: string;
   /** `ROSETTA_TEST=1`: real Ollama calls are refused (RNF-005, ADR-008). */
   readonly testMode: boolean;
-  /** True only in tests whose base URL is a loopback fake Ollama server they started. */
-  readonly fakeServer?: boolean;
   /**
    * `providers.<name>.contextTokens` (DEC-114): `auto` (the default) or a fixed `num_ctx` of at
    * least 1024; a smaller number is refused with RST-1514.
@@ -102,8 +100,8 @@ export class OllamaProvider implements LlmProvider {
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
-    const { baseUrl, testMode, fakeServer, maxRetries, sleep, random } = this.options;
-    refuseRealProviderInTests({ testMode, fakeServer, baseUrl });
+    const { baseUrl, testMode, maxRetries, sleep, random } = this.options;
+    refuseRealProviderInTests({ testMode, baseUrl });
     return completeWithRetries({
       attempt: () => this.attempt(request),
       signal: request.signal,

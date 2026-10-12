@@ -1,10 +1,15 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { z } from 'zod';
+import {
+  registerFakeServerPort,
+  releaseFakeServerPort,
+} from '../../src/infrastructure/providers/fake-server-ports.js';
 
 // ADR-008, RF-406: a fake provider HTTP server on loopback for adapter tests. A route function
 // chooses the recorded exchange for each request; the requests it received (method, path,
 // headers and JSON body) are kept for assertions. The provider fakes (Ollama, OpenAI) build on it.
+// A started server registers its port, the only way the test-mode check trusts a URL (RNF-005).
 
 export const exchangeSchema = z.union([
   z.strictObject({
@@ -79,10 +84,14 @@ export class FakeHttpServer {
     await new Promise<void>((resolve) => {
       this.server.listen(0, '127.0.0.1', resolve);
     });
-    return `http://127.0.0.1:${String(portOf(this.server.address()))}`;
+    const port = portOf(this.server.address());
+    if (this.registerPort) registerFakeServerPort(port);
+    return `http://127.0.0.1:${String(port)}`;
   }
 
   async stop(): Promise<void> {
+    const address = this.server.address();
+    if (address !== null) releaseFakeServerPort(portOf(address));
     this.server.closeAllConnections();
     await new Promise<void>((resolve) => {
       this.server.close(() => {
@@ -106,7 +115,7 @@ export class FakeHttpServer {
   }
 }
 
-/** A loopback URL with nothing listening on it: a stopped server. */
+/** A loopback URL with nothing listening on it: a stopped fake server, so its port is trusted. */
 export async function closedLoopbackUrl(): Promise<string> {
   const server = createServer();
   await new Promise<void>((resolve) => {
@@ -118,5 +127,6 @@ export async function closedLoopbackUrl(): Promise<string> {
       resolve();
     });
   });
+  registerFakeServerPort(port);
   return `http://127.0.0.1:${String(port)}`;
 }
