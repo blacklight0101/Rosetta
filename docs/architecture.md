@@ -239,7 +239,7 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `BuildReport` | Build report on a run | RF-500..RF-505 |
 | `BuildPlan` | Build the hand-off package from a run, the planning brief and the catalogue (ADR-018) | RF-604..RF-613 |
 | `ExportZip` | Download zip / Download hand-off | RF-008 |
-| `TestProviders` | Test button in settings | RF-407 |
+| `TestProviders` | Test button in settings (`POST /api/account/providers/test`): one tiny call to each role of the new-project template (the administrator's default models applied) through the provider factory, metered against the user's day as a `cost_reservations` / `cost_ledger` row that belongs to no run (`run_id` null, stage `provider-test`); sequential, 60 s a call, a role without a usable key or a provider this release does not offer is shown as failed with its code; the fixed prompt carries no repository content, so the call is made with the cloud consent given | RF-407, RF-1104 |
 | `SubmitRun` | accepts a run of the user's project into the queue (called by the stage routes, for example `POST /api/projects/:id/runs`): own folder name, manifest written, started at once when the queue has room | RF-003, RF-1108 |
 | `SubscribeRunEvents` | live page (`GET /api/runs/:runId/events`, server-sent events): the stored events after `Last-Event-ID`, then the live ones, closing after `run.ended`; stored events go out in batches that wait for the page to read (no limit on a long history), only live events are held to the 1 MiB unread limit; a `Last-Event-ID` beyond the last `seq` counts as the last one; another user's run answers 404 | RF-1006, RF-1105 |
 | `StopRun` | Stop button (`POST /api/runs/:runId/stop`): aborts the signal of a running run (202, it ends as `Interrupted`) or cancels a queued run (200); an ended run answers 409 | RF-1003, RF-422, RF-1108 |
@@ -317,6 +317,8 @@ RF-145, DEC-57). Tool definitions are not masked: they come from code and must n
 guard checks the run cap and, for server keys, the user-day and server-month caps in the same database transaction
 that inserts the call's worst-case reservation into `cost_reservations`; after the call it writes the ledger row and
 deletes the reservation (RF-1106, data-model.md section 4).
+
+**Provider factory (P1-29).** `ProviderSetFactory` (application port) is implemented by `GuardedProviderFactory`, the only way to get a provider. For each role it picks the provider and model the settings name, chooses the key (the user's own, else the server key where the provider's `keySource` and the account allow it; the sealed key is opened only here), parses the endpoint once (`new URL(...)`) so the guard's host and the adapter's URL cannot differ, and wraps the adapter as BudgetGuard(EgressGuard(ObservedProvider(adapter))). Adapters are constructed only in `adapter-builder.ts` and the decorators only in `guarded-provider.ts`; a dependency-cruiser rule and a source-scan test keep it so. The reservation lasts timeout x attempts + backoff + a margin. Anthropic and OpenAI-compatible adapters are P2: those kinds are `RST-1517` until then. The price table is loaded at start-up (`RST-1602` when invalid).
 
 The budget guard is outermost on purpose: it reserves before the egress guard can refuse or the adapter can
 retry, so every call that can reach a provider is priced and capped first, and it counts the attempts through the

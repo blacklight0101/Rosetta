@@ -4,6 +4,9 @@ const baseDelayMs = 1000;
 const maxBackoffMs = 30_000;
 const maxRetryAfterMs = 300_000;
 
+/** The longest one wait between two attempts can be: a retry-after hint beats the back-off. */
+export const maxBackoffWaitMs = Math.max(maxBackoffMs, maxRetryAfterMs);
+
 export interface BackoffInput {
   /** 1 for the first retry. */
   readonly retry: number;

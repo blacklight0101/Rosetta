@@ -1,24 +1,18 @@
 import type { LedgerEntry } from '../../application/ports/cost-ledger.js';
 import type { LlmRequest } from '../../application/ports/llm-provider.js';
 import type { ProviderCallRecord } from '../../application/ports/provider-call-recorder.js';
+import type { ProviderRun } from '../../application/ports/provider-set-factory.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { TokenUsage } from '../../domain/budget/token-usage.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
-import type { RunStage } from '../../domain/runs/run-states.js';
 import type { ProviderTarget } from '../providers/call-attempts.js';
 import type { CallPrice } from './budget-pricing.js';
 
 // RF-408, RF-428, data-model.md sections 3.10 and 3.13: the records the budget guard writes: the
 // ledger row of a call that was sent, and the call-log record of a call it refused for a cap.
 
-/** The run a budget guard meters: its row ids, owner and stage. */
-export interface BudgetRun {
-  /** The run row's UUID (`cost_ledger.run_id`), not the folder name. */
-  readonly id: string;
-  readonly userId: string;
-  readonly projectId: string;
-  readonly stage: RunStage;
-}
+/** The run a budget guard meters, or the run-less provider test of RF-407. */
+export type BudgetRun = ProviderRun;
 
 /** Who pays for the calls of one provider of a run. */
 export interface BudgetCaller {
@@ -49,7 +43,8 @@ export function ledgerEntryOf(
     userId: run.userId,
     projectId: run.projectId,
     runId: run.id,
-    agentTaskId: context.agentTaskId,
+    // data-model.md section 4: a provider test has no agent task.
+    agentTaskId: run.stage === 'provider-test' ? null : context.agentTaskId,
     stage: run.stage,
     role: context.role,
     provider: target.provider,

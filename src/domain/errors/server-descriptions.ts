@@ -137,6 +137,11 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'The API key must have 16 to 512 characters, without spaces or line breaks.',
     nextStep: 'Paste the whole key exactly as the provider shows it.',
   },
+  'RST-2302': {
+    message: 'There is no API key you may use for this provider.',
+    nextStep:
+      'Save your own key for it in your settings, or ask an administrator to allow server keys for your account.',
+  },
   'RST-2304': {
     message: 'The URL must use https and a public address.',
     nextStep: 'Enter an https address that is reachable from the internet.',

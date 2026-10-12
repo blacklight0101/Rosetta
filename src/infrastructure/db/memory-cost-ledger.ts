@@ -65,7 +65,9 @@ export class MemoryCostLedger implements CostLedger {
       entry.at.getTime() >= start && entry.at.getTime() < end;
     const mine = (source: KeySource) => (entry: LedgerEntry | Reservation) =>
       entry.userId === call.userId && entry.keySource === source;
-    const ofRun = (entry: LedgerEntry | Reservation): boolean => entry.runId === call.runId;
+    // A call of no run (a provider test) shares no run with any other call, as in SQL `run_id = NULL`.
+    const ofRun = (entry: LedgerEntry | Reservation): boolean =>
+      call.runId !== null && entry.runId === call.runId;
     const server = (entry: LedgerEntry | Reservation): boolean => entry.keySource === 'server';
     const day = (source: KeySource): bigint =>
       sum(

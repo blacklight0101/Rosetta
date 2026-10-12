@@ -79,6 +79,16 @@ module.exports = {
       to: { path: '^openai(/|$)|node_modules/openai/' },
     },
     {
+      name: 'adapters-only-via-adapter-builder',
+      comment:
+        'the Ollama, OpenAI and fake adapters are imported only by the adapter builder of the provider factory, so every provider is wrapped in the guards (ADR-003, ADR-006, ADR-007)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/infrastructure/providers/adapter-builder\\.ts$' },
+      to: {
+        path: '^src/infrastructure/providers/(ollama/ollama-provider|openai/openai-provider|fake/fake-provider)\\.ts$',
+      },
+    },
+    {
       name: 'tree-sitter-only-in-packs',
       comment:
         'web-tree-sitter and its grammars only from src/infrastructure/scan/packs/ (ADR-004, DEC-11)',

@@ -228,6 +228,11 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
       'A model call was blocked because repository content was outside its labelled data block.',
     nextStep: 'Report this as a bug: tool results must reach the model only as data blocks.',
   },
+  'RST-1517': {
+    message: 'This provider is not available on this server.',
+    nextStep:
+      'Choose another provider for the role, or ask the operator to set it up (Ollama needs ROSETTA_OLLAMA_URL).',
+  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:

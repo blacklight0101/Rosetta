@@ -31,8 +31,7 @@ import { buildServer, type AuthServices } from './web/server.js';
 
 // Architecture section 2: the only place that creates adapters and wires them together. This file
 // is at the same depth in `src/` and in the built `dist/`, so `../../` is the repository root (the
-// image's app folder) from both: migrations in `db/migrations/`, the front end built into
-// `dist/web/` (tasks.md P1-12).
+// image's app folder) from both: migrations in `db/migrations/`, the front end in `dist/web/` (P1-12).
 const repositoryRoot = new URL('../../', import.meta.url);
 const migrationsFolder = fileURLToPath(new URL('db/migrations/', repositoryRoot));
 const staticRoot = fileURLToPath(new URL('dist/web/', repositoryRoot));
@@ -266,7 +265,7 @@ export function composeApplication(options: ApplicationOptions): Application {
   const start = async (): Promise<string> => {
     try {
       await file.applyRetention();
-      const auth = await composeAuth({ pool, logger, clock, masker, hasher, secretBox });
+      const auth = await composeAuth(options, { pool, logger, clock, masker, hasher, secretBox });
       const { server, runs } = await createServer({
         ...{ environment, logger, pool, clock, masker, doubles },
         auth: auth.services,

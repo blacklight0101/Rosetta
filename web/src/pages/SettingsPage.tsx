@@ -4,11 +4,13 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Link } from '../components/Link.js';
 import { KeyRow } from './KeyRow.js';
 import { OwnDailyCap } from './OwnDailyCap.js';
+import { ProviderTest } from './ProviderTest.js';
 import { providers } from './provider-meta.js';
 import { useProviderKeys } from './use-provider-keys.js';
 
-// RF-1104, RF-1103, DEC-107, design-system.md section 14 (settings and keys): the user's provider
-// keys, the optional daily cap for those keys and the way to the change-password page.
+// RF-1104, RF-1103, RF-407, DEC-107, design-system.md section 14 (settings and keys): the user's
+// provider keys, the Test button, the optional daily cap for those keys and the way to the
+// change-password page.
 
 function ProviderKeys(): JSX.Element {
   const { client } = useApp();
@@ -57,6 +59,7 @@ export function SettingsPage(): JSX.Element {
         </p>
         <ProviderKeys />
       </section>
+      <ProviderTest />
       <OwnDailyCap />
       <section class="rst-card rst-settings__section rst-settings__password" aria-labelledby="pw">
         <div>
