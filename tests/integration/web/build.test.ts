@@ -117,3 +117,8 @@ it('P1-12 leaves the component gallery out of the production build', async () =>
   const scripts = await Promise.all(files.filter((f) => f.endsWith('.js')).map(textOf));
   expect(scripts.join('\n')).not.toContain('Component gallery');
 });
+
+it('DEC-126 leaves the /dev/gallery route out of the production bundle', async () => {
+  const scripts = await Promise.all(files.filter((f) => f.endsWith('.js')).map(textOf));
+  expect(scripts.join('\n')).not.toContain('/dev/gallery');
+});
