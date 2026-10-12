@@ -15,7 +15,8 @@ import { signedInOf } from './request-actor.js';
 // dollars); a negative one is refused on its field with RST-1003, anything else that is not an
 // amount with RST-2000.
 // - GET /api/admin/caps and PUT /api/admin/caps (administrators): the run, user-day and
-//   server-month caps on the server keys.
+//   server-month caps on the server keys; the GET also answers `serverMonthToDate`, the spend of
+//   this UTC month on the server's keys only (per currency, micro-dollar strings).
 // - GET /api/account/daily-cap and PUT /api/account/daily-cap (every signed-in user): the optional
 //   daily cap on the user's own keys; null means none.
 
@@ -66,9 +67,20 @@ const ownCapView = (micros: bigint | null): { ownDailyCapMicros: string | null }
   ownDailyCapMicros: micros?.toString() ?? null,
 });
 
+async function readView(services: CapServices): Promise<Record<string, unknown>> {
+  const { caps, serverMonthToDate } = await services.getCaps.execute();
+  return {
+    caps: capsView(caps),
+    serverMonthToDate: serverMonthToDate.map(({ currency, costMicros }) => ({
+      currency,
+      costMicros: costMicros.toString(),
+    })),
+  };
+}
+
 function registerServerCaps(server: FastifyInstance, services: CapServices): void {
   server.get('/api/admin/caps', { config: { access: 'admin' } }, async (_request, reply) =>
-    reply.status(200).send({ caps: capsView(await services.getCaps.execute()) }),
+    reply.status(200).send(await readView(services)),
   );
 
   server.put(

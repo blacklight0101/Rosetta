@@ -113,16 +113,9 @@ class AgentTask {
   }
 
   private async explore(): Promise<AgentTaskEnd> {
-    const { signal, settings, prompts } = this.request;
+    const { settings, prompts } = this.request;
     for (;;) {
-      if (signal.aborted) return stoppedEnd(signal);
-      if (this.turns >= settings.maxTurns) {
-        return { reason: 'max-turns', code: ERROR_CODES.agentTurnLimitReached };
-      }
-      if (this.overContextShare()) {
-        return { reason: 'context-limit', code: ERROR_CODES.agentContextLimitReached };
-      }
-      const answer = await this.call();
+      const answer = await this.turn();
       if (!answer.ok) return answer.error;
       if (answer.value.toolCalls.length === 0) return this.finish(answer.value.text);
       const stopped = await this.runTools(answer.value);
@@ -130,6 +123,19 @@ class AgentTask {
       const left = settings.maxTurns - this.turns;
       if (left > 0) this.add({ role: 'user', content: turnsLeftMessage(prompts, left) });
     }
+  }
+
+  /** One model call, unless a stop, the turn limit or the context share ends the task first. */
+  private async turn(): Promise<Result<LlmResponse, AgentTaskEnd>> {
+    const { signal, settings } = this.request;
+    if (signal.aborted) return err(stoppedEnd(signal));
+    if (this.turns >= settings.maxTurns) {
+      return err({ reason: 'max-turns', code: ERROR_CODES.agentTurnLimitReached });
+    }
+    if (this.overContextShare()) {
+      return err({ reason: 'context-limit', code: ERROR_CODES.agentContextLimitReached });
+    }
+    return this.call();
   }
 
   private overContextShare(): boolean {
@@ -236,7 +242,7 @@ class AgentTask {
     this.messages.push({ role: 'assistant', content: text });
     const content = renderRepairRequest(this.request.prompts.repair.text, problems).trimEnd();
     this.add({ role: 'user', content });
-    const answer = await this.call();
+    const answer = await this.turn();
     if (answer.ok) return answer.value.text;
     this.repairFailure = answer.error;
     return undefined;

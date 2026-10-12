@@ -53,6 +53,22 @@ export class PgServerSettings implements ServerSettings {
     return parsed.data;
   }
 
+  // DEC-106
+  async saveDefaultRoles(roles: DefaultRoles, change: SettingChange): Promise<void> {
+    const parsed = defaultRolesSchema.safeParse(roles);
+    if (!parsed.success) throw invalidSetting('defaultRoles', parsed.error);
+    try {
+      await this.pool.query(UPSERT_VALUE, [
+        'defaultRoles',
+        JSON.stringify(parsed.data),
+        change.at,
+        change.by,
+      ]);
+    } catch (error) {
+      throw queryFailed(error);
+    }
+  }
+
   // RF-1106
   async caps(): Promise<ServerCaps> {
     const parsed = capsSchema.safeParse(await this.value('caps'));

@@ -115,7 +115,7 @@ export class ReadOnlyTools {
       case 'grep':
         return runGrepBounded(this.reader, request, {
           limits: this.limits,
-          isListed: (path) => this.index.isListed(path),
+          paths: this.index.readablePaths(),
         });
       case 'codemap_query':
         return request.by === 'symbol'

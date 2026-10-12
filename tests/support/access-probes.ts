@@ -29,6 +29,8 @@ export interface Probe {
 }
 
 const capsUrl = '/api/admin/caps';
+const rolesUrl = '/api/admin/default-roles';
+const roles = { reader: { provider: 'ollama', model: 'gemma4:e4b' } };
 const ownCapUrl = '/api/account/daily-cap';
 const caps = { runMicros: '500000', userDayMicros: '1000000', serverMonthMicros: '10000000' };
 
@@ -48,6 +50,11 @@ export const budgetRoutes: Readonly<Record<string, readonly Probe[]>> = {
   'HEAD /api/admin/caps': [{ method: 'HEAD', url: capsUrl, expected: adminOnly(200) }],
   'PUT /api/admin/caps': [
     { method: 'PUT', url: capsUrl, payload: () => caps, expected: adminOnly(200) },
+  ],
+  'GET /api/admin/default-roles': [{ method: 'GET', url: rolesUrl, expected: adminOnly(200) }],
+  'HEAD /api/admin/default-roles': [{ method: 'HEAD', url: rolesUrl, expected: adminOnly(200) }],
+  'PUT /api/admin/default-roles': [
+    { method: 'PUT', url: rolesUrl, payload: () => ({ roles }), expected: adminOnly(200) },
   ],
 };
 

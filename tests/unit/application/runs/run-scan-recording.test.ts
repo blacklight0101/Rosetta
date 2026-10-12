@@ -7,7 +7,7 @@ import { settingsWith } from '../../../support/project-fixtures.js';
 import { createScanRunHarness, RecordingPipeline } from '../../../support/scan-run-harness.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
-// RF-127, RF-147, RNF-002: what RunScan records in the manifest and leaves on disk when a run is
+// RF-127, RF-147, RNF-002: what RunScan records in the manifest, logs and leaves on disk when a run is
 // edited while queued, stopped or failed.
 
 const temp = useTempRoot('rosetta-run-scan-record-');
@@ -117,5 +117,43 @@ describe('RunScan output files of a stopped run', () => {
     expect(run.endState).toBe('Interrupted');
     expect(pipeline.discarded).toHaveLength(1);
     expect(pipeline.discarded[0]).toMatchObject({ runKey: run.runKey });
+  });
+});
+
+describe('RunScan fallback to the current scan settings', () => {
+  const secret = 'sk-test-0000000000000000000000000000';
+  const warnings = (entries: readonly { readonly level: string }[]): unknown[] =>
+    entries.filter((entry) => entry.level === 'warn');
+
+  it('RF-147 logs one warning when the manifest records no scan settings', async () => {
+    const h = await createScanRunHarness({ dataDir: temp.path, pipeline: new RecordingPipeline() });
+
+    const run = await h.scan();
+
+    expect(run.endState).toBe('Completed');
+    expect(warnings(h.logger.entries)).toEqual([
+      expect.objectContaining({ logger: 'runs', runId: run.id, data: { reason: 'missing' } }),
+    ]);
+  });
+
+  it('RF-147 logs one warning without secrets when the recorded scan settings are invalid', async () => {
+    const h = await createScanRunHarness({ dataDir: temp.path, pipeline: new RecordingPipeline() });
+
+    const run = await h.ended(await h.submit({ scanSettings: { apiKey: secret } }));
+
+    expect(run.endState).toBe('Completed');
+    expect(warnings(h.logger.entries)).toEqual([
+      expect.objectContaining({ logger: 'runs', runId: run.id, data: { reason: 'invalid' } }),
+    ]);
+    expect(h.logger.text()).not.toContain(secret);
+    expect(h.logger.text()).not.toContain('apiKey');
+  });
+
+  it('RF-147 logs no warning when the manifest records valid scan settings', async () => {
+    const h = await createScanRunHarness({ dataDir: temp.path, pipeline: new RecordingPipeline() });
+
+    await h.ended(await h.start());
+
+    expect(warnings(h.logger.entries)).toEqual([]);
   });
 });
