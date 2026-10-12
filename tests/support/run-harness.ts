@@ -4,6 +4,7 @@ import type {
   RunExecutor,
   RunOutcome,
 } from '../../src/application/ports/run-executor.js';
+import type { RunEventHistory, RunEventSink } from '../../src/application/ports/run-events.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
@@ -78,7 +79,7 @@ export interface RunHarness {
   readonly subscribe: SubscribeRunEvents;
   readonly runs: MemoryRunIndex;
   readonly manifests: MemoryRunManifestStore;
-  readonly events: MemoryEventSink;
+  readonly events: EventStore;
   readonly broadcaster: SseBroadcaster;
   readonly executor: ControlledExecutor;
   readonly clock: FixedClock;
@@ -93,29 +94,36 @@ export interface RunHarness {
 
 export interface RunHarnessOptions {
   readonly maxRunning?: number;
+  /** The clock and logger of the surrounding test, when it has them. */
+  readonly clock?: FixedClock;
+  readonly logger?: MemoryLogger;
+  /** Where the events are stored; memory by default. */
+  readonly eventStore?: EventStore;
   /** The stages that have an executor; all five by default. */
   readonly stages?: readonly RunStage[];
 }
 
 const allStages: readonly RunStage[] = ['scan', 'understand', 'verify', 'report', 'plan'];
 
+export type EventStore = RunEventSink & RunEventHistory;
+
 interface Stores {
   readonly clock: FixedClock;
   readonly logger: MemoryLogger;
   readonly runs: MemoryRunIndex;
   readonly manifests: MemoryRunManifestStore;
-  readonly events: MemoryEventSink;
+  readonly events: EventStore;
   readonly broadcaster: SseBroadcaster;
   readonly lifecycle: RunLifecycle;
 }
 
-function createStores(): Stores {
-  const clock = new FixedClock('2026-10-12T10:00:00.000Z');
+function createStores(options: RunHarnessOptions): Stores {
+  const clock = options.clock ?? new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
-  const logger = new MemoryLogger(clock, masker);
+  const logger = options.logger ?? new MemoryLogger(clock, masker);
   const runs = new MemoryRunIndex();
   const manifests = new MemoryRunManifestStore();
-  const events = new MemoryEventSink();
+  const events = options.eventStore ?? new MemoryEventSink();
   const broadcaster = new SseBroadcaster(masker);
   const sink = new FanOutSink([events, broadcaster]);
   const lifecycle = new RunLifecycle({ runs, manifests, sink, history: events, clock, logger });
@@ -136,7 +144,7 @@ function waitUntilEnded(runs: MemoryRunIndex): RunHarness['ended'] {
 
 // RF-1108
 export function createRunHarness(options: RunHarnessOptions = {}): RunHarness {
-  const stores = createStores();
+  const stores = createStores(options);
   const { clock, logger, runs, manifests, events, broadcaster, lifecycle } = stores;
   const executor = new ControlledExecutor();
   const executors = Object.fromEntries(

@@ -21,6 +21,8 @@ import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
+import { ManualScheduler } from './manual-scheduler.js';
+import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
@@ -40,9 +42,17 @@ export interface TestServer {
   readonly projects: MemoryProjectRepository;
   readonly serverSettings: MemoryServerSettings;
   readonly hasher: PasswordHasher;
+  /** RF-1006, RF-1108: the run queue, its stores and the executor the test controls. */
+  readonly runs: RunHarness;
+  /** The scheduler behind the SSE keep-alive; a test ticks it. */
+  readonly heartbeat: ManualScheduler;
 }
 
-export interface TestServerOptions extends Partial<Omit<ServerOptions, 'auth' | 'projects'>> {
+export interface TestServerOptions extends Partial<
+  Omit<ServerOptions, 'auth' | 'projects' | 'runs'>
+> {
+  /** Where the run events are stored, given the server's logger; memory by default. */
+  readonly eventStore?: (logger: MemoryLogger) => EventStore;
   /** The password hasher of sign-in; the fast fake by default. */
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
@@ -78,7 +88,12 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
  * the server.
  */
 export function createTestServer(options: TestServerOptions = {}): TestServer {
-  const { hasher = new FakePasswordHasher(), dummyHash = 'fake$dummy', ...overrides } = options;
+  const {
+    hasher = new FakePasswordHasher(),
+    dummyHash = 'fake$dummy',
+    eventStore,
+    ...overrides
+  } = options;
   const clock = new FixedClock('2026-10-11T09:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -89,6 +104,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const auditLog = audit;
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings({});
+  const runs = createRunHarness({
+    clock,
+    logger,
+    ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
+  });
+  const heartbeat = new ManualScheduler(() => undefined);
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -102,6 +123,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
     },
     projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
+    runs: { subscribeRunEvents: runs.subscribe, stopRun: runs.stop, heartbeat },
     ...overrides,
   });
   return {
@@ -115,5 +137,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     hasher,
     projects,
     serverSettings,
+    runs,
+    heartbeat,
   };
 }
