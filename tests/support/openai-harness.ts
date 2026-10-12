@@ -37,7 +37,6 @@ export function useFakeOpenAi(): (
       timeoutSeconds: 5,
       maxRetries: 3,
       testMode: true,
-      fakeServer: true,
       random: () => 0.5,
       ...overrides,
       baseUrl,

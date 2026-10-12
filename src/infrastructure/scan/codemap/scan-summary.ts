@@ -9,6 +9,8 @@ export interface ScanSummaryInput {
   readonly codeMap: CodeMap;
   /** How long the scan took, in whole milliseconds. */
   readonly durationMs: number;
+  /** Files a pack claims that stayed coarse because the parse budget was spent (P1-75). */
+  readonly overParseBudget?: number;
 }
 
 interface Totals {
@@ -72,12 +74,14 @@ function areaRows(codeMap: CodeMap): string[][] {
   ]);
 }
 
-function skippedNote(codeMap: CodeMap): string {
+function skippedNote(input: ScanSummaryInput): string {
   const count = (reason: string): number =>
-    codeMap.files.filter((file) => file.skipped === reason).length;
+    input.codeMap.files.filter((file) => file.skipped === reason).length;
+  const overBudget = input.overParseBudget ?? 0;
   const notes = [
     count('too-large') > 0 ? `${String(count('too-large'))} skipped as too large` : '',
     count('binary') > 0 ? `${String(count('binary'))} skipped as binary` : '',
+    overBudget > 0 ? `${String(overBudget)} not analysed: parse budget reached` : '',
   ].filter((note) => note !== '');
   return notes.length === 0 ? '' : ` (${notes.join(', ')})`;
 }
@@ -91,7 +95,7 @@ function headline(input: ScanSummaryInput): string[] {
     `- Source: ${codeMap.source.owner}/${codeMap.source.repo} (${cell(subpath)})`,
     `- Commit: ${codeMap.source.commitSha}`,
     `- Scan duration: ${formatDuration(input.durationMs)}`,
-    `- Files: ${String(codeMap.files.length)}${skippedNote(codeMap)}`,
+    `- Files: ${String(codeMap.files.length)}${skippedNote(input)}`,
     `- Estimated tokens: ${String(tokens)}`,
     `- Symbols: ${String(codeMap.symbols.length)}, links: ${String(codeMap.links.length)}, SQL statements: ${String(codeMap.sqlStatements.length)}, candidate entities: ${String(codeMap.entities.length)}`,
     `- Language packs: ${packs === '' ? 'none' : packs}`,

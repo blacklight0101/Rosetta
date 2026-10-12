@@ -16,6 +16,28 @@ import { failureOf } from '../../../support/failure-of.js';
 const fast = { cost: 2 ** 14, blockSize: 8, parallelization: 1 } as const;
 const base64 = /^[A-Za-z0-9+/]+={0,2}$/;
 
+interface StoredHashParts {
+  readonly cost?: number;
+  readonly blockSize?: number;
+  readonly parallelization?: number;
+  readonly saltBytes?: number;
+  readonly keyBytes?: number;
+}
+
+/** A stored hash in the scrypt$N$r$p$salt$hash form with the given parts. */
+function storedHash(parts: StoredHashParts): string {
+  const salt = Buffer.alloc(parts.saltBytes ?? 16, 7).toString('base64');
+  const key = Buffer.alloc(parts.keyBytes ?? 64, 9).toString('base64');
+  return [
+    'scrypt',
+    parts.cost ?? 2 ** 14,
+    parts.blockSize ?? 8,
+    parts.parallelization ?? 1,
+    salt,
+    key,
+  ].join('$');
+}
+
 describe('ScryptPasswordHasher', () => {
   it('RF-1100 stores only the scrypt hash with its salt and the ADR-015 parameters', async () => {
     const password = fixturePassword('Hash');
@@ -76,6 +98,48 @@ describe('ScryptPasswordHasher stored hashes and limits', () => {
     expect(failure).toBeInstanceOf(RosettaError);
     expect(failure).toMatchObject({ code: ERROR_CODES.passwordHashInvalid });
     expect(JSON.stringify(failure)).not.toContain(stored);
+  });
+});
+
+describe('ScryptPasswordHasher parameter bounds and scrypt failures', () => {
+  it.each([
+    ['N = 2^20 and r = 1', storedHash({ cost: 2 ** 20, blockSize: 1 })],
+    ['r = 999', storedHash({ cost: 2 ** 10, blockSize: 999 })],
+    ['p = 999', storedHash({ cost: 2 ** 10, blockSize: 1, parallelization: 999 })],
+    ['N = 2^30', storedHash({ cost: 2 ** 30, blockSize: 1 })],
+    ['a salt that is too short', storedHash({ saltBytes: 4 })],
+    ['a salt that is too long', storedHash({ saltBytes: 512 })],
+    ['a key that is too long', storedHash({ keyBytes: 4096 })],
+  ])(
+    'RF-1100 refuses a stored hash with parameters out of bounds: %s (RST-2209)',
+    async (_case, stored) => {
+      let derived = 0;
+      const derive: DeriveKey = (_password, _salt, keyLength) => {
+        derived += 1;
+        return Promise.resolve(Buffer.alloc(keyLength, 1));
+      };
+      const hasher = new ScryptPasswordHasher({ derive });
+
+      const failure = await failureOf(hasher.verify(fixturePassword('Bound'), stored));
+
+      expect(failure).toMatchObject({ code: ERROR_CODES.passwordHashInvalid });
+      expect(derived).toBe(0);
+    },
+  );
+});
+
+describe('ScryptPasswordHasher scrypt failures and concurrency', () => {
+  it.each([
+    ['a RangeError', new RangeError('Invalid scrypt params')],
+    ['any other error', new Error('scrypt failed')],
+  ])('RF-1100 maps %s from scrypt to RST-2209', async (_case, thrown) => {
+    const derive: DeriveKey = () => Promise.reject(thrown);
+    const hasher = new ScryptPasswordHasher({ derive });
+
+    const failure = await failureOf(hasher.verify(fixturePassword('Range'), storedHash({})));
+
+    expect(failure).toBeInstanceOf(RosettaError);
+    expect(failure).toMatchObject({ code: ERROR_CODES.passwordHashInvalid });
   });
 
   it('DEC-112 runs at most two hashes at a time, with maxmem 256 MiB', async () => {

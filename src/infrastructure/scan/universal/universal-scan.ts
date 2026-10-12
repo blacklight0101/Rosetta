@@ -27,7 +27,7 @@ export async function scanRepository(
       unreadable.push(path);
       continue;
     }
-    const inspected = inspectFile(path, read.value);
+    const inspected = inspectFile(path, read.value, options.masker);
     files.push(inspected.file);
     sqlStatements.push(...inspected.sql);
   }

@@ -35,7 +35,15 @@ export interface ScryptPasswordHasherOptions {
 const ADR_015_PARAMETERS: ScryptParameters = { cost: 2 ** 17, blockSize: 8, parallelization: 1 };
 const SALT_BYTES = 16;
 const KEY_BYTES = 64;
+// P1-77: the bounds of a stored hash, so a tampered row cannot make verification costly or throw.
+const MIN_COST = 2 ** 10;
+const MAX_COST = 2 ** 17;
+const MAX_BLOCK_SIZE = 16;
+const MAX_PARALLELIZATION = 4;
+const MIN_SALT_BYTES = 16;
+const MAX_SALT_BYTES = 64;
 const MIN_KEY_BYTES = 16;
+const MAX_KEY_BYTES = 64;
 const MAX_MEMORY_BYTES = 256 * 1024 * 1024;
 const MAX_CONCURRENT_HASHES = 2;
 const BASE64 = '[A-Za-z0-9+/]+={0,2}';
@@ -58,12 +66,17 @@ function isPowerOfTwo(value: number): boolean {
   return value > 1 && (value & (value - 1)) === 0;
 }
 
-/** Fits within maxmem: scrypt needs about 128 * N * r * p bytes. */
+function isWithin(value: number, min: number, max: number): boolean {
+  return value >= min && value <= max;
+}
+
+/** Within the bounds and within maxmem: scrypt needs about 128 * N * r * p bytes. */
 function isAllowed({ cost, blockSize, parallelization }: ScryptParameters): boolean {
   return (
     isPowerOfTwo(cost) &&
-    blockSize >= 1 &&
-    parallelization >= 1 &&
+    isWithin(cost, MIN_COST, MAX_COST) &&
+    isWithin(blockSize, 1, MAX_BLOCK_SIZE) &&
+    isWithin(parallelization, 1, MAX_PARALLELIZATION) &&
     128 * cost * blockSize * parallelization < MAX_MEMORY_BYTES
   );
 }
@@ -74,8 +87,12 @@ interface StoredHash {
   readonly key: Buffer;
 }
 
-function hashInvalid(): RosettaError {
-  return new RosettaError(ERROR_CODES.passwordHashInvalid);
+function hashInvalid(cause?: unknown): RosettaError {
+  return new RosettaError(
+    ERROR_CODES.passwordHashInvalid,
+    undefined,
+    cause === undefined ? undefined : { cause },
+  );
 }
 
 /** The parts of a stored hash; RST-2209 when it is not a hash this hasher can verify. */
@@ -88,9 +105,16 @@ function parseStored(stored: string): StoredHash {
     blockSize: Number(blockSize),
     parallelization: Number(parallelization),
   };
+  const saltBytes = Buffer.from(salt, 'base64');
   const keyBytes = Buffer.from(key, 'base64');
-  if (!isAllowed(parameters) || keyBytes.length < MIN_KEY_BYTES) throw hashInvalid();
-  return { parameters, salt: Buffer.from(salt, 'base64'), key: keyBytes };
+  if (
+    !isAllowed(parameters) ||
+    !isWithin(saltBytes.length, MIN_SALT_BYTES, MAX_SALT_BYTES) ||
+    !isWithin(keyBytes.length, MIN_KEY_BYTES, MAX_KEY_BYTES)
+  ) {
+    throw hashInvalid();
+  }
+  return { parameters, salt: saltBytes, key: keyBytes };
 }
 
 export class ScryptPasswordHasher implements PasswordHasher {
@@ -123,7 +147,14 @@ export class ScryptPasswordHasher implements PasswordHasher {
   // RF-1100
   async verify(password: string, passwordHash: string): Promise<boolean> {
     const stored = parseStored(passwordHash);
-    const key = await this.deriveKey(password, stored.salt, stored.key.length, stored.parameters);
+    let key: Buffer;
+    try {
+      key = await this.deriveKey(password, stored.salt, stored.key.length, stored.parameters);
+    } catch (error) {
+      // P1-77: a RangeError or any other scrypt failure on a stored hash is RST-2209.
+      throw hashInvalid(error);
+    }
+    if (key.length !== stored.key.length) throw hashInvalid();
     return timingSafeEqual(key, stored.key);
   }
 

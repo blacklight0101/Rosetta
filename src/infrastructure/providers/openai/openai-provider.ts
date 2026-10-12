@@ -29,8 +29,6 @@ export interface OpenAiProviderOptions {
   readonly maxRetries: number;
   /** `ROSETTA_TEST=1`: real OpenAI calls are refused (RNF-005, ADR-008). */
   readonly testMode: boolean;
-  /** True only in tests whose base URL is a loopback fake OpenAI server they started. */
-  readonly fakeServer?: boolean;
   /** The size limit of one answer; 8 MiB when not set. */
   readonly maxResponseBytes?: number;
   readonly sleep?: Sleep;
@@ -40,12 +38,15 @@ export interface OpenAiProviderOptions {
 
 const defaultBaseUrl = 'https://api.openai.com/v1';
 
-/** A key is one run of visible characters: a pasted newline or space would break the header. */
+/**
+ * A key is one run of visible Latin-1 characters: a pasted newline or space would break the
+ * header, and a character above U+00FF cannot be sent in one, so the SDK would fail every attempt.
+ */
 function isUsableKey(key: string): boolean {
   if (key === '') return false;
   for (const char of key) {
     const code = char.codePointAt(0) ?? 0;
-    if (code <= 32 || (code >= 127 && code <= 160)) return false;
+    if (code <= 32 || (code >= 127 && code <= 160) || code > 255) return false;
   }
   return true;
 }
@@ -68,7 +69,7 @@ export class OpenAiProvider implements LlmProvider {
       // The message never holds the key: not even a part of it (RNF-003).
       throw new RosettaError(
         ERROR_CODES.openAiKeyRejected,
-        'The OpenAI API key is empty or holds spaces or control characters.',
+        'The OpenAI API key is empty or holds spaces, control characters or characters above U+00FF.',
       );
     }
     this.options = options;
@@ -88,8 +89,8 @@ export class OpenAiProvider implements LlmProvider {
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
-    const { testMode, fakeServer, maxRetries, sleep, random } = this.options;
-    refuseRealProviderInTests({ testMode, fakeServer, baseUrl: this.baseUrl });
+    const { testMode, maxRetries, sleep, random } = this.options;
+    refuseRealProviderInTests({ testMode, baseUrl: this.baseUrl });
     return completeWithRetries({
       attempt: () => this.attempt(request),
       signal: request.signal,
