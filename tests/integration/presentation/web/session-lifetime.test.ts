@@ -63,16 +63,11 @@ describe('sign-out and disabled accounts', () => {
     const replayed = await browser.request({ method: 'GET', url: '/api/session' });
 
     expect(signOut.statusCode).toBe(204);
+    const cleared = { value: '', maxAge: 0, httpOnly: true, secure: true, sameSite: 'Strict' };
+    // P1-79: the CSRF secret is cleared with the session.
     expect(signOut.cookies).toEqual([
-      expect.objectContaining({
-        name: '__Host-rosetta_session',
-        value: '',
-        maxAge: 0,
-        httpOnly: true,
-        secure: true,
-        sameSite: 'Strict',
-        path: '/',
-      }),
+      expect.objectContaining({ name: '__Host-rosetta_session', ...cleared, path: '/' }),
+      expect.objectContaining({ name: '__Host-rosetta_csrf', ...cleared, path: '/' }),
     ]);
     expect(test.sessions.storedKeys()).toEqual([]);
     expect(replayed.statusCode).toBe(401);
