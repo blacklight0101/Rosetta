@@ -45,6 +45,7 @@ export const ERROR_CODES = {
   workspaceIdInvalid: 'RST-1111',
   grepFailed: 'RST-1112',
   byteLimitInvalid: 'RST-1113',
+  fileTooLarge: 'RST-1114',
   languagePackFailed: 'RST-1200',
   languagePackInvalid: 'RST-1201',
   codeMapInvalid: 'RST-1202',
