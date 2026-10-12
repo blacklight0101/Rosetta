@@ -19,7 +19,7 @@ export default defineConfig({
     emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: false,
-    // The preload polyfill is a script the page would run inline-style; modern browsers need none.
+    // The preload polyfill is extra code the front end does not need in current browsers.
     modulePreload: { polyfill: false },
   },
   server: {

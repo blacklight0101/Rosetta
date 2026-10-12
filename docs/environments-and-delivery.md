@@ -164,7 +164,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Zip export | `yazl` | 3.3 | streaming zip writer (RF-008) |
 | Snapshot extraction | `tar` | 7.5 | GitHub tarball extraction with an entry filter, `src/infrastructure/github/` only (ADR-019, RF-122, RF-127) |
 | Ignore rules | `ignore` | 7.0 | gitignore-syntax matching for `.rosettaignore` and the deny list, `src/infrastructure/files/` only (ADR-019, RF-140) |
-| Web UI and report components | `preact` | 11.0 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52) |
+| Web UI and report components | `preact` | 10.29 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52); 11.0.0 was published 2026-09-30, inside the two-week rule, so P1-12 pins 10.29.8 and a follow-up moves to 11 |
 
 **Development**
 
@@ -183,7 +183,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Dead code | `knip` | 6.41 | unused files, exports, dependencies |
 | Commits | `@commitlint/cli`, `@commitlint/config-conventional` | 21.2 | `commit-msg` hook and CI on pull request titles |
 | Git hooks | `lefthook` | 2.2 | no install scripts in the hooks |
-| Front-end build | `vite`, `@preact/preset-vite` | 8.3 / 2.10 | builds `web/` into static assets (DEC-52); preset compatibility with Preact 11 confirmed in the first web UI card |
+| Front-end build | `vite`, `@preact/preset-vite` | 8.3 / 2.10 | builds `web/` into `dist/web/` (DEC-52); pinned 8.3.1 / 2.10.6 by P1-12, which also ran the preset with Preact 10.29 |
 | Browser tests | `@playwright/test`, `@axe-core/playwright` | 1.64 / 4.13 | the e2e project for the web UI and report; accessibility checks (RNF-010) |
 | Component tests | `happy-dom`, `@testing-library/preact` | 20.14 / 3.2 | the `web` Vitest project (conventions section 7, DEC-112) |
 | Containers | Docker Engine, Docker Compose | 29.7 / v5.4 | on the owner's machine; base images `node:24-slim` and `postgres:17` pinned by digest |
