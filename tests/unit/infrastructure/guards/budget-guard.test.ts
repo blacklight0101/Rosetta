@@ -144,7 +144,7 @@ describe('BudgetGuard failed calls', () => {
       ledger: {
         reserve: (request) => h.ledger.reserve(request),
         settle: () => Promise.reject(new Error('disk full')),
-        release: (callId) => h.ledger.release(callId),
+        release: (key) => h.ledger.release(key),
         runEntries: (userId, runId) => h.ledger.runEntries(userId, runId),
         purgeExpired: (at) => h.ledger.purgeExpired(at),
       },

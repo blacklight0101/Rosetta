@@ -2,6 +2,7 @@ import type {
   CostLedger,
   LedgerEntry,
   Reservation,
+  ReservationKey,
   ReservationRequest,
 } from '../../application/ports/cost-ledger.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
@@ -17,6 +18,10 @@ function sum(values: readonly bigint[]): bigint {
   return values.reduce((total, value) => total + value, 0n);
 }
 
+/** One map key per user, run and call (a call id alone can repeat across users). */
+const keyOf = ({ userId, runId, callId }: ReservationKey): string =>
+  JSON.stringify([userId, runId, callId]);
+
 const tokensOf = (entry: LedgerEntry): bigint =>
   BigInt(entry.inputTokens) + BigInt(entry.outputTokens);
 
@@ -27,18 +32,18 @@ export class MemoryCostLedger implements CostLedger {
   reserve(request: ReservationRequest): Promise<Result<void, CapBreach>> {
     const { reservation, caps, at } = request;
     const checked = checkCaps(caps, this.spent(reservation, at), reservation.worstCase);
-    if (checked.ok) this.reservations.set(reservation.callId, reservation);
+    if (checked.ok) this.reservations.set(keyOf(reservation), reservation);
     return Promise.resolve(checked);
   }
 
   settle(entry: LedgerEntry): Promise<void> {
     this.entries.push(entry);
-    this.reservations.delete(entry.callId);
+    this.reservations.delete(keyOf(entry));
     return Promise.resolve();
   }
 
-  release(callId: string): Promise<void> {
-    this.reservations.delete(callId);
+  release(key: ReservationKey): Promise<void> {
+    this.reservations.delete(keyOf(key));
     return Promise.resolve();
   }
 
@@ -50,7 +55,7 @@ export class MemoryCostLedger implements CostLedger {
 
   purgeExpired(at: Date): Promise<number> {
     const expired = [...this.reservations.values()].filter((held) => !this.counts(held, at));
-    for (const held of expired) this.reservations.delete(held.callId);
+    for (const held of expired) this.reservations.delete(keyOf(held));
     return Promise.resolve(expired.length);
   }
 
