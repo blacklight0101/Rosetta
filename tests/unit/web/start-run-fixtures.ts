@@ -36,7 +36,7 @@ const point = (inputTokens: number, outputTokens: number, costMicros: string): P
   costMicros,
 });
 
-export interface RoleOptions {
+interface RoleOptions {
   readonly role: 'reader' | 'verifier';
   readonly provider: string;
   readonly kind: string;
@@ -46,7 +46,7 @@ export interface RoleOptions {
   readonly costs: readonly [string, string, string];
 }
 
-export function roleOf(options: RoleOptions): RoleBody {
+function roleOf(options: RoleOptions): RoleBody {
   const { role, provider, kind, model, costs } = options;
   const [low, likely, high] = costs;
   return {
@@ -62,7 +62,7 @@ export function roleOf(options: RoleOptions): RoleBody {
 const sum = (parts: readonly string[]): string =>
   parts.reduce((total, each) => total + BigInt(each), 0n).toString();
 
-export function estimateOf(roles: readonly RoleBody[]): Record<string, unknown> {
+function estimateOf(roles: readonly RoleBody[]): Record<string, unknown> {
   return {
     priceTableVersion: '2026-10-11',
     currency: 'USD',

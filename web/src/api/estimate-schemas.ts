@@ -12,7 +12,6 @@ const point = z.object({
 
 const range = { low: point, likely: point, high: point };
 
-export type EstimatePoint = z.output<typeof point>;
 export type Scenario = keyof typeof range;
 
 const scenarioNumbers = z.object({ low: z.number(), likely: z.number(), high: z.number() });

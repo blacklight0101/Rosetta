@@ -13,7 +13,7 @@ import { EstimateTable } from './EstimateTable.js';
 // run cap is editable here, with a meter of the likely cost against it and a marker at the high
 // estimate; a warning names every cap the likely estimate is over, and Start stays available.
 
-export interface CapField {
+interface CapField {
   readonly text: string;
   readonly capMicros: bigint;
   readonly error: { readonly code?: string; readonly message: string } | undefined;

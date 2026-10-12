@@ -15,7 +15,7 @@ import { useStartActions, type StartActions } from './use-start-actions.js';
 // RF-1001, RF-143, DEC-108: the state of the start page: the stage, the address, the run cap, the
 // cloud consent, and what follows from them (the warnings, the gate on Start).
 
-export interface CloudConsent {
+interface CloudConsent {
   /** The roles whose notice must be confirmed; empty when no code leaves this machine. */
   readonly roles: readonly RoleEstimate[];
   readonly names: string;

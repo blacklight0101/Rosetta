@@ -20,7 +20,7 @@ const UNKNOWN_AREA = 'RST-1307';
 const notAnAmount: FieldProblem = { message: 'Enter an amount in dollars, for example 2.00.' };
 
 /** A refusal the page itself makes, or one the server made for a field. */
-export interface FieldProblem {
+interface FieldProblem {
   readonly code?: string;
   readonly message: string;
 }
@@ -37,7 +37,7 @@ export interface ActionInputs {
   readonly onConsentRefused: () => void;
 }
 
-export interface Refusals {
+interface Refusals {
   readonly url?: ApiFailure;
   readonly cap?: FieldProblem;
   readonly consent?: ApiFailure;
