@@ -45,6 +45,8 @@ export interface GrepRequest {
   readonly pattern: string;
   /** Optional gitignore-style pattern that limits the files searched. */
   readonly pathGlob?: string;
+  /** When given, only these files are searched; the agent tools pass the files the scan read. */
+  readonly paths?: readonly string[];
 }
 
 interface GrepMatch {

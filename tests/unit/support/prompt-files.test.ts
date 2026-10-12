@@ -28,7 +28,7 @@ describe('listPromptFiles', () => {
   });
 
   it('RF-145 lists files in nested folders and at the root, whatever their extension', async () => {
-    for (const path of ['top.md', 'reader/extra/deep.v1.md', 'reader/notes.txt']) {
+    for (const path of ['top.md', 'reader/extra/deep.v1.md', 'reader/notes.txt', '.gitkeep']) {
       await put(path);
     }
 

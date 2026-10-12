@@ -64,8 +64,9 @@ export class CodeMapIndex {
     return err({ kind: 'not-found' });
   }
 
-  isListed(path: string): boolean {
-    return this.files.has(path);
+  /** The files the scan read: listed and not skipped (RF-100), sorted by path. */
+  readablePaths(): readonly string[] {
+    return this.codeMap.files.filter((file) => file.skipped === undefined).map((file) => file.path);
   }
 
   /** Symbols and entities whose name is `name`, ignoring case. */

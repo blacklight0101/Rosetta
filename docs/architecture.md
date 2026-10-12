@@ -384,12 +384,14 @@ sequenceDiagram
   error is logged. The tools read only files the code map lists, through the `RepositoryReader`; a path the model
   writes in another letter case resolves to the code map's spelling, so the egress guard sees one spelling per file;
   a path that is not plain and relative (`..`, absolute, backslashes) is refused before any read and logged as a
-  security event (`RST-1100`, `RST-1101`). Results are bounded (`ToolLimits`): lines longer than 2 000 characters
+  security event (`RST-1100`, `RST-1101`). `grep` searches only the files the scan read (listed in the code map and
+  not skipped), passed to the reader as its path list. Results are bounded (`ToolLimits`): lines longer than 2 000 characters
   are cut, a result holds at most 40 000 characters (a read stops at the last whole line that fits and cites only
   the lines it returns), grep at most 100 matches and listings at most 200 entries, each with a notice.
 - **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v1.md` with the area's file list as a
   data block; after each tool turn a user message from `prompts/reader/turns-left.v1.md` gives the turns left. The
-  task ends `Done` (final answer parsed with one repair, RF-202), `InvalidOutput`, `TurnLimitReached` (the
+  task ends `Done` (final answer parsed with one repair, RF-202; the repair turn is a turn like any other, under the
+  same turn limit, context share and stop checks), `InvalidOutput`, `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
   model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again) or
   names unknown tools three times (`RST-1302`), a stop through the shared signal (checked before every turn and
