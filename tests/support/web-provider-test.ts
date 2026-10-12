@@ -12,6 +12,7 @@ import { budgetTable } from './budget-harness.js';
 import type { FixedClock } from './fixed-clock.js';
 import type { MemoryLogger } from './memory-logger.js';
 import { templateSettings } from './project-fixtures.js';
+import { FakeTimeoutSignals } from './fake-timeout-signals.js';
 import { fakeAdapters, SpyLedger, type FakeAdapters } from './provider-fakes.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
@@ -49,6 +50,7 @@ export function providerTestService(parts: ProviderTestParts): ProviderTestServi
   const testProviders = new TestProviders({
     ...{ users, serverSettings, template, factory, ids },
     unrecorded: unrecordedSinks(),
+    signals: new FakeTimeoutSignals(),
   });
   return { providers, providerLedger, testProviders };
 }

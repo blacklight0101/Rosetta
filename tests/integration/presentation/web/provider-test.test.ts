@@ -153,4 +153,35 @@ describe('POST /api/account/providers/test access', () => {
 
     expect(statuses).toEqual([200, 200, 200, 200, 200, 200, 429, 429]);
   });
+
+  it('RF-1100 limits the presses per user too: another address does not give a user more', async () => {
+    test = createTestServer();
+    const amy = await signedIn('amy');
+
+    const statuses: number[] = [];
+    for (let n = 1; n <= 8; n += 1) {
+      const from = `10.0.0.${String(n)}`;
+      const response = await amy.request({
+        method: 'POST',
+        url: '/api/account/providers/test',
+        remoteAddress: from,
+      });
+      statuses.push(response.statusCode);
+    }
+
+    expect(statuses).toEqual([200, 200, 200, 200, 200, 200, 429, 429]);
+  });
+
+  it('RF-1100 one user reaching the limit does not stop another user on the same address', async () => {
+    test = createTestServer();
+    const amy = await signedIn('amy');
+    const bob = await signedIn('bob');
+    for (let n = 0; n < 6; n += 1) await press(amy);
+
+    const refused = await press(amy);
+    const other = await press(bob);
+
+    expect(refused.statusCode).toBe(429);
+    expect(other.statusCode).toBe(200);
+  });
 });

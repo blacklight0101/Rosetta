@@ -176,3 +176,46 @@ describe('dependency-cruiser layer rule: provider adapters', () => {
     expect(report).not.toContain('adapters-only-via-adapter-builder');
   });
 });
+
+describe('dependency-cruiser layer rule: the adapter builder', () => {
+  const root = useTempRoot('rosetta-arch-');
+  const builder = {
+    'src/infrastructure/providers/adapter-builder.ts': 'export const realAdapters = () => 1;\n',
+  };
+
+  it.each([
+    ['src/presentation/sneaky.ts', '../infrastructure/providers/adapter-builder.js'],
+    ['src/infrastructure/providers/provider-factory.ts', './adapter-builder.js'],
+    ['src/infrastructure/guards/other.ts', '../providers/adapter-builder.js'],
+    ['src/application/use.ts', '../infrastructure/providers/adapter-builder.js'],
+  ])('ADR-003 %s importing %s is reported', async (file, module) => {
+    const report = await cruise(root.path, { ...builder, [file]: importing(module) });
+
+    expect(report).toContain('adapter-builder-only-in-compose-providers');
+  });
+
+  it('ADR-003 an aliased import and a dynamic import() are reported too', async () => {
+    const report = await cruise(root.path, {
+      ...builder,
+      'src/presentation/aliased.ts':
+        "import { realAdapters as raw } from '../infrastructure/providers/adapter-builder.js';\nexport const x = raw;\n",
+      'src/presentation/dynamic.ts':
+        "export const load = () => import('../infrastructure/providers/adapter-builder.js');\n",
+    });
+
+    expect(report).toContain('src/presentation/aliased.ts');
+    expect(report).toContain('src/presentation/dynamic.ts');
+    expect(report).toContain('adapter-builder-only-in-compose-providers');
+  });
+
+  it('ADR-003 only the provider composition may import the adapter builder', async () => {
+    const report = await cruise(root.path, {
+      ...builder,
+      'src/presentation/compose-providers.ts': importing(
+        '../infrastructure/providers/adapter-builder.js',
+      ),
+    });
+
+    expect(report).not.toContain('adapter-builder-only-in-compose-providers');
+  });
+});

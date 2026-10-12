@@ -127,6 +127,18 @@ describe('TestProviders: the call', () => {
   });
 });
 
+describe('TestProviders: the time limit', () => {
+  it('RF-407 cancels a call after 60 s with a signal from the TimeoutSignals port', async () => {
+    const harness = await providerTestHarness(ready);
+
+    await harness.testProviders.execute({ actor: harness.actor });
+
+    expect(harness.signals.delays).toEqual([60_000, 60_000, 60_000, 60_000]);
+    const sent = harness.fakeList.map((fake) => fake.requests[0]?.signal);
+    expect(sent).toEqual(harness.signals.controllers.map((controller) => controller.signal));
+  });
+});
+
 describe('TestProviders: keys', () => {
   it('RF-002 shows a role without a usable key as failed, names no value and calls nothing for it', async () => {
     const harness = await providerTestHarness({

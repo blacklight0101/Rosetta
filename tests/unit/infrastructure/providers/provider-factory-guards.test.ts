@@ -178,6 +178,43 @@ describe('cloud consent: local and remote Ollama', () => {
   });
 });
 
+describe('provider test ceiling and ownership', () => {
+  it('RF-407 a provider test of a user key with no daily cap still has a fixed ceiling', async () => {
+    const own = factoryHarness();
+    await own.storeKey(factoryAccount.id, 'openai', userKeyText);
+    const built = await own.factory.build(
+      own.request({ settings: openAiSettings, run: testRun, cloudConsent: true }),
+    );
+    const reader = built.ok ? built.value.get('reader') : undefined;
+    if (reader === undefined) throw new Error('The reader was not built.');
+    const huge = {
+      ...callFor('reader', 'contract-model'),
+      messages: [{ role: 'user' as const, content: 'word '.repeat(200_000) }],
+    };
+
+    const failure = await failureOf(complete(reader, huge));
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.budgetCapReached });
+    expect(own.fakes.get('openai')?.requests).toEqual([]);
+    expect(own.ledger.reservations[0]?.caps).toEqual(
+      expect.arrayContaining([
+        { kind: 'run-cost', limit: 100_000n },
+        { kind: 'run-tokens', limit: 2_000n },
+      ]),
+    );
+  });
+
+  it('RF-405 refuses a request whose account is not the user of its run', async () => {
+    const harness = factoryHarness(withServerKey);
+    const other = { ...factoryAccount, id: '00000000-0000-4000-9000-0000000000a2' };
+
+    const built = harness.factory.build(harness.request({ account: other }));
+
+    await expect(built).rejects.toThrow(/account/u);
+    expect(harness.built).toEqual([]);
+  });
+});
+
 describe('caps and reservations', () => {
   it('RF-422 a reservation lasts the longest the call can run, plus a margin', async () => {
     const { harness, reader } = await setUp(withServerKey, { cloudConsent: true });
@@ -209,7 +246,7 @@ describe('caps: server and own keys', () => {
     expect(own.ledger.entries).toHaveLength(1);
   });
 
-  it('RF-407 a provider test belongs to no run: no run cap applies and the row has no run', async () => {
+  it('RF-407 a provider test belongs to no run: the fixed ceiling replaces the run budget and the row has no run', async () => {
     const settings: ProjectSettings = {
       ...openAiSettings,
       budget: { ...openAiSettings.budget, run: { maxCostMicros: 0, maxTokens: 0 } },
@@ -224,7 +261,12 @@ describe('caps: server and own keys', () => {
 
     const held = harness.ledger.reservations[0];
     expect(held?.reservation.runId).toBeNull();
-    expect(held?.caps.map((cap) => cap.kind)).toEqual(['user-day', 'server-month']);
+    expect(held?.caps.map((cap) => [cap.kind, cap.limit])).toEqual([
+      ['run-cost', 100_000n],
+      ['run-tokens', 2_000n],
+      ['user-day', 1_000_000n],
+      ['server-month', 10_000_000n],
+    ]);
     expect(harness.ledger.entries[0]).toMatchObject({
       runId: null,
       projectId: null,
