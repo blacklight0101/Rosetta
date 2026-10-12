@@ -1,5 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import { ChangePassword } from '../../src/application/use-cases/change-password.js';
@@ -14,17 +13,22 @@ import { SignOut } from '../../src/application/use-cases/sign-out.js';
 import { UpdateUser } from '../../src/application/use-cases/update-user.js';
 import type { TestProviders } from '../../src/application/use-cases/test-providers.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
+import { GetAccountTotals } from '../../src/application/use-cases/get-account-totals.js';
+import { GetCaps } from '../../src/application/use-cases/get-caps.js';
+import { GetProjectCost } from '../../src/application/use-cases/get-project-cost.js';
 import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
-import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
+import type { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
-import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
+import type { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
+import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
-import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
-import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
+import type { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
+import type { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
+import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
@@ -45,12 +49,13 @@ import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
+import { MemoryOutputWriter } from './memory-output-writer.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
-import { runOutputs, runServices, type RunOutputGiven } from './web-run-services.js';
+import { runServices, type RunOutputGiven } from './web-run-services.js';
+import { memoryStores, outputsAndRoutes } from './web-server-parts.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
-import { recordRoutes } from './route-recorder.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
@@ -74,6 +79,8 @@ export interface TestServer {
   readonly routes: () => readonly string[];
   /** RF-1102: the projects and month-to-date spend the administration list shows. */
   readonly usage: MemoryAccountUsage;
+  /** RF-428, RF-1010: the ledger rows the cost page and the totals pill sum; a test adds them. */
+  readonly costs: MemoryCostTotals;
   /** RF-1006, RF-1108: the run queue, its stores and the executor the test controls. */
   readonly runs: RunHarness;
   /** RF-008: the run folders the default export reads; give a run its folder with `seed`. */
@@ -82,6 +89,9 @@ export interface TestServer {
   readonly runFiles: MemoryRunFileReader;
   /** RF-504: the models the default report writer was asked to write. */
   readonly reportWriter: RecordingReportWriter;
+  /** RF-1007: the projects' answers.md files the answer routes read and write, in `answerFiles`. */
+  readonly answers: FileAnswersFile;
+  readonly answerFiles: MemoryOutputWriter;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
@@ -96,21 +106,15 @@ export interface TestServer {
   readonly providerLedger: SpyLedger;
 }
 
-export interface TestServerOptions extends Partial<
-  Omit<ServerOptions, 'auth' | 'projects' | 'runs'>
-> {
+/** `archiveWriter`, `runFileReader` and `report` replace the memory doubles of the run outputs. */
+export interface TestServerOptions
+  extends Partial<Omit<ServerOptions, 'auth' | 'projects' | 'runs'>>, RunOutputGiven {
   /** RF-407: what the fake adapter of each provider name replays; the text answer by default. */
   readonly providerRecordings?: Readonly<Record<string, Recording>>;
   /** DEC-106: the server's default models, which the provider test uses. */
   readonly defaultRoles?: DefaultRoles;
   /** Where the run events are stored, given the server's logger; memory by default. */
   readonly eventStore?: (logger: MemoryLogger) => EventStore;
-  /** RF-008: where the zip export reads run folders from; the memory folders of `archives` by default. */
-  readonly archiveWriter?: ArchiveWriter;
-  /** RF-506: where run files are read from; the memory folders of `runFiles` by default. */
-  readonly runFileReader?: RunOutputGiven['runFileReader'];
-  /** RF-504: the files the report reads and the writer that writes it; memory doubles by default. */
-  readonly report?: RunOutputGiven['report'];
   /** The password hasher of sign-in; the fast fake by default. */
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
@@ -124,12 +128,15 @@ interface ProjectParts {
   readonly auditLog: MemoryAuditLog;
   readonly logger: MemoryLogger;
   readonly clock: FixedClock;
+  readonly costs: MemoryCostTotals;
+  readonly usage: MemoryAccountUsage;
 }
 
 /** RF-010, RF-1105: the project use cases over memory adapters and predictable ids. */
 function projectServices(parts: ProjectParts): ServerOptions['projects'] {
-  const { projects, serverSettings, users, auditLog, logger, clock } = parts;
+  const { projects, serverSettings, users, auditLog, logger, clock, costs, usage } = parts;
   const ids = new SequenceIdGenerator();
+  const caps = new GetCaps({ settings: serverSettings, usage, clock });
   const template = templateSettings;
   return {
     createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
@@ -137,6 +144,8 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
     openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
+    getProjectCost: new GetProjectCost({ projects, costs }),
+    getAccountTotals: new GetAccountTotals({ costs, caps }),
   };
 }
 
@@ -158,15 +167,6 @@ interface KeyParts {
   readonly keys: MemoryProviderKeyRepository;
   readonly secretBox: AesGcmSecretBox;
   readonly resolver: FakeHostResolver;
-}
-
-/** RF-1104: the stored keys, the box that seals them and the DNS stand-in of the base-URL check. */
-function keyStores(): KeyParts {
-  return {
-    keys: new MemoryProviderKeyRepository(),
-    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
-    resolver: new FakeHostResolver(),
-  };
 }
 
 /** RF-1104: the key use cases over memory adapters and the fake resolver. */
@@ -227,14 +227,19 @@ function runHarnessOf(
   });
 }
 
-/** The memory stores every test server starts with. */
-function memoryStores() {
+/** RF-1104: the key store, its sealing box and the DNS stand-in of the base-URL check. */
+function keyParts(): KeyParts {
   return {
-    users: new MemoryUserRepository(),
-    sessions: new MemorySessionStore(),
-    usage: new MemoryAccountUsage(),
-    projects: new MemoryProjectRepository(),
+    keys: new MemoryProviderKeyRepository(),
+    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
+    resolver: new FakeHostResolver(),
   };
+}
+
+/** RF-1007: the answers.md adapter over memory files. */
+function answerStore(masker: SecretMasker): Pick<TestServer, 'answers' | 'answerFiles'> {
+  const answerFiles = new MemoryOutputWriter();
+  return { answerFiles, answers: new FileAnswersFile({ writer: answerFiles, masker }) };
 }
 
 /**
@@ -258,17 +263,19 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
   const health = new FakeDatabaseHealth(true);
-  const { users, sessions, usage, projects } = memoryStores();
+  const { users, sessions, usage, projects, costs } = memoryStores();
   const auditLog = new MemoryAuditLog(masker);
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
+  const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
+  const files = answerStore(masker);
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
-  const keys = keyStores();
+  const keys = keyParts();
+  const stores = { projects, keys: keys.keys, answers: files.answers };
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
-  const { outputs, doubles } = runOutputs({ archiveWriter, runFileReader, report });
-  const recorder = recordRoutes();
+  const projectParts = { projects, serverSettings, users, auditLog, logger, clock, costs, usage };
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -279,14 +286,14 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage, keys },
       ...{ serverSettings, testProviders },
     }),
-    projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
-    runs: runServices(runs, { projects, keys: keys.keys }, route, outputs),
+    projects: projectServices(projectParts),
+    runs: runServices(runs, stores, route, outputs),
     onRoute: recorder.onRoute,
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
-    ...{ serverSettings, runs, ...doubles, ...route, ...keys, routes: () => recorder.rows() },
-    ...{ providers, providerLedger },
+    ...{ serverSettings, runs, ...doubles, ...files, ...route, ...keys, providers, providerLedger },
+    costs,
   };
 }

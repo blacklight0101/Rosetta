@@ -1,3 +1,4 @@
+import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
 import type { ReportWriter } from '../../src/application/ports/report-writer.js';
 import type { RunFileReader } from '../../src/application/ports/run-file-reader.js';
@@ -7,6 +8,8 @@ import { BuildReport } from '../../src/application/use-cases/build-report.js';
 import { ReadRunFile } from '../../src/application/use-cases/read-run-file.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetRun } from '../../src/application/use-cases/get-run.js';
+import { ListAnswers } from '../../src/application/use-cases/list-answers.js';
+import { RecordAnswers } from '../../src/application/use-cases/record-answers.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -66,11 +69,12 @@ export function runServices(
   stores: {
     readonly projects: MemoryProjectRepository;
     readonly keys: MemoryProviderKeyRepository;
+    readonly answers: AnswersFile;
   },
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
-  const { projects, keys } = stores;
+  const { projects, keys, answers } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs }),
     subscribeRunEvents: runs.subscribe,
@@ -84,6 +88,8 @@ export function runServices(
       files: outputs.text,
       writer: outputs.reportWriter,
     }),
+    listAnswers: new ListAnswers({ runs: runs.runs, answers }),
+    recordAnswers: new RecordAnswers({ runs: runs.runs, answers }),
     startRun: new StartRun({ projects, submit: runs.submit }),
     // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
     estimateRun: new EstimateRun({

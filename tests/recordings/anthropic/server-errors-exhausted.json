@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. Four 500 errors in a row; the last carries request id 503. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 500,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000500"
+      },
+      "body": {
+        "type": "error",
+        "error": {
+          "type": "api_error",
+          "message": "Internal server error"
+        }
+      }
+    },
+    {
+      "status": 500,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000500"
+      },
+      "body": {
+        "type": "error",
+        "error": {
+          "type": "api_error",
+          "message": "Internal server error"
+        }
+      }
+    },
+    {
+      "status": 500,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000500"
+      },
+      "body": {
+        "type": "error",
+        "error": {
+          "type": "api_error",
+          "message": "Internal server error"
+        }
+      }
+    },
+    {
+      "status": 503,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000503"
+      },
+      "body": {
+        "type": "error",
+        "error": {
+          "type": "api_error",
+          "message": "Service unavailable"
+        }
+      }
+    }
+  ]
+}

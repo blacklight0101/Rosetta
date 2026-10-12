@@ -172,7 +172,7 @@ describe('PUT /api/projects/:id/settings', () => {
   it('RF-002 valid settings are saved and shown on the next read', async () => {
     const { amy } = await setup();
     const id = await createdId(amy);
-    const settings = settingsWith({ 'budget.run.maxCostMicros': 100_000 });
+    const settings = settingsWith({ 'budget.run.maxCostMicros': 300_000 });
 
     const response = await amy.request({
       method: 'PUT',
@@ -281,14 +281,19 @@ describe('GET /api/admin/users/:id/projects', () => {
     expect(events).toEqual([]);
   });
 
-  it('RF-1105 an unknown user answers 404 to the administrator', async () => {
-    const { root } = await setup();
+  it('RF-1109 an unknown user answers 404 to the administrator and a refused row is written', async () => {
+    const { test, root } = await setup();
+    const unknown = '00000000-0000-4000-9000-00000000ffff';
 
     const response = await root.request({
       method: 'GET',
-      url: '/api/admin/users/00000000-0000-4000-9000-00000000ffff/projects',
+      url: `/api/admin/users/${unknown}/projects`,
+      remoteAddress: '203.0.113.5',
     });
 
     expect(response.statusCode).toBe(404);
+    const events = await test.audit.list({ since: 0, action: 'admin.workspace_opened' });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ targetId: unknown, ip: '203.0.113.5', outcome: 'refused' });
   });
 });

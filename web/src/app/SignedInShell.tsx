@@ -1,0 +1,50 @@
+import type { JSX } from 'preact';
+import { useCallback, useState } from 'preact/hooks';
+import type { AccountTotals } from '../api/cost-schemas.js';
+import { Shell, type ShellProps } from '../components/Shell.js';
+import { TotalsPill } from '../components/TotalsPill.js';
+import { CapBanner } from '../pages/CapBanner.js';
+import { serverMonthOf } from '../pages/admin-month.js';
+import { useAccountTotals } from './use-account-totals.js';
+import { UsageSignalContext } from './usage-signal.js';
+
+// RF-1010, RF-1106, design-system.md section 14: the shell of every signed-in page with the totals
+// pill in the header, read from the ledger and read again whenever a page announces a model call,
+// and for the administrator the cap banner from 80% of the server's monthly cap on every page but
+// the administration pages, which show their own.
+
+export interface SignedInShellProps extends Omit<ShellProps, 'totals' | 'banners'> {
+  /** The current location; the administration pages draw their own cap banner. */
+  readonly path: string;
+  /** The open project, whose cost page the pill links to. */
+  readonly projectId?: string | undefined;
+}
+
+function bannerOf(totals: AccountTotals | undefined, path: string): JSX.Element | undefined {
+  const server = totals?.server ?? null;
+  if (server === null || path.startsWith('/admin/')) return undefined;
+  const { serverMonthToDate, caps } = server;
+  if (!serverMonthOf(serverMonthToDate, BigInt(caps.serverMonthMicros)).warn) return undefined;
+  return <CapBanner spent={serverMonthToDate} caps={caps} />;
+}
+
+// RF-1010
+export function SignedInShell(props: SignedInShellProps): JSX.Element {
+  const { path, projectId, ...shell } = props;
+  const [version, setVersion] = useState(0);
+  const announce = useCallback(() => {
+    setVersion((current) => current + 1);
+  }, []);
+  const totals = useAccountTotals(version);
+  const href =
+    projectId === undefined ? undefined : `/projects/${encodeURIComponent(projectId)}/cost`;
+  return (
+    <UsageSignalContext.Provider value={announce}>
+      <Shell
+        {...shell}
+        totals={totals === undefined ? undefined : <TotalsPill totals={totals} href={href} />}
+        banners={bannerOf(totals, path)}
+      />
+    </UsageSignalContext.Provider>
+  );
+}

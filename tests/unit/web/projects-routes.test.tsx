@@ -41,6 +41,8 @@ it('RF-002 matches the settings page of a project and lists it in the project na
   });
   expect(groups.find((group) => group.id === 'project')?.items).toEqual([
     { path: '/projects/p-7/start', label: 'Start a run', current: false },
+    // RF-428, P1-36: the cost page of the project.
+    { path: '/projects/p-7/cost', label: 'Cost', current: false },
     { path: '/projects/p-7/settings', label: 'Project settings', current: true },
   ]);
 });

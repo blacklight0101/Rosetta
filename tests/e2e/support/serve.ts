@@ -14,6 +14,7 @@ import { createDisposableSchema } from './database.js';
 import { createE2eProvider } from './e2e-provider.js';
 import { e2eContactEmail, e2ePort } from './server-config.js';
 import { seededAdmin, seedUsers } from './seed.js';
+import { seedCost } from './seed-cost.js';
 import { seedReplayRuns } from './seed-replay.js';
 import { clearSessions } from './sign-in.js';
 
@@ -118,6 +119,8 @@ async function main(): Promise<void> {
   await preparation.start();
   await preparation.stop();
   await seedUsers(schema.url);
+  // P1-36: the accounts of the cost specs and the server's spend this month.
+  await seedCost(schema.url);
   await seedReplayRuns(schema.url, dataDir);
   const application = compose(port);
   const shutDown = (): void => {

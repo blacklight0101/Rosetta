@@ -12,6 +12,7 @@ import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-r
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
+import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
 import { EventStream, type StreamRegistry } from './event-stream.js';
 import { registerRunFileRoutes, type RunFileServices } from './run-file-routes.js';
 import { signedInOf } from './request-actor.js';
@@ -38,8 +39,9 @@ import { runView } from './run-view.js';
 //   running, 404 for another user's run id, an unknown id and a run without that folder.
 // - POST /api/runs/:runId/stop aborts a running run (202, it ends as Interrupted when its work
 //   stops) or cancels a queued one (200); a run that has ended answers 409.
+// - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 
-export interface RunServices extends RunFileServices {
+export interface RunServices extends RunFileServices, AnswerServices {
   readonly startRun: StartRun;
   readonly estimateRun: EstimateRun;
   readonly getRun: GetRun;
@@ -265,4 +267,5 @@ export function registerRunRoutes(server: FastifyInstance, services: RunServices
   registerStop(server, services);
   registerStart(server, services);
   registerEstimate(server, services);
+  registerAnswerRoutes(server, services);
 }
