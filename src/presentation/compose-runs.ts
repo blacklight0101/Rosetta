@@ -98,7 +98,10 @@ function composeScan(
     ...{ writer: stores.writer, masker, logger, packs: parts.packs },
   });
   const { manifests } = stores;
-  return { fetcher, executor: new RunScan({ fetcher, projects, pipeline, manifests, clock }) };
+  return {
+    fetcher,
+    executor: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
+  };
 }
 
 function keepAliveScheduler(logger: Logger): IntervalScheduler {

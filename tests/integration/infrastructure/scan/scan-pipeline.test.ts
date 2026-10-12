@@ -6,6 +6,7 @@ import type { ScanRequest } from '../../../../src/application/ports/scan-pipelin
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { err } from '../../../../src/domain/errors/result.js';
 import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
+import { runPath } from '../../../../src/infrastructure/files/workspace-paths.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { LanguagePackRegistry } from '../../../../src/infrastructure/scan/packs/pack-registry.js';
 import { SnapshotScanPipeline } from '../../../../src/infrastructure/scan/scan-pipeline.js';
@@ -15,8 +16,8 @@ import { templateSettings } from '../../../support/project-fixtures.js';
 import { fixtureRoot } from '../../../support/scan-harness.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
-// RF-124, RNF-002: the scan pipeline on the C# fixture: a missing subpath fails, and a scan that
-// stops or fails while writing leaves neither output file behind.
+// RF-124, RNF-002: the scan pipeline on the C# fixture: a missing subpath fails, a scan that stops or
+// fails while writing leaves neither output file behind, and a file discard cannot remove is logged.
 
 const temp = useTempRoot('rosetta-pipeline-');
 const userId = '0b7c3f8e-5d1a-4c2b-9e6f-1a2b3c4d5e6f';
@@ -35,15 +36,27 @@ function request(overrides: Partial<ScanRequest['source']>, signal: AbortSignal)
   };
 }
 
-function pipelineOver(wrap: (writer: NodeOutputWriter) => OutputWriter): SnapshotScanPipeline {
+function pipelineOver(
+  wrap: (writer: NodeOutputWriter) => OutputWriter,
+  logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker()),
+): SnapshotScanPipeline {
   const masker = new SecretMasker();
-  const logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), masker);
   return new SnapshotScanPipeline({
     writer: wrap(new NodeOutputWriter({ dataDir: temp.path, logger })),
     masker,
     logger,
     packs: new LanguagePackRegistry([]),
   });
+}
+
+/** A writer that behaves like the real one, with `remove` replaced. */
+function withRemove(writer: NodeOutputWriter, remove: OutputWriter['remove']): OutputWriter {
+  return {
+    writeText: (file, content) => writer.writeText(file, content),
+    appendLine: (file, line) => writer.appendLine(file, line),
+    readText: (file) => writer.readText(file),
+    remove,
+  };
 }
 
 /** A writer that behaves like the real one, with `writeText` replaced. */
@@ -127,5 +140,69 @@ describe('SnapshotScanPipeline stops and discard', () => {
     await pipeline.discard(scope);
 
     expect(await outputFiles()).toEqual([]);
+  });
+});
+
+const secret = 'sk-test-0000000000000000000000000000';
+const scope = request({}, new AbortController().signal).scope;
+const outputPath = (name: string): string => `${runPath(projectId, runKey)}/${name}`;
+
+/** A pipeline whose writer fails to remove `codemap.json` as `fail` says and records the rest. */
+function failingCodeMapRemoval(fail: () => ReturnType<OutputWriter['remove']>): {
+  readonly pipeline: SnapshotScanPipeline;
+  readonly logger: MemoryLogger;
+  readonly removed: string[];
+} {
+  const logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker());
+  const removed: string[] = [];
+  const pipeline = pipelineOver(
+    (writer) =>
+      withRemove(writer, (file) => {
+        if (file.path.endsWith('codemap.json')) return fail();
+        removed.push(file.path);
+        return writer.remove(file);
+      }),
+    logger,
+  );
+  return { pipeline, logger, removed };
+}
+
+describe('SnapshotScanPipeline discard failures', () => {
+  it('RNF-002 logs one warning with the path and code when an output file removal is refused', async () => {
+    const refused = err({
+      code: ERROR_CODES.writeOutsideWorkspace,
+      reason: 'outside-workspace' as const,
+      message: `refused ${secret}`,
+    });
+    const { pipeline, logger } = failingCodeMapRemoval(() => Promise.resolve(refused));
+
+    await pipeline.discard(scope);
+
+    const warnings = logger.entries.filter((entry) => entry.level === 'warn');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({
+      logger: 'scan',
+      code: ERROR_CODES.writeOutsideWorkspace,
+      data: { path: outputPath('codemap.json') },
+    });
+    expect(logger.text()).not.toContain(secret);
+  });
+
+  it('RNF-002 logs one warning with the path when removing an output file throws, and goes on', async () => {
+    const { pipeline, logger, removed } = failingCodeMapRemoval(() =>
+      Promise.reject(new Error(`EACCES ${secret}`)),
+    );
+
+    await expect(pipeline.discard(scope)).resolves.toBeUndefined();
+
+    const warnings = logger.entries.filter((entry) => entry.level === 'warn');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({
+      logger: 'scan',
+      data: { path: outputPath('codemap.json') },
+    });
+    expect(warnings[0]?.code).toBeUndefined();
+    expect(removed).toEqual([outputPath('scan-summary.md')]);
+    expect(logger.text()).not.toContain(secret);
   });
 });
