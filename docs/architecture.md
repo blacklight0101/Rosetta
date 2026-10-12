@@ -166,9 +166,10 @@ web/                    front-end source of the landing page, web UI and report 
 db/migrations/          numbered SQL migrations (ADR-016, data-model.md section 7)
 Dockerfile              multi-stage image (RF-1300): stages `build`, `deps`, `test` (fakes, compose.ci.yaml only) and `runtime` (the default target; production dependencies, `dist/`, migrations, prompts, prices, templates, the password list; user `node`, port 8080, `HEALTHCHECK` on /healthz)
 .dockerignore           keeps .env files, history, maps, docs and tool configuration out of the build context (RNF-003)
-compose.yaml            local deployment: app + PostgreSQL (RF-1301)
-compose.ci.yaml         CI overlay: the image's test stage, fake provider and fake GitHub (RF-1301)
-db/init/                Compose init script that creates the database roles (data-model.md section 6)
+compose.yaml            local deployment: app (runtime stage, 127.0.0.1:8080) + PostgreSQL, volumes pgdata and rosetta-data (RF-1301)
+compose.ci.yaml         CI overlay: the image's test stage started through tests/compose/serve.ts, with the fake provider and an in-process fake GitHub (RF-1301)
+playwright.compose.config.ts  Playwright against the running Compose stack (tests/compose/: smoke and persistence specs) for the compose-smoke job
+db/init/roles.sh        Compose init script that creates rosetta_migrator and rosetta_app from the .env passwords (data-model.md section 6)
 prices/                 the shipped price table (data-model.md section 3.18)
 templates/              default project settings and ignore rules (data-model.md section 10)
 scripts/                build and test helper scripts (test levels, page screenshots)
@@ -571,7 +572,7 @@ One image, two places (ADR-014): locally `compose.yaml` runs the app and Postgre
 the app on `127.0.0.1:8080`; hosted, the same image runs behind the host's HTTPS with managed PostgreSQL and a
 persistent disk. Migrations run at start-up before the server listens (RF-1302). GitHub and cloud providers are
 reached over HTTPS. The `image` job of CI builds the image, starts it against a disposable PostgreSQL
-(`tests/integration/image/`) and scans it with Trivy (high and critical findings with a fix fail). The sample report is static files on GitHub Pages. Details:
+(`tests/integration/image/`) and scans it with Trivy (high and critical findings with a fix fail). The `compose-smoke` job brings the stack up with `compose.yaml` plus `compose.ci.yaml` and a throwaway `.env`, runs the Playwright smoke of `tests/compose/` (landing page, first sign-in, a project, a scan), restarts the stack with `down` and `up`, checks that the account, the project and the run survived, and runs `down -v`; the runbook is [runbooks/local.md](runbooks/local.md). The sample report is static files on GitHub Pages. Details:
 [environments-and-delivery.md](environments-and-delivery.md).
 
 ## 16. Quality attributes
