@@ -3,6 +3,8 @@
 // Shared by the masker tests (RF-141), the logger tests (RF-009) and the egress guard (P1-28).
 
 import type { SecretKind } from '../../src/infrastructure/guards/secret-masker.js';
+import { fakeValue } from './fake-value.js';
+import { moreAdversarialPieces, moreInnocentTexts, moreSecretCases } from './secret-shapes.js';
 
 export interface SecretCase {
   readonly name: string;
@@ -15,15 +17,11 @@ export interface SecretCase {
   readonly secrets: readonly string[];
 }
 
-/** A fake value of the given length made of "FAKE0" repeated. */
-function fakeValue(length: number): string {
-  return 'FAKE0'.repeat(Math.ceil(length / 5)).slice(0, length);
-}
-
 const dash = '-';
 /** A FAKE OpenAI project key, for the OpenAI adapter tests (RF-402). */
 export const fakeOpenAiKey = ['sk', 'proj', fakeValue(40)].join(dash);
-const anthropicKey = ['sk', 'ant', 'api03', fakeValue(48)].join(dash);
+/** A FAKE Anthropic key, for the Anthropic adapter tests (RF-404). */
+export const fakeAnthropicKey = ['sk', 'ant', 'api03', fakeValue(48)].join(dash);
 const githubToken = ['ghp', fakeValue(36)].join('_');
 const githubPat = ['github', 'pat', fakeValue(30)].join('_');
 const awsKeyId = ['AK', 'IA', fakeValue(16)].join('');
@@ -49,9 +47,9 @@ export const secretCases: readonly SecretCase[] = [
   {
     name: 'an Anthropic key (sk-ant-) in source code',
     kind: 'api-key',
-    text: `const client = new Client({ apiKey: "${anthropicKey}" });`,
+    text: `const client = new Client({ apiKey: "${fakeAnthropicKey}" });`,
     masked: 'const client = new Client({ apiKey: "[MASKED:api-key]" });',
-    secrets: [anthropicKey],
+    secrets: [fakeAnthropicKey],
   },
   {
     name: 'a GitHub token (ghp_)',
@@ -159,6 +157,8 @@ export const secretCases: readonly SecretCase[] = [
     masked: 'database:\n  password: [MASKED:password]\n  user: app',
     secrets: [fakePassword],
   },
+  // Before the key blocks: the unterminated one masks everything after it in the whole fixture.
+  ...moreSecretCases,
   {
     name: 'a multi-line private key block',
     kind: 'private-key',
@@ -191,6 +191,7 @@ export const innocentTexts: readonly string[] = [
   'The bearer of this note may pass.',
   'See https://example.com/docs:8080/path for details.',
   'AKIA is not a key on its own',
+  ...moreInnocentTexts,
 ];
 
 /**
@@ -223,6 +224,7 @@ export const adversarialPieces: readonly string[] = [
   ['"password"', '"'].join(':'),
   ['pwd', "'a\\'"].join('='),
   ['pwd', '"\\"'].join('='),
+  ...moreAdversarialPieces,
 ];
 
 export interface KeyedSecretCase {

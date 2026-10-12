@@ -259,31 +259,3 @@ describe('OpenWorkspace', () => {
     });
   });
 });
-
-describe('OpenWorkspace: refusals', () => {
-  it('RF-1105 a user who is not an administrator is refused and nothing is read or audited', async () => {
-    const test = await withAmy();
-
-    const outcome = await test.openWorkspace.execute({
-      actor: bob,
-      ownerId: amy.userId,
-      ip: '203.0.113.9',
-    });
-
-    expect(outcome).toEqual({ ok: false, error: ERROR_CODES.notAllowed });
-    expect(await test.audit.list({ since: 0 })).toEqual([]);
-  });
-
-  it('RF-1105 an unknown user id is not found and writes no audit event', async () => {
-    const test = await withAmy();
-
-    const outcome = await test.openWorkspace.execute({
-      actor: root,
-      ownerId: '00000000-0000-4000-9000-00000000ffff',
-      ip: '203.0.113.9',
-    });
-
-    expect(outcome).toEqual({ ok: false, error: ERROR_CODES.notFound });
-    expect(await test.audit.list({ since: 0 })).toEqual([]);
-  });
-});

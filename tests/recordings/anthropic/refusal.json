@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A refusal: stop_reason refusal with its text. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 200,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000001"
+      },
+      "body": {
+        "id": "msg_FAKE00000000000000000001",
+        "type": "message",
+        "role": "assistant",
+        "model": "contract-model-20260807",
+        "content": [
+          {
+            "type": "text",
+            "text": "I cannot help with that."
+          }
+        ],
+        "stop_reason": "refusal",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 176,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 7,
+          "service_tier": "standard"
+        }
+      }
+    }
+  ]
+}

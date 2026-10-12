@@ -21,14 +21,26 @@ export interface JsonlProviderCallLogOptions {
   readonly masker: TextMasker;
 }
 
-/** RF-006: the complete lines a file already holds, so a resumed run continues its `seq`. */
-async function existingLines(file: string): Promise<number> {
+interface FileTail {
+  /** The lines the file holds, a partial last line included. */
+  readonly lines: number;
+  /** True when the file ends without a newline (a crash mid-append). */
+  readonly torn: boolean;
+}
+
+/** RF-006: the lines a file already holds, so a resumed run continues its `seq` without a repeat. */
+async function existingTail(file: string): Promise<FileTail> {
+  let text: string;
   try {
-    return (await readFile(file, 'utf8')).split('\n').length - 1;
+    text = await readFile(file, 'utf8');
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return 0;
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return { lines: 0, torn: false };
+    }
     throw new RosettaError(ERROR_CODES.providerCallLogFailed, undefined, { cause: error });
   }
+  const torn = text !== '' && !text.endsWith('\n');
+  return { lines: text.split('\n').length - (torn ? 0 : 1), torn };
 }
 
 async function appendTo(file: string, text: string): Promise<void> {
@@ -72,9 +84,12 @@ export class JsonlProviderCallLog implements ProviderCallRecorder {
 
   /** Masks the lines numbered from the next free `seq`, appends them and returns that `seq`. */
   private async append(file: string, lines: (first: number) => string[]): Promise<number> {
-    const first = (this.lineCounts.get(file) ?? (await existingLines(file))) + 1;
+    const known = this.lineCounts.get(file);
+    const tail = known === undefined ? await existingTail(file) : { lines: known, torn: false };
+    const first = tail.lines + 1;
     const text = lines(first);
-    await appendTo(file, text.join(''));
+    // A torn last line stays as it was; the next record starts on a line of its own.
+    await appendTo(file, (tail.torn ? '\n' : '') + text.join(''));
     this.lineCounts.set(file, first - 1 + text.length);
     return first;
   }

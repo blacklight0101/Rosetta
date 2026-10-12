@@ -1,11 +1,16 @@
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import { CreateProject } from '../application/use-cases/create-project.js';
+import { GetAccountTotals } from '../application/use-cases/get-account-totals.js';
+import { GetCaps } from '../application/use-cases/get-caps.js';
 import { GetProject } from '../application/use-cases/get-project.js';
+import { GetProjectCost } from '../application/use-cases/get-project-cost.js';
 import { ListProjects } from '../application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../application/use-cases/open-workspace.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
+import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
 import { PgAuditLog } from '../infrastructure/db/pg-audit-log.js';
+import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
@@ -32,10 +37,13 @@ export interface ProjectParts {
 export async function composeProjects(parts: ProjectParts): Promise<ProjectServices> {
   const { pool, logger, clock, masker } = parts;
   const projects = new PgProjectRepository(pool);
+  const costs = new PgCostTotals(pool);
+  const settings = new PgServerSettings(pool);
+  const caps = new GetCaps({ settings, usage: new PgAccountUsage(pool), clock });
   return {
     createProject: new CreateProject({
       projects,
-      serverSettings: new PgServerSettings(pool),
+      serverSettings: settings,
       template: await loadProjectTemplate(parts.templatesFolder),
       ids: new TimestampIdGenerator(clock),
       clock,
@@ -50,5 +58,8 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       logger,
       clock,
     }),
+    // RF-428, RF-1010: the cost page and the totals pill.
+    getProjectCost: new GetProjectCost({ projects, costs }),
+    getAccountTotals: new GetAccountTotals({ costs, caps }),
   };
 }

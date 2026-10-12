@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { realAdapters } from '../../../../src/infrastructure/providers/adapter-builder.js';
 import type { AdapterSpec } from '../../../../src/infrastructure/providers/adapter-spec.js';
+import { AnthropicProvider } from '../../../../src/infrastructure/providers/anthropic/anthropic-provider.js';
 import { OllamaProvider } from '../../../../src/infrastructure/providers/ollama/ollama-provider.js';
 import { OpenAiProvider } from '../../../../src/infrastructure/providers/openai/openai-provider.js';
 import { contractRequest } from '../../../contracts/llm-provider.contract.js';
@@ -10,7 +11,7 @@ import { MemoryLogger } from '../../../support/memory-logger.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 
-// RF-401, RF-402, ADR-003, RNF-005: the one place that constructs the adapters of this release.
+// RF-401, RF-402, RF-404, ADR-003, RNF-005: the one place that constructs the adapters of this release.
 
 const logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker());
 const build = realAdapters({ testMode: true, textProtocolPrompt: 'protocol {{tools}}', logger });
@@ -40,7 +41,7 @@ describe('realAdapters', () => {
     expect(adapter).toBeInstanceOf(OpenAiProvider);
   });
 
-  it.each(['anthropic', 'openai-compatible', 'fake'] as const)(
+  it.each(['openai-compatible', 'fake'] as const)(
     'RF-400 builds no adapter for kind %s in this release',
     (kind) => {
       expect(build(spec({ kind, apiKey: 'k'.repeat(20) }))).toBeUndefined();
@@ -54,6 +55,30 @@ describe('realAdapters', () => {
   it('RNF-005 an adapter built in test mode refuses a real host before it leaves the process', async () => {
     const adapter = build(
       spec({ kind: 'openai', baseUrl: 'https://api.openai.com/v1', apiKey: 'k'.repeat(20) }),
+    );
+
+    const failure = await failureOf(adapter?.complete(contractRequest()) ?? Promise.resolve());
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.realProviderRefusedInTests });
+  });
+});
+
+describe('realAdapters: Anthropic', () => {
+  it('RF-404 builds the Anthropic adapter for kind anthropic with its key', () => {
+    const adapter = build(
+      spec({ kind: 'anthropic', baseUrl: 'https://api.anthropic.com', apiKey: 'k'.repeat(20) }),
+    );
+
+    expect(adapter).toBeInstanceOf(AnthropicProvider);
+  });
+
+  it('RF-404 builds no Anthropic adapter without a key', () => {
+    expect(build(spec({ kind: 'anthropic', apiKey: undefined }))).toBeUndefined();
+  });
+
+  it('RNF-005 an Anthropic adapter built in test mode refuses the real API', async () => {
+    const adapter = build(
+      spec({ kind: 'anthropic', baseUrl: 'https://api.anthropic.com', apiKey: 'k'.repeat(20) }),
     );
 
     const failure = await failureOf(adapter?.complete(contractRequest()) ?? Promise.resolve());

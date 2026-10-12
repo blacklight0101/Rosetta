@@ -1,10 +1,12 @@
 import type { Logger } from '../../application/ports/logger.js';
 import type { OutputWriter, WriteRefusal } from '../../application/ports/output-writer.js';
+import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
 import { err, type Result } from '../../domain/errors/result.js';
 import { writeRefusal } from '../files/workspace-guard.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { serialiseCardIndex } from './card-index.js';
+import { renderCoverage, serialiseCoverage } from './coverage-files.js';
 import { cardPath, renderCardFile } from './card-markdown.js';
 import type { PermalinkSource } from './citation-link.js';
 import { renderSpec } from './spec-markdown.js';
@@ -65,6 +67,27 @@ export async function writeCardOutputs(
     })),
     { path: 'cards/index.json', text: serialiseCardIndex(cards, masker) },
     { path: 'spec.md', text: renderSpec(cards, source, masker, areasWithoutCards) },
+  ];
+  return writeAll(writer, target, files, logger);
+}
+
+export interface CoverageOutputInput {
+  /** The coverage of every ended task, in area order. */
+  readonly coverage: readonly AreaCoverage[];
+  readonly masker: TextMasker;
+  readonly logger: Logger;
+}
+
+// RF-230: `coverage.json` and `coverage.md`, both made and masked before the first write.
+export async function writeCoverageOutputs(
+  writer: OutputWriter,
+  target: CardOutputTarget,
+  input: CoverageOutputInput,
+): Promise<Result<void, WriteRefusal>> {
+  const { coverage, masker, logger } = input;
+  const files: PlannedFile[] = [
+    { path: 'coverage.json', text: serialiseCoverage(coverage, masker) },
+    { path: 'coverage.md', text: renderCoverage(coverage, masker) },
   ];
   return writeAll(writer, target, files, logger);
 }

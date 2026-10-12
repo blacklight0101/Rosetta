@@ -10,6 +10,7 @@ import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { AgentPanel } from './AgentPanel.js';
 import { ClaimsList } from './ClaimsList.js';
 import { EventLog } from './EventLog.js';
+import { RunAnswers } from './RunAnswers.js';
 import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
 import { RunMeter } from './RunMeter.js';
@@ -118,6 +119,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
       <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
       <Agents state={state} />
       <ClaimsList claims={state.claims} source={sourceOf(state, run)} />
+      {stage === 'understand' ? <RunAnswers runId={run.id} ended={phase.kind === 'ended'} /> : null}
       <EventLog lines={state.log} startedAt={state.startedAt} />
     </div>
   );

@@ -79,7 +79,13 @@ it('RF-1100 shows the shell with the signed-in user once the session answers', a
   expect(await screen.findByRole('heading', { name: 'Your projects' })).not.toBeNull();
   expect(screen.getByText('Ana Ruiz')).not.toBeNull();
   expect(screen.getByRole('link', { name: 'Projects' }).getAttribute('aria-current')).toBe('page');
-  expect(calls).toEqual([{ url: '/api/session', method: 'GET', csrf: null }]);
+  // RF-1010: the shell then reads the totals pill.
+  await waitFor(() => {
+    expect(calls).toEqual([
+      { url: '/api/session', method: 'GET', csrf: null },
+      { url: '/api/account/totals', method: 'GET', csrf: null },
+    ]);
+  });
   expect(document.title).toBe('Projects - Rosetta');
 });
 

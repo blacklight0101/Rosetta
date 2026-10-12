@@ -2,7 +2,6 @@ import type { JSX } from 'preact';
 import { useCallback, useEffect, useMemo } from 'preact/hooks';
 import type { ApiClient } from '../api/client.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Shell } from '../components/Shell.js';
 import { SignOutButton } from '../components/SignOutButton.js';
 import type { ThemePreference } from '../lib/theme.js';
 import { AppContext } from './app-context.js';
@@ -10,6 +9,7 @@ import { NotFoundPage } from './NotFoundPage.js';
 import { buildNavigation } from './navigation.js';
 import { matchRoute, type RouteMatch } from './route-match.js';
 import { RouteParamsContext } from './route-params.js';
+import { SignedInShell } from './SignedInShell.js';
 import type { RouteDefinition } from './route-types.js';
 import { useLocation } from './router.js';
 import { SessionContext } from './session-context.js';
@@ -82,15 +82,17 @@ function SignedInPage(props: SignedInProps): JSX.Element {
   });
   return (
     <SessionContext.Provider value={user}>
-      <Shell
+      <SignedInShell
         user={user}
+        path={location}
+        projectId={match.params['projectId']}
         navigation={navigation}
         theme={theme}
         onTheme={onTheme}
         actions={<SignOutButton />}
       >
         {page}
-      </Shell>
+      </SignedInShell>
     </SessionContext.Provider>
   );
 }

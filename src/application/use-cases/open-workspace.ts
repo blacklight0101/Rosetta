@@ -12,7 +12,8 @@ import type { Project } from '../projects/project.js';
 // RF-1105, RF-1109: Open workspace lets an administrator read another user's projects. It is the
 // only use case that takes another user's id; it writes an `admin.workspace_opened` audit row and
 // an `info` entry. A user who is not an administrator is refused before anything is read, and an
-// unknown user id is "not found" and writes nothing.
+// unknown user id is "not found"; both refusals write the same audit row with the outcome
+// `refused` and the refusal's code, and a `warn` entry (P1-80).
 
 export interface OpenWorkspaceRequest {
   readonly actor: Actor;
@@ -48,9 +49,9 @@ export class OpenWorkspace {
     request: OpenWorkspaceRequest,
   ): Promise<Result<OpenedWorkspace, OpenWorkspaceRefusal>> {
     const { projects, users, auditLog, logger, clock } = this.deps;
-    if (request.actor.role !== 'admin') return err(ERROR_CODES.notAllowed);
+    if (request.actor.role !== 'admin') return this.refuse(request, ERROR_CODES.notAllowed);
     const account = await users.findById(request.ownerId);
-    if (account === undefined) return err(ERROR_CODES.notFound);
+    if (account === undefined) return this.refuse(request, ERROR_CODES.notFound);
     const owner = { id: account.id, userName: account.userName, displayName: account.displayName };
     const opened = await projects.list(owner.id);
     await auditLog.record({
@@ -71,5 +72,32 @@ export class OpenWorkspace {
       data: { ownerId: owner.id },
     });
     return ok({ owner, projects: opened });
+  }
+
+  // RF-1109
+  private async refuse(
+    request: OpenWorkspaceRequest,
+    code: OpenWorkspaceRefusal,
+  ): Promise<Result<never, OpenWorkspaceRefusal>> {
+    const { auditLog, logger, clock } = this.deps;
+    await auditLog.record({
+      at: clock.now(),
+      actorUserId: request.actor.userId,
+      action: 'admin.workspace_opened',
+      targetType: 'user',
+      targetId: request.ownerId,
+      ip: request.ip,
+      outcome: 'refused',
+      detail: { code },
+    });
+    await logger.log({
+      level: 'warn',
+      logger: 'accounts',
+      message: 'A workspace open was refused.',
+      code,
+      userId: request.actor.userId,
+      data: { ownerId: request.ownerId },
+    });
+    return err(code);
   }
 }

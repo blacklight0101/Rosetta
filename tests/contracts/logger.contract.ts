@@ -144,6 +144,29 @@ function maskingTests(newHarness: NewHarness): void {
   });
 }
 
+function keyNameTests(newHarness: NewHarness): void {
+  it('RF-009 never writes a value held under a password-like data key, at any depth', async () => {
+    const harness = await newHarness();
+    // FAKE SECRET ONLY (RNF-003): a plain value the text masker alone would not recognise.
+    const fakeKey = ['Pw', 'FAKE0'.repeat(4), 'plain'].join(' ');
+    await harness.logger.log({
+      level: 'warn',
+      logger: 'fixture',
+      message: 'm',
+      data: { password: fakeKey, nested: { apiKey: fakeKey, list: [{ token: fakeKey }] } },
+    });
+    await harness.logger.securityEvent(ERROR_CODES.baseUrlRejected, {
+      message: 'm',
+      data: { clientSecret: fakeKey },
+    });
+
+    const written = await harness.written();
+    expect(written).toContain('[MASKED:password]');
+    expect(written).not.toContain(fakeKey);
+    expect(written).not.toContain('FAKE0'.repeat(4));
+  });
+}
+
 /** Contract of the Logger port (RF-009): every logger and the test fake must pass it. */
 export function loggerContract(name: string, create: LoggerFactory): void {
   describe(`Logger contract: ${name}`, () => {
@@ -153,5 +176,6 @@ export function loggerContract(name: string, create: LoggerFactory): void {
     entryTests(newHarness);
     securityTests(newHarness);
     maskingTests(newHarness);
+    keyNameTests(newHarness);
   });
 }

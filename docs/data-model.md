@@ -327,8 +327,18 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
   cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
   is listed with its status, rejected ones included. A last section, `## Areas without cards`, names every area whose
   reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
-- `coverage.json`: per area `{ area, files: [{ path, read: [{ startLine, endLine }] }], readTokenShare }`; feeds the
-  web UI coverage map (RF-1005) and the report. `coverage.md` is its readable form (RF-230).
+- `coverage.json`: `{ schemaVersion: 1, areas }` where each area is
+  `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare }`; feeds the web UI
+  coverage map (RF-1005) and the report. Areas keep the order of the run and list only tasks that ended; `files` is
+  every file of the area in the area's order, `read` the line ranges the task's tools returned (a read, the lines of
+  grep matches, the statements of a code map entry), cut to the file, sorted and merged, empty for a file not read;
+  lines of files outside the area are not counted. `tokens` is the area's estimated tokens, `readTokens` each file's
+  estimated tokens in proportion to its lines read (rounded per file, then summed), `readTokenShare` their ratio from 0
+  to 1 with four decimals (0 for an area without tokens). It holds no times, so the same coverage gives the same bytes. Rewritten with
+  the cards after every task that ends (P2-04).
+- `coverage.md` is its readable form (RF-230): a `## Run summary` table with, per area and for all areas, the files
+  read of the files listed and the percentage of area tokens read, then one `## Area: <name>` table per area with each
+  file and its read lines or `not read`.
 
 ### 3.9 `events.jsonl` (run events)
 
@@ -476,6 +486,10 @@ output as JSON lines at `ROSETTA_LOG_LEVEL` and above. One file per UTC day; fil
 start-up and daily (RF-009): a file is deleted when its UTC day is more than that many days before today, and
 only files named `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the secret masking: `logger`,
 `message`, the ids and every key and string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept.
+A `data` key at any depth whose name contains `password`, `passwd`, `pwd`, `secret`, `token` or `api key`
+(`api[_-]?key`), in any case, has its whole value replaced, whatever its type: `[MASKED:api-key]` for an API key
+name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count such as
+`inputTokens` is therefore never written under such a name.
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
@@ -488,10 +502,11 @@ Content is exactly what was sent after masking, so it may contain excerpts of th
 `ObservedProvider` through `ProviderCallRecorder` (RF-408): the system prompt on the task's first call, then each
 call's new messages before it is sent and its answer after. The messages of a task are append-only (each call repeats
 the earlier ones unchanged), so only the new ones are written. Every key and string is masked, and every value is
-masked again together with its property name, so a secret held under a key such as `password` is masked too;
-when masking fails nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file
-name. `seq` continues after the lines a file already holds, so a resumed run (RF-006) never repeats a number; the
-same holds for `provider-calls.jsonl`.
+masked again together with its property name, so a secret held under a key such as `password` is masked too, and so
+is each item of an array held under such a key; when masking fails nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file
+name. `seq` continues after the lines a file already holds, so a resumed run (RF-006) never repeats a number; a
+partial last line left by a crash mid-append is counted and kept as it is, and the next record starts on a new line.
+The same holds for `provider-calls.jsonl`.
 
 ### 3.16 `answers.md`
 
@@ -510,6 +525,12 @@ existing answer is never overwritten. `RunUnderstand` adds the `OQ` cards of the
 included): a question whose heading text is already in the file is skipped, new sections are appended after the
 existing ones, the question and context are one line each and masked, and the context is the card's first citation
 followed by its first claim (P1-33, DEC-98).
+
+The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question belongs to the run its `- Card:` line
+names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
+line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
+never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
+and writes to one project's file run one after another.
 
 ### 3.17 Report and hand-off folders
 

@@ -14,6 +14,7 @@ import { createDisposableSchema } from './database.js';
 import { createE2eProvider } from './e2e-provider.js';
 import { e2eContactEmail, e2ePort } from './server-config.js';
 import { seededAdmin, seedUsers } from './seed.js';
+import { seedCost } from './seed-cost.js';
 import { clearSessions } from './sign-in.js';
 
 // RNF-005, ADR-008, P1-13: the end-to-end test server. Usage (from the repository root):
@@ -117,6 +118,8 @@ async function main(): Promise<void> {
   await preparation.start();
   await preparation.stop();
   await seedUsers(schema.url);
+  // P1-36: the accounts of the cost specs and the server's spend this month.
+  await seedCost(schema.url);
   const application = compose(port);
   const shutDown = (): void => {
     void (async () => {

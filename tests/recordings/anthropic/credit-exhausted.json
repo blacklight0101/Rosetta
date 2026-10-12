@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A 402 billing error: the account has no credit. Hand-written in the documented shape of Anthropic's Messages API answer (POST /v1/messages, stream false); no real model was called and no key is held (ADR-008).",
+  "messages": [
+    {
+      "status": 402,
+      "headers": {
+        "request-id": "req_FAKE00000000000000000402"
+      },
+      "body": {
+        "type": "error",
+        "error": {
+          "type": "billing_error",
+          "message": "Your credit balance is too low to access the Anthropic API."
+        }
+      }
+    }
+  ]
+}

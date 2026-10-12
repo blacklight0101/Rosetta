@@ -23,11 +23,12 @@ import { recordCsrfRefusal, registerAccessHooks } from './access-hooks.js';
 import { registerAccountRoutes } from './account-routes.js';
 import { registerAdminRoutes, type AdminServices } from './admin-routes.js';
 import { registerCapRoutes, type CapServices } from './cap-routes.js';
+import { registerCostRoutes } from './cost-routes.js';
 import { registerDefaultRoleRoutes, type DefaultRoleServices } from './default-role-routes.js';
 import { registerKeyRoutes, type KeyServices } from './key-routes.js';
 import { registerProviderTestRoutes, type ProviderTestServices } from './provider-test-routes.js';
 import { toErrorReply } from './error-mapper.js';
-import { logRateLimited } from './rate-limit-log.js';
+import { recordRateLimited } from './rate-limit-log.js';
 import { registerProjectRoutes, type ProjectServices } from './project-routes.js';
 import { registerRunRoutes, type RunServices } from './run-routes.js';
 import { registerLandingRoute } from './landing-routes.js';
@@ -137,8 +138,8 @@ function registerHooks(server: FastifyInstance, logger: Logger): void {
 
 // RF-1009, RF-1100: cookies, the CSRF token in its cookie mode (the secret lives only in the
 // `__Host-rosetta_csrf` cookie, never in the database) and the per-route rate limit; reaching the
-// limit is a security event (RF-009).
-function registerSessionPlugins(server: FastifyInstance, logger: Logger): void {
+// limit is a refused request: an audit row and a security event (RF-009, RF-1109).
+function registerSessionPlugins(server: FastifyInstance, refusals: RecordRefusedRequest): void {
   void server.register(fastifyCookie);
   void server.register(fastifyCsrfProtection, {
     sessionPlugin: '@fastify/cookie',
@@ -152,7 +153,7 @@ function registerSessionPlugins(server: FastifyInstance, logger: Logger): void {
   void server.register(fastifyRateLimit, {
     global: false,
     onExceeded: (request) => {
-      logRateLimited(logger, request);
+      void recordRateLimited(refusals, request);
     },
   });
 }
@@ -204,7 +205,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   server.server.on('connect', connectHandler(options.logger, options.publicUrl));
   void server.register(fastifyHelmet, securityHeaderOptions(options.publicUrl));
   registerHooks(server, options.logger);
-  registerSessionPlugins(server, options.logger);
+  registerSessionPlugins(server, options.auth.refusals);
   registerAccessHooks(server, { publicUrl: options.publicUrl, ...options.auth });
   registerErrorHandlers(server, options);
   registerPublicRoutes(server, options);
@@ -214,12 +215,13 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     registerSessionRoutes(instance, options.auth);
     registerAccountRoutes(instance, options.auth.accounts);
     registerKeyRoutes(instance, options.auth.accounts);
-    registerProviderTestRoutes(instance, options.auth.accounts, options.logger);
+    registerProviderTestRoutes(instance, options.auth.accounts, options.auth.refusals);
     registerAdminRoutes(instance, options.auth.accounts);
     registerCapRoutes(instance, options.auth.accounts);
     registerDefaultRoleRoutes(instance, options.auth.accounts);
     registerProjectRoutes(instance, options.projects);
     registerRunRoutes(instance, options.runs);
+    registerCostRoutes(instance, options.projects);
     done();
   });
   if (options.staticRoot !== undefined) {
