@@ -176,6 +176,7 @@ Verification: integration tests with a fake GitHub client; end-to-end test of th
 As a developer I want the configuration (providers, models per role, caps, price table, paths) validated before any
 work starts so that a typo never costs money.
 - Given valid project settings, when a run starts, then they load and the run continues.
+- Given a numeric setting outside its allowed range (data-model.md section 3.1, DEC-117), when settings are saved, then nothing is saved and the problem is shown next to the field with an error code.
 - Given an unknown provider, a missing model for a role or a negative cap, when settings are saved or a run starts, then nothing runs and each problem is shown next to its field with an error code.
 - Given a role whose provider has no key for this user and no server key allowed for them (RF-1104), when a run starts, then it stops before any model call and names the provider, never a value.
 Verification: unit tests on the schema; integration test per failure.
@@ -184,8 +185,9 @@ Verification: unit tests on the schema; integration test per failure.
 As a developer I want every run stored in its own folder with a manifest so that I can explain and repeat any
 result.
 - Given any stage runs, when it starts, then a run folder `runs/<yyyyMMdd-HHmmss>-<stage>/` is created with `manifest.json` holding the Rosetta version, stage, options, code map hash, prompt versions, provider, model and settings per role, and caps.
+- Given a run is accepted, when it is queued or started, then the manifest is written at acceptance with `startedAt` null until the run starts, so the options survive a restart while the run waits (DEC-120); the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`) are kept in the manifest `options` (DEC-121).
 - Given the run ends for any reason (done, cap reached, error, interrupted), when it ends, then the manifest records the end state and time.
-Verification: integration tests with the fake provider, including an interrupted run.
+Verification: integration tests with the fake provider, including an interrupted run and a queued run.
 
 **RF-004 Show progress** - Withdrawn 2026-10-11 - see RF-1002 and RF-1003 (DEC-59: progress is shown in the web UI only)
 
@@ -349,6 +351,7 @@ Verification: integration test with the fake provider.
 **RF-143 Warn before using a cloud provider** - R1 (M1) - Must - Source DEC-16 - ADR-006
 As a developer I want to confirm before code leaves my machine so that I never send it by accident.
 - Given a run whose roles use a non-local provider, when the user starts it, then the start page names the providers and requires the consent checkbox (RF-1001); without it nothing is sent.
+- Given a role whose provider is Ollama, when its server host is loopback or `host.docker.internal`, then it counts as local; on any other host it counts as non-local and needs the consent like every cloud provider (DEC-118).
 - Given an API request that starts such a run without the consent field, when it arrives, then it is refused with an error code before any call.
 Verification: integration tests for both cases.
 
@@ -773,8 +776,9 @@ As a user I want every page and API call to require my session so that no one el
 - Given any route other than the landing page, sign-in, `/healthz`, static assets and `robots.txt`, when it is requested without a valid session, then pages redirect to sign-in and the API answers 401.
 - Given a state-changing request (POST, PUT, PATCH, DELETE), when its `Origin` differs from the configured public URL or its CSRF token is missing or wrong, then it is refused with 403 and a security event is logged. The sign-in request, which has no session yet, is protected by the `Origin` check and the `SameSite=Strict` cookie (DEC-112).
 - Given any response, when it is sent, then it never contains a password hash, a session id other than in the cookie, a provider key or another secret.
+- Given a GET or HEAD request for a page path outside `/api/` and `/assets/`, when no route matches, then the server answers `index.html` (the app shell) so that the client router can show the page; `/sign-in` is public, and every other page follows the session rules above (DEC-120).
 - Given the local Compose deployment, when it starts, then the app port is published on `127.0.0.1` only (RF-1301).
-Verification: integration tests for each refused request; output scan test.
+Verification: integration tests for each refused request and for the app shell fallback; output scan test.
 
 **RF-1010 Project tokens and cost always visible** - R1 (M1) - Must - Source DEC-49 - ADR-007, ADR-012
 As a developer I want the tokens and price spent on the whole project in view at all times so that I never lose track of what the analysis costs.
@@ -813,6 +817,7 @@ As a user I want to sign in with my user name and password so that only invited 
 - Given the sign-in page, when I enter a correct user name and password for an enabled account, then a session starts (RF-1101) and I land on my projects.
 - Given a wrong user name or password, when I submit, then the page says only "User name or password is incorrect", with the same response time whether or not the user exists.
 - Given five failed attempts for one user name within 15 minutes, when another attempt arrives, then the account is locked for 15 minutes, the attempt is refused with the same message, and a security event is logged; sign-in is also rate limited to 10 attempts per minute per IP address.
+- Given I submit a wrong current password on the change-password form (RF-1103), when it is refused, then the attempt counts toward the same lockout as a failed sign-in (DEC-119).
 - Given any password, when it is stored, then only its scrypt hash with salt and parameters is kept (ADR-015).
 Verification: integration tests for success, failure, lockout, rate limit and timing; unit test on the hash format.
 
@@ -820,21 +825,24 @@ Verification: integration tests for success, failure, lockout, rate limit and ti
 As a user I want my session to be safe and to end when I leave so that a forgotten browser does not stay signed in.
 - Given a successful sign-in, when the session is created, then its id is new (any previous id is discarded), random (256 bits), only its SHA-256 is stored, and the cookie follows RF-1013.
 - Given 8 hours without activity or 7 days since sign-in, when the next request arrives, then the session is ended and I must sign in again.
-- Given Sign out, when I press it, then the session is deleted on the server and the cookie is cleared.
+- Given Sign out, when I press it, then the session is deleted on the server and the cookie is cleared; sign-out is a single button in the page header (DEC-127).
 - Given an administrator disables my account or resets my password, when my next request arrives, then all my sessions are ended.
 Verification: integration tests with a fixed clock.
 
 **RF-1102 Administer accounts** - R1 (M1) - Must - Source DEC-62, DEC-66 - ADR-015
 As the administrator I want to create and manage accounts so that I decide who uses Rosetta.
-- Given the first start of an empty database, when `ROSETTA_ADMIN_USER` and `ROSETTA_ADMIN_PASSWORD` are set, then that administrator account is created once and the password must be changed at first sign-in; the values are never logged.
+- Given the first start of an empty database, when `ROSETTA_ADMIN_USER` and `ROSETTA_ADMIN_PASSWORD` are set, then that administrator account is created once and the password must be changed at first sign-in; the values are never logged. A `ROSETTA_ADMIN_PASSWORD` that breaks the RF-1103 password rules stops start-up (DEC-119).
 - Given the administration page, when I create an account, then I set the user name, display name, role (`admin` or `user`), an initial password and whether it must be changed at first sign-in (default on; off for the teacher account, RF-1107); there is no self sign-up anywhere.
 - Given an account, when I disable it, enable it or reset its password, then the change takes effect at once (RF-1101) and an audit event is written (RF-1109).
+- Given my own account, when I try to disable it or reset its password from the administration page, then it is refused with RST-2213 (an administrator cannot disable or reset their own account; the own password is changed with RF-1103) (DEC-119).
 - Given the administration page, when I open it, then I see every account with its last sign-in, number of projects and month-to-date cost.
 Verification: integration tests per action; end-to-end test of the page; authorization test that a `user` gets 403.
 
 **RF-1103 Change my password** - R1 (M1) - Must - Source DEC-62 - ADR-015
 As a user I want to change my password so that only I know it.
 - Given my settings, when I enter my current password and a new one, then the new one is accepted only if it has at least 12 characters, is not on the common-passwords list and does not contain my user name; my other sessions are ended.
+- Given a new password equal to my current one, when I submit, then it is refused with RST-2214 (DEC-119).
+- Given a wrong current password, when I submit, then the change is refused and the attempt counts toward the sign-in lockout (RF-1100, DEC-119).
 Verification: integration tests for each rule.
 
 **RF-1104 My provider API keys** - R1 (M1) - Must - Source DEC-64 - ADR-015
@@ -844,6 +852,7 @@ As a user I want to store my own API keys for the providers so that runs use my 
 - Given I replace or delete a key, when I confirm, then the old value is gone from the database and an audit event is written without the value.
 - Given Ollama in the local deployment, when it is configured, then no key is needed; the hosted deployment offers Ollama only if the operator sets `ROSETTA_OLLAMA_URL` (DEC-112).
 - Given an OpenAI-compatible key with a base URL, when it is saved, then the URL must use `https` and must not resolve to a private, loopback or link-local address, checked when it is saved and again when each call connects; otherwise it is refused with an error code. This key row is the only place a base URL is set; project settings never set one (DEC-112).
+- Given a key to save, when its length is outside 16 to 512 characters, or its base URL carries a query string (an Azure `api-version` URL is refused), or its host does not resolve within 5 seconds, then it is refused with an error code (DEC-123).
 Verification: integration tests on storage, use and deletion; output scan test that no response contains a key.
 
 **RF-1105 Private workspaces** - R1 (M1) - Must - Source DEC-66 - ADR-015, ADR-016
@@ -870,13 +879,13 @@ Verification: manual sign-in on the hosted URL.
 
 **RF-1108 Run queue** - R1 (M1) - Should - Source DEC-61 - ADR-014
 As a user I want my run to wait its turn when the server is busy so that the server stays responsive.
-- Given more running runs than the configured limit (default 2), when I start a run, then it is queued, the page shows its position, and it starts automatically when a slot frees; one user has at most one running run.
+- Given more running runs than the limit (a constant, 2; it is not a setting, DEC-122), when I start a run, then it is queued, the page shows its position, and it starts automatically when a slot frees; one user has at most one running run.
 - Given the server restarts while runs are running or queued, when it starts again, then running runs end as `Interrupted` (resumable with RF-006) and queued runs stay queued in their order (DEC-112).
 Verification: integration test with the fake provider.
 
 **RF-1109 Security audit trail** - R1 (M1) - Must - Source DEC-69 - ADR-013, ADR-015
 As the administrator I want account and key events recorded so that I can see who did what.
-- Given a sign-in (success or failure), lockout, sign-out, account change, key change, administrator access to another workspace, or a refused request, when it happens, then an audit row with time, actor, action, target, IP address and outcome is stored and a `warn` or `info` log entry is written (RF-009); no row contains a password or key.
+- Given a sign-in (success or failure), lockout, sign-out, account change, key change, administrator access to another workspace, or a refused request, when it happens, then an audit row with time, actor, action, target, IP address and outcome is stored and a `warn` or `info` log entry is written (RF-009); no row contains a password or key. Every refused request keeps its `request.refused` row; none is dropped or sampled (DEC-124).
 - Given the administration page, when I open the audit view, then I can filter the last 30 days by user and action.
 Verification: integration tests per event.
 
@@ -973,10 +982,10 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 
 | Requirement group | Source | ADR | Phase | Cards |
 |---|---|---|---|---|
-| RF-001..RF-010 | DEC-13, DEC-14, DEC-17, DEC-24, DEC-50, DEC-59 | ADR-002, ADR-006, ADR-007, ADR-009, ADR-015 | P1 (RF-006: P2; RF-001, RF-004 withdrawn) | P1-03, P1-04, P1-07, P1-16, P1-17, P1-18, P1-22, P1-23, P1-29, P1-33, P1-40, P1-41, P1-56, P2-01, P2-13 |
+| RF-001..RF-010 | DEC-13, DEC-14, DEC-17, DEC-24, DEC-50, DEC-59, DEC-117, DEC-120, DEC-121 | ADR-002, ADR-006, ADR-007, ADR-009, ADR-015 | P1 (RF-006: P2; RF-001, RF-004 withdrawn) | P1-03, P1-04, P1-07, P1-16, P1-17, P1-18, P1-22, P1-23, P1-29, P1-33, P1-40, P1-41, P1-56, P2-01, P2-13 |
 | RF-100..RF-112 | DEC-11, DEC-12 | ADR-004 | P1 | P1-19, P1-20, P1-21, P1-23, P1-46 |
 | RF-120..RF-127 | DEC-48, DEC-57 | ADR-012, ADR-013, ADR-019 | P1 | P1-16, P1-19, P1-22, P1-23, P1-32, P3-02 |
-| RF-140..RF-147 | DEC-16, DEC-57 | ADR-006, ADR-013, ADR-019 | P1 (RF-144: P2) | P1-04, P1-17, P1-28, P1-31, P1-33, P1-34, P2-07 |
+| RF-140..RF-147 | DEC-16, DEC-57, DEC-118 | ADR-006, ADR-013, ADR-019 | P1 (RF-144: P2) | P1-04, P1-17, P1-28, P1-31, P1-33, P1-34, P2-07 |
 | RF-200..RF-205 | DEC-15, DEC-18 | ADR-003, ADR-005 | P1 | P1-25, P1-31, P1-32, P1-33 |
 | RF-230..RF-250 | DEC-15, DEC-18, DEC-98 | ADR-003, ADR-005 | P2 (RF-240: P1, DEC-98) | P1-33, P1-39, P2-04, P2-05, P2-06, P2-13 |
 | RF-300, RF-302 | DEC-19 | ADR-005 | P1 | P1-32, P1-33 |
@@ -986,8 +995,8 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-500..RF-507 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57 | ADR-002, ADR-005, ADR-012, ADR-013 | P3 (RF-504, RF-506, RF-507: P1) | P1-12, P1-43, P1-50, P3-01, P3-02, P3-03, P3-04 |
 | RF-600..RF-613 | DEC-10, DEC-72..DEC-85 | ADR-005, ADR-007, ADR-018 | P3 (RF-600 withdrawn) | P3-05, P3-06, P3-07, P3-08, P3-09, P3-10, P3-11, P3-12 |
 | RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | P1-45, P1-50, P1-52, P1-53, P1-54, P1-55 |
-| RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | P1-07, P1-09, P1-12, P1-22, P1-34, P1-35, P1-36, P1-37, P1-38, P1-39, P1-40, P1-42, P1-43, P1-45, P1-46, P2-02, P2-05, P3-01 |
-| RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | P1-08, P1-09, P1-10, P1-11, P1-14, P1-18, P1-22, P1-27, P1-29, P1-34, P1-36, P1-41, P1-42, P1-46, P1-54, P1-55, P1-56, P2-10 |
+| RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57, DEC-120 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | P1-07, P1-09, P1-12, P1-22, P1-34, P1-35, P1-36, P1-37, P1-38, P1-39, P1-40, P1-42, P1-43, P1-45, P1-46, P2-02, P2-05, P3-01 |
+| RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69, DEC-119, DEC-122, DEC-123, DEC-124, DEC-127 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | P1-08, P1-09, P1-10, P1-11, P1-14, P1-18, P1-22, P1-27, P1-29, P1-34, P1-36, P1-41, P1-42, P1-46, P1-54, P1-55, P1-56, P2-10 |
 | RF-1200..RF-1201 | DEC-63 | ADR-012, ADR-014 | P1 | P1-07, P1-15 |
 | RF-1300..RF-1306 | DEC-61, DEC-65, DEC-67 | ADR-014, ADR-016 | P1 (RF-1306: P2) | P1-05, P1-06, P1-07, P1-44, P1-45, P1-48, P1-55, P2-12 |
 | RNF-001..RNF-017 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31, DEC-57 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009, ADR-013 | all | P1-01, P1-02, P1-03, P1-04, P1-05, P1-06, P1-07, P1-08, P1-09, P1-11, P1-12, P1-13, P1-14, P1-15, P1-16, P1-17, P1-19, P1-20, P1-21, P1-22, P1-24, P1-25, P1-28, P1-31, P1-33, P1-44, P1-45, P1-46, P1-47, P1-48, P1-49, P1-50, P1-51, P1-55, P2-11, P2-14, P3-04, P3-09, P3-12 |

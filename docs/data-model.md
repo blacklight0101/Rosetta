@@ -100,22 +100,22 @@ column of the `projects` table, edited on the project's settings page. The sourc
 | | `<name>.baseUrl` | - | - | not allowed (refused by the schema): an `openai-compatible` base URL is stored with the user's key (`provider_keys.base_url`, RF-1104) and Ollama always uses the server's `ROSETTA_OLLAMA_URL` (DEC-112) |
 | | `<name>.keySource` | enum | `user-then-server` | `user` (only the user's stored key) or `user-then-server` (RF-1104); the key itself is never in the settings |
 | | `<name>.toolMode` | enum | `native` | `native` or `text` (RF-205) |
-| | `<name>.timeoutSeconds` | int | 120 | per call |
-| | `<name>.maxRetries` | int | 3 | RF-406 |
+| | `<name>.timeoutSeconds` | int | 120 | per call; 10 to 600 |
+| | `<name>.maxRetries` | int | 3 | RF-406; 0 to 5 |
 | | `<name>.contextTokens` | `auto` or int | `auto` | `ollama` only, refused for other kinds: `auto` picks the largest context that fits the GPU memory Ollama reports; a number (at least 1 024) is sent as `num_ctx` unchanged (RF-401, DEC-114, Q-23) |
-| `roles` | `reader`, `verifier`, `planner`, `summariser` | object | - | each `{ provider, model, maxOutputTokens, temperature?, maxTurns? }`; `maxTurns` for `reader` only (RF-201, RF-405) |
-| `budget` | `run.maxCostMicros`, `run.maxTokens` | int | template values | hard caps per run (RF-422) |
+| `roles` | `reader`, `verifier`, `planner`, `summariser` | object | - | each `{ provider, model, maxOutputTokens, temperature?, maxTurns? }`; `maxTurns` for `reader` only (RF-201, RF-405); `maxOutputTokens` 256 to 32 768, `maxTurns` 1 to 50 |
+| `budget` | `run.maxCostMicros`, `run.maxTokens` | int | template values | hard caps per run (RF-422); cost 0 to 100 000 000 micros (100 USD), tokens 0 to 50 000 000 |
 | | `roles.<role>.maxCostMicros`, `roles.<role>.maxTokens` | int | none | caps per role (RF-423) |
-| | `confirmAboveCostMicros` | int | template value | estimate threshold that asks to continue (RF-425) |
+| | `confirmAboveCostMicros` | int | template value | estimate threshold that asks to continue (RF-425); 0 up to the run cost cap |
 | | `prices` | list | none | overrides of the shipped price table, same shape as 3.18; applied only to calls with the user's own keys (DEC-107) |
 | | `allowUnpriced` | bool | false | run a non-local model missing from the price table, only with the user's own key (RF-427, DEC-112) |
-| `scan` | `maxFileBytes` | int | 1 000 000 | larger files are listed as `skipped: too large` (RF-100) |
-| | `areaTokenBudget` | int | 60 000 | RF-104 |
+| `scan` | `maxFileBytes` | int | 1 000 000 | larger files are listed as `skipped: too large` (RF-100); 1 000 to 5 000 000 |
+| | `areaTokenBudget` | int | 60 000 | RF-104; 4 000 to 200 000 |
 | | `areas` | list | none | manual areas `{ name, include: [glob] }` (RF-104) |
-| | `excerptMaxLines` | int | 400 | RF-144 |
+| | `excerptMaxLines` | int | 400 | RF-144; 20 to 2 000 |
 | | `ignoreRules` | string | the default template | gitignore syntax (3.2) |
 | | `allowDenied` | list | `[]` | built-in deny patterns lifted for this project; recorded in the manifest (RF-147) |
-| `agents` | `parallelism` | int | 1 for Ollama, 4 otherwise | reader tasks run at the same time (architecture section 8) |
+| `agents` | `parallelism` | int | 1 for Ollama, 4 otherwise | reader tasks run at the same time (architecture section 8); 1 to 8 |
 | `output` | `transcripts` | bool | true | skip transcripts for this project (DEC-43) |
 
 Unknown keys are an error (RF-002), so a typo never silently changes behaviour. The schema is
@@ -128,7 +128,8 @@ code of the refusal as a whole. A new project takes `templates/project-settings.
 `templates/ignore-rules.txt`, the provider and model of each role from the server setting `defaultRoles` where set,
 only the providers its roles use, and `agents.parallelism` 1 when the reader is Ollama (DEC-106). The numbers in
 `templates/project-settings.json` (run cap, confirmation threshold, output limits, turns, timeouts) are
-owner-editable defaults pending the owner's confirmation; the placeholder model is `gemma4:e4b`, the best reader measured
+the owner's confirmed defaults (DEC-116); the numeric fields have the allowed ranges of the table above (DEC-117) and a
+value outside a range is RST-1006; the placeholder model is `gemma4:e4b`, the best reader measured
 so far (providers.md 2.6), until the reader spike (P1-47) decides.
 
 ### 3.2 `.rosettaignore`
@@ -256,7 +257,7 @@ counts, areas with file and token counts, map level and origin (RF-105, RF-112).
 | `resumedFrom` | string | the earlier `runId` when resumed (RF-006) |
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
-| `options` | object | the start request's options (areas, answers option, consent) |
+| `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
 | `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v1.md`), its version (`v1`) and the SHA-256 of its bytes, names in code-unit order |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
