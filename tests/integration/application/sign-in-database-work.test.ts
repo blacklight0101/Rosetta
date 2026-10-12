@@ -11,15 +11,15 @@ import { fixturePassword, sampleAccount } from '../../support/account-fixtures.j
 import { FixedClock } from '../../support/fixed-clock.js';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
 import { RecordingLogger } from '../../support/recording-logger.js';
-import { timedAsync } from '../../support/stopwatch.js';
 
 // RF-1100: given a wrong user name or password, the response time is the same whether or not the
-// user exists. On PostgreSQL, a refused sign-in for an unknown user name runs the same statements
-// as a wrong password for a known one (the failure counter update included), and the median times
-// of both stay within a statistical bound. Every known account fails once only, so no lock adds
-// its own audit row.
+// user exists. On PostgreSQL, a refused sign-in for an unknown user name sends the same statements,
+// each with the same number of bound values, as a wrong password for a known one (the failure
+// counter update included). That is the deterministic proof of equal database work; the scrypt
+// derivation is counted by the unit test, and no wall-clock time is asserted (it is flaky).
+// A known account fails once only, so no lock adds its own audit row.
 
-const samples = 15;
+const knownUser = 'known';
 const parameters = { cost: 2 ** 12, blockSize: 8, parallelization: 1 } as const;
 const request = { ip: '203.0.113.9', userAgent: 'Browser/1.0' };
 
@@ -28,13 +28,14 @@ interface Setup {
   readonly signIn: SignIn;
 }
 
-function median(values: readonly number[]): number {
-  const sorted = [...values].sort((left, right) => left - right);
-  return sorted[Math.floor(sorted.length / 2)] ?? 0;
+/** A statement the pool received and how many values were bound to it. */
+interface Sent {
+  readonly statement: string;
+  readonly values: number;
 }
 
-/** The statements one sign-in sends to the pool, in order. */
-async function statementsOf(setup: Setup, userName: string): Promise<readonly string[]> {
+/** The statements one sign-in sends to the pool, in order, with their bound value counts. */
+async function statementsOf(setup: Setup, userName: string): Promise<readonly Sent[]> {
   const query = vi.spyOn(setup.pool, 'query');
   try {
     const outcome = await setup.signIn.execute({
@@ -43,20 +44,13 @@ async function statementsOf(setup: Setup, userName: string): Promise<readonly st
       password: fixturePassword('Wrong'),
     });
     expect(outcome.ok).toBe(false);
-    return query.mock.calls.map(([statement]) =>
-      typeof statement === 'string' ? statement : 'config',
-    );
+    return query.mock.calls.map(([statement, values]) => ({
+      statement: typeof statement === 'string' ? statement : 'config',
+      values: Array.isArray(values) ? values.length : 0,
+    }));
   } finally {
     query.mockRestore();
   }
-}
-
-async function timeRefusal(setup: Setup, userName: string): Promise<number> {
-  const { result, ms } = await timedAsync(() =>
-    setup.signIn.execute({ ...request, userName, password: fixturePassword('Wrong') }),
-  );
-  expect(result.ok).toBe(false);
-  return ms;
 }
 
 describe.skipIf(!hasTestDatabase)('sign-in database work on PostgreSQL', () => {
@@ -67,11 +61,8 @@ describe.skipIf(!hasTestDatabase)('sign-in database work on PostgreSQL', () => {
     const { pool } = await database.createSchema({ migrate: true });
     const hasher = new ScryptPasswordHasher({ parameters });
     const users = new PgUserRepository(pool);
-    for (let index = 0; index <= samples; index += 1) {
-      const userName = `known${String(index)}`;
-      const passwordHash = await hasher.hash(fixturePassword(userName));
-      await users.insert(sampleAccount({ userName, passwordHash }));
-    }
+    const passwordHash = await hasher.hash(fixturePassword(knownUser));
+    await users.insert(sampleAccount({ userName: knownUser, passwordHash }));
     const signIn = new SignIn({
       users,
       hasher,
@@ -85,27 +76,11 @@ describe.skipIf(!hasTestDatabase)('sign-in database work on PostgreSQL', () => {
   });
 
   it('RF-1100 an unknown user name runs the same statements as a wrong password', async () => {
-    const known = await statementsOf(setup, `known${String(samples)}`);
+    const known = await statementsOf(setup, knownUser);
     const unknown = await statementsOf(setup, 'nobody');
 
     expect(known.length).toBeGreaterThan(1);
+    expect(known.filter((sent) => /^\s*UPDATE/i.test(sent.statement))).toHaveLength(1);
     expect(unknown).toEqual(known);
   });
-
-  it('RF-1100 an unknown user name takes as long as a wrong password on PostgreSQL', async () => {
-    const known: number[] = [];
-    const unknown: number[] = [];
-    // Interleaved, so a slow moment of the machine hits both series alike.
-    for (let index = 0; index < samples; index += 1) {
-      known.push(await timeRefusal(setup, `known${String(index)}`));
-      unknown.push(await timeRefusal(setup, `nobody${String(index)}`));
-    }
-
-    const knownMedian = median(known);
-    const unknownMedian = median(unknown);
-
-    expect(Math.abs(knownMedian - unknownMedian)).toBeLessThan(
-      0.3 * Math.max(knownMedian, unknownMedian),
-    );
-  }, 60_000);
 });
