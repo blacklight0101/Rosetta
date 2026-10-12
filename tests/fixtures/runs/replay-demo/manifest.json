@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "runId": "20261012-100000-understand",
+  "stage": "understand",
+  "rosettaVersion": "0.0.0-fixture",
+  "startedAt": "2026-10-12T10:00:00.000Z",
+  "endedAt": "2026-10-12T10:00:48.000Z",
+  "endState": "Completed",
+  "resumedFrom": null,
+  "source": {
+    "url": "https://github.com/octo/demo",
+    "owner": "octo",
+    "repo": "demo",
+    "ref": "main",
+    "commitSha": "3f786850e387550fdab836ed7e6dc881de23001b",
+    "subpath": "",
+    "snapshotHash": null
+  },
+  "codemapHash": null,
+  "options": {},
+  "roles": {},
+  "promptVersions": {},
+  "security": {
+    "deniedReads": 0,
+    "refusedRequests": 1,
+    "skippedLinks": 0,
+    "blockedCalls": 0,
+    "allowDenied": []
+  },
+  "priceTable": {
+    "version": "2026-10-01",
+    "currency": "USD"
+  },
+  "caps": {
+    "run": {
+      "maxCostMicros": 500000,
+      "maxTokens": 2000000
+    },
+    "roles": {}
+  },
+  "masking": {},
+  "totals": {
+    "inputTokens": 3600,
+    "outputTokens": 330,
+    "cachedInputTokens": 0,
+    "costMicros": 4000,
+    "calls": 3
+  },
+  "agentTasks": [
+    {
+      "agentTaskId": "task-orders",
+      "area": "orders",
+      "role": "reader",
+      "state": "Done",
+      "turns": 2,
+      "cards": 1
+    },
+    {
+      "agentTaskId": "task-catalog",
+      "area": "catalog",
+      "role": "reader",
+      "state": "Done",
+      "turns": 1,
+      "cards": 0
+    }
+  ]
+}
