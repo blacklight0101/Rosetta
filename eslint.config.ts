@@ -4,6 +4,7 @@ import prettier from 'eslint-config-prettier';
 import n from 'eslint-plugin-n';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
+import { unsafeHtmlSelectors } from './web-lint.config.js';
 
 export default defineConfig(
   {
@@ -58,6 +59,12 @@ export default defineConfig(
     rules: { 'no-console': 'off' },
   },
   {
+    files: ['web/**'],
+    rules: {
+      'no-restricted-syntax': ['error', ...unsafeHtmlSelectors],
+    },
+  },
+  {
     files: ['src/infrastructure/db/**'],
     rules: {
       'no-restricted-syntax': [
@@ -83,7 +90,7 @@ export default defineConfig(
   },
   {
     // Tools load their configuration through a default export.
-    files: ['*.config.ts'],
+    files: ['*.config.ts', 'web/vite.config.ts'],
     rules: { 'no-restricted-exports': 'off' },
   },
   prettier,

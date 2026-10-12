@@ -144,7 +144,7 @@ src/
     web/                Fastify server, plugins, auth hooks, API routes, server-sent events, error-to-status mapping
     main.ts             start-up: read environment, run migrations, create the bootstrap admin, listen
     composition-root.ts
-web/                    front-end source of the landing page, web UI and report components (Preact + Vite, DEC-52)
+web/                    front-end source of the landing page, web UI and report components (Preact + Vite, DEC-52): src/app (router table `routes.ts`, navigation, App), src/api (typed client, wire schemas), src/components (shared components, one per file), src/lib (text-only renderer, theme), src/styles (tokens.css copied from docs/design/, base.css, components.css), src/gallery (development only); `npm run build` writes dist/web/ (index.html plus files under assets/ only, because the server answers only / , /sign-in and /assets/ without a session)
 db/migrations/          numbered SQL migrations (ADR-016, data-model.md section 7)
 Dockerfile              multi-stage image (RF-1300)
 compose.yaml            local deployment: app + PostgreSQL (RF-1301)

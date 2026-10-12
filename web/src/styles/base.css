@@ -1,0 +1,283 @@
+/* Base styles and the signed-in shell layout (design-system.md sections 2, 3 and 12). Everything
+   reads the tokens of tokens.css; no colour, font or size is written here as a literal. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: var(--rst-fw-head);
+  line-height: var(--rst-lh-head);
+}
+
+a {
+  text-underline-offset: 0.18em;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.rst-wordmark {
+  font-size: var(--rst-fs-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--rst-ink);
+  text-decoration: none;
+}
+
+.rst-root a.rst-wordmark,
+.rst-root a.rst-wordmark:hover {
+  color: var(--rst-ink);
+}
+
+.rst-skip-link {
+  position: absolute;
+  inset-inline-start: var(--rst-sp-2);
+  inset-block-start: calc(-1 * var(--rst-sp-8));
+  z-index: var(--rst-z-toast);
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-raised);
+  box-shadow: var(--rst-shadow-2);
+}
+
+.rst-skip-link:focus {
+  inset-block-start: var(--rst-sp-2);
+}
+
+/* Shell */
+
+.rst-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.rst-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2) var(--rst-sp-5);
+  padding: var(--rst-sp-3) var(--rst-sp-5);
+  background: var(--rst-surface);
+  border-bottom: 1px solid var(--rst-rule);
+}
+
+.rst-header__repository {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--rst-ink-soft);
+}
+
+.rst-header__spacer {
+  flex: 1 1 auto;
+}
+
+.rst-header__totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-2);
+}
+
+.rst-header__user {
+  display: flex;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
+
+.rst-shell__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.rst-nav {
+  display: flex;
+  flex: 1 1 12.5rem;
+  flex-direction: column;
+  gap: var(--rst-sp-1);
+  max-width: 15rem;
+  padding: var(--rst-sp-4) var(--rst-sp-3);
+  border-inline-end: 1px solid var(--rst-rule);
+  background: var(--rst-surface);
+}
+
+.rst-nav__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rst-nav__heading {
+  margin: var(--rst-sp-3) var(--rst-sp-3) var(--rst-sp-1);
+  font-size: var(--rst-fs-xs);
+  color: var(--rst-ink-muted);
+}
+
+.rst-root .rst-nav__link {
+  display: flex;
+  align-items: center;
+  min-height: var(--rst-row-h);
+  padding: 0 var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  color: var(--rst-ink-soft);
+  font-weight: var(--rst-fw-label);
+  text-decoration: none;
+}
+
+.rst-root .rst-nav__link:hover {
+  background: var(--rst-surface-2);
+  color: var(--rst-ink);
+}
+
+.rst-root .rst-nav__link[aria-current='page'] {
+  background: var(--rst-brand-tint);
+  color: var(--rst-brand);
+}
+
+.rst-shell__content {
+  display: flex;
+  flex: 999 1 35rem;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rst-shell__banners {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  padding: var(--rst-sp-3) var(--rst-sp-6) 0;
+  z-index: var(--rst-z-banner);
+}
+
+.rst-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-5);
+  width: 100%;
+  max-width: 72rem;
+  padding: var(--rst-sp-5) var(--rst-sp-6);
+}
+
+.rst-main:focus {
+  outline: none;
+}
+
+/* Pages */
+
+.rst-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-4);
+}
+
+.rst-page--centered {
+  align-items: flex-start;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: var(--rst-sp-8) var(--rst-sp-4);
+}
+
+.rst-page__title {
+  font-size: var(--rst-fs-2xl);
+}
+
+.rst-page__lead {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-lg);
+}
+
+.rst-loading {
+  padding: var(--rst-sp-6);
+  color: var(--rst-ink-muted);
+}
+
+/* Component gallery (development only) */
+
+.rst-gallery__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-5);
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: var(--rst-sp-5) var(--rst-sp-4);
+}
+
+.rst-gallery__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-gallery__heading {
+  font-size: var(--rst-fs-lg);
+}
+
+.rst-gallery__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2);
+}
+
+.rst-gallery__badges {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  margin: 0;
+}
+
+.rst-gallery__badges dd {
+  margin: 0;
+}
+
+.rst-gallery__label {
+  flex: 0 0 11rem;
+  font-size: var(--rst-fs-xs);
+  color: var(--rst-ink-muted);
+}
+
+.rst-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--rst-sp-4);
+}
+
+@media (max-width: 40rem) {
+  .rst-header,
+  .rst-main {
+    padding-inline: var(--rst-sp-4);
+  }
+
+  .rst-nav {
+    max-width: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-inline-end: none;
+    border-block-end: 1px solid var(--rst-rule);
+  }
+}

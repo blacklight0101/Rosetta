@@ -137,7 +137,9 @@ conflict visibly; the codes already shown on the design board are reserved there
 - No `.only`, no skipped tests on `main`, no snapshot for something an assertion can state. **(tool:
   `@vitest/eslint-plugin`)**
 - The front end in `web/` has its own `web/tsconfig.json` (DOM library) and a Vitest project `web` with happy-dom and
-  `@testing-library/preact` for component tests, counted as unit tests (DEC-112).
+  `@testing-library/preact` for component tests, counted as unit tests (DEC-112). Its tests live in `tests/unit/web/`,
+  which has its own `tsconfig.json` (the root program excludes it) and a setup file; `npm run typecheck` runs all three
+  programs. A test that needs a real build runs in `tests/integration/web/`.
 - Coverage thresholds (v8): `domain` and `application` at least 90% lines and 85% branches; whole project at least
   80% lines (RNF-005). **(tool)**
 
@@ -166,7 +168,8 @@ too. ESLint never formats (`eslint-config-prettier` last). **(tool)**
 `consistent-type-imports`, `switch-exhaustiveness-check`, `no-import-type-side-effects`,
 `explicit-module-boundary-types`, `prefer-readonly`, `no-restricted-exports` (default), `no-console` (except
 `src/presentation`), `eqeqeq`, `complexity` 10, `max-depth` 3, `max-params` 4, `max-lines` 300,
-`max-lines-per-function` 50, `n/no-sync`, `n/prefer-node-protocol`, and in `src/infrastructure/db/**` a
+`max-lines-per-function` 50, `n/no-sync`, `n/prefer-node-protocol`, in `web/**` a `no-restricted-syntax` rule that rejects `innerHTML`, `outerHTML`,
+`insertAdjacentHTML`, `dangerouslySetInnerHTML`, `document.write` and `DOMParser` (RF-507; the selectors are in `web-lint.config.ts`), and in `src/infrastructure/db/**` a
 `no-restricted-syntax` rule that rejects a template literal as the first argument of `query` (parameterised SQL,
 ADR-016). Lint runs with `--max-warnings 0`. A disabled rule
 needs an inline `eslint-disable-next-line <rule> -- <reason>`; blanket disables are forbidden. **(tool)**
