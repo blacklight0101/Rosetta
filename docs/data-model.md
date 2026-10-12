@@ -236,7 +236,9 @@ Rules for `areas[]` (RF-104, added with P1-20):
 
 Readable summary of the code map: source and commit, the scan duration (the only value that differs between two scans
 of one commit, which is why it is here and not in `codemap.json`), languages with files, lines and tokens, artefact
-counts, areas with file and token counts, map level and origin (RF-105, RF-112). Generated; never read back.
+counts, areas with file and token counts, map level and origin (RF-105, RF-112). The files line also counts the
+skipped files and the files a language pack claims that stayed `coarse` because the scan-wide parse budget was spent
+(`not analysed: parse budget reached`, P1-75). Generated; never read back.
 
 ### 3.6 `runs/<runId>/manifest.json`
 
