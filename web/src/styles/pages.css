@@ -352,3 +352,125 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Administration: users and caps, audit, default models (design-system.md section 14) */
+
+.rst-admin__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-admin__pair,
+.rst-admin__triple {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--rst-sp-3);
+  align-items: start;
+}
+
+.rst-admin__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(26rem, 100%), 1fr));
+  gap: var(--rst-sp-5);
+  align-items: start;
+}
+
+.rst-table .rst-table__num {
+  text-align: end;
+}
+
+.rst-table__sub {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-table__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2);
+  min-inline-size: 11rem;
+}
+
+.rst-table .rst-table__actions-cell {
+  white-space: normal;
+}
+
+.rst-audit__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
+  align-items: flex-end;
+  padding: var(--rst-sp-4) var(--rst-sp-5);
+}
+
+.rst-audit__filters .rst-field {
+  flex: 1 1 12rem;
+}
+
+.rst-audit__events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  padding: var(--rst-sp-4);
+}
+
+/* The warning bar from 80% of the server's monthly cap */
+
+.rst-cap-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+  padding: var(--rst-sp-3) var(--rst-sp-4);
+  border: 1px solid var(--rst-warn-solid);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+}
+
+.rst-root .rst-cap-banner a {
+  color: var(--rst-warn-ink);
+}
+
+.rst-cap-banner__text {
+  flex: 1 1 22rem;
+}
+
+/* The server month meter */
+
+.rst-meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+}
+
+.rst-meter__figures {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--rst-sp-3);
+}
+
+.rst-meter__of {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-meter__track {
+  block-size: 10px;
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-surface-2);
+  overflow: hidden;
+}
+
+.rst-meter__fill {
+  display: block;
+  block-size: 100%;
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-brand);
+}
+
+.rst-meter__fill--warn {
+  background: var(--rst-warn-solid);
+}

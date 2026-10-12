@@ -28,6 +28,7 @@ describe.skipIf(!hasTestDatabase)('PgAccountUsage', () => {
             at: row.at,
             cost_micros: row.costMicros.toString(),
             currency: row.currency ?? 'USD',
+            key_source: row.keySource ?? 'server',
           }),
         ),
     };

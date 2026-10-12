@@ -14,6 +14,8 @@ export interface SettingChange {
 export interface ServerSettings {
   /** The provider and model per role for new projects; `{}` until the administrator sets it. */
   defaultRoles(): Promise<DefaultRoles>;
+  /** Replaces the default models; a role left out keeps the template's model (DEC-106). */
+  saveDefaultRoles(roles: DefaultRoles, change: SettingChange): Promise<void>;
   /** The run, user-day and server-month caps in micro-dollars (defaults of migration 0004). */
   caps(): Promise<ServerCaps>;
   saveCaps(caps: ServerCaps, change: SettingChange): Promise<void>;

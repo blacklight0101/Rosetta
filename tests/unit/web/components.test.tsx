@@ -50,6 +50,12 @@ it('RNF-010 cannot be pressed twice while busy', () => {
   expect(onClick).not.toHaveBeenCalled();
 });
 
+it('RNF-010 gives a button that repeats in a table the name of what it acts on', () => {
+  render(<Button ariaLabel="Disable ana.ruiz">Disable</Button>);
+  const button = screen.getByRole('button', { name: 'Disable ana.ruiz' });
+  expect(button.textContent).toBe('Disable');
+});
+
 it('RNF-010 binds the label to the input', () => {
   render(<Field kind="text" id="user" label="User name" value="" onInput={() => undefined} />);
   expect(screen.getByLabelText('User name').tagName).toBe('INPUT');

@@ -20,6 +20,7 @@ describe('MemoryAccountUsage', () => {
           at: row.at,
           costMicros: row.costMicros,
           currency: row.currency ?? 'USD',
+          keySource: row.keySource ?? 'server',
         });
         return Promise.resolve();
       },
