@@ -43,5 +43,6 @@ describe('listPromptFiles', () => {
     expect(isAgentPrompt('judge/claim.v1.md')).toBe(true);
     expect(isAgentPrompt('cards/repair.v1.md')).toBe(false);
     expect(isAgentPrompt('shared/text-tool-protocol.v1.md')).toBe(false);
+    expect(isAgentPrompt('catalogue/solid.v1.md')).toBe(false);
   });
 });
