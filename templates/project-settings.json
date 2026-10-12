@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "providers": {
+    "ollama": {
+      "kind": "ollama",
+      "keySource": "user-then-server",
+      "toolMode": "native",
+      "timeoutSeconds": 120,
+      "maxRetries": 3,
+      "contextTokens": "auto"
+    },
+    "openai": {
+      "kind": "openai",
+      "keySource": "user-then-server",
+      "toolMode": "native",
+      "timeoutSeconds": 120,
+      "maxRetries": 3
+    },
+    "openai-compatible": {
+      "kind": "openai-compatible",
+      "keySource": "user",
+      "toolMode": "native",
+      "timeoutSeconds": 120,
+      "maxRetries": 3
+    },
+    "anthropic": {
+      "kind": "anthropic",
+      "keySource": "user-then-server",
+      "toolMode": "native",
+      "timeoutSeconds": 120,
+      "maxRetries": 3
+    },
+    "fake": {
+      "kind": "fake",
+      "keySource": "user",
+      "toolMode": "native",
+      "timeoutSeconds": 120,
+      "maxRetries": 3
+    }
+  },
+  "roles": {
+    "reader": {
+      "provider": "ollama",
+      "model": "qwen2.5-coder:7b",
+      "maxOutputTokens": 4096,
+      "maxTurns": 12
+    },
+    "verifier": { "provider": "ollama", "model": "qwen2.5-coder:7b", "maxOutputTokens": 2048 },
+    "planner": { "provider": "ollama", "model": "qwen2.5-coder:7b", "maxOutputTokens": 4096 },
+    "summariser": { "provider": "ollama", "model": "qwen2.5-coder:7b", "maxOutputTokens": 2048 }
+  },
+  "budget": {
+    "run": { "maxCostMicros": 500000, "maxTokens": 2000000 },
+    "confirmAboveCostMicros": 250000,
+    "allowUnpriced": false
+  },
+  "scan": {
+    "maxFileBytes": 1000000,
+    "areaTokenBudget": 60000,
+    "excerptMaxLines": 400,
+    "allowDenied": []
+  },
+  "agents": { "parallelism": 4 },
+  "output": { "transcripts": true }
+}

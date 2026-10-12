@@ -1,9 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import { settingsWith, templateSettings } from '../../../support/project-fixtures.js';
+import { sampleAccount } from '../../../support/account-fixtures.js';
+import { newProjectSettings, settingsWith } from '../../../support/project-fixtures.js';
 import { amy, bob, projectHarness, root } from '../../../support/project-harness.js';
 
 // RF-010 (all scenarios), RF-002 (first two), RF-1105 (both): the project use cases.
+
+async function created(): Promise<{ test: ReturnType<typeof projectHarness>; id: string }> {
+  const test = projectHarness();
+  const outcome = await test.createProject.execute({
+    actor: amy,
+    url: 'https://github.com/owner/repo',
+  });
+  if (!outcome.ok) throw new Error('The project was not created');
+  return { test, id: outcome.value.project.id };
+}
+
+async function withAmy(): Promise<ReturnType<typeof projectHarness>> {
+  const test = projectHarness();
+  await test.users.insert(sampleAccount({ id: amy.userId, userName: 'amy', displayName: 'Amy' }));
+  await test.createProject.execute({ actor: amy, url: 'https://github.com/owner/repo' });
+  return test;
+}
 
 describe('CreateProject', () => {
   it('RF-010 a public GitHub URL becomes a project with its URL, ref, subpath and default settings', async () => {
@@ -23,7 +41,7 @@ describe('CreateProject', () => {
       sourceUrl: 'https://github.com/dotnet-architecture/eshopmodernizing',
       ref: 'master',
       subpath: 'eShopLegacyWebFormsSolution',
-      settings: templateSettings,
+      settings: newProjectSettings,
     });
     expect(await test.projects.find(amy.userId, outcome.value.project.id)).toEqual(
       outcome.value.project,
@@ -51,7 +69,9 @@ describe('CreateProject', () => {
     expect(await test.listProjects.execute({ actor: amy })).toHaveLength(1);
     expect(await test.listProjects.execute({ actor: bob })).toEqual([]);
   });
+});
 
+describe('CreateProject: refused addresses', () => {
   it.each([
     ['https://gitlab.com/owner/repo', 'not-github'],
     ['http://github.com/owner/repo', 'not-https'],
@@ -89,7 +109,9 @@ describe('CreateProject', () => {
     expect(again.value).toEqual({ project: first.value.project, created: false });
     expect(await test.listProjects.execute({ actor: amy })).toHaveLength(1);
   });
+});
 
+describe('CreateProject: ref, subpath, users and server defaults', () => {
   it('RF-010 another ref or subpath is another project, and another user may have the same one', async () => {
     const test = projectHarness();
     await test.createProject.execute({ actor: amy, url: 'https://github.com/owner/repo' });
@@ -150,16 +172,6 @@ describe('GetProject and ListProjects', () => {
 });
 
 describe('UpdateProjectSettings', () => {
-  async function created(): Promise<{ test: ReturnType<typeof projectHarness>; id: string }> {
-    const test = projectHarness();
-    const outcome = await test.createProject.execute({
-      actor: amy,
-      url: 'https://github.com/owner/repo',
-    });
-    if (!outcome.ok) throw new Error('The project was not created');
-    return { test, id: outcome.value.project.id };
-  }
-
   it('RF-002 valid settings are stored and the update time moves', async () => {
     const { test, id } = await created();
     test.clock.advance(60_000);
@@ -177,7 +189,9 @@ describe('UpdateProjectSettings', () => {
     expect(outcome.value.updatedAt).toBe(test.clock.now().getTime());
     expect(await test.getProject.execute({ actor: amy, projectId: id })).toEqual(outcome);
   });
+});
 
+describe('UpdateProjectSettings: refusals', () => {
   it('RF-002 invalid settings change nothing and each problem is returned with its field and code', async () => {
     const { test, id } = await created();
     const before = await test.getProject.execute({ actor: amy, projectId: id });
@@ -221,29 +235,6 @@ describe('UpdateProjectSettings', () => {
 });
 
 describe('OpenWorkspace', () => {
-  async function withAmy(): Promise<ReturnType<typeof projectHarness>> {
-    const test = projectHarness();
-    await test.users.insert({
-      id: amy.userId,
-      userName: 'amy',
-      displayName: 'Amy',
-      role: 'user',
-      state: 'Active',
-      passwordHash: 'fake$x',
-      failedSignIns: 0,
-      firstFailedAt: null,
-      lockedUntil: null,
-      serverKeysAllowed: true,
-      dailyCapMicros: null,
-      ownDailyCapMicros: null,
-      createdAt: 0,
-      updatedAt: 0,
-      lastSignInAt: null,
-    });
-    await test.createProject.execute({ actor: amy, url: 'https://github.com/owner/repo' });
-    return test;
-  }
-
   it('RF-1105 the administrator reads the projects of another user and an audit event is written', async () => {
     const test = await withAmy();
 
@@ -267,7 +258,9 @@ describe('OpenWorkspace', () => {
       detail: { projects: 1 },
     });
   });
+});
 
+describe('OpenWorkspace: refusals', () => {
   it('RF-1105 a user who is not an administrator is refused and nothing is read or audited', async () => {
     const test = await withAmy();
 

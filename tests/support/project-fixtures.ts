@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import type { Project } from '../../src/application/projects/project.js';
+import { settingsForNewProject } from '../../src/application/projects/default-settings.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { loadProjectTemplate } from '../../src/infrastructure/files/project-template.js';
 import { fixtureNow } from './account-fixtures.js';
@@ -7,7 +8,7 @@ import { fixtureNow } from './account-fixtures.js';
 // RF-010, RF-002: the shipped template (`templates/`) as the valid project settings of tests, and
 // projects built from it. A test that needs an invalid document edits a copy with `settingsWith`.
 
-export const templatesFolder = fileURLToPath(new URL('../../templates/', import.meta.url));
+const templatesFolder = fileURLToPath(new URL('../../templates/', import.meta.url));
 
 /** The shipped default settings: what `CreateProject` stores before the server defaults apply. */
 export const templateSettings: ProjectSettings = await loadProjectTemplate(templatesFolder);
@@ -54,3 +55,6 @@ export function sampleProject(overrides: Partial<Project> = {}): Project {
     ...overrides,
   };
 }
+
+/** The settings a new project gets when the server has no default models: the template, reduced. */
+export const newProjectSettings: ProjectSettings = settingsForNewProject(templateSettings, {});

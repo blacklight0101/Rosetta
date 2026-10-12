@@ -78,7 +78,7 @@ describe('parseProjectSettings: each problem names its field and code', () => {
   });
 
   it('RF-002 a role that names a provider the project does not define is RST-1001', () => {
-    const input = settingsWith({ 'roles.verifier.provider': 'openai' });
+    const input = settingsWith({ 'roles.verifier.provider': 'mystery' });
 
     expect(problemsOf(input)).toEqual([
       { field: 'roles.verifier.provider', code: ERROR_CODES.settingsProviderUnknown },
@@ -100,7 +100,9 @@ describe('parseProjectSettings: each problem names its field and code', () => {
       { field: 'roles.planner', code: ERROR_CODES.settingsModelMissing },
     ]);
   });
+});
 
+describe('parseProjectSettings: caps, prices and unknown keys', () => {
   it.each([
     ['budget.run.maxCostMicros', -1, 'budget.run.maxCostMicros'],
     ['budget.run.maxTokens', -5, 'budget.run.maxTokens'],
@@ -143,7 +145,9 @@ describe('parseProjectSettings: each problem names its field and code', () => {
       { field: 'scan.maxFileByte', code: ERROR_CODES.settingValueInvalid },
     ]);
   });
+});
 
+describe('parseProjectSettings: provider and role details', () => {
   it('RF-002 contextTokens is refused for a provider that is not Ollama', () => {
     const input = settingsWith({
       providers: { openai: { ...openAi, contextTokens: 'auto' } },
@@ -181,7 +185,9 @@ describe('parseProjectSettings: each problem names its field and code', () => {
       { field: path, code: ERROR_CODES.settingValueInvalid },
     ]);
   });
+});
 
+describe('parseProjectSettings: several problems and wrong shapes', () => {
   it('RF-002 several problems are all returned, ordered by field', () => {
     const input = settingsWith({
       'budget.run.maxCostMicros': -1,

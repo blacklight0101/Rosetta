@@ -12,7 +12,7 @@ import { useTempRoot } from '../../../support/temp-root.js';
 const temp = useTempRoot('rst-template-');
 
 describe('loadProjectTemplate', () => {
-  it('RF-010 the shipped template is valid and carries the shipped ignore rules', async () => {
+  it('RF-010 the shipped template is valid and carries the shipped ignore rules', () => {
     const rules = templateSettings.scan.ignoreRules;
 
     expect(rules).toContain('*.pfx');

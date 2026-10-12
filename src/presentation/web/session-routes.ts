@@ -1,10 +1,10 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { SignedInSession } from '../../application/use-cases/resolve-session.js';
 import type { SignIn } from '../../application/use-cases/sign-in.js';
 import type { SignOut } from '../../application/use-cases/sign-out.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { signedInOf } from './request-actor.js';
 import { secureCookie, SESSION_COOKIE } from './session-cookies.js';
 
 // RF-1100, RF-1101, RF-1009: the session API.
@@ -39,12 +39,6 @@ function parseSignIn(body: unknown): z.output<typeof signInBody> {
   const parsed = signInBody.safeParse(body);
   if (!parsed.success) throw new RosettaError(ERROR_CODES.requestInvalid);
   return parsed.data;
-}
-
-/** The signed-in session; the access hook has already answered 401 without one. */
-function signedInOf(request: FastifyRequest): SignedInSession {
-  if (request.signedIn === null) throw new RosettaError(ERROR_CODES.notSignedIn);
-  return request.signedIn;
 }
 
 function registerSignIn(server: FastifyInstance, signIn: SignIn): void {

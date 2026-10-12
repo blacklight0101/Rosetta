@@ -1,0 +1,54 @@
+import type { Clock } from '../application/ports/clock.js';
+import type { Logger } from '../application/ports/logger.js';
+import { CreateProject } from '../application/use-cases/create-project.js';
+import { GetProject } from '../application/use-cases/get-project.js';
+import { ListProjects } from '../application/use-cases/list-projects.js';
+import { OpenWorkspace } from '../application/use-cases/open-workspace.js';
+import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
+import { PgAuditLog } from '../infrastructure/db/pg-audit-log.js';
+import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
+import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
+import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
+import type { DatabasePool } from '../infrastructure/db/pool.js';
+import { loadProjectTemplate } from '../infrastructure/files/project-template.js';
+import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
+import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import type { ProjectServices } from './web/project-routes.js';
+
+// Architecture section 2 (composition root), RF-010, RF-002, RF-1105: the project adapters and the
+// use cases behind the projects API. The default settings come from `templates/` and are checked
+// here, so a broken template stops the start-up instead of the first new project.
+
+export interface ProjectParts {
+  readonly pool: DatabasePool;
+  readonly logger: Logger;
+  readonly clock: Clock;
+  readonly masker: TextMasker;
+  /** The folder with `project-settings.json` and `ignore-rules.txt`. */
+  readonly templatesFolder: string;
+}
+
+// RF-010
+export async function composeProjects(parts: ProjectParts): Promise<ProjectServices> {
+  const { pool, logger, clock, masker } = parts;
+  const projects = new PgProjectRepository(pool);
+  return {
+    createProject: new CreateProject({
+      projects,
+      serverSettings: new PgServerSettings(pool),
+      template: await loadProjectTemplate(parts.templatesFolder),
+      ids: new TimestampIdGenerator(clock),
+      clock,
+    }),
+    listProjects: new ListProjects({ projects }),
+    getProject: new GetProject({ projects }),
+    updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
+    openWorkspace: new OpenWorkspace({
+      projects,
+      users: new PgUserRepository(pool),
+      auditLog: new PgAuditLog(pool, masker),
+      logger,
+      clock,
+    }),
+  };
+}

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { describeError } from '../../../../src/domain/errors/descriptions.js';
-import { settingsWith, templateSettings } from '../../../support/project-fixtures.js';
+import { newProjectSettings, settingsWith } from '../../../support/project-fixtures.js';
 import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
@@ -70,7 +70,7 @@ describe('POST /api/projects', () => {
       sourceUrl: repository,
       ref: 'main',
       subpath: 'src',
-      settings: JSON.parse(JSON.stringify(templateSettings)),
+      settings: newProjectSettings,
       createdAt: '2026-10-11T09:00:00.000Z',
       updatedAt: '2026-10-11T09:00:00.000Z',
     });
@@ -91,7 +91,9 @@ describe('POST /api/projects', () => {
     const list = await amy.request({ method: 'GET', url: '/api/projects' });
     expect(list.json()).toMatchObject({ projects: [{ id }] });
   });
+});
 
+describe('POST /api/projects: refused addresses and bodies', () => {
   it('RF-010 a URL that is not a public GitHub repository answers 400 with the code and reason at the url field', async () => {
     const { amy } = await setup();
 
@@ -211,10 +213,12 @@ describe('PUT /api/projects/:id/settings', () => {
     });
     const read = await amy.request({ method: 'GET', url: `/api/projects/${id}` });
     expect(read.json()).toMatchObject({
-      settings: JSON.parse(JSON.stringify(templateSettings)),
+      settings: newProjectSettings,
     });
   });
+});
 
+describe('PUT /api/projects/:id/settings: other users and tokens', () => {
   it('RF-1105 another user cannot change the settings and gets 404', async () => {
     const { amy, bob } = await setup();
     const id = await createdId(amy);

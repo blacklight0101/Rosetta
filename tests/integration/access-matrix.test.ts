@@ -130,17 +130,25 @@ afterEach(async () => {
   current = undefined;
 });
 
-/** "METHOD path" for every route of the server, from Fastify's route listing. */
+/**
+ * "METHOD path" for every route of the server, from Fastify's route listing. The listing is a tree
+ * (four characters of indentation per level): a node's path is its own text after those of its
+ * parents, and only nodes that end in a method list are routes.
+ */
 function routesOf(listing: string): readonly string[] {
-  return listing
-    .split('\n')
-    .map((line) => /([^\s─│├└]+) \(([A-Z, ]+)\)$/.exec(line))
-    .flatMap((match) =>
-      match === null
-        ? []
-        : (match[2] ?? '').split(', ').map((method) => `${method} ${match[1] ?? ''}`),
-    )
-    .sort();
+  const parents: string[] = [];
+  const routes: string[] = [];
+  for (const line of listing.split('\n')) {
+    const match = /^((?:│ {3}| {4})*)[├└]── (\S+)(?: \(([A-Z, ]+)\))?$/u.exec(line);
+    if (match === null) continue;
+    const depth = (match[1] ?? '').length / 4;
+    parents.length = depth;
+    parents.push(match[2] ?? '');
+    for (const method of (match[3] ?? '').split(', ').filter((name) => name !== '')) {
+      routes.push(`${method} ${parents.join('')}`);
+    }
+  }
+  return routes.sort();
 }
 
 async function browserFor(

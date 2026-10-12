@@ -49,6 +49,29 @@ export interface TestServerOptions extends Partial<Omit<ServerOptions, 'auth' | 
   readonly dummyHash?: string;
 }
 
+interface ProjectParts {
+  readonly projects: MemoryProjectRepository;
+  readonly serverSettings: MemoryServerSettings;
+  readonly users: MemoryUserRepository;
+  readonly auditLog: MemoryAuditLog;
+  readonly logger: MemoryLogger;
+  readonly clock: FixedClock;
+}
+
+/** RF-010, RF-1105: the project use cases over memory adapters and predictable ids. */
+function projectServices(parts: ProjectParts): ServerOptions['projects'] {
+  const { projects, serverSettings, users, auditLog, logger, clock } = parts;
+  const ids = new SequenceIdGenerator();
+  const template = templateSettings;
+  return {
+    createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
+    listProjects: new ListProjects({ projects }),
+    getProject: new GetProject({ projects }),
+    updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
+    openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
+  };
+}
+
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
@@ -66,7 +89,6 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const auditLog = audit;
   const projects = new MemoryProjectRepository();
   const serverSettings = new MemoryServerSettings({});
-  const ids = new SequenceIdGenerator();
   const server = buildServer({
     logger,
     databaseHealth: health,
@@ -79,19 +101,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       resolveSession: new ResolveSession({ sessions, users, logger, clock }),
       refusals: new RecordRefusedRequest({ auditLog, logger, clock }),
     },
-    projects: {
-      createProject: new CreateProject({
-        projects,
-        serverSettings,
-        template: templateSettings,
-        ids,
-        clock,
-      }),
-      listProjects: new ListProjects({ projects }),
-      getProject: new GetProject({ projects }),
-      updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
-      openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
-    },
+    projects: projectServices({ projects, serverSettings, users, auditLog, logger, clock }),
     ...overrides,
   });
   return {

@@ -25,6 +25,12 @@ export const ERROR_RANGES = {
 /** Codes in use, reserved first for the ones the design board already shows. */
 export const ERROR_CODES = {
   configurationInvalid: 'RST-1000',
+  settingsProviderUnknown: 'RST-1001',
+  settingsModelMissing: 'RST-1002',
+  settingsCapNegative: 'RST-1003',
+  settingsBaseUrlRefused: 'RST-1004',
+  settingsInvalid: 'RST-1005',
+  settingValueInvalid: 'RST-1006',
   pathOutsideRoot: 'RST-1100',
   pathInvalid: 'RST-1101',
   pathIgnored: 'RST-1102',
