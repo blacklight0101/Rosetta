@@ -3,6 +3,8 @@ export const grepLimits = {
   maxPatternLength: 200,
   maxLineLength: 2000,
   timeoutMs: 2000,
+  /** Matches past this are dropped and the agent is told (P1-67). */
+  maxMatches: 1000,
 } as const;
 
 export function isPatternTooLong(pattern: string): boolean {

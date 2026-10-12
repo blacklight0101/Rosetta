@@ -7,10 +7,12 @@ import type { searchFiles } from './grep-search.js';
 // RF-146, ADR-013: a thin shell that runs the search in its own thread, so the caller can stop it.
 // The search module sits next to this file (`.ts` from source, `.js` from the build), and the
 // worker derives its URL from its own location: nothing in the input names a module to load.
+// The optional match cap only shortens the search (P1-67).
 
 const input = z.object({
   pattern: z.string(),
   files: z.array(z.object({ path: z.string(), lines: z.array(z.string()) })),
+  maxMatches: z.number().int().positive().optional(),
 });
 
 const searchModule = z.object({
