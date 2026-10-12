@@ -15,6 +15,7 @@ import {
   CHANGE_PASSWORD_PAGE,
   isPageRequest,
   isStateChanging,
+  needsSession,
   requestPath,
 } from './route-access.js';
 import { SESSION_COOKIE } from './session-cookies.js';
@@ -22,7 +23,9 @@ import { SESSION_COOKIE } from './session-cookies.js';
 // RF-1009, RF-1101, RF-1102, RF-1109, DEC-112: the request hooks, in this order.
 // 1. Origin: a state-changing request whose `Origin` is not the public URL's origin (or is
 //    missing) is refused with 403 RST-2007; this also protects sign-in, which has no session yet.
-// 2. Session: the `__Host-rosetta_session` cookie becomes `request.signedIn` (or null).
+// 2. Session: the `__Host-rosetta_session` cookie becomes `request.signedIn` (or null). A public
+//    route skips the lookup unless it reads the session (`readsSession`, the landing page), so
+//    /healthz still answers 503 with a cookie while the database is down (RF-1303).
 // 3. Access: without a session a page redirects to /sign-in and anything else answers 401; a
 //    `user` on an administrator route answers 403. A user whose password must be changed
 //    (MustChangePassword, RF-1102) reaches only the session API, the change-password route and
@@ -116,7 +119,7 @@ export function registerAccessHooks(server: FastifyInstance, options: AccessHook
 
   server.addHook('onRequest', async (request) => {
     const sessionId = request.cookies[SESSION_COOKIE];
-    if (sessionId === undefined || sessionId === '') return;
+    if (sessionId === undefined || sessionId === '' || !needsSession(request)) return;
     request.signedIn = (await resolveSession.execute(sessionId)) ?? null;
   });
 

@@ -1,5 +1,6 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import type { RecordRefusedRequest } from '../../application/use-cases/record-refused-request.js';
 import type { SignIn } from '../../application/use-cases/sign-in.js';
 import type { SignOut } from '../../application/use-cases/sign-out.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -9,22 +10,26 @@ import {
   PASSWORD_BODY_LIMIT_BYTES,
   PASSWORD_RATE,
 } from './password-limits.js';
+import { recordRateLimited } from './rate-limit-log.js';
 import { signedInOf } from './request-actor.js';
-import { secureCookie, SESSION_COOKIE } from './session-cookies.js';
+import { CSRF_COOKIE, secureCookie, SESSION_COOKIE } from './session-cookies.js';
 
 // RF-1100, RF-1101, RF-1009: the session API.
 // - POST /api/session signs in (public; Origin-checked, 10 attempts per minute per IP). It sets
-//   the new `__Host-rosetta_session` cookie and answers the user and a CSRF token.
+//   the new `__Host-rosetta_session` cookie and answers the user and a CSRF token under a new
+//   secret, so a token issued before the sign-in is refused afterwards.
 // - GET /api/session answers the signed-in user and a CSRF token.
-// - DELETE /api/session signs out and clears the cookie (204).
+// - DELETE /api/session signs out and clears the session and CSRF secret cookies (204).
 // No body ever holds the session id, a hash or the CSRF secret (the token is derived from it).
 // The P1-08 hasher has no length limit and queues hashes, so the body is capped at 4 KiB, the
 // password at 1,024 characters, and at most eight sign-ins are verified at a time; beyond that the
-// request is answered 429 before any hashing (the rate limit alone does not bound many addresses).
+// request is answered 429 before any hashing (the rate limit alone does not bound many addresses),
+// and the refusal is audited and logged like a rate-limit hit (RF-1109).
 
 export interface SessionRouteOptions {
   readonly signIn: SignIn;
   readonly signOut: SignOut;
+  readonly refusals: RecordRefusedRequest;
 }
 
 const MAX_USER_NAME_LENGTH = 200;
@@ -43,7 +48,14 @@ function parseSignIn(body: unknown): z.output<typeof signInBody> {
   return parsed.data;
 }
 
-function registerSignIn(server: FastifyInstance, signIn: SignIn): void {
+/** RF-1009: a token under a new CSRF secret; a secret the browser brought is never reused. */
+function freshCsrfToken(request: FastifyRequest, reply: FastifyReply): string {
+  request.cookies[CSRF_COOKIE] = undefined;
+  return reply.generateCsrf();
+}
+
+function registerSignIn(server: FastifyInstance, options: SessionRouteOptions): void {
+  const { signIn, refusals } = options;
   let pending = 0;
   server.post(
     '/api/session',
@@ -53,7 +65,10 @@ function registerSignIn(server: FastifyInstance, signIn: SignIn): void {
     },
     async (request, reply) => {
       const body = parseSignIn(request.body);
-      if (pending >= MAX_PENDING_SIGN_INS) throw new RosettaError(ERROR_CODES.rateLimited);
+      if (pending >= MAX_PENDING_SIGN_INS) {
+        await recordRateLimited(refusals, request);
+        throw new RosettaError(ERROR_CODES.rateLimited);
+      }
       pending += 1;
       const outcome = await signIn
         .execute({
@@ -67,14 +82,15 @@ function registerSignIn(server: FastifyInstance, signIn: SignIn): void {
         });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       void reply.setCookie(SESSION_COOKIE, outcome.value.sessionId, secureCookie);
-      return reply.status(200).send({ user: outcome.value.user, csrfToken: reply.generateCsrf() });
+      const csrfToken = freshCsrfToken(request, reply);
+      return reply.status(200).send({ user: outcome.value.user, csrfToken });
     },
   );
 }
 
 // RF-1100, RF-1101
 export function registerSessionRoutes(server: FastifyInstance, options: SessionRouteOptions): void {
-  registerSignIn(server, options.signIn);
+  registerSignIn(server, options);
 
   server.get(
     '/api/session',
@@ -90,6 +106,7 @@ export function registerSessionRoutes(server: FastifyInstance, options: SessionR
       const { actor, sessionId } = signedInOf(request);
       await options.signOut.execute({ actor, sessionId, ip: request.ip });
       void reply.clearCookie(SESSION_COOKIE, secureCookie);
+      void reply.clearCookie(CSRF_COOKIE, secureCookie);
       return reply.status(204).send();
     },
   );

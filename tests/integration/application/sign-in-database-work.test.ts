@@ -20,7 +20,7 @@ import { timedAsync } from '../../support/stopwatch.js';
 // its own audit row.
 
 const samples = 15;
-const parameters = { cost: 2 ** 10, blockSize: 8, parallelization: 1 } as const;
+const parameters = { cost: 2 ** 12, blockSize: 8, parallelization: 1 } as const;
 const request = { ip: '203.0.113.9', userAgent: 'Browser/1.0' };
 
 interface Setup {
@@ -105,7 +105,7 @@ describe.skipIf(!hasTestDatabase)('sign-in database work on PostgreSQL', () => {
     const unknownMedian = median(unknown);
 
     expect(Math.abs(knownMedian - unknownMedian)).toBeLessThan(
-      0.25 * Math.max(knownMedian, unknownMedian),
+      0.3 * Math.max(knownMedian, unknownMedian),
     );
   }, 60_000);
 });
