@@ -160,7 +160,7 @@ describe('data block headers with hostile paths', () => {
 
     expect(scan).toMatchObject({ ok: true, value: { blocks: 1, textOutside: false } });
     const path = scan.ok ? scan.value.excerpts[0]?.path : undefined;
-    expect(path).toBe(hostile.replace('<<<END', '<<-<END'));
+    expect(path).toBe(hostile.replace('ROSETTA-DATA', 'ROSETTA|-DATA'));
     expect(holdsDataMarker(path ?? '')).toBe(false);
   });
 
