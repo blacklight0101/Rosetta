@@ -200,9 +200,9 @@ describe('GitHub Actions workflows: compose smoke job', () => {
 
   it('RF-1301 runs the Playwright smoke before and after a restart of the stack, then removes the volumes', async () => {
     const text = await smoke();
-    const before = text.indexOf('playwright.compose.config.ts smoke');
+    const before = text.indexOf('--config=playwright.compose.config.ts smoke');
     const restart = text.indexOf(`${stack} down\n`);
-    const after = text.indexOf('playwright.compose.config.ts persistence');
+    const after = text.indexOf('--config=playwright.compose.config.ts persistence');
     const cleanup = text.indexOf('down -v');
 
     expect(before).toBeGreaterThan(-1);

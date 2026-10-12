@@ -5,7 +5,9 @@
     "src/presentation/main.ts",
     "scripts/*.mjs",
     "tests/**/*.test.ts",
-    "src/infrastructure/files/grep-worker.ts"
+    "src/infrastructure/files/grep-worker.ts",
+    "tests/compose/*.spec.ts",
+    "tests/compose/serve.ts"
   ],
   "project": ["src/**/*.ts", "tests/**/*.{ts,tsx}", "scripts/**/*.mjs", "web/**/*.{ts,tsx}"]
 }
