@@ -42,6 +42,9 @@ export async function scanTree(
     logger,
     ...(options.subpath === undefined ? {} : { subpath: options.subpath }),
   });
-  const scanOptions: ScanOptions = { maxFileBytes: options.maxFileBytes ?? defaultMaxFileBytes };
+  const scanOptions: ScanOptions = {
+    maxFileBytes: options.maxFileBytes ?? defaultMaxFileBytes,
+    masker: new SecretMasker(),
+  };
   return { scan: await scanRepository(reader, scanOptions), reader };
 }

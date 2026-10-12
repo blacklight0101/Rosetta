@@ -54,7 +54,7 @@ async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
   if (double !== undefined) return () => double;
   return realAdapters({
     testMode: parts.environment.test,
-    textProtocolPrompt: await loadTextToolProtocol(promptsFolder),
+    textProtocolPrompt: (await loadTextToolProtocol(promptsFolder)).text,
     logger: parts.logger,
   });
 }

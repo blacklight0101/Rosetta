@@ -1,3 +1,4 @@
+import type { TextMasker } from '../../guards/secret-masker.js';
 import type { ArtefactKind } from '../../../domain/code-map/artefact.js';
 import type { SkipReason } from '../../../domain/code-map/file-entry.js';
 import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
@@ -35,6 +36,8 @@ export interface SqlStatement {
 export interface ScanOptions {
   /** `scan.maxFileBytes`: larger files are listed as `skipped: too-large` and never read. */
   readonly maxFileBytes: number;
+  /** Masks a script before its statements are read (RF-141), so no secret reaches the code map. */
+  readonly masker: TextMasker;
 }
 
 export interface UniversalScan {

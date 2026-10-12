@@ -5,7 +5,7 @@ import type {
   AuditLog,
 } from '../../application/ports/audit-log.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { maskedDetailJson, toAuditEvent } from './audit-rows.js';
+import { maskedDetailJson, storedAuditText, toAuditEvent } from './audit-rows.js';
 
 // Architecture section 7, RF-1109: the audit trail in memory, for unit tests. It masks and stores
 // the detail exactly as PgAuditLog does and passes the same contract suite.
@@ -14,6 +14,8 @@ interface StoredEvent {
   readonly sequence: number;
   readonly row: Record<string, unknown>;
   readonly event: AuditEventInput;
+  /** The action as stored, which the filter compares. */
+  readonly action: string;
 }
 
 function parseJson(text: string): unknown {
@@ -31,27 +33,28 @@ export class MemoryAuditLog implements AuditLog {
 
   record(event: AuditEventInput): Promise<void> {
     const sequence = this.events.length + 1;
+    const text = storedAuditText(event);
     const row = {
       id: String(sequence),
       at: event.at,
       actor_user_id: event.actorUserId,
-      action: event.action,
-      target_type: event.targetType,
-      target_id: event.targetId,
-      ip: event.ip,
+      action: text.action,
+      target_type: text.targetType,
+      target_id: text.targetId,
+      ip: text.ip,
       outcome: event.outcome,
       detail: parseJson(maskedDetailJson(event.detail, this.masker)),
     };
-    this.events.push({ sequence, row, event });
+    this.events.push({ sequence, row, event, action: text.action });
     return Promise.resolve();
   }
 
   list(filter: AuditFilter): Promise<readonly AuditEvent[]> {
     const matching = this.events.filter(
-      ({ event }) =>
+      ({ event, action }) =>
         event.at.getTime() >= filter.since &&
         (filter.actorUserId === undefined || event.actorUserId === filter.actorUserId) &&
-        (filter.action === undefined || event.action === filter.action),
+        (filter.action === undefined || action === filter.action),
     );
     const newestFirst = matching.sort(
       (left, right) =>

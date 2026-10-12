@@ -28,7 +28,7 @@ function invalid(name: string, problem: string): RosettaError {
 }
 
 /** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v1.md`). */
-async function loadPromptFile(promptsFolder: string, name: string): Promise<PromptFile> {
+export async function loadPromptFile(promptsFolder: string, name: string): Promise<PromptFile> {
   const version = versionPattern.exec(name)?.[1];
   if (version === undefined) throw invalid(name, 'has no version in its file name');
   const bytes = await readFile(join(promptsFolder, ...name.split('/')));

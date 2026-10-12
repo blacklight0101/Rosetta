@@ -46,7 +46,8 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `cap` sets the daily cap on its own keys (DEC-107), `providers` presses the Test button (RF-407),
  * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
  * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
- * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001).
+ * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001) and `live-run` watches
+ * the runs of its own project on the live page (RF-1002).
  */
 export type E2eAccountKind =
   | 'keys'
@@ -58,6 +59,7 @@ export type E2eAccountKind =
   | 'projects'
   | 'project-settings'
   | 'start-run'
+  | 'live-run'
   | 'admin';
 
 const accountKinds: readonly E2eAccountKind[] = [
@@ -70,6 +72,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'projects',
   'project-settings',
   'start-run',
+  'live-run',
   'admin',
 ];
 

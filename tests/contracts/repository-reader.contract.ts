@@ -11,6 +11,7 @@ import {
   type RepositoryReaderFactory,
 } from '../support/reader-harness.js';
 import { bytesContract } from './repository-reader-bytes.contract.js';
+import { capsContract } from './repository-reader-caps.contract.js';
 import { grepContract } from './repository-reader-grep.contract.js';
 import { mirrorContract } from './repository-reader-mirror.contract.js';
 
@@ -274,6 +275,7 @@ export function repositoryReaderContract(name: string, create: RepositoryReaderF
     grepContract(newReader);
     mirrorContract(newReader);
     bytesContract(newReader);
+    capsContract(newReader);
     readOnlyTests(newReader);
     skippedNameTests(newReader);
   });

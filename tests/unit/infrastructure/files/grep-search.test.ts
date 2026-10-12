@@ -22,6 +22,16 @@ describe('grep search', () => {
     expect(searchFiles({ pattern: 'absent', files })).toEqual({ kind: 'matches', matches: [] });
   });
 
+  it('RF-146 stops one match past the cap, so the caller can tell the matches were cut', () => {
+    expect(searchFiles({ pattern: 'place', files, maxMatches: 1 })).toEqual({
+      kind: 'matches',
+      matches: [
+        { path: 'a.ts', line: 2 },
+        { path: 'b.ts', line: 1 },
+      ],
+    });
+  });
+
   it('RF-146 reports a pattern that is not a regular expression instead of throwing', () => {
     const outcome = searchFiles({ pattern: '(unclosed', files });
 

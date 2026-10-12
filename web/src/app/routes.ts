@@ -3,6 +3,7 @@ import { AdminAuditPage } from '../pages/AdminAuditPage.js';
 import { AdminModelsPage } from '../pages/AdminModelsPage.js';
 import { AdminUsersPage } from '../pages/AdminUsersPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
+import { LiveRunPage } from '../pages/LiveRunPage.js';
 import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
 import { ProjectsPage } from '../pages/ProjectsPage.js';
 import { SettingsPage } from '../pages/SettingsPage.js';
@@ -92,6 +93,13 @@ export const routes: readonly RouteDefinition[] = [
     chrome: 'shell',
     component: AdminModelsPage,
     nav: { group: 'admin', label: 'Default models', order: 30 },
+  },
+  {
+    path: '/runs/:runId',
+    title: 'Live run',
+    access: 'user',
+    chrome: 'shell',
+    component: LiveRunPage,
   },
   ...developmentRoutes,
 ];
