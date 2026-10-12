@@ -100,4 +100,23 @@ describe('EgressGuard and the reads that follow an open private key', () => {
     expect(sent).toContain('Run the tests before a change');
     for (const value of split?.secrets.slice(0, 3) ?? []) expect(sent).not.toContain(value);
   });
+
+  it.each([
+    ['in another case', 'src/Web.config', 'SRC/web.CONFIG'],
+    ['in another Unicode form', 'src/Caf\u00e9/Web.config', 'src/Cafe\u0301/Web.config'],
+  ])(
+    'RF-141 carries an open key into a read of the same file named %s',
+    async (_name, first, other) => {
+      const split = splitKeyCases.find((item) => item.name === 'a key read in three pieces');
+      const [opening = '', middle = ''] = split?.pieces ?? [];
+      const { guard, fake } = await egressHarness();
+
+      await guard.complete(
+        requestWith([...read('call-1', first, 1, opening), ...read('call-2', other, 3, middle)]),
+      );
+
+      const sent = JSON.stringify(fake.requests);
+      for (const value of split?.secrets.slice(0, 3) ?? []) expect(sent).not.toContain(value);
+    },
+  );
 });
