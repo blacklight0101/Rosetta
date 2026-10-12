@@ -147,6 +147,9 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'GET', url: '/missing-page', expected: signedIn(302, 200) },
     { method: 'GET', url: '/projects/a1b2/runs', expected: signedIn(302, 200) },
     { method: 'GET', url: '/assets/missing.js', expected: everyone(404) },
+    { method: 'GET', url: '/ASSETS/x.js', expected: signedIn(302, 200) },
+    { method: 'GET', url: '/assets%2fnope.js', expected: signedIn(302, 200) },
+    { method: 'GET', url: '/api%2fx', expected: signedIn(302, 200) },
     { method: 'GET', url: '/api/missing', expected: signedIn(401, 404) },
   ],
   'HEAD *': [

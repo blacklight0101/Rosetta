@@ -31,6 +31,46 @@ test.describe('network guard', () => {
   });
 });
 
+test.describe('network guard for WebSockets', () => {
+  test('RNF-005 blocks a WebSocket to a host outside 127.0.0.1 and records it', async ({
+    page,
+    network,
+  }) => {
+    await page.setContent('<!doctype html><title>t</title>');
+
+    const outcome = await page.evaluate(
+      () =>
+        new Promise<string>((resolve) => {
+          const socket = new WebSocket('wss://example.com/socket');
+          socket.onopen = () => {
+            resolve('open');
+          };
+          socket.onclose = () => {
+            resolve('closed');
+          };
+        }),
+    );
+
+    expect(outcome).toBe('closed');
+    expect(network.takeBlocked()).toEqual(['wss://example.com/socket']);
+  });
+
+  test('RNF-005 a blocked WebSocket nobody expected fails the test', async ({ page }) => {
+    test.fail();
+    await page.setContent('<!doctype html><title>t</title>');
+
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          const socket = new WebSocket('wss://example.com/unexpected');
+          socket.onclose = () => {
+            resolve();
+          };
+        }),
+    );
+  });
+});
+
 test.describe('axe helper', () => {
   test('RNF-010 fails on a critical violation', async ({ page }) => {
     await page.setContent(

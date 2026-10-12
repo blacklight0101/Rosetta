@@ -1,12 +1,10 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { TestDoubles } from '../../../src/presentation/test-doubles.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { useWritableTempRoot } from '../../support/writable-temp-root.js';
 import { demoGitHub } from '../../support/snapshot-fetcher-harness.js';
 
 // RNF-005, ADR-008: a scan run started through the HTTP API fetches from the fake GitHub injected
@@ -14,11 +12,6 @@ import { demoGitHub } from '../../support/snapshot-fetcher-harness.js';
 
 const secretKey = Buffer.alloc(32, 6).toString('base64');
 const adminName = ['e2e', 'admin'].join('.');
-const folders: string[] = [];
-
-afterAll(async () => {
-  await Promise.all(folders.map((folder) => rm(folder, { recursive: true, force: true })));
-});
 
 type Headers = Record<string, string>;
 
@@ -66,17 +59,17 @@ async function endState(query: () => Promise<string | null | undefined>): Promis
 
 describe.skipIf(!hasTestDatabase)('test doubles in the composed application', () => {
   const database = useTestDatabase();
+  // The snapshot the scan downloads is read-only (RF-005), so the folder is made writable to delete.
+  const data = useWritableTempRoot('rst-doubles-');
 
   it('RNF-005 a scan run fetches from the injected fake GitHub', async () => {
     const schema = await database.createSchema({ migrate: false });
-    const dataDir = await mkdtemp(join(tmpdir(), 'rst-doubles-'));
-    folders.push(dataDir);
     const password = fixturePassword('Doubles');
     const environment = loadEnvironment({
       DATABASE_URL: schema.url,
       ROSETTA_SECRET_KEY: secretKey,
       ROSETTA_PUBLIC_URL: 'http://127.0.0.1:8080',
-      ROSETTA_DATA_DIR: dataDir,
+      ROSETTA_DATA_DIR: data.path,
       ROSETTA_ADMIN_USER: adminName,
       ROSETTA_ADMIN_PASSWORD: password,
       ROSETTA_TEST: '1',

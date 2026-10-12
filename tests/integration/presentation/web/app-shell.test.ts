@@ -134,3 +134,29 @@ describe('app shell fallback limits', () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+describe('app shell fallback and path variants', () => {
+  it.each(['/ASSETS/x.js', '/assets%2fnope.js', '/api%2fx'])(
+    'RF-1009 %s is not public: a visitor without a session is sent to /sign-in',
+    async (url) => {
+      const test = serverWithShell();
+
+      const response = await new TestBrowser(test.server).request({ method: 'GET', url });
+
+      expect(response.statusCode).toBe(302);
+      expect(response.headers.location).toBe('/sign-in');
+    },
+  );
+
+  it.each(['/ASSETS/x.js', '/assets%2fnope.js', '/api%2fx'])(
+    'RF-1009 %s answers the front end to a signed-in user (the match is case-sensitive and does not decode)',
+    async (url) => {
+      const test = serverWithShell();
+      const browser = await signedInBrowser(test.server, await addUser(test, { userName: 'amy' }));
+
+      const response = await browser.request({ method: 'GET', url });
+
+      expect(response.statusCode).toBe(200);
+    },
+  );
+});
