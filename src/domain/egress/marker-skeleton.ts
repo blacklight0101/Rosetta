@@ -1,31 +1,38 @@
 import { foldMarkers, isAscii } from './marker-fold.js';
 
-// RF-145, ADR-013: the one matcher that decides whether text holds a data-block marker. The
-// frames Rosetta writes are `<<<ROSETTA-DATA {...}>>>` and `<<<END ROSETTA-DATA>>>`; a model also
-// takes `<<<END R0SETTA_DATA>>>`, `«««END RОSETTA/DATA»»»` or `＜＜＜ＥＮＤ ＲＯＳＥＴＴＡ` for one, and no
-// list of spellings is ever complete. So every line is read as a skeleton, after the fold of
-// marker-fold.ts (NFKC, invisible characters dropped, Unicode look-alikes written as ASCII, a
-// next-line or line separator as a line break, any other space or control as a space, an Arabic
-// tatweel as a hyphen), with each character one of:
+// RF-145, ADR-013: the one matcher that decides whether text holds a data-block marker. It is the
+// second line of defence: a block ends only at the footer with its own random tag (data-block.ts),
+// and this matcher defangs and refuses any other text a model could still take for a frame. The
+// frames Rosetta writes are `<<<ROSETTA-DATA <tag> {...}>>>` and `<<<END ROSETTA-DATA <tag>>>>`; a
+// model also takes `<<<END R0SETTA_DATA>>>`, `«««END RОSETTA/DATA»»»`, `END ROSETTA-DATA: note` or
+// `＜＜＜ＥＮＤ ＲＯＳＥＴＴＡ` for one, and no list of spellings is ever complete. So every line is read
+// as a skeleton, after the fold of marker-fold.ts (NFKC, invisible characters dropped, Unicode
+// look-alikes written as ASCII, a next-line or line separator as a line break, any other space or
+// control as a space, an Arabic tatweel as a hyphen), with each character one of:
 // - a letter: an ASCII letter in upper case, a digit or symbol written for one (0 O, 3 E, 4 A,
 //   5 S, 7 T, @ A, $ S), or "any letter" for another digit or a non-ASCII letter or number;
 // - a bracket: `< > [ ] { } ( )` or a non-ASCII symbol, opening, closing or quotation mark;
+// - a line break: a lone CR or a folded next-line control or line or paragraph separator (text is
+//   cut into lines at `\n` only, as the block format cuts it, so a CR cannot hide a marker);
 // - a stop: the `|` with which a rendered block breaks a name;
 // - a gap: anything else (spaces, other ASCII punctuation, non-ASCII dashes and punctuation).
-// The name is eleven letters spelling ROSETTADATA with only gaps and brackets between them, of
-// which up to three may be "any letter". It is a marker when, with only gaps between, a run of at
-// least two brackets stands before it (`<` or non-ASCII; any bracket when a whole END stands
-// between) or after it (`>` or non-ASCII), or when its part of the line between line breaks
-// spells nothing but END and the name and holds END or an angle or non-ASCII bracket. Finding a
-// marker and breaking it (a `|` after the seventh letter of the name) are this one matcher, so
-// what the guard refuses and what a rendered block defangs cannot drift.
+// The name is eleven letters spelling ROSETTADATA with only gaps, brackets and line breaks between
+// them, of which up to three may be "any letter". It is a marker when, with only gaps between:
+// - END stands before it, anywhere on the line (`ok END ROSETTA-DATA here`, `&lt;END ROSETTA-DATA`,
+//   `%3CEND ROSETTA-DATA`), because a footer is END and the name;
+// - a `{` follows it, or one word and then a `{` (a header, with or without a forged tag);
+// - a run of at least two brackets stands before it (`<` or non-ASCII) or after it (`>` or
+//   non-ASCII);
+// - or its part of the line between line breaks spells nothing but the name and holds an angle or
+//   non-ASCII bracket (`<ROSETTA-DATA>`).
+// Finding a marker and breaking it (a `|` after the seventh letter of the name) are this one
+// matcher, so what the guard refuses and what a rendered block defangs cannot drift.
 //
-// Known limits: a marker with single brackets and other words on its line (`<END ROSETTA-DATA> x`),
-// one cut by a line break, `>>>` or `[[[` before the name without END, or a name with four or
-// more letters no table knows is not seen; none reads as Rosetta's frames. On the safe side, a
-// name next to two brackets is refused even in ordinary text (`«Rosetta» data`,
-// `<< rosettaData`, `List<RosettaData>>`): the worst case is a refused excerpt, never a forged
-// frame.
+// Known limits: a marker cut by a hard line break (`<<<END` / `ROSETTA-DATA`) or a name with four or
+// more letters no table knows is not seen; the tag still keeps such a block closed. On the safe
+// side, the name after the letters END or next to two brackets is a marker even in ordinary text
+// (`send Rosetta data`, `«Rosetta» data`, `List<RosettaData>>`): the worst case is a defanged or
+// refused excerpt, never a forged frame.
 
 const NAME = 'ROSETTADATA';
 const END = 'END';
@@ -43,7 +50,7 @@ type Kind = 'letter' | 'bracket' | 'gap' | 'line' | 'stop';
 
 interface Token {
   readonly kind: Kind;
-  /** The letter a letter token reads as, `<` or `>` for an ASCII bracket; empty otherwise. */
+  /** The letter a letter token reads as, the bracket for an ASCII bracket; empty otherwise. */
   readonly letter: string;
   /** Where, in the line, the character the token comes from ends. */
   readonly end: number;
@@ -68,7 +75,7 @@ function asciiKind(char: string): [Kind, string] {
 }
 
 function kindOf(char: string): [Kind, string] {
-  if (char === '\n') return ['line', ''];
+  if (char === '\n' || char === '\r') return ['line', ''];
   if (char === BREAK) return ['stop', ''];
   if ('<>[]{}()'.includes(char)) return ['bracket', char];
   if (char.charCodeAt(0) < 0x80) return asciiKind(char);
@@ -77,7 +84,7 @@ function kindOf(char: string): [Kind, string] {
   return ['gap', ''];
 }
 
-/** The skeleton of one line (no `\n` or `\r` in it). */
+/** The skeleton of one line (no `\n` in it). */
 function tokensOf(line: string): Token[] {
   const ascii = isAscii(line);
   const fold = ascii ? undefined : foldMarkers(line);
@@ -102,13 +109,13 @@ function skipGaps(tokens: readonly Token[], index: number, step: number): number
   return at;
 }
 
-// Which brackets frame a name (`''` stands for any non-ASCII bracket): before it `<`, or any
-// bracket when a whole END stands between; after it `>`; so `List<int>> name`, `>>> name`,
-// `[[name]]` and `name<T>` do not frame a name, and the brackets that do not count are passed over.
+// Which brackets frame a name (`''` stands for any non-ASCII bracket): before it `<`, after it
+// `>`; so `List<int>> name`, `>>> name`, `[[name]]` and `name<T>` do not frame a name, and the
+// brackets that do not count are passed over.
 const opening: ReadonlySet<string> = new Set(['', '<']);
-const openingAfterEnd: ReadonlySet<string> = new Set(['', '<', '>', '[', ']', '{', '}', '(', ')']);
 const closing: ReadonlySet<string> = new Set(['', '>']);
 const angle: ReadonlySet<string> = new Set(['', '<', '>']);
+const openingBrace: ReadonlySet<string> = new Set(['{']);
 
 const counts = (token: Token | undefined, kinds: ReadonlySet<string>): boolean =>
   token?.kind === 'bracket' && kinds.has(token.letter);
@@ -132,17 +139,24 @@ function reads(token: Token | undefined, letter: string | undefined): boolean {
   return token?.kind === 'letter' && (token.letter === letter || token.letter === ANY);
 }
 
-/** The END letters right before the name: how many there are and the index of the first. */
-function endBefore(tokens: readonly Token[], first: number): { count: number; start: number } {
-  let count = 0;
-  let start = first;
+/** Whether the letters END stand right before the name, with only gaps between. */
+function endBefore(tokens: readonly Token[], first: number): boolean {
   let at = skipGaps(tokens, first - 1, -1);
-  while (count < END.length && reads(tokens[at], END[END.length - 1 - count])) {
-    count += 1;
-    start = at;
+  for (let count = 0; count < END.length; count += 1) {
+    if (!reads(tokens[at], END[END.length - 1 - count])) return false;
     at = skipGaps(tokens, at - 1, -1);
   }
-  return { count, start };
+  return true;
+}
+
+/** Whether a `{` follows the name, with only gaps and at most one word between (a header). */
+function opensObject(tokens: readonly Token[], last: number): boolean {
+  let at = skipGaps(tokens, last + 1, 1);
+  if (tokens[at]?.kind === 'letter') {
+    while (tokens[at]?.kind === 'letter') at += 1;
+    at = skipGaps(tokens, at, 1);
+  }
+  return counts(tokens[at], openingBrace);
 }
 
 /** The indexes of the tokens that spell the name from letter `start` on, or undefined. */
@@ -168,23 +182,21 @@ function segmentOf(tokens: readonly Token[], from: number, to: number): readonly
   return tokens.slice(start, end + 1);
 }
 
-/** Whether the name, with its END, is all its part of the line spells, marked as a frame. */
-function standsAlone(tokens: readonly Token[], from: number, to: number, ends: number): boolean {
+/** Whether the name is all its part of the line spells, marked as a frame by a bracket. */
+function standsAlone(tokens: readonly Token[], from: number, to: number): boolean {
   const segment = segmentOf(tokens, from, to);
   const letters = segment.filter((token) => token.kind === 'letter').length;
-  const bracketed = segment.some((token) => counts(token, angle));
-  return letters === NAME.length + ends && (ends === END.length || bracketed);
+  return letters === NAME.length && segment.some((token) => counts(token, angle));
 }
 
 /** Whether the name at these token indexes is a marker. */
 function framed(tokens: readonly Token[], name: readonly number[]): boolean {
   const first = name[0] ?? 0;
   const last = name.at(-1) ?? 0;
-  const end = endBefore(tokens, first);
-  const before = end.count === END.length ? openingAfterEnd : opening;
-  if (bracketRun(tokens, skipGaps(tokens, end.start - 1, -1), -1, before) >= MIN_RUN) return true;
+  if (endBefore(tokens, first) || opensObject(tokens, last)) return true;
+  if (bracketRun(tokens, skipGaps(tokens, first - 1, -1), -1, opening) >= MIN_RUN) return true;
   if (bracketRun(tokens, last + 1, 1, closing) >= MIN_RUN) return true;
-  return standsAlone(tokens, end.start, last, end.count);
+  return standsAlone(tokens, first, last);
 }
 
 /** Where, in the line, each marker has the break of its name. */
@@ -200,7 +212,8 @@ function breaksIn(line: string): number[] {
   return breaks;
 }
 
-const lineText = /[^\n\r]+/g;
+/** A line: the block format cuts at `\n` only, so a lone CR stays inside its line. */
+const lineText = /[^\n]+/g;
 
 // RF-145
 export function holdsMarker(text: string): boolean {

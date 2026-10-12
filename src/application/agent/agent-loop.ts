@@ -1,4 +1,4 @@
-import { renderDataBlock } from '../../domain/egress/data-block.js';
+import type { DataBlockSource } from '../../domain/egress/data-block.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { parseCardsWithRepair, type OutputProblem } from '../cards/parse-cards.js';
@@ -39,6 +39,8 @@ import { isReaderToolName, type ReaderToolName } from './tool-definitions.js';
 interface AgentToolSet {
   readonly definitions: readonly ToolDefinition[];
   areaOverview(): string;
+  /** RF-145: text as one data block with a fresh tag of its own. */
+  renderBlock(source: DataBlockSource, text: string): string;
   run(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome>;
 }
 
@@ -221,7 +223,7 @@ class AgentTask {
     const code = ERROR_CODES.agentRepeatedCalls;
     const text = `error ${code}: ${repeatedMessage}`;
     return {
-      content: renderDataBlock({ source, excerpts: [], text }),
+      content: this.request.tools.renderBlock(source, text),
       error: { code, message: repeatedMessage },
     };
   }

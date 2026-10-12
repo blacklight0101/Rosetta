@@ -210,7 +210,7 @@ export function composeRuns(parts: RunParts): RunComposition {
     lifecycle,
     executors: {
       scan: scan.executor,
-      understand: composeUnderstand({ ...parts, writer, manifests, projects, runs }),
+      understand: composeUnderstand({ ...parts, writer, manifests, projects, runs, ids }),
     },
     clock,
     logger,

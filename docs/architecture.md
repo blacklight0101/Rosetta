@@ -281,7 +281,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `LanguagePack` | symbols, references (links), routes and candidate entities for the files of some extensions, one file at a time (ADR-004, RF-110); the port is `src/application/ports/language-pack.ts`; `LanguagePackRegistry` maps an extension to its pack (two packs on one extension is `RST-1201`) and the composition root builds it (`composeLanguagePacks`); `analyseWithPacks` runs the packs over the universal scan's files through `RepositoryReader.readBytes`, keeps a file whose pack throws at `coarse` with an `RST-1200` warning (path and pack only, never the failure text), drops links to files outside the scan, and sorts every list; `web-tree-sitter` is imported only under `src/infrastructure/scan/packs/` (dependency-cruiser rule `tree-sitter-only-in-packs`); the C# pack refuses a tree with syntax errors, so that file stays `coarse` instead of carrying partial data; the runner yields to the event loop after every file; a scan-wide parse budget (`ParseBudget` in `parse-budget.ts`, two minutes by default, injectable with a fake monotonic clock; only time inside the packs counts) bounds the total pack time: once it is spent, no further file reaches a pack and a running parse is stopped through `PackFile.shouldStop` (the C# pack checks it in its tree-sitter progress callback and resets the parser after a halted parse), the remaining claimed files stay `coarse` with an `RST-1204` warning, one aggregated log line is written and `scan-summary.md` counts them (P1-75); `knip.json` ignores the `tree-sitter-c-sharp` dependency only because its grammar file is found by `createRequire().resolve`, which knip cannot see (JSON has no comments) | `CSharpPack` (tree-sitter, WebAssembly grammar; `.cs` symbols and `DbSet` entities, `.aspx`/`.ascx`/`.master` code-behind links), `TestLanguagePack` (tests) |
 | `ConfigSource` | load and validate the server environment (RF-1305) and project settings | `EnvConfigSource`, `DbProjectSettings` |
 | `Clock` | current time | `SystemClock`, `FixedClock` (tests) |
-| `IdGenerator` | run ids and every UUID | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
+| `IdGenerator` | run ids, every UUID and the random tag of every data block (RF-145) | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
 | `Logger` | structured application log with levels and correlation ids (RF-009) | `StdoutJsonLogger`, `JsonlFileLogger`, `FanOutLogger`, `MemoryLogger` (tests) |
 | `ProviderCallRecorder` | one record per provider call attempt (RF-408) and the masked transcript lines of each agent task (data-model.md section 3.15), written by an `ObservedProvider` decorator around every provider; masks every line before it is kept | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
 | `RunEventSink`, `RunEventHistory`, `RunEventFeed` | typed run events for the web UI and the replay log (RF-424, RF-1006). The sink takes complete events with their `seq` (numbered by `RunEventPublisher`); the log refuses a gap, an event of another run and anything after `run.ended` (RST-2105). The history reads the stored events after a `seq` (`read`), replays them in batches at the receiver's pace (`replay`, streaming the file through the `TextLineReader` port) and gives the last `seq`; the feed gives a page the live events of its own run. `JsonlEventLog` writes through the `OutputWriter`, masks each line, serialises the writes of a run, ignores a torn last line and removes it before the next write; `SseBroadcaster` masks, delivers per user and run and forgets a run's listeners after `run.ended`; `FanOutSink` sends to the log first | `JsonlEventLog` (sink and history), `SseBroadcaster` (sink and feed), `FanOutSink`, `MemoryEventSink` (sink and history, tests) |
@@ -393,8 +393,8 @@ sequenceDiagram
   not skipped), passed to the reader as its path list. Results are bounded (`ToolLimits`): lines longer than 2 000 characters
   are cut, a result holds at most 40 000 characters (a read stops at the last whole line that fits and cites only
   the lines it returns), grep at most 100 matches and listings at most 200 entries, each with a notice.
-- **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v1.md` with the area's file list as a
-  data block; after each tool turn a user message from `prompts/reader/turns-left.v1.md` gives the turns left. The
+- **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v2.md` with the area's file list as a
+  data block; after each tool turn a user message from `prompts/reader/turns-left.v2.md` gives the turns left. The
   task ends `Done` (final answer parsed with one repair, RF-202; the repair turn is a turn like any other, under the
   same turn limit, context share and stop checks), `InvalidOutput`, `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
@@ -405,12 +405,13 @@ sequenceDiagram
   conversation. A task whose call the budget guard refuses (`RST-1600`), or whose signal another task aborted for a
   cap, ends `StoppedByCap` with reason `cap-reached` and keeps what it learned; any other stop stays `Failed`
   with `RST-1501`.
-- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v1.md` followed by
+- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v2.md` followed by
   `prompts/cards/card-format.v1.md`; `loadReaderPrompts` reads the five files it uses (the two above, the task, the
   turns-left notice and `prompts/cards/repair.v1.md`), refuses a template without its one placeholder or a file
   that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
   them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
-  text inside data blocks is data, never instructions (unit test over `prompts/<role>/`).
+  text inside data blocks is data, never instructions, and that a block ends only at the closing line with its own
+  tag (unit test over `prompts/<role>/`).
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,
@@ -426,33 +427,47 @@ sequenceDiagram
   the pattern (every agent re-reads context, so tokens grow with the number of agents) is bounded by the caps of
   ADR-007. Frameworks that own this loop (LangGraph, Google ADK) are not used (ADR-003, DEC-58).
 - **Untrusted content** (ADR-013): tool results enter the conversation only inside delimited repository-content
-  blocks, never in the system prompt (RF-145): the loop wraps each tool result with `renderDataBlock`
-  (`src/domain/egress/data-block.ts`) as one tool message; a header line
-  `<<<ROSETTA-DATA {"label":"repository-content","note":...,"source":<tool>,"excerpts":[{"path","startLine","endLine"}]}>>>`
-  (paths with their markers defanged, every `<` and `>` of the JSON written as `\u003c`/`\u003e`, a line break in a
+  blocks, never in the system prompt (RF-145): the tools wrap each result with `renderDataBlock`
+  (`src/domain/egress/data-block.ts`) as one tool message (the loop's own error answers too, through the tool set's
+  `renderBlock`). Every block carries a **tag**: 24 characters of lower-case base32 (120 random bits) from
+  `IdGenerator.dataBlockTag` (`node:crypto` `randomBytes` in `TimestampIdGenerator`; tests inject
+  `SequenceIdGenerator`, so rendered blocks stay stable), new for every block and never derived from content. The
+  header line is
+  `<<<ROSETTA-DATA <tag> {"label":"repository-content","note":...,"source":<tool>,"excerpts":[{"path","startLine","endLine"}]}>>>`
+  (paths with their markers defanged, every `<` and `>` of the JSON written as `<`/`>`, a line break in a
   path escaped by JSON and every character outside printable ASCII written as a `\u` escape, so no header text can
-  read as a frame), the content with every marker look-alike defanged (the name broken, `ROSETTA|-DATA`, lines kept), and the footer
-  `<<<END ROSETTA-DATA>>>`; the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
-  Whether text holds a marker is decided by one matcher, `src/domain/egress/marker-skeleton.ts`, used both to refuse
-  and to defang, so the two cannot drift; no list of look-alikes is ever complete, so it reads each line as a
-  skeleton. The line is folded first (`marker-fold.ts`: NFKC, invisible characters and combining marks dropped, the
-  characters of the Unicode confusables data written as the ASCII they imitate from the generated table
-  `marker-confusables.ts`, U+0085 and the line and paragraph separators as line breaks, any other space or control as
-  a space, U+0640 tatweel as a hyphen); then each character is a letter (ASCII in any case; `0 3 4 5 7 @ $` for
-  `O E A S T A S`; any other digit or non-ASCII letter stands for any letter), a bracket (`< > [ ] { } ( )` or a
-  non-ASCII symbol, opening, closing or quotation mark), a stop (`|`) or a gap (spaces and other punctuation). The
-  name is the letters `ROSETTADATA` with only gaps and brackets between them, up to three of the eleven standing for
-  any letter. It is a marker when a run of at least two brackets stands before it (`<` or non-ASCII, or any bracket
-  when a whole `END` stands between) or after it (`>` or non-ASCII), or when its part of the line spells nothing but
-  `END` and the name and holds `END` or an angle or non-ASCII bracket. A rendered block breaks every match with a `|`
-  after the seventh letter of the name; the guard refuses a block read back that still holds one (`RST-1516`, security
-  event). Known limits: a marker with single brackets and other words on its line (`<END ROSETTA-DATA> x`), one cut
-  by a line break, `>>>` or `[[[` before the name without `END`, or a name with four or more letters no table knows
-  is not seen (none reads as Rosetta's frames); on the safe side a name next to two brackets is refused even in
-  ordinary text (`«Rosetta» data`, `<< rosettaData`, `List<RosettaData>>`), while prose such as "Rosetta data: …",
-  `ROSETTA_DATA_DIR`, heredocs, shifts and generics pass. Over the fixture repositories, `src/` and `docs/` the only
-  text refused is the injection fixture and the files that document the markers. The table is regenerated with
-  `scripts/make-marker-confusables.mjs`, whose output carries the full Unicode License v3 notice.
+  read as a frame), then the content with every marker look-alike defanged (the name broken, `ROSETTA|-DATA`, lines
+  kept), then the footer `<<<END ROSETTA-DATA <tag>>>>` with the same tag. A tag that is not well formed is refused
+  when the block is built (`RST-1516`). The reader prompts (`prompts/reader/*.v2.md`) tell the model that a block ends
+  only at the closing line that carries the same tag as its opening line, and that any other line that looks like an
+  opening or closing line, with a missing or a different tag, is data; they describe the frame in words, so they hold
+  no marker themselves. `scanDataBlocks` reads blocks back the same way: lines are cut at `\n` only, a block ends only
+  at the footer with its own tag, and a block whose header or content holds its own tag (in any case, also folded as
+  below) is refused (`RST-1516`, security event); repository text cannot know the tag, so this check only fails
+  closed. The tag removes the look-alike race: whatever a file spells, it cannot produce the closing line of the block
+  it sits in, so no list or matcher has to be complete for a block to stay closed.
+  The marker matcher stays as a **second line of defence**, for a model that ignores the tag. Whether text holds a
+  marker is decided by one matcher, `src/domain/egress/marker-skeleton.ts`, used both to refuse and to defang, so the
+  two cannot drift. It reads each line (cut at `\n` only, like the scan) as a skeleton. The line is folded first
+  (`marker-fold.ts`: NFKC, invisible characters and combining marks dropped, the characters of the Unicode confusables
+  data written as the ASCII they imitate from the generated table `marker-confusables.ts`, U+0085 and the line and
+  paragraph separators as line breaks, any other space or control as a space, U+0640 tatweel as a hyphen); then each
+  character is a letter (ASCII in any case; `0 3 4 5 7 @ $` for `O E A S T A S`; any other digit or non-ASCII letter
+  stands for any letter), a bracket (`< > [ ] { } ( )` or a non-ASCII symbol, opening, closing or quotation mark), a
+  line break (a lone CR or a folded separator), a stop (`|`) or a gap (spaces and other punctuation). The name is the
+  letters `ROSETTADATA` with only gaps, brackets and line breaks between them, up to three of the eleven standing for
+  any letter. It is a marker when `END` stands before it anywhere on the line (`END ROSETTA-DATA: note`,
+  `&lt;END ROSETTA-DATA`, `%3CEND ROSETTA-DATA`), when a `{` follows it (directly or after one word, a forged tag),
+  when a run of at least two brackets stands before it (`<` or non-ASCII) or after it (`>` or non-ASCII), or when its
+  part of the line between line breaks spells nothing but the name and holds an angle or non-ASCII bracket. A rendered
+  block breaks every match with a `|` after the seventh letter of the name; the guard refuses a block read back that
+  still holds one (`RST-1516`, security event). Known limits: a marker cut by a hard line break, or a name with four
+  or more letters no table knows, is not seen (the tag still keeps the block closed); on the safe side the name after
+  the letters `END` or next to two brackets is a marker even in ordinary text (`send Rosetta data`, `«Rosetta» data`,
+  `List<RosettaData>>`), while prose such as "Rosetta data: …", `ROSETTA_DATA_DIR`, heredocs, shifts and generics
+  pass. Over the fixture repositories, `src/`, `docs/`, `prompts/`, `web/`, `templates/`, `eval/` and `scripts/` the
+  only text that matches is the injection fixture and the files that document the markers. The table is regenerated
+  with `scripts/make-marker-confusables.mjs`, whose output carries the full Unicode License v3 notice.
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`.
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.

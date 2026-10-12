@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
+import type { IdGenerator } from '../application/ports/id-generator.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProjectRepository } from '../application/ports/project-repository.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
@@ -40,6 +41,7 @@ export interface UnderstandParts {
   readonly manifests: RunManifestStore;
   readonly projects: ProjectRepository;
   readonly runs: RunIndex;
+  readonly ids: IdGenerator;
 }
 
 /** RF-143: the host of the Ollama address; an address that does not parse names no host. */
@@ -86,5 +88,6 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     ledger: new PgCostLedger(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(promptsFolder),
+    ids: parts.ids,
   });
 }

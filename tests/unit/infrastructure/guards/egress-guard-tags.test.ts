@@ -72,7 +72,6 @@ describe('EgressGuard and block tags', () => {
       await outcomeOf(renderDataBlock({ source: 'read_file', excerpts: [], text }, TAG)),
     ).toMatchObject(refused);
   });
-
 });
 
 describe('EgressGuard and markers rendered into a tagged block', () => {

@@ -7,6 +7,7 @@ import { runAgentTask } from '../agent/agent-loop.js';
 import type { AgentTaskResult } from '../agent/agent-task-result.js';
 import { ReadOnlyTools } from '../agent/read-only-tools.js';
 import type { ReaderPrompts } from '../agent/reader-prompts.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { ScannedSource } from '../ports/scan-results.js';
@@ -40,6 +41,8 @@ export interface ReaderTaskContext {
   readonly nextCallId: () => string;
   /** One per run, 32 hexadecimal characters. */
   readonly traceId: string;
+  /** RF-145: the random tag of every data block the tools write. */
+  readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
 const READER = 'reader';
@@ -86,6 +89,7 @@ export async function runReaderTask(
   const tools = new ReadOnlyTools({
     ...{ reader: scanned.reader, codeMap: scanned.codeMap, area: task.area, logger },
     limits: readerToolLimits(context.settings),
+    ids: context.ids,
   });
   return runAgentTask({
     provider: providerWithEvents(role.provider, events, turns),
