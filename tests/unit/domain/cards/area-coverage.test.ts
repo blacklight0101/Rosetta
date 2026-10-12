@@ -63,6 +63,17 @@ describe('areaCoverage token share', () => {
     expect(coverage.readTokenShare).toBe(0.25);
   });
 
+  it('RF-230 rounds the tokens read per file, so the area total is the sum of the rounded files', () => {
+    const halves = ['x', 'y', 'z'].map((name) => file(`src/${name}.cs`, 10, 5));
+    const three = { name: 'halves', files: halves.map((entry) => entry.path), estimatedTokens: 15 };
+    const reads = halves.map((entry) => read(entry.path, 1, 1));
+
+    const coverage = areaCoverage(three, halves, reads);
+
+    expect(coverage.readTokens).toBe(3);
+    expect(coverage.readTokenShare).toBe(0.2);
+  });
+
   it('RF-230 rounds the share to four decimals and reaches 1 when every line was read', () => {
     const thirds = areaCoverage(area, files, [read('src/a.cs', 1, 33)]);
     const whole = areaCoverage(area, files, [read('src/a.cs', 1, 100), read('src/b.cs', 1, 100)]);
