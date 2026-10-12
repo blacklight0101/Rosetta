@@ -34,7 +34,7 @@ export class FileReportWriter implements ReportWriter {
 
   // RF-504, RF-506
   async write(scope: RunScope, model: ReportModel): Promise<readonly string[]> {
-    const { writer, masker } = this.options;
+    const { masker } = this.options;
     const assets = await loadReportAssets(this.options.assetsFolder);
     // The pages are made of repository and model text, so they are masked; the two assets are the
     // files of `templates/report/`, written as they are.
@@ -48,15 +48,27 @@ export class FileReportWriter implements ReportWriter {
     const folder = `${runPath(scope.projectId, scope.runKey)}/${FOLDER}`;
     const written: string[] = [];
     for (const [name, text] of Object.entries(files)) {
-      const file = { userId: scope.userId, path: `${folder}/${name}` };
-      const result = await writer.writeText(file, text);
-      if (!result.ok) {
-        throw new RosettaError(ERROR_CODES.reportWriteFailed, result.error.message, {
-          cause: result.error,
-        });
-      }
+      await this.writeOne(scope.userId, `${folder}/${name}`, text);
       written.push(`${FOLDER}/${name}`);
     }
     return written;
+  }
+
+  /**
+   * One file, whole or not at all. A refusal or a failure of the disk is RST-1701 with its cause;
+   * files already written by this build stay, so a build that stops half way is repeated (it
+   * writes the same bytes again) rather than undone.
+   */
+  private async writeOne(userId: string, path: string, text: string): Promise<void> {
+    try {
+      const result = await this.options.writer.writeText({ userId, path }, text);
+      if (result.ok) return;
+      throw new RosettaError(ERROR_CODES.reportWriteFailed, result.error.message, {
+        cause: result.error,
+      });
+    } catch (error) {
+      if (error instanceof RosettaError) throw error;
+      throw new RosettaError(ERROR_CODES.reportWriteFailed, undefined, { cause: error });
+    }
   }
 }

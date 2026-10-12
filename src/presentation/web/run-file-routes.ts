@@ -31,6 +31,8 @@ function registerFiles(server: FastifyInstance, services: RunFileServices): void
     // A HEAD request would open the file to throw it away; the route has no HEAD form.
     { exposeHeadRoute: false, config: { access: 'user' } },
     async (request, reply) => {
+      // Set first, so the 404 of a refused path carries it too.
+      reply.header('cache-control', 'no-store');
       const outcome = await services.readRunFile.execute({
         actor: signedInOf(request).actor,
         runId: request.params.runId,
@@ -38,10 +40,7 @@ function registerFiles(server: FastifyInstance, services: RunFileServices): void
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
       const { contentType, disposition, fileName, size, body } = outcome.value;
-      reply
-        .header('content-type', contentType)
-        .header('content-length', size)
-        .header('cache-control', 'no-store');
+      reply.header('content-type', contentType).header('content-length', size);
       if (disposition === 'attachment') {
         reply.header('content-disposition', `attachment; filename="${fileName}"`);
       }

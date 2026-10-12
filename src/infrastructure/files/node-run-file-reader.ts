@@ -47,11 +47,18 @@ async function openSame(found: { path: string; info: BigIntStats }): Promise<Ope
   return ok({ size: Number(opened.size), body: handle.createReadStream() });
 }
 
+export interface NodeRunFileReaderOptions {
+  /** Called with the path between the look at the file and its opening; tests swap the file there. */
+  readonly afterLook?: (path: string) => Promise<void>;
+}
+
 export class NodeRunFileReader implements RunFileReader {
   private readonly dataDir: string;
+  private readonly options: NodeRunFileReaderOptions;
 
-  constructor(dataDir: string) {
+  constructor(dataDir: string, options: NodeRunFileReaderOptions = {}) {
     this.dataDir = dataDir;
+    this.options = options;
   }
 
   // RF-506, RF-1105, RF-005
@@ -62,6 +69,7 @@ export class NodeRunFileReader implements RunFileReader {
     if (folder === undefined || !(await isRealFolder(folder))) return notFound;
     const found = await plainFileAt(folder, path.split('/')).catch(() => undefined);
     if (found === undefined) return notFound;
+    await this.options.afterLook?.(found.path);
     return openSame(found);
   }
 }

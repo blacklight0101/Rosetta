@@ -178,13 +178,19 @@ function registerErrorHandlers(server: FastifyInstance, options: ServerOptions):
     if (errorReply.body.code === ERROR_CODES.csrfTokenInvalid) {
       await recordCsrfRefusal(auth.refusals, request);
     }
-    return reply.status(errorReply.status).send(errorReply.body);
+    return reply
+      .header('cache-control', 'no-store')
+      .status(errorReply.status)
+      .send(errorReply.body);
   });
   const hasShell = options.staticRoot !== undefined;
   server.setNotFoundHandler((request, reply) => {
     if (hasShell && isShellRequest(request)) return reply.sendFile('index.html');
     const errorReply = toErrorReply(new RosettaError(ERROR_CODES.notFound));
-    return reply.status(errorReply.status).send(errorReply.body);
+    return reply
+      .header('cache-control', 'no-store')
+      .status(errorReply.status)
+      .send(errorReply.body);
   });
 }
 
