@@ -208,8 +208,8 @@ The cheapest current OpenAI model with tool calling, checked on OpenAI's pricing
 **`gpt-5-nano`**, dated id **`gpt-5-nano-2025-08-07`**: USD 0.05 per million input tokens, 0.005 cached input, 0.40
 output (standard tier). It supports function calling on Chat Completions. It is the recommended `defaultRoles` value
 for every role of the hosted deployment until the reader model spike (P1-47) shows a role needs a stronger model;
-OpenAI recommends `gpt-5.6-luna` (0.20 / 0.02 / 1.20) as the next step up. Prices change: the price table (P1-27) is
-the source for cost figures, not this section.
+OpenAI recommends `gpt-5.6-luna` (0.20 / 0.02 / 1.20) as the next step up. Prices change: the price table
+`prices/default-prices.yaml` (data-model.md section 3.18) is the source for cost figures, not this section.
 
 ## 4. Anthropic
 
