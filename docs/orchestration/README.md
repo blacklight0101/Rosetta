@@ -32,7 +32,7 @@ Every rule below refers to these settings by name, so a stack change is made her
 | Commit message | Conventional Commits, `type(scope): subject`, a `Refs:` footer with the card, RF, ADR and DEC ids, and the attribution line given by the session instructions |
 | Issue and pull request | one GitHub issue per card (title `<id> <title>`, milestone of the phase, labels `difficulty:<n>` and `builder:<model>`); one pull request per card from `.github/pull_request_template.md`, closing its issue (DEC-35) |
 | Merge | by the orchestrator, squash only, under the merge rules of section 3.1 (DEC-96); pull requests labelled `needs-owner` are merged only by the owner |
-| Agents in flight | one at a time, builders and verifiers together, under the usage throttle of section 8.1 (DEC-115) |
+| Agents in flight | one plan agent at a time under the usage throttle of section 8.1 (DEC-115), plus at most one verifier billed to the owner's Anthropic API key (DEC-128) |
 | Serialized resources | `db/migrations/`; `src/presentation/composition-root.ts` and `src/presentation/main.ts`; `package.json` and `package-lock.json`; `.github/workflows/`; `web/src/app/routes.ts`; `tests/integration/access-matrix.test.ts` |
 | Requirement comment | `// RF-nnn` (or `RNF-nnn`) on the line above each implementing class or function |
 
@@ -240,7 +240,7 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 - Two cards run at the same time only when their *Delivers* paths are disjoint and they share no serialized resource
   (section 1). Migration numbers are fixed per card in `docs/data-model.md` section 7 and tasks.md; the orchestrator
   never reassigns them.
-- Keep at most the configured number of agents in flight (one at a time, DEC-115). One card has one verifier at a time.
+- Keep at most the configured number of agents in flight (one plan agent at a time, DEC-115, plus one API-billed verifier, DEC-128). One card has one verifier at a time.
 - When the owner asks to pause (usage limits), stop the running agents; their worktrees keep the work. On resume,
   continue the same agent (SendMessage) rather than starting the card again.
 - Use Agent-tool subagents (one per builder or verifier, each builder in its own worktree). A Workflow script runs
@@ -271,6 +271,13 @@ Further limits:
 - A running agent is not killed when a band is crossed; the next launch waits for the right band. After the reset the
   orchestrator resumes a paused agent (SendMessage, not a fresh start).
 - When the usage cannot be read, keep to the 50 to 70% rules until it can.
+
+API-billed verifier (DEC-128): while a plan agent builds the next card, the orchestrator may verify the previous card
+with a headless Claude Code run billed to the owner's Anthropic API key (`claude --bare -p`, the verifier agent file as
+its appended system prompt, the model of the verifier band). The key is passed from the git-ignored `.env` into that
+run's environment only and is never printed or committed. Each run has a `--max-budget-usd` cap; the orchestrator adds
+each run's reported cost to a ledger and starts no API run once the day's total reaches 20 USD. These runs do not
+count against the plan bands above.
 
 ## 9. Follow-up and fix cards
 
