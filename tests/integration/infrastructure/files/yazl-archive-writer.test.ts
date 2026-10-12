@@ -1,4 +1,5 @@
-import { link, mkdir, symlink, writeFile } from 'node:fs/promises';
+import { link, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { setImmediate as nextTick } from 'node:timers/promises';
@@ -15,6 +16,23 @@ import { collectBytes, readZip } from '../../../support/zip-reader.js';
 // RF-008, RF-1105: the zip of a run folder in a temporary data folder, unzipped and compared with
 // the folder. Links are never followed, so nothing outside the run folder is archived.
 const data = useTempRoot('rosetta-zip-');
+// Making a file link needs a privilege on Windows without developer mode; without it the test is
+// skipped with the reason instead of passing without trying.
+const canLinkFiles = await canMakeFileLinks();
+
+async function canMakeFileLinks(): Promise<boolean> {
+  const probe = await mkdtemp(join(tmpdir(), 'rosetta-link-probe-'));
+  try {
+    await writeFile(join(probe, 'target'), 'x');
+    await symlink(join(probe, 'target'), join(probe, 'link'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await rm(probe, { recursive: true, force: true });
+  }
+}
+
 const scope = scopeFor('20261012-100000-understand');
 
 function runFolder(of: RunScope = scope): string {
@@ -34,6 +52,17 @@ async function archived(part: ArchivePart, of: RunScope = scope) {
   const result = await new YazlArchiveWriter(data.path).archive(of, part);
   if (!result.ok) throw new Error('The run was not archived');
   return await readZip(await collectBytes(result.value));
+}
+
+/** A complete run (with a hand-off package) at `folder`, outside the data folder's own tree. */
+async function copyRunTo(folder: string): Promise<void> {
+  await mkdir(join(folder, 'handoff'), { recursive: true });
+  await writeFile(join(folder, 'manifest.json'), 'outside');
+  await writeFile(join(folder, 'handoff', 'README.md'), 'outside');
+}
+
+async function archiveOf(part: ArchivePart) {
+  return await new YazlArchiveWriter(data.path).archive(scope, part);
 }
 
 async function outsideFolder(): Promise<string> {
@@ -99,16 +128,18 @@ describe('YazlArchiveWriter and links', () => {
     expect(entries.map((entry) => entry.name)).toEqual([`${scope.runKey}/manifest.json`]);
   });
 
-  it('RF-1105 a file link inside the run folder is not archived', async () => {
-    const outside = join(await outsideFolder(), 'secret.txt');
-    await seed(scope, { 'manifest.json': '{}\n' });
-    // A system that refuses file links cannot make one, and then there is nothing to skip.
-    await symlink(outside, join(runFolder(), 'note.txt')).catch(() => undefined);
+  it.skipIf(!canLinkFiles)(
+    'RF-1105 a file link inside the run folder is not archived',
+    async () => {
+      const outside = join(await outsideFolder(), 'secret.txt');
+      await seed(scope, { 'manifest.json': '{}\n' });
+      await symlink(outside, join(runFolder(), 'note.txt'));
 
-    const entries = await archived('run');
+      const entries = await archived('run');
 
-    expect(entries.map((entry) => entry.name)).toEqual([`${scope.runKey}/manifest.json`]);
-  });
+      expect(entries.map((entry) => entry.name)).toEqual([`${scope.runKey}/manifest.json`]);
+    },
+  );
 
   it('RF-1105 a file hard-linked from outside the run folder is not archived', async () => {
     const outside = join(await outsideFolder(), 'secret.txt');
@@ -142,14 +173,40 @@ describe('YazlArchiveWriter and linked folders', () => {
     expect(result).toEqual({ ok: false, error: 'not-found' });
   });
 
-  it('RF-1105 a user folder that is a link to another place is refused', async () => {
-    const outside = await outsideFolder();
+  it('RF-1105 a user folder linked to a place that holds the whole run path is refused', async () => {
+    const elsewhere = join(data.path, 'elsewhere', 'user');
+    await copyRunTo(join(elsewhere, 'projects', scope.projectId, 'runs', scope.runKey));
     await mkdir(join(data.path, 'users'), { recursive: true });
-    await symlink(outside, join(data.path, 'users', scope.userId), 'junction');
+    await symlink(elsewhere, join(data.path, 'users', scope.userId), 'junction');
 
-    const result = await new YazlArchiveWriter(data.path).archive(scope, 'run');
+    expect(await archiveOf('run')).toEqual({ ok: false, error: 'not-found' });
+    expect(await archiveOf('handoff')).toEqual({ ok: false, error: 'not-found' });
+  });
+});
 
-    expect(result).toEqual({ ok: false, error: 'not-found' });
+describe('YazlArchiveWriter and linked parent folders', () => {
+  it('RF-1105 a project folder linked to a place that holds the whole run path is refused', async () => {
+    const elsewhere = join(data.path, 'elsewhere', 'project');
+    await copyRunTo(join(elsewhere, 'runs', scope.runKey));
+    await mkdir(join(data.path, 'users', scope.userId, 'projects'), { recursive: true });
+    await symlink(
+      elsewhere,
+      join(data.path, 'users', scope.userId, 'projects', scope.projectId),
+      'junction',
+    );
+
+    expect(await archiveOf('run')).toEqual({ ok: false, error: 'not-found' });
+    expect(await archiveOf('handoff')).toEqual({ ok: false, error: 'not-found' });
+  });
+
+  it('RF-1105 a run folder linked to a place that holds a run is refused', async () => {
+    const elsewhere = join(data.path, 'elsewhere', 'run');
+    await copyRunTo(elsewhere);
+    await mkdir(dirname(runFolder()), { recursive: true });
+    await symlink(elsewhere, runFolder(), 'junction');
+
+    expect(await archiveOf('run')).toEqual({ ok: false, error: 'not-found' });
+    expect(await archiveOf('handoff')).toEqual({ ok: false, error: 'not-found' });
   });
 });
 
