@@ -126,8 +126,11 @@ src/
     files/              node-repository-reader, snapshot-index, snapshot-scope, ignore-rules (deny list), grep worker,
                         search and limits, node-output-writer, workspace-guard, workspace-paths, repository-path checks
     events/             sse-broadcaster, jsonl-event-log
-    db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit), migration runner
-    security/           password-hasher (scrypt), secret-box (AES-256-GCM), token generator
+    db/                 pool, repositories (users, sessions, keys, projects, runs, cost ledger, audit) with their
+                        memory twins, row schemas, migration runner
+    security/           password-hasher (scrypt, at most two at a time through a semaphore), the common-passwords
+                        list common-passwords.txt (SecLists, MIT; read at start-up from the repository root, so
+                        the image ships this file), secret-box (AES-256-GCM), token generator
     scan/               universal/, packs/csharp/, codemap/ (build the code map, `codemap.json` writer and schema, `scan-summary.md`)
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
@@ -244,15 +247,15 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `RunEventSink` | typed run events for the web UI and the replay log (RF-424, RF-1006) | `SseBroadcaster`, `JsonlEventLog`, `FanOutSink`, `MemorySink` |
 | `ArchiveWriter` | zip a folder (RF-008) | `YazlArchiveWriter` |
 | `UserPrompt` | withdrawn 2026-10-11 (DEC-59): confirmations are fields of the start request (consent, estimate accepted) | - |
-| `UserRepository` | accounts, roles, state, lockout counters (RF-1100..RF-1103) | `PgUserRepository`, `MemoryUserRepository` |
+| `UserRepository` | accounts, roles, state, lockout counters (RF-1100..RF-1103); user names unique case-insensitively, lists never select the password hash, `insertIfNoUsers` for `BootstrapAdmin` (under an advisory lock in PostgreSQL) | `PgUserRepository`, `MemoryUserRepository` |
 | `SessionStore` | create, touch, end and expire sessions by hash (RF-1101) | `PgSessionStore`, `MemorySessionStore` |
-| `PasswordHasher` | hash and verify passwords (ADR-015) | `ScryptPasswordHasher` |
+| `PasswordHasher` | hash and verify passwords (ADR-015): `scrypt$N$r$p$salt$hash`, verified with the stored parameters in constant time; an unreadable stored hash is `RST-2209` | `ScryptPasswordHasher` |
 | `SecretBox` | encrypt and decrypt provider keys with a key version (RF-1104) | `AesGcmSecretBox` |
 | `ProviderKeyRepository` | encrypted keys per user and provider | `PgProviderKeyRepository`, `MemoryProviderKeyRepository` |
 | `ProjectRepository` | projects and their settings per user (RF-010) | `PgProjectRepository`, `MemoryProjectRepository` |
 | `RunIndex` | run rows: owner, stage, state, queue position, folder, totals (RF-1108) | `PgRunIndex`, `MemoryRunIndex` |
 | `CostLedger` | insert one row per call; sums per run, project, user-day, server-month (RF-428, RF-1106) | `PgCostLedger`, `MemoryCostLedger` |
-| `AuditLog` | security audit rows (RF-1109) | `PgAuditLog`, `MemoryAuditLog` |
+| `AuditLog` | security audit rows (RF-1109); the detail passes `maskDeep` (keys and values, P1-04 masking) before it is stored and is withheld whole when masking fails; listed newest first by time, actor and action | `PgAuditLog`, `MemoryAuditLog` |
 | `Migrator` | apply and check migrations (RF-1302) | `PgMigrator` |
 | `DatabaseHealth` | whether the database answers a trivial query within 3 seconds, for `GET /healthz` (RF-1303); never throws | `PgDatabaseHealth`, `FakeDatabaseHealth` (tests) |
 | `Scheduler` | periodic jobs in the process: session and reservation purge hourly, log retention daily, restart recovery at start-up (one instance assumed, DEC-112); a job still running when its next tick arrives is skipped, and a failing job is reported through the scheduler's `onError` callback without stopping its schedule or other jobs | `IntervalScheduler`, `ManualScheduler` (tests) |
