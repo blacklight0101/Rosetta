@@ -126,7 +126,9 @@ describe('analysis with language packs (scan-wide parse budget)', () => {
       data: { budgetMs: 50, files: 3 },
     });
   });
+});
 
+describe('analysis with language packs (parse budget details)', () => {
   it('RF-110 stops a parse that runs past the budget through the file stop signal', async () => {
     const ticks = new FakeTicks();
     const pack = new EndlessPack(ticks);

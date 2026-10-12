@@ -210,6 +210,16 @@ describe('C# pack on hostile input', () => {
     );
   });
 
+  it('RNF-001 reports no secret from a string literal in a symbol name', () => {
+    const { symbols } = analyse(
+      'class C { string Key = "' + ['AK', 'IA', 'ABCDEFGHIJKLMNOP'].join('') + '"; void M() { } }',
+    );
+
+    expect(JSON.stringify(symbols)).not.toContain('AKIA');
+  });
+});
+
+describe('C# pack and the scan-wide parse budget', () => {
   it('RF-110 stops a parse when the scan-wide parse budget says to stop', () => {
     expect(() => pack.analyse({ path: 'A.cs', text: sample, shouldStop: () => true })).toThrow(
       expect.objectContaining({ code: 'RST-1200' }),
@@ -223,13 +233,5 @@ describe('C# pack on hostile input', () => {
     const { symbols } = fresh.analyse({ path: 'B.cs', text: 'class Basket { }' });
 
     expect(symbols.map((symbol) => symbol.name)).toEqual(['Basket']);
-  });
-
-  it('RNF-001 reports no secret from a string literal in a symbol name', () => {
-    const { symbols } = analyse(
-      'class C { string Key = "' + ['AK', 'IA', 'ABCDEFGHIJKLMNOP'].join('') + '"; void M() { } }',
-    );
-
-    expect(JSON.stringify(symbols)).not.toContain('AKIA');
   });
 });

@@ -32,7 +32,7 @@ export interface PackScanInput {
   readonly logger: Logger;
   /** The `scan.maxFileBytes` the universal scan used. */
   readonly maxFileBytes: number;
-  /** The total time the packs may spend on this scan; `defaultParseBudgetMs` when absent. */
+  /** The total time the packs may spend on this scan; two minutes when absent. */
   readonly parseBudget?: ParseBudget;
 }
 

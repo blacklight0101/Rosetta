@@ -2,10 +2,10 @@ import { performance } from 'node:perf_hooks';
 
 // RF-110, P1-75: the scan-wide parse budget. Only the time spent inside the language packs counts.
 // Once it is spent, no further file goes to a pack, and a pack that can stop part-way is told to
-// stop through `PackFile.shouldStop`, so one scan can never hold the event loop for longer than this.
+// stop through `PackFile.shouldStop`; a pack that cannot overruns it by at most one file.
 
 /** The default total parse time of one scan: two minutes. */
-export const defaultParseBudgetMs = 120_000;
+const defaultParseBudgetMs = 120_000;
 
 export interface ParseBudget {
   /** The total milliseconds the packs may spend on one scan. */
