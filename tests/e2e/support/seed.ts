@@ -42,11 +42,12 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
 /**
  * The accounts the page specs of P1-14 use, one set per project: `keys` stores and deletes keys,
  * `lock` is locked out, `force` and `force-admin` must change their password at first sign-in
- * (`force-admin` as an administrator, like the bootstrap account, which other specs need unchanged).
+ * (`force-admin` as an administrator, like the bootstrap account, which other specs need unchanged),
+ * and `cap` sets the daily cap on its own keys (DEC-107).
  */
-export type E2eAccountKind = 'keys' | 'lock' | 'force' | 'force-admin';
+export type E2eAccountKind = 'keys' | 'lock' | 'force' | 'force-admin' | 'cap';
 
-const accountKinds: readonly E2eAccountKind[] = ['keys', 'lock', 'force', 'force-admin'];
+const accountKinds: readonly E2eAccountKind[] = ['keys', 'lock', 'force', 'force-admin', 'cap'];
 
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
   return {

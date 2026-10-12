@@ -16,6 +16,7 @@ import {
   signedIn,
   type Column,
 } from '../support/access-columns.js';
+import { budgetRoutes, type Context, type Probe } from '../support/access-probes.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the
@@ -24,28 +25,6 @@ import { createTestServer, type TestServer } from '../support/web-server.js';
 // routes answer; other pages redirect to /account/password and other API routes answer 403). The
 // routes are read from the server itself (with the static front end mounted), so a new route
 // without a row fails this test.
-
-type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE';
-
-/** What the rows need to name: the project and runs of the user column and a user id to open. */
-interface Context {
-  readonly projectId: string;
-  readonly userId: string;
-  /** A disabled account, for the enable route. */
-  readonly disabledUserId: string;
-  /** A run of that user that has ended, so its event stream closes by itself. */
-  readonly endedRunId: string;
-  /** A run of that user that is running. */
-  readonly runningRunId: string;
-}
-
-interface Probe {
-  readonly method: Method;
-  readonly url: string | ((context: Context) => string);
-  /** The body, given the column's own credentials (undefined for anonymous). */
-  readonly payload?: (user: TestUser | undefined) => InjectOptions['payload'];
-  readonly expected: Readonly<Record<Column, number>>;
-}
 
 const staticRoot = fileURLToPath(new URL('../fixtures/static-site/', import.meta.url));
 const ownCredentials = (user: TestUser | undefined): InjectOptions['payload'] => ({
@@ -161,6 +140,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
   'DELETE /api/account/keys/:provider': [
     { method: 'DELETE', url: '/api/account/keys/anthropic', expected: active(401, 204) },
   ],
+  ...budgetRoutes,
   'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
   'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],
   'POST /api/admin/users': [

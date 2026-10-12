@@ -90,6 +90,8 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'cost_micros int8',
     'currency bpchar',
     'price_table_version text',
+    'agent_task_id text null',
+    'cost_known bool',
   ],
   cost_reservations: [
     'call_id text',
@@ -98,6 +100,7 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'key_source text',
     'worst_case_micros int8',
     'expires_at timestamptz',
+    'worst_case_tokens int8',
   ],
   server_settings: ['key text', 'value jsonb', 'updated_at timestamptz', 'updated_by uuid null'],
   audit_events: [

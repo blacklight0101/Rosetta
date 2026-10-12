@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { expect, it } from 'vitest';
 import { SettingsPage } from '../../../web/src/pages/SettingsPage.js';
-import { empty, failure, json, renderPage } from './fake-api.js';
+import { empty, failure, json, renderPage, type Answer, type RenderedPage } from './fake-api.js';
 
 // RF-1104, DEC-64, DEC-107: the settings page. Keys are shown by their last four characters only;
 // saving needs a key, replacing and deleting ask first, and the page never holds a saved key.
@@ -10,6 +10,13 @@ const fixtureKey = ['fixture', 'key', 'material', 'abcd1234'].join('-');
 const newerKey = ['newer', 'fixture', 'material', 'wxyz9876'].join('-');
 const saved = { provider: 'openai', last4: '1234', updatedAt: '2026-10-12T09:30:00.000Z' };
 const listOf = (...keys: readonly object[]) => json(200, { keys });
+
+/** The page with no own daily cap saved, unless a test answers that route itself. */
+const renderSettings = (answers: Readonly<Record<string, Answer>>): RenderedPage =>
+  renderPage(<SettingsPage />, {
+    'GET /api/account/daily-cap': json(200, { ownDailyCapMicros: null }),
+    ...answers,
+  });
 
 const row = (name: string): HTMLElement => {
   const heading = screen.getByRole('heading', { name, level: 3 });
@@ -24,7 +31,7 @@ function enterKey(name: string, value: string): void {
 }
 
 it('RF-1104 lists a saved key by its last four characters and offers the other providers', async () => {
-  renderPage(<SettingsPage />, { 'GET /api/account/keys': listOf(saved) });
+  renderSettings({ 'GET /api/account/keys': listOf(saved) });
 
   await screen.findByRole('heading', { name: 'OpenAI', level: 3 });
   expect(row('OpenAI').textContent).toContain('1234');
@@ -36,7 +43,7 @@ it('RF-1104 lists a saved key by its last four characters and offers the other p
 });
 
 it('RF-1104 saves a key with the CSRF token, shows its last four and keeps nothing else', async () => {
-  const { calls } = renderPage(<SettingsPage />, {
+  const { calls } = renderSettings({
     'GET /api/account/keys': listOf(),
     'PUT /api/account/keys/anthropic': json(200, {
       key: {
@@ -66,7 +73,7 @@ it('RF-1104 saves a key with the CSRF token, shows its last four and keeps nothi
 });
 
 it('RF-1104 shows a refused key next to its field', async () => {
-  renderPage(<SettingsPage />, {
+  renderSettings({
     'GET /api/account/keys': listOf(),
     'PUT /api/account/keys/openai': failure(400, 'RST-2301', [{ field: 'key', code: 'RST-2301' }]),
   });
@@ -80,7 +87,7 @@ it('RF-1104 shows a refused key next to its field', async () => {
 });
 
 it('RF-1104 sends the base URL of an OpenAI-compatible key and shows its refusal', async () => {
-  const { calls } = renderPage(<SettingsPage />, {
+  const { calls } = renderSettings({
     'GET /api/account/keys': listOf(),
     'PUT /api/account/keys/openai-compatible': failure(400, 'RST-2304', [
       { field: 'baseUrl', code: 'RST-2304' },
@@ -101,7 +108,7 @@ it('RF-1104 sends the base URL of an OpenAI-compatible key and shows its refusal
 });
 
 it('RF-1104 asks for confirmation before it replaces a key', async () => {
-  const { calls } = renderPage(<SettingsPage />, {
+  const { calls } = renderSettings({
     'GET /api/account/keys': listOf(saved),
     'PUT /api/account/keys/openai': json(200, {
       key: { provider: 'openai', last4: '9876', updatedAt: '2026-10-12T11:00:00.000Z' },
@@ -124,7 +131,7 @@ it('RF-1104 asks for confirmation before it replaces a key', async () => {
 });
 
 it('RF-1104 cancels a replacement and keeps the saved key', async () => {
-  const { calls } = renderPage(<SettingsPage />, { 'GET /api/account/keys': listOf(saved) });
+  const { calls } = renderSettings({ 'GET /api/account/keys': listOf(saved) });
   await screen.findByRole('heading', { name: 'OpenAI', level: 3 });
 
   fireEvent.click(within(row('OpenAI')).getByRole('button', { name: 'Replace' }));
@@ -135,7 +142,7 @@ it('RF-1104 cancels a replacement and keeps the saved key', async () => {
 });
 
 it('RF-1104 asks for confirmation before it deletes a key, then removes it', async () => {
-  const { calls } = renderPage(<SettingsPage />, {
+  const { calls } = renderSettings({
     'GET /api/account/keys': listOf(saved),
     'DELETE /api/account/keys/openai': empty(204),
   });
@@ -159,7 +166,7 @@ it('RF-1104 asks for confirmation before it deletes a key, then removes it', asy
 });
 
 it('RF-1104 keeps the key and shows the error when a delete fails', async () => {
-  renderPage(<SettingsPage />, {
+  renderSettings({
     'GET /api/account/keys': listOf(saved),
     'DELETE /api/account/keys/openai': failure(404, 'RST-2003'),
   });
@@ -173,24 +180,13 @@ it('RF-1104 keeps the key and shows the error when a delete fails', async () => 
 });
 
 it('RF-1104 shows the error when the keys cannot be listed', async () => {
-  renderPage(<SettingsPage />, { 'GET /api/account/keys': failure(500, 'RST-2006') });
+  renderSettings({ 'GET /api/account/keys': failure(500, 'RST-2006') });
 
   expect((await screen.findByRole('alert')).textContent).toContain('RST-2006');
 });
 
-it('DEC-107 leaves the optional daily cap for the own keys as an unwired slot', async () => {
-  renderPage(<SettingsPage />, { 'GET /api/account/keys': listOf() });
-  await screen.findByRole('heading', { name: 'OpenAI', level: 3 });
-
-  const slot = screen.getByTestId('own-daily-cap');
-  expect(within(slot).getByLabelText('Daily cap for my own keys').hasAttribute('disabled')).toBe(
-    true,
-  );
-  expect(slot.textContent).toContain('not available yet');
-});
-
 it('RF-1103 links to the change-password page', async () => {
-  renderPage(<SettingsPage />, { 'GET /api/account/keys': listOf() });
+  renderSettings({ 'GET /api/account/keys': listOf() });
 
   const link = await screen.findByRole('link', { name: 'Change password' });
   expect(link.getAttribute('href')).toBe('/account/password');
