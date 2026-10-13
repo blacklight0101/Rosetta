@@ -18,8 +18,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   # The run key of the sample in site/ (scripts/build-sample-site.mjs); the smoke step looks for it.
