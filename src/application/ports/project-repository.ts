@@ -28,11 +28,11 @@ export interface ProjectRepository {
   ): Promise<Project | undefined>;
   /**
    * Removes the project (RF-1012); false for an unknown id and for another user's project, and
-   * then `beforeRowsGo` is not called. PostgreSQL also refuses (false) while a run of the project
+   * then `afterRowsGone` is not called. PostgreSQL also refuses (false) while a run of the project
    * is queued or running, also one queued during the removal, and removes the project's run rows
-   * with it; the cost ledger keeps its rows (DEC-55). `beforeRowsGo` (the folder removal) runs once
-   * the project is known to go and before its rows do; when it throws, nothing is removed and the
-   * error is rethrown (P1-121).
+   * with it; the cost ledger keeps its rows (DEC-55). The rows are removed and committed first, then
+   * `afterRowsGone` (the folder removal) runs with no connection or lock held, so a slow disk holds
+   * neither (P1-138); when it throws, the rows stay removed and the error is rethrown.
    */
-  remove(userId: string, projectId: string, beforeRowsGo: () => Promise<void>): Promise<boolean>;
+  remove(userId: string, projectId: string, afterRowsGone: () => Promise<void>): Promise<boolean>;
 }
