@@ -20,6 +20,11 @@ describe('maskDeep on a key that names a secret', () => {
     ['clientSecret', '[MASKED:password]'],
     ['client_secret', '[MASKED:password]'],
     ['secrets', '[MASKED:password]'],
+    ['APIToken', '[MASKED:bearer-token]'],
+    ['JWTToken', '[MASKED:bearer-token]'],
+    ['token2', '[MASKED:bearer-token]'],
+    ['token_2', '[MASKED:bearer-token]'],
+    ['userSecret2', '[MASKED:password]'],
   ])('RF-141 replaces the whole value under the key %s with %s', (key, marker) => {
     expect(maskDeep({ [key]: fakeSecret }, masker)).toEqual({ [key]: marker });
   });
@@ -57,6 +62,7 @@ describe('maskDeep on a secret key, for every value type and depth', () => {
       areaTokenBudget: 50_000,
       secretCount: 3,
       tokenizer: 'cl100k',
+      tokens: 5,
     };
 
     expect(maskDeep(record, masker)).toEqual(record);

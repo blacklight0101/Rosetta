@@ -39,4 +39,19 @@ describe('the resolver warnings as they are written to the log', () => {
 
     expect(written.data).toMatchObject({ contextSize: 32_768 });
   });
+
+  it('RF-009 a fallback warning shows the context size', async () => {
+    const { provider, logger } = await start('contract-text');
+    await provider.complete(contractRequest());
+
+    const [warning] = logger.records.filter((record) => record.level === 'warn');
+    const written = formatLogEntry(
+      warning ?? { level: 'warn', logger: '', message: '' },
+      at,
+      new SecretMasker(),
+    );
+
+    expect(written.data).toMatchObject({ contextSize: 32_768 });
+    expect(JSON.stringify(written)).not.toContain('[MASKED:');
+  });
 });

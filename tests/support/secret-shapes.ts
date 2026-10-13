@@ -82,6 +82,20 @@ export const moreSecretCases: readonly ShapeCase[] = [
     secrets: [password],
   },
   {
+    name: 'a mysql -p password after a database name',
+    kind: 'password',
+    text: `mysql mydb -u root -p${password}`,
+    masked: 'mysql mydb -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after a quoted option value',
+    kind: 'password',
+    text: `mysql -e "select 1 from t" -u root -p${password}`,
+    masked: 'mysql -e "select 1 from t" -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
     name: 'an OpenAI key (sk-) after an underscore',
     kind: 'api-key',
     text: `key: "prod_${openAiKey}"`,
