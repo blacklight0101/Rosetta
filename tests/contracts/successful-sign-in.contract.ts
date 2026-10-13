@@ -5,7 +5,7 @@ import { fixtureNow, minutes, sampleAccount } from '../support/account-fixtures.
 // RF-1100, RF-1102, P1-133: every UserRepository adapter records a successful sign-in in one write
 // of the sign-in columns only (failure counters, lock, last sign-in time). The write is refused
 // for a Disabled account or one whose password hash changed since it was read, so a concurrent
-// disable or reset is never undone. A lock that ends exactly now no longer locks (`<=`).
+// disable, reset or lock written by another server instance is never undone. A lock that ends exactly now no longer locks (`<=`).
 
 type Fresh = () => Promise<UserRepository>;
 
@@ -65,6 +65,39 @@ function raceTests(name: string, fresh: Fresh): void {
   });
 }
 
+function lockRaceTests(name: string, fresh: Fresh): void {
+  it(`RF-1102 ${name} refuses the sign-in of an account locked since it was read`, async () => {
+    const users = await fresh();
+    const account = sampleAccount();
+    await users.insert(account);
+    const locked = {
+      ...account,
+      failedSignIns: 5,
+      firstFailedAt: fixtureNow,
+      lockedUntil: fixtureNow + minutes(15),
+    };
+    await users.update(locked);
+
+    const stored = await users.markSignedIn(account, fixtureNow + minutes(1));
+
+    expect(stored).toBe(false);
+    expect(await users.findById(account.id)).toEqual(locked);
+  });
+
+  it(`RF-1102 ${name} refuses the sign-in of an account whose lock was renewed since it was read`, async () => {
+    const users = await fresh();
+    const expired = sampleAccount({ failedSignIns: 5, lockedUntil: fixtureNow - minutes(1) });
+    await users.insert(expired);
+    const renewed = { ...expired, lockedUntil: fixtureNow + minutes(15) };
+    await users.update(renewed);
+
+    const stored = await users.markSignedIn(expired, fixtureNow);
+
+    expect(stored).toBe(false);
+    expect(await users.findById(expired.id)).toEqual(renewed);
+  });
+}
+
 function keepTests(name: string, fresh: Fresh): void {
   it(`RF-1102 ${name} keeps a role or cap change made since the account was read`, async () => {
     const users = await fresh();
@@ -109,5 +142,6 @@ function keepTests(name: string, fresh: Fresh): void {
 export function successfulSignInContract(name: string, fresh: Fresh): void {
   writeTests(name, fresh);
   raceTests(name, fresh);
+  lockRaceTests(name, fresh);
   keepTests(name, fresh);
 }
