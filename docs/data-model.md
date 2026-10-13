@@ -263,7 +263,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when a role uses Ollama with `toolMode: text` (RF-205) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `caps` | object | run and role caps in force |
@@ -348,7 +348,7 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
 |---|---|
 | Purpose | the ordered story of a run, streamed live to the web UI and replayed by the report |
 | Writer | `JsonlEventLog` behind the `RunEventSink` port (RF-1006) |
-| Readers | web UI (late subscribers read it before live events), report replay (RF-506) |
+| Readers | web UI (late subscribers read it before live events, in batches; the last `seq` of a run not in memory comes from the last complete line, read from the end of the file), report replay (RF-506) |
 | Spec | RF-1002..RF-1006, RF-506 |
 
 Envelope of every line:
@@ -841,6 +841,7 @@ releases.
 | Application logs | `ROSETTA_LOG_RETENTION_DAYS` (14) | deleted at start-up and daily |
 | `.partial-*` snapshot folders | until next start-up | deleted |
 | Runs, projects, exports | until the user deletes them | delete button in the web UI with confirmation (RF-1012, DEC-55); never automatic |
+| Run and project folders on deletion | as long as their rows | the folder is removed first and the rows second (P1-121): Delete run removes the run folder, then the row; Delete project locks the project row (`FOR UPDATE`, so a run queued at the same moment is seen and refuses the deletion), removes the project folder and then the rows in the same transaction. A folder that cannot be removed writes an `error` log entry with RST-1115 naming it, answers RST-1115 and keeps the rows, so the run or project is still listed and Delete removes the folder on the next attempt; no folder is left without its rows, so no clean-up task exists for them |
 | Snapshots | until the administrator deletes them | delete button on the administration page (RF-1012) |
 | Sessions | until expiry or sign-out | expired rows deleted hourly by the in-process scheduler |
 | Cost reservations | until the call ends or the row expires | expired rows deleted hourly |

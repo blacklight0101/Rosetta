@@ -50,7 +50,8 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * the runs of its own project on the live page (RF-1002), `live-controls` pauses and meters its own runs (P1-95), `live-coverage` watches the coverage map of its own runs (RF-1005), `api-calls` reads the calls and logs of
  * its own run (RF-1011), `replay` owns a recorded run (seed-replay.ts) whose report and replay
  * page it opens (RF-506), `history` browses and deletes the runs of its own project (RF-1008,
- * RF-1012) and `history-admin` is the administrator who deletes snapshots. The journey specs
+ * RF-1012), `history-admin` is the administrator who deletes snapshots and `project-runs` reads the
+ * run columns and cancels a queued run on the Projects page (RF-1008, RF-1108). The journey specs
  * (P1-46) have accounts of their own: `journey` signs in through the pages, `journey-owner` owns
  * a project and a run, `journey-other` is the second user who must not see them, `journey-force`
  * must change its password at first sign-in, `journey-run` runs the pipeline on the C# fixture,
@@ -73,6 +74,7 @@ export type E2eAccountKind =
   | 'api-calls'
   | 'history'
   | 'history-admin'
+  | 'project-runs'
   | 'admin'
   | 'replay'
   | 'journey'
@@ -99,6 +101,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'api-calls',
   'history',
   'history-admin',
+  'project-runs',
   'admin',
   'replay',
   'journey',

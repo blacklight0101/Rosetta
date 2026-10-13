@@ -6,6 +6,17 @@ import { tokensLabel } from './live-run/format.js';
 // (cached input is part of the input, as the run token cap counts them); a cost the ledger does not
 // know (an unpriced model, RF-427) is named, never shown as zero.
 
+/** The totals of no call: a project that has not run yet. */
+export const zeroTotals: UsageTotals = {
+  calls: 0,
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  cost: [],
+  unknownCostCalls: 0,
+  priceTableVersions: [],
+};
+
 export const tokensText = (totals: UsageTotals): string =>
   tokensLabel(totals.inputTokens + totals.outputTokens);
 

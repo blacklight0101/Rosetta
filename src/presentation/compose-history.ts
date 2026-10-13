@@ -3,7 +3,9 @@ import { DeleteProject } from '../application/use-cases/delete-project.js';
 import { DeleteRun } from '../application/use-cases/delete-run.js';
 import { DeleteSnapshot } from '../application/use-cases/delete-snapshot.js';
 import { ListHistory } from '../application/use-cases/list-history.js';
+import { ListProjectOverview } from '../application/use-cases/list-project-overview.js';
 import { ListSnapshots } from '../application/use-cases/list-snapshots.js';
+import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgProjectRepository } from '../infrastructure/db/pg-project-repository.js';
 import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
@@ -12,7 +14,8 @@ import { NodeWorkspaceFolders } from '../infrastructure/files/node-workspace-fol
 import type { HistoryServices } from './web/history-routes.js';
 
 // Architecture section 2 (composition root), RF-1008, RF-1012, RF-1105: the adapters and the use
-// cases behind the history page, the deletions and the administrator's snapshot list.
+// cases behind the history page, the deletions, the administrator's snapshot list and the run
+// columns of the Projects page.
 
 export interface HistoryParts {
   readonly pool: DatabasePool;
@@ -30,6 +33,7 @@ export function composeHistory(parts: HistoryParts): HistoryServices {
   const snapshots = new FileSnapshotCache(dataDir);
   return {
     listHistory: new ListHistory({ projects, runs, folders }),
+    listProjectOverview: new ListProjectOverview({ projects, runs, costs: new PgCostTotals(pool) }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({ projects, runs, folders, logger }),
     listSnapshots: new ListSnapshots({ snapshots, runs }),
