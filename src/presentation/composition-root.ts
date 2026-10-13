@@ -22,7 +22,7 @@ import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './co
 import type { Auth } from './compose-accounts.js';
 import { composeHistory } from './compose-history.js';
 import { composeProjects } from './compose-projects.js';
-import { scheduledTasks, type ScheduledTask } from './compose-schedule.js';
+import { scheduledTasks, startScheduledTasks } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
 import { stopWithin, type StopOutcome } from './shutdown.js';
 import { startUp } from './start-up.js';
@@ -176,12 +176,6 @@ function createScheduler(logger: Logger): IntervalScheduler {
   });
 }
 
-/** Starts every task on its interval; returns the functions that cancel them. */
-function scheduleAll(logger: Logger, tasks: readonly ScheduledTask[]): (() => void)[] {
-  const scheduler = createScheduler(logger);
-  return tasks.map((task) => scheduler.every(task.intervalMs, task.job));
-}
-
 function openPool(environment: Environment, logger: Logger): DatabasePool {
   return createAppPool(environment, (error) => {
     logSettled(logger, { level: 'warn', logger: 'db', message: error.message });
@@ -225,7 +219,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         auth,
       });
       close = closer({ server, runs });
-      const tasks = scheduledTasks({ file, auth, pool, clock, runs: runs.queue });
+      const tasks = scheduledTasks({ file, auth, pool, clock, runs: runs.queue, logger });
       let address = '';
       await startUp({
         migrate: () => migrate(environment, clock, logger),
@@ -237,7 +231,7 @@ export function composeApplication(options: ApplicationOptions): Application {
           address = await server.listen(options.listen);
         },
         startScheduler: () => {
-          cancels.push(...scheduleAll(logger, tasks));
+          cancels.push(...startScheduledTasks(createScheduler(logger), tasks));
         },
       });
       return address;
