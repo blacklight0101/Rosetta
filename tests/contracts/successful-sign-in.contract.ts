@@ -9,6 +9,49 @@ import { fixtureNow, minutes, sampleAccount } from '../support/account-fixtures.
 
 type Fresh = () => Promise<UserRepository>;
 
+/** Stores a lock with the given instant text (microseconds kept), for adapters that can. */
+export type StoreLockedUntil = (id: string, instant: string) => Promise<void>;
+
+export interface SignInContractOptions {
+  readonly storeLockedUntil?: StoreLockedUntil;
+}
+
+function subMillisecondTests(name: string, fresh: Fresh, storeLock: StoreLockedUntil): void {
+  it(`RF-1102 ${name} lets a correct sign-in through when a lock below a millisecond has expired`, async () => {
+    const users = await fresh();
+    const account = sampleAccount({ failedSignIns: 5, firstFailedAt: fixtureNow - minutes(20) });
+    await users.insert(account);
+    await storeLock(account.id, '2026-10-11T08:55:00.123456Z');
+    const read = await users.findById(account.id);
+    if (read === undefined) throw new Error('the account was not stored');
+
+    const stored = await users.markSignedIn(read, fixtureNow);
+
+    expect(stored).toBe(true);
+    expect(await users.findById(account.id)).toEqual({
+      ...account,
+      failedSignIns: 0,
+      firstFailedAt: null,
+      lockedUntil: null,
+      lastSignInAt: fixtureNow,
+    });
+  });
+
+  it(`RF-1102 ${name} still refuses a sign-in while a lock below a millisecond is live`, async () => {
+    const users = await fresh();
+    const account = sampleAccount({ failedSignIns: 5, firstFailedAt: fixtureNow - minutes(20) });
+    await users.insert(account);
+    await storeLock(account.id, '2026-10-11T09:05:00.123456Z');
+    const read = await users.findById(account.id);
+    if (read === undefined) throw new Error('the account was not stored');
+
+    const stored = await users.markSignedIn(read, fixtureNow);
+
+    expect(stored).toBe(false);
+    expect(await users.findById(account.id)).toEqual(read);
+  });
+}
+
 function writeTests(name: string, fresh: Fresh): void {
   it(`RF-1100 ${name} clears the counters and the lock and records the sign-in time`, async () => {
     const users = await fresh();
@@ -139,9 +182,15 @@ function keepTests(name: string, fresh: Fresh): void {
   });
 }
 
-export function successfulSignInContract(name: string, fresh: Fresh): void {
+export function successfulSignInContract(
+  name: string,
+  fresh: Fresh,
+  options: SignInContractOptions = {},
+): void {
   writeTests(name, fresh);
   raceTests(name, fresh);
   lockRaceTests(name, fresh);
   keepTests(name, fresh);
+  if (options.storeLockedUntil !== undefined)
+    subMillisecondTests(name, fresh, options.storeLockedUntil);
 }
