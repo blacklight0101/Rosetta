@@ -161,10 +161,11 @@ it('RF-802 the video script placeholders for the hosted URL, sample report and t
 it('RF-802 the results slide quotes the CI verify run on the current head, dated and with its run id', async () => {
   const slides = await readRepoFile('docs/hand-in/slides/slides.md');
 
-  expect(slides).toContain('run 38478996250');
+  expect(slides).toContain('run 38480431418');
   expect(slides).toMatch(/a fecha 2026-10-13/u);
-  expect(slides).toContain('6928 pasadas');
-  expect(slides).toContain('2348');
+  expect(slides).toContain('6953 pasadas');
+  expect(slides).toContain('2362');
+  expect(slides).not.toContain('38478996250');
   expect(slides).toMatch(/96,2 %/u);
   expect(slides).not.toContain('6629');
   expect(slides).not.toContain('91,7 %');

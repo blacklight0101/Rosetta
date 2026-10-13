@@ -145,9 +145,9 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 # Resultados: estado del proyecto
 
 - Fecha de referencia: 2026-10-13 (noche), según [handoff.md](../../../handoff.md): **123 de 182 tarjetas hechas**.
-- Verificación en CI de la cabeza actual de la rama (`9877eb0`), **a fecha 2026-10-13 (UTC), run 38478996250**, trabajo `verify (ubuntu-latest)`:
-  - Pirámide de pruebas por nivel: unitarias 4579 (65 %), integración 2348 (33 %), E2E 166 (2 %); objetivo 60 / 30 / 10 con 10 puntos de tolerancia.
-  - Pruebas de Vitest: 6928 pasadas y 6 omitidas, en 542 archivos pasados y 1 omitido (543 en total).
+- Verificación en CI de la cabeza actual de la rama (`1d7d8a4`), **a fecha 2026-10-13 (UTC), run 38480431418**, trabajo `verify (ubuntu-latest)`:
+  - Pirámide de pruebas por nivel: unitarias 4590 (64 %), integración 2362 (33 %), E2E 166 (2 %); objetivo 60 / 30 / 10 con 10 puntos de tolerancia.
+  - Pruebas de Vitest: 6953 pasadas y 6 omitidas, en 545 archivos pasados y 1 omitido (546 en total).
   - Las 6 pruebas omitidas son de `tests/integration/image` (imagen de contenedor). Las pruebas E2E, en tres fragmentos de CI, pasaron en la misma ejecución.
   - Cobertura de sentencias: 96,2 %.
 - Fuente: el registro del trabajo `verify (ubuntu-latest)` de esa ejecución y el informe de `scripts/test-levels.mjs`. Las cifras cambian con las fusiones posteriores; la ejecución y la fecha son las de referencia.
