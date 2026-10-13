@@ -2,11 +2,11 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { ProjectsPage } from '../../../web/src/pages/ProjectsPage.js';
 import { failure, json, renderPage, type Answer } from './fake-api.js';
-import { projectOf } from './project-fixtures.js';
+import { overviewRow, projectOf } from './project-fixtures.js';
 
 // RF-010, RF-1105, design-system.md section 14 (Projects): the user's projects, the New project
 // form with the refusal next to the field, and the existing project that opens when the same URL
-// is created again. Run columns and the queue notice wait for a runs API (see the page).
+// is created again. The run columns and the queue notice are in projects-runs.test.tsx.
 
 const demoUrl = 'https://github.com/octo/demo';
 const demo = projectOf('p-1', 'octo/demo', { ref: 'main', subpath: 'src/legacy' });
@@ -37,7 +37,9 @@ afterEach(() => {
 });
 
 it('RF-010 lists the projects with branch, folder and a link to their settings', async () => {
-  renderProjects({ 'GET /api/projects': json(200, { projects: [demo, other] }) });
+  renderProjects({
+    'GET /api/projects/overview': json(200, { projects: [demo, other].map((p) => overviewRow(p)) }),
+  });
 
   const row = (await screen.findByText('octo/demo')).closest('tr');
   if (row === null) throw new Error('No row for octo/demo.');
@@ -56,7 +58,7 @@ it('RF-010 lists the projects with branch, folder and a link to their settings',
 });
 
 it('RF-010 with no project says so and offers the demo repository', async () => {
-  renderProjects({ 'GET /api/projects': json(200, { projects: [] }) });
+  renderProjects({ 'GET /api/projects/overview': json(200, { projects: [] }) });
 
   await screen.findByText(/No projects yet/u);
   fireEvent.click(screen.getByRole('button', { name: 'Use the demo repository' }));
@@ -68,7 +70,7 @@ it('RF-010 with no project says so and offers the demo repository', async () => 
 });
 
 it('RF-1105 a list that cannot be loaded shows the error and still offers the form', async () => {
-  renderProjects({ 'GET /api/projects': failure(500, 'RST-2006') });
+  renderProjects({ 'GET /api/projects/overview': failure(500, 'RST-2006') });
 
   expect((await screen.findByRole('alert')).textContent).toContain('RST-2006');
   expect(screen.getByRole('button', { name: 'Create project' })).not.toBeNull();
@@ -76,7 +78,7 @@ it('RF-1105 a list that cannot be loaded shows the error and still offers the fo
 
 it('RF-010 creates a project from the URL with the CSRF token and lists it', async () => {
   const { calls } = renderProjects({
-    'GET /api/projects': json(200, { projects: [other] }),
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(other)] }),
     'POST /api/projects': json(201, demo),
   });
   await screen.findByText('acme/shop');
@@ -97,7 +99,7 @@ it('RF-010 creates a project from the URL with the CSRF token and lists it', asy
 
 it('RF-010 the same URL again opens the existing project and adds nothing', async () => {
   renderProjects({
-    'GET /api/projects': json(200, { projects: [demo] }),
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(demo)] }),
     'POST /api/projects': json(200, demo),
   });
   await screen.findByText('octo/demo');
@@ -112,7 +114,7 @@ it('RF-010 the same URL again opens the existing project and adds nothing', asyn
 
 it('RF-010 a URL that is not a GitHub repository is refused next to the field and nothing is added', async () => {
   renderProjects({
-    'GET /api/projects': json(200, { projects: [other] }),
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(other)] }),
     'POST /api/projects': json(400, {
       code: 'RST-1900',
       message: 'The address is not a public GitHub repository URL.',
@@ -146,7 +148,7 @@ it('RF-010 a URL that is not a GitHub repository is refused next to the field an
 
 it('RNF-010 a refusal read through the focused field is not also announced as an alert', async () => {
   renderProjects({
-    'GET /api/projects': json(200, { projects: [] }),
+    'GET /api/projects/overview': json(200, { projects: [] }),
     'POST /api/projects': failure(400, 'RST-1900', [{ field: 'url', code: 'RST-1900' }]),
   });
   await screen.findByText(/No projects yet/u);
@@ -161,7 +163,7 @@ it('RNF-010 a refusal read through the focused field is not also announced as an
 
 it('RF-010 a refusal that names no field shows in a banner', async () => {
   renderProjects({
-    'GET /api/projects': json(200, { projects: [] }),
+    'GET /api/projects/overview': json(200, { projects: [] }),
     'POST /api/projects': failure(429, 'RST-2005'),
   });
   await screen.findByText(/No projects yet/u);

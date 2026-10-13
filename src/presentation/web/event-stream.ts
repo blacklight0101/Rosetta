@@ -8,7 +8,8 @@ import type { RunEvent } from '../../domain/runs/run-event.js';
 // subscription or timer outlives its page. A page that does not read live events (more than 1 MiB
 // waiting) is dropped: it reconnects and reads the stored events again. Stored events are not
 // held to that limit: they are sent in batches, each waiting for the page to read (`drained`), so
-// a history of any length reaches a page that reads.
+// a history of any length reaches a page that reads. The live events that arrive during that replay
+// are held by the subscription up to the same 1 MiB; past it the page is dropped the same way.
 
 const MAX_WAITING_BYTES = 1_048_576;
 const RETRY_MS = 3000;

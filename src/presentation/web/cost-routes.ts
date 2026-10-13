@@ -34,7 +34,7 @@ interface IdParams {
 const moneyView = (money: readonly CurrencyTotal[]): Record<string, string>[] =>
   money.map(({ currency, costMicros }) => ({ currency, costMicros: costMicros.toString() }));
 
-function totalsView(totals: UsageTotals): Record<string, unknown> {
+export function totalsView(totals: UsageTotals): Record<string, unknown> {
   return { ...totals, cost: moneyView(totals.cost) };
 }
 

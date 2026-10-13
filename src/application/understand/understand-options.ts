@@ -55,3 +55,14 @@ export function rolesNeedCloudConsent(
     return needsCloudConsent({ kind: provider.kind, endpointHost });
   });
 }
+
+/**
+ * RF-205, RNF-004: whether a role of the run uses Ollama in the text tool mode, whose adapter
+ * appends the text tool protocol prompt to the system prompt; the run then records that file too.
+ */
+export function rolesUseTextToolProtocol(settings: ProjectSettings): boolean {
+  return UNDERSTAND_ROLES.some((role) => {
+    const provider = settings.providers[settings.roles[role].provider];
+    return provider?.kind === 'ollama' && provider.toolMode === 'text';
+  });
+}
