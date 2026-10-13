@@ -499,7 +499,7 @@ had; the last word decides, so `inputTokens`, `timeToFirstTokenMs` and `secretCo
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
-The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id or key and any `userId` it carries is the owner's; an entry with the key alone is shown only while no other user's run has the same key.
+The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id and any `userId` it carries is the owner's, or its `runId` is the run's key and its `userId` is the owner's. An entry with the key and no user is never shown: the key is unique per project only and a deleted run's entries stay in the files, so it may belong to another user's run that is gone (P1-122). The run's own writers therefore name the owner beside the key (`ownerLogger` for an understand run, the queue and the lifecycle directly).
 
 ### 3.15 `transcripts/<agentTaskId>.jsonl`
 
