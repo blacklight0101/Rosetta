@@ -1,5 +1,5 @@
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
@@ -127,7 +127,14 @@ describe('JsonlEventLog reads by streaming', () => {
       logger: new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker()),
     });
     const log = new JsonlEventLog({ writer, masker: new SecretMasker() });
-    for (let seq = 1; seq <= 300; seq += 1) await log.publish(scope, eventFor(scope, seq));
+    // The 300 lines are written in one go: publishing each one appends and syncs a line of its own,
+    // which took longer than the test timeout on a loaded machine. The replay is what is under test.
+    const lines = Array.from(
+      { length: 300 },
+      (_, index) => `${JSON.stringify(eventFor(scope, index + 1))}\n`,
+    );
+    await mkdir(dirname(eventsFile()), { recursive: true });
+    await writeFile(eventsFile(), lines.join(''), 'utf8');
     const readText = vi.spyOn(writer, 'readText');
     const batches: number[] = [];
 

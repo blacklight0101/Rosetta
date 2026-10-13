@@ -24,7 +24,7 @@ const viewports = [
   { device: 'phone', width: 360, height: 780 },
 ];
 const schemes = ['light', 'dark'];
-const startTimeoutMs = 60_000;
+const startTimeoutMs = 120_000;
 
 // Each option that takes a value, and the flag that does not.
 const valueFlags = {
