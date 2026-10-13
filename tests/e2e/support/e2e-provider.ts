@@ -7,8 +7,8 @@ import { ScriptedProvider } from '../../support/scripted-provider.js';
 // ADR-008, RF-407, P1-34, P1-35: the model double of the end-to-end server. Calls about the
 // `octo/webforms` repository (its areas are known to the script) replay the recorded understand run
 // of the C# fixture, answered by area and turn so several users can run at once; every other call is
-// answered by the answering provider (RF-407; the reader of an understand run is held for a few
-// seconds so a queue can be shown, P1-34).
+// answered by the answering provider (RF-407; the first reader call of an understand run is held
+// for a few seconds so a queue can be shown, P1-34).
 
 /** The recorded calls that answer each area of `understand-csharp-full.json`, in turn order. */
 const WEBFORMS_SCRIPT = {

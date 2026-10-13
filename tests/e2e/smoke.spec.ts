@@ -2,10 +2,10 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { transitionsDone } from './support/transitions.js';
 
-// RNF-005, RF-1303, RF-1201, RF-1009, RNF-010, P1-13: the smoke spec. It runs in every project of
-// playwright.config.ts (two viewports, light and dark) against the test server: the server answers
-// health and robots, the sign-in page opens without a session, a page that needs a session sends
-// the visitor to sign-in, and the pages pass axe.
+// RNF-005, RF-1303, RF-1201, RF-1009, RNF-010, P1-13: the smoke spec, against the test server: the
+// server answers health and robots, the sign-in page opens without a session and a page that needs a
+// session sends the visitor to sign-in, once (desktop-light); the sign-in page passes axe and follows
+// the colour scheme in every project (@visual).
 
 test.describe('smoke', () => {
   test('RF-1303 /healthz answers ok with the version', async ({ request }) => {
@@ -43,7 +43,7 @@ test.describe('smoke', () => {
   });
 });
 
-test.describe('smoke accessibility', () => {
+test.describe('smoke accessibility', { tag: '@visual' }, () => {
   test('RNF-010 the sign-in page has no serious or critical accessibility violation', async ({
     page,
   }, info) => {

@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openScannedStartPage } from './support/cost-run.js';
 import {
   openStartPage,
   runStatus,
@@ -15,7 +16,8 @@ import { signInAs } from './support/sign-in.js';
 // state and counts; a run that waits in the real queue (the reader of the `Controllers` area is
 // held until the run is stopped, e2e-provider.ts, and one user has at most one running run) shows
 // its position and is cancelled from the notice. The page never scrolls sideways, at 360 px
-// either (verdict on #268). The steps run in order because they share one project and its runs.
+// either (verdict on #268; @phone, so phone-light runs that test on its own and scans first when the
+// project has no run). The steps run in order because they share one project and its runs.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -83,9 +85,14 @@ test('RF-1108 a queued run shows its position on the Projects page and Cancel en
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
 });
 
-test('RF-1008 the Projects page with its run columns never scrolls sideways', async ({ page }) => {
-  await openProjects(page);
-  await expect(projectRow(page)).toBeVisible();
+test(
+  'RF-1008 the Projects page with its run columns never scrolls sideways',
+  { tag: '@phone' },
+  async ({ page }) => {
+    await openScannedStartPage(page);
+    await openProjects(page);
+    await expect(projectRow(page)).toBeVisible();
 
-  await noSidewaysScroll(page);
-});
+    await noSidewaysScroll(page);
+  },
+);

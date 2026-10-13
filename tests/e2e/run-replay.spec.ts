@@ -13,6 +13,9 @@ import { signInAs } from './support/sign-in.js';
 // page is opened with JavaScript on (play, pause, step) and off (the whole timeline as a list).
 // Whatever the run's text says, nothing in it runs.
 
+/** One step of the replay playback (templates/report/replay.js, `data-interval` unset). */
+const stepMs = 700;
+
 const pagePath = (project: string): string =>
   `/runs/${replayRunId(project)}/files/report/replay.html`;
 
@@ -34,13 +37,15 @@ test.beforeEach(async ({ context }, info) => {
 
 test.describe('with JavaScript, the controls', () => {
   test('RF-506 plays, pauses and steps through the run, and passes axe', async ({ page }, info) => {
-    test.setTimeout(90_000); // the run plays at one step in 700 ms
     await page.goto(pagePath(info.project.name));
     const steps = page.locator('[data-replay-steps] > li');
     const total = await steps.count();
     expect(total).toBeGreaterThan(3);
     await expect(page.getByRole('heading', { name: 'Run replay', level: 1 })).toBeVisible();
     await expectNoSeriousViolations(page);
+    // The run plays at one step in `stepMs`: the timers of the page run on a clock the test
+    // moves, so playing and pausing take no real time.
+    await page.clock.install();
 
     await page.getByRole('button', { name: 'Restart' }).click();
     await expect(steps.locator('visible=true')).toHaveCount(0);
@@ -53,11 +58,12 @@ test.describe('with JavaScript, the controls', () => {
     await page.getByRole('button', { name: 'Play' }).click();
     await page.getByRole('button', { name: 'Pause' }).click();
     const paused = await steps.locator('visible=true').count();
-    await page.waitForTimeout(1_500);
+    await page.clock.runFor(1_500);
     await expect(steps.locator('visible=true')).toHaveCount(paused);
 
     await page.getByRole('button', { name: 'Play' }).click();
-    await expect(steps.locator('visible=true')).toHaveCount(total, { timeout: 30_000 });
+    await page.clock.runFor(stepMs * total);
+    await expect(steps.locator('visible=true')).toHaveCount(total);
   });
 });
 
