@@ -130,6 +130,10 @@ function registerEvents(server: FastifyInstance, services: RunServices): void {
           holder.stream?.finish();
         },
         drained: () => holder.stream?.drained() ?? Promise.resolve(),
+        // A page that stalls during the replay is dropped; it reconnects with `Last-Event-ID`.
+        onDrop: () => {
+          holder.stream?.destroy();
+        },
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
       const stream = openStream(services, () => {

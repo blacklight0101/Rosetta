@@ -12,7 +12,14 @@ import { scopeOf } from '../runs/run-scope.js';
 // can be sent), and holds back what arrives meanwhile, so an event published during the read is
 // not lost. The caller starts `replay` once the page can receive. A `seq` beyond the last stored
 // one (a page that names an event that never existed) counts as the last one. Another user's run
-// id and an unknown id give the same answer, and nothing is subscribed.
+// id and an unknown id give the same answer, and nothing is subscribed. A page that stops reading
+// during the replay is dropped once the live events held for it pass 1 MiB (the limit of live
+// delivery): `onDrop` closes its stream, and it reconnects with `Last-Event-ID` for the rest.
+
+/** The most bytes of live events (as JSON) held for one page while its replay runs. */
+const MAX_HELD_BYTES = 1_048_576;
+
+const encoder = new TextEncoder();
 
 export interface SubscribeRunEventsDependencies {
   readonly runs: RunIndex;
@@ -31,6 +38,8 @@ export interface SubscribeRunEventsRequest {
   readonly drained?: () => Promise<void>;
   /** Called once, after `run.ended` was delivered. */
   readonly onEnd: () => void;
+  /** Called once when the page is dropped for holding up more than `MAX_HELD_BYTES`. */
+  readonly onDrop?: () => void;
 }
 
 export interface RunEventSubscription {
@@ -90,6 +99,7 @@ class Delivery {
   unsubscribe: () => void = () => undefined;
   private readonly request: SubscribeRunEventsRequest;
   private readonly held: RunEvent[] = [];
+  private heldBytes = 0;
   private last: number;
   private holding = true;
   private closed = false;
@@ -100,8 +110,16 @@ class Delivery {
   }
 
   live(event: RunEvent): void {
-    if (this.holding) this.held.push(event);
-    else this.send(event);
+    if (this.closed) return;
+    if (!this.holding) {
+      this.send(event);
+      return;
+    }
+    this.held.push(event);
+    this.heldBytes += encoder.encode(JSON.stringify(event)).byteLength;
+    if (this.heldBytes <= MAX_HELD_BYTES) return;
+    this.close();
+    this.request.onDrop?.();
   }
 
   send(event: RunEvent, stored = false): void {
@@ -129,6 +147,7 @@ class Delivery {
 
   close(): void {
     this.closed = true;
+    this.held.length = 0;
     this.unsubscribe();
   }
 }

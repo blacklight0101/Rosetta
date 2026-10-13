@@ -22,6 +22,7 @@ import type {
   WriteRefusalReason,
 } from '../../application/ports/output-writer.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { lastCompleteLineOf } from './last-line.js';
 import { isInside } from './repository-path.js';
 import { linkProblem, writeRefusal, type WorkspaceRoots } from './workspace-guard.js';
 import {
@@ -137,6 +138,17 @@ export class NodeOutputWriter implements OutputWriter, TextLineReader {
       throw error;
     }
     return ok(completeLinesOf(target.value));
+  }
+
+  async readLastLine(file: WorkspaceFile): Promise<Result<string | undefined, WriteRefusal>> {
+    const target = await this.#resolve(file, 'read');
+    if (!target.ok) return target;
+    try {
+      return ok(await lastCompleteLineOf(target.value));
+    } catch (error: unknown) {
+      if (hasCode(error, 'ENOENT')) return this.#refuse('not-found', file);
+      throw error;
+    }
   }
 
   async #resolve(file: WorkspaceFile, mode: Mode): Promise<Result<string, WriteRefusal>> {
