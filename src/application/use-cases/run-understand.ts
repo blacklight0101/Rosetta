@@ -33,7 +33,9 @@ import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { ownerLogger } from '../runs/owner-logger.js';
 import { ManifestCostRecorder } from '../runs/run-cost-record.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { ManifestSecurityRecorder } from '../runs/run-security-record.js';
+import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
 import { planReaderTasks, type ReaderTask } from '../understand/reader-tasks.js';
 import {
   readUnderstandOptions,
@@ -85,17 +87,6 @@ const failed = (code: RosettaError['code']): RunOutcome => ({
   errorCode: code,
 });
 
-/** One trace per run (32 hexadecimal characters): the run's UUID without its dashes. */
-function traceIdOf(run: Run): string {
-  const hex = run.id.replace(/-/gu, '').toLowerCase();
-  return /^[0-9a-f]{32}$/u.test(hex)
-    ? hex
-    : hex
-        .replace(/[^0-9a-f]/gu, '0')
-        .padEnd(32, '0')
-        .slice(0, 32);
-}
-
 export class RunUnderstand implements RunExecutor {
   private readonly deps: RunUnderstandDependencies;
 
@@ -120,7 +111,8 @@ export class RunUnderstand implements RunExecutor {
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(execution.run));
     const prepared = await this.prepare(execution, updates);
     if (!prepared.ok) return prepared.outcome;
-    const role = await this.readerOf(execution, prepared.value.project, updates);
+    const nextCallId = callIds(execution.run);
+    const role = await this.readerOf(execution, prepared.value.project, updates, nextCallId);
     if (!role.ok) return role.outcome;
     if (execution.signal.aborted) return { endState: 'Interrupted' };
     const session = new UnderstandSession({
@@ -130,7 +122,7 @@ export class RunUnderstand implements RunExecutor {
       settings: prepared.value.project.settings,
       deps: this.deps,
       source: this.cardSource(execution, prepared.value.scanned),
-      nextCallId: callIds(execution.run),
+      nextCallId,
       traceId: traceIdOf(execution.run),
       ids: this.deps.ids,
     });
@@ -198,6 +190,7 @@ export class RunUnderstand implements RunExecutor {
     execution: RunExecution,
     project: Project,
     updates: ManifestUpdates,
+    nextCallId: () => string,
   ): Promise<Step<RoleProvider>> {
     const { run, manifest } = execution;
     const account = await this.deps.users.findById(run.userId);
@@ -230,9 +223,32 @@ export class RunUnderstand implements RunExecutor {
       return stop(failed(built.error[0]?.code ?? ERROR_CODES.providerUnavailable));
     }
     const reader = built.value.get('reader');
-    return reader === undefined
-      ? stop(failed(ERROR_CODES.providerUnavailable))
-      : { ok: true, value: reader };
+    if (reader === undefined) return stop(failed(ERROR_CODES.providerUnavailable));
+    const ready = await preflightOllama(built.value, {
+      runId: run.runKey,
+      traceId: traceIdOf(run),
+      nextCallId,
+      signal: execution.signal,
+    });
+    if (!ready.ok) return stop(await this.notReady(execution, ready.error));
+    return { ok: true, value: reader };
+  }
+
+  /** RF-401: an Ollama that cannot answer ends the run before its first task (a stop interrupts). */
+  private async notReady(execution: RunExecution, problem: PreflightProblem): Promise<RunOutcome> {
+    if (execution.signal.aborted) return { endState: 'Interrupted' };
+    await this.log(
+      execution.run,
+      problem.code,
+      'An Ollama provider of the run is not ready; no agent task was started.',
+      {
+        role: problem.role,
+        provider: problem.provider,
+        model: problem.model,
+        nextStep: problem.nextStep,
+      },
+    );
+    return failed(problem.code);
   }
 
   /** The pinned repository of the citations' permalinks (RF-125). */
@@ -281,13 +297,4 @@ type Step<T> =
 
 function stop(outcome: RunOutcome): { readonly ok: false; readonly outcome: RunOutcome } {
   return { ok: false, outcome };
-}
-
-/** `<runKey>#<n>`, one numbering for every task of the run. */
-function callIds(run: Run): () => string {
-  let count = 0;
-  return () => {
-    count += 1;
-    return `${run.runKey}#${String(count)}`;
-  };
 }

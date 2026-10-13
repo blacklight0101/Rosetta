@@ -28,7 +28,7 @@ export interface StartRunRequest {
   readonly actor: Actor;
   readonly projectId: string;
   readonly stage: RunStage;
-  /** `understand`: only these areas (RF-200); every area when absent. */
+  /** `understand`: only these areas (RF-200); every area when absent or empty. */
   readonly areas?: readonly string[];
   /** RF-143: the consent to send code to the cloud providers the run's roles use. */
   readonly cloudConsent?: boolean;

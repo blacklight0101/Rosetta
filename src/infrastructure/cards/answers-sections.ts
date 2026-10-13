@@ -3,24 +3,39 @@ import type { AnswerEntry, RecordedQuestion } from '../../application/ports/answ
 // RF-1007, data-model.md section 3.16: the sections of `answers.md` as lines. A section starts at
 // a `## <card id> - <question>` heading and holds the `- Card:`, `- Context:` and `- Answer:` lines;
 // the card line names the run that found the question. Only the answer lines of the questions
-// answered change; every other line is kept as it is, with the file's own line ends (CRLF, lone CR
-// or LF) and its byte-order mark.
+// answered change; every other line is kept as it is, with its own line end (CRLF, lone CR or LF,
+// even when a file mixes them), and the file keeps its byte-order mark. A new line takes the end of
+// the line before it.
 
 const HEADING = /^## (\S+) - (.*)$/u;
 const FIELD = /^- (Card|Context|Answer):(?: (.*))?$/u;
 
 const LINE_BREAK = /\r\n|\r|\n/u;
+const LINE_BREAKS = /\r\n|\r|\n/gu;
+/** Splits into lines with each line's end between them: line, end, line, ..., line. */
+const LINE_AND_BREAK = /(\r\n|\r|\n)/u;
 const BOM = '\uFEFF';
 
-/** The file's own line end: CRLF when it holds one, else a lone CR (old Mac) when it holds one, else LF. */
-export function lineEndOf(text: string): string {
-  if (text.includes('\r\n')) return '\r\n';
-  return text.includes('\r') ? '\r' : '\n';
+/** The byte-order mark an editor may put before the first line ('' when there is none), and the rest. */
+export function markOf(text: string): { readonly mark: string; readonly body: string } {
+  return text.startsWith(BOM)
+    ? { mark: BOM, body: text.slice(BOM.length) }
+    : { mark: '', body: text };
+}
+
+/**
+ * The end of the last line that is not blank (CRLF, lone CR or LF); when that line has none, the
+ * last end the text holds; LF for a text without one.
+ */
+export function lastLineEndOf(text: string): string {
+  const content = text.trimEnd();
+  const after = LINE_BREAK.exec(text.slice(content.length));
+  return after?.[0] ?? content.match(LINE_BREAKS)?.at(-1) ?? '\n';
 }
 
 /** The lines of the text, without the byte-order mark an editor may put before the first one. */
 export function linesOf(text: string): string[] {
-  return (text.startsWith(BOM) ? text.slice(BOM.length) : text).split(LINE_BREAK);
+  return markOf(text).body.split(LINE_BREAK);
 }
 
 interface Section {
@@ -89,7 +104,10 @@ export function withAnswers(
   runKey: string,
   answers: readonly AnswerEntry[],
 ): string | undefined {
-  const lines = linesOf(text);
+  const { mark, body } = markOf(text);
+  const parts = body.split(LINE_AND_BREAK);
+  const lines = parts.filter((_, index) => index % 2 === 0);
+  const ends = parts.filter((_, index) => index % 2 === 1);
   const byCard = new Map(ofRun(sectionsOf(lines), runKey).map((each) => [each.cardId, each]));
   if (answers.some((entry) => !byCard.has(entry.cardId))) return undefined;
   const inserts = new Map<number, string>();
@@ -100,11 +118,13 @@ export function withAnswers(
     if (section.answerLine === undefined) inserts.set(section.lastLine, line);
     else lines[section.answerLine] = line;
   }
-  const mark = text.startsWith(BOM) ? BOM : '';
   return `${mark}${lines
-    .flatMap((line, index) => {
+    .map((line, index) => {
+      const end = ends[index] ?? '';
       const added = inserts.get(index);
-      return added === undefined ? [line] : [line, added];
+      if (added === undefined) return `${line}${end}`;
+      // The added line follows `line`, so it takes the end of `line`, or of the line before the last.
+      return `${line}${end === '' ? (ends.at(-1) ?? '\n') : end}${added}${end}`;
     })
-    .join(lineEndOf(text))}`;
+    .join('')}`;
 }

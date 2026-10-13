@@ -1,46 +1,73 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { parseTextAnswer } from '../../../../../src/infrastructure/providers/ollama/text-tool-protocol.js';
 
 // RF-205, ADR-013: reading the fenced blocks of a text-protocol answer takes time linear in its
 // size, with a small cost per block, so a long answer full of tiny blocks cannot stall the run.
 // The old parser threw and caught one JSON error per empty block: 2.5 MB of them took about 3 s.
-// The fastest of three runs keeps a busy machine from turning noise into a failure.
+// Neither check reads the wall clock against a fixed bound, so a loaded machine cannot fail them:
+// the cost per block is counted, and the time of a large input is compared with a small one.
 
 const fence = '```';
-const maxMs = 100;
-/**
- * A fence every five bytes is the densest answer there is: half a million fences take about 30 ms
- * without coverage and up to three times that with it, so this one bound leaves room for both.
- */
-const densestMaxMs = 250;
 
-function fastestOfThree(content: string): number {
-  const times = [0, 1, 2].map(() => {
+describe('fenced blocks at a constant cost each', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // A failed JSON parse throws, and a throw per block is what made the old parser slow; a block
+  // that cannot hold an object is never handed to JSON.parse.
+  it.each([
+    ['empty tool_call blocks', `${fence}tool_call\n`, 13],
+    ['a fence every five bytes', `${fence}x\n`, 5],
+  ])('RF-205 a 2.5 MB answer of %s parses no block as JSON', (_name, unit, bytes) => {
+    const content = unit.repeat(2_500_000 / bytes);
+    const parse = vi.spyOn(JSON, 'parse');
+
+    parseTextAnswer(content);
+
+    expect(parse).not.toHaveBeenCalled();
+  });
+});
+
+describe('fenced blocks in linear time', () => {
+  // A sixteenfold input takes about 16 times as long when linear and about 256 times when
+  // quadratic; the bound of 64 sits four times from each. Small and large runs alternate, so a
+  // burst of load slows both, and the floor keeps a sub-millisecond baseline from turning timer
+  // noise into a ratio.
+  const smallSize = 2_500_000 / 16;
+  const largeSize = 2_500_000;
+  const floorMs = 5;
+  const maxGrowth = 64;
+
+  function timeOf(content: string): number {
     const started = performance.now();
     parseTextAnswer(content);
     return performance.now() - started;
-  });
-  return Math.min(...times);
-}
+  }
 
-describe('fenced blocks in linear time', () => {
-  it('RF-205 a 2.5 MB answer of empty tool_call blocks parses in under 100 ms', () => {
-    const content = `${fence}tool_call\n`.repeat(2_500_000 / 13);
+  function growthOf(build: (size: number) => string): number {
+    const small = build(smallSize);
+    const large = build(largeSize);
+    const times = [0, 1, 2].map(() => ({ small: timeOf(small), large: timeOf(large) }));
+    const fastest = (pick: (each: { small: number; large: number }) => number): number =>
+      Math.max(Math.min(...times.map(pick)), floorMs);
+    return fastest((each) => each.large) / fastest((each) => each.small);
+  }
 
-    expect(fastestOfThree(content)).toBeLessThan(maxMs);
-  });
+  const shapes: readonly (readonly [string, (size: number) => string])[] = [
+    ['empty tool_call blocks', (size) => `${fence}tool_call\n`.repeat(size / 13)],
+    ['a fence every five bytes', (size) => `${fence}x\n`.repeat(size / 5)],
+    [
+      'a long run of backticks and a long label',
+      (size) => `${'`'.repeat(size / 2)}${fence}${'a'.repeat(size / 2)} \t`,
+    ],
+  ];
 
-  it('RF-205 a 2.5 MB answer of a fence every five bytes parses in under 250 ms', () => {
-    const content = `${fence}x\n`.repeat(2_500_000 / 5);
-
-    expect(fastestOfThree(content)).toBeLessThan(densestMaxMs);
-  });
-
-  it('RF-205 a long run of backticks and a long label parse in under 100 ms', () => {
-    const content = `${'`'.repeat(1_000_000)}${fence}${'a'.repeat(1_000_000)} \t`;
-
-    expect(fastestOfThree(content)).toBeLessThan(maxMs);
-  });
+  for (const [name, build] of shapes) {
+    it(`RF-205 an answer of ${name} grows linearly with its size`, () => {
+      expect(growthOf(build)).toBeLessThan(maxGrowth);
+    });
+  }
 });
 
 describe('fenced blocks keep their meaning', () => {

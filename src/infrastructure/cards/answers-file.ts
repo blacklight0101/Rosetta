@@ -11,7 +11,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { lineEndOf, linesOf, questionsOfRun, withAnswers } from './answers-sections.js';
+import { lastLineEndOf, linesOf, markOf, questionsOfRun, withAnswers } from './answers-sections.js';
 
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
@@ -19,7 +19,8 @@ import { lineEndOf, linesOf, questionsOfRun, withAnswers } from './answers-secti
 // and written on one line, so it cannot start a heading, an answer line or a new section. Writes
 // to one project's file run one after another. The page records the answers to one run's questions
 // (RF-1007): each answer is masked and written on its question's answer line, and nothing else in
-// the file changes. Appended lines use the file's own line end and its byte-order mark is kept.
+// the file changes. The file is kept byte for byte, its byte-order mark too (also in a file that
+// holds only the mark); appended lines take the end of the file's last line.
 
 export interface FileAnswersFileOptions {
   readonly writer: OutputWriter;
@@ -57,7 +58,8 @@ export class FileAnswersFile implements AnswersFile {
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
       const known = questionsIn(existing);
-      const end = lineEndOf(existing);
+      const { mark, body } = markOf(existing);
+      const end = lastLineEndOf(body);
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
         if (known.has(text)) return [];
@@ -65,8 +67,8 @@ export class FileAnswersFile implements AnswersFile {
         return [this.section(question, text, end)];
       });
       if (sections.length === 0) return;
-      const head = existing.trimEnd() === '' ? TITLE : existing.trimEnd();
-      await this.write(file, `${[head, ...sections].join(end + end)}${end}`);
+      const head = body.trimEnd() === '' ? TITLE : body.trimEnd();
+      await this.write(file, `${mark}${[head, ...sections].join(end + end)}${end}`);
     });
   }
 
@@ -92,7 +94,7 @@ export class FileAnswersFile implements AnswersFile {
     });
   }
 
-  /** One section, its lines joined with the file's own line end. */
+  /** One section, its lines joined with the line end of the file's last line. */
   private section(question: OpenQuestion, text: string, end: string): string {
     return [
       `## ${question.cardId} - ${text}`,

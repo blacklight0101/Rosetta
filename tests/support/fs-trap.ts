@@ -1,7 +1,9 @@
 /**
  * A one-shot trap for `vi.mock('node:fs/promises')`: when the mocked function is called with
- * `path`, the real call runs first, then `action` runs once (the trap disarms itself before, so the
- * action may use the file system freely). Makes a check-then-use race deterministic.
+ * `path`, `action` runs once (the trap disarms itself before, so the action may use the file system
+ * freely). The mock decides the order: spring the trap after the real call to change the file
+ * between a check and its use, or before it to change the file the real call is about to open.
+ * Makes a check-then-use race deterministic.
  */
 export interface FsTrap {
   path: string | undefined;
