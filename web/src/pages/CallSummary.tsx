@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import type { SummaryRow } from '../api/call-schemas.js';
 import { costText, durationText, speedText, tokenText } from '../lib/api-calls/format.js';
+import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1011, DEC-57: the summary per provider and role: calls, errors, P50 and P95 latency and time
 // to first token, tokens per second for Ollama, tokens and cost.
@@ -63,7 +64,7 @@ export function CallSummary({ rows }: CallSummaryProps): JSX.Element {
       {rows.length === 0 ? (
         <p class="rst-settings__note">The figures appear when the run makes its first call.</p>
       ) : (
-        <div class="rst-table-scroll">
+        <ScrollRegion label="Summary figures">
           <table class="rst-table">
             <thead>
               <tr>
@@ -80,7 +81,7 @@ export function CallSummary({ rows }: CallSummaryProps): JSX.Element {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
     </section>
   );

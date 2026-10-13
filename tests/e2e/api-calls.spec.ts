@@ -1,7 +1,12 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
-import { startUnderstand } from './support/live-run-page.js';
+import {
+  openStartPage,
+  runStatus,
+  startAndOpenLiveRun,
+  startUnderstand,
+} from './support/live-run-page.js';
 import { appendLogs, appendProblemCalls, runFolderOf } from './support/run-folder.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
@@ -30,6 +35,10 @@ const entries = (page: Page): Locator => logs(page).getByTestId('log-entry');
 test('RF-1011 the calls of a run appear in the panel as it works, and the summary counts them', async ({
   page,
 }) => {
+  await openStartPage(page);
+  await page.getByLabel('Scan only').check();
+  await startAndOpenLiveRun(page);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
   livePath = await startUnderstand(page, ['(root)', 'Catalog']);
 
   await page.getByRole('link', { name: 'API calls and logs' }).click();

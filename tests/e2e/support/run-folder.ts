@@ -22,8 +22,12 @@ export interface RunFolder {
 
 /** The folder of a run, found from its UUID through the run route and the users' workspaces. */
 export async function runFolderOf(page: Page, runUuid: string): Promise<RunFolder> {
-  const response = await page.request.get(`/api/runs/${runUuid}`);
-  const { projectId, runId } = runRow.parse(await response.json());
+  await page.goto('/projects');
+  const body: unknown = await page.evaluate(
+    async (path) => (await fetch(path)).json(),
+    `/api/runs/${runUuid}`,
+  );
+  const { projectId, runId } = runRow.parse(body);
   for (const userId of await readdir(join(dataDir(), 'users'))) {
     const dir = join(dataDir(), 'users', userId, 'projects', projectId, 'runs', runId);
     const found = await readdir(dir).then(
