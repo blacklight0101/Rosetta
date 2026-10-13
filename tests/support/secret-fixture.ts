@@ -4,6 +4,11 @@
 
 import type { SecretKind } from '../../src/infrastructure/guards/secret-masker.js';
 import { fakeValue } from './fake-value.js';
+import {
+  commandAdversarialPieces,
+  commandInnocentTexts,
+  commandSecretCases,
+} from './secret-command-shapes.js';
 import { gapAdversarialPieces, gapInnocentTexts, gapSecretCases } from './secret-gap-shapes.js';
 import { moreAdversarialPieces, moreInnocentTexts, moreSecretCases } from './secret-shapes.js';
 
@@ -161,6 +166,7 @@ export const secretCases: readonly SecretCase[] = [
   // Before the key blocks: the unterminated one masks everything after it in the whole fixture.
   ...moreSecretCases,
   ...gapSecretCases,
+  ...commandSecretCases,
   {
     name: 'a multi-line private key block',
     kind: 'private-key',
@@ -195,6 +201,7 @@ export const innocentTexts: readonly string[] = [
   'AKIA is not a key on its own',
   ...moreInnocentTexts,
   ...gapInnocentTexts,
+  ...commandInnocentTexts,
 ];
 
 /**
@@ -229,6 +236,7 @@ export const adversarialPieces: readonly string[] = [
   ['pwd', '"\\"'].join('='),
   ...moreAdversarialPieces,
   ...gapAdversarialPieces,
+  ...commandAdversarialPieces,
 ];
 
 export interface KeyedSecretCase {
