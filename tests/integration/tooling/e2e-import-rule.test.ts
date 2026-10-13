@@ -6,9 +6,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 // An existing spec path, so the type-aware rules find it in the TypeScript project.
 const specPath = 'tests/e2e/smoke.spec.ts';
+// One instance for the file: each new instance loads the configuration and the TypeScript project again.
+const eslint = new ESLint({ cwd: process.cwd() });
 
 async function restrictedImports(source: string, filePath = specPath): Promise<string[]> {
-  const [result] = await new ESLint({ cwd: process.cwd() }).lintText(source, { filePath });
+  const [result] = await eslint.lintText(source, { filePath });
   return (result?.messages ?? [])
     .filter((message) => message.ruleId === 'no-restricted-imports')
     .map((message) => message.message);

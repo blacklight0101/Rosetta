@@ -13,7 +13,6 @@ export const toolsPlaceholder = '{{tools}}';
 
 /** `<think>`, `<thinking>` and their closing tags, in any letter case. */
 const thinkingTag = /<(\/?)think(?:ing)?>/gi;
-const fencedBlock = /```([\w-]*)[ \t]*\r?\n([\s\S]*?)```/g;
 
 /**
  * The content without thinking text, which some models send even with thinking off. One pass over
@@ -41,9 +40,16 @@ export interface TextAnswer {
   readonly calls: readonly ParsedToolCall[];
 }
 
-function parsedJson(text: string): unknown {
+/**
+ * The JSON object the text holds, or undefined. A tool call is always an object, so only text that
+ * starts and ends like one is parsed: a failed parse throws, and a throw for every block of a long
+ * answer of empty blocks cost seconds.
+ */
+function parsedObject(text: string): unknown {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return undefined;
   try {
-    return JSON.parse(text);
+    return JSON.parse(trimmed);
   } catch {
     return undefined;
   }
@@ -56,25 +62,53 @@ function onlyCall(value: unknown): ParsedToolCall | undefined {
   return extra.length === 0 ? toolCallOf(value) : undefined;
 }
 
-function blockCall(label: string, body: string): ParsedToolCall | undefined {
-  const value = parsedJson(body);
-  if (label === toolCallLabel) return toolCallOf(value);
-  return label === 'json' || label === '' ? onlyCall(value) : undefined;
+/**
+ * An opening fence: three backticks, a label of letters, digits, `_` or `-`, spaces or tabs and a
+ * line break. It holds no body, so a search for it never runs to the end of the text and back.
+ */
+const openingFence = /```([\w-]*)[ \t]*\r?\n/g;
+
+interface Range {
+  readonly start: number;
+  readonly end: number;
 }
 
-/** The prose and the tool calls of a text-protocol answer; a block that is not a call stays text. */
+/** Only a `tool_call`, `json` or unlabelled block can hold a call; others are never parsed. */
+function blockCall(label: string, text: string, body: Range): ParsedToolCall | undefined {
+  if (label !== toolCallLabel && label !== 'json' && label !== '') return undefined;
+  const value = parsedObject(text.slice(body.start, body.end));
+  if (value === undefined) return undefined;
+  return label === toolCallLabel ? toolCallOf(value) : onlyCall(value);
+}
+
+/**
+ * The prose and the tool calls of a text-protocol answer; a block that is not a call stays text. A
+ * block is an opening fence and the body up to the next fence. One pass: each search starts where
+ * the last block ended, and when no fence closes an opening one, none closes a later one either.
+ */
 export function parseTextAnswer(content: string): TextAnswer {
   const visible = stripThinking(content);
-  const whole = onlyCall(parsedJson(visible.trim()));
+  const whole = onlyCall(parsedObject(visible));
   if (whole !== undefined) return { text: '', calls: [whole] };
   const calls: ParsedToolCall[] = [];
-  const text = visible.replace(fencedBlock, (block: string, label: string, body: string) => {
-    const call = blockCall(label, body);
-    if (call === undefined) return block;
+  const kept: string[] = [];
+  let keptFrom = 0;
+  openingFence.lastIndex = 0;
+  for (let open = openingFence.exec(visible); open !== null; open = openingFence.exec(visible)) {
+    const body = {
+      start: openingFence.lastIndex,
+      end: visible.indexOf(fence, openingFence.lastIndex),
+    };
+    if (body.end < 0) break;
+    openingFence.lastIndex = body.end + fence.length;
+    const call = blockCall(open[1] ?? '', visible, body);
+    if (call === undefined) continue;
     calls.push(call);
-    return '';
-  });
-  return { text: text.trim(), calls };
+    kept.push(visible.slice(keptFrom, open.index));
+    keptFrom = openingFence.lastIndex;
+  }
+  kept.push(visible.slice(keptFrom));
+  return { text: kept.join('').trim(), calls };
 }
 
 /** An earlier tool call of the conversation, as the model would have written it. */

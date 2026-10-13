@@ -1,34 +1,30 @@
-import { execFile } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { promisify } from 'node:util';
+import { cruise as depcruise } from 'dependency-cruiser';
+import extractDepcruiseOptions from 'dependency-cruiser/config-utl/extract-depcruise-options';
+import extractTSConfig from 'dependency-cruiser/config-utl/extract-ts-config';
 import { describe, expect, it } from 'vitest';
 import { useTempRoot } from '../../support/temp-root.js';
 
-const run = promisify(execFile);
-const repo = process.cwd();
-const depcruise = join(repo, 'node_modules', 'dependency-cruiser', 'bin', 'dependency-cruiser.mjs');
-const config = join(repo, '.dependency-cruiser.cjs');
+// dependency-cruiser runs in-process through its API, with the repository's configuration and the
+// fixture's own tsconfig, as `depcruise src --config .dependency-cruiser.cjs --output-type err` from
+// the fixture folder would (one node process per case made this file the slowest of the suite).
+const options = await extractDepcruiseOptions(join(process.cwd(), '.dependency-cruiser.cjs'));
 
 async function cruise(root: string, files: Record<string, string>): Promise<string> {
   for (const [path, source] of Object.entries(files)) {
     await mkdir(dirname(join(root, path)), { recursive: true });
     await writeFile(join(root, path), source);
   }
-  await writeFile(join(root, 'tsconfig.json'), '{"compilerOptions":{"module":"nodenext"}}');
-  const report = join(root, 'report.txt');
-  const args = [
-    depcruise,
-    'src',
-    '--config',
-    config,
-    '--output-type',
-    'err',
-    '--output-to',
-    report,
-  ];
-  await run('node', args, { cwd: root }).catch(() => undefined);
-  return readFile(report, 'utf8');
+  const tsConfig = join(root, 'tsconfig.json');
+  await writeFile(tsConfig, '{"compilerOptions":{"module":"nodenext"}}');
+  const { output } = await depcruise(
+    ['src'],
+    { ...options, baseDir: root, outputType: 'err', tsConfig: { fileName: tsConfig } },
+    {},
+    { tsConfig: extractTSConfig(tsConfig) },
+  );
+  return typeof output === 'string' ? output : JSON.stringify(output);
 }
 
 const importing = (module: string): string =>

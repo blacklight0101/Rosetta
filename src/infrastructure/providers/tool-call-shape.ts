@@ -18,6 +18,10 @@ const callSchema = z.object({
   arguments: z.unknown().optional(),
 });
 
+function field(value: unknown, key: string): unknown {
+  return typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined;
+}
+
 function jsonValue(value: unknown): unknown {
   if (typeof value !== 'string') return value;
   try {
@@ -36,6 +40,8 @@ function parsedArguments(value: unknown): Record<string, unknown> | undefined {
 
 /** The tool call `value` describes, or undefined when it is not a valid one. */
 export function toolCallOf(value: unknown): ParsedToolCall | undefined {
+  // A failed schema parse builds its issues, which is slow over the many blocks of a long answer.
+  if (typeof field(value, 'name') !== 'string') return undefined;
   const call = callSchema.safeParse(value);
   if (!call.success) return undefined;
   const args = parsedArguments(call.data.arguments);
@@ -55,10 +61,6 @@ export function numberedToolCalls(calls: readonly ParsedToolCall[]): ToolCall[] 
 export interface NativeToolCalls {
   readonly calls: readonly ToolCall[];
   readonly rejected: readonly string[];
-}
-
-function field(value: unknown, key: string): unknown {
-  return typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined;
 }
 
 /**

@@ -6,7 +6,7 @@ import { capsViewSchema } from './admin-schemas.js';
 
 const micros = z.string().regex(/^\d+$/u);
 
-const totalsSchema = z.object({
+export const totalsSchema = z.object({
   calls: z.number().int(),
   inputTokens: z.number().int(),
   outputTokens: z.number().int(),

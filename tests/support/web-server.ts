@@ -286,7 +286,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     }),
     projects: projectServices(projectParts),
     runs: runServices(runs, { ...stores, keys: keys.keys }, route, outputs),
-    history: historyServices({ runs, projects, folders, snapshots, logger }),
+    history: historyServices({ runs, projects, folders, snapshots, logger, costs }),
     onRoute: recorder.onRoute,
     ...overrides,
   });
