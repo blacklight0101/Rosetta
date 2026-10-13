@@ -145,6 +145,9 @@ const forceKinds: ReadonlySet<E2eAccountKind> = new Set([
   'sweep-force',
 ]);
 
+/** Kinds whose pre-seeded account holds data the specs read (seed-replay.ts): always that account. */
+const fixedAccountKinds: ReadonlySet<E2eAccountKind> = new Set(['replay']);
+
 /**
  * The account of a kind in a project. Inside a test it is the account of that test (and of that
  * repeat, `--repeat-each`), so tests that run in parallel or repeat never share an account, its
@@ -154,9 +157,10 @@ const forceKinds: ReadonlySet<E2eAccountKind> = new Set([
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
   const base = ['e2e', kind, project].join('-');
   const password = fixturePassword(`Acct${kind}`);
-  const key = currentTestKey(kind);
+  const key = fixedAccountKinds.has(kind) ? undefined : currentTestKey(kind);
   if (key === undefined) return { userName: base, password };
-  return { userName: `${base}-${key}`, password, seed: { kind, project } };
+  // A user name has 40 characters at most (RF-1102), so the key stands for the kind and project.
+  return { userName: `e2e-${key}`, password, seed: { kind, project } };
 }
 
 /**
@@ -175,7 +179,7 @@ function currentTestKey(kind: E2eAccountKind): string | undefined {
   }
   const parts = [kind, info.file, info.workerIndex, info.parallelIndex, info.repeatEachIndex];
   const digest = createHash('sha256').update(parts.map(String).join('|'));
-  return digest.digest('hex').slice(0, 10);
+  return digest.digest('hex').slice(0, 20);
 }
 
 const quiet: Logger = {
@@ -224,7 +228,8 @@ export async function ensureAccount(credentials: Credentials): Promise<void> {
       userName: credentials.userName,
       displayName: `E2E ${kind}`,
       role: adminKinds.has(kind) ? 'admin' : 'user',
-      password: credentials.password,
+      // The account's own password, not the one a test tries (it may be a wrong one on purpose).
+      password: fixturePassword(`Acct${kind}`),
       mustChangePassword: forceKinds.has(kind),
       ip: 'e2e-seed',
     });
