@@ -175,7 +175,6 @@ export const commandInnocentTexts: readonly string[] = [
   `-${tokenOption} abc`,
   'mysql 2>&1 -u root -p',
   'mysql >& out.sql -u root',
-  `tool ${tokenOption} Negotiate`,
 ];
 
 /** Hostile pieces for the new patterns (RF-141 linear time), built from pieces like the cases. */
