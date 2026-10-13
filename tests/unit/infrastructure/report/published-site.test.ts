@@ -2,9 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { checkPublishedIndex } from '../../../../src/infrastructure/report/index-check.js';
 import {
   buildSiteFiles,
-  checkPublishedIndex,
   type ReportSiteAssets,
 } from '../../../../src/infrastructure/report/published-site.js';
 import { auditHtml } from '../../../support/html-audit.js';
@@ -15,29 +15,54 @@ import { hostileCard, plainCard, reportModel } from '../../../support/report-fix
 
 const runKey = '20261012-100000-understand';
 const assets: ReportSiteAssets = { 'report.css': 'body {}', 'replay.js': 'void 0;' };
+const documents = {
+  'spec.md': '# Specification\n\n- [card file](cards/BR/BR-001.md)\n',
+  'cost.md': '# Cost\n',
+  'cards/BR/BR-001.md': '# BR-001\n',
+} as const;
 const masker = new SecretMasker();
 const htmlPages = ['index.html', 'report.html', 'replay.html'] as const;
 
 function siteOf(cards = reportModel().cards): Readonly<Record<string, string>> {
-  return buildSiteFiles(reportModel({ cards }), assets, masker);
+  return buildSiteFiles(reportModel({ cards }), assets, masker, documents);
 }
 
 describe('buildSiteFiles', () => {
-  it('RF-800 writes the static site: the index, the report, the replay, their assets and .nojekyll', () => {
+  it('RF-800 writes the static site: the index, the report, the replay, the run documents, their assets and .nojekyll', () => {
     const site = siteOf();
 
     expect(Object.keys(site).sort()).toEqual(
-      ['.nojekyll', 'index.html', 'replay.html', 'replay.js', 'report.css', 'report.html'].sort(),
+      [
+        '.nojekyll',
+        'cards/BR/BR-001.md',
+        'cost.md',
+        'index.html',
+        'replay.html',
+        'replay.js',
+        'report.css',
+        'report.html',
+        'report.md',
+        'spec.md',
+      ].sort(),
     );
     expect(site['.nojekyll']).toBe('');
   });
+});
 
+describe('buildSiteFiles pages', () => {
   it('RF-800 the index shows the run and links the report and the run replay', () => {
     const index = siteOf()['index.html'] ?? '';
 
     expect(index).toContain(`<span class="mono">${runKey}</span>`);
     expect(index).toContain('href="report.html"');
     expect(index).toContain('href="replay.html"');
+  });
+
+  it('RF-800 the report links the run documents inside the site, not one folder up', () => {
+    const report = siteOf()['report.html'] ?? '';
+
+    expect(report).not.toContain('href="../');
+    expect(report).toContain('href="spec.md"');
   });
 
   it('RF-501 every page loads its files from the site and no other address', () => {

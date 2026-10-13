@@ -1,25 +1,25 @@
 import { execFile } from 'node:child_process';
-import { readdir, readFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { checkPublishedIndex } from '../../../src/infrastructure/report/published-site.js';
+import { checkPublishedIndex } from '../../../src/infrastructure/report/index-check.js';
 import { auditHtml } from '../../support/html-audit.js';
 
-// RF-800, RF-507, RNF-003: the committed `site/` folder that GitHub Pages publishes from `main`, the
-// Pages workflow that publishes and smoke-tests it, and the smoke script run against a loopback
-// server that serves a fixture (a stale index without the run) and the committed index.
+// RF-800, RF-501, RF-507, RNF-003: the committed `site/` folder that GitHub Pages publishes from `main`
+// (its links, its drift from the build, its content), and the smoke script run against a loopback
+// server and from a bare copy with no node_modules. The workflow's own properties are in
+// pages-workflow.test.ts.
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const siteFolder = `${root}site/`;
-const workflowPath = `${root}.github/workflows/pages.yml`;
 const runKey = '20261012-100000-understand';
+const sampleLabel = "Sample run (recorded test data); the owner's demo run replaces it (DEC-105)";
 const execFileAsync = promisify(execFile);
-const staleFixture = fileURLToPath(
-  new URL('../../fixtures/pages/index-without-run.html', import.meta.url),
-);
+const staleFixture = join(root, 'tests/fixtures/pages/index-without-run.html');
 
 let server: Server;
 let baseUrl: string;
@@ -33,8 +33,11 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => {
     server.listen(0, '127.0.0.1', resolve);
   });
-  const { port } = server.address() as AddressInfo;
-  baseUrl = `http://127.0.0.1:${String(port)}/`;
+  const address = server.address();
+  if (typeof address !== 'object' || address === null) {
+    throw new Error('The loopback server has no address.');
+  }
+  baseUrl = `http://127.0.0.1:${String(address.port)}/`;
 });
 
 afterAll(async () => {
@@ -46,12 +49,38 @@ afterAll(async () => {
   });
 });
 
+/** Every file under a folder, as paths relative to it, in order. */
+async function filesOf(folder: string): Promise<string[]> {
+  const names = (await readdir(folder, { recursive: true })).sort();
+  const files: string[] = [];
+  for (const name of names) {
+    if ((await stat(join(folder, name))).isFile()) files.push(name);
+  }
+  return files;
+}
+
+/** The targets of the links and resources of a page or a Markdown document. */
+function linksOf(text: string, markdown: boolean): string[] {
+  const pattern = markdown ? /\]\(([^)\s]+)\)/gu : /\b(?:href|src)="([^"]*)"/gu;
+  return [...text.matchAll(pattern)].map((match) => match[1] ?? '');
+}
+
 interface SmokeOutcome {
   readonly code: number;
   readonly stderr: string;
 }
 
-async function smoke(url: string): Promise<SmokeOutcome> {
+function outcomeOf(error: unknown): SmokeOutcome {
+  const code =
+    error instanceof Error && 'code' in error && typeof error.code === 'number' ? error.code : -1;
+  const stderr =
+    error instanceof Error && 'stderr' in error && typeof error.stderr === 'string'
+      ? error.stderr
+      : '';
+  return { code, stderr };
+}
+
+async function smoke(url: string, cwd: string = root): Promise<SmokeOutcome> {
   return await execFileAsync(
     process.execPath,
     [
@@ -63,35 +92,73 @@ async function smoke(url: string): Promise<SmokeOutcome> {
       '--attempts',
       '1',
     ],
-    { cwd: root },
+    { cwd },
   ).then(
     (result) => ({ code: 0, stderr: result.stderr }),
     (error: unknown) => outcomeOf(error),
   );
 }
 
-// A failed run of the script: its exit code and its standard error, from the error execFile raises.
-function outcomeOf(error: unknown): SmokeOutcome {
-  const code =
-    error instanceof Error && 'code' in error && typeof error.code === 'number' ? error.code : -1;
-  const stderr =
-    error instanceof Error && 'stderr' in error && typeof error.stderr === 'string'
-      ? error.stderr
-      : '';
-  return { code, stderr };
-}
-
 describe('the committed site/ folder', () => {
-  it('RF-800 holds the report, the replay, their assets, the index and .nojekyll, and nothing else', async () => {
-    expect((await readdir(siteFolder)).sort()).toEqual(
-      ['.nojekyll', 'index.html', 'replay.html', 'replay.js', 'report.css', 'report.html'].sort(),
+  it('RF-800 holds the index, the report, the replay, the run documents, their assets and .nojekyll, and nothing else', async () => {
+    expect(await filesOf(siteFolder)).toEqual(
+      [
+        '.nojekyll',
+        'cards/BR/BR-001.md',
+        'cost.md',
+        'index.html',
+        'replay.html',
+        'replay.js',
+        'report.css',
+        'report.html',
+        'report.md',
+        'spec.md',
+      ].sort(),
     );
   });
 
-  it('RF-800 its index shows the run key the Pages smoke step looks for', async () => {
+  it('RF-800 its index shows the run key the Pages smoke step looks for and labels the sample', async () => {
     const index = await readFile(`${siteFolder}index.html`, 'utf8');
 
     expect(checkPublishedIndex(index, runKey)).toEqual({ ok: true });
+    expect(index).toContain(sampleLabel);
+  });
+
+  it('RF-800 every relative link and resource of the site points at a file of the site', async () => {
+    const files = await filesOf(siteFolder);
+    const broken: string[] = [];
+    for (const name of files.filter((file) => /\.(?:html|md)$/u.test(file))) {
+      const text = await readFile(join(siteFolder, name), 'utf8');
+      for (const target of linksOf(text, name.endsWith('.md'))) {
+        if (target === '' || target.startsWith('#') || /^[a-z][a-z0-9+.-]*:/iu.test(target)) {
+          continue;
+        }
+        const path = target.split('#')[0] ?? '';
+        const resolved = posix.normalize(posix.join(posix.dirname(name), path));
+        if (!files.includes(resolved)) broken.push(`${name} -> ${target}`);
+      }
+    }
+
+    expect(broken).toEqual([]);
+  });
+});
+
+describe('the committed site/ content', () => {
+  it('RF-507 the sample carries no script text, no javascript: link and no link to another host than GitHub', async () => {
+    const found: string[] = [];
+    for (const name of await filesOf(siteFolder)) {
+      if (!/\.(?:html|md|js)$/u.test(name)) continue;
+      const text = await readFile(join(siteFolder, name), 'utf8');
+      if (/javascript:|onerror|__pwned/iu.test(text)) found.push(`${name}: active text`);
+      for (const tag of text.match(/<script[^>]*>/gu) ?? []) {
+        if (tag !== '<script src="replay.js" defer>') found.push(`${name}: ${tag}`);
+      }
+      for (const address of text.match(/https?:\/\/[^"\s)]+/gu) ?? []) {
+        if (!address.startsWith('https://github.com/')) found.push(`${name}: ${address}`);
+      }
+    }
+
+    expect(found).toEqual([]);
   });
 
   it('RF-507 runs no script from the repository text: only the replay script loads', async () => {
@@ -106,34 +173,23 @@ describe('the committed site/ folder', () => {
   });
 });
 
-describe('the Pages workflow', () => {
-  it('RF-800 publishes site/ from main and smoke-tests the published index after the deployment', async () => {
-    const workflow = await readFile(workflowPath, 'utf8');
-
-    expect(workflow).toContain('branches: [main]');
-    expect(workflow).toContain('path: site');
-    expect(workflow).toContain('needs: deploy');
-    expect(workflow).toContain('scripts/pages-smoke.mjs');
-    expect(workflow).toContain(`SAMPLE_RUN_KEY: ${runKey}`);
-  });
-
-  it('RNF-003 pins every action to a full commit SHA and keeps expressions out of run blocks', async () => {
-    const lines = (await readFile(workflowPath, 'utf8')).split('\n');
-    const unpinned = lines.filter(
-      (line) => line.includes('uses:') && !/@[0-9a-f]{40}\b/u.test(line),
-    );
-    let runIndent: number | undefined;
-    const expressionsInRun = lines.filter((line) => {
-      const indent = line.length - line.trimStart().length;
-      if (runIndent !== undefined && line.trim() !== '' && indent <= runIndent) {
-        runIndent = undefined;
+describe('the committed site/ drift', () => {
+  it('RF-800 a fresh build into a folder of its own matches the committed site/ byte for byte', async () => {
+    const out = await mkdtemp(join(tmpdir(), 'rosetta-site-'));
+    try {
+      await execFileAsync(
+        process.execPath,
+        ['--import', './scripts/register-ts.mjs', 'scripts/build-sample-site.mjs', out],
+        { cwd: root },
+      );
+      const built = await filesOf(out);
+      expect(built).toEqual(await filesOf(siteFolder));
+      for (const name of built) {
+        expect(await readFile(join(out, name))).toEqual(await readFile(join(siteFolder, name)));
       }
-      if (/^\s*run:/u.test(line)) runIndent = indent;
-      return runIndent !== undefined && line.includes('${{');
-    });
-
-    expect(unpinned).toEqual([]);
-    expect(expressionsInRun).toEqual([]);
+    } finally {
+      await rm(out, { recursive: true, force: true });
+    }
   });
 });
 
@@ -150,5 +206,28 @@ describe('scripts/pages-smoke.mjs', () => {
     served = await readFile(`${siteFolder}index.html`, 'utf8');
 
     expect((await smoke(baseUrl)).code).toBe(0);
+  });
+
+  it('RF-800 runs from a copy of its own files with no node_modules (the smoke job runs no npm ci)', async () => {
+    const copy = await mkdtemp(join(tmpdir(), 'rosetta-smoke-'));
+    try {
+      const needed = [
+        'package.json',
+        'scripts/pages-smoke.mjs',
+        'scripts/register-ts.mjs',
+        'scripts/ts-resolve-hook.mjs',
+        'src/infrastructure/report/index-check.ts',
+        'src/infrastructure/report/html-text.ts',
+      ];
+      for (const file of needed) {
+        await mkdir(dirname(join(copy, file)), { recursive: true });
+        await copyFile(join(root, file), join(copy, file));
+      }
+      served = await readFile(`${siteFolder}index.html`, 'utf8');
+
+      expect((await smoke(baseUrl, copy)).code).toBe(0);
+    } finally {
+      await rm(copy, { recursive: true, force: true });
+    }
   });
 });
