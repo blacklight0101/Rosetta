@@ -104,17 +104,23 @@ function Row(props: {
   const { costMicros, inputTokens, outputTokens } = run.totals;
   return (
     <tr>
-      <td>
+      <td data-label="Run">
         <RunId run={run} />
       </td>
-      <td>{run.stage}</td>
-      <td class="rst-mono">{run.commitSha === null ? 'none' : run.commitSha.slice(0, 7)}</td>
-      <td>
+      <td data-label="Stage">{run.stage}</td>
+      <td class="rst-mono" data-label="Commit">
+        {run.commitSha === null ? 'none' : run.commitSha.slice(0, 7)}
+      </td>
+      <td data-label="State">
         <StateBadge run={run} />
       </td>
-      <td class="rst-table__num">{tokensLabel(inputTokens + outputTokens)}</td>
-      <td class="rst-table__num">{costLabel(costMicros)}</td>
-      <td>
+      <td class="rst-table__num" data-label="Tokens">
+        {tokensLabel(inputTokens + outputTokens)}
+      </td>
+      <td class="rst-table__num" data-label="Cost">
+        {costLabel(costMicros)}
+      </td>
+      <td data-label="Open">
         <Open run={run} />
       </td>
       <td>
@@ -128,7 +134,7 @@ function Row(props: {
 export function HistoryRuns({ runs, onDelete }: HistoryRunsProps): JSX.Element {
   return (
     <ScrollRegion label="Runs table">
-      <table class="rst-table" aria-label="Runs">
+      <table class="rst-table rst-table--stack" aria-label="Runs">
         <thead>
           <tr>
             <th scope="col">Run</th>

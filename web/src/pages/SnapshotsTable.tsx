@@ -72,12 +72,20 @@ function Row(props: {
   const { snapshot } = props;
   return (
     <tr>
-      <td class="rst-mono">{snapshot.repository}</td>
-      <td class="rst-mono">{shortCommit(snapshot)}</td>
-      <td>{minutes(snapshot.downloadedAt)}</td>
-      <td class="rst-table__num">{tokensLabel(snapshot.fileCount)}</td>
-      <td class="rst-table__num">{bytesText(snapshot.sizeBytes)}</td>
-      <td>
+      <td class="rst-mono" data-label="Repository">
+        {snapshot.repository}
+      </td>
+      <td class="rst-mono" data-label="Commit">
+        {shortCommit(snapshot)}
+      </td>
+      <td data-label="Downloaded (UTC)">{minutes(snapshot.downloadedAt)}</td>
+      <td class="rst-table__num" data-label="Files">
+        {tokensLabel(snapshot.fileCount)}
+      </td>
+      <td class="rst-table__num" data-label="Size">
+        {bytesText(snapshot.sizeBytes)}
+      </td>
+      <td data-label="Used by">
         <UsedBy snapshot={snapshot} />
       </td>
       <td>
@@ -91,7 +99,7 @@ function Row(props: {
 export function SnapshotsTable({ snapshots, onDelete }: SnapshotsTableProps): JSX.Element {
   return (
     <ScrollRegion label="Snapshots table">
-      <table class="rst-table" aria-label="Downloaded snapshots">
+      <table class="rst-table rst-table--stack" aria-label="Downloaded snapshots">
         <thead>
           <tr>
             <th scope="col">Repository</th>

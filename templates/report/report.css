@@ -367,6 +367,43 @@ tbody tr:last-child td {
     grid-template-columns: 1fr;
   }
 
+  /* P1-136: at 360 px the agents table stacks; each cell carries its column name (data-label). */
+  table.stacked thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  table.stacked,
+  table.stacked tbody {
+    display: block;
+  }
+
+  table.stacked tr {
+    display: block;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--rst-rule);
+  }
+
+  table.stacked th,
+  table.stacked td {
+    display: block;
+    border: 0;
+    padding: 2px 12px;
+    white-space: normal;
+  }
+
+  table.stacked td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--rst-ink-muted);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 400;
+  }
+
   .step .running {
     white-space: normal;
   }

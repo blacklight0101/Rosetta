@@ -95,10 +95,16 @@ function RoleRow({ role }: { readonly role: RoleTotals }): JSX.Element {
   return (
     <tr>
       <th scope="row">{role.role}</th>
-      <td class="rst-table__number">{tokensLabel(role.inputTokens)}</td>
-      <td class="rst-table__number">{tokensLabel(role.outputTokens)}</td>
-      <td class="rst-table__number">{tokensLabel(role.inputTokens + role.outputTokens)}</td>
-      <td class="rst-table__number">
+      <td class="rst-table__number" data-label="Input">
+        {tokensLabel(role.inputTokens)}
+      </td>
+      <td class="rst-table__number" data-label="Output">
+        {tokensLabel(role.outputTokens)}
+      </td>
+      <td class="rst-table__number" data-label="Tokens">
+        {tokensLabel(role.inputTokens + role.outputTokens)}
+      </td>
+      <td class="rst-table__number" data-label="Cost">
         {role.costMicros === undefined ? '—' : costLabel(role.costMicros)}
       </td>
     </tr>
@@ -116,10 +122,16 @@ function TotalRow(props: {
       <th scope="row">
         <strong>Total</strong>
       </th>
-      <td class="rst-table__number">{tokensLabel(input)}</td>
-      <td class="rst-table__number">{tokensLabel(output)}</td>
-      <td class="rst-table__number">{tokensLabel(input + output)}</td>
-      <td class="rst-table__number">
+      <td class="rst-table__number" data-label="Input">
+        {tokensLabel(input)}
+      </td>
+      <td class="rst-table__number" data-label="Output">
+        {tokensLabel(output)}
+      </td>
+      <td class="rst-table__number" data-label="Tokens">
+        {tokensLabel(input + output)}
+      </td>
+      <td class="rst-table__number" data-label="Cost">
         <strong>{costLabel(props.costMicros)}</strong>
       </td>
     </tr>
@@ -130,7 +142,7 @@ function RoleTable(props: { readonly state: RunState; readonly costMicros: numbe
   const roles = roleTotalsOf(props.state);
   return (
     <ScrollRegion label="Tokens and cost per role">
-      <table class="rst-table">
+      <table class="rst-table rst-table--stack">
         <caption class="rst-visually-hidden">Tokens and cost per role</caption>
         <thead>
           <tr>
