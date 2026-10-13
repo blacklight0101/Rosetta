@@ -58,11 +58,20 @@ export async function violations(check: (workflow: Workflow) => string[]): Promi
   );
 }
 
-export const ci = async (): Promise<string> =>
-  textOf((await load()).find((workflow) => workflow.name === 'ci.yml'));
+/** The text of one workflow file of .github/workflows. */
+export const workflowText = async (name: string): Promise<string> =>
+  textOf((await load()).find((workflow) => workflow.name === name));
+
+export const ci = (): Promise<string> => workflowText('ci.yml');
 
 /** The body of one job of ci.yml, as text. */
 export async function ciJob(id: string): Promise<string> {
   const lines = (await load()).find((workflow) => workflow.name === 'ci.yml')?.lines ?? [];
   return (jobs(lines).find((job) => job.id === id)?.body ?? []).join('\n');
+}
+
+/** The ids of the jobs of one workflow file. */
+export async function jobIds(name: string): Promise<string[]> {
+  const lines = (await load()).find((workflow) => workflow.name === name)?.lines ?? [];
+  return jobs(lines).map((job) => job.id);
 }

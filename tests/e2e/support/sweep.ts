@@ -74,63 +74,104 @@ async function expectNoSidewaysScroll(page: Page, what = 'the page'): Promise<vo
   ).toBeLessThanOrEqual(0);
 }
 
-/**
- * A table of the desktop web UI that is known to be wider than 360 px. The orchestration README
- * (section 1) asks the 360 px width of the landing page, sign-in and report only; the table names
- * what fixes it. At 360 px the sweep measures the page with that table taken out of the layout, so
- * any other element that overflows still fails, and records the table's own overflow as an
- * annotation of the test. At 1280 px nothing is exempt.
- */
-export interface KnownWideTable {
-  /** The accessible name of the table (its caption or `aria-label`). */
-  readonly table: string;
-  readonly until: string;
-}
+/** The width of each table of the page and of the box it sits in, in pixels. */
+const tableBoxes = z.array(z.object({ name: z.string(), width: z.number(), box: z.number() }));
+
+// A string, because the end-to-end project is compiled without the DOM types.
+const tableBoxesScript = `Array.from(document.querySelectorAll('table')).map((table) => ({
+  name: table.getAttribute('aria-label') ?? table.querySelector('caption')?.textContent?.trim() ?? '(unnamed)',
+  width: table.offsetWidth,
+  box: table.parentElement?.clientWidth ?? 0,
+}))`;
 
 /**
- * Takes the named table out of the layout (`display: none`) or puts it back. The table is found by
- * its `aria-label` or caption, as the accessible name the spec gives; a string, because the
- * end-to-end project is compiled without the DOM types.
+ * At 360 px every table fits the box it sits in. A table wider than its box scrolls sideways inside
+ * it, and the sweep fails on it: no table is exempt (RNF-010, design-system.md section 8).
  */
-async function setTableHidden(page: Page, name: string, hidden: boolean): Promise<void> {
-  await page.evaluate(`Array.from(document.querySelectorAll('table'))
-    .filter((table) => (table.getAttribute('aria-label')
-      ?? table.querySelector('caption')?.textContent?.trim()) === ${JSON.stringify(name)})
-    .forEach((table) => { table.style.display = ${hidden ? "'none'" : "''"}; })`);
+async function expectTablesFitTheirBox(page: Page): Promise<void> {
+  const tables = tableBoxes.parse(await page.evaluate(tableBoxesScript));
+  const wide = tables.filter((table) => table.width > table.box).map((table) => table.name);
+  expect(wide, `${page.url()}: a table scrolls sideways at 360 px`).toEqual([]);
 }
 
-async function expectOnlyTheTableScrollsSideways(page: Page, known: KnownWideTable): Promise<void> {
-  const table = page.getByRole('table', { name: known.table, exact: true });
-  await expect(table, `the wide table "${known.table}" is on the page`).toHaveCount(1);
-  const withTable = await sidewaysOverflow(page);
-  await setTableHidden(page, known.table, true);
-  try {
-    await expectNoSidewaysScroll(page, `the page without the table "${known.table}"`);
-  } finally {
-    await setTableHidden(page, known.table, false);
-  }
-  test.info().annotations.push({
-    type: 'known wide table',
-    description: `${page.url()}: "${known.table}" by ${String(withTable)} px, until ${known.until}`,
-  });
+/** One cell of a stacked table: its column, its data-label and the fonts a reader sees. */
+const stackedCells = z.array(
+  z.object({
+    table: z.string(),
+    column: z.string(),
+    label: z.string().nullable(),
+    action: z.boolean(),
+    empty: z.boolean(),
+    labelFont: z.string(),
+    labelWeight: z.string(),
+    bodyFont: z.string(),
+    bodyWeight: z.string(),
+  }),
+);
+
+// A string, because the end-to-end project is compiled without the DOM types. A stacked table names
+// each cell by its column (`data-label`) and shows the label in the font of the column heading.
+const stackedCellsScript = `Array.from(document.querySelectorAll('table.rst-table--stack, table.stacked'))
+  .flatMap((table) => {
+    const name = table.getAttribute('aria-label') ?? table.querySelector('caption')?.textContent?.trim() ?? '(unnamed)';
+    const heads = table.tHead?.rows[0]?.cells ?? [];
+    return Array.from(table.querySelectorAll('td')).map((cell) => {
+      const head = heads[cell.cellIndex];
+      const label = getComputedStyle(cell, '::before');
+      const body = getComputedStyle(document.body);
+      return {
+        table: name,
+        column: head?.textContent?.trim() ?? '',
+        label: cell.getAttribute('data-label'),
+        action: cell.querySelector('button, a') !== null,
+        empty: cell.textContent?.trim() === '' && cell.children.length === 0,
+        labelFont: label.fontFamily,
+        labelWeight: label.fontWeight,
+        bodyFont: body.fontFamily,
+        bodyWeight: body.fontWeight,
+      };
+    });
+  })`;
+
+/**
+ * At 360 px every cell of a stacked table that holds text is named by its column: its data-label is
+ * the heading of its column, except an action cell (a button or a link) and an empty cell, which have
+ * none. The label is in the page font, so a monospace cell does not make its label monospace.
+ */
+async function expectStackedCellsNamed(page: Page): Promise<void> {
+  const cells = stackedCells.parse(await page.evaluate(stackedCellsScript));
+  const unnamed = cells.filter((cell) => cell.label === null && !cell.action && !cell.empty);
+  const mislabelled = cells.filter((cell) => cell.label !== null && cell.label !== cell.column);
+  const fonts = cells.filter(
+    (cell) =>
+      cell.label !== null &&
+      (cell.labelFont !== cell.bodyFont || cell.labelWeight !== cell.bodyWeight),
+  );
+  const describe = (list: readonly { table: string; column: string }[]): string[] =>
+    list.map((cell) => `${cell.table}: ${cell.column}`);
+  expect(describe(unnamed), `${page.url()}: a cell of a stacked table has no data-label`).toEqual(
+    [],
+  );
+  expect(describe(mislabelled), `${page.url()}: a data-label is not its column heading`).toEqual(
+    [],
+  );
+  expect(describe(fonts), `${page.url()}: a data-label is not in the body font`).toEqual([]);
 }
 
 /** The checks of the sweep on the page as it is now, once its colours have stopped moving. */
 // RNF-010
-export async function expectPageInView(
-  page: Page,
-  kind: PageKind = 'app',
-  known?: KnownWideTable,
-): Promise<void> {
+export async function expectPageInView(page: Page, kind: PageKind = 'app'): Promise<void> {
   // The pointer may still be over the control that led here: its hover state is not the page at rest.
   await page.mouse.move(0, 0);
   // The theme is set after the first render and colours fade to it: axe waits for them (smoke.spec.ts).
   await expectSchemeFollowed(page, kind);
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
-  const phone = (page.viewportSize()?.width ?? 0) <= phoneWidth;
-  if (known === undefined || !phone) await expectNoSidewaysScroll(page);
-  else await expectOnlyTheTableScrollsSideways(page, known);
+  await expectNoSidewaysScroll(page);
+  if ((page.viewportSize()?.width ?? 0) <= phoneWidth) {
+    await expectTablesFitTheirBox(page);
+    await expectStackedCellsNamed(page);
+  }
 }
 
 /**

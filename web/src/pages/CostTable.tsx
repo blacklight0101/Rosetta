@@ -30,12 +30,24 @@ function Row({ row }: { readonly row: CostRow }): JSX.Element {
         {row.name}
         {row.local ? <span class="rst-p136-local">Local</span> : null}
       </th>
-      <td class="rst-table__num">{tokensLabel(totals.calls)}</td>
-      <td class="rst-table__num">{tokensLabel(totals.inputTokens)}</td>
-      <td class="rst-table__num">{tokensLabel(totals.outputTokens)}</td>
-      <td class="rst-table__num">{tokensLabel(totals.cachedInputTokens)}</td>
-      <td class="rst-table__num">{totalCostText(totals)}</td>
-      <td class="rst-mono">{totals.priceTableVersions.join(', ')}</td>
+      <td data-label="Calls" class="rst-table__num">
+        {tokensLabel(totals.calls)}
+      </td>
+      <td data-label="Input tokens" class="rst-table__num">
+        {tokensLabel(totals.inputTokens)}
+      </td>
+      <td data-label="Output tokens" class="rst-table__num">
+        {tokensLabel(totals.outputTokens)}
+      </td>
+      <td data-label="Cached input" class="rst-table__num">
+        {tokensLabel(totals.cachedInputTokens)}
+      </td>
+      <td data-label="Cost" class="rst-table__num">
+        {totalCostText(totals)}
+      </td>
+      <td data-label="Price table" class="rst-mono">
+        {totals.priceTableVersions.join(', ')}
+      </td>
     </tr>
   );
 }
@@ -44,7 +56,7 @@ function Row({ row }: { readonly row: CostRow }): JSX.Element {
 export function CostTable({ caption, firstColumn, rows }: CostTableProps): JSX.Element {
   return (
     <ScrollRegion label={`Cost ${caption.toLowerCase()} table`}>
-      <table class="rst-table rst-p136-table">
+      <table class="rst-table rst-table--stack rst-p136-table">
         <caption class="rst-p136-caption">{caption}</caption>
         <thead>
           <tr>

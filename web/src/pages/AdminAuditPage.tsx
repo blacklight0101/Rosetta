@@ -75,12 +75,20 @@ function EventRow(props: { readonly event: AuditEvent; readonly users: readonly 
   const { event, users } = props;
   return (
     <tr>
-      <td class="rst-mono">{secondsText(event.at)}</td>
-      <td>{event.actorUserId === null ? 'anonymous' : nameOf(users, event.actorUserId)}</td>
-      <td class="rst-mono">{event.action}</td>
-      <td>{targetText(event, users)}</td>
-      <td class="rst-mono">{event.ip}</td>
-      <td>
+      <td class="rst-mono" data-label="Time (UTC)">
+        {secondsText(event.at)}
+      </td>
+      <td data-label="Actor">
+        {event.actorUserId === null ? 'anonymous' : nameOf(users, event.actorUserId)}
+      </td>
+      <td class="rst-mono" data-label="Action">
+        {event.action}
+      </td>
+      <td data-label="Target">{targetText(event, users)}</td>
+      <td class="rst-mono" data-label="IP address">
+        {event.ip}
+      </td>
+      <td data-label="Outcome">
         <Outcome outcome={event.outcome} />
       </td>
     </tr>
@@ -103,7 +111,7 @@ function Events(props: {
   return (
     <>
       <ScrollRegion label="Audit events table">
-        <table class="rst-table">
+        <table class="rst-table rst-table--stack">
           <caption class="rst-visually-hidden">Audit events</caption>
           <thead>
             <tr>

@@ -21,15 +21,15 @@ function stepItem(step: ReplayStep): string {
 }
 
 function agentRow(agent: ReplayAgent): string {
-  const cells = [
-    renderModelText(agent.area),
-    renderModelText(agent.role),
-    renderModelText(agent.model),
-    escapeHtml(agent.state),
-    String(agent.turns),
-    String(agent.cards),
+  const cells: readonly [string, string][] = [
+    ['Area', renderModelText(agent.area)],
+    ['Role', renderModelText(agent.role)],
+    ['Model', renderModelText(agent.model)],
+    ['State', escapeHtml(agent.state)],
+    ['Turns', String(agent.turns)],
+    ['Cards', String(agent.cards)],
   ];
-  return `<tr>${cells.map((cell) => `<td>${cell}</td>`).join('')}</tr>`;
+  return `<tr>${cells.map(([label, cell]) => `<td data-label="${label}">${cell}</td>`).join('')}</tr>`;
 }
 
 function agentsSection(agents: readonly ReplayAgent[]): string {
@@ -37,7 +37,7 @@ function agentsSection(agents: readonly ReplayAgent[]): string {
   return `<section aria-labelledby="agents">
 <h2 id="agents">Agents</h2>
 <div class="table-wrap" role="region" aria-label="Agents of the run" tabindex="0">
-<table>
+<table class="stacked">
 <thead><tr><th scope="col">Area</th><th scope="col">Role</th><th scope="col">Model</th><th scope="col">State</th><th scope="col">Turns</th><th scope="col">Cards</th></tr></thead>
 <tbody>
 ${agents.map(agentRow).join('\n')}
