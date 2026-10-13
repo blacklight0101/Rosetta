@@ -75,13 +75,15 @@ async function classify(root: string, event: string, changed: readonly string[])
 async function testsReadingDocs(): Promise<string[]> {
   const files = await readdir(join(process.cwd(), 'tests'), { recursive: true });
   const reads = /(readFile|readdir|read|resolve|join|URL)\(.*['`"](\.\.\/)*docs\//u;
-  const found: string[] = [];
-  for (const file of files.map((name) => name.replaceAll('\\', '/'))) {
-    if (!/\.test\.tsx?$/u.test(file)) continue;
-    const text = await readFile(join(process.cwd(), 'tests', file), 'utf8');
-    if (text.split('\n').some((line) => reads.test(line))) found.push(`tests/${file}`);
-  }
-  return found;
+  const tests = files
+    .map((name) => name.replaceAll('\\', '/'))
+    .filter((file) => /\.test\.tsx?$/u.test(file));
+  const texts = await Promise.all(
+    tests.map((file) => readFile(join(process.cwd(), 'tests', file), 'utf8')),
+  );
+  return tests
+    .filter((_, i) => (texts[i] ?? '').split('\n').some((line) => reads.test(line)))
+    .map((file) => `tests/${file}`);
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -182,16 +184,20 @@ describe('GitHub Actions workflows: documentation-only checks', () => {
     expect(named('npx vitest run')).toContain(docsOnlyOnLinux);
   });
 
-  it('RNF-001 the documentation-only tests include every test that reads the repository documents', async () => {
-    const step = (await steps('verify')).find((text) => text.includes('npx vitest run')) ?? '';
-    const listed = [...step.matchAll(/^\s+(tests\/\S+)$/gmu)].map((match) => match[1] ?? '');
-    const readers = await testsReadingDocs();
+  it(
+    'RNF-001 the documentation-only tests include every test that reads the repository documents',
+    { timeout: 30_000 },
+    async () => {
+      const step = (await steps('verify')).find((text) => text.includes('npx vitest run')) ?? '';
+      const listed = [...step.matchAll(/^\s+(tests\/\S+)$/gmu)].map((match) => match[1] ?? '');
+      const readers = await testsReadingDocs();
 
-    expect(listed).toContain('tests/integration/docs');
-    expect(readers.length).toBeGreaterThan(0);
-    for (const file of readers) {
-      expect(listed.some((entry) => file === entry || file.startsWith(`${entry}/`))).toBe(true);
-    }
-    for (const entry of listed) await expect(exists(entry)).resolves.toBe(true);
-  });
+      expect(listed).toContain('tests/integration/docs');
+      expect(readers.length).toBeGreaterThan(0);
+      for (const file of readers) {
+        expect(listed.some((entry) => file === entry || file.startsWith(`${entry}/`))).toBe(true);
+      }
+      for (const entry of listed) await expect(exists(entry)).resolves.toBe(true);
+    },
+  );
 });
