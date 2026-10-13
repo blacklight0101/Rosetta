@@ -4,7 +4,9 @@ import type {
 } from '../../src/application/ports/workspace-folders.js';
 
 // RF-1012: a WorkspaceFolders over folders kept in memory, for tests of the layers above it. A
-// folder is given files with `seed`; `removals` lists what was removed, in order.
+// folder is given files with `seed`; `removals` lists what was removed, in order. While
+// `refuseRemoval` is set, `remove` fails the way a folder held open or without permission does and
+// removes nothing (P1-121).
 
 function pathOf(target: FolderTarget): string {
   const parts = [target.userId, target.projectId];
@@ -17,6 +19,7 @@ function byteLength(files: Readonly<Record<string, string>>): number {
 
 export class MemoryWorkspaceFolders implements WorkspaceFolders {
   readonly removals: FolderTarget[] = [];
+  refuseRemoval = false;
   private readonly folders = new Map<string, Readonly<Record<string, string>>>();
 
   /** Gives the run folder (or, without a run key, the project folder) these files. */
@@ -35,6 +38,10 @@ export class MemoryWorkspaceFolders implements WorkspaceFolders {
   }
 
   remove(target: FolderTarget): Promise<void> {
+    if (this.refuseRemoval) {
+      const refused = Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' });
+      return Promise.reject(refused);
+    }
     this.removals.push(target);
     for (const path of this.paths(target)) this.folders.delete(path);
     return Promise.resolve();

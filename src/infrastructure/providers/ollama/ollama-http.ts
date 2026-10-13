@@ -8,8 +8,9 @@ import type { AttemptFailed } from '../retrying-call.js';
 import { failedStatus, failedThrown } from './ollama-errors.js';
 import { errorText } from './ollama-wire.js';
 
-// RF-401, conventions section 5: one HTTP exchange with Ollama, with a timeout, the caller's
-// abort signal and a cap on the answer's size. A failure is classified, never thrown, so the
+// RF-401, conventions section 5, ADR-013: one HTTP exchange with Ollama, with a timeout, the
+// caller's abort signal and a cap on the answer's size. A redirect is an error, never followed, so
+// an answer cannot send the call to another address. A failure is classified, never thrown, so the
 // provider decides about retries.
 
 export interface OllamaExchange {
@@ -49,6 +50,7 @@ export async function exchange(request: OllamaExchange): Promise<ExchangeResult>
       method: request.body === undefined ? 'GET' : 'POST',
       headers: { 'content-type': 'application/json' },
       ...(request.body === undefined ? {} : { body: JSON.stringify(request.body) }),
+      redirect: 'error',
       signal,
     });
     const body = await jsonOf(
