@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { InsertUserProblem, UserRepository } from '../../application/ports/user-repository.js';
-import type { User, UserAccount } from '../../domain/accounts/user.js';
+import { SIGN_IN_FAILURE_LIMITS } from '../../domain/accounts/sign-in-failures.js';
+import type { EpochMs, User, UserAccount } from '../../domain/accounts/user.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -33,10 +34,27 @@ const LIST = 'SELECT ' + USER_COLUMNS + ' FROM users ORDER BY user_name COLLATE 
 const UPDATE =
   'UPDATE users SET display_name = $2, role = $3, state = $4, password_hash = $5, failed_sign_ins = $6, first_failed_at = $7, locked_until = $8, server_keys_allowed = $9, daily_cap_micros = $10, own_daily_cap_micros = $11, updated_at = $12, last_sign_in_at = $13 WHERE id = $1';
 
-const UPDATE_IF_CURRENT = UPDATE + ' AND state = $14 AND updated_at = $15';
+const UPDATE_IF_CURRENT = UPDATE + ' AND state = $14 AND updated_at = $15 AND password_hash = $16';
+// P1-86, DEC-112: `recordFailedSignIn` in one statement. $2 is now, $3 the start of the window
+// (now - 15 minutes), $4 the failure limit, $5 the end of a new lock. The SET expressions read the
+// row as it is when the write takes its row lock, so parallel failures each count; only the
+// counters are written, so a concurrent disable or reset stays; a locked account is not matched.
+const OPEN_WINDOW = 'first_failed_at > $3::timestamptz';
+const FAILURES = 'CASE WHEN ' + OPEN_WINDOW + ' THEN failed_sign_ins + 1 ELSE 1 END';
+const COUNT_FAILED_SIGN_IN =
+  'UPDATE users SET failed_sign_ins = ' +
+  FAILURES +
+  ', first_failed_at = CASE WHEN ' +
+  OPEN_WINDOW +
+  ' THEN first_failed_at ELSE $2::timestamptz END, locked_until = CASE WHEN ' +
+  FAILURES +
+  ' >= $4::int THEN $5::timestamptz ELSE locked_until END' +
+  ' WHERE id = $1 AND (locked_until IS NULL OR locked_until <= $2::timestamptz)' +
+  ' RETURNING failed_sign_ins';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UNIQUE_VIOLATION = '23505';
 const foundRow = z.object({ found: z.boolean() });
+const countedRow = z.object({ failed_sign_ins: z.number().int() });
 
 function isUniqueViolation(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === UNIQUE_VIOLATION;
@@ -138,7 +156,12 @@ export class PgUserRepository implements UserRepository {
     read: Pick<UserAccount, 'state' | 'updatedAt' | 'passwordHash'>,
   ): Promise<boolean> {
     if (!UUID.test(account.id)) return false;
-    const values = [...updateValues(account), read.state, new Date(read.updatedAt)];
+    const values = [
+      ...updateValues(account),
+      read.state,
+      new Date(read.updatedAt),
+      read.passwordHash,
+    ];
     try {
       const result = await this.pool.query(UPDATE_IF_CURRENT, values);
       return result.rowCount === 1;
@@ -147,8 +170,19 @@ export class PgUserRepository implements UserRepository {
     }
   }
 
-  countFailedSignIn(_id: string, _now: number): Promise<boolean> {
-    return Promise.resolve(false);
+  async countFailedSignIn(id: string, now: EpochMs): Promise<boolean> {
+    if (!UUID.test(id)) return false;
+    const { maxFailures, windowMs, lockMs } = SIGN_IN_FAILURE_LIMITS;
+    const values = [
+      id,
+      new Date(now),
+      new Date(now - windowMs),
+      maxFailures,
+      new Date(now + lockMs),
+    ];
+    const [row] = await this.rows(COUNT_FAILED_SIGN_IN, values);
+    // Only an account that was not locked is written, so reaching the limit is this lock.
+    return row !== undefined && countedRow.parse(row).failed_sign_ins >= maxFailures;
   }
 
   private async rows(sql: string, values: unknown[]): Promise<unknown[]> {

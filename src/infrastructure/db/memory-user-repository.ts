@@ -1,11 +1,13 @@
 import type { InsertUserProblem, UserRepository } from '../../application/ports/user-repository.js';
-import type { User, UserAccount } from '../../domain/accounts/user.js';
+import { recordFailedSignIn } from '../../domain/accounts/sign-in-failures.js';
+import type { EpochMs, User, UserAccount } from '../../domain/accounts/user.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 
 // Architecture section 7, RF-1100..RF-1103: accounts in memory, for unit tests. Passes the same
 // contract suite as PgUserRepository: user names unique case-insensitively, lists without the
-// password hash, ordered by user name in code-unit order.
+// password hash, ordered by user name in code-unit order. A failure count is one synchronous step,
+// so it is atomic like the guarded UPDATE of the PostgreSQL adapter.
 
 /** The account without its password hash. */
 function withoutHash(account: UserAccount): User {
@@ -81,12 +83,24 @@ export class MemoryUserRepository implements UserRepository {
     read: Pick<UserAccount, 'state' | 'updatedAt' | 'passwordHash'>,
   ): Promise<boolean> {
     const stored = this.accounts.get(account.id);
-    const current = stored?.state === read.state && stored.updatedAt === read.updatedAt;
+    const current =
+      stored?.state === read.state &&
+      stored.updatedAt === read.updatedAt &&
+      stored.passwordHash === read.passwordHash;
     return current ? this.update(account) : Promise.resolve(false);
   }
 
-  countFailedSignIn(_id: string, _now: number): Promise<boolean> {
-    return Promise.resolve(false);
+  countFailedSignIn(id: string, now: EpochMs): Promise<boolean> {
+    const stored = this.accounts.get(id);
+    if (stored === undefined) return Promise.resolve(false);
+    const { account: counted, locked } = recordFailedSignIn(stored, now);
+    this.accounts.set(id, {
+      ...stored,
+      failedSignIns: counted.failedSignIns,
+      firstFailedAt: counted.firstFailedAt,
+      lockedUntil: counted.lockedUntil,
+    });
+    return Promise.resolve(locked);
   }
 
   private named(userName: string): UserAccount | undefined {
