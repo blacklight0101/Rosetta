@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CLAIM_STATUSES } from '../../domain/cards/card-vocabulary.js';
+import type { MapLevel } from '../../domain/code-map/map-level.js';
 import type { ReplayModel } from './replay-model.js';
 
 // RF-504, RF-506, data-model.md section 3.17: what the report writers need to know about a finished
@@ -16,6 +17,13 @@ export interface ReportCard {
   readonly path: string;
   /** The number of claims per status, every status listed. */
   readonly claimCounts: Readonly<Record<string, number>>;
+}
+
+/** An area of the code map and how deeply it is mapped (RF-112). */
+export interface ReportArea {
+  /** Repository text: untrusted. */
+  readonly name: string;
+  readonly mapLevel: MapLevel;
 }
 
 /** Which of the run folder's documents exist. */
@@ -42,6 +50,8 @@ export interface ReportModel {
   readonly totals: ReportTotals | null;
   readonly documents: ReportDocuments;
   readonly cards: readonly ReportCard[];
+  /** The areas of the project's newest completed scan; none when it has none or its output is gone. */
+  readonly areas: readonly ReportArea[];
   readonly replay: ReplayModel;
 }
 
