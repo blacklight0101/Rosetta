@@ -110,3 +110,25 @@ export async function appendProblemCalls(folder: RunFolder): Promise<void> {
     },
   ]);
 }
+
+async function filesUnder(folder: string): Promise<string[]> {
+  const found: string[] = [];
+  for (const entry of await readdir(folder, { withFileTypes: true })) {
+    const path = join(folder, entry.name);
+    found.push(...(entry.isDirectory() ? await filesUnder(path) : [path]));
+  }
+  return found;
+}
+
+/**
+ * The files of the server's data folder (run folders, reports, application logs) that hold `text`,
+ * and how many files it looked at, so a check that finds nothing can show it looked.
+ */
+export async function filesHolding(text: string): Promise<{ held: string[]; looked: number }> {
+  const files = await filesUnder(dataDir());
+  const held: string[] = [];
+  for (const file of files) {
+    if ((await readFile(file, 'utf8')).includes(text)) held.push(file);
+  }
+  return { held, looked: files.length };
+}

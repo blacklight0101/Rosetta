@@ -47,14 +47,46 @@ async function settle(page: Page): Promise<void> {
   await transitionsDone(page);
 }
 
-async function show(
-  page: Page,
-  viewport: { readonly width: number; readonly height: number },
-  colorScheme: string,
-): Promise<void> {
-  await page.setViewportSize(viewport);
-  await page.emulateMedia({ colorScheme: colorScheme === 'dark' ? 'dark' : 'light' });
+const shownView = z.object({
+  width: z.number(),
+  prefersDark: z.boolean(),
+  theme: z.string().nullable(),
+});
+
+/**
+ * Fails, naming what the page shows, unless the page now has the view: its width, the colour scheme
+ * of the media query and, on a page the front end draws, `data-theme` (a theme saved by a test, or
+ * a theme read only at load, would leave it behind).
+ */
+async function expectShown(page: Page, view: ShownView): Promise<void> {
+  const shown = shownView.parse(
+    await page.evaluate(`({
+      width: window.innerWidth,
+      prefersDark: matchMedia('(prefers-color-scheme: dark)').matches,
+      theme: document.documentElement.getAttribute('data-theme'),
+    })`),
+  );
+  const dark = view.colorScheme === 'dark';
+  const themeFollows = shown.theme === null || shown.theme === view.colorScheme;
+  if (shown.width === view.viewport.width && shown.prefersDark === dark && themeFollows) return;
+  const scheme = shown.prefersDark ? 'dark' : 'light';
+  throw new Error(
+    `The ${view.name} view did not take effect on ${page.url()}: width ${String(shown.width)}, ` +
+      `prefers-color-scheme ${scheme}, data-theme ${String(shown.theme)}`,
+  );
+}
+
+interface ShownView {
+  readonly name: string;
+  readonly viewport: { readonly width: number; readonly height: number };
+  readonly colorScheme: string;
+}
+
+async function show(page: Page, view: ShownView): Promise<void> {
+  await page.setViewportSize(view.viewport);
+  await page.emulateMedia({ colorScheme: view.colorScheme === 'dark' ? 'dark' : 'light' });
   await settle(page);
+  await expectShown(page, view);
 }
 
 /**
@@ -79,11 +111,11 @@ export async function inEveryView(
     globalThis.rstHeldAnimations.forEach((each) => each.pause());`);
   try {
     for (const view of walk) {
-      await show(page, view.viewport, view.colorScheme);
+      await show(page, view);
       await check(view);
     }
   } finally {
-    await show(page, viewport, colorScheme);
+    await show(page, { name: info.project.name, viewport, colorScheme });
     await page.evaluate(`window.scrollTo(${String(x)}, ${String(y)});
       (globalThis.rstHeldAnimations ?? []).forEach((each) => each.play());`);
   }

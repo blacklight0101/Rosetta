@@ -122,14 +122,14 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
 | Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; the Playwright e2e project runs only in the `e2e-shard` jobs, which install Chromium with `npx playwright install --with-deps chromium`; `verify` installs no browser) | yes |
-| End-to-end tests | job `e2e-shard`: the Playwright project split in three shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/3`, each with its own PostgreSQL service); job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
+| End-to-end tests | job `e2e-shard`: the Playwright project split in three shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/3`, each with its own PostgreSQL service; two shards were tried on 2026-10-13 and left the slowest at about 5 minutes, so three are kept for wall time); job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
 | Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
 | Secret scan | gitleaks action | yes |
 | Static analysis | CodeQL (`javascript-typescript`), on pull requests and weekly | yes, for high and critical alerts |
 | Dependency review | `actions/dependency-review-action` on pull requests: fails on newly added packages with high or critical advisories or a disallowed licence | yes |
 | Image build and scan | `docker build` of the `Dockerfile`, then a container scan (Trivy action) that fails on high or critical findings with a fix available | yes (Linux job) |
 | Compose smoke test | `docker compose -f compose.yaml -f compose.ci.yaml up -d`, wait for `/healthz`, Playwright smoke (landing, sign-in, fake-provider scan), `down -v` | yes (Linux job) |
-| Pull request title | commitlint on the title, passed as `env: TITLE: ${{ github.event.pull_request.title }}` and read as `"$TITLE"`, never `${{ }}` inside `run:` | yes |
+| Pull request title | commitlint on the title, passed as `env: TITLE: ${{ github.event.pull_request.title }}` and read as `"$TITLE"`, never `${{ }}` inside `run:`; Dependabot titles of the exact shape `build(deps): Bump ...`, `build(deps-dev): Bump ...` or `ci(deps): Bump ...` skip the rules (`commitlint.config.ts`), because Dependabot cannot lower-case its subject | yes |
 
 `npm run verify` runs the first six checks locally in the same order; builders and the verifier run it on every card.
 

@@ -220,17 +220,18 @@ test('RF-1105 a run id that is not the account own shows the error and no page o
   await expectNoSeriousViolations(page);
 });
 
+// P1-131: the test server holds a server key for OpenAI only, so the provider without one is Anthropic.
 test('RF-1108 RST-2302 a run refused for a missing key shows the code, the message and where to fix it', async ({
   page,
 }) => {
   await openStartPage(page);
   await page.getByRole('link', { name: 'Project settings' }).click();
-  await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
-  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await page.getByLabel('Reader provider', { exact: true }).selectOption('anthropic');
+  await page.getByLabel('Reader model', { exact: true }).fill('claude-haiku-4-5');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();
-  await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
+  await page.getByLabel('I understand; send masked excerpts to Anthropic for this run').check();
 
   await startAndOpenLiveRun(page);
 

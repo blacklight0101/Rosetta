@@ -56,6 +56,16 @@ describe('GitHub Actions workflows: files', () => {
   });
 });
 
+describe('GitHub Actions workflows: e2e shards', () => {
+  it('RNF-005 the e2e project runs in three shards, and the matrix, the name and the step agree', async () => {
+    const shard = await ciJob('e2e-shard');
+
+    expect(shard).toContain('shard: [1, 2, 3]');
+    expect(shard).toContain('name: e2e (shard ${{ matrix.shard }}/3)');
+    expect(shard).toContain('run: node scripts/run-e2e.mjs "--shard=$SHARD/3"');
+  });
+});
+
 describe('GitHub Actions workflows: triggers', () => {
   it('RNF-001 push runs only on main so a pull request commit is not built twice', async () => {
     const found = await violations(({ lines }) =>

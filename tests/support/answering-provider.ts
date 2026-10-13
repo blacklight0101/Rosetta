@@ -14,15 +14,17 @@ import { ProviderCallError } from '../../src/infrastructure/providers/provider-c
 // show one role reachable and another with its error. It never touches the network. With
 // `holdUnderstandMs` the first reader call of each understand run waits that long, so the run is
 // still working when a second run is asked for and that one waits in the queue (P1-34); the later
-// calls of the run answer at once, so a run of several areas takes no longer than one hold. The
-// start check of an Ollama reader (RF-401) is not a reader's call: the hold goes to the first one.
+// calls of the run answer at once, so a run of several areas takes no longer than one hold. A run
+// is told apart by its trace id (one per run): the run key has one-second resolution and is shared
+// by every user of the server. The start check of an Ollama reader (RF-401) is not a reader's call:
+// the hold goes to the first one.
 
 export class AnsweringProvider implements LlmProvider {
   private readonly failing: ReadonlySet<string>;
 
   private readonly holdUnderstandMs: number;
 
-  /** The understand runs whose first reader call has been held. */
+  /** The trace ids of the understand runs whose first reader call has been held. */
   private readonly held = new Set<string>();
 
   constructor(failing: readonly string[] = [], holdUnderstandMs = 0) {
@@ -48,12 +50,12 @@ export class AnsweringProvider implements LlmProvider {
     };
   }
 
-  private holdsFirstReaderCall({ role, runId, agentTaskId }: LlmCallContext): boolean {
+  private holdsFirstReaderCall({ role, runId, traceId, agentTaskId }: LlmCallContext): boolean {
     if (this.holdUnderstandMs <= 0 || role !== 'reader' || !runId.endsWith('-understand')) {
       return false;
     }
-    if (agentTaskId === preflightAgentTaskId || this.held.has(runId)) return false;
-    this.held.add(runId);
+    if (agentTaskId === preflightAgentTaskId || this.held.has(traceId)) return false;
+    this.held.add(traceId);
     return true;
   }
 }

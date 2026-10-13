@@ -15,10 +15,14 @@ import { expectPageInView } from '../support/sweep.js';
 const visual = { tag: '@visual' };
 
 /**
- * The table of this page is wider than 360 px (found by this sweep; RNF-010 asks 360 px of the
- * landing page, sign-in and report only), so at 360 px its overflow is recorded, not failed.
+ * Tables wider than 360 px, found by this sweep (orchestration README section 1 asks 360 px of the
+ * landing page, sign-in and report only): at 360 px the rest of the page must still fit (sweep.ts).
  */
-const wideTable = { scrollsSidewaysUntil: 'a follow-up card fits its table into 360 px' };
+const accountsTable = { table: 'Accounts', until: 'an app fix that fits the table into 360 px' };
+const snapshotsTable = {
+  table: 'Downloaded snapshots',
+  until: 'an app fix that fits the table into 360 px',
+};
 
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('sweep-admin', info.project.name));
@@ -38,7 +42,7 @@ test(
 test('RNF-010 users and caps, with the workspace of an account open', visual, async ({ page }) => {
   await page.goto('/admin/users');
   await expect(page.getByRole('heading', { name: 'Users and caps', level: 1 })).toBeVisible();
-  await expectPageInView(page, 'app', wideTable);
+  await expectPageInView(page, 'app', accountsTable);
 
   await accountRow(page, seededUser.userName)
     .getByRole('button', { name: /^Open workspace/u })
@@ -47,7 +51,7 @@ test('RNF-010 users and caps, with the workspace of an account open', visual, as
     page.getByRole('region', { name: `Workspace of ${seededUser.userName}` }),
   ).toBeVisible();
 
-  await expectPageInView(page, 'app', wideTable);
+  await expectPageInView(page, 'app', accountsTable);
 });
 
 test('RNF-010 the audit page', visual, async ({ page }) => {
@@ -69,12 +73,12 @@ test('RNF-010 the snapshots page and its delete confirmation', visual, async ({ 
   await page.goto('/admin/snapshots');
   const row = page.getByRole('row').filter({ hasText: planted.repository });
   await expect(row).toContainText('unused');
-  await expectPageInView(page, 'app', wideTable);
+  await expectPageInView(page, 'app', snapshotsTable);
 
   await row.getByRole('button', { name: /^Delete:/u }).click();
   await expect(confirmation(page)).toContainText('This cannot be undone.');
 
-  await expectPageInView(page, 'app', wideTable);
+  await expectPageInView(page, 'app', snapshotsTable);
   await page.keyboard.press('Escape');
   await expect(confirmation(page)).toHaveCount(0);
 });
