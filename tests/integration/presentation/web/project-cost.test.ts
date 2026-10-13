@@ -167,6 +167,42 @@ describe('GET /api/projects/:id/cost lines and scope', () => {
   });
 });
 
+describe('GET /api/projects/:id/cost for an administrator', () => {
+  it('RF-1105 an administrator gets 404 for another user project, not their own totals', async () => {
+    const { projectId } = await fixtureLedger();
+    const root = await signedIn('root', 'admin');
+    test.costs.add(costEntry(root.id, { costMicros: 999n }));
+
+    const response = await root.browser.request({
+      method: 'GET',
+      url: `/api/projects/${projectId}/cost`,
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.notFound });
+    expect(JSON.stringify(response.json())).not.toContain('999');
+  });
+
+  it('RF-1105 an administrator reads the totals of their own project, not a user one', async () => {
+    const { amy } = await fixtureLedger();
+    const root = await signedIn('root', 'admin');
+    const rootProject = await projectOf(root);
+    test.costs.add(costEntry(root.id, { projectId: rootProject, costMicros: 999n }));
+
+    const response = await root.browser.request({
+      method: 'GET',
+      url: `/api/projects/${rootProject}/cost`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ totals: unknown }>().totals).toMatchObject({
+      calls: 1,
+      cost: [{ currency: 'USD', costMicros: '999' }],
+    });
+    expect(amy.id).not.toBe(root.id);
+  });
+});
+
 describe('GET /api/account/totals', () => {
   it('RF-1010 a user gets the totals of their own projects and provider tests, and no server figures', async () => {
     const { amy } = await fixtureLedger();

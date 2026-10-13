@@ -1,5 +1,5 @@
 import type { LedgerEntry } from '../../application/ports/cost-ledger.js';
-import type { CostTotals, LedgerGroup } from '../../application/ports/cost-totals.js';
+import type { CostTotals, LedgerGroup, SummaryGroup } from '../../application/ports/cost-totals.js';
 
 // Architecture section 7, RF-428, RF-1010: the ledger sums in memory, for unit and route tests. A
 // test adds ledger rows; the adapter passes the same contract suite as PgCostTotals.
@@ -38,11 +38,47 @@ function groupsOf(entries: readonly LedgerEntry[]): readonly LedgerGroup[] {
   return [...groups.values()];
 }
 
+/** The summary columns of a group, as one key. */
+const summaryKey = (entry: LedgerEntry): string =>
+  JSON.stringify([entry.currency, entry.costKnown, entry.priceTableVersion]);
+
+const noCalls = (entry: LedgerEntry): SummaryGroup => ({
+  currency: entry.currency,
+  costKnown: entry.costKnown,
+  priceTableVersion: entry.priceTableVersion,
+  calls: 0,
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  costMicros: 0n,
+});
+
+function summaryOf(entries: readonly LedgerEntry[]): readonly SummaryGroup[] {
+  const groups = new Map<string, SummaryGroup>();
+  for (const entry of entries) {
+    const known = groups.get(summaryKey(entry)) ?? noCalls(entry);
+    groups.set(summaryKey(entry), {
+      ...known,
+      calls: known.calls + 1,
+      inputTokens: known.inputTokens + entry.inputTokens,
+      outputTokens: known.outputTokens + entry.outputTokens,
+      cachedInputTokens: known.cachedInputTokens + entry.cachedInputTokens,
+      costMicros: known.costMicros + entry.costMicros,
+    });
+  }
+  return [...groups.values()];
+}
+
 export class MemoryCostTotals implements CostTotals {
   private readonly entries: LedgerEntry[] = [];
 
   add(entry: LedgerEntry): void {
     this.entries.push(entry);
+  }
+
+  userSummary(userId: string): Promise<readonly SummaryGroup[]> {
+    const mine = this.entries.filter((entry) => entry.userId === userId);
+    return Promise.resolve(summaryOf(mine));
   }
 
   userGroups(userId: string): Promise<readonly LedgerGroup[]> {
