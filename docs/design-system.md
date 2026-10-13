@@ -142,7 +142,9 @@ reflow from four columns to one.
 - Connection loss: if the event stream drops, a banner says "Live updates paused - reconnecting", the page keeps its
   last state, and on reconnection missed events are replayed from `events.jsonl` (RF-1006).
 - Pause updates: the live run page can freeze its panels for reading while the run continues; a counter shows how
-  many events are waiting.
+  many events are waiting. It freezes the agent panels, the overview, the claims and the event log; the stage stepper,
+  the run meter and the top-bar meter stay live. While paused the button reads Resume, Stop run stays usable and the
+  page's one polite status says "Updates paused" once (the counter is not announced).
 
 ## 5. Component inventory
 

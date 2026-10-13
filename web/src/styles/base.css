@@ -281,3 +281,10 @@ select {
     border-block-end: 1px solid var(--rst-rule);
   }
 }
+
+/* The totals pill keeps one width while its figures grow, so the run meter beside it stays put. */
+@media (min-width: 900px) {
+  .rst-header__totals {
+    min-inline-size: 28rem;
+  }
+}
