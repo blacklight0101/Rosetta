@@ -33,21 +33,31 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 /** Runs before the call with this number (from 1) reaches the fake; the signal is the call's own. */
 export type BeforeCall = (call: number, signal: AbortSignal) => Promise<void>;
 
+/** Changes an answer of the recording before the run sees it, by call number (from 1). */
+export type DecorateAnswer = (call: number, response: LlmResponse) => LlmResponse;
+
 /** The fake behind every role, with a hook before each call. */
 class HookedProvider implements LlmProvider {
   readonly fake: FakeProvider;
   private readonly before: BeforeCall | undefined;
+  private readonly decorate: DecorateAnswer | undefined;
   private calls = 0;
 
-  constructor(recording: Recording, before: BeforeCall | undefined) {
+  constructor(
+    recording: Recording,
+    before: BeforeCall | undefined,
+    decorate: DecorateAnswer | undefined,
+  ) {
     this.fake = new FakeProvider({ testMode: true, recording });
     this.before = before;
+    this.decorate = decorate;
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
     this.calls += 1;
     await this.before?.(this.calls, request.signal);
-    return this.fake.complete(request, observer);
+    const response = await this.fake.complete(request, observer);
+    return this.decorate === undefined ? response : this.decorate(this.calls, response);
   }
 }
 
@@ -67,11 +77,12 @@ export interface UnderstandProviderParts {
   readonly logger: Logger;
   readonly recording: Recording;
   readonly beforeCall?: BeforeCall;
+  readonly decorateAnswer?: DecorateAnswer;
 }
 
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
   const { dataDir, writer, masker, clock, logger } = parts;
-  const adapter = new HookedProvider(parts.recording, parts.beforeCall);
+  const adapter = new HookedProvider(parts.recording, parts.beforeCall, parts.decorateAnswer);
   const ledger = new SpyLedger(new MemoryCostLedger());
   const factory = new GuardedProviderFactory({
     keys: new MemoryProviderKeyRepository(),
