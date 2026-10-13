@@ -57,11 +57,11 @@ export class MemoryProjectRepository implements ProjectRepository {
   async remove(
     userId: string,
     projectId: string,
-    beforeRowsGo: () => Promise<void>,
+    afterRowsGone: () => Promise<void>,
   ): Promise<boolean> {
     if (this.owned(userId, projectId) === undefined) return false;
-    await beforeRowsGo();
     this.projects.delete(projectId);
+    await afterRowsGone();
     return true;
   }
 

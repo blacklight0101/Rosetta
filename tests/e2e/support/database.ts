@@ -55,6 +55,13 @@ export async function dropDisposableSchema(databaseUrl: string, port: number): P
   }
 }
 
+/** A connection URL whose connections use the disposable schema of the run on this port. */
+export function disposableSchemaUrl(databaseUrl: string, port: number): string {
+  const url = new URL(databaseUrl);
+  url.searchParams.set('options', `-c search_path=${schemaName(port)}`);
+  return url.toString();
+}
+
 /** Makes an empty schema `rst_e2e_<port>`; a leftover of the same name is dropped first. */
 export async function createDisposableSchema(
   databaseUrl: string,
@@ -70,7 +77,8 @@ export async function createDisposableSchema(
   } finally {
     await admin.end();
   }
-  const url = new URL(databaseUrl);
-  url.searchParams.set('options', `-c search_path=${name}`);
-  return { url: url.toString(), drop: () => dropDisposableSchema(databaseUrl, port) };
+  return {
+    url: disposableSchemaUrl(databaseUrl, port),
+    drop: () => dropDisposableSchema(databaseUrl, port),
+  };
 }

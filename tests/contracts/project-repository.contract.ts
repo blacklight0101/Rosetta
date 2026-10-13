@@ -103,15 +103,15 @@ function updatingTests(name: string, fresh: FreshProjects): void {
   });
 }
 
-/** A hook for `remove` that records the project ids it ran for. */
-function recordingHook(): {
+/** A hook for `remove` that records whether the project was already gone when it ran. */
+function recordingHook(projects: ProjectRepository): {
   readonly calls: string[];
   readonly hook: (id: string) => () => Promise<void>;
 } {
   const calls: string[] = [];
-  const hook = (id: string) => (): Promise<void> => {
-    calls.push(id);
-    return Promise.resolve();
+  const hook = (id: string) => async (): Promise<void> => {
+    const stillListed = (await projects.find(amy, id)) !== undefined;
+    calls.push(stillListed ? `${id} still listed` : id);
   };
   return { calls, hook };
 }
@@ -122,7 +122,7 @@ function removalTests(name: string, fresh: FreshProjects): void {
     const doomed = sampleProject({ userId: amy });
     const kept = sampleProject({ userId: amy });
     for (const project of [doomed, kept]) await projects.insertOrFind(project);
-    const { calls, hook } = recordingHook();
+    const { calls, hook } = recordingHook(projects);
 
     expect(await projects.remove(amy, doomed.id, hook(doomed.id))).toBe(true);
 
@@ -137,7 +137,7 @@ function removalTests(name: string, fresh: FreshProjects): void {
     const projects = await fresh();
     const project = sampleProject({ userId: amy });
     await projects.insertOrFind(project);
-    const { calls, hook } = recordingHook();
+    const { calls, hook } = recordingHook(projects);
 
     expect(await projects.remove(bob, project.id, hook(project.id))).toBe(false);
     expect(await projects.remove(amy, unknownId, hook(unknownId))).toBe(false);
@@ -146,7 +146,7 @@ function removalTests(name: string, fresh: FreshProjects): void {
     expect(await projects.find(amy, project.id)).toEqual(project);
   });
 
-  it(`RF-1012 ${name} keeps the project when the hook before the removal fails`, async () => {
+  it(`RF-1012 ${name} has removed the project when the hook after the removal fails`, async () => {
     const projects = await fresh();
     const project = sampleProject({ userId: amy });
     await projects.insertOrFind(project);
@@ -156,7 +156,7 @@ function removalTests(name: string, fresh: FreshProjects): void {
       failure,
     );
 
-    expect(await projects.find(amy, project.id)).toEqual(project);
+    expect(await projects.find(amy, project.id)).toBeUndefined();
   });
 }
 
