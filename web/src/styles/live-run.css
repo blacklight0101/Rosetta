@@ -372,3 +372,21 @@
   color: var(--rst-ink-soft);
   overflow-wrap: anywhere;
 }
+
+/* Report: the Build report control and the links to what it built (P1-97) */
+
+.rst-live-report {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-3);
+}
+
+.rst-live-report__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3) var(--rst-sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
