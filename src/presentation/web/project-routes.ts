@@ -43,7 +43,7 @@ interface IdParams {
   readonly id: string;
 }
 
-function projectView(project: Project): Record<string, unknown> {
+export function projectView(project: Project): Record<string, unknown> {
   return {
     id: project.id,
     name: project.name,
