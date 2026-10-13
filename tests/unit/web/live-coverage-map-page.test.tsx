@@ -55,9 +55,10 @@ it('RF-1005 fills in the tree of an area and its read share as files are read', 
   connection.event(toolCalled(11, 'reader-002', { path: 'Services/Other.cs' }));
 
   await waitFor(() => {
-    expect(within(areaOf('Catalog')).getByText('Edit.aspx')).toBeTruthy();
+    expect(within(areaOf('Services')).getByText('CatalogService.cs')).toBeTruthy();
   });
   const catalog = areaOf('Catalog');
+  expect(within(catalog).getByText('Edit.aspx')).toBeTruthy();
   const folders = within(catalog).getAllByRole('list');
   expect(folders.length).toBe(3);
   expect(within(catalog).getByText('Details.aspx.cs')).toBeTruthy();
@@ -65,7 +66,6 @@ it('RF-1005 fills in the tree of an area and its read share as files are read', 
   const catalogMeter = within(catalog).getByRole('meter', { name: 'Read share of Catalog' });
   expect(catalogMeter.getAttribute('aria-valuenow')).toBe('67');
   const services = areaOf('Services');
-  expect(within(services).getByText('CatalogService.cs')).toBeTruthy();
   expect(within(services).queryByText('Other.cs')).toBeNull();
   const servicesMeter = within(services).getByRole('meter', { name: 'Read share of Services' });
   expect(servicesMeter.getAttribute('aria-valuenow')).toBe('33');
