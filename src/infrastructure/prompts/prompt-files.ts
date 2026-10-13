@@ -14,10 +14,10 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v1.md',
+  system: 'reader/area.v2.md',
   cardFormat: 'cards/card-format.v1.md',
-  task: 'reader/task.v1.md',
-  turnsLeft: 'reader/turns-left.v1.md',
+  task: 'reader/task.v2.md',
+  turnsLeft: 'reader/turns-left.v2.md',
   repair: 'cards/repair.v1.md',
 } as const;
 
@@ -27,7 +27,7 @@ function invalid(name: string, problem: string): RosettaError {
   return new RosettaError(ERROR_CODES.configurationInvalid, `The prompt ${name} ${problem}.`);
 }
 
-/** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v1.md`). */
+/** Reads one prompt file; `name` is its path under the prompts folder (`reader/area.v2.md`). */
 export async function loadPromptFile(promptsFolder: string, name: string): Promise<PromptFile> {
   const version = versionPattern.exec(name)?.[1];
   if (version === undefined) throw invalid(name, 'has no version in its file name');

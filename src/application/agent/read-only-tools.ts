@@ -6,6 +6,7 @@ import { renderDataBlock, type DataBlockSource } from '../../domain/egress/data-
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { isRepositoryPath } from '../../domain/sources/permalink.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 import type { ToolCall, ToolDefinition } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import type { RepositoryReader } from '../ports/repository-reader.js';
@@ -37,6 +38,8 @@ export interface ReadOnlyToolsOptions {
   readonly area: Area;
   readonly logger: Logger;
   readonly limits?: Partial<ToolLimits>;
+  /** RF-145: a fresh random tag for every data block the tools write. */
+  readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
 /** The ids of the call a tool runs for, for the log. */
@@ -62,10 +65,6 @@ const refusedPath =
 const notListed =
   'There is no such file in the code map. Use list_area_files, grep or codemap_query to find the exact path.';
 
-function render(source: DataBlockSource, data: ToolData): string {
-  return renderDataBlock({ source, excerpts: data.excerpts, text: data.text });
-}
-
 function skippedMessage(file: FileEntry): string {
   return `The scan skipped ${file.path} (${file.skipped ?? 'skipped'}), so it cannot be read. Read other files instead.`;
 }
@@ -77,6 +76,7 @@ export class ReadOnlyTools {
   private readonly area: Area;
   private readonly logger: Logger;
   private readonly limits: ToolLimits;
+  private readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 
   constructor(options: ReadOnlyToolsOptions) {
     this.reader = options.reader;
@@ -84,11 +84,22 @@ export class ReadOnlyTools {
     this.area = options.area;
     this.logger = options.logger;
     this.limits = { ...defaultToolLimits, ...options.limits };
+    this.ids = options.ids;
+  }
+
+  /** RF-145: text as one data block with a tag of its own (also the agent loop's own answers). */
+  renderBlock(source: DataBlockSource, text: string): string {
+    return this.render(source, { excerpts: [], text });
+  }
+
+  private render(source: DataBlockSource, data: ToolData): string {
+    const block = { source, excerpts: data.excerpts, text: data.text };
+    return renderDataBlock(block, this.ids.dataBlockTag());
   }
 
   /** The list_area_files result as a data block; the task message carries it from the start. */
   areaOverview(): string {
-    return render('list_area_files', this.listAreaFiles());
+    return this.render('list_area_files', this.listAreaFiles());
   }
 
   // RF-201
@@ -103,7 +114,7 @@ export class ReadOnlyTools {
       ? await this.answer(request.value, ids)
       : err({ code: ERROR_CODES.toolArgumentsInvalid, message: request.error });
     if (!answer.ok) return this.failed(call.name, answer.error, ids);
-    return { content: render(call.name, answer.value), excerpts: answer.value.excerpts };
+    return { content: this.render(call.name, answer.value), excerpts: answer.value.excerpts };
   }
 
   private async answer(request: ToolRequest, ids: ToolCallIds): Promise<ToolAnswer> {
@@ -205,6 +216,6 @@ export class ReadOnlyTools {
       data: { tool: source },
     });
     const text = `error ${error.code}: ${error.message}`;
-    return { content: render(source, { excerpts: [], text }), error };
+    return { content: this.render(source, { excerpts: [], text }), error };
   }
 }

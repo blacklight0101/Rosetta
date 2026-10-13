@@ -87,6 +87,7 @@ describe('runAgentTask stop between tool calls', () => {
     const tools: typeof base.tools = {
       definitions: base.tools.definitions,
       areaOverview: () => base.tools.areaOverview(),
+      renderBlock: (source, text) => base.tools.renderBlock(source, text),
       run: async (call, ids) => {
         ran.push(call.name);
         const outcome = await base.tools.run(call, ids);
