@@ -15,13 +15,18 @@ export interface RunReportProps {
   /** The run's id (the UUID). */
   readonly runId: string;
   readonly ended: boolean;
+  /** Told once the server has written the report, so the stepper shows it done (P1-130). */
+  readonly onBuilt?: () => void;
 }
 
 type ReportState = 'idle' | 'building' | 'built';
 
 const inProgressCode = 'RST-1700';
 
-function useReportBuild(runId: string): {
+function useReportBuild(
+  runId: string,
+  onBuilt: (() => void) | undefined,
+): {
   readonly state: ReportState;
   readonly failure: ApiFailure | undefined;
   readonly build: () => void;
@@ -34,7 +39,8 @@ function useReportBuild(runId: string): {
     setFailure(undefined);
     void buildReport(client, runId).then((result) => {
       setState(result.ok ? 'built' : 'idle');
-      if (!result.ok) setFailure(result.error);
+      if (result.ok) onBuilt?.();
+      else setFailure(result.error);
     });
   };
   return { state, failure, build };
@@ -66,8 +72,8 @@ function ReportLinks({ runId }: { readonly runId: string }): JSX.Element {
 }
 
 // RF-504, RF-506
-export function RunReport({ runId, ended }: RunReportProps): JSX.Element {
-  const { state, failure, build } = useReportBuild(runId);
+export function RunReport({ runId, ended, onBuilt }: RunReportProps): JSX.Element {
+  const { state, failure, build } = useReportBuild(runId, onBuilt);
   const waiting = ended ? undefined : 'Available when the run ends.';
   return (
     <section class="rst-live-report" aria-label="Report">
