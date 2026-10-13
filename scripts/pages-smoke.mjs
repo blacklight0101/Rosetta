@@ -5,7 +5,7 @@
 //   --delay-ms  wait between tries; default 10000
 import { setTimeout as sleep } from 'node:timers/promises';
 
-const { checkPublishedIndex } = await import('../src/infrastructure/report/published-site.ts');
+const { checkPublishedIndex } = await import('../src/infrastructure/report/index-check.ts');
 
 const usage = 'usage: pages-smoke.mjs <url> <runKey> [--attempts n] [--delay-ms ms]';
 

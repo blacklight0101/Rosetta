@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join, posix } from 'node:path';
+import { dirname, join, posix, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -54,7 +54,9 @@ async function filesOf(folder: string): Promise<string[]> {
   const names = (await readdir(folder, { recursive: true })).sort();
   const files: string[] = [];
   for (const name of names) {
-    if ((await stat(join(folder, name))).isFile()) files.push(name);
+    // readdir gives backslashes on Windows; the links of the site are POSIX paths.
+    const path = name.split(sep).join(posix.sep);
+    if ((await stat(join(folder, name))).isFile()) files.push(path);
   }
   return files;
 }

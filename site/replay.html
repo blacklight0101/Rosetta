@@ -94,7 +94,7 @@
 <li class="step step-tool" data-seq="9" data-cost="$0.0000" data-tokens="1280">
 <time datetime="2026-10-12T10:00:16.000Z">+16.0 s</time>
 <span class="label">Tool call</span>
-<span class="text">read_file endLine=24 path=src/&lt;img src=x onerror=&quot;window.__pwned=&#39;onerror&#39;&quot;&gt;.cs startLine=10</span>
+<span class="text">read_file endLine=24 path=src/.cs startLine=10</span>
 <span class="running"><span>$0.0000</span> <span>1280 tokens</span></span>
 </li>
 <li class="step step-tool" data-seq="10" data-cost="$0.0000" data-tokens="1280">
@@ -118,7 +118,7 @@
 <li class="step step-tool" data-seq="13" data-cost="$0.0015" data-tokens="2990">
 <time datetime="2026-10-12T10:00:24.000Z">+24.0 s</time>
 <span class="label">Tool call</span>
-<span class="text">grep pattern=&lt;script&gt;alert(1)&lt;/script&gt;</span>
+<span class="text">grep pattern=</span>
 <span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
 </li>
 <li class="step step-tool" data-seq="14" data-cost="$0.0015" data-tokens="2990">
@@ -130,7 +130,7 @@
 <li class="step step-card" data-seq="15" data-cost="$0.0015" data-tokens="2990">
 <time datetime="2026-10-12T10:00:28.000Z">+28.0 s</time>
 <span class="label">Card proposed</span>
-<span class="text">BR-001 &lt;script&gt;window.__pwned = &#39;script&#39;&lt;/script&gt; Order &lt;b&gt;checkout&lt;/b&gt; (1 claim)</span>
+<span class="text">BR-001 Order checkout (1 claim)</span>
 <span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
 </li>
 <li class="step step-verdict" data-seq="16" data-cost="$0.0015" data-tokens="2990">
@@ -142,7 +142,7 @@
 <li class="step step-verdict" data-seq="17" data-cost="$0.0015" data-tokens="2990">
 <time datetime="2026-10-12T10:00:32.000Z">+32.0 s</time>
 <span class="label">Verdict</span>
-<span class="text">BR-001.c1: Supported - Lines 10-24 match. See [details](javascript:window.__pwned=&#39;link&#39;) and <a href="https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24" rel="noopener noreferrer nofollow">the lines</a> or [elsewhere](https://evil.example/phish).</span>
+<span class="text">BR-001.c1: Supported - Lines 10-24 match the claim.</span>
 <span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
 </li>
 <li class="step step-cost" data-seq="18" data-cost="$0.0040" data-tokens="2990">

@@ -1,9 +1,12 @@
-// RF-800, RF-507, P1-50: writes the sample report of the repository's `site/` folder from the recorded
-// run of tests/fixtures/runs/replay-demo. No provider is called and no live run is made; the replay of
-// the owner's demo run replaces this folder through a `needs-owner` pull request (DEC-105).
-// Usage: npm run site:build   (node --import ./scripts/register-ts.mjs scripts/build-sample-site.mjs)
+// RF-800, RF-507, P1-50: writes the sample report of the repository's `site/` folder from a recorded
+// run (tests/fixtures/runs/sample-report, a benign copy of the replay test run). No provider is called
+// and no live run is made; the owner's demo run replaces this folder through a `needs-owner` pull
+// request (DEC-105).
+// Usage: npm run site:build                  (writes site/)
+//        node --import ./scripts/register-ts.mjs scripts/build-sample-site.mjs <folder>   (writes <folder>)
+// The integration test rebuilds into a temporary folder and compares it with site/ byte for byte.
 import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const { buildReportModel } = await import('../src/application/report/build-report-model.ts');
@@ -12,16 +15,17 @@ const { parseRunManifest } = await import('../src/application/runs/run-manifest-
 const { SecretMasker } = await import('../src/infrastructure/guards/secret-masker.ts');
 const { buildSiteFiles } = await import('../src/infrastructure/report/published-site.ts');
 
-const fixture = fileURLToPath(new URL('../tests/fixtures/runs/replay-demo/', import.meta.url));
+const recorded = fileURLToPath(new URL('../tests/fixtures/runs/sample-report/', import.meta.url));
 const assetsFolder = fileURLToPath(new URL('../templates/report/', import.meta.url));
-const siteFolder = fileURLToPath(new URL('../site/', import.meta.url));
+const defaultSite = fileURLToPath(new URL('../site/', import.meta.url));
+const siteFolder = process.argv[2] === undefined ? defaultSite : resolve(process.argv[2]);
 
 async function readRunFile(path) {
-  return await readFile(join(fixture, path), 'utf8');
+  return await readFile(join(recorded, path), 'utf8');
 }
 
 async function exists(path) {
-  return await access(join(fixture, path)).then(
+  return await access(join(recorded, path)).then(
     () => true,
     () => false,
   );
@@ -37,6 +41,25 @@ async function recordedEvents() {
         throw new Error('The recorded run holds an event that does not parse.');
       return event;
     });
+}
+
+// The documents the pages link, read from the run folder: the specification, the cost report and
+// every card of the index (their paths are the links of the report).
+async function documentsOf(model) {
+  const documents = {};
+  for (const name of ['spec.md', 'cost.md']) {
+    if (await exists(name)) documents[name] = await readRunFile(name);
+  }
+  for (const card of model.cards) documents[card.path] = await readRunFile(card.path);
+  return documents;
+}
+
+async function writeSite(files) {
+  await rm(siteFolder, { recursive: true, force: true });
+  for (const [name, text] of Object.entries(files)) {
+    await mkdir(join(siteFolder, name, '..'), { recursive: true });
+    await writeFile(join(siteFolder, name), text);
+  }
 }
 
 async function main() {
@@ -58,11 +81,12 @@ async function main() {
     endedAt: 0,
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
   };
+  const cardIndex = await readRunFile('cards/index.json');
   const model = buildReportModel({
     run,
     manifest,
     events: await recordedEvents(),
-    cardIndex: await readRunFile('cards/index.json'),
+    cardIndex,
     documents: {
       spec: await exists('spec.md'),
       coverage: await exists('coverage.md'),
@@ -70,18 +94,15 @@ async function main() {
     },
     areas: [],
   });
+  const documents = await documentsOf(model);
   const assets = {
     'report.css': await readFile(join(assetsFolder, 'report.css'), 'utf8'),
     'replay.js': await readFile(join(assetsFolder, 'replay.js'), 'utf8'),
   };
-  const files = buildSiteFiles(model, assets, new SecretMasker());
-  await rm(siteFolder, { recursive: true, force: true });
-  await mkdir(siteFolder, { recursive: true });
-  for (const [name, text] of Object.entries(files)) {
-    await writeFile(join(siteFolder, name), text);
-  }
+  const files = buildSiteFiles(model, assets, new SecretMasker(), documents);
+  await writeSite(files);
   console.log(
-    `wrote ${String(Object.keys(files).length)} files to site/ for run ${manifest.runId}`,
+    `wrote ${String(Object.keys(files).length)} files to ${siteFolder} for run ${manifest.runId}`,
   );
 }
 
