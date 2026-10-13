@@ -16,7 +16,7 @@ const reachable = (role: string, model: string, costMicros = '0') => ({
   currency: 'USD',
 });
 
-const answered = json(200, {
+const answeredBody = {
   roles: [
     reachable('reader', 'gemma4:e4b', '1160'),
     reachable('verifier', 'gemma4:e4b'),
@@ -33,7 +33,8 @@ const answered = json(200, {
     },
     reachable('summariser', 'gemma4:e4b'),
   ],
-});
+};
+const answered = json(200, answeredBody);
 
 const renderSettings = (answers: Readonly<Record<string, Answer>>): RenderedPage =>
   renderPage(<SettingsPage />, {
@@ -105,4 +106,53 @@ it('RF-407 does not send a second test while the first one runs', async () => {
     expect(within(slot()).getAllByTestId('provider-test-result')).toHaveLength(4);
   });
   expect(calls.filter((call) => call.path === '/api/account/providers/test')).toHaveLength(1);
+});
+
+/** An answer that stays open until the test releases it: a cold model that is still loading. */
+function slowAnswer(): { readonly response: Response; readonly release: (body: unknown) => void } {
+  let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+  const stream = new ReadableStream<Uint8Array>({
+    start(started) {
+      controller = started;
+    },
+  });
+  const response = new Response(stream, {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
+  const release = (body: unknown): void => {
+    controller?.enqueue(new TextEncoder().encode(JSON.stringify(body)));
+    controller?.close();
+  };
+  return { response, release };
+}
+
+it('RF-407 marks every role as Testing while the answer is awaited, with the button busy', async () => {
+  const slow = slowAnswer();
+  renderSettings({ 'POST /api/account/providers/test': slow.response });
+  await screen.findByRole('heading', { name: 'Test providers' });
+
+  fireEvent.click(within(slot()).getByRole('button', { name: 'Test providers' }));
+
+  const rows = await within(slot()).findAllByTestId('provider-test-pending');
+  expect(rows.map((row) => row.textContent)).toEqual([
+    expect.stringContaining('Reader'),
+    expect.stringContaining('Verifier'),
+    expect.stringContaining('Planner'),
+    expect.stringContaining('Summariser'),
+  ]);
+  for (const row of rows) expect(row.textContent).toContain('Testing');
+  const button = within(slot()).getByRole('button', { name: 'Test providers' });
+  expect(button.hasAttribute('disabled')).toBe(true);
+  expect(button.getAttribute('aria-busy')).toBe('true');
+
+  slow.release(answeredBody);
+
+  await waitFor(() => {
+    expect(within(slot()).getAllByTestId('provider-test-result')).toHaveLength(4);
+  });
+  expect(within(slot()).queryAllByTestId('provider-test-pending')).toEqual([]);
+  expect(
+    within(slot()).getByRole('button', { name: 'Test providers' }).hasAttribute('disabled'),
+  ).toBe(false);
 });
