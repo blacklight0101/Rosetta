@@ -44,35 +44,69 @@ function luminance([red, green, blue]: readonly number[]): number {
 async function expectSchemeFollowed(page: Page, kind: PageKind): Promise<void> {
   const scheme = test.info().project.use.colorScheme === 'dark' ? 'dark' : 'light';
   if (kind === 'app') await expect(page.locator('html')).toHaveAttribute('data-theme', scheme);
-  const shown = luminance(await backgroundOf(page));
-  if (scheme === 'dark') expect(shown, 'a dark background in the dark scheme').toBeLessThan(0.2);
-  else expect(shown, 'a light background in the light scheme').toBeGreaterThan(0.5);
+  // Polled: a stylesheet that is still arriving leaves the background transparent for a moment.
+  const shown = expect.poll(async () => luminance(await backgroundOf(page)), {
+    message: `a ${scheme} background in the ${scheme} scheme`,
+  });
+  if (scheme === 'dark') await shown.toBeLessThan(0.2);
+  else await shown.toBeGreaterThan(0.5);
 }
 
-/** `scrollWidth <= clientWidth`: the page never scrolls sideways (at 360 px: RNF-010 on a phone). */
-async function expectNoSidewaysScroll(page: Page): Promise<void> {
-  const overflow: unknown = await page.evaluate(
-    'document.documentElement.scrollWidth - document.documentElement.clientWidth',
-  );
-  expect(Number(overflow), `${page.url()} scrolls sideways`).toBeLessThanOrEqual(0);
+const overflowScript =
+  'document.documentElement.scrollWidth - document.documentElement.clientWidth';
+
+/** How far the page reaches beside the viewport, in pixels (0 or less: not at all). */
+async function sidewaysOverflow(page: Page): Promise<number> {
+  const overflow: unknown = await page.evaluate(overflowScript);
+  return Number(overflow);
+}
+
+/** `scrollWidth <= clientWidth`: the page never scrolls sideways (at 360 px: the phone check). */
+async function expectNoSidewaysScroll(page: Page, what = 'the page'): Promise<void> {
+  expect(
+    await sidewaysOverflow(page),
+    `${page.url()}: ${what} scrolls sideways`,
+  ).toBeLessThanOrEqual(0);
 }
 
 /**
- * A page of the desktop web UI that is known to scroll sideways at 360 px. RNF-010 asks the phone
- * width of the landing page, sign-in and report only; such a page names what fixes it, and at 360 px
- * the sweep records its overflow as an annotation of the test instead of failing (at 1280 it fails).
+ * A table of the desktop web UI that is known to be wider than 360 px. The orchestration README
+ * (section 1) asks the 360 px width of the landing page, sign-in and report only; the table names
+ * what fixes it. At 360 px the sweep measures the page with that table taken out of the layout, so
+ * any other element that overflows still fails, and records the table's own overflow as an
+ * annotation of the test. At 1280 px nothing is exempt.
  */
-export interface KnownOverflow {
-  readonly scrollsSidewaysUntil: string;
+export interface KnownWideTable {
+  /** The accessible name of the table (its caption or `aria-label`). */
+  readonly table: string;
+  readonly until: string;
 }
 
-async function recordOverflow(page: Page, known: KnownOverflow): Promise<void> {
-  const overflow: unknown = await page.evaluate(
-    'document.documentElement.scrollWidth - document.documentElement.clientWidth',
-  );
+/**
+ * Takes the named table out of the layout (`display: none`) or puts it back. The table is found by
+ * its `aria-label` or caption, as the accessible name the spec gives; a string, because the
+ * end-to-end project is compiled without the DOM types.
+ */
+async function setTableHidden(page: Page, name: string, hidden: boolean): Promise<void> {
+  await page.evaluate(`Array.from(document.querySelectorAll('table'))
+    .filter((table) => (table.getAttribute('aria-label')
+      ?? table.querySelector('caption')?.textContent?.trim()) === ${JSON.stringify(name)})
+    .forEach((table) => { table.style.display = ${hidden ? "'none'" : "''"}; })`);
+}
+
+async function expectOnlyTheTableScrollsSideways(page: Page, known: KnownWideTable): Promise<void> {
+  const table = page.getByRole('table', { name: known.table, exact: true });
+  await expect(table, `the wide table "${known.table}" is on the page`).toHaveCount(1);
+  const withTable = await sidewaysOverflow(page);
+  await setTableHidden(page, known.table, true);
+  try {
+    await expectNoSidewaysScroll(page, `the page without the table "${known.table}"`);
+  } finally {
+    await setTableHidden(page, known.table, false);
+  }
   test.info().annotations.push({
-    type: 'known sideways scroll',
-    description: `${page.url()} by ${String(overflow)} px, until ${known.scrollsSidewaysUntil}`,
+    type: 'known wide table',
+    description: `${page.url()}: "${known.table}" by ${String(withTable)} px, until ${known.until}`,
   });
 }
 
@@ -81,7 +115,7 @@ async function recordOverflow(page: Page, known: KnownOverflow): Promise<void> {
 export async function expectPageInView(
   page: Page,
   kind: PageKind = 'app',
-  known?: KnownOverflow,
+  known?: KnownWideTable,
 ): Promise<void> {
   // The pointer may still be over the control that led here: its hover state is not the page at rest.
   await page.mouse.move(0, 0);
@@ -91,5 +125,5 @@ export async function expectPageInView(
   await expectNoSeriousViolations(page);
   const phone = (page.viewportSize()?.width ?? 0) <= phoneWidth;
   if (known === undefined || !phone) await expectNoSidewaysScroll(page);
-  else await recordOverflow(page, known);
+  else await expectOnlyTheTableScrollsSideways(page, known);
 }

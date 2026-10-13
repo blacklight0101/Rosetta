@@ -38,10 +38,10 @@ async function linkTarget(page: Page, name: string): Promise<string> {
 const visual = { tag: '@visual' };
 
 /**
- * The table of this page is wider than 360 px (found by this sweep; RNF-010 asks 360 px of the
- * landing page, sign-in and report only), so at 360 px its overflow is recorded, not failed.
+ * Tables wider than 360 px, found by this sweep (orchestration README section 1 asks 360 px of the
+ * landing page, sign-in and report only): at 360 px the rest of the page must still fit (sweep.ts).
  */
-const wideTable = { scrollsSidewaysUntil: 'a follow-up card fits its table into 360 px' };
+const runsTable = { table: 'Runs', until: 'an app fix that fits the table into 360 px' };
 
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('sweep', info.project.name));
@@ -98,12 +98,12 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await openHistory(page);
   const row = runRow(page, '-understand');
   await expect(row).toContainText('Completed');
-  await expectPageInView(page, 'app', wideTable);
+  await expectPageInView(page, 'app', runsTable);
 
   await row.getByRole('button', { name: /^Delete:/u }).click();
   await expect(confirmation(page)).toContainText('This cannot be undone.');
 
-  await expectPageInView(page, 'app', wideTable);
+  await expectPageInView(page, 'app', runsTable);
   await page.keyboard.press('Escape');
   await expect(confirmation(page)).toHaveCount(0);
 });
