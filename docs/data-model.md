@@ -861,7 +861,7 @@ releases.
 | Default project settings and ignore rules | `templates/project-settings.json`, `templates/ignore-rules.txt` | `CreateProject` (RF-010) |
 | Default price table | `prices/default-prices.yaml` | budget guard, estimator |
 | Prompts | `prompts/<role>/` | agent loop (RNF-004) |
-| Demo target | `https://github.com/dotnet-architecture/eShopModernizing/tree/master/eShopLegacyWebFormsSolution` | README quick start, milestone run (RF-801) |
+| Demo target | `https://github.com/dotnet-architecture/eShopModernizing/tree/main/eShopLegacyWebFormsSolution` | README quick start, milestone run (RF-801) |
 
 ## 11. History import
 
