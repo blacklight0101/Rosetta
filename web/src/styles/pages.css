@@ -669,6 +669,8 @@
     display: block;
     color: var(--rst-ink-muted);
     font-size: var(--rst-fs-xs);
+    font-family: var(--rst-sans);
+    font-weight: var(--rst-fw-body);
   }
 
   .rst-table.rst-table--stack .rst-table__num {
