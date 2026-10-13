@@ -144,6 +144,10 @@ describe('scripts/test-levels.mjs guards', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('Unit 2 / Integration 0 / E2E 0');
   });
+});
+
+describe('scripts/test-levels.mjs report shape', () => {
+  const tmp = useTempRoot('rosetta-levels-shape-');
 
   it.each([
     ['is missing', {}],
