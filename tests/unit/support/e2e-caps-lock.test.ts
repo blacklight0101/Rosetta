@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { Clock } from '../../../src/application/ports/clock.js';
 import { acquireCapsLock } from '../../e2e/support/caps-lock.js';
 
 // RF-1106, P1-131: the caps of the administration page are server-wide, so the end-to-end specs
@@ -125,6 +126,38 @@ describe('e2e caps lock, the takeover gate', () => {
     const lock = await acquireCapsLock(folder, { staleAfterMs: 30_000 });
 
     expect(lock.waitedMs).toBeLessThan(5000);
+    await lock.release();
+  });
+});
+
+describe('e2e caps lock, the re-check under the gate', () => {
+  let root: string;
+  let folder: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'rosetta-caps-lock-'));
+    folder = join(root, 'lock');
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('RF-1106 a waiter that judged the lock stale re-checks it under the gate before removing it', async () => {
+    const first = await acquireCapsLock(folder);
+    let calls = 0;
+    // Call 2 is the waiter's first staleness check and sees the lock an hour old; later calls are real.
+    const clock: Clock = {
+      now: () => {
+        calls += 1;
+        return calls === 2 ? new Date(Date.now() + 3_600_000) : new Date();
+      },
+    };
+    const second = acquireCapsLock(folder, { staleAfterMs: 30_000, clock });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await first.release();
+    const lock = await second;
+
+    expect(lock.waitedMs).toBeGreaterThanOrEqual(400);
     await lock.release();
   });
 });

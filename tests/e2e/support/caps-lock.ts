@@ -58,6 +58,8 @@ async function isStale(folder: string, staleAfterMs: number, clock: Clock): Prom
 /**
  * Removes a stale lock folder under the takeover gate, so two waiters that both judged it stale
  * cannot both remove it: the second one would remove the lock the first one took in its place.
+ * This narrows the race between a stale takeover and a holder that is releasing; it does not
+ * close it, because the removal and the release are not atomic.
  */
 async function takeOverIfStale(folder: string, staleAfterMs: number, clock: Clock): Promise<void> {
   const gate = `${folder}.takeover`;
