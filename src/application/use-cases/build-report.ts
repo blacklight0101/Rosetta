@@ -1,8 +1,11 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import type { Run } from '../../domain/runs/run.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { ReportWriter } from '../ports/report-writer.js';
 import type { RunEventHistory, RunScope } from '../ports/run-events.js';
+import type { Logger } from '../ports/logger.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
@@ -24,8 +27,9 @@ export interface BuildReportDependencies {
   readonly history: RunEventHistory;
   readonly files: RunTextFiles;
   readonly writer: ReportWriter;
-  /** Where the map level of the areas is read (RF-112); without it the report lists no areas. */
-  readonly scans?: ScanResults;
+  /** Where the map level of the areas is read (RF-112). */
+  readonly scans: ScanResults;
+  readonly logger: Logger;
 }
 
 export interface BuiltReport {
@@ -66,7 +70,6 @@ export class BuildReport {
   /** RF-112: the areas of the run's own scan, or of the newest completed scan of its project. */
   private async areasOf(run: Run): Promise<readonly ReportArea[]> {
     const { scans, runs } = this.deps;
-    if (scans === undefined) return [];
     const own = run.stage === 'scan' ? run : undefined;
     const scan =
       own ??
@@ -77,10 +80,22 @@ export class BuildReport {
     try {
       const { codeMap } = await scans.open(scan);
       return codeMap.areas.map(({ name, mapLevel }) => ({ name, mapLevel }));
-    } catch {
+    } catch (error) {
       // The scan's output is gone or fails its check: the report is still worth building without it.
+      await this.logUnreadable(run, scan, error);
       return [];
     }
+  }
+
+  private async logUnreadable(run: Run, scan: Run, error: unknown): Promise<void> {
+    await this.deps.logger.log({
+      level: 'warn',
+      logger: 'report',
+      code: error instanceof RosettaError ? error.code : ERROR_CODES.codeMapMissing,
+      message: 'The scan output could not be read, so the report lists no areas.',
+      runId: run.id,
+      data: { scanRunId: scan.id },
+    });
   }
 
   private async documentsOf(scope: RunScope): Promise<ReportDocuments> {
