@@ -245,7 +245,7 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `RunVerify` | part of `understand`; Resume verification on a run | RF-300..RF-304 |
 | `RecordAnswers` | Open questions on the live run page (P1-39; `PUT /api/runs/:runId/answers` with `{ answers: [{ cardId, answer }] }`, session required, another user's run answers 404): writes each answer on its question's `- Answer:` line of the project's `answers.md` through `AnswersFile` and keeps every other line; only the questions the run added (their card line names the run) can be answered, an unknown card id answers 404 and writes nothing; an answer is masked and written on one line, an empty one clears it; at most 50 answers of up to 4000 characters, card ids `OQ-n`, no card twice, body 256 KiB, else `RST-2000` (400); answers the run's questions as they are now. The page (`web/src/pages/RunAnswers.tsx`, styles under `.rst-p139-` in `src/styles/run-answers.css`) shows the list on an understand run once it has ended and saves one answer at a time; every question reads `Open` until the re-run with answers marks it (RF-241, P2-05) | RF-240, RF-241, RF-1007, RF-1105 |
 | `ListAnswers` | the same list (`GET /api/runs/:runId/answers`, `{ questions: [{ cardId, question, context, answer }] }`, `no-store`; another user's run answers 404): the questions the run added to the project's `answers.md`, in file order, with the answers recorded so far | RF-1007, RF-1105 |
-| `BuildReport` | Build report on a run | RF-500..RF-505 |
+| `BuildReport` | Build report on a run (P1-43, `POST /api/runs/:runId/report`, 200 with the files written; a queued or running run is 409 with the run-in-progress code): finds the user's run (another user's id and an unknown id answer 404), reads the manifest, the events, `cards/index.json` and the documents the run folder has, and asks the `ReportWriter` for `report/report.md` (links the specification, every card, the cost report and the coverage report only when each exists; coverage belongs to P2-04), the same report as escaped static HTML (DEC-112) and the static "Run replay" page made from `events.jsonl`. It is not run automatically at the end of a run | RF-500..RF-506 |
 | `BuildPlan` | Build the hand-off package from a run, the planning brief and the catalogue (ADR-018) | RF-604..RF-613 |
 | `ExportZip` | Download zip / Download hand-off (`GET /api/runs/:runId/zip` and `/api/runs/:runId/handoff.zip`, an attachment named `<runKey>.zip` or `<runKey>-handoff.zip`): finds the user's run (another user's id and an unknown id answer 404), refuses a queued or running run with 409 (`RST-1700`) and streams the zip from the `ArchiveWriter` as it is produced, never held whole in memory; the full archive is rooted at `<runKey>/`, the hand-off archive at `handoff/`; a run without that folder answers 404. Nothing is written to `exports/`; the zip exists only on the wire | RF-008, RF-1105 |
 | `TestProviders` | Test button in settings (`POST /api/account/providers/test`): one tiny call to each role of the new-project template (the administrator's default models applied) through the provider factory, metered against the user's day as a `cost_reservations` / `cost_ledger` row that belongs to no run (`run_id` null, stage `provider-test`); sequential, 60 s a call (the cancel signal comes from the `TimeoutSignals` port), a fixed ceiling of 100,000 micro-dollars and 2,000 tokens of worst case per call in place of the run caps, at most 6 presses a minute per user and 30 per address, a role without a usable key or a provider this release does not offer is shown as failed with its code; the fixed prompt carries no repository content, so the call is made with the cloud consent given | RF-407, RF-1104 |
@@ -253,7 +253,7 @@ Since DEC-59 every use case is reached through the HTTP API of the web UI; there
 | `SubscribeRunEvents` | live page (`GET /api/runs/:runId/events`, server-sent events): the stored events after `Last-Event-ID`, then the live ones, closing after `run.ended`; stored events go out in batches that wait for the page to read (no limit on a long history), only live events are held to the 1 MiB unread limit; a `Last-Event-ID` beyond the last `seq` counts as the last one; another user's run answers 404 | RF-1006, RF-1105 |
 | `GetRun` | live run page (`GET /api/runs/:runId`): the run as the start answered it (stage, queue and end state, project, totals so far), for a run that has no event yet and for the cost so far; another user's run answers 404 | RF-1002, RF-1003, RF-1105 |
 | `StopRun` | Stop button (`POST /api/runs/:runId/stop`): aborts the signal of a running run (202, it ends as `Interrupted`) or cancels a queued run (200); an ended run answers 409 | RF-1003, RF-422, RF-1108 |
-| `ReadRunFile` | run output pages and downloads (`GET /runs/:runId/files/*`, owner-scoped, served as text or attachment with the RF-1013 CSP) | RF-504, RF-506, RF-1105 |
+| `ReadRunFile` | run output pages and downloads (`GET /runs/:runId/files/*`, owner-scoped): another user's run id, an unknown id, a missing file and every path that is not a plain relative path inside the run folder (`..`, encoded `..`, absolute, backslashes, links) answer 404. Text (`md`, `txt`, `log`, `jsonl`, `json`) is served inline as text, never as HTML; the `html`, `css` and `js` files directly in `report/` are served as what they are; anything else is an attachment. Every answer carries the RF-1013 policy, `nosniff` and `no-referrer`, and `Cache-Control: no-store`. A running run's files can be read (they are its live record) | RF-504, RF-506, RF-507, RF-1013, RF-1105 |
 | `DeleteRun`, `DeleteProject`, `DeleteSnapshot` | Delete buttons (snapshots: administrator) | RF-1012 |
 | `SignIn`, `SignOut`, `ChangePassword` | sign-in page, menu, change-password page (`POST`, `DELETE /api/session`; `POST /api/account/password` with the current and the new password: the RF-1103 rules, `RST-2211` for a wrong current password (counted in the sign-in failure window: the fifth in 15 minutes locks the account, DEC-112), `RST-2214` for a new password equal to the current one, a write conditional on the state and update time it read (a concurrent disable or reset wins, `RST-2208`), every session of the account ends and a new one is opened for this browser, `MustChangePassword` is cleared) | RF-1100, RF-1101, RF-1103 |
 | `ResolveSession`, `RecordRefusedRequest` | every request: the session hook turns the cookie into the `Actor` and ends the sessions of a disabled account; the Origin, CSRF and role hooks record each refusal (audit row and security event) | RF-1009, RF-1101, RF-1109 |
@@ -286,7 +286,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `LanguagePack` | symbols, references (links), routes and candidate entities for the files of some extensions, one file at a time (ADR-004, RF-110); the port is `src/application/ports/language-pack.ts`; `LanguagePackRegistry` maps an extension to its pack (two packs on one extension is `RST-1201`) and the composition root builds it (`composeLanguagePacks`); `analyseWithPacks` runs the packs over the universal scan's files through `RepositoryReader.readBytes`, keeps a file whose pack throws at `coarse` with an `RST-1200` warning (path and pack only, never the failure text), drops links to files outside the scan, and sorts every list; `web-tree-sitter` is imported only under `src/infrastructure/scan/packs/` (dependency-cruiser rule `tree-sitter-only-in-packs`); the C# pack refuses a tree with syntax errors, so that file stays `coarse` instead of carrying partial data; the runner yields to the event loop after every file; a scan-wide parse budget (`ParseBudget` in `parse-budget.ts`, two minutes by default, injectable with a fake monotonic clock; only time inside the packs counts) bounds the total pack time: once it is spent, no further file reaches a pack and a running parse is stopped through `PackFile.shouldStop` (the C# pack checks it in its tree-sitter progress callback and resets the parser after a halted parse), the remaining claimed files stay `coarse` with an `RST-1204` warning, one aggregated log line is written and `scan-summary.md` counts them (P1-75); `knip.json` ignores the `tree-sitter-c-sharp` dependency only because its grammar file is found by `createRequire().resolve`, which knip cannot see (JSON has no comments) | `CSharpPack` (tree-sitter, WebAssembly grammar; `.cs` symbols and `DbSet` entities, `.aspx`/`.ascx`/`.master` code-behind links), `TestLanguagePack` (tests) |
 | `ConfigSource` | load and validate the server environment (RF-1305) and project settings | `EnvConfigSource`, `DbProjectSettings` |
 | `Clock` | current time | `SystemClock`, `FixedClock` (tests) |
-| `IdGenerator` | run ids and every UUID | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
+| `IdGenerator` | run ids, every UUID and the random tag of every data block (RF-145) | `TimestampIdGenerator`, `SequenceIdGenerator` (tests) |
 | `Logger` | structured application log with levels and correlation ids (RF-009) | `StdoutJsonLogger`, `JsonlFileLogger`, `FanOutLogger`, `MemoryLogger` (tests) |
 | `ProviderCallRecorder` | one record per provider call attempt (RF-408) and the masked transcript lines of each agent task (data-model.md section 3.15), written by an `ObservedProvider` decorator around every provider; masks every line before it is kept | `JsonlProviderCallLog`, `MemoryProviderCallLog` |
 | `RunEventSink`, `RunEventHistory`, `RunEventFeed` | typed run events for the web UI and the replay log (RF-424, RF-1006). The sink takes complete events with their `seq` (numbered by `RunEventPublisher`); the log refuses a gap, an event of another run and anything after `run.ended` (RST-2105). The history reads the stored events after a `seq` (`read`), replays them in batches at the receiver's pace (`replay`, streaming the file through the `TextLineReader` port) and gives the last `seq`; the feed gives a page the live events of its own run. `JsonlEventLog` writes through the `OutputWriter`, masks each line, serialises the writes of a run, ignores a torn last line and removes it before the next write; `SseBroadcaster` masks, delivers per user and run and forgets a run's listeners after `run.ended`; `FanOutSink` sends to the log first | `JsonlEventLog` (sink and history), `SseBroadcaster` (sink and feed), `FanOutSink`, `MemoryEventSink` (sink and history, tests) |
@@ -297,6 +297,9 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `ArchiveWriter` | `archive(scope, part)`, `part` = `run` or `handoff`: the zip of the owner's run folder as a byte stream, or `not-found` (RF-008). `YazlArchiveWriter` reads only `<data>/users/<userId>/projects/<projectId>/runs/<runKey>[/handoff]` and refuses it when that folder or any folder above it is a link; inside it a link, a file with more than one hard link and anything that is not a plain file or folder are left out, entries are sorted by name, and a failure of the zip destroys the stream (RF-005, RF-1105) | `YazlArchiveWriter` |
 | `WorkspaceFolders` | `size(target)` and `remove(target)` for the folder of a project (`<data>/users/<userId>/projects/<projectId>`) or of one of its runs (`.../runs/<runKey>`), built from ids only (RF-1012). `NodeWorkspaceFolders` resolves the real path of the data folder, refuses a folder or any folder above it that is a link (nothing is followed or removed through a link), counts bytes with `lstat` (links are not counted) and removes recursively; a folder that is not there has size 0 and removing it is not an error | `NodeWorkspaceFolders`, `MemoryWorkspaceFolders` (tests) |
 | `SnapshotCache` | `list()` the snapshots of `<data>/sources/` and `remove(key)` (RF-1012). Only a folder named `<owner>__<repo>@<40 hex>` with a readable `snapshot.json` is a snapshot, so a partial download or a damaged folder is neither listed nor removable and a key that is not of that shape never reaches the file system. The fetcher leaves the tree read-only (RF-005), so `FileSnapshotCache.remove` makes it writable before removing it and refuses a link | `FileSnapshotCache`, `MemorySnapshotCache` (tests) |
+| `ReportWriter` | `write(scope, model)`: `report/report.md`, `report.html`, `replay.html`, `report.css` and `replay.js` written through the `OutputWriter` (masked, workspace guard); `FileReportWriter` copies the two assets from `templates/report/`, which must ship in the image (P1-43) | `FileReportWriter` |
+| `RunFileReader` | `open(scope, path)`: one plain file of the owner's run folder as a byte stream with its size, or `not-found`. `NodeRunFileReader` checks the path (plain relative names only), uses the same real-folder checks as the archive writer (`run-folder.ts`), looks at every name on the way down (no link, no file with several hard links, only folders and plain files), opens the file and compares device and inode with what it looked at (RF-005, RF-506, RF-1105) | `NodeRunFileReader` |
+| `RunTextFiles` | reads the small text files of a run folder the report needs (`cards/index.json`, the card files, `spec.md`, `cost.md`), or undefined when there is none | `FileRunTextFiles` |
 | `UserPrompt` | withdrawn 2026-10-11 (DEC-59): confirmations are fields of the start request (consent, estimate accepted) | - |
 | `UserRepository` | accounts, roles, state, lockout counters (RF-1100..RF-1103); user names unique case-insensitively, lists never select the password hash, `insertIfNoUsers` for `BootstrapAdmin` (under an advisory lock in PostgreSQL); `updateIfCurrent` saves only while the stored state and update time are those the caller read | `PgUserRepository`, `MemoryUserRepository` |
 | `SessionStore` | create, touch, end and expire sessions by hash (RF-1101): `create` makes the 256-bit id (`node:crypto`, 43 base64url characters) and hands it out once, only its SHA-256 is stored; `touch` moves `last_seen_at` and sets `expires_at` = min(last seen + 8 h, created + 7 days), or deletes the session when it has expired; `end`, `endAllForUser`, and `purgeExpired` for the hourly scheduler job | `PgSessionStore`, `MemorySessionStore` |
@@ -328,7 +331,10 @@ loopback or `host.docker.internal`) without that consent (`RST-1515`), refuses a
 data block or whose message holds a broken one (`RST-1516`), masks every message part (a private key read in pieces
 included, read line by line so a key written as string literals in code counts too: an END line without its BEGIN
 masks the key lines above it, and a key left open by one read masks the key lines that start the next read of the same
-file), adds the secrets first sent by the agent task to the manifest and, last, appends
+file, the paths compared as one file system would (`fileKey`, `src/infrastructure/guards/file-key.ts`: case-folded,
+Unicode-normalised, a backslash read as a slash, trailing dots and spaces dropped, Turkish `İ` read as `i`) because the
+same file can come back as `A.cs`, `a.cs.` or `a.cs` in another Unicode form; known limit: a key written inline with no BEGIN or END line, such as `key: "MII...`, is not masked, see
+the header of `private-key-pieces.ts`), adds the secrets first sent by the agent task to the manifest and, last, appends
 the egress line, so a line always means a sent call. Every refusal and every failure of those steps (masking
 `RST-2101`, manifest `RST-2106`, egress log `RST-2107`, or the code the failure carries) is a `security` log entry
 and a blocked call in the manifest, and is thrown so the agent task stops; the call is never sent (RF-141..RF-143,
@@ -398,8 +404,8 @@ sequenceDiagram
   not skipped), passed to the reader as its path list. Results are bounded (`ToolLimits`): lines longer than 2 000 characters
   are cut, a result holds at most 40 000 characters (a read stops at the last whole line that fits and cites only
   the lines it returns), grep at most 100 matches and listings at most 200 entries, each with a notice.
-- **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v1.md` with the area's file list as a
-  data block; after each tool turn a user message from `prompts/reader/turns-left.v1.md` gives the turns left. The
+- **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v2.md` with the area's file list as a
+  data block; after each tool turn a user message from `prompts/reader/turns-left.v2.md` gives the turns left. The
   task ends `Done` (final answer parsed with one repair, RF-202; the repair turn is a turn like any other, under the
   same turn limit, context share and stop checks), `InvalidOutput`, `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
@@ -410,12 +416,13 @@ sequenceDiagram
   conversation. A task whose call the budget guard refuses (`RST-1600`), or whose signal another task aborted for a
   cap, ends `StoppedByCap` with reason `cap-reached` and keeps what it learned; any other stop stays `Failed`
   with `RST-1501`.
-- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v1.md` followed by
+- **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v2.md` followed by
   `prompts/cards/card-format.v1.md`; `loadReaderPrompts` reads the five files it uses (the two above, the task, the
   turns-left notice and `prompts/cards/repair.v1.md`), refuses a template without its one placeholder or a file
   that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
   them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
-  text inside data blocks is data, never instructions (unit test over `prompts/<role>/`).
+  text inside data blocks is data, never instructions, and that a block ends only at the closing line with its own
+  tag (unit test over `prompts/<role>/`).
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,
@@ -433,12 +440,48 @@ sequenceDiagram
   the pattern (every agent re-reads context, so tokens grow with the number of agents) is bounded by the caps of
   ADR-007. Frameworks that own this loop (LangGraph, Google ADK) are not used (ADR-003, DEC-58).
 - **Untrusted content** (ADR-013): tool results enter the conversation only inside delimited repository-content
-  blocks, never in the system prompt (RF-145): the loop wraps each tool result with `renderDataBlock`
-  (`src/domain/egress/data-block.ts`) as one tool message; a header line
-  `<<<ROSETTA-DATA {"label":"repository-content","note":...,"source":<tool>,"excerpts":[{"path","startLine","endLine"}]}>>>`
-  (paths with their markers defanged, every `<` and `>` of the JSON written as `\u003c`/`\u003e`, a line break in a
-  path escaped by JSON, so no header text can read as a frame), the content with every marker look-alike defanged (`<<<` becomes `<<-<`, lines kept), and the footer
-  `<<<END ROSETTA-DATA>>>`; the egress guard refuses anything else; `grep` runs in a worker with limits (RF-146).
+  blocks, never in the system prompt (RF-145): the tools wrap each result with `renderDataBlock`
+  (`src/domain/egress/data-block.ts`) as one tool message (the loop's own error answers too, through the tool set's
+  `renderBlock`). Every block carries a **tag**: 24 characters of lower-case base32 (120 random bits) from
+  `IdGenerator.dataBlockTag` (`node:crypto` `randomBytes` in `TimestampIdGenerator`; tests inject
+  `SequenceIdGenerator`, so rendered blocks stay stable), new for every block and never derived from content. The
+  header line is
+  `<<<ROSETTA-DATA <tag> {"label":"repository-content","note":...,"source":<tool>,"excerpts":[{"path","startLine","endLine"}]}>>>`
+  (paths with their markers defanged, every `<` and `>` of the JSON written as `<`/`>`, a line break in a
+  path escaped by JSON and every character outside printable ASCII written as a `\u` escape, so no header text can
+  read as a frame), then the content with every marker look-alike defanged (the name broken, `ROSETTA|-DATA`, lines
+  kept), then the footer `<<<END ROSETTA-DATA <tag>>>>` with the same tag. A tag that is not well formed is refused
+  when the block is built (`RST-1516`). The reader prompts (`prompts/reader/*.v2.md`) tell the model that a block ends
+  only at the closing line that carries the same tag as its opening line, and that any other line that looks like an
+  opening or closing line, with a missing or a different tag, is data; they describe the frame in words, so they hold
+  no marker themselves. `scanDataBlocks` reads blocks back the same way: lines are cut at `\n` only, a block ends only
+  at the footer with its own tag, and a block whose header or content holds its own tag (in any case, also folded as
+  below) is refused (`RST-1516`, security event); repository text cannot know the tag, so this check only fails
+  closed. As a backstop for the fresh tag, the guard also refuses a request in which two blocks carry the same tag, in
+  one message or across messages (`requestExcerpts`, `RST-1516`). The tag removes the look-alike race: whatever a file spells, it cannot produce the closing line of the block
+  it sits in, so no list or matcher has to be complete for a block to stay closed.
+  The marker matcher stays as a **second line of defence**, for a model that ignores the tag. Whether text holds a
+  marker is decided by one matcher, `src/domain/egress/marker-skeleton.ts`, used both to refuse and to defang, so the
+  two cannot drift. It reads each line (cut at `\n` only, like the scan) as a skeleton. The line is folded first
+  (`marker-fold.ts`: NFKC, invisible characters and combining marks dropped, the characters of the Unicode confusables
+  data written as the ASCII they imitate from the generated table `marker-confusables.ts`, U+0085 and the line and
+  paragraph separators as line breaks, any other space or control as a space, U+0640 tatweel as a hyphen); then each
+  character is a letter (ASCII in any case; `0 3 4 5 7 @ $` for `O E A S T A S`; any other digit or non-ASCII letter
+  stands for any letter), a bracket (`< > [ ] { } ( )` or a non-ASCII symbol, opening, closing or quotation mark), a
+  line break (a lone CR or a folded separator), a stop (`|`) or a gap (spaces and other punctuation). The name is the
+  letters `ROSETTADATA` with only gaps, brackets and line breaks between them, up to three of the eleven standing for
+  any letter. It is a marker when `END` stands before it anywhere on the line (`END ROSETTA-DATA: note`,
+  `&lt;END ROSETTA-DATA`, `%3CEND ROSETTA-DATA`), when a `{` follows it (directly or after one word, a forged tag),
+  when a run of at least two brackets stands before it (`<` or non-ASCII) or after it (`>` or non-ASCII), or when its
+  part of the line between line breaks spells nothing but the name and holds an angle or non-ASCII bracket. A rendered
+  block breaks every match with a `|` after the seventh letter of the name; the guard refuses a block read back that
+  still holds one (`RST-1516`, security event). Known limits: a marker cut by a hard line break, or a name with four
+  or more letters no table knows, is not seen (the tag still keeps the block closed); on the safe side the name after
+  the letters `END` or next to two brackets is a marker even in ordinary text (`send Rosetta data`, `«Rosetta» data`,
+  `List<RosettaData>>`), while prose such as "Rosetta data: …", `ROSETTA_DATA_DIR`, heredocs, shifts and generics
+  pass. Over the fixture repositories, `src/`, `docs/`, `prompts/`, `web/`, `templates/`, `eval/` and `scripts/` the
+  only text that matches is the injection fixture and the files that document the markers. The table is regenerated
+  with `scripts/make-marker-confusables.mjs`, whose output carries the full Unicode License v3 notice.
   An error result is a block too, with no excerpts; a call that names no tool gets the source `unknown_tool`.
 - **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.

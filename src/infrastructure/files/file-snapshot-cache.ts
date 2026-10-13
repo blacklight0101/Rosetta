@@ -2,7 +2,7 @@ import { chmod, readdir, readFile, realpath, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import type { CachedSnapshot, SnapshotCache } from '../../application/ports/snapshot-cache.js';
-import { isRealFolder } from './real-folder.js';
+import { isRealFolder } from './run-folder.js';
 import { snapshotCacheRoot } from './workspace-paths.js';
 
 // RF-1012, RF-005, data-model.md section 3.3: the snapshots of `<data>/sources/`, listed from their

@@ -80,6 +80,12 @@ export interface ServerOptions {
   readonly contactEmail?: string | undefined;
   /** The folder of the built front end; no static files are served without it. */
   readonly staticRoot?: string;
+  /**
+   * Called for every route the server registers, with its method(s) and whole url. Tests use it to
+   * keep the access matrix complete (RF-1105); it must be set here because a hook only sees the
+   * routes registered after it.
+   */
+  readonly onRoute?: (route: { method: string | readonly string[]; url: string }) => void;
 }
 
 /** The largest request body accepted (Fastify's default, stated so it is a decision). */
@@ -172,13 +178,19 @@ function registerErrorHandlers(server: FastifyInstance, options: ServerOptions):
     if (errorReply.body.code === ERROR_CODES.csrfTokenInvalid) {
       await recordCsrfRefusal(auth.refusals, request);
     }
-    return reply.status(errorReply.status).send(errorReply.body);
+    return reply
+      .header('cache-control', 'no-store')
+      .status(errorReply.status)
+      .send(errorReply.body);
   });
   const hasShell = options.staticRoot !== undefined;
   server.setNotFoundHandler((request, reply) => {
     if (hasShell && isShellRequest(request)) return reply.sendFile('index.html');
     const errorReply = toErrorReply(new RosettaError(ERROR_CODES.notFound));
-    return reply.status(errorReply.status).send(errorReply.body);
+    return reply
+      .header('cache-control', 'no-store')
+      .status(errorReply.status)
+      .send(errorReply.body);
   });
 }
 
@@ -203,6 +215,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     frameworkErrors: frameworkErrorHandler(options.logger, options.publicUrl),
     clientErrorHandler: clientErrorHandler(options.logger, options.publicUrl),
   });
+  if (options.onRoute !== undefined) server.addHook('onRoute', options.onRoute);
   // Node core answers these itself unless a listener does: a bare 417, or a dropped connection.
   server.server.on('checkExpectation', expectationHandler(options.logger, options.publicUrl));
   server.server.on('connect', connectHandler(options.logger, options.publicUrl));

@@ -1,4 +1,4 @@
-import { lstat, readdir, realpath } from 'node:fs/promises';
+import { readdir, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PassThrough, pipeline } from 'node:stream';
 import { ZipFile } from 'yazl';
@@ -8,10 +8,8 @@ import type {
   ArchiveWriter,
 } from '../../application/ports/archive-writer.js';
 import type { RunScope } from '../../application/ports/run-events.js';
-import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { isRealFolder } from './real-folder.js';
-import { runPath, workspaceRoot } from './workspace-paths.js';
+import { isOwnFile, isRealFolder, runFolderOf } from './run-folder.js';
 
 // RF-008, RF-1105, RF-005, data-model.md section 2: the zip of a run folder, written while it is
 // read (yazl pulls one file at a time and the stream stops at its buffer, so a run of any size
@@ -24,28 +22,13 @@ const HANDOFF_FOLDER = 'handoff';
 
 /** Where the part lives, as the data folder's real path plus the names Rosetta builds from ids. */
 function locate(realData: string, scope: RunScope, part: ArchivePart): string | undefined {
-  try {
-    const run = join(
-      workspaceRoot(realData, scope.userId),
-      ...runPath(scope.projectId, scope.runKey).split('/'),
-    );
-    return part === 'handoff' ? join(run, HANDOFF_FOLDER) : run;
-  } catch (error) {
-    // An id that is not an id has no folder; any other failure is not ours to hide.
-    if (error instanceof RosettaError) return undefined;
-    throw error;
-  }
+  const run = runFolderOf(realData, scope);
+  return run === undefined || part !== 'handoff' ? run : join(run, HANDOFF_FOLDER);
 }
 
 function byName(left: string, right: string): number {
   if (left === right) return 0;
   return left < right ? -1 : 1;
-}
-
-/** Whether the file may enter the archive: a plain file nobody else holds a second name for. */
-async function isOwnFile(path: string): Promise<boolean> {
-  const info = await lstat(path);
-  return info.isFile() && info.nlink === 1;
 }
 
 /** Adds the folder's contents under `prefix` (ending in `/`); folders get their own entry. */

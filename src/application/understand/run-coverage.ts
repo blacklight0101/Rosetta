@@ -29,6 +29,7 @@ export function toolsWithReads(inner: AgentTools, reads: TaskReads): AgentTools 
   return {
     definitions: inner.definitions,
     areaOverview: () => inner.areaOverview(),
+    renderBlock: (source, text) => inner.renderBlock(source, text),
     async run(call, ids) {
       const outcome = await inner.run(call, ids);
       if (outcome.error === undefined) reads.add(outcome.excerpts ?? []);

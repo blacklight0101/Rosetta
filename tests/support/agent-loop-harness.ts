@@ -1,4 +1,5 @@
 import type { AgentTaskRequest } from '../../src/application/agent/agent-loop.js';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { ReadOnlyTools } from '../../src/application/agent/read-only-tools.js';
 import type { LlmProvider, TokenUsage } from '../../src/application/ports/llm-provider.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
@@ -68,7 +69,10 @@ export function loopSetup(
   const fake = new FakeProvider({ testMode: true, recording: recordingOf(...outcomes) });
   const logger = new MemoryLogger(new FixedClock('2026-10-12T09:00:00.000Z'), new SecretMasker());
   const reader = new MemoryRepositoryReader(agentFiles);
-  const tools = new ReadOnlyTools({ reader, codeMap: agentCodeMap, area: ordersArea, logger });
+  const tools = new ReadOnlyTools({
+    ...{ reader, codeMap: agentCodeMap, area: ordersArea, logger },
+    ids: new SequenceIdGenerator(),
+  });
   let calls = 0;
   const request = (
     provider: LlmProvider,

@@ -13,6 +13,11 @@
 // letters or more right above an orphan END line are masked too, which is the safe side.
 // Linear time: each line is looked at a bounded number of times, and a walk back stops at the
 // previous END. Line breaks stay, so line numbers do not move.
+// Known limit: a key written inline with no BEGIN or END line, such as the bare base64 body of a
+// DER key in a setting (`key: "MII...`), is not masked. Nothing marks it as a key: these rules
+// start only from a BEGIN or END line, and SecretMasker's password rules match only the names
+// password, passwd and pwd. Catching it needs a rule on the value itself (a DER prefix or its
+// entropy), which no requirement asks for yet.
 
 const keyLabel = String.raw`(?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY(?: BLOCK)?-----`;
 const beginPattern = new RegExp(String.raw`-----BEGIN ${keyLabel}`, 'g');

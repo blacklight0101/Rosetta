@@ -15,6 +15,7 @@ import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
 import type { CostLedger } from '../ports/cost-ledger.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
+import type { IdGenerator } from '../ports/id-generator.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderSetFactory, ProviderSinks } from '../ports/provider-set-factory.js';
@@ -58,6 +59,8 @@ export interface RunUnderstandDependencies {
   readonly prompts: () => Promise<ReaderPrompts>;
   readonly clock: Clock;
   readonly logger: Logger;
+  /** RF-145: the random tag of every data block the reader's tools write. */
+  readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
 /** What a run needs before its tasks can start. */
@@ -119,6 +122,7 @@ export class RunUnderstand implements RunExecutor {
       source: this.cardSource(execution, prepared.value.scanned),
       nextCallId: callIds(execution.run),
       traceId: traceIdOf(execution.run),
+      ids: this.deps.ids,
     });
     await session.plan();
     await session.run();

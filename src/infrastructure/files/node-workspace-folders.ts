@@ -2,7 +2,7 @@ import { lstat, readdir, realpath, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { FolderTarget, WorkspaceFolders } from '../../application/ports/workspace-folders.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { isRealFolder } from './real-folder.js';
+import { isRealFolder } from './run-folder.js';
 import { projectPath, runPath, workspaceRoot } from './workspace-paths.js';
 
 // RF-1012, RF-005, RF-1105, data-model.md section 2: the size and the removal of a project or run

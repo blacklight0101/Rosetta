@@ -1,6 +1,7 @@
 import type { LlmMessage, LlmRequest, ToolCall } from '../../application/ports/llm-provider.js';
 import type { Citation } from '../../domain/cards/citation.js';
 import { scanDataBlocks } from '../../domain/egress/data-block-scan.js';
+import { fileKey } from './file-key.js';
 import { maskDeep } from './mask-deep.js';
 import { leavesKeyOpen, maskKeyContinuation } from './private-key-pieces.js';
 import {
@@ -61,14 +62,15 @@ interface ContentPart {
  * later pieces of the request that read the same file, across blocks and messages; a read of
  * another file in between neither continues nor closes it (see private-key-pieces.ts). The file
  * of a piece is the path of its block's first excerpt, and the key it leaves open belongs to the
- * last one; text outside blocks and blocks without excerpts share the empty path.
+ * last one; text outside blocks and blocks without excerpts share the empty path. Paths compare
+ * folded (fileKey), so a read of `A.cs` continues a key left open by a read of `a.cs`.
  */
 class KeyCarry {
   private readonly open = new Set<string>();
 
   /** The piece with the key lines of a key an earlier read of its file left open masked first. */
   take(part: ContentPart, masker: CountingMasker): string {
-    const first = part.excerpts[0]?.path ?? '';
+    const first = fileKey(part.excerpts[0]?.path ?? '');
     let piece = part.text;
     let open = false;
     if (this.open.delete(first)) {
@@ -77,7 +79,7 @@ class KeyCarry {
       piece = continued.text;
       open = continued.open;
     }
-    if (open || leavesKeyOpen(part.text)) this.open.add(part.excerpts.at(-1)?.path ?? '');
+    if (open || leavesKeyOpen(part.text)) this.open.add(fileKey(part.excerpts.at(-1)?.path ?? ''));
     return piece;
   }
 }
