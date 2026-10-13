@@ -109,7 +109,10 @@ describe('a run that fails', () => {
 
     const stored = await h.events.read(h.scopeOf(run), 0);
     expect(stored.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.unexpected });
-    expect(h.logger.entries.some((entry) => entry.level === 'error')).toBe(true);
+    // RF-1011: the entry names the run's key and its owner, so it is shown on that run's page only.
+    expect(h.logger.entries).toContainEqual(
+      expect.objectContaining({ level: 'error', runId: run.runKey, userId: run.userId }),
+    );
   });
 
   it('RF-1108 leaves a run queued whose stage has no executor yet, and starts the others', async () => {
@@ -154,6 +157,9 @@ describe('a run whose records cannot be written', () => {
 
     const events = await h.events.read(h.scopeOf(run), 0);
     expect(events.at(-1)?.type).toBe('run.ended');
-    expect(h.logger.entries.some((entry) => entry.level === 'error')).toBe(true);
+    // RF-1011: the entry names the run's key and its owner, so it is shown on that run's page only.
+    expect(h.logger.entries).toContainEqual(
+      expect.objectContaining({ level: 'error', runId: run.runKey, userId: run.userId }),
+    );
   });
 });

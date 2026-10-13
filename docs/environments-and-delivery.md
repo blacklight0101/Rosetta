@@ -95,7 +95,7 @@ before commit (ADR-008).
   jobs as required status checks to the ruleset once P1-02 has merged the workflow; from then on no pull request can
   be merged with a red check.
 - **Required checks.** The owner adds these job names to the `main` ruleset as required status checks:
-  `verify (ubuntu-latest)`, `verify (windows-latest)`, `audit`, `gitleaks`, `dependency-review`, `pr-title` (all in
+  `verify (ubuntu-latest)`, `verify (windows-latest)`, `e2e`, `audit`, `gitleaks`, `dependency-review`, `pr-title` (all in
   `.github/workflows/ci.yml`) and `codeql` (`.github/workflows/codeql.yml`). Jobs that later cards add to the table of
   section 6 (image build and scan, Compose smoke test) join this list in the card that adds them. The `audit` job
   runs `scripts/audit-check.mjs`, which reads `audit-exceptions.json`: a JSON array of
@@ -122,6 +122,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
 | Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; on Linux with a database also the Playwright e2e project, after `npx playwright install --with-deps chromium`) | yes |
+| End-to-end tests | job `e2e-shard`: the Playwright project split in three shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/3`, each with its own PostgreSQL service); job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
 | Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
 | Secret scan | gitleaks action | yes |
 | Static analysis | CodeQL (`javascript-typescript`), on pull requests and weekly | yes, for high and critical alerts |

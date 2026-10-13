@@ -504,7 +504,7 @@ and `primaryKey` keep their values (P1-112, P1-124).
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
-The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id or key and any `userId` it carries is the owner's; an entry with the key alone is shown only while no other user's run has the same key.
+The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id and any `userId` it carries is the owner's, or its `runId` is the run's key and its `userId` is the owner's. An entry with the key and no user is never shown: the key is unique per project only and a deleted run's entries stay in the files, so it may belong to another user's run that is gone (P1-122). The run's own writers therefore name the owner beside the key: `ownerLogger` for the understand session and for the egress and budget guards that the provider factory builds for the run (their security events and cap refusals), and the queue and the lifecycle directly.
 
 ### 3.15 `transcripts/<agentTaskId>.jsonl`
 
@@ -841,6 +841,7 @@ releases.
 | Application logs | `ROSETTA_LOG_RETENTION_DAYS` (14) | deleted at start-up and daily |
 | `.partial-*` snapshot folders | until next start-up | deleted |
 | Runs, projects, exports | until the user deletes them | delete button in the web UI with confirmation (RF-1012, DEC-55); never automatic |
+| Run and project folders on deletion | as long as their rows | the folder is removed first and the rows second (P1-121): Delete run removes the run folder, then the row; Delete project locks the project row (`FOR UPDATE`, so a run queued at the same moment is seen and refuses the deletion), removes the project folder and then the rows in the same transaction. A folder that cannot be removed writes an `error` log entry with RST-1115 naming it, answers RST-1115 and keeps the rows, so the run or project is still listed and Delete removes the folder on the next attempt; no folder is left without its rows, so no clean-up task exists for them |
 | Snapshots | until the administrator deletes them | delete button on the administration page (RF-1012) |
 | Sessions | until expiry or sign-out | expired rows deleted hourly by the in-process scheduler |
 | Cost reservations | until the call ends or the row expires | expired rows deleted hourly |

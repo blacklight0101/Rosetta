@@ -233,6 +233,7 @@ export class RunQueue {
       logger: 'runs',
       message: `Run ${run.runKey} ${what}: ${detail}`,
       runId: run.runKey,
+      userId: run.userId,
       ...(code === undefined ? {} : { code }),
     });
   }

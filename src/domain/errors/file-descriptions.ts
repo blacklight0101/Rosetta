@@ -69,4 +69,9 @@ export const FILE_ERROR_DESCRIPTIONS: Readonly<Record<FileErrorCode, ErrorDescri
     nextStep:
       'Read a smaller file; raise scan.maxFileBytes and scan again if this one must be read.',
   },
+  'RST-1115': {
+    message: 'The folder could not be removed, so nothing was deleted.',
+    nextStep:
+      'Delete it again; if it keeps failing, check the application log for the folder and close what holds it open.',
+  },
 };

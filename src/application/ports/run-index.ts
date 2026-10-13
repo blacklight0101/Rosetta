@@ -31,12 +31,6 @@ export interface RunIndex {
   insert(run: Run): Promise<Result<Run, 'run-key-taken'>>;
   /** Undefined for an unknown id and for another user's run. */
   find(userId: string, runId: string): Promise<Run | undefined>;
-  /**
-   * RF-1011, RF-1105: true when a run of another user has that run key. A run key is unique per
-   * project only, so a log entry that names a key and no user is the run's own only while this
-   * is false.
-   */
-  keyUsedByOthers(userId: string, runKey: string): Promise<boolean>;
   /** The project's runs of that user, newest first. */
   list(userId: string, projectId: string): Promise<readonly Run[]>;
   /** Every queued run of every user, in queue order. */

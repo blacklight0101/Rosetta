@@ -7,7 +7,7 @@ import type { Project } from '../../application/projects/project.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import type { DatabasePool } from './pool.js';
+import type { DatabaseClient, DatabasePool } from './pool.js';
 import { PROJECT_COLUMNS, toProject } from './project-rows.js';
 
 // Architecture section 7, ADR-016, RF-010, RF-1105: projects in PostgreSQL with parameterised SQL
@@ -26,8 +26,16 @@ const UPDATE_SETTINGS =
   'UPDATE projects SET settings = $3::jsonb, updated_at = $4 WHERE user_id = $1 AND id = $2 RETURNING ' +
   PROJECT_COLUMNS;
 
-// The runs of the project go with it (ON DELETE CASCADE); a project with a run that has not ended
-// stays. `cost_ledger` has no foreign key to either, so its rows stay (DEC-55).
+// RF-1012, P1-121: the removal is one transaction. It first locks the project row (`FOR UPDATE`
+// waits for a transaction that is inserting a run of the project, whose foreign key check holds a
+// key-share lock on the row, and keeps any later insert waiting until the end). Each following
+// statement takes a fresh snapshot, so a run queued in the meantime is seen and the project stays.
+// The hook (the folder removal) runs under the lock, before the rows go; when it fails nothing is
+// removed. The runs of the project go with it (ON DELETE CASCADE). `cost_ledger` has no foreign key
+// to either, so its rows stay (DEC-55).
+const LOCK = 'SELECT id FROM projects WHERE user_id = $1 AND id = $2 FOR UPDATE';
+const IN_USE =
+  "SELECT 1 FROM runs WHERE user_id = $1 AND project_id = $2 AND queue_state <> 'Ended' LIMIT 1";
 const REMOVE =
   "DELETE FROM projects WHERE user_id = $1 AND id = $2 AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.project_id = projects.id AND runs.queue_state <> 'Ended')";
 
@@ -35,6 +43,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function queryFailed(error: unknown): RosettaError {
   return new RosettaError(ERROR_CODES.databaseQueryFailed, undefined, { cause: error });
+}
+
+/** One statement of a transaction; a database failure is thrown as RST-2404 with the cause. */
+async function query(
+  client: DatabaseClient,
+  sql: string,
+  values: unknown[],
+): Promise<{ readonly rowCount: number | null }> {
+  try {
+    return await client.query(sql, values);
+  } catch (error) {
+    throw queryFailed(error);
+  }
 }
 
 export class PgProjectRepository implements ProjectRepository {
@@ -99,9 +120,40 @@ export class PgProjectRepository implements ProjectRepository {
     return row === undefined ? undefined : toProject(row);
   }
 
-  async remove(userId: string, projectId: string): Promise<boolean> {
+  async remove(
+    userId: string,
+    projectId: string,
+    beforeRowsGo: () => Promise<void>,
+  ): Promise<boolean> {
     if (!UUID.test(userId) || !UUID.test(projectId)) return false;
-    return (await this.run(REMOVE, [userId, projectId])).rowCount === 1;
+    const values = [userId, projectId];
+    return this.transaction(async (client) => {
+      if ((await query(client, LOCK, values)).rowCount !== 1) return false;
+      if ((await query(client, IN_USE, values)).rowCount !== 0) return false;
+      await beforeRowsGo();
+      return (await query(client, REMOVE, values)).rowCount === 1;
+    });
+  }
+
+  /** Commits what `work` did, or rolls it back and rethrows when it throws or answers false. */
+  private async transaction(work: (client: DatabaseClient) => Promise<boolean>): Promise<boolean> {
+    let client: DatabaseClient;
+    try {
+      client = await this.pool.connect();
+    } catch (error) {
+      throw queryFailed(error);
+    }
+    try {
+      await query(client, 'BEGIN', []);
+      const done = await work(client);
+      await query(client, done ? 'COMMIT' : 'ROLLBACK', []);
+      return done;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   private async run(
