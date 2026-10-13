@@ -17,6 +17,9 @@ const preflightPrompt = 'Reply with the single word OK.';
 const preflightMaxOutputTokens = 64;
 const spanIdLength = 16;
 
+/** The agent task id of the check's call: a test double must not take it for a reader's call. */
+export const preflightAgentTaskId = 'ollama-preflight';
+
 export interface PreflightProblem {
   readonly role: AgentRole;
   /** The provider's name in the project settings. */
@@ -52,7 +55,7 @@ function requestFor(role: AgentRole, provider: RoleProvider, call: PreflightCall
   return {
     context: {
       runId: call.runId,
-      agentTaskId: 'ollama-preflight',
+      agentTaskId: preflightAgentTaskId,
       role,
       callId: call.nextCallId(),
       traceId: call.traceId,
