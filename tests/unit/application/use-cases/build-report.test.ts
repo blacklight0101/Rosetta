@@ -7,6 +7,8 @@ import { RUN_END_STATES } from '../../../../src/domain/runs/run-states.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
 import { MemoryEventSink } from '../../../../src/infrastructure/events/memory-event-sink.js';
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
+import { FixedScans } from '../../../support/estimate-harness.js';
+import { RecordingLogger } from '../../../support/recording-logger.js';
 import { MapRunTextFiles, RecordingReportWriter } from '../../../support/report-doubles.js';
 import {
   replayDemoEvents,
@@ -82,7 +84,11 @@ async function setup(run: Run, parts: Parts = {}) {
       'cost.md': '# Cost\n',
     },
   );
-  return { build: new BuildReport({ runs, manifests, history, files, writer }), writer };
+  const build = new BuildReport({
+    ...{ runs, manifests, history, files, writer },
+    ...{ scans: new FixedScans([]), logger: new RecordingLogger() },
+  });
+  return { build, writer };
 }
 
 const request = (run: Run, actor: Actor = userAmy) => ({ actor, runId: run.id });

@@ -26,6 +26,7 @@ import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
 import { MemoryArchiveWriter } from './memory-archive-writer.js';
+import { RecordingLogger } from './recording-logger.js';
 import type { MemoryLogger } from './memory-logger.js';
 import type { MemorySnapshotCache } from './memory-snapshot-cache.js';
 import type { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
@@ -104,6 +105,8 @@ export function runServices(
       history: runs.events,
       files: outputs.text,
       writer: outputs.reportWriter,
+      scans: new FixedScans(catalogAreas),
+      logger: new RecordingLogger(),
     }),
     listAnswers: new ListAnswers({ runs: runs.runs, answers }),
     recordAnswers: new RecordAnswers({ runs: runs.runs, answers }),
