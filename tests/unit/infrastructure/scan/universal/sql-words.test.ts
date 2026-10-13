@@ -77,9 +77,15 @@ describe('cutting inside an XML password element', () => {
     expect(cutAtWord(`<db>${element} tail of the text`, element.length + 8)).toBe(`<db>${element}`);
   });
 
-  it('RF-141 a placeholder tag in prose is kept', () => {
-    const text = `set ${opening} to a strong value`;
+  it('RF-141 a cut inside an element whose value starts with a space drops the open element', () => {
+    const text = `<db>${opening} ${value}${closing} <other/>`;
 
-    expect(cutAtWord(text, text.length - 3)).toBe(`set ${opening} to a strong`);
+    expect(cutAtWord(text, text.indexOf('FAKE0') + 2)).toBe('<db>');
+  });
+
+  it('RF-141 a placeholder tag in prose followed by another tag on the line is kept', () => {
+    const text = `set ${opening} or <user> to a strong value`;
+
+    expect(cutAtWord(text, text.length - 3)).toBe(`set ${opening} or <user> to a strong`);
   });
 });

@@ -1,4 +1,4 @@
-import type { User, UserAccount } from '../../domain/accounts/user.js';
+import type { EpochMs, User, UserAccount } from '../../domain/accounts/user.js';
 import type { ERROR_CODES } from '../../domain/errors/codes.js';
 import type { Result } from '../../domain/errors/result.js';
 
@@ -22,9 +22,19 @@ export interface UserRepository {
   /** Saves everything but the id, user name and creation time; false for an unknown id. */
   update(account: UserAccount): Promise<boolean>;
   /**
-   * Saves like `update`, but only while the stored account still has the state and update time
-   * of `read` (the account as the caller read it); false otherwise, so a concurrent change by an
-   * administrator is never overwritten (RF-1102).
+   * Saves like `update`, but only while the stored account still has the state, update time and
+   * password hash of `read` (the account as the caller read it); false otherwise, so a concurrent
+   * change by an administrator is never overwritten (RF-1102).
    */
-  updateIfCurrent(account: UserAccount, read: Pick<User, 'state' | 'updatedAt'>): Promise<boolean>;
+  updateIfCurrent(
+    account: UserAccount,
+    read: Pick<UserAccount, 'state' | 'updatedAt' | 'passwordHash'>,
+  ): Promise<boolean>;
+  /**
+   * Counts one failed sign-in or password check in one atomic write (RF-1100, DEC-112): the
+   * failure counters of the stored account move by the rules of `recordFailedSignIn`, nothing
+   * else is written, and parallel failures each count. A locked or unknown account is left as it
+   * is. True when this failure locked the account.
+   */
+  countFailedSignIn(id: string, now: EpochMs): Promise<boolean>;
 }
