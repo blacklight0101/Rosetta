@@ -11,8 +11,9 @@ import { ciJob, runLines } from '../../support/workflow-files.js';
 // keeps its name) run only when it does, and the Linux verify job still checks the documents.
 
 const run = promisify(execFile);
-const code = "needs.changes.outputs.code == 'true'";
-const docsOnlyOnLinux = "runner.os == 'Linux' && needs.changes.outputs.code != 'true'";
+// Fail closed: the heavy steps run unless the output is exactly 'false'.
+const code = "needs.changes.outputs.code != 'false'";
+const docsOnlyOnLinux = "runner.os == 'Linux' && needs.changes.outputs.code == 'false'";
 
 /** The shell script of the `changes` job, as it runs on the runner. */
 async function classifyScript(): Promise<string> {
@@ -31,10 +32,13 @@ async function git(root: string, ...args: string[]): Promise<string> {
   return (await run('git', args, { cwd: root })).stdout.trim();
 }
 
-async function commitFiles(root: string, paths: readonly string[]): Promise<string> {
-  for (const path of paths) {
-    await mkdir(dirname(join(root, path)), { recursive: true });
-    await writeFile(join(root, path), `${path}\n`);
+/** Writes each path, or moves it with git mv for an "old -> new" entry, and commits. */
+async function commitFiles(root: string, paths: readonly string[], mark = ''): Promise<string> {
+  for (const entry of paths) {
+    const [from = '', to] = entry.split(' -> ');
+    await mkdir(dirname(join(root, to ?? from)), { recursive: true });
+    if (to === undefined) await writeFile(join(root, from), `${from}${mark}\n`);
+    else await git(root, 'mv', from, to);
   }
   await git(root, 'add', '--all');
   await git(
@@ -50,11 +54,13 @@ async function commitFiles(root: string, paths: readonly string[]): Promise<stri
   return git(root, 'rev-parse', 'HEAD');
 }
 
+const baseFiles = ['README.md', 'src/main.ts', 'prompts/reader/area.v1.md', 'scripts/run-e2e.mjs'];
+
 /** Runs the script of the changes job on a pull request from a base commit to `changed`. */
 async function classify(root: string, event: string, changed: readonly string[]): Promise<string> {
   await git(root, 'init', '-q');
-  const base = await commitFiles(root, ['README.md', 'src/main.ts']);
-  const head = await commitFiles(root, changed);
+  const base = await commitFiles(root, baseFiles);
+  const head = await commitFiles(root, changed, ' (changed)');
   const output = join(root, 'github-output.txt');
   await writeFile(output, '');
   const env = { ...process.env, EVENT: event, BASE_SHA: base, HEAD_SHA: head };
@@ -95,7 +101,7 @@ describe('GitHub Actions workflows: the changes job', () => {
     expect(uses[0]).toContain('uses: actions/checkout@');
     expect(job).toContain('code: ${{ steps.classify.outputs.code }}');
     expect(job).toContain('BASE_SHA: ${{ github.event.pull_request.base.sha }}');
-    expect(job).toContain('git diff --name-only "$BASE_SHA...$HEAD_SHA"');
+    expect(job).toContain('git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA"');
   });
 });
 
@@ -110,6 +116,12 @@ describe('GitHub Actions workflows: the changes script', () => {
     ['pull_request', ['prompts/reader/area.v2.md'], 'code=true'],
     ['pull_request', ['docs/guide.md', 'package.json'], 'code=true'],
     ['push', ['docs/guide.md'], 'code=true'],
+    // A rename lists both paths, so moving code or a prompt into documentation is still code.
+    ['pull_request', ['src/main.ts -> docs/main.md'], 'code=true'],
+    ['pull_request', ['prompts/reader/area.v1.md -> docs/archive/area.v1.md'], 'code=true'],
+    ['pull_request', ['scripts/run-e2e.mjs -> scripts/run-e2e.md'], 'code=true'],
+    // Documentation is docs/ and top-level Markdown only; Markdown elsewhere is code.
+    ['pull_request', ['templates/report.md'], 'code=true'],
   ] as const)('RNF-001 a %s that changes %j sets %s', async (event, changed, expected) => {
     expect(await classify(repo.path, event, changed)).toBe(expected);
   });
@@ -133,12 +145,22 @@ describe('GitHub Actions workflows: documentation-only gating', () => {
         (step) =>
           !step.includes(code) &&
           !step.includes('if: failure()') &&
-          !step.includes("code != 'true'"),
+          !step.includes("code == 'false'"),
       );
 
       expect(ungated).toEqual([]);
     },
   );
+
+  it('RNF-001 every condition fails closed: only an output of exactly false skips work', async () => {
+    const jobsText = await Promise.all(
+      ['verify', 'e2e-shard', 'image', 'compose-smoke'].map(ciJob),
+    );
+    const cleanup = (await steps('compose-smoke')).find((step) => step.includes('down -v')) ?? '';
+
+    expect(jobsText.join('\n')).not.toMatch(/outputs\.code [!=]= 'true'/u);
+    expect(cleanup).toContain(`if: always() && ${code}`);
+  });
 
   it('RNF-001 the e2e check stays green when the shards ran with their steps skipped', async () => {
     const job = await ciJob('e2e');
