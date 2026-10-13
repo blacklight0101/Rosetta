@@ -7,8 +7,8 @@ import { addUser, signedInBrowser, type TestBrowser } from '../../../support/tes
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
 // RF-1011, RF-009, RF-1105: GET /api/runs/:runId/logs through the server with a session. A user sees
-// only the log entries of their own runs; two users' runs may share a run key, so an entry that
-// names the key and no user is shown to nobody while the key is shared.
+// only the log entries of their own runs; two users' runs may share a run key, and a deleted run's
+// entries stay in the log, so an entry that names the key and no user is shown to nobody.
 
 let current: TestServer | undefined;
 
@@ -160,23 +160,19 @@ describe('GET /api/runs/:runId/logs scoping', () => {
 });
 
 describe('GET /api/runs/:runId/logs run key of one user', () => {
-  it('RF-1011 shows an entry that names only the run key while no other user has a run with that key', async () => {
+  it('RF-1105 shows an entry that names the run key only when it also names the owner, even while no other user has that key', async () => {
     const test = createTestServer();
     current = test;
     const amyUser = await addUser(test, { userName: 'amy' });
     const run = await test.runs.start(actorOf(amyUser.account), 'understand');
     const amy = await signedInBrowser(test.server, amyUser);
-    await test.logger.log({
-      level: 'warn',
-      logger: 'understand',
-      message: 'The reader of area "Catalog" ended with no card.',
-      runId: run.runKey,
-      agentTaskId: 'reader-001',
-    });
+    const entry = { level: 'warn', logger: 'understand', runId: run.runKey } as const;
+    await test.logger.log({ ...entry, message: 'Key only, no user.' });
+    await test.logger.log({ ...entry, message: 'Key and owner.', userId: run.userId });
 
     const body = await fetchLogs(amy, run);
 
-    expect(messagesOf(body)).toEqual(['The reader of area "Catalog" ended with no card.']);
+    expect(messagesOf(body)).toEqual(['Key and owner.']);
   });
 });
 

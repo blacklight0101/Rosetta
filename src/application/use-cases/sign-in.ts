@@ -1,8 +1,5 @@
 import { sessionUserOf, type SessionUser } from '../../domain/accounts/actor.js';
-import {
-  recordFailedSignIn,
-  recordSuccessfulSignIn,
-} from '../../domain/accounts/sign-in-failures.js';
+import { recordSuccessfulSignIn } from '../../domain/accounts/sign-in-failures.js';
 import { accountState, type UserAccount } from '../../domain/accounts/user.js';
 import { parseUserName } from '../../domain/accounts/user-names.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
@@ -20,11 +17,12 @@ import { KeyedQueue } from '../support/keyed-queue.js';
 // same RST-2201 ("User name or password is incorrect"), whether the user is unknown, the password
 // wrong, the account locked or disabled. An unknown user name is verified against a dummy hash, so
 // every attempt costs one scrypt derivation and takes the same time. A wrong password counts the
-// failure with one account write; an unknown, disabled or locked name makes the same write to an
-// id no account has, so every refusal costs the same database work too. The fifth failure within 15
-// minutes locks the account for 15 minutes (DEC-112). A success rotates the session: the previous
-// id is ended and a new one is created. Attempts on one user name run one after another, so
-// parallel attempts cannot all read the same failure count and slip past the lock.
+// failure with one atomic write of the failure counters only (P1-86), so parallel guesses each
+// count and a concurrent disable or reset is never undone; an unknown, disabled or locked name
+// makes the same write to an id no account has, so every refusal costs the same database work too.
+// The fifth failure within 15 minutes locks the account for 15 minutes (DEC-112). A success
+// rotates the session: the previous id is ended and a new one is created. Attempts on one user
+// name run one after another, so an attempt after the lock sees it before its password is checked.
 
 export interface SignInRequest {
   readonly userName: string;
@@ -65,28 +63,6 @@ interface Refusal {
 
 /** No account has this id (ids are random version 4 UUIDs), so a write to it changes nothing. */
 const NO_ACCOUNT_ID = '00000000-0000-0000-0000-000000000000';
-
-/** The failure count a refusal without a counted failure writes to no account (equal work). */
-function uncountedFailure(now: Date): UserAccount {
-  const at = now.getTime();
-  return {
-    id: NO_ACCOUNT_ID,
-    userName: '',
-    displayName: '',
-    role: 'user',
-    state: 'Active',
-    passwordHash: '',
-    failedSignIns: 1,
-    firstFailedAt: at,
-    lockedUntil: null,
-    serverKeysAllowed: false,
-    dailyCapMicros: null,
-    ownDailyCapMicros: null,
-    createdAt: at,
-    updatedAt: at,
-    lastSignInAt: null,
-  };
-}
 
 const SECURITY_CODES: Readonly<Record<RefusalReason, ErrorCode>> = {
   'unknown-user': ERROR_CODES.invalidCredentials,
@@ -157,16 +133,15 @@ export class SignIn {
     request: SignInRequest,
     now: Date,
   ): Promise<Result<never, SignInProblem>> {
-    const failed = recordFailedSignIn(account, now.getTime());
-    await this.deps.users.update(failed.account);
+    const locked = await this.deps.users.countFailedSignIn(account.id, now.getTime());
     const refused = await this.refuse({ request, reason: 'wrong-password', now, account });
-    if (failed.locked) await this.recordLock(account, request, now);
+    if (locked) await this.recordLock(account, request, now);
     return refused;
   }
 
   /** RF-1100: a refusal that counts no failure still makes the account write `fail` makes. */
   private async refuseUncounted(refusal: Refusal): Promise<Result<never, SignInProblem>> {
-    await this.deps.users.update(uncountedFailure(refusal.now));
+    await this.deps.users.countFailedSignIn(NO_ACCOUNT_ID, refusal.now.getTime());
     return this.refuse(refusal);
   }
 

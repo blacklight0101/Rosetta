@@ -64,9 +64,62 @@ jobs:
         if: runner.os == 'Windows'
         run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
         shell: bash
+      # The Playwright project runs in the sharded e2e jobs below, in parallel with this one.
       - run: npm run verify
         env:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
+          ROSETTA_E2E_OWN_JOB: '1'
+
+  e2e-shard:
+    name: e2e (shard ${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    services:
+      # Disposable database for the end-to-end tests; the credentials are throwaway.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rosetta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # One third of the Playwright project (RNF-005); the three shards together run every spec.
+      - run: node scripts/run-e2e.mjs "--shard=$SHARD/3"
+        env:
+          SHARD: ${{ matrix.shard }}
+          ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
+
+  # One stable check name for the ruleset: green only when every shard passed.
+  e2e:
+    name: e2e
+    if: always()
+    needs: e2e-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$RESULT" = success
+        env:
+          RESULT: ${{ needs.e2e-shard.result }}
 
   audit:
     name: audit

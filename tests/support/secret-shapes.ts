@@ -15,6 +15,7 @@ interface ShapeCase {
 
 const dash = '-';
 const password = `Pw${fakeValue(14)}`;
+const tailPiece = `Tl${fakeValue(6)}`;
 const basicCredentials = Buffer.from(`app:${password}`).toString('base64');
 const plainToken = fakeValue(40);
 const awsSessionKeyId = ['AS', 'IA', fakeValue(16)].join('');
@@ -89,6 +90,55 @@ export const moreSecretCases: readonly ShapeCase[] = [
     secrets: [password],
   },
   {
+    name: 'a mysql -p password after a database name with a hyphen',
+    kind: 'password',
+    text: `mysql my-db -u root -p${password}`,
+    masked: 'mysql my-db -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after a database name with a dot and a hyphen',
+    kind: 'password',
+    text: `mysql shop.v2-test -u root -p${password}`,
+    masked: 'mysql shop.v2-test -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after a file path',
+    kind: 'password',
+    text: `mysql ./x.sql -p${password}`,
+    masked: 'mysql ./x.sql -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after the options and a hyphenated database name',
+    kind: 'password',
+    text: `mysql -u root my-db -p${password}`,
+    masked: 'mysql -u root my-db -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after a host with a colon and a Windows path',
+    kind: 'password',
+    text: `mysql db:3306 C:\\dump\\x.sql -u root -p${password}`,
+    masked: 'mysql db:3306 C:\\dump\\x.sql -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql.exe -p password',
+    kind: 'password',
+    text: `mysql.exe -u root -p${password}`,
+    masked: 'mysql.exe -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password quoted in part',
+    kind: 'password',
+    text: `mysql -u root -p"${password}"${tailPiece} catalog`,
+    masked: 'mysql -u root -p[MASKED:password] catalog',
+    secrets: [password, tailPiece],
+  },
+  {
     name: 'a mysql -p password after a quoted option value',
     kind: 'password',
     text: `mysql -e "select 1 from t" -u root -p${password}`,
@@ -135,6 +185,7 @@ export const moreInnocentTexts: readonly string[] = [
   'Usage: login <user> <password>, then `<password>` again',
   'mysql -u root -p -D catalog',
   'mysql -P 3306 -u app catalog',
+  'mysql the-db, -u root and then -people say',
   '# mysql is used in production -pretty much everywhere',
   'We moved from mysql to postgres, -people say -pgsql is faster',
   '<password>placeholder text\nthen </note> closes',
@@ -154,6 +205,8 @@ export const moreAdversarialPieces: readonly string[] = [
   '<x:',
   'mysql ',
   'mysql -p',
+  'mysql a-b/c.d:e ',
+  'mysql.exe -u x "a"b',
   ' -p',
   ['_sk', ''].join(dash),
   ['sk', 'live', ''].join('_'),

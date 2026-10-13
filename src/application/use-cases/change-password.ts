@@ -5,7 +5,7 @@ import {
   type CommonPasswordList,
   type PasswordProblem,
 } from '../../domain/accounts/password-rules.js';
-import { isLocked, recordFailedSignIn } from '../../domain/accounts/sign-in-failures.js';
+import { isLocked } from '../../domain/accounts/sign-in-failures.js';
 import type { UserAccount } from '../../domain/accounts/user.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -21,8 +21,9 @@ import type { UserRepository } from '../ports/user-repository.js';
 // toward the sign-in failure window (RF-1100, DEC-112), so the fifth within 15 minutes locks the
 // account and a locked account is refused without a check. The new one must meet the P1-08 rules
 // and differ from the current one (RST-2214), or a forced change could keep the password. The
-// account becomes Active (MustChangePassword is cleared) with clear counters, written only if
-// nobody changed it since it was read (an administrator's disable or reset wins, RST-2208). Every
+// account becomes Active (MustChangePassword is cleared) with clear counters, written only if its
+// state, update time and password hash are still as read (an administrator's disable or reset
+// wins, RST-2208). Every
 // session of the account ends and a new one is opened for the browser that made the change, so
 // "my other sessions are ended" and the session id rotates with the credential. Neither password
 // is ever logged or audited.
@@ -140,11 +141,11 @@ export class ChangePassword {
     ip: string,
   ): Promise<Result<never, ChangePasswordProblem>> {
     const now = this.deps.clock.now();
-    const failed = recordFailedSignIn(account, now.getTime());
-    // A concurrent change by an administrator wins; this failure is then not counted.
-    await this.deps.users.updateIfCurrent(failed.account, account);
+    // One atomic write of the counters only (P1-86): parallel wrong guesses each count, and a
+    // concurrent disable or reset by an administrator is never undone.
+    const locked = await this.deps.users.countFailedSignIn(account.id, now.getTime());
     const refused = await this.refuseCurrent(account, ip, 'current-password-incorrect');
-    if (failed.locked) await this.recordLock(account, ip, now);
+    if (locked) await this.recordLock(account, ip, now);
     return refused;
   }
 

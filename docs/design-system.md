@@ -142,7 +142,7 @@ reflow from four columns to one.
 - Connection loss: if the event stream drops, a banner says "Live updates paused - reconnecting", the page keeps its
   last state, and on reconnection missed events are replayed from `events.jsonl` (RF-1006).
 - Pause updates: the live run page can freeze its panels for reading while the run continues; a counter shows how
-  many events are waiting. It freezes the agent panels, the overview, the claims and the event log; the stage stepper,
+  many events are waiting. It freezes the agent panels, the coverage map, the overview, the claims and the event log; the stage stepper,
   the run meter and the top-bar meter stay live. While paused the button reads Resume, Stop run stays usable and the
   page's one polite status says "Updates paused" once (the counter is not announced).
 
@@ -160,6 +160,7 @@ from tokens, and English text (DEC-45).
 | Pipeline stepper | - | done, current (live), waiting | ordered list; current step `aria-current="step"` | Snapshot, Scan, Understand, Verify, Report |
 | Stat card | - | - | - | label, big number, caption; numbers tabular |
 | Agent panel | reader, verifier, planner, summariser | planned, running, done, failed and the other `AgentTaskState` values | `article` with the area as heading | role dot, area, model, current tool call, turn, files read, tokens, cost, read bar, card chips |
+| Coverage map | - | no areas yet, area with no file read, area filling in | a region with one labelled region per area; the read share is `role="meter"`; the tree is nested lists | one block per reader area in plan order: area name, files read and share of the run's files read, a bar in the reader role colour, the files read as a tree of folders (folders first, by name); it fills in from successful `read_file` calls (RF-1005) |
 | Timeline | live, replay | - | lanes are a list; each bar has a text alternative | one lane per agent, coloured by role; time axis |
 | Event stream | live, replay | - | `aria-live="polite"`, throttled | time, event type coloured by kind, one-line text; newest first |
 | Data table | calls, runs, snapshots, cards, projects | default, highlighted (error), selected | real `table` with headers; wide tables scroll inside a box | filter bar above; numeric columns right-aligned |
