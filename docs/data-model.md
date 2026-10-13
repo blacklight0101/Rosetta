@@ -534,8 +534,17 @@ and writes to one project's file run one after another.
 
 ### 3.17 Report and hand-off folders
 
-`report/` (static site, RF-500..RF-506) and `handoff/` (RF-600..RF-699) are generated from the files above. Their
-inner structure is defined by the report and plan cards in P3 and documented in this section then.
+`report/` (RF-500..RF-506) and `handoff/` (RF-600..RF-699) are generated from the files above. `handoff/` is
+defined by the plan cards in P3 and documented in this section then.
+
+`report/` is written by the `BuildReport` use case (P1-43) and holds, all directly in the folder: `report.md` (links the
+specification, every card, the cost report and, once P2-04 writes one, the coverage report; a link is written only for a
+file the run has), `report.html` (the same report as escaped static HTML, DEC-112), `replay.html` (the run replay: agents,
+turns, tool calls, cards, verdicts and cost from `events.jsonl`, as a list that needs no script, with play, pause and
+step added by `replay.js` when scripts run), `report.css` and `replay.js`. The pages carry a `<meta>` content security
+policy and `referrer` of no-referrer (RF-1013); repository and model text is escaped, and only links that start with
+`https://github.com/` stay links (RF-507). The server serves these five files as pages, styles and scripts; every other
+file of a run folder is text or a download.
 
 ### 3.18 Price table
 

@@ -83,6 +83,8 @@ describe.skipIf(!enabled)('the container image contents', () => {
     expect(files).toContain('/app/db/migrations/0001_accounts.sql');
     expect(files).toContain('/app/prices/default-prices.yaml');
     expect(files).toContain('/app/templates/project-settings.json');
+    expect(files).toContain('/app/templates/report/report.css');
+    expect(files).toContain('/app/templates/report/replay.js');
     expect(files).toContain('/app/src/infrastructure/security/common-passwords.txt');
     expect(files.some((file) => file.startsWith('/app/prompts/reader/'))).toBe(true);
     expect(files).toContain('/app/dist/presentation/main.js');
