@@ -21,10 +21,13 @@ afterEach(() => {
 });
 
 const pipeline = (): HTMLElement => screen.getByRole('list', { name: 'Pipeline' });
-const step = (name: string): HTMLElement =>
-  within(pipeline())
+const step = (name: string): HTMLElement => {
+  const found = within(pipeline())
     .getAllByRole('listitem')
-    .filter((item) => item.textContent.startsWith(name))[0] as HTMLElement;
+    .find((item) => item.textContent.startsWith(name));
+  if (found === undefined) throw new Error(`No step ${name}.`);
+  return found;
+};
 
 it('RF-1002 the stepper is an ordered list of the five stages in order', async () => {
   const { stream } = renderLive();

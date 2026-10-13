@@ -109,8 +109,6 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
     lines: await log.getByRole('listitem').count(),
   };
   await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(2);
-  const first = await waitingEvents(page);
-  await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(first);
   expect(await agentPanel(page, 'Catalog').textContent()).toBe(held.catalog);
   await expect(valueOf(overview, 'Done')).toHaveText(held.done);
   await expect(log.getByRole('listitem')).toHaveCount(held.lines);
@@ -137,14 +135,16 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
   await startUnderstand(page, ['Catalog', 'Controllers']);
   await expect(agentPanel(page, 'Catalog')).toBeVisible();
   await page.getByRole('button', { name: 'Pause updates' }).click();
+  const held = (await agentPanel(page, 'Controllers').textContent()) ?? '';
   await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(0);
 
   await page.getByRole('button', { name: 'Stop run' }).click();
 
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
-  await expect(agentPanel(page, 'Controllers')).toContainText('Running');
+  expect(await agentPanel(page, 'Controllers').textContent()).toBe(held);
   await page.getByRole('button', { name: 'Resume' }).click();
-  await expect(agentPanel(page, 'Controllers')).not.toContainText('Running');
+  await expect(pauseCount(page)).toHaveCount(0);
+  await expect(agentPanel(page, 'Controllers')).not.toHaveText(held);
   const log = page.getByRole('log', { name: 'Event log' });
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
 });

@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import { phaseOf, type RunPhase } from '../../../web/src/lib/live-run/run-phase.js';
 import type { RunRow } from '../../../web/src/api/run-schemas.js';
+import type { RunEvent } from '../../../web/src/api/run-events.js';
 import { stepperOf } from '../../../web/src/lib/live-run/run-stepper.js';
 import {
   agentEnded,
@@ -33,7 +34,7 @@ function row(stage: string, queueState: RunRow['queueState'] = 'Running'): RunRo
   };
 }
 
-type Events = Parameters<typeof stateAfter>;
+type Events = readonly RunEvent[];
 
 /** The steps as `name:status` words, so a case reads as one line. */
 function words(stage: string, events: Events, phase?: RunPhase): string[] {
@@ -43,7 +44,13 @@ function words(stage: string, events: Events, phase?: RunPhase): string[] {
   return steps.map((step) => `${step.name}:${step.status}`);
 }
 
-const started = (stage: string): Events[number] => ev(1, 'run.started', { ...startedData, stage });
+/** A scan has pinned no commit when it starts; an understand run starts on the commit of its scan. */
+const started = (stage: string): RunEvent =>
+  ev(1, 'run.started', {
+    ...startedData,
+    stage,
+    source: { ...startedData.source, commitSha: stage === 'scan' ? null : sha },
+  });
 const resolved = ev(2, 'source.resolved', {
   url: 'https://github.com/octo/demo',
   ref: 'main',

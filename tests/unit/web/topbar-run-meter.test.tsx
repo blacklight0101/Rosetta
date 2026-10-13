@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/preact';
+import { render, screen, waitFor } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createApiClient } from '../../../web/src/api/client.js';
 import { App } from '../../../web/src/app/App.js';
@@ -41,9 +41,7 @@ function openRun(cost: (read: number) => number) {
   return stream;
 }
 
-const meter = (): HTMLElement =>
-  within(screen.getByRole('banner')).getByRole('meter', { name: 'This run spent against cap' });
-
+const meter = (): HTMLElement => screen.getByRole('meter', { name: 'This run spent against cap' });
 it('RF-1003 RF-1010 shows what the run spent against its cap in the top bar, beside the totals', async () => {
   const stream = openRun(() => 412_000);
   const connection = await stream.connection();
@@ -59,7 +57,8 @@ it('RF-1003 RF-1010 shows what the run spent against its cap in the top bar, bes
   expect(group.textContent).toContain('$0.412');
   expect(group.textContent).toContain('$2.00');
   expect(group.textContent).toContain('21%');
-  expect(within(screen.getByRole('banner')).getByTestId('header-totals')).toBeTruthy();
+  expect(meter().closest('header.rst-header')).not.toBeNull();
+  expect(screen.getByTestId('header-totals')).toBeTruthy();
 });
 
 it('RF-1003 RF-424 follows the run total that the page reads again at every model turn', async () => {
