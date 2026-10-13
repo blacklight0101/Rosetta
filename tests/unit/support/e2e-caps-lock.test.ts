@@ -1,4 +1,4 @@
-import { mkdtemp, rm, utimes } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -78,5 +78,53 @@ describe('e2e caps lock, a holder that is gone', () => {
 
     expect(next.waitedMs).toBeLessThan(200);
     await next.release();
+  });
+});
+
+describe('e2e caps lock, the takeover gate', () => {
+  let root: string;
+  let folder: string;
+  let gate: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'rosetta-caps-lock-'));
+    folder = join(root, 'lock');
+    gate = `${folder}.takeover`;
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('RF-1106 a takeover waits while another waiter holds the takeover gate', async () => {
+    await acquireCapsLock(folder);
+    const old = new Date(Date.now() - 60_000);
+    await utimes(folder, old, old);
+    await mkdir(gate);
+    let taken = false;
+    const pending = acquireCapsLock(folder, { staleAfterMs: 30_000 }).then((lock) => {
+      taken = true;
+      return lock;
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(taken).toBe(false);
+    await rm(gate, { recursive: true, force: true });
+    const lock = await pending;
+
+    expect(lock.waitedMs).toBeGreaterThanOrEqual(300);
+    await lock.release();
+  });
+
+  it('RF-1106 a takeover gate left by a dead waiter is itself taken over', async () => {
+    await acquireCapsLock(folder);
+    const old = new Date(Date.now() - 60_000);
+    await utimes(folder, old, old);
+    await mkdir(gate);
+    await utimes(gate, old, old);
+
+    const lock = await acquireCapsLock(folder, { staleAfterMs: 30_000 });
+
+    expect(lock.waitedMs).toBeLessThan(5000);
+    await lock.release();
   });
 });
