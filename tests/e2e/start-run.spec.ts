@@ -167,3 +167,73 @@ test('RF-1001 an invalid address is refused next to the field with its code and 
   await expect(page.getByTestId('run-notice')).toHaveCount(0);
   await expectNoSeriousViolations(page);
 });
+
+test('RF-1001 an address the account already has opens that project and makes no second one', async ({
+  page,
+}) => {
+  const webformsUrl = 'https://github.com/octo/webforms';
+  await page.goto('/projects');
+  const webforms = page.getByRole('link', { name: 'Start run for octo/webforms' });
+  if ((await webforms.count()) === 0) {
+    await page.getByLabel('GitHub repository URL').fill(webformsUrl);
+    await page.getByRole('button', { name: 'Create project' }).click();
+    await expect(webforms).toBeVisible();
+  }
+  await openStartPage(page);
+  const demoId = projectIdOf(page);
+
+  await page.getByLabel('GitHub repository URL').fill(webformsUrl);
+  await page.getByRole('button', { name: 'Resolve' }).click();
+
+  await expect(page).not.toHaveURL(new RegExp(`/projects/${demoId}/start$`, 'u'));
+  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
+  await expect(page.getByText('octo/webforms', { exact: true })).toBeVisible();
+  await page.goto('/projects');
+  await expect(page.getByRole('row').filter({ hasText: 'octo/webforms' })).toHaveCount(1);
+});
+
+test('RF-425 an unknown estimate query parameter is refused with a message that names it', async ({
+  page,
+}) => {
+  await openStartPage(page);
+  const path = `/api/projects/${projectIdOf(page)}/estimate?areas[]=Catalog`;
+
+  const answer = await page.evaluate(async (url) => {
+    const response = await fetch(url);
+    return { status: response.status, body: await response.text() };
+  }, path);
+
+  expect(answer.status).toBe(400);
+  expect(answer.body).toContain('RST-2000');
+  expect(answer.body).toContain('Unknown query parameter \\"areas[]\\"');
+});
+
+test('RF-1001 a run cap below the confirm threshold is refused before the request; a lower threshold lets it start', async ({
+  page,
+}) => {
+  // The reader runs on OpenAI since the consent test, and the test server holds no OpenAI key.
+  await openStartPage(page);
+  await expect(page.getByTestId('server-key-note')).toContainText(
+    "OpenAI runs on the server's key",
+  );
+  await page.getByLabel(consent).check();
+  const threshold = page.getByLabel('Ask before a run estimated above (USD)');
+  await expect(threshold).toHaveValue('0.25');
+
+  await page.getByLabel('Run cap (USD)').fill('0.10');
+  await page.getByRole('button', startButton).click();
+
+  await expect(threshold).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByText(/must not be above the run cap/u)).toBeVisible();
+  await expect(page.getByTestId('run-notice')).toHaveCount(0);
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+  await threshold.fill('0.05');
+  await page.getByRole('button', startButton).click();
+
+  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+  await page.reload();
+  await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.10');
+  await expect(threshold).toHaveValue('0.05');
+});

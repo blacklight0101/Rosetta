@@ -5,19 +5,34 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
 import type { CapWarning } from '../lib/cap-warnings.js';
-import { dollars, percentOf, pricedTotal } from '../lib/estimate-math.js';
+import { dollars, percentOf, pricedTotal, unpricedRoles } from '../lib/estimate-math.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { EstimateTable } from './EstimateTable.js';
+import { ServerKeyNote } from './ServerKeyNote.js';
 
-// RF-425, RF-1001, DEC-71, DEC-108, design-system.md section 14 (Start run): the estimate card. The
-// run cap is editable here, with a meter of the likely cost against it and a marker at the high
-// estimate; a warning names every cap the likely estimate is over, and Start stays available.
+// RF-425, RF-1001, DEC-71, DEC-108, DEC-117, design-system.md section 14 (Start run): the estimate
+// card. The run cap is editable here, with a meter of the likely cost against it and a marker at the
+// high estimate (a model without a price is named as left out of both); the confirm threshold
+// stands beside it, since it may not be above the cap. A warning names every cap the likely
+// estimate is over, and Start stays available. A role on the server's key says that the run may be
+// refused (ServerKeyNote.tsx).
+
+interface FieldError {
+  readonly code?: string;
+  readonly message: string;
+}
 
 interface CapField {
   readonly text: string;
   readonly capMicros: bigint;
-  readonly error: { readonly code?: string; readonly message: string } | undefined;
+  readonly error: FieldError | undefined;
   readonly onInput: (text: string) => void;
+  /** `budget.confirmAboveCostMicros` in dollars, which may not be above the cap (DEC-117). */
+  readonly threshold: {
+    readonly text: string;
+    readonly error: FieldError | undefined;
+    readonly onInput: (text: string) => void;
+  };
 }
 
 export interface EstimateSectionProps {
@@ -36,6 +51,7 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: bigint 
   const high = pricedTotal(estimate, 'high');
   const used = percentOf(likely, cap);
   const mark = Math.min(100, percentOf(high, cap));
+  const unpriced = unpricedRoles(estimate).map((role) => `${role.provider} / ${role.model}`);
   return (
     <div class="rst-start__meter">
       <div
@@ -55,7 +71,11 @@ function CapMeter(props: { readonly estimate: RunEstimate; readonly cap: bigint 
       </div>
       <p id={hintId} class="rst-settings__note">
         Likely {dollars(likely)} is {used}% of the cap; the marker shows the high estimate,{' '}
-        {dollars(high)}. The run stops before any call that could pass the cap.
+        {dollars(high)}.
+        {unpriced.length === 0
+          ? ''
+          : ` Each leaves out ${unpriced.join(', ')}, which has no price, so the cost may be higher.`}{' '}
+        The run stops before any call that could pass the cap.
       </p>
     </div>
   );
@@ -74,6 +94,40 @@ function Warnings({ warnings }: { readonly warnings: readonly CapWarning[] }): J
         </div>
       ))}
     </div>
+  );
+}
+
+/** The run cap with its meter, and the confirm threshold beside it (DEC-117). */
+function CapFields(props: { readonly cap: CapField; readonly estimate: RunEstimate }): JSX.Element {
+  const { cap, estimate } = props;
+  return (
+    <>
+      <div class="rst-start__cap">
+        <Field
+          kind="text"
+          id="run-cap"
+          label="Run cap (USD)"
+          value={cap.text}
+          error={cap.error}
+          describedBy={hintId}
+          announce={false}
+          onInput={cap.onInput}
+        />
+        <CapMeter estimate={estimate} cap={cap.capMicros} />
+      </div>
+      <div class="rst-start__threshold">
+        <Field
+          kind="text"
+          id="confirm-above"
+          label="Ask before a run estimated above (USD)"
+          help="It may not be above the run cap; lower it with the cap."
+          value={cap.threshold.text}
+          error={cap.threshold.error}
+          announce={false}
+          onInput={cap.threshold.onInput}
+        />
+      </div>
+    </>
   );
 }
 
@@ -107,20 +161,9 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
   if (estimate.status === 'none') return <p class="rst-settings__note">No estimate yet.</p>;
   return (
     <>
-      <div class="rst-start__cap">
-        <Field
-          kind="text"
-          id="run-cap"
-          label="Run cap (USD)"
-          value={cap.text}
-          error={cap.error}
-          describedBy={hintId}
-          announce={false}
-          onInput={cap.onInput}
-        />
-        <CapMeter estimate={estimate.estimate} cap={cap.capMicros} />
-      </div>
+      <CapFields cap={cap} estimate={estimate.estimate} />
       <Warnings warnings={warnings} />
+      <ServerKeyNote estimate={estimate.estimate} />
       <EstimateTable estimate={estimate.estimate} />
     </>
   );

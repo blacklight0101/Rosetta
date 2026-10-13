@@ -25,10 +25,14 @@ const accountSchema = z.object({
 
 export type Account = z.output<typeof accountSchema>;
 
-/** An account of `GET /api/admin/users`, with its projects and its month-to-date cost. */
+/**
+ * An account of `GET /api/admin/users`, with its projects, its month-to-date cost and whether it may
+ * use the server's keys (RF-1104).
+ */
 const listedAccountSchema = accountSchema.extend({
   projects: z.number().int(),
   monthToDate: z.array(money),
+  serverKeysAllowed: z.boolean(),
 });
 
 export type ListedAccount = z.output<typeof listedAccountSchema>;

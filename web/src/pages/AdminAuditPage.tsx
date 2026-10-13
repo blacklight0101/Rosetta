@@ -4,22 +4,18 @@ import { listAudit, type AuditQuery } from '../api/admin.js';
 import type { AuditEvent, AuditPage, ListedAccount } from '../api/admin-schemas.js';
 import type { ApiFailure } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
-import { Button } from '../components/Button.js';
 import { EmptyState } from '../components/EmptyState.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Field } from '../components/Field.js';
 import { Glyph } from '../components/Glyph.js';
 import { secondsText } from './admin-format.js';
-import { auditActions } from './audit-actions.js';
-import { CapBanner } from './CapBanner.js';
+import { AuditFilters, noFilters, periodText } from './AuditFilters.js';
 import { useAdminOverview } from './use-admin-overview.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1109, design-system.md section 14 (administration: audit): the last 30 days of the audit
-// trail, newest first, filtered by user and action. The actor and the target of a row are shown by
-// user name. Passwords and keys are never recorded, so there is nothing of them to show.
-
-const noFilters: AuditQuery = { userId: '', action: '' };
+// trail, newest first, filtered by user, action, period and outcome (AuditFilters.tsx). The actor
+// and the target of a row are shown by user name. Passwords and keys are never recorded, so there
+// is nothing of them to show. The cap banner is the shell's (SignedInShell.tsx).
 
 type Loaded =
   | { readonly status: 'loading' }
@@ -95,10 +91,14 @@ function plural(count: number): string {
   return `${String(count)} ${count === 1 ? 'event' : 'events'}`;
 }
 
-function Events(props: { readonly page: AuditPage; readonly users: readonly ListedAccount[] }) {
-  const { page, users } = props;
+function Events(props: {
+  readonly page: AuditPage;
+  readonly users: readonly ListedAccount[];
+  readonly days: string;
+}) {
+  const { page, users, days } = props;
   if (page.events.length === 0) {
-    return <EmptyState message="No events match these filters in the last 30 days." />;
+    return <EmptyState message={`No events match these filters in ${periodText(days)}.`} />;
   }
   return (
     <>
@@ -124,55 +124,10 @@ function Events(props: { readonly page: AuditPage; readonly users: readonly List
       </ScrollRegion>
       <p class="rst-settings__note">
         {page.truncated
-          ? `Showing the newest ${plural(page.events.length)} of the last 30 days. Narrow the filters to see older ones.`
+          ? `Showing the newest ${plural(page.events.length)} of ${periodText(days)}. Narrow the filters to see older ones.`
           : `Showing ${plural(page.events.length)} · newest first`}
       </p>
     </>
-  );
-}
-
-function Filters(props: {
-  readonly query: AuditQuery;
-  readonly users: readonly ListedAccount[];
-  readonly onChange: (query: AuditQuery) => void;
-}): JSX.Element {
-  const { query, users, onChange } = props;
-  return (
-    <section class="rst-card rst-audit__filters" aria-label="Filters">
-      <Field
-        kind="select"
-        id="audit-user"
-        label="User"
-        value={query.userId}
-        options={[
-          { value: '', label: 'All users' },
-          ...users.map((user) => ({ value: user.id, label: user.userName })),
-        ]}
-        onChange={(userId) => {
-          onChange({ ...query, userId });
-        }}
-      />
-      <Field
-        kind="select"
-        id="audit-action"
-        label="Action"
-        value={query.action}
-        options={[
-          { value: '', label: 'All actions' },
-          ...auditActions.map((action) => ({ value: action, label: action })),
-        ]}
-        onChange={(action) => {
-          onChange({ ...query, action });
-        }}
-      />
-      <Button
-        onClick={() => {
-          onChange(noFilters);
-        }}
-      >
-        Clear filters
-      </Button>
-    </section>
   );
 }
 
@@ -182,7 +137,7 @@ function AuditView(props: { readonly users: readonly ListedAccount[] }): JSX.Ele
   const loaded = useAuditEvents(query);
   return (
     <>
-      <Filters query={query} users={users} onChange={setQuery} />
+      <AuditFilters query={query} users={users} onChange={setQuery} />
       <section class="rst-card rst-audit__events">
         {loaded.status === 'loading' ? (
           <p class="rst-loading" role="status">
@@ -190,7 +145,9 @@ function AuditView(props: { readonly users: readonly ListedAccount[] }): JSX.Ele
           </p>
         ) : null}
         {loaded.status === 'failed' ? <ErrorBanner error={loaded.error} /> : null}
-        {loaded.status === 'ready' ? <Events page={loaded.page} users={users} /> : null}
+        {loaded.status === 'ready' ? (
+          <Events page={loaded.page} users={users} days={query.days} />
+        ) : null}
       </section>
     </>
   );
@@ -201,9 +158,6 @@ export function AdminAuditPage(): JSX.Element {
   const { overview } = useAdminOverview();
   return (
     <div class="rst-settings rst-admin">
-      {overview.status === 'ready' ? (
-        <CapBanner spent={overview.serverSpent} caps={overview.caps} />
-      ) : null}
       <div>
         <h1 class="rst-page__title">Audit</h1>
         <p class="rst-settings__lead">

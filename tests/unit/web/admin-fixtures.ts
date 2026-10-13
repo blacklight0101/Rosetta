@@ -25,6 +25,7 @@ export function accountBody(
     lastSignInAt: '2026-10-11T14:01:00.000Z',
     projects: 0,
     monthToDate: [],
+    serverKeysAllowed: true,
     ...patch,
   };
 }

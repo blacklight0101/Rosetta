@@ -1,11 +1,11 @@
 import { expect, test } from './support/fixtures.js';
-import { expectNoSeriousViolations } from './support/axe.js';
 import { e2eContactEmail } from './support/server-config.js';
 import { seededUser, signInAs } from './support/sign-in.js';
 
-// RF-1200, RF-1201, RNF-010, P1-15: the public landing page at `/`. It runs in every project of
-// playwright.config.ts (1280 and 360 px wide, light and dark), so it is checked at both viewports
-// and in both colour schemes against the running server, with JavaScript on and off.
+// RF-1200, RF-1201, RNF-010, P1-15: the public landing page at `/`, against the running server, with
+// JavaScript on and off. The behaviour is checked once (desktop-light); the colour scheme in every
+// project (@visual), Sign in inside the 360 px screen in phone-light too (@phone), and axe and the
+// sideways scroll in the visual sweep (tests/e2e/visual/sweep-public.spec.ts).
 
 const backgrounds = { light: 'rgb(244, 246, 246)', dark: 'rgb(13, 20, 19)' } as const;
 
@@ -93,28 +93,20 @@ test.describe('landing page replay and theme', () => {
     await expect(page.locator('.swap-a').first()).toHaveCSS('opacity', '0');
   });
 
-  test('RNF-010 follows the colour scheme of the browser', async ({ page }, info) => {
-    const scheme = info.project.use.colorScheme === 'dark' ? 'dark' : 'light';
+  test(
+    'RNF-010 follows the colour scheme of the browser',
+    { tag: '@visual' },
+    async ({ page }, info) => {
+      const scheme = info.project.use.colorScheme === 'dark' ? 'dark' : 'light';
 
-    await expect(page.locator('body')).toHaveCSS('background-color', backgrounds[scheme]);
-  });
+      await expect(page.locator('body')).toHaveCSS('background-color', backgrounds[scheme]);
+    },
+  );
 });
 
-test.describe('landing page accessibility and layout', () => {
+test.describe('landing page load', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-  });
-
-  test('RNF-010 has no serious or critical accessibility violation', async ({ page }) => {
-    await expectNoSeriousViolations(page);
-  });
-
-  test('RNF-010 never scrolls sideways', async ({ page }) => {
-    const overflow: unknown = await page.evaluate(
-      'document.documentElement.scrollWidth - document.documentElement.clientWidth',
-    );
-
-    expect(Number(overflow)).toBeLessThanOrEqual(0);
   });
 
   test('RF-1200 loads without a console error or a policy violation', async ({ page }) => {
@@ -133,23 +125,26 @@ test.describe('landing page accessibility and layout', () => {
 test.describe('landing page without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('RF-1200 shows the whole page and keeps Sign in inside the screen', async ({
-    page,
-    viewport,
-  }) => {
-    await page.goto('/');
-    const signIn = page.getByRole('banner').getByRole('link', { name: 'Sign in' });
+  test(
+    'RF-1200 shows the whole page and keeps Sign in inside the screen',
+    { tag: '@phone' },
+    async ({ page, viewport }) => {
+      await page.goto('/');
+      const signIn = page.getByRole('banner').getByRole('link', { name: 'Sign in' });
 
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('legacy code');
-    await expect(page.getByText('Sample run', { exact: true })).toBeVisible();
-    await expect(page.getByRole('list', { name: 'Pipeline' }).getByRole('listitem')).toHaveCount(6);
-    await expect(page.getByRole('region', { name: 'Cited lines' })).toBeVisible();
-    await expect(signIn).toBeVisible();
-    const box = await signIn.boundingBox();
-    expect((box?.x ?? 0) + (box?.width ?? Number.POSITIVE_INFINITY)).toBeLessThanOrEqual(
-      viewport?.width ?? 0,
-    );
-  });
+      await expect(page.getByRole('heading', { level: 1 })).toContainText('legacy code');
+      await expect(page.getByText('Sample run', { exact: true })).toBeVisible();
+      await expect(page.getByRole('list', { name: 'Pipeline' }).getByRole('listitem')).toHaveCount(
+        6,
+      );
+      await expect(page.getByRole('region', { name: 'Cited lines' })).toBeVisible();
+      await expect(signIn).toBeVisible();
+      const box = await signIn.boundingBox();
+      expect((box?.x ?? 0) + (box?.width ?? Number.POSITIVE_INFINITY)).toBeLessThanOrEqual(
+        viewport?.width ?? 0,
+      );
+    },
+  );
 
   test('RF-1200 still reaches the sign-in page with a click', async ({ page }) => {
     await page.goto('/');
@@ -159,14 +154,16 @@ test.describe('landing page without JavaScript', () => {
     await expect(page).toHaveURL(/\/sign-in$/);
   });
 
-  test('RNF-010 follows the colour scheme of the browser without a script', async ({
-    page,
-  }, info) => {
-    await page.goto('/');
-    const scheme = info.project.use.colorScheme === 'dark' ? 'dark' : 'light';
+  test(
+    'RNF-010 follows the colour scheme of the browser without a script',
+    { tag: '@visual' },
+    async ({ page }, info) => {
+      await page.goto('/');
+      const scheme = info.project.use.colorScheme === 'dark' ? 'dark' : 'light';
 
-    await expect(page.locator('body')).toHaveCSS('background-color', backgrounds[scheme]);
-  });
+      await expect(page.locator('body')).toHaveCSS('background-color', backgrounds[scheme]);
+    },
+  );
 });
 
 test.describe('landing page for a signed-in visitor', () => {
