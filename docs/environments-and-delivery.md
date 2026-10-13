@@ -118,7 +118,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 |---|---|---|
 | Type check | `npm run typecheck` (`tsc --noEmit`) | yes |
 | Lint, zero warnings | `npm run lint` (`eslint . --max-warnings 0`) | yes |
-| Format | `npm run format:check` (`prettier --check .`) | yes |
+| Format | `npm run format:check` (`prettier --check --cache --cache-strategy content .`) | yes |
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
 | Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; on Linux with a database also the Playwright e2e project, after `npx playwright install --with-deps chromium`) | yes |
@@ -138,6 +138,18 @@ gate above; the `verify (windows-latest)` job runs only `npm run test:ci`. Type 
 dead-code checks give the same answer on both operating systems, so running them twice bought nothing; the tests are
 what catches path, line-ending and process differences. Both job names stay the same, because both are required
 checks.
+
+**Caches** (added 2026-10-13), each through `actions/cache` pinned like every other action:
+
+- *Prettier*: `format:check` keeps a content cache in `node_modules/.cache/prettier`. Prettier's cache holds a result
+  per file content and options, so the Linux `verify` job restores the newest cache for the same lockfile and
+  Prettier configuration (`restore-keys`) and saves a new one on every run.
+- *Playwright browsers*: every job that installs Chromium caches `~/.cache/ms-playwright` under the installed
+  `@playwright/test` version. On a hit the job runs only `npx playwright install-deps chromium` (the system
+  packages, which the runner does not keep); on a miss it runs `npx playwright install --with-deps chromium`.
+- *No ESLint cache.* ESLint's cache keys each file on its own content, but the type-aware rules of the
+  configuration also read the files it imports: a change in one file can create an error in another that the cache
+  then reports as clean. Lint therefore always runs in full.
 
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
