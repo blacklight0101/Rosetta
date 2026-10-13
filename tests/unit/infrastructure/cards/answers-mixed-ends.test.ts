@@ -99,6 +99,31 @@ describe('answers.md with mixed line ends', () => {
   });
 });
 
+describe('answers.md with a CRLF section between LF sections', () => {
+  it('RF-1007 an answer added to a CRLF section in the middle takes its CRLF, and a later LF section stays as it is', async () => {
+    const text =
+      '# Answers to open questions\n\n' +
+      '## OQ-001 - Is a sold-out item shown?\n' +
+      `- Card: runs/${run}/cards/OQ/OQ-001.md\n` +
+      '- Context: Catalog/Default.aspx.cs:1-4 stock\n' +
+      '- Answer: Yes, greyed.\n\n' +
+      '## OQ-002 - Who may edit prices?\r\n\r\n' +
+      `- Card: runs/${run}/cards/OQ/OQ-002.md\r\n` +
+      '- Context: Catalog/Default.aspx.cs:5-8 prices\r\n\r\n' +
+      '## OQ-003 - Who may cancel an order?\n\n' +
+      `- Card: runs/${run}/cards/OQ/OQ-003.md\n` +
+      '- Context: Orders/Cancel.aspx.cs:1-9 cancel\n' +
+      '- Answer:\n';
+    const { writer, answers } = setup(text);
+
+    await answers.recordAnswers(project, run, [{ cardId: 'OQ-002', answer: 'Managers.' }]);
+
+    expect(writer.files.get(path)).toBe(
+      text.replace('5-8 prices\r\n', '5-8 prices\r\n- Answer: Managers.\r\n'),
+    );
+  });
+});
+
 describe('answers.md with mixed line ends, appended to', () => {
   it('RF-240 an append keeps the file byte for byte and uses the end of its last line', async () => {
     const { writer, answers } = setup(mixed);
