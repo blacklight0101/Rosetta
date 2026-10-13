@@ -2,8 +2,8 @@ import type { Browser, Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.js';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { clientAddressFor } from '../support/client-address.js';
-import { createProject, repositories } from '../support/journey-pages.js';
-import { startAndOpenLiveRun } from '../support/live-run-page.js';
+import { repositories } from '../support/journey-pages.js';
+import { ensureProject, startAndOpenLiveRun } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { e2eOrigin } from '../support/server-config.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
@@ -51,7 +51,7 @@ test('RF-1105 a second user finds nothing of the first one project or run', asyn
   const files = await other.goto(`${runPath}/files/scan-summary.md`);
   expect(files?.status()).toBe(404);
   await other.goto('/projects');
-  await createProject(other, repositories.demo);
+  await ensureProject(other, repositories.demo);
   await expect(other.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
   await other.context().close();
 

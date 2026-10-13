@@ -11,7 +11,8 @@
     "tests/e2e/settings-daily-cap.spec.ts",
     "tests/e2e/sign-in.spec.ts",
     "tests/e2e/smoke.spec.ts",
-    "tests/e2e/visual/sweep-admin.spec.ts"
+    "tests/e2e/visual/sweep-admin.spec.ts",
+    "tests/e2e/shared-account.spec.ts"
   ],
   "2": [
     "tests/e2e/admin-audit.spec.ts",

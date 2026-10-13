@@ -8,18 +8,35 @@ import { expect } from './fixtures.js';
 const webformsUrl = 'https://github.com/octo/webforms';
 const startButton = { name: /^Start run/u } as const;
 
+/** The start link of the project of a repository address on the projects page. */
+export function startLinkOf(page: Page, url: string): Locator {
+  return page.getByRole('link', { name: `Start run for ${new URL(url).pathname.slice(1)}` });
+}
+
+/**
+ * Makes sure the account has the project of a repository address, creating it when it has not.
+ * Two tests of one account can run at once and both see the empty list. The second creation is
+ * refused and its page keeps the empty list, so the list is read again until the project shows
+ * (P1-150); the same holds when the first creation is still in flight.
+ */
+export async function ensureProject(page: Page, url: string): Promise<void> {
+  const link = startLinkOf(page, url);
+  const empty = page.getByText('No projects yet');
+  await expect(link.or(empty).or(page.getByRole('table')).first()).toBeVisible();
+  if ((await link.count()) > 0) return;
+  await page.getByLabel('GitHub repository URL').fill(url);
+  await page.getByRole('button', { name: 'Create project' }).click();
+  await expect(async () => {
+    await page.goto('/projects');
+    await expect(link).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 30_000 });
+}
+
 /** Opens the start page of the account's `octo/webforms` project, creating the project once. */
 export async function openStartPage(page: Page): Promise<void> {
   await page.goto('/projects');
-  const link = page.getByRole('link', { name: 'Start run for octo/webforms' });
-  const empty = page.getByText('No projects yet');
-  await expect(link.or(empty).first()).toBeVisible();
-  if (await empty.isVisible()) {
-    await page.getByLabel('GitHub repository URL').fill(webformsUrl);
-    await page.getByRole('button', { name: 'Create project' }).click();
-    await expect(link).toBeVisible();
-  }
-  await link.click();
+  await ensureProject(page, webformsUrl);
+  await startLinkOf(page, webformsUrl).click();
   await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
 }

@@ -13,9 +13,13 @@ import { e2ePort } from './server-config.js';
 /** The tag of a test that writes the server-wide caps. */
 export const capsTag = '@caps';
 
-/** The lock of this run (one run per port). */
+/**
+ * The lock of this run: keyed by the run key that global-setup.ts sets, so a run killed while it
+ * held the lock leaves a folder that no later run looks at (P1-150).
+ */
 export function capsLockFolder(): string {
-  return join(tmpdir(), `rosetta-e2e-caps-lock-${String(e2ePort())}`);
+  const run = process.env['ROSETTA_E2E_RUN_KEY'] ?? 'unkeyed';
+  return join(tmpdir(), `rosetta-e2e-caps-lock-${String(e2ePort())}-${run}`);
 }
 
 const POLL_MS = 100;
@@ -37,13 +41,27 @@ export interface CapsLockOptions {
   readonly clock?: Clock;
 }
 
+const CREATE_ATTEMPTS = 5;
+const CREATE_RETRY_MS = 100;
+
+function codeOf(error: unknown): unknown {
+  return error instanceof Error && 'code' in error ? error.code : undefined;
+}
+
 async function tryTake(folder: string): Promise<boolean> {
-  try {
-    await mkdir(folder);
-    return true;
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'EEXIST') return false;
-    throw new Error('The caps lock folder could not be created.', { cause: error });
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await mkdir(folder);
+      return true;
+    } catch (error) {
+      if (codeOf(error) === 'EEXIST') return false;
+      // Windows refuses a create with EPERM for a moment after a removal; the lock is retried, not failed.
+      if (codeOf(error) === 'EPERM' && attempt < CREATE_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, CREATE_RETRY_MS));
+        continue;
+      }
+      throw new Error('The caps lock folder could not be created.', { cause: error });
+    }
   }
 }
 
