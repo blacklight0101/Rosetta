@@ -120,7 +120,9 @@ describe('GET /api/projects/:id/estimate refuses', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
   });
+});
 
+describe('GET /api/projects/:id/estimate refuses unknown parameters', () => {
   it.each(['?areas[]=Catalog', '?area=Catalog', '?areas=Catalog&stage=understand'])(
     'RF-425 an unknown query parameter (%s) is refused with RST-2000 and names the parameter',
     async (query) => {

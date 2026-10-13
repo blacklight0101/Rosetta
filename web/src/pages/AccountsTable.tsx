@@ -5,9 +5,10 @@ import { StatusBadge } from '../components/StatusBadge.js';
 import { costText, signInText } from './admin-format.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
-// RF-1102, RF-1105, design-system.md section 14 (administration: users): every account with its
-// role, state, last sign-in, projects and month-to-date cost, and the actions. The own account
-// offers none: an administrator never disables or resets themselves (RST-2213).
+// RF-1102, RF-1104, RF-1105, design-system.md section 14 (administration: users): every account
+// with its role, state, last sign-in, projects, month-to-date cost and whether it may use the
+// server's keys, and the actions on one line. The own account offers none: an administrator never
+// disables or resets themselves (RST-2213).
 
 export interface AccountsTableProps {
   readonly users: readonly ListedAccount[];
@@ -26,7 +27,7 @@ function RowActions(props: RowProps): JSX.Element | null {
   const change = user.state === 'Disabled' ? 'enable' : 'disable';
   const word = change === 'enable' ? 'Enable' : 'Disable';
   return (
-    <div class="rst-table__actions">
+    <div class="rst-admin__actions">
       <Button
         ariaLabel={`Open workspace of ${user.userName}`}
         onClick={() => {
@@ -73,7 +74,8 @@ function AccountRow(props: RowProps): JSX.Element {
       <td>{signInText(user.lastSignInAt)}</td>
       <td class="rst-table__num">{user.projects}</td>
       <td class="rst-table__num">{costText(user.monthToDate)}</td>
-      <td class="rst-table__actions-cell">
+      <td>{user.serverKeysAllowed ? 'allowed' : 'not allowed'}</td>
+      <td>
         <RowActions {...props} />
       </td>
     </tr>
@@ -98,6 +100,7 @@ export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Eleme
             <th scope="col" class="rst-table__num">
               Month to date
             </th>
+            <th scope="col">Server keys</th>
             <th scope="col">
               <span class="rst-visually-hidden">Actions</span>
             </th>

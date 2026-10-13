@@ -15,14 +15,15 @@ const users = [
   accountBody('u-2', 'test2', { displayName: 'Former tester', serverKeysAllowed: false }),
 ];
 
+const noEvents = json(200, { since: '2026-09-11T00:00:00.000Z', truncated: false, events: [] });
+
 const base: Readonly<Record<string, Answer>> = {
   'GET /api/admin/users': json(200, { users }),
   'GET /api/admin/caps': json(200, cap('500000', '1000000', '10000000')),
-  'GET /api/admin/audit': json(200, {
-    since: '2026-09-11T00:00:00.000Z',
-    truncated: false,
-    events: [],
-  }),
+  'GET /api/admin/audit': noEvents,
+  'GET /api/admin/audit?days=7': noEvents,
+  'GET /api/admin/audit?days=7&outcome=refused': noEvents,
+  'GET /api/admin/audit?days=1': noEvents,
 };
 
 function accountsTable(): HTMLElement {

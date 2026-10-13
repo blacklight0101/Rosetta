@@ -126,7 +126,9 @@ function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
 
     expect(listed.map((row) => row.at)).toEqual([3, 2].map(minutesAfterStart));
   });
+}
 
+function outcomeTests(name: string, fresh: () => Promise<AuditLog>): void {
   it(`RF-1109 ${name} lists the rows of one outcome`, async () => {
     const audit = await fresh();
     await audit.record(event({ at: minutesAfterStart(1), outcome: 'ok' }));
@@ -213,6 +215,7 @@ function maskingAndFilterTests(name: string, fresh: () => Promise<AuditLog>): vo
 export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): void {
   recordingTests(name, fresh);
   listingTests(name, fresh);
+  outcomeTests(name, fresh);
   nulTests(name, fresh);
   maskingAndFilterTests(name, fresh);
 }

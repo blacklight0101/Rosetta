@@ -56,7 +56,8 @@ export class MemoryAuditLog implements AuditLog {
       ({ event, action }) =>
         event.at.getTime() >= filter.since &&
         (filter.actorUserId === undefined || event.actorUserId === filter.actorUserId) &&
-        (filter.action === undefined || action === filter.action),
+        (filter.action === undefined || action === filter.action) &&
+        (filter.outcome === undefined || event.outcome === filter.outcome),
     );
     const newestFirst = matching.sort(
       (left, right) =>

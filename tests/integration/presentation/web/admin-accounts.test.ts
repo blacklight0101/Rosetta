@@ -258,7 +258,9 @@ describe('GET /api/admin/audit', () => {
     expect(all.body).not.toContain(resetTo);
     expect(all.body).not.toContain(initial);
   });
+});
 
+describe('GET /api/admin/audit period and outcome', () => {
   it('RF-1109 narrows the list to a period and an outcome', async () => {
     const { admin } = await setup();
     await post(admin, '/api/admin/users', newUser);

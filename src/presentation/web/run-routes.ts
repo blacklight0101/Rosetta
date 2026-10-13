@@ -17,6 +17,7 @@ import { EventStream, type StreamRegistry } from './event-stream.js';
 import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
 import { registerRunFileRoutes, type RunFileServices } from './run-file-routes.js';
 import { signedInOf } from './request-actor.js';
+import { parseEstimateQuery } from './estimate-query.js';
 import { estimateView } from './estimate-view.js';
 import { runView } from './run-view.js';
 
@@ -27,8 +28,9 @@ import { runView } from './run-view.js';
 //   one whose roles need the consent and lack it answers 400 (RST-1515, RF-143).
 // - GET /api/projects/:id/estimate gives the estimate of an understand run (RF-425): tokens and cost
 //   per role as low, likely and high, with the assumptions. `areas` (repeated) names the areas to
-//   estimate; one the code map does not have answers 400 (RST-1307), a project without a completed
-//   scan 409 (RST-1203), another user's project 404.
+//   estimate; one the code map does not have answers 400 (RST-1307), any other query parameter 400
+//   (RST-2000, estimate-query.ts), a project without a completed scan 409 (RST-1203), another
+//   user's project 404.
 // - GET /api/runs/:runId gives the run as the start answered it (stage, queue and end state, project,
 //   totals so far): the live run page reads it for a run that has no event yet. Another user's run
 //   id answers 404 like an unknown one.
@@ -69,14 +71,6 @@ const startBody = z.strictObject({
   stage: z.enum(RUN_STAGES),
   areas: z.array(areaName).max(MAX_AREAS).optional(),
   cloudConsent: z.boolean().optional(),
-});
-
-/** RF-425: `?areas=A&areas=B`; a single `areas=A` arrives as a string. */
-const estimateQuery = z.object({
-  areas: z
-    .union([areaName, z.array(areaName).max(MAX_AREAS)])
-    .optional()
-    .transform((areas) => (typeof areas === 'string' ? [areas] : areas)),
 });
 
 interface EventsRequest {
@@ -244,9 +238,7 @@ function registerEstimate(server: FastifyInstance, services: RunServices): void 
     '/api/projects/:id/estimate',
     { config: { access: 'user' } },
     async (request, reply) => {
-      const query = estimateQuery.safeParse(request.query);
-      if (!query.success) throw new RosettaError(ERROR_CODES.requestInvalid);
-      const { areas } = query.data;
+      const areas = parseEstimateQuery(request.query);
       const outcome = await services.estimateRun.execute({
         actor: signedInOf(request).actor,
         projectId: request.params.id,
