@@ -151,6 +151,21 @@ checks.
   configuration also read the files it imports: a change in one file can create an error in another that the cache
   then reports as clean. Lint therefore always runs in full.
 
+**Documentation-only pull requests** (added 2026-10-13). A first job, `changes`, compares the pull request with its
+base using plain git (`git diff --name-only base...head`, full history, no third-party action) and sets
+`code=false` only when every changed file is documentation: `*.md` anywhere or anything under `docs/`, except files
+under `src/`, `tests/` or `prompts/` (the prompts are Markdown the product reads). A push to `main` always counts as
+code. The jobs `verify`, `e2e-shard`, `image` and `compose-smoke` always run and need `changes`; when `code` is not
+`true` their heavy steps are skipped by a step-level `if:`, never a job-level one, because a skipped matrix job
+reports an unexpanded name and the required checks `verify (ubuntu-latest)` and `verify (windows-latest)` would
+never arrive. The `e2e` check stays green, since shards whose steps were skipped still succeed. For a
+documentation-only change the Linux `verify` job still runs `npm run format:check` and the tests that read the
+documents: `tests/integration/docs/`, the workflow tests, `release-schema.test.ts` (against `data-model.md`),
+`status-badge.test.tsx` (against `architecture.md`) and `tokens.test.ts` (against `docs/design/tokens.css`);
+`workflow-docs-only.test.ts` fails when a test that reads `docs/` is missing from that list. `audit`, `gitleaks`,
+`dependency-review` and `pr-title` run as before. The `changes` job is not a required check: if it fails, the
+jobs that need it do not run and the required checks stay missing, so the pull request cannot merge.
+
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
 version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm

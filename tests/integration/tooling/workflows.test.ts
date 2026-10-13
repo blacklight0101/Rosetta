@@ -31,9 +31,9 @@ describe('GitHub Actions workflows: files', () => {
   it('RNF-001 Linux runs every gate of verify and Windows runs only the tests', async () => {
     const text = await ci();
 
-    expect(text).toMatch(/if: runner\.os == 'Linux'\n\s+run: npm run verify\n/u);
-    expect(text).toMatch(/if: runner\.os == 'Windows'\n\s+run: npm run test:ci\n/u);
-    expect(text).not.toMatch(/if: runner\.os == 'Windows'\n\s+run: npm run verify/u);
+    expect(text).toMatch(/if: runner\.os == 'Linux'[^\n]*\n\s+run: npm run verify\n/u);
+    expect(text).toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run test:ci\n/u);
+    expect(text).not.toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run verify/u);
     expect(text).toContain('name: verify (${{ matrix.os }})');
   });
 
@@ -163,7 +163,7 @@ describe('GitHub Actions workflows: compose smoke job', () => {
   it('RNF-003 removes the stack and its volumes even when a step failed, and writes the .env at run time', async () => {
     const text = await smoke();
 
-    expect(text).toMatch(/if: always\(\)\n\s+run: docker compose [^\n]*down -v/u);
+    expect(text).toMatch(/if: always\(\)[^\n]*\n\s+run: docker compose [^\n]*down -v/u);
     expect(text).toContain('openssl rand');
     expect(text).toContain('> .env');
   });
