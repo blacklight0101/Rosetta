@@ -22,7 +22,14 @@ const passing = (file: string, count: number): ReportFile => ({
   statuses: Array.from({ length: count }, () => 'passed' as const),
 });
 
-async function writeReport(root: string, files: readonly ReportFile[]): Promise<string> {
+const oneHour = 60 * 60 * 1000;
+
+// Writes a report whose run started at `startTime` (epoch ms), as Vitest's JSON reporter does.
+async function writeReport(
+  root: string,
+  files: readonly ReportFile[],
+  startTime: number = Date.now(),
+): Promise<string> {
   const testResults = files.map(({ file, statuses }) => ({
     name: join(root, file),
     status: 'passed',
@@ -33,7 +40,7 @@ async function writeReport(root: string, files: readonly ReportFile[]): Promise<
     })),
   }));
   const path = join(root, 'vitest-report.json');
-  await writeFile(path, JSON.stringify({ testResults }));
+  await writeFile(path, JSON.stringify({ startTime, testResults }));
   return path;
 }
 
@@ -97,6 +104,68 @@ describe('scripts/test-levels.mjs', () => {
     expect(result.code).toBe(1);
     expect(result.stderr).toMatch(/counted zero tests/u);
   });
+});
+
+describe('scripts/test-levels.mjs guards', () => {
+  const tmp = useTempRoot('rosetta-levels-guard-');
+
+  it('RNF-005 fails when the Vitest report has zero tests even if Playwright specs have tests', async () => {
+    const folder = join(tmp.path, 'tests', 'e2e');
+    await mkdir(folder, { recursive: true });
+    await writeFile(join(folder, 'smoke.spec.ts'), "test('RNF-005 browser', async () => {});");
+    const report = await writeReport(tmp.path, []);
+
+    const result = await runScript(['--report', report, tmp.path]);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toMatch(/counted zero tests/u);
+  });
+
+  it('RNF-005 refuses a Vitest report left by an earlier run and says why', async () => {
+    const twoHoursAgo = Date.now() - 2 * oneHour;
+    const report = await writeReport(tmp.path, [passing('tests/unit/a.test.ts', 2)], twoHoursAgo);
+
+    const result = await runScript(['--report', report, tmp.path]);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toMatch(/is stale/u);
+    expect(result.stderr).toMatch(/run the tests again/u);
+  });
+
+  it('RNF-005 accepts a Vitest report from the current run', async () => {
+    const report = await writeReport(
+      tmp.path,
+      [passing('tests/unit/a.test.ts', 2)],
+      Date.now() - 1000,
+    );
+
+    const result = await runScript(['--report', report, tmp.path]);
+
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('Unit 2 / Integration 0 / E2E 0');
+  });
+});
+
+describe('scripts/test-levels.mjs report shape', () => {
+  const tmp = useTempRoot('rosetta-levels-shape-');
+
+  it.each([
+    ['is missing', {}],
+    ['is a string', { startTime: '1700000000000' }],
+    ['is null', { startTime: null }],
+  ])('RNF-005 refuses a Vitest report whose startTime %s', async (_label, startTime) => {
+    const report = join(tmp.path, 'no-start-time.json');
+    await writeFile(report, JSON.stringify({ ...startTime, testResults: [] }));
+
+    const result = await runScript(['--report', report, tmp.path]);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toMatch(/no startTime/u);
+  });
+});
+
+describe('scripts/test-levels.mjs option', () => {
+  const tmp = useTempRoot('rosetta-levels-option-');
 
   it('RNF-005 fails and names the option when no Vitest report is given', async () => {
     const result = await runScript([tmp.path]);

@@ -126,7 +126,10 @@ conflict visibly; the codes already shown on the design board are reserved there
 - `npm run test:levels` (and the level step of `npm run test:ci`) counts the Vitest tests that ran, from the run's JSON
   report (`test-results/vitest.json`): every passed or failed test counts once, so each `it.each` row counts, and a
   contract suite from `tests/contracts/` counts at the level of the test file that runs it; a test that ran outside
-  the three level folders fails the report. Playwright specs are counted from their source (P1-61).
+  the three level folders fails the report. Playwright specs are counted from their source (P1-61). The zero-test
+  guard looks at the Vitest report alone, so Playwright specs cannot make an empty Vitest run pass. A report whose
+  `startTime` is more than an hour old is refused as stale, and a report without a numeric `startTime` is refused as
+  not a Vitest JSON report (P1-117).
 - **Test names start with the requirement id** they prove, then the behaviour (ADR-010):
   `it('RF-422 stops the run when the next call would exceed the cap', ...)`. Tests for internal helpers name the
   requirement their caller serves.

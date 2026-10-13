@@ -15,6 +15,8 @@ const levels = [
 ];
 const tolerance = 10;
 const executed = new Set(['passed', 'failed']);
+// A Vitest report older than this is left by an earlier run: its startTime is the start of that run.
+const maxReportAgeMs = 60 * 60 * 1000;
 
 // A Playwright declaration is test(...) or test.<modifier>(...); skipped and todo tests are not
 // counted, nor are the members of Playwright's test that declare no test (describe, fail, fixme,
@@ -75,7 +77,21 @@ async function readReport(path) {
     Array.isArray(files) &&
     files.every((file) => typeof file?.name === 'string' && Array.isArray(file.assertionResults));
   if (!valid) fail(`${path} is not a Vitest JSON report (no testResults).`);
-  return files;
+  if (typeof report.startTime !== 'number') {
+    fail(`${path} is not a Vitest JSON report (no startTime).`);
+  }
+  return report;
+}
+
+// A report whose run started more than an hour ago does not belong to this check: refuse it.
+function checkFresh(path, report) {
+  const ageMs = Date.now() - report.startTime;
+  if (ageMs > maxReportAgeMs) {
+    const minutes = Math.round(ageMs / 60000);
+    fail(
+      `${path} is stale: its run started ${String(minutes)} minutes ago, so it is not from this run; run the tests again.`,
+    );
+  }
 }
 
 // The level of a test file is the folder under tests/; a file elsewhere has no level (DEC-30).
@@ -129,9 +145,12 @@ function report(counts) {
 
 async function main() {
   const { report: reportPath, root } = parseArguments(process.argv.slice(2));
-  const counts = countReport(root, await readReport(reportPath));
-  counts[2] += await countPlaywrightSpecs(root);
+  const vitestReport = await readReport(reportPath);
+  checkFresh(reportPath, vitestReport);
+  const counts = countReport(root, vitestReport.testResults);
+  // The zero-test guard looks at the Vitest report only: Playwright specs run in a later step.
   if (counts.every((count) => count === 0)) fail('the run counted zero tests (RNF-005, DEC-30).');
+  counts[2] += await countPlaywrightSpecs(root);
   report(counts);
 }
 
