@@ -60,6 +60,11 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 | Cost control | **Estimate, hard caps, live meter, price table, cost report** | Logging only |
 | Builders | **Claude agents build, the owner reviews** | The owner codes by hand |
 
+## Milestone hand-in (2026-10-26)
+
+- Slides URL: [PENDIENTE: URL de las diapositivas]. Source: [docs/hand-in/slides/slides.md](docs/hand-in/slides/slides.md) (Spanish).
+- Video URL: [PENDIENTE: URL del vídeo]. Script: [docs/hand-in/video-script.md](docs/hand-in/video-script.md) (Spanish, about 5 minutes).
+
 ## Read the documents in this order
 
 1. [docs/rfc/RFC-001-rosetta.md](docs/rfc/RFC-001-rosetta.md) - the design proposal: problem, goals and non-goals, alternatives, proposed design, phases, success metrics.
