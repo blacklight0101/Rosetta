@@ -1,0 +1,238 @@
+/* API calls and logs page (P1-37, RF-1011, artboard ApiCalls.dc.html). Every class here starts with
+   rst-p137 so the page owns its styles; colours, spacing and type come from the tokens. */
+
+.rst-p137-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-4);
+  min-inline-size: 0;
+}
+
+.rst-p137-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+}
+
+.rst-p137-title__key {
+  color: var(--rst-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.rst-p137-title__spacer {
+  flex: 1 1 auto;
+}
+
+.rst-p137-live-link {
+  margin: 0;
+}
+
+.rst-p137-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-p137-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+}
+
+.rst-p137-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p137-filters .rst-field {
+  flex: 1 1 9rem;
+  min-inline-size: 0;
+}
+
+/* Errors and retries: a tinted row, never colour alone (the badge and the code say it too) */
+
+.rst-p137-row--problem {
+  background: var(--rst-danger-bg);
+}
+
+.rst-p137-row[aria-current='true'] {
+  outline: 2px solid var(--rst-focus);
+  outline-offset: -2px;
+}
+
+.rst-p137-code {
+  color: var(--rst-danger-ink);
+}
+
+.rst-p137-errors {
+  color: var(--rst-danger-ink);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-p137-errors__detail {
+  margin-inline-start: var(--rst-sp-2);
+}
+
+/* The selected call and its transcript */
+
+.rst-p137-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--rst-sp-3);
+  margin: 0;
+  padding: var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-2);
+}
+
+.rst-p137-fact dt {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-p137-fact dd {
+  margin: 0;
+  font-weight: var(--rst-fw-label);
+  overflow-wrap: anywhere;
+}
+
+.rst-p137-messages {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-p137-message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-1);
+  padding-block: var(--rst-sp-3);
+  border-block-end: 1px solid var(--rst-rule);
+}
+
+.rst-p137-message:last-child {
+  border-block-end: 0;
+}
+
+.rst-p137-message__role {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-label);
+  text-transform: uppercase;
+}
+
+.rst-p137-message__text,
+.rst-p137-message__tool {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.rst-p137-message__tool {
+  color: var(--rst-ink-soft);
+}
+
+/* The Logs panel */
+
+.rst-p137-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2);
+}
+
+.rst-p137-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-1);
+  min-block-size: 28px;
+  padding: 0 var(--rst-sp-3);
+  border: 1px solid var(--rst-rule-strong);
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-surface);
+  color: var(--rst-ink-soft);
+  font: inherit;
+  font-size: var(--rst-fs-xs);
+  cursor: pointer;
+}
+
+.rst-p137-toggle[aria-pressed='true'] {
+  border-color: var(--rst-brand);
+  background: var(--rst-brand);
+  color: var(--rst-brand-ink);
+}
+
+.rst-p137-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.rst-p137-toggle--security {
+  margin-inline-start: auto;
+}
+
+.rst-p137-entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-p137-entry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--rst-sp-3);
+  padding-block: 5px;
+  border-block-end: 1px solid var(--rst-rule);
+}
+
+.rst-p137-entry__time {
+  flex: 0 0 6rem;
+  color: var(--rst-ink-muted);
+}
+
+.rst-p137-entry__level {
+  flex: 0 0 3.5rem;
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-p137-entry__level--debug {
+  color: var(--rst-neutral-ink);
+}
+
+.rst-p137-entry__level--info {
+  color: var(--rst-info-ink);
+}
+
+.rst-p137-entry__level--warn {
+  color: var(--rst-warn-ink);
+}
+
+.rst-p137-entry__level--error {
+  color: var(--rst-danger-ink);
+}
+
+.rst-p137-entry__logger {
+  flex: 0 0 10rem;
+  color: var(--rst-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.rst-p137-entry__message {
+  flex: 1 1 18rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .rst-p137-entry__time,
+  .rst-p137-entry__level,
+  .rst-p137-entry__logger {
+    flex: 0 1 auto;
+  }
+}
