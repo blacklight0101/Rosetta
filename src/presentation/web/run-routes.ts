@@ -12,6 +12,7 @@ import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-r
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
+import { MAX_AREAS, MAX_AREA_NAME, START_BODY_LIMIT_BYTES } from './area-limits.js';
 import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
 import { EventStream, type StreamRegistry } from './event-stream.js';
 import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
@@ -57,12 +58,8 @@ export interface RunServices extends RunFileServices, AnswerServices, Observabil
   readonly streams: StreamRegistry;
 }
 
-const START_BODY_LIMIT_BYTES = 1024;
 const KEEP_ALIVE_MS = 15_000;
 const SEQ = /^\d{1,15}$/;
-
-const MAX_AREAS = 200;
-const MAX_AREA_NAME = 1024;
 
 const areaName = z.string().min(1).max(MAX_AREA_NAME);
 

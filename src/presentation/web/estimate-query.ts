@@ -2,14 +2,12 @@ import { z } from 'zod';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { FieldProblemsError } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { MAX_AREAS, MAX_AREA_NAME } from './area-limits.js';
 
 // RF-425, P1-107: the query of GET /api/projects/:id/estimate. `?areas=A&areas=B` names the areas;
 // a single `areas=A` arrives as a string. Any other parameter (`areas[]=A`, a misspelt `area=A`)
 // is refused with RST-2000 and a problem that names it, instead of being ignored, so a caller never
 // gets the estimate of every area while believing it asked for fewer.
-
-const MAX_AREAS = 200;
-const MAX_AREA_NAME = 1024;
 
 const areaName = z.string().min(1).max(MAX_AREA_NAME);
 
