@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import { sampleAccount } from '../../../support/account-fixtures.js';
+import { fixtureNow, sampleAccount } from '../../../support/account-fixtures.js';
 import { newProjectSettings, settingsWith } from '../../../support/project-fixtures.js';
 import { amy, bob, projectHarness, root } from '../../../support/project-harness.js';
 
@@ -244,18 +244,34 @@ describe('OpenWorkspace', () => {
       ip: '203.0.113.9',
     });
 
-    expect(outcome.ok && outcome.value.projects).toHaveLength(1);
-    expect(outcome.ok && outcome.value.owner.userName).toBe('amy');
-    const [event, ...rest] = await test.audit.list({ since: 0 });
-    expect(rest).toEqual([]);
-    expect(event).toMatchObject({
-      actorUserId: root.userId,
-      action: 'admin.workspace_opened',
-      targetType: 'user',
-      targetId: amy.userId,
-      ip: '203.0.113.9',
-      outcome: 'ok',
-      detail: { projects: 1 },
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        owner: { id: amy.userId, userName: 'amy', displayName: 'Amy' },
+        projects: await test.projects.list(amy.userId),
+      },
     });
+    expect(await test.audit.list({ since: 0 })).toEqual([
+      {
+        id: '1',
+        at: new Date(fixtureNow),
+        actorUserId: root.userId,
+        action: 'admin.workspace_opened',
+        targetType: 'user',
+        targetId: amy.userId,
+        ip: '203.0.113.9',
+        outcome: 'ok',
+        detail: { projects: 1 },
+      },
+    ]);
+    expect(test.logger.records).toEqual([
+      {
+        level: 'info',
+        logger: 'accounts',
+        message: 'An administrator opened a workspace.',
+        userId: root.userId,
+        data: { ownerId: amy.userId },
+      },
+    ]);
   });
 });
