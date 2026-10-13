@@ -39,16 +39,20 @@ async function requireFrontEnd(): Promise<void> {
 }
 
 // P1-35: `octo/webforms` is the C# fixture repository, whose recorded understand run the live run
-// page journeys replay (e2e-provider.ts).
-async function webformsRepository(): Promise<ConstructorParameters<typeof FakeGitHub>[0][number]> {
+// page journeys replay (e2e-provider.ts). P1-46: `octo/ledger` is the COBOL fixture, a language
+// without a pack (RF-112), whose reads the answering provider takes like those of `octo/demo`.
+async function folderRepository(
+  repo: string,
+  folder: string,
+): Promise<ConstructorParameters<typeof FakeGitHub>[0][number]> {
   return {
     owner: 'octo',
-    repo: 'webforms',
+    repo,
     defaultBranch: 'main',
     refs: { main: FIXTURE_SHA },
     archive: await archiveOfFolder(
-      join('tests', 'fixtures', 'repos', 'webforms-csharp'),
-      `octo-webforms-${FIXTURE_SHA.slice(0, 7)}`,
+      join('tests', 'fixtures', 'repos', folder),
+      `octo-${repo}-${FIXTURE_SHA.slice(0, 7)}`,
     ),
     licence: 'MIT',
   };
@@ -56,7 +60,8 @@ async function webformsRepository(): Promise<ConstructorParameters<typeof FakeGi
 
 async function demoGitHub(): Promise<FakeGitHub> {
   return new FakeGitHub([
-    await webformsRepository(),
+    await folderRepository('webforms', 'webforms-csharp'),
+    await folderRepository('ledger', 'cobol-ledger'),
     {
       owner: 'octo',
       repo: 'demo',

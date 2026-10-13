@@ -560,6 +560,11 @@ policy and `referrer` of no-referrer (RF-1013); repository and model text is esc
 `https://github.com/` stay links (RF-507). The server serves these five files as pages, styles and scripts; every other
 file of a run folder is text or a download.
 
+Contents (RF-112). Besides the run facts, the documents and the cards, both report pages list the areas of the code map with
+their map level, `coarse` or `symbols`, the value `scan-summary.md` shows. They come from the run's own scan, or for an
+understand run from the newest scan of its project that ended `Completed`; a report built without such a scan (none, or
+its output is gone) has no areas section. Area names are repository text and are escaped like the other repository text.
+
 Writing the report. Each of the five files is written to a temporary name and renamed over its final name, so a file
 is always whole or absent and never half written. The set of files is not written atomically: a build that fails
 part-way (RST-1701) can leave some files new and the others from an earlier build (for example a new `report.html`

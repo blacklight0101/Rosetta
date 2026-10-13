@@ -56,6 +56,18 @@ function documentLines(model: ReportModel): string[] {
   ];
 }
 
+function areaLines(model: ReportModel, esc: MarkdownEscaper): string[] {
+  if (model.areas.length === 0) return [];
+  return [
+    '## Areas',
+    '',
+    '| Area | Map level |',
+    '|---|---|',
+    ...model.areas.map((area) => `| ${esc.inline(area.name)} | ${area.mapLevel} |`),
+    '',
+  ];
+}
+
 function cardRow(card: ReportCard, esc: MarkdownEscaper): string {
   const id = esc.label(card.id);
   const link = card.path === '' ? id : `[${id}](../${card.path})`;
@@ -94,6 +106,7 @@ export function renderReportMarkdown(model: ReportModel, masker: TextMasker): st
     '',
     ...documentLines(model),
     '',
+    ...areaLines(model, esc),
     '## Cards',
     '',
     ...cardLines(model, esc),
