@@ -65,7 +65,17 @@ jobs:
         run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
         shell: bash
       # The Playwright project runs in the sharded e2e jobs below, in parallel with this one.
-      - run: npm run verify
+      - name: Every gate (npm run verify)
+        if: runner.os == 'Linux'
+        run: npm run verify
+        env:
+          ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
+          ROSETTA_E2E_OWN_JOB: '1'
+      # Windows runs only the tests: typecheck, lint, format, arch and deadcode do not depend on the
+      # operating system and run in the Linux job; the tests catch path and line-ending differences.
+      - name: Tests only (the other gates run on Linux)
+        if: runner.os == 'Windows'
+        run: npm run test:ci
         env:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
           ROSETTA_E2E_OWN_JOB: '1'

@@ -84,6 +84,15 @@ describe('GitHub Actions workflows: files', () => {
     expect(text).toContain('run: npm run verify');
   });
 
+  it('RNF-001 Linux runs every gate of verify and Windows runs only the tests', async () => {
+    const text = await ci();
+
+    expect(text).toMatch(/if: runner\.os == 'Linux'\n\s+run: npm run verify\n/u);
+    expect(text).toMatch(/if: runner\.os == 'Windows'\n\s+run: npm run test:ci\n/u);
+    expect(text).not.toMatch(/if: runner\.os == 'Windows'\n\s+run: npm run verify/u);
+    expect(text).toContain('name: verify (${{ matrix.os }})');
+  });
+
   it('RNF-005 the Linux job installs Chromium before verify runs the end-to-end project', async () => {
     const text = await ci();
     const install = text.indexOf('npx playwright install --with-deps chromium');

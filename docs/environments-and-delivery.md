@@ -133,6 +133,12 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 
 `npm run verify` runs the first six checks locally in the same order; builders and the verifier run it on every card.
 
+**Windows runs the tests only** (added 2026-10-13). The `verify (ubuntu-latest)` job runs `npm run verify`, every
+gate above; the `verify (windows-latest)` job runs only `npm run test:ci`. Type check, lint, format, architecture and
+dead-code checks give the same answer on both operating systems, so running them twice bought nothing; the tests are
+what catches path, line-ending and process differences. Both job names stay the same, because both are required
+checks.
+
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
 version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm
