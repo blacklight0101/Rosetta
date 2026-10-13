@@ -63,7 +63,7 @@ function logEntriesWith(h: UnderstandHarness, code: ErrorCode) {
 function nextStepOf(h: UnderstandHarness, code: ErrorCode): string {
   const entries = logEntriesWith(h, code);
   expect(entries).toHaveLength(1);
-  const next = entries[0]?.data?.nextStep;
+  const next = entries[0]?.data?.['nextStep'];
   return typeof next === 'string' ? next : '';
 }
 
