@@ -538,8 +538,9 @@ The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question 
 names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
 line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
 never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
-and writes to one project's file run one after another. A file saved with CRLF line ends is read like one with LF, and the
-answers written into it keep CRLF.
+and writes to one project's file run one after another. A file saved with CRLF or lone CR (old Mac) line ends, or with a
+byte-order mark before its first line, is read like one with LF; the answers and the sections appended to it use the
+file's own line end, and the mark is kept (P1-126).
 
 ### 3.17 Report and hand-off folders
 
