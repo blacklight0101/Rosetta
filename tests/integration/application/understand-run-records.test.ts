@@ -9,6 +9,7 @@ import {
   fullUnderstandRun,
   readJson,
   UNDERSTAND_TIMEOUT,
+  useSharedFullRun,
 } from '../../support/understand-full-run.js';
 import { createUnderstandHarness } from '../../support/understand-run-harness.js';
 
@@ -17,10 +18,12 @@ import { createUnderstandHarness } from '../../support/understand-run-harness.js
 // workspace; and the runs that stop before any call.
 
 const temp = useTempRoot('rosetta-understand-records-');
+// The tests that only read a run share this one; the snapshot test and the early stops keep their own.
+const full = useSharedFullRun('rosetta-understand-shared-');
 
-describe('an understand run: cost and prompts', UNDERSTAND_TIMEOUT, () => {
+describe('an understand run: cost and prompts', () => {
   it('RF-426 writes cost.json and cost.md from the ledger rows of the run', async () => {
-    const { folder } = await fullUnderstandRun(temp.path);
+    const { folder } = full.current();
 
     expect(await readJson(join(folder, 'cost.json'))).toMatchObject({
       totals: { calls: 8, inputTokens: 8800, outputTokens: 1090 },
@@ -37,7 +40,7 @@ describe('an understand run: cost and prompts', UNDERSTAND_TIMEOUT, () => {
   });
 
   it('RNF-004 records the reader prompt files with their versions and hashes', async () => {
-    const { h, run } = await fullUnderstandRun(temp.path);
+    const { h, run } = full.current();
 
     const manifest = await h.manifestOf(run);
     expect(Object.keys(manifest.promptVersions)).toEqual([
@@ -53,9 +56,9 @@ describe('an understand run: cost and prompts', UNDERSTAND_TIMEOUT, () => {
   });
 });
 
-describe('an understand run: events', UNDERSTAND_TIMEOUT, () => {
+describe('an understand run: events', () => {
   it('RF-1002 publishes the plan, every turn and tool call, the cards, the citation checks and each end', async () => {
-    const { h, run } = await fullUnderstandRun(temp.path);
+    const { h, run } = full.current();
 
     const events = await h.eventsOf(run);
     const count = (type: string): number => events.filter((event) => event.type === type).length;
@@ -82,7 +85,7 @@ describe('an understand run: events', UNDERSTAND_TIMEOUT, () => {
   });
 
   it('RF-1004 the citation check of a claim carries its text and cited lines, with the reason when it fails', async () => {
-    const { h, run } = await fullUnderstandRun(temp.path);
+    const { h, run } = full.current();
 
     const checks = (await h.eventsOf(run)).filter(
       (event) => event.type === 'verify.citation.checked',
@@ -104,9 +107,9 @@ describe('an understand run: events', UNDERSTAND_TIMEOUT, () => {
   });
 });
 
-describe('an understand run: log entries', UNDERSTAND_TIMEOUT, () => {
-  it("RF-1011 every log entry that names the run's key also names its owner", async () => {
-    const { h, run } = await fullUnderstandRun(temp.path);
+describe('an understand run: log entries', () => {
+  it("RF-1011 every log entry that names the run's key also names its owner", () => {
+    const { h, run } = full.current();
 
     const named = h.logger.entries.filter((entry) => entry.runId === run.runKey);
     expect(named.map((entry) => entry.message)).toContain('An agent task ended.');

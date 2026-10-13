@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
   agentEnded,
@@ -16,8 +16,12 @@ import { findAgentPanel, renderLive, runPath, valueOf } from './live-run-helpers
 // filling a buffer; a counter shows how many events wait; Resume applies them in order.
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
+
+// web/src/pages/use-pause-updates.ts: how long `Updates resumed` stays in the status.
+const RESUMED_NOTE_MS = 3000;
 
 const count = (): string => screen.getByTestId('pause-count').textContent;
 const logItems = (): HTMLElement[] =>
@@ -175,14 +179,19 @@ it('RF-1002 the stepper is held with the panels, so it never disagrees with them
 it('RF-1002 Updates resumed leaves the status after it was announced', async () => {
   await runningRun();
   const status = screen.getByTestId('run-status');
+  // Only the timers are faked, and only once the stream is connected, so the page loads in real time.
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   fireEvent.click(screen.getByRole('button', { name: 'Pause updates' }));
   fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
   expect(status.textContent).toContain('Updates resumed');
 
-  await waitFor(
-    () => {
-      expect(status.textContent).not.toContain('Updates resumed');
-    },
-    { timeout: 6000 },
-  );
-}, 10_000);
+  await act(() => {
+    vi.advanceTimersByTime(RESUMED_NOTE_MS - 1);
+  });
+  expect(status.textContent).toContain('Updates resumed');
+  await act(() => {
+    vi.advanceTimersByTime(1);
+  });
+
+  expect(status.textContent).not.toContain('Updates resumed');
+});

@@ -193,13 +193,19 @@ interface ReadParts {
 function waitUntilEnded(runs: MemoryRunIndex, log: JsonlEventLog): (run: Run) => Promise<Run> {
   return async (run) => {
     let latest: Run | undefined;
-    await vi.waitFor(async () => {
-      latest = await runs.find(run.userId, run.id);
-      if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
-      // The index records the end first; the manifest and `run.ended` follow.
-      const events = await log.read(scopeOf(latest), 0);
-      if (events.at(-1)?.type !== 'run.ended') throw new Error('The run has not published its end');
-    });
+    // 2 ms poll instead of the default 50 ms; the timeout stays at the 1 s default.
+    await vi.waitFor(
+      async () => {
+        latest = await runs.find(run.userId, run.id);
+        if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
+        // The index records the end first; the manifest and `run.ended` follow.
+        const events = await log.read(scopeOf(latest), 0);
+        if (events.at(-1)?.type !== 'run.ended') {
+          throw new Error('The run has not published its end');
+        }
+      },
+      { interval: 2 },
+    );
     if (latest === undefined) throw new Error('The run vanished');
     return latest;
   };
