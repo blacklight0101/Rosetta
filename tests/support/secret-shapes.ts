@@ -61,6 +61,13 @@ export const moreSecretCases: readonly ShapeCase[] = [
     secrets: [password],
   },
   {
+    name: 'an XML password element whose end tag is on the same line',
+    kind: 'password',
+    text: `<config><password>${password}</password><user>app</user></config>`,
+    masked: '<config><password>[MASKED:password]</password><user>app</user></config>',
+    secrets: [password],
+  },
+  {
     name: 'an XML password element with a prefix and an attribute',
     kind: 'password',
     text: `<db:SmtpPassword encrypted="false">${password} with spaces</db:SmtpPassword>`,
@@ -114,6 +121,9 @@ export const moreInnocentTexts: readonly string[] = [
   'Usage: login <user> <password>, then `<password>` again',
   'mysql -u root -p -D catalog',
   'mysql -P 3306 -u app catalog',
+  '# mysql is used in production -pretty much everywhere',
+  'We moved from mysql to postgres, -people say -pgsql is faster',
+  '<password>placeholder text\nthen </note> closes',
   'ask-1234567890123456789012345 finished',
   'sk_live_ is the prefix of a live key',
 ];

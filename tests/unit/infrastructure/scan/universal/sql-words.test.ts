@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cutAtWord,
   cutLine,
   statementText,
   statementWindow,
@@ -48,5 +49,37 @@ describe('cutting a long line', () => {
     const line = `${'b'.repeat(4000)} next`;
 
     expect(cutLine(line)).toBe('b'.repeat(4000));
+  });
+});
+
+describe('cutting inside an XML password element', () => {
+  // FAKE SECRETS ONLY (RNF-003): plain words, built from pieces.
+  const value = ['first', 'FAKE0FAKE0', 'third'].join(' ');
+  const opening = ['<pass', 'word>'].join('');
+  const closing = `</${opening.slice(1)}`;
+
+  it('RF-141 a cut between the opening tag and its end tag drops the open element with its value', () => {
+    const text = `<db>${opening}${value}${closing} <other/>`;
+    const cut = text.indexOf('FAKE0') + 2;
+
+    expect(cutAtWord(text, cut)).toBe('<db>');
+  });
+
+  it('RF-141 a cut on a later line leaves the lines before it alone', () => {
+    const text = `a\n<db>${opening}${value}${closing}`;
+
+    expect(cutAtWord(text, text.indexOf('FAKE0') + 2)).toBe('a\n<db>');
+  });
+
+  it('RF-141 an element whose end tag is in the kept text stays for the masker', () => {
+    const element = `${opening}${value}${closing}`;
+
+    expect(cutAtWord(`<db>${element} tail of the text`, element.length + 8)).toBe(`<db>${element}`);
+  });
+
+  it('RF-141 a placeholder tag in prose is kept', () => {
+    const text = `set ${opening} to a strong value`;
+
+    expect(cutAtWord(text, text.length - 3)).toBe(`set ${opening} to a strong`);
   });
 });
