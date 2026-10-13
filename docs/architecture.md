@@ -691,6 +691,12 @@ a language pack, two users). They sign in through the sign-in page and use the p
 accounts are seeded (`seed.ts`, kinds `journey-*`). The test server's fake GitHub also knows `octo/ledger`, the COBOL
 fixture, for the language-without-pack journey (RF-112).
 
+**Server key in the test server (P1-131).** `serve.ts` gives the test server a fake OpenAI key (`support/server-key.ts`, built
+from pieces, set in its environment only, never printed), so a user without a key of their own runs on the server key under
+the administrator's caps (RF-1106). `journeys/server-key-cap.spec.ts` saves a low run cap, runs, and puts the shared figures
+back in a `finally` (the caps are server-wide, so the window is kept short). Anthropic has no server key: specs that need a
+missing key use it.
+
 ## 18. Open architecture questions
 
 | Question | Link | Default |
