@@ -2,6 +2,7 @@ import type { ErrorCode, ErrorDescription } from './codes.js';
 import { ANTHROPIC_ERROR_DESCRIPTIONS, type AnthropicErrorCode } from './anthropic-descriptions.js';
 import { BUDGET_ERROR_DESCRIPTIONS, type BudgetErrorCode } from './budget-descriptions.js';
 import { FILE_ERROR_DESCRIPTIONS, type FileErrorCode } from './file-descriptions.js';
+import { REPORT_ERROR_DESCRIPTIONS, type ReportErrorCode } from './report-descriptions.js';
 import { SCAN_ERROR_DESCRIPTIONS, type ScanErrorCode } from './scan-descriptions.js';
 import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descriptions.js';
 
@@ -9,11 +10,17 @@ import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descri
 // codes themselves live in codes.ts (which imports nothing); a new code adds its entry here in
 // the same change, and describeError is the only way to read the table. The codes from RST-2000
 // on live in server-descriptions.ts, the file-system codes in file-descriptions.ts, the scan codes
-// in scan-descriptions.ts, the budget codes in budget-descriptions.ts and the Anthropic codes in
-// anthropic-descriptions.ts, so no file passes the size limit.
+// in scan-descriptions.ts, the budget codes in budget-descriptions.ts, the Anthropic codes in
+// anthropic-descriptions.ts and the report and export codes in report-descriptions.ts, so no file
+// passes the size limit.
 
 type SplitOff =
-  ServerErrorCode | FileErrorCode | BudgetErrorCode | ScanErrorCode | AnthropicErrorCode;
+  | ServerErrorCode
+  | FileErrorCode
+  | BudgetErrorCode
+  | ScanErrorCode
+  | AnthropicErrorCode
+  | ReportErrorCode;
 
 const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
   Record<Exclude<ErrorCode, SplitOff>, ErrorDescription>
@@ -175,10 +182,6 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Choose another provider for the role, or ask the operator to set it up (Ollama needs ROSETTA_OLLAMA_URL).',
   },
-  'RST-1700': {
-    message: 'This run is still in progress, so it cannot be downloaded yet.',
-    nextStep: 'Wait until the run has ended, then download it again.',
-  },
   'RST-1900': {
     message: 'The address is not a public GitHub repository URL.',
     nextStep:
@@ -226,6 +229,7 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   ...FILE_ERROR_DESCRIPTIONS,
   ...SCAN_ERROR_DESCRIPTIONS,
   ...BUDGET_ERROR_DESCRIPTIONS,
+  ...REPORT_ERROR_DESCRIPTIONS,
   ...SERVER_ERROR_DESCRIPTIONS,
 };
 

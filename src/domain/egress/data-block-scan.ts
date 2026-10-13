@@ -2,22 +2,29 @@ import { createCitation, type Citation } from '../cards/citation.js';
 import { err, ok, type Result } from '../errors/result.js';
 import {
   DATA_BLOCK_CLOSE,
-  DATA_BLOCK_FOOTER,
   DATA_BLOCK_LABEL,
   DATA_BLOCK_OPEN,
   DATA_BLOCK_SOURCES,
+  dataBlockFooter,
   holdsDataMarker,
+  holdsTag,
+  isDataBlockTag,
 } from './data-block.js';
 
 // RF-142, RF-145: reads the data blocks of a message back (see data-block.ts). A block is a header
-// line, content lines and a footer line. Anything that looks like a marker but is not a complete,
-// valid frame is refused, so content can neither close a block early nor forge one.
+// line with the block's tag, content lines and the footer line with the same tag; lines are cut at
+// `\n` only, as the marker matcher cuts them. A block ends only at the footer with its own tag.
+// Anything that looks like a marker but is not a complete, valid frame is refused, and so is a
+// block whose header or content holds its own tag, so content can neither close a block early nor
+// forge one.
 
 export interface DataBlockScan {
   /** How many well-formed blocks the text holds. */
   readonly blocks: number;
   /** The excerpts of every block, in order. */
   readonly excerpts: readonly Citation[];
+  /** The tag of every block, in order (DEC-129: each one fresh). */
+  readonly tags: readonly string[];
   /** Whether any non-blank text stands outside the blocks. */
   readonly textOutside: boolean;
   /**
@@ -69,18 +76,30 @@ function citationsOf(value: unknown): Citation[] | undefined {
   return citations;
 }
 
+interface Header {
+  readonly tag: string;
+  readonly excerpts: Citation[];
+}
+
 /**
- * The excerpts of a header line, or undefined when the line is not a valid header. A header
- * written by renderDataBlock holds no raw `<` or `>` and no path with a marker look-alike.
+ * The tag and excerpts of a header line, or undefined when the line is not a valid header. A
+ * header written by renderDataBlock is a well-formed tag and JSON that is printable ASCII with no
+ * raw `<` or `>` (so no look-alike of a frame bracket either), no path with a marker look-alike
+ * and no copy of the tag.
  */
-function headerExcerpts(line: string): Citation[] | undefined {
+function headerOf(line: string): Header | undefined {
   if (!line.startsWith(DATA_BLOCK_OPEN) || !line.endsWith(DATA_BLOCK_CLOSE)) return undefined;
-  const json = line.slice(DATA_BLOCK_OPEN.length, -DATA_BLOCK_CLOSE.length);
-  if (/[<>]/.test(json)) return undefined;
+  const rest = line.slice(DATA_BLOCK_OPEN.length, -DATA_BLOCK_CLOSE.length);
+  const space = rest.indexOf(' ');
+  const tag = rest.slice(0, Math.max(space, 0));
+  const json = rest.slice(space + 1);
+  if (!isDataBlockTag(tag) || holdsTag(json, tag)) return undefined;
+  if (/[<>]|[^\x20-\x7E]/.test(json)) return undefined;
   const header = parseJson(json);
   if (!isRecord(header) || header['label'] !== DATA_BLOCK_LABEL) return undefined;
   const known = DATA_BLOCK_SOURCES.some((source) => source === header['source']);
-  return known ? citationsOf(header['excerpts']) : undefined;
+  const excerpts = known ? citationsOf(header['excerpts']) : undefined;
+  return excerpts === undefined ? undefined : { tag, excerpts };
 }
 
 /** The scan so far: the lines between frames wait in `pending` until a frame or the end. */
@@ -89,17 +108,21 @@ interface ScanState {
   blocks: number;
   textOutside: boolean;
   readonly excerpts: Citation[];
+  readonly tags: string[];
   readonly parts: DataBlockPart[];
   pending: string[];
   /** The excerpts of the block the scan is inside. */
   current: readonly Citation[];
+  /** The tag of the block the scan is inside. */
+  tag: string;
 }
 
-/** Closes the pending lines as one part; refuses a marker in them. */
+/** Closes the pending lines as one part; refuses a marker, or the block's own tag, in them. */
 function flush(state: ScanState): boolean {
   if (state.pending.length === 0) return true;
   const text = state.pending.join('\n');
   if (holdsDataMarker(text)) return false;
+  if (state.inside && holdsTag(text, state.tag)) return false;
   if (!state.inside && text.trim() !== '') state.textOutside = true;
   state.parts.push({ frame: false, text, excerpts: state.inside ? state.current : [] });
   state.pending = [];
@@ -108,17 +131,19 @@ function flush(state: ScanState): boolean {
 
 /** Takes one line; false when the text cannot be a set of well-formed blocks. */
 function takeLine(state: ScanState, line: string): boolean {
-  const excerpts = state.inside ? undefined : headerExcerpts(line);
-  const footer = state.inside && line === DATA_BLOCK_FOOTER;
-  if (excerpts === undefined && !footer) {
+  const header = state.inside ? undefined : headerOf(line);
+  const footer = state.inside && line === dataBlockFooter(state.tag);
+  if (header === undefined && !footer) {
     state.pending.push(line);
     return true;
   }
   if (!flush(state)) return false;
   state.parts.push({ frame: true, text: line, excerpts: [] });
-  if (excerpts !== undefined) {
-    state.current = excerpts;
-    state.excerpts.push(...excerpts);
+  if (header !== undefined) {
+    state.current = header.excerpts;
+    state.tag = header.tag;
+    state.tags.push(header.tag);
+    state.excerpts.push(...header.excerpts);
     state.blocks += 1;
   }
   state.inside = !state.inside;
@@ -132,14 +157,16 @@ export function scanDataBlocks(content: string): Result<DataBlockScan, DataBlock
     blocks: 0,
     textOutside: false,
     excerpts: [],
+    tags: [],
     parts: [],
     pending: [],
     current: [],
+    tag: '',
   };
   for (const line of content.split('\n')) {
     if (!takeLine(state, line)) return err('malformed-block');
   }
   if (!flush(state) || state.inside) return err('malformed-block');
-  const { blocks, excerpts, textOutside, parts } = state;
-  return ok({ blocks, excerpts, textOutside, parts });
+  const { blocks, excerpts, tags, textOutside, parts } = state;
+  return ok({ blocks, excerpts, tags, textOutside, parts });
 }

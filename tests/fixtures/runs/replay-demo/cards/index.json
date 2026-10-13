@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "cards": [
+    {
+      "id": "BR-001",
+      "type": "BR",
+      "title": "<script>window.__pwned = 'script'</script> Order <b>checkout</b>",
+      "area": "orders",
+      "path": "cards/BR/BR-001.md",
+      "claimCounts": {
+        "Proposed": 0,
+        "CitationInvalid": 0,
+        "Supported": 1,
+        "Rejected": 0,
+        "Unverified": 0
+      }
+    }
+  ]
+}

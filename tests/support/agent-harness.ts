@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { runAgentTask } from '../../src/application/agent/agent-loop.js';
 import type { AgentTaskResult } from '../../src/application/agent/agent-task-result.js';
 import { ReadOnlyTools } from '../../src/application/agent/read-only-tools.js';
@@ -80,7 +81,7 @@ export async function runRecordedAgent(options: AgentRunOptions): Promise<AgentR
   let calls = 0;
   const result = await runAgentTask({
     provider: egress.guard,
-    tools: new ReadOnlyTools({ reader, codeMap, area, logger }),
+    tools: new ReadOnlyTools({ reader, codeMap, area, logger, ids: new SequenceIdGenerator() }),
     prompts: await loadReaderPrompts('prompts'),
     logger,
     settings: {

@@ -47,8 +47,9 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
  * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
  * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001), `live-run` watches
- * the runs of its own project on the live page (RF-1002) and `api-calls` reads the calls and logs of
- * its own run (RF-1011).
+ * the runs of its own project on the live page (RF-1002), `api-calls` reads the calls and logs of
+ * its own run (RF-1011) and `replay` owns a recorded run (seed-replay.ts) whose report and replay
+ * page it opens (RF-506).
  */
 export type E2eAccountKind =
   | 'keys'
@@ -62,7 +63,8 @@ export type E2eAccountKind =
   | 'start-run'
   | 'live-run'
   | 'api-calls'
-  | 'admin';
+  | 'admin'
+  | 'replay';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -77,6 +79,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'live-run',
   'api-calls',
   'admin',
+  'replay',
 ];
 
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {

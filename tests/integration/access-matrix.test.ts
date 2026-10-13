@@ -13,11 +13,10 @@ import {
   columns,
   everyone,
   ownerOnly,
-  routesOf,
   signedIn,
   type Column,
 } from '../support/access-columns.js';
-import { budgetRoutes, exportRoutes, type Context, type Probe } from '../support/access-probes.js';
+import { budgetRoutes, outputRoutes, type Context, type Probe } from '../support/access-probes.js';
 import { seedEndedRun } from '../support/call-fixtures.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
@@ -158,7 +157,7 @@ const matrix: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'POST', url: '/api/account/providers/test', expected: active(401, 200) },
   ],
   ...budgetRoutes,
-  ...exportRoutes,
+  ...outputRoutes,
   'GET /api/admin/users': [{ method: 'GET', url: '/api/admin/users', expected: adminOnly(200) }],
   'HEAD /api/admin/users': [{ method: 'HEAD', url: '/api/admin/users', expected: adminOnly(200) }],
   'POST /api/admin/users': [
@@ -256,6 +255,7 @@ async function browserFor(
   test.runs.executor.settle(ended.id, { endState: 'Completed' });
   await test.runs.ended(ended);
   await seedEndedRun(test, ended);
+  test.runFiles.seed(test.runs.scopeOf(ended), { 'manifest.json': '{}' });
   const running = await test.runs.start(owner);
   const context = {
     projectId: project.id,
@@ -278,7 +278,7 @@ describe('access matrix', () => {
     current = createTestServer({ staticRoot });
     await current.server.ready();
 
-    const routes = routesOf(current.server.printRoutes({ commonPrefix: false }));
+    const routes = current.routes();
 
     expect(routes).toEqual(Object.keys(matrix).sort());
   });

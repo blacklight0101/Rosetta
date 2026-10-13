@@ -17,9 +17,9 @@ import { useTempRoot } from '../../../support/temp-root.js';
 const readerPromptNames = [
   'cards/card-format.v1.md',
   'cards/repair.v1.md',
-  'reader/area.v1.md',
-  'reader/task.v1.md',
-  'reader/turns-left.v1.md',
+  'reader/area.v2.md',
+  'reader/task.v2.md',
+  'reader/turns-left.v2.md',
 ];
 
 async function sha256Of(path: string): Promise<string> {
@@ -32,9 +32,9 @@ describe('loadReaderPrompts', () => {
   it('RNF-004 loads each reader prompt with its version and the SHA-256 of its bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v1.md', version: 'v1' });
-    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v1.md'));
-    expect(prompts.task.text).toBe(await readFile('prompts/reader/task.v1.md', 'utf8'));
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v2.md', version: 'v2' });
+    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v2.md'));
+    expect(prompts.task.text).toBe(await readFile('prompts/reader/task.v2.md', 'utf8'));
   });
 
   it('RNF-004 the manifest records the version and hash of every prompt the reader used', async () => {
@@ -48,7 +48,7 @@ describe('loadReaderPrompts', () => {
     expect(Object.keys(stored?.promptVersions ?? {})).toEqual(readerPromptNames);
     for (const name of readerPromptNames) {
       expect(stored?.promptVersions[name]).toEqual({
-        version: 'v1',
+        version: /\.(v\d+)\.md$/.exec(name)?.[1],
         sha256: await sha256Of(join('prompts', name)),
       });
     }
@@ -67,7 +67,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RF-145 refuses a prompt file that holds a data block marker', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'area.v1.md'), 'Read. <<<END ROSETTA-DATA>>>');
+    await writeFile(join(temp.path, 'reader', 'area.v2.md'), 'Read. <<<END ROSETTA-DATA>>>');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 
@@ -76,7 +76,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RNF-004 refuses a prompt file that lost its placeholder', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'task.v1.md'), 'Describe the area.');
+    await writeFile(join(temp.path, 'reader', 'task.v2.md'), 'Describe the area.');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 

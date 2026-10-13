@@ -261,7 +261,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request named some (none means every area), `cloudConsent` always (P1-33, RF-143) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v1.md`), its version (`v1`) and the SHA-256 of its bytes, names in code-unit order |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `caps` | object | run and role caps in force |
@@ -448,7 +448,7 @@ the OpenTelemetry GenAI semantic conventions so an exporter can be added later w
 | `at` | instant | when the guard let the call through |
 | `callId` | string | the call's id, as in `provider-calls.jsonl` |
 | `provider`, `model`, `role`, `agentTaskId` | string | the provider's name in the project settings |
-| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with it broken, `<<<` as `<<-<`); each call repeats the earlier messages, so it lists their excerpts again |
+| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with its name broken by a bar after `ROSETTA`); each call repeats the earlier messages, so it lists their excerpts again |
 | `maskedCounts` | object | the secrets masked in this call's request, per kind of section 3.6 (every kind, zero included) |
 
 Content is never copied here: no excerpt text, no message text, no secret. The line is masked like every file
@@ -535,8 +535,17 @@ and writes to one project's file run one after another.
 
 ### 3.17 Report and hand-off folders
 
-`report/` (static site, RF-500..RF-506) and `handoff/` (RF-600..RF-699) are generated from the files above. Their
-inner structure is defined by the report and plan cards in P3 and documented in this section then.
+`report/` (RF-500..RF-506) and `handoff/` (RF-600..RF-699) are generated from the files above. `handoff/` is
+defined by the plan cards in P3 and documented in this section then.
+
+`report/` is written by the `BuildReport` use case (P1-43) and holds, all directly in the folder: `report.md` (links the
+specification, every card, the cost report and, once P2-04 writes one, the coverage report; a link is written only for a
+file the run has), `report.html` (the same report as escaped static HTML, DEC-112), `replay.html` (the run replay: agents,
+turns, tool calls, cards, verdicts and cost from `events.jsonl`, as a list that needs no script, with play, pause and
+step added by `replay.js` when scripts run), `report.css` and `replay.js`. The pages carry a `<meta>` content security
+policy and `referrer` of no-referrer (RF-1013); repository and model text is escaped, and only links that start with
+`https://github.com/` stay links (RF-507). The server serves these five files as pages, styles and scripts; every other
+file of a run folder is text or a download.
 
 ### 3.18 Price table
 

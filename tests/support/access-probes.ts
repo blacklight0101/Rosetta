@@ -73,6 +73,62 @@ export const budgetRoutes: Readonly<Record<string, readonly Probe[]>> = {
 const runUrl = (suffix: string, pick: (context: Context) => string) => (context: Context) =>
   `/api/runs/${pick(context)}${suffix}`;
 
+/** RF-008, RF-1105: the zip downloads answer the owner of a finished run, 409 while it runs. */
+const exportRoutes: Readonly<Record<string, readonly Probe[]>> = Object.fromEntries(
+  ['zip', 'handoff.zip'].map((name) => [
+    `GET /api/runs/:runId/${name}`,
+    [
+      { method: 'GET', url: runUrl(`/${name}`, (c) => c.endedRunId), expected: ownerOnly(200) },
+      { method: 'GET', url: runUrl(`/${name}`, (c) => c.runningRunId), expected: ownerOnly(409) },
+      { method: 'GET', url: () => `/api/runs/not-a-uuid/${name}`, expected: active(401, 404) },
+    ],
+  ]),
+);
+
+/** A page request: a visitor without a session is sent to sign in (302), not answered 401. */
+const pageOwnerOnly = (status: number) => ({
+  ...ownerOnly(status),
+  anonymous: 302,
+  mustChange: 302,
+});
+
+/**
+ * RF-504, RF-506, RF-1105: the report is built by the owner of a finished run (409 while it runs)
+ * and the files of a run folder are read by its owner only.
+ */
+const reportRoutes: Readonly<Record<string, readonly Probe[]>> = {
+  'POST /api/runs/:runId/report': [
+    {
+      method: 'POST',
+      url: runUrl('/report', (c) => c.endedRunId),
+      expected: ownerOnly(200),
+    },
+    {
+      method: 'POST',
+      url: runUrl('/report', (c) => c.runningRunId),
+      expected: ownerOnly(409),
+    },
+    { method: 'POST', url: () => '/api/runs/not-a-uuid/report', expected: active(401, 404) },
+  ],
+  'GET /runs/:runId/files/*': [
+    {
+      method: 'GET',
+      url: (c) => `/runs/${c.endedRunId}/files/manifest.json`,
+      expected: pageOwnerOnly(200),
+    },
+    {
+      method: 'GET',
+      url: (c) => `/runs/${c.endedRunId}/files/missing.json`,
+      expected: pageOwnerOnly(404),
+    },
+    {
+      method: 'GET',
+      url: () => '/runs/not-a-uuid/files/manifest.json',
+      expected: active(302, 404),
+    },
+  ],
+};
+
 const noAnswers = () => ({ answers: [] });
 
 /** RF-1007, RF-1105: the answers of a run answer only its owner. */
@@ -122,21 +178,10 @@ const observabilityRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ],
 };
 
-/**
- * RF-008, RF-1105: the zip downloads answer the owner of a finished run, 409 while it runs; with the
- * rows of the run's answers (RF-1007), which name a run the same way.
- */
-export const exportRoutes: Readonly<Record<string, readonly Probe[]>> = {
+/** RF-008, RF-504, RF-506, RF-1007, RF-1105: every route that reads or builds the output of a run. */
+export const outputRoutes: Readonly<Record<string, readonly Probe[]>> = {
+  ...exportRoutes,
+  ...reportRoutes,
   ...answerRoutes,
   ...observabilityRoutes,
-  ...Object.fromEntries(
-    ['zip', 'handoff.zip'].map((name) => [
-      `GET /api/runs/:runId/${name}`,
-      [
-        { method: 'GET', url: runUrl(`/${name}`, (c) => c.endedRunId), expected: ownerOnly(200) },
-        { method: 'GET', url: runUrl(`/${name}`, (c) => c.runningRunId), expected: ownerOnly(409) },
-        { method: 'GET', url: () => `/api/runs/not-a-uuid/${name}`, expected: active(401, 404) },
-      ],
-    ]),
-  ),
 };
