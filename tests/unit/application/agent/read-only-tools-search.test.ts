@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { cutNotice } from '../../../../src/infrastructure/files/read-refusals.js';
 import { agentFiles } from '../../../support/agent-fixtures.js';
 import { blockOf, toolsSetup } from '../../../support/agent-tools-harness.js';
 
@@ -102,11 +103,13 @@ describe('grep answers from the reader', () => {
   });
 
   it("RF-146 grep passes the reader's notice about cut lines on", async () => {
-    const { run } = toolsSetup();
+    const order = agentFiles['src/Orders/Order.cs'] ?? '';
+    const files = { ...agentFiles, 'src/Orders/Order.cs': `// ${'x'.repeat(2001)}\n${order}` };
+    const { run } = toolsSetup({}, files);
 
-    const outcome = await run('grep', { pattern: 'cut' });
+    const outcome = await run('grep', { pattern: 'public class' });
 
-    expect(blockOf(outcome.content).text).toContain('Lines were cut before the search.');
+    expect(blockOf(outcome.content).text).toContain(cutNotice);
   });
 });
 
