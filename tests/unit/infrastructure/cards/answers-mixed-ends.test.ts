@@ -89,6 +89,17 @@ describe('answers.md with mixed line ends', () => {
     expect(writer.files.get(path)).toBe(`${text}- Answer: Managers.\r\n`);
   });
 
+  it('RF-1007 an answer line added after a last line without an end takes the end before it', async () => {
+    const text = mixed.replace('5-8 prices\n', '5-8 prices');
+    const { writer, answers } = setup(text);
+
+    await answers.recordAnswers(project, run, [{ cardId: 'OQ-002', answer: 'Managers.' }]);
+
+    expect(writer.files.get(path)).toBe(`${text}\r\n- Answer: Managers.`);
+  });
+});
+
+describe('answers.md with mixed line ends, appended to', () => {
   it('RF-240 an append keeps the file byte for byte and uses the end of its last line', async () => {
     const { writer, answers } = setup(mixed);
 
