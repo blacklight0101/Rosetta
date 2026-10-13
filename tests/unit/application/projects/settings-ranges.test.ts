@@ -125,6 +125,10 @@ describe('parseProjectSettings: thresholds and edge cases of the budget (DEC-117
       { field: 'budget.run.maxCostMicros', code: ERROR_CODES.settingValueInvalid },
     ]);
   });
+});
+
+describe('parseProjectSettings: the threshold at the top of the cap (DEC-117)', () => {
+  const maxCost = 100_000_000;
 
   it('RF-002 a threshold of exactly 100 USD is accepted with a run cost cap of 100 USD', () => {
     const input = settingsWith({
