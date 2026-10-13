@@ -39,7 +39,7 @@ describe('history page rows', () => {
     }
     expect(live.getByText('196,102')).not.toBeNull();
     expect(live.getByText('$0.41')).not.toBeNull();
-    expect(within(table).getByText('Completed')).not.toBeNull();
+    expect(within(table).getAllByText('Completed')).toHaveLength(2);
     const capped = within(await rowOf(capKey));
     expect(capped.getByText('Cap reached')).not.toBeNull();
     expect(capped.getByText('$2.16')).not.toBeNull();
@@ -82,7 +82,7 @@ describe('history page rows, states', () => {
   it("RF-1105 shows the error and no table for another user's project", async () => {
     renderHistory({ [historyPath]: failure(404, 'RST-2003') });
 
-    expect(await screen.findByText(/RST-2003/u)).not.toBeNull();
+    expect((await screen.findByTestId('error-banner-code')).textContent).toBe('RST-2003');
     expect(screen.queryByRole('table')).toBeNull();
   });
 });
@@ -154,7 +154,7 @@ describe('deleting a run, confirmed', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete run' }));
 
-    expect(await screen.findByText(/RST-2306/u)).not.toBeNull();
+    expect((await screen.findByTestId('error-banner-code')).textContent).toBe('RST-2306');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(await rowOf(doneKey)).not.toBeNull();
   });

@@ -40,7 +40,7 @@ export async function projectFolderOf(page: Page): Promise<string> {
 }
 
 /** The folder of the test server's downloaded snapshots (serve.ts: `<tmp>/rosetta-e2e-<port>`). */
-export function sourcesFolder(): string {
+function sourcesFolder(): string {
   return join(tmpdir(), `rosetta-e2e-${String(e2ePort())}`, 'sources');
 }
 

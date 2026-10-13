@@ -76,16 +76,3 @@ test('RF-1012 disables Delete for the snapshot that a run in progress uses, with
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
 });
-
-test('RF-1102 sends a user who is not the administrator to the same refusal as any admin page', async ({
-  context,
-  page,
-}, info) => {
-  await context.clearCookies();
-  await signInAs(context, accountFor('history', info.project.name));
-
-  const response = await page.request.get('/api/admin/snapshots');
-
-  expect(response.status()).toBe(403);
-  expect(await response.text()).not.toContain('octo/');
-});

@@ -76,7 +76,7 @@ describe('snapshots table, states', () => {
   it('RF-1102 shows the refusal and no table to a user who is not the administrator', async () => {
     renderSnapshots({ [listPath]: failure(403, 'RST-2102') });
 
-    expect(await screen.findByText(/RST-2102/u)).not.toBeNull();
+    expect((await screen.findByTestId('error-banner-code')).textContent).toBe('RST-2102');
     expect(screen.queryByRole('table')).toBeNull();
   });
 });
@@ -121,7 +121,7 @@ describe('deleting a snapshot', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete snapshot' }));
 
-    expect(await screen.findByText(/RST-2306/u)).not.toBeNull();
+    expect((await screen.findByTestId('error-banner-code')).textContent).toBe('RST-2306');
     expect(screen.getByRole('button', { name: olderName })).not.toBeNull();
   });
 });

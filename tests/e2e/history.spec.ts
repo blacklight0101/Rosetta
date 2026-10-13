@@ -43,7 +43,7 @@ test('RF-1008 lists a finished run with its stage, commit, state and links, and 
   const row = runRow(page, '-scan');
   await expect(row).toContainText('Completed');
   await expect(row).toContainText('scan');
-  await expect(row).toContainText(/\b[0-9a-f]{7}\b/u);
+  await expect(row.getByRole('cell').nth(2)).toHaveText(/^[0-9a-f]{7}$/u);
   await expect(row.getByRole('link', { name: /^Report of run/u })).toBeVisible();
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
@@ -149,4 +149,18 @@ test('RF-1105 answers the history of an unknown project like any other with the 
   await expect(page.getByTestId('error-banner')).toContainText('RST-2003');
   await expect(runsTable(page)).toHaveCount(0);
   await expectNoSeriousViolations(page);
+});
+
+test('RF-1102 refuses the snapshot list to a user who is not the administrator and shows no snapshot', async ({
+  page,
+}) => {
+  await page.goto('/projects');
+
+  const answer = await page.evaluate(async () => {
+    const response = await fetch('/api/admin/snapshots');
+    return { status: response.status, body: await response.text() };
+  });
+
+  expect(answer.status).toBe(403);
+  expect(answer.body).not.toContain('octo/');
 });
