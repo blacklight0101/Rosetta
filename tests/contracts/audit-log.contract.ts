@@ -4,6 +4,7 @@ import type {
   AuditEventInput,
   AuditLog,
 } from '../../src/application/ports/audit-log.js';
+import { phraseContractTests } from './audit-log-phrase.contract.js';
 import { fixturePassword } from '../support/account-fixtures.js';
 import { FixedClock } from '../support/fixed-clock.js';
 
@@ -265,4 +266,5 @@ export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): 
   maskingAndFilterTests(name, fresh);
   filterParityTests(name, fresh);
   quotedPhraseTests(name, fresh);
+  phraseContractTests(name, fresh);
 }
