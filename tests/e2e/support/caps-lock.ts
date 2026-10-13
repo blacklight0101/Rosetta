@@ -1,6 +1,8 @@
 import { mkdir, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import type { Clock } from '../../../src/application/ports/clock.js';
+import { SystemClock } from '../../../src/infrastructure/system/system-clock.js';
 import { e2ePort } from './server-config.js';
 
 // RF-1106, P1-131: the caps of the administration page are server-wide, so the end-to-end specs
@@ -28,6 +30,8 @@ export interface CapsLock {
 
 export interface CapsLockOptions {
   readonly staleAfterMs?: number;
+  /** The harness clock; the system clock by default. */
+  readonly clock?: Clock;
 }
 
 async function tryTake(folder: string): Promise<boolean> {
@@ -40,9 +44,9 @@ async function tryTake(folder: string): Promise<boolean> {
   }
 }
 
-async function isStale(folder: string, staleAfterMs: number): Promise<boolean> {
+async function isStale(folder: string, staleAfterMs: number, clock: Clock): Promise<boolean> {
   try {
-    return Date.now() - (await stat(folder)).mtimeMs > staleAfterMs;
+    return clock.now().getTime() - (await stat(folder)).mtimeMs > staleAfterMs;
   } catch {
     return false;
   }
@@ -54,15 +58,17 @@ export async function acquireCapsLock(
   options: CapsLockOptions = {},
 ): Promise<CapsLock> {
   const staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_MS;
-  const started = Date.now();
+  const clock = options.clock ?? new SystemClock();
+  const started = clock.now().getTime();
   await mkdir(dirname(folder), { recursive: true });
   while (!(await tryTake(folder))) {
-    if (await isStale(folder, staleAfterMs)) await rm(folder, { recursive: true, force: true });
+    if (await isStale(folder, staleAfterMs, clock))
+      await rm(folder, { recursive: true, force: true });
     await new Promise((resolve) => setTimeout(resolve, POLL_MS));
   }
   let released = false;
   return {
-    waitedMs: Date.now() - started,
+    waitedMs: clock.now().getTime() - started,
     release: async () => {
       if (released) return;
       released = true;
