@@ -126,7 +126,7 @@ describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL', () => {
     const queued = sampleRun({ userId: amy, projectId: project.id });
     await runs.insert(queued);
 
-    expect(await projects.remove(amy, project.id)).toBe(false);
+    expect(await projects.remove(amy, project.id, () => Promise.resolve())).toBe(false);
 
     expect(await projects.find(amy, project.id)).toEqual(project);
     expect(await runs.find(amy, queued.id)).toEqual(queued);
@@ -137,8 +137,29 @@ describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL', () => {
     const { projects, runs, project, ended } = await setup(database);
     const done = await ended();
 
-    expect(await projects.remove(amy, project.id)).toBe(true);
+    expect(await projects.remove(amy, project.id, () => Promise.resolve())).toBe(true);
 
+    expect(await runs.find(amy, done.id)).toBeUndefined();
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL when its folder stays', () => {
+  const database = useTestDatabase();
+
+  it('RF-1012 keeps the project and its runs when the folder cannot be removed (P1-121)', async () => {
+    const { projects, runs, folders, logger, project, ended } = await setup(database);
+    const done = await ended();
+    folders.refuseRemoval = true;
+    const deleteProject = new DeleteProject({ projects, runs, folders, logger });
+
+    await expect(deleteProject.execute({ actor, projectId: project.id })).rejects.toMatchObject({
+      code: ERROR_CODES.folderRemovalFailed,
+    });
+
+    expect(await projects.find(amy, project.id)).toEqual(project);
+    expect(await runs.find(amy, done.id)).toEqual(done);
+    folders.refuseRemoval = false;
+    expect((await deleteProject.execute({ actor, projectId: project.id })).ok).toBe(true);
     expect(await runs.find(amy, done.id)).toBeUndefined();
   });
 });

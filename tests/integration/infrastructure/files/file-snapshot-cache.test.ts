@@ -1,16 +1,21 @@
-import { chmod, mkdir, readdir, stat, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, stat, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { CachedSnapshot } from '../../../../src/application/ports/snapshot-cache.js';
 import { FileSnapshotCache } from '../../../../src/infrastructure/files/file-snapshot-cache.js';
 import { snapshotCacheContract } from '../../../contracts/snapshot-cache.contract.js';
+import { ModeCheckingFiles } from '../../../support/mode-checking-files.js';
 import { sampleCachedSnapshot, snapshotSha } from '../../../support/snapshot-listing-fixtures.js';
 import { useWritableTempRoot } from '../../../support/writable-temp-root.js';
 
 // RF-1012, RF-005, data-model.md section 3.3: FileSnapshotCache lists the complete snapshots of
 // `<data>/sources/` from their snapshot.json and removes one, though the fetcher left it read-only.
+// The modes go through ModeCheckingFiles, which refuses to remove a read-only tree on every
+// system, so the removal test fails on Windows and Linux alike when the adapter stops making the
+// tree writable first (P1-121).
 
 const data = useWritableTempRoot('rosetta-snapshots-');
+const files = new ModeCheckingFiles();
 
 function infoOf(snapshot: CachedSnapshot): string {
   const [owner = '', repo = ''] = snapshot.repository.split('/');
@@ -37,25 +42,34 @@ async function lay(snapshot: CachedSnapshot): Promise<void> {
   await writeFile(join(folder, 'files', 'src', 'Program.cs'), 'class Program {}');
   await writeFile(join(folder, 'snapshot.json'), infoOf(snapshot));
   for (const file of [join(folder, 'files', 'src', 'Program.cs'), join(folder, 'snapshot.json')]) {
-    await chmod(file, 0o444);
+    await files.chmod(file, 0o444);
   }
   for (const dir of [join(folder, 'files', 'src'), join(folder, 'files'), folder]) {
-    await chmod(dir, 0o555);
+    await files.chmod(dir, 0o555);
   }
 }
 
 describe('FileSnapshotCache', () => {
   snapshotCacheContract('FileSnapshotCache', () =>
-    Promise.resolve({ cache: new FileSnapshotCache(data.path), add: lay }),
+    Promise.resolve({ cache: new FileSnapshotCache(data.path, files), add: lay }),
   );
 
   it('RF-1012 removes a read-only snapshot tree completely', async () => {
     const snapshot = sampleCachedSnapshot();
     await lay(snapshot);
 
-    expect(await new FileSnapshotCache(data.path).remove(snapshot.key)).toBe(true);
+    expect(await new FileSnapshotCache(data.path, files).remove(snapshot.key)).toBe(true);
 
     expect(await readdir(join(data.path, 'sources'))).toEqual([]);
+  });
+
+  it('RF-1012 the mode-checking file system refuses a read-only tree that is not made writable', async () => {
+    const snapshot = sampleCachedSnapshot();
+    await lay(snapshot);
+    const folder = join(data.path, 'sources', snapshot.key);
+
+    await expect(files.rm(folder, { recursive: true, force: true })).rejects.toThrow('EACCES');
+    expect(await readdir(join(data.path, 'sources'))).toEqual([snapshot.key]);
   });
 
   it('RF-122 does not list a partial download, a folder without snapshot.json or a damaged one', async () => {

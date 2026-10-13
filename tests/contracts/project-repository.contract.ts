@@ -103,28 +103,59 @@ function updatingTests(name: string, fresh: FreshProjects): void {
   });
 }
 
+/** A hook for `remove` that records the project ids it ran for. */
+function recordingHook(): {
+  readonly calls: string[];
+  readonly hook: (id: string) => () => Promise<void>;
+} {
+  const calls: string[] = [];
+  const hook = (id: string) => (): Promise<void> => {
+    calls.push(id);
+    return Promise.resolve();
+  };
+  return { calls, hook };
+}
+
 function removalTests(name: string, fresh: FreshProjects): void {
   it(`RF-1012 ${name} removes the owner's project and keeps the others`, async () => {
     const projects = await fresh();
     const doomed = sampleProject({ userId: amy });
     const kept = sampleProject({ userId: amy });
     for (const project of [doomed, kept]) await projects.insertOrFind(project);
+    const { calls, hook } = recordingHook();
 
-    expect(await projects.remove(amy, doomed.id)).toBe(true);
+    expect(await projects.remove(amy, doomed.id, hook(doomed.id))).toBe(true);
 
+    expect(calls).toEqual([doomed.id]);
     expect(await projects.find(amy, doomed.id)).toBeUndefined();
     expect(await projects.list(amy)).toEqual([kept]);
-    expect(await projects.remove(amy, doomed.id)).toBe(false);
+    expect(await projects.remove(amy, doomed.id, hook(doomed.id))).toBe(false);
+    expect(calls).toEqual([doomed.id]);
   });
 
   it(`RF-1105 ${name} removes nothing for another user's project, an unknown id or a bad id`, async () => {
     const projects = await fresh();
     const project = sampleProject({ userId: amy });
     await projects.insertOrFind(project);
+    const { calls, hook } = recordingHook();
 
-    expect(await projects.remove(bob, project.id)).toBe(false);
-    expect(await projects.remove(amy, unknownId)).toBe(false);
-    expect(await projects.remove(amy, 'not-a-uuid')).toBe(false);
+    expect(await projects.remove(bob, project.id, hook(project.id))).toBe(false);
+    expect(await projects.remove(amy, unknownId, hook(unknownId))).toBe(false);
+    expect(await projects.remove(amy, 'not-a-uuid', hook('not-a-uuid'))).toBe(false);
+    expect(calls).toEqual([]);
+    expect(await projects.find(amy, project.id)).toEqual(project);
+  });
+
+  it(`RF-1012 ${name} keeps the project when the hook before the removal fails`, async () => {
+    const projects = await fresh();
+    const project = sampleProject({ userId: amy });
+    await projects.insertOrFind(project);
+    const failure = new Error('the folder could not be removed');
+
+    await expect(projects.remove(amy, project.id, () => Promise.reject(failure))).rejects.toBe(
+      failure,
+    );
+
     expect(await projects.find(amy, project.id)).toEqual(project);
   });
 }
