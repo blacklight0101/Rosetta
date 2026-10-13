@@ -150,6 +150,11 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'This server cannot run that stage yet.',
     nextStep: 'Start a stage that is available, or ask the operator to update Rosetta.',
   },
+  'RST-2306': {
+    message:
+      'This run, project or snapshot is in use by a run that has not ended, so it cannot be deleted.',
+    nextStep: 'Stop the run or wait until it ends, then delete it again.',
+  },
   'RST-2400': {
     message: 'A database migration file has an invalid name or a duplicate number.',
     nextStep: 'Name each file NNNN_snake_name.sql with a number used once, then start again.',

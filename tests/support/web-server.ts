@@ -41,6 +41,9 @@ import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
 import { MemoryArchiveWriter } from './memory-archive-writer.js';
+import { MemorySnapshotCache } from './memory-snapshot-cache.js';
+import { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
+import { historyServices } from './web-history-services.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
 import { FakeHostResolver } from './fake-host-resolver.js';
 import type { FakeAdapters, SpyLedger } from './provider-fakes.js';
@@ -81,6 +84,9 @@ export interface TestServer {
   readonly runs: RunHarness;
   /** RF-008: the run folders the default export reads; give a run its folder with `seed`. */
   readonly archives: MemoryArchiveWriter;
+  /** RF-1012: the run and project folders the deletions measure and remove, and the snapshot cache. */
+  readonly folders: MemoryWorkspaceFolders;
+  readonly snapshots: MemorySnapshotCache;
   /** RF-1007: the projects' answers.md files the answer routes read and write, in `answerFiles`. */
   readonly answers: FileAnswersFile;
   readonly answerFiles: MemoryOutputWriter;
@@ -256,12 +262,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const logger = new MemoryLogger(clock, masker);
   const health = new FakeDatabaseHealth(true);
   const [users, sessions] = [new MemoryUserRepository(), new MemorySessionStore()];
-  const auditLog = new MemoryAuditLog(masker);
-  const usage = new MemoryAccountUsage();
+  const [auditLog, usage] = [new MemoryAuditLog(masker), new MemoryAccountUsage()];
   const [projects, costs] = [new MemoryProjectRepository(), new MemoryCostTotals()];
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
   const archives = new MemoryArchiveWriter();
+  const [folders, snapshots] = [new MemoryWorkspaceFolders(), new MemorySnapshotCache()];
   const files = answerStore(masker);
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const keys = keyParts();
@@ -282,11 +288,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     }),
     projects: projectServices(projectParts),
     runs: runServices(runs, stores, route, archiveWriter ?? archives),
+    history: historyServices({ runs, projects, folders, snapshots, logger }),
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
     ...{ serverSettings, runs, archives, ...files, ...route, ...keys, providers, providerLedger },
-    costs,
+    ...{ costs, folders, snapshots },
   };
 }

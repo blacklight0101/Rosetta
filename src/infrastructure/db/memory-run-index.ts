@@ -1,6 +1,6 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type { RunIndex, RunSource } from '../../application/ports/run-index.js';
+import type { RunIndex, RunSource, SnapshotUsage } from '../../application/ports/run-index.js';
 import { inQueueOrder } from '../../domain/runs/queue-rules.js';
 import { endRun, startRun, type Run, type RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
@@ -70,6 +70,22 @@ export class MemoryRunIndex implements RunIndex {
 
   recordTotals(runId: string, totals: RunTotals): Promise<Run | undefined> {
     return Promise.resolve(this.update(runId, { totals }));
+  }
+
+  removeEnded(userId: string, runId: string): Promise<boolean> {
+    void userId;
+    void runId;
+    return Promise.resolve(false);
+  }
+
+  removeEndedOfProject(userId: string, projectId: string): Promise<void> {
+    void userId;
+    void projectId;
+    return Promise.resolve();
+  }
+
+  snapshotUsage(): Promise<readonly SnapshotUsage[]> {
+    return Promise.resolve([]);
   }
 
   private inState(state: Run['queueState']): Run[] {

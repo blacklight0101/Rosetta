@@ -1,5 +1,5 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
-import type { RunIndex, RunSource } from '../../application/ports/run-index.js';
+import type { RunIndex, RunSource, SnapshotUsage } from '../../application/ports/run-index.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -108,6 +108,22 @@ export class PgRunIndex implements RunIndex {
       totals.outputTokens,
       totals.cachedInputTokens,
     ]);
+  }
+
+  removeEnded(userId: string, runId: string): Promise<boolean> {
+    void userId;
+    void runId;
+    return Promise.resolve(false);
+  }
+
+  removeEndedOfProject(userId: string, projectId: string): Promise<void> {
+    void userId;
+    void projectId;
+    return Promise.resolve();
+  }
+
+  snapshotUsage(): Promise<readonly SnapshotUsage[]> {
+    return Promise.resolve([]);
   }
 
   /** One UPDATE by run id; undefined when no row matched its conditions. */

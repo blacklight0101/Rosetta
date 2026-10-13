@@ -20,6 +20,7 @@ import { AesGcmSecretBox } from '../infrastructure/security/aes-gcm-secret-box.j
 import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password-hasher.js';
 import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './compose-accounts.js';
 import type { Auth } from './compose-accounts.js';
+import { composeHistory } from './compose-history.js';
 import { composeProjects } from './compose-projects.js';
 import { scheduledTasks, type ScheduledTask } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
@@ -146,6 +147,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     auth: auth.services,
     projects,
     runs: runs.services,
+    history: composeHistory({ pool, logger, dataDir: environment.dataDir }),
     ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,
     staticRoot,

@@ -97,12 +97,43 @@ const answerRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ],
 };
 
+const historyUrl = (context: Context): string => `/api/projects/${context.projectId}/history`;
+const snapshotsUrl = '/api/admin/snapshots';
+
+/**
+ * RF-1008, RF-1012, RF-1105: the history of a project, the deletion of a run and of a project (409
+ * while one is in progress, so the owner's project with a running run answers 409) and the
+ * administrator's snapshot list and deletion.
+ */
+const historyRoutes: Readonly<Record<string, readonly Probe[]>> = {
+  'GET /api/projects/:id/history': [
+    { method: 'GET', url: historyUrl, expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/projects/not-a-uuid/history', expected: active(401, 404) },
+  ],
+  'HEAD /api/projects/:id/history': [{ method: 'HEAD', url: historyUrl, expected: ownerOnly(200) }],
+  'DELETE /api/runs/:runId': [
+    { method: 'DELETE', url: runUrl('', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'DELETE', url: runUrl('', (c) => c.runningRunId), expected: ownerOnly(409) },
+    { method: 'DELETE', url: () => '/api/runs/not-a-uuid', expected: active(401, 404) },
+  ],
+  'DELETE /api/projects/:id': [
+    { method: 'DELETE', url: (c) => `/api/projects/${c.projectId}`, expected: ownerOnly(409) },
+    { method: 'DELETE', url: () => '/api/projects/not-a-uuid', expected: active(401, 404) },
+  ],
+  'GET /api/admin/snapshots': [{ method: 'GET', url: snapshotsUrl, expected: adminOnly(200) }],
+  'HEAD /api/admin/snapshots': [{ method: 'HEAD', url: snapshotsUrl, expected: adminOnly(200) }],
+  'DELETE /api/admin/snapshots/:key': [
+    { method: 'DELETE', url: `${snapshotsUrl}/octo__none@x`, expected: adminOnly(404) },
+  ],
+};
+
 /**
  * RF-008, RF-1105: the zip downloads answer the owner of a finished run, 409 while it runs; with the
  * rows of the run's answers (RF-1007), which name a run the same way.
  */
 export const exportRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ...answerRoutes,
+  ...historyRoutes,
   ...Object.fromEntries(
     ['zip', 'handoff.zip'].map((name) => [
       `GET /api/runs/:runId/${name}`,

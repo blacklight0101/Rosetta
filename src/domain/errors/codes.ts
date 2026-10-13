@@ -130,6 +130,7 @@ export const ERROR_CODES = {
   providerKeyMissing: 'RST-2302',
   baseUrlRejected: 'RST-2304',
   runStageNotAvailable: 'RST-2305',
+  deleteRefusedInUse: 'RST-2306',
   migrationFileInvalid: 'RST-2400',
   migrationChanged: 'RST-2401',
   migrationUnknown: 'RST-2402',
