@@ -71,6 +71,11 @@ export interface CapsState {
   readonly maxTokens: number;
 }
 
+export interface ScanState {
+  readonly files: number;
+  readonly areas: number;
+}
+
 interface EndedState {
   readonly endState: string;
   readonly errorCode: string | undefined;
@@ -84,6 +89,8 @@ export interface RunState {
   readonly stage: string | undefined;
   readonly source: SourceState | undefined;
   readonly caps: CapsState | undefined;
+  /** The result of the scan, known from `scan.completed`; undefined for any other run. */
+  readonly scan: ScanState | undefined;
   readonly agents: readonly AgentPanelState[];
   readonly cards: readonly CardRef[];
   readonly claims: readonly ClaimRow[];

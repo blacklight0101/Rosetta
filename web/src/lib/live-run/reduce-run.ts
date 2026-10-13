@@ -47,6 +47,7 @@ export function initialRunState(): RunState {
     stage: undefined,
     source: undefined,
     caps: undefined,
+    scan: undefined,
     agents: [],
     cards: [],
     claims: [],
