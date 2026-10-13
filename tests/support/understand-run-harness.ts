@@ -28,6 +28,7 @@ import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-f
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { loadReaderPrompts } from '../../src/infrastructure/prompts/prompt-files.js';
 import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
+import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
 import { SnapshotScanPipeline } from '../../src/infrastructure/scan/scan-pipeline.js';
@@ -154,6 +155,7 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
     ledger: providers.ledger,
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts('prompts'),
+    textToolProtocol: () => loadTextToolProtocol('prompts'),
     ids: new SequenceIdGenerator(),
   });
 }
