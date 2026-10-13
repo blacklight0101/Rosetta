@@ -56,6 +56,8 @@ export interface EstimateAssumptions {
 interface EstimatedArea {
   readonly name: string;
   readonly estimatedTokens: number;
+  /** True when the area holds only vendored or minified files (RF-1001): unticked by default. */
+  readonly thirdParty: boolean;
 }
 
 export interface RunEstimate {

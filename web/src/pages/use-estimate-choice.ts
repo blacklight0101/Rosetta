@@ -1,14 +1,16 @@
-import { useRef, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import type { AreaChoice } from './StageAreasSection.js';
 import { useEstimate, type EstimateLoad } from './use-estimate.js';
 
-// RF-425, RF-200: the estimate together with the choice of areas. The names come from the first
-// estimate, which covers every area; choosing fewer asks for the estimate of those alone, and
-// choosing all again asks for the plain one.
+// RF-425, RF-200, RF-1001: the estimate together with the choice of areas. The names come from the
+// first estimate, which covers every area. The areas that hold only third-party files start
+// unticked, so the estimate is asked again for the others; choosing a different set asks for the
+// estimate of those alone, and choosing every area again asks for the plain one.
 
 interface KnownArea {
   readonly name: string;
   readonly estimatedTokens: number;
+  readonly thirdParty: boolean;
 }
 
 export interface EstimateChoice {
@@ -23,19 +25,20 @@ export interface EstimateChoice {
 export function useEstimateChoice(projectId: string): EstimateChoice {
   const [picked, setPicked] = useState<readonly string[] | undefined>();
   const [version, setVersion] = useState(0);
-  const known = useRef<readonly KnownArea[]>([]);
-  const everyArea = picked === undefined || picked.length === known.current.length;
-  const estimate = useEstimate({ projectId, areas: everyArea ? undefined : picked, version });
-  if (picked === undefined && estimate.status === 'ready') known.current = estimate.estimate.areas;
-  const names = known.current.map((area) => area.name);
-  const chosen = picked ?? names;
+  const [known, setKnown] = useState<readonly KnownArea[]>([]);
+  const names = known.map((area) => area.name);
+  const chosen = picked ?? known.filter((area) => !area.thirdParty).map((area) => area.name);
+  const everyArea = chosen.length === names.length;
+  const estimate = useEstimate({ projectId, areas: everyArea ? undefined : chosen, version });
+  // The first answer is the estimate of every area; the list of areas never changes after it.
+  if (known.length === 0 && estimate.status === 'ready') setKnown(estimate.estimate.areas);
   return {
     estimate,
     chosen,
-    areas: known.current.map((area) => ({ ...area, checked: chosen.includes(area.name) })),
+    areas: known.map((area) => ({ ...area, checked: chosen.includes(area.name) })),
     toggle: (name) => {
       const next = names.filter((each) => (each === name) !== chosen.includes(each));
-      setPicked(next.length === names.length ? undefined : next);
+      setPicked(next);
     },
     reestimate: () => {
       setVersion((current) => current + 1);

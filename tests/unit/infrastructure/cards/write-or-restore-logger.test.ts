@@ -10,6 +10,14 @@ const throwingLogger: Logger = {
   securityEvent: () => Promise.reject(new Error('log file gone')),
 };
 
+/** A logger whose `log` throws before it returns a promise, as a non-async implementation would. */
+const syncThrowingLogger: Logger = {
+  log: () => {
+    throw new Error('log file gone');
+  },
+  securityEvent: () => Promise.reject(new Error('log file gone')),
+};
+
 function plannedWrites() {
   return ['a.md', 'b.md', 'c.md'].map((name) => ({
     file: { userId: 'u1', path: `projects/p/runs/r/cards/${name}` },
@@ -27,6 +35,17 @@ describe('writeOrRestore when the logger throws while reporting a failed restore
         ok: false,
         error: { message: 'no' },
       });
+    },
+  );
+
+  it.each<AfterRefusal>(['refuses-restores', 'throws-on-restore'])(
+    'RNF-002 a restore that %s with a logger that throws synchronously still returns the refusal',
+    async (after) => {
+      const writer = new RefusingWriter(new MemoryOutputWriter(), 3, after);
+
+      await expect(
+        writeOrRestore(writer, syncThrowingLogger, plannedWrites()),
+      ).resolves.toMatchObject({ ok: false, error: { message: 'no' } });
     },
   );
 

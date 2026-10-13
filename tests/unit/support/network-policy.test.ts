@@ -62,6 +62,9 @@ describe('RNF-005 pipe policy', () => {
     String.raw`\??\pipe\..\UNC\example.com\pipe\rosetta`,
     String.raw`\??\UNC\example.com\pipe\rosetta`,
     String.raw`\\.\pipe\.\..\UNC\example.com\pipe\rosetta`,
+    String.raw`\\.\pipe\.\rosetta`,
+    String.raw`\\.\pipe\..`,
+    String.raw`\\.\pipe\../UNC/example.com/pipe/rosetta`,
     '//./pipe/../UNC/example.com/pipe/rosetta',
     String.raw`\\.\.\UNC\example.com\pipe\rosetta`,
   ])('RNF-005 refuses the remote pipe %s', (path) => {

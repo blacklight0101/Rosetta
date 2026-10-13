@@ -552,6 +552,39 @@
   gap: var(--rst-sp-2);
 }
 
+/* One area of the code map: the name wraps inside the card (a path has no spaces, so it breaks
+   anywhere), the token count stays whole beside it, or under it on a narrow screen. */
+.rst-start__area {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--rst-sp-1) var(--rst-sp-2);
+}
+
+.rst-start__area-name {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.rst-start__area-tokens {
+  white-space: nowrap;
+}
+
+.rst-start__area-note {
+  grid-column: 2 / -1;
+  justify-self: start;
+}
+
+@media (max-width: 40rem) {
+  .rst-start__area {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rst-start__area-tokens {
+    grid-column: 2;
+  }
+}
+
 .rst-start__choices {
   display: flex;
   flex-wrap: wrap;

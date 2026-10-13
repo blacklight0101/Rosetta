@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { AreaProblem } from '../../../domain/code-map/area.js';
+import { MAX_AREA_NAME_LENGTH, type AreaProblem } from '../../../domain/code-map/area.js';
 import {
   createCodeMap,
   type CodeLink,
@@ -47,7 +47,7 @@ const fileSchema = z.strictObject({
 });
 
 const areaSchema = z.strictObject({
-  name: z.string().min(1).max(maxName),
+  name: z.string().min(1).max(MAX_AREA_NAME_LENGTH),
   files: z.array(path).min(1).max(maxFiles),
   estimatedTokens: z.number().int().min(0),
   mapLevel,

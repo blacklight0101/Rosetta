@@ -8,6 +8,7 @@ import {
   runEnded,
   startedData,
 } from './live-run-fixtures.js';
+import { json } from './fake-api.js';
 import { renderLive, runPath, runRow, runUuid } from './live-run-helpers.js';
 
 // RF-1002..RF-1006, RF-1108, RF-008, RF-507, DEC-103 (P1-35): the claims, downloads and refusal of the live run page. Whatever the page shows comes from
@@ -137,7 +138,13 @@ it('RF-008 offers the hand-off zip of a plan run once it has ended', async () =>
 });
 
 it('RF-1108 RST-2302 shows a run that was refused for a missing key with its code, message and next step', async () => {
-  const { stream } = renderLive();
+  const { stream } = renderLive({
+    'GET /api/errors/RST-2302': json(200, {
+      code: 'RST-2302',
+      message: 'There is no API key you may use for this provider.',
+      nextStep: 'Save your own key for it in your settings.',
+    }),
+  });
   const connection = await stream.connection();
 
   connection.event(ev(1, 'run.started', startedData));
@@ -145,7 +152,9 @@ it('RF-1108 RST-2302 shows a run that was refused for a missing key with its cod
 
   const refusal = await screen.findByTestId('run-failure');
   expect(refusal.textContent).toContain('RST-2302');
-  expect(refusal.textContent).toContain('There is no API key you may use for this provider.');
+  await waitFor(() => {
+    expect(refusal.textContent).toContain('There is no API key you may use for this provider.');
+  });
   expect(
     within(refusal).getByRole('link', { name: 'Settings and keys' }).getAttribute('href'),
   ).toBe('/settings');

@@ -8,7 +8,7 @@ import { sampleProject } from '../../../support/project-fixtures.js';
 import { addUser, signedInBrowser, TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
-// RF-425, RF-1105, RF-1009: GET /api/projects/:id/estimate through the server with a session. The
+// RF-425, RF-1105, RF-1009: GET and POST /api/projects/:id/estimate through the server with a session. The
 // fixed code map has Catalog (10,000 tokens) and Orders (4,000).
 
 let current: TestServer | undefined;
@@ -43,7 +43,9 @@ const point = z.object({
   costMicros: z.string(),
 });
 const estimateBody = z.object({
-  areas: z.array(z.object({ name: z.string(), estimatedTokens: z.number() })),
+  areas: z.array(
+    z.object({ name: z.string(), estimatedTokens: z.number(), thirdParty: z.boolean() }),
+  ),
   roles: z.array(z.object({ role: z.string(), low: point, likely: point, high: point }).loose()),
   total: z.object({ low: point, likely: point, high: point }),
 });
@@ -85,45 +87,99 @@ describe('GET /api/projects/:id/estimate answers', () => {
     expect(body.total.high.costMicros).toBe('0');
   });
 
-  it('RF-425 the areas query parameter limits the estimate; a repeated parameter names several', async () => {
+  it('RF-425 the areas in the body limit the estimate', async () => {
     const { amy, project } = await setup();
 
-    const one = await amy.request({ method: 'GET', url: estimateUrl(project.id, '?areas=Orders') });
+    const one = await amy.request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: { areas: ['Orders'] },
+    });
     const both = await amy.request({
-      method: 'GET',
-      url: estimateUrl(project.id, '?areas=Orders&areas=Catalog'),
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: { areas: ['Orders', 'Catalog'] },
     });
 
-    expect(bodyOf(one).areas).toEqual([{ name: 'Orders', estimatedTokens: 4000 }]);
+    expect(bodyOf(one).areas).toEqual([
+      { name: 'Orders', estimatedTokens: 4000, thirdParty: false },
+    ]);
     expect(bodyOf(both).areas.map((area) => area.name)).toEqual(['Catalog', 'Orders']);
   });
 });
 
-describe('GET /api/projects/:id/estimate refuses', () => {
+describe('POST /api/projects/:id/estimate refuses', () => {
   it('RST-1307 an unknown area is refused with 400, like the understand run', async () => {
     const { amy, project } = await setup();
 
     const response = await amy.request({
-      method: 'GET',
-      url: estimateUrl(project.id, '?areas=Nowhere'),
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: { areas: ['Nowhere'] },
     });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.areaUnknown });
   });
 
-  it('RF-425 an empty area name is a bad request (RST-2000)', async () => {
-    const { amy, project } = await setup();
+  it.each([{ areas: [''] }, { areas: [] }, { areas: 'Catalog' }, { areas: ['Catalog'], x: 1 }])(
+    'RF-425 a body that is not a list of area names (%j) is a bad request (RST-2000)',
+    async (payload) => {
+      const { amy, project } = await setup();
 
-    const response = await amy.request({ method: 'GET', url: estimateUrl(project.id, '?areas=') });
+      const response = await amy.request({
+        method: 'POST',
+        url: estimateUrl(project.id),
+        payload,
+      });
 
-    expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
+    },
+  );
+});
+
+describe('POST /api/projects/:id/estimate and the session', () => {
+  it('RF-1009 requires a session and the CSRF token', async () => {
+    const { test, amy, project } = await setup();
+
+    const anonymous = await new TestBrowser(test.server).request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: { areas: ['Orders'] },
+      csrf: false,
+    });
+    const noToken = await amy.request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: { areas: ['Orders'] },
+      csrf: false,
+    });
+
+    expect(anonymous.statusCode).toBe(401);
+    expect(noToken.statusCode).toBe(403);
+  });
+
+  it('RF-1105 another user project answers 404 like an unknown one', async () => {
+    const { bob, project } = await setup();
+
+    const other = await bob.request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: { areas: ['Orders'] },
+    });
+
+    expect(other.statusCode).toBe(404);
   });
 });
 
 describe('GET /api/projects/:id/estimate refuses unknown parameters', () => {
-  it.each(['?areas[]=Catalog', '?area=Catalog', '?areas=Catalog&stage=understand'])(
+  it.each([
+    '?areas[]=Catalog',
+    '?area=Catalog',
+    '?areas=Catalog',
+    '?areas=Catalog&stage=understand',
+  ])(
     'RF-425 an unknown query parameter (%s) is refused with RST-2000 and names the parameter',
     async (query) => {
       const { amy, project } = await setup();
@@ -138,8 +194,10 @@ describe('GET /api/projects/:id/estimate refuses unknown parameters', () => {
         })
         .parse(response.json());
       expect(body.code).toBe(ERROR_CODES.requestInvalid);
-      expect(body.problems).toHaveLength(1);
-      expect(body.problems[0]?.reason).toMatch(/^Unknown query parameter ".+"\. Name each area/u);
+      expect(body.problems.length).toBeGreaterThan(0);
+      expect(body.problems[0]?.reason).toMatch(
+        /^Unknown query parameter ".+"\. To estimate some areas, POST/u,
+      );
     },
   );
 

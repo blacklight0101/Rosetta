@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
@@ -253,4 +254,46 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   await page.getByRole('link', { name: 'Start page' }).click();
   await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.10');
   await expect(page.getByLabel('Ask before a run estimated above (USD)')).toHaveValue('0.05');
+});
+
+test('RNF-010 long area names wrap inside the Stage and areas card at 1280 and 360 px', async ({
+  page,
+}) => {
+  // The estimate answer gets long names; the page and its CSS are the real ones.
+  const longPath = 'src/Services/Billing/Payments/Gateway/Providers/Adapters/Legacy/Mapping/Rules';
+  const names = [
+    ...Array.from({ length: 10 }, (_, index) => `${longPath}/Module${String(index)}`),
+    `Scripts/${'VeryLongUnbrokenFolderName'.repeat(8)}`,
+  ];
+  await page.route('**/api/projects/*/estimate', async (route) => {
+    const response = await route.fetch({ method: 'GET', postData: '' });
+    const body = z.looseObject({ areas: z.array(z.unknown()) }).parse(await response.json());
+    const areas = names.map((name, i) => ({
+      name,
+      estimatedTokens: 1_234_567 + i,
+      thirdParty: !i,
+    }));
+    await route.fulfill({ response, json: { ...body, areas } });
+  });
+  await openStartPage(page);
+  await expect(page.getByLabel(names[1] ?? '')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+
+  for (const width of [1280, 360]) {
+    await page.setViewportSize({ width, height: 780 });
+    const measured: unknown = await page.evaluate(`(() => {
+      const card = document.querySelector('section[aria-labelledby="stage-heading"]');
+      const edge = card.getBoundingClientRect().right;
+      const rows = [...document.querySelectorAll('.rst-start__area')];
+      return {
+        rows: rows.length,
+        outside: rows.filter((row) =>
+          [row, ...row.querySelectorAll('*')].some((part) => part.getBoundingClientRect().right > edge + 1),
+        ).length,
+        sideways: document.documentElement.scrollWidth - window.innerWidth,
+      };
+    })()`);
+    expect(measured).toEqual({ rows: names.length, outside: 0, sideways: 0 });
+  }
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
 });

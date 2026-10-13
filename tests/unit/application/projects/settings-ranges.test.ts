@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import { maxRunCostMicros as maxCost, settingsWith } from '../../../support/project-fixtures.js';
+import { maxRunCostMicros, settingsWith } from '../../../support/project-fixtures.js';
 
 // RF-002 (second scenario), DEC-117, data-model.md section 3.1: every numeric setting has an
 // allowed range. A value just outside it is refused with its field and RST-1006 (a cap below zero
@@ -64,11 +64,11 @@ describe('parseProjectSettings: the run cost cap and the confirmation threshold'
   it('RF-002 the run cost cap accepts 0 and 100 USD', () => {
     const atZero = { 'budget.run.maxCostMicros': 0, 'budget.confirmAboveCostMicros': 0 };
     expect(problemsOf(settingsWith(atZero))).toEqual([]);
-    expect(problemsOf(settingsWith({ 'budget.run.maxCostMicros': maxCost }))).toEqual([]);
+    expect(problemsOf(settingsWith({ 'budget.run.maxCostMicros': maxRunCostMicros }))).toEqual([]);
   });
 
   it('RF-002 the run cost cap refuses one micro above 100 USD with RST-1006', () => {
-    expect(problemsOf(settingsWith({ 'budget.run.maxCostMicros': maxCost + 1 }))).toEqual([
+    expect(problemsOf(settingsWith({ 'budget.run.maxCostMicros': maxRunCostMicros + 1 }))).toEqual([
       { field: 'budget.run.maxCostMicros', code: ERROR_CODES.settingValueInvalid },
     ]);
   });
@@ -113,8 +113,8 @@ describe('parseProjectSettings: thresholds and edge cases of the budget (DEC-117
 
   it('RF-002 a run cost cap above 100 USD with a threshold above it reports only the cap', () => {
     const input = settingsWith({
-      'budget.run.maxCostMicros': maxCost + 1,
-      'budget.confirmAboveCostMicros': maxCost + 2,
+      'budget.run.maxCostMicros': maxRunCostMicros + 1,
+      'budget.confirmAboveCostMicros': maxRunCostMicros + 2,
     });
 
     expect(problemsOf(input)).toEqual([
@@ -126,8 +126,8 @@ describe('parseProjectSettings: thresholds and edge cases of the budget (DEC-117
 describe('parseProjectSettings: the threshold at the top of the cap (DEC-117)', () => {
   it('RF-002 a threshold of exactly 100 USD is accepted with a run cost cap of 100 USD', () => {
     const input = settingsWith({
-      'budget.run.maxCostMicros': maxCost,
-      'budget.confirmAboveCostMicros': maxCost,
+      'budget.run.maxCostMicros': maxRunCostMicros,
+      'budget.confirmAboveCostMicros': maxRunCostMicros,
     });
 
     expect(problemsOf(input)).toEqual([]);
@@ -135,8 +135,8 @@ describe('parseProjectSettings: the threshold at the top of the cap (DEC-117)', 
 
   it('RF-002 a threshold one micro above a run cost cap of 100 USD is refused', () => {
     const input = settingsWith({
-      'budget.run.maxCostMicros': maxCost,
-      'budget.confirmAboveCostMicros': maxCost + 1,
+      'budget.run.maxCostMicros': maxRunCostMicros,
+      'budget.confirmAboveCostMicros': maxRunCostMicros + 1,
     });
 
     expect(problemsOf(input)).toEqual([

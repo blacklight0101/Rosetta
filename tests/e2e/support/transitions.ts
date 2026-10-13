@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 // accident. This waits for the page's CSS transitions (a button that has just been enabled, a link
 // that has just become current) to finish before axe reads the colours.
 // Which test needs it: the sign-in check of smoke.spec.ts on phone-dark, where the Sign in button's
-// background-color transition is still running when `data-theme` turns dark (seen on every load).
+// background transition is still running when `data-theme` turns dark (seen on every load).
 // The contrast failure it prevents shows only when axe runs mid-fade, on a slow or loaded runner,
 // so no committed test fails without the wait; the journeys call it before axe for the same reason.
 

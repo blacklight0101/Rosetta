@@ -22,7 +22,10 @@ export interface StartRequest {
   readonly cloudConsent?: boolean;
 }
 
-/** The estimate of an understand run; `areas` names the ones to estimate, every area when absent. */
+/**
+ * The estimate of an understand run: for every area when `areas` is undefined, else for those
+ * named, which travel in a POST body so a long selection never meets a URL limit.
+ */
 // RF-425
 export function getEstimate(
   client: ApiClient,
@@ -30,14 +33,11 @@ export function getEstimate(
   areas: readonly string[] | undefined,
   signal: AbortSignal,
 ): Promise<ApiResult<RunEstimate>> {
-  const query = new URLSearchParams((areas ?? []).map((area) => ['areas', area]));
-  const suffix = query.size === 0 ? '' : `?${query.toString()}`;
-  return client.request({
-    method: 'GET',
-    path: `/api/projects/${encodeURIComponent(projectId)}/estimate${suffix}`,
-    schema: estimateSchema,
-    signal,
-  });
+  const path = `/api/projects/${encodeURIComponent(projectId)}/estimate`;
+  if (areas === undefined) {
+    return client.request({ method: 'GET', path, schema: estimateSchema, signal });
+  }
+  return client.request({ method: 'POST', path, body: { areas }, schema: estimateSchema, signal });
 }
 
 // RF-1001, RF-143
