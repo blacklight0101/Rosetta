@@ -260,9 +260,8 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     ...overrides
   } = options;
   const clock = new FixedClock('2026-10-11T09:00:00.000Z');
-  const masker = new SecretMasker();
+  const [masker, health] = [new SecretMasker(), new FakeDatabaseHealth(true)];
   const logger = new MemoryLogger(clock, masker);
-  const health = new FakeDatabaseHealth(true);
   const { users, sessions, usage, projects, costs, folders, snapshots } = memoryStores();
   const auditLog = new MemoryAuditLog(masker);
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});

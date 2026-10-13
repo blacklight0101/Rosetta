@@ -80,31 +80,6 @@ describe('GET /api/runs/:runId/calls/:seq/transcript refusals', () => {
     expect(missing.json()).toMatchObject({ code: ERROR_CODES.notFound });
   });
 
-  // The call number is a plain decimal from 1, written one way only, of at most 9 digits.
-  it.each([
-    ['a valid number', '1', 200],
-    ['leading zeros', '01', 404],
-    ['zero', '0', 404],
-    ['a negative number', '-1', 404],
-    ['a number above the safe range', '9007199254740993', 404],
-    ['an exponent', '1e0', 404],
-    ['a fraction', '1.0', 404],
-    ['text', 'one', 404],
-  ] as const)(
-    'RF-1011 answers a call number given as %s (%s) with %i',
-    async (_name, seq, status) => {
-      const { test, amy, run } = await setup();
-      await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-001' })]);
-      await seedTranscript(test.callFiles, run, 'reader-001', messages(run));
-
-      const response = await amy.request({ method: 'GET', url: transcriptUrl(run, seq) });
-
-      expect(response.statusCode).toBe(status);
-      if (status === 404) expect(response.json()).toMatchObject({ code: ERROR_CODES.notFound });
-      else expect(response.body).toContain('You read one area.');
-    },
-  );
-
   it("RF-1105 answers 404 for another user's run, with nothing of the transcript", async () => {
     const { test, bob, run } = await setup();
     await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-001' })]);
@@ -115,4 +90,41 @@ describe('GET /api/runs/:runId/calls/:seq/transcript refusals', () => {
     expect(response.statusCode).toBe(404);
     expect(response.body).not.toContain('You read one area.');
   });
+});
+
+// The call number is a plain decimal from 1, written one way only, of at most 9 digits.
+describe('GET /api/runs/:runId/calls/:seq/transcript call number', () => {
+  it('RF-1011 answers 200 with the transcript for a call number that is a valid number', async () => {
+    const { test, amy, run } = await setup();
+    await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-001' })]);
+    await seedTranscript(test.callFiles, run, 'reader-001', messages(run));
+
+    const response = await amy.request({ method: 'GET', url: transcriptUrl(run, '1') });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('You read one area.');
+  });
+
+  it.each([
+    ['leading zeros', '01'],
+    ['zero', '0'],
+    ['a negative number', '-1'],
+    ['a number above the safe range', '9007199254740993'],
+    ['an exponent', '1e0'],
+    ['a fraction', '1.0'],
+    ['text', 'one'],
+  ] as const)(
+    'RF-1011 answers 404 with RST-2003 for a call number given as %s (%s)',
+    async (_name, seq) => {
+      const { test, amy, run } = await setup();
+      await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-001' })]);
+      await seedTranscript(test.callFiles, run, 'reader-001', messages(run));
+
+      const response = await amy.request({ method: 'GET', url: transcriptUrl(run, seq) });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toMatchObject({ code: ERROR_CODES.notFound });
+      expect(response.body).not.toContain('You read one area.');
+    },
+  );
 });
