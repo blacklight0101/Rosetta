@@ -220,9 +220,9 @@ Rules for `areas[]` (RF-104, added with P1-20):
   scan makes (that window, and the 4 000-character line limit) falls between words: when it would fall inside a run
   without white space, the whole run is dropped. Every masker rule matches inside one such run (keys, connection
   URLs, `password=value`) or runs to the end of the text once its keyword is seen (key blocks, quoted values,
-  `;Password=`); the one exception is the XML password element, whose value may hold spaces and ends at its closing tag
-  on the same line, so a cut that falls between the opening tag and the closing tag drops the open element with its
-  value (P1-112). So a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
+  `;Password=`, a CDATA value of an XML password element); the one exception is the XML password element without
+  CDATA, whose value may start after blanks, may hold spaces and ends at its closing tag on the same line, so a cut
+  that falls between the opening tag and the closing tag drops the open element with its value (P1-112, P1-124). So a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
   A wider window alone would not be enough: masking shortens the text, so the cut end can reach the first 500
   characters. The 500-character cut after masking falls between words as well, so it never leaves half a marker or
   a bare `scheme://user:` behind. A statement with no white space before a cut keeps an empty text.
@@ -493,9 +493,14 @@ A `data` key at any depth whose name contains `password`, `passwd`, `pwd`, `secr
 name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count is
 therefore never written under such a name: the Ollama context size is logged as `contextSize`, not `contextTokens`
 (P1-112). Records kept by the shared deep masking (provider call lines, transcripts, run events, audit details) apply the
-same whole-value rule to a key whose last word is `secret`, `secrets`, `token` or `authorization` (`accessToken`,
-`client_secret`, `X-Auth-Token`, `proxyAuthorization`), besides the `password`, `passwd` and `pwd` keys they already
-had; the last word decides, so `inputTokens`, `timeToFirstTokenMs` and `secretCount` keep their numbers (P1-112).
+same whole-value rule to a key whose last word is `secret`, `secrets`, `token`, `authorization` or `bearer`
+(`accessToken`, `client_secret`, `X-Auth-Token`, `proxyAuthorization`), or whose last two words are `secret key`,
+`secret value` or `token value` (`secretKey`, `tokenValue`, `accessTokenValue`), or the plural `tokens` after a word
+that names a credential (`access`, `refresh`, `id`, `auth`, `bearer`, `session`, `api`, `jwt`: `refreshTokens`,
+`access_tokens`), besides the `password`, `passwd` and `pwd` keys they already had. Keys are split into words at
+camelCase, acronym runs, `_`, `-` and digits, and a short suffix that starts with a digit (`2`, `_2FA`) is not a word,
+so `Secret2FA` and `Secret_2FA` match; the last words decide, so `inputTokens`, `timeToFirstTokenMs`, `secretCount`
+and `primaryKey` keep their values (P1-112, P1-124).
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
@@ -538,8 +543,9 @@ The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question 
 names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
 line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
 never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
-and writes to one project's file run one after another. A file saved with CRLF line ends is read like one with LF, and the
-answers written into it keep CRLF.
+and writes to one project's file run one after another. A file saved with CRLF or lone CR (old Mac) line ends, or with a
+byte-order mark before its first line, is read like one with LF; the answers and the sections appended to it use the
+file's own line end, and the mark is kept (P1-126).
 
 ### 3.17 Report and hand-off folders
 
