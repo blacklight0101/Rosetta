@@ -23,21 +23,37 @@ function Row({ row }: { readonly row: SummaryRow }): JSX.Element {
   return (
     <tr data-testid="summary-row">
       <th scope="row">{row.provider}</th>
-      <td>{row.role}</td>
-      <td class="rst-table__num">{tokenText(row.calls)}</td>
-      <td>
+      <td data-label="Role">{row.role}</td>
+      <td data-label="Calls" class="rst-table__num">
+        {tokenText(row.calls)}
+      </td>
+      <td data-label="Errors">
         <span class={row.errors > 0 ? 'rst-p137-errors' : undefined}>{String(row.errors)}</span>
         {errorsText(row) === '' ? null : (
           <span class="rst-table__sub rst-p137-errors__detail">{errorsText(row)}</span>
         )}
       </td>
-      <td class="rst-table__num">{durationText(row.latencyP50Ms)}</td>
-      <td class="rst-table__num">{durationText(row.latencyP95Ms)}</td>
-      <td class="rst-table__num">{durationText(row.firstTokenP50Ms)}</td>
-      <td class="rst-table__num">{durationText(row.firstTokenP95Ms)}</td>
-      <td class="rst-table__num">{speedText(row.tokensPerSecond)}</td>
-      <td class="rst-table__num">{tokenText(row.inputTokens + row.outputTokens)}</td>
-      <td class="rst-table__num">{costText(row.costMicros)}</td>
+      <td data-label="Latency P50" class="rst-table__num">
+        {durationText(row.latencyP50Ms)}
+      </td>
+      <td data-label="Latency P95" class="rst-table__num">
+        {durationText(row.latencyP95Ms)}
+      </td>
+      <td data-label="First token P50" class="rst-table__num">
+        {durationText(row.firstTokenP50Ms)}
+      </td>
+      <td data-label="First token P95" class="rst-table__num">
+        {durationText(row.firstTokenP95Ms)}
+      </td>
+      <td data-label="Speed" class="rst-table__num">
+        {speedText(row.tokensPerSecond)}
+      </td>
+      <td data-label="Tokens" class="rst-table__num">
+        {tokenText(row.inputTokens + row.outputTokens)}
+      </td>
+      <td data-label="Cost" class="rst-table__num">
+        {costText(row.costMicros)}
+      </td>
     </tr>
   );
 }
@@ -65,7 +81,7 @@ export function CallSummary({ rows }: CallSummaryProps): JSX.Element {
         <p class="rst-settings__note">The figures appear when the run makes its first call.</p>
       ) : (
         <ScrollRegion label="Summary figures">
-          <table class="rst-table">
+          <table class="rst-table rst-table--stack">
             <thead>
               <tr>
                 {heads.map(([label, numeric]) => (

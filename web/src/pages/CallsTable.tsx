@@ -20,7 +20,7 @@ const NONE = '-';
 
 function StatusCell({ call }: { readonly call: CallRow }): JSX.Element {
   return (
-    <td>
+    <td data-label="Status">
       <StatusBadge
         list="CallStatus"
         value={call.status}
@@ -29,6 +29,32 @@ function StatusCell({ call }: { readonly call: CallRow }): JSX.Element {
       {call.attempt > 1 ? <span class="rst-table__sub"> attempt {call.attempt}</span> : null}
       {call.errorCode === undefined ? null : (
         <span class="rst-mono rst-p137-code"> {call.errorCode}</span>
+      )}
+    </td>
+  );
+}
+
+function TranscriptCell(props: {
+  readonly call: CallRow;
+  readonly transcriptHref: CallsTableProps['transcriptHref'];
+  readonly onSelect: CallsTableProps['onSelect'];
+}): JSX.Element {
+  const { call } = props;
+  return (
+    <td data-label="Transcript">
+      {call.hasTranscript ? (
+        <a
+          href={props.transcriptHref(call.seq)}
+          aria-label={`Transcript of call ${String(call.seq)}`}
+          onClick={(event) => {
+            event.preventDefault();
+            props.onSelect(call.seq);
+          }}
+        >
+          open
+        </a>
+      ) : (
+        <span class="rst-table__sub">none</span>
       )}
     </td>
   );
@@ -45,32 +71,31 @@ function Row(props: CallsTableProps & { readonly call: CallRow }): JSX.Element {
       aria-current={selected === call.seq ? 'true' : undefined}
       class={`rst-p137-row${isProblem(call) ? ' rst-p137-row--problem' : ''}`}
     >
-      <td class="rst-mono">{call.seq}</td>
-      <td class="rst-mono">{clockText(call.startedAt)}</td>
-      <td>{call.agent}</td>
-      <td class="rst-mono">{`${call.provider} / ${call.model}`}</td>
-      <td class="rst-table__num">{answered ? durationText(call.timeToFirstTokenMs) : NONE}</td>
-      <td class="rst-table__num">{durationText(call.latencyMs)}</td>
-      <td class="rst-table__num">{answered ? tokenText(call.inputTokens) : NONE}</td>
-      <td class="rst-table__num">{answered ? tokenText(call.outputTokens) : NONE}</td>
-      <td class="rst-table__num">{costText(call.costMicros)}</td>
-      <StatusCell call={call} />
-      <td>
-        {call.hasTranscript ? (
-          <a
-            href={props.transcriptHref(call.seq)}
-            aria-label={`Transcript of call ${String(call.seq)}`}
-            onClick={(event) => {
-              event.preventDefault();
-              props.onSelect(call.seq);
-            }}
-          >
-            open
-          </a>
-        ) : (
-          <span class="rst-table__sub">none</span>
-        )}
+      <td data-label="#" class="rst-mono">
+        {call.seq}
       </td>
+      <td data-label="Time" class="rst-mono">
+        {clockText(call.startedAt)}
+      </td>
+      <td data-label="Agent">{call.agent}</td>
+      <td data-label="Provider, model" class="rst-mono">{`${call.provider} / ${call.model}`}</td>
+      <td data-label="First token" class="rst-table__num">
+        {answered ? durationText(call.timeToFirstTokenMs) : NONE}
+      </td>
+      <td data-label="Latency" class="rst-table__num">
+        {durationText(call.latencyMs)}
+      </td>
+      <td data-label="In" class="rst-table__num">
+        {answered ? tokenText(call.inputTokens) : NONE}
+      </td>
+      <td data-label="Out" class="rst-table__num">
+        {answered ? tokenText(call.outputTokens) : NONE}
+      </td>
+      <td data-label="Cost" class="rst-table__num">
+        {costText(call.costMicros)}
+      </td>
+      <StatusCell call={call} />
+      <TranscriptCell call={call} transcriptHref={props.transcriptHref} onSelect={props.onSelect} />
     </tr>
   );
 }
@@ -93,7 +118,7 @@ const heads = [
 export function CallsTable(props: CallsTableProps): JSX.Element {
   return (
     <div class="rst-table-scroll">
-      <table class="rst-table">
+      <table class="rst-table rst-table--stack">
         <thead>
           <tr>
             {heads.map(([label, numeric]) => (

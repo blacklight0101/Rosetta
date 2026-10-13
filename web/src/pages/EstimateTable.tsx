@@ -26,13 +26,13 @@ function RoleRow({ role }: { readonly role: RoleEstimate }): JSX.Element {
   return (
     <tr>
       <th scope="row">{role.role}</th>
-      <td class="rst-table__wrap">
+      <td class="rst-table__wrap" data-label="Provider, model">
         <span class="rst-mono">
           {role.provider} / {role.model}
         </span>
       </td>
       {scenarios.map((scenario) => (
-        <td key={scenario} class="rst-table__number">
+        <td key={scenario} class="rst-table__number" data-label={columnTitles[scenario]}>
           <div>{roleCost(role, scenario)}</div>
           <div class="rst-table__sub">{tokens(totalTokens(role, scenario))}</div>
         </td>
@@ -52,7 +52,7 @@ function TotalRow({ estimate }: { readonly estimate: RunEstimate }): JSX.Element
       {scenarios.map((scenario) => {
         const amount = dollars(pricedTotal(estimate, scenario));
         return (
-          <td key={scenario} class="rst-table__number">
+          <td key={scenario} class="rst-table__number" data-label={columnTitles[scenario]}>
             <div>
               <strong>{incomplete ? `at least ${amount}` : amount}</strong>
             </div>
@@ -82,7 +82,7 @@ export function EstimateTable({ estimate }: { readonly estimate: RunEstimate }):
   return (
     <>
       <div class="rst-table-scroll" role="region" aria-label="Estimate table" tabIndex={0}>
-        <table class="rst-table">
+        <table class="rst-table rst-table--stack">
           <caption class="rst-visually-hidden">Estimate per role</caption>
           <thead>
             <tr>

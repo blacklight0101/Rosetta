@@ -163,7 +163,7 @@ from tokens, and English text (DEC-45).
 | Coverage map | - | no areas yet, area with no file read, area filling in | a region with one labelled region per area; the read share is `role="meter"`; the tree is nested lists | one block per reader area in plan order: area name, files read and share of the run's files read, a bar in the reader role colour, the files read as a tree of folders (folders first, by name); it fills in from successful `read_file` calls (RF-1005) |
 | Timeline | live, replay | - | lanes are a list; each bar has a text alternative | one lane per agent, coloured by role; time axis |
 | Event stream | live, replay | - | `aria-live="polite"`, throttled | time, event type coloured by kind, one-line text; newest first |
-| Data table | calls, runs, snapshots, cards, projects | default, highlighted (error), selected | real `table` with headers; wide tables scroll inside a box | filter bar above; numeric columns right-aligned |
+| Data table | calls, runs, snapshots, cards, projects | default, highlighted (error), selected | real `table` with headers; at 360 px rows stack, each cell named by its column (`data-label`); at 1280 px the columns stay | filter bar above; numeric columns right-aligned |
 | Cost meter | run, role | under 80%, 80-95% (warn), 95%+ (danger) | `role="meter"` with value and label | marker at the likely estimate |
 | Callout | warning, error, info | - | `role="alert"` for the cloud warning and errors | cloud warning includes the consent checkbox (RF-143) |
 | Dialog | confirm, destructive confirm | open | `role="dialog"`, `aria-modal`, focus trapped and restored | destructive confirm names the target, space freed, and what is kept |
@@ -299,5 +299,5 @@ Components these screens add to section 5:
 | Cap banner | administration pages | warning bar at 80% of the server's monthly cap (RF-1106) |
 | Queue notice | projects | info callout with the queue position and Cancel queued run (RF-1108) |
 | Callout tones | start run | `rst-callout--warn` (cloud notice, cap warning) and `rst-callout--info` (queue notice, the server key note of P1-107) beside the default error tone; the cap meter is `role="meter"` with the high estimate as a marker (P1-34) |
-| Administration rows and filters | administration | the row actions of an account stay on one line (`rst-admin__actions`; the table scrolls in its region), the accounts filter by name (`rst-admin__filter`), the audit filters are User, Action, Period and Outcome; the cap banner sits in the shell's banner slot on every page (P1-107) |
+| Administration rows and filters | administration | the row actions of an account stay on one line at 1280 px (`rst-admin__actions`; at 360 px they wrap inside the stacked row), the accounts filter by name (`rst-admin__filter`), the audit filters are User, Action, Period and Outcome; the cap banner sits in the shell's banner slot on every page (P1-107) |
 | Rule checklist | change password | each password rule with a pass or fail glyph and text, updated as the user types (RF-1103) |

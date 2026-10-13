@@ -61,20 +61,24 @@ function AccountRow(props: RowProps): JSX.Element {
   const { user } = props;
   return (
     <tr>
-      <td>
+      <td data-label="User">
         <strong>{user.displayName}</strong>
         <div class="rst-mono rst-table__sub">{user.userName}</div>
       </td>
-      <td>
+      <td data-label="Role">
         <StatusBadge list="Role" value={user.role} />
       </td>
-      <td>
+      <td data-label="State">
         <StatusBadge list="AccountState" value={user.state} />
       </td>
-      <td>{signInText(user.lastSignInAt)}</td>
-      <td class="rst-table__num">{user.projects}</td>
-      <td class="rst-table__num">{costText(user.monthToDate)}</td>
-      <td>{user.serverKeysAllowed ? 'allowed' : 'not allowed'}</td>
+      <td data-label="Last sign-in (UTC)">{signInText(user.lastSignInAt)}</td>
+      <td class="rst-table__num" data-label="Projects">
+        {user.projects}
+      </td>
+      <td class="rst-table__num" data-label="Month to date">
+        {costText(user.monthToDate)}
+      </td>
+      <td data-label="Server keys">{user.serverKeysAllowed ? 'allowed' : 'not allowed'}</td>
       <td>
         <RowActions {...props} />
       </td>
@@ -86,7 +90,7 @@ function AccountRow(props: RowProps): JSX.Element {
 export function AccountsTable({ users, ...rest }: AccountsTableProps): JSX.Element {
   return (
     <ScrollRegion label="Accounts table">
-      <table class="rst-table">
+      <table class="rst-table rst-table--stack">
         <caption class="rst-visually-hidden">Accounts</caption>
         <thead>
           <tr>
