@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
+import { addUser, signedInBrowser, TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
 // RF-1101, RF-1105, RNF-003: with the session store down, a non-public route never serves its page
@@ -58,6 +58,21 @@ describe('public routes with the session store down', () => {
   });
 });
 
+describe('other public routes with the session store down', () => {
+  it.each(['/sign-in', '/assets/missing.js', '/healthz'])(
+    'RF-1105 %s answers as it does with the store up',
+    async (url) => {
+      const { test, browser } = await signedInWithStoreDown();
+      const up = await new TestBrowser(test.server).request({ method: 'GET', url });
+
+      const down = await browser.request({ method: 'GET', url });
+
+      expect(down.statusCode).toBe(up.statusCode);
+      expect(down.statusCode).not.toBe(500);
+    },
+  );
+});
+
 describe('the landing page lookup failure', () => {
   it('RNF-003 writes one warn line with RST-2404 and the path, and keeps the visitor page', async () => {
     const { test, browser } = await signedInWithStoreDown();
@@ -69,7 +84,36 @@ describe('the landing page lookup failure', () => {
     );
     expect(response.statusCode).toBe(200);
     expect(lines).toHaveLength(1);
-    expect(lines[0]).toMatchObject({ level: 'warn', data: { path: '/' } });
-    expect(Object.keys(lines[0]?.data ?? {})).toEqual(['path']);
+    expect(lines[0]).toEqual({
+      schemaVersion: 1,
+      at: expect.any(String),
+      level: 'warn',
+      logger: 'http',
+      message: 'The session lookup failed; the page is shown to a visitor.',
+      code: ERROR_CODES.databaseQueryFailed,
+      data: { path: '/' },
+    });
+  });
+
+  it('RNF-003 keeps the visitor page when the log write rejects', async () => {
+    const { test, browser } = await signedInWithStoreDown();
+    test.logger.log = () => Promise.reject(new Error('log file full'));
+
+    const response = await browser.request({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('text/html');
+  });
+
+  it('RNF-003 keeps the visitor page when the log write throws', async () => {
+    const { test, browser } = await signedInWithStoreDown();
+    test.logger.log = () => {
+      throw new Error('log file full');
+    };
+
+    const response = await browser.request({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('text/html');
   });
 });
