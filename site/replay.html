@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39;; connect-src &#39;self&#39;; img-src &#39;self&#39; data:; style-src &#39;self&#39;; base-uri &#39;none&#39;; form-action &#39;self&#39;">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run replay - 20261012-100000-understand</title>
+<link rel="stylesheet" href="report.css">
+<script src="replay.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="masthead">
+<p class="brand">Rosetta</p>
+<p class="run">Run <span class="mono">20261012-100000-understand</span></p>
+</header>
+<nav class="tabs" aria-label="Report pages"><a href="report.html">Report</a>
+<a href="replay.html" aria-current="page">Run replay</a></nav>
+<main id="main">
+<h1>Run replay</h1>
+<p class="lede">How the agents worked on this run, step by step: their turns, the files they read, the cards they proposed, the verifier's verdicts and the cost as it grew.</p>
+<p class="summary"><span>24 steps</span> <span>46.0 s</span> <span>$0.0040</span> <span>3930 tokens</span></p>
+<section aria-labelledby="agents">
+<h2 id="agents">Agents</h2>
+<div class="table-wrap" role="region" aria-label="Agents of the run" tabindex="0">
+<table class="stacked">
+<thead><tr><th scope="col">Area</th><th scope="col">Role</th><th scope="col">Model</th><th scope="col">State</th><th scope="col">Turns</th><th scope="col">Cards</th></tr></thead>
+<tbody>
+<tr><td data-label="Area">orders</td><td data-label="Role">reader</td><td data-label="Model">model-a</td><td data-label="State">Done</td><td data-label="Turns">2</td><td data-label="Cards">1</td></tr>
+<tr><td data-label="Area">catalog</td><td data-label="Role">reader</td><td data-label="Model">model-a</td><td data-label="State">Done</td><td data-label="Turns">1</td><td data-label="Cards">0</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<section aria-labelledby="timeline">
+<h2 id="timeline">Timeline</h2>
+<div class="controls" data-replay-controls hidden>
+<button type="button" data-action="play">Play</button>
+<button type="button" data-action="pause">Pause</button>
+<button type="button" data-action="step">Step</button>
+<button type="button" data-action="restart">Restart</button>
+<p class="status" role="status" aria-live="polite" data-replay-status></p>
+</div>
+<ol class="timeline" data-replay-steps data-total="24">
+<li class="step step-run" data-seq="1" data-cost="$0.0000" data-tokens="0">
+<time datetime="2026-10-12T10:00:00.000Z">+0.0 s</time>
+<span class="label">Run started</span>
+<span class="text">Stage understand</span>
+<span class="running"><span>$0.0000</span> <span>0 tokens</span></span>
+</li>
+<li class="step step-source" data-seq="2" data-cost="$0.0000" data-tokens="0">
+<time datetime="2026-10-12T10:00:02.000Z">+2.0 s</time>
+<span class="label">Source resolved</span>
+<span class="text">https://github.com/octo/demo @ main, commit 3f786850e387</span>
+<span class="running"><span>$0.0000</span> <span>0 tokens</span></span>
+</li>
+<li class="step step-source" data-seq="3" data-cost="$0.0000" data-tokens="0">
+<time datetime="2026-10-12T10:00:04.000Z">+4.0 s</time>
+<span class="label">Source downloaded</span>
+<span class="text">12 files, 48213 bytes, cached</span>
+<span class="running"><span>$0.0000</span> <span>0 tokens</span></span>
+</li>
+<li class="step step-scan" data-seq="4" data-cost="$0.0000" data-tokens="0">
+<time datetime="2026-10-12T10:00:06.000Z">+6.0 s</time>
+<span class="label">Scan completed</span>
+<span class="text">12 files in 2 areas</span>
+<span class="running"><span>$0.0000</span> <span>0 tokens</span></span>
+</li>
+<li class="step step-agent" data-seq="5" data-cost="$0.0000" data-tokens="0">
+<time datetime="2026-10-12T10:00:08.000Z">+8.0 s</time>
+<span class="label">Agent planned</span>
+<span class="text">orders: reader (model-a)</span>
+<span class="running"><span>$0.0000</span> <span>0 tokens</span></span>
+</li>
+<li class="step step-agent" data-seq="6" data-cost="$0.0000" data-tokens="0">
+<time datetime="2026-10-12T10:00:10.000Z">+10.0 s</time>
+<span class="label">Agent planned</span>
+<span class="text">catalog: reader (model-a)</span>
+<span class="running"><span>$0.0000</span> <span>0 tokens</span></span>
+</li>
+<li class="step step-agent" data-seq="7" data-cost="$0.0000" data-tokens="0">
+<time datetime="2026-10-12T10:00:12.000Z">+12.0 s</time>
+<span class="label">Agent started</span>
+<span class="text">orders: reader (model-a)</span>
+<span class="running"><span>$0.0000</span> <span>0 tokens</span></span>
+</li>
+<li class="step step-turn" data-seq="8" data-cost="$0.0000" data-tokens="1280">
+<time datetime="2026-10-12T10:00:14.000Z">+14.0 s</time>
+<span class="label">Turn</span>
+<span class="text">Turn 1: 1200 tokens in, 80 out</span>
+<span class="running"><span>$0.0000</span> <span>1280 tokens</span></span>
+</li>
+<li class="step step-tool" data-seq="9" data-cost="$0.0000" data-tokens="1280">
+<time datetime="2026-10-12T10:00:16.000Z">+16.0 s</time>
+<span class="label">Tool call</span>
+<span class="text">read_file endLine=24 path=src/.cs startLine=10</span>
+<span class="running"><span>$0.0000</span> <span>1280 tokens</span></span>
+</li>
+<li class="step step-tool" data-seq="10" data-cost="$0.0000" data-tokens="1280">
+<time datetime="2026-10-12T10:00:18.000Z">+18.0 s</time>
+<span class="label">Tool result</span>
+<span class="text">read_file: ok, 15 lines</span>
+<span class="running"><span>$0.0000</span> <span>1280 tokens</span></span>
+</li>
+<li class="step step-cost" data-seq="11" data-cost="$0.0015" data-tokens="1280">
+<time datetime="2026-10-12T10:00:20.000Z">+20.0 s</time>
+<span class="label">Usage</span>
+<span class="text">reader model-a: $0.0015</span>
+<span class="running"><span>$0.0015</span> <span>1280 tokens</span></span>
+</li>
+<li class="step step-turn" data-seq="12" data-cost="$0.0015" data-tokens="2990">
+<time datetime="2026-10-12T10:00:22.000Z">+22.0 s</time>
+<span class="label">Turn</span>
+<span class="text">Turn 2: 1500 tokens in, 210 out</span>
+<span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-tool" data-seq="13" data-cost="$0.0015" data-tokens="2990">
+<time datetime="2026-10-12T10:00:24.000Z">+24.0 s</time>
+<span class="label">Tool call</span>
+<span class="text">grep pattern=</span>
+<span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-tool" data-seq="14" data-cost="$0.0015" data-tokens="2990">
+<time datetime="2026-10-12T10:00:26.000Z">+26.0 s</time>
+<span class="label">Tool result</span>
+<span class="text">grep: refused (RST-1100)</span>
+<span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-card" data-seq="15" data-cost="$0.0015" data-tokens="2990">
+<time datetime="2026-10-12T10:00:28.000Z">+28.0 s</time>
+<span class="label">Card proposed</span>
+<span class="text">BR-001 Order checkout (1 claim)</span>
+<span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-verdict" data-seq="16" data-cost="$0.0015" data-tokens="2990">
+<time datetime="2026-10-12T10:00:30.000Z">+30.0 s</time>
+<span class="label">Citation check</span>
+<span class="text">BR-001.c1: citation ok</span>
+<span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-verdict" data-seq="17" data-cost="$0.0015" data-tokens="2990">
+<time datetime="2026-10-12T10:00:32.000Z">+32.0 s</time>
+<span class="label">Verdict</span>
+<span class="text">BR-001.c1: Supported - Lines 10-24 match the claim.</span>
+<span class="running"><span>$0.0015</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-cost" data-seq="18" data-cost="$0.0040" data-tokens="2990">
+<time datetime="2026-10-12T10:00:34.000Z">+34.0 s</time>
+<span class="label">Usage</span>
+<span class="text">reader model-a: $0.0025</span>
+<span class="running"><span>$0.0040</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-agent" data-seq="19" data-cost="$0.0040" data-tokens="2990">
+<time datetime="2026-10-12T10:00:36.000Z">+36.0 s</time>
+<span class="label">Agent ended</span>
+<span class="text">Done, 2 turns, 1 card</span>
+<span class="running"><span>$0.0040</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-agent" data-seq="20" data-cost="$0.0040" data-tokens="2990">
+<time datetime="2026-10-12T10:00:38.000Z">+38.0 s</time>
+<span class="label">Agent started</span>
+<span class="text">catalog: reader (model-a)</span>
+<span class="running"><span>$0.0040</span> <span>2990 tokens</span></span>
+</li>
+<li class="step step-turn" data-seq="21" data-cost="$0.0040" data-tokens="3930">
+<time datetime="2026-10-12T10:00:40.000Z">+40.0 s</time>
+<span class="label">Turn</span>
+<span class="text">Turn 1: 900 tokens in, 40 out</span>
+<span class="running"><span>$0.0040</span> <span>3930 tokens</span></span>
+</li>
+<li class="step step-agent" data-seq="22" data-cost="$0.0040" data-tokens="3930">
+<time datetime="2026-10-12T10:00:42.000Z">+42.0 s</time>
+<span class="label">Agent ended</span>
+<span class="text">Done, 1 turn, 0 cards</span>
+<span class="running"><span>$0.0040</span> <span>3930 tokens</span></span>
+</li>
+<li class="step step-budget" data-seq="23" data-cost="$0.0040" data-tokens="3930">
+<time datetime="2026-10-12T10:00:44.000Z">+44.0 s</time>
+<span class="label">Budget warning</span>
+<span class="text">run at 50 percent of its cap</span>
+<span class="running"><span>$0.0040</span> <span>3930 tokens</span></span>
+</li>
+<li class="step step-run" data-seq="24" data-cost="$0.0040" data-tokens="3930">
+<time datetime="2026-10-12T10:00:46.000Z">+46.0 s</time>
+<span class="label">Run ended</span>
+<span class="text">Completed</span>
+<span class="running"><span>$0.0040</span> <span>3930 tokens</span></span>
+</li>
+</ol>
+</section>
+</main>
+</body>
+</html>
