@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { expect, test } from './fixtures.js';
+import { expect } from './fixtures.js';
 
 // RF-1002, RF-1003, RF-1004, P1-35: what the live run journeys do on the start page and on the live
 // page, so the specs read as steps. The repository is `octo/webforms` (serve.ts), the C# fixture whose
@@ -40,24 +40,8 @@ async function chooseAreas(page: Page, names: readonly string[]): Promise<void> 
   }
 }
 
-const PROJECT_NAMES = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-dark'];
-
-/**
- * Waits for a second of its own before a run starts. The key of a run is its start second plus the
- * mode, and the cost reservations of two runs that started in the same second collide on one key
- * (see OPEN QUESTIONS of P1-35), which fails the readers. The four projects run at once, each
- * starting only in the seconds that are its own modulo eight, two seconds apart.
- */
-async function waitForOwnSecond(): Promise<void> {
-  const slot = Math.max(0, PROJECT_NAMES.indexOf(test.info().project.name)) * 2;
-  while (Math.floor(Date.now() / 1000) % (PROJECT_NAMES.length * 2) !== slot) {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-}
-
 /** Presses Start and follows the link of the notice to the live page; returns its path. */
 export async function startAndOpenLiveRun(page: Page): Promise<string> {
-  await waitForOwnSecond();
   await page.getByRole('button', startButton).click();
   const notice = page.getByTestId('run-notice');
   await expect(notice).toContainText(/Run started|Queued/u);
