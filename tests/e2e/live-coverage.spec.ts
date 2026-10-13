@@ -33,6 +33,15 @@ function readShare(page: Page, area: string): Locator {
   return coverageOf(page, area).getByRole('meter', { name: `Read share of ${area}` });
 }
 
+/** The number in the pause counter ("12 events waiting"); 0 when the counter is not shown. */
+async function waitingEvents(page: Page): Promise<number> {
+  const shown = await page
+    .getByTestId('pause-count')
+    .textContent({ timeout: 1000 })
+    .catch(() => null);
+  return Number(/(\d+) events? waiting/u.exec(shown ?? '')?.[1] ?? 0);
+}
+
 /** Lets two reader tasks run at once, so a held reader does not keep the others from starting. */
 async function twoParallelReaders(page: Page): Promise<void> {
   await page.goto('/projects');
@@ -42,19 +51,29 @@ async function twoParallelReaders(page: Page): Promise<void> {
   await expect(page.getByText('Settings saved.')).toBeVisible();
 }
 
+/** A completed scan of the project: an understand run needs one. */
+async function scanProject(page: Page): Promise<void> {
+  await openStartPage(page);
+  await page.getByLabel('Scan only').check();
+  await startAndOpenLiveRun(page);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+}
+
 test('RF-1005 the coverage map of a running run fills in by area and by read share as files are read', async ({
   page,
 }) => {
   test.setTimeout(120_000); // a scan, then an understand run at one recorded step in 700 ms
   await openStartPage(page);
   await twoParallelReaders(page);
-  await openStartPage(page);
-  await page.getByLabel('Scan only').check();
-  await startAndOpenLiveRun(page);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await scanProject(page);
 
   await startUnderstand(page, ['(root)', 'Controllers', 'Services']);
   const map = page.getByRole('region', { name: 'Coverage map' });
+  // The condition the map depends on: the first `read_file` event is applied to the tree. The
+  // planned areas, Controllers among them, are on the map by then.
+  await expect(
+    coverageOf(page, '(root)').getByText('Default.aspx.cs', { exact: true }),
+  ).toBeVisible({ timeout: 30_000 });
   await expect(map).toBeVisible();
   await expect(coverageOf(page, 'Controllers')).toBeVisible();
 
@@ -76,4 +95,41 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await expect(coverageOf(page, 'Services')).toContainText('CatalogService.cs');
+});
+
+test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file events keep arriving, and Resume applies the held reads', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await scanProject(page);
+  // One reader at a time: `(root)` reads Default.aspx.cs first, `Services` reads CatalogService.cs after it.
+  await startUnderstand(page, ['(root)', 'Services']);
+  const map = page.getByRole('region', { name: 'Coverage map' });
+  const root = coverageOf(page, '(root)');
+  await expect(root.getByText('Default.aspx.cs', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(map).toContainText('1 file read in 1 area');
+  const services = coverageOf(page, 'Services');
+  await expect(services).toContainText('No files read yet');
+
+  await page.getByRole('button', { name: 'Pause updates' }).click();
+  const frozen = {
+    map: await map.innerHTML(),
+    share: await readShare(page, '(root)').getAttribute('aria-valuenow'),
+  };
+  // The Services reader reads CatalogService.cs behind the pause: its `read_file` events wait.
+  await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(7);
+  await expect(services).toContainText('No files read yet');
+  await expect(services.getByText('CatalogService.cs')).toHaveCount(0);
+  expect(await map.innerHTML()).toBe(frozen.map);
+  expect(await readShare(page, '(root)').getAttribute('aria-valuenow')).toBe(frozen.share);
+
+  await page.getByRole('button', { name: 'Resume' }).click();
+
+  await expect(services.getByText('CatalogService.cs', { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(map).toContainText('2 files read in 2 areas');
+  await expect(readShare(page, '(root)')).toHaveAttribute('aria-valuenow', '50');
+  await expect(readShare(page, 'Services')).toHaveAttribute('aria-valuenow', '50');
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
 });

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
   agentStarted,
@@ -80,4 +80,41 @@ it('RF-1005 a scan run has no coverage map', async () => {
 
   await screen.findByText(/This run has no agents/u);
   expect(screen.queryByRole('region', { name: 'Coverage map' })).toBeNull();
+});
+
+it('RF-1005 RF-1002 the coverage map is held while updates are paused and applies the held reads on Resume', async () => {
+  const { stream } = renderLive();
+  const connection = await stream.connection();
+  connection.event(ev(1, 'run.started', startedData));
+  connection.event(planned(2, 'reader-001', 'Catalog'));
+  connection.event(planned(3, 'reader-002', 'Services'));
+  connection.event(agentStarted(4, 'reader-001', 'Catalog'));
+  connection.event(toolCalled(5, 'reader-001', { path: 'Catalog/Edit.aspx' }));
+  connection.event(toolResult(6, 'reader-001', true));
+  await waitFor(() => {
+    expect(within(areaOf('Catalog')).getByText('Edit.aspx')).toBeTruthy();
+  });
+  const before = coverage().innerHTML;
+  fireEvent.click(screen.getByRole('button', { name: 'Pause updates' }));
+
+  connection.event(toolCalled(7, 'reader-001', { path: 'Catalog/Details.aspx.cs' }));
+  connection.event(toolResult(8, 'reader-001', true));
+  connection.event(toolCalled(9, 'reader-002', { path: 'Services/CatalogService.cs' }));
+  connection.event(toolResult(10, 'reader-002', true));
+
+  await waitFor(() => {
+    expect(screen.getByTestId('pause-count').textContent).toContain('4 events waiting');
+  });
+  expect(coverage().innerHTML).toBe(before);
+  expect(within(areaOf('Catalog')).queryByText('Details.aspx.cs')).toBeNull();
+  expect(within(areaOf('Services')).queryByText('CatalogService.cs')).toBeNull();
+  expect(coverage().textContent).toContain('1 file read in 1 area');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+
+  await waitFor(() => {
+    expect(within(areaOf('Services')).getByText('CatalogService.cs')).toBeTruthy();
+  });
+  expect(within(areaOf('Catalog')).getByText('Details.aspx.cs')).toBeTruthy();
+  expect(coverage().textContent).toContain('3 files read in 2 areas');
 });
