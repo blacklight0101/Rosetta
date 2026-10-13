@@ -20,7 +20,9 @@ export function PauseUpdates({ paused, waiting, onToggle }: PauseUpdatesProps): 
         <span class="rst-live-pause-count" data-testid="pause-count">
           {`${String(waiting)} ${waiting === 1 ? 'event' : 'events'} waiting`}
         </span>
-      ) : null}
+      ) : (
+        <span class="rst-live-pause-count" aria-hidden="true" />
+      )}
       <Button onClick={onToggle}>{paused ? 'Resume' : 'Pause updates'}</Button>
     </span>
   );

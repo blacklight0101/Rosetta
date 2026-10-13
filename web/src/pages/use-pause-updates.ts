@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import type { RunState } from '../lib/live-run/run-state.js';
 
 // RF-1002, design-system.md section 1 (principle 6): the view of the page that Pause updates can
@@ -22,6 +22,9 @@ function noteOf(held: RunState | undefined, resumed: boolean): string | undefine
   return resumed ? 'Updates resumed' : undefined;
 }
 
+/** How long `Updates resumed` stays in the status, so it is announced and then goes. */
+const RESUMED_NOTE_MS = 3000;
+
 // RF-1002
 export function usePauseUpdates(live: RunState): PauseView {
   const [held, setHeld] = useState<RunState | undefined>();
@@ -30,6 +33,15 @@ export function usePauseUpdates(live: RunState): PauseView {
     setResumed(held !== undefined);
     setHeld(held === undefined ? live : undefined);
   };
+  useEffect(() => {
+    if (!resumed) return undefined;
+    const timer = setTimeout(() => {
+      setResumed(false);
+    }, RESUMED_NOTE_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [resumed]);
   const waiting = held === undefined ? 0 : Math.max(0, live.lastSeq - held.lastSeq);
   return {
     shown: held ?? live,

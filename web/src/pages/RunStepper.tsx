@@ -8,21 +8,24 @@ import type { Step, StepStatus } from '../lib/live-run/run-stepper.js';
 const glyphOf: Readonly<Record<StepStatus, GlyphName>> = {
   done: 'check',
   current: 'live-dot',
+  stopped: 'square',
   waiting: 'open-circle',
 };
 
 const wordOf: Readonly<Record<StepStatus, string>> = {
   done: 'done',
   current: 'in progress',
+  stopped: 'stopped',
   waiting: 'waiting',
 };
 
-function StepItem({ step }: { readonly step: Step }): JSX.Element {
+function StepItem(props: { readonly step: Step; readonly marked: boolean }): JSX.Element {
+  const { step, marked } = props;
   return (
     <li
       class="rst-live-stepper-item"
       data-state={step.status}
-      aria-current={step.status === 'current' ? 'step' : undefined}
+      aria-current={marked ? 'step' : undefined}
     >
       <span class={`rst-live-stepper-step rst-live-stepper-step--${step.status}`}>
         <Glyph name={glyphOf[step.status]} />
@@ -38,10 +41,12 @@ function StepItem({ step }: { readonly step: Step }): JSX.Element {
 
 // RF-1002
 export function RunStepper({ steps }: { readonly steps: readonly Step[] }): JSX.Element {
+  // Verify can work while Understand does; only the first step in progress is the current one.
+  const first = steps.find((step) => step.status === 'current');
   return (
     <ol class="rst-live-stepper" aria-label="Pipeline" data-testid="stepper">
       {steps.map((step) => (
-        <StepItem key={step.name} step={step} />
+        <StepItem key={step.name} step={step} marked={step === first} />
       ))}
     </ol>
   );

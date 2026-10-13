@@ -167,3 +167,23 @@
 .rst-topbar-runmeter--danger .rst-topbar-runmeter-note {
   color: var(--rst-danger-ink);
 }
+
+/* Room for the pause note and the counter is always reserved, and Pause updates and Resume are the
+   same size, so nothing moves under the pointer when updates are paused or resumed. */
+.rst-live-pause-note {
+  min-inline-size: 7rem;
+  min-block-size: 1lh;
+}
+
+.rst-live-pause .rst-button {
+  inline-size: 8.5rem;
+}
+
+.rst-topbar-runmeter-figures {
+  min-inline-size: 10rem;
+}
+
+.rst-live-stepper-step--stopped {
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+}

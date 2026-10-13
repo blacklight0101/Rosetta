@@ -51,9 +51,7 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
           {stopping && phase.kind !== 'ended' ? (
             <span class="rst-live-head__note">Stopping…</span>
           ) : null}
-          {props.updatesNote === undefined ? null : (
-            <span class="rst-live-head__note">{props.updatesNote}</span>
-          )}
+          <span class="rst-live-head__note rst-live-pause-note">{props.updatesNote}</span>
         </span>
         <span class="rst-live-pause-actions">
           <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>

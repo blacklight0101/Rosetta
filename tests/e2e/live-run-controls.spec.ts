@@ -82,9 +82,11 @@ test('RF-1002 RF-1004 the stepper of an understand run moves from Understand to 
     /^Verify/u,
     /^Report/u,
   ]);
+  await expect(step(page, 'Understand')).toHaveAttribute('aria-current', 'step', {
+    timeout: 30_000,
+  });
   await expect(step(page, 'Snapshot')).toContainText('done');
   await expect(step(page, 'Scan')).toContainText('done');
-  await expect(step(page, 'Understand')).toHaveAttribute('aria-current', 'step');
   await expect(step(page, 'Understand')).toContainText(/\d of 4 agents done/u);
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
@@ -109,12 +111,10 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   const log = page.getByRole('log', { name: 'Event log' });
 
   const pauseBox = await boxOf(page.getByRole('button', { name: 'Pause updates' }));
-  const panelBox = await boxOf(agentPanel(page, 'Catalog'));
   await page.getByRole('button', { name: 'Pause updates' }).click();
 
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
   expect(await boxOf(page.getByRole('button', { name: 'Resume' }))).toEqual(pauseBox);
-  expect((await boxOf(agentPanel(page, 'Catalog'))).y).toBe(panelBox.y);
   await expect(runStatus(page)).toContainText('Updates paused');
   const held = {
     catalog: (await agentPanel(page, 'Catalog').textContent()) ?? '',
@@ -134,7 +134,6 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   await expect(pauseCount(page)).toHaveCount(0);
   await expect(runStatus(page)).toContainText('Updates resumed');
   expect(await boxOf(page.getByRole('button', { name: 'Pause updates' }))).toEqual(pauseBox);
-  expect((await boxOf(agentPanel(page, 'Catalog'))).y).toBe(panelBox.y);
   await expect(page.getByRole('button', { name: 'Pause updates' })).toBeVisible();
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
   expect(await log.getByRole('listitem').count()).toBeGreaterThan(held.lines);
@@ -142,6 +141,30 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
   await expectNoSeriousViolations(page);
+});
+
+test('RF-1002 pressing Pause updates and Resume moves neither the button nor the panels', async ({
+  page,
+}) => {
+  await startUnderstand(page, ['Controllers']);
+  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
+  await expect(page.getByRole('button', { name: 'Pause updates' })).toBeVisible();
+  const before = {
+    button: await boxOf(page.getByRole('button', { name: 'Pause updates' })),
+    panel: await boxOf(agentPanel(page, 'Controllers')),
+  };
+
+  await page.getByRole('button', { name: 'Pause updates' }).click();
+  await expect(runStatus(page)).toContainText('Updates paused');
+
+  expect(await boxOf(page.getByRole('button', { name: 'Resume' }))).toEqual(before.button);
+  expect(await boxOf(agentPanel(page, 'Controllers'))).toEqual(before.panel);
+  await page.getByRole('button', { name: 'Resume' }).click();
+  await expect(runStatus(page)).toContainText('Updates resumed');
+  expect(await boxOf(page.getByRole('button', { name: 'Pause updates' }))).toEqual(before.button);
+  expect(await boxOf(agentPanel(page, 'Controllers'))).toEqual(before.panel);
+  await page.getByRole('button', { name: 'Stop run' }).click();
+  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
 });
 
 test('RF-1003 Stop run ends a run whose updates are paused, and Resume then shows how it ended', async ({
@@ -170,7 +193,7 @@ test('RF-1003 RF-1010 the top bar shows what the run spent against its cap while
   await startUnderstand(page, ['Catalog', 'Controllers']);
 
   const group = page.getByTestId('topbar-run-meter');
-  await expect(group).toBeVisible();
+  await expect(group).toBeVisible({ timeout: 30_000 });
   await expect(group).toContainText('This run');
   await expect(group).toContainText(/\$\d+(\.\d+)? of \$\d+\.\d\d/u);
   await expect(runMeter(page)).toHaveAttribute('aria-valuenow', /^\d+$/u);
@@ -178,7 +201,7 @@ test('RF-1003 RF-1010 the top bar shows what the run spent against its cap while
   await expect(page.getByTestId('header-totals')).toBeVisible();
   const meterBox = await boxOf(group);
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
-  await expect(page.getByTestId('header-totals')).toContainText(/[1-9][d,]* tokens/u);
+  await expect(page.getByTestId('header-totals')).toContainText(/[1-9][0-9,]* tokens/u);
   expect((await boxOf(group)).x).toBe(meterBox.x);
   const fits = await page.evaluate(
     'document.documentElement.scrollWidth <= document.documentElement.clientWidth',

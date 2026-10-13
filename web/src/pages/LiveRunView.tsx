@@ -135,7 +135,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
           ) : null
         }
       />
-      <RunStepper steps={stepperOf({ stage, commitSha: run.commitSha }, state, phase)} />
+      <RunStepper steps={stepperOf({ stage, commitSha: run.commitSha }, view.shown, phase)} />
       <Connection stream={stream} />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
       <p class="rst-p137-live-link">

@@ -8,7 +8,7 @@ import { overviewOf } from './run-summary.js';
 // of a finished run, never by the run, so its step always waits.
 
 type StepName = 'Snapshot' | 'Scan' | 'Understand' | 'Verify' | 'Report';
-export type StepStatus = 'done' | 'current' | 'waiting';
+export type StepStatus = 'done' | 'current' | 'stopped' | 'waiting';
 
 export interface Step {
   readonly name: StepName;
@@ -28,10 +28,14 @@ function step(name: StepName, status: StepStatus, detail?: string): Step {
   return { name, status, detail };
 }
 
-/** A step that has not finished is current while the run works on it and waiting otherwise. */
-function statusOf(progress: Progress, running: boolean): StepStatus {
+/**
+ * A step that has not finished is current while the run works on it, stopped when the run ended
+ * without finishing it, and waiting when the run never reached it.
+ */
+function statusOf(progress: Progress, phase: RunPhase): StepStatus {
   if (progress === 'done') return 'done';
-  return progress === 'working' && running ? 'current' : 'waiting';
+  if (progress === 'idle') return 'waiting';
+  return phase.kind === 'running' ? 'current' : 'stopped';
 }
 
 function agentsDone(state: RunState): string | undefined {
@@ -52,6 +56,10 @@ function everyAgentEnded(state: RunState): boolean {
     state.agents.length > 0 &&
     state.agents.every((agent) => agent.state !== 'Planned' && agent.state !== 'Running')
   );
+}
+
+function claimsStarted(state: RunState): boolean {
+  return state.claims.some((claim) => claim.status !== 'Proposed');
 }
 
 function everyClaimChecked(state: RunState): boolean {
@@ -80,27 +88,26 @@ function completedOf(phase: RunPhase): boolean {
 
 /** The first two steps of a scan: the snapshot is done once its commit is known, the scan at its end. */
 function scanSteps(run: StepperRun, state: RunState, phase: RunPhase): readonly Step[] {
-  const running = phase.kind === 'running';
   const completed = completedOf(phase);
   const snapshot: Progress = snapshotTaken(run, state) || completed ? 'done' : 'working';
   const scan: Progress =
     state.scan !== undefined || completed ? 'done' : afterwards(snapshot === 'done');
   return [
-    step('Snapshot', statusOf(snapshot, running)),
-    step('Scan', statusOf(scan, running), filesAndAreas(state)),
+    step('Snapshot', statusOf(snapshot, phase)),
+    step('Scan', statusOf(scan, phase), filesAndAreas(state)),
   ];
 }
 
 /** An understand run starts from a scan that is already done. */
 function readerSteps(state: RunState, phase: RunPhase): readonly Step[] {
-  const running = phase.kind === 'running';
   const completed = completedOf(phase);
-  const understood = everyAgentEnded(state) || completed;
+  const understood = completed || (everyAgentEnded(state) && overviewOf(state).failed === 0);
   const verified = understood && (completed || everyClaimChecked(state));
-  const verify = verified ? 'done' : afterwards(understood);
+  const started = understood || claimsStarted(state);
+  const verify: Progress = verified ? 'done' : afterwards(started);
   return [
-    step('Understand', statusOf(understood ? 'done' : 'working', running), agentsDone(state)),
-    step('Verify', statusOf(verify, running), claimsChecked(state)),
+    step('Understand', statusOf(understood ? 'done' : 'working', phase), agentsDone(state)),
+    step('Verify', statusOf(verify, phase), claimsChecked(state)),
   ];
 }
 
