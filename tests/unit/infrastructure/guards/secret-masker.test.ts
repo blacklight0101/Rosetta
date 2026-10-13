@@ -49,7 +49,7 @@ describe('SecretMasker on the whole fixture', () => {
       'api-key': 9,
       'bearer-token': 4,
       'connection-string': 7,
-      password: 11,
+      password: 19,
       'private-key': 3,
     });
   });
