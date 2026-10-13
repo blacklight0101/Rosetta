@@ -80,6 +80,7 @@ export function reportModel(overrides: Partial<ReportModel> = {}): ReportModel {
     totals: { inputTokens: 3600, outputTokens: 330, costMicros: 4000, calls: 3 },
     documents: { spec: true, coverage: false, cost: true },
     cards: [plainCard],
+    areas: [],
     replay: plainReplay(),
     ...overrides,
   };

@@ -1,7 +1,12 @@
 import type { Run } from '../../domain/runs/run.js';
 import type { RunEvent } from '../../domain/runs/run-event.js';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
-import { parseCardIndex, type ReportDocuments, type ReportModel } from './report-model.js';
+import {
+  parseCardIndex,
+  type ReportArea,
+  type ReportDocuments,
+  type ReportModel,
+} from './report-model.js';
 import { buildReplay } from './replay-timeline.js';
 
 // RF-504, RF-506: what the report of a finished run says, from the run row, the manifest (when the
@@ -15,6 +20,7 @@ export interface ReportInputs {
   readonly events: readonly RunEvent[];
   readonly cardIndex: string | undefined;
   readonly documents: ReportDocuments;
+  readonly areas: readonly ReportArea[];
 }
 
 // RF-504, RF-506
@@ -41,6 +47,7 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
           },
     documents: inputs.documents,
     cards: parseCardIndex(inputs.cardIndex),
+    areas: inputs.areas,
     replay: buildReplay(run.runKey, inputs.events),
   };
 }
