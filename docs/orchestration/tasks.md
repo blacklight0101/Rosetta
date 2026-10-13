@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 146 | 55 | 76 | 15 | 0 | 86 | 52 | 8 | 89 | 0 |
+| P1 Milestone slice (M1) | 152 | 58 | 79 | 15 | 0 | 90 | 54 | 8 | 95 | 0 |
 | P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
 | P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **176** | **60** | **94** | **22** | **0** | **92** | **73** | **11** | **93** | **0** |
+| **Total** | **182** | **63** | **97** | **22** | **0** | **96** | **75** | **11** | **99** | **0** |
 
 ## Conventions for every card
 
@@ -634,7 +634,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-25, P1-33
 - **Gate**: none
-- **Status**: Todo; owner's run Blocked (G-04)
+- **Status**: Todo
 - **Reads**: `docs/spec/requirements.md` Q-04 and Q-10; `docs/providers.md`.
 - **Do**: a scoring script `eval/spike/score-reader.ts` (`npm run spike:reader`) that runs one demo area with each candidate 7-9B tool-calling model through Ollama under the local deployment and scores valid cards, valid citations, tool-call errors and time; a candidate list of at most four models that fit 8 GB of VRAM; the owner runs it on their machine; the result table and the recommended model in `docs/providers.md`.
 - **Delivers**: the script, the documented results, the recommended model as the default `reader` model for Ollama in `templates/project-settings.json`.
@@ -730,7 +730,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-45, P1-48
 - **Gate**: G-07, G-08 (DEC-133)
-- **Status**: Blocked (G-07, G-08)
+- **Status**: Blocked (G-07)
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 3, 8, 10-12 and 14; the host ADR of P1-48; `docs/security/threat-model.md` section 5.
 - **Do**: the release workflow `.github/workflows/release.yml` (image to GHCR as `X.Y.Z` and `sha-<short>`, CycloneDX SBOM on releases); deploy the `sha-<short>` image of `main` to the chosen host (DEC-104) with managed PostgreSQL, the persistent disk at `ROSETTA_DATA_DIR`, every secret in the host's store, `ROSETTA_TRUST_PROXY=1`, HTTPS with HTTP redirected; the OWASP ZAP baseline scan against the Compose stack before the deploy; the smoke script (health, landing, sign-in, a cheap scan); measure RNF-017 once; `docs/runbooks/deploy.md` (deploy, rollback, backup, restore, roles in the host's console, teacher account); the owner creates the `teacher` account without a forced password change (RF-1107) and sets `defaultRoles` (DEC-106); redeploy as later P1 cards merge.
 - **Delivers**: the release workflow, the smoke script, the runbook, the ZAP report summary, the hosted URL recorded in `handoff.md`.
@@ -922,7 +922,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-18, P1-22, P1-63
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` 3.1 (`contextTokens`); RF-401; DEC-114.
 - **Do**: validate `providers.<name>.contextTokens` (`auto` or an int of at least 1 024, `ollama` kind only) in the settings schema, pass it to the Ollama adapter, and record the chosen `contextTokens` and `contextSource` per model in the run manifest.
 - **Delivers**: the schema field, the wiring and the manifest entry with tests.
@@ -1702,7 +1702,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-107
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/support/sweep.ts`; `tests/e2e/visual/sweep-admin.spec.ts` and `sweep-runs.spec.ts` (the `wideTable` exemption); `web/src/styles/`; the pages for users, snapshots and history; `docs/design-system.md` (tables at 360 px); the verdict 6146557849 on #307.
 - **Do**: the users, snapshots and history tables are wider than 360 px, and the sweep exempts them through `scrollsSidewaysUntil`. Fix the CSS so each table fits (stack the cells or hide a secondary column at narrow widths, following the design system), then remove the table exemption from the sweep so a table that scrolls sideways fails it.
 - **Delivers**: the CSS changes and the sweep without the table exemption.
@@ -1726,7 +1726,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-121
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/delete-run.ts`; `tests/integration/presentation/web/delete-run-project.test.ts`; `src/infrastructure/files/run-folder.ts`; `docs/conventions.md` (errors); the verdict 6144290364 on #295.
 - **Do**: two gaps. First, RST-1115 (HTTP 500, the folder could not be removed) is tested only at use-case level: add a route test that makes the removal fail and checks the status, the error code and that nothing leaks in the body. Second, the folder removal runs inside the database transaction, so a slow disk holds a pooled connection and the row lock: move the removal out of the transaction (delete the rows, commit, then remove the folder, keeping the orphan clean-up of P1-121 as the safety net) or bound it with a timeout, and test that the connection is released before the removal starts.
 - **Delivers**: the route test and the changed order or bound with its test.
@@ -1762,7 +1762,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-13
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/integration/infrastructure/providers/provider-output-scan.test.ts`; `tests/e2e/live-coverage.spec.ts` (line 100); `tests/e2e/support/seed.ts` and `sign-in.ts`; the CI logs of runs 38379124565 and 38393978228.
 - **Do**: two flakes. The test "no file the call log writes ... fixture secret" in `provider-output-scan.test.ts` took 5051 ms on Windows (run 38379124565): find what is slow (the scan of a large tree, a real wait) and bound it or speed it up. `live-coverage.spec.ts:100` failed on desktop-dark on `main` (run 38393978228), possibly because its two tests share one account and interfere: reproduce it by running the spec repeatedly with workers, then give each test its own account or run folder instead of retrying.
 - **Delivers**: the faster scan test and the isolated E2E tests.
@@ -1774,7 +1774,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-134
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/unit/infrastructure/guards/secret-masker.test.ts`; `tests/support/secret-command-shapes.ts`; the verdict 6148899278 on #326.
 - **Do**: three gaps. A redirect before the options still leaks when it is `&>` or `>|` (`mysql &> out.sql -u root -pSECRET` is not masked): mask those as `>` is masked. `--token Bearer <value>` masks only the word `Bearer` and leaves the value visible: mask the value after a scheme word. Nothing tests the lookbehind of `optionStart`: add `x--token abc` and `---token abc` as innocent texts that stay visible.
 - **Delivers**: the masker changes and their tests.
@@ -1786,7 +1786,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-133
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/accounts/sign-in.ts`; the account repositories (`src/infrastructure/db/`); the sign-in tests; the verdict on #322.
 - **Do**: `markSignedIn` does not guard against a lock set by another server instance between the read and the write: make the write conditional on the account state it read, as the disable path does, and test it with two instances. Add the missing test that the audit row carries the reason `account-changed` when that happens. Shorten the long comment in `sign-in.ts` to the why.
 - **Delivers**: the guarded write, the two tests and the comment.
@@ -1822,12 +1822,84 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-02
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `.github/workflows/ci.yml`; `tests/integration/tooling/workflows.test.ts`; `playwright.config.ts`; `docs/environments-and-delivery.md` section 6; the shard times on #325.
 - **Do**: the `edited` event of `pull_request` re-runs the whole CI when only the body changes and cancels the running run: run only the pr-title job on `edited`, and keep the full run on `opened`, `synchronize` and `reopened`. Shard 1 of the e2e job takes about 4 minutes while shard 3 takes under 2, because Playwright splits by count in file order: balance the shards (move the long journey and administration specs apart, or split by duration) so that the slowest shard is under about 3 minutes.
 - **Delivers**: the workflow change, its test and the balanced shards.
 - **Done when**: editing a pull request body runs only pr-title; the slowest e2e shard is under about 3 minutes on two runs; the `e2e` aggregate stays the required check; `npm run verify` green.
 - **Refs**: RNF-001, DEC-42, P1-02 (CI time work of 2026-10-13, #297, #304, #307, #325).
+
+### P1-147 - Follow-up: local acceptance fixes from the owner's first test
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-41, P1-34, P1-107
+- **Gate**: none
+- **Status**: In progress
+- **Reads**: `web/src/pages/ProjectsPage.tsx`; `web/src/lib/live-run/run-failures.ts`; `src/domain/errors/descriptions.ts`; `src/presentation/web/run-routes.ts` and `estimate-query.ts`; the start page and its area list; the code map builder under `src/infrastructure/scan/codemap/`; `web/src/pages/ProviderTest.tsx`; issue #353.
+- **Do**: six bugs from the owner's hands-on local test of 2026-10-13. (a) The demo URL uses `/tree/master/`, but the demo repository's default branch is now `main`, so the scan fails with RST-1901: use `main`. (b) The live run failure text knows only a few codes and shows a generic message for the rest: show the catalogue message and next step for every code. (c) Starting a run has a 1 KB body limit while it allows 200 areas of up to 1 024 characters, so 42 real area names are refused with RST-2000: make the limit and the schema agree, and test the largest allowed body. (d) Long area names overflow the Stage and areas card on the start page: keep them inside the card at 1280 px and 360 px. (e) The code map offers vendored third-party JavaScript (jQuery bundles, MSAjax, esm and umd builds) as areas, and they dominate the estimate: leave areas made only of vendored or minified files unticked and marked "third-party", using a conservative, tested rule. (f) Test providers shows little progress during a cold model load: mark each role as being tested and the button busy.
+- **Delivers**: the six fixes with their tests and the documents that describe them.
+- **Done when**: a project from the demo URL scans; a run with 42 long area names starts; RST-1901 shows its catalogue text on the live run page; the area list stays inside its card at 1280 px and 360 px; vendored areas start unticked and marked; Test providers shows progress per role; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-010, RF-100, RF-1001, RF-1108, RNF-010, DEC-71, G-08 (the owner's local test of 2026-10-13, issue #353).
+
+### P1-148 - Follow-up: secret masking gaps after P1-142
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-142
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-command-shapes.ts`; the masker tests and the speed bound; the verdict 6151856171 on #345.
+- **Do**: these shapes still leak the value: `--token Negotiate <value>` (and other scheme words), `--token 'Bearer' <value>`, `--token Bearer Bearer <value>`, `--token Bearer` followed by many spaces and a value; `mysql 2>&1 -u root -pSECRET` and `mysql >& out.sql -u root -pSECRET` are not masked. Mask them, keep the harmless neighbours visible and masking idempotent, and add hostile pieces for the new patterns to the adversarial speed input.
+- **Delivers**: the masker changes and their tests.
+- **Done when**: every shape above is masked; the innocent texts stay visible; `mask(mask(x))` equals `mask(x)`; the speed bound holds with the new pieces; `npm run verify` green.
+- **Refs**: RNF-005, RF-408, P1-142 (verdict 6151856171 on #345).
+
+### P1-149 - Follow-up: sign-in lock precision and the counters note
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-143
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/db/pg-user-repository.ts`; `src/application/ports/user-repository.ts`; `tests/contracts/successful-sign-in.contract.ts`; the verdict 6152015674 on #346.
+- **Do**: a lock stored with more than millisecond precision (manual SQL, a database `now()`, a restore) reads back truncated, so the guarded sign-in write never matches and the account cannot sign in until an administrator resets it: compare at millisecond precision and add a contract case. Write the default that the failure counters are not compared into the port documentation. Shorten the long header comment of the contract file.
+- **Delivers**: the comparison change, the contract case and the two text fixes.
+- **Done when**: a sub-millisecond lock that has expired lets a correct sign-in through on PostgreSQL; a live lock still refuses it; `npm run verify` green.
+- **Refs**: RF-1100, RF-1102, RNF-005, P1-143 (verdict 6152015674 on #346).
+
+### P1-150 - Follow-up: end-to-end harness gaps after 2026-10-13
+- **Difficulty**: 5 (haiku)
+- **Size**: M
+- **Depends on**: P1-145, P1-146
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/support/` (the start page helper, `caps-lock.ts`, `serve.ts`, the global setup); `scripts/run-e2e.mjs`; `tests/integration/tooling/workflows.test.ts` and `e2e-shards.test.ts`; `tests/e2e/api-calls.spec.ts`; `tests/support/understand-run-harness.ts`; the verdicts on #334, #344, #349 and #351.
+- **Do**: (1) the start page helper checks for "No projects yet" and then creates the project, so two parallel tests on one account can race: make the create idempotent. (2) No test covers the `--shard` selection of `run-e2e.mjs`: an empty selection would run every spec in every shard. (3) The workflow test checks the pr-title job id, not its `name: pr-title`, which the ruleset matches. (4) The caps lock folder is not cleared when an e2e run starts, so a killed run makes the next one wait up to 10 minutes: key it per run. (5) `api-calls.spec.ts:35` still times out about once in twenty repeats under four workers. (6) `tests/support/understand-run-harness.ts` is at the 300-line limit: split it.
+- **Delivers**: the six fixes with tests.
+- **Done when**: each item has a test that fails without its fix (or, for item 5, twenty green repeats with four workers); `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RNF-001, RNF-003, P1-141, P1-145, P1-146, P1-144 (verdicts on #334, #344, #349, #351).
+
+### P1-151 - Follow-up: table label check and report word breaks
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-136
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/support/sweep.ts`; `web/src/` (`CallsTable.tsx`, `HistoryRuns.tsx`); `templates/report/report.css`; the verdict 6151652627 on #335.
+- **Do**: the stacked-table label check exempts cells that hold a link or a button, so a text column made only of links (Transcript in the calls table, Open in history) can lose its label unnoticed: check those cells too, by their link text. The static report's Cards table breaks words in the middle at 360 px ("Cata/log"): break at word boundaries only.
+- **Delivers**: the stricter check and the report CSS.
+- **Done when**: removing the label of the Transcript or Open cell fails the sweep; no mid-word break in the report at 360 px; `npm run verify` and the visual sweep green.
+- **Refs**: RNF-010, DEC-71, P1-136 (verdict 6151652627 on #335).
+
+### P1-152 - Follow-up: sweep the folders of deleted projects
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-138
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/projects/delete-project.ts`; the project repositories; `docs/data-model.md` section 9; the verdict 6153137792 on #348; RF-1012, DEC-55, Q-16.
+- **Do**: since P1-138 the rows of a project are deleted before its folder, so a folder that cannot be removed, or a crash after the commit, leaves a folder with no row and no way to retry from the app. Add a sweep that removes project and run folders with no row, at start-up and daily, logs each removal, never touches a folder that still has a row, and is tested on both repositories. Built after the milestone unless the owner says otherwise (agenda).
+- **Delivers**: the sweep and its tests.
+- **Done when**: an orphaned project folder is removed by the next sweep; a folder with a row is never removed; `npm run verify` green.
+- **Refs**: RF-1012, DEC-55, Q-16, P1-138 (verdict 6153137792 on #348).
 
 ---
 
