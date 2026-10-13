@@ -153,7 +153,8 @@ conflict visibly; the codes already shown on the design board are reserved there
   - **`@visual`**: runs in all four projects. Use it for a check that depends on the project's colour scheme or
     viewport and nothing else, and for the visual sweep. A page card that adds a page or route also adds it to the
     sweep in `tests/e2e/visual/`, through `expectPageInView(page)` (`'static'` for a page the front end does not draw):
-    axe, the colour scheme and no sideways scroll.
+    axe, the colour scheme and no sideways scroll. Only a table already known to be wider than 360 px may be named as
+    the third argument (architecture.md section 17); the rest of that page must still fit.
   - **`@phone`**: a test about the 360 px layout (a `scrollWidth` check, an element that must fit the screen). It runs
     in `desktop-light` and `phone-light`; in `phone-light` it runs on its own, so it makes what it needs itself.
   - Tag a test with its details object, `test('RF-123 ...', { tag: '@phone' }, async ({ page }) => { ... })`, or a
