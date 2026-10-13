@@ -58,6 +58,8 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 
 - Each call first reads the model's digest from `GET /api/tags` (once per model and provider instance); the digest
   is the response's `modelVersion` (RNF-004). A model name without a tag matches `<name>:latest`.
+- Every request to Ollama is sent with `redirect: 'error'`: a redirect answer fails the attempt and its `Location` is
+  never called, so an answer cannot send the call, with the prompt and the code in it, to another address (ADR-013).
 - `options.num_ctx` is sent on every call: Ollama's own default context of recent models overflows an 8 GB GPU and
   spills the model to the CPU. The adapter option `contextTokens` (project setting `providers.<name>.contextTokens`,
   wired by P1-18) is `auto` (default) or a number of at least 1 024; a smaller number is refused with `RST-1514`.
@@ -102,14 +104,20 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   `tool_call` blocks in the assistant message and tool results as `tool_result` blocks (`{"id", "content"}`) in a
   user message, because such models drop tool messages. A `json` block or a whole answer that holds nothing but
   `name` and `arguments` is read as a call too; any other block, including one that is not valid JSON, stays text.
+- The answer is read in one pass, so the time grows linearly with its size: a block opens at three backticks, a label
+  of letters, digits, `_` or `-`, optional spaces and a line break, and closes at the next three backticks; when an
+  opening fence has no closing one the rest of the answer is text. Only a `tool_call`, `json` or unlabelled block is
+  parsed, and only when its body starts with `{` and ends with `}` (a call is always an object).
 - Both modes pass the same validation (`tool-call-shape.ts`): a non-empty tool name and an arguments object (a JSON
   string is parsed); a call that fails it stays visible as text. Calls are numbered `call-1`, `call-2`, ... per
   answer. What the arguments mean is judged by the agent loop with each tool's schema (ADR-013): line numbers sent
   as numeric strings, a non-breaking hyphen in a `start-end` range, an unknown tool name and an invented path all
   reach the loop unchanged, exactly as the same native call would.
 - The composition root reads the protocol prompt with `loadTextToolProtocol(<prompts folder>)`, which returns the
-  prompt file (`name`, `version`, `sha256` of its bytes, `text`) for the run manifest (RNF-004) and passes its `text`
-  to the adapter.
+  prompt file (`name`, `version`, `sha256` of its bytes, `text`) and passes its `text` to the adapter. An understand
+  run whose roles use an `ollama` provider with `toolMode: text` records the file's `version` and `sha256` under
+  its name (`shared/text-tool-protocol.v1.md`) in the manifest's `promptVersions`, next to the reader's prompt files
+  (RNF-004).
 
 ### 2.4 Retries (RF-406)
 
@@ -179,6 +187,8 @@ To be filled by the reader model spike (P1-47, Q-04). Measured so far on the own
   (including `content_filter`).
 - An answer is read with a size limit (8 MiB, adapter option `maxResponseBytes`); a larger one, or a body that is not
   a chat completion, fails with `RST-1506` and is not retried.
+- The adapter's fetch is sent with `redirect: 'error'`: a redirect answer fails the call and its `Location` is never
+  called, so an answer cannot send the key and the prompt to another address (ADR-013).
 
 ### 3.3 Retries and permanent errors (RF-406)
 
