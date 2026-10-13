@@ -538,8 +538,9 @@ The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question 
 names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
 line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
 never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
-and writes to one project's file run one after another. A file saved with CRLF line ends is read like one with LF, and the
-answers written into it keep CRLF.
+and writes to one project's file run one after another. A file saved with CRLF or lone CR (old Mac) line ends, or with a
+byte-order mark before its first line, is read like one with LF; the answers and the sections appended to it use the
+file's own line end, and the mark is kept (P1-126).
 
 ### 3.17 Report and hand-off folders
 
@@ -554,6 +555,11 @@ step added by `replay.js` when scripts run), `report.css` and `replay.js`. The p
 policy and `referrer` of no-referrer (RF-1013); repository and model text is escaped, and only links that start with
 `https://github.com/` stay links (RF-507). The server serves these five files as pages, styles and scripts; every other
 file of a run folder is text or a download.
+
+Contents (RF-112). Besides the run facts, the documents and the cards, both report pages list the areas of the code map with
+their map level, `coarse` or `symbols`, the value `scan-summary.md` shows. They come from the run's own scan, or for an
+understand run from the newest scan of its project that ended `Completed`; a report built without such a scan (none, or
+its output is gone) has no areas section. Area names are repository text and are escaped like the other repository text.
 
 Writing the report. Each of the five files is written to a temporary name and renamed over its final name, so a file
 is always whole or absent and never half written. The set of files is not written atomically: a build that fails
