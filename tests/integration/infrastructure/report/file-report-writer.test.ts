@@ -43,6 +43,16 @@ function writerOver(inner?: (real: NodeOutputWriter) => NodeOutputWriter | Refus
   });
 }
 
+/** The files of the report folder with their text, in name order; a leftover temporary file shows. */
+async function filesOf(): Promise<Map<string, string>> {
+  const folder = join(runFolder(), 'report');
+  const found = new Map<string, string>();
+  for (const name of (await readdir(folder)).sort()) {
+    found.set(name, await readFile(join(folder, name), 'utf8'));
+  }
+  return found;
+}
+
 const paths = [
   'report/replay.html',
   'report/replay.js',
@@ -117,6 +127,25 @@ describe('FileReportWriter and failures', () => {
 
     expect(failure).toBeInstanceOf(RosettaError);
     expect(failure).toMatchObject({ code: ERROR_CODES.reportWriteFailed });
+  });
+
+  it('RF-504 leaves every file whole when a rebuild fails part-way: each is the old file or the new one, never half of one, and no temporary file stays', async () => {
+    await writerOver().write(scope, reportModel());
+    const before = await filesOf();
+    const changed = reportModel({ runKey: '20261012-100000-understand', stage: 'scan' });
+
+    await writerOver((real) => new RefusingWriter(real, 3))
+      .write(scope, changed)
+      .catch((error: unknown) => error);
+
+    const after = await filesOf();
+    const complete = new Map<string, string>();
+    await writerOver().write(scope, changed);
+    for (const [name, text] of await filesOf()) complete.set(name, text);
+    expect([...after.keys()]).toEqual([...before.keys()]);
+    for (const [name, text] of after) {
+      expect([before.get(name), complete.get(name)]).toContain(text);
+    }
   });
 });
 
