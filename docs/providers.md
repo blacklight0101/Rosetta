@@ -53,6 +53,10 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
 - When Ollama is not running, a call fails at once with `RST-1507` and the message names the fix (`ollama serve`, or
   open the Ollama app, and check `ROSETTA_OLLAMA_URL`). When the model is not pulled, it fails with `RST-1508` and
   the message names `ollama pull <model>`. Neither is retried.
+- A run that uses an `ollama` provider checks it before its first agent task (RF-401, P1-72): one tiny call goes
+  through the guards to each Ollama provider and model of the run, once each. A stopped server or a missing model
+  then ends the run with `RST-1507` or `RST-1508`, and the run log holds the fix as the next step; no agent task
+  starts. A stop of the run during the check ends it as interrupted.
 
 ### 2.2 What every call sends and reads
 
