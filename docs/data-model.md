@@ -220,9 +220,9 @@ Rules for `areas[]` (RF-104, added with P1-20):
   scan makes (that window, and the 4 000-character line limit) falls between words: when it would fall inside a run
   without white space, the whole run is dropped. Every masker rule matches inside one such run (keys, connection
   URLs, `password=value`) or runs to the end of the text once its keyword is seen (key blocks, quoted values,
-  `;Password=`); the one exception is the XML password element, whose value may hold spaces and ends at its closing tag
-  on the same line, so a cut that falls between the opening tag and the closing tag drops the open element with its
-  value (P1-112). So a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
+  `;Password=`, a CDATA value of an XML password element); the one exception is the XML password element without
+  CDATA, whose value may start after blanks, may hold spaces and ends at its closing tag on the same line, so a cut
+  that falls between the opening tag and the closing tag drops the open element with its value (P1-112, P1-124). So a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
   A wider window alone would not be enough: masking shortens the text, so the cut end can reach the first 500
   characters. The 500-character cut after masking falls between words as well, so it never leaves half a marker or
   a bare `scheme://user:` behind. A statement with no white space before a cut keeps an empty text.
@@ -493,13 +493,18 @@ A `data` key at any depth whose name contains `password`, `passwd`, `pwd`, `secr
 name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count is
 therefore never written under such a name: the Ollama context size is logged as `contextSize`, not `contextTokens`
 (P1-112). Records kept by the shared deep masking (provider call lines, transcripts, run events, audit details) apply the
-same whole-value rule to a key whose last word is `secret`, `secrets`, `token` or `authorization` (`accessToken`,
-`client_secret`, `X-Auth-Token`, `proxyAuthorization`), besides the `password`, `passwd` and `pwd` keys they already
-had; the last word decides, so `inputTokens`, `timeToFirstTokenMs` and `secretCount` keep their numbers (P1-112).
+same whole-value rule to a key whose last word is `secret`, `secrets`, `token`, `authorization` or `bearer`
+(`accessToken`, `client_secret`, `X-Auth-Token`, `proxyAuthorization`), or whose last two words are `secret key`,
+`secret value` or `token value` (`secretKey`, `tokenValue`, `accessTokenValue`), or the plural `tokens` after a word
+that names a credential (`access`, `refresh`, `id`, `auth`, `bearer`, `session`, `api`, `jwt`: `refreshTokens`,
+`access_tokens`), besides the `password`, `passwd` and `pwd` keys they already had. Keys are split into words at
+camelCase, acronym runs, `_`, `-` and digits, and a short suffix that starts with a digit (`2`, `_2FA`) is not a word,
+so `Secret2FA` and `Secret_2FA` match; the last words decide, so `inputTokens`, `timeToFirstTokenMs`, `secretCount`
+and `primaryKey` keep their values (P1-112, P1-124).
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
-The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id or key and any `userId` it carries is the owner's; an entry with the key alone is shown only while no other user's run has the same key.
+The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id and any `userId` it carries is the owner's, or its `runId` is the run's key and its `userId` is the owner's. An entry with the key and no user is never shown: the key is unique per project only and a deleted run's entries stay in the files, so it may belong to another user's run that is gone (P1-122). The run's own writers therefore name the owner beside the key: `ownerLogger` for the understand session and for the egress and budget guards that the provider factory builds for the run (their security events and cap refusals), and the queue and the lifecycle directly.
 
 ### 3.15 `transcripts/<agentTaskId>.jsonl`
 
@@ -538,8 +543,9 @@ The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question 
 names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
 line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
 never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
-and writes to one project's file run one after another. A file saved with CRLF line ends is read like one with LF, and the
-answers written into it keep CRLF.
+and writes to one project's file run one after another. A file saved with CRLF or lone CR (old Mac) line ends, or with a
+byte-order mark before its first line, is read like one with LF; the answers and the sections appended to it use the
+file's own line end, and the mark is kept (P1-126).
 
 ### 3.17 Report and hand-off folders
 
@@ -554,6 +560,11 @@ step added by `replay.js` when scripts run), `report.css` and `replay.js`. The p
 policy and `referrer` of no-referrer (RF-1013); repository and model text is escaped, and only links that start with
 `https://github.com/` stay links (RF-507). The server serves these five files as pages, styles and scripts; every other
 file of a run folder is text or a download.
+
+Contents (RF-112). Besides the run facts, the documents and the cards, both report pages list the areas of the code map with
+their map level, `coarse` or `symbols`, the value `scan-summary.md` shows. They come from the run's own scan, or for an
+understand run from the newest scan of its project that ended `Completed`; a report built without such a scan (none, or
+its output is gone) has no areas section. Area names are repository text and are escaped like the other repository text.
 
 Writing the report. Each of the five files is written to a temporary name and renamed over its final name, so a file
 is always whole or absent and never half written. The set of files is not written atomically: a build that fails

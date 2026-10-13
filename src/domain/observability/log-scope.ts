@@ -14,17 +14,12 @@ export interface LogScopeRun {
 }
 
 /**
- * An entry is the run's when it names the run (its UUID, or its key) and, if it names a user, that
- * user is the owner. An entry that names the key and no user is the run's only while no other user
- * has a run with that key (`keyShared`), because the key is unique per project only.
+ * An entry is the run's when it names the run's UUID and no other user, or the run's key and the
+ * owner. The key is unique per project only and a deleted run's entries stay in the log, so an entry
+ * with the key and no user may be another user's run that is gone: it is never the run's.
  */
 // RF-1011, RF-1105
-export function entryBelongsToRun(
-  entry: LogScopeEntry,
-  run: LogScopeRun,
-  keyShared: boolean,
-): boolean {
-  if (entry.runId !== run.id && entry.runId !== run.runKey) return false;
-  if (entry.userId !== undefined) return entry.userId === run.userId;
-  return entry.runId === run.id || !keyShared;
+export function entryBelongsToRun(entry: LogScopeEntry, run: LogScopeRun): boolean {
+  if (entry.runId === run.id) return entry.userId === undefined || entry.userId === run.userId;
+  return entry.runId === run.runKey && entry.userId === run.userId;
 }

@@ -47,10 +47,15 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
  * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
  * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001), `live-run` watches
- * the runs of its own project on the live page (RF-1002), `live-controls` pauses and meters its own runs (P1-95), `api-calls` reads the calls and logs of
+ * the runs of its own project on the live page (RF-1002), `live-controls` pauses and meters its own runs (P1-95), `live-coverage` watches the coverage map of its own runs (RF-1005), `api-calls` reads the calls and logs of
  * its own run (RF-1011), `replay` owns a recorded run (seed-replay.ts) whose report and replay
  * page it opens (RF-506), `history` browses and deletes the runs of its own project (RF-1008,
- * RF-1012) and `history-admin` is the administrator who deletes snapshots.
+ * RF-1012) and `history-admin` is the administrator who deletes snapshots. The journey specs
+ * (P1-46) have accounts of their own: `journey` signs in through the pages, `journey-owner` owns
+ * a project and a run, `journey-other` is the second user who must not see them, `journey-force`
+ * must change its password at first sign-in, `journey-run` runs the pipeline on the C# fixture,
+ * `journey-language` on the COBOL one and `journey-admin` is the administrator who creates a user
+ * and saves the caps.
  */
 export type E2eAccountKind =
   | 'keys'
@@ -64,11 +69,19 @@ export type E2eAccountKind =
   | 'start-run'
   | 'live-run'
   | 'live-controls'
+  | 'live-coverage'
   | 'api-calls'
   | 'history'
   | 'history-admin'
   | 'admin'
-  | 'replay';
+  | 'replay'
+  | 'journey'
+  | 'journey-owner'
+  | 'journey-other'
+  | 'journey-force'
+  | 'journey-run'
+  | 'journey-language'
+  | 'journey-admin';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -82,14 +95,28 @@ const accountKinds: readonly E2eAccountKind[] = [
   'start-run',
   'live-run',
   'live-controls',
+  'live-coverage',
   'api-calls',
   'history',
   'history-admin',
   'admin',
   'replay',
+  'journey',
+  'journey-owner',
+  'journey-other',
+  'journey-force',
+  'journey-run',
+  'journey-language',
+  'journey-admin',
 ];
 
-const adminKinds: ReadonlySet<E2eAccountKind> = new Set(['force-admin', 'history-admin', 'admin']);
+const adminKinds: ReadonlySet<E2eAccountKind> = new Set([
+  'force-admin',
+  'history-admin',
+  'admin',
+  'journey-admin',
+]);
+const forceKinds: ReadonlySet<E2eAccountKind> = new Set(['force', 'force-admin', 'journey-force']);
 
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
   return {
@@ -142,7 +169,7 @@ export async function seedUsers(databaseUrl: string): Promise<void> {
         displayName: `E2E ${kind}`,
         role: adminKinds.has(kind) ? 'admin' : 'user',
         password,
-        mustChangePassword: kind.startsWith('force'),
+        mustChangePassword: forceKinds.has(kind),
         ip: 'e2e-seed',
       });
       if (!outcome.ok) throw new Error(`The account ${userName} was refused (${outcome.error}).`);
