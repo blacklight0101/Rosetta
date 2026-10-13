@@ -43,7 +43,9 @@ const point = z.object({
   costMicros: z.string(),
 });
 const estimateBody = z.object({
-  areas: z.array(z.object({ name: z.string(), estimatedTokens: z.number() })),
+  areas: z.array(
+    z.object({ name: z.string(), estimatedTokens: z.number(), thirdParty: z.boolean() }),
+  ),
   roles: z.array(z.object({ role: z.string(), low: point, likely: point, high: point }).loose()),
   total: z.object({ low: point, likely: point, high: point }),
 });
@@ -94,7 +96,9 @@ describe('GET /api/projects/:id/estimate answers', () => {
       url: estimateUrl(project.id, '?areas=Orders&areas=Catalog'),
     });
 
-    expect(bodyOf(one).areas).toEqual([{ name: 'Orders', estimatedTokens: 4000 }]);
+    expect(bodyOf(one).areas).toEqual([
+      { name: 'Orders', estimatedTokens: 4000, thirdParty: false },
+    ]);
     expect(bodyOf(both).areas.map((area) => area.name)).toEqual(['Catalog', 'Orders']);
   });
 });
