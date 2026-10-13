@@ -159,6 +159,13 @@ export const commandSecretCases: readonly ShapeCase[] = [
     masked: 'mysql &> a 2>&1 -u root -p[MASKED:password]',
     secrets: [password],
   },
+  {
+    name: 'a mysql -p password after a >&- redirect',
+    kind: 'password',
+    text: `mysql >&- -u root -p${password}`,
+    masked: 'mysql >&- -u root -p[MASKED:password]',
+    secrets: [password],
+  },
 ];
 
 /** Text close to the new shapes that is not a secret. */
