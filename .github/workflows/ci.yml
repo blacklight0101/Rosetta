@@ -1,6 +1,8 @@
 # CI gates (environments-and-delivery.md section 6, ADR-011). Hardening: top-level read-only token,
 # a timeout on every job, one run per branch, third-party actions pinned to a commit SHA, no secrets,
 # values reach shell steps through env: and never as an expression inside run:.
+# A pull request that changes only documentation skips the heavy steps (not the jobs, so every
+# required check still reports under its own name); see environments-and-delivery.md section 6.
 name: CI
 
 on:
@@ -17,8 +19,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # code=true unless every file the pull request changes is documentation: anything under docs/ or
+  # a *.md file at the repository root. Markdown anywhere else (src/, tests/, prompts/, templates/...)
+  # is code. --no-renames lists both paths of a move. A push to main always counts as code. Plain
+  # git, no third-party action. The other jobs fail closed: their heavy steps run unless code is
+  # exactly 'false'.
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify the changed files
+        id: classify
+        run: |
+          code=true
+          if [ "$EVENT" = pull_request ]; then
+            files="$(git diff --name-only --no-renames "$BASE_SHA...$HEAD_SHA")"
+            printf 'Changed files:\n%s\n' "$files"
+            code=false
+            [ -n "$files" ] || code=true
+            while IFS= read -r file; do
+              case "$file" in
+                '') ;;
+                src/* | tests/* | prompts/*) code=true ;;
+                docs/*) ;;
+                */*) code=true ;;
+                *.md) ;;
+                *) code=true ;;
+              esac
+            done <<< "$files"
+          fi
+          echo "code=$code"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
   verify:
     name: verify (${{ matrix.os }})
+    needs: changes
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -47,31 +93,62 @@ jobs:
             services: {}
     services: ${{ matrix.services }}
     steps:
+      - name: Documentation-only change
+        if: needs.changes.outputs.code == 'false'
+        run: echo "::notice title=Documentation only::Heavy steps skipped; Linux checks the format and runs the tests that read the documents."
+        shell: bash
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: runner.os == 'Linux' || needs.changes.outputs.code != 'false'
         with:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: runner.os == 'Linux' || needs.changes.outputs.code != 'false'
         with:
           node-version-file: .nvmrc
           cache: npm
       # CI=true on the runner keeps lefthook from writing git hooks.
-      - run: npm ci
-      # The end-to-end project of test:ci drives Chromium; the browser is not part of npm ci.
-      - name: Install Chromium
-        if: runner.os == 'Linux'
-        run: npx playwright install --with-deps chromium
+      - if: runner.os == 'Linux' || needs.changes.outputs.code != 'false'
+        run: npm ci
       - name: Database tests are skipped on Windows
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && needs.changes.outputs.code != 'false'
         run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
         shell: bash
       # The Playwright project runs in the sharded e2e jobs below, in parallel with this one.
-      - run: npm run verify
+      - name: Every gate (npm run verify)
+        if: runner.os == 'Linux' && needs.changes.outputs.code != 'false'
+        run: npm run verify
         env:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
           ROSETTA_E2E_OWN_JOB: '1'
+      # Windows runs only the tests: typecheck, lint, format, arch and deadcode do not depend on the
+      # operating system and run in the Linux job; the tests catch path and line-ending differences.
+      - name: Tests only (the other gates run on Linux)
+        if: runner.os == 'Windows' && needs.changes.outputs.code != 'false'
+        run: npm run test:ci
+        env:
+          ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
+          ROSETTA_E2E_OWN_JOB: '1'
+      # Documentation only: the format check and every test that reads the documents
+      # (environments-and-delivery.md section 6 lists them; workflow-docs-only.test.ts keeps the list whole).
+      - name: Format check (documentation only)
+        if: runner.os == 'Linux' && needs.changes.outputs.code == 'false'
+        run: npm run format:check
+      - name: Tests that read the documents (documentation only)
+        if: runner.os == 'Linux' && needs.changes.outputs.code == 'false'
+        run: >-
+          npx vitest run
+          tests/integration/docs
+          tests/integration/tooling/workflows.test.ts
+          tests/integration/tooling/workflow-docs-only.test.ts
+          tests/integration/infrastructure/db/release-schema.test.ts
+          tests/unit/web/status-badge.test.tsx
+          tests/unit/web/tokens.test.ts
+        env:
+          ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
 
   e2e-shard:
     name: e2e (shard ${{ matrix.shard }}/3)
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -94,17 +171,26 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Documentation-only change
+        if: needs.changes.outputs.code == 'false'
+        run: echo "::notice title=Documentation only::The steps of this job are skipped."
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - if: needs.changes.outputs.code != 'false'
+        run: npm ci
+      - name: Install Chromium
+        if: needs.changes.outputs.code != 'false'
+        run: npx playwright install --with-deps chromium
       # One third of the Playwright project (RNF-005); the three shards together run every spec.
-      - run: node scripts/run-e2e.mjs "--shard=$SHARD/3"
+      - if: needs.changes.outputs.code != 'false'
+        run: node scripts/run-e2e.mjs "--shard=$SHARD/3"
         env:
           SHARD: ${{ matrix.shard }}
           ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
@@ -192,6 +278,7 @@ jobs:
 
   image:
     name: image (build, container test, trivy)
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -212,23 +299,33 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Documentation-only change
+        if: needs.changes.outputs.code == 'false'
+        run: echo "::notice title=Documentation only::The steps of this job are skipped."
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - if: needs.changes.outputs.code != 'false'
+        run: npm ci
       # The runtime image is the default target; the test image must build too (compose.ci.yaml, P1-45).
-      - run: docker build --tag "$ROSETTA_IMAGE" .
-      - run: docker build --target test --tag rosetta:ci-test .
+      - if: needs.changes.outputs.code != 'false'
+        run: docker build --tag "$ROSETTA_IMAGE" .
+      - if: needs.changes.outputs.code != 'false'
+        run: docker build --target test --tag rosetta:ci-test .
       # Starts the image against the service database and calls /healthz (RF-1300, Linux only).
-      - run: npx vitest run --project integration tests/integration/image
+      - if: needs.changes.outputs.code != 'false'
+        run: npx vitest run --project integration tests/integration/image
         env:
           ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test
       # High and critical findings that have a fix fail the job (RF-1300, environments-and-delivery.md section 6).
-      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      - if: needs.changes.outputs.code != 'false'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: rosetta:ci
           format: table
@@ -239,22 +336,31 @@ jobs:
 
   compose-smoke:
     name: compose smoke (up, scan, restart, down)
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Documentation-only change
+        if: needs.changes.outputs.code == 'false'
+        run: echo "::notice title=Documentation only::The steps of this job are skipped."
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - if: needs.changes.outputs.code != 'false'
+        run: npm ci
       - name: Install Chromium
+        if: needs.changes.outputs.code != 'false'
         run: npx playwright install --with-deps chromium
       # A throwaway .env for this run: fresh random values, masked in the log, never committed
       # (RNF-003). The URL-safe hex keeps the passwords valid inside the database URLs.
       - name: Write a throwaway .env
+        if: needs.changes.outputs.code != 'false'
         run: |
           : > .env
           add() { value="$(openssl rand "$2" "$3")"; echo "::add-mask::$value"; echo "$1=$value" >> .env; }
@@ -267,18 +373,23 @@ jobs:
           echo "ROSETTA_ADMIN_USER=smoke-admin" >> .env
       # The CI overlay swaps the app for the image's test stage with the fake provider and fake GitHub.
       - name: Start the stack
+        if: needs.changes.outputs.code != 'false'
         run: docker compose -f compose.yaml -f compose.ci.yaml up -d --build --wait
       - name: Wait for /healthz
+        if: needs.changes.outputs.code != 'false'
         run: curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 http://127.0.0.1:8080/healthz
       - name: Smoke test (landing, sign-in, scan)
+        if: needs.changes.outputs.code != 'false'
         run: |
           set -a; . ./.env; set +a
           npx playwright test --config=playwright.compose.config.ts smoke
       - name: Restart the stack, keeping its volumes
+        if: needs.changes.outputs.code != 'false'
         run: |
           docker compose -f compose.yaml -f compose.ci.yaml down
           docker compose -f compose.yaml -f compose.ci.yaml up -d --wait
       - name: Data survives the restart
+        if: needs.changes.outputs.code != 'false'
         run: |
           set -a; . ./.env; set +a
           npx playwright test --config=playwright.compose.config.ts persistence
@@ -287,5 +398,5 @@ jobs:
         run: docker compose -f compose.yaml -f compose.ci.yaml logs --no-color --tail 200
       # Always remove the stack and its volumes, whatever failed.
       - name: Remove the stack and its volumes
-        if: always()
+        if: always() && needs.changes.outputs.code != 'false'
         run: docker compose -f compose.yaml -f compose.ci.yaml down -v --rmi local

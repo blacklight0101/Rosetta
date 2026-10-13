@@ -19,6 +19,9 @@ const codeMap = {
   ],
 };
 
+/** A file long enough that only the range itself can be wrong. */
+const rangeMap = { files: [entry('src/A.cs', 10, { lines: 20 })] };
+
 function cardsCiting(...claims: (readonly Citation[])[]): readonly Card[] {
   const draft = draftOf({
     claims: claims.map((citations, index) => ({ text: `Claim ${String(index)}`, citations })),
@@ -90,6 +93,38 @@ describe('citation check (step 1): line ranges', () => {
       status: 'CitationInvalid',
       verdict: { reason: 'src/big.sql:1-1 ends after the last line of the file (0).' },
     });
+  });
+});
+
+describe('citation check (step 1): line numbers', () => {
+  it.each([
+    ['0-3', 0, 3, 'src/A.cs:0-3 does not start at line 1 or later.'],
+    ['5-2', 5, 2, 'src/A.cs:5-2 ends before it starts.'],
+    ['1.5-3', 1.5, 3, 'src/A.cs:1.5-3 has a line number that is not a whole number.'],
+    ['1-NaN', 1, Number.NaN, 'src/A.cs:1-NaN has a line number that is not a whole number.'],
+  ])(
+    'RF-300 a citation src/A.cs:%s is CitationInvalid with its reason and kept',
+    (_range, startLine, endLine, reason) => {
+      const cards = cardsCiting([cite('src/A.cs', startLine, endLine)]);
+
+      const checked = checkCitations(cards, rangeMap, at);
+
+      expect(checked.cards[0]?.claims[0]).toMatchObject({
+        claimId: 'FEAT-001.c1',
+        status: 'CitationInvalid',
+        citations: [cite('src/A.cs', startLine, endLine)],
+        verdict: { step: 'citation', reason },
+      });
+      expect(checked.checks).toEqual([{ claimId: 'FEAT-001.c1', ok: false, reason }]);
+    },
+  );
+
+  it('RF-300 a citation of the whole file, from line 1 to its last line, holds', () => {
+    const cards = cardsCiting([cite('src/A.cs', 1, 20)]);
+
+    const checked = checkCitations(cards, rangeMap, at);
+
+    expect(checked.cards[0]?.claims[0]?.status).toBe('Proposed');
   });
 });
 
