@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import {
   cloudCall,
@@ -69,16 +70,40 @@ describe('GET /api/runs/:runId/calls/:seq/transcript', () => {
 });
 
 describe('GET /api/runs/:runId/calls/:seq/transcript refusals', () => {
-  it('RF-1011 answers 404 for a call the log does not hold and for a call number that is not a number', async () => {
+  it('RF-1011 answers 404 with RST-2003 for a call the log does not hold', async () => {
     const { test, amy, run } = await setup();
     await seedCallLog(test.callFiles, run, [localCall(run)]);
 
     const missing = await amy.request({ method: 'GET', url: transcriptUrl(run, 9) });
-    const word = await amy.request({ method: 'GET', url: transcriptUrl(run, 'one') });
 
     expect(missing.statusCode).toBe(404);
-    expect(word.statusCode).toBe(404);
+    expect(missing.json()).toMatchObject({ code: ERROR_CODES.notFound });
   });
+
+  // The call number is a plain decimal from 1, written one way only, of at most 9 digits.
+  it.each([
+    ['a valid number', '1', 200],
+    ['leading zeros', '01', 404],
+    ['zero', '0', 404],
+    ['a negative number', '-1', 404],
+    ['a number above the safe range', '9007199254740993', 404],
+    ['an exponent', '1e0', 404],
+    ['a fraction', '1.0', 404],
+    ['text', 'one', 404],
+  ] as const)(
+    'RF-1011 answers a call number given as %s (%s) with %i',
+    async (_name, seq, status) => {
+      const { test, amy, run } = await setup();
+      await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-001' })]);
+      await seedTranscript(test.callFiles, run, 'reader-001', messages(run));
+
+      const response = await amy.request({ method: 'GET', url: transcriptUrl(run, seq) });
+
+      expect(response.statusCode).toBe(status);
+      if (status === 404) expect(response.json()).toMatchObject({ code: ERROR_CODES.notFound });
+      else expect(response.body).toContain('You read one area.');
+    },
+  );
 
   it("RF-1105 answers 404 for another user's run, with nothing of the transcript", async () => {
     const { test, bob, run } = await setup();
