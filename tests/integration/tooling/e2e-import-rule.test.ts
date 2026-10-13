@@ -1,13 +1,23 @@
 import { ESLint } from 'eslint';
-import { describe, expect, it, vi } from 'vitest';
+import tseslint from 'typescript-eslint';
+import { describe, expect, it } from 'vitest';
 
 // RNF-005, P1-13: a spec gets `test` and `expect` from tests/e2e/support/fixtures.ts, because that
 // `test` carries the network guard. Importing them from @playwright/test would skip the guard.
 
-// An existing spec path, so the type-aware rules find it in the TypeScript project.
 const specPath = 'tests/e2e/smoke.spec.ts';
-// One instance for the file: each new instance loads the configuration and the TypeScript project again.
-const eslint = new ESLint({ cwd: process.cwd() });
+// One instance for the file: each new instance loads the configuration again. no-restricted-imports
+// needs no type information, so the type-aware rules are switched off and no TypeScript project loads.
+const eslint = new ESLint({
+  cwd: process.cwd(),
+  overrideConfig: [
+    {
+      ...tseslint.configs.disableTypeChecked,
+      files: ['tests/e2e/**/*.ts'],
+      languageOptions: { parserOptions: { projectService: false } },
+    },
+  ],
+});
 
 async function restrictedImports(source: string, filePath = specPath): Promise<string[]> {
   const [result] = await eslint.lintText(source, { filePath });
@@ -15,9 +25,6 @@ async function restrictedImports(source: string, filePath = specPath): Promise<s
     .filter((message) => message.ruleId === 'no-restricted-imports')
     .map((message) => message.message);
 }
-
-// The first lint of a run loads the TypeScript project, which takes a while.
-vi.setConfig({ testTimeout: 60_000 });
 
 describe('e2e import rule', () => {
   it.each([
