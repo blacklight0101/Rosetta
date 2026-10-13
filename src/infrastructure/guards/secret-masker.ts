@@ -36,11 +36,22 @@ const passwordKey = String.raw`${passwordName}["']?[ \t]{0,16}(?::=|[:=])[ \t]{0
 // Not preceded by a letter or digit: an underscore before the key is allowed (`prod_sk-...`).
 const keyStart = '(?<![A-Za-z0-9])';
 
-// The pieces of a `mysql` command line: an optional database word, and an option with an optional
-// value (bare or quoted). A value never starts with `-`, so an option and the next one cannot blur.
-const mysqlDatabase = String.raw`(?:[ \t]+[^\s"'-]\S*)?`;
+// The pieces of a `mysql` command line. An option is a word that starts with `-`, with at most one
+// bare or quoted value; it is atomic (a lookahead capture, then a back reference), so a value never
+// turns into a positional word on a retry and the scan stays linear. A positional word (a database
+// or table name) is an identifier, so prose with a comma or many words is not read as a command.
 const mysqlValue = String.raw`(?:"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s"'-]\S*)`;
-const mysqlOption = String.raw`[ \t]+-\S+(?:[ \t]+${mysqlValue})?`;
+const mysqlOption = (name: string): string =>
+  String.raw`(?=(?<${name}>[ \t]+-\S+(?:[ \t]+${mysqlValue})?))\k<${name}>`;
+const mysqlWord = String.raw`[ \t]+[\w.$]+(?=[ \t])`;
+// At most three positional words, each followed by at most 16 options, anywhere before `-p`.
+const mysqlArguments = String.raw`(?:${mysqlOption('first')}){0,16}(?:${mysqlWord}(?:${mysqlOption('later')}){0,16}){0,3}`;
+// A quoted password runs to its closing quote (or the end of the line), spaces included.
+const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|\S+)`;
+// The start of the value of an XML element whose name ends in a password name, with an optional
+// prefix and attributes, and blanks before the value.
+const xmlPasswordOpen = String.raw`<[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>[ \t]{0,16}`;
+const cdataOpen = String.raw`<!\[CDATA\[`;
 
 // The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
 // whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
@@ -107,23 +118,30 @@ const defaultRules: readonly MaskRule[] = [
     pattern: new RegExp(String.raw`(?<keep>${passwordKey})${notMasked}(?![="'])[^\s;,&"']+`, 'gi'),
   },
   {
-    // An XML element whose name ends in a password name, with an optional prefix and attributes;
-    // the value runs to its closing tag on the same line, so a `<password>` placeholder in prose
-    // is left alone.
+    // A CDATA section in such an element: the value runs to `]]>`, or to the end of the line when
+    // the section is not closed there, so a secret that holds `<` is masked whole.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep><[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>)${notMasked}[^<\s][^<\r\n]*(?=</)`,
+      String.raw`(?<keep>${xmlPasswordOpen}${cdataOpen})${notMasked}(?:[^\]\r\n]|\](?!\]>))+`,
+      'gi',
+    ),
+  },
+  {
+    // Such an element without CDATA: the value runs to its closing tag on the same line, so a
+    // `<password>` placeholder in prose is left alone.
+    kind: 'password',
+    pattern: new RegExp(
+      String.raw`(?<keep>${xmlPasswordOpen})${notMasked}[^<\s][^<\r\n]*(?=</)`,
       'gi',
     ),
   },
   {
     // `mysql mydb -u root -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and
-    // is left alone. Command-line shape only: `mysql`, at most one database word, then at most 16
-    // options (a word that starts with `-`, each with at most one bare or quoted value), so prose
-    // such as "mysql is used in production -pretty much" is not read as a password.
+    // is left alone. Command-line shape only (see mysqlArguments), so prose such as "mysql is used
+    // in production -pretty much" is not read as a password.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>\bmysql(?:admin|dump)?${mysqlDatabase}(?:${mysqlOption}){0,16}?[ \t]+-p)${notMasked}\S+`,
+      String.raw`(?<keep>\bmysql(?:admin|dump)?${mysqlArguments}[ \t]+-p)${notMasked}${mysqlPassword}`,
       'g',
     ),
   },
