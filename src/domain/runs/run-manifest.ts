@@ -231,15 +231,22 @@ export function recordManifestAgentTask(
 
 /** Records the Ollama context size of a role and how it was chosen (RF-401, DEC-114). */
 // RF-401
-/* eslint-disable @typescript-eslint/no-unused-vars -- red stub, implemented in the next commit */
 export function recordManifestContext(
   manifest: RunManifest,
-  _role: string,
-  _context: { readonly contextTokens: number; readonly contextSource: string },
+  role: string,
+  context: { readonly contextTokens: number; readonly contextSource: string },
 ): Result<RunManifest, ManifestProblem> {
-  return manifest.endState === null ? ok(manifest) : err('already-ended');
+  if (manifest.endState !== null) return err('already-ended');
+  const current = manifest.roles[role];
+  if (current === undefined) return ok(manifest);
+  if (
+    current.contextTokens === context.contextTokens &&
+    current.contextSource === context.contextSource
+  )
+    return ok(manifest);
+  const changed = { ...current, ...context };
+  return ok({ ...manifest, roles: { ...manifest.roles, [role]: changed } });
 }
-/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /** Records the exact model version a role's provider reported, once it is known (RNF-004). */
 // RNF-004

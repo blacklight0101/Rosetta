@@ -108,6 +108,8 @@ describe('acceptedManifest roles', () => {
       model: 'reader-model',
       modelVersion: null,
       modelDigest: null,
+      contextTokens: null,
+      contextSource: null,
       toolMode: 'native',
       maxOutputTokens: 4096,
       temperature: 0.2,
