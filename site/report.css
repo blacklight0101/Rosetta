@@ -1,0 +1,417 @@
+/*
+ * Rosetta static report (RF-504, RF-506, DEC-44, design-system.md sections 2 and 13).
+ * One stylesheet for report.html and replay.html: light and dark by the reader's system setting,
+ * readable from 360 px, no font or image from elsewhere (the pages allow only their own files).
+ * The colour values are those of docs/design/tokens.css.
+ */
+:root {
+  --rst-bg: #f4f6f6;
+  --rst-surface: #ffffff;
+  --rst-surface-2: #eaefee;
+  --rst-ink: #13201f;
+  --rst-ink-soft: #364644;
+  --rst-ink-muted: #56645f;
+  --rst-rule: #d8dfde;
+  --rst-rule-strong: #7a8987;
+  --rst-brand: #0e6b6b;
+  --rst-brand-hover: #0a5555;
+  --rst-brand-ink: #ffffff;
+  --rst-brand-tint: #ddefee;
+  --rst-ok-ink: #1c6e37;
+  --rst-warn-ink: #7a4a00;
+  --rst-danger-ink: #a8211a;
+  --rst-info-ink: #1b5799;
+  --rst-focus: #1b5799;
+  --rst-sans: system-ui, -apple-system, 'Segoe UI', 'Noto Sans', 'Helvetica Neue', sans-serif;
+  --rst-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rst-bg: #0d1413;
+    --rst-surface: #141d1c;
+    --rst-surface-2: #1b2625;
+    --rst-ink: #e5edec;
+    --rst-ink-soft: #bac8c6;
+    --rst-ink-muted: #93a5a2;
+    --rst-rule: #2a3836;
+    --rst-rule-strong: #66807c;
+    --rst-brand: #45b8b0;
+    --rst-brand-hover: #64cbc4;
+    --rst-brand-ink: #04201e;
+    --rst-brand-tint: #123533;
+    --rst-ok-ink: #63cc88;
+    --rst-warn-ink: #f2ba5c;
+    --rst-danger-ink: #ff8e84;
+    --rst-info-ink: #84b9f2;
+    --rst-focus: #84b9f2;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--rst-bg);
+  color: var(--rst-ink);
+  font-family: var(--rst-sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+main,
+.masthead,
+.tabs {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+main {
+  padding-block: 24px 64px;
+}
+
+h1,
+h2 {
+  line-height: 1.2;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+h2 {
+  margin: 32px 0 12px;
+  font-size: 20px;
+}
+
+a {
+  color: var(--rst-brand);
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--rst-brand-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--rst-focus);
+  outline-offset: 2px;
+}
+
+.skip {
+  position: absolute;
+  left: 16px;
+  top: -64px;
+  padding: 8px 12px;
+  background: var(--rst-surface);
+  color: var(--rst-ink);
+  border: 1px solid var(--rst-rule-strong);
+  border-radius: 6px;
+}
+
+.skip:focus {
+  top: 8px;
+}
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding-block: 16px 8px;
+}
+
+.masthead p {
+  margin: 0;
+}
+
+.brand {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--rst-brand);
+}
+
+.run {
+  color: var(--rst-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.mono,
+.step .text,
+.step time {
+  font-family: var(--rst-mono);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--rst-rule);
+}
+
+.tabs a {
+  padding: 8px 12px;
+  color: var(--rst-ink-soft);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs a[aria-current='page'] {
+  color: var(--rst-ink);
+  border-bottom-color: var(--rst-brand);
+  font-weight: 650;
+}
+
+.lede {
+  margin: 0 0 16px;
+  max-width: 70ch;
+  color: var(--rst-ink-soft);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.facts div {
+  padding: 12px;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: 6px;
+}
+
+.facts dt {
+  color: var(--rst-ink-muted);
+  font-size: 12px;
+}
+
+.facts dd {
+  margin: 4px 0 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.summary span {
+  padding: 4px 10px;
+  background: var(--rst-brand-tint);
+  border-radius: 999px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--rst-rule);
+  overflow-wrap: anywhere;
+}
+
+th {
+  color: var(--rst-ink-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.controls button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  background: var(--rst-brand);
+  color: var(--rst-brand-ink);
+  border: 1px solid var(--rst-brand);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.controls button:hover:not(:disabled) {
+  background: var(--rst-brand-hover);
+}
+
+.controls button:disabled {
+  background: var(--rst-surface-2);
+  color: var(--rst-ink-muted);
+  border-color: var(--rst-rule);
+  cursor: default;
+}
+
+.status {
+  margin: 0 0 0 8px;
+  color: var(--rst-ink-soft);
+}
+
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: 6px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 6.5rem 9rem 1fr auto;
+  gap: 4px 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rst-rule);
+  border-inline-start: 4px solid var(--rst-rule-strong);
+}
+
+.step:last-child {
+  border-bottom: 0;
+}
+
+.step[aria-current='step'] {
+  background: var(--rst-brand-tint);
+}
+
+.step time {
+  color: var(--rst-ink-muted);
+  font-size: 12px;
+}
+
+.step .label {
+  font-weight: 500;
+}
+
+.step .text {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.step .running {
+  display: flex;
+  gap: 8px;
+  color: var(--rst-ink-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.step-turn {
+  border-inline-start-color: var(--rst-brand);
+}
+
+.step-tool {
+  border-inline-start-color: var(--rst-info-ink);
+}
+
+.step-card,
+.step-verdict {
+  border-inline-start-color: var(--rst-ok-ink);
+}
+
+.step-budget {
+  border-inline-start-color: var(--rst-warn-ink);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .step {
+    grid-template-columns: 1fr;
+  }
+
+  /* P1-136: at 360 px the agents table stacks; each cell carries its column name (data-label). */
+  table.stacked thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  table.stacked,
+  table.stacked tbody {
+    display: block;
+  }
+
+  table.stacked tr {
+    display: block;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--rst-rule);
+  }
+
+  table.stacked th,
+  table.stacked td {
+    display: block;
+    border: 0;
+    padding: 2px 12px;
+    white-space: normal;
+  }
+
+  table.stacked td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--rst-ink-muted);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 400;
+  }
+
+  .step .running {
+    white-space: normal;
+  }
+}
+
+@media print {
+  .controls,
+  .skip {
+    display: none;
+  }
+}
