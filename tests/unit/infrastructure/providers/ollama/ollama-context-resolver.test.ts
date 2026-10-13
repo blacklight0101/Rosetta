@@ -8,6 +8,7 @@ import {
   type ProbeResult,
   type Residency,
 } from '../../../../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
+import * as resolverModule from '../../../../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
 import { FALLBACK_BACKOFF_MS } from '../../../../../src/infrastructure/providers/ollama/ollama-context.js';
 import { RecordingLogger } from '../../../../support/recording-logger.js';
 
@@ -205,6 +206,10 @@ describe('Ollama context size cache reset', () => {
 
     expect(probe.shows).toBe(2);
     expect(probe.psReads).toBe(4);
+  });
+
+  it('RF-401 the production resolver module does not export the cache reset', () => {
+    expect(Object.keys(resolverModule)).not.toContain('clearContextCache');
   });
 });
 
