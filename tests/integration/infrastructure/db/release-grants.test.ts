@@ -83,6 +83,13 @@ describe.skipIf(!hasTestDatabase)('release-1 grants in use', () => {
     expect(await outcomeOf(pool, audit, 'rosetta_app')).toBe(INSUFFICIENT_PRIVILEGE);
   });
 
+  it('RF-1109 rosetta_app cannot UPDATE audit_events, and only the retention function deletes rows', async () => {
+    const update = { sql: 'UPDATE audit_events SET outcome = $1', params: ['ok'] };
+
+    expect(await outcomeOf(pool, update, 'rosetta_app')).toBe(INSUFFICIENT_PRIVILEGE);
+    expect(await privilegesOf(pool, 'audit_events')).toEqual(['SELECT', 'INSERT']);
+  });
+
   it('RF-1302 rosetta_app cannot change the schema', async () => {
     const ddl = { sql: 'ALTER TABLE users ADD COLUMN extra text', params: [] };
 
