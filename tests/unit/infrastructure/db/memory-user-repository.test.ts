@@ -2,6 +2,7 @@ import { describe } from 'vitest';
 import { MemoryUserRepository } from '../../../../src/infrastructure/db/memory-user-repository.js';
 import { failedSignInCounterContract } from '../../../contracts/failed-sign-in-counter.contract.js';
 import { userRepositoryContract } from '../../../contracts/user-repository.contract.js';
+import { successfulSignInContract } from '../../../contracts/successful-sign-in.contract.js';
 
 // Architecture section 7: the memory adapter passes the same contracts as PgUserRepository.
 describe('MemoryUserRepository', () => {
@@ -9,4 +10,5 @@ describe('MemoryUserRepository', () => {
 
   userRepositoryContract('MemoryUserRepository', fresh);
   failedSignInCounterContract('MemoryUserRepository', fresh);
+  successfulSignInContract('MemoryUserRepository', fresh);
 });
