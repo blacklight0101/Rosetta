@@ -72,7 +72,11 @@ export interface UnderstandHarnessOptions {
   readonly settings?: ProjectSettings;
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
-  readonly beforeCall?: (call: number, harness: UnderstandHarness) => Promise<void>;
+  readonly beforeCall?: (
+    call: number,
+    harness: UnderstandHarness,
+    signal: AbortSignal,
+  ) => Promise<void>;
 }
 
 interface UnderstandStart {
@@ -275,8 +279,10 @@ export async function createUnderstandHarness(
   });
   await s.projects.insertOrFind(project);
   const holder: { harness?: UnderstandHarness } = {};
-  const beforeCall: BeforeCall = async (call) => {
-    if (holder.harness !== undefined) await options.beforeCall?.(call, holder.harness);
+  const beforeCall: BeforeCall = async (call, signal) => {
+    if (holder.harness !== undefined) {
+      await options.beforeCall?.(call, holder.harness, signal);
+    }
   };
   const providers = understandProviders({
     ...{ dataDir: options.dataDir, writer: s.writer, masker: s.masker, clock: s.clock },

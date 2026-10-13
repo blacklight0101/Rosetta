@@ -131,6 +131,7 @@ export class RunQueue {
     await Promise.allSettled([...this.inFlight]);
   }
 
+  // A getter, so TypeScript does not narrow `closing` to false after the early return across awaits.
   private get isClosing(): boolean {
     return this.closing;
   }

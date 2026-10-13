@@ -172,7 +172,8 @@ jobs that need it do not run and the required checks stay missing, so the pull r
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
 version in a comment; no `pull_request_target`; no secrets in CI (tests never call providers). Dependabot updates npm
-packages and GitHub Actions weekly, grouped by minor and patch.
+packages and GitHub Actions weekly, grouped by minor and patch, with a 14-day cooldown so it proposes only
+versions that are two weeks old (DEC-125).
 
 ## 7. Package and tool baseline
 

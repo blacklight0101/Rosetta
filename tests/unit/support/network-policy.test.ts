@@ -40,6 +40,8 @@ describe('RNF-005 pipe policy', () => {
     '/tmp/rosetta.sock',
     String.raw`\\.\pipe\rosetta`,
     String.raw`\\?\pipe\rosetta`,
+    String.raw`\??\pipe\rosetta`,
+    String.raw`\\.\pipe\rosetta..sock`,
     String.raw`\\localhost\pipe\rosetta`,
     String.raw`\\127.0.0.1\pipe\rosetta`,
     '//./pipe/rosetta',
@@ -55,6 +57,13 @@ describe('RNF-005 pipe policy', () => {
     String.raw`\\.\UNC\example.com\pipe\rosetta`,
     String.raw`\\example.com`,
     String.raw`\\.\GLOBALROOT\Device\Mup\example.com\pipe\rosetta`,
+    String.raw`\\.\pipe\..\UNC\example.com\pipe\rosetta`,
+    String.raw`\\?\pipe\..\UNC\example.com\pipe\rosetta`,
+    String.raw`\??\pipe\..\UNC\example.com\pipe\rosetta`,
+    String.raw`\??\UNC\example.com\pipe\rosetta`,
+    String.raw`\\.\pipe\.\..\UNC\example.com\pipe\rosetta`,
+    '//./pipe/../UNC/example.com/pipe/rosetta',
+    String.raw`\\.\.\UNC\example.com\pipe\rosetta`,
   ])('RNF-005 refuses the remote pipe %s', (path) => {
     expect(isAllowedPipe(path, undefined)).toBe(false);
   });

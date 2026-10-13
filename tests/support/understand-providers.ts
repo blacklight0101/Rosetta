@@ -30,8 +30,8 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 // memory stores, whose one adapter is a FakeProvider replaying a recording. A hook runs before each
 // call reaches the fake, so a test can stop the run at a chosen call.
 
-/** Runs before the call with this number (from 1) reaches the fake. */
-export type BeforeCall = (call: number) => Promise<void>;
+/** Runs before the call with this number (from 1) reaches the fake; the signal is the call's own. */
+export type BeforeCall = (call: number, signal: AbortSignal) => Promise<void>;
 
 /** The fake behind every role, with a hook before each call. */
 class HookedProvider implements LlmProvider {
@@ -46,7 +46,7 @@ class HookedProvider implements LlmProvider {
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
     this.calls += 1;
-    await this.before?.(this.calls);
+    await this.before?.(this.calls, request.signal);
     return this.fake.complete(request, observer);
   }
 }
@@ -77,7 +77,8 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     keys: new MemoryProviderKeyRepository(),
     box: new AesGcmSecretBox({ current: fixtureSecret(3) }),
     serverKeys: {},
-    ollamaUrl: undefined,
+    // An Ollama provider needs the address (RF-401); the adapter is the fake, so it is never called.
+    ollamaUrl: 'http://127.0.0.1:11434',
     serverSettings: new MemoryServerSettings({}),
     ledger,
     priceTable: budgetTable,

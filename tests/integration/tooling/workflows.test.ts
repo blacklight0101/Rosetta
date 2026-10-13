@@ -197,3 +197,11 @@ describe('GitHub Actions workflows: compose smoke job', () => {
     expect(text).toMatch(/timeout-minutes: \d+/u);
   });
 });
+
+describe('Dependabot configuration', () => {
+  it('DEC-125 Dependabot waits two weeks before it proposes a new version', async () => {
+    const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
+
+    expect(dependabot.match(/cooldown:\n\s+default-days: 14\n/gu) ?? []).toHaveLength(2);
+  });
+});

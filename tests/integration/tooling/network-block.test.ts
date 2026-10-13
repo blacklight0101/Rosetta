@@ -59,7 +59,11 @@ describe('RNF-005 outbound network block', () => {
 
   it('RNF-005 refuses a numeric-string port to a public address', async () => {
     const socket = new Socket();
-    const error = await failureOf(() => socket.connect('80' as unknown as number, '192.0.2.1'));
+    // Node accepts a numeric-string port at run time; the typings only allow a number.
+    const error = await failureOf(() => {
+      Reflect.apply(socket.connect.bind(socket), undefined, ['80', PUBLIC]);
+      return socket;
+    });
     socket.destroy();
     expect(error.message).toMatch(BLOCKED);
   });
@@ -148,6 +152,13 @@ describe('RNF-005 outbound network block with unusual connect arguments', () => 
 
   it('RNF-005 refuses a Windows named pipe on a remote server', async () => {
     const error = await failureOf(() => netConnect({ path: String.raw`\\${PUBLIC}\pipe\rosetta` }));
+    expect(error.message).toMatch(BLOCKED);
+    expect(error.message).toContain(PUBLIC);
+  });
+
+  it('RNF-005 refuses a local pipe path whose dot segments lead to a remote server', async () => {
+    const path = [String.raw`\\.\pipe\..\UNC`, PUBLIC, 'pipe', 'rosetta'].join('\\');
+    const error = await failureOf(() => netConnect({ path }));
     expect(error.message).toMatch(BLOCKED);
     expect(error.message).toContain(PUBLIC);
   });
