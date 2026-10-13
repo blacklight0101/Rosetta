@@ -126,3 +126,5 @@ project and the run are still there, then runs `down -v`. To run it by hand, use
 `docker compose -p rosetta-smoke -f compose.yaml -f compose.ci.yaml up -d --build --wait`, then
 `npx playwright test --config=playwright.compose.config.ts smoke` with the `.env` values exported, and finish with
 `docker compose -p rosetta-smoke -f compose.yaml -f compose.ci.yaml down -v`.
+
+This sentence is a throwaway probe for the documentation-only CI path; it is never merged.
