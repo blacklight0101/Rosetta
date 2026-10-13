@@ -367,15 +367,6 @@ tbody tr:last-child td {
     grid-template-columns: 1fr;
   }
 
-  th,
-  td {
-    padding: 6px 8px;
-  }
-
-  th {
-    white-space: normal;
-  }
-
   .step .running {
     white-space: normal;
   }
