@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { BrowserContext } from '@playwright/test';
 import { z } from 'zod';
 import { clientAddressFor } from './client-address.js';
-import type { Credentials } from './seed.js';
+import { ensureAccount, type Credentials } from './seed.js';
 import { e2eOrigin, e2ePort } from './server-config.js';
 
 // RF-1100, RF-1009: a browser context signed in through the API, as a person would through the
@@ -72,6 +72,7 @@ async function openSession(context: BrowserContext, credentials: Credentials): P
 /** Opens a session for the account in the context; its cookies then apply to pages and requests. */
 // RF-1100
 export async function signInAs(context: BrowserContext, credentials: Credentials): Promise<void> {
+  await ensureAccount(credentials);
   const known = await keptCookies(credentials.userName);
   if (known !== undefined) {
     await context.addCookies(known);

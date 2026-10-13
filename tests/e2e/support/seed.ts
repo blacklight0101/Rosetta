@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
+import { test } from '@playwright/test';
 import { actorOf } from '../../../src/domain/accounts/actor.js';
 import type { Logger } from '../../../src/application/ports/logger.js';
 import { CreateUser } from '../../../src/application/use-cases/create-user.js';
 import { PgAuditLog } from '../../../src/infrastructure/db/pg-audit-log.js';
 import { PgUserRepository } from '../../../src/infrastructure/db/pg-user-repository.js';
-import { createPool } from '../../../src/infrastructure/db/pool.js';
+import { createPool, type DatabasePool } from '../../../src/infrastructure/db/pool.js';
 import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
 import {
   commonPasswordsFile,
@@ -13,6 +15,8 @@ import { ScryptPasswordHasher } from '../../../src/infrastructure/security/scryp
 import { SystemClock } from '../../../src/infrastructure/system/system-clock.js';
 import { TimestampIdGenerator } from '../../../src/infrastructure/system/timestamp-id-generator.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
+import { disposableSchemaUrl } from './database.js';
+import { e2ePort } from './server-config.js';
 
 // FAKE CREDENTIALS ONLY (RNF-003): the accounts of an end-to-end run. The test server creates the
 // administrator at start-up through the bootstrap use case (RF-1102), so it must change its
@@ -34,6 +38,8 @@ export const seededUser = {
 export interface Credentials {
   readonly userName: string;
   readonly password: string;
+  /** Set on an account of one test: the kind and project `ensureAccount` creates it for. */
+  readonly seed?: { readonly kind: E2eAccountKind; readonly project: string };
 }
 
 /** The Playwright projects (playwright.config.ts); each gets accounts of its own, as they run in parallel. */
@@ -139,17 +145,94 @@ const forceKinds: ReadonlySet<E2eAccountKind> = new Set([
   'sweep-force',
 ]);
 
+/**
+ * The account of a kind in a project. Inside a test it is the account of that test (and of that
+ * repeat, `--repeat-each`), so tests that run in parallel or repeat never share an account, its
+ * projects or its settings; it is created on first sign-in (`ensureAccount`). Outside a test, and
+ * for the seed of the replays, it is the pre-seeded account of the kind.
+ */
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
-  return {
-    userName: ['e2e', kind, project].join('-'),
-    password: fixturePassword(`Acct${kind}`),
-  };
+  const base = ['e2e', kind, project].join('-');
+  const password = fixturePassword(`Acct${kind}`);
+  const key = currentTestKey(kind);
+  if (key === undefined) return { userName: base, password };
+  return { userName: `${base}-${key}`, password, seed: { kind, project } };
+}
+
+/**
+ * A short key of the account of the running test: its kind, spec file, worker, parallel slot and
+ * repeat. Tests running at the same moment are in different workers, so they never share an account;
+ * a serial journey runs in one worker and one repeat, so its steps share the account and the run.
+ * A worker that restarts after a failure gets a new worker index, so it never meets an earlier
+ * worker's half-finished journey (the rest of a serial journey is skipped, not re-run elsewhere).
+ */
+function currentTestKey(kind: E2eAccountKind): string | undefined {
+  let info: ReturnType<typeof test.info>;
+  try {
+    info = test.info();
+  } catch {
+    return undefined;
+  }
+  const parts = [kind, info.file, info.workerIndex, info.parallelIndex, info.repeatEachIndex];
+  const digest = createHash('sha256').update(parts.map(String).join('|'));
+  return digest.digest('hex').slice(0, 10);
 }
 
 const quiet: Logger = {
   log: () => Promise.resolve(),
   securityEvent: () => Promise.resolve(),
 };
+
+let commonPasswordList: Promise<ReadonlySet<string>> | undefined;
+
+/** The use case that creates users, as the bootstrap administrator's actions do (P1-10). */
+async function userCreation(pool: DatabasePool): Promise<CreateUser> {
+  const clock = new SystemClock();
+  commonPasswordList ??= loadCommonPasswords(commonPasswordsFile);
+  return new CreateUser({
+    users: new PgUserRepository(pool),
+    hasher: new ScryptPasswordHasher(),
+    auditLog: new PgAuditLog(pool, new SecretMasker()),
+    logger: quiet,
+    clock,
+    ids: new TimestampIdGenerator(clock),
+    commonPasswords: await commonPasswordList,
+  });
+}
+
+/**
+ * Creates the account of one test (see `accountFor`) in the disposable schema, unless it exists.
+ * It is made by the same use case as the pre-seeded accounts, with the same role and forced change.
+ */
+export async function ensureAccount(credentials: Credentials): Promise<void> {
+  if (credentials.seed === undefined) return;
+  const databaseUrl = process.env['ROSETTA_TEST_DATABASE_URL'] ?? '';
+  const pool = createPool({
+    connectionString: disposableSchemaUrl(databaseUrl, e2ePort()),
+    onIdleError: () => undefined,
+  });
+  try {
+    const users = new PgUserRepository(pool);
+    if ((await users.findByUserName(credentials.userName)) !== undefined) return;
+    const admin = await users.findByUserName(seededAdmin.userName);
+    if (admin === undefined) throw new Error('The bootstrap administrator was not created.');
+    const { kind, project } = credentials.seed;
+    const outcome = await (
+      await userCreation(pool)
+    ).execute({
+      actor: actorOf(admin),
+      userName: credentials.userName,
+      displayName: `E2E ${kind}`,
+      role: adminKinds.has(kind) ? 'admin' : 'user',
+      password: credentials.password,
+      mustChangePassword: forceKinds.has(kind),
+      ip: 'e2e-seed',
+    });
+    if (!outcome.ok) throw new Error(`The account of ${project} was refused (${outcome.error}).`);
+  } finally {
+    await pool.end();
+  }
+}
 
 /** Creates `seededUser` through CreateUser, as the bootstrap administrator. */
 // RF-1102
