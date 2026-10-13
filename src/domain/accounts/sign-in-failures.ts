@@ -8,6 +8,13 @@ const MAX_FAILED_SIGN_INS = 5;
 const FAILURE_WINDOW_MS = 15 * 60_000;
 const LOCK_DURATION_MS = 15 * 60_000;
 
+/** The lockout rule, for an adapter that applies `recordFailedSignIn` in one database write. */
+export const SIGN_IN_FAILURE_LIMITS = {
+  maxFailures: MAX_FAILED_SIGN_INS,
+  windowMs: FAILURE_WINDOW_MS,
+  lockMs: LOCK_DURATION_MS,
+} as const;
+
 export interface FailedSignIn {
   readonly account: UserAccount;
   /** True when this failure locked the account (for the audit event `auth.locked`). */

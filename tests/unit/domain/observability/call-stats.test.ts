@@ -41,6 +41,19 @@ describe('percentile', () => {
     expect(percentile(values, 95)).toBe(190);
   });
 
+  it('RF-1011 gives P50 of two values as the lower and P95 as the higher', () => {
+    // Nearest rank: ceil(50 * 2 / 100) = 1 and ceil(95 * 2 / 100) = 2.
+    expect(percentile([20, 10], 50)).toBe(10);
+    expect(percentile([20, 10], 95)).toBe(20);
+  });
+
+  it('RF-1011 rounds the rank up, never to the nearest: P95 of eleven values is the 11th', () => {
+    // ceil(95 * 11 / 100) = ceil(10.45) = 11; rounding would give the 10th.
+    const values = Array.from({ length: 11 }, (_item, index) => index + 1);
+
+    expect(percentile(values, 95)).toBe(11);
+  });
+
   it('RF-1011 gives the only value for any percentile and nothing for no values', () => {
     expect(percentile([7], 50)).toBe(7);
     expect(percentile([7], 95)).toBe(7);
