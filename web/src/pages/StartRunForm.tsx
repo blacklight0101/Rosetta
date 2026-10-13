@@ -39,6 +39,11 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
           capMicros: form.capMicros,
           error: actions.refusals.cap,
           onInput: form.setCapText,
+          threshold: {
+            text: form.thresholdText,
+            error: actions.refusals.threshold,
+            onInput: form.setThresholdText,
+          },
         }}
       />
     </div>

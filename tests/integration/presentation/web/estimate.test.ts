@@ -120,6 +120,28 @@ describe('GET /api/projects/:id/estimate refuses', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
   });
+});
+
+describe('GET /api/projects/:id/estimate refuses unknown parameters', () => {
+  it.each(['?areas[]=Catalog', '?area=Catalog', '?areas=Catalog&stage=understand'])(
+    'RF-425 an unknown query parameter (%s) is refused with RST-2000 and names the parameter',
+    async (query) => {
+      const { amy, project } = await setup();
+
+      const response = await amy.request({ method: 'GET', url: estimateUrl(project.id, query) });
+
+      expect(response.statusCode).toBe(400);
+      const body = z
+        .object({
+          code: z.string(),
+          problems: z.array(z.object({ field: z.string(), code: z.string(), reason: z.string() })),
+        })
+        .parse(response.json());
+      expect(body.code).toBe(ERROR_CODES.requestInvalid);
+      expect(body.problems).toHaveLength(1);
+      expect(body.problems[0]?.reason).toMatch(/^Unknown query parameter ".+"\. Name each area/u);
+    },
+  );
 
   it('RST-1203 a project that was never scanned answers 409 with the code', async () => {
     const { amy, project } = await setup(false);

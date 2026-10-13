@@ -1,11 +1,13 @@
 import type { JSX } from 'preact';
-import { useState } from 'preact/hooks';
+import { useContext, useState } from 'preact/hooks';
 import type { Account, Caps, ListedAccount, Money } from '../api/admin-schemas.js';
 import { useUser } from '../app/session-context.js';
+import { UsageSignalContext } from '../app/usage-signal.js';
+import { EmptyState } from '../components/EmptyState.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { withChange, withNew } from './admin-format.js';
+import { Field } from '../components/Field.js';
+import { namedLike, withChange, withNew } from './admin-format.js';
 import { AccountsTable } from './AccountsTable.js';
-import { CapBanner } from './CapBanner.js';
 import { CapsForm } from './CapsForm.js';
 import { CreateAccountForm } from './CreateAccountForm.js';
 import { ResetPasswordPanel } from './ResetPasswordPanel.js';
@@ -13,10 +15,11 @@ import { useAccountActions, type AccountActions } from './use-account-actions.js
 import { useAdminOverview, type OverviewEditor } from './use-admin-overview.js';
 import { WorkspacePanel } from './WorkspacePanel.js';
 
-// RF-1102, RF-1105, RF-1106, RF-1107, design-system.md section 14 (administration: users): the
-// accounts with their state and cost, the actions on them, the form that creates an account, the
-// caps on the server keys with the month meter, and the warning banner from 80% of the monthly
-// cap. Only an administrator reaches it; the API answers 403 to anyone else.
+// RF-1102, RF-1104, RF-1105, RF-1106, RF-1107, design-system.md section 14 (administration:
+// users): the accounts with their state, cost and server keys, filtered by name, the actions on
+// them, the form that creates an account and the caps on the server keys with the month meter. The
+// warning banner from 80% of the monthly cap is the shell's (SignedInShell.tsx), read again when
+// the caps are saved. Only an administrator reaches it; the API answers 403 to anyone else.
 
 type Panel =
   | { readonly kind: 'reset'; readonly account: ListedAccount }
@@ -53,6 +56,8 @@ function AccountsSection(props: {
   readonly onWorkspace: (account: ListedAccount) => void;
 }): JSX.Element {
   const { users, ownId, actions, onReset, onWorkspace } = props;
+  const [filter, setFilter] = useState('');
+  const shown = namedLike(users, filter);
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="accounts">
       <h2 id="accounts" class="rst-settings__heading">
@@ -62,17 +67,57 @@ function AccountsSection(props: {
       <p class="rst-settings__note" role="status">
         {actions.notice}
       </p>
-      <AccountsTable
-        users={users}
-        ownId={ownId}
-        busyId={actions.busyId}
-        onChange={(user, change) => {
-          void actions.change(user, change);
-        }}
-        onReset={onReset}
-        onWorkspace={onWorkspace}
-      />
+      <div class="rst-admin__filter">
+        <Field
+          kind="text"
+          id="account-filter"
+          label="Filter by name"
+          value={filter}
+          onInput={setFilter}
+        />
+      </div>
+      {shown.length === 0 ? (
+        <EmptyState message={`No account matches "${filter.trim()}".`} />
+      ) : (
+        <AccountsTable
+          users={shown}
+          ownId={ownId}
+          busyId={actions.busyId}
+          onChange={(user, change) => {
+            void actions.change(user, change);
+          }}
+          onReset={onReset}
+          onWorkspace={onWorkspace}
+        />
+      )}
     </section>
+  );
+}
+
+/** Create an account, and the caps; saving the caps has the shell read its banner again. */
+function FormColumns(props: {
+  readonly editor: OverviewEditor;
+  readonly caps: Caps;
+  readonly spent: readonly Money[];
+}): JSX.Element {
+  const { editor, caps, spent } = props;
+  const announce = useContext(UsageSignalContext);
+  return (
+    <div class="rst-admin__columns">
+      <CreateAccountForm
+        onCreated={(account) => {
+          editor.setUsers((current) => withNew(current, account));
+        }}
+      />
+      <CapsForm
+        caps={caps}
+        spent={spent}
+        onSaved={(saved) => {
+          editor.setCaps(saved);
+          announce();
+        }}
+      />
+    </div>
   );
 }
 
@@ -90,7 +135,6 @@ function UsersView(props: {
   });
   return (
     <>
-      <CapBanner spent={spent} caps={caps} onCapsPage />
       <AccountsSection
         users={users}
         ownId={own.id}
@@ -115,14 +159,7 @@ function UsersView(props: {
           setPanel(undefined);
         }}
       />
-      <div class="rst-admin__columns">
-        <CreateAccountForm
-          onCreated={(account) => {
-            editor.setUsers((current) => withNew(current, account));
-          }}
-        />
-        <CapsForm caps={caps} spent={spent} onSaved={editor.setCaps} />
-      </div>
+      <FormColumns editor={editor} caps={caps} spent={spent} />
     </>
   );
 }

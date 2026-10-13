@@ -82,7 +82,6 @@ describe('GetAccountTotals', () => {
     costs.add(costEntry(amy.userId));
     const summaryOnly = {
       userSummary: (userId: string) => costs.userSummary(userId),
-      userGroups: () => Promise.reject(new Error('The pill must not read the groups per run.')),
       projectGroups: () => Promise.reject(new Error('Not the pill.')),
       providerTestGroups: () => Promise.reject(new Error('Not the pill.')),
     };

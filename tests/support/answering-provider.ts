@@ -9,12 +9,18 @@ import { ProviderCallError } from '../../src/infrastructure/providers/provider-c
 
 // ADR-008, RF-407: the model of the end-to-end test server. It answers every call with a short text
 // and small usage, and fails the calls of the roles in `failing` with RST-1506, so a journey can
-// show one role reachable and another with its error. It never touches the network.
+// show one role reachable and another with its error. It never touches the network. With
+// `holdUnderstandMs` the first reader call of each understand run waits that long, so the run is
+// still working when a second run is asked for and that one waits in the queue (P1-34); the later
+// calls of the run answer at once, so a run of several areas takes no longer than one hold.
 
 export class AnsweringProvider implements LlmProvider {
   private readonly failing: ReadonlySet<string>;
 
   private readonly holdUnderstandMs: number;
+
+  /** The understand runs whose first reader call has been held. */
+  private readonly held = new Set<string>();
 
   constructor(failing: readonly string[] = [], holdUnderstandMs = 0) {
     this.failing = new Set(failing);
@@ -23,7 +29,7 @@ export class AnsweringProvider implements LlmProvider {
 
   async complete(request: LlmRequest): Promise<LlmResponse> {
     const { role, runId } = request.context;
-    if (this.holdUnderstandMs > 0 && role === 'reader' && runId.endsWith('-understand')) {
+    if (this.holdsFirstReaderCall(role, runId)) {
       await sleep(this.holdUnderstandMs, undefined, { signal: request.signal }).catch(
         () => undefined,
       );
@@ -38,5 +44,14 @@ export class AnsweringProvider implements LlmProvider {
       finishReason: 'stop',
       modelVersion: 'answering-provider-1',
     };
+  }
+
+  private holdsFirstReaderCall(role: string, runId: string): boolean {
+    if (this.holdUnderstandMs <= 0 || role !== 'reader' || !runId.endsWith('-understand')) {
+      return false;
+    }
+    if (this.held.has(runId)) return false;
+    this.held.add(runId);
+    return true;
   }
 }

@@ -121,7 +121,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Format | `npm run format:check` (`prettier --check .`) | yes |
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
-| Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; on Linux with a database also the Playwright e2e project, after `npx playwright install --with-deps chromium`) | yes |
+| Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; the Playwright e2e project runs only in the `e2e-shard` jobs, which install Chromium with `npx playwright install --with-deps chromium`; `verify` installs no browser) | yes |
 | End-to-end tests | job `e2e-shard`: the Playwright project split in three shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/3`, each with its own PostgreSQL service); job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
 | Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
 | Secret scan | gitleaks action | yes |
@@ -132,6 +132,42 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Pull request title | commitlint on the title, passed as `env: TITLE: ${{ github.event.pull_request.title }}` and read as `"$TITLE"`, never `${{ }}` inside `run:` | yes |
 
 `npm run verify` runs the first six checks locally in the same order; builders and the verifier run it on every card.
+
+**Windows runs the tests only** (added 2026-10-13). The `verify (ubuntu-latest)` job runs `npm run verify`, every
+gate above; the `verify (windows-latest)` job runs only `npm run test:ci`. Type check, lint, format, architecture and
+dead-code checks give the same answer on both operating systems, so running them twice bought nothing; the tests are
+what catches path, line-ending and process differences. Both job names stay the same, because both are required
+checks.
+
+**No caches beyond `setup-node`'s npm cache** (measured 2026-10-13 on pull request #304). The extra caches tried
+did not pay for themselves, so none is used:
+
+- *Playwright browsers* (`~/.cache/ms-playwright` per `@playwright/test` version): on a hit a job still has to run
+  `npx playwright install-deps chromium`, because the runner keeps no system packages. A cold
+  `install --with-deps` took 19 to 23 s; a cache restore plus `install-deps` took 15 to 26 s.
+- *Prettier* (`--cache --cache-strategy content`): the format check fell from about 7 s to about 3 s, and the
+  cache restore and save cost about the same.
+- *ESLint* (`--cache`): not used even though it is fast, because it is unsound here. ESLint's cache keys each file
+  on its own content, but the type-aware rules of the configuration also read the files it imports: a change in
+  one file can create an error in another that the cache then reports as clean. Lint always runs in full.
+
+**Documentation-only pull requests** (added 2026-10-13). A first job, `changes`, compares the pull request with its
+base using plain git (`git diff --name-only --no-renames base...head`, full history, no third-party action;
+`--no-renames` lists both paths of a moved file, so moving code or a prompt into `docs/` still counts as code) and
+sets `code=false` only when every changed file is documentation: anything under `docs/`, or a `*.md` file at the
+repository root. Markdown anywhere else (`src/`, `tests/`, `prompts/`, `templates/`, `scripts/` and so on) counts as
+code, because some of it ships in the image or is read at run time. A push to `main` always counts as code. The jobs
+`verify`, `e2e-shard`, `image` and `compose-smoke` always run and need `changes`. Their heavy steps run unless `code`
+is exactly `false` (`needs.changes.outputs.code != 'false'`), so a missing or unexpected value fails closed. The
+steps are skipped by a step-level `if:`, never a job-level one, because a skipped matrix job
+reports an unexpanded name and the required checks `verify (ubuntu-latest)` and `verify (windows-latest)` would
+never arrive. The `e2e` check stays green, since shards whose steps were skipped still succeed. For a
+documentation-only change the Linux `verify` job still runs `npm run format:check` and the tests that read the
+documents: `tests/integration/docs/`, the workflow tests, `release-schema.test.ts` (against `data-model.md`),
+`status-badge.test.tsx` (against `architecture.md`) and `tokens.test.ts` (against `docs/design/tokens.css`);
+`workflow-docs-only.test.ts` fails when a test that reads `docs/` is missing from that list. `audit`, `gitleaks`,
+`dependency-review` and `pr-title` run as before. The `changes` job is not a required check: if it fails, the
+jobs that need it do not run and the required checks stay missing, so the pull request cannot merge.
 
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the

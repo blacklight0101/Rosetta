@@ -47,20 +47,29 @@ test('RF-010 refuses an address that is not a GitHub repository next to the fiel
   await expectNoSeriousViolations(page);
 });
 
-test('RF-010 creates a project from a GitHub URL and lists it', async ({ page }) => {
-  await page.getByLabel('GitHub repository URL').fill(demoUrl);
+test(
+  'RF-010 creates a project from a GitHub URL and lists it',
+  { tag: '@phone' },
+  async ({ page }) => {
+    await page.getByLabel('GitHub repository URL').fill(demoUrl);
 
-  await page.getByRole('button', { name: 'Create project' }).click();
+    await page.getByRole('button', { name: 'Create project' }).click();
 
-  const row = page.getByRole('row').filter({ hasText: 'octo/demo' });
-  await expect(row).toBeVisible();
-  await expect(row).toContainText('default branch');
-  await expect(page.getByRole('status').filter({ hasText: 'Created octo/demo' })).toBeVisible();
-  await expect(page.getByLabel('GitHub repository URL')).toHaveValue('');
-  await page.reload();
-  await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
-  await expectNoSeriousViolations(page);
-});
+    const row = page.getByRole('row').filter({ hasText: 'octo/demo' });
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('default branch');
+    await expect(page.getByRole('status').filter({ hasText: 'Created octo/demo' })).toBeVisible();
+    await expect(page.getByLabel('GitHub repository URL')).toHaveValue('');
+    await page.reload();
+    await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
+    await expectNoSeriousViolations(page);
+    // The verdict on #268: with a project listed, the page scrolled sideways at 360 px (529).
+    const overflow: unknown = await page.evaluate(
+      'document.documentElement.scrollWidth - window.innerWidth',
+    );
+    expect(Number(overflow)).toBeLessThanOrEqual(0);
+  },
+);
 
 test('RF-010 creating the same address again opens the existing project', async ({ page }) => {
   await page.getByLabel('GitHub repository URL').fill(demoUrl);

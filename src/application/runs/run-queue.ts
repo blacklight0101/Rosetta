@@ -118,12 +118,21 @@ export class RunQueue {
     });
   }
 
-  /** Stops every running run, waits for them to end and starts no other run. */
+  /**
+   * Stops every running run, waits for them to end and starts no other run. A dispatch under way
+   * is awaited first, so a run it was starting is aborted and awaited like the others, and the
+   * runs it had not reached stay queued.
+   */
   // RNF-002
   async shutDown(): Promise<void> {
     this.closing = true;
     for (const controller of this.controllers.values()) controller.abort();
+    await this.steps.run(STEP, () => Promise.resolve());
     await Promise.allSettled([...this.inFlight]);
+  }
+
+  private get isClosing(): boolean {
+    return this.closing;
   }
 
   private async startWaiting(): Promise<void> {
@@ -142,6 +151,8 @@ export class RunQueue {
       ),
     );
     for (const { run, executor } of startable) {
+      // A shutdown may have begun while the previous run of this loop was starting.
+      if (this.isClosing) return;
       if (chosen.has(run)) await this.launch(run, executor);
     }
   }

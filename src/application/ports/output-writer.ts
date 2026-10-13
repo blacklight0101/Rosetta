@@ -37,4 +37,10 @@ export interface TextLineReader {
    * is refused with reason `not-found`.
    */
   readLines(file: WorkspaceFile): Promise<Result<AsyncIterable<string>, WriteRefusal>>;
+  /**
+   * The last complete line of the file, read from its end without reading the file whole;
+   * undefined when it has none (empty, or only a torn fragment). A file that does not exist is
+   * refused with reason `not-found`.
+   */
+  readLastLine(file: WorkspaceFile): Promise<Result<string | undefined, WriteRefusal>>;
 }

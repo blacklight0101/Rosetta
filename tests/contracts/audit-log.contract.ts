@@ -4,6 +4,7 @@ import type {
   AuditEventInput,
   AuditLog,
 } from '../../src/application/ports/audit-log.js';
+import { phraseContractTests } from './audit-log-phrase.contract.js';
 import { fixturePassword } from '../support/account-fixtures.js';
 import { FixedClock } from '../support/fixed-clock.js';
 
@@ -128,6 +129,20 @@ function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
   });
 }
 
+function outcomeTests(name: string, fresh: () => Promise<AuditLog>): void {
+  it(`RF-1109 ${name} lists the rows of one outcome`, async () => {
+    const audit = await fresh();
+    await audit.record(event({ at: minutesAfterStart(1), outcome: 'ok' }));
+    await audit.record(event({ at: minutesAfterStart(2), outcome: 'refused' }));
+    await audit.record(event({ at: minutesAfterStart(3), outcome: 'failed' }));
+
+    const since = minutesAfterStart(0).getTime();
+    const refused = await audit.list({ since, outcome: 'refused' });
+
+    expect(refused.map((row) => row.at)).toEqual([minutesAfterStart(2)]);
+  });
+}
+
 function nulTests(name: string, fresh: () => Promise<AuditLog>): void {
   it(`RF-1109 ${name} stores a row whose text holds a NUL, with the NUL replaced`, async () => {
     const audit = await fresh();
@@ -168,7 +183,7 @@ function maskingAndFilterTests(name: string, fresh: () => Promise<AuditLog>): vo
           pw: password,
           value: password,
           clientSecret: { nested: password },
-          note: `my password is ${password} today`,
+          note: `my password is ${password}, today`,
         },
       }),
     );
@@ -181,7 +196,7 @@ function maskingAndFilterTests(name: string, fresh: () => Promise<AuditLog>): vo
       pw: '[MASKED:password]',
       value: '[MASKED:password]',
       clientSecret: '[MASKED:password]',
-      note: 'my password is [MASKED:password] today',
+      note: 'my password is [MASKED:password], today',
     });
   });
 
@@ -198,9 +213,73 @@ function maskingAndFilterTests(name: string, fresh: () => Promise<AuditLog>): vo
   });
 }
 
+function filterParityTests(name: string, fresh: () => Promise<AuditLog>): void {
+  it(`RF-1109 ${name} finds a user's rows by an upper-case user id`, async () => {
+    const audit = await fresh();
+    await audit.record(event());
+    await audit.record(event({ actorUserId: userB }));
+
+    const listed = await audit.list({
+      since: minutesAfterStart(-1).getTime(),
+      actorUserId: userA.toUpperCase(),
+    });
+
+    expect(listed.map((row) => row.actorUserId)).toEqual([userA]);
+  });
+
+  it(`RF-1109 ${name} finds a row by an action filter that holds a NUL`, async () => {
+    const audit = await fresh();
+    const nul = String.fromCodePoint(0);
+    await audit.record(event({ action: `auth.sign_in${nul}` }));
+    await audit.record(event({ action: 'auth.sign_in' }));
+
+    const listed = await audit.list({
+      since: minutesAfterStart(-1).getTime(),
+      action: `auth.sign_in${nul}`,
+    });
+
+    expect(listed.map((row) => row.action)).toEqual([
+      `auth.sign_in${String.fromCodePoint(0xfffd)}`,
+    ]);
+  });
+}
+
+function quotedPhraseTests(name: string, fresh: () => Promise<AuditLog>): void {
+  it(`RNF-003 ${name} masks every word of a quoted multi-word password in free text`, async () => {
+    const audit = await fresh();
+    const words = ['One', 'Two', 'Three'].map(fixturePassword);
+    const phrase = words.join(' ');
+
+    await audit.record(
+      event({
+        detail: {
+          double: `the password is "${phrase}" now`,
+          single: `password was '${phrase}', then`,
+          curly: `pass is \u201c${phrase}\u201d here`,
+          open: `secret is "${phrase}`,
+        },
+      }),
+    );
+    const listed = await audit.list({ since: minutesAfterStart(-1).getTime() });
+
+    const stored = JSON.stringify(listed);
+    for (const word of words) expect(stored).not.toContain(word);
+    expect(listed[0]?.detail).toEqual({
+      double: 'the password is [MASKED:password] now',
+      single: 'password was [MASKED:password], then',
+      curly: 'pass is [MASKED:password] here',
+      open: 'secret is [MASKED:password]',
+    });
+  });
+}
+
 export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): void {
   recordingTests(name, fresh);
   listingTests(name, fresh);
+  outcomeTests(name, fresh);
   nulTests(name, fresh);
   maskingAndFilterTests(name, fresh);
+  filterParityTests(name, fresh);
+  quotedPhraseTests(name, fresh);
+  phraseContractTests(name, fresh);
 }

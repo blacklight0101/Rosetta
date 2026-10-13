@@ -145,6 +145,19 @@ conflict visibly; the codes already shown on the design board are reserved there
   `network.takeBlocked()`. `npm run test:e2e` runs the project against a disposable PostgreSQL
   (`ROSETTA_TEST_DATABASE_URL`) with Chromium installed by `npx playwright install chromium`; `ROSETTA_E2E_PORT` moves the
   test server (default 18080); the test server trusts one proxy hop and the `clientAddress` fixture gives every test an address of its own in `X-Forwarded-For`, so the per-address rate limits of sign-in and password change never couple tests, and `accountFor(kind, project)` gives each Playwright project accounts of its own (`tests/e2e/support/seed.ts`). A page card adds an axe check (`expectNoSeriousViolations`) to its spec.
+- Where an end-to-end test runs is decided by its tag (`playwright.config.ts`, architecture.md section 17); a new spec
+  needs no change to the configuration:
+  - **No tag** (the default): a behavioural test. It runs once, in `desktop-light`; its `expectNoSeriousViolations`
+    calls are made there in all four views (1280 and 360 px, light and dark) on the page in the state the test reached.
+    Write a new test, journeys included, this way.
+  - **`@visual`**: runs in all four projects. Use it for a check that depends on the project's colour scheme or
+    viewport and nothing else, and for the visual sweep. A page card that adds a page or route also adds it to the
+    sweep in `tests/e2e/visual/`, through `expectPageInView(page)` (`'static'` for a page the front end does not draw):
+    axe, the colour scheme and no sideways scroll.
+  - **`@phone`**: a test about the 360 px layout (a `scrollWidth` check, an element that must fit the screen). It runs
+    in `desktop-light` and `phone-light`; in `phone-light` it runs on its own, so it makes what it needs itself.
+  - Tag a test with its details object, `test('RF-123 ...', { tag: '@phone' }, async ({ page }) => { ... })`, or a
+    whole block with `test.describe('...', { tag: '@visual' }, () => { ... })`.
 - No real provider calls: the test setup sets `ROSETTA_TEST=1` and blocks outbound network; providers are the fake
   provider with recordings in `tests/recordings/` (ADR-008).
 - Every port has a contract test suite that the real adapters and the fakes both pass.

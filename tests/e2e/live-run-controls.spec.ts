@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openScannedStartPage } from './support/cost-run.js';
 import {
   agentPanel,
   openStartPage,
@@ -17,7 +18,8 @@ import { transitionsDone } from './support/transitions.js';
 // (P1-95): the stage stepper, Pause updates and the "This run" meter of the top bar on the live run
 // page. The runs are real runs of the test server: the model double replays the recorded understand
 // run of the C# fixture (e2e-provider.ts) and nothing of the API or the event stream is replaced.
-// The steps share one project and one run at a time, so they run in order.
+// The steps share one project and one run at a time, so they run in order. The top bar test also
+// checks the 360 px layout (@phone).
 
 test.describe.configure({ mode: 'serial' });
 
@@ -191,33 +193,38 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
 });
 
-test('RF-1003 RF-1010 the top bar shows what the run spent against its cap while the run is active and drops the meter when it ends', async ({
-  page,
-}) => {
-  await startUnderstand(page, ['Catalog', 'Controllers']);
+test(
+  'RF-1003 RF-1010 the top bar shows what the run spent against its cap while the run is active and drops the meter when it ends',
+  { tag: '@phone' },
+  async ({ page }) => {
+    // @phone: phone-light runs this test on its own, so it scans first when the project has none.
+    test.setTimeout(90_000);
+    await openScannedStartPage(page);
+    await startUnderstand(page, ['Catalog', 'Controllers']);
 
-  const group = page.getByTestId('topbar-run-meter');
-  await expect(group).toBeVisible({ timeout: 30_000 });
-  await expect(group).toContainText('This run');
-  await expect(group).toContainText(/\$\d+(\.\d+)? of \$\d+\.\d\d/u);
-  await expect(runMeter(page)).toHaveAttribute('aria-valuenow', /^\d+$/u);
-  await expect(runMeter(page)).toHaveAttribute('aria-valuetext', /^\$\S+ of \$\S+ \(\d+%\)/u);
-  await expect(page.getByTestId('header-totals')).toBeVisible();
-  const meterBox = await boxOf(group);
-  await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
-  await expect(page.getByTestId('header-totals')).toContainText(/[1-9][0-9,]* tokens/u);
-  expect((await boxOf(group)).x).toBe(meterBox.x);
-  const fits = await page.evaluate(
-    'document.documentElement.scrollWidth <= document.documentElement.clientWidth',
-  );
-  expect(fits).toBe(true);
-  await transitionsDone(page);
-  await expectNoSeriousViolations(page);
+    const group = page.getByTestId('topbar-run-meter');
+    await expect(group).toBeVisible({ timeout: 30_000 });
+    await expect(group).toContainText('This run');
+    await expect(group).toContainText(/\$\d+(\.\d+)? of \$\d+\.\d\d/u);
+    await expect(runMeter(page)).toHaveAttribute('aria-valuenow', /^\d+$/u);
+    await expect(runMeter(page)).toHaveAttribute('aria-valuetext', /^\$\S+ of \$\S+ \(\d+%\)/u);
+    await expect(page.getByTestId('header-totals')).toBeVisible();
+    const meterBox = await boxOf(group);
+    await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
+    await expect(page.getByTestId('header-totals')).toContainText(/[1-9][0-9,]* tokens/u);
+    expect((await boxOf(group)).x).toBe(meterBox.x);
+    const fits = await page.evaluate(
+      'document.documentElement.scrollWidth <= document.documentElement.clientWidth',
+    );
+    expect(fits).toBe(true);
+    await transitionsDone(page);
+    await expectNoSeriousViolations(page);
 
-  await page.getByRole('button', { name: 'Stop run' }).click();
+    await page.getByRole('button', { name: 'Stop run' }).click();
 
-  await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
-  await expect(group).toHaveCount(0);
-  await expect(page.getByTestId('header-totals')).toBeVisible();
-  await expectNoSeriousViolations(page);
-});
+    await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+    await expect(group).toHaveCount(0);
+    await expect(page.getByTestId('header-totals')).toBeVisible();
+    await expectNoSeriousViolations(page);
+  },
+);

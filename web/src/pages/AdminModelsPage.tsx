@@ -9,9 +9,7 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
-import { CapBanner } from './CapBanner.js';
 import { defaultModelProviders } from './provider-choices.js';
-import { useAdminOverview } from './use-admin-overview.js';
 
 // DEC-106, design-system.md section 14: the provider and the dated model each role of a new project
 // starts with. A role left on "Template default" is left out of the saved setting and keeps the
@@ -220,13 +218,9 @@ function useSavedRoles(): Loaded {
 
 // DEC-106
 export function AdminModelsPage(): JSX.Element {
-  const { overview } = useAdminOverview();
   const loaded = useSavedRoles();
   return (
     <div class="rst-settings rst-admin">
-      {overview.status === 'ready' ? (
-        <CapBanner spent={overview.serverSpent} caps={overview.caps} />
-      ) : null}
       <div>
         <h1 class="rst-page__title">Default models</h1>
         <p class="rst-settings__lead">

@@ -28,8 +28,14 @@ export interface NewAccount {
 }
 
 export interface AuditQuery {
+  /** A user id, or '' for every user. */
   readonly userId: string;
+  /** An action name, or '' for every action. */
   readonly action: string;
+  /** The window in days: '1', '7' or '30' (the default, which the request leaves out). */
+  readonly days: string;
+  /** 'ok', 'refused' or 'failed', or '' for every outcome. */
+  readonly outcome: string;
 }
 
 // RF-1102
@@ -131,6 +137,8 @@ export function listAudit(
   const params = new URLSearchParams();
   if (query.userId !== '') params.set('userId', query.userId);
   if (query.action !== '') params.set('action', query.action);
+  if (query.days !== '30') params.set('days', query.days);
+  if (query.outcome !== '') params.set('outcome', query.outcome);
   const text = params.toString();
   return client.request({
     method: 'GET',

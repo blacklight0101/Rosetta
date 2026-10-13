@@ -39,12 +39,11 @@ export interface LedgerGroup extends SummaryGroup {
 
 export interface CostTotals {
   /**
-   * The same rows as `userGroups`, summed per currency, known cost and price table version only:
-   * what the totals pill needs, read in a bounded number of groups (RF-1010).
+   * Every ledger row of the user, of every project and of none, summed per currency, known cost
+   * and price table version only: what the totals pill needs, read in a bounded number of groups
+   * (RF-1010).
    */
   userSummary(userId: string): Promise<readonly SummaryGroup[]>;
-  /** Every ledger row of the user, of every project and of none, grouped. */
-  userGroups(userId: string): Promise<readonly LedgerGroup[]>;
   /** The user's ledger rows of one project, grouped. */
   projectGroups(userId: string, projectId: string): Promise<readonly LedgerGroup[]>;
   /** The user's provider tests (RF-407): the rows of no project, grouped. */

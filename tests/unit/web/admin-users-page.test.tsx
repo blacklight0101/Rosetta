@@ -128,15 +128,15 @@ it('RF-1106 saves the caps in micro-dollars from dollars', async () => {
   });
 });
 
-it('RF-1106 shows the warning banner at 82% of the monthly cap, with the meter', async () => {
+it('RF-1106 at 82% of the monthly cap shows the meter and leaves the banner to the shell slot', async () => {
   render({
     'GET /api/admin/caps': json(200, cap('500000', '1000000', '10000000', spent('8200000'))),
   });
 
-  const banner = await screen.findByText(/The server has used 82% of its monthly cap/u);
+  const meter = await screen.findByRole('meter', { name: 'Server spend this month' });
 
-  expect(banner.textContent).toContain('$8.20 of $10.00');
-  expect(screen.getByRole('meter', { name: 'Server spend this month' })).not.toBeNull();
+  expect(meter.textContent).toContain('$8.20');
+  expect(screen.queryByText(/The server has used/u)).toBeNull();
 });
 
 it('RF-1106 shows no banner at 21% of the monthly cap', async () => {
