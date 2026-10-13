@@ -6,10 +6,9 @@ import { FixedClock } from '../../support/fixed-clock.js';
 import { MemoryLogger } from '../../support/memory-logger.js';
 import { MemoryRepositoryReader } from '../../support/memory-repository-reader.js';
 import type { NewReader } from '../../support/reader-harness.js';
-
 // P1-90, P1-119: the in-memory reader passes the same mirror and cap contracts as
-// NodeRepositoryReader (whose
-// integration test runs it as part of the full RepositoryReader contract).
+// NodeRepositoryReader (whose integration test runs it as part of the full RepositoryReader
+// contract).
 
 const newReader: NewReader = (fixture) =>
   Promise.resolve({
