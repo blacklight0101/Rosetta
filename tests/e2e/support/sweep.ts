@@ -44,10 +44,15 @@ function luminance([red, green, blue]: readonly number[]): number {
 async function expectSchemeFollowed(page: Page, kind: PageKind): Promise<void> {
   const scheme = test.info().project.use.colorScheme === 'dark' ? 'dark' : 'light';
   if (kind === 'app') await expect(page.locator('html')).toHaveAttribute('data-theme', scheme);
-  // Polled: a stylesheet that is still arriving leaves the background transparent for a moment.
-  const shown = expect.poll(async () => luminance(await backgroundOf(page)), {
-    message: `a ${scheme} background in the ${scheme} scheme`,
-  });
+  // Polled: a stylesheet that is still arriving leaves the background transparent for a moment. A
+  // transparent background is no background (NaN), so it never counts as dark or as light.
+  const shown = expect.poll(
+    async () => {
+      const colour = await backgroundOf(page);
+      return colour[3] > 0 ? luminance(colour) : Number.NaN;
+    },
+    { message: `an opaque ${scheme} background in the ${scheme} scheme` },
+  );
   if (scheme === 'dark') await shown.toBeLessThan(0.2);
   else await shown.toBeGreaterThan(0.5);
 }
@@ -129,13 +134,21 @@ export async function expectPageInView(
 }
 
 /**
- * Pauses the page's CSS animations at their first frame, as a page just opened shows them. The
- * landing page's replay loops for ever and fades each event in, so a check at a random moment can
- * meet an event half-faded (contrast near 1:1) that no reader ever has to read.
+ * Pauses the page's CSS animations at their first frame (`'start'`), as a page just opened shows
+ * them, or at the last frame of their cycle (`'end'`), where the landing page's replay shows its
+ * finished state (every event in, the final badge `.swap-b` shown). The replay loops for ever and
+ * fades each event in, so a check at a random moment can meet an event half-faded (contrast near
+ * 1:1) that no reader ever has to read; the sweep checks both held frames instead.
  */
 // RNF-010
-export async function holdAnimationsAtStart(page: Page): Promise<void> {
+export async function holdAnimationsAt(page: Page, frame: 'start' | 'end'): Promise<void> {
+  const time = frame === 'start' ? '0' : 'Number(timing.delay) + Number(timing.duration) - 1';
+  // A string, because the end-to-end project is compiled without the DOM types.
   await page.evaluate(`document.getAnimations()
     .filter((each) => each instanceof CSSAnimation)
-    .forEach((each) => { each.pause(); each.currentTime = 0; })`);
+    .forEach((each) => {
+      each.pause();
+      const timing = each.effect.getComputedTiming();
+      each.currentTime = ${time};
+    })`);
 }
