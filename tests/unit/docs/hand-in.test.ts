@@ -28,6 +28,21 @@ const TOTAL_SECONDS = 300;
 const toSeconds = (minutes: string, seconds: string): number =>
   Number(minutes) * 60 + Number(seconds);
 
+const segmentLength = (section: string): number => {
+  const range = /^\[(\d+):(\d{2})-(\d+):(\d{2})\]/u.exec(section);
+  expect(range).not.toBeNull();
+  const [startMin = '0', startSec = '0', endMin = '0', endSec = '0'] = range?.slice(1) ?? [];
+  return toSeconds(endMin, endSec) - toSeconds(startMin, startSec);
+};
+
+const segmentSplit = (section: string): { narration: number; clip: number } => {
+  const timing = /\*\*Tiempo:\*\* narración ~(\d+) s; resto \(imagen o clip\): (\d+) s\./u.exec(
+    section,
+  );
+  expect(timing).not.toBeNull();
+  return { narration: Number(timing?.[1]), clip: Number(timing?.[2]) };
+};
+
 const slideSection = (slides: string, title: string): string =>
   slides.split(/^# /mu).find((section) => section.startsWith(title)) ?? '';
 
@@ -84,7 +99,7 @@ it('RF-802 the build method describes the orchestrator, the verifier agent and t
   expect(section).toMatch(/orquestador/u);
   expect(section).not.toMatch(/revisa cada cambio/u);
   expect(script).toMatch(/agente verificador/u);
-  expect(script).not.toMatch(/yo reviso/u);
+  expect(script).not.toMatch(/yo reviso/iu);
 });
 
 it('RF-802 the test-first claim is scoped to the specification behaviour, not to all 182 cards', async () => {
@@ -120,14 +135,19 @@ it('RF-802 the video script is in Spanish and runs exactly five minutes in conti
   expect(previousEnd).toBe(TOTAL_SECONDS);
 });
 
-it('RF-802 every video segment states its narration seconds and what fills the rest of the time', async () => {
+it('RF-802 each video segment has narration and clip seconds that sum to its length, and the segments total 300 seconds', async () => {
   const script = await readRepoFile('docs/hand-in/video-script.md');
-  const segments = [...script.matchAll(/\[(\d+):(\d{2})-(\d+):(\d{2})\]/gu)];
-  const timing = [
-    ...script.matchAll(/\*\*Tiempo:\*\* narración ~\d+ s; resto \(imagen o clip\): \d+ s\./gu),
-  ];
+  const sections = script.split(/^## /mu).filter((section) => section.startsWith('['));
 
-  expect(timing.length).toBe(segments.length);
+  expect(sections.length).toBeGreaterThanOrEqual(6);
+  let total = 0;
+  for (const section of sections) {
+    const length = segmentLength(section);
+    const { narration, clip } = segmentSplit(section);
+    expect(narration + clip).toBe(length);
+    total += length;
+  }
+  expect(total).toBe(TOTAL_SECONDS);
 });
 
 it('RF-802 the video script placeholders for the hosted URL, sample report and teacher account are marked', async () => {
@@ -136,4 +156,23 @@ it('RF-802 the video script placeholders for the hosted URL, sample report and t
   expect(script).toMatch(/\[PENDIENTE: URL definitiva de la aplicación alojada/u);
   expect(script).toMatch(/\[PENDIENTE: URL definitiva del informe de ejemplo/u);
   expect(script).toMatch(/cuenta de evaluación/iu);
+});
+
+it('RF-802 the results slide quotes the CI verify run on the current head, dated and with its run id', async () => {
+  const slides = await readRepoFile('docs/hand-in/slides/slides.md');
+
+  expect(slides).toContain('run 38478996250');
+  expect(slides).toMatch(/a fecha 2026-10-13/u);
+  expect(slides).toContain('6928 pasadas');
+  expect(slides).toContain('2348');
+  expect(slides).toMatch(/96,2 %/u);
+  expect(slides).not.toContain('6629');
+  expect(slides).not.toContain('91,7 %');
+});
+
+it('RF-802 the slides state P1-50 status only as the repository shows it (open PR #361)', async () => {
+  const slides = await readRepoFile('docs/hand-in/slides/slides.md');
+
+  expect(slides).toContain('PR #361');
+  expect(slides).not.toContain('en curso');
 });
