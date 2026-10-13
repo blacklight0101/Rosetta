@@ -100,6 +100,7 @@ describe('citation check (step 1): line numbers', () => {
   it.each([
     ['0-3', 0, 3, 'src/A.cs:0-3 does not start at line 1 or later.'],
     ['5-2', 5, 2, 'src/A.cs:5-2 ends before it starts.'],
+    ['5-4', 5, 4, 'src/A.cs:5-4 ends before it starts.'],
     ['1.5-3', 1.5, 3, 'src/A.cs:1.5-3 has a line number that is not a whole number.'],
     ['1-NaN', 1, Number.NaN, 'src/A.cs:1-NaN has a line number that is not a whole number.'],
   ])(
@@ -118,6 +119,15 @@ describe('citation check (step 1): line numbers', () => {
       expect(checked.checks).toEqual([{ claimId: 'FEAT-001.c1', ok: false, reason }]);
     },
   );
+
+  it('RF-300 a one-line citation src/A.cs:3-3, which starts and ends on the same line, holds', () => {
+    const cards = cardsCiting([cite('src/A.cs', 3, 3)]);
+
+    const checked = checkCitations(cards, rangeMap, at);
+
+    expect(checked.cards[0]?.claims[0]?.status).toBe('Proposed');
+    expect(checked.checks).toEqual([{ claimId: 'FEAT-001.c1', ok: true }]);
+  });
 
   it('RF-300 a citation of the whole file, from line 1 to its last line, holds', () => {
     const cards = cardsCiting([cite('src/A.cs', 1, 20)]);
