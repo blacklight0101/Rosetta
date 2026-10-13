@@ -27,7 +27,10 @@ import { projectPath, runPath } from '../../src/infrastructure/files/workspace-p
 import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-fetcher.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { loadReaderPrompts } from '../../src/infrastructure/prompts/prompt-files.js';
-import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
+import {
+  loadRecording,
+  type Recording,
+} from '../../src/infrastructure/providers/fake/recording.js';
 import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
 import { SnapshotScanPipeline } from '../../src/infrastructure/scan/scan-pipeline.js';
@@ -66,6 +69,8 @@ export interface UnderstandHarnessOptions {
   /** A file name under tests/recordings/fake/. */
   readonly recording: string;
   readonly settings?: ProjectSettings;
+  /** How many understand runs replay the recording, one after the other (1 when absent). */
+  readonly replays?: number;
   readonly beforeCall?: (call: number, harness: UnderstandHarness) => Promise<void>;
 }
 
@@ -250,6 +255,11 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
   };
 }
 
+/** The recording's calls `times` over, so several runs can replay it in turn. */
+function repeated(recording: Recording, times: number): Recording {
+  return { ...recording, calls: Array.from({ length: times }, () => recording.calls).flat() };
+}
+
 // RF-200
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
@@ -269,7 +279,10 @@ export async function createUnderstandHarness(
   const providers = understandProviders({
     ...{ dataDir: options.dataDir, writer: s.writer, masker: s.masker, clock: s.clock },
     logger: s.logger,
-    recording: await loadRecording(join('tests', 'recordings', 'fake', options.recording)),
+    recording: repeated(
+      await loadRecording(join('tests', 'recordings', 'fake', options.recording)),
+      options.replays ?? 1,
+    ),
     beforeCall,
   });
   const queue = await queueOf(s, providers);
