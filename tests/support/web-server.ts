@@ -28,7 +28,7 @@ import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import type { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import type { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
-import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
+import type { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
@@ -49,7 +49,8 @@ import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
-import { MemoryOutputWriter } from './memory-output-writer.js';
+import { answerStore, observabilityStore } from './observability-store.js';
+import type { MemoryOutputWriter } from './memory-output-writer.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
@@ -92,6 +93,8 @@ export interface TestServer extends HistoryDoubles {
   /** RF-1007: the projects' answers.md files the answer routes read and write, in `answerFiles`. */
   readonly answers: FileAnswersFile;
   readonly answerFiles: MemoryOutputWriter;
+  /** RF-1011: the run folders the call log and transcript routes read; `seedCallLog` fills them. */
+  readonly callFiles: MemoryOutputWriter;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
@@ -236,12 +239,6 @@ function keyParts(): KeyParts {
   };
 }
 
-/** RF-1007: the answers.md adapter over memory files. */
-function answerStore(masker: SecretMasker): Pick<TestServer, 'answers' | 'answerFiles'> {
-  const answerFiles = new MemoryOutputWriter();
-  return { answerFiles, answers: new FileAnswersFile({ writer: answerFiles, masker }) };
-}
-
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
@@ -268,9 +265,9 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
-  const [files, keys] = [answerStore(masker), keyParts()];
+  const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
-  const stores = { projects, keys: keys.keys, answers: files.answers };
+  const [keys, stores] = [keyParts(), { projects, ...files, clock }];
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
@@ -286,14 +283,14 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ serverSettings, testProviders },
     }),
     projects: projectServices(projectParts),
-    runs: runServices(runs, stores, route, outputs),
+    runs: runServices(runs, { ...stores, keys: keys.keys }, route, outputs),
     history: historyServices({ runs, projects, folders, snapshots, logger }),
     onRoute: recorder.onRoute,
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
-    ...{ serverSettings, runs, ...doubles, ...files, ...route, ...keys, providers, providerLedger },
-    ...{ costs, folders, snapshots },
+    ...{ serverSettings, runs, ...doubles, ...files, ...route, ...keys },
+    ...{ costs, providers, providerLedger, folders, snapshots },
   };
 }

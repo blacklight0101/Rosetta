@@ -398,7 +398,7 @@ entries are not run events: the web UI logs panel receives them on its own strea
 |---|---|
 | Purpose | one record per provider call attempt, for observability |
 | Writer | the `ObservedProvider` decorator through `ProviderCallRecorder` (RF-408); a call the budget guard refuses is recorded by the guard through the same recorder with status `refused-by-cap` |
-| Readers | web UI API calls panel (RF-1011), the user |
+| Readers | web UI API calls panel (RF-1011): `FileRunCallReader` behind `GET /api/runs/:runId/calls`, owner-scoped, masked again on read, a torn last line ignored; the user |
 | Spec | RF-408, RF-406, RNF-003 |
 
 | Field | Type | Notes |
@@ -499,6 +499,7 @@ had; the last word decides, so `inputTokens`, `timeToFirstTokenMs` and `secretCo
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
+The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id or key and any `userId` it carries is the owner's; an entry with the key alone is shown only while no other user's run has the same key.
 
 ### 3.15 `transcripts/<agentTaskId>.jsonl`
 
@@ -536,7 +537,8 @@ The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question 
 names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the
 line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
 never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
-and writes to one project's file run one after another.
+and writes to one project's file run one after another. A file saved with CRLF line ends is read like one with LF, and the
+answers written into it keep CRLF.
 
 ### 3.17 Report and hand-off folders
 

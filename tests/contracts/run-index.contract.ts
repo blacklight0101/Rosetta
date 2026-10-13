@@ -76,6 +76,23 @@ function scopingTests(name: string, fresh: FreshRuns): void {
   });
 }
 
+// RF-1011, RF-1105: a run key is unique per project only, so the logs panel asks whether another
+// user has a run with the same key before it trusts an entry that names the key and no user.
+function sharedKeyTests(name: string, fresh: FreshRuns): void {
+  it(`RF-1105 ${name} says whether a run of another user has the run key`, async () => {
+    const index = await fresh();
+    await stored(index, amyRun({ runKey: '20261012-100000-scan' }));
+    await stored(index, amyRun({ runKey: '20261012-100001-scan' }));
+    await stored(index, bobRun({ runKey: '20261012-100001-scan' }));
+
+    expect(await index.keyUsedByOthers(runAmy, '20261012-100000-scan')).toBe(false);
+    expect(await index.keyUsedByOthers(runAmy, '20261012-100001-scan')).toBe(true);
+    expect(await index.keyUsedByOthers(runBob, '20261012-100001-scan')).toBe(true);
+    expect(await index.keyUsedByOthers(runBob, '20261012-100000-scan')).toBe(true);
+    expect(await index.keyUsedByOthers(runAmy, '20261012-199999-scan')).toBe(false);
+  });
+}
+
 function queueTests(name: string, fresh: FreshRuns): void {
   it(`RF-1108 ${name} lists the queued runs of every user in queue order`, async () => {
     const index = await fresh();
@@ -270,6 +287,7 @@ function snapshotUsageTests(name: string, fresh: FreshRuns): void {
 export function runIndexContract(name: string, fresh: FreshRuns): void {
   storingTests(name, fresh);
   scopingTests(name, fresh);
+  sharedKeyTests(name, fresh);
   queueTests(name, fresh);
   endingTests(name, fresh);
   recordingTests(name, fresh);

@@ -14,6 +14,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
 import { EventStream, type StreamRegistry } from './event-stream.js';
+import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
 import { registerRunFileRoutes, type RunFileServices } from './run-file-routes.js';
 import { signedInOf } from './request-actor.js';
 import { estimateView } from './estimate-view.js';
@@ -41,7 +42,7 @@ import { runView } from './run-view.js';
 //   stops) or cancels a queued one (200); a run that has ended answers 409.
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 
-export interface RunServices extends RunFileServices, AnswerServices {
+export interface RunServices extends RunFileServices, AnswerServices, ObservabilityServices {
   readonly startRun: StartRun;
   readonly estimateRun: EstimateRun;
   readonly getRun: GetRun;
@@ -268,4 +269,5 @@ export function registerRunRoutes(server: FastifyInstance, services: RunServices
   registerStart(server, services);
   registerEstimate(server, services);
   registerAnswerRoutes(server, services);
+  registerObservabilityRoutes(server, services);
 }

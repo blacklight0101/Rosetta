@@ -8,6 +8,13 @@ import type { AnswerEntry, RecordedQuestion } from '../../application/ports/answ
 const HEADING = /^## (\S+) - (.*)$/u;
 const FIELD = /^- (Card|Context|Answer):(?: (.*))?$/u;
 
+const LINE_BREAK = /\r?\n/u;
+
+/** The file's own line end: CRLF when it holds one, else LF. */
+function lineEndOf(text: string): string {
+  return text.includes('\r\n') ? '\r\n' : '\n';
+}
+
 interface Section {
   readonly cardId: string;
   readonly question: string;
@@ -61,7 +68,7 @@ function recorded(section: Section): RecordedQuestion {
 
 /** RF-1007: the questions the run added, in file order. */
 export function questionsOfRun(text: string, runKey: string): RecordedQuestion[] {
-  return ofRun(sectionsOf(text.split('\n')), runKey).map(recorded);
+  return ofRun(sectionsOf(text.split(LINE_BREAK)), runKey).map(recorded);
 }
 
 /**
@@ -74,7 +81,7 @@ export function withAnswers(
   runKey: string,
   answers: readonly AnswerEntry[],
 ): string | undefined {
-  const lines = text.split('\n');
+  const lines = text.split(LINE_BREAK);
   const byCard = new Map(ofRun(sectionsOf(lines), runKey).map((each) => [each.cardId, each]));
   if (answers.some((entry) => !byCard.has(entry.cardId))) return undefined;
   const inserts = new Map<number, string>();
@@ -90,5 +97,5 @@ export function withAnswers(
       const added = inserts.get(index);
       return added === undefined ? [line] : [line, added];
     })
-    .join('\n');
+    .join(lineEndOf(text));
 }

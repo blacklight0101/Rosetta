@@ -153,6 +153,31 @@ const answerRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ],
 };
 
+/** RF-1011, RF-1105: the calls, transcripts and logs of a run answer only its owner. */
+const observabilityRoutes: Readonly<Record<string, readonly Probe[]>> = {
+  ...Object.fromEntries(
+    ['calls', 'logs'].map((name) => [
+      `GET /api/runs/:runId/${name}`,
+      [
+        { method: 'GET', url: runUrl(`/${name}`, (c) => c.endedRunId), expected: ownerOnly(200) },
+        { method: 'GET', url: () => `/api/runs/not-a-uuid/${name}`, expected: active(401, 404) },
+      ],
+    ]),
+  ),
+  'GET /api/runs/:runId/calls/:seq/transcript': [
+    {
+      method: 'GET',
+      url: runUrl('/calls/1/transcript', (c) => c.endedRunId),
+      expected: ownerOnly(200),
+    },
+    {
+      method: 'GET',
+      url: () => '/api/runs/not-a-uuid/calls/1/transcript',
+      expected: active(401, 404),
+    },
+  ],
+};
+
 const historyUrl = (context: Context): string => `/api/projects/${context.projectId}/history`;
 const snapshotsUrl = '/api/admin/snapshots';
 
@@ -188,5 +213,6 @@ export const outputRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ...exportRoutes,
   ...reportRoutes,
   ...answerRoutes,
+  ...observabilityRoutes,
   ...historyRoutes,
 };
