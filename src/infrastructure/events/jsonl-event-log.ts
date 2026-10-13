@@ -146,8 +146,19 @@ export class JsonlEventLog implements RunEventSink, RunEventHistory {
     for await (const batch of batchesAfter(lines.value, afterSeq)) await onBatch(batch);
   }
 
+  // RF-1006: a run whose tail is not in memory (it has ended, or the server restarted) has its
+  // last seq read from the last line of its log, so the whole log is neither read nor parsed.
   lastSeq(scope: RunScope): Promise<number> {
-    return this.queue.run(scope.id, async () => (await this.tailOf(scope)).lastSeq);
+    return this.queue.run(scope.id, async () => {
+      const known = this.tails.get(scope.id);
+      if (known !== undefined) return known.lastSeq;
+      const line = await this.options.writer.readLastLine(fileOf(scope));
+      if (!line.ok) {
+        if (line.error.reason === 'not-found') return 0;
+        throw failed(line.error.message);
+      }
+      return line.value === undefined ? 0 : parseStoredLine(line.value).seq;
+    });
   }
 
   /** The tail from memory, or from the file (removing a torn last line) the first time. */

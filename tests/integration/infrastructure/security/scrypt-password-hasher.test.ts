@@ -128,6 +128,31 @@ describe('ScryptPasswordHasher parameter bounds and scrypt failures', () => {
   );
 });
 
+describe('ScryptPasswordHasher cost bound', () => {
+  it('RF-1100 accepts a stored hash at the ADR-015 cost N and refuses one above it (RST-2209)', async () => {
+    let derived = 0;
+    const derive: DeriveKey = (_password, _salt, keyLength) => {
+      derived += 1;
+      return Promise.resolve(Buffer.alloc(keyLength, 9));
+    };
+    const hasher = new ScryptPasswordHasher({ derive });
+    const adrCost = Number((await hasher.hash(fixturePassword('Cost'))).split('$')[1]);
+    derived = 0;
+
+    const atBound = await hasher.verify(
+      fixturePassword('Cost'),
+      storedHash({ cost: adrCost, blockSize: 1 }),
+    );
+    const above = await failureOf(
+      hasher.verify(fixturePassword('Cost'), storedHash({ cost: adrCost * 2, blockSize: 1 })),
+    );
+
+    expect(atBound).toBe(true);
+    expect(above).toMatchObject({ code: ERROR_CODES.passwordHashInvalid });
+    expect(derived).toBe(1);
+  });
+});
+
 describe('ScryptPasswordHasher scrypt failures and concurrency', () => {
   it.each([
     ['a RangeError', new RangeError('Invalid scrypt params')],

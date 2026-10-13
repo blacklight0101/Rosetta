@@ -5,9 +5,11 @@ import {
   recordManifestCodeMap,
   recordManifestPriceTable,
   recordPromptVersions,
+  type PromptVersion,
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import { parseCommitSha } from '../../domain/sources/commit-sha.js';
+import type { PromptFile } from '../agent/prompt-file.js';
 import { promptVersionsOf, type ReaderPrompts } from '../agent/reader-prompts.js';
 import { buildCostReport } from '../budget/cost-report.js';
 import type { AnswersFile } from '../ports/answers-file.js';
@@ -33,7 +35,11 @@ import { ManifestCostRecorder } from '../runs/run-cost-record.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { ManifestSecurityRecorder } from '../runs/run-security-record.js';
 import { planReaderTasks, type ReaderTask } from '../understand/reader-tasks.js';
-import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understand-options.js';
+import {
+  readUnderstandOptions,
+  rolesUseTextToolProtocol,
+  UNDERSTAND_ROLES,
+} from '../understand/understand-options.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
@@ -58,6 +64,8 @@ export interface RunUnderstandDependencies {
   readonly costReports: CostReportWriter;
   /** Reads the reader's prompt files with their versions and hashes (RNF-004). */
   readonly prompts: () => Promise<ReaderPrompts>;
+  /** Reads the text tool protocol prompt, recorded when a role uses it (RF-205, RNF-004). */
+  readonly textToolProtocol: () => Promise<PromptFile>;
   readonly clock: Clock;
   readonly logger: Logger;
   /** RF-145: the random tag of every data block the reader's tools write. */
@@ -160,8 +168,20 @@ export class RunUnderstand implements RunExecutor {
       return stop(failed(ERROR_CODES.areaUnknown));
     }
     const prompts = await this.deps.prompts();
-    await updates.update((stored) => ok(recordPromptVersions(stored, promptVersionsOf(prompts))));
+    const versions = await this.promptVersions(project, prompts);
+    await updates.update((stored) => ok(recordPromptVersions(stored, versions)));
     return { ok: true, value: { project, scanned, tasks: tasks.value, prompts } };
+  }
+
+  /** RNF-004: the reader's prompt files, and the text tool protocol when a role uses it. */
+  private async promptVersions(
+    project: Project,
+    prompts: ReaderPrompts,
+  ): Promise<Record<string, PromptVersion>> {
+    const versions = promptVersionsOf(prompts);
+    if (!rolesUseTextToolProtocol(project.settings)) return versions;
+    const { name, version, sha256 } = await this.deps.textToolProtocol();
+    return { ...versions, [name]: { version, sha256 } };
   }
 
   /** RF-200: the newest scan of the project that ended `Completed`. */

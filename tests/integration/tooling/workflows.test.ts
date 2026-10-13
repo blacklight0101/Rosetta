@@ -1,67 +1,11 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ci, ciJob, jobs, load, runLines, violations } from '../../support/workflow-files.js';
 
 // Workflow hardening rules of environments-and-delivery.md section 6 and the hard-rule greps of
 // docs/orchestration/README.md section 5.1. Workflows are checked as text: no YAML parser is in the
 // package baseline.
-const folder = join(process.cwd(), '.github', 'workflows');
-
-interface Workflow {
-  readonly name: string;
-  readonly lines: string[];
-}
-
-async function load(): Promise<Workflow[]> {
-  const names = (await readdir(folder)).filter((name) => name.endsWith('.yml')).sort();
-  return Promise.all(
-    names.map(async (name) => ({
-      name,
-      lines: (await readFile(join(folder, name), 'utf8')).split(/\r?\n/u),
-    })),
-  );
-}
-
-const indentOf = (line: string): number => line.length - line.trimStart().length;
-const textOf = (workflow: Workflow | undefined): string => (workflow?.lines ?? []).join('\n');
-
-/** Lines that belong to a `run:` value, including the one-line form. */
-function runLines(lines: string[]): string[] {
-  const found: string[] = [];
-  lines.forEach((line, i) => {
-    const match = /^(\s*)(- )?run:\s*(.*)$/u.exec(line);
-    if (!match) return;
-    found.push(match[3] ?? '');
-    const base = (match[1] ?? '').length + (match[2] === undefined ? 0 : 2);
-    for (const next of lines.slice(i + 1)) {
-      if (next.trim() !== '' && indentOf(next) <= base) break;
-      found.push(next);
-    }
-  });
-  return found;
-}
-
-/** The job blocks: the lines between `  <id>:` and the next job at the same indentation. */
-function jobs(lines: string[]): { id: string; body: string[] }[] {
-  const start = lines.indexOf('jobs:');
-  const result: { id: string; body: string[] }[] = [];
-  for (const line of lines.slice(start + 1)) {
-    const header = /^ {2}([\w-]+):\s*$/u.exec(line);
-    if (header) result.push({ id: header[1] ?? '', body: [] });
-    else result.at(-1)?.body.push(line);
-  }
-  return result;
-}
-
-/** Runs a check on every workflow and returns "<file>: <problem>" lines; an empty list passes. */
-async function violations(check: (workflow: Workflow) => string[]): Promise<string[]> {
-  return (await load()).flatMap((workflow) =>
-    check(workflow).map((problem) => `${workflow.name}: ${problem}`),
-  );
-}
-
-const ci = async (): Promise<string> =>
-  textOf((await load()).find((workflow) => workflow.name === 'ci.yml'));
 
 describe('GitHub Actions workflows: files', () => {
   it('RNF-001 ships the CI and CodeQL workflows and Dependabot configuration', async () => {
@@ -84,13 +28,23 @@ describe('GitHub Actions workflows: files', () => {
     expect(text).toContain('run: npm run verify');
   });
 
-  it('RNF-005 the Linux job installs Chromium before verify runs the end-to-end project', async () => {
+  it('RNF-001 Linux runs every gate of verify and Windows runs only the tests', async () => {
     const text = await ci();
-    const install = text.indexOf('npx playwright install --with-deps chromium');
+
+    expect(text).toMatch(/if: runner\.os == 'Linux'[^\n]*\n\s+run: npm run verify\n/u);
+    expect(text).toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run test:ci\n/u);
+    expect(text).not.toMatch(/if: runner\.os == 'Windows'[^\n]*\n\s+run: npm run verify/u);
+    expect(text).toContain('name: verify (${{ matrix.os }})');
+  });
+
+  it('RNF-005 the e2e shards install Chromium before Playwright runs, and verify does not', async () => {
+    const shard = await ciJob('e2e-shard');
+    const install = shard.indexOf('npx playwright install --with-deps chromium');
 
     expect(install).toBeGreaterThan(-1);
-    expect(install).toBeLessThan(text.indexOf('run: npm run verify'));
-    expect(text).toMatch(/- name: Install Chromium[^\n]*\n\s+if: runner\.os == 'Linux'/u);
+    expect(install).toBeLessThan(shard.indexOf('node scripts/run-e2e.mjs'));
+    // verify skips the Playwright project (ROSETTA_E2E_OWN_JOB=1), so it needs no browser.
+    expect(await ciJob('verify')).not.toContain('playwright install');
   });
 
   it('DEC-35 the pull request title reaches commitlint through env: TITLE and audit gets today', async () => {
@@ -157,6 +111,17 @@ describe('GitHub Actions workflows: hardening', () => {
   });
 });
 
+describe('GitHub Actions workflows: no lint cache', () => {
+  // ESLint's cache keys a file on its own content, but the type-aware rules also read the files it
+  // imports, so a cached "clean" can hide a new error (environments-and-delivery.md section 6).
+  it('RNF-001 lint runs in full, without a cache, locally and in CI', async () => {
+    const manifest = await readFile(join(process.cwd(), 'package.json'), 'utf8');
+
+    expect(manifest).toContain('"lint": "eslint . --max-warnings 0"');
+    expect(await ci()).not.toContain('--cache');
+  });
+});
+
 describe('GitHub Actions workflows: limits', () => {
   it('RNF-001 every job has a timeout-minutes', async () => {
     const found = await violations(({ lines }) =>
@@ -184,11 +149,7 @@ describe('GitHub Actions workflows: limits', () => {
 describe('GitHub Actions workflows: compose smoke job', () => {
   const stack = 'docker compose -f compose.yaml -f compose.ci.yaml';
 
-  async function smoke(): Promise<string> {
-    const lines = (await load()).find((workflow) => workflow.name === 'ci.yml')?.lines ?? [];
-    const job = jobs(lines).find((entry) => entry.id === 'compose-smoke');
-    return (job?.body ?? []).join('\n');
-  }
+  const smoke = (): Promise<string> => ciJob('compose-smoke');
 
   it('RF-1301 starts the stack with the CI overlay and waits for /healthz', async () => {
     const text = await smoke();
@@ -214,7 +175,7 @@ describe('GitHub Actions workflows: compose smoke job', () => {
   it('RNF-003 removes the stack and its volumes even when a step failed, and writes the .env at run time', async () => {
     const text = await smoke();
 
-    expect(text).toMatch(/if: always\(\)\n\s+run: docker compose [^\n]*down -v/u);
+    expect(text).toMatch(/if: always\(\)[^\n]*\n\s+run: docker compose [^\n]*down -v/u);
     expect(text).toContain('openssl rand');
     expect(text).toContain('> .env');
   });

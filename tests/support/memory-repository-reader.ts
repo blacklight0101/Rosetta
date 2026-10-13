@@ -9,17 +9,15 @@ import type {
   RepositoryReader,
 } from '../../src/application/ports/repository-reader.js';
 import { err, ok, type Result } from '../../src/domain/errors/result.js';
-import { grepLimits } from '../../src/infrastructure/files/grep-limits.js';
-import {
-  matchCapNotice,
-  refusal,
-  tooLargeNotice,
-} from '../../src/infrastructure/files/read-refusals.js';
+import { cutLine } from '../../src/infrastructure/files/grep-limits.js';
+import { grepResult, type SearchedFile } from '../../src/infrastructure/files/grep-result.js';
+import { refusal } from '../../src/infrastructure/files/read-refusals.js';
 
 // RF-201: a RepositoryReader over files held in memory, for unit tests of the agent tools. It
 // counts every call, so a test can prove a tool refused a request before it reached the reader.
 // Lines, ranges, path lists and refusals follow NodeRepositoryReader (the mirror contract, P1-90),
-// and so do its caps: files above `maxFileBytes` and matches past the grep cap (P1-119).
+// and so do its caps: files above `maxFileBytes` and matches past the grep cap (P1-119). Lines are
+// cut and the grep answer is built by the real reader's code, so the notices match (P1-127).
 
 const notFound = refusal('not-found');
 const invalidPattern = refusal('invalid-pattern');
@@ -50,18 +48,10 @@ function isValidRange({ startLine, endLine }: ReadLinesRequest, total: number): 
   );
 }
 
-/** The grep answer with the notices of the real reader: cut lines, big files, matches past the cap. */
-function answer(pattern: string, all: GrepResult['matches'], skipped: number): GrepResult {
-  const cutLines = pattern === 'cut' ? 1 : 0;
-  const notices = [
-    cutLines > 0 ? 'Lines were cut before the search.' : '',
-    skipped > 0 ? tooLargeNotice(skipped) : '',
-    all.length > grepLimits.maxMatches ? matchCapNotice : '',
-  ].filter((notice) => notice !== '');
-  const matches = all.slice(0, grepLimits.maxMatches);
-  return notices.length === 0
-    ? { matches, cutLines }
-    : { matches, cutLines, notice: notices.join(' ') };
+/** A file as grep searches it: every line cut to the limit, as in NodeRepositoryReader. */
+function searchedFile(path: string, lines: readonly string[]): SearchedFile {
+  const cut = lines.map(cutLine);
+  return { path, lines: cut.map((line) => line.text), cut: cut.map((line) => line.cut) };
 }
 
 export class MemoryRepositoryReader implements RepositoryReader {
@@ -127,14 +117,14 @@ export class MemoryRepositoryReader implements RepositoryReader {
     const selected = [...this.files.entries()]
       .filter(([path]) => wanted === undefined || wanted.has(path))
       .sort(([a], [b]) => (a < b ? -1 : 1));
-    const sorted = selected.filter(([path]) => !this.oversized.has(path));
-    const matches = sorted.flatMap(([path, lines]) =>
-      lines.flatMap((text, index) =>
-        pattern.test(text) ? [{ path, line: index + 1, text, cut: false }] : [],
-      ),
+    const searched = selected
+      .filter(([path]) => !this.oversized.has(path))
+      .map(([path, lines]) => searchedFile(path, lines));
+    const matches = searched.flatMap(({ path, lines }) =>
+      lines.flatMap((text, index) => (pattern.test(text) ? [{ path, line: index + 1 }] : [])),
     );
-    const skipped = selected.length - sorted.length;
-    return Promise.resolve(ok(answer(request.pattern, matches, skipped)));
+    const tooLarge = selected.length - searched.length;
+    return Promise.resolve(ok(grepResult({ files: searched, tooLarge }, matches)));
   }
 
   readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>> {

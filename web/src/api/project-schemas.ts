@@ -69,6 +69,3 @@ export const projectSchema = z.object({
 });
 
 export type Project = z.output<typeof projectSchema>;
-
-/** `GET /api/projects`. */
-export const projectListSchema = z.object({ projects: z.array(projectSchema) });

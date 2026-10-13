@@ -21,6 +21,7 @@ import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { loadReaderPrompts } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
+import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { FileScanResults } from '../infrastructure/scan/scan-results.js';
 
 // Architecture section 2 (composition root), RF-200, ADR-003: the executor of the `understand`
@@ -90,6 +91,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     ledger: new PgCostLedger(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(promptsFolder),
+    textToolProtocol: () => loadTextToolProtocol(promptsFolder),
     ids: parts.ids,
   });
 }

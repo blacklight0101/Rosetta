@@ -14,6 +14,10 @@ export interface SseConnection {
   readonly ended: Promise<void>;
   /** Closes the connection from the client side. */
   abort(): void;
+  /** Stops reading, as a page that stalls: what the server sends waits in its buffers. */
+  pause(): void;
+  /** Reads again after `pause`. */
+  resume(): void;
 }
 
 export function connectSse(url: string, headers: Record<string, string>): Promise<SseConnection> {
@@ -29,6 +33,9 @@ export function connectSse(url: string, headers: Record<string, string>): Promis
       const ended = new Promise<void>((done) => {
         response.on('end', done);
         response.on('close', done);
+        response.on('error', () => {
+          done();
+        });
       });
       resolve({
         status: response.statusCode ?? 0,
@@ -47,6 +54,12 @@ export function connectSse(url: string, headers: Record<string, string>): Promis
         ended,
         abort: () => {
           req.destroy();
+        },
+        pause: () => {
+          response.pause();
+        },
+        resume: () => {
+          response.resume();
         },
       });
     });
