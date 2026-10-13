@@ -1,4 +1,3 @@
-import { request } from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import {
@@ -112,35 +111,67 @@ describe('POST /api/projects/:id/runs body bounds', () => {
   });
 });
 
-/** One GET over a real socket, so the server's request-line limit applies (inject skips it). */
-async function getStatus(server: TestServer['server'], path: string): Promise<number> {
-  await server.listen({ port: 0, host: '127.0.0.1' });
-  const address = server.server.address();
-  const port = typeof address === 'object' && address !== null ? address.port : 0;
-  return new Promise((resolve, reject) => {
-    const call = request(
-      { host: '127.0.0.1', port, path, headers: { host: 'localhost' } },
-      (res) => {
-        res.resume();
-        resolve(res.statusCode ?? 0);
-      },
-    );
-    call.on('error', reject);
-    call.end();
+const estimateUrl = (projectId: string): string => `/api/projects/${projectId}/estimate`;
+
+describe('POST /api/projects/:id/estimate body limit', () => {
+  it('RF-425 takes the largest body the schema allows, so a long selection is never a URL problem', async () => {
+    const { amy, project } = await setup();
+    const areas = Array.from({ length: MAX_AREAS }, () => ''.repeat(MAX_AREA_NAME));
+    const body = JSON.stringify({ areas });
+
+    const response = await amy.request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: body,
+      headers: jsonHeaders,
+    });
+
+    expect(Buffer.byteLength(body)).toBeLessThanOrEqual(START_BODY_LIMIT_BYTES);
+    // The names are not in the code map: the request got past the size and shape checks.
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.codeMapMissing });
   });
-}
 
-describe('GET /api/projects/:id/estimate query limit', () => {
-  it('RF-425 the longest query the schema allows reaches the route: 401 without a session, not a size refusal', async () => {
-    const { test, project } = await setup();
-    // A name of characters that percent-encode to three characters each is the largest query.
-    const name = '/'.repeat(MAX_AREA_NAME);
-    const query = Array.from({ length: MAX_AREAS }, () => `areas=${encodeURIComponent(name)}`).join(
-      '&',
-    );
+  it('RF-425 accepts a body of exactly the limit and refuses one byte more with RST-2000 (400)', async () => {
+    const { amy, project } = await setup();
+    const base = JSON.stringify({ areas: ['Catalog'] });
+    const pad = (size: number) => base + ' '.repeat(size - Buffer.byteLength(base));
 
-    const status = await getStatus(test.server, `/api/projects/${project.id}/estimate?${query}`);
+    const at = await amy.request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: pad(START_BODY_LIMIT_BYTES),
+      headers: jsonHeaders,
+    });
+    const over = await amy.request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: pad(START_BODY_LIMIT_BYTES + 1),
+      headers: jsonHeaders,
+    });
 
-    expect(status).toBe(401);
+    expect(at.json()).toMatchObject({ code: ERROR_CODES.codeMapMissing });
+    expect(over.statusCode).toBe(400);
+    expect(over.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
+  });
+});
+
+describe('the area name limit', () => {
+  it('RF-200 a name of 1024 characters, the longest the code map holds, is accepted by start and estimate', async () => {
+    const { amy, project } = await setup();
+    const areas = ['a'.repeat(1024)];
+
+    const start = await amy.request({
+      method: 'POST',
+      url: startUrl(project.id),
+      payload: { stage: 'understand', areas, cloudConsent: false },
+    });
+    const estimate = await amy.request({
+      method: 'POST',
+      url: estimateUrl(project.id),
+      payload: { areas },
+    });
+
+    expect(start.statusCode).toBe(202);
+    expect(estimate.json()).toMatchObject({ code: ERROR_CODES.codeMapMissing });
   });
 });

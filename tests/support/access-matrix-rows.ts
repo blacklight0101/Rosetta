@@ -97,6 +97,14 @@ const projectRows: Rows = {
     { method: 'GET', url: projectUrl('/estimate'), expected: ownerOnly(200) },
     { method: 'GET', url: () => '/api/projects/not-a-uuid/estimate', expected: active(401, 404) },
   ],
+  'POST /api/projects/:id/estimate': [
+    {
+      method: 'POST',
+      url: projectUrl('/estimate'),
+      payload: () => ({ areas: ['Catalog'] }),
+      expected: ownerOnly(200),
+    },
+  ],
   'HEAD /api/projects/:id/estimate': [
     { method: 'HEAD', url: projectUrl('/estimate'), expected: ownerOnly(200) },
   ],

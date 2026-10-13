@@ -24,10 +24,14 @@ const ownAreas = {
   ...withVendored,
   areas: withVendored.areas.filter((area) => !area.thirdParty),
 };
-const defaultPath = `${estimatePath}?areas=Catalog&areas=Models`;
+const defaultBody = { areas: ['Catalog', 'Models'] };
+const asksForDefaults = (call: { method: string; path: string; body: unknown }): boolean =>
+  call.method === 'POST' &&
+  call.path === estimatePath &&
+  JSON.stringify(call.body) === JSON.stringify(defaultBody);
 const answers = {
   [`GET ${estimatePath}`]: json(200, withVendored),
-  [`GET ${defaultPath}`]: json(200, ownAreas),
+  [`POST ${estimatePath}`]: json(200, ownAreas),
 };
 
 it('RF-1001 an area of third-party files starts unticked and is marked, the others are ticked', async () => {
@@ -53,7 +57,7 @@ it('RF-1001 the estimate of the default selection leaves the third-party areas o
   await ready();
 
   await waitFor(() => {
-    expect(calls.map((call) => call.path)).toContain(defaultPath);
+    expect(calls.some(asksForDefaults)).toBe(true);
   });
 });
 
@@ -64,7 +68,7 @@ it('RF-1001 starting the run sends the own areas only', async () => {
   });
   await ready();
   await waitFor(() => {
-    expect(calls.map((call) => call.path)).toContain(defaultPath);
+    expect(calls.some(asksForDefaults)).toBe(true);
   });
 
   fireEvent.click(start());
@@ -87,7 +91,9 @@ it('RF-1001 ticking a third-party area adds it to the selection', async () => {
 
   expect(input('Scripts#1').checked).toBe(true);
   await waitFor(() => {
-    expect(calls.map((call) => call.path)).toContain(estimatePath);
+    expect(
+      calls.filter((call) => call.method === 'GET' && call.path === estimatePath).length,
+    ).toBeGreaterThan(1);
   });
   expect(input('Catalog').checked).toBe(true);
 });

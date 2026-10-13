@@ -14,48 +14,75 @@ import { entry } from '../../../support/code-map-builders.js';
 const shaped = (path: string, lines: number, charactersPerLine: number) =>
   entry(path, Math.ceil((lines * charactersPerLine) / 4), { lines });
 
+const thirdPartyFiles = [
+  'Scripts/app.min.js',
+  'css/site.MIN.css',
+  'wwwroot/js/chart.min.js',
+  'Scripts/jquery-3.4.1.js',
+  'Scripts/jquery.validate.unobtrusive.js',
+  'Scripts/bootstrap.bundle.js',
+  'Scripts/modernizr-2.8.3.js',
+  'Scripts/respond.js',
+  'Scripts/MicrosoftAjax.js',
+  'Scripts/MicrosoftMvcValidation.js',
+  'Scripts/esm/popper.js',
+  'Scripts/umd/popper-utils.js',
+  'Scripts/_references.js',
+  'Scripts/jquery-3.3.1.min.map',
+  'Scripts/jquery-3.3.1.slim.min.js',
+  'Scripts/jquery.validate.min.js',
+  'Scripts/respond.matchmedia.addListener.min.js',
+  'Scripts/bootstrap.js.map',
+  'Scripts/bootstrap.bundle.min.js.map',
+  'Scripts/WebForms/Menu.js',
+  'Scripts/WebForms/WebUIValidation.js',
+  'Scripts/WebForms/MSAjax/MicrosoftAjaxWebForms.js',
+  'src/vendor/acme/site.css',
+  'Scripts/WebForms/WebForms.js',
+  'Scripts/WebForms/MSAjax/MicrosoftAjaxCore.js',
+  'src/vendor/acme/thing.js',
+  'web/node_modules/left-pad/index.js',
+  'bower_components/x/x.js',
+  'wwwroot/lib/jquery/dist/jquery.js',
+  'wwwroot/lib/bootstrap/dist/js/bootstrap.js',
+];
+
+const ownFiles = [
+  'Scripts/site.js',
+  'Scripts/checkout.js',
+  'Scripts/respondents.js',
+  'Controllers/HomeController.cs',
+  'src/minimal.js',
+  'src/app.minify.js',
+  'lib/Billing/Invoice.cs',
+  'lib/helpers.js',
+  'wwwroot/lib/site-helpers.js',
+  'Catalog/Edit.aspx.cs',
+  'docs/vendor-notes.md',
+  'jquery-notes/readme.js',
+  'web/webforms.js',
+  'Content/Site.css',
+  'Domain/Vendor/Vendor.cs',
+  'Procurement/Vendor/VendorService.cs',
+  'vendor/acme/Thing.cs',
+  'node_modules/pkg/README.md',
+  'Scripts/angularApp.js',
+  'Scripts/d3-charts.js',
+  'lib/moment-helpers.js',
+  'Scripts/jquery-helpers.js',
+  'Scripts/bootstrap-theme-custom.js',
+  'Scripts/jquery.cs',
+  'lib/jquery/Notes.md',
+  'Scripts/WebForms/Custom.js',
+  'Scripts/WebForms/Readme.md',
+];
+
 describe('isThirdPartyFile by name', () => {
-  it.each([
-    'Scripts/app.min.js',
-    'css/site.MIN.css',
-    'wwwroot/js/chart.min.js',
-    'Scripts/jquery-3.4.1.js',
-    'Scripts/jquery.validate.unobtrusive.js',
-    'Scripts/bootstrap.bundle.js',
-    'Scripts/modernizr-2.8.3.js',
-    'Scripts/respond.js',
-    'Scripts/MicrosoftAjax.js',
-    'Scripts/MicrosoftMvcValidation.js',
-    'Scripts/esm/popper.js',
-    'Scripts/umd/popper-utils.js',
-    'Scripts/_references.js',
-    'Scripts/WebForms/WebForms.js',
-    'Scripts/WebForms/MSAjax/MicrosoftAjaxCore.js',
-    'src/vendor/acme/thing.js',
-    'web/node_modules/left-pad/index.js',
-    'bower_components/x/x.js',
-    'wwwroot/lib/jquery/dist/jquery.js',
-    'wwwroot/lib/bootstrap/dist/js/bootstrap.js',
-  ])('RF-104 %s is third-party', (path) => {
+  it.each(thirdPartyFiles)('RF-104 %s is third-party', (path) => {
     expect(isThirdPartyFile(entry(path))).toBe(true);
   });
 
-  it.each([
-    'Scripts/site.js',
-    'Scripts/checkout.js',
-    'Scripts/respondents.js',
-    'Controllers/HomeController.cs',
-    'src/minimal.js',
-    'src/app.minify.js',
-    'lib/Billing/Invoice.cs',
-    'lib/helpers.js',
-    'wwwroot/lib/site-helpers.js',
-    'Catalog/Edit.aspx.cs',
-    'docs/vendor-notes.md',
-    'jquery-notes/readme.js',
-    'web/webforms.js',
-    'Content/Site.css',
-  ])('RF-104 %s is the team own file', (path) => {
+  it.each(ownFiles)('RF-104 %s is the team own file', (path) => {
     expect(isThirdPartyFile(entry(path))).toBe(false);
   });
 });

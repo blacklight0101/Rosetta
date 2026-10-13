@@ -1,4 +1,3 @@
-import { MAX_HEADER_BYTES } from '../../../../src/presentation/web/area-limits.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { fallbackSecurityHeaders } from '../../../../src/presentation/web/security-headers.js';
@@ -172,7 +171,7 @@ describe('client errors on the socket', () => {
 
   it('RF-007 an oversized header answers 431 RST-2000 with the security headers', async () => {
     const { app, address } = await listening();
-    const request = `GET / HTTP/1.1\r\nHost: localhost\r\nX-Big: ${'a'.repeat(MAX_HEADER_BYTES + 1000)}\r\n\r\n`;
+    const request = `GET / HTTP/1.1\r\nHost: localhost\r\nX-Big: ${'a'.repeat(20_000)}\r\n\r\n`;
 
     const response = parseRawResponse(await sendRaw(address, request));
 
