@@ -9,7 +9,6 @@ import {
   runsTable,
 } from './support/history-page.js';
 import {
-  agentPanel,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
@@ -44,29 +43,30 @@ test('RF-1008 lists a finished run with its stage, commit, state and links, and 
   await expect(row).toContainText('Completed');
   await expect(row).toContainText('scan');
   await expect(row.getByRole('cell').nth(2)).toHaveText(/^[0-9a-f]{7}$/u);
-  await expect(row.getByRole('link', { name: /^Report of run/u })).toBeVisible();
+  await expect(row.getByRole('link', { name: /^View run /u })).toBeVisible();
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     row.getByRole('link', { name: /^Zip of run/u }).click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/-scan\.zip$/u);
-  await row.getByRole('link', { name: /^Report of run/u }).click();
+  await row.getByRole('link', { name: /^View run /u }).click();
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
 });
 
 test('RF-1012 disables Delete while a run is in progress, with the reason, until it is stopped', async ({
   page,
 }) => {
-  await startUnderstand(page, ['Catalog', 'Controllers']);
-  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
-  const live = page.url();
+  // P1-121: the server runs two runs at once for all the Playwright projects, so this run may wait
+  // in the queue behind the runs of other specs. Queued and running are both "in progress" for
+  // RF-1012, so the steps accept either instead of waiting for the run to start.
+  const live = await startUnderstand(page, ['Catalog', 'Controllers']);
 
   await openHistory(page);
 
   const row = runRow(page, '-understand');
-  await expect(row).toContainText('Running');
-  const delete1 = row.getByRole('button', { name: /^Delete \(running\)/u });
+  await expect(row).toContainText(/Queued|Running/u);
+  const delete1 = row.getByRole('button', { name: /^Delete \((queued|running)\)/u });
   await expect(delete1).toBeDisabled();
   await expect(delete1).toHaveAttribute('title', 'Stop the run before deleting it');
   await expect(page.getByRole('button', { name: 'Delete project' })).toBeDisabled();
@@ -74,7 +74,7 @@ test('RF-1012 disables Delete while a run is in progress, with the reason, until
   await expectNoSeriousViolations(page);
 
   await page.goto(live);
-  await page.getByRole('button', { name: 'Stop run' }).click();
+  await page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await openHistory(page);
   await expect(runRow(page, '-understand')).toContainText('Interrupted');
