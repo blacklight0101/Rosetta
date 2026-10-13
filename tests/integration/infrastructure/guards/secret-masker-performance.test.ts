@@ -35,4 +35,22 @@ describe('SecretMasker on hostile input', () => {
 
     expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
   });
+
+  it.each([
+    ['bare scheme words', 'Bearer '],
+    ['quoted scheme words', "'Bearer' "],
+    ['mixed scheme words and double blanks', 'Basic  "Bearer" Negotiate  '],
+    ['scheme words with many blanks', `Bearer${' '.repeat(40)}`],
+  ])(
+    `RF-141 masks 1 MB of --token and %s ending in a masked value within ${String(budgetMs)} ms`,
+    (_name, middle) => {
+      const option = ['-', '-', 'token'].join('');
+      const tail = ['[MASKED', 'bearer-token]'].join(':');
+      for (const head of [`${option} `, `${option}=`]) {
+        const input = `${head}${middle.repeat(Math.floor(oneMegabyte / middle.length))}${tail}`;
+
+        expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+      }
+    },
+  );
 });
