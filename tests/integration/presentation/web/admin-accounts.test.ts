@@ -219,6 +219,7 @@ describe('GET /api/admin/users', () => {
           lastSignInAt: null,
           projects: 1,
           monthToDate: [{ currency: 'USD', costMicros: '125000' }],
+          serverKeysAllowed: true,
         },
         expect.objectContaining({
           userName: 'root',
@@ -258,10 +259,27 @@ describe('GET /api/admin/audit', () => {
     expect(all.body).not.toContain(initial);
   });
 
+  it('RF-1109 narrows the list to a period and an outcome', async () => {
+    const { admin } = await setup();
+    await post(admin, '/api/admin/users', newUser);
+
+    const day = await admin.request({ method: 'GET', url: '/api/admin/audit?days=1' });
+    const refused = await admin.request({
+      method: 'GET',
+      url: '/api/admin/audit?days=7&outcome=refused',
+    });
+
+    expect(day.statusCode).toBe(200);
+    expect(day.json()).toMatchObject({ since: '2026-10-10T09:00:00.000Z' });
+    expect(refused.json()).toMatchObject({ since: '2026-10-04T09:00:00.000Z', events: [] });
+  });
+
   it.each([
     ['a user id that is not a UUID', '?userId=nope'],
     ['an action with other characters', '?action=DROP%20TABLE'],
     ['an unknown parameter', '?since=0'],
+    ['a period that is not offered', '?days=2'],
+    ['an unknown outcome', '?outcome=maybe'],
   ])('RF-1109 refuses %s with 400', async (_case, query) => {
     const { admin } = await setup();
 

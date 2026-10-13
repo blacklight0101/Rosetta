@@ -126,6 +126,18 @@ function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
 
     expect(listed.map((row) => row.at)).toEqual([3, 2].map(minutesAfterStart));
   });
+
+  it(`RF-1109 ${name} lists the rows of one outcome`, async () => {
+    const audit = await fresh();
+    await audit.record(event({ at: minutesAfterStart(1), outcome: 'ok' }));
+    await audit.record(event({ at: minutesAfterStart(2), outcome: 'refused' }));
+    await audit.record(event({ at: minutesAfterStart(3), outcome: 'failed' }));
+
+    const since = minutesAfterStart(0).getTime();
+    const refused = await audit.list({ since, outcome: 'refused' });
+
+    expect(refused.map((row) => row.at)).toEqual([minutesAfterStart(2)]);
+  });
 }
 
 function nulTests(name: string, fresh: () => Promise<AuditLog>): void {
