@@ -44,9 +44,17 @@ const keyStart = '(?<![A-Za-z0-9])';
 const mysqlValue = String.raw`(?:"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s"'-]\S*)`;
 const mysqlOption = (name: string): string =>
   String.raw`(?=(?<${name}>[ \t]+-\S+(?:[ \t]+${mysqlValue})?))\k<${name}>`;
-const mysqlWord = String.raw`[ \t]+[^\s\-,;"'<>|&=][^\s,;"'<>|&]*(?=[ \t])`;
+// A positional word may be quoted (`"my db"`) or be a redirect with its file (`> out.sql`, `2> err`).
+const mysqlQuoted = String.raw`"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'`;
+const mysqlRedirect = String.raw`[0-9]?(?:<|>>?)[ \t]{0,16}`;
+const mysqlWord = String.raw`[ \t]+(?:${mysqlRedirect})?(?:${mysqlQuoted}|[^\s\-,;"'<>|&=][^\s,;"'<>|&]*)(?=[ \t])`;
 // At most three positional words, each followed by at most 16 options, anywhere before `-p`.
 const mysqlArguments = String.raw`(?:${mysqlOption('first')}){0,16}(?:${mysqlWord}(?:${mysqlOption('later')}){0,16}){0,3}`;
+// The value of a long option such as `--password <value>`: one quoted value (to its closing quote or
+// the end of the line) or a bare word that does not start with `-`, a quote or a shell operator.
+const optionValue = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s\-"'<>|&;][^\s"'<>|&;]*)`;
+// Not preceded by a letter, digit or dash, so `x--token` and `---token` are left alone.
+const optionStart = '(?<![A-Za-z0-9-])--';
 // A quoted part runs to its closing quote (or the end of the line), spaces included; the token goes
 // on to the next space, so `-p"abc"def` is masked whole. The alternatives start differently.
 const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'])+`;
@@ -138,12 +146,28 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
   {
+    // `--password <value>` on a command line; `--password=<value>` is masked by the rule above.
+    kind: 'password',
+    pattern: new RegExp(
+      String.raw`(?<keep>${optionStart}${passwordName}[ \t]{1,16})${notMasked}${optionValue}`,
+      'gi',
+    ),
+  },
+  {
+    // `--token <value>` and `--token=<value>` on a command line.
+    kind: 'bearer-token',
+    pattern: new RegExp(
+      String.raw`(?<keep>${optionStart}token(?:[ \t]{1,16}|=))${notMasked}${optionValue}`,
+      'gi',
+    ),
+  },
+  {
     // `mysql mydb -u root -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and
-    // is left alone. Command-line shape only (see mysqlArguments), so prose such as "mysql is used
+    // is left alone; a quoted executable path ends with its quote. Command-line shape only (see mysqlArguments), so prose such as "mysql is used
     // in production -pretty much" is not read as a password.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>\bmysql(?:admin|dump)?(?:\.exe)?${mysqlArguments}[ \t]+-p)${notMasked}${mysqlPassword}`,
+      String.raw`(?<keep>\bmysql(?:admin|dump)?(?:\.exe)?["']?${mysqlArguments}[ \t]+-p)${notMasked}${mysqlPassword}`,
       'g',
     ),
   },

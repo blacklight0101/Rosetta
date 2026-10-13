@@ -55,8 +55,8 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * (P1-46) have accounts of their own: `journey` signs in through the pages, `journey-owner` owns
  * a project and a run, `journey-other` is the second user who must not see them, `journey-force`
  * must change its password at first sign-in, `journey-run` runs the pipeline on the C# fixture,
- * `journey-language` on the COBOL one and `journey-admin` is the administrator who creates a user
- * and saves the caps. The visual sweep (tests/e2e/visual/, RNF-010) has its own too: `sweep` makes a
+ * `journey-language` on the COBOL one, `journey-admin` is the administrator who creates a user
+ * and saves the caps and `journey-server` is the user who runs on the server key (P1-131). The visual sweep (tests/e2e/visual/, RNF-010) has its own too: `sweep` makes a
  * project and its runs and opens every page of a user, `sweep-admin` the administration pages and
  * `sweep-force` keeps its temporary password, so the first sign-in page stays open to it.
  */
@@ -86,6 +86,7 @@ export type E2eAccountKind =
   | 'journey-run'
   | 'journey-language'
   | 'journey-admin'
+  | 'journey-server'
   | 'sweep'
   | 'sweep-admin'
   | 'sweep-force';
@@ -116,6 +117,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'journey-run',
   'journey-language',
   'journey-admin',
+  'journey-server',
   'sweep',
   'sweep-admin',
   'sweep-force',
