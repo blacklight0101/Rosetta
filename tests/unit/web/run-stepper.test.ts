@@ -31,6 +31,7 @@ function row(stage: string, queueState: RunRow['queueState'] = 'Running'): RunRo
     endState: null,
     commitSha: null,
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
+    reportBuilt: false,
   };
 }
 
@@ -197,6 +198,19 @@ it('RF-1002 a completed understand run has every step done but the report, which
     'Verify:done',
     'Report:waiting',
   ]);
+});
+
+it('RF-1002 RF-504 the Report step is done once a report exists for the run, and waits without one', () => {
+  const events = [started('understand'), planned(2, 'a1', 'Catalog'), runEnded(3, 'Completed')];
+  const state = stateAfter(...events);
+  const ended = row('understand', 'Ended');
+
+  const without = stepperOf(ended, state, phaseOf(ended, state));
+  const built = stepperOf({ ...ended, reportBuilt: true }, state, phaseOf(ended, state));
+
+  expect(without.at(-1)).toMatchObject({ name: 'Report', status: 'waiting' });
+  expect(built.at(-1)).toMatchObject({ name: 'Report', status: 'done' });
+  expect(built.filter((step) => step.status === 'current')).toEqual([]);
 });
 
 it('RF-1002 a run that was stopped has no current step and keeps the steps it never reached waiting', () => {

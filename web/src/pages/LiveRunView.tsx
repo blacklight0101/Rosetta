@@ -81,6 +81,20 @@ function useStop(runId: string): {
   return { busy, stopping, error, stop };
 }
 
+/**
+ * RF-504, P1-130: whether the run has a report. One built earlier comes with the run row; one built
+ * from this page turns the Report step done at once, without reading the run again.
+ */
+function useReportBuilt(run: RunRow): { readonly built: boolean; readonly onBuilt: () => void } {
+  const [builtHere, setBuiltHere] = useState(false);
+  return {
+    built: run.reportBuilt || builtHere,
+    onBuilt: () => {
+      setBuiltHere(true);
+    },
+  };
+}
+
 function Agents({ state }: { readonly state: RunState }): JSX.Element {
   const emptyText =
     state.stage === 'scan'
@@ -125,6 +139,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
     planned ? state.agents.map((agent) => agent.area) : [],
   );
   const stage = state.stage ?? run.stage;
+  const report = useReportBuilt(run);
   return (
     <div class="rst-live">
       <RunStatusBar
@@ -137,14 +152,20 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
           ) : null
         }
       />
-      <RunStepper steps={stepperOf({ stage, commitSha: run.commitSha }, view.shown, phase)} />
+      <RunStepper
+        steps={stepperOf(
+          { stage, commitSha: run.commitSha, reportBuilt: report.built },
+          view.shown,
+          phase,
+        )}
+      />
       <Connection stream={stream} />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
       <p class="rst-p137-live-link">
         <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
       </p>
       <RunDownloads runId={run.id} stage={stage} ended={phase.kind === 'ended'} />
-      <RunReport runId={run.id} ended={phase.kind === 'ended'} />
+      <RunReport runId={run.id} ended={phase.kind === 'ended'} onBuilt={report.onBuilt} />
       <RunOverview state={view.shown} />
       <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
       <Agents state={view.shown} />
