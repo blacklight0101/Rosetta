@@ -30,6 +30,7 @@ import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
+import { FileRunCallReader } from '../../src/infrastructure/providers/file-run-call-reader.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
@@ -48,6 +49,7 @@ import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
+import { MemoryLogReader } from './memory-log-reader.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
@@ -84,6 +86,8 @@ export interface TestServer {
   /** RF-1007: the projects' answers.md files the answer routes read and write, in `answerFiles`. */
   readonly answers: FileAnswersFile;
   readonly answerFiles: MemoryOutputWriter;
+  /** RF-1011: the run folders the call log and transcript routes read; `seedCallLog` fills them. */
+  readonly callFiles: MemoryOutputWriter;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
@@ -265,7 +269,10 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const files = answerStore(masker);
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const keys = keyParts();
-  const stores = { projects, keys: keys.keys, answers: files.answers };
+  const callFiles = new MemoryOutputWriter();
+  const calls = new FileRunCallReader({ reader: callFiles, masker });
+  const logs = new MemoryLogReader(logger);
+  const stores = { projects, keys: keys.keys, answers: files.answers, calls, logs, clock };
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
@@ -288,5 +295,6 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
     ...{ serverSettings, runs, archives, ...files, ...route, ...keys, providers, providerLedger },
     costs,
+    callFiles,
   };
 }

@@ -39,6 +39,12 @@ export class MemoryRunIndex implements RunIndex {
     return Promise.resolve(run?.userId === userId ? run : undefined);
   }
 
+  keyUsedByOthers(userId: string, runKey: string): Promise<boolean> {
+    void userId;
+    void runKey;
+    return Promise.resolve(false);
+  }
+
   list(userId: string, projectId: string): Promise<readonly Run[]> {
     const own = [...this.runs.values()].filter(
       (run) => run.userId === userId && run.projectId === projectId,

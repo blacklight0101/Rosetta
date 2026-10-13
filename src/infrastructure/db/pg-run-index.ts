@@ -76,6 +76,12 @@ export class PgRunIndex implements RunIndex {
     return this.one(FIND, [userId, runId]);
   }
 
+  keyUsedByOthers(userId: string, runKey: string): Promise<boolean> {
+    void userId;
+    void runKey;
+    return Promise.resolve(false);
+  }
+
   async list(userId: string, projectId: string): Promise<readonly Run[]> {
     if (!UUID.test(userId) || !UUID.test(projectId)) return [];
     return (await this.run(LIST, [userId, projectId])).rows.map(toRun);

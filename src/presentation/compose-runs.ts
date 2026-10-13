@@ -34,7 +34,9 @@ import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import { StreamRegistry } from './web/event-stream.js';
+import { composeObservability } from './compose-observability.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
+import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
 import type { StartUpSteps } from './start-up.js';
 
@@ -133,11 +135,13 @@ interface ServiceParts {
   readonly queue: RunQueue;
   readonly scans: ReturnType<typeof composeScanResults>;
   readonly answers: FileAnswersFile;
+  readonly observability: ObservabilityServices;
 }
 
 /** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
+  const { observability } = service;
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   return {
     startRun: new StartRun({
@@ -156,6 +160,7 @@ function runServices(service: ServiceParts): RunServices {
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     listAnswers: new ListAnswers({ runs, answers }),
     recordAnswers: new RecordAnswers({ runs, answers }),
+    ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
     streams: new StreamRegistry(),
   };
@@ -235,6 +240,7 @@ export function composeRuns(parts: RunParts): RunComposition {
     queue,
     services: runServices({
       ...{ parts, runs, log, broadcaster, projects, submitRun, queue, answers },
+      observability: composeObservability({ runs, manifests, writer, masker, clock, dataDir }),
       scans: composeScanResults({ dataDir, writer, manifests, logger }),
     }),
     submitRun,

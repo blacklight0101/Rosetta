@@ -97,12 +97,38 @@ const answerRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ],
 };
 
+/** RF-1011, RF-1105: the calls, transcripts and logs of a run answer only its owner. */
+const observabilityRoutes: Readonly<Record<string, readonly Probe[]>> = {
+  ...Object.fromEntries(
+    ['calls', 'logs'].map((name) => [
+      `GET /api/runs/:runId/${name}`,
+      [
+        { method: 'GET', url: runUrl(`/${name}`, (c) => c.endedRunId), expected: ownerOnly(200) },
+        { method: 'GET', url: () => `/api/runs/not-a-uuid/${name}`, expected: active(401, 404) },
+      ],
+    ]),
+  ),
+  'GET /api/runs/:runId/calls/:seq/transcript': [
+    {
+      method: 'GET',
+      url: runUrl('/calls/1/transcript', (c) => c.endedRunId),
+      expected: ownerOnly(200),
+    },
+    {
+      method: 'GET',
+      url: () => '/api/runs/not-a-uuid/calls/1/transcript',
+      expected: active(401, 404),
+    },
+  ],
+};
+
 /**
  * RF-008, RF-1105: the zip downloads answer the owner of a finished run, 409 while it runs; with the
  * rows of the run's answers (RF-1007), which name a run the same way.
  */
 export const exportRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ...answerRoutes,
+  ...observabilityRoutes,
   ...Object.fromEntries(
     ['zip', 'handoff.zip'].map((name) => [
       `GET /api/runs/:runId/${name}`,

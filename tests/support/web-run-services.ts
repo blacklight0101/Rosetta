@@ -1,9 +1,15 @@
+import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
 import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
+import type { Clock } from '../../src/application/ports/clock.js';
+import type { RunCallReader } from '../../src/application/ports/run-call-reader.js';
 import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
+import { GetCallTranscript } from '../../src/application/use-cases/get-call-transcript.js';
 import { GetRun } from '../../src/application/use-cases/get-run.js';
 import { ListAnswers } from '../../src/application/use-cases/list-answers.js';
+import { ListRunCalls } from '../../src/application/use-cases/list-run-calls.js';
+import { ListRunLogs } from '../../src/application/use-cases/list-run-logs.js';
 import { RecordAnswers } from '../../src/application/use-cases/record-answers.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
@@ -19,11 +25,14 @@ export function runServices(
     readonly projects: MemoryProjectRepository;
     readonly keys: MemoryProviderKeyRepository;
     readonly answers: AnswersFile;
+    readonly calls: RunCallReader;
+    readonly logs: ApplicationLogReader;
+    readonly clock: Clock;
   },
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
   archives: ArchiveWriter,
 ): ServerOptions['runs'] {
-  const { projects, keys, answers } = stores;
+  const { projects, keys, answers, calls, logs, clock } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs }),
     subscribeRunEvents: runs.subscribe,
@@ -31,6 +40,10 @@ export function runServices(
     exportZip: new ExportZip({ runs: runs.runs, archives }),
     listAnswers: new ListAnswers({ runs: runs.runs, answers }),
     recordAnswers: new RecordAnswers({ runs: runs.runs, answers }),
+    // RF-1011: the call log and transcripts of the harness's run folders, and the logger's entries.
+    listRunCalls: new ListRunCalls({ runs: runs.runs, calls, manifests: runs.manifests }),
+    getCallTranscript: new GetCallTranscript({ runs: runs.runs, calls }),
+    listRunLogs: new ListRunLogs({ runs: runs.runs, logs, clock }),
     startRun: new StartRun({ projects, submit: runs.submit }),
     // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
     estimateRun: new EstimateRun({

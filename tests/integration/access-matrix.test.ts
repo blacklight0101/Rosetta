@@ -18,6 +18,7 @@ import {
   type Column,
 } from '../support/access-columns.js';
 import { budgetRoutes, exportRoutes, type Context, type Probe } from '../support/access-probes.js';
+import { localCall, seedCallLog } from '../support/call-fixtures.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the answer
@@ -258,6 +259,8 @@ async function browserFor(
     'manifest.json': '{}',
     'handoff/README.md': '# Hand-off',
   });
+  // RF-1011: the ended run has one call, so its transcript route has something to find.
+  await seedCallLog(test.callFiles, ended, [localCall(ended)]);
   const running = await test.runs.start(owner);
   const context = {
     projectId: project.id,
