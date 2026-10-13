@@ -33,7 +33,7 @@ Every rule below refers to these settings by name, so a stack change is made her
 | Issue and pull request | one GitHub issue per card (title `<id> <title>`, milestone of the phase, labels `difficulty:<n>` and `builder:<model>`); one pull request per card from `.github/pull_request_template.md`, closing its issue (DEC-35) |
 | Merge | by the orchestrator, squash only, under the merge rules of section 3.1 (DEC-96); pull requests labelled `needs-owner` are merged only by the owner |
 | Agents in flight | up to two (three after a usage reset) plan builders, as many local verifiers as pull requests are ready, an API-billed builder or verifier when the key has credit, and cards in the owner's cloud sessions, under the usage bands of section 8.1 (DEC-115, DEC-128, DEC-130) |
-| Serialized resources | `db/migrations/`; `src/presentation/composition-root.ts` and `src/presentation/main.ts`; `package.json` and `package-lock.json`; `.github/workflows/`; `web/src/app/routes.ts`; `tests/integration/access-matrix.test.ts` |
+| Serialized resources | `db/migrations/`; `src/presentation/composition-root.ts` and `src/presentation/main.ts`; `package.json` and `package-lock.json`; `.github/workflows/`; `web/src/app/routes.ts`; `tests/support/access-matrix-rows.ts` (new routes add their access-matrix rows there) |
 | Requirement comment | `// RF-nnn` (or `RNF-nnn`) on the line above each implementing class or function |
 
 ## 2. Roles
@@ -231,6 +231,7 @@ same ids and names as `handoff.md` (DEC-99). The orchestrator never opens a gate
 | G-05 Milestone hand-in approved | BlackLigth (blacklight0101) | the owner has checked the hosted URL, the teacher account, the sample report, the slides and the video, and submits the hand-in (RF-803) by 2026-10-26 | the P1 exit |
 | G-06 Hosted deployment ready | BlackLigth (blacklight0101) | the image of `main` deployed by its `sha-<short>` tag (DEC-104); `/healthz` green; smoke test passed; the teacher account signs in on the hosted URL (RF-1304, RF-1107); by 2026-10-24 | P1-54 |
 | G-07 Host account and secrets ready | BlackLigth (blacklight0101) | the host ADR of P1-48 is merged, the owner has created the host account and stored every secret of environments-and-delivery.md section 4 in the host's store (DEC-104) | P1-55 |
+| G-08 Local acceptance | BlackLigth (blacklight0101) | the owner has completed a hands-on local test of the Compose stack and declared it ready (DEC-133) | P1-49, P1-50 and P1-55 |
 
 ## 8. Parallelism and ordering
 
