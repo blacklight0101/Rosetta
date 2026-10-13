@@ -12,6 +12,7 @@ import type {
 import type { SecretBox } from '../../application/ports/secret-box.js';
 import type { ServerSettings } from '../../application/ports/server-settings.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
+import { ownerLogger } from '../../application/runs/owner-logger.js';
 import { priceOverridesOf } from '../../application/projects/price-overrides.js';
 import type { ProviderSet, RoleProvider } from '../../application/providers/provider-set.js';
 import { capsFor, type ServerCaps } from '../../domain/budget/budget.js';
@@ -210,7 +211,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
         maxRetries: config.maxRetries,
       }),
       sinks: request.sinks,
-      services: this.options,
+      // RF-1011: the guards' entries name the run's owner, like every other writer of the run.
+      services: { ...this.options, logger: ownerLogger(this.options.logger, request.run.userId) },
     });
   }
 

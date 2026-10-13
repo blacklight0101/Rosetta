@@ -109,7 +109,7 @@ describe('GET /api/runs/:runId/calls/:seq/transcript call number', () => {
     ['leading zeros', '01'],
     ['zero', '0'],
     ['a negative number', '-1'],
-    ['a number above the safe range', '9007199254740993'],
+    ['ten digits, over the nine-digit cap', '1234567890'],
     ['an exponent', '1e0'],
     ['a fraction', '1.0'],
     ['text', 'one'],
