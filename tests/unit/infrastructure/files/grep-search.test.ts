@@ -52,7 +52,8 @@ describe('grep search', () => {
     expect(outcome.kind === 'matches' && outcome.matches).toHaveLength(3);
     expect(read).toEqual(['a.ts', 'b.ts']);
   });
-
+});
+describe('grep search errors', () => {
   it('RF-146 reports a pattern that is not a regular expression instead of throwing', () => {
     const outcome = searchFiles({ pattern: '(unclosed', files });
 
