@@ -1,5 +1,8 @@
 import type { InsertUserProblem, UserRepository } from '../../application/ports/user-repository.js';
-import { recordFailedSignIn } from '../../domain/accounts/sign-in-failures.js';
+import {
+  recordFailedSignIn,
+  recordSuccessfulSignIn,
+} from '../../domain/accounts/sign-in-failures.js';
 import type { EpochMs, User, UserAccount } from '../../domain/accounts/user.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -90,8 +93,24 @@ export class MemoryUserRepository implements UserRepository {
     return current ? this.update(account) : Promise.resolve(false);
   }
 
-  markSignedIn(_read: UserAccount, _now: EpochMs): Promise<boolean> {
-    return Promise.resolve(false);
+  markSignedIn(read: UserAccount, now: EpochMs): Promise<boolean> {
+    const stored = this.accounts.get(read.id);
+    if (stored === undefined) return Promise.resolve(false);
+    if (stored.state === 'Disabled' || stored.passwordHash !== read.passwordHash) {
+      return Promise.resolve(false);
+    }
+    const { failedSignIns, firstFailedAt, lockedUntil, lastSignInAt } = recordSuccessfulSignIn(
+      stored,
+      now,
+    );
+    this.accounts.set(read.id, {
+      ...stored,
+      failedSignIns,
+      firstFailedAt,
+      lockedUntil,
+      lastSignInAt,
+    });
+    return Promise.resolve(true);
   }
 
   countFailedSignIn(id: string, now: EpochMs): Promise<boolean> {

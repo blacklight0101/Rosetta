@@ -21,7 +21,8 @@ import { KeyedQueue } from '../support/keyed-queue.js';
 // count and a concurrent disable or reset is never undone; an unknown, disabled or locked name
 // makes the same write to an id no account has, so every refusal costs the same database work too.
 // The fifth failure within 15 minutes locks the account for 15 minutes (DEC-112). A success
-// rotates the session: the previous id is ended and a new one is created. Attempts on one user
+// rotates the session (P1-133: the success write touches the sign-in columns only and only while
+// the account is enabled with the verified password, else the sign-in is refused): the previous id is ended and a new one is created. Attempts on one user
 // name run one after another, so an attempt after the lock sees it before its password is checked.
 
 export interface SignInRequest {
@@ -52,7 +53,7 @@ export interface SignInDependencies {
   readonly dummyHash: string;
 }
 
-type RefusalReason = 'unknown-user' | 'wrong-password' | 'locked' | 'disabled';
+type RefusalReason = 'unknown-user' | 'wrong-password' | 'locked' | 'disabled' | 'account-changed';
 
 interface Refusal {
   readonly request: SignInRequest;
@@ -69,6 +70,7 @@ const SECURITY_CODES: Readonly<Record<RefusalReason, ErrorCode>> = {
   'wrong-password': ERROR_CODES.invalidCredentials,
   locked: ERROR_CODES.accountLocked,
   disabled: ERROR_CODES.invalidCredentials,
+  'account-changed': ERROR_CODES.invalidCredentials,
 };
 
 export class SignIn {
@@ -101,7 +103,7 @@ export class SignIn {
     if (state === 'Locked')
       return this.refuseUncounted({ request, reason: 'locked', now, account });
     if (!matches) return this.fail(account, request, now);
-    return ok(await this.succeed(account, request, now));
+    return this.succeed(account, request, now);
   }
 
   private async find(key: string): Promise<UserAccount | undefined> {
@@ -187,10 +189,13 @@ export class SignIn {
     account: UserAccount,
     request: SignInRequest,
     now: Date,
-  ): Promise<SignedIn> {
+  ): Promise<Result<SignedIn, SignInProblem>> {
     const { users, sessions } = this.deps;
     const signedIn = recordSuccessfulSignIn(account, now.getTime());
-    await users.update(signedIn);
+    // P1-133: only the sign-in columns, only while enabled with the password that was verified.
+    if (!(await users.markSignedIn(account, now.getTime()))) {
+      return this.refuse({ request, reason: 'account-changed', now, account });
+    }
     if (request.previousSessionId !== undefined) await sessions.end(request.previousSessionId);
     const created = await sessions.create({
       userId: account.id,
@@ -214,6 +219,6 @@ export class SignIn {
       message: 'Signed in.',
       userId: account.id,
     });
-    return { sessionId: created.id, user: sessionUserOf(signedIn) };
+    return ok({ sessionId: created.id, user: sessionUserOf(signedIn) });
   }
 }
