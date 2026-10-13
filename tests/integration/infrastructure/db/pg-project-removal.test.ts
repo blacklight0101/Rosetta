@@ -20,6 +20,14 @@ const INSERT_QUEUED =
   "INSERT INTO runs (id, project_id, user_id, run_key, stage, queue_state, queued_at, cost_micros, input_tokens, output_tokens, cached_input_tokens) VALUES ($1, $2, $3, '20261013-090000-scan', 'scan', 'Queued', now(), 0, 0, 0, 0)";
 const BLOCKED_BY =
   'SELECT count(*)::int AS n FROM pg_stat_activity WHERE $1::int = ANY (pg_blocking_pids(pid))';
+// Open transactions that hold a lock on a table of this test's own schema; other test files run
+// beside this one on the same database, so a count over the whole database would see theirs.
+const OPEN_TRANSACTIONS = `SELECT count(DISTINCT a.pid)::int AS n
+  FROM pg_stat_activity a
+  JOIN pg_locks l ON l.pid = a.pid
+  JOIN pg_class c ON c.oid = l.relation
+  JOIN pg_namespace ns ON ns.oid = c.relnamespace
+  WHERE ns.nspname = $1 AND a.state LIKE 'idle in transaction%'`;
 const RUNS_WITHOUT_PROJECT =
   'SELECT count(*)::int AS n FROM runs WHERE NOT EXISTS (SELECT 1 FROM projects WHERE projects.id = runs.project_id)';
 
@@ -72,3 +80,29 @@ describe.skipIf(!hasTestDatabase)(
     });
   },
 );
+
+describe.skipIf(!hasTestDatabase)('PgProjectRepository.remove and the pool', () => {
+  const database = useTestDatabase();
+
+  it('RF-1012 releases the connection and the row lock before the folder removal starts', async () => {
+    const { pool, name } = await database.createSchema({ migrate: true });
+    await new PgUserRepository(pool).insert(sampleAccount({ id: amy, userName: 'amy' }));
+    const projects = new PgProjectRepository(pool);
+    const project = sampleProject({ userId: amy });
+    await projects.insertOrFind(project);
+    const seen: { checkedOut: number; open: number; listed: boolean }[] = [];
+
+    const removed = await projects.remove(amy, project.id, async () => {
+      const [row] = (await pool.query<{ n: number }>(OPEN_TRANSACTIONS, [name])).rows;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      seen.push({
+        checkedOut: pool.totalCount - pool.idleCount,
+        open: row?.n ?? -1,
+        listed: (await projects.find(amy, project.id)) !== undefined,
+      });
+    });
+
+    expect(removed).toBe(true);
+    expect(seen).toEqual([{ checkedOut: 0, open: 0, listed: false }]);
+  });
+});

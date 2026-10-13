@@ -143,23 +143,25 @@ describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL', () => {
   });
 });
 
-describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL when its folder stays', () => {
-  const database = useTestDatabase();
+describe.skipIf(!hasTestDatabase)(
+  'deleting a project on PostgreSQL when its folder cannot be removed',
+  () => {
+    const database = useTestDatabase();
 
-  it('RF-1012 keeps the project and its runs when the folder cannot be removed (P1-121)', async () => {
-    const { projects, runs, folders, logger, project, ended } = await setup(database);
-    const done = await ended();
-    folders.refuseRemoval = true;
-    const deleteProject = new DeleteProject({ projects, runs, folders, logger });
+    it('RF-1012 has removed the project and its runs when the folder cannot be removed (P1-138)', async () => {
+      const { projects, runs, folders, logger, project, ended } = await setup(database);
+      const done = await ended();
+      folders.refuseRemoval = true;
+      const deleteProject = new DeleteProject({ projects, runs, folders, logger });
 
-    await expect(deleteProject.execute({ actor, projectId: project.id })).rejects.toMatchObject({
-      code: ERROR_CODES.folderRemovalFailed,
+      await expect(deleteProject.execute({ actor, projectId: project.id })).rejects.toMatchObject({
+        code: ERROR_CODES.folderRemovalFailed,
+      });
+
+      expect(await projects.find(amy, project.id)).toBeUndefined();
+      expect(await runs.find(amy, done.id)).toBeUndefined();
+      const retried = await deleteProject.execute({ actor, projectId: project.id });
+      expect(retried).toEqual({ ok: false, error: ERROR_CODES.notFound });
     });
-
-    expect(await projects.find(amy, project.id)).toEqual(project);
-    expect(await runs.find(amy, done.id)).toEqual(done);
-    folders.refuseRemoval = false;
-    expect((await deleteProject.execute({ actor, projectId: project.id })).ok).toBe(true);
-    expect(await runs.find(amy, done.id)).toBeUndefined();
-  });
-});
+  },
+);

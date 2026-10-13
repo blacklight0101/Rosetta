@@ -15,9 +15,11 @@ import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
 
 // RF-1012, DEC-55, data-model.md section 9, P1-121 (finding 5 of the P1-40 verdict): a folder that
-// cannot be removed never becomes an orphan. Both deletions remove the folder before the rows; a
-// failed removal writes an `error` entry with RST-1115 naming the folder, answers that code and
-// leaves the rows, so the project or run is still listed and the next Delete removes the folder.
+// cannot be removed is always logged. Delete run removes the folder before the row; a failed
+// removal writes an `error` entry with RST-1115 naming the folder, answers that code and leaves
+// the row, so the run is still listed and the next Delete removes the folder. Delete project
+// removes the folder after its rows are committed (P1-138, so a slow disk holds no connection):
+// the failure is logged and answered the same way, and the folder is left for the administrator.
 
 const clock = new FixedClock('2026-10-13T10:00:00.000Z');
 
@@ -42,7 +44,7 @@ async function setup() {
 const refusal = { name: 'RosettaError', code: ERROR_CODES.folderRemovalFailed };
 
 describe('DeleteProject when the folder cannot be removed', () => {
-  it('RF-1012 logs the folder with RST-1115, keeps the project and its runs, and a retry cleans it up', async () => {
+  it('RF-1012 logs the folder with RST-1115 after the rows are gone and leaves the folder', async () => {
     const { projects, runs, folders, logger, project, target, run } = await setup();
     const deleteProject = new DeleteProject({ projects, runs, folders, logger });
     folders.refuseRemoval = true;
@@ -51,8 +53,8 @@ describe('DeleteProject when the folder cannot be removed', () => {
 
     await expect(failed).rejects.toBeInstanceOf(RosettaError);
     await expect(failed).rejects.toMatchObject(refusal);
-    expect(await projects.find(userAmy.userId, project.id)).toEqual(project);
-    expect(await runs.find(userAmy.userId, run.id)).toEqual(run);
+    expect(await projects.find(userAmy.userId, project.id)).toBeUndefined();
+    expect(await runs.find(userAmy.userId, run.id)).toBeUndefined();
     expect(folders.has(target)).toBe(true);
     expect(logger.entries).toHaveLength(1);
     expect(logger.entries[0]).toMatchObject({
@@ -62,13 +64,9 @@ describe('DeleteProject when the folder cannot be removed', () => {
       userId: userAmy.userId,
       data: { folder: `projects/${project.id}` },
     });
-
-    folders.refuseRemoval = false;
-    const retried = await deleteProject.execute({ actor: userAmy, projectId: project.id });
-
-    expect(retried).toEqual({ ok: true, value: { freedBytes: 150 } });
-    expect(folders.has(target)).toBe(false);
-    expect(await projects.find(userAmy.userId, project.id)).toBeUndefined();
+    expect(logger.entries[0]?.message).toBe(
+      `The folder projects/${project.id} could not be removed; its rows are already deleted, so remove the folder by hand.`,
+    );
   });
 });
 
