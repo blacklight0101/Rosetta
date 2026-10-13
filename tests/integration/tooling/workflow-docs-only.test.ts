@@ -156,7 +156,6 @@ describe('GitHub Actions workflows: documentation-only checks', () => {
 
     expect(named('run: npm run verify')).toContain(code);
     expect(named('run: npm run test:ci')).toContain(code);
-    expect(named('playwright install --with-deps')).toContain(code);
     expect(named('run: npm run format:check')).toContain(docsOnlyOnLinux);
     expect(named('npx vitest run')).toContain(docsOnlyOnLinux);
   });

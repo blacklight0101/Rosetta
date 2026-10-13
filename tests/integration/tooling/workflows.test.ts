@@ -37,13 +37,14 @@ describe('GitHub Actions workflows: files', () => {
     expect(text).toContain('name: verify (${{ matrix.os }})');
   });
 
-  it('RNF-005 the Linux job installs Chromium before verify runs the end-to-end project', async () => {
-    const text = await ci();
-    const install = text.indexOf('npx playwright install --with-deps chromium');
+  it('RNF-005 the e2e shards install Chromium before Playwright runs, and verify does not', async () => {
+    const shard = await ciJob('e2e-shard');
+    const install = shard.indexOf('npx playwright install --with-deps chromium');
 
     expect(install).toBeGreaterThan(-1);
-    expect(install).toBeLessThan(text.indexOf('run: npm run verify'));
-    expect(text).toMatch(/- name: Install Chromium[^\n]*\n\s+if: runner\.os == 'Linux'/u);
+    expect(install).toBeLessThan(shard.indexOf('node scripts/run-e2e.mjs'));
+    // verify skips the Playwright project (ROSETTA_E2E_OWN_JOB=1), so it needs no browser.
+    expect(await ciJob('verify')).not.toContain('playwright install');
   });
 
   it('DEC-35 the pull request title reaches commitlint through env: TITLE and audit gets today', async () => {
