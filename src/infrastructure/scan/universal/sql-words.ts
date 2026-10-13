@@ -40,9 +40,10 @@ const createdObjects: ReadonlySet<string> = new Set([
 ]);
 
 // An XML element whose name ends in a password name, opened on the last line and not closed: the
-// masker needs the closing tag (its value may hold spaces), so a cut inside it would keep the value.
+// masker needs the closing tag (its value may hold spaces and start after blanks), so a cut inside
+// it would keep the value. A CDATA value needs no guard: the masker masks it to the end of the line.
 const openPasswordElement =
-  /<[\w.:-]{0,32}?(?:password|passwd|pwd)(?:[ \t][^<>\r\n]{0,256})?>[^<\s][^<\r\n]*$/iu;
+  /<[\w.:-]{0,32}?(?:password|passwd|pwd)(?:[ \t][^<>\r\n]{0,256})?>[ \t]{0,16}[^<\s][^<\r\n]*$/iu;
 
 /**
  * RF-141: `text` cut to at most `length` characters, never inside a word. When the cut falls inside
