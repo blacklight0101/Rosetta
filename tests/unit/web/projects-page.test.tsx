@@ -64,7 +64,7 @@ it('RF-010 with no project says so and offers the demo repository', async () => 
   fireEvent.click(screen.getByRole('button', { name: 'Use the demo repository' }));
 
   expect(urlField().value).toBe(
-    'https://github.com/dotnet-architecture/eShopModernizing/tree/master/eShopLegacyWebFormsSolution',
+    'https://github.com/dotnet-architecture/eShopModernizing/tree/main/eShopLegacyWebFormsSolution',
   );
   expect(screen.queryByRole('table')).toBeNull();
 });

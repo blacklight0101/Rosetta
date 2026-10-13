@@ -97,6 +97,14 @@ const projectRows: Rows = {
     { method: 'GET', url: projectUrl('/estimate'), expected: ownerOnly(200) },
     { method: 'GET', url: () => '/api/projects/not-a-uuid/estimate', expected: active(401, 404) },
   ],
+  'POST /api/projects/:id/estimate': [
+    {
+      method: 'POST',
+      url: projectUrl('/estimate'),
+      payload: () => ({ areas: ['Catalog'] }),
+      expected: ownerOnly(200),
+    },
+  ],
   'HEAD /api/projects/:id/estimate': [
     { method: 'HEAD', url: projectUrl('/estimate'), expected: ownerOnly(200) },
   ],
@@ -149,6 +157,12 @@ const accountRows: Rows = {
   ],
   'DELETE /api/account/keys/:provider': [
     { method: 'DELETE', url: '/api/account/keys/anthropic', expected: active(401, 204) },
+  ],
+  'GET /api/errors/:code': [
+    { method: 'GET', url: '/api/errors/RST-1901', expected: active(401, 200) },
+  ],
+  'HEAD /api/errors/:code': [
+    { method: 'HEAD', url: '/api/errors/RST-1901', expected: active(401, 200) },
   ],
   'POST /api/account/providers/test': [
     { method: 'POST', url: '/api/account/providers/test', expected: active(401, 200) },

@@ -111,7 +111,7 @@ it('RF-1003 RF-424 shows tokens per role and in total, the cap as a bar, the cos
       reads += 1;
       return runRow({ costMicros: reads === 1 ? 0 : 4_100 });
     },
-    [`GET ${estimatePath}`]: json(200, localEstimate),
+    [`POST ${estimatePath}`]: json(200, localEstimate),
   });
   const connection = await stream.connection();
 

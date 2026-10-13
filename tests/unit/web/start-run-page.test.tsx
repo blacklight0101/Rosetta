@@ -89,14 +89,21 @@ it('RF-425 Re-estimate asks for the estimate again', async () => {
 
 it('RF-425 choosing fewer areas estimates only those areas', async () => {
   const { calls } = renderStart({
-    [`GET ${estimatePath}?areas=Catalog`]: json(200, localEstimate),
+    [`POST ${estimatePath}`]: json(200, localEstimate),
   });
   await ready();
 
   fireEvent.click(input('Models'));
 
   await waitFor(() => {
-    expect(calls.map((call) => call.path)).toContain(`${estimatePath}?areas=Catalog`);
+    expect(
+      calls.some(
+        (call) =>
+          call.method === 'POST' &&
+          call.path === estimatePath &&
+          JSON.stringify(call.body) === JSON.stringify({ areas: ['Catalog'] }),
+      ),
+    ).toBe(true);
   });
 });
 

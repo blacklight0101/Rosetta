@@ -65,8 +65,8 @@ describe('RF-425 estimate before running', () => {
     expect(estimate.assumptions.turnsPerArea).toEqual({ low: 3, likely: 6, high: 10 });
     expect(estimate.assumptions.verifierSharePercent).toEqual({ low: 15, likely: 30, high: 50 });
     expect(estimate.areas).toEqual([
-      { name: 'Catalog', estimatedTokens: 10_000 },
-      { name: 'Orders', estimatedTokens: 4000 },
+      { name: 'Catalog', estimatedTokens: 10_000, thirdParty: false },
+      { name: 'Orders', estimatedTokens: 4000, thirdParty: false },
     ]);
     expect(estimate.priceTableVersion).toBe('2026-10-11');
     expect(estimate.currency).toBe('USD');
@@ -128,7 +128,7 @@ describe('RF-425 the range and the roles', () => {
     const all = await estimateOf(createEstimateHarness(), cloud);
     const orders = await estimateOf(createEstimateHarness(), cloud, ['Orders']);
 
-    expect(orders.areas).toEqual([{ name: 'Orders', estimatedTokens: 4000 }]);
+    expect(orders.areas).toEqual([{ name: 'Orders', estimatedTokens: 4000, thirdParty: false }]);
     expect(orders.total.likely.inputTokens).toBe(24_498 + 7350);
     expect(orders.total.likely.inputTokens).toBeLessThan(all.total.likely.inputTokens);
   });
