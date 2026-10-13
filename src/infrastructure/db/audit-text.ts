@@ -1,8 +1,8 @@
 // RF-1109, RNF-003, P1-77: what an audit row's text goes through before it is stored, on top of
 // the shared secret masking (P1-04). PostgreSQL text and jsonb cannot hold NUL, so every NUL
 // becomes U+FFFD and the row is still stored. A detail value is masked whole when a word of its
-// key names a secret (`secret`, `clientSecret`, `pass`, `pw`, `value`, ...), and the word after
-// "password is" (and the like) in free text is masked.
+// key names a secret (`secret`, `clientSecret`, `pass`, `pw`, `value`, ...), and the word or the
+// quoted phrase after "password is" (and the like) in free text is masked.
 
 const NUL = String.fromCodePoint(0);
 const REPLACEMENT = String.fromCodePoint(0xfffd);
@@ -18,8 +18,10 @@ const SECRET_KEY_WORDS: ReadonlySet<string> = new Set([
   'secrets',
   'value',
 ]);
+// The value is one word, or a quoted phrase taken whole up to its closing quote (or the end of
+// the text when the quote is never closed), so no word of a multi-word password is kept (P1-101).
 const SECRET_IN_TEXT =
-  /\b(?<keep>(?:password|passwd|passphrase|pwd|pw|pass|secret)\s+(?:is|was)\s*[:=]?\s*)(?!\[MASKED:)[^\s,;]+/giu;
+  /\b(?<keep>(?:password|passwd|passphrase|pwd|pw|pass|secret)\s+(?:is|was)\s*[:=]?\s*)(?!\[MASKED:)(?:"[^"]*"?|'[^']*'?|\u201c[^\u201d]*\u201d?|[^\s,;]+)/giu;
 
 /** The text with every NUL replaced by U+FFFD. */
 // RF-1109
