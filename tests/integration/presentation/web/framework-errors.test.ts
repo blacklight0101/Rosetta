@@ -68,6 +68,22 @@ function addGates(app: TestServer): Gates {
   };
 }
 
+/**
+ * Whether the promise settles within `ms`. The wait is bounded so that a request the server refuses
+ * before routing fails the test on its status line, not on the test timeout.
+ */
+async function arrivesWithin(promise: Promise<undefined>, ms: number): Promise<boolean> {
+  const timer: { id?: NodeJS.Timeout } = {};
+  const late = new Promise<boolean>((resolve) => {
+    timer.id = setTimeout(() => {
+      resolve(false);
+    }, ms);
+  });
+  const arrived = await Promise.race([promise.then(() => true), late]);
+  clearTimeout(timer.id);
+  return arrived;
+}
+
 async function listening(): Promise<{ app: TestServer; address: string; gates: Gates }> {
   const app = server();
   app.server.post('/test/echo', { config: { access: 'public' } }, (request) => ({
@@ -230,12 +246,13 @@ describe('requests while the server closes', () => {
     const closing = app.server.close();
     await gates.closeStarted;
     connection.write(`GET ${missingAsset} HTTP/1.1\r\nHost: localhost\r\n\r\n`);
-    await gates.assetReceived;
+    const received = await arrivesWithin(gates.assetReceived, 1000);
     gates.releaseSlow();
     const responses = parseRawResponses(await connection.settle());
     await closing;
 
     expect(responses.map((response) => response.status)).toEqual([200, 404]);
+    expect(received).toBe(true);
     expect(responses[1]?.headers.get('connection')).toBe('close');
     expectProtected(responses[1]?.headers ?? new Map());
     expect(JSON.parse(responses[1]?.body ?? '')).toMatchObject({ code: ERROR_CODES.notFound });
