@@ -1,0 +1,169 @@
+/* The three parts of the live run artboard that sit beside the panels (P1-95, design-system.md
+   sections 1, 4 and 5, artboards LiveRun.dc.html and Main.dc.html): the stage stepper, Pause updates
+   and the "This run" meter of the top bar. Each owns its prefix (rst-live-stepper-, rst-live-pause-,
+   rst-topbar-runmeter-) and reuses no class of another page; colours, spacing and type come from the
+   tokens. */
+
+/* Pipeline stepper */
+
+.rst-live-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-live-stepper-item {
+  display: flex;
+  align-items: center;
+  gap: var(--rst-sp-2);
+  min-inline-size: 0;
+}
+
+.rst-live-stepper-item:not(:last-child)::after {
+  content: '';
+  flex: none;
+  inline-size: var(--rst-sp-3);
+  block-size: 1px;
+  background: var(--rst-rule-strong);
+}
+
+.rst-live-stepper-step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-2);
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border-radius: var(--rst-radius-pill);
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+  overflow-wrap: anywhere;
+}
+
+.rst-live-stepper-step--done {
+  background: var(--rst-ok-bg);
+  color: var(--rst-ok-ink);
+}
+
+.rst-live-stepper-step--current {
+  background: var(--rst-info-solid);
+  color: var(--rst-info-solid-ink);
+}
+
+.rst-live-stepper-step--waiting {
+  background: var(--rst-neutral-bg);
+  color: var(--rst-neutral-ink);
+}
+
+.rst-live-stepper-detail {
+  font-variant-numeric: tabular-nums;
+}
+
+/* On a phone the steps stack, so no connector dangles at the start of a wrapped line. */
+@media (max-width: 480px) {
+  .rst-live-stepper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rst-live-stepper-item:not(:last-child)::after {
+    display: none;
+  }
+}
+
+/* Pause updates */
+
+/* Start page, Pause updates and Stop run stay together and wrap as one group. */
+.rst-live-pause-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+  margin-inline-start: auto;
+}
+
+.rst-live-pause {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-3);
+}
+
+/* A fixed width, so the counter growing never moves the buttons beside it. */
+.rst-live-pause-count {
+  inline-size: 9rem;
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+@media (max-width: 480px) {
+  .rst-live-pause-count {
+    inline-size: auto;
+    min-inline-size: 8rem;
+  }
+}
+
+/* "This run" meter of the top bar */
+
+.rst-topbar-runmeter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-2);
+}
+
+.rst-topbar-runmeter-label {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-topbar-runmeter-figures {
+  font-variant-numeric: tabular-nums;
+}
+
+.rst-topbar-runmeter-bar {
+  inline-size: 4.5rem;
+  block-size: 8px;
+  overflow: hidden;
+  border: 1px solid var(--rst-rule-strong);
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-surface);
+}
+
+.rst-topbar-runmeter-fill {
+  block-size: 100%;
+  background: var(--rst-brand);
+}
+
+.rst-topbar-runmeter--warn .rst-topbar-runmeter-fill {
+  background: var(--rst-warn-solid);
+}
+
+.rst-topbar-runmeter--danger .rst-topbar-runmeter-fill {
+  background: var(--rst-danger-solid);
+}
+
+.rst-topbar-runmeter-share {
+  font-weight: var(--rst-fw-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.rst-topbar-runmeter-note {
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-topbar-runmeter--warn .rst-topbar-runmeter-note {
+  color: var(--rst-warn-ink);
+}
+
+.rst-topbar-runmeter--danger .rst-topbar-runmeter-note {
+  color: var(--rst-danger-ink);
+}

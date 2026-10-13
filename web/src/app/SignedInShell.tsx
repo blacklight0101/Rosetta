@@ -2,9 +2,12 @@ import type { JSX } from 'preact';
 import { useCallback, useState } from 'preact/hooks';
 import type { AccountTotals } from '../api/cost-schemas.js';
 import { Shell, type ShellProps } from '../components/Shell.js';
+import { TopbarRunMeter } from '../components/TopbarRunMeter.js';
 import { TotalsPill } from '../components/TotalsPill.js';
+import { topBarMeterOf } from '../lib/live-run/top-bar-meter.js';
 import { CapBanner } from '../pages/CapBanner.js';
 import { serverMonthOf } from '../pages/admin-month.js';
+import { RunMeterContext, type RunMeterReading } from './run-meter-signal.js';
 import { useAccountTotals } from './use-account-totals.js';
 import { UsageSignalContext } from './usage-signal.js';
 
@@ -13,7 +16,7 @@ import { UsageSignalContext } from './usage-signal.js';
 // and for the administrator the cap banner from 80% of the server's monthly cap on every page but
 // the administration pages, which show their own.
 
-export interface SignedInShellProps extends Omit<ShellProps, 'totals' | 'banners'> {
+export interface SignedInShellProps extends Omit<ShellProps, 'totals' | 'banners' | 'runMeter'> {
   /** The current location; the administration pages draw their own cap banner. */
   readonly path: string;
   /** The open project, whose cost page the pill links to. */
@@ -35,16 +38,24 @@ export function SignedInShell(props: SignedInShellProps): JSX.Element {
   const announce = useCallback(() => {
     setVersion((current) => current + 1);
   }, []);
+  const [reading, setReading] = useState<RunMeterReading | undefined>();
   const totals = useAccountTotals(version);
   const href =
     projectId === undefined ? undefined : `/projects/${encodeURIComponent(projectId)}/cost`;
   return (
     <UsageSignalContext.Provider value={announce}>
-      <Shell
-        {...shell}
-        totals={totals === undefined ? undefined : <TotalsPill totals={totals} href={href} />}
-        banners={bannerOf(totals, path)}
-      />
+      <RunMeterContext.Provider value={setReading}>
+        <Shell
+          {...shell}
+          runMeter={
+            reading === undefined ? undefined : (
+              <TopbarRunMeter meter={topBarMeterOf(reading.costMicros, reading.capMicros)} />
+            )
+          }
+          totals={totals === undefined ? undefined : <TotalsPill totals={totals} href={href} />}
+          banners={bannerOf(totals, path)}
+        />
+      </RunMeterContext.Provider>
     </UsageSignalContext.Provider>
   );
 }

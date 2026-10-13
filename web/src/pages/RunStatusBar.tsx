@@ -1,4 +1,4 @@
-import type { JSX } from 'preact';
+import type { ComponentChildren, JSX } from 'preact';
 import type { ApiFailure } from '../api/client.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
@@ -20,6 +20,10 @@ export interface RunStatusBarProps {
   readonly busy: boolean;
   readonly stopError: ApiFailure | undefined;
   readonly onStop: () => void;
+  /** What the page status says about Pause updates (`Updates paused`), if anything. */
+  readonly updatesNote?: string | undefined;
+  /** Controls beside Stop run, for example Pause updates. */
+  readonly controls?: ComponentChildren;
 }
 
 function Badge({ phase }: { readonly phase: RunPhase }): JSX.Element {
@@ -47,19 +51,24 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
           {stopping && phase.kind !== 'ended' ? (
             <span class="rst-live-head__note">Stopping…</span>
           ) : null}
+          {props.updatesNote === undefined ? null : (
+            <span class="rst-live-head__note">{props.updatesNote}</span>
+          )}
         </span>
-        <span class="rst-live-head__spacer" />
-        <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
-        {phase.kind === 'ended' ? null : (
-          <Button
-            variant="danger"
-            busy={props.busy}
-            {...(stopping ? { disabledReason: 'The run is stopping.' } : {})}
-            onClick={props.onStop}
-          >
-            {phase.kind === 'queued' ? 'Cancel queued run' : 'Stop run'}
-          </Button>
-        )}
+        <span class="rst-live-pause-actions">
+          <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
+          {props.controls}
+          {phase.kind === 'ended' ? null : (
+            <Button
+              variant="danger"
+              busy={props.busy}
+              {...(stopping ? { disabledReason: 'The run is stopping.' } : {})}
+              onClick={props.onStop}
+            >
+              {phase.kind === 'queued' ? 'Cancel queued run' : 'Stop run'}
+            </Button>
+          )}
+        </span>
       </div>
       {props.stopError === undefined ? null : <ErrorBanner error={props.stopError} />}
     </>
