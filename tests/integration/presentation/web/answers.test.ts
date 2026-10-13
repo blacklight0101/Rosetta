@@ -184,3 +184,96 @@ describe('answers and access', () => {
     expect(fileOf(test, run)).toBe(before);
   });
 });
+
+function answersOf(count: number): { cardId: string; answer: string }[] {
+  return Array.from({ length: count }, (_value, index) => ({
+    cardId: `OQ-${String(index + 1).padStart(3, '0')}`,
+    answer: 'ok',
+  }));
+}
+
+describe('PUT /api/runs/:runId/answers limits', () => {
+  it('RF-1007 refuses 51 answers with RST-2000 and takes 50 past the shape check', async () => {
+    const { test, amy, run } = await setup();
+    const before = fileOf(test, run);
+
+    const over = await amy.request({
+      method: 'PUT',
+      url: answersUrl(run),
+      payload: { answers: answersOf(51) },
+    });
+    const atLimit = await amy.request({
+      method: 'PUT',
+      url: answersUrl(run),
+      payload: { answers: answersOf(50) },
+    });
+
+    expect(over.statusCode).toBe(400);
+    expect(over.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
+    // Fifty answers pass the shape check; the run has no such questions, so it is a 404, not a 400.
+    expect(atLimit.statusCode).toBe(404);
+    expect(fileOf(test, run)).toBe(before);
+  });
+
+  it('RF-1007 accepts an answer of 4000 characters', async () => {
+    const { amy, run } = await setup();
+
+    const response = await amy.request({
+      method: 'PUT',
+      url: answersUrl(run),
+      payload: { answers: [{ cardId: 'OQ-001', answer: 'a'.repeat(4000) }] },
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('RF-1007 refuses a body one byte above 256 KiB with RST-2000 and reads one at the limit', async () => {
+    const { test, amy, run } = await setup();
+    const limit = 256 * 1024;
+    const body = (pad: number): string =>
+      `${JSON.stringify({ answers: [{ cardId: 'OQ-001', answer: 'a' }] })}${' '.repeat(pad)}`;
+    const empty = Buffer.byteLength(body(0));
+    const send = (pad: number) =>
+      amy.request({
+        method: 'PUT',
+        url: answersUrl(run),
+        payload: body(pad),
+        headers: { 'content-type': 'application/json' },
+      });
+
+    const atLimit = await send(limit - empty);
+    const recorded = fileOf(test, run);
+    const over = await send(limit - empty + 1);
+
+    // Trailing spaces are valid JSON: a body of exactly 256 KiB is read and recorded.
+    expect(atLimit.statusCode).toBe(200);
+    expect(over.statusCode).toBe(400);
+    expect(over.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
+    expect(recorded).toContain('- Answer: a\n');
+    expect(fileOf(test, run)).toBe(recorded);
+  });
+});
+
+describe('PUT /api/runs/:runId/answers and CSRF', () => {
+  it.each([
+    ['no token', false],
+    ['a wrong token', 'not-the-token'],
+  ] as const)(
+    'RF-1009 refuses a request with %s with 403 and writes nothing',
+    async (_name, csrf) => {
+      const { test, amy, run } = await setup();
+      const before = fileOf(test, run);
+
+      const response = await amy.request({
+        method: 'PUT',
+        url: answersUrl(run),
+        payload: { answers: [{ cardId: 'OQ-001', answer: 'Sneaky.' }] },
+        csrf,
+      });
+
+      expect(response.statusCode).toBe(403);
+      expect(response.json()).toMatchObject({ code: ERROR_CODES.csrfTokenInvalid });
+      expect(fileOf(test, run)).toBe(before);
+    },
+  );
+});
