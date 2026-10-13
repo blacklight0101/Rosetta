@@ -42,7 +42,10 @@ export interface UserRepository {
    * RF-1102): the failure counters and the lock are cleared and the last sign-in time is set,
    * nothing else is written. Only while the stored account is not Disabled and still has the
    * password hash and the lock of `read` (the account as the caller read it); false otherwise, so
-   * a disable, password reset or lock written by another server instance is never undone.
+   * a disable, password reset or lock written by another server instance is never undone. The lock
+   * is compared at millisecond precision (P1-149). The failure counters are not compared: a
+   * successful sign-in resets them whatever they were; only a lock, a disable or a password change
+   * refuses it.
    */
   markSignedIn(read: UserAccount, now: EpochMs): Promise<boolean>;
 }

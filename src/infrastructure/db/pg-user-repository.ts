@@ -54,10 +54,12 @@ const COUNT_FAILED_SIGN_IN =
 // P1-133, RF-1102: a successful sign-in writes the sign-in columns only (counters, lock, last
 // sign-in time), and only while the account is not Disabled and keeps the password hash that was
 // read and the lock it read, so a concurrent disable, reset or lock is never undone and the sign-in
-// is refused.
+// is refused. P1-149: the lock is compared at millisecond precision, the precision the read has; a
+// lock stored with microseconds (a database now(), a manual fix, a restore) must not refuse forever.
 const MARK_SIGNED_IN =
   'UPDATE users SET failed_sign_ins = 0, first_failed_at = NULL, locked_until = NULL, last_sign_in_at = $2::timestamptz' +
-  " WHERE id = $1 AND state <> 'Disabled' AND password_hash = $3 AND locked_until IS NOT DISTINCT FROM $4::timestamptz";
+  " WHERE id = $1 AND state <> 'Disabled' AND password_hash = $3" +
+  " AND date_trunc('milliseconds', locked_until) IS NOT DISTINCT FROM $4::timestamptz";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UNIQUE_VIOLATION = '23505';
 const foundRow = z.object({ found: z.boolean() });
