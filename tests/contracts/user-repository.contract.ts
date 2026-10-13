@@ -143,6 +143,7 @@ function conditionalTests(name: string, fresh: () => Promise<UserRepository>): v
   it.each([
     ['its state changed', { state: 'Disabled' as const }],
     ['it was updated since', { updatedAt: fixtureNow + minutes(5) }],
+    ['its password hash changed', { passwordHash: 'fake$reset' }],
   ])(`RF-1102 ${name} keeps an account whose %s`, async (_case, meanwhile) => {
     const users = await fresh();
     const account = sampleAccount();
