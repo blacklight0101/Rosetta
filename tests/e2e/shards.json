@@ -1,0 +1,46 @@
+{
+  "1": [
+    "tests/e2e/admin-snapshots.spec.ts",
+    "tests/e2e/api-calls.spec.ts",
+    "tests/e2e/journeys/admin-and-cap.spec.ts",
+    "tests/e2e/journeys/server-key-cap.spec.ts",
+    "tests/e2e/journeys/two-users.spec.ts",
+    "tests/e2e/live-run.spec.ts",
+    "tests/e2e/project-settings.spec.ts",
+    "tests/e2e/projects.spec.ts",
+    "tests/e2e/settings-daily-cap.spec.ts",
+    "tests/e2e/sign-in.spec.ts",
+    "tests/e2e/smoke.spec.ts",
+    "tests/e2e/visual/sweep-admin.spec.ts"
+  ],
+  "2": [
+    "tests/e2e/admin-audit.spec.ts",
+    "tests/e2e/admin-models.spec.ts",
+    "tests/e2e/admin-users.spec.ts",
+    "tests/e2e/harness.spec.ts",
+    "tests/e2e/history.spec.ts",
+    "tests/e2e/journeys/pipeline.spec.ts",
+    "tests/e2e/journeys/visitor.spec.ts",
+    "tests/e2e/live-coverage.spec.ts",
+    "tests/e2e/live-run-controls.spec.ts",
+    "tests/e2e/project-cost.spec.ts",
+    "tests/e2e/run-report.spec.ts",
+    "tests/e2e/settings-provider-test.spec.ts",
+    "tests/e2e/visual/sweep-account.spec.ts"
+  ],
+  "3": [
+    "tests/e2e/account-password.spec.ts",
+    "tests/e2e/admin-polish.spec.ts",
+    "tests/e2e/announce-refusals.spec.ts",
+    "tests/e2e/journeys/first-sign-in.spec.ts",
+    "tests/e2e/journeys/language-without-pack.spec.ts",
+    "tests/e2e/landing.spec.ts",
+    "tests/e2e/page-shots.spec.ts",
+    "tests/e2e/projects-runs.spec.ts",
+    "tests/e2e/run-replay.spec.ts",
+    "tests/e2e/settings-keys.spec.ts",
+    "tests/e2e/start-run.spec.ts",
+    "tests/e2e/visual/sweep-public.spec.ts",
+    "tests/e2e/visual/sweep-runs.spec.ts"
+  ]
+}

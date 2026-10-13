@@ -5,11 +5,15 @@
 # required check still reports under its own name); see environments-and-delivery.md section 6.
 name: CI
 
+# An edit of a pull request (its title or body) does not run this workflow: a job skipped for that
+# event would report "skipped", which a required check counts as passed, so it would hide a failed run
+# of the same commit, and the edit would cancel a running one. The title check has its own workflow,
+# pr-title.yml, which does run on edited.
 on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -256,25 +260,6 @@ jobs:
           fail-on-severity: high
           deny-licenses: AGPL-3.0-only, AGPL-3.0-or-later, GPL-2.0-only, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later
           comment-summary-in-pr: never
-
-  pr-title:
-    name: pr-title
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      # The title is untrusted input: it is read from the environment, never expanded into the script.
-      - run: printf '%s\n' "$TITLE" | npx --no-install commitlint
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
 
   image:
     name: image (build, container test, trivy)
