@@ -10,8 +10,9 @@ import { secondsText } from './admin-format.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1008, RF-1012, History artboard: the runs of a project, newest first, each with its start, stage,
-// commit, state, tokens and cost, the links to its report and zip, and its Delete button, which is
-// disabled with the reason while the run is queued or running.
+// commit, state, tokens and cost, the links to its run page and zip, and its Delete button, which is
+// disabled with the reason while the run is queued or running. The run page link reads "View run"
+// so that no control here shares a name with the Report controls of the run page (P1-97, P1-121).
 
 export interface HistoryRunsProps {
   readonly runs: readonly HistoryRun[];
@@ -48,7 +49,9 @@ function Open({ run }: { readonly run: HistoryRun }): JSX.Element {
   );
   return (
     <>
-      <Link href={`/runs/${encodeURIComponent(run.id)}`}>Report{hidden()}</Link>
+      <Link href={`/runs/${encodeURIComponent(run.id)}`}>
+        View run<span class="rst-visually-hidden">{` ${run.runId}`}</span>
+      </Link>
       {' · '}
       {run.queueState === 'Ended' ? (
         <a href={runDownloadPath(run.id, 'zip')} download>
