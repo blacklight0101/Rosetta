@@ -48,7 +48,7 @@ describe('GET /api/runs/:runId/events for a page that stalls during the replay',
     stalled.pause();
 
     for (let turn = 1; turn <= 3; turn += 1)
-      await events?.emit('agent.note', { turn, note: LIVE_NOTE });
+      await events?.emit('agent.turn', { turn: HISTORY + turn, note: LIVE_NOTE });
     await vi.waitFor(() => {
       expect(test.streams.size).toBe(0);
     });
