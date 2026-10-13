@@ -17,11 +17,13 @@ interface RowOptions {
   readonly queueState?: 'Queued' | 'Running' | 'Ended';
   readonly endState?: string | null;
   readonly costMicros?: number;
+  readonly reportBuilt?: boolean;
 }
 
 /** What `GET /api/runs/:runId` answers. */
 export function runRow(options: RowOptions = {}): Response {
-  const { stage = 'understand', queueState = 'Running', endState = null, costMicros = 0 } = options;
+  const { stage = 'understand', queueState = 'Running', endState = null } = options;
+  const { costMicros = 0, reportBuilt = false } = options;
   return json(200, {
     id: runUuid,
     projectId: 'p-1',
@@ -34,6 +36,7 @@ export function runRow(options: RowOptions = {}): Response {
     endedAt: null,
     commitSha: sourceState.commitSha,
     totals: { costMicros, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
+    reportBuilt,
   });
 }
 

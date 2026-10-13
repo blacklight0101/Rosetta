@@ -72,6 +72,36 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
   await expectNoSeriousViolations(page);
 });
 
+test('RF-1002 RF-504 the Report step of an ended run waits until the report is built from the page, turns done at once and is done on load', async ({
+  page,
+}) => {
+  await openStartPage(page);
+  await page.getByLabel('Scan only').check();
+  await startAndOpenLiveRun(page);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  const build = page.getByRole('button', { name: 'Build report' });
+  await expect(build).toBeEnabled();
+  await expect(step(page, 'Report')).toContainText('waiting');
+  // A mark on the document that a reload would lose: the step must turn done on this same page.
+  await page.evaluate(() => {
+    document.body.dataset['sameDocument'] = 'yes';
+  });
+
+  await build.click();
+
+  await expect(page.getByRole('link', { name: 'Open the run replay' })).toBeVisible();
+  await expect(step(page, 'Report')).toContainText('done');
+  expect(await page.evaluate(() => document.body.dataset['sameDocument'])).toBe('yes');
+  await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
+
+  await page.reload();
+
+  await expect(step(page, 'Report')).toContainText('done');
+  await expect(step(page, 'Report')).toHaveAttribute('data-state', 'done');
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+});
+
 test('RF-1002 RF-1004 the stepper of an understand run moves from Understand to Verify with the agents done and the claims checked', async ({
   page,
 }) => {
