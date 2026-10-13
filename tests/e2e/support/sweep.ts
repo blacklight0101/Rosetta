@@ -94,6 +94,70 @@ async function expectTablesFitTheirBox(page: Page): Promise<void> {
   expect(wide, `${page.url()}: a table scrolls sideways at 360 px`).toEqual([]);
 }
 
+/** One cell of a stacked table: its column, its data-label and the fonts a reader sees. */
+const stackedCells = z.array(
+  z.object({
+    table: z.string(),
+    column: z.string(),
+    label: z.string().nullable(),
+    action: z.boolean(),
+    empty: z.boolean(),
+    labelFont: z.string(),
+    labelWeight: z.string(),
+    bodyFont: z.string(),
+    bodyWeight: z.string(),
+  }),
+);
+
+// A string, because the end-to-end project is compiled without the DOM types. A stacked table names
+// each cell by its column (`data-label`) and shows the label in the font of the column heading.
+const stackedCellsScript = `Array.from(document.querySelectorAll('table.rst-table--stack, table.stacked'))
+  .flatMap((table) => {
+    const name = table.getAttribute('aria-label') ?? table.querySelector('caption')?.textContent?.trim() ?? '(unnamed)';
+    const heads = table.tHead?.rows[0]?.cells ?? [];
+    return Array.from(table.querySelectorAll('td')).map((cell) => {
+      const head = heads[cell.cellIndex];
+      const label = getComputedStyle(cell, '::before');
+      const body = getComputedStyle(document.body);
+      return {
+        table: name,
+        column: head?.textContent?.trim() ?? '',
+        label: cell.getAttribute('data-label'),
+        action: cell.querySelector('button, a') !== null,
+        empty: cell.textContent?.trim() === '' && cell.children.length === 0,
+        labelFont: label.fontFamily,
+        labelWeight: label.fontWeight,
+        bodyFont: body.fontFamily,
+        bodyWeight: body.fontWeight,
+      };
+    });
+  })`;
+
+/**
+ * At 360 px every cell of a stacked table that holds text is named by its column: its data-label is
+ * the heading of its column, except an action cell (a button or a link) and an empty cell, which have
+ * none. The label is in the page font, so a monospace cell does not make its label monospace.
+ */
+async function expectStackedCellsNamed(page: Page): Promise<void> {
+  const cells = stackedCells.parse(await page.evaluate(stackedCellsScript));
+  const unnamed = cells.filter((cell) => cell.label === null && !cell.action && !cell.empty);
+  const mislabelled = cells.filter((cell) => cell.label !== null && cell.label !== cell.column);
+  const fonts = cells.filter(
+    (cell) =>
+      cell.label !== null &&
+      (cell.labelFont !== cell.bodyFont || cell.labelWeight !== cell.bodyWeight),
+  );
+  const describe = (list: readonly { table: string; column: string }[]): string[] =>
+    list.map((cell) => `${cell.table}: ${cell.column}`);
+  expect(describe(unnamed), `${page.url()}: a cell of a stacked table has no data-label`).toEqual(
+    [],
+  );
+  expect(describe(mislabelled), `${page.url()}: a data-label is not its column heading`).toEqual(
+    [],
+  );
+  expect(describe(fonts), `${page.url()}: a data-label is not in the body font`).toEqual([]);
+}
+
 /** The checks of the sweep on the page as it is now, once its colours have stopped moving. */
 // RNF-010
 export async function expectPageInView(page: Page, kind: PageKind = 'app'): Promise<void> {
@@ -104,7 +168,10 @@ export async function expectPageInView(page: Page, kind: PageKind = 'app'): Prom
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
   await expectNoSidewaysScroll(page);
-  if ((page.viewportSize()?.width ?? 0) <= phoneWidth) await expectTablesFitTheirBox(page);
+  if ((page.viewportSize()?.width ?? 0) <= phoneWidth) {
+    await expectTablesFitTheirBox(page);
+    await expectStackedCellsNamed(page);
+  }
 }
 
 /**
