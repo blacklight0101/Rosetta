@@ -21,7 +21,7 @@ const optionsSchema = z.object({
   cloudConsent: z.boolean().optional(),
 });
 
-/** The options as the manifest records them; `areas` only when some were named. */
+/** The options as the manifest records them; `areas` only when the request sent it, as sent (empty kept). */
 export function understandOptionsOf(request: {
   readonly areas?: readonly string[] | undefined;
   readonly cloudConsent?: boolean | undefined;

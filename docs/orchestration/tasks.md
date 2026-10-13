@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 141 | 52 | 74 | 15 | 0 | 81 | 52 | 8 | 84 | 0 |
+| P1 Milestone slice (M1) | 146 | 55 | 76 | 15 | 0 | 86 | 52 | 8 | 89 | 0 |
 | P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
 | P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **171** | **57** | **92** | **22** | **0** | **87** | **73** | **11** | **88** | **0** |
+| **Total** | **176** | **60** | **94** | **22** | **0** | **92** | **73** | **11** | **93** | **0** |
 
 ## Conventions for every card
 
@@ -838,7 +838,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-58
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/support/network-policy.ts`; `tests/integration/tooling/network-block.test.ts`.
 - **Do**: refuse a pipe path with a `.` or `..` segment after the `\\.\`, `\\?\` or `\??\` prefix (after normalisation it can reach a remote pipe) and add the form to the remote-pipe cases; replace the double cast on the numeric-string port test with `Reflect.apply`.
 - **Delivers**: the policy change and its tests.
@@ -934,7 +934,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-29
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-401 scenario 2; `docs/providers.md` section 2.
 - **Do**: at run start make one tiny call through the guards to every Ollama provider the run uses, so a stopped server or a missing model ends the run before any agent starts, with RST-1507 or RST-1508 and the fix command.
 - **Delivers**: the start check and its tests.
@@ -1066,7 +1066,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-32
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/cards/write-or-restore.ts`; `docs/data-model.md` 3.7.
 - **Do**: a logger that throws while reporting a failed restore must not replace the original refusal (catch and keep the refusal); state in the doc comment and data-model 3.7 that card writes to one run folder must be serialised by the caller.
 - **Delivers**: the change and its test.
@@ -1618,7 +1618,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-116
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the settings range tests and the `OpenWorkspace` tests from #267; `src/application/projects/project-settings.ts`; DEC-117; the verdict 6138390870 on #267.
 - **Do**: the missing-value test asserts only the field name, not the error code, and skips the two budget fields (the run cost cap and the run tokens): assert field and code, and cover both budget fields. `maxCost` is duplicated in the tests (two copies of the same constant): keep one, exported from a test support file.
 - **Delivers**: the stricter test and the single constant.
@@ -1630,7 +1630,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-95, P1-97
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/LiveRunPage.tsx` and the stepper component from #268; the run read route and its contract in `web/src/api/`; `docs/design/board/LiveRun.dc.html`; the verdict 6139949379 on #268.
 - **Do**: the Report step of the stage stepper shows done as soon as a report exists for the run, not only when the run events say so. The page needs a report-exists signal: add it to the run read model (or to the file listing the page already reads) and set it after the build of P1-97 without a page reload. Test the three states: no report (waiting), a report built from the page (done at once) and a report built earlier (done on load).
 - **Delivers**: the signal, the stepper change and unit and E2E tests.
@@ -1642,7 +1642,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-46
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `tests/e2e/journeys/`; `tests/e2e/support/` (the harness has no server key); `docs/process-flows.md` flow 5; the verdicts on #271.
 - **Do**: administrator caps apply only to runs on a server key, and the E2E harness has no server key, so the cap journey of P1-46 cannot cover them. Give the harness a server key for the fake provider (set in the test environment only, never printed) and add a journey: the administrator sets a cap, a user starts a run on the server key, the run stops at the cap and the user and server totals show it.
 - **Delivers**: the harness server key and the journey.
@@ -1666,7 +1666,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-86
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/sign-in.ts`; `src/application/ports/user-repository.ts`; `src/infrastructure/db/pg-user-repository.ts` and `memory-user-repository.ts`; `tests/contracts/user-repository.contract.ts` and `failed-sign-in-counter.contract.ts`; `tests/integration/application/sign-in-failure-races.test.ts`; `tests/integration/infrastructure/db/pg-user-repository-hardening.test.ts`; `tests/support/postgres.ts`; the verdict 6141942123 on #291.
 - **Do**: **priority (security).** A successful sign-in writes the whole account row back, so it can undo a disable that an administrator made at the same moment: a disabled account signs in once more or becomes enabled again. Make the success write conditional on the account still being enabled and on the row not having changed, or write only the columns that sign-in owns (failure counter, lock, last sign-in), and test it on PostgreSQL with two connections: a disable that lands between the read and the success write keeps the account disabled and the sign-in is refused. Also test the lock-expiry boundary (`<=`: a lock that ends exactly now no longer locks) and add a parallel `SignIn` test on PostgreSQL (several sign-ins of one account at once, correct and wrong passwords mixed) that checks the failure counter and the lock.
 - **Delivers**: the conditional or column-scoped success write in both repositories and the contract, the boundary test and the parallel PostgreSQL tests.
@@ -1678,7 +1678,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-124
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/unit/infrastructure/guards/secret-masker.test.ts`; `tests/integration/infrastructure/guards/secret-masker-performance.test.ts`; `docs/security/threat-model.md` (secret shapes); the verdict 6142376462 on #285.
 - **Do**: three shapes still leak in a command line: a quoted executable path (`"C:\Program Files\tool.exe" --password x`), a quoted database name before the credentials, and a redirect placed before the options (`> out.txt --token x`). Write a failing case for each, with the secret value and a harmless neighbour, then close the gap without making the masker slower on the performance fixture and without masking the harmless neighbour.
 - **Delivers**: the three masker fixes and their tests.
@@ -1690,7 +1690,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-126
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/cards/answers-file.ts` and `answers-sections.ts`; `tests/unit/infrastructure/cards/answers-line-ends.test.ts`, `answers-sections-crlf.test.ts` and `answers-file.test.ts`; the verdict 6141894338 on #286.
 - **Do**: an `answers.md` that holds only a byte-order mark loses the mark when an answer is recorded, and a file with mixed line ends (some `\r\n`, some `\n`) is rewritten in one style without a rule. Write a failing test for each, then keep the mark of a BOM-only file and keep each existing line's own ending, using the ending of the preceding line for new lines.
 - **Delivers**: the two fixes and their tests.
@@ -1750,7 +1750,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-98, P1-81, P1-127, P1-132, P1-103
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/understand/understand-options.ts`; `src/application/use-cases/start-run.ts`; `tests/unit/application/verifier/citation-check.test.ts`; `src/application/runs/run-queue.ts`; `tests/support/fs-trap.ts`; `tests/e2e/support/`; `tests/unit/infrastructure/providers/ollama/parse-text-answer-speed.test.ts` and the other speed bounds from #300; the verdicts 6144652613 (#302), 6144312780 (#299), 6144307484 (#298), 6142032481 (#292) and 6144534207 (#300).
 - **Do**: P1-98: add the citation cases 5-4 and 3-3 (a range that ends before it starts, and a one-line range; a mutation of the range check survives today) and fix the stale comments at `understand-options.ts:24` and `start-run.ts:31`. P1-81: add a one-line comment on `isClosing` at `run-queue.ts:134` saying why the flag exists. P1-127: reword the comment in `tests/support/fs-trap.ts` as the verdict asks. P1-132: no committed test needs the transition wait of the harness, so remove the wait or say in a comment which test needs it. P1-103: replace the wall-clock speed bounds, including the 250 ms bound on the 500k case, with a check that does not depend on machine load (compare the time of the large input with a small one, or count operations).
 - **Delivers**: the two tests, the comment fixes and the load-insensitive speed checks.
@@ -1768,6 +1768,66 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the faster scan test and the isolated E2E tests.
 - **Done when**: the scan test finishes under 2 s on the Windows runner; `live-coverage.spec.ts` is green twenty times in a row on desktop-dark; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RNF-003, RNF-005, P1-13 (CI flakes of 2026-10-13).
+
+### P1-142 - Follow-up: secret masking gaps after P1-134
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-134
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/unit/infrastructure/guards/secret-masker.test.ts`; `tests/support/secret-command-shapes.ts`; the verdict 6148899278 on #326.
+- **Do**: three gaps. A redirect before the options still leaks when it is `&>` or `>|` (`mysql &> out.sql -u root -pSECRET` is not masked): mask those as `>` is masked. `--token Bearer <value>` masks only the word `Bearer` and leaves the value visible: mask the value after a scheme word. Nothing tests the lookbehind of `optionStart`: add `x--token abc` and `---token abc` as innocent texts that stay visible.
+- **Delivers**: the masker changes and their tests.
+- **Done when**: the three shapes are masked and the innocent texts stay visible; removing the lookbehind fails a test; the speed bound of the masker still holds; `npm run verify` green.
+- **Refs**: RNF-005, RF-408, P1-134 (verdict 6148899278 on #326).
+
+### P1-143 - Follow-up: sign-in gaps after P1-133
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-133
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/accounts/sign-in.ts`; the account repositories (`src/infrastructure/db/`); the sign-in tests; the verdict on #322.
+- **Do**: `markSignedIn` does not guard against a lock set by another server instance between the read and the write: make the write conditional on the account state it read, as the disable path does, and test it with two instances. Add the missing test that the audit row carries the reason `account-changed` when that happens. Shorten the long comment in `sign-in.ts` to the why.
+- **Delivers**: the guarded write, the two tests and the comment.
+- **Done when**: a sign-in never clears a lock or a disable written after its read (tested on both repositories); the audit reason is tested; `npm run verify` green.
+- **Refs**: RF-1100, RF-1102, RNF-005, P1-133 (verdict on #322).
+
+### P1-144 - Follow-up: small gaps after the 2026-10-13 merges
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-64, P1-72, P1-83, P1-129, P1-131, P1-140
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/unit/support/network-policy.test.ts`; `src/infrastructure/cards/write-or-restore.ts`; `tests/e2e/support/caps-lock.ts`; `src/application/understand/understand-options.ts`; `web/src/` (the `transitions.ts` comment); the verdicts on #331, #328, #321, #320, #308 and #333.
+- **Do**: P1-64: add a lone `.` segment and a trailing `..` to the Windows pipe path cases. P1-83: a logger that throws synchronously still replaces the refusal: keep the refusal and test it. P1-129: use the project import alias the verdict names. P1-131: the minor points of the stale-lock takeover in `caps-lock.ts` from the verdict. P1-140: the `transitions.ts` comment says `background-color` where the CSS uses `background`; the header of `understand-options.ts` still says "every area when absent". P1-72: `run-understand.ts` is at the 300-line limit; move one helper out so the next change has room.
+- **Delivers**: the tests and the small fixes above.
+- **Done when**: each item is done or answered in the PR with the reason; the new tests fail on the mutation of the code they protect; `npm run verify` green.
+- **Refs**: RNF-005, RF-1007, P1-64, P1-72, P1-83, P1-129, P1-131, P1-140 (verdicts on #331, #328, #321, #320, #308, #333).
+
+### P1-145 - Follow-up: more test flakes seen on 2026-10-13
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-141
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/start-run.spec.ts` (lines 171 and 212); `tests/e2e/live-run.spec.ts` (line 155); `tests/e2e/api-calls.spec.ts`; `tests/e2e/page-shots.spec.ts`; `tests/integration/infrastructure/events/jsonl-event-log.test.ts`; the CI logs of the P1-64 runs on #331.
+- **Do**: `start-run.spec.ts:171` and `live-run.spec.ts:155` failed once each in CI and passed on a re-run; `api-calls.spec.ts` (RF-1011) failed once under local load; `page-shots` misses its `/healthz` wait on a busy machine; `jsonl-event-log` times out under full-suite load. Find the shared cause (shared accounts, a fixed wait, a server start bound) and fix each without retries. `start-run.spec.ts:212` fails on every local run because of a stale "no OpenAI key" assumption: make it independent of the local `.env`.
+- **Delivers**: the fixed tests.
+- **Done when**: each named test is green twenty times in a row with four workers; `start-run.spec.ts:212` passes locally with and without a key in `.env`; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RNF-003, RNF-005, P1-141 (CI flakes of 2026-10-13).
+
+### P1-146 - Follow-up: CI waste on pull request edits and uneven e2e shards
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-02
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `.github/workflows/ci.yml`; `tests/integration/tooling/workflows.test.ts`; `playwright.config.ts`; `docs/environments-and-delivery.md` section 6; the shard times on #325.
+- **Do**: the `edited` event of `pull_request` re-runs the whole CI when only the body changes and cancels the running run: run only the pr-title job on `edited`, and keep the full run on `opened`, `synchronize` and `reopened`. Shard 1 of the e2e job takes about 4 minutes while shard 3 takes under 2, because Playwright splits by count in file order: balance the shards (move the long journey and administration specs apart, or split by duration) so that the slowest shard is under about 3 minutes.
+- **Delivers**: the workflow change, its test and the balanced shards.
+- **Done when**: editing a pull request body runs only pr-title; the slowest e2e shard is under about 3 minutes on two runs; the `e2e` aggregate stays the required check; `npm run verify` green.
+- **Refs**: RNF-001, DEC-42, P1-02 (CI time work of 2026-10-13, #297, #304, #307, #325).
 
 ---
 

@@ -1,10 +1,12 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import type {
+  LlmCallContext,
   LlmProvider,
   LlmRequest,
   LlmResponse,
 } from '../../src/application/ports/llm-provider.js';
 import { ERROR_CODES } from '../../src/domain/errors/codes.js';
+import { preflightAgentTaskId } from '../../src/application/understand/reader-preflight.js';
 import { ProviderCallError } from '../../src/infrastructure/providers/provider-call-error.js';
 
 // ADR-008, RF-407: the model of the end-to-end test server. It answers every call with a short text
@@ -14,7 +16,8 @@ import { ProviderCallError } from '../../src/infrastructure/providers/provider-c
 // still working when a second run is asked for and that one waits in the queue (P1-34); the later
 // calls of the run answer at once, so a run of several areas takes no longer than one hold. A run
 // is told apart by its trace id (one per run): the run key has one-second resolution and is shared
-// by every user of the server.
+// by every user of the server. The start check of an Ollama reader (RF-401) is not a reader's call:
+// the hold goes to the first one.
 
 export class AnsweringProvider implements LlmProvider {
   private readonly failing: ReadonlySet<string>;
@@ -47,11 +50,11 @@ export class AnsweringProvider implements LlmProvider {
     };
   }
 
-  private holdsFirstReaderCall({ role, runId, traceId }: LlmRequest['context']): boolean {
+  private holdsFirstReaderCall({ role, runId, traceId, agentTaskId }: LlmCallContext): boolean {
     if (this.holdUnderstandMs <= 0 || role !== 'reader' || !runId.endsWith('-understand')) {
       return false;
     }
-    if (this.held.has(traceId)) return false;
+    if (agentTaskId === preflightAgentTaskId || this.held.has(traceId)) return false;
     this.held.add(traceId);
     return true;
   }

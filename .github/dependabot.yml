@@ -1,12 +1,15 @@
 # Weekly updates for npm packages and GitHub Actions, minor and patch grouped (DEC-42).
 # Commit messages use a lower-case Conventional Commits prefix so pull request titles pass commitlint
 # (the pr-title check): "build(deps): bump ..." for npm and "ci(deps): bump ..." for actions.
+# A version is proposed only once it is two weeks old (DEC-125), through the cooldown of each entry.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     commit-message:
       prefix: build
       include: scope
@@ -27,6 +30,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     commit-message:
       prefix: ci
       include: scope

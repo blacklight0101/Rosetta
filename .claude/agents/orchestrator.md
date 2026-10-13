@@ -43,7 +43,7 @@ Rules:
   with the updated totals, and gate releases; merge it once CI is green; always before the session ends.
 - **Owner checks.** Verdict lines marked "owner check pending" do not block the merge; copy each into the owner's
   agenda in `handoff.md` with the card and the pull request (DEC-111).
-- **Gates.** G-07 (host account and secrets) holds P1-55; G-04 holds only the live-check parts of P1-25, P1-26 and
+- **Gates.** G-08 (local acceptance, DEC-133) holds P1-49, P1-50 and P1-55; G-07 (host account and secrets) holds P1-55; G-04 holds only the live-check parts of P1-25, P1-26 and
   P1-47, so the rest of those cards runs.
 - **Fail (retry ladder, DEC-115).** FAIL 1: send the findings back to the same builder (keep its context). FAIL 2:
   re-run once with a fresh builder one band up (haiku to sonnet, sonnet to opus; an opus card stays on opus), and its

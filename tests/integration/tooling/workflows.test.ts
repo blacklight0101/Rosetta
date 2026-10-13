@@ -1,18 +1,27 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ci, ciJob, jobs, load, runLines, violations } from '../../support/workflow-files.js';
+import {
+  ci,
+  ciJob,
+  jobIds,
+  jobs,
+  load,
+  runLines,
+  violations,
+  workflowText,
+} from '../../support/workflow-files.js';
 
 // Workflow hardening rules of environments-and-delivery.md section 6 and the hard-rule greps of
 // docs/orchestration/README.md section 5.1. Workflows are checked as text: no YAML parser is in the
 // package baseline.
 
 describe('GitHub Actions workflows: files', () => {
-  it('RNF-001 ships the CI and CodeQL workflows and Dependabot configuration', async () => {
+  it('RNF-001 ships the CI, CodeQL and pull request title workflows and Dependabot configuration', async () => {
     const names = (await load()).map((workflow) => workflow.name);
     const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
 
-    expect(names).toEqual(['ci.yml', 'codeql.yml']);
+    expect(names).toEqual(['ci.yml', 'codeql.yml', 'pr-title.yml']);
     expect(dependabot).toContain('package-ecosystem: npm');
     expect(dependabot).toContain('package-ecosystem: github-actions');
   });
@@ -47,12 +56,11 @@ describe('GitHub Actions workflows: files', () => {
     expect(await ciJob('verify')).not.toContain('playwright install');
   });
 
-  it('DEC-35 the pull request title reaches commitlint through env: TITLE and audit gets today', async () => {
-    const text = await ci();
+  it('DEC-35 the pull request title reaches commitlint through env: TITLE', async () => {
+    const text = await workflowText('pr-title.yml');
 
     expect(text).toContain('TITLE: ${{ github.event.pull_request.title }}');
     expect(text).toContain('"$TITLE"');
-    expect(text).toContain('--today "$(date -u +%F)"');
   });
 });
 
@@ -68,11 +76,30 @@ describe('GitHub Actions workflows: e2e shards', () => {
 
 describe('GitHub Actions workflows: triggers', () => {
   it('RNF-001 push runs only on main so a pull request commit is not built twice', async () => {
-    const found = await violations(({ lines }) =>
-      /^ {2}push:\n {4}branches: \[main\]$/mu.test(lines.join('\n')) ? [] : ['push trigger'],
-    );
+    expect(await ci()).toMatch(/^ {2}push:\n {4}branches: \[main\]$/mu);
+  });
+});
 
-    expect(found).toEqual([]);
+describe('GitHub Actions workflows: edited pull requests', () => {
+  // A job skipped by an if: on an edited event reports "skipped", which a required check counts as
+  // passed and which would replace the result of the same commit. So ci.yml does not listen for
+  // edited at all, and the title check, the only job an edit needs, has its own workflow.
+  const types = (text: string): string[] =>
+    (/^ {4}types: \[([^\]]*)\]$/mu.exec(text)?.[1] ?? '').split(', ');
+
+  it('RNF-001 an edit of a pull request runs only the pr-title check', async () => {
+    expect(types(await ci())).toEqual(['opened', 'synchronize', 'reopened']);
+    expect(types(await workflowText('pr-title.yml'))).toEqual([
+      'opened',
+      'synchronize',
+      'reopened',
+      'edited',
+    ]);
+  });
+
+  it('RNF-001 the pr-title check is reported by its own workflow and not by ci.yml', async () => {
+    expect(await jobIds('ci.yml')).not.toContain('pr-title');
+    expect(await jobIds('pr-title.yml')).toEqual(['pr-title']);
   });
 });
 
@@ -133,6 +160,10 @@ describe('GitHub Actions workflows: no lint cache', () => {
 });
 
 describe('GitHub Actions workflows: limits', () => {
+  it('DEC-35 the audit job gets today as its date', async () => {
+    expect(await ciJob('audit')).toContain('--today "$(date -u +%F)"');
+  });
+
   it('RNF-001 every job has a timeout-minutes', async () => {
     const found = await violations(({ lines }) =>
       jobs(lines)
@@ -195,5 +226,13 @@ describe('GitHub Actions workflows: compose smoke job', () => {
 
     expect(text).toContain('npx playwright install --with-deps chromium');
     expect(text).toMatch(/timeout-minutes: \d+/u);
+  });
+});
+
+describe('Dependabot configuration', () => {
+  it('DEC-125 Dependabot waits two weeks before it proposes a new version', async () => {
+    const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
+
+    expect(dependabot.match(/cooldown:\n\s+default-days: 14\n/gu) ?? []).toHaveLength(2);
   });
 });

@@ -64,7 +64,9 @@ test('RF-1011 errors and retries are highlighted, filtered and reached with Next
 
   await page.goto(`${livePath}/calls`);
 
-  await expect(rows(page)).toHaveCount(6);
+  // Three reader calls, the start check of the Ollama reader (RF-401, one call) and the three
+  // appended problem calls.
+  await expect(rows(page)).toHaveCount(7);
   await expect(rows(page).filter({ hasText: 'RST-1504' })).toHaveAttribute('data-problem', 'true');
   await expect(rows(page).filter({ hasText: 'RST-1505' })).toHaveAttribute('data-problem', 'true');
   const summary = page.getByRole('region', { name: 'Summary per provider and role' });

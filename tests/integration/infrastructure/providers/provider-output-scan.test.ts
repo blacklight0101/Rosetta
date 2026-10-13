@@ -72,11 +72,14 @@ describe('provider output scan', () => {
       priceCall: () => microUsd(0n),
       transcripts: true,
     });
-    for (const [index, { text }] of secretCases.entries()) {
+    // One agent task for every case: each new task costs a transcript file of its own, the slowest
+    // disk operation of the call log on Windows (P1-141). The masking is per line, so it is still
+    // checked for every case.
+    for (const { text } of secretCases) {
       const request = contractRequest();
       await provider.complete({
         ...request,
-        context: { ...request.context, agentTaskId: `task-${String(index)}`, callId: text },
+        context: { ...request.context, agentTaskId: 'task-scan', callId: text },
         model: text,
         system: text,
         messages: [{ role: 'user', content: text }],
