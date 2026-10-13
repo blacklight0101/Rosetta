@@ -58,7 +58,10 @@ it('RF-1001 the estimate of the default selection leaves the third-party areas o
 });
 
 it('RF-1001 starting the run sends the own areas only', async () => {
-  const { calls } = renderStart({ ...answers, [`POST ${runsPath}`]: runAnswer });
+  const { calls } = renderStart({
+    ...answers,
+    [`POST ${runsPath}`]: runAnswer('understand', null),
+  });
   await ready();
   await waitFor(() => {
     expect(calls.map((call) => call.path)).toContain(defaultPath);
