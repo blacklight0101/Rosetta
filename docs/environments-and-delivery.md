@@ -152,11 +152,14 @@ did not pay for themselves, so none is used:
   one file can create an error in another that the cache then reports as clean. Lint always runs in full.
 
 **Documentation-only pull requests** (added 2026-10-13). A first job, `changes`, compares the pull request with its
-base using plain git (`git diff --name-only base...head`, full history, no third-party action) and sets
-`code=false` only when every changed file is documentation: `*.md` anywhere or anything under `docs/`, except files
-under `src/`, `tests/` or `prompts/` (the prompts are Markdown the product reads). A push to `main` always counts as
-code. The jobs `verify`, `e2e-shard`, `image` and `compose-smoke` always run and need `changes`; when `code` is not
-`true` their heavy steps are skipped by a step-level `if:`, never a job-level one, because a skipped matrix job
+base using plain git (`git diff --name-only --no-renames base...head`, full history, no third-party action;
+`--no-renames` lists both paths of a moved file, so moving code or a prompt into `docs/` still counts as code) and
+sets `code=false` only when every changed file is documentation: anything under `docs/`, or a `*.md` file at the
+repository root. Markdown anywhere else (`src/`, `tests/`, `prompts/`, `templates/`, `scripts/` and so on) counts as
+code, because some of it ships in the image or is read at run time. A push to `main` always counts as code. The jobs
+`verify`, `e2e-shard`, `image` and `compose-smoke` always run and need `changes`. Their heavy steps run unless `code`
+is exactly `false` (`needs.changes.outputs.code != 'false'`), so a missing or unexpected value fails closed. The
+steps are skipped by a step-level `if:`, never a job-level one, because a skipped matrix job
 reports an unexpanded name and the required checks `verify (ubuntu-latest)` and `verify (windows-latest)` would
 never arrive. The `e2e` check stays green, since shards whose steps were skipped still succeed. For a
 documentation-only change the Linux `verify` job still runs `npm run format:check` and the tests that read the
