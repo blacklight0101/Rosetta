@@ -63,3 +63,9 @@ export function signInWith(setup: Setup, hasher: PasswordHasher): SignIn {
 export async function lockEvents(setup: Setup): Promise<number> {
   return (await setup.auditLog.list({ since: 0, action: 'auth.locked' })).length;
 }
+
+/** The detail of the one refused `auth.sign_in` audit row, or undefined when there is not one. */
+export async function refusalDetail(setup: Setup): Promise<unknown> {
+  const rows = await setup.auditLog.list({ since: 0, action: 'auth.sign_in' });
+  return rows.length === 1 ? rows[0]?.detail : undefined;
+}
