@@ -44,15 +44,20 @@ const keyStart = '(?<![A-Za-z0-9])';
 const mysqlValue = String.raw`(?:"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s"'-]\S*)`;
 const mysqlOption = (name: string): string =>
   String.raw`(?=(?<${name}>[ \t]+-\S+(?:[ \t]+${mysqlValue})?))\k<${name}>`;
-// A positional word may be quoted (`"my db"`) or be a redirect with its file (`> out.sql`, `2> err`).
+// A positional word may be quoted (`"my db"`) or be a redirect with its file (`> out.sql`, `2> err`,
+// `&> all`, `>| force`).
 const mysqlQuoted = String.raw`"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'`;
-const mysqlRedirect = String.raw`[0-9]?(?:<|>>?)[ \t]{0,16}`;
+const mysqlRedirect = String.raw`[0-9]?(?:&>>?|>\||<|>>?)[ \t]{0,16}`;
 const mysqlWord = String.raw`[ \t]+(?:${mysqlRedirect})?(?:${mysqlQuoted}|[^\s\-,;"'<>|&=][^\s,;"'<>|&]*)(?=[ \t])`;
 // At most three positional words, each followed by at most 16 options, anywhere before `-p`.
 const mysqlArguments = String.raw`(?:${mysqlOption('first')}){0,16}(?:${mysqlWord}(?:${mysqlOption('later')}){0,16}){0,3}`;
 // The value of a long option such as `--password <value>`: one quoted value (to its closing quote or
 // the end of the line) or a bare word that does not start with `-`, a quote or a shell operator.
 const optionValue = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s\-"'<>|&;][^\s"'<>|&;]*)`;
+// A scheme word before the value of `--token` stays visible: `--token Bearer <value>`.
+// Without one, a scheme word in front of an already masked value is not taken for the value.
+const tokenSchemeWord = '(?:bearer|basic|token|digest)';
+const tokenScheme = String.raw`(?:${tokenSchemeWord}[ \t]{1,16}(?=\S)|(?!${tokenSchemeWord}[ \t]{1,16}\[MASKED:))`;
 // Not preceded by a letter, digit or dash, so `x--token` and `---token` are left alone.
 const optionStart = '(?<![A-Za-z0-9-])--';
 // A quoted part runs to its closing quote (or the end of the line), spaces included; the token goes
@@ -157,7 +162,7 @@ const defaultRules: readonly MaskRule[] = [
     // `--token <value>` and `--token=<value>` on a command line.
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>${optionStart}token(?:[ \t]{1,16}|=))${notMasked}${optionValue}`,
+      String.raw`(?<keep>${optionStart}token(?:[ \t]{1,16}|=)${tokenScheme})${notMasked}${optionValue}`,
       'gi',
     ),
   },
