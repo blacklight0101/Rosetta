@@ -4,6 +4,7 @@ import {
   markManifestStarted,
   recordManifestBlockedCall,
   recordManifestCodeMap,
+  recordManifestContext,
   recordManifestMasking,
   recordManifestSkippedLinks,
   recordManifestSource,
@@ -142,6 +143,61 @@ describe('run manifest of an egress', () => {
       error: 'already-ended',
     });
     expect(recordManifestBlockedCall(ended.value)).toEqual({ ok: false, error: 'already-ended' });
+  });
+});
+
+describe('run manifest of a role', () => {
+  it('RF-401 records the context size of a role and how it was chosen (DEC-114)', () => {
+    const manifest = sampleManifest();
+
+    expect(
+      recordManifestContext(manifest, 'reader', {
+        contextTokens: 16384,
+        contextSource: 'auto-fit',
+      }),
+    ).toEqual({
+      ok: true,
+      value: {
+        ...manifest,
+        roles: {
+          ...manifest.roles,
+          reader: { ...manifest.roles['reader'], contextTokens: 16384, contextSource: 'auto-fit' },
+        },
+      },
+    });
+  });
+});
+
+describe('run manifest of a role that is not changed', () => {
+  it('RF-401 returns the same manifest when the value is already recorded', () => {
+    const recorded = recordManifestContext(sampleManifest(), 'reader', {
+      contextTokens: 8192,
+      contextSource: 'fixed',
+    });
+    if (!recorded.ok) throw new Error('The manifest did not change');
+
+    expect(
+      recordManifestContext(recorded.value, 'reader', {
+        contextTokens: 8192,
+        contextSource: 'fixed',
+      }),
+    ).toEqual({ ok: true, value: recorded.value });
+  });
+
+  it('RF-401 does not change a role the manifest does not list, or a manifest that has ended', () => {
+    const manifest = sampleManifest();
+    const context = { contextTokens: 8192, contextSource: 'fixed' } as const;
+    expect(recordManifestContext(manifest, 'verifier', context)).toEqual({
+      ok: true,
+      value: manifest,
+    });
+
+    const ended = endManifest(manifest, 'Completed', '2026-10-12T10:05:00.000Z');
+    if (!ended.ok) throw new Error('The manifest did not end');
+    expect(recordManifestContext(ended.value, 'reader', context)).toEqual({
+      ok: false,
+      error: 'already-ended',
+    });
   });
 });
 

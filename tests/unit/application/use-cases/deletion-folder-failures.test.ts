@@ -64,7 +64,9 @@ describe('DeleteProject when the folder cannot be removed', () => {
       userId: userAmy.userId,
       data: { folder: `projects/${project.id}` },
     });
-    expect(logger.entries[0]?.message).not.toContain('nothing was deleted');
+    expect(logger.entries[0]?.message).toBe(
+      `The folder projects/${project.id} could not be removed; its rows are already deleted, so remove the folder by hand.`,
+    );
   });
 });
 

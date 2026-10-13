@@ -25,6 +25,10 @@ export interface ManifestRole {
   readonly modelVersion: string | null;
   /** The Ollama digest. */
   readonly modelDigest: string | null;
+  /** The Ollama context size sent as `num_ctx`, known after the first call (DEC-114). */
+  readonly contextTokens: number | null;
+  /** How the context size was chosen (`auto-fit`, `auto-floor`, ..., or `fixed`). */
+  readonly contextSource: string | null;
   readonly toolMode: string;
   readonly maxOutputTokens: number;
   readonly temperature: number | null;
@@ -223,6 +227,25 @@ export function recordManifestAgentTask(
     ? manifest.agentTasks.map((each) => (each.agentTaskId === task.agentTaskId ? task : each))
     : [...manifest.agentTasks, task];
   return ok({ ...manifest, agentTasks });
+}
+
+/** Records the Ollama context size of a role and how it was chosen (RF-401, DEC-114). */
+// RF-401
+export function recordManifestContext(
+  manifest: RunManifest,
+  role: string,
+  context: { readonly contextTokens: number; readonly contextSource: string },
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  const current = manifest.roles[role];
+  if (current === undefined) return ok(manifest);
+  if (
+    current.contextTokens === context.contextTokens &&
+    current.contextSource === context.contextSource
+  )
+    return ok(manifest);
+  const changed = { ...current, ...context };
+  return ok({ ...manifest, roles: { ...manifest.roles, [role]: changed } });
 }
 
 /** Records the exact model version a role's provider reported, once it is known (RNF-004). */

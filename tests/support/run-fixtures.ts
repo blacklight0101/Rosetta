@@ -1,4 +1,4 @@
-import type { RunManifest } from '../../src/domain/runs/run-manifest.js';
+import type { ManifestRole, RunManifest } from '../../src/domain/runs/run-manifest.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { fixtureNow } from './account-fixtures.js';
 
@@ -40,6 +40,23 @@ export function runningRun(overrides: Partial<Run> = {}): Run {
   return sampleRun({ queueState: 'Running', startedAt: fixtureNow + 500, ...overrides });
 }
 
+/** The reader role of a manifest: an Ollama model whose context size is not chosen yet. */
+function sampleReaderRole(): ManifestRole {
+  return {
+    provider: 'ollama',
+    kind: 'ollama',
+    model: 'model-a',
+    modelVersion: null,
+    modelDigest: null,
+    contextTokens: null,
+    contextSource: null,
+    toolMode: 'native',
+    maxOutputTokens: 4096,
+    temperature: null,
+    maxTurns: 12,
+  };
+}
+
 /** A manifest of a run that has been accepted and is not over; a test overrides what it needs. */
 export function sampleManifest(overrides: Partial<RunManifest> = {}): RunManifest {
   return {
@@ -62,19 +79,7 @@ export function sampleManifest(overrides: Partial<RunManifest> = {}): RunManifes
     },
     codemapHash: null,
     options: {},
-    roles: {
-      reader: {
-        provider: 'ollama',
-        kind: 'ollama',
-        model: 'model-a',
-        modelVersion: null,
-        modelDigest: null,
-        toolMode: 'native',
-        maxOutputTokens: 4096,
-        temperature: null,
-        maxTurns: 12,
-      },
-    },
+    roles: { reader: sampleReaderRole() },
     promptVersions: {},
     security: {
       deniedReads: 0,

@@ -17,6 +17,15 @@ export interface AcceptedRun {
   readonly options: Readonly<Record<string, unknown>>;
 }
 
+/** A fixed context size is known when the run starts; `auto` is chosen at the first call (DEC-114). */
+function contextOf(
+  setting: 'auto' | number | undefined,
+): Pick<ManifestRole, 'contextTokens' | 'contextSource'> {
+  return typeof setting === 'number'
+    ? { contextTokens: setting, contextSource: 'fixed' }
+    : { contextTokens: null, contextSource: null };
+}
+
 function rolesOf(settings: ProjectSettings): Record<string, ManifestRole> {
   return Object.fromEntries(
     ROLE_NAMES.map((name) => {
@@ -30,6 +39,7 @@ function rolesOf(settings: ProjectSettings): Record<string, ManifestRole> {
           model: role.model,
           modelVersion: null,
           modelDigest: null,
+          ...contextOf(provider?.contextTokens),
           toolMode: provider?.toolMode ?? 'native',
           maxOutputTokens: role.maxOutputTokens,
           temperature: role.temperature ?? null,

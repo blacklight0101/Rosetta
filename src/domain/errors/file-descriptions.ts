@@ -72,6 +72,6 @@ export const FILE_ERROR_DESCRIPTIONS: Readonly<Record<FileErrorCode, ErrorDescri
   'RST-1115': {
     message: 'The folder could not be removed.',
     nextStep:
-      'Check the application log for the folder and close what holds it open; a run that is still listed can be deleted again.',
+      'Ask the administrator to check the application log for the folder and close what holds it open; a run that is still listed can be deleted again.',
   },
 };
