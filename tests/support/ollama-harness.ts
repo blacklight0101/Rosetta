@@ -4,11 +4,9 @@ import {
   OllamaProvider,
   type OllamaProviderOptions,
 } from '../../src/infrastructure/providers/ollama/ollama-provider.js';
-import {
-  clearContextCache,
-  processContextCache,
-} from '../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
+import { processContextCache } from '../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
+import { clearContextCache } from './ollama-context-cache.js';
 import { FakeOllamaServer, loadOllamaRecording } from './fake-ollama-server.js';
 import { RecordingLogger } from './recording-logger.js';
 

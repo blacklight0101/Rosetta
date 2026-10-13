@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  clearContextCache,
   newContextCache,
   OllamaContextResolver,
   type ContextProbe,
@@ -10,6 +9,7 @@ import {
 } from '../../../../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
 import * as resolverModule from '../../../../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
 import { FALLBACK_BACKOFF_MS } from '../../../../../src/infrastructure/providers/ollama/ollama-context.js';
+import { clearContextCache } from '../../../../support/ollama-context-cache.js';
 import { RecordingLogger } from '../../../../support/recording-logger.js';
 
 // RF-401, DEC-114, Q-23: the automatic Ollama context size, against a probe that simulates the
