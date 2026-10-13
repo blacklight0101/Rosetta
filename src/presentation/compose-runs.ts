@@ -171,7 +171,7 @@ function runServices(service: ServiceParts): RunServices {
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),
     buildReport: new BuildReport({
-      ...{ runs, manifests, history: log },
+      ...{ runs, manifests, history: log, scans, logger: parts.logger },
       files: new FileRunTextFiles(writer),
       writer: new FileReportWriter({ writer, masker: parts.masker, assetsFolder: reportTemplates }),
     }),
