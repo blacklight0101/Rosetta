@@ -28,6 +28,8 @@ password. The app is published on `127.0.0.1` only. `docker compose down` stops 
 `docker compose down -v` deletes it. The steps in full (generating the secrets, Ollama on the host, reset and
 troubleshooting) are in [docs/runbooks/local.md](docs/runbooks/local.md).
 
+A sample report, made from recorded data of a demo repository, is published at <https://blacklight0101.github.io/Rosetta/> once GitHub Pages is enabled for the repository (source: GitHub Actions).
+
 ## Release 1 scope in three lines
 
 - Release 1 covers the full pipeline as a web application with sign-in: `scan`, `understand` (agents plus
