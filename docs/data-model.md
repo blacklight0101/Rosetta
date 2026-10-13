@@ -220,7 +220,9 @@ Rules for `areas[]` (RF-104, added with P1-20):
   scan makes (that window, and the 4 000-character line limit) falls between words: when it would fall inside a run
   without white space, the whole run is dropped. Every masker rule matches inside one such run (keys, connection
   URLs, `password=value`) or runs to the end of the text once its keyword is seen (key blocks, quoted values,
-  `;Password=`), so a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
+  `;Password=`); the one exception is the XML password element, whose value may hold spaces and ends at its closing tag
+  on the same line, so a cut that falls between the opening tag and the closing tag drops the open element with its
+  value (P1-112). So a secret whose end was cut away (for example the `@` of a connection URL) is never kept in part.
   A wider window alone would not be enough: masking shortens the text, so the cut end can reach the first 500
   characters. The 500-character cut after masking falls between words as well, so it never leaves half a marker or
   a bare `scheme://user:` behind. A statement with no white space before a cut keeps an empty text.
@@ -488,8 +490,12 @@ only files named `rosetta-YYYY-MM-DD.jsonl` are touched. Every entry passes the 
 `message`, the ids and every key and string inside `data` are masked as `[MASKED:<kind>]`, with line breaks kept.
 A `data` key at any depth whose name contains `password`, `passwd`, `pwd`, `secret`, `token` or `api key`
 (`api[_-]?key`), in any case, has its whole value replaced, whatever its type: `[MASKED:api-key]` for an API key
-name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count such as
-`inputTokens` is therefore never written under such a name.
+name, `[MASKED:bearer-token]` for a token name, otherwise `[MASKED:password]` (P1-62). A count is
+therefore never written under such a name: the Ollama context size is logged as `contextSize`, not `contextTokens`
+(P1-112). Records kept by the shared deep masking (provider call lines, transcripts, run events, audit details) apply the
+same whole-value rule to a key whose last word is `secret`, `secrets`, `token` or `authorization` (`accessToken`,
+`client_secret`, `X-Auth-Token`, `proxyAuthorization`), besides the `password`, `passwd` and `pwd` keys they already
+had; the last word decides, so `inputTokens`, `timeToFirstTokenMs` and `secretCount` keep their numbers (P1-112).
 When masking fails the entry is withheld (fail closed, DEC-57): a `warn` entry with logger `security`, code
 `RST-2101` and the fixed message `Log entry withheld because secret masking failed.` is written instead, with
 nothing of the original entry; it is filtered by its own level, so it reaches standard output at `info`.
@@ -704,7 +710,7 @@ of another shape is refused at read time.
 | `target_type`, `target_id` | `text` null | |
 | `ip` | `text` | |
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
-| `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, and the word after "password is"); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
+| `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, a key whose last word is `token` or `authorization` such as `accessToken`, and the word after "password is"); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
 
 Retention (DEC-132, RF-1109): audit rows are kept for 365 days and then deleted by a daily task of the server (at
 start-up and every 24 hours). `rosetta_app` has no `UPDATE` or `DELETE` on this table; the only deletion is the
