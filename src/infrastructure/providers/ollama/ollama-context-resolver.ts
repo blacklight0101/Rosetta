@@ -49,13 +49,6 @@ export function newContextCache(): ContextCache {
   return { auto: new Map(), retryAt: new Map(), fixedChecked: new Set() };
 }
 
-/** Forgets every measurement, so a test harness starts each test from an empty cache. */
-export function clearContextCache(cache: ContextCache): void {
-  cache.auto.clear();
-  cache.retryAt.clear();
-  cache.fixedChecked.clear();
-}
-
 /** The cache every Ollama provider of this process shares (DEC-114: once per process). */
 export const processContextCache: ContextCache = newContextCache();
 
