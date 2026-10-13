@@ -194,6 +194,12 @@ function registerErrorHandlers(server: FastifyInstance, options: ServerOptions):
   });
 }
 
+// RF-1009: the access hooks get the public URL, the auth use cases and the logger.
+function registerAccess(server: FastifyInstance, options: ServerOptions): void {
+  const { publicUrl, logger, auth } = options;
+  registerAccessHooks(server, { publicUrl, logger, ...auth });
+}
+
 /**
  * RF-1013, RF-1201, RF-1303, RF-007, RF-1009, RF-1100, RF-1101: the server with its plugins, hooks,
  * public routes and the session API.
@@ -222,11 +228,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   void server.register(fastifyHelmet, securityHeaderOptions(options.publicUrl));
   registerHooks(server, options.logger);
   registerSessionPlugins(server, options.auth.refusals);
-  registerAccessHooks(server, {
-    publicUrl: options.publicUrl,
-    logger: options.logger,
-    ...options.auth,
-  });
+  registerAccess(server, options);
   registerErrorHandlers(server, options);
   registerPublicRoutes(server, options);
   registerLandingRoute(server, { contactEmail: options.contactEmail });
