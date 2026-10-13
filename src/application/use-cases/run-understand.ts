@@ -121,7 +121,7 @@ export class RunUnderstand implements RunExecutor {
       logger: ownerLogger(this.deps.logger, execution.run.userId),
       settings: prepared.value.project.settings,
       deps: this.deps,
-      source: pinnedSourceOf(execution.manifest.source, prepared.value.scanned),
+      source: pinnedSourceOf(execution.manifest.source, prepared.value.scanned.source.commitSha),
       nextCallId,
       traceId: traceIdOf(execution.run),
       ids: this.deps.ids,
