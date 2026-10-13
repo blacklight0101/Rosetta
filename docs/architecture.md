@@ -190,7 +190,7 @@ tests/
   fixtures/             small legacy samples per stack, and `repos/injection/` (planted instructions, RF-145)
   support/              test helpers: database, fixed clock, sequence ids, servers
 eval/                   golden set and the evaluation runner (RNF-006); results go to the git-ignored eval-out/
-site/                   published sample report (RF-800)
+site/                   published sample report (RF-800): built by `npm run site:build` (scripts/build-sample-site.mjs) from the recorded run of tests/fixtures/runs/replay-demo, pages from src/infrastructure/report/published-site.ts, published and smoke-tested by .github/workflows/pages.yml (scripts/pages-smoke.mjs)
 docs/runbooks/          local and hosted deployment runbooks (environments-and-delivery.md section 14)
 
 The front end in `web/` has its own `web/tsconfig.json` with the DOM library and imports from `src/` only the event
