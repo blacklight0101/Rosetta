@@ -228,16 +228,17 @@ async function openSlowReader(
 }
 
 describe('NodeRepositoryReader grep worker', () => {
-  // The 2 s default is not waited for: the constant is asserted and the stop path runs with 200 ms.
+  // The 2 s default is not waited for: the constant is asserted and the stop path runs with 1 s,
+  // enough for the next search to start its worker on a slow runner.
   it('RF-146 ^(a+)+$ on a long line times out, the default is 2 s, and the worker stops', async () => {
     const logger = newLogger();
-    const reader = await openSlowReader(logger, 200);
+    const reader = await openSlowReader(logger, 1000);
     const { result, ms } = await timedAsync(() => reader.grep({ pattern: '^(a+)+$' }));
 
     expect(grepLimits.timeoutMs).toBe(2000);
     expect(refusalOf(result)).toMatchObject({ code: ERROR_CODES.grepTimedOut, reason: 'timeout' });
-    expect(ms).toBeGreaterThanOrEqual(150);
-    expect(ms).toBeLessThan(1500);
+    expect(ms).toBeGreaterThanOrEqual(900);
+    expect(ms).toBeLessThan(3000);
     expect(securityCodes(logger)).toEqual([ERROR_CODES.grepTimedOut]);
     expect(await reader.grep({ pattern: '!' })).toMatchObject({ ok: true });
   });
