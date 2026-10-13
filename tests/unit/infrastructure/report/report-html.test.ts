@@ -106,6 +106,25 @@ describe('renderReportHtml cards', () => {
   });
 });
 
+describe('renderReportHtml and the map level', () => {
+  it('RF-112 states the map level of every area, as text', () => {
+    const page = pageOf({
+      areas: [
+        { name: 'LEDGER', mapLevel: 'coarse' },
+        { name: '<b>orders</b>', mapLevel: 'symbols' },
+      ],
+    });
+    const rows = [...page.document.querySelectorAll('section[aria-labelledby="areas"] tbody tr')];
+
+    expect(rows.map((row) => row.textContent)).toEqual(['LEDGERcoarse', '<b>orders</b>symbols']);
+    expect(page.document.querySelectorAll('b')).toHaveLength(0);
+  });
+
+  it('RF-112 leaves out the areas section when the report has no code map', () => {
+    expect(pageOf({ areas: [] }).document.querySelector('#areas')).toBeNull();
+  });
+});
+
 describe('renderReportHtml and untrusted text', () => {
   it('RF-507 shows the title of a hostile card as text, character for character', () => {
     const page = pageOf({ cards: [hostileCard] });
