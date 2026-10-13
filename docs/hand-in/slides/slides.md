@@ -144,7 +144,12 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 # Resultados: estado del proyecto
 
 - Fecha de referencia: 2026-10-13 (noche), según [handoff.md](../../../handoff.md): **123 de 182 tarjetas hechas**.
-- Pirámide de pruebas y número de pruebas de la última ejecución de `npm run verify`: [PENDIENTE: cifras de la ejecución final de la rama de entrega].
+- Última ejecución de `npm run verify` en la rama de entrega (commit `fb5bebe`, 2026-10-14), con estas cifras:
+  - Pirámide de pruebas por nivel: unitarias 4498 (67 %), integración 2015 (30 %), E2E 165 (2 %); objetivo 60 / 30 / 10 con 10 puntos de tolerancia.
+  - Pruebas de Vitest: 6514 pasadas y 305 omitidas, en 501 archivos.
+  - Cobertura de sentencias: 91,65 %.
+  - Las pruebas E2E no se ejecutaron en local (no estaba definida `ROSETTA_TEST_DATABASE_URL`); la ejecución de CI es la referencia.
+- Fuente: el registro de `npm run verify` y el informe de `scripts/test-levels.mjs` de esa ejecución.
 - Lo que aún no está medido: la precisión y la cobertura del conjunto de referencia (ver la siguiente diapositiva).
 
 ---
