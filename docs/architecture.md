@@ -124,7 +124,8 @@ src/
     understand/         the understand run's parts (P1-33): reader tasks per area (`planReaderTasks`), the task
                         pool (one abort signal), the reader limits from the settings, one reader task with its
                         run events (`runReaderTask`, `providerWithEvents`, `toolsWithEvents`), the cards of the
-                        run as tasks end (`RunCards`: ids in area order, citation check) and `UnderstandSession`
+                        run as tasks end (`RunCards`: ids in area order, citation check), the pinned repository
+                        of the citations (`pinnedSourceOf`, RF-125) and `UnderstandSession`
     cards/              the card schema, parsing with one repair attempt, the repair request (RF-202)
     verifier/           citation check (step 1, `checkCitations`, P1-33), judgement step (P2)
     estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30)
