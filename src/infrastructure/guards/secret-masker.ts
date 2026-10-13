@@ -36,6 +36,12 @@ const passwordKey = String.raw`${passwordName}["']?[ \t]{0,16}(?::=|[:=])[ \t]{0
 // Not preceded by a letter or digit: an underscore before the key is allowed (`prod_sk-...`).
 const keyStart = '(?<![A-Za-z0-9])';
 
+// The pieces of a `mysql` command line: an optional database word, and an option with an optional
+// value (bare or quoted). A value never starts with `-`, so an option and the next one cannot blur.
+const mysqlDatabase = String.raw`(?:[ \t]+[^\s"'-]\S*)?`;
+const mysqlValue = String.raw`(?:"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s"'-]\S*)`;
+const mysqlOption = String.raw`[ \t]+-\S+(?:[ \t]+${mysqlValue})?`;
+
 // The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
 // whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
 const defaultRules: readonly MaskRule[] = [
@@ -111,13 +117,13 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
   {
-    // `mysql -u root -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and is left
-    // alone. Command-line shape only: `mysql` is followed by options (a word that starts with `-`,
-    // each with at most one value), at most 16 of them, so prose such as "mysql is fast -pretty
-    // much" is not read as a password.
+    // `mysql mydb -u root -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and
+    // is left alone. Command-line shape only: `mysql`, at most one database word, then at most 16
+    // options (a word that starts with `-`, each with at most one bare or quoted value), so prose
+    // such as "mysql is used in production -pretty much" is not read as a password.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>\bmysql(?:admin|dump)?(?:[ \t]+-\S+(?:[ \t]+[^\s-]\S*)?){0,16}?[ \t]+-p)${notMasked}\S+`,
+      String.raw`(?<keep>\bmysql(?:admin|dump)?${mysqlDatabase}(?:${mysqlOption}){0,16}?[ \t]+-p)${notMasked}\S+`,
       'g',
     ),
   },
