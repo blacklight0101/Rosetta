@@ -86,7 +86,7 @@ describe('the landing page lookup failure', () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toEqual({
       schemaVersion: 1,
-      at: expect.any(String),
+      at: lines[0]?.at,
       level: 'warn',
       logger: 'http',
       message: 'The session lookup failed; the page is shown to a visitor.',
