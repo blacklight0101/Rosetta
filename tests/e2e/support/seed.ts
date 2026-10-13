@@ -47,7 +47,8 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
  * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
  * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001) and `live-run` watches
- * the runs of its own project on the live page (RF-1002).
+ * the runs of its own project on the live page (RF-1002). `history` browses and deletes the runs of its
+ * own project (RF-1008, RF-1012) and `history-admin` is the administrator who deletes snapshots.
  */
 export type E2eAccountKind =
   | 'keys'
@@ -60,6 +61,8 @@ export type E2eAccountKind =
   | 'project-settings'
   | 'start-run'
   | 'live-run'
+  | 'history'
+  | 'history-admin'
   | 'admin';
 
 const accountKinds: readonly E2eAccountKind[] = [
@@ -73,8 +76,12 @@ const accountKinds: readonly E2eAccountKind[] = [
   'project-settings',
   'start-run',
   'live-run',
+  'history',
+  'history-admin',
   'admin',
 ];
+
+const adminKinds: ReadonlySet<E2eAccountKind> = new Set(['force-admin', 'history-admin', 'admin']);
 
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
   return {
@@ -125,7 +132,7 @@ export async function seedUsers(databaseUrl: string): Promise<void> {
         actor: actorOf(admin),
         userName,
         displayName: `E2E ${kind}`,
-        role: kind === 'force-admin' || kind === 'admin' ? 'admin' : 'user',
+        role: adminKinds.has(kind) ? 'admin' : 'user',
         password,
         mustChangePassword: kind.startsWith('force'),
         ip: 'e2e-seed',
