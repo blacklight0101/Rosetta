@@ -235,4 +235,10 @@ describe('Dependabot configuration', () => {
 
     expect(dependabot.match(/cooldown:\n\s+default-days: 14\n/gu) ?? []).toHaveLength(2);
   });
+
+  it('P2-17 Dependabot leaves the Anthropic SDK pin to its card', async () => {
+    const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
+
+    expect(dependabot).toMatch(/- dependency-name: '@anthropic-ai\/sdk'\n/u);
+  });
 });

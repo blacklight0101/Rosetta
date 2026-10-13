@@ -21,6 +21,8 @@ updates:
       # @types/node follows the Node runtime major in .nvmrc (24); a higher major describes APIs the runtime lacks.
       - dependency-name: '@types/node'
         versions: ['>=25.0.0']
+      # The Anthropic SDK stays on the exact pin chosen for P2-09; card P2-17 moves it by hand (DEC-125).
+      - dependency-name: '@anthropic-ai/sdk'
     groups:
       npm-minor-and-patch:
         update-types:

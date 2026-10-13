@@ -5,6 +5,7 @@ import { hasTestDatabase, testClock, useTestDatabase } from '../../support/postg
 import {
   lockEvents,
   racingHasher,
+  refusalDetail,
   setUp,
   signInWith,
   type Setup,
@@ -48,6 +49,24 @@ describe.skipIf(!hasTestDatabase)('a sign-in success racing an administrator on 
 
     expect(outcome).toEqual(refused);
     expect(await setup.users.findById(setup.amy.id)).toEqual(reset);
+  });
+
+  it('RF-1102 a sign-in racing a lock from another instance keeps the lock and audits account-changed', async () => {
+    const setup = await setUp(database);
+    const now = testClock.now().getTime();
+    const locked = {
+      ...setup.amy,
+      failedSignIns: 5,
+      firstFailedAt: now,
+      lockedUntil: now + minutes(15),
+    };
+    const signIn = signInWith(setup, racingHasher(setup, locked));
+
+    const outcome = await signIn.execute({ userName: 'amy', password: setup.password, ...client });
+
+    expect(outcome).toEqual(refused);
+    expect(await setup.users.findById(setup.amy.id)).toEqual(locked);
+    expect(await refusalDetail(setup)).toEqual({ reason: 'account-changed' });
   });
 });
 

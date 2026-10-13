@@ -123,16 +123,18 @@ export class PgProjectRepository implements ProjectRepository {
   async remove(
     userId: string,
     projectId: string,
-    beforeRowsGo: () => Promise<void>,
+    afterRowsGone: () => Promise<void>,
   ): Promise<boolean> {
     if (!UUID.test(userId) || !UUID.test(projectId)) return false;
     const values = [userId, projectId];
-    return this.transaction(async (client) => {
+    const removed = await this.transaction(async (client) => {
       if ((await query(client, LOCK, values)).rowCount !== 1) return false;
       if ((await query(client, IN_USE, values)).rowCount !== 0) return false;
-      await beforeRowsGo();
       return (await query(client, REMOVE, values)).rowCount === 1;
     });
+    // The connection and the row lock are released: a slow disk holds neither (P1-138).
+    if (removed) await afterRowsGone();
+    return removed;
   }
 
   /** Commits what `work` did, or rolls it back and rethrows when it throws or answers false. */

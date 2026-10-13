@@ -228,6 +228,18 @@ export function callFor(
   };
 }
 
+/** The settings with one provider's context size set (`providers.<name>.contextTokens`, DEC-114). */
+export function withContextTokens(
+  settings: ProjectSettings,
+  provider: string,
+  contextTokens: 'auto' | number,
+): ProjectSettings {
+  const existing = settings.providers[provider];
+  if (existing === undefined) throw new Error(`The settings define no provider ${provider}.`);
+  const providers = { ...settings.providers, [provider]: { ...existing, contextTokens } };
+  return { ...settings, providers };
+}
+
 /** The settings with one provider's key source changed. */
 export function withKeySource(
   settings: ProjectSettings,

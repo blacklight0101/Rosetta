@@ -46,6 +46,7 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 import {
   understandProviders,
   type BeforeCall,
+  type DecorateAnswer,
   type UnderstandProviders,
 } from './understand-providers.js';
 
@@ -72,6 +73,7 @@ export interface UnderstandHarnessOptions {
   readonly settings?: ProjectSettings;
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
+  readonly decorateAnswer?: DecorateAnswer;
   readonly beforeCall?: (
     call: number,
     harness: UnderstandHarness,
@@ -279,11 +281,8 @@ export async function createUnderstandHarness(
   });
   await s.projects.insertOrFind(project);
   const holder: { harness?: UnderstandHarness } = {};
-  const beforeCall: BeforeCall = async (call, signal) => {
-    if (holder.harness !== undefined) {
-      await options.beforeCall?.(call, holder.harness, signal);
-    }
-  };
+  const beforeCall: BeforeCall = async (call, signal) =>
+    holder.harness === undefined ? undefined : options.beforeCall?.(call, holder.harness, signal);
   const providers = understandProviders({
     ...{ dataDir: options.dataDir, writer: s.writer, masker: s.masker, clock: s.clock },
     logger: s.logger,
@@ -292,6 +291,7 @@ export async function createUnderstandHarness(
       options.replays ?? 1,
     ),
     beforeCall,
+    ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
   });
   const queue = await queueOf(s, providers);
   const harness = harnessOf({ s, queue, project, providers, dataDir: options.dataDir });

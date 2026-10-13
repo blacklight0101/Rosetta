@@ -262,7 +262,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143) |
-| `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
+| `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004); `contextTokens` and `contextSource` are the Ollama context size sent as `num_ctx` and how it was chosen (`fixed` from the start, or `auto-fit`, `auto-floor`, `auto-model-limit`, `auto-fallback` after the first call; RF-401, DEC-114), `null` until then |
 | `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when a role uses Ollama with `toolMode: text` (RF-205) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
@@ -273,7 +273,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 
 A field that is not known yet is `null` (or `{}` / `[]` for objects and lists), never absent, so the file always has the
 same fields; `source.commitSha` and `source.snapshotHash` are `null` until the source is resolved, and `roles[].modelVersion`
-and `modelDigest` until the first call. The file is masked like every file Rosetta writes (RNF-003). A file with a
+and `modelDigest`, and `contextTokens` and `contextSource` for `auto`, until the first call. The file is masked like every file Rosetta writes (RNF-003). A file with a
 newer `schemaVersion` is refused with RST-2106. The queue's run row mirrors the end state, the commit and the snapshot
 folder (section 4, `runs`); the folder name is the `runId` of this file and of every event, while URLs use the row's `id`.
 
@@ -844,7 +844,7 @@ releases.
 | Application logs | `ROSETTA_LOG_RETENTION_DAYS` (14) | deleted at start-up and daily |
 | `.partial-*` snapshot folders | until next start-up | deleted |
 | Runs, projects, exports | until the user deletes them | delete button in the web UI with confirmation (RF-1012, DEC-55); never automatic |
-| Run and project folders on deletion | as long as their rows | the folder is removed first and the rows second (P1-121): Delete run removes the run folder, then the row; Delete project locks the project row (`FOR UPDATE`, so a run queued at the same moment is seen and refuses the deletion), removes the project folder and then the rows in the same transaction. A folder that cannot be removed writes an `error` log entry with RST-1115 naming it, answers RST-1115 and keeps the rows, so the run or project is still listed and Delete removes the folder on the next attempt; no folder is left without its rows, so no clean-up task exists for them |
+| Run and project folders on deletion | as long as their rows, for a run | Delete run removes the run folder first and the row second (P1-121): a folder that cannot be removed writes an `error` log entry with RST-1115 naming it, answers RST-1115 and keeps the row, so Delete removes the folder on the next attempt. Delete project locks the project row (`FOR UPDATE`, so a run queued at the same moment is seen and refuses the deletion), removes the rows and commits, and only then removes the project folder (P1-138), so a slow disk holds neither a pooled connection nor the lock. A project folder that cannot be removed is logged with RST-1115 naming the folder and answered with it; the project is already gone, so the folder stays until the administrator removes it by hand (no automatic clean-up exists) |
 | Snapshots | until the administrator deletes them | delete button on the administration page (RF-1012) |
 | Sessions | until expiry or sign-out | expired rows deleted hourly by the in-process scheduler |
 | Cost reservations | until the call ends or the row expires | expired rows deleted hourly |

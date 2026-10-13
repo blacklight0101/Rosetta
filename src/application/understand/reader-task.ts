@@ -1,5 +1,6 @@
 import {
   recordManifestAgentTask,
+  recordManifestContext,
   recordManifestModelVersion,
 } from '../../domain/runs/run-manifest.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
@@ -8,6 +9,7 @@ import type { AgentTaskResult } from '../agent/agent-task-result.js';
 import { ReadOnlyTools } from '../agent/read-only-tools.js';
 import type { ReaderPrompts } from '../agent/reader-prompts.js';
 import type { IdGenerator } from '../ports/id-generator.js';
+import type { LlmResponse } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { ScannedSource } from '../ports/scan-results.js';
@@ -67,6 +69,16 @@ export function recordTaskState(
   );
 }
 
+/** Records the model version and, for Ollama, the context size of one answer (RNF-004, RF-401). */
+async function recordAnswer(updates: ManifestUpdates, response: LlmResponse): Promise<void> {
+  const { modelVersion, metrics } = response;
+  await updates.update((manifest) => recordManifestModelVersion(manifest, READER, modelVersion));
+  const ollama = metrics?.ollama;
+  if (ollama?.contextTokens === undefined || ollama.contextSource === undefined) return;
+  const context = { contextTokens: ollama.contextTokens, contextSource: ollama.contextSource };
+  await updates.update((manifest) => recordManifestContext(manifest, READER, context));
+}
+
 // RF-201, RF-1002, RF-230: the lines the tools return are kept in `reads` for the coverage.
 export async function runReaderTask(
   context: ReaderTaskContext,
@@ -84,8 +96,7 @@ export async function runReaderTask(
   const events: TaskEvents = {
     events: execution.events,
     agentTaskId,
-    onModelVersion: (version) =>
-      updates.update((manifest) => recordManifestModelVersion(manifest, READER, version)),
+    onAnswer: (response) => recordAnswer(updates, response),
   };
   const turns = new TurnCounter();
   const tools = new ReadOnlyTools({
