@@ -29,7 +29,7 @@ describe('CreateProject', () => {
 
     const outcome = await test.createProject.execute({
       actor: amy,
-      url: 'https://github.com/Dotnet-Architecture/eShopModernizing/tree/master/eShopLegacyWebFormsSolution',
+      url: 'https://github.com/Dotnet-Architecture/eShopModernizing/tree/main/eShopLegacyWebFormsSolution',
     });
 
     expect(outcome.ok).toBe(true);
