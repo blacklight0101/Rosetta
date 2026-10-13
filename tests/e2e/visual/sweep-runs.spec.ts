@@ -37,12 +37,6 @@ async function linkTarget(page: Page, name: string): Promise<string> {
 /** Every test of the sweep runs in all four projects (playwright.config.ts). */
 const visual = { tag: '@visual' };
 
-/**
- * Tables wider than 360 px, found by this sweep (orchestration README section 1 asks 360 px of the
- * landing page, sign-in and report only): at 360 px the rest of the page must still fit (sweep.ts).
- */
-const runsTable = { table: 'Runs', until: 'an app fix that fits the table into 360 px' };
-
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('sweep', info.project.name));
 });
@@ -98,12 +92,12 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await openHistory(page);
   const row = runRow(page, '-understand');
   await expect(row).toContainText('Completed');
-  await expectPageInView(page, 'app', runsTable);
+  await expectPageInView(page);
 
   await row.getByRole('button', { name: /^Delete:/u }).click();
   await expect(confirmation(page)).toContainText('This cannot be undone.');
 
-  await expectPageInView(page, 'app', runsTable);
+  await expectPageInView(page);
   await page.keyboard.press('Escape');
   await expect(confirmation(page)).toHaveCount(0);
 });
