@@ -26,6 +26,11 @@ const UPDATE_SETTINGS =
   'UPDATE projects SET settings = $3::jsonb, updated_at = $4 WHERE user_id = $1 AND id = $2 RETURNING ' +
   PROJECT_COLUMNS;
 
+// The runs of the project go with it (ON DELETE CASCADE); a project with a run that has not ended
+// stays. `cost_ledger` has no foreign key to either, so its rows stay (DEC-55).
+const REMOVE =
+  "DELETE FROM projects WHERE user_id = $1 AND id = $2 AND NOT EXISTS (SELECT 1 FROM runs WHERE runs.project_id = projects.id AND runs.queue_state <> 'Ended')";
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function queryFailed(error: unknown): RosettaError {
@@ -92,6 +97,11 @@ export class PgProjectRepository implements ProjectRepository {
       ])
     ).rows;
     return row === undefined ? undefined : toProject(row);
+  }
+
+  async remove(userId: string, projectId: string): Promise<boolean> {
+    if (!UUID.test(userId) || !UUID.test(projectId)) return false;
+    return (await this.run(REMOVE, [userId, projectId])).rowCount === 1;
   }
 
   private async run(

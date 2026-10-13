@@ -1,12 +1,12 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
-import type { RunIndex, RunSource } from '../../application/ports/run-index.js';
+import type { RunIndex, RunSource, SnapshotUsage } from '../../application/ports/run-index.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run, RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 import type { DatabasePool } from './pool.js';
-import { RUN_COLUMNS, toRun } from './run-rows.js';
+import { RUN_COLUMNS, toRun, toSnapshotUsage } from './run-rows.js';
 
 // Architecture section 7, ADR-016, RF-1108, RF-1105: the run rows in PostgreSQL with parameterised
 // SQL only. User-triggered reads filter on `user_id`; every transition is one conditional UPDATE,
@@ -35,6 +35,14 @@ const RECORD_SOURCE =
 const RECORD_TOTALS =
   "UPDATE runs SET cost_micros = $2, input_tokens = $3, output_tokens = $4, cached_input_tokens = $5 WHERE id = $1 AND queue_state <> 'Ended'" +
   RETURNING;
+
+// RF-1012: only ended runs are removed, so a run cannot vanish under the queue; `cost_ledger` has
+// no foreign key to `runs`, so its rows stay (DEC-55).
+const REMOVE_ENDED = "DELETE FROM runs WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended'";
+const REMOVE_ENDED_OF_PROJECT =
+  "DELETE FROM runs WHERE user_id = $1 AND project_id = $2 AND queue_state = 'Ended'";
+const SNAPSHOT_USAGE =
+  'SELECT snapshot_key, count(*)::int AS runs, (count(*) FILTER (WHERE queue_state <> \'Ended\'))::int AS active, max(COALESCE(ended_at, started_at, queued_at)) AS last_used_at FROM runs WHERE snapshot_key IS NOT NULL GROUP BY snapshot_key ORDER BY snapshot_key COLLATE "C"';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -115,6 +123,20 @@ export class PgRunIndex implements RunIndex {
       totals.outputTokens,
       totals.cachedInputTokens,
     ]);
+  }
+
+  async removeEnded(userId: string, runId: string): Promise<boolean> {
+    if (!UUID.test(userId) || !UUID.test(runId)) return false;
+    return (await this.run(REMOVE_ENDED, [userId, runId])).rowCount === 1;
+  }
+
+  async removeEndedOfProject(userId: string, projectId: string): Promise<void> {
+    if (!UUID.test(userId) || !UUID.test(projectId)) return;
+    await this.run(REMOVE_ENDED_OF_PROJECT, [userId, projectId]);
+  }
+
+  async snapshotUsage(): Promise<readonly SnapshotUsage[]> {
+    return (await this.run(SNAPSHOT_USAGE, [])).rows.map(toSnapshotUsage);
   }
 
   /** One UPDATE by run id; undefined when no row matched its conditions. */

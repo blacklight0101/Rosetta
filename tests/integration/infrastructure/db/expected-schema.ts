@@ -157,3 +157,11 @@ export const readWriteTables: readonly string[] = [
 
 /** Append-only tables: `rosetta_app` may insert and select, never update or delete. */
 export const appendOnlyTables: readonly string[] = ['cost_ledger', 'audit_events'];
+
+/**
+ * The functions of the release-1 schema (data-model.md sections 4 and 6), as `name(arguments)
+ * returns type`. `purge_audit_events_before` is the only way to delete audit rows (DEC-132).
+ */
+export const expectedFunctions: readonly string[] = [
+  'purge_audit_events_before(cut_off timestamp with time zone) returns bigint',
+];

@@ -178,10 +178,41 @@ const observabilityRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ],
 };
 
-/** RF-008, RF-504, RF-506, RF-1007, RF-1105: every route that reads or builds the output of a run. */
+const historyUrl = (context: Context): string => `/api/projects/${context.projectId}/history`;
+const snapshotsUrl = '/api/admin/snapshots';
+
+/**
+ * RF-1008, RF-1012, RF-1105: the history of a project, the deletion of a run and of a project (409
+ * for a run in progress; the project of the matrix has none) and the administrator's snapshot list
+ * and deletion.
+ */
+const historyRoutes: Readonly<Record<string, readonly Probe[]>> = {
+  'GET /api/projects/:id/history': [
+    { method: 'GET', url: historyUrl, expected: ownerOnly(200) },
+    { method: 'GET', url: () => '/api/projects/not-a-uuid/history', expected: active(401, 404) },
+  ],
+  'HEAD /api/projects/:id/history': [{ method: 'HEAD', url: historyUrl, expected: ownerOnly(200) }],
+  'DELETE /api/runs/:runId': [
+    { method: 'DELETE', url: runUrl('', (c) => c.endedRunId), expected: ownerOnly(200) },
+    { method: 'DELETE', url: runUrl('', (c) => c.runningRunId), expected: ownerOnly(409) },
+    { method: 'DELETE', url: () => '/api/runs/not-a-uuid', expected: active(401, 404) },
+  ],
+  'DELETE /api/projects/:id': [
+    { method: 'DELETE', url: (c) => `/api/projects/${c.projectId}`, expected: ownerOnly(200) },
+    { method: 'DELETE', url: () => '/api/projects/not-a-uuid', expected: active(401, 404) },
+  ],
+  'GET /api/admin/snapshots': [{ method: 'GET', url: snapshotsUrl, expected: adminOnly(200) }],
+  'HEAD /api/admin/snapshots': [{ method: 'HEAD', url: snapshotsUrl, expected: adminOnly(200) }],
+  'DELETE /api/admin/snapshots/:key': [
+    { method: 'DELETE', url: `${snapshotsUrl}/octo__none@x`, expected: adminOnly(404) },
+  ],
+};
+
+/** RF-008, RF-504, RF-506, RF-1007, RF-1008, RF-1012, RF-1105: every route that reads or builds the output of a run. */
 export const outputRoutes: Readonly<Record<string, readonly Probe[]>> = {
   ...exportRoutes,
   ...reportRoutes,
   ...answerRoutes,
   ...observabilityRoutes,
+  ...historyRoutes,
 };

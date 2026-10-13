@@ -52,6 +52,7 @@ describe('release migrations', () => {
       '0005_cost_ledger_tasks_and_tokens.sql',
       '0006_cost_reservations_without_run.sql',
       '0007_cost_reservations_per_run_call.sql',
+      '0008_audit_retention_purge.sql',
     ]);
   });
 

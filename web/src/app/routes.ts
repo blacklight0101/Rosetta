@@ -2,8 +2,10 @@ import { GalleryPage } from '../gallery/GalleryPage.js';
 import { ApiCallsPage } from '../pages/ApiCallsPage.js';
 import { AdminAuditPage } from '../pages/AdminAuditPage.js';
 import { AdminModelsPage } from '../pages/AdminModelsPage.js';
+import { AdminSnapshotsPage } from '../pages/AdminSnapshotsPage.js';
 import { AdminUsersPage } from '../pages/AdminUsersPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
+import { HistoryPage } from '../pages/HistoryPage.js';
 import { LiveRunPage } from '../pages/LiveRunPage.js';
 import { ProjectCostPage } from '../pages/ProjectCostPage.js';
 import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
@@ -95,6 +97,22 @@ export const routes: readonly RouteDefinition[] = [
     chrome: 'shell',
     component: AdminModelsPage,
     nav: { group: 'admin', label: 'Default models', order: 30 },
+  },
+  {
+    path: '/admin/snapshots',
+    title: 'Downloaded snapshots',
+    access: 'admin',
+    chrome: 'shell',
+    component: AdminSnapshotsPage,
+    nav: { group: 'admin', label: 'Snapshots', order: 40 },
+  },
+  {
+    path: '/projects/:projectId/history',
+    title: 'History',
+    access: 'user',
+    chrome: 'shell',
+    component: HistoryPage,
+    nav: { group: 'project', label: 'History', order: 70 },
   },
   {
     path: '/runs/:runId',

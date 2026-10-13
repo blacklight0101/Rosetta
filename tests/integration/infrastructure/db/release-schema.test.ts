@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { DatabasePool } from '../../../../src/infrastructure/db/pool.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
-import { expectedColumns, expectedIndexes } from './expected-schema.js';
+import { expectedColumns, expectedFunctions, expectedIndexes } from './expected-schema.js';
 
 /** Tables that data-model.md section 4 describes in a sentence rather than a column table. */
 const PROSE_TABLES = ['schema_version', 'server_settings'];
@@ -97,5 +97,34 @@ describe.skipIf(!hasTestDatabase)('release-1 schema', () => {
     expect(result.rows.map((row) => describeIndex(row.table, row.definition)).sort()).toEqual(
       [...expectedIndexes].sort(),
     );
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('release-1 schema functions', () => {
+  const database = useTestDatabase();
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    ({ pool } = await database.createSchema({ migrate: true }));
+  });
+
+  it('RF-1109 has exactly the functions of data-model.md section 4', async () => {
+    const result = await pool.query<{ described: string }>(
+      `SELECT format('%s(%s) returns %s', p.proname, pg_get_function_identity_arguments(p.oid),
+                     pg_get_function_result(p.oid)) AS described
+         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = current_schema()
+        ORDER BY p.proname`,
+    );
+
+    expect(result.rows.map((row) => row.described)).toEqual([...expectedFunctions].sort());
+  });
+
+  it('RF-1109 data-model.md names every function of the schema', async () => {
+    const text = await readFile(new URL('../../../../docs/data-model.md', import.meta.url), 'utf8');
+
+    for (const described of expectedFunctions) {
+      expect(text).toContain(`\`${described.slice(0, described.indexOf('('))}\``);
+    }
   });
 });

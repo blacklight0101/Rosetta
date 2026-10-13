@@ -707,6 +707,16 @@ of another shape is refused at read time.
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
 | `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, and the word after "password is"); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
 
+Retention (DEC-132, RF-1109): audit rows are kept for 365 days and then deleted by a daily task of the server (at
+start-up and every 24 hours). `rosetta_app` has no `UPDATE` or `DELETE` on this table; the only deletion is the
+function `purge_audit_events_before(cut_off timestamptz)` (migration `0008_audit_retention_purge`), which returns
+the number of rows it deleted. It is owned by `rosetta_migrator` and is `SECURITY DEFINER`, with `search_path` fixed to
+`pg_catalog, pg_temp` and the table schema-qualified. It deletes the rows with `at < cut_off` and refuses with
+SQLSTATE `22023`, deleting nothing, a `NULL` cut-off and any cut-off younger than 365 days; the 365 days are
+measured with `clock_timestamp()` on the database clock, never from a value the caller sends. `EXECUTE` is revoked
+from `PUBLIC` and granted to `rosetta_app` only (when that role exists). The task sends a cut-off one hour older
+than 365 days so that an application clock a little ahead of the database clock is not refused.
+
 **`schema_version`** (RF-1302): `version int` primary key, `name text` (the file name), `checksum text` (SHA-256 of
 the file, lower-case hex), `applied_at timestamptz`. Created by the migration runner (`PgMigrator`) itself, not by a
 migration.
@@ -743,7 +753,7 @@ migration.
 | Role | Rights | Used by |
 |---|---|---|
 | `rosetta_migrator` | owns the schema; `CREATE`, `ALTER`, `DROP` | the migration runner at start-up only (`DATABASE_MIGRATOR_URL`, or `DATABASE_URL` when the host offers one role) |
-| `rosetta_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables (including `cost_reservations`); `INSERT`, `SELECT` only on `cost_ledger` and `audit_events` (no update or delete) | the server (`DATABASE_URL`) |
+| `rosetta_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables (including `cost_reservations`); `INSERT`, `SELECT` only on `cost_ledger` and `audit_events` (no update or delete); `EXECUTE` on the function `purge_audit_events_before` and on no other function (DEC-132) | the server (`DATABASE_URL`) |
 
 The roles are created outside the migrations, because a committed file cannot hold their passwords: locally by a
 Compose init script (`db/init/roles.sh`) that reads the passwords from `.env`, hosted by the runbook in the host's
@@ -766,7 +776,7 @@ runner; `rosetta_app` has no right on it.
 **Database migrations** (RF-1302): files `db/migrations/NNNN_snake_name.sql`, four digits, applied in order, each in
 a transaction, recorded in `schema_version` with its checksum. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`), `0100..` later
 releases.
 
 **File schema versions**:
@@ -805,7 +815,7 @@ releases.
 | Snapshots | until the administrator deletes them | delete button on the administration page (RF-1012) |
 | Sessions | until expiry or sign-out | expired rows deleted hourly by the in-process scheduler |
 | Cost reservations | until the call ends or the row expires | expired rows deleted hourly |
-| Audit events | the life of the deployment | never purged, like the cost ledger (DEC-110) |
+| Audit events | 365 days (DEC-132) | rows older than that are deleted at start-up and daily through `purge_audit_events_before`, the only deletion `rosetta_app` can make; the cost ledger is never purged (DEC-110) |
 | Users | the life of the deployment | disabled, never deleted (the ledger refers to them) |
 | Cost ledger | the life of the deployment | never purged, also not when runs or projects are deleted: it is the source of every total and cap |
 

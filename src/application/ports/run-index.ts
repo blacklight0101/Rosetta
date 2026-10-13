@@ -15,6 +15,17 @@ export interface RunSource {
   readonly snapshotKey: string;
 }
 
+/** RF-1012: how the runs use one snapshot folder, for the administrator's snapshot list. */
+export interface SnapshotUsage {
+  readonly snapshotKey: string;
+  /** Every run that recorded this snapshot as its source, of every user. */
+  readonly runs: number;
+  /** The runs among them that are queued or running. */
+  readonly active: number;
+  /** The latest end, start or queue instant of those runs. */
+  readonly lastUsedAt: EpochMs;
+}
+
 export interface RunIndex {
   /** Stores a new run; refuses a run key the project already has. */
   insert(run: Run): Promise<Result<Run, 'run-key-taken'>>;
@@ -43,4 +54,13 @@ export interface RunIndex {
   recordSource(runId: string, source: RunSource): Promise<Run | undefined>;
   /** Replaces the running totals; undefined for an unknown or ended run. */
   recordTotals(runId: string, totals: RunTotals): Promise<Run | undefined>;
+  /**
+   * Removes the user's run row (RF-1012); false for an unknown id, another user's run and a run
+   * that is queued or running. The cost ledger is never touched (DEC-55).
+   */
+  removeEnded(userId: string, runId: string): Promise<boolean>;
+  /** Removes the ended runs of the user's project; the queued and running ones stay. */
+  removeEndedOfProject(userId: string, projectId: string): Promise<void>;
+  /** Server-wide, for the administrator only: the use of each snapshot folder, by key. */
+  snapshotUsage(): Promise<readonly SnapshotUsage[]>;
 }

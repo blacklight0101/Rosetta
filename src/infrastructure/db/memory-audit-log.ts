@@ -26,13 +26,15 @@ function parseJson(text: string): unknown {
 export class MemoryAuditLog implements AuditLog {
   private readonly masker: TextMasker;
   private readonly events: StoredEvent[] = [];
+  private recorded = 0;
 
   constructor(masker: TextMasker) {
     this.masker = masker;
   }
 
   record(event: AuditEventInput): Promise<void> {
-    const sequence = this.events.length + 1;
+    this.recorded += 1;
+    const sequence = this.recorded;
     const text = storedAuditText(event);
     const row = {
       id: String(sequence),
@@ -62,5 +64,13 @@ export class MemoryAuditLog implements AuditLog {
     );
     const limited = newestFirst.slice(0, filter.limit ?? newestFirst.length);
     return Promise.resolve(limited.map((stored) => toAuditEvent(stored.row)));
+  }
+
+  /** For MemoryAuditRetention only (the port never deletes): drops the events before `cutOff`. */
+  removeBefore(cutOff: Date): number {
+    const kept = this.events.filter(({ event }) => event.at.getTime() >= cutOff.getTime());
+    const removed = this.events.length - kept.length;
+    this.events.splice(0, this.events.length, ...kept);
+    return removed;
   }
 }

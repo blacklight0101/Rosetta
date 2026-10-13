@@ -193,6 +193,97 @@ function recordingTests(name: string, fresh: FreshRuns): void {
   });
 }
 
+const endedOnce = {
+  queueState: 'Ended',
+  endState: 'Completed',
+  startedAt: 1,
+  endedAt: 2,
+} as const;
+
+function removalTests(name: string, fresh: FreshRuns): void {
+  it(`RF-1012 ${name} removes the owner's ended run and keeps every other run`, async () => {
+    const index = await fresh();
+    const doomed = await stored(index, amyRun(endedOnce));
+    const kept = await stored(index, amyRun());
+
+    expect(await index.removeEnded(runAmy, doomed.id)).toBe(true);
+
+    expect(await index.find(runAmy, doomed.id)).toBeUndefined();
+    expect(await index.find(runAmy, kept.id)).toEqual(kept);
+    expect(await index.removeEnded(runAmy, doomed.id)).toBe(false);
+  });
+
+  it(`RF-1012 ${name} does not remove a run that is queued or running`, async () => {
+    const index = await fresh();
+    const queued = await stored(index, amyRun());
+    const running = await stored(index, amyRun());
+    await index.start(running.id, 5_000);
+
+    expect(await index.removeEnded(runAmy, queued.id)).toBe(false);
+    expect(await index.removeEnded(runAmy, running.id)).toBe(false);
+
+    expect(await index.find(runAmy, queued.id)).toEqual(queued);
+    expect(await index.find(runAmy, running.id)).toMatchObject({ queueState: 'Running' });
+  });
+
+  it(`RF-1105 ${name} removes nothing for another user's run, an unknown id or a bad id`, async () => {
+    const index = await fresh();
+    const run = await stored(index, amyRun(endedOnce));
+
+    expect(await index.removeEnded(runBob, run.id)).toBe(false);
+    expect(await index.removeEnded(runAmy, unknownId)).toBe(false);
+    expect(await index.removeEnded(runAmy, 'not-a-uuid')).toBe(false);
+    expect(await index.find(runAmy, run.id)).toEqual(run);
+  });
+}
+
+function projectRemovalTests(name: string, fresh: FreshRuns): void {
+  it(`RF-1012 ${name} removes the ended runs of one project of the user and nothing else`, async () => {
+    const index = await fresh();
+    const doomed = await stored(index, amyRun(endedOnce));
+    const live = await stored(index, amyRun());
+    const otherProject = await stored(index, amyRun({ ...endedOnce, projectId: amySecondProject }));
+    const foreign = await stored(index, bobRun(endedOnce));
+
+    await index.removeEndedOfProject(runAmy, amyProject);
+    await index.removeEndedOfProject(runBob, amyProject);
+    await index.removeEndedOfProject('not-a-uuid', amyProject);
+
+    expect(await index.find(runAmy, doomed.id)).toBeUndefined();
+    expect(await index.find(runAmy, live.id)).toEqual(live);
+    expect(await index.find(runAmy, otherProject.id)).toEqual(otherProject);
+    expect(await index.find(runBob, foreign.id)).toEqual(foreign);
+  });
+}
+
+function snapshotUsageTests(name: string, fresh: FreshRuns): void {
+  const keyOne = `owner__repo@${'a'.repeat(40)}`;
+  const keyTwo = `owner__repo@${'b'.repeat(40)}`;
+
+  it(`RF-1012 ${name} counts the runs of every user per snapshot, those still active and the last use`, async () => {
+    const index = await fresh();
+    const done = { ...endedOnce, snapshotKey: keyOne };
+    await stored(index, amyRun({ ...done, queuedAt: 10, startedAt: 20, endedAt: 300 }));
+    await stored(index, bobRun({ ...done, queuedAt: 30, startedAt: 40, endedAt: 200 }));
+    const running = await stored(index, amyRun({ snapshotKey: keyOne, queuedAt: 50 }));
+    await index.start(running.id, 400);
+    await stored(index, amyRun({ snapshotKey: keyTwo, queuedAt: 70 }));
+    await stored(index, amyRun({ snapshotKey: null }));
+
+    expect(await index.snapshotUsage()).toEqual([
+      { snapshotKey: keyOne, runs: 3, active: 1, lastUsedAt: 400 },
+      { snapshotKey: keyTwo, runs: 1, active: 1, lastUsedAt: 70 },
+    ]);
+  });
+
+  it(`RF-1012 ${name} reports no usage when no run recorded a snapshot`, async () => {
+    const index = await fresh();
+    await stored(index, amyRun());
+
+    expect(await index.snapshotUsage()).toEqual([]);
+  });
+}
+
 export function runIndexContract(name: string, fresh: FreshRuns): void {
   storingTests(name, fresh);
   scopingTests(name, fresh);
@@ -200,4 +291,7 @@ export function runIndexContract(name: string, fresh: FreshRuns): void {
   queueTests(name, fresh);
   endingTests(name, fresh);
   recordingTests(name, fresh);
+  removalTests(name, fresh);
+  projectRemovalTests(name, fresh);
+  snapshotUsageTests(name, fresh);
 }
