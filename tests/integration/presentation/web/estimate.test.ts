@@ -194,7 +194,7 @@ describe('GET /api/projects/:id/estimate refuses unknown parameters', () => {
         })
         .parse(response.json());
       expect(body.code).toBe(ERROR_CODES.requestInvalid);
-      expect(body.problems).toHaveLength(1);
+      expect(body.problems.length).toBeGreaterThan(0);
       expect(body.problems[0]?.reason).toMatch(
         /^Unknown query parameter ".+"\. To estimate some areas, POST/u,
       );

@@ -5,6 +5,9 @@ import type { MapLevel } from './map-level.js';
 
 // RF-104, RF-112: an area is a group of files small enough for one agent task (data-model 3.4).
 
+/** The longest area name the code map holds (a folder path, RF-104); the API limits follow it. */
+export const MAX_AREA_NAME_LENGTH = 1024;
+
 /** How the files of an area were grouped: by folder, by language-pack references, or by settings. */
 export type AreaOrigin = 'config' | 'folder' | 'references';
 

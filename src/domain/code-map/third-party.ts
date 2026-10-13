@@ -4,31 +4,60 @@ import type { FileEntry } from './file-entry.js';
 // RF-104, RF-1001: which files and areas of the code map are third-party code (vendored libraries
 // and minified bundles). The scan keeps them in the map; the start page leaves an area that
 // consists only of them unticked and marks it. The rule is conservative, so own code is never
-// hidden by it: a file is third-party only when its name, its folder or its shape says so.
+// hidden by it: a file is third-party only when its name, its folder or its shape says so, and
+// only a script, style sheet or source map can be a library file.
 //
 // - a `*.min.js` or `*.min.css` file;
 // - a file whose lines average more than 500 characters (about four characters per token, as the
 //   scan counts them), which is what a bundle or a minified script looks like;
-// - a file under a `vendor`, `node_modules` or `bower_components` folder;
-// - a file named after a well-known library under a `lib`, `libs` or `Scripts` folder
-//   (`jquery-3.4.1.js`, `bootstrap.js`, `MicrosoftAjax.js`, but not `respondents.js`);
-// - a file under `Scripts/WebForms/`, and the Visual Studio `Scripts/_references.js`.
+// - a `.js` or `.css` file under a `vendor`, `node_modules` or `bower_components` folder;
+// - a `.js`, `.css` or `.map` file under a `lib`, `libs` or `Scripts` folder whose whole name is a
+//   well-known library, optionally followed by versions and variants: `jquery-3.4.1.js`,
+//   `jquery.validate.min.js`, `bootstrap.bundle.js`, `popper-utils.js`, but not `angularApp.js`,
+//   `d3-charts.js` or `moment-helpers.js`;
+// - the Microsoft Web Forms scripts of `Scripts/WebForms/` (`MSAjax/`, `WebForms.js`, ...), and
+//   the Visual Studio `Scripts/_references.js`.
 
 const MAX_AVERAGE_LINE = 500;
 const CHARACTERS_PER_TOKEN = 4;
 
 const MINIFIED = /\.min\.(?:js|css)$/iu;
+const SCRIPT_OR_STYLE = /\.(?:js|css)$/iu;
+const LIBRARY_FILE = /\.(?:js|css|map)$/iu;
 const VENDOR_FOLDERS: ReadonlySet<string> = new Set(['vendor', 'node_modules', 'bower_components']);
 const LIBRARY_FOLDERS: ReadonlySet<string> = new Set(['lib', 'libs', 'scripts']);
-const LIBRARY_NAMES =
-  /^(?:jquery|bootstrap|modernizr|respond|microsoftajax|microsoftmvc|popper|knockout|angular|lodash|underscore|moment|backbone|d3)/iu;
+const LIBRARIES: ReadonlySet<string> = new Set([
+  ...['jquery', 'bootstrap', 'modernizr', 'respond', 'popper', 'knockout', 'angular', 'lodash'],
+  ...['underscore', 'moment', 'backbone', 'd3', 'microsoftajax', 'microsoftmvcajax'],
+  ...['microsoftmvcvalidation', 'microsoftajaxwebforms'],
+]);
+/** What may follow a library name: `min`, `bundle`, `slim`, `validate`, `intellisense`, ... */
+const VARIANTS: ReadonlySet<string> = new Set([
+  ...['min', 'map', 'js', 'css', 'bundle', 'slim', 'validate', 'unobtrusive', 'intellisense'],
+  ...['vsdoc', 'utils', 'debug', 'esm', 'umd', 'matchmedia', 'addlistener', 'migrate'],
+]);
+const VERSION_PART = /^\d+$/u;
 
-/** A name matches a library when no lower-case letter follows it: `respond.js`, not `respondents.js`. */
+/** The Microsoft Web Forms scripts directly under `Scripts/WebForms/`; `MSAjax/` holds more. */
+const WEB_FORMS_FILES: ReadonlySet<string> = new Set([
+  ...['webforms.js', 'webuivalidation.js', 'menustandards.js', 'menu.js', 'focus.js'],
+  ...['gridview.js', 'detailsview.js', 'treeview.js', 'smartnav.js', 'webparts.js'],
+]);
+
+/** `jquery-3.4.1.min.js` is a library file; `jquery-helpers.js` and `angularApp.js` are not. */
 function isLibraryName(name: string): boolean {
-  const match = LIBRARY_NAMES.exec(name);
-  if (match === null) return false;
-  const next = name.charAt(match[0].length);
-  return !/^[a-z]$/u.test(next);
+  if (!LIBRARY_FILE.test(name)) return false;
+  const [library = '', ...rest] = name.toLowerCase().split(/[-.]/u);
+  return (
+    LIBRARIES.has(library) && rest.every((part) => VERSION_PART.test(part) || VARIANTS.has(part))
+  );
+}
+
+function isWebFormsScript(folders: readonly string[], name: string): boolean {
+  const index = folders.indexOf('scripts');
+  if (index < 0 || folders[index + 1] !== 'webforms') return false;
+  const below = folders.slice(index + 2);
+  return below[0] === 'msajax' || (below.length === 0 && WEB_FORMS_FILES.has(name.toLowerCase()));
 }
 
 function averageLineIsLong(file: FileEntry): boolean {
@@ -37,13 +66,14 @@ function averageLineIsLong(file: FileEntry): boolean {
   );
 }
 
-function byFolder(folders: readonly string[], name: string): boolean {
-  const lower = folders.map((folder) => folder.toLowerCase());
-  if (lower.some((folder) => VENDOR_FOLDERS.has(folder))) return true;
-  const scripts = lower.indexOf('scripts');
-  if (scripts >= 0 && lower[scripts + 1] === 'webforms') return true;
-  if (scripts >= 0 && name === '_references.js') return true;
-  return lower.some((folder) => LIBRARY_FOLDERS.has(folder)) && isLibraryName(name);
+function byFolder(path: readonly string[], name: string): boolean {
+  const folders = path.map((folder) => folder.toLowerCase());
+  if (folders.some((folder) => VENDOR_FOLDERS.has(folder)) && SCRIPT_OR_STYLE.test(name)) {
+    return true;
+  }
+  if (isWebFormsScript(folders, name)) return true;
+  if (folders.includes('scripts') && name === '_references.js') return true;
+  return folders.some((folder) => LIBRARY_FOLDERS.has(folder)) && isLibraryName(name);
 }
 
 /** RF-104: whether one listed file is a vendored library or a minified bundle. */

@@ -18,8 +18,7 @@ import { EventStream, type StreamRegistry } from './event-stream.js';
 import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
 import { registerRunFileRoutes, type RunFileServices } from './run-file-routes.js';
 import { signedInOf } from './request-actor.js';
-import { parseEstimateQuery } from './estimate-query.js';
-import { estimateView } from './estimate-view.js';
+import { registerEstimateRoutes } from './estimate-routes.js';
 import { runView } from './run-view.js';
 
 // RF-1006, RF-1108, RF-1105: the run routes.
@@ -27,11 +26,7 @@ import { runView } from './run-view.js';
 //   and its queue position (null when it started); a stage that cannot be started yet answers 409
 //   (RST-2305), another user's project 404. An understand run takes `areas` and `cloudConsent`;
 //   one whose roles need the consent and lack it answers 400 (RST-1515, RF-143).
-// - GET /api/projects/:id/estimate gives the estimate of an understand run (RF-425): tokens and cost
-//   per role as low, likely and high, with the assumptions. `areas` (repeated) names the areas to
-//   estimate; one the code map does not have answers 400 (RST-1307), any other query parameter 400
-//   (RST-2000, estimate-query.ts), a project without a completed scan 409 (RST-1203), another
-//   user's project 404.
+// - GET and POST /api/projects/:id/estimate give the estimate of an understand run (estimate-routes.ts).
 // - GET /api/runs/:runId gives the run as the start answered it (stage, queue and end state, project,
 //   totals so far) and `reportBuilt`, whether its report exists (P1-130): the live run page reads
 //   it for a run that has no event yet. Another user's run id answers 404 like an unknown one.
@@ -235,23 +230,6 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
   );
 }
 
-function registerEstimate(server: FastifyInstance, services: RunServices): void {
-  server.get<{ Params: { id: string } }>(
-    '/api/projects/:id/estimate',
-    { config: { access: 'user' } },
-    async (request, reply) => {
-      const areas = parseEstimateQuery(request.query);
-      const outcome = await services.estimateRun.execute({
-        actor: signedInOf(request).actor,
-        projectId: request.params.id,
-        ...(areas === undefined ? {} : { areas }),
-      });
-      if (!outcome.ok) throw new RosettaError(outcome.error);
-      return reply.status(200).send(estimateView(outcome.value));
-    },
-  );
-}
-
 // RF-1006, RF-1108, RF-1105
 export function registerRunRoutes(server: FastifyInstance, services: RunServices): void {
   registerGet(server, services);
@@ -261,7 +239,7 @@ export function registerRunRoutes(server: FastifyInstance, services: RunServices
   registerRunFileRoutes(server, services);
   registerStop(server, services);
   registerStart(server, services);
-  registerEstimate(server, services);
+  registerEstimateRoutes(server, services);
   registerAnswerRoutes(server, services);
   registerObservabilityRoutes(server, services);
 }
