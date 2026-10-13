@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 108 | 37 | 56 | 15 | 0 | 54 | 46 | 8 | 51 | 0 |
-| P2 Full understand | 16 | 2 | 9 | 5 | 0 | 3 | 12 | 1 | 2 | 0 |
-| P3 Report and plan | 12 | 1 | 9 | 2 | 0 | 1 | 9 | 2 | 0 | 0 |
-| **Total** | **136** | **40** | **74** | **22** | **0** | **58** | **67** | **11** | **53** | **0** |
+| P1 Milestone slice (M1) | 120 | 43 | 62 | 15 | 0 | 64 | 48 | 8 | 63 | 0 |
+| P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
+| P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
+| **Total** | **150** | **48** | **80** | **22** | **0** | **70** | **69** | **11** | **67** | **0** |
 
 ## Conventions for every card
 
@@ -502,7 +502,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-14, P1-18, P1-22, P1-27
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design-system.md` section 14 (totals pill); `docs/design/board/Main.dc.html`.
 - **Do**: the totals pill in every signed-in header ("Your total" from the ledger; the administrator also sees "Server, this month" against the cap); live update on usage events during a run; `/projects/:id/cost` with the project totals and the breakdown by run, stage, role, provider and model (local models with zero cost); the 80% server-cap banner for the administrator. Ledger rows with a null `run_id` (provider tests, P1-29) are listed as tests, not dropped and not joined to a run.
 - **Delivers**: header component data, cost page, route `GET /api/projects/:id/cost`; integration tests with a fixture ledger; E2E specs for live update and the banner.
@@ -514,7 +514,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-35
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/design/board/ApiCalls.dc.html`; `docs/data-model.md` sections 3.10 and 3.14.
 - **Do**: the "API calls" panel listing calls live from the provider call log with filters (provider, role, agent, status), errors and retries highlighted, link to the masked transcript, "Next error"; summary per provider and role (calls, errors, P50 and P95 latency and time to first token, tokens per second for Ollama); the security-event counter filtering the log; the "Logs" panel streaming the user's own run log entries with a level filter.
 - **Delivers**: the panels and their routes; integration tests for percentiles and scoping; E2E specs with recorded events.
@@ -538,7 +538,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-35
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.16; `docs/architecture.md` section 6 (`RecordAnswers`).
 - **Do**: `RecordAnswers` use case and `PUT /api/runs/:id/answers` updating `answers.md` (other answers kept); the answers list on the run page.
 - **Delivers**: use case, route, component; integration and E2E tests.
@@ -550,7 +550,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-33, P1-36, P1-56
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/design/board/History.dc.html`; `docs/data-model.md` sections 2 and 9.
 - **Do**: `/projects/:id/history` listing runs with source, commit, stage, state, cost and links (report, zip from P1-56); `DeleteRun` and `DeleteProject` with a confirmation naming the folder and the space freed, disabled while running, an `info` log entry, ledger untouched; `DeleteSnapshot` and the `/admin/snapshots` page for the administrator (snapshots with size and last use, following the History artboard's table), delete disabled while a run uses it.
 - **Delivers**: page, use cases, routes; integration tests for the ledger kept after deletion; E2E specs.
@@ -778,7 +778,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-12
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/conventions.md` section 10; `.dependency-cruiser.cjs`.
 - **Do**: add `web` to the `arch` script so the `web-imports-contracts-only` rule (DEC-112) runs, with a fixture test that a `web/` file importing `src/infrastructure/` is reported.
 - **Delivers**: the script change and the test.
@@ -802,7 +802,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `scripts/test-levels.mjs`; `docs/conventions.md` section 7.
 - **Do**: make `npm run test:levels` count the tests that actually run, including suites in `tests/contracts/` (by the level of the file that runs them) and each `it.each` row, preferably from the Vitest JSON reporter rather than a static scan.
 - **Delivers**: the script change and its tests.
@@ -814,7 +814,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-04
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` sections 3.6 and 3.14; `docs/security/threat-model.md`.
 - **Do**: extend `SecretMasker` to `Authorization: Basic` and `token` schemes, AWS `ASIA` keys, XML `<password>` elements, `mysql -p<pw>` and `sk-` after an underscore; in the log formatter, mask the whole value of any data key that matches `password|passwd|pwd|secret|token|api[_-]?key`; keep linear time (extend the hostile-input suite); lift or document the 512-character bound on connection-string values (P1-04 scope); mask Stripe-style keys such as `api_key = "sk_live_..."` (P1-32 verifier).
 - **Delivers**: the masker and formatter changes with fixture cases and hostile-input cases.
@@ -850,7 +850,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-24
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/provider-call-lines.ts`; `jsonl-provider-call-log.ts`; `docs/data-model.md` 3.10 and 3.15.
 - **Do**: mask each primitive item of an array held by a secret-named key together with that key; when a JSONL log file ends without a newline (a crash mid-append), start the next record on a new line and count the partial line, so `seq` has no repeat.
 - **Delivers**: the two fixes with fixture cases.
@@ -874,7 +874,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-17
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/files/`; `docs/conventions.md` size limits; RF-144, RF-146.
 - **Do**: add a per-file byte cap to readLines and grep (files above `scan.maxFileBytes` refused with a reason) and a match cap on grep results with a truncation notice; keep the worker contract.
 - **Delivers**: the caps and their tests.
@@ -886,7 +886,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-07
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/composition-root.ts`; ADR-014.
 - **Do**: bound `stop()` with a deadline: race `pool.end()` against a few seconds, then resolve so the process exits; unit test with a pool whose `end()` never settles under fake timers.
 - **Delivers**: the deadline and its test.
@@ -898,7 +898,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-63
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/ollama/ollama-context-*.ts`; `docs/providers.md` 2.2; `docs/data-model.md` 3.10.
 - **Do**: on a probe failure part-way through halving, send the last size known to fit (or the floor) instead of the start value and make the docs say what is sent; give probes a short timeout and a short back-off after a fallback; race the fixed-size spill check against the request signal; add tests for `num_ctx` on retried attempts, a malformed `/api/show` through the provider and an abort of one of two sharing callers; add a cache reset for test harnesses.
 - **Delivers**: the changes with tests.
@@ -1018,7 +1018,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/web/access-hooks.ts`, `session-routes.ts`; `src/application/use-cases/sign-in.ts`; RF-1303.
 - **Do**: skip the session lookup on public routes so `/healthz` answers 503 (not 500) while the database is down even with a session cookie; bound the `request.refused` audit rows written for Origin refusals (rate limit or sampling, with a security event); log a security event and an audit row for the 429 of the in-flight sign-in bound and for rate-limit hits; make a wrong password for a known user cost the same database work as an unknown user name and add a timing test on PostgreSQL; rotate or clear the CSRF secret cookie at sign-in and sign-out.
 - **Delivers**: the changes with tests.
@@ -1030,7 +1030,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-18
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/projects/project-settings.ts`; `src/application/use-cases/open-workspace.ts`; `docs/data-model.md` 3.1.
 - **Do**: add the allowed ranges of DEC-117 to the numeric settings and refuse a value outside them with its field and code: `agents.parallelism` 1-8; `scan.maxFileBytes` 1 KB-5 MB; `scan.areaTokenBudget` 4,000-200,000; `scan.excerptMaxLines` 20-2,000; run cost cap 0-100,000,000 micros; run tokens 0-50,000,000; `confirmAboveCostMicros` 0 up to the run cost cap; `maxOutputTokens` 256-32,768; reader `maxTurns` 1-50; `timeoutSeconds` 10-600; `maxRetries` 0-5; the template defaults stay as they are (DEC-116); audit refused and unknown-id `OpenWorkspace` attempts.
 - **Delivers**: the bounds, the audit rows and their tests.
@@ -1138,7 +1138,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-28
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/mask-request.ts`, `private-key-pieces.ts`; `src/domain/egress/data-block-scan.ts`; `docs/architecture.md` section 7.
 - **Do**: compare paths case-folded in the split-key carry (a case-insensitive file system can return `a.cs` for `A.cs`); document the `key: "MII...` limit in the module header and architecture section 7; refuse or defang Unicode look-alike block markers in content and headers.
 - **Delivers**: the changes with tests.
@@ -1186,7 +1186,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-29
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/web/provider-routes.ts`; `docs/architecture.md` section 7.
 - **Do**: write the security log entry (`RST-2005`) when the per-user provider-test limit answers 429, like the per-address limit; keep the documented per-call ceiling of run-less calls (100,000 micros, 2,000 tokens) in one constant.
 - **Delivers**: the change with a test.
@@ -1373,6 +1373,150 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Done when**: an all-zero secret key stops start-up with a code and no value in the log; the README states the real phase; `npm run verify` green and the compose smoke job green.
 - **Refs**: RNF-003, RF-1301, RF-1302, RF-1303, P1-15, P1-44, P1-45 (verifier MINORs and builder notes).
 
+### P1-109 - Follow-up: audit retention, a 365-day purge function and a daily task
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-06, P1-08, P1-79
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/decision-log.md` DEC-132; `docs/data-model.md` sections 4 (`audit_events`) and 6; `db/migrations/0003_cost_ledger_audit.sql`; `src/infrastructure/db/pg-audit-log.ts`; the `Scheduler` port and its users in `src/presentation/composition-root.ts`; `tests/support/postgres.ts`.
+- **Do**: DEC-132 keeps audit rows for 365 days while `rosetta_app` still cannot update or delete them. (1) A new migration (next free number) adds a `SECURITY DEFINER` function that deletes the `audit_events` rows older than a cut-off and returns how many it deleted. It is owned by `rosetta_migrator`, sets a fixed `search_path`, refuses with an error any cut-off younger than 365 days (measured on the database clock, not the caller's), and `EXECUTE` is revoked from `PUBLIC` and granted to `rosetta_app` only when that role exists (data-model section 6). `rosetta_app` gets no `UPDATE` or `DELETE` on `audit_events`. (2) A port and a `PgAuditRetention` adapter (and a memory adapter for the contract suite) call the function with a cut-off of 365 days; a failure is logged with a code and never stops the server. (3) A daily task on the `Scheduler` port calls it at start-up and every 24 hours, stopped by the shutdown signal. (4) Update `docs/data-model.md` section 4 (`audit_events`: retention and the function) and section 6 (the grant on the function and no other right).
+- **Delivers**: the migration, the port, the adapters, the scheduled task and the two document sections; unit tests for the task (fake `Scheduler` and `Clock`) and integration tests on PostgreSQL.
+- **Done when**: tests prove that rows older than 365 days are deleted; rows younger than 365 days survive; a direct `DELETE` and `UPDATE` on `audit_events` by `rosetta_app` fails; a cut-off younger than 365 days is refused by the function; the daily task calls it; the schema test of P1-06 lists the new function and grant; `npm run verify` green.
+- **Refs**: RF-1109, RNF-003, ADR-015, ADR-016, DEC-132, P1-08, P1-79 (the table is created by P1-06 and written by the audit log of P1-08; P1-10 only records events).
+
+### P1-110 - Follow-up: egress test that a repeated call gets a fresh tag
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-89
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/understand/run-coverage.ts`; `tests/unit/application/understand/`; `src/domain/egress/`; DEC-129; the verifier probe in comment 6134901154 on #193.
+- **Do**: `src/application/understand/run-coverage.ts`: commit a test that `toolsWithReads` forwards `renderBlock`, so that the answer to a repeated call (the same tool with the same arguments a second time) carries a fresh valid random tag and not the tag of the first answer. Use the verifier's probe of comment 6134901154 on #193 as the starting case.
+- **Delivers**: the test.
+- **Done when**: removing the `renderBlock` forwarding from `toolsWithReads` makes the test fail; `npm run verify` green.
+- **Refs**: RF-145, ADR-013, DEC-129, P1-89 (verifier finding, test gap).
+
+### P1-111 - Follow-up: make `clearContextCache` test-only
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-69
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/ollama/ollama-context-resolver.ts`; the tests of the resolver; `knip.json`.
+- **Do**: `src/infrastructure/providers/ollama/ollama-context-resolver.ts`: `clearContextCache` is exported for tests only. Move it so that production code cannot reach it (a test support file, or a resolver instance with its own cache that tests build fresh) and keep knip and dependency-cruiser green.
+- **Delivers**: the change and the adjusted tests.
+- **Done when**: no file under `src/` exports `clearContextCache`; the resolver tests still pass; `npm run verify` green.
+- **Refs**: RF-401, DEC-114, P1-69 (verifier MINOR).
+
+### P1-112 - Follow-up: secret masking gaps found in P1-62
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-62
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `src/infrastructure/guards/mask-deep.ts`; `src/infrastructure/scan/universal/sql-words.ts`; `docs/data-model.md` section 3.14 and the scan section near line 221; the tests of the masker; the verdict on #219.
+- **Do**: close the findings of the P1-62 verdict. (1) The `contextTokens` log key is masked as a bearer token: rename the log key (and its writer) so that it no longer matches a secret rule, and fix the sentence of `docs/data-model.md` 3.14 that names it. (2) The XML `<password>` rule disagrees with the code-map cut rule (`docs/data-model.md` near line 221 and `sql-words.ts` lines 43-48): decide from the masker's behaviour, then make the document and the code say the same thing, with a test. (3) Add the missing test that an XML secret element whose end tag is on the same line is masked. (4) The mysql `-p` rule over-masks ordinary prose (`-p` followed by a word): narrow it to a command-line shape and test a prose sentence. (5) The secret keys of `mask-deep.ts` cover only `password`, `passwd` and `pwd`; add `secret`, `token` and `authorization` (and their usual variants) with tests, and say so in 3.14 and in the audit `detail` rule of section 4.
+- **Delivers**: the code, the document lines and tests for each of the five items.
+- **Done when**: a log line with the renamed key shows its number; a `token`, `secret` and `authorization` value is masked by `mask-deep`; the same-line XML case and the prose `-p` case have tests that fail when the rule is reverted; `npm run verify` green.
+- **Refs**: RF-009, RF-141, RNF-003, P1-62 (verifier MINORs, verdict on #219).
+
+### P1-113 - Follow-up: answers file parsing and route tests from P1-39
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-39
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/cards/answers-sections.ts`; the answers route and its tests; `docs/data-model.md` (`answers.md`); `tests/integration/access-matrix.test.ts`; the verdict on #222.
+- **Do**: `src/infrastructure/cards/answers-sections.ts` splits on `\n` only, so an `answers.md` with CRLF line ends breaks: split on `\r?\n` (keep the file's own line ends when writing it back) and add a CRLF fixture test. Add the tests the 50-answer limit and the 256 KiB body limit lack (accepted at the limit, refused one over it, with the code). Add a route test that a state-changing answers request without a valid CSRF token is refused.
+- **Delivers**: the parser change, a CRLF fixture and the three tests.
+- **Done when**: a CRLF `answers.md` parses and saves without changing its line ends; each limit test fails when the limit constant changes; the CSRF test fails when the hook is removed from the route; `npm run verify` green.
+- **Refs**: RF-203, RF-1005, RNF-003, DEC-98, P1-39 (verifier MINORs).
+
+### P1-114 - Follow-up: bound the pill totals query and test the admin read from P1-36
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-36
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/db/pg-cost-totals.ts`; `src/application/ports/cost-totals.ts`; `tests/e2e/support/cost-run.ts`; the project cost E2E spec; the verdict on #223.
+- **Do**: `CostTotals.userSummary` in `pg-cost-totals.ts` runs an unbounded `GROUP BY` over the ledger on every refresh of the header pill: bound it (an index-friendly query on the user and the period, a limit on the groups, or a short cache keyed by user) and test the bound. `tests/e2e/support/cost-run.ts` reads `Date.now()`: take the time from the harness clock or the database instead. Add the missing test that an administrator who opens another user's project reads that project's totals and not their own (and a user still gets 404 for someone else's project).
+- **Delivers**: the query change, the helper change and the tests.
+- **Done when**: the summary query touches a bounded number of rows for a ledger of many rows (test with a seeded ledger); `grep -n "Date.now" tests/e2e/support/cost-run.ts` is empty; the admin-reads-other test passes; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-428, RF-1010, RF-1105, RNF-004, P1-36 (verifier MINORs).
+
+### P1-115 - Follow-up: log the landing-page lookup failure and test fail-closed routes
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-79
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the request-protection hooks and the landing-page route from #218 (`src/presentation/web/`); `tests/integration/access-matrix.test.ts`; `docs/conventions.md` (user-facing behaviour when something is down); the verdict on #218.
+- **Do**: the landing-page lookup failure (the store call that decides what the landing page shows) is swallowed without a log line: log it with a code at warn level (no request data beyond the path) and keep the answer as built. Add a fail-closed test: with the session store down, every non-public route answers the store-unavailable error and never serves its page, and the public routes still answer.
+- **Delivers**: the log line and the test.
+- **Done when**: a lookup failure writes one log line with its code; the fail-closed test covers a page route and an API route and fails if the hook falls open; `npm run verify` green.
+- **Refs**: RF-1101, RF-1105, RNF-003, P1-79 (verifier MINORs).
+
+### P1-116 - Follow-up: threshold and edge-case tests for settings ranges and OpenWorkspace
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-80
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/open-workspace.ts` and its tests; the settings range validation from #221; DEC-117; the verdict on #221.
+- **Do**: add tests for the early return of the threshold check (the value that returns before the later checks run) and for the three edge cases the verdict lists (a value exactly on each end of a range, one step outside it, and the missing value). In the `OpenWorkspace` tests replace the loose `toMatchObject` checks with exact expectations (`toEqual` on the audit event and on the result) so an extra or missing field fails.
+- **Delivers**: the tests.
+- **Done when**: each added test fails when its guard or constant is changed; `npm run verify` green.
+- **Refs**: RF-1106, DEC-117, P1-80 (verifier MINORs).
+
+### P1-117 - Follow-up: zero-test guard and stale report in the level script
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-61
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `scripts/test-levels.mjs` and its tests; `package.json` scripts; the verdict on #217.
+- **Do**: `scripts/test-levels.mjs`: the zero-tests guard also counts Playwright tests, so a Vitest run with zero tests passes when Playwright ran some: count only the Vitest report for the Vitest guard. Standalone, the script accepts a stale `vitest.json` left from an earlier run: refuse a report older than the run it belongs to (compare its start time, or delete it before the run) and say why. Add tests for both.
+- **Delivers**: the script change and tests.
+- **Done when**: a Vitest report with zero tests fails even when a Playwright report has tests; a `vitest.json` older than the current run is refused standalone; `npm run verify` green.
+- **Refs**: RNF-005, README section 1 (test pyramid), P1-61 (verifier MINORs).
+
+### P1-118 - Follow-up: fixtures and line length for the call log from P1-65
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-65
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the keyed-array secret masking and the call-log writer from #215 (`src/infrastructure/guards/`, `src/infrastructure/providers/`); `tests/fixtures/`; the verdict on #215.
+- **Do**: wrap the long comment lines that the verdict lists to the line width used by the repository; commit fixtures and tests for the cases that were only generated inside a test: a call-log file with CRLF line ends, an empty file, and a file holding a very long array, each read back by the same code.
+- **Delivers**: the comment edits and three committed fixtures with their tests.
+- **Done when**: each fixture exists in `tests/fixtures/` and is read by a test that fails when the handling is removed; `npm run verify` green.
+- **Refs**: RF-408, RF-009, P1-65 (verifier MINORs).
+
+### P1-119 - Follow-up: file reader and grep gaps from P1-67
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-67
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/files/` (the file reader and the grep worker); `tests/support/memory-repository-reader.ts`; `src/application/ports/`; the verdict on #207; ADR-006.
+- **Do**: test the file that grows between the size check (`stat`) and the read (it must still stop at the cap, not read the new size); pin the early stop of the grep worker with a test (a fixture with more matches than the cap stops reading further files and reports the cut); give `MemoryRepositoryReader` (`tests/support/memory-repository-reader.ts`) the same caps as the real reader so tests of its callers see the same limits, covered by the shared contract suite. The 1,000-match cap against RF-144 and RF-146 is an owner question (handoff 2026-10-13); keep it as built.
+- **Delivers**: three tests and the reader change.
+- **Done when**: the grow-between test, the early-stop test and a contract case that runs against both readers pass and fail when the guard is removed; `npm run verify` green.
+- **Refs**: RF-144, RF-146, RNF-004, ADR-006, P1-67 (verifier MINORs).
+
+### P1-120 - Follow-up: remove the start stagger from the P1-35 E2E specs
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-35
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/support/live-run-page.ts` (`waitForOwnSecond` and its call in `startAndOpenLiveRun`); `tests/e2e/live-run.spec.ts`; PR #212 (cost reservation key per user, run and call; migration 0007).
+- **Do**: the stagger worked around the cost reservation key collision of runs that started in the same second; #212 fixed the cause. Remove `waitForOwnSecond`, its call, the `PROJECT_NAMES` constant if nothing else uses it and the comment that explains it, in `tests/e2e/support/live-run-page.ts`; find any other copy with `grep -rn -i "stagger\|reservation" tests/e2e`. Run the live-run specs on all four viewport projects at once to show they stay green.
+- **Delivers**: the removal.
+- **Done when**: the grep above finds no workaround; `npm run test:e2e` is green three times in a row; `npm run verify` green.
+- **Refs**: RF-421, RF-1003, P1-35 (builder question, fixed by #212).
+
 ---
 
 ## Phase 2 - Full understand
@@ -1420,7 +1564,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.8.
 - **Do**: `coverage.json` and `coverage.md` per run: every file in each area as read (with line ranges) or not read, and the share of area tokens read in the run summary.
 - **Delivers**: the writer; integration tests with the fake provider.
@@ -1480,7 +1624,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-29
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; `docs/providers.md`.
 - **Do**: `AnthropicProvider` on `@anthropic-ai/sdk`: tool calling, the stable prompt prefix marked for caching, cached-token usage, retries; key from the provider set; the Anthropic section of `docs/providers.md`.
 - **Delivers**: the adapter, recordings, the contract suite run on it; one live call by the owner recorded.
@@ -1571,6 +1715,18 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Done when**: a recorded Anthropic call with cache-write tokens settles at the cache-write price and the reserved worst case covers it; a model without a cache-write price is handled as the price table rules say for a missing price; the cost report lists the cache-write tokens and cost; `npm run verify` green.
 - **Refs**: RF-428, RF-404, ADR-007, P2-09 (verdict comment 6132492790 on #210; owner-approved 2026-10-12).
 
+### P2-17 - Follow-up: move `@anthropic-ai/sdk` from 0.128.0 to the 0.133 line
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P2-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `package.json`; `package-lock.json`; `src/infrastructure/providers/anthropic/`; DEC-125; the verdict on #210.
+- **Do**: not before 2026-10-23 (the 0.133 line must be two weeks old, DEC-125): move `@anthropic-ai/sdk` from the exact pin 0.128.0 (the owner's choice for P2-09) to the 0.133 line, keep the exact pin style, regenerate the lockfile so that `npm ci --ignore-scripts` passes, and run the Anthropic contract suite and `npm run live:anthropic` if G-04 is open.
+- **Delivers**: the version change and the lockfile.
+- **Done when**: `npm run verify` and the Anthropic adapter contract tests are green on the new version; the audit check passes.
+- **Refs**: RF-404, ADR-013, DEC-125, P2-09 (owner chose the 0.128.0 pin on 2026-10-12).
+
 ---
 
 ## Phase 3 - Report and plan
@@ -1628,7 +1784,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`; RF-606.
 - **Do**: `prompts/catalogue/` with a version: every group and entry of RF-606, each with a one-line rule, why it matters and how to check it, in Rosetta's own words; the six architecture styles with selection criteria; a README crediting the master (Master en Desarrollo con IA, BIG School); a zod schema and loader.
 - **Delivers**: the catalogue files, schema, loader; a schema test and a defaults test.
@@ -1718,3 +1874,15 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: journey specs, the matrix.
 - **Done when**: every journey passes in CI; no R1 Must lacks evidence or a follow-up card.
 - **Refs**: RF-601, RF-604, RF-605, RNF-005, RNF-010.
+
+### P3-13 - Follow-up: catalogue rule tests and the catalogue version in the run manifest
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P3-05
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/prompts/catalogue-files.ts`; `src/infrastructure/prompts/catalogue-entry-file.ts`; `src/domain/planning/catalogue.ts`; `src/domain/runs/run-manifest.ts`; RF-606; the verdict on #208.
+- **Do**: add the two schema tests P3-05 lacks (a rule longer than 200 characters is refused; the bullets list needs at least two items, `min(2)`). `loadCatalogue` is not called at start-up (RF-606): call it once in the composition root so a broken catalogue stops start-up with a code, and record the catalogue version and its sha256 in the run manifest of a run that uses it.
+- **Delivers**: the tests, the start-up call and the manifest fields (with their line in `docs/data-model.md`).
+- **Done when**: a catalogue with a 201-character rule or one bullet fails its test; a broken catalogue file stops start-up; the manifest of a run lists the version and sha; `npm run verify` green.
+- **Refs**: RF-606, ADR-018, P3-05 (verifier MINORs).
