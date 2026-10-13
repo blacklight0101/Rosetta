@@ -688,6 +688,13 @@ measures the page with that table taken out of the layout, so anything else that
 the table's own overflow as an annotation of the test; at 1280 px nothing is exempt. The exemption ends when an app fix
 fits the tables into 360 px (a follow-up card).
 
+The landing page's replay loops for ever and fades each event in, so a check at a random moment could meet an event
+half-faded. The sweep therefore holds the page's CSS animations still (`holdAnimationsAt` in
+`tests/e2e/support/sweep.ts`) and checks two frames: the first frame, as a page just opened shows it, and the last frame
+of the cycle, the finished replay with every event in and the final badge (`.swap-b`) shown. The colour-scheme check
+needs an opaque background: a transparent one, such as a page whose stylesheet has not arrived, counts as neither light
+nor dark and fails once the poll gives up.
+
 Playwright starts `tests/e2e/support/serve.ts`, the test server: it makes a disposable PostgreSQL schema
 (`rst_e2e_<port>`) in the database at `ROSETTA_TEST_DATABASE_URL`, sets `ROSETTA_TEST=1`, creates the seeded
 administrator through the bootstrap use case (RF-1102) and composes the application with `TestDoubles`, the only
