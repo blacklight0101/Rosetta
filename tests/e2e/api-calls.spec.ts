@@ -45,12 +45,14 @@ test('RF-1011 the calls of a run appear in the panel as it works, and the summar
 
   await expect(page.getByRole('heading', { name: 'API calls and logs', level: 1 })).toBeVisible();
   await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
-  await expect(rows(page)).toHaveCount(3, { timeout: 60_000 });
+  // Three reader calls and the start check of the Ollama reader (RF-401: one call per provider and
+  // model, before the first task). The check is a call of its own, so the count includes it.
+  await expect(rows(page)).toHaveCount(4, { timeout: 60_000 });
   const summary = page.getByRole('region', { name: 'Summary per provider and role' });
   const row = summary.getByTestId('summary-row');
   await expect(row).toHaveCount(1);
   await expect(row).toContainText('reader');
-  await expect(row.getByRole('cell').nth(1)).toHaveText('3');
+  await expect(row.getByRole('cell').nth(1)).toHaveText('4');
   await expect(calls(page).getByRole('button', { name: 'Next error' })).toBeDisabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);

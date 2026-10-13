@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openScannedStartPage } from './support/cost-run.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
@@ -212,8 +213,16 @@ test('RF-425 an unknown estimate query parameter is refused with a message that 
 test('RF-1001 a run cap below the confirm threshold is refused before the request; a lower threshold lets it start', async ({
   page,
 }) => {
-  // The reader runs on OpenAI since the consent test, and the test server holds no OpenAI key.
-  await openStartPage(page);
+  // The reader runs on OpenAI with the server's key. The test scans the project when it has no code
+  // map yet and sets the reader itself, as the consent test does, so it does not depend on the tests
+  // before it (or on a .env file: the server reads none).
+  await openScannedStartPage(page);
+  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
+  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.getByRole('link', { name: 'Start a run' }).click();
   await expect(page.getByTestId('server-key-note')).toContainText(
     "OpenAI runs on the server's key",
   );
