@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { scopeOf } from '../../../../src/application/runs/run-scope.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
+import { sampleRun } from '../../../support/run-fixtures.js';
 import { REPORT_CSP } from '../../../../src/infrastructure/report/report-security.js';
 import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { auditHtml } from '../../../support/html-audit.js';
@@ -156,6 +157,29 @@ describe('POST /api/runs/:runId/report and a folder that cannot be written', () 
     expect(response.statusCode).toBe(500);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.reportWriteFailed });
     expect(response.body).not.toContain(data.path);
+  });
+});
+
+describe('POST /api/runs/:runId/report and a run with no events', () => {
+  it('RF-504 builds an empty report for a run that recorded no events, and its replay page says so', async () => {
+    const { test, amy, run } = await setup();
+    const bare = sampleRun({
+      userId: run.userId,
+      runKey: '20261012-100500-scan',
+      queueState: 'Ended',
+      endState: 'Failed',
+      startedAt: 1,
+      endedAt: 2,
+    });
+    await test.runs.runs.insert(bare);
+
+    const response = await amy.request({ method: 'POST', url: reportUrl(bare) });
+    const replay = await amy.request({ method: 'GET', url: fileUrl(bare, 'replay.html') });
+    const read = await amy.request({ method: 'GET', url: fileUrl(bare, 'report.md') });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ files: FILES });
+    expect(read.statusCode).toBe(200);
+    expect(replay.body).toContain('This run recorded no events.');
   });
 });
 

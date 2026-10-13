@@ -554,6 +554,16 @@ policy and `referrer` of no-referrer (RF-1013); repository and model text is esc
 `https://github.com/` stay links (RF-507). The server serves these five files as pages, styles and scripts; every other
 file of a run folder is text or a download.
 
+Writing the report. Each of the five files is written to a temporary name and renamed over its final name, so a file
+is always whole or absent and never half written. The set of files is not written atomically: a build that fails
+part-way (RST-1701) can leave some files new and the others from an earlier build (for example a new `report.html`
+beside an old `report.md`). Building again writes all five again, with the same bytes for the same run. A run that
+recorded no events still builds: its replay page says so and has no controls.
+
+The `<meta>` content security policy of the report pages carries no `frame-ancestors`: browsers ignore that directive
+in a `meta` element, only the response header can carry it, and the run file route sets it there (RF-1013, with
+`X-Frame-Options: DENY`).
+
 ### 3.18 Price table
 
 Shipped as `prices/default-prices.yaml` in the Rosetta repository: `{ schemaVersion, version (date),

@@ -148,6 +148,16 @@ describe('.dockerignore', () => {
   it('RF-1300 keeps source maps, coverage and local build output out of the build context', async () => {
     expect(await entries()).toEqual(expect.arrayContaining(['**/*.map', 'coverage', 'dist']));
   });
+
+  it('RF-506 ships templates/report with its stylesheet and script: both exist, the runtime stage copies the folder to /app/templates and no entry leaves them out of the build context', async () => {
+    const runtime = instructions((await stages()).at(-1)).join('\n');
+    const ignored = await entries();
+
+    expect(await read('templates/report/report.css')).not.toBe('');
+    expect(await read('templates/report/replay.js')).not.toBe('');
+    expect(runtime).toMatch(/^COPY templates \.\/templates$/mu);
+    expect(ignored.filter((entry) => /templates|^\*\*?\/?\*\.(css|js)$/u.test(entry))).toEqual([]);
+  });
 });
 
 describe('CI image job', () => {
