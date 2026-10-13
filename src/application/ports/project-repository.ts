@@ -26,4 +26,10 @@ export interface ProjectRepository {
     settings: ProjectSettings,
     updatedAt: EpochMs,
   ): Promise<Project | undefined>;
+  /**
+   * Removes the project (RF-1012); false for an unknown id and for another user's project.
+   * PostgreSQL also refuses (false) while a run of the project is queued or running and removes
+   * the project's run rows with it; the cost ledger keeps its rows (DEC-55).
+   */
+  remove(userId: string, projectId: string): Promise<boolean>;
 }

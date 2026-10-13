@@ -25,6 +25,7 @@ import { registerAdminRoutes, type AdminServices } from './admin-routes.js';
 import { registerCapRoutes, type CapServices } from './cap-routes.js';
 import { registerCostRoutes } from './cost-routes.js';
 import { registerDefaultRoleRoutes, type DefaultRoleServices } from './default-role-routes.js';
+import { registerHistoryRoutes, type HistoryServices } from './history-routes.js';
 import { registerKeyRoutes, type KeyServices } from './key-routes.js';
 import { registerProviderTestRoutes, type ProviderTestServices } from './provider-test-routes.js';
 import { toErrorReply } from './error-mapper.js';
@@ -67,6 +68,8 @@ export interface ServerOptions {
   readonly projects: ProjectServices;
   /** RF-1006, RF-1108, RF-1105: the use cases behind the run events and stop routes. */
   readonly runs: RunServices;
+  /** RF-1008, RF-1012: the use cases behind the history page, the deletions and the snapshot list. */
+  readonly history: HistoryServices;
   /** The Rosetta version reported by /healthz. */
   readonly version: string;
   /** `ROSETTA_PUBLIC_URL`; https turns HSTS on (RF-1013). */
@@ -235,6 +238,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     registerProjectRoutes(instance, options.projects);
     registerRunRoutes(instance, options.runs);
     registerCostRoutes(instance, options.projects);
+    registerHistoryRoutes(instance, options.history);
     done();
   });
   if (options.staticRoot !== undefined) {
