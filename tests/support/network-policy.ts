@@ -32,6 +32,12 @@ export function isAllowedHost(host: string, databaseUrl: string | undefined): bo
 
 // Two leading separators (either slash), then up to three path segments.
 const UNC_PREFIX = /^[\\/]{2}([^\\/]*)(?:[\\/]([^\\/]*)(?:[\\/]([^\\/]*))?)?/;
+// `\??\` is the object-manager form of `\\?\`; it is read as that prefix.
+const NT_PREFIX = /^[\\/]\?\?(?=[\\/])/;
+// A device path: `\\.\` or `\\?\` (either slash).
+const DEVICE_PREFIX = /^[\\/]{2}[.?](?=[\\/])/;
+// A `.` or `..` segment, which Windows normalisation can use to leave `\\.\pipe\`.
+const DOT_SEGMENT = /[\\/]\.{1,2}(?=[\\/]|$)/;
 
 /**
  * The server a Windows pipe path names, or undefined for a local one: `\\server\pipe\x` and
@@ -48,8 +54,19 @@ function pipeServer(path: string): string | undefined {
   return kind === 'unc' ? next : device;
 }
 
-/** True when a test may open a pipe (unix-domain socket or Windows named pipe) at `path`. */
+/** True when a device path has a dot segment after its prefix (`\\.\pipe\..\UNC\server\...`). */
+function hasDeviceDotSegment(path: string): boolean {
+  const prefix = DEVICE_PREFIX.exec(path);
+  return prefix !== null && DOT_SEGMENT.test(path.slice(prefix[0].length));
+}
+
+/**
+ * True when a test may open a pipe (unix-domain socket or Windows named pipe) at `path`. A device
+ * path with a dot segment is refused: after normalisation `\\.\pipe\..\UNC\server\...` is remote.
+ */
 export function isAllowedPipe(path: string, databaseUrl: string | undefined): boolean {
-  const server = pipeServer(path);
+  const canonical = path.replace(NT_PREFIX, String.raw`\\?`);
+  if (hasDeviceDotSegment(canonical)) return false;
+  const server = pipeServer(canonical);
   return server === undefined || isAllowedHost(server, databaseUrl);
 }
