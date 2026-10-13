@@ -1,7 +1,7 @@
 import { link, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Logger } from '../../../../src/application/ports/logger.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { grepLimits } from '../../../../src/infrastructure/files/grep-limits.js';
@@ -241,6 +241,25 @@ describe('NodeRepositoryReader grep worker', () => {
     expect(ms).toBeLessThan(3000);
     expect(securityCodes(logger)).toEqual([ERROR_CODES.grepTimedOut]);
     expect(await reader.grep({ pattern: '!' })).toMatchObject({ ok: true });
+  });
+
+  it('RF-146 a reader opened without grepTimeoutMs arms the grep timer with the 2 s default', async () => {
+    await writeTree(snapshotRoot(), { 'a.txt': 'needle\n' });
+    const reader = await NodeRepositoryReader.open({
+      root: snapshotRoot(),
+      ignoreRules: '',
+      allowDenied: [],
+      logger: newLogger(),
+    });
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+
+    try {
+      expect(await reader.grep({ pattern: 'needle' })).toMatchObject({ ok: true });
+
+      expect(timers.mock.calls.map(([, delay]) => delay)).toContain(2000);
+    } finally {
+      timers.mockRestore();
+    }
   });
 
   it('RF-146 the timeout is configurable', async () => {
