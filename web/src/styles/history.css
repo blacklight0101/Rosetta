@@ -1,0 +1,92 @@
+/*
+ * P1-40, RF-1008, RF-1012, design-system.md sections 7 and 14 (History and snapshots): the history
+ * page, the snapshots page and the confirmation dialog of a deletion. Tokens only; every class
+ * carries the card prefix `rst-p140-`.
+ */
+
+.rst-p140-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-4);
+}
+
+.rst-p140-heading {
+  font-size: var(--rst-fs-lg);
+}
+
+.rst-p140-project {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+/* The notice of the last deletion: no box while it is empty */
+
+.rst-p140-notice {
+  margin: 0;
+}
+
+.rst-p140-notice:not(:empty) {
+  padding: var(--rst-sp-3) var(--rst-sp-4);
+  border: 1px solid var(--rst-ok-solid);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-ok-bg);
+  color: var(--rst-ok-ink);
+}
+
+/* The confirmation dialog (native <dialog>, opened as a modal) */
+
+.rst-root dialog.rst-p140-dialog,
+dialog.rst-p140-dialog {
+  inline-size: calc(100% - var(--rst-sp-4) * 2);
+  max-inline-size: 32.5rem;
+  padding: var(--rst-sp-5);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-lg);
+  background: var(--rst-surface-raised);
+  color: var(--rst-ink);
+  box-shadow: var(--rst-shadow-2);
+}
+
+dialog.rst-p140-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+dialog.rst-p140-dialog::backdrop {
+  background: var(--rst-scrim);
+}
+
+.rst-p140-dialog__title {
+  margin: 0;
+  font-size: var(--rst-fs-lg);
+  overflow-wrap: anywhere;
+}
+
+.rst-p140-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  overflow-wrap: anywhere;
+}
+
+.rst-p140-dialog__body p {
+  margin: 0;
+}
+
+.rst-p140-dialog__list {
+  margin: 0;
+  padding-inline-start: var(--rst-sp-4);
+  color: var(--rst-ink-soft);
+}
+
+.rst-p140-dialog__warning {
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-p140-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--rst-sp-3);
+}
