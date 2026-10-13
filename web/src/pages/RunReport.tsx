@@ -71,7 +71,11 @@ export function RunReport({ runId, ended }: RunReportProps): JSX.Element {
   const waiting = ended ? undefined : 'Available when the run ends.';
   return (
     <section class="rst-live-report" aria-label="Report">
-      <Button disabledReason={waiting} busy={state === 'building'} onClick={build}>
+      <Button
+        {...(waiting === undefined ? {} : { disabledReason: waiting })}
+        busy={state === 'building'}
+        onClick={build}
+      >
         Build report
       </Button>
       {failure === undefined ? null : <Failure failure={failure} />}
