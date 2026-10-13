@@ -127,3 +127,15 @@ export async function expectPageInView(
   if (known === undefined || !phone) await expectNoSidewaysScroll(page);
   else await expectOnlyTheTableScrollsSideways(page, known);
 }
+
+/**
+ * Pauses the page's CSS animations at their first frame, as a page just opened shows them. The
+ * landing page's replay loops for ever and fades each event in, so a check at a random moment can
+ * meet an event half-faded (contrast near 1:1) that no reader ever has to read.
+ */
+// RNF-010
+export async function holdAnimationsAtStart(page: Page): Promise<void> {
+  await page.evaluate(`document.getAnimations()
+    .filter((each) => each instanceof CSSAnimation)
+    .forEach((each) => { each.pause(); each.currentTime = 0; })`);
+}

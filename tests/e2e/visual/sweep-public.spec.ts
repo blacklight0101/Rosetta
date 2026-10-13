@@ -1,5 +1,5 @@
 import { expect, test } from '../support/fixtures.js';
-import { expectPageInView } from '../support/sweep.js';
+import { expectPageInView, holdAnimationsAtStart } from '../support/sweep.js';
 import { submitSignIn } from '../support/sign-in-page.js';
 
 // RNF-010, RF-1200, RF-1100, architecture.md section 17: the visual sweep of the pages a visitor
@@ -12,6 +12,7 @@ test.describe('visual sweep: signed out', { tag: '@visual' }, () => {
   test('RNF-010 the landing page', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('legacy code');
+    await holdAnimationsAtStart(page);
 
     await expectPageInView(page, 'static');
   });
