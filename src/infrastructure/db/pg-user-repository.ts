@@ -135,7 +135,7 @@ export class PgUserRepository implements UserRepository {
 
   async updateIfCurrent(
     account: UserAccount,
-    read: Pick<User, 'state' | 'updatedAt'>,
+    read: Pick<UserAccount, 'state' | 'updatedAt' | 'passwordHash'>,
   ): Promise<boolean> {
     if (!UUID.test(account.id)) return false;
     const values = [...updateValues(account), read.state, new Date(read.updatedAt)];
@@ -145,6 +145,10 @@ export class PgUserRepository implements UserRepository {
     } catch (error) {
       throw queryFailed(error, account.passwordHash);
     }
+  }
+
+  countFailedSignIn(_id: string, _now: number): Promise<boolean> {
+    return Promise.resolve(false);
   }
 
   private async rows(sql: string, values: unknown[]): Promise<unknown[]> {

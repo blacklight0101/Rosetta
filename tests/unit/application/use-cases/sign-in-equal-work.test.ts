@@ -3,8 +3,8 @@ import { fixtureNow, fixturePassword, minutes } from '../../../support/account-f
 import { request, signInHarness as harness } from '../../../support/sign-in-harness.js';
 
 // RF-1100: given a wrong user name or password, the response time is the same whether or not the
-// user exists. Every refusal makes one account write, like a wrong password for a known name does
-// when it counts the failure; the write for an unknown, locked or disabled name changes no
+// user exists. Every refusal makes one failure count write, like a wrong password for a known name
+// does when it counts the failure; the write for an unknown, locked or disabled name changes no
 // stored account.
 
 const wrong = { password: fixturePassword('Wrong'), ...request };
@@ -19,12 +19,12 @@ describe('SignIn equal work', () => {
     'RF-1100 %s writes once like a wrong password for a known name',
     async (_case, overrides, userName) => {
       const known = await harness();
-      const knownWrites = vi.spyOn(known.users, 'update');
+      const knownWrites = vi.spyOn(known.users, 'countFailedSignIn');
       await known.signIn.execute({ userName: 'amy', ...wrong });
 
       const other = await harness(overrides);
       const before = await other.users.list();
-      const otherWrites = vi.spyOn(other.users, 'update');
+      const otherWrites = vi.spyOn(other.users, 'countFailedSignIn');
       const outcome = await other.signIn.execute({ userName, ...wrong });
 
       expect(outcome.ok).toBe(false);
