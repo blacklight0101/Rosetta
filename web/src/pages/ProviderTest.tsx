@@ -28,6 +28,8 @@ const roleLabels: Readonly<Record<RoleTest['role'], string>> = {
   summariser: 'Summariser',
 };
 
+const roleOrder = ['reader', 'verifier', 'planner', 'summariser'] as const;
+
 function useProviderTest(): { readonly state: TestState; readonly press: () => void } {
   const { client } = useApp();
   const [state, setState] = useState<TestState>({ status: 'idle' });
@@ -87,6 +89,30 @@ function ResultRow({ result }: { readonly result: RoleTest }): JSX.Element {
   );
 }
 
+/** RNF-010: while the answer is awaited each role shows that it is being tested. */
+function Pending(): JSX.Element {
+  return (
+    <>
+      <p class="rst-loading">
+        Testing the providers. A model that is not loaded yet can take half a minute.
+      </p>
+      <ul class="rst-provider-test__results">
+        {roleOrder.map((role) => (
+          <li key={role} class="rst-provider-test__result" data-testid="provider-test-pending">
+            <div class="rst-provider-test__summary">
+              <span class="rst-provider-test__role">{roleLabels[role]}</span>
+              <span class="rst-badge rst-badge--neutral-tint">
+                <Glyph name="clock" />
+                Testing...
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 function Results({ state }: { readonly state: TestState }): JSX.Element | null {
   if (state.status !== 'done') return null;
   return (
@@ -121,7 +147,7 @@ export function ProviderTest(): JSX.Element {
       </div>
       {state.status === 'failed' ? <ErrorBanner error={state.error} /> : null}
       <div role="status" aria-live="polite">
-        {state.status === 'running' ? <p class="rst-loading">Testing the providers</p> : null}
+        {state.status === 'running' ? <Pending /> : null}
         <Results state={state} />
       </div>
     </section>
