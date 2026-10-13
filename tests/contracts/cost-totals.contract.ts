@@ -44,6 +44,7 @@ type Fresh = () => Promise<CostTotalsFixture>;
 export function costTotalsContract(name: string, fresh: Fresh): void {
   groupingCases(name, fresh);
   scopeCases(name, fresh);
+  summaryCases(name, fresh);
 }
 
 function groupingCases(name: string, fresh: Fresh): void {
@@ -130,5 +131,65 @@ function scopeCases(name: string, fresh: Fresh): void {
     expect(tests).toEqual([
       expect.objectContaining({ runId: null, stage: 'provider-test', calls: 2, costMicros: 7n }),
     ]);
+  });
+}
+
+const RUNS = 60;
+const runNumbered = (number: number): string =>
+  `00000000-0000-4000-8000-${String(number).padStart(12, '0')}`;
+
+/** A ledger of many runs: two calls each, one of them of an unpriced model, plus a provider test. */
+async function seedManyRuns(fixture: CostTotalsFixture, userId: string): Promise<void> {
+  for (let number = 1; number <= RUNS; number += 1) {
+    await fixture.add(costEntry(userId, { runId: runNumbered(number) }));
+    await fixture.add(costEntry(userId, { runId: runNumbered(number), costKnown: false }));
+  }
+  await fixture.add(providerTestEntry(userId, { costMicros: 3n }));
+}
+
+function summaryCases(name: string, fresh: Fresh): void {
+  it(`RF-1010 ${name} sums a ledger of many runs into a bounded number of groups`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    await seedManyRuns(fixture, amy);
+
+    const summary = await fixture.totals.userSummary(amy);
+
+    expect((await fixture.totals.userGroups(amy)).length).toBeGreaterThan(RUNS);
+    expect(
+      summary.toSorted((left, right) => Number(left.costKnown) - Number(right.costKnown)),
+    ).toEqual([
+      expect.objectContaining({ costKnown: false, calls: RUNS, costMicros: BigInt(RUNS) * 700n }),
+      expect.objectContaining({
+        costKnown: true,
+        calls: RUNS + 1,
+        costMicros: BigInt(RUNS) * 700n + 3n,
+      }),
+    ]);
+  });
+
+  it(`RF-1010 ${name} summarises only the user's own rows, with the tokens and the versions`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    const bob = await fixture.addUser();
+    await fixture.add(costEntry(amy));
+    await fixture.add(costEntry(amy, { priceTableVersion: '2026-10-12', cachedInputTokens: 7 }));
+    await fixture.add(costEntry(bob, { costMicros: 5n }));
+
+    const summary = await fixture.totals.userSummary(amy);
+
+    expect(summary.map((group) => group.priceTableVersion).toSorted()).toEqual([
+      '2026-10-11',
+      '2026-10-12',
+    ]);
+    expect(
+      summary.map((group) => [group.calls, group.inputTokens, group.cachedInputTokens]),
+    ).toEqual(
+      expect.arrayContaining([
+        [1, 1000, 50],
+        [1, 1000, 7],
+      ]),
+    );
+    expect(await fixture.totals.userSummary(await fixture.addUser())).toEqual([]);
   });
 }

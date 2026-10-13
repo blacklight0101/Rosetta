@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { CostTotals, LedgerGroup } from '../../application/ports/cost-totals.js';
+import type { CostTotals, LedgerGroup, SummaryGroup } from '../../application/ports/cost-totals.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { DatabasePool } from './pool.js';
@@ -66,6 +66,10 @@ export class PgCostTotals implements CostTotals {
 
   constructor(pool: DatabasePool) {
     this.pool = pool;
+  }
+
+  userSummary(_userId: string): Promise<readonly SummaryGroup[]> {
+    return Promise.resolve([]);
   }
 
   // RF-1010
