@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { AccountSummary } from '../../application/accounts/account-summary.js';
 import type { AuditEvent } from '../../application/ports/audit-log.js';
 import type { CreateUser } from '../../application/use-cases/create-user.js';
-import type { ListAudit } from '../../application/use-cases/list-audit.js';
+import { AUDIT_PERIOD_DAYS, type ListAudit } from '../../application/use-cases/list-audit.js';
 import type { ListedAccount, ListUsers } from '../../application/use-cases/list-users.js';
 import type { ResetPassword } from '../../application/use-cases/reset-password.js';
 import type { AccountChange, UpdateUser } from '../../application/use-cases/update-user.js';
@@ -17,11 +17,13 @@ import { MAX_PASSWORD_LENGTH, PASSWORD_BODY_LIMIT_BYTES } from './password-limit
 
 // RF-1102, RF-1107, RF-1109: the account administration API; every route needs the `admin` role
 // (a `user` gets 403, access matrix).
-// - GET /api/admin/users lists every account with last sign-in, projects and month-to-date cost.
+// - GET /api/admin/users lists every account with last sign-in, projects, month-to-date cost and
+//   whether it may use the server's keys (RF-1104).
 // - POST /api/admin/users creates an account (201); `mustChangePassword` defaults to true.
 // - POST /api/admin/users/:id/disable and /enable change the account at once.
 // - POST /api/admin/users/:id/password resets the password.
-// - GET /api/admin/audit lists the last 30 days, optionally `?userId=<uuid>&action=<name>`.
+// - GET /api/admin/audit lists the last 30 days, optionally `?userId=<uuid>&action=<name>`,
+//   `&outcome=ok|refused|failed` and `&days=1|7|30` for a shorter window (P1-107).
 // Bodies with a password are capped at 4 KiB and the password at 1,024 characters (as sign-in).
 // Costs travel as decimal strings of micro-units, so no amount is rounded; no answer carries a
 // password hash or a lockout counter.
@@ -50,6 +52,11 @@ const auditQuery = z.strictObject({
   action: z
     .string()
     .regex(/^[a-z_.]{1,64}$/)
+    .optional(),
+  outcome: z.enum(['ok', 'refused', 'failed']).optional(),
+  days: z
+    .enum(AUDIT_PERIOD_DAYS.map(String))
+    .transform((days) => AUDIT_PERIOD_DAYS.find((each) => String(each) === days))
     .optional(),
 });
 
@@ -96,6 +103,7 @@ function listedView(account: ListedAccount): Record<string, unknown> {
   return {
     ...summaryView(account),
     projects: account.projects,
+    serverKeysAllowed: account.serverKeysAllowed,
     monthToDate: account.monthToDate.map(({ currency, costMicros }) => ({
       currency,
       costMicros: costMicros.toString(),
@@ -172,6 +180,8 @@ function registerAudit(server: FastifyInstance, services: AdminServices): void {
       actor: signedInOf(request).actor,
       userId: query.userId,
       action: query.action,
+      outcome: query.outcome,
+      days: query.days,
     });
     if (!outcome.ok) throw refusal(outcome.error);
     const { since, events, truncated } = outcome.value;

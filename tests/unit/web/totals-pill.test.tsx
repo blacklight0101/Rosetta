@@ -151,11 +151,26 @@ describe('cap banner', () => {
     expect(screen.queryByText(/of its monthly cap/u)).toBeNull();
   });
 
-  it('RF-1106 leaves the banner of an administration page to the page itself', async () => {
+  it('RF-1106 shows the banner of an administration page in the shell slot, linked to the caps form', async () => {
     appAt('/admin/users', 'admin', () => adminTotals());
-    await waitFor(async () => {
-      expect((await pill()).textContent).toContain('$8.50 of $10.00');
+
+    const slot = await screen.findByTestId('shell-banners');
+
+    await waitFor(() => {
+      expect(slot.textContent).toContain('The server has used 85% of its monthly cap');
     });
-    expect(screen.queryByText(/of its monthly cap/u)).toBeNull();
+    expect(within(slot).getByRole('link', { name: 'Review caps' }).getAttribute('href')).toBe(
+      '#caps',
+    );
+  });
+
+  it('RF-1106 the banner of another page links to the users and caps page', async () => {
+    appAt('/projects', 'admin', () => adminTotals());
+
+    const slot = await screen.findByTestId('shell-banners');
+
+    expect(within(slot).getByRole('link', { name: 'Review caps' }).getAttribute('href')).toBe(
+      '/admin/users',
+    );
   });
 });

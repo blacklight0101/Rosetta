@@ -129,6 +129,20 @@ function listingTests(name: string, fresh: () => Promise<AuditLog>): void {
   });
 }
 
+function outcomeTests(name: string, fresh: () => Promise<AuditLog>): void {
+  it(`RF-1109 ${name} lists the rows of one outcome`, async () => {
+    const audit = await fresh();
+    await audit.record(event({ at: minutesAfterStart(1), outcome: 'ok' }));
+    await audit.record(event({ at: minutesAfterStart(2), outcome: 'refused' }));
+    await audit.record(event({ at: minutesAfterStart(3), outcome: 'failed' }));
+
+    const since = minutesAfterStart(0).getTime();
+    const refused = await audit.list({ since, outcome: 'refused' });
+
+    expect(refused.map((row) => row.at)).toEqual([minutesAfterStart(2)]);
+  });
+}
+
 function nulTests(name: string, fresh: () => Promise<AuditLog>): void {
   it(`RF-1109 ${name} stores a row whose text holds a NUL, with the NUL replaced`, async () => {
     const audit = await fresh();
@@ -262,6 +276,7 @@ function quotedPhraseTests(name: string, fresh: () => Promise<AuditLog>): void {
 export function auditLogContract(name: string, fresh: () => Promise<AuditLog>): void {
   recordingTests(name, fresh);
   listingTests(name, fresh);
+  outcomeTests(name, fresh);
   nulTests(name, fresh);
   maskingAndFilterTests(name, fresh);
   filterParityTests(name, fresh);
