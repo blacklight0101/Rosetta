@@ -94,3 +94,77 @@ describe('parseProjectSettings: the run cost cap and the confirmation threshold'
     ]);
   });
 });
+
+describe('parseProjectSettings: thresholds and edge cases of the budget (DEC-117)', () => {
+  const maxCost = 100_000_000;
+
+  it('RF-002 a negative run cost cap is refused with RST-1003, not RST-1006', () => {
+    expect(problemsOf(settingsWith({ 'budget.run.maxCostMicros': -1 }))).toEqual([
+      { field: 'budget.run.maxCostMicros', code: ERROR_CODES.settingsCapNegative },
+    ]);
+  });
+
+  it('RF-002 a negative run cost cap with a threshold reports only the cap, not the threshold', () => {
+    const input = settingsWith({
+      'budget.run.maxCostMicros': -1,
+      'budget.confirmAboveCostMicros': 0,
+    });
+
+    expect(problemsOf(input)).toEqual([
+      { field: 'budget.run.maxCostMicros', code: ERROR_CODES.settingsCapNegative },
+    ]);
+  });
+
+  it('RF-002 a run cost cap above 100 USD with a threshold above it reports only the cap', () => {
+    const input = settingsWith({
+      'budget.run.maxCostMicros': maxCost + 1,
+      'budget.confirmAboveCostMicros': maxCost + 2,
+    });
+
+    expect(problemsOf(input)).toEqual([
+      { field: 'budget.run.maxCostMicros', code: ERROR_CODES.settingValueInvalid },
+    ]);
+  });
+
+  it('RF-002 a threshold of exactly 100 USD is accepted with a run cost cap of 100 USD', () => {
+    const input = settingsWith({
+      'budget.run.maxCostMicros': maxCost,
+      'budget.confirmAboveCostMicros': maxCost,
+    });
+
+    expect(problemsOf(input)).toEqual([]);
+  });
+
+  it('RF-002 a threshold one micro above a run cost cap of 100 USD is refused', () => {
+    const input = settingsWith({
+      'budget.run.maxCostMicros': maxCost,
+      'budget.confirmAboveCostMicros': maxCost + 1,
+    });
+
+    expect(problemsOf(input)).toEqual([
+      { field: 'budget.confirmAboveCostMicros', code: ERROR_CODES.settingValueInvalid },
+    ]);
+  });
+
+  it('RF-002 a negative confirmation threshold is refused with RST-1003', () => {
+    expect(problemsOf(settingsWith({ 'budget.confirmAboveCostMicros': -1 }))).toEqual([
+      { field: 'budget.confirmAboveCostMicros', code: ERROR_CODES.settingsCapNegative },
+    ]);
+  });
+});
+
+describe('parseProjectSettings: a missing ranged value (DEC-117)', () => {
+  it.each(RANGES.filter(([field]) => field !== 'roles.reader.maxTurns'))(
+    'RF-002 %s left out is refused with its field',
+    (field) => {
+      const [problem, ...rest] = problemsOf(settingsWith({ [field]: undefined }));
+
+      expect(rest).toEqual([]);
+      expect(problem?.field).toBe(field);
+    },
+  );
+
+  it('RF-002 the optional reader turn limit may be left out', () => {
+    expect(problemsOf(settingsWith({ 'roles.reader.maxTurns': undefined }))).toEqual([]);
+  });
+});
