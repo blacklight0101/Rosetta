@@ -5,14 +5,14 @@ import { stripThinking } from '../../../../../src/infrastructure/providers/ollam
 
 describe('thinking text in linear time', () => {
   // The old regex was quadratic: its time grew with the square of the size. Comparing two sizes
-  // checks the growth and not the speed of the machine, so a loaded runner does not flake. An
-  // eightfold input takes about 8 times as long when linear and about 64 times when quadratic;
-  // the bound of 30 sits between them, and the floor keeps a sub-millisecond baseline from
+  // checks the growth and not the speed of the machine, so a loaded runner does not flake. A
+  // sixteenfold input takes about 16 times as long when linear and about 256 times when quadratic;
+  // the bound of 64 sits four times from each, and the floor keeps a sub-millisecond baseline from
   // turning timer noise into a ratio.
-  const smallSize = 100_000;
+  const smallSize = 50_000;
   const largeSize = 800_000;
   const floorMs = 5;
-  const maxGrowth = 30;
+  const maxGrowth = 64;
 
   function bestOfThree(content: string): number {
     const times = [0, 1, 2].map(() => {
