@@ -94,3 +94,18 @@ it("RF-1105 shows the catalogue's error when the run is not found", async () => 
   expect((await screen.findByTestId('error-banner-code')).textContent).toBe('RST-2003');
   expect(screen.queryByRole('link', { name: 'Open the run replay' })).toBeNull();
 });
+
+it('RF-504 sends one request when Build report is pressed twice in a row', async () => {
+  const { calls } = await endedRun({ [`POST ${reportPath}`]: built });
+  const button = await screen.findByRole('button', { name: 'Build report' });
+  await waitFor(() => {
+    expect(button.hasAttribute('disabled')).toBe(false);
+  });
+
+  fireEvent.click(button);
+  fireEvent.click(button);
+  fireEvent.dblClick(button);
+
+  await screen.findByRole('link', { name: 'Open the run replay' });
+  expect(calls.filter((call) => call.method === 'POST')).toHaveLength(1);
+});
