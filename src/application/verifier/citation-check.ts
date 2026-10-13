@@ -9,9 +9,9 @@ import type { CodeMap } from '../../domain/code-map/code-map.js';
 
 // RF-300, RF-302, ADR-005, DEC-19: step 1 of the verifier. Every citation of a claim must name a
 // file of the code map (the exact path, as the permalink needs it) and a line range inside that
-// file; otherwise the claim becomes `CitationInvalid` with the reason. A claim that passes stays
-// `Proposed` until the judgement step (DEC-103). A claim is never removed, only its status and
-// verdict change. The check costs nothing: no model is called.
+// file, in whole lines with `1 <= start <= end`; otherwise the claim becomes `CitationInvalid` with
+// the reason. A claim that passes stays `Proposed` until the judgement step (DEC-103). A claim is
+// never removed, only its status and verdict change. The check costs nothing: no model is called.
 
 interface CitationCheck {
   readonly claimId: string;
@@ -28,8 +28,21 @@ export interface CheckedCards {
 /** The name the verdict of this step carries where the judgement step names its model. */
 const CHECKER = 'citation-check';
 
+/** Why a citation's range is not `1 <= start <= end` in whole lines, or undefined when it is. */
+function rangeProblemOf(citation: Citation): string | undefined {
+  const { startLine, endLine } = citation;
+  const cited = formatCitation(citation);
+  if (!Number.isInteger(startLine) || !Number.isInteger(endLine)) {
+    return `${cited} has a line number that is not a whole number.`;
+  }
+  if (startLine < 1) return `${cited} does not start at line 1 or later.`;
+  return endLine < startLine ? `${cited} ends before it starts.` : undefined;
+}
+
 /** Why a citation does not hold, or undefined when it does. */
 function problemOf(citation: Citation, lines: ReadonlyMap<string, number>): string | undefined {
+  const range = rangeProblemOf(citation);
+  if (range !== undefined) return range;
   const fileLines = lines.get(citation.path);
   if (fileLines === undefined) return `${citation.path} is not a file of the code map.`;
   if (citation.endLine <= fileLines) return undefined;
