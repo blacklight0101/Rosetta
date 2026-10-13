@@ -149,7 +149,7 @@ it('RF-1002 RF-1004 Understand counts the agents done of the agents planned and 
     'Snapshot:done',
     'Scan:done',
     'Understand:current',
-    'Verify:waiting',
+    'Verify:current',
     'Report:waiting',
   ]);
   expect(steps[2]?.detail).toBe('1 of 3 agents done');
@@ -216,11 +216,33 @@ it('RF-1002 a run that was stopped has no current step and keeps the steps it ne
   expect(steps.map((step) => `${step.name}:${step.status}`)).toEqual([
     'Snapshot:done',
     'Scan:done',
-    'Understand:waiting',
+    'Understand:stopped',
     'Verify:waiting',
     'Report:waiting',
   ]);
   expect(steps[2]?.detail).toBe('1 of 2 agents done');
+});
+
+it('RF-1002 an interrupted run does not mark Understand or Verify done when agents failed or claims are unchecked', () => {
+  const failed = [
+    started('understand'),
+    planned(2, 'a1', 'Catalog'),
+    cardProposed(3, 'a1', 'BR-001', 1),
+    citationChecked(4, 'a1', 'BR-001.c1', true),
+    agentEnded(5, 'a1', 'Failed'),
+    runEnded(6, 'Interrupted'),
+  ];
+  const unchecked = [
+    started('understand'),
+    planned(2, 'a1', 'Catalog'),
+    cardProposed(3, 'a1', 'BR-001', 2),
+    citationChecked(4, 'a1', 'BR-001.c1', true),
+    agentEnded(5, 'a1', 'Done', 1),
+    runEnded(6, 'Interrupted'),
+  ];
+
+  expect(words('understand', failed).slice(2, 4)).toEqual(['Understand:stopped', 'Verify:stopped']);
+  expect(words('understand', unchecked).slice(2, 4)).toEqual(['Understand:done', 'Verify:stopped']);
 });
 
 it('RF-1002 the state keeps the files and areas of scan.completed and ignores a malformed one', () => {

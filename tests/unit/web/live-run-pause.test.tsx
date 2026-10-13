@@ -147,3 +147,42 @@ it('RF-1002 when the run ends while paused, the status shows how it ended and th
     expect(panel.textContent).toContain('Done');
   });
 });
+
+it('RF-1002 the stepper is held with the panels, so it never disagrees with them', async () => {
+  const { connection } = await runningRun();
+  const pipeline = screen.getByRole('list', { name: 'Pipeline' });
+  expect(pipeline.textContent).not.toContain('claims checked');
+  fireEvent.click(screen.getByRole('button', { name: 'Pause updates' }));
+
+  connection.event(
+    ev(
+      5,
+      'agent.card.proposed',
+      { cardId: 'BR-001', type: 'BR', title: 'T', claims: 2 },
+      'reader-001',
+    ),
+  );
+  await waitFor(() => {
+    expect(count()).toContain('1 event waiting');
+  });
+  expect(pipeline.textContent).not.toContain('claims checked');
+  fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+  await waitFor(() => {
+    expect(pipeline.textContent).toContain('0 of 2 claims checked');
+  });
+});
+
+it('RF-1002 Updates resumed leaves the status after it was announced', async () => {
+  await runningRun();
+  const status = screen.getByTestId('run-status');
+  fireEvent.click(screen.getByRole('button', { name: 'Pause updates' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+  expect(status.textContent).toContain('Updates resumed');
+
+  await waitFor(
+    () => {
+      expect(status.textContent).not.toContain('Updates resumed');
+    },
+    { timeout: 6000 },
+  );
+}, 10_000);

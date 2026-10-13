@@ -30,6 +30,15 @@ const step = (page: Page, name: string): Locator =>
   pipeline(page).getByRole('listitem').filter({ hasText: name });
 const runMeter = (page: Page): Locator =>
   page.getByRole('banner').getByRole('meter', { name: 'This run spent against cap' });
+/** Where an element is on the page: nothing may move when Pause updates is pressed or released. */
+async function boxOf(
+  locator: Locator,
+): Promise<{ x: number; y: number; width: number; height: number }> {
+  const box = await locator.boundingBox();
+  if (box === null) throw new Error('The element has no box.');
+  return box;
+}
+
 const pauseCount = (page: Page): Locator => page.getByTestId('pause-count');
 
 /** The number in the pause counter ("12 events waiting"); 0 when the counter is not shown. */
@@ -99,9 +108,13 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   const overview = page.getByRole('region', { name: 'Overview' });
   const log = page.getByRole('log', { name: 'Event log' });
 
+  const pauseBox = await boxOf(page.getByRole('button', { name: 'Pause updates' }));
+  const panelBox = await boxOf(agentPanel(page, 'Catalog'));
   await page.getByRole('button', { name: 'Pause updates' }).click();
 
   await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
+  expect(await boxOf(page.getByRole('button', { name: 'Resume' }))).toEqual(pauseBox);
+  expect((await boxOf(agentPanel(page, 'Catalog'))).y).toBe(panelBox.y);
   await expect(runStatus(page)).toContainText('Updates paused');
   const held = {
     catalog: (await agentPanel(page, 'Catalog').textContent()) ?? '',
@@ -120,6 +133,8 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
 
   await expect(pauseCount(page)).toHaveCount(0);
   await expect(runStatus(page)).toContainText('Updates resumed');
+  expect(await boxOf(page.getByRole('button', { name: 'Pause updates' }))).toEqual(pauseBox);
+  expect((await boxOf(agentPanel(page, 'Catalog'))).y).toBe(panelBox.y);
   await expect(page.getByRole('button', { name: 'Pause updates' })).toBeVisible();
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
   expect(await log.getByRole('listitem').count()).toBeGreaterThan(held.lines);
@@ -161,6 +176,10 @@ test('RF-1003 RF-1010 the top bar shows what the run spent against its cap while
   await expect(runMeter(page)).toHaveAttribute('aria-valuenow', /^\d+$/u);
   await expect(runMeter(page)).toHaveAttribute('aria-valuetext', /^\$\S+ of \$\S+ \(\d+%\)/u);
   await expect(page.getByTestId('header-totals')).toBeVisible();
+  const meterBox = await boxOf(group);
+  await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
+  await expect(page.getByTestId('header-totals')).toContainText(/[1-9][d,]* tokens/u);
+  expect((await boxOf(group)).x).toBe(meterBox.x);
   const fits = await page.evaluate(
     'document.documentElement.scrollWidth <= document.documentElement.clientWidth',
   );
