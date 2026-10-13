@@ -148,34 +148,43 @@ const forceKinds: ReadonlySet<E2eAccountKind> = new Set([
 /** Kinds whose pre-seeded account holds data the specs read (seed-replay.ts): always that account. */
 const fixedAccountKinds: ReadonlySet<E2eAccountKind> = new Set(['replay']);
 
-/**
- * The account of a kind in a project. Inside a test it is the account of that test (and of that
- * repeat, `--repeat-each`), so tests that run in parallel or repeat never share an account, its
- * projects or its settings; it is created on first sign-in (`ensureAccount`). Outside a test, and
- * for the seed of the replays, it is the pre-seeded account of the kind.
- */
-export function accountFor(kind: E2eAccountKind, project: string): Credentials {
-  const base = ['e2e', kind, project].join('-');
-  const password = fixturePassword(`Acct${kind}`);
-  const key = fixedAccountKinds.has(kind) ? undefined : currentTestKey(kind);
-  if (key === undefined) return { userName: base, password };
-  // A user name has 40 characters at most (RF-1102), so the key stands for the kind and project.
-  return { userName: `e2e-${key}`, password, seed: { kind, project } };
+/** The account the seed pre-creates for a kind and project (outside any test). */
+export function preseededAccountFor(kind: E2eAccountKind, project: string): Credentials {
+  return { userName: ['e2e', kind, project].join('-'), password: fixturePassword(`Acct${kind}`) };
 }
 
 /**
- * A short key of the account of the running test: its kind, spec file, worker, parallel slot and
- * repeat. Tests running at the same moment are in different workers, so they never share an account;
- * a serial journey runs in one worker and one repeat, so its steps share the account and the run.
- * A worker that restarts after a failure gets a new worker index, so it never meets an earlier
- * worker's half-finished journey (the rest of a serial journey is skipped, not re-run elsewhere).
+ * The account of a kind in a project, for a test. It is the account of that test (and of that
+ * repeat, `--repeat-each`), so tests that run in parallel or repeat never share an account, its
+ * projects or its settings; it is created on first sign-in (`ensureAccount`). A kind in
+ * `fixedAccountKinds` always gets its pre-seeded account. Called outside a test it throws: the
+ * seed and other code outside tests use `preseededAccountFor`.
  */
-function currentTestKey(kind: E2eAccountKind): string | undefined {
+export function accountFor(kind: E2eAccountKind, project: string): Credentials {
+  if (fixedAccountKinds.has(kind)) return preseededAccountFor(kind, project);
+  const key = currentTestKey(kind);
+  // A user name has 40 characters at most (RF-1102), so the key stands for the kind and project.
+  return {
+    userName: `e2e-${key}`,
+    password: fixturePassword(`Acct${kind}`),
+    seed: { kind, project },
+  };
+}
+
+/**
+ * A key of the running test's account: kind, spec file, worker, parallel slot and repeat. Concurrent
+ * tests are in different workers; a serial journey keeps one worker and one repeat, so its steps
+ * share the account; a restarted worker gets a new key.
+ */
+function currentTestKey(kind: E2eAccountKind): string {
   let info: ReturnType<typeof test.info>;
   try {
     info = test.info();
-  } catch {
-    return undefined;
+  } catch (error) {
+    throw new Error(
+      `accountFor('${kind}') was called outside a test; use preseededAccountFor or call it inside a test.`,
+      { cause: error },
+    );
   }
   const parts = [kind, info.file, info.workerIndex, info.parallelIndex, info.repeatEachIndex];
   const digest = createHash('sha256').update(parts.map(String).join('|'));
@@ -271,7 +280,7 @@ export async function seedUsers(databaseUrl: string): Promise<void> {
       accountKinds.map((kind) => ({ kind, project })),
     );
     for (const { kind, project } of accounts) {
-      const { userName, password } = accountFor(kind, project);
+      const { userName, password } = preseededAccountFor(kind, project);
       const outcome = await createUser.execute({
         actor: actorOf(admin),
         userName,

@@ -24,14 +24,15 @@ test.describe('page shots', () => {
   test('RNF-010 saves a PNG per viewport and colour scheme and the console errors', async ({
     network,
   }, info) => {
-    test.setTimeout(180_000);
+    // The script waits up to 120 s for its server (the e2e webServer bound), then takes the shots.
+    test.setTimeout(240_000);
     const out = await mkdtemp(join(tmpdir(), 'rosetta-shots-'));
     // Each project of the run uses a server port of its own, because the projects run in parallel.
     const port = e2ePort() + 1 + projectNames.indexOf(info.project.name);
 
     try {
       await run('node', [script, '/sign-in', '--out', out, '--port', String(port)], {
-        timeout: 150_000,
+        timeout: 180_000,
       });
       const files = (await readdir(out)).sort();
       const report: unknown = JSON.parse(await readFile(join(out, 'console-errors.json'), 'utf8'));

@@ -241,8 +241,16 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   await threshold.fill('0.05');
   await page.getByRole('button', startButton).click();
 
-  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
-  await page.reload();
+  const notice = page.getByTestId('run-notice');
+  await expect(notice).toContainText(/Run started|Queued/u);
+  // The run holds one of the server's run slots: stop it (or cancel it, when queued) and wait until
+  // it has ended, so no other test's run waits behind it.
+  await notice.getByRole('link', { name: 'Open the live run' }).click();
+  await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
+  const endOfRun = page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u });
+  if (await endOfRun.isVisible()) await endOfRun.click();
+  await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });
+  await page.getByRole('link', { name: 'Start page' }).click();
   await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.10');
-  await expect(threshold).toHaveValue('0.05');
+  await expect(page.getByLabel('Ask before a run estimated above (USD)')).toHaveValue('0.05');
 });

@@ -24,6 +24,16 @@ test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('api-calls', info.project.name));
 });
 
+/**
+ * The rows the recorded understand run shows (e2e-provider.ts): its reader calls, and the start check
+ * of an Ollama reader, one call per Ollama provider and model before the first task (RF-401,
+ * reader-preflight.ts). The problem calls appendProblemCalls adds (run-folder.ts) are three rows.
+ */
+const readerCalls = 3;
+const ollamaStartChecks = 1;
+const readerRows = readerCalls + ollamaStartChecks;
+const appendedProblemRows = 3;
+
 /** The path of the live page of the run (`/runs/<uuid>`). */
 let livePath = '';
 
@@ -45,14 +55,12 @@ test('RF-1011 the calls of a run appear in the panel as it works, and the summar
 
   await expect(page.getByRole('heading', { name: 'API calls and logs', level: 1 })).toBeVisible();
   await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
-  // Three reader calls and the start check of the Ollama reader (RF-401: one call per provider and
-  // model, before the first task). The check is a call of its own, so the count includes it.
-  await expect(rows(page)).toHaveCount(4, { timeout: 60_000 });
+  await expect(rows(page)).toHaveCount(readerRows, { timeout: 60_000 });
   const summary = page.getByRole('region', { name: 'Summary per provider and role' });
   const row = summary.getByTestId('summary-row');
   await expect(row).toHaveCount(1);
   await expect(row).toContainText('reader');
-  await expect(row.getByRole('cell').nth(1)).toHaveText('4');
+  await expect(row.getByRole('cell').nth(1)).toHaveText(String(readerRows));
   await expect(calls(page).getByRole('button', { name: 'Next error' })).toBeDisabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
@@ -66,9 +74,7 @@ test('RF-1011 errors and retries are highlighted, filtered and reached with Next
 
   await page.goto(`${livePath}/calls`);
 
-  // Three reader calls, the start check of the Ollama reader (RF-401, one call) and the three
-  // appended problem calls.
-  await expect(rows(page)).toHaveCount(7);
+  await expect(rows(page)).toHaveCount(readerRows + appendedProblemRows);
   await expect(rows(page).filter({ hasText: 'RST-1504' })).toHaveAttribute('data-problem', 'true');
   await expect(rows(page).filter({ hasText: 'RST-1505' })).toHaveAttribute('data-problem', 'true');
   const summary = page.getByRole('region', { name: 'Summary per provider and role' });
@@ -77,7 +83,7 @@ test('RF-1011 errors and retries are highlighted, filtered and reached with Next
     '1 retried, 1 failed',
   );
   await calls(page).getByLabel('Provider').selectOption('cloud');
-  await expect(rows(page)).toHaveCount(3);
+  await expect(rows(page)).toHaveCount(appendedProblemRows);
   await calls(page).getByLabel('Status').selectOption('problems');
   await expect(rows(page)).toHaveCount(2);
   await calls(page).getByLabel('Status').selectOption('');
