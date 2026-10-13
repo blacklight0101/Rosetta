@@ -222,7 +222,11 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   void server.register(fastifyHelmet, securityHeaderOptions(options.publicUrl));
   registerHooks(server, options.logger);
   registerSessionPlugins(server, options.auth.refusals);
-  registerAccessHooks(server, { publicUrl: options.publicUrl, ...options.auth });
+  registerAccessHooks(server, {
+    publicUrl: options.publicUrl,
+    logger: options.logger,
+    ...options.auth,
+  });
   registerErrorHandlers(server, options);
   registerPublicRoutes(server, options);
   registerLandingRoute(server, { contactEmail: options.contactEmail });

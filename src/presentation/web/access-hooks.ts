@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { Logger } from '../../application/ports/logger.js';
 import type {
   RecordRefusedRequest,
   RefusalReason,
@@ -26,7 +27,7 @@ import { SESSION_COOKIE } from './session-cookies.js';
 // 2. Session: the `__Host-rosetta_session` cookie becomes `request.signedIn` (or null). A public
 //    route skips the lookup unless it reads the session (`readsSession`, the landing page), so
 //    /healthz still answers 503 with a cookie while the database is down (RF-1303); if that
-//    lookup fails, the landing page treats the visitor as signed out (RF-1200).
+//    lookup fails, the landing page treats the visitor as signed out (RF-1200) and logs it at warn.
 // 3. Access: without a session a page redirects to /sign-in and anything else answers 401; a
 //    `user` on an administrator route answers 403. A user whose password must be changed
 //    (MustChangePassword, RF-1102) reaches only the session API, the change-password route and
@@ -49,6 +50,8 @@ export interface AccessHookOptions {
   readonly publicUrl: string;
   readonly resolveSession: ResolveSession;
   readonly refusals: RecordRefusedRequest;
+  /** RNF-003: the landing page's failed session lookup is logged here. */
+  readonly logger: Logger;
 }
 
 const SIGN_IN_PAGE = '/sign-in';
@@ -108,24 +111,35 @@ async function checkPasswordChange(
 
 /**
  * RF-1009, RF-1200: a public route that reads the session (the landing page) shows its visitor page
- * when the lookup fails, instead of answering 500; any other route lets the failure through.
+ * when the lookup fails, instead of answering 500; any other route lets the failure through. The
+ * failure is logged at warn with RST-2404 and the path only (RNF-003), never the error text.
  */
 async function lookUp(
   resolveSession: ResolveSession,
+  logger: Logger,
+  request: FastifyRequest,
   sessionId: string,
-  publicRoute: boolean,
 ): Promise<SignedInSession | null> {
-  if (!publicRoute) return (await resolveSession.execute(sessionId)) ?? null;
+  if (accessOf(request) !== 'public') return (await resolveSession.execute(sessionId)) ?? null;
   try {
     return (await resolveSession.execute(sessionId)) ?? null;
   } catch {
+    await logger
+      .log({
+        level: 'warn',
+        logger: 'http',
+        message: 'The session lookup failed; the page is shown to a visitor.',
+        code: ERROR_CODES.databaseQueryFailed,
+        data: { path: requestPath(request) },
+      })
+      .catch(() => undefined);
     return null;
   }
 }
 
 // RF-1009
 export function registerAccessHooks(server: FastifyInstance, options: AccessHookOptions): void {
-  const { resolveSession, refusals } = options;
+  const { resolveSession, refusals, logger } = options;
   const origin = new URL(options.publicUrl).origin;
   server.decorateRequest('signedIn', null);
 
@@ -138,7 +152,7 @@ export function registerAccessHooks(server: FastifyInstance, options: AccessHook
   server.addHook('onRequest', async (request) => {
     const sessionId = request.cookies[SESSION_COOKIE];
     if (sessionId === undefined || sessionId === '' || !needsSession(request)) return;
-    request.signedIn = await lookUp(resolveSession, sessionId, accessOf(request) === 'public');
+    request.signedIn = await lookUp(resolveSession, logger, request, sessionId);
   });
 
   server.addHook('onRequest', (request, reply) => checkAccess(refusals, request, reply));
