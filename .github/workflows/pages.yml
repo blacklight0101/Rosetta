@@ -1,7 +1,9 @@
 # Pages (RF-800, RF-501, DEC-04, DEC-105): publishes the sample report in `site/` from `main` to GitHub
 # Pages, then checks that the published index shows the sample run (scripts/pages-smoke.mjs). Nothing
-# is published from a pull request. The owner enables Pages with the source "GitHub Actions" in the
-# repository settings; this file changes no setting.
+# is published from a pull request. Three jobs: build reads the repository (contents: read only),
+# deploy holds the two write scopes Pages needs and nothing else, and smoke checks the public address.
+# The owner enables Pages with the source "GitHub Actions" in the repository settings; this file
+# changes no setting. Until the owner does, the first run on main is red at configure-pages.
 name: Pages
 
 on:
@@ -11,7 +13,7 @@ on:
       - site/**
       - .github/workflows/pages.yml
       - scripts/pages-smoke.mjs
-      - src/infrastructure/report/published-site.ts
+      - src/infrastructure/report/index-check.ts
   workflow_dispatch:
 
 permissions:
@@ -26,20 +28,13 @@ env:
   SAMPLE_RUN_KEY: 20261012-100000-understand
 
 jobs:
-  deploy:
-    name: deploy
+  build:
+    name: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    outputs:
-      page_url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
-      pages: write
-      id-token: write
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -51,6 +46,22 @@ jobs:
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site
+
+  deploy:
+    name: deploy
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
