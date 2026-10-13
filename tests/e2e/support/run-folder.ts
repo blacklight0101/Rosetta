@@ -3,6 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { z } from 'zod';
+import type { Clock } from '../../../src/application/ports/clock.js';
+import { SystemClock } from '../../../src/infrastructure/system/system-clock.js';
+import { FixedClock } from '../../support/fixed-clock.js';
 import { e2ePort } from './server-config.js';
 
 // RF-1011, P1-37: the files of a run of the end-to-end server, for the journeys that need a call or a
@@ -56,22 +59,29 @@ async function appendCalls(
   await appendFile(file, `${added.join('\n')}\n`, 'utf8');
 }
 
-/** Appends entries of this run to today's application log file. */
+/**
+ * Appends entries of this run to today's application log file. The time comes from the harness
+ * clock; the default is the system clock, because the server reads today's file by its own clock.
+ */
 export async function appendLogs(
   folder: RunFolder,
   entries: readonly { level: string; logger: string; message: string; code?: string }[],
+  clock: Clock = new SystemClock(),
 ): Promise<void> {
-  const now = new Date();
-  const file = join(dataDir(), 'logs', `rosetta-${now.toISOString().slice(0, 10)}.jsonl`);
-  const lines = entries.map((entry, index) =>
-    JSON.stringify({
+  // One millisecond apart, so the entries keep their order.
+  const ticks = new FixedClock(clock.now().toISOString());
+  const file = join(dataDir(), 'logs', `rosetta-${ticks.now().toISOString().slice(0, 10)}.jsonl`);
+  const lines = entries.map((entry) => {
+    const at = ticks.now().toISOString();
+    ticks.advance(1);
+    return JSON.stringify({
       schemaVersion: 1,
-      at: new Date(now.getTime() + index).toISOString(),
+      at,
       runId: folder.runKey,
       userId: folder.userId,
       ...entry,
-    }),
-  );
+    });
+  });
   await appendFile(file, `${lines.join('\n')}\n`, 'utf8');
 }
 
