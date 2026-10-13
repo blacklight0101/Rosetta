@@ -144,6 +144,20 @@ describe('scripts/test-levels.mjs guards', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('Unit 2 / Integration 0 / E2E 0');
   });
+
+  it.each([
+    ['is missing', {}],
+    ['is a string', { startTime: '1700000000000' }],
+    ['is null', { startTime: null }],
+  ])('RNF-005 refuses a Vitest report whose startTime %s', async (_label, startTime) => {
+    const report = join(tmp.path, 'no-start-time.json');
+    await writeFile(report, JSON.stringify({ ...startTime, testResults: [] }));
+
+    const result = await runScript(['--report', report, tmp.path]);
+
+    expect(result.code).toBe(1);
+    expect(result.stderr).toMatch(/no startTime/u);
+  });
 });
 
 describe('scripts/test-levels.mjs option', () => {
