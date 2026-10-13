@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
+import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { TaskReads, toolsWithReads } from '../../../../src/application/understand/run-coverage.js';
 import { footerOf, tagOf } from '../../../support/data-block-tags.js';
 import { toolsSetup } from '../../../support/agent-tools-harness.js';
@@ -67,11 +68,18 @@ describe('runAgentTask through toolsWithReads', () => {
     });
 
     const answers = result.messages.filter((m) => m.role === 'tool').map((m) => m.content);
+    const overviews = result.messages.filter(
+      (m) => m.role === 'user' && m.content.includes('<<<ROSETTA-DATA'),
+    );
+    const overview = overviews[0]?.content ?? '';
     const tags = answers.map((content) => tagOf(content));
+    const overviewTag = tagOf(overview.slice(overview.indexOf('<<<ROSETTA-DATA')));
     expect(answers).toHaveLength(2);
-    expect(answers[1]).toContain('RST-');
+    expect(overviews).toHaveLength(1);
+    expect(answers[1]).toContain(`error ${ERROR_CODES.agentRepeatedCalls}:`);
     expect(tags.every((tag) => /^[a-z2-7]{24}$/.test(tag))).toBe(true);
     expect(new Set(tags).size).toBe(2);
+    expect(tags).not.toContain(overviewTag);
     expect(answers[1]?.split('\n').at(-1)).toBe(footerOf(tags[1] ?? ''));
   });
 });
