@@ -56,7 +56,7 @@ async function setup(database: ReturnType<typeof useTestDatabase>) {
     Number((await pool.query<{ n: string }>(count)).rows[0]?.n);
   const totals = new PgCostTotals(pool);
   const spent = async (): Promise<bigint> =>
-    (await totals.userGroups(amy)).reduce((sum, group) => sum + group.costMicros, 0n);
+    (await totals.userSummary(amy)).reduce((sum, group) => sum + group.costMicros, 0n);
   return { projects, runs, project, ...deps, spend, ended, ledgerRows, totals, spent };
 }
 

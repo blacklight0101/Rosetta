@@ -21,7 +21,6 @@ const GROUPS = (scope: string): string =>
  */
 const USER_SUMMARY = `SELECT currency, cost_known, price_table_version, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 GROUP BY currency, cost_known, price_table_version ORDER BY currency COLLATE "C", cost_known, price_table_version COLLATE "C"`;
 
-const USER_GROUPS = GROUPS('user_id = $1');
 const PROJECT_GROUPS = GROUPS('user_id = $1 AND project_id = $2');
 /** A provider test is the only row of no project (RF-407, data-model.md 3.13). */
 const PROVIDER_TEST_GROUPS = GROUPS('user_id = $1 AND project_id IS NULL');
@@ -87,11 +86,6 @@ export class PgCostTotals implements CostTotals {
   // RF-1010
   async userSummary(userId: string): Promise<readonly SummaryGroup[]> {
     return (await this.rows(USER_SUMMARY, [userId])).map((row) => toSummary(summaryRow.parse(row)));
-  }
-
-  // RF-1010
-  userGroups(userId: string): Promise<readonly LedgerGroup[]> {
-    return this.groups(USER_GROUPS, [userId]);
   }
 
   // RF-428

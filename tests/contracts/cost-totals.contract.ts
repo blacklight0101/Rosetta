@@ -4,8 +4,9 @@ import type { CostTotals, LedgerGroup } from '../../src/application/ports/cost-t
 import { costEntry, costProjectId, costRunB, providerTestEntry } from '../support/cost-fixtures.js';
 
 // Architecture section 7: every CostTotals adapter (PgCostTotals, MemoryCostTotals) passes this
-// suite. RF-428, RF-1010: the ledger rows of one user (all of them, or one project's) are summed per
-// run, stage, role, provider, model, key source, currency, known cost and price table version.
+// suite. RF-428, RF-1010: the ledger rows of one project, or of no project, are summed per run,
+// stage, role, provider, model, key source, currency, known cost and price table version; all the
+// rows of one user are summed per currency, known cost and price table version only.
 
 /** What a suite needs to put rows behind the adapter; each adapter's test provides it. */
 interface CostTotalsFixture {
@@ -44,6 +45,7 @@ type Fresh = () => Promise<CostTotalsFixture>;
 export function costTotalsContract(name: string, fresh: Fresh): void {
   groupingCases(name, fresh);
   scopeCases(name, fresh);
+  boundedCases(name, fresh);
   summaryCases(name, fresh);
 }
 
@@ -96,24 +98,22 @@ function scopeCases(name: string, fresh: Fresh): void {
     await fixture.add(costEntry(bob, { costMicros: 5n }));
 
     const project = await fixture.totals.projectGroups(amy, costProjectId);
-    const mine = await fixture.totals.userGroups(amy);
-    const theirs = await fixture.totals.userGroups(bob);
+    const mine = await fixture.totals.userSummary(amy);
+    const theirs = await fixture.totals.userSummary(bob);
 
     expect(project.map((group) => group.calls)).toEqual([1]);
     expect(mine.map((group) => group.calls)).toEqual([2]);
     expect(theirs.map((group) => group.costMicros)).toEqual([5n]);
   });
 
-  it(`RF-1010 ${name} lists a provider test as a group of no run, never dropped`, async () => {
+  it(`RF-1010 ${name} counts a provider test, of no project, in the user's sums`, async () => {
     const fixture = await fresh();
     const amy = await fixture.addUser();
     await fixture.add(providerTestEntry(amy, { costMicros: 3n }));
 
-    const mine = await fixture.totals.userGroups(amy);
+    const mine = await fixture.totals.userSummary(amy);
 
-    expect(mine).toEqual([
-      expect.objectContaining({ runId: null, stage: 'provider-test', calls: 1, costMicros: 3n }),
-    ]);
+    expect(mine).toEqual([expect.objectContaining({ calls: 1, costMicros: 3n })]);
     expect(await fixture.totals.projectGroups(amy, costProjectId)).toEqual([]);
   });
 
@@ -149,7 +149,7 @@ async function seedManyRuns(fixture: CostTotalsFixture, userId: string): Promise
   await fixture.add(providerTestEntry(userId, { costMicros: 3n }));
 }
 
-function summaryCases(name: string, fresh: Fresh): void {
+function boundedCases(name: string, fresh: Fresh): void {
   it(
     `RF-1010 ${name} sums a ledger of many runs into a bounded number of groups`,
     async () => {
@@ -159,7 +159,8 @@ function summaryCases(name: string, fresh: Fresh): void {
 
       const summary = await fixture.totals.userSummary(amy);
 
-      expect((await fixture.totals.userGroups(amy)).length).toBeGreaterThan(RUNS);
+      const perRun = await fixture.totals.projectGroups(amy, costProjectId);
+      expect(perRun.length).toBeGreaterThan(RUNS);
       expect(
         summary.toSorted((left, right) => Number(left.costKnown) - Number(right.costKnown)),
       ).toEqual([
@@ -173,7 +174,9 @@ function summaryCases(name: string, fresh: Fresh): void {
     },
     SEED_TIMEOUT_MS,
   );
+}
 
+function summaryCases(name: string, fresh: Fresh): void {
   it(`RF-1010 ${name} summarises only the user's own rows, with the tokens and the versions`, async () => {
     const fixture = await fresh();
     const amy = await fixture.addUser();

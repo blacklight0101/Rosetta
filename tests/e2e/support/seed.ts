@@ -56,7 +56,9 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * a project and a run, `journey-other` is the second user who must not see them, `journey-force`
  * must change its password at first sign-in, `journey-run` runs the pipeline on the C# fixture,
  * `journey-language` on the COBOL one and `journey-admin` is the administrator who creates a user
- * and saves the caps.
+ * and saves the caps. The visual sweep (tests/e2e/visual/, RNF-010) has its own too: `sweep` makes a
+ * project and its runs and opens every page of a user, `sweep-admin` the administration pages and
+ * `sweep-force` keeps its temporary password, so the first sign-in page stays open to it.
  */
 export type E2eAccountKind =
   | 'keys'
@@ -83,7 +85,10 @@ export type E2eAccountKind =
   | 'journey-force'
   | 'journey-run'
   | 'journey-language'
-  | 'journey-admin';
+  | 'journey-admin'
+  | 'sweep'
+  | 'sweep-admin'
+  | 'sweep-force';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -111,6 +116,9 @@ const accountKinds: readonly E2eAccountKind[] = [
   'journey-run',
   'journey-language',
   'journey-admin',
+  'sweep',
+  'sweep-admin',
+  'sweep-force',
 ];
 
 const adminKinds: ReadonlySet<E2eAccountKind> = new Set([
@@ -118,8 +126,14 @@ const adminKinds: ReadonlySet<E2eAccountKind> = new Set([
   'history-admin',
   'admin',
   'journey-admin',
+  'sweep-admin',
 ]);
-const forceKinds: ReadonlySet<E2eAccountKind> = new Set(['force', 'force-admin', 'journey-force']);
+const forceKinds: ReadonlySet<E2eAccountKind> = new Set([
+  'force',
+  'force-admin',
+  'journey-force',
+  'sweep-force',
+]);
 
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
   return {

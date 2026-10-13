@@ -1,8 +1,12 @@
 import { AxeBuilder } from '@axe-core/playwright';
-import type { Page } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
+import { checksEveryView, inEveryView } from './views.js';
 
 // RNF-010, DEC-52: WCAG 2.1 AA by axe on the page as it is now. Serious and critical violations
-// fail; minor and moderate ones are for the verifier's page walk.
+// fail; minor and moderate ones are for the verifier's page walk. A behavioural test runs once, in
+// desktop-light (playwright.config.ts), so there the check is made in all four views of views.ts
+// (1280 and 360 px wide, light and dark) on the page in the same state; a test tagged @visual runs
+// in all four projects and checks the view of its own project only.
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const FAILING: ReadonlySet<string> = new Set(['serious', 'critical']);
@@ -10,6 +14,15 @@ const FAILING: ReadonlySet<string> = new Set(['serious', 'critical']);
 /** Throws, listing rule ids and impact, when axe finds a serious or critical violation. */
 // RNF-010
 export async function expectNoSeriousViolations(page: Page): Promise<void> {
+  const info = test.info();
+  if (!checksEveryView(info)) {
+    await expectNoSeriousViolationsInView(page, info.project.name);
+    return;
+  }
+  await inEveryView(page, info, (view) => expectNoSeriousViolationsInView(page, view.name));
+}
+
+async function expectNoSeriousViolationsInView(page: Page, view: string): Promise<void> {
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const failing = results.violations.filter(
     (violation) =>
@@ -20,7 +33,9 @@ export async function expectNoSeriousViolations(page: Page): Promise<void> {
     (violation) =>
       `${String(violation.impact)} ${violation.id}: ${violation.help} (${String(violation.nodes.length)} node(s): ${violation.nodes.map((node) => `${node.target.join(' ')} ${node.any.map((check) => check.message).join(' ')}`).join('; ')})`,
   );
-  throw new Error(`Accessibility violations on ${page.url()}:\n${lines.join('\n')}`);
+  throw new Error(
+    `Accessibility violations on ${page.url()} in the ${view} view:\n${lines.join('\n')}`,
+  );
 }
 
 /**
