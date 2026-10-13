@@ -104,6 +104,10 @@ describe('scripts/test-levels.mjs', () => {
     expect(result.code).toBe(1);
     expect(result.stderr).toMatch(/counted zero tests/u);
   });
+});
+
+describe('scripts/test-levels.mjs guards', () => {
+  const tmp = useTempRoot('rosetta-levels-guard-');
 
   it('RNF-005 fails when the Vitest report has zero tests even if Playwright specs have tests', async () => {
     const folder = join(tmp.path, 'tests', 'e2e');
@@ -140,6 +144,10 @@ describe('scripts/test-levels.mjs', () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toContain('Unit 2 / Integration 0 / E2E 0');
   });
+});
+
+describe('scripts/test-levels.mjs option', () => {
+  const tmp = useTempRoot('rosetta-levels-option-');
 
   it('RNF-005 fails and names the option when no Vitest report is given', async () => {
     const result = await runScript([tmp.path]);
