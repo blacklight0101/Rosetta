@@ -261,7 +261,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `resumedFrom` | string | the earlier `runId` when resumed (RF-006) |
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
-| `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request named some (none means every area), `cloudConsent` always (P1-33, RF-143) |
+| `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
 | `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when a role uses Ollama with `toolMode: text` (RF-205) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
@@ -310,8 +310,8 @@ part-way every file already written gets its previous content back and a file th
 (RNF-002); a file that cannot be put back is logged and the original refusal is returned. An understand run rewrites
 the whole set after each task ends (the cards of every ended task, ids given in area order), one write at a time per
 run folder, so a run that stops keeps the cards of the tasks that ended (P1-33). Every claim passes the citation check
-(verifier step 1) before it is written: a citation of a path that is not a file of the code map, or a range that ends
-after the file's last line, makes the claim `CitationInvalid` with the reason in its verdict
+(verifier step 1) before it is written: a citation of a path that is not a file of the code map, a range whose start or end
+is not a whole number or that breaks `1 <= start <= end`, or a range that ends after the file's last line, makes the claim `CitationInvalid` with the reason in its verdict
 (`{ step: citation, model: citation-check }`); a claim that passes stays `Proposed` until the judgement step (DEC-103).
 
 In the header a citation is the string `path:startLine-endLine`; absent optional fields are left out. Every string is a
