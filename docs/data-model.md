@@ -307,9 +307,11 @@ Header fields:
 A rejected or invalid claim is never removed; only its status and verdict change (RF-302). The card files, the index
 and `spec.md` are written together: each file's previous content is read first, and when a write is refused or fails
 part-way every file already written gets its previous content back and a file that did not exist is removed
-(RNF-002); a file that cannot be put back is logged and the original refusal is returned. An understand run rewrites
-the whole set after each task ends (the cards of every ended task, ids given in area order), one write at a time per
-run folder, so a run that stops keeps the cards of the tasks that ended (P1-33). Every claim passes the citation check
+(RNF-002); a file that cannot be put back is logged and the original refusal is returned, even when the log entry
+itself cannot be written. The writer does not lock: card writes to one run folder must be serialised by the caller,
+because two writes at once would each take the other's half-written files as the previous content. An understand run
+rewrites the whole set after each task ends (the cards of every ended task, ids given in area order), one write at a
+time per run folder, so a run that stops keeps the cards of the tasks that ended (P1-33). Every claim passes the citation check
 (verifier step 1) before it is written: a citation of a path that is not a file of the code map, a range whose start or end
 is not a whole number or that breaks `1 <= start <= end`, or a range that ends after the file's last line, makes the claim `CitationInvalid` with the reason in its verdict
 (`{ step: citation, model: citation-check }`); a claim that passes stays `Proposed` until the judgement step (DEC-103).

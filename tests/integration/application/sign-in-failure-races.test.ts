@@ -1,24 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
 import { ChangePassword } from '../../../src/application/use-cases/change-password.js';
-import { SignIn } from '../../../src/application/use-cases/sign-in.js';
 import { actorOf } from '../../../src/domain/accounts/actor.js';
-import type { UserAccount } from '../../../src/domain/accounts/user.js';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
-import { MemoryAuditLog } from '../../../src/infrastructure/db/memory-audit-log.js';
-import { MemorySessionStore } from '../../../src/infrastructure/db/memory-session-store.js';
-import { PgUserRepository } from '../../../src/infrastructure/db/pg-user-repository.js';
-import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
 import {
   commonPasswords,
-  FakePasswordHasher,
   fixtureNow,
   fixturePassword,
   minutes,
-  sampleAccount,
 } from '../../support/account-fixtures.js';
 import { hasTestDatabase, testClock, useTestDatabase } from '../../support/postgres.js';
-import { RecordingLogger } from '../../support/recording-logger.js';
+import { lockEvents, racingHasher, setUp, signInWith } from '../../support/sign-in-race-setup.js';
 
 // RF-1100, RF-1102, RF-1103, DEC-112, P1-86 on PostgreSQL: a failed sign-in or password check is
 // counted with one incrementing guarded UPDATE, so parallel wrong guesses each count until the
@@ -28,45 +20,6 @@ import { RecordingLogger } from '../../support/recording-logger.js';
 
 const client = { ip: '203.0.113.7', userAgent: 'Browser/1.0' };
 const wrongPassword = fixturePassword('Wrong');
-
-async function setUp(database: ReturnType<typeof useTestDatabase>) {
-  const { pool } = await database.createSchema({ migrate: true });
-  const users = new PgUserRepository(pool);
-  const hasher = new FakePasswordHasher();
-  const password = fixturePassword('Amy');
-  const amy = sampleAccount({ userName: 'amy', passwordHash: await hasher.hash(password) });
-  await users.insert(amy);
-  const auditLog = new MemoryAuditLog(new SecretMasker());
-  const parts = {
-    users,
-    sessions: new MemorySessionStore(),
-    auditLog,
-    logger: new RecordingLogger(),
-    clock: testClock,
-  };
-  return { users, hasher, password, amy, auditLog, parts };
-}
-
-type Setup = Awaited<ReturnType<typeof setUp>>;
-
-/** A hasher whose verification first lets an administrator change the account. */
-function racingHasher(setup: Setup, meanwhile: UserAccount): PasswordHasher {
-  return {
-    hash: (password) => setup.hasher.hash(password),
-    verify: async (candidate, hash) => {
-      await setup.users.update(meanwhile);
-      return setup.hasher.verify(candidate, hash);
-    },
-  };
-}
-
-function signInWith(setup: Setup, hasher: PasswordHasher): SignIn {
-  return new SignIn({ ...setup.parts, hasher, dummyHash: 'fake$dummy' });
-}
-
-async function lockEvents(setup: Setup): Promise<number> {
-  return (await setup.auditLog.list({ since: 0, action: 'auth.locked' })).length;
-}
 
 describe.skipIf(!hasTestDatabase)('parallel failure counts on PostgreSQL', () => {
   const database = useTestDatabase();

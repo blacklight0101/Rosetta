@@ -2,6 +2,7 @@ import { describe } from 'vitest';
 import { PgUserRepository } from '../../../../src/infrastructure/db/pg-user-repository.js';
 import { failedSignInCounterContract } from '../../../contracts/failed-sign-in-counter.contract.js';
 import { userRepositoryContract } from '../../../contracts/user-repository.contract.js';
+import { successfulSignInContract } from '../../../contracts/successful-sign-in.contract.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
 
 // Architecture section 7, ADR-016: PgUserRepository passes the UserRepository contract and the
@@ -16,4 +17,5 @@ describe.skipIf(!hasTestDatabase)('PgUserRepository', () => {
 
   userRepositoryContract('PgUserRepository', fresh);
   failedSignInCounterContract('PgUserRepository', fresh);
+  successfulSignInContract('PgUserRepository', fresh);
 });

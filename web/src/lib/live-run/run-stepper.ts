@@ -5,7 +5,7 @@ import { overviewOf } from './run-summary.js';
 // RF-1002, RF-1004, design-system.md section 5 (pipeline stepper): the five steps of a run as the page
 // can tell them from the events and the run row. A stage the run does not include stays waiting, and
 // so does a step the run never reached; at most one step is current. The report is built from the page
-// of a finished run, never by the run, so its step always waits.
+// of a finished run, never by the run, so its step waits until a report exists (RF-504, P1-130).
 
 type StepName = 'Snapshot' | 'Scan' | 'Understand' | 'Verify' | 'Report';
 export type StepStatus = 'done' | 'current' | 'stopped' | 'waiting';
@@ -20,6 +20,8 @@ export interface Step {
 export interface StepperRun {
   readonly stage: string;
   readonly commitSha: string | null;
+  /** A report exists for the run: built earlier (the run row) or from this page. */
+  readonly reportBuilt: boolean;
 }
 
 type Progress = 'done' | 'working' | 'idle';
@@ -113,7 +115,7 @@ function readerSteps(state: RunState, phase: RunPhase): readonly Step[] {
 
 // RF-1002
 export function stepperOf(run: StepperRun, state: RunState, phase: RunPhase): readonly Step[] {
-  const report = step('Report', 'waiting');
+  const report = step('Report', run.reportBuilt ? 'done' : 'waiting');
   if (phase.kind === 'queued') {
     return (['Snapshot', 'Scan', 'Understand', 'Verify'] as const)
       .map((name) => step(name, 'waiting'))

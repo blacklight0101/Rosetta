@@ -133,10 +133,14 @@ function createStores(options: RunHarnessOptions): Stores {
 function waitUntilEnded(runs: MemoryRunIndex): RunHarness['ended'] {
   return async (run) => {
     let latest: Run | undefined;
-    await vi.waitFor(async () => {
-      latest = await runs.find(run.userId, run.id);
-      if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
-    });
+    // The default 50 ms poll made every call cost about 50 ms; 2 ms keeps the same 1 s timeout.
+    await vi.waitFor(
+      async () => {
+        latest = await runs.find(run.userId, run.id);
+        if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
+      },
+      { interval: 2 },
+    );
     if (latest === undefined) throw new Error('The run vanished');
     return latest;
   };
