@@ -41,6 +41,7 @@ async function queueOne(test: HistoryHarness): Promise<Run> {
   const project = await test.test.projects.find(test.userId, test.projectId);
   if (user === undefined || project === undefined) throw new Error('No user or project.');
   const actor = actorOf(user);
+  test.test.clock.advance(60_000);
   const outcome = await test.test.runs.submit.execute({
     actor,
     project,

@@ -68,7 +68,7 @@ export function projectOf(
 }
 
 /** The totals of a project without a call: what `GET /api/projects/overview` answers for one. */
-export const zeroTotals = {
+const zeroTotals = {
   calls: 0,
   inputTokens: 0,
   outputTokens: 0,

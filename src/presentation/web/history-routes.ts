@@ -10,6 +10,10 @@ import type {
 import type { ListedSnapshot, ListSnapshots } from '../../application/use-cases/list-snapshots.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { formatInstant } from '../../infrastructure/system/instant.js';
+import {
+  registerProjectOverviewRoutes,
+  type ProjectOverviewServices,
+} from './project-overview-routes.js';
 import { signedInOf } from './request-actor.js';
 
 // RF-1008, RF-1012, RF-1105, RF-1102: the history and deletion API.
@@ -21,8 +25,9 @@ import { signedInOf } from './request-actor.js';
 //   an unknown one. The cost ledger is never touched (DEC-55).
 // - GET /api/admin/snapshots and DELETE /api/admin/snapshots/:key (administrator) list and remove
 //   the downloaded snapshots; one that a run in progress uses answers 409.
+// - GET /api/projects/overview: the run columns of the Projects page (project-overview-routes.ts).
 
-export interface HistoryServices {
+export interface HistoryServices extends ProjectOverviewServices {
   readonly listHistory: ListHistory;
   readonly deleteRun: DeleteRun;
   readonly deleteProject: DeleteProject;
@@ -146,4 +151,5 @@ export function registerHistoryRoutes(server: FastifyInstance, services: History
   registerHistory(server, services);
   registerDeletions(server, services);
   registerSnapshots(server, services);
+  registerProjectOverviewRoutes(server, services);
 }

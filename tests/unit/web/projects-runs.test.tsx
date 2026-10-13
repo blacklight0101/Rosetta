@@ -36,9 +36,12 @@ const renderProjects = (answers: Readonly<Record<string, Answer>>) =>
   renderPage(<ProjectsPage />, answers);
 
 async function rowOf(name: string): Promise<HTMLElement> {
-  const row = (await screen.findByText(name)).closest('tr');
-  if (row === null) throw new Error(`No row for ${name}.`);
-  return row;
+  const cells = await screen.findAllByText(name);
+  for (const cell of cells) {
+    const row = cell.closest('tr');
+    if (row !== null) return row;
+  }
+  throw new Error(`No row for ${name}.`);
 }
 
 it('RF-1008 shows the last run, its state, the runs, tokens and cost of each project', async () => {

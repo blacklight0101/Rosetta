@@ -19,9 +19,11 @@ import { RecordAnswers } from '../../src/application/use-cases/record-answers.js
 import { DeleteProject } from '../../src/application/use-cases/delete-project.js';
 import { DeleteRun } from '../../src/application/use-cases/delete-run.js';
 import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.js';
+import { ListProjectOverview } from '../../src/application/use-cases/list-project-overview.js';
 import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
+import type { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
@@ -124,18 +126,20 @@ export function runServices(
   };
 }
 
-/** RF-1008, RF-1012: the history, deletion and snapshot use cases over the harness's memory adapters. */
+/** RF-1008, RF-1012: the history, deletion, snapshot and Projects page run use cases over the harness's memory adapters. */
 export function historyServices(parts: {
   readonly runs: RunHarness;
   readonly projects: MemoryProjectRepository;
   readonly folders: MemoryWorkspaceFolders;
   readonly snapshots: MemorySnapshotCache;
   readonly logger: MemoryLogger;
+  readonly costs: MemoryCostTotals;
 }): ServerOptions['history'] {
-  const { projects, folders, snapshots, logger } = parts;
+  const { projects, folders, snapshots, logger, costs } = parts;
   const runs = parts.runs.runs;
   return {
     listHistory: new ListHistory({ projects, runs, folders }),
+    listProjectOverview: new ListProjectOverview({ projects, runs, costs }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
     deleteProject: new DeleteProject({ projects, runs, folders, logger }),
     listSnapshots: new ListSnapshots({ snapshots, runs }),
