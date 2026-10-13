@@ -1,5 +1,6 @@
+import type { AuditRetentionDeps } from '../application/audit/audit-retention-job.js';
 import type { Clock } from '../application/ports/clock.js';
-import type { ScheduledJob } from '../application/ports/scheduler.js';
+import type { ScheduledJob, Scheduler } from '../application/ports/scheduler.js';
 import type { SessionStore } from '../application/ports/session-store.js';
 import type { RunQueue } from '../application/runs/run-queue.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
@@ -9,6 +10,7 @@ import type { JsonlFileLogger } from '../infrastructure/system/jsonl-file-logger
 export interface ScheduledTask {
   readonly intervalMs: number;
   readonly job: ScheduledJob;
+  readonly runAtStart?: boolean;
 }
 
 const dayMs = 86_400_000;
@@ -53,4 +55,17 @@ export function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] 
     },
     { intervalMs: minuteMs, job: () => runs.recover() },
   ];
+}
+
+// STUBS for the red commit.
+export function auditRetentionTask(deps: AuditRetentionDeps): ScheduledTask {
+  void deps;
+  return { intervalMs: 0, job: () => Promise.resolve() };
+}
+
+export function startScheduledTasks(
+  scheduler: Scheduler,
+  tasks: readonly ScheduledTask[],
+): (() => void)[] {
+  return tasks.map((task) => scheduler.every(task.intervalMs, task.job));
 }
