@@ -19,9 +19,8 @@ import { signInAs } from './support/sign-in.js';
 // while the map fills in. An understand run needs a completed scan of the project, so the test scans
 // first. Nothing of the API or the event stream is replaced.
 
-test.beforeEach(async ({ context }, info) => {
-  await signInAs(context, accountFor('live-coverage', info.project.name));
-});
+// Each test signs in to an account of its own (P1-141): both tests scan and run the same project, so
+// with one shared account their projects, settings and runs could interfere.
 
 function coverageOf(page: Page, area: string): Locator {
   return page
@@ -60,9 +59,11 @@ async function scanProject(page: Page): Promise<void> {
 }
 
 test('RF-1005 the coverage map of a running run fills in by area and by read share as files are read', async ({
+  context,
   page,
-}) => {
+}, info) => {
   test.setTimeout(120_000); // a scan, then an understand run at one recorded step in 700 ms
+  await signInAs(context, accountFor('live-coverage', info.project.name));
   await openStartPage(page);
   await twoParallelReaders(page);
   await scanProject(page);
@@ -98,9 +99,11 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
 });
 
 test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file events keep arriving, and Resume applies the held reads', async ({
+  context,
   page,
-}) => {
+}, info) => {
   test.setTimeout(120_000);
+  await signInAs(context, accountFor('live-coverage-pause', info.project.name));
   await scanProject(page);
   // One reader at a time: `(root)` reads Default.aspx.cs first, `Services` reads CatalogService.cs after it.
   await startUnderstand(page, ['(root)', 'Services']);
