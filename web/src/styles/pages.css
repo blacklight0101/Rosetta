@@ -628,3 +628,54 @@
   justify-content: flex-end;
   gap: var(--rst-sp-3);
 }
+
+/*
+ * P1-136, RNF-010, design-system.md section 8: at 360 px a data table stacks. Each row becomes a block
+ * and each cell carries its column name (`data-label`), so no table scrolls sideways. From 640 px the
+ * table keeps its columns and nothing changes.
+ */
+@media (max-width: 40rem) {
+  .rst-table.rst-table--stack,
+  .rst-table.rst-table--stack tbody {
+    display: block;
+  }
+
+  .rst-table.rst-table--stack thead {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .rst-table.rst-table--stack tr {
+    display: block;
+    padding: var(--rst-sp-2) 0;
+    border-block-end: 1px solid var(--rst-rule);
+  }
+
+  .rst-table.rst-table--stack th,
+  .rst-table.rst-table--stack td {
+    display: block;
+    padding: var(--rst-sp-1) var(--rst-sp-3);
+    border: 0;
+    text-align: start;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .rst-table.rst-table--stack td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--rst-ink-muted);
+    font-size: var(--rst-fs-xs);
+  }
+
+  .rst-table.rst-table--stack .rst-table__num {
+    text-align: start;
+  }
+
+  .rst-table.rst-table--stack .rst-admin__actions {
+    flex-wrap: wrap;
+  }
+}

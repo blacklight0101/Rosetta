@@ -679,14 +679,10 @@ the configuration:
 | Tag | Runs in | For |
 |---|---|---|
 | none | `desktop-light` | behavioural tests: each runs once. Their axe checks (`expectNoSeriousViolations`) are made there in all four views on the page as it is (the viewport and `prefers-color-scheme` are switched, the helper confirms the page took the view, by its width, the media query and `data-theme`, axe runs, the page is put back), so a state reached only inside a test, such as an open dialog or a paused run, keeps its check in light and dark at 1280 and 360 px |
-| `@visual` | all four projects | the visual sweep (`tests/e2e/visual/`, accounts `sweep-*` in `seed.ts`): every page the suite visits, with its data, is opened in each project and checked for axe (colour contrast among the rules), the colour scheme (`data-theme` and a light or dark background) and no sideways scroll (`scrollWidth <= clientWidth`; at 360 px this is the phone width that orchestration README section 1 sets for the landing page, sign-in and report, checked here on every page); also the few tests that read the project's colour scheme |
+| `@visual` | all four projects | the visual sweep (`tests/e2e/visual/`, accounts `sweep-*` in `seed.ts`): every page the suite visits, with its data, is opened in each project and checked for axe (colour contrast among the rules), the colour scheme (`data-theme` and a light or dark background) and no sideways scroll (`scrollWidth <= clientWidth`, and at 360 px no table wider than its box; at 360 px this is the phone width that orchestration README section 1 sets for the landing page, sign-in and report, checked here on every page); also the few tests that read the project's colour scheme |
 | `@phone` | `desktop-light` and `phone-light` | tests about the 360 px layout; in `phone-light` such a test runs on its own, so it must not depend on an earlier test of its file |
 
-Three tables of the desktop web UI are wider than 360 px today: Accounts on users and caps, Downloaded snapshots and the
-Runs table of the history. At 360 px the sweep names each one (`KnownWideTable` in `tests/e2e/support/sweep.ts`),
-measures the page with that table taken out of the layout, so anything else that overflows still fails, and records
-the table's own overflow as an annotation of the test; at 1280 px nothing is exempt. The exemption ends when an app fix
-fits the tables into 360 px (a follow-up card).
+No table is exempt from the sweep. At 360 px a data table stacks (`rst-table--stack` in `web/src/styles/pages.css`): each row becomes a block and each cell names its column through `data-label`, so no table scrolls sideways; at 1280 px the columns stay. The sweep fails on a page that scrolls sideways and on a table wider than the box it sits in (`expectTablesFitTheirBox` in `tests/e2e/support/sweep.ts`).
 
 The landing page's replay loops for ever and fades each event in, so a check at a random moment could meet an event
 half-faded. The sweep therefore holds the page's CSS animations still (`holdAnimationsAt` in

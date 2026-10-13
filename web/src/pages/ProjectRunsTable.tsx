@@ -60,7 +60,7 @@ function ProjectRow({ row }: { readonly row: ProjectOverviewRow }): JSX.Element 
   const { project, lastRun, totals } = row;
   return (
     <tr>
-      <td>
+      <td data-label="Repository">
         <span class="rst-mono">{project.name}</span>
         <span class="rst-table__sub rst-p1105-note">
           <span>{project.ref === '' ? 'default branch' : project.ref}</span>
@@ -68,13 +68,19 @@ function ProjectRow({ row }: { readonly row: ProjectOverviewRow }): JSX.Element 
           <span>{project.subpath === '' ? 'whole repository' : project.subpath}</span>
         </span>
       </td>
-      <td>{lastRunText(lastRun)}</td>
-      <td>
+      <td data-label="Last run">{lastRunText(lastRun)}</td>
+      <td data-label="State">
         <RunState run={lastRun} />
       </td>
-      <td class="rst-table__num">{row.runs}</td>
-      <td class="rst-table__num">{tokensText(totals)}</td>
-      <td class="rst-table__num">{totalCostText(totals)}</td>
+      <td data-label="Runs" class="rst-table__num">
+        {row.runs}
+      </td>
+      <td data-label="Tokens" class="rst-table__num">
+        {tokensText(totals)}
+      </td>
+      <td data-label="Cost" class="rst-table__num">
+        {totalCostText(totals)}
+      </td>
       <td class="rst-table__actions-cell">
         <Actions row={row} />
       </td>
@@ -88,7 +94,7 @@ export function ProjectRunsTable(props: {
 }): JSX.Element {
   return (
     <div class="rst-table-scroll rst-p1105-scroll">
-      <table class="rst-table">
+      <table class="rst-table rst-table--stack">
         <caption class="rst-visually-hidden">Your projects</caption>
         <thead>
           <tr>
