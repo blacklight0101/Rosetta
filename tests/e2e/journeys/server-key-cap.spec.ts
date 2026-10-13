@@ -94,9 +94,9 @@ test('RF-1106 RF-1104 RF-428 a user without a key runs on the server key, stops 
     await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
     await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
     await expectNoFullKey(page, [e2eServerOpenAiKey()]);
-    await signOut(page);
   } finally {
-    await signOut(page).catch(() => undefined);
+    // However the run ended, the next sign-in starts clean and the caps go back to the shared figures.
+    await page.context().clearCookies();
     await adminSavesRunCap(page, admin, keptCaps.run);
   }
 

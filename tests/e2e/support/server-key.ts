@@ -8,3 +8,8 @@
 export function e2eServerOpenAiKey(): string {
   return ['fixture', 'server', 'material', 'of', 'a', 'key', 'SRV1'].join('-');
 }
+
+/** RF-1106: the environment variable that gives the test server its key, so a user without a key runs under the caps. */
+export function e2eServerKeyVariables(): { readonly OPENAI_API_KEY: string } {
+  return { OPENAI_API_KEY: e2eServerOpenAiKey() };
+}
