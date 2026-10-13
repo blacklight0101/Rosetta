@@ -37,11 +37,18 @@ function setUp(outcome: () => Promise<number>) {
   return { retention, logger, job: auditRetentionJob({ retention, clock, logger }) };
 }
 
-describe('auditRetentionJob', () => {
+describe('audit retention constants', () => {
   it('RF-1109 keeps audit rows for 365 days', () => {
     expect(AUDIT_RETENTION_DAYS).toBe(365);
   });
 
+  it('RF-1109 the clock-skew margin is positive and at most a day', () => {
+    expect(CLOCK_SKEW_MARGIN_MS).toBeGreaterThan(0);
+    expect(CLOCK_SKEW_MARGIN_MS).toBeLessThanOrEqual(DAY);
+  });
+});
+
+describe('auditRetentionJob', () => {
   it('RF-1109 asks the store to delete rows older than 365 days plus the clock-skew margin', async () => {
     const { retention, job } = setUp(() => Promise.resolve(0));
 
@@ -49,11 +56,6 @@ describe('auditRetentionJob', () => {
 
     const expected = new Date(now).getTime() - AUDIT_RETENTION_DAYS * DAY - CLOCK_SKEW_MARGIN_MS;
     expect(retention.cutOffs.map((cutOff) => cutOff.getTime())).toEqual([expected]);
-  });
-
-  it('RF-1109 the clock-skew margin is positive and at most a day', () => {
-    expect(CLOCK_SKEW_MARGIN_MS).toBeGreaterThan(0);
-    expect(CLOCK_SKEW_MARGIN_MS).toBeLessThanOrEqual(DAY);
   });
 
   it('RF-1109 logs how many rows it deleted', async () => {
@@ -65,7 +67,9 @@ describe('auditRetentionJob', () => {
       expect.objectContaining({ level: 'info', logger: 'audit-retention', data: { deleted: 7 } }),
     ]);
   });
+});
 
+describe('auditRetentionJob failures', () => {
   it('RF-1109 logs a failure with its code and resolves, so the server keeps running', async () => {
     const failure = new RosettaError(ERROR_CODES.databaseQueryFailed);
     const { logger, job } = setUp(() => Promise.reject(failure));

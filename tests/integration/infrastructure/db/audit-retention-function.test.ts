@@ -33,9 +33,9 @@ async function actions(pool: DatabasePool): Promise<string[]> {
   return rows.rows.map((row) => row.action).sort();
 }
 
-describe.skipIf(!hasTestDatabase)('audit retention function', () => {
-  const database = useTestDatabase();
+const database = useTestDatabase();
 
+describe.skipIf(!hasTestDatabase)('audit retention function definition', () => {
   it('RF-1109 purge_audit_events_before is SECURITY DEFINER with a fixed search_path', async () => {
     const { pool } = await database.createSchema({ migrate: true });
 
@@ -62,7 +62,9 @@ describe.skipIf(!hasTestDatabase)('audit retention function', () => {
 
     expect(result.rows).toEqual([{ public_may: false, app_may: true }]);
   });
+});
 
+describe.skipIf(!hasTestDatabase)('audit retention function deletion', () => {
   it('RF-1109 rosetta_app deletes the rows older than the cut-off through the function and no others', async () => {
     const pool = await withRows(database);
 
@@ -83,7 +85,9 @@ describe.skipIf(!hasTestDatabase)('audit retention function', () => {
     expect(rows.rows).toEqual([{ deleted: '1' }]);
     expect(await actions(pool)).toEqual(['young']);
   });
+});
 
+describe.skipIf(!hasTestDatabase)('audit retention function floor', () => {
   it('RF-1109 the function refuses a cut-off younger than 365 days and deletes nothing', async () => {
     const pool = await withRows(database);
 
@@ -115,7 +119,9 @@ describe.skipIf(!hasTestDatabase)('audit retention function', () => {
       rows: [{ ok: 1 }],
     });
   });
+});
 
+describe.skipIf(!hasTestDatabase)('audit retention function caller', () => {
   it('RF-1109 a caller whose clock runs two days ahead gets no younger floor', async () => {
     const pool = await withRows(database);
     const callerNow = Date.now() + 2 * DAY;

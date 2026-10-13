@@ -41,7 +41,7 @@ async function actionsKept(harness: RetentionHarness): Promise<string[]> {
   return rows.map((row) => row.action).sort();
 }
 
-export function auditRetentionContract(name: string, fresh: Fresh): void {
+function deletionTests(name: string, fresh: Fresh): void {
   it(`RF-1109 ${name} deletes the rows older than the cut-off, keeps the rest and counts them`, async () => {
     const harness = await fresh();
     await recordAt(harness, daysAgo(harness, 400), 'old.a');
@@ -73,7 +73,9 @@ export function auditRetentionContract(name: string, fresh: Fresh): void {
     expect(await harness.retention.purgeBefore(daysAgo(harness, 366))).toBe(0);
     expect(await actionsKept(harness)).toEqual(['recent']);
   });
+}
 
+function refusalTests(name: string, fresh: Fresh): void {
   it.each([
     ['now', 0],
     ['100 days ago', 100],
@@ -102,7 +104,9 @@ export function auditRetentionContract(name: string, fresh: Fresh): void {
 
     expect(await harness.retention.purgeBefore(new Date(edge - MINUTE))).toBe(1);
   });
+}
 
+function clockTests(name: string, fresh: Fresh): void {
   it(`RF-1109 ${name} measures the 365 days on its own clock: a caller two days ahead is refused`, async () => {
     const harness = await fresh();
     await recordAt(harness, daysAgo(harness, 400), 'old');
@@ -126,4 +130,10 @@ export function auditRetentionContract(name: string, fresh: Fresh): void {
 
     expect(deleted).toBe(1);
   });
+}
+
+export function auditRetentionContract(name: string, fresh: Fresh): void {
+  deletionTests(name, fresh);
+  refusalTests(name, fresh);
+  clockTests(name, fresh);
 }

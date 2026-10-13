@@ -98,6 +98,15 @@ describe.skipIf(!hasTestDatabase)('release-1 schema', () => {
       [...expectedIndexes].sort(),
     );
   });
+});
+
+describe.skipIf(!hasTestDatabase)('release-1 schema functions', () => {
+  const database = useTestDatabase();
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    ({ pool } = await database.createSchema({ migrate: true }));
+  });
 
   it('RF-1109 has exactly the functions of data-model.md section 4', async () => {
     const result = await pool.query<{ described: string }>(
