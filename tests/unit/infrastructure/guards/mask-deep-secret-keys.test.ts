@@ -23,7 +23,9 @@ describe('maskDeep on a key that names a secret', () => {
   ])('RF-141 replaces the whole value under the key %s with %s', (key, marker) => {
     expect(maskDeep({ [key]: fakeSecret }, masker)).toEqual({ [key]: marker });
   });
+});
 
+describe('maskDeep on a secret key, for every value type and depth', () => {
   it('RF-141 replaces a number, a list and an object under such a key whole', () => {
     const masked = maskDeep(
       { token: 73915820, secret: [fakeSecret, fakeSecret], authorization: { scheme: fakeSecret } },
