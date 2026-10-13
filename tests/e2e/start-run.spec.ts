@@ -250,7 +250,8 @@ test('RNF-010 long area names wrap inside the Stage and areas card at 1280 and 3
     `Scripts/${'VeryLongUnbrokenFolderName'.repeat(8)}`,
   ];
   await page.route('**/api/projects/*/estimate', async (route) => {
-    const response = await route.fetch();
+    // The names are not in the real code map, so a POST for some of them is answered like the GET.
+    const response = await route.fetch({ method: 'GET', postData: '' });
     const body = z.looseObject({ areas: z.array(z.unknown()) }).parse(await response.json());
     const areas = names.map((name, index) => ({
       name,
@@ -261,6 +262,8 @@ test('RNF-010 long area names wrap inside the Stage and areas card at 1280 and 3
   });
   await openStartPage(page);
   await expect(page.getByLabel(names[1] ?? '')).toBeVisible();
+  // The first area is third-party, so the page asks again for the estimate of the others.
+  await page.waitForLoadState('networkidle');
 
   for (const size of [
     { width: 1280, height: 800 },
@@ -281,4 +284,5 @@ test('RNF-010 long area names wrap inside the Stage and areas card at 1280 and 3
     })()`);
     expect(measured).toEqual({ rows: names.length, outside: 0, sideways: 0 });
   }
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
 });
