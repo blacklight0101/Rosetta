@@ -54,3 +54,27 @@ describe('pull request title check', () => {
     timeout,
   );
 });
+
+describe('pull request title check for Dependabot', () => {
+  it(
+    'DEC-35 accepts the titles Dependabot writes for npm and GitHub Actions updates',
+    async () => {
+      const titles = [
+        'build(deps): Bump the npm-minor-and-patch group with 8 updates',
+        'build(deps-dev): Bump vitest from 5.0.3 to 5.1.0',
+        'ci(deps): Bump actions/checkout from 7.0.1 to 7.1.0',
+      ];
+      for (const title of titles) expect((await lint(title)).code).toBe(0);
+    },
+    timeout,
+  );
+
+  it(
+    'DEC-35 still rejects a sentence-case subject outside the Dependabot shape',
+    async () => {
+      expect((await lint('fix(answers): Bump the parser')).code).not.toBe(0);
+      expect((await lint('build(web): Bump preact to 11')).code).not.toBe(0);
+    },
+    timeout,
+  );
+});

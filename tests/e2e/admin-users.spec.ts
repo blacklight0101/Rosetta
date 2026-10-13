@@ -152,21 +152,25 @@ test('RF-1105 opens the workspace of an account, read only', async ({ page }, in
   await expectNoSeriousViolations(page);
 });
 
-test('RF-1106 saves the caps and shows them again after a reload', async ({ page }) => {
-  const caps = page.getByRole('region', { name: 'Caps on server keys' });
-  await caps.getByLabel('Per run (USD)').fill('0.5');
-  await caps.getByLabel('Per user per day (USD)').fill('1');
-  await caps.getByLabel('Server per month (USD)').fill('10');
+test(
+  'RF-1106 saves the caps and shows them again after a reload',
+  { tag: '@caps' },
+  async ({ page }) => {
+    const caps = page.getByRole('region', { name: 'Caps on server keys' });
+    await caps.getByLabel('Per run (USD)').fill('0.5');
+    await caps.getByLabel('Per user per day (USD)').fill('1');
+    await caps.getByLabel('Server per month (USD)').fill('10');
 
-  await caps.getByRole('button', { name: 'Save caps' }).click();
+    await caps.getByRole('button', { name: 'Save caps' }).click();
 
-  await expect(page.getByRole('status').filter({ hasText: 'Caps saved' })).toBeVisible();
-  await page.reload();
-  await expect(caps.getByLabel('Per run (USD)')).toHaveValue('0.50');
-  await expect(caps.getByLabel('Server per month (USD)')).toHaveValue('10.00');
-  await expect(caps.getByRole('meter', { name: 'Server spend this month' })).toBeVisible();
-  await expectNoSeriousViolations(page);
-});
+    await expect(page.getByRole('status').filter({ hasText: 'Caps saved' })).toBeVisible();
+    await page.reload();
+    await expect(caps.getByLabel('Per run (USD)')).toHaveValue('0.50');
+    await expect(caps.getByLabel('Server per month (USD)')).toHaveValue('10.00');
+    await expect(caps.getByRole('meter', { name: 'Server spend this month' })).toBeVisible();
+    await expectNoSeriousViolations(page);
+  },
+);
 
 test('RF-1106 refuses a cap that is not dollars next to its field', async ({ page }) => {
   const caps = page.getByRole('region', { name: 'Caps on server keys' });

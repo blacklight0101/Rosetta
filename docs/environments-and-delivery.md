@@ -129,7 +129,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Dependency review | `actions/dependency-review-action` on pull requests: fails on newly added packages with high or critical advisories or a disallowed licence | yes |
 | Image build and scan | `docker build` of the `Dockerfile`, then a container scan (Trivy action) that fails on high or critical findings with a fix available | yes (Linux job) |
 | Compose smoke test | `docker compose -f compose.yaml -f compose.ci.yaml up -d`, wait for `/healthz`, Playwright smoke (landing, sign-in, fake-provider scan), `down -v` | yes (Linux job) |
-| Pull request title | commitlint on the title, passed as `env: TITLE: ${{ github.event.pull_request.title }}` and read as `"$TITLE"`, never `${{ }}` inside `run:` | yes |
+| Pull request title | commitlint on the title, passed as `env: TITLE: ${{ github.event.pull_request.title }}` and read as `"$TITLE"`, never `${{ }}` inside `run:`; Dependabot titles of the exact shape `build(deps): Bump ...`, `build(deps-dev): Bump ...` or `ci(deps): Bump ...` skip the rules (`commitlint.config.ts`), because Dependabot cannot lower-case its subject | yes |
 
 `npm run verify` runs the first six checks locally in the same order; builders and the verifier run it on every card.
 
