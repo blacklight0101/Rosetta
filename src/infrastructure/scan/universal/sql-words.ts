@@ -39,20 +39,32 @@ const createdObjects: ReadonlySet<string> = new Set([
   'sequence',
 ]);
 
+// An XML element whose name ends in a password name, opened on the last line and not closed: the
+// masker needs the closing tag (its value may hold spaces), so a cut inside it would keep the value.
+const openPasswordElement =
+  /<[\w.:-]{0,32}?(?:password|passwd|pwd)(?:[ \t][^<>\r\n]{0,256})?>[^<\s][^<\r\n]*$/iu;
+
 /**
  * RF-141: `text` cut to at most `length` characters, never inside a word. When the cut falls inside
  * a run without white space, that whole run is dropped. Every masker rule either matches inside one
  * such run (keys, connection URLs, `password=value`) or, once its keyword is in the text, runs to
- * the end of the text (private key blocks, quoted values, `;Password=` settings). So the masker
+ * the end of the text (private key blocks, quoted values, `;Password=` settings). The XML password
+ * element is the one exception: its value may hold spaces and it ends at its closing tag, so a cut
+ * between the opening tag and the closing tag drops the open element with its value. So the masker
  * finds in the kept prefix every secret character it would find in the whole text, and a secret
  * whose end (for example the `@` of a connection URL) was cut away is never kept in part. A wider
  * window alone cannot give this: masking shortens the text, so the cut end can reach the output.
  */
 export function cutAtWord(text: string, length: number): string {
-  if (text.length <= length || /\s/u.test(text.charAt(length))) return text.slice(0, length);
+  if (text.length <= length) return text;
   let end = length;
-  while (end > 0 && !/\s/u.test(text.charAt(end - 1))) end -= 1;
-  return text.slice(0, end).trimEnd();
+  if (!/\s/u.test(text.charAt(length))) {
+    while (end > 0 && !/\s/u.test(text.charAt(end - 1))) end -= 1;
+  }
+  const kept = text.slice(0, end);
+  const open = openPasswordElement.exec(kept.slice(kept.lastIndexOf('\n') + 1));
+  if (open !== null) return kept.slice(0, kept.length - open[0].length).trimEnd();
+  return end === length ? kept : kept.trimEnd();
 }
 
 /** A line cut to the length the extractors look at, never inside a word. */

@@ -1,10 +1,12 @@
+import { secretKeyMarker } from './secret-key-names.js';
 import type { TextMasker } from './secret-masker.js';
 
 // RF-141, RNF-003: masks a JSON-like value for a record that is kept (provider call lines,
 // transcripts, audit details). Every key and every string is masked, and every primitive value is
 // masked again together with its property name, so a secret whose only clue is its key
 // (`{ "password": "..." }`, or each item of `{ "passwords": ["...", "..."] }`) is caught too. A masker failure is thrown (RST-2101); callers fail
-// closed.
+// closed. A key whose last word is `secret`, `token` or `authorization` hides its whole value
+// (secret-key-names.ts).
 
 const maskedMarker = /\[MASKED:[a-z-]+\]/;
 
@@ -41,7 +43,8 @@ function maskObject(value: object, masker: TextMasker): Record<string, unknown> 
   return Object.fromEntries(
     Object.entries(value).map(([key, item]: [string, unknown]) => {
       const maskedKey = masker.mask(key).text;
-      return [maskedKey, maskUnderKey(maskedKey, item, masker)];
+      const marker = item === null ? undefined : secretKeyMarker(key);
+      return [maskedKey, marker ?? maskUnderKey(maskedKey, item, masker)];
     }),
   );
 }
