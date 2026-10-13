@@ -152,7 +152,7 @@ describe('the committed site/ content', () => {
       if (!/\.(?:html|md|js)$/u.test(name)) continue;
       const text = await readFile(join(siteFolder, name), 'utf8');
       if (/javascript:|onerror|__pwned/iu.test(text)) found.push(`${name}: active text`);
-      for (const tag of text.match(/<script[^>]*>/gu) ?? []) {
+      for (const tag of text.match(/<script[^>]*>/giu) ?? []) {
         if (tag !== '<script src="replay.js" defer>') found.push(`${name}: ${tag}`);
       }
       for (const address of text.match(/https?:\/\/[^"\s)]+/gu) ?? []) {
