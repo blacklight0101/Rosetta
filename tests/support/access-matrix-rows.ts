@@ -150,6 +150,12 @@ const accountRows: Rows = {
   'DELETE /api/account/keys/:provider': [
     { method: 'DELETE', url: '/api/account/keys/anthropic', expected: active(401, 204) },
   ],
+  'GET /api/errors/:code': [
+    { method: 'GET', url: '/api/errors/RST-1901', expected: active(401, 200) },
+  ],
+  'HEAD /api/errors/:code': [
+    { method: 'HEAD', url: '/api/errors/RST-1901', expected: active(401, 200) },
+  ],
   'POST /api/account/providers/test': [
     { method: 'POST', url: '/api/account/providers/test', expected: active(401, 200) },
   ],
