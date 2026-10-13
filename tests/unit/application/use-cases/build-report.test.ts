@@ -191,18 +191,18 @@ describe('BuildReport and the run folder', () => {
   });
 });
 
-describe('BuildReport and the map level', () => {
-  const ledger = { ...areaOf('LEDGER', 100), mapLevel: 'coarse' } as const;
-  const shop = { ...areaOf('shop', 200), mapLevel: 'symbols' } as const;
-  const scanRun = (overrides: Partial<Run> = {}): Run =>
-    sampleRun({
-      userId: userAmy.userId,
-      stage: 'scan',
-      queueState: 'Ended',
-      endState: 'Completed',
-      ...overrides,
-    });
+const ledger = { ...areaOf('LEDGER', 100), mapLevel: 'coarse' } as const;
+const shop = { ...areaOf('shop', 200), mapLevel: 'symbols' } as const;
+const scanRun = (overrides: Partial<Run> = {}): Run =>
+  sampleRun({
+    userId: userAmy.userId,
+    stage: 'scan',
+    queueState: 'Ended',
+    endState: 'Completed',
+    ...overrides,
+  });
 
+describe('BuildReport and the map level', () => {
   it('RF-112 gives an understand run the map level of every area of its newest completed scan', async () => {
     const scans = new FixedScans([ledger, shop]);
     const scan = scanRun();

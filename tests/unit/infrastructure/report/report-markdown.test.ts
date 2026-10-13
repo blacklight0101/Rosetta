@@ -134,7 +134,9 @@ describe('renderReportMarkdown and untrusted text', () => {
 
     expect(markdown).not.toContain(fakeOpenAiKey);
   });
+});
 
+describe('renderReportMarkdown and the map level', () => {
   it('RF-112 states the map level of every area, escaped like the other repository text', () => {
     const markdown = renderReportMarkdown(
       reportModel({

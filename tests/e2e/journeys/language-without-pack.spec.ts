@@ -44,7 +44,13 @@ test('RF-112 a repository without a language pack completes scan, understand and
     .getAttribute('href');
   await page.getByRole('link', { name: 'Open the report as Markdown' }).click();
   await expect(page.locator('body')).toContainText('# Report for run');
+  await expect(page.locator('body')).toContainText('| Area | Map level |');
+  await expect(page.locator('body')).toContainText('| coarse |');
+  await expect(page.locator('body')).not.toContainText('| symbols |');
   await page.goto(report ?? '');
   await expect(page.getByRole('heading', { name: 'Run report', level: 1 })).toBeVisible();
+  const areas = page.getByRole('region', { name: 'Map level of the areas' });
+  await expect(areas.getByRole('row', { name: /coarse/u }).first()).toBeVisible();
+  await expect(areas).not.toContainText('symbols');
   await expectNoSeriousViolations(page);
 });

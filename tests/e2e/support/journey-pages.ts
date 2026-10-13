@@ -47,7 +47,7 @@ export async function runScan(page: Page): Promise<string> {
 
 /** Chooses which areas the understand run reads: only the named ones, or all when none is named. */
 export async function chooseAreas(page: Page, names: readonly string[] | 'all'): Promise<void> {
-  await expect(page.getByLabel('Understand')).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Understand', exact: true })).toBeChecked();
   const areas = page.getByRole('group', { name: 'Areas from the code map' });
   await expect(areas.locator('label').first()).toBeVisible();
   for (const label of await areas.locator('label').allTextContents()) {
