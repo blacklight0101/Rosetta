@@ -9,6 +9,7 @@ import {
   runsTable,
 } from './support/history-page.js';
 import {
+  agentPanel,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
@@ -57,9 +58,10 @@ test('RF-1008 lists a finished run with its stage, commit, state and links, and 
 test('RF-1012 disables Delete while a run is in progress, with the reason, until it is stopped', async ({
   page,
 }) => {
-  // P1-121: the server runs two runs at once for all the Playwright projects, so this run may wait
-  // in the queue behind the runs of other specs. Queued and running are both "in progress" for
-  // RF-1012, so the steps accept either instead of waiting for the run to start.
+  // P1-121: this step timed out on phone-light while it waited for the reader to run inside the
+  // 30 s test budget, after up to 8 s of the start stagger (removed by P1-120). The history checks
+  // no longer wait for the run to start: queued and running are both "in progress" for RF-1012.
+  // Only the stop waits for Controllers to run, so Catalog has spent what the next step counts.
   const live = await startUnderstand(page, ['Catalog', 'Controllers']);
 
   await openHistory(page);
@@ -74,7 +76,8 @@ test('RF-1012 disables Delete while a run is in progress, with the reason, until
   await expectNoSeriousViolations(page);
 
   await page.goto(live);
-  await page.getByRole('button', { name: /^(Stop run|Cancel queued run)$/u }).click();
+  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
+  await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await openHistory(page);
   await expect(runRow(page, '-understand')).toContainText('Interrupted');
@@ -88,11 +91,14 @@ test('RF-1012 DEC-55 deleting a run asks first, frees its folder and leaves the 
 }) => {
   await openHistory(page);
   const pill = page.getByTestId('header-totals');
+  // P1-121: both counts are read only once their element shows data; a bare `count()` or
+  // `textContent()` read the page before its request had answered and kept 0 (seen on phone-dark).
+  await expect.poll(() => tokensOf(pill)).toBeGreaterThan(0);
   const before = await tokensOf(pill);
-  expect(before).toBeGreaterThan(0);
   const costPage = page.getByRole('navigation').getByRole('link', { name: 'Cost' });
   await costPage.click();
   const costRows = page.getByRole('table', { name: 'By run' }).getByRole('link');
+  await expect(costRows.first()).toBeVisible();
   const kept = await costRows.count();
   await openHistory(page);
 
