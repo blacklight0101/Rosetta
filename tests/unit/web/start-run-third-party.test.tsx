@@ -88,3 +88,13 @@ it('RF-1001 ticking a third-party area adds it to the selection', async () => {
   });
   expect(input('Catalog').checked).toBe(true);
 });
+
+it('RNF-010 every area keeps its full name in a title, so a wrapped path can be read whole', async () => {
+  renderStart(answers);
+  await ready();
+
+  const label = screen.getByText('Scripts#1', { selector: 'label' });
+
+  expect(label.getAttribute('title')).toBe('Scripts#1');
+  expect(label.className).toContain('rst-start__area-name');
+});
