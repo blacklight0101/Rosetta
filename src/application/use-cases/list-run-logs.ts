@@ -9,8 +9,8 @@ import type { RunIndex } from '../ports/run-index.js';
 
 // RF-1011, RF-009, RF-1105: List run logs gives the "Logs" panel the application log entries of the
 // user's own run, and the number of security events among them. Another user's run id and an
-// unknown id give the same answer, and an entry that cannot be told to be this run's is never
-// listed.
+// unknown id give the same answer, and an entry that cannot be told to be this run's (one with the
+// run key and no user, which may be a deleted run of another user) is never listed.
 
 export interface ListRunLogsDependencies {
   readonly runs: RunIndex;
@@ -50,14 +50,13 @@ export class ListRunLogs {
     const { runs, logs, clock } = this.deps;
     const run = await runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
-    const keyShared = await runs.keyUsedByOthers(run.userId, run.runKey);
     const stored = await logs.read({
       fromMs: run.queuedAt,
       toMs: (run.endedAt ?? clock.now().getTime()) + AFTER_END_MS,
       mentioning: [run.id, run.runKey],
     });
     const own = stored.filter(
-      (entry) => Date.parse(entry.at) >= run.queuedAt && entryBelongsToRun(entry, run, keyShared),
+      (entry) => Date.parse(entry.at) >= run.queuedAt && entryBelongsToRun(entry, run),
     );
     return ok({
       runKey: run.runKey,

@@ -17,7 +17,9 @@ function renderHistory(answers: Readonly<Record<string, Answer>> = {}) {
 }
 
 async function rowOf(runKey: string): Promise<HTMLElement> {
-  const row = (await screen.findByText(runKey)).closest('tr');
+  // The run id is shown once and also ends the hidden text of the View run link of the same row.
+  const [cell] = await screen.findAllByText(runKey);
+  const row = cell?.closest('tr') ?? null;
   if (row === null) throw new Error(`No row for ${runKey}.`);
   return row;
 }
@@ -46,17 +48,26 @@ describe('history page rows', () => {
     expect(capped.getByText('0f1e2d3')).not.toBeNull();
   });
 
-  it('RF-1008 links each run to its report and its zip', async () => {
+  it('RF-1008 links each run to its run page and its zip', async () => {
     renderHistory();
 
     const done = within(await rowOf(scanKey));
 
-    expect(done.getByRole('link', { name: `Report of run ${scanKey}` }).getAttribute('href')).toBe(
+    expect(done.getByRole('link', { name: `View run ${scanKey}` }).getAttribute('href')).toBe(
       '/runs/r-3',
     );
     const zip = done.getByRole('link', { name: `Zip of run ${scanKey}` });
     expect(zip.getAttribute('href')).toBe('/api/runs/r-3/zip');
     expect(zip.hasAttribute('download')).toBe(true);
+  });
+
+  it('RF-1008 names no control of the history page like the Report controls of the run page', async () => {
+    renderHistory();
+
+    const table = await screen.findByRole('table', { name: 'Runs' });
+
+    expect(within(table).queryAllByRole('link', { name: /report/iu })).toEqual([]);
+    expect(within(table).queryAllByRole('button', { name: /report/iu })).toEqual([]);
   });
 });
 

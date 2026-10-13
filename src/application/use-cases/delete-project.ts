@@ -6,15 +6,17 @@ import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { WorkspaceFolders } from '../ports/workspace-folders.js';
 import type { Deleted, DeleteRunProblem } from './delete-run.js';
+import { removeFolder } from './remove-folder.js';
 
 // RF-1012, DEC-55, RF-1105: Delete project removes one of the signed-in user's projects with its
 // runs and its whole folder, and writes an `info` entry naming it and the space freed. A project
 // with a run that is queued or running is refused. The cost ledger is not touched, so the user's
-// totals keep every call of the project. The rows go first and under the database's own check
-// (PostgreSQL refuses a project whose run started in the meantime), then the folder: a folder that
-// cannot be removed is then an orphan the next start can ignore, where a folder removed first would
-// leave a project whose files are gone. Another user's project id and an unknown id give the same
-// answer, `not found`.
+// totals keep every call of the project. The repository removes the project under a lock on its row
+// and its own check (PostgreSQL refuses a project whose run was queued in the meantime, P1-121) and
+// removes the folder inside that step, before the rows: a folder that cannot be removed is logged
+// with RST-1115 and leaves the project and its runs listed, so Delete can be pressed again and no
+// folder is ever left without its project (data-model.md section 9). Another user's project id and
+// an unknown id give the same answer, `not found`.
 
 export interface DeleteProjectDependencies {
   readonly projects: ProjectRepository;
@@ -43,12 +45,12 @@ export class DeleteProject {
     if (own.some((run) => run.queueState !== 'Ended')) return err(ERROR_CODES.deleteRefusedInUse);
     const target = { userId, projectId: project.id };
     const freedBytes = await folders.size(target);
-    if (!(await projects.remove(userId, project.id))) {
+    const removeOwnFolder = (): Promise<void> => removeFolder(folders, logger, target);
+    if (!(await projects.remove(userId, project.id, removeOwnFolder))) {
       const stillThere = (await projects.find(userId, project.id)) !== undefined;
       return err(stillThere ? ERROR_CODES.deleteRefusedInUse : ERROR_CODES.notFound);
     }
     await runs.removeEndedOfProject(userId, project.id);
-    await folders.remove(target);
     await logger.log({
       level: 'info',
       logger: 'history',

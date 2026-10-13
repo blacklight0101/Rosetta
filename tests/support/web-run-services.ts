@@ -24,10 +24,14 @@ import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
+import type { TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import { composeObservability } from '../../src/presentation/compose-observability.js';
+import type { ObservabilityServices } from '../../src/presentation/web/observability-routes.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
 import { MemoryArchiveWriter } from './memory-archive-writer.js';
 import { RecordingLogger } from './recording-logger.js';
 import type { MemoryLogger } from './memory-logger.js';
+import type { MemoryOutputWriter } from './memory-output-writer.js';
 import type { MemorySnapshotCache } from './memory-snapshot-cache.js';
 import type { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
 import { MemoryRunFileReader } from './memory-run-file-reader.js';
@@ -78,6 +82,40 @@ export function runOutputs(given: RunOutputGiven): {
   };
 }
 
+/** RF-1011: what the composition root's calls and logs routes read, when a test gives a data folder. */
+interface ObservedFiles {
+  readonly callFiles: MemoryOutputWriter;
+  readonly masker: TextMasker;
+  readonly logDir?: string | undefined;
+}
+
+/**
+ * RF-1011: the use cases of the calls and logs routes. By default over the harness's run folders and
+ * the logger's entries; with a data folder, the composition root's, over the same run folders and the
+ * daily log files there.
+ */
+function observability(
+  runs: RunHarness,
+  readers: {
+    readonly calls: RunCallReader;
+    readonly logs: ApplicationLogReader;
+    readonly clock: Clock;
+  },
+  files: ObservedFiles,
+): ObservabilityServices {
+  const { calls, logs, clock } = readers;
+  if (files.logDir !== undefined) {
+    const { callFiles, masker, logDir } = files;
+    const parts = { runs: runs.runs, manifests: runs.manifests, masker, clock };
+    return composeObservability({ ...parts, writer: callFiles, dataDir: logDir });
+  }
+  return {
+    listRunCalls: new ListRunCalls({ runs: runs.runs, calls, manifests: runs.manifests }),
+    getCallTranscript: new GetCallTranscript({ runs: runs.runs, calls }),
+    listRunLogs: new ListRunLogs({ runs: runs.runs, logs, clock }),
+  };
+}
+
 /** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
 export function runServices(
   runs: RunHarness,
@@ -88,7 +126,7 @@ export function runServices(
     readonly calls: RunCallReader;
     readonly logs: ApplicationLogReader;
     readonly clock: Clock;
-  },
+  } & ObservedFiles,
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
@@ -110,10 +148,7 @@ export function runServices(
     }),
     listAnswers: new ListAnswers({ runs: runs.runs, answers }),
     recordAnswers: new RecordAnswers({ runs: runs.runs, answers }),
-    // RF-1011: the call log and transcripts of the harness's run folders, and the logger's entries.
-    listRunCalls: new ListRunCalls({ runs: runs.runs, calls, manifests: runs.manifests }),
-    getCallTranscript: new GetCallTranscript({ runs: runs.runs, calls }),
-    listRunLogs: new ListRunLogs({ runs: runs.runs, logs, clock }),
+    ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, submit: runs.submit }),
     // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
     estimateRun: new EstimateRun({

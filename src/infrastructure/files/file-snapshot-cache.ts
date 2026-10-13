@@ -24,6 +24,17 @@ const info = z.looseObject({
   totalBytes: z.number().int().nonnegative(),
 });
 
+/**
+ * The two calls a removal makes. The server uses `node:fs/promises`; a test passes one that refuses
+ * a read-only tree on every system (Windows ignores the mode of a folder), P1-121.
+ */
+export interface RemovalFileSystem {
+  chmod(path: string, mode: number): Promise<void>;
+  rm(path: string, options: { readonly recursive: true; readonly force: true }): Promise<void>;
+}
+
+const nodeRemoval: RemovalFileSystem = { chmod, rm };
+
 function isMissing(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT';
 }
@@ -58,20 +69,22 @@ function inListOrder(left: CachedSnapshot, right: CachedSnapshot): number {
 }
 
 /** The fetcher leaves the tree read-only (RF-005); a folder must be writable to lose its entries. */
-async function makeWritable(folder: string): Promise<void> {
-  await chmod(folder, WRITABLE_DIR);
+async function makeWritable(files: RemovalFileSystem, folder: string): Promise<void> {
+  await files.chmod(folder, WRITABLE_DIR);
   for (const entry of await readdir(folder, { withFileTypes: true })) {
     const path = join(folder, entry.name);
-    if (entry.isDirectory()) await makeWritable(path);
-    else if (entry.isFile()) await chmod(path, WRITABLE_FILE);
+    if (entry.isDirectory()) await makeWritable(files, path);
+    else if (entry.isFile()) await files.chmod(path, WRITABLE_FILE);
   }
 }
 
 export class FileSnapshotCache implements SnapshotCache {
   readonly #dataDir: string;
+  readonly #files: RemovalFileSystem;
 
-  constructor(dataDir: string) {
+  constructor(dataDir: string, files: RemovalFileSystem = nodeRemoval) {
     this.#dataDir = dataDir;
+    this.#files = files;
   }
 
   // RF-1012
@@ -100,8 +113,8 @@ export class FileSnapshotCache implements SnapshotCache {
     if (root === undefined || !KEY.test(key)) return false;
     const folder = join(root, key);
     if (!(await isRealFolder(folder))) return false;
-    await makeWritable(folder);
-    await rm(folder, { recursive: true, force: true });
+    await makeWritable(this.#files, folder);
+    await this.#files.rm(folder, { recursive: true, force: true });
     return true;
   }
 
