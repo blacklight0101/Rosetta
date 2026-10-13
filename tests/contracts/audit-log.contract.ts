@@ -169,7 +169,7 @@ function maskingAndFilterTests(name: string, fresh: () => Promise<AuditLog>): vo
           pw: password,
           value: password,
           clientSecret: { nested: password },
-          note: `my password is ${password} today`,
+          note: `my password is ${password}, today`,
         },
       }),
     );
@@ -182,7 +182,7 @@ function maskingAndFilterTests(name: string, fresh: () => Promise<AuditLog>): vo
       pw: '[MASKED:password]',
       value: '[MASKED:password]',
       clientSecret: '[MASKED:password]',
-      note: 'my password is [MASKED:password] today',
+      note: 'my password is [MASKED:password], today',
     });
   });
 
