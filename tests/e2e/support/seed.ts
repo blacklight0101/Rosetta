@@ -54,8 +54,8 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * (P1-46) have accounts of their own: `journey` signs in through the pages, `journey-owner` owns
  * a project and a run, `journey-other` is the second user who must not see them, `journey-force`
  * must change its password at first sign-in, `journey-run` runs the pipeline on the C# fixture,
- * `journey-language` on the COBOL one and `journey-admin` is the administrator who creates a user
- * and saves the caps.
+ * `journey-language` on the COBOL one, `journey-admin` is the administrator who creates a user
+ * and saves the caps and `journey-server` is the user who runs on the server key (P1-131).
  */
 export type E2eAccountKind =
   | 'keys'
@@ -81,7 +81,8 @@ export type E2eAccountKind =
   | 'journey-force'
   | 'journey-run'
   | 'journey-language'
-  | 'journey-admin';
+  | 'journey-admin'
+  | 'journey-server';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -108,6 +109,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'journey-run',
   'journey-language',
   'journey-admin',
+  'journey-server',
 ];
 
 const adminKinds: ReadonlySet<E2eAccountKind> = new Set([
