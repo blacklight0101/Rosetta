@@ -17,7 +17,9 @@ function renderHistory(answers: Readonly<Record<string, Answer>> = {}) {
 }
 
 async function rowOf(runKey: string): Promise<HTMLElement> {
-  const row = (await screen.findByText(runKey)).closest('tr');
+  // The run id is shown once and also ends the hidden text of the View run link of the same row.
+  const [cell] = await screen.findAllByText(runKey);
+  const row = cell?.closest('tr') ?? null;
   if (row === null) throw new Error(`No row for ${runKey}.`);
   return row;
 }

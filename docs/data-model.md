@@ -830,6 +830,7 @@ releases.
 | Application logs | `ROSETTA_LOG_RETENTION_DAYS` (14) | deleted at start-up and daily |
 | `.partial-*` snapshot folders | until next start-up | deleted |
 | Runs, projects, exports | until the user deletes them | delete button in the web UI with confirmation (RF-1012, DEC-55); never automatic |
+| Run and project folders on deletion | as long as their rows | the folder is removed first and the rows second (P1-121): Delete run removes the run folder, then the row; Delete project locks the project row (`FOR UPDATE`, so a run queued at the same moment is seen and refuses the deletion), removes the project folder and then the rows in the same transaction. A folder that cannot be removed writes an `error` log entry with RST-1115 naming it, answers RST-1115 and keeps the rows, so the run or project is still listed and Delete removes the folder on the next attempt; no folder is left without its rows, so no clean-up task exists for them |
 | Snapshots | until the administrator deletes them | delete button on the administration page (RF-1012) |
 | Sessions | until expiry or sign-out | expired rows deleted hourly by the in-process scheduler |
 | Cost reservations | until the call ends or the row expires | expired rows deleted hourly |

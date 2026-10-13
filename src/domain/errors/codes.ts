@@ -46,6 +46,7 @@ export const ERROR_CODES = {
   grepFailed: 'RST-1112',
   byteLimitInvalid: 'RST-1113',
   fileTooLarge: 'RST-1114',
+  folderRemovalFailed: 'RST-1115',
   languagePackFailed: 'RST-1200',
   languagePackInvalid: 'RST-1201',
   codeMapInvalid: 'RST-1202',

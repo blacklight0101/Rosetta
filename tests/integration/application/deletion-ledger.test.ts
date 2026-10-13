@@ -141,6 +141,10 @@ describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL', () => {
 
     expect(await runs.find(amy, done.id)).toBeUndefined();
   });
+});
+
+describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL when its folder stays', () => {
+  const database = useTestDatabase();
 
   it('RF-1012 keeps the project and its runs when the folder cannot be removed (P1-121)', async () => {
     const { projects, runs, folders, logger, project, ended } = await setup(database);
