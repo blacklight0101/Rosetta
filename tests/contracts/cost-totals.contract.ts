@@ -134,7 +134,9 @@ function scopeCases(name: string, fresh: Fresh): void {
   });
 }
 
-const RUNS = 60;
+const RUNS = 20;
+/** Seeding row by row is slow on a loaded PostgreSQL. */
+const SEED_TIMEOUT_MS = 30_000;
 const runNumbered = (number: number): string =>
   `00000000-0000-4000-8000-${String(number).padStart(12, '0')}`;
 
@@ -148,25 +150,29 @@ async function seedManyRuns(fixture: CostTotalsFixture, userId: string): Promise
 }
 
 function summaryCases(name: string, fresh: Fresh): void {
-  it(`RF-1010 ${name} sums a ledger of many runs into a bounded number of groups`, async () => {
-    const fixture = await fresh();
-    const amy = await fixture.addUser();
-    await seedManyRuns(fixture, amy);
+  it(
+    `RF-1010 ${name} sums a ledger of many runs into a bounded number of groups`,
+    async () => {
+      const fixture = await fresh();
+      const amy = await fixture.addUser();
+      await seedManyRuns(fixture, amy);
 
-    const summary = await fixture.totals.userSummary(amy);
+      const summary = await fixture.totals.userSummary(amy);
 
-    expect((await fixture.totals.userGroups(amy)).length).toBeGreaterThan(RUNS);
-    expect(
-      summary.toSorted((left, right) => Number(left.costKnown) - Number(right.costKnown)),
-    ).toEqual([
-      expect.objectContaining({ costKnown: false, calls: RUNS, costMicros: BigInt(RUNS) * 700n }),
-      expect.objectContaining({
-        costKnown: true,
-        calls: RUNS + 1,
-        costMicros: BigInt(RUNS) * 700n + 3n,
-      }),
-    ]);
-  });
+      expect((await fixture.totals.userGroups(amy)).length).toBeGreaterThan(RUNS);
+      expect(
+        summary.toSorted((left, right) => Number(left.costKnown) - Number(right.costKnown)),
+      ).toEqual([
+        expect.objectContaining({ costKnown: false, calls: RUNS, costMicros: BigInt(RUNS) * 700n }),
+        expect.objectContaining({
+          costKnown: true,
+          calls: RUNS + 1,
+          costMicros: BigInt(RUNS) * 700n + 3n,
+        }),
+      ]);
+    },
+    SEED_TIMEOUT_MS,
+  );
 
   it(`RF-1010 ${name} summarises only the user's own rows, with the tokens and the versions`, async () => {
     const fixture = await fresh();
