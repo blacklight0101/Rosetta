@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import { settingsWith } from '../../../support/project-fixtures.js';
+import { maxRunCostMicros as maxCost, settingsWith } from '../../../support/project-fixtures.js';
 
 // RF-002 (second scenario), DEC-117, data-model.md section 3.1: every numeric setting has an
 // allowed range. A value just outside it is refused with its field and RST-1006 (a cap below zero
@@ -61,8 +61,6 @@ describe('parseProjectSettings: allowed ranges (DEC-117)', () => {
 });
 
 describe('parseProjectSettings: the run cost cap and the confirmation threshold', () => {
-  const maxCost = 100_000_000;
-
   it('RF-002 the run cost cap accepts 0 and 100 USD', () => {
     const atZero = { 'budget.run.maxCostMicros': 0, 'budget.confirmAboveCostMicros': 0 };
     expect(problemsOf(settingsWith(atZero))).toEqual([]);
@@ -96,8 +94,6 @@ describe('parseProjectSettings: the run cost cap and the confirmation threshold'
 });
 
 describe('parseProjectSettings: thresholds and edge cases of the budget (DEC-117)', () => {
-  const maxCost = 100_000_000;
-
   it('RF-002 a negative run cost cap is refused with RST-1003, not RST-1006', () => {
     expect(problemsOf(settingsWith({ 'budget.run.maxCostMicros': -1 }))).toEqual([
       { field: 'budget.run.maxCostMicros', code: ERROR_CODES.settingsCapNegative },
@@ -128,8 +124,6 @@ describe('parseProjectSettings: thresholds and edge cases of the budget (DEC-117
 });
 
 describe('parseProjectSettings: the threshold at the top of the cap (DEC-117)', () => {
-  const maxCost = 100_000_000;
-
   it('RF-002 a threshold of exactly 100 USD is accepted with a run cost cap of 100 USD', () => {
     const input = settingsWith({
       'budget.run.maxCostMicros': maxCost,
@@ -158,15 +152,17 @@ describe('parseProjectSettings: the threshold at the top of the cap (DEC-117)', 
 });
 
 describe('parseProjectSettings: a missing ranged value (DEC-117)', () => {
-  it.each(RANGES.filter(([field]) => field !== 'roles.reader.maxTurns'))(
-    'RF-002 %s left out is refused with its field',
-    (field) => {
-      const [problem, ...rest] = problemsOf(settingsWith({ [field]: undefined }));
+  const required = [
+    ...RANGES.map(([field]) => field).filter((field) => field !== 'roles.reader.maxTurns'),
+    'budget.run.maxCostMicros',
+    'budget.confirmAboveCostMicros',
+  ];
 
-      expect(rest).toEqual([]);
-      expect(problem?.field).toBe(field);
-    },
-  );
+  it.each(required)('RF-002 %s left out is refused with its field and RST-1006', (field) => {
+    expect(problemsOf(settingsWith({ [field]: undefined }))).toEqual([
+      { field, code: ERROR_CODES.settingValueInvalid },
+    ]);
+  });
 
   it('RF-002 the optional reader turn limit may be left out', () => {
     expect(problemsOf(settingsWith({ 'roles.reader.maxTurns': undefined }))).toEqual([]);
