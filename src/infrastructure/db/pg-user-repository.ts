@@ -53,10 +53,11 @@ const COUNT_FAILED_SIGN_IN =
   ' RETURNING failed_sign_ins';
 // P1-133, RF-1102: a successful sign-in writes the sign-in columns only (counters, lock, last
 // sign-in time), and only while the account is not Disabled and keeps the password hash that was
-// read, so a concurrent disable or reset is never undone and the sign-in is refused.
+// read and the lock it read, so a concurrent disable, reset or lock is never undone and the sign-in
+// is refused.
 const MARK_SIGNED_IN =
   'UPDATE users SET failed_sign_ins = 0, first_failed_at = NULL, locked_until = NULL, last_sign_in_at = $2::timestamptz' +
-  " WHERE id = $1 AND state <> 'Disabled' AND password_hash = $3";
+  " WHERE id = $1 AND state <> 'Disabled' AND password_hash = $3 AND locked_until IS NOT DISTINCT FROM $4::timestamptz";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UNIQUE_VIOLATION = '23505';
 const foundRow = z.object({ found: z.boolean() });
@@ -193,7 +194,8 @@ export class PgUserRepository implements UserRepository {
 
   async markSignedIn(read: UserAccount, now: EpochMs): Promise<boolean> {
     if (!UUID.test(read.id)) return false;
-    const values = [read.id, new Date(now), read.passwordHash];
+    const lockedUntil = read.lockedUntil === null ? null : new Date(read.lockedUntil);
+    const values = [read.id, new Date(now), read.passwordHash, lockedUntil];
     try {
       const result = await this.pool.query(MARK_SIGNED_IN, values);
       return result.rowCount === 1;

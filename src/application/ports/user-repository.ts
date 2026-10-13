@@ -41,8 +41,8 @@ export interface UserRepository {
    * Records a successful sign-in in one atomic write of the sign-in columns only (RF-1100,
    * RF-1102): the failure counters and the lock are cleared and the last sign-in time is set,
    * nothing else is written. Only while the stored account is not Disabled and still has the
-   * password hash of `read` (the account as the caller read it); false otherwise, so a concurrent
-   * disable or password reset is never undone by the sign-in.
+   * password hash and the lock of `read` (the account as the caller read it); false otherwise, so
+   * a disable, password reset or lock written by another server instance is never undone.
    */
   markSignedIn(read: UserAccount, now: EpochMs): Promise<boolean>;
 }

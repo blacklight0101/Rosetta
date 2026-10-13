@@ -21,8 +21,7 @@ import { KeyedQueue } from '../support/keyed-queue.js';
 // count and a concurrent disable or reset is never undone; an unknown, disabled or locked name
 // makes the same write to an id no account has, so every refusal costs the same database work too.
 // The fifth failure within 15 minutes locks the account for 15 minutes (DEC-112). A success
-// rotates the session (P1-133: the success write touches the sign-in columns only and only while
-// the account is enabled with the verified password, else the sign-in is refused): the previous id is ended and a new one is created. Attempts on one user
+// rotates the session: the previous id is ended and a new one is created. Attempts on one user
 // name run one after another, so an attempt after the lock sees it before its password is checked.
 
 export interface SignInRequest {
@@ -192,7 +191,7 @@ export class SignIn {
   ): Promise<Result<SignedIn, SignInProblem>> {
     const { users, sessions } = this.deps;
     const signedIn = recordSuccessfulSignIn(account, now.getTime());
-    // P1-133: only the sign-in columns, only while enabled with the password that was verified.
+    // Refused when another instance disabled, reset or locked the account since the read.
     if (!(await users.markSignedIn(account, now.getTime()))) {
       return this.refuse({ request, reason: 'account-changed', now, account });
     }

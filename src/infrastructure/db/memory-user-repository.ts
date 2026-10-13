@@ -96,9 +96,11 @@ export class MemoryUserRepository implements UserRepository {
   markSignedIn(read: UserAccount, now: EpochMs): Promise<boolean> {
     const stored = this.accounts.get(read.id);
     if (stored === undefined) return Promise.resolve(false);
-    if (stored.state === 'Disabled' || stored.passwordHash !== read.passwordHash) {
-      return Promise.resolve(false);
-    }
+    const changed =
+      stored.state === 'Disabled' ||
+      stored.passwordHash !== read.passwordHash ||
+      stored.lockedUntil !== read.lockedUntil;
+    if (changed) return Promise.resolve(false);
     const { failedSignIns, firstFailedAt, lockedUntil, lastSignInAt } = recordSuccessfulSignIn(
       stored,
       now,
