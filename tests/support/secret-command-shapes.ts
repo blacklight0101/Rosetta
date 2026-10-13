@@ -17,6 +17,7 @@ interface ShapeCase {
 const password = `Pw${fakeValue(14)}`;
 const token = `Tk${fakeValue(20)}`;
 const tail = `Tail${fakeValue(12)}`;
+const shortToken = `Tk${fakeValue(8)}`;
 const doubleDash = ['-', '-'].join('');
 const passwordOption = `${doubleDash}password`;
 const tokenOption = `${doubleDash}token`;
@@ -75,6 +76,27 @@ export const commandSecretCases: readonly ShapeCase[] = [
     secrets: [password],
   },
   {
+    name: 'a mysql -p password after an &> redirect',
+    kind: 'password',
+    text: `mysql &> out.sql -u root -p${password}`,
+    masked: 'mysql &> out.sql -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysqldump -p password after a >| redirect',
+    kind: 'password',
+    text: `mysqldump catalog >| out.sql -u root -p${password}`,
+    masked: 'mysqldump catalog >| out.sql -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a short --token value after the scheme word Bearer',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption} Bearer ${shortToken} --verbose`,
+    masked: `tool ${tokenOption} Bearer [MASKED:bearer-token] --verbose`,
+    secrets: [shortToken],
+  },
+  {
     name: 'a --token option after a redirect',
     kind: 'bearer-token',
     text: `tool > out.txt ${tokenOption} ${token}`,
@@ -100,6 +122,8 @@ export const commandInnocentTexts: readonly string[] = [
   `tool ${tokenOption}-file token.txt > out.txt`,
   `tool ${passwordOption}-file secret.txt`,
   `tool ${doubleDash}no-password > out.txt`,
+  `x${tokenOption} abc`,
+  `${doubleDash}${tokenOption} abc`,
 ];
 
 /** Hostile pieces for the new patterns (RF-141 linear time), built from pieces like the cases. */
