@@ -123,7 +123,7 @@ export const commandInnocentTexts: readonly string[] = [
   `tool ${passwordOption}-file secret.txt`,
   `tool ${doubleDash}no-password > out.txt`,
   `x${tokenOption} abc`,
-  `${doubleDash}${tokenOption} abc`,
+  `-${tokenOption} abc`,
 ];
 
 /** Hostile pieces for the new patterns (RF-141 linear time), built from pieces like the cases. */
