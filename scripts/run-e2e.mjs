@@ -3,6 +3,7 @@
 // Usage: node scripts/run-e2e.mjs [--ci] [playwright arguments]
 // With --ci (the step of `npm run test:ci`) it runs on Linux where a database is configured and
 // otherwise says it was skipped and succeeds; the Windows job has no database service.
+// With --ci and ROSETTA_E2E_OWN_JOB=1 it is skipped too: in CI the sharded e2e jobs run the project.
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -12,6 +13,7 @@ const [, , ...args] = process.argv;
 const ci = args[0] === '--ci';
 const passThrough = ci ? args.slice(1) : args;
 const database = process.env.ROSETTA_TEST_DATABASE_URL ?? '';
+const ownJob = process.env.ROSETTA_E2E_OWN_JOB === '1';
 
 function runNode(script, scriptArgs) {
   return new Promise((resolve) => {
@@ -22,9 +24,10 @@ function runNode(script, scriptArgs) {
   });
 }
 
-if (ci && (process.platform !== 'linux' || database === '')) {
-  const why =
-    database === ''
+if (ci && (ownJob || process.platform !== 'linux' || database === '')) {
+  const why = ownJob
+    ? 'the e2e jobs of the workflow run them'
+    : database === ''
       ? 'ROSETTA_TEST_DATABASE_URL is not set'
       : 'it runs on Linux only (the CI database service)';
   process.stdout.write(`End-to-end tests skipped: ${why}.\n`);

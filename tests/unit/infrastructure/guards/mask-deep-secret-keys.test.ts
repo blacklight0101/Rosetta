@@ -25,6 +25,19 @@ describe('maskDeep on a key that names a secret', () => {
     ['token2', '[MASKED:bearer-token]'],
     ['token_2', '[MASKED:bearer-token]'],
     ['userSecret2', '[MASKED:password]'],
+    ['Secret_2FA', '[MASKED:password]'],
+    ['Secret2FA', '[MASKED:password]'],
+    ['secret_2fa', '[MASKED:password]'],
+    ['tokenValue', '[MASKED:bearer-token]'],
+    ['accessTokenValue', '[MASKED:bearer-token]'],
+    ['secretValue', '[MASKED:password]'],
+    ['refreshTokens', '[MASKED:bearer-token]'],
+    ['access_tokens', '[MASKED:bearer-token]'],
+    ['idTokens', '[MASKED:bearer-token]'],
+    ['bearer', '[MASKED:bearer-token]'],
+    ['Bearer', '[MASKED:bearer-token]'],
+    ['secretKey', '[MASKED:password]'],
+    ['client_secret_key', '[MASKED:password]'],
   ])('RF-141 replaces the whole value under the key %s with %s', (key, marker) => {
     expect(maskDeep({ [key]: fakeSecret }, masker)).toEqual({ [key]: marker });
   });
@@ -63,6 +76,15 @@ describe('maskDeep on a secret key, for every value type and depth', () => {
       secretCount: 3,
       tokenizer: 'cl100k',
       tokens: 5,
+      outputTokens: 30,
+      cachedTokens: 2,
+      totalTokens: 44,
+      secret_count: 1,
+      secret2Count: 2,
+      tokenCount: 9,
+      primaryKey: 'id',
+      cacheKey: 'scan',
+      OAuth2Count: 1,
     };
 
     expect(maskDeep(record, masker)).toEqual(record);

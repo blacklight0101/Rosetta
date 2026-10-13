@@ -11,7 +11,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { questionsOfRun, withAnswers } from './answers-sections.js';
+import { lineEndOf, linesOf, questionsOfRun, withAnswers } from './answers-sections.js';
 
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
@@ -19,7 +19,7 @@ import { questionsOfRun, withAnswers } from './answers-sections.js';
 // and written on one line, so it cannot start a heading, an answer line or a new section. Writes
 // to one project's file run one after another. The page records the answers to one run's questions
 // (RF-1007): each answer is masked and written on its question's answer line, and nothing else in
-// the file changes.
+// the file changes. Appended lines use the file's own line end and its byte-order mark is kept.
 
 export interface FileAnswersFileOptions {
   readonly writer: OutputWriter;
@@ -36,7 +36,7 @@ function fileOf(project: ProjectRef): WorkspaceFile {
 /** The questions the file already holds, as written in their headings. */
 function questionsIn(text: string): Set<string> {
   return new Set(
-    text.split(/\r?\n/u).flatMap((line) => {
+    linesOf(text).flatMap((line) => {
       const found = heading.exec(line);
       return found === null ? [] : [found[1] ?? ''];
     }),
@@ -57,15 +57,16 @@ export class FileAnswersFile implements AnswersFile {
     return this.queue.run(`${file.userId}/${file.path}`, async () => {
       const existing = await this.read(file);
       const known = questionsIn(existing);
+      const end = lineEndOf(existing);
       const sections = questions.flatMap((question) => {
         const text = this.line(question.question);
         if (known.has(text)) return [];
         known.add(text);
-        return [this.section(question, text)];
+        return [this.section(question, text, end)];
       });
       if (sections.length === 0) return;
       const head = existing.trimEnd() === '' ? TITLE : existing.trimEnd();
-      await this.write(file, `${[head, ...sections].join('\n\n')}\n`);
+      await this.write(file, `${[head, ...sections].join(end + end)}${end}`);
     });
   }
 
@@ -91,14 +92,15 @@ export class FileAnswersFile implements AnswersFile {
     });
   }
 
-  private section(question: OpenQuestion, text: string): string {
+  /** One section, its lines joined with the file's own line end. */
+  private section(question: OpenQuestion, text: string, end: string): string {
     return [
       `## ${question.cardId} - ${text}`,
       '',
       `- Card: runs/${question.runKey}/cards/OQ/${question.cardId}.md`,
       `- Context: ${this.line(question.context)}`,
       '- Answer:',
-    ].join('\n');
+    ].join(end);
   }
 
   /** Masked text on one line. */

@@ -12,6 +12,7 @@ import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { AgentPanel } from './AgentPanel.js';
 import { ClaimsList } from './ClaimsList.js';
+import { CoverageMap } from './CoverageMap.js';
 import { EventLog } from './EventLog.js';
 import { RunAnswers } from './RunAnswers.js';
 import { RunDownloads } from './RunDownloads.js';
@@ -26,9 +27,10 @@ import { usePauseUpdates } from './use-pause-updates.js';
 import { useRunEstimate } from './use-run-estimate.js';
 import type { RunStream } from './use-run-stream.js';
 
-// RF-1002, RF-1003, RF-424, RF-1004, design-system.md section 14 (live run): the page of a run that
-// exists: head with Stop, downloads, the overview, the run meter, one panel per agent, the claims
-// and the verbose event log. Everything shown comes from the run row and the run's events.
+// RF-1002, RF-1003, RF-424, RF-1004, RF-1005, design-system.md section 14 (live run): the page of a
+// run that exists: head with Stop, downloads, the overview, the run meter, one panel per agent, the
+// coverage map, the claims and the verbose event log. Everything shown comes from the run row and
+// the run's events.
 
 export interface LiveRunViewProps {
   readonly run: RunRow;
@@ -146,6 +148,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
       <RunOverview state={view.shown} />
       <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
       <Agents state={view.shown} />
+      {stage === 'understand' ? <CoverageMap state={view.shown} /> : null}
       <ClaimsList claims={view.shown.claims} source={sourceOf(state, run)} />
       {stage === 'understand' ? <RunAnswers runId={run.id} ended={phase.kind === 'ended'} /> : null}
       <EventLog lines={view.shown.log} startedAt={view.shown.startedAt} />
