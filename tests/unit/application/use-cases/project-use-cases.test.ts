@@ -39,7 +39,7 @@ describe('CreateProject', () => {
       userId: amy.userId,
       name: 'Dotnet-Architecture/eShopModernizing',
       sourceUrl: 'https://github.com/dotnet-architecture/eshopmodernizing',
-      ref: 'master',
+      ref: 'main',
       subpath: 'eShopLegacyWebFormsSolution',
       settings: newProjectSettings,
     });
