@@ -32,7 +32,9 @@ export type RoleEstimate = z.output<typeof roleEstimate>;
 export const estimateSchema = z.object({
   priceTableVersion: z.string(),
   currency: z.string(),
-  areas: z.array(z.object({ name: z.string(), estimatedTokens: z.number() })),
+  areas: z.array(
+    z.object({ name: z.string(), estimatedTokens: z.number(), thirdParty: z.boolean() }),
+  ),
   assumptions: z.looseObject({ turnsPerArea: scenarioNumbers }),
   roles: z.array(roleEstimate),
   total: z.object(range),

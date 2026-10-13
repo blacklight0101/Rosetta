@@ -39,7 +39,7 @@ it('RF-1001 an area of third-party files starts unticked and is marked, the othe
   });
   expect(input('Catalog').checked).toBe(true);
   expect(input('Models').checked).toBe(true);
-  const row = input('Scripts#1').closest('.rst-start__choice');
+  const row = input('Scripts#1').parentElement;
   expect(row?.textContent).toContain('third-party');
   expect(
     within(screen.getByRole('group', { name: 'Areas from the code map' })).getAllByText(
