@@ -1,5 +1,5 @@
 import type { CurrencyTotal } from '../ports/account-usage.js';
-import type { LedgerGroup } from '../ports/cost-totals.js';
+import type { LedgerGroup, SummaryGroup } from '../ports/cost-totals.js';
 
 // RF-428, RF-1010, DEC-49: adds ledger groups up into the totals the header shows and the breakdown
 // of a project's cost page, by run, stage, role, provider and model.
@@ -50,7 +50,7 @@ const codeUnitOrder = (left: string, right: string): number =>
 /** The key of the line of the provider tests, which belong to no run (RF-407). */
 const TESTS_KEY = 'provider-tests';
 
-function costOf(groups: readonly LedgerGroup[]): CurrencyTotal[] {
+function costOf(groups: readonly SummaryGroup[]): CurrencyTotal[] {
   const known = new Map<string, bigint>();
   for (const group of groups.filter((each) => each.costKnown)) {
     known.set(group.currency, (known.get(group.currency) ?? 0n) + group.costMicros);
@@ -60,11 +60,11 @@ function costOf(groups: readonly LedgerGroup[]): CurrencyTotal[] {
     .sort((left, right) => codeUnitOrder(left.currency, right.currency));
 }
 
-const sumOf = (groups: readonly LedgerGroup[], pick: (group: LedgerGroup) => number): number =>
+const sumOf = (groups: readonly SummaryGroup[], pick: (group: SummaryGroup) => number): number =>
   groups.reduce((total, group) => total + pick(group), 0);
 
 // RF-1010
-export function totalsOf(groups: readonly LedgerGroup[]): UsageTotals {
+export function totalsOf(groups: readonly SummaryGroup[]): UsageTotals {
   const versions = new Set(groups.map((group) => group.priceTableVersion));
   return {
     calls: sumOf(groups, (group) => group.calls),

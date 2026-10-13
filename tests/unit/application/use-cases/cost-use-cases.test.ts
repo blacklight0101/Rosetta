@@ -77,6 +77,26 @@ describe('GetProjectCost', () => {
 });
 
 describe('GetAccountTotals', () => {
+  it('RF-1010 the pill reads the bounded summary, never one group per run', async () => {
+    const costs = new MemoryCostTotals();
+    costs.add(costEntry(amy.userId));
+    const summaryOnly = {
+      userSummary: (userId: string) => costs.userSummary(userId),
+      userGroups: () => Promise.reject(new Error('The pill must not read the groups per run.')),
+      projectGroups: () => Promise.reject(new Error('Not the pill.')),
+      providerTestGroups: () => Promise.reject(new Error('Not the pill.')),
+    };
+    const totals = new GetAccountTotals({
+      costs: summaryOnly,
+      caps: { execute: () => Promise.resolve(capsView) },
+    });
+
+    const answer = await totals.execute({ actor: amy });
+
+    expect(answer.totals).toMatchObject({ calls: 1, inputTokens: 1000, cachedInputTokens: 50 });
+    expect(answer.totals.cost).toEqual([{ currency: 'USD', costMicros: 700n }]);
+  });
+
   it('RF-1010 totals cover only my own rows, every project and my provider tests', async () => {
     const { getAccountTotals } = await fixture();
 

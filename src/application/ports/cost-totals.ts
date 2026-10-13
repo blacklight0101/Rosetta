@@ -7,15 +7,12 @@ import type { RunStage } from '../../domain/runs/run-states.js';
 // never reads one row per call. A provider test has neither project nor run (RF-407). Each group
 // keeps the cost fixed at the time of its calls and the price table version they used.
 
-/** The ledger rows that share every column below, summed. */
-export interface LedgerGroup {
-  /** Null for a provider test (RF-407): never joined to a run. */
-  readonly runId: string | null;
-  readonly stage: RunStage | 'provider-test';
-  readonly role: string;
-  readonly provider: string;
-  readonly model: string;
-  readonly keySource: KeySource;
+/**
+ * The ledger rows that share a currency, a known or unknown cost and a price table version, summed.
+ * Its number is bounded by those three columns, not by the number of runs or calls, so the totals
+ * pill reads a handful of rows however long the ledger is.
+ */
+export interface SummaryGroup {
   readonly currency: string;
   /** False for calls of an unpriced model (RF-427): their cost is unknown. */
   readonly costKnown: boolean;
@@ -25,11 +22,27 @@ export interface LedgerGroup {
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly costMicros: bigint;
+}
+
+/** The ledger rows that share every column below, summed. */
+export interface LedgerGroup extends SummaryGroup {
+  /** Null for a provider test (RF-407): never joined to a run. */
+  readonly runId: string | null;
+  readonly stage: RunStage | 'provider-test';
+  readonly role: string;
+  readonly provider: string;
+  readonly model: string;
+  readonly keySource: KeySource;
   /** The instant of the group's first call. */
   readonly firstAt: Date;
 }
 
 export interface CostTotals {
+  /**
+   * The same rows as `userGroups`, summed per currency, known cost and price table version only:
+   * what the totals pill needs, read in a bounded number of groups (RF-1010).
+   */
+  userSummary(userId: string): Promise<readonly SummaryGroup[]>;
   /** Every ledger row of the user, of every project and of none, grouped. */
   userGroups(userId: string): Promise<readonly LedgerGroup[]>;
   /** The user's ledger rows of one project, grouped. */
