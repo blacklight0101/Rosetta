@@ -1,6 +1,11 @@
 import { expect, it } from 'vitest';
 import { ERROR_CODES } from '../../src/domain/errors/codes.js';
 import {
+  cutNotice,
+  matchCapNotice,
+  tooLargeNotice,
+} from '../../src/infrastructure/files/read-refusals.js';
+import {
   refusalOf,
   securityCodes,
   type NewReader,
@@ -90,9 +95,38 @@ function grepMatchCapTests(newReader: NewReader): void {
   });
 }
 
+// P1-127: both readers build the notice with the same builder, so the agent reads the same text
+// whichever reader runs; a reader with its own wording fails here.
+function grepNoticeTests(newReader: NewReader): void {
+  it('RF-146 the notice for a cut line is the shared cut notice', async () => {
+    const { reader } = await newReader({ files: { 'long.txt': `${'a'.repeat(2001)}\nneedle\n` } });
+    const result = await reader.grep({ pattern: 'needle' });
+
+    expect(result.ok && result.value.cutLines).toBe(1);
+    expect(result.ok && result.value.notice).toBe(cutNotice);
+    expect(cutNotice).toContain('2000');
+  });
+
+  it('RF-146 cut lines, big files and the match cap are told in one notice, in that order', async () => {
+    const { reader } = await newReader({
+      files: {
+        'a.txt': `${'r'.repeat(2001)}\n${lines(1000, 'row')}`,
+        'big.txt': lines(2000, 'row'),
+      },
+      maxFileBytes: 2002 + 4000,
+    });
+    const result = await reader.grep({ pattern: 'r' });
+
+    expect(result.ok && result.value.notice).toBe(
+      [cutNotice, tooLargeNotice(1), matchCapNotice].join(' '),
+    );
+  });
+}
+
 /** The size caps of the RepositoryReader contract (RF-144, RF-146). */
 export function capsContract(newReader: NewReader): void {
   readCapTests(newReader);
   grepSizeTests(newReader);
   grepMatchCapTests(newReader);
+  grepNoticeTests(newReader);
 }
