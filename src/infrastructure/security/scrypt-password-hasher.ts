@@ -36,8 +36,9 @@ const ADR_015_PARAMETERS: ScryptParameters = { cost: 2 ** 17, blockSize: 8, para
 const SALT_BYTES = 16;
 const KEY_BYTES = 64;
 // P1-77: the bounds of a stored hash, so a tampered row cannot make verification costly or throw.
+// P1-101: the highest cost is the ADR-015 N, so raising N there moves the bound with it.
 const MIN_COST = 2 ** 10;
-const MAX_COST = 2 ** 17;
+const MAX_COST = ADR_015_PARAMETERS.cost;
 const MAX_BLOCK_SIZE = 16;
 const MAX_PARALLELIZATION = 4;
 const MIN_SALT_BYTES = 16;
