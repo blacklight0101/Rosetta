@@ -2,9 +2,16 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '../support/fixtures.js';
 import { expectNoSeriousViolations } from '../support/axe.js';
 import { tokensOf } from '../support/cost-run.js';
-import { openProjectStart, runScan, repositories, chooseAreas } from '../support/journey-pages.js';
+import {
+  buildReport,
+  openProjectStart,
+  runScan,
+  repositories,
+  chooseAreas,
+} from '../support/journey-pages.js';
 import { runStatus, startAndOpenLiveRun } from '../support/live-run-page.js';
 import { expectNoFullKey } from '../support/no-full-key.js';
+import { filesHolding } from '../support/run-folder.js';
 import { accountFor, type Credentials } from '../support/seed.js';
 import { e2eServerOpenAiKey } from '../support/server-key.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
@@ -49,6 +56,18 @@ async function serverMonthOf(page: Page): Promise<number> {
   return Number(await meter.getAttribute('aria-valuenow'));
 }
 
+/** The Logs panel, the built report and every file of the server's data folder hold no key. */
+async function expectKeyInNoLogOrReport(page: Page): Promise<void> {
+  const key = e2eServerOpenAiKey();
+  await buildReport(page);
+  await page.getByRole('link', { name: 'API calls and logs' }).click();
+  await expect(page.getByRole('region', { name: 'Logs' })).toBeVisible();
+  await expectNoFullKey(page, [key]);
+  const { held, looked } = await filesHolding(key);
+  expect(looked, 'the data folder holds the run files').toBeGreaterThan(5);
+  expect(held, 'no log, report or run file holds the server key').toEqual([]);
+}
+
 async function userPicksTheReader(page: Page, user: Credentials): Promise<void> {
   await signIn(page, user);
   await openProjectStart(page, repositories.webforms);
@@ -64,43 +83,46 @@ async function userPicksTheReader(page: Page, user: Credentials): Promise<void> 
   await signOut(page);
 }
 
-test('RF-1106 RF-1104 RF-428 a user without a key runs on the server key, stops at the administrator cap, and the totals show the spend', async ({
-  page,
-}, info) => {
-  test.setTimeout(240_000);
-  const user = accountFor('journey-server', info.project.name);
-  const admin = accountFor('journey-admin', info.project.name);
-  await userPicksTheReader(page, user);
-  await signIn(page, admin);
-  const monthBefore = await serverMonthOf(page);
-  expect(monthBefore).toBeGreaterThanOrEqual(serverMonthSeed);
-  await signOut(page);
-
-  try {
-    await adminSavesRunCap(page, admin, lowRunCap);
+test(
+  'RF-1106 RF-1104 RF-428 a user without a key runs on the server key, stops at the administrator cap, and the totals show the spend',
+  { tag: '@caps' },
+  async ({ page }, info) => {
+    test.setTimeout(240_000);
+    const user = accountFor('journey-server', info.project.name);
+    const admin = accountFor('journey-admin', info.project.name);
+    await userPicksTheReader(page, user);
+    await signIn(page, admin);
+    const monthBefore = await serverMonthOf(page);
+    expect(monthBefore).toBeGreaterThanOrEqual(serverMonthSeed);
     await signOut(page);
-    await signIn(page, user);
-    await openProjectStart(page, repositories.webforms);
-    const pill = page.getByTestId('header-totals');
-    const before = await tokensOf(pill);
-    await chooseAreas(page, ['Catalog', 'Database', 'Services']);
-    await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
-    await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.50');
-    await startAndOpenLiveRun(page);
 
-    await expect(runStatus(page)).toContainText('Cap reached', { timeout: 90_000 });
-    await transitionsDone(page);
-    await expectNoSeriousViolations(page);
-    await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
-    await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
+    try {
+      await adminSavesRunCap(page, admin, lowRunCap);
+      await signOut(page);
+      await signIn(page, user);
+      await openProjectStart(page, repositories.webforms);
+      const pill = page.getByTestId('header-totals');
+      const before = await tokensOf(pill);
+      await chooseAreas(page, ['Catalog', 'Database', 'Services']);
+      await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
+      await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.50');
+      await startAndOpenLiveRun(page);
+
+      await expect(runStatus(page)).toContainText('Cap reached', { timeout: 90_000 });
+      await transitionsDone(page);
+      await expectNoSeriousViolations(page);
+      await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
+      await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
+      await expectNoFullKey(page, [e2eServerOpenAiKey()]);
+      await expectKeyInNoLogOrReport(page);
+    } finally {
+      // However the run ended, the next sign-in starts clean and the caps go back to the shared figures.
+      await page.context().clearCookies();
+      await adminSavesRunCap(page, admin, keptCaps.run);
+    }
+
+    const monthAfter = await serverMonthOf(page);
+    expect(monthAfter).toBeGreaterThan(monthBefore);
     await expectNoFullKey(page, [e2eServerOpenAiKey()]);
-  } finally {
-    // However the run ended, the next sign-in starts clean and the caps go back to the shared figures.
-    await page.context().clearCookies();
-    await adminSavesRunCap(page, admin, keptCaps.run);
-  }
-
-  const monthAfter = await serverMonthOf(page);
-  expect(monthAfter).toBeGreaterThan(monthBefore);
-  await expectNoFullKey(page, [e2eServerOpenAiKey()]);
-});
+  },
+);

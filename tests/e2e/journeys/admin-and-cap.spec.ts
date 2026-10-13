@@ -61,36 +61,38 @@ async function userStoresKeyAndPricedReader(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Start a run' }).click();
 }
 
-test('RF-1106 RF-422 RF-1010 an administrator creates a user, and the user run stops at the cap with its spend still in the totals', async ({
-  page,
-}, info) => {
-  test.setTimeout(240_000);
-  const project = info.project.name;
-  const user: Credentials = {
-    userName: `e2e-journey-cap-${project}`,
-    password: fixturePassword('JourneyCap'),
-  };
-  await adminCreatesUser(page, accountFor('journey-admin', project), user);
+test(
+  'RF-1106 RF-422 RF-1010 an administrator creates a user, and the user run stops at the cap with its spend still in the totals',
+  { tag: '@caps' },
+  async ({ page }, info) => {
+    test.setTimeout(240_000);
+    const project = info.project.name;
+    const user: Credentials = {
+      userName: `e2e-journey-cap-${project}`,
+      password: fixturePassword('JourneyCap'),
+    };
+    await adminCreatesUser(page, accountFor('journey-admin', project), user);
 
-  await signInThroughPage(page, user);
-  await expect(page).toHaveURL(/\/projects$/u);
-  await userStoresKeyAndPricedReader(page);
-  const pill = page.getByTestId('header-totals');
-  const before = await tokensOf(pill);
-  await chooseAreas(page, ['Catalog', 'Database', 'Services']);
-  await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
-  await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.002');
-  await startAndOpenLiveRun(page);
+    await signInThroughPage(page, user);
+    await expect(page).toHaveURL(/\/projects$/u);
+    await userStoresKeyAndPricedReader(page);
+    const pill = page.getByTestId('header-totals');
+    const before = await tokensOf(pill);
+    await chooseAreas(page, ['Catalog', 'Database', 'Services']);
+    await page.getByLabel('I understand; send masked excerpts to OpenAI for this run').check();
+    await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.002');
+    await startAndOpenLiveRun(page);
 
-  await expect(runStatus(page)).toContainText('Cap reached', { timeout: 90_000 });
-  await transitionsDone(page);
-  await expectNoSeriousViolations(page);
-  await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
-  await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
-  await page.getByRole('link', { name: 'Start page' }).click();
-  await pill.getByRole('link', { name: /Your total/u }).click();
-  await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();
-  await expect(page.getByRole('table', { name: 'By model' })).toContainText('gpt-5-nano');
-  await expect(page.getByRole('table', { name: 'By run' }).getByRole('link')).not.toHaveCount(0);
-  await expectNoSeriousViolations(page);
-});
+    await expect(runStatus(page)).toContainText('Cap reached', { timeout: 90_000 });
+    await transitionsDone(page);
+    await expectNoSeriousViolations(page);
+    await expect.poll(() => tokensOf(pill), { timeout: 15_000 }).toBeGreaterThan(before);
+    await expect(page.getByTestId('run-failure')).toContainText('RST-1600');
+    await page.getByRole('link', { name: 'Start page' }).click();
+    await pill.getByRole('link', { name: /Your total/u }).click();
+    await expect(page.getByRole('heading', { name: 'Project cost', level: 1 })).toBeVisible();
+    await expect(page.getByRole('table', { name: 'By model' })).toContainText('gpt-5-nano');
+    await expect(page.getByRole('table', { name: 'By run' }).getByRole('link')).not.toHaveCount(0);
+    await expectNoSeriousViolations(page);
+  },
+);

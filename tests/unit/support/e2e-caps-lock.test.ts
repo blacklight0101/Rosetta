@@ -44,6 +44,19 @@ describe('e2e caps lock', () => {
     expect(lock.waitedMs).toBeGreaterThanOrEqual(300);
     await lock.release();
   });
+});
+
+describe('e2e caps lock, a holder that is gone', () => {
+  let root: string;
+  let folder: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'rosetta-caps-lock-'));
+    folder = join(root, 'lock');
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
 
   it('RF-1106 takes over a lock whose holder is gone (older than the stale limit)', async () => {
     await acquireCapsLock(folder);

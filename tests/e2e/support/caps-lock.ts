@@ -1,12 +1,72 @@
-// P1-131: placeholder, replaced by the lock.
+import { mkdir, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { e2ePort } from './server-config.js';
+
+// RF-1106, P1-131: the caps of the administration page are server-wide, so the end-to-end specs
+// that write them (tagged @caps) take turns. The lock is a folder: `mkdir` without `recursive`
+// fails when it exists, so exactly one process holds it. A holder that died leaves the folder
+// behind; one older than `staleAfterMs` (more than a test may last) is taken over.
+
+/** The tag of a test that writes the server-wide caps. */
+export const capsTag = '@caps';
+
+/** The lock of this run (one run per port). */
+export function capsLockFolder(): string {
+  return join(tmpdir(), `rosetta-e2e-caps-lock-${String(e2ePort())}`);
+}
+
+const POLL_MS = 100;
+const DEFAULT_STALE_MS = 600_000;
+
 export interface CapsLock {
+  /** How long the taker waited for the turn. */
   readonly waitedMs: number;
+  /** Gives the turn up; calling it again does nothing. */
   release(): Promise<void>;
 }
 
-export function acquireCapsLock(
-  _folder: string,
-  _options?: { staleAfterMs?: number },
+export interface CapsLockOptions {
+  readonly staleAfterMs?: number;
+}
+
+async function tryTake(folder: string): Promise<boolean> {
+  try {
+    await mkdir(folder);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'EEXIST') return false;
+    throw new Error('The caps lock folder could not be created.', { cause: error });
+  }
+}
+
+async function isStale(folder: string, staleAfterMs: number): Promise<boolean> {
+  try {
+    return Date.now() - (await stat(folder)).mtimeMs > staleAfterMs;
+  } catch {
+    return false;
+  }
+}
+
+/** Waits for the turn and returns the lock; the caller releases it in a `finally`. */
+export async function acquireCapsLock(
+  folder: string,
+  options: CapsLockOptions = {},
 ): Promise<CapsLock> {
-  return Promise.reject(new Error('not implemented'));
+  const staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_MS;
+  const started = Date.now();
+  await mkdir(dirname(folder), { recursive: true });
+  while (!(await tryTake(folder))) {
+    if (await isStale(folder, staleAfterMs)) await rm(folder, { recursive: true, force: true });
+    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+  }
+  let released = false;
+  return {
+    waitedMs: Date.now() - started,
+    release: async () => {
+      if (released) return;
+      released = true;
+      await rm(folder, { recursive: true, force: true });
+    },
+  };
 }

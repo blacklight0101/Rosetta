@@ -1,4 +1,5 @@
 import { expect, test as base } from '@playwright/test';
+import { acquireCapsLock, capsLockFolder, capsTag } from './caps-lock.js';
 import { clientAddressFor } from './client-address.js';
 import { isAllowedRequestUrl } from './request-policy.js';
 
@@ -22,7 +23,30 @@ export class NetworkGuard {
   }
 }
 
-export const test = base.extend<{ network: NetworkGuard; clientAddress: string }>({
+export const test = base.extend<{
+  network: NetworkGuard;
+  clientAddress: string;
+  capsTurn: boolean;
+}>({
+  // RF-1106, P1-131: a test tagged @caps writes the server-wide caps, so it waits for its turn
+  // (caps-lock.ts) and keeps it until it ends. The wait is added to the time the test may take.
+  capsTurn: [
+    // eslint-disable-next-line no-empty-pattern -- Playwright requires the first argument of a fixture to be a destructuring pattern, and this one needs no other fixture.
+    async ({}, use, testInfo) => {
+      if (!testInfo.tags.includes(capsTag)) {
+        await use(false);
+        return;
+      }
+      const turn = await acquireCapsLock(capsLockFolder());
+      testInfo.setTimeout(testInfo.timeout + turn.waitedMs);
+      try {
+        await use(true);
+      } finally {
+        await turn.release();
+      }
+    },
+    { auto: true, timeout: 900_000 },
+  ],
   // Every test browses from an address of its own (see serve.ts, ROSETTA_TRUST_PROXY), so the
   // per-address rate limits of sign-in and password change count that test only.
   clientAddress: [
