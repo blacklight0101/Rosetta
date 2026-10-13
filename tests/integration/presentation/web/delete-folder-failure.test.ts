@@ -56,6 +56,8 @@ describe('DELETE /api/projects/:id when the folder cannot be removed', () => {
 
     expectCatalogueAnswer(response.statusCode, response.body, [projectId, userId]);
     expect(test.folders.has({ userId, projectId })).toBe(true);
+    const gone = await amy.request({ method: 'GET', url: `/api/projects/${projectId}` });
+    expect(gone.statusCode).toBe(404);
     const entry = test.logger.entries.find(
       (candidate) => candidate.code === ERROR_CODES.folderRemovalFailed,
     );
