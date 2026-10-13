@@ -6,3 +6,4 @@
 *.pdf binary
 *.tar.gz binary
 *.tgz binary
+tests/fixtures/call-log/crlf/*.jsonl -text

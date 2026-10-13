@@ -510,9 +510,10 @@ Content is exactly what was sent after masking, so it may contain excerpts of th
 call's new messages before it is sent and its answer after. The messages of a task are append-only (each call repeats
 the earlier ones unchanged), so only the new ones are written. Every key and string is masked, and every value is
 masked again together with its property name, so a secret held under a key such as `password` is masked too, and so
-is each item of an array held under such a key; when masking fails nothing is written and the call is not sent (DEC-57). The agent task id must be a plain file
-name. `seq` continues after the lines a file already holds, so a resumed run (RF-006) never repeats a number; a
-partial last line left by a crash mid-append is counted and kept as it is, and the next record starts on a new line.
+is each item of an array held under such a key; when masking fails nothing is written and the call is not sent
+(DEC-57). The agent task id must be a plain file name. `seq` continues after the lines a file already holds, so a
+resumed run (RF-006) never repeats a number; a partial last line left by a crash mid-append is counted and kept as
+it is, and the next record starts on a new line.
 The same holds for `provider-calls.jsonl`.
 
 ### 3.16 `answers.md`
