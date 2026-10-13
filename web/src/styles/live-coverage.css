@@ -1,0 +1,89 @@
+/* The coverage map of the live run page (P1-38, RF-1005, design-system.md section 14, artboard
+   LiveRun.dc.html): one block per area with its read share as a bar in the reader role colour and
+   the files read as a tree. It owns the rst-p138- prefix and reuses no class of another page;
+   colours, spacing and type come from the tokens. */
+
+.rst-p138-coverage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p138-title {
+  font-size: var(--rst-fs-lg);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-p138-note {
+  color: var(--rst-ink-muted);
+}
+
+.rst-p138-areas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.75rem), 1fr));
+  gap: var(--rst-sp-3);
+}
+
+.rst-p138-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  min-inline-size: 0;
+  padding: var(--rst-sp-3) var(--rst-sp-4);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface);
+}
+
+.rst-p138-area-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+}
+
+.rst-p138-area-name {
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-md);
+  font-weight: var(--rst-fw-head);
+  overflow-wrap: anywhere;
+}
+
+.rst-p138-area-figures {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-p138-meter {
+  block-size: 8px;
+  overflow: hidden;
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-surface-2);
+}
+
+.rst-p138-meter-fill {
+  block-size: 100%;
+  background: var(--rst-role-reader);
+}
+
+.rst-p138-tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-p138-tree .rst-p138-tree {
+  padding-inline-start: var(--rst-sp-4);
+  border-inline-start: 1px solid var(--rst-rule);
+}
+
+.rst-p138-name {
+  overflow-wrap: anywhere;
+}
+
+.rst-p138-node--folder > .rst-p138-name {
+  color: var(--rst-ink-soft);
+}

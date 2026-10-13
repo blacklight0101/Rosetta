@@ -29,7 +29,7 @@ function outline(nodes: readonly CoverageNode[], depth = 0): readonly string[] {
   ]);
 }
 
-describe('the coverage map', () => {
+describe('the areas of the coverage map', () => {
   it('RF-1005 lists every planned area in plan order, empty until its agent reads a file', () => {
     const state = stateAfter(
       planned(1, 'reader-001', 'Catalog'),
@@ -67,7 +67,9 @@ describe('the coverage map', () => {
       ['Models', 0, 0],
     ]);
   });
+});
 
+describe('the files of the coverage map', () => {
   it('RF-1005 shows the files of an area as a tree of folders, folders first, by name', () => {
     const state = stateAfter(
       planned(1, 'reader-001', 'Catalog'),
@@ -101,7 +103,9 @@ describe('the coverage map', () => {
 
     expect(coverageOf(state).areas[0]?.filesRead).toBe(0);
   });
+});
 
+describe('the agents of the coverage map', () => {
   it('RF-1005 merges the agents of one area and leaves out agents that are not readers', () => {
     const state = stateAfter(
       planned(1, 'reader-001', 'Catalog'),
