@@ -2,6 +2,7 @@ import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { ScannedSource, ScanResults } from '../../src/application/ports/scan-results.js';
 import type { Area } from '../../src/domain/code-map/area.js';
+import type { FileEntry } from '../../src/domain/code-map/file-entry.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import type { Project } from '../../src/application/projects/project.js';
 import type { Run } from '../../src/domain/runs/run.js';
@@ -29,9 +30,11 @@ export function areaOf(name: string, estimatedTokens: number): Area {
 export class FixedScans implements ScanResults {
   readonly opened: Run[] = [];
   private readonly areas: readonly Area[];
+  private readonly files: readonly FileEntry[];
 
-  constructor(areas: readonly Area[]) {
+  constructor(areas: readonly Area[], files: readonly FileEntry[] = []) {
     this.areas = areas;
+    this.files = files;
   }
 
   open(scan: Run): Promise<ScannedSource> {
@@ -40,7 +43,7 @@ export class FixedScans implements ScanResults {
       codeMap: {
         schemaVersion: 1,
         source: { owner: 'owner', repo: 'repo', commitSha: 'c'.repeat(40), subpath: '' },
-        files: [],
+        files: this.files,
         areas: this.areas,
         symbols: [],
         links: [],
@@ -110,11 +113,14 @@ export async function projectWithScan(
   return project;
 }
 
-export function createEstimateHarness(areas: readonly Area[] = catalogAreas): EstimateHarness {
+export function createEstimateHarness(
+  areas: readonly Area[] = catalogAreas,
+  files: readonly FileEntry[] = [],
+): EstimateHarness {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const keys = new MemoryProviderKeyRepository();
-  const scans = new FixedScans(areas);
+  const scans = new FixedScans(areas, files);
   const estimate = new EstimateRun({ projects, runs, scans, keys, priceTable: estimatePrices });
   return { estimate, projects, runs, keys, scans };
 }
