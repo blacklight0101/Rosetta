@@ -22,7 +22,7 @@ import type { DatabasePool } from './pool.js';
 const INSERT =
   'INSERT INTO audit_events (at, actor_user_id, action, target_type, target_id, ip, outcome, detail) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)';
 const LIST =
-  'SELECT id::text AS id, at, actor_user_id::text AS actor_user_id, action, target_type, target_id, ip, outcome, detail FROM audit_events WHERE at >= $1 AND ($2::uuid IS NULL OR actor_user_id = $2::uuid) AND ($3::text IS NULL OR action = $3::text) ORDER BY at DESC, id DESC LIMIT $4';
+  'SELECT id::text AS id, at, actor_user_id::text AS actor_user_id, action, target_type, target_id, ip, outcome, detail FROM audit_events WHERE at >= $1 AND ($2::uuid IS NULL OR actor_user_id = $2::uuid) AND ($3::text IS NULL OR action = $3::text) AND ($5::text IS NULL OR outcome = $5::text) ORDER BY at DESC, id DESC LIMIT $4';
 
 function queryFailed(error: unknown): RosettaError {
   return new RosettaError(ERROR_CODES.databaseQueryFailed, undefined, { cause: error });
@@ -66,6 +66,7 @@ export class PgAuditLog implements AuditLog {
       stored.actorUserId ?? null,
       stored.action ?? null,
       stored.limit ?? null,
+      stored.outcome ?? null,
     ];
     let rows: unknown[];
     try {

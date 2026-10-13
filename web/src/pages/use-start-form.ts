@@ -12,8 +12,9 @@ import { useEstimateChoice, type EstimateChoice } from './use-estimate-choice.js
 import { useOwnDailyCap } from './use-own-daily-cap.js';
 import { useStartActions, type StartActions } from './use-start-actions.js';
 
-// RF-1001, RF-143, DEC-108: the state of the start page: the stage, the address, the run cap, the
-// cloud consent, and what follows from them (the warnings, the gate on Start).
+// RF-1001, RF-143, DEC-108, DEC-117: the state of the start page: the stage, the address, the run
+// cap and the confirm threshold beside it, the cloud consent, and what follows from them (the
+// warnings, the gate on Start).
 
 interface CloudConsent {
   /** The roles whose notice must be confirmed; empty when no code leaves this machine. */
@@ -33,6 +34,8 @@ export interface StartForm {
   readonly capText: string;
   readonly setCapText: (text: string) => void;
   readonly capMicros: bigint;
+  readonly thresholdText: string;
+  readonly setThresholdText: (text: string) => void;
   readonly consent: CloudConsent;
   readonly warnings: readonly CapWarning[];
   readonly gate: StartGate;
@@ -57,6 +60,9 @@ export function useStartForm(loaded: Project): StartForm {
   const [chosenStage, setStage] = useState<RunStageChoice>('understand');
   const [url, setUrl] = useState(project.sourceUrl);
   const [capText, setCapText] = useState(microsToDollars(runCapOf(project).toString()));
+  const [thresholdText, setThresholdText] = useState(
+    microsToDollars(String(project.settings.budget.confirmAboveCostMicros)),
+  );
   const [checked, setChecked] = useState(false);
   const [refused, setRefused] = useState(false);
   const choice = useEstimateChoice(project.id);
@@ -75,7 +81,7 @@ export function useStartForm(loaded: Project): StartForm {
         })
       : [];
   const actions = useStartActions({
-    ...{ project, stage, url, capText, areas: choice.chosen, consent: checked },
+    ...{ project, stage, url, capText, thresholdText, areas: choice.chosen, consent: checked },
     onSaved: setProject,
     onConsentRefused: () => {
       setRefused(true);
@@ -87,6 +93,7 @@ export function useStartForm(loaded: Project): StartForm {
   });
   return {
     ...{ project, choice, stage, setStage, url, setUrl, capText, setCapText, capMicros },
+    ...{ thresholdText, setThresholdText },
     ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions },
   };
 }

@@ -16,6 +16,8 @@ export interface ListUsersRequest {
 
 export interface ListedAccount extends AccountSummary {
   readonly projects: number;
+  /** `users.server_keys_allowed`: whether runs may fall back to the server's keys (RF-1104). */
+  readonly serverKeysAllowed: boolean;
   /** Spend since the start of the UTC month, per currency; empty when nothing was spent. */
   readonly monthToDate: readonly CurrencyTotal[];
 }
@@ -54,6 +56,7 @@ export class ListUsers {
         return {
           ...summaryOf(user, now.getTime()),
           projects: used?.projects ?? 0,
+          serverKeysAllowed: user.serverKeysAllowed,
           monthToDate: used?.spent ?? [],
         };
       }),

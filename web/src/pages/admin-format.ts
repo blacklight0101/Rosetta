@@ -34,10 +34,24 @@ export function withChange(
   return users.map((user) => (user.id === changed.id ? { ...user, ...changed } : user));
 }
 
-/** A new account starts with no projects and no cost. */
+/** A new account starts with no projects, no cost and the server's keys allowed (RF-1104). */
 export function withNew(
   users: readonly ListedAccount[],
   created: Account,
 ): readonly ListedAccount[] {
-  return [...users, { ...created, projects: 0, monthToDate: [] }];
+  return [...users, { ...created, projects: 0, monthToDate: [], serverKeysAllowed: true }];
+}
+
+/** The accounts whose user name or display name contains `filter`, ignoring case. */
+export function namedLike(
+  users: readonly ListedAccount[],
+  filter: string,
+): readonly ListedAccount[] {
+  const wanted = filter.trim().toLocaleLowerCase('en-US');
+  if (wanted === '') return users;
+  return users.filter((user) =>
+    [user.userName, user.displayName].some((name) =>
+      name.toLocaleLowerCase('en-US').includes(wanted),
+    ),
+  );
 }

@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 132 | 47 | 70 | 15 | 0 | 72 | 52 | 8 | 75 | 0 |
+| P1 Milestone slice (M1) | 141 | 52 | 74 | 15 | 0 | 81 | 52 | 8 | 84 | 0 |
 | P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
 | P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **162** | **52** | **88** | **22** | **0** | **78** | **73** | **11** | **79** | **0** |
+| **Total** | **171** | **57** | **92** | **22** | **0** | **87** | **73** | **11** | **88** | **0** |
 
 ## Conventions for every card
 
@@ -526,7 +526,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-35
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/LiveRun.dc.html` (coverage section).
 - **Do**: a tree of the analysed files by area filling in from `read_file` events with the read share per area.
 - **Delivers**: the component; an E2E spec with recorded events.
@@ -656,8 +656,8 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 ### P1-49 - Security review and the milestone verification matrix
 - **Difficulty**: 10 (opus)
 - **Size**: M
-- **Depends on**: P1-46, P1-55
-- **Gate**: none
+- **Depends on**: P1-46
+- **Gate**: G-08 (DEC-133)
 - **Status**: Todo
 - **Reads**: `docs/security/threat-model.md`; `SECURITY.md`; `docs/roadmap.md` (P1 exit criteria); `docs/architecture.md` section 10.
 - **Do**: `docs/verification/m1-matrix.md`: every P1 Must and Should requirement with its passing test or recorded manual check, gaps listed; a review of every threat-model row against the code with findings ranked BLOCKING, MAJOR, MINOR; RNF-014 defaults checked on a Compose stack started from `.env.example`; an output scan of a full demo run folder and the logs for key patterns (RNF-003); licence review of fixtures (RNF-009); gaps and MAJOR findings are listed with a proposed card each; the orchestrator files them as follow-up cards (README section 9).
@@ -668,8 +668,8 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 ### P1-50 - Sample report on GitHub Pages
 - **Difficulty**: 5 (haiku)
 - **Size**: S
-- **Depends on**: P1-02, P1-43, P1-55
-- **Gate**: none
+- **Depends on**: P1-02, P1-43
+- **Gate**: G-08 (DEC-133)
 - **Status**: Todo
 - **Reads**: `docs/environments-and-delivery.md` sections 2 and 8.
 - **Do**: a Pages workflow publishing `site/` from `main` with the smoke step that fetches the index and fails when the run id is missing; `site/` holding the escaped HTML report and the replay of the owner's demo run on the hosted URL (DEC-105), with a `.nojekyll` file, copied by the orchestrator after an output scan for secrets into a `needs-owner` pull request; the README link.
@@ -729,8 +729,8 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-45, P1-48
-- **Gate**: G-07
-- **Status**: Blocked (G-07)
+- **Gate**: G-07, G-08 (DEC-133)
+- **Status**: Blocked (G-07, G-08)
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 3, 8, 10-12 and 14; the host ADR of P1-48; `docs/security/threat-model.md` section 5.
 - **Do**: the release workflow `.github/workflows/release.yml` (image to GHCR as `X.Y.Z` and `sha-<short>`, CycloneDX SBOM on releases); deploy the `sha-<short>` image of `main` to the chosen host (DEC-104) with managed PostgreSQL, the persistent disk at `ROSETTA_DATA_DIR`, every secret in the host's store, `ROSETTA_TRUST_PROXY=1`, HTTPS with HTTP redirected; the OWASP ZAP baseline scan against the Compose stack before the deploy; the smoke script (health, landing, sign-in, a cheap scan); measure RNF-017 once; `docs/runbooks/deploy.md` (deploy, rollback, backup, restore, roles in the host's console, teacher account); the owner creates the `teacher` account without a forced password change (RF-1107) and sets `defaultRoles` (DEC-106); redeploy as later P1 cards merge.
 - **Delivers**: the release workflow, the smoke script, the runbook, the ZAP report summary, the hosted URL recorded in `handoff.md`.
@@ -1042,7 +1042,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-22
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/web/event-stream.ts`, `run-routes.ts`; `src/infrastructure/events/jsonl-event-log.ts`; `src/application/runs/run-queue.ts`.
 - **Do**: cap the live events held for a page that stalls during replay (1 MiB, like live delivery) and drop the page so it reconnects with `Last-Event-ID`; get the last `seq` of a finished run without parsing the whole log (store it in the run index or read the tail); close the `RunQueue.shutDown` window in which a run launched mid-dispatch is neither aborted nor awaited.
 - **Delivers**: the changes with tests.
@@ -1102,7 +1102,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-10
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/use-cases/sign-in.ts`, `change-password.ts`; `src/infrastructure/db/pg-user-repository.ts`; DEC-112.
 - **Do**: record sign-in and change-password failures with an atomic update (an incrementing guarded `UPDATE`) so parallel wrong guesses each count and a failure write never undoes a concurrent disable or reset; add `password_hash` to the `updateIfCurrent` guard.
 - **Delivers**: the changes with PostgreSQL tests.
@@ -1246,7 +1246,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-33
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/verifier/citation-check.ts`; `src/application/use-cases/run-understand.ts`; `docs/data-model.md` 3.6; RF-200, RF-203, RF-300.
 - **Do**: make the citation check refuse a citation whose start or end is not an integer or that breaks `1 <= start <= end`, with the reason `CitationInvalid`; add an integration test that a second understand run on the same snapshot re-checks the card ids and area names of the first (RF-203); say in the data model and the request documentation that an empty `areas` list means every area.
 - **Delivers**: the check, the test and the document lines.
@@ -1282,7 +1282,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-77
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/db/pg-audit-log.ts`, `audit-rows.ts`; the memory audit log; `tests/contracts/`; ADR-015.
 - **Do**: make the PostgreSQL and the memory audit log agree on a filter with an upper-case user id and on a NUL in the action filter (RST-2404 on one and an empty result on the other today) and cover both in the contract suite; mask the words after the first in a quoted multi-word "password is ..." sentence; take the hard-coded cost bound of 2^17 from the scrypt cost N that ADR-015 names instead of repeating the number.
 - **Delivers**: the changes with contract and unit tests.
@@ -1306,7 +1306,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-66
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/ollama/text-tool-protocol.ts`; `src/infrastructure/providers/openai/`; `docs/providers.md`; the run manifest writer.
 - **Do**: make the fenced-block parser of `parseTextAnswer` linear (a 2.5 MB answer takes 3.2 s today); pass `redirect: 'error'` for the fetch of the Ollama and the OpenAI adapters so a redirect never leads the call to another address; record the `sha256` that the text-tool-protocol loader returns next to its version in the run manifest; widen the margin of the "opening tags with text" growth test.
 - **Delivers**: the changes with tests.
@@ -1330,7 +1330,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-41, P1-22
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/web/run-routes.ts`; `web/src/pages/ProjectsPage.tsx`; `docs/design/board/Projects.dc.html`; RF-1108.
 - **Do**: add a read API for a signed-in user's projects with, for each, the project totals, the latest run with its state and the queue position of a queued run, then use it on the Projects page for the columns and the queue notice; add "Cancel queued run" (RF-1108). The access matrix and the owner scope apply to every row. Also (from the verdict on #268, 2026-10-13): `/projects` overflows horizontally at 360 px (`scrollWidth` 529, a bug already on main): fix the layout so the page has no horizontal scroll at 360 px and add an E2E check of `scrollWidth <= innerWidth` on the phone projects.
 - **Delivers**: the route, the page columns, the queue notice with Cancel, integration and E2E tests against the real server.
@@ -1354,7 +1354,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-34, P1-42, P1-41
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/`; `docs/design/board/StartRun.dc.html`, `AdminUsers.dc.html`, `AdminAudit.dc.html`; `web/src/pages/provider-choices.ts`; `templates/project-settings.json`.
 - **Do**: start page: show a model without a price as "unknown" and flag that the estimate total excludes it; warn that a run on the server key may be refused when the server has no key (`providerKeyMissing`); open the start page when a project URL is already known; refuse unknown estimate query parameters such as `?areas[]=` with a clear message instead of ignoring them; take the provider defaults from the project settings template (serve it, or test the two stay in step). Administration: one line for the row actions, a name filter, a server keys column or checkbox, unlock and an account filter, period and outcome filters on the audit page, the cap banner in the shell slot, and the status an `/admin/*` page answers (403 or the shell). Classes keep the prefix of their page. Also (from the verdicts on #271, 2026-10-13): the start page fails when the run cap is below the confirm threshold; RST-1005 and RST-1006 name `budget.confirmAboveCostMicros`, which the start page does not show. This is a bug: show that setting next to the cap, or refuse the pair before the request, and add an E2E test with a cap below the threshold.
 - **Delivers**: the page changes with E2E specs against the real server.
@@ -1522,7 +1522,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-40
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the delete use cases and routes from #256 (`src/application/use-cases/`, `src/presentation/web/`); the History page (`web/src/pages/`); `tests/e2e/history.spec.ts`; the removal tests; `docs/data-model.md` sections 2 and 9; the verdict 6136190668 on #256.
 - **Do**: close the findings of the P1-40 verdict. (1) A project delete can race a queued-run insert: inside the delete transaction take a `FOR UPDATE` lock on the project row, then run the guarded delete, and add a test with two concurrent connections (a queued-run insert against a delete) that shows no run row is left without its project. (2) A run folder is orphaned when its removal fails after the rows are deleted and nothing cleans it up: log the failure with a code and add a clean-up that retries it (at start-up or on a daily task), or remove the folder first and the rows second; pick one, say so in `docs/data-model.md` section 9 and test the failure. (3) The read-only removal test is a no-op on Windows: make it fail the removal in a way that works on both systems (for example a fake file-system port that refuses) and show that it fails when the clean-up is removed. (4) The History "Report" link label clashes with the build control and links of P1-97 (same name, different action): rename the History link so that the two differ by accessible name, and keep the E2E locators unambiguous. (5) A repeating flake: `tests/e2e/history.spec.ts:58` timed out on phone-light twice in CI; find the cause (a wait on a state that is set late, or a layout that depends on the viewport) and fix it without raising the timeout.
 - **Delivers**: the lock, the clean-up, the changed test, the renamed label and the stabilised spec, with the document line.
@@ -1534,7 +1534,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-37, P1-40
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the API calls and logs routes and queries from #255 (`src/presentation/web/`, `src/infrastructure/providers/jsonl-provider-call-log.ts`, `provider-call-lines.ts`); the transcript route; the `seq` parsing; the percentile tests; `tests/integration/access-matrix.test.ts`; `docs/data-model.md` sections 3.10 and 3.14; the verdict 6136282855 on #255.
 - **Do**: close the findings of the P1-37 verdict; the first is a privacy bug and goes first. (1) A key-only log entry (one that carries the call key but no run id) of another user's deleted run is attributed to a live run that has the same key; P1-40's deletion now makes this reachable. Scope an entry to a run by the run id and the owner as well as the key (or drop key-only entries whose run is gone), and test it with two users, a deleted run and a live run with the same key: the second user must see none of the first user's entries in the calls list, the transcript and the logs. (2) Add a route-level masking test: seed a secret in a call, send it through the HTTP transcript route and the log route, and assert the secret appears in neither body. (3) The `seq` regex is untested: add cases for a valid number, leading zeros, a negative number, a number above the safe range and text, with the codes the routes answer. (4) Add a fixture for the percentile with two samples (P50 and P95 of a pair) next to the existing ones.
 - **Delivers**: the scoping fix and the three tests with their fixtures.
@@ -1546,7 +1546,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-109
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the migration and tests of #257 (`db/migrations/`, `tests/integration/`, `tests/support/postgres.ts`); `src/presentation/composition-root.ts` (the scheduled tasks); `docs/data-model.md` section 6; DEC-132; the verdict 6136064533 on #257.
 - **Do**: add the three tests the P1-109 verdict lists. (1) The purge function is owned by `rosetta_migrator` (read the owner from the catalogue, not from the migration text). (2) `rosetta_app` cannot `ALTER` the function nor replace it with `CREATE OR REPLACE FUNCTION`, and cannot change its owner. (3) A test lists the tasks registered on the `Scheduler` port at start-up and expects the audit purge among them with its 24-hour interval, so that a task dropped from the composition root fails a test.
 - **Delivers**: three tests.
@@ -1558,7 +1558,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-112
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `src/infrastructure/guards/mask-deep.ts`; the masker tests; `docs/data-model.md` section 3.14; the verdict 6136826590 on #259.
 - **Do**: close the findings of the P1-112 verdict, each with a test that fails when the rule is reverted. (1) The mysql `-p` rule still leaks with two positional words before `-p` and with the database name after the options: match the password option wherever it stands in the command line. (2) The keys `Secret_2FA` and `Secret2FA` are not masked: let the secret key rule match a digit or an underscore after the word. (3) A quoted password that contains a space leaves its tail: mask to the closing quote. (4) The keys `tokenValue`, `refreshTokens`, `bearer` and `secretKey` are not masked: extend the key rule (and the plural), and say which key shapes are covered in section 3.14. (5) An XML secret element with a leading space inside the tag, or with a CDATA section, is not masked: handle both. Keep linear time and add the new shapes to the hostile-input suite.
 - **Delivers**: the rule changes, the cases for the five items and the hostile-input cases.
@@ -1582,7 +1582,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-113
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/cards/answers-file.ts` (`FileAnswersFile.addQuestions`, line 68); `src/infrastructure/cards/answers-sections.ts`; the answers tests and fixtures; `docs/data-model.md` (`answers.md`); the verdict 6137529664 on #261.
 - **Do**: `FileAnswersFile.addQuestions` joins with `\n` onto a file that has CRLF line ends, so the file gets mixed line ends and is then rewritten as CRLF: detect the file's own line end once and use it for the lines it appends. Add the missing tests: a file with a lone CR (old Mac line ends) and a byte-order mark before a heading; each must parse, keep the other answers and write back without changing the line ends or dropping the mark.
 - **Delivers**: the join fix and fixtures for a CRLF append, a lone CR and a BOM.
@@ -1594,7 +1594,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-119
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/files/` (the file reader and its `stat` then `readUpTo` path); `tests/support/memory-repository-reader.ts`; the shared reader contract suite in `tests/contracts/`; the verdict 6137566727 on #262.
 - **Do**: the wiring from `stat` to `readUpTo` for a file that grows between the two is untested at the reader level (P1-119 tested the helper): add a test that drives the reader itself with a file that grows after the size check and still stops at the cap. The cut notice of the memory reader is faked (a fixed string): make it use the same notice builder as the real reader and cover the notice text in the contract suite for both readers.
 - **Delivers**: the reader-level test and the shared notice with its contract case.
@@ -1606,7 +1606,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-114
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/ports/cost-totals.ts`; `src/infrastructure/db/pg-cost-totals.ts`; the memory adapter and the contract suite; `knip.json`; the verdict 6137727261 on #263.
 - **Do**: `CostTotals.userGroups` has no production caller (only tests use it): remove it from the port, from both adapters and from the contract suite, and move any case it covered that nothing else covers onto `userSummary`.
 - **Delivers**: the removal and the adjusted tests.
@@ -1642,7 +1642,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `tests/e2e/journeys/`; `tests/e2e/support/` (the harness has no server key); `docs/process-flows.md` flow 5; the verdicts on #271.
 - **Do**: administrator caps apply only to runs on a server key, and the E2E harness has no server key, so the cap journey of P1-46 cannot cover them. Give the harness a server key for the fake provider (set in the test environment only, never printed) and add a journey: the administrator sets a cap, a user starts a run on the server key, the run stops at the cap and the user and server totals show it.
 - **Delivers**: the harness server key and the journey.
@@ -1654,12 +1654,120 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-13
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/support/run-folder.ts` (`appendLogs`, lines 64 and 69); `tests/e2e/support/` for the harness clock; `tests/e2e/smoke.spec.ts` (line 46); `docs/conventions.md`.
 - **Do**: `appendLogs` calls `new Date()` on lines 64 and 69, which breaks the rule that time comes from the harness clock: take the time from the harness clock. Separately, `tests/e2e/smoke.spec.ts:46` on phone-dark failed a colour-contrast check once in CI: reproduce it (run the axe check on the phone-dark project in a loop and read the failing node and colour pair), then fix the colour or the moment the check runs (for example before a transition has finished) instead of retrying.
 - **Delivers**: the clock change and the stabilised check.
 - **Done when**: `grep -n "new Date\|Date.now" tests/e2e/support/run-folder.ts` is empty; `tests/e2e/smoke.spec.ts` is green ten times in a row on phone-dark; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RNF-005, P1-13 (CI flake and a hard-rule finding, 2026-10-13).
+
+### P1-133 - Follow-up: a successful sign-in must not undo a concurrent disable
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P1-86
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/sign-in.ts`; `src/application/ports/user-repository.ts`; `src/infrastructure/db/pg-user-repository.ts` and `memory-user-repository.ts`; `tests/contracts/user-repository.contract.ts` and `failed-sign-in-counter.contract.ts`; `tests/integration/application/sign-in-failure-races.test.ts`; `tests/integration/infrastructure/db/pg-user-repository-hardening.test.ts`; `tests/support/postgres.ts`; the verdict 6141942123 on #291.
+- **Do**: **priority (security).** A successful sign-in writes the whole account row back, so it can undo a disable that an administrator made at the same moment: a disabled account signs in once more or becomes enabled again. Make the success write conditional on the account still being enabled and on the row not having changed, or write only the columns that sign-in owns (failure counter, lock, last sign-in), and test it on PostgreSQL with two connections: a disable that lands between the read and the success write keeps the account disabled and the sign-in is refused. Also test the lock-expiry boundary (`<=`: a lock that ends exactly now no longer locks) and add a parallel `SignIn` test on PostgreSQL (several sign-ins of one account at once, correct and wrong passwords mixed) that checks the failure counter and the lock.
+- **Delivers**: the conditional or column-scoped success write in both repositories and the contract, the boundary test and the parallel PostgreSQL tests.
+- **Done when**: the disable-race test fails on the old whole-row write and passes now; the `<=` boundary test fails when the comparison is changed to `<`; the parallel test is green ten times in a row; `npm run verify` green.
+- **Refs**: RF-1100, RF-1102, RF-1103, RF-1109, P1-86 (verdict 6141942123 on #291).
+
+### P1-134 - Follow-up: more secret-masking gaps in command lines
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-124
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/unit/infrastructure/guards/secret-masker.test.ts`; `tests/integration/infrastructure/guards/secret-masker-performance.test.ts`; `docs/security/threat-model.md` (secret shapes); the verdict 6142376462 on #285.
+- **Do**: three shapes still leak in a command line: a quoted executable path (`"C:\Program Files\tool.exe" --password x`), a quoted database name before the credentials, and a redirect placed before the options (`> out.txt --token x`). Write a failing case for each, with the secret value and a harmless neighbour, then close the gap without making the masker slower on the performance fixture and without masking the harmless neighbour.
+- **Delivers**: the three masker fixes and their tests.
+- **Done when**: the three cases fail on `main` and pass now; the performance test keeps its bound; `npm run verify` green.
+- **Refs**: RF-009, RF-141, RNF-003, P1-124 (verdict 6142376462 on #285).
+
+### P1-135 - Follow-up: BOM-only and mixed-line-end answers files
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-126
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/cards/answers-file.ts` and `answers-sections.ts`; `tests/unit/infrastructure/cards/answers-line-ends.test.ts`, `answers-sections-crlf.test.ts` and `answers-file.test.ts`; the verdict 6141894338 on #286.
+- **Do**: an `answers.md` that holds only a byte-order mark loses the mark when an answer is recorded, and a file with mixed line ends (some `\r\n`, some `\n`) is rewritten in one style without a rule. Write a failing test for each, then keep the mark of a BOM-only file and keep each existing line's own ending, using the ending of the preceding line for new lines.
+- **Delivers**: the two fixes and their tests.
+- **Done when**: both tests fail on `main` and pass now; an unchanged part of the file is byte-identical after a record; `npm run verify` green.
+- **Refs**: RF-203, RF-1005, RNF-003, P1-126 (verdict 6141894338 on #286).
+
+### P1-136 - Follow-up: three tables scroll sideways at 360 px
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-107
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/support/sweep.ts`; `tests/e2e/visual/sweep-admin.spec.ts` and `sweep-runs.spec.ts` (the `wideTable` exemption); `web/src/styles/`; the pages for users, snapshots and history; `docs/design-system.md` (tables at 360 px); the verdict 6146557849 on #307.
+- **Do**: the users, snapshots and history tables are wider than 360 px, and the sweep exempts them through `scrollsSidewaysUntil`. Fix the CSS so each table fits (stack the cells or hide a secondary column at narrow widths, following the design system), then remove the table exemption from the sweep so a table that scrolls sideways fails it.
+- **Delivers**: the CSS changes and the sweep without the table exemption.
+- **Done when**: the sweep is green on phone-light and phone-dark with no table exemption; the 1280 px layout is unchanged; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RNF-010, RF-1008, RF-1100, DEC-71, P1-107 (PR #307, verdict 6146557849).
+
+### P1-137 - Follow-up: Projects overview query cost
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-105
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/presentation/web/project-overview-routes.ts`; `src/application/use-cases/list-project-overview.ts`; `web/src/pages/use-project-overview.ts`; `tests/integration/presentation/web/project-overview.test.ts`; the verdict 6144213653 on #294.
+- **Do**: `GET /api/projects/overview` makes two queries per project plus a queue read, and the Projects page polls it every 5 s, so the cost grows with the number of projects and the number of open tabs. Bound it: read the latest run and the totals of all the user's projects in a fixed number of queries (a join or a grouped query, scoped to the user), and cap the number of projects it answers with a documented limit. Test the bound by counting queries with 1, 10 and 50 projects (the count does not grow) and test the limit.
+- **Delivers**: the bounded query, the limit and the tests.
+- **Done when**: the query count is the same for 1 and 50 projects; another user's projects never appear; `npm run verify` green.
+- **Refs**: RF-1001, RF-1008, RF-1108, RF-1105, P1-105 (verdict 6144213653 on #294).
+
+### P1-138 - Follow-up: deletion error route test and the folder removal outside the transaction
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-121
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/delete-run.ts`; `tests/integration/presentation/web/delete-run-project.test.ts`; `src/infrastructure/files/run-folder.ts`; `docs/conventions.md` (errors); the verdict 6144290364 on #295.
+- **Do**: two gaps. First, RST-1115 (HTTP 500, the folder could not be removed) is tested only at use-case level: add a route test that makes the removal fail and checks the status, the error code and that nothing leaks in the body. Second, the folder removal runs inside the database transaction, so a slow disk holds a pooled connection and the row lock: move the removal out of the transaction (delete the rows, commit, then remove the folder, keeping the orphan clean-up of P1-121 as the safety net) or bound it with a timeout, and test that the connection is released before the removal starts.
+- **Delivers**: the route test and the changed order or bound with its test.
+- **Done when**: the route test fails when the error mapping is removed; a test with a deliberately slow removal shows the pool is not held; `npm run verify` green.
+- **Refs**: RF-1012, RF-1008, ADR-009, DEC-55, P1-121 (verdict 6144290364 on #295).
+
+### P1-139 - Follow-up: start and admin page gaps
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-107
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/pages/` (the start-run page and the administration caps page); `tests/e2e/start-run.spec.ts` and `admin-polish.spec.ts`; `tests/e2e/support/axe.ts`; the unit test of the cap banner; the verdict 6144206682 on #296.
+- **Do**: two gaps. The administrator cap banner has only a unit test: add an E2E check of the banner and an axe check of the page in both colour schemes. In the "none" estimate state, a refusal because the threshold is above the cap is shown in a field that is not on the page, so the user sees nothing: show the message where the page has a field for it, and test it.
+- **Delivers**: the E2E and axe checks, the message placement and its test.
+- **Done when**: the refusal is visible and announced in the "none" state; the banner is covered by E2E and axe; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1001, RF-1100, RF-1106, RNF-010, DEC-71, P1-107 (verdict 6144206682 on #296).
+
+### P1-140 - Follow-up: small test and comment gaps
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-98, P1-81, P1-127, P1-132, P1-103
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/understand/understand-options.ts`; `src/application/use-cases/start-run.ts`; `tests/unit/application/verifier/citation-check.test.ts`; `src/application/runs/run-queue.ts`; `tests/support/fs-trap.ts`; `tests/e2e/support/`; `tests/unit/infrastructure/providers/ollama/parse-text-answer-speed.test.ts` and the other speed bounds from #300; the verdicts 6144652613 (#302), 6144312780 (#299), 6144307484 (#298), 6142032481 (#292) and 6144534207 (#300).
+- **Do**: P1-98: add the citation cases 5-4 and 3-3 (a range that ends before it starts, and a one-line range; a mutation of the range check survives today) and fix the stale comments at `understand-options.ts:24` and `start-run.ts:31`. P1-81: add a one-line comment on `isClosing` at `run-queue.ts:134` saying why the flag exists. P1-127: reword the comment in `tests/support/fs-trap.ts` as the verdict asks. P1-132: no committed test needs the transition wait of the harness, so remove the wait or say in a comment which test needs it. P1-103: replace the wall-clock speed bounds, including the 250 ms bound on the 500k case, with a check that does not depend on machine load (compare the time of the large input with a small one, or count operations).
+- **Delivers**: the two tests, the comment fixes and the load-insensitive speed checks.
+- **Done when**: the two citation cases kill the surviving mutation; the speed tests stay green when the machine is loaded (ten runs with a parallel CPU load); `npm run verify` green.
+- **Refs**: RF-203, RF-300, RF-1006, RF-205, RNF-004, P1-98, P1-81, P1-127, P1-132, P1-103 (verdicts 6144652613, 6144312780, 6144307484, 6142032481, 6144534207).
+
+### P1-141 - Follow-up: test flakes seen on 2026-10-13
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P1-13
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/integration/infrastructure/providers/provider-output-scan.test.ts`; `tests/e2e/live-coverage.spec.ts` (line 100); `tests/e2e/support/seed.ts` and `sign-in.ts`; the CI logs of runs 38379124565 and 38393978228.
+- **Do**: two flakes. The test "no file the call log writes ... fixture secret" in `provider-output-scan.test.ts` took 5051 ms on Windows (run 38379124565): find what is slow (the scan of a large tree, a real wait) and bound it or speed it up. `live-coverage.spec.ts:100` failed on desktop-dark on `main` (run 38393978228), possibly because its two tests share one account and interfere: reproduce it by running the spec repeatedly with workers, then give each test its own account or run folder instead of retrying.
+- **Delivers**: the faster scan test and the isolated E2E tests.
+- **Done when**: the scan test finishes under 2 s on the Windows runner; `live-coverage.spec.ts` is green twenty times in a row on desktop-dark; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RNF-003, RNF-005, P1-13 (CI flakes of 2026-10-13).
 
 ---
 

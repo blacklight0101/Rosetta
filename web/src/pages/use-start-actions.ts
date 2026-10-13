@@ -9,15 +9,21 @@ import { navigate } from '../app/router.js';
 import { dollarsToMicros } from '../lib/usd.js';
 import type { RunNoticeState } from './RunNotice.js';
 
-// RF-1001, RF-143, RF-1108: what pressing Start does, in order. Another address than the project's
-// is resolved to its own project and its start page. Otherwise a changed run cap is saved with the
-// project settings, and then the run is requested. Each refusal is kept for the field it names (the
-// address, the cap, the areas, the consent) or, for anything else, for Start.
+// RF-1001, RF-143, RF-1108, DEC-117: what pressing Start does, in order. Another address than the
+// project's is resolved to its own project and its start page. Otherwise a changed run cap or
+// confirm threshold is saved with the project settings, and then the run is requested; a threshold
+// above the cap is refused here, before any request, since the server would refuse the pair
+// (RST-1005, RST-1006). Each refusal is kept for the field it names (the address, the cap, the
+// threshold, the areas, the consent) or, for anything else, for Start.
 
 const RUN_CAP_PATH = 'budget.run.maxCostMicros';
+const THRESHOLD_PATH = 'budget.confirmAboveCostMicros';
 const NO_CONSENT = 'RST-1515';
 const UNKNOWN_AREA = 'RST-1307';
 const notAnAmount: FieldProblem = { message: 'Enter an amount in dollars, for example 2.00.' };
+const aboveCap: FieldProblem = {
+  message: 'The threshold must not be above the run cap. Lower it, or raise the run cap.',
+};
 
 /** A refusal the page itself makes, or one the server made for a field. */
 interface FieldProblem {
@@ -32,6 +38,7 @@ export interface ActionInputs {
   readonly consent: boolean;
   readonly url: string;
   readonly capText: string;
+  readonly thresholdText: string;
   /** Told the project with the settings the page just saved. */
   readonly onSaved: (project: Project) => void;
   readonly onConsentRefused: () => void;
@@ -40,6 +47,7 @@ export interface ActionInputs {
 interface Refusals {
   readonly url?: ApiFailure;
   readonly cap?: FieldProblem;
+  readonly threshold?: FieldProblem;
   readonly consent?: ApiFailure;
   readonly areas?: ApiFailure;
   readonly start?: ApiFailure;
@@ -61,10 +69,49 @@ function requestOf(inputs: ActionInputs): StartRequest {
   return { stage: 'understand', areas: inputs.areas, cloudConsent: inputs.consent };
 }
 
-function settingsWithCap(project: Project, micros: string): Project['settings'] {
+/** The run cap and the confirm threshold the page asks for, in micro-dollars. */
+interface Limits {
+  readonly cap: number;
+  readonly threshold: number;
+}
+
+function settingsWithLimits(project: Project, limits: Limits): Project['settings'] {
   const { budget } = project.settings;
-  const run = { ...budget.run, maxCostMicros: Number(micros) };
-  return { ...project.settings, budget: { ...budget, run } };
+  const run = { ...budget.run, maxCostMicros: limits.cap };
+  return {
+    ...project.settings,
+    budget: { ...budget, run, confirmAboveCostMicros: limits.threshold },
+  };
+}
+
+/** The limits typed on the page, or the refusal of the field that is wrong (DEC-117). */
+function limitsOf(
+  inputs: ActionInputs,
+): { readonly limits: Limits } | { readonly refusal: Refusals } {
+  const cap = dollarsToMicros(inputs.capText);
+  if (cap === undefined) return { refusal: { cap: notAnAmount } };
+  const threshold = dollarsToMicros(inputs.thresholdText);
+  if (threshold === undefined) return { refusal: { threshold: notAnAmount } };
+  if (BigInt(threshold) > BigInt(cap)) return { refusal: { threshold: aboveCap } };
+  return { limits: { cap: Number(cap), threshold: Number(threshold) } };
+}
+
+function unchanged(project: Project, limits: Limits): boolean {
+  const { budget } = project.settings;
+  return (
+    limits.cap === budget.run.maxCostMicros && limits.threshold === budget.confirmAboveCostMicros
+  );
+}
+
+/** The refusal of a save: next to the cap or the threshold when it names one, else at Start. */
+function saveRefusal(error: ApiFailure): Refusals {
+  const cap = problemFor(error, RUN_CAP_PATH);
+  const threshold = problemFor(error, THRESHOLD_PATH);
+  if (cap === undefined && threshold === undefined) return { start: error };
+  return {
+    ...(cap === undefined ? {} : { cap }),
+    ...(threshold === undefined ? {} : { threshold }),
+  };
 }
 
 interface Steps {
@@ -82,23 +129,23 @@ async function resolveUrl({ client, inputs, refuse }: Steps): Promise<boolean> {
   return false;
 }
 
-/** Saves a changed run cap with the project settings; true when the run must not start. */
-async function saveCap({ client, inputs, refuse }: Steps): Promise<boolean> {
-  const micros = dollarsToMicros(inputs.capText);
-  if (micros === undefined) return refuse({ cap: notAnAmount });
-  if (Number(micros) === inputs.project.settings.budget.run.maxCostMicros) return false;
+/** Saves a changed run cap or threshold with the settings; true when the run must not start. */
+async function saveLimits({ client, inputs, refuse }: Steps): Promise<boolean> {
+  const typed = limitsOf(inputs);
+  if ('refusal' in typed) return refuse(typed.refusal);
+  const { limits } = typed;
+  if (unchanged(inputs.project, limits)) return false;
   // A save replaces the whole document, so it starts from the settings as they are now: what
-  // another session changed since this page opened stays (only the cap is ours to change).
+  // another session changed since this page opened stays (only the limits are ours to change).
   const read = await getProject(client, inputs.project.id, new AbortController().signal);
   if (!read.ok) return refuse({ start: read.error });
   const project = read.value;
-  const saved = await saveProjectSettings(client, project.id, settingsWithCap(project, micros));
+  const saved = await saveProjectSettings(client, project.id, settingsWithLimits(project, limits));
   if (saved.ok) {
     inputs.onSaved(saved.value);
     return false;
   }
-  const cap = problemFor(saved.error, RUN_CAP_PATH);
-  return refuse(cap === undefined ? { start: saved.error } : { cap });
+  return refuse(saveRefusal(saved.error));
 }
 
 function refusalOf(error: ApiFailure): Refusals {
@@ -122,11 +169,11 @@ async function requestRun(steps: Steps): Promise<boolean> {
   return false;
 }
 
-/** Pressing Start: another address is resolved; otherwise the cap is saved, then the run requested. */
+/** Pressing Start: another address is resolved; else the limits are saved, then the run requested. */
 async function press(steps: Steps): Promise<void> {
   const { inputs } = steps;
   if (inputs.url.trim() !== inputs.project.sourceUrl) await resolveUrl(steps);
-  else if (inputs.stage !== 'understand' || !(await saveCap(steps))) await requestRun(steps);
+  else if (inputs.stage !== 'understand' || !(await saveLimits(steps))) await requestRun(steps);
 }
 
 // RF-1001, RF-143, RF-1108
