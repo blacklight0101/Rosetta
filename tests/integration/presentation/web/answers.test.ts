@@ -214,7 +214,8 @@ describe('PUT /api/runs/:runId/answers limits', () => {
     expect(atLimit.statusCode).toBe(404);
     expect(fileOf(test, run)).toBe(before);
   });
-
+});
+describe('PUT /api/runs/:runId/answers size limits', () => {
   it('RF-1007 accepts an answer of 4000 characters', async () => {
     const { amy, run } = await setup();
 
