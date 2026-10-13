@@ -37,7 +37,9 @@ function countingTests(name: string, fresh: () => Promise<UserRepository>): void
       lockedUntil: fixtureNow + minutes(15),
     });
   });
+}
 
+function sequenceTests(name: string, fresh: () => Promise<UserRepository>): void {
   it(`RF-1100 ${name} reports only the fifth of five failures in a row as the lock`, async () => {
     const users = await fresh();
     const account = sampleAccount();
@@ -122,5 +124,6 @@ export function failedSignInCounterContract(
   fresh: () => Promise<UserRepository>,
 ): void {
   countingTests(name, fresh);
+  sequenceTests(name, fresh);
   guardTests(name, fresh);
 }

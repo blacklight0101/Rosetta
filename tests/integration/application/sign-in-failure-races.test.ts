@@ -96,6 +96,10 @@ describe.skipIf(!hasTestDatabase)('parallel failure counts on PostgreSQL', () =>
       lockedUntil: fixtureNow + minutes(15),
     });
   });
+});
+
+describe.skipIf(!hasTestDatabase)('parallel wrong current passwords on PostgreSQL', () => {
+  const database = useTestDatabase();
 
   it('RF-1103 eight parallel wrong current passwords count until the lock, locked once', async () => {
     const setup = await setUp(database);
@@ -162,6 +166,10 @@ describe.skipIf(!hasTestDatabase)('failures racing an administrator on PostgreSQ
       failedSignIns: 1,
     });
   });
+});
+
+describe.skipIf(!hasTestDatabase)('a password change racing a reset on PostgreSQL', () => {
+  const database = useTestDatabase();
 
   it('RF-1103 a password change racing a reset at the same update time is refused', async () => {
     const setup = await setUp(database);
