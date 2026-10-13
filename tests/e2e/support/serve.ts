@@ -13,6 +13,7 @@ import { FIXTURE_SHA, fixtureArchive } from '../../support/snapshot-fixtures.js'
 import { createDisposableSchema } from './database.js';
 import { createE2eProvider } from './e2e-provider.js';
 import { e2eContactEmail, e2ePort } from './server-config.js';
+import { e2eServerKeyVariables } from './server-key.js';
 import { seededAdmin, seedUsers } from './seed.js';
 import { seedCost } from './seed-cost.js';
 import { seedReplayRuns } from './seed-replay.js';
@@ -108,13 +109,13 @@ async function main(): Promise<void> {
     ROSETTA_DATA_DIR: dataDir,
     ROSETTA_ADMIN_USER: seededAdmin.userName,
     ROSETTA_ADMIN_PASSWORD: seededAdmin.password,
-    // One hop: the test server trusts X-Forwarded-For from the browser, so each test has an
-    // address of its own and the sign-in rate limit (10 a minute per address) never couples tests.
+    // One hop: X-Forwarded-For gives each test an address of its own, so no sign-in rate limit couples tests.
     ROSETTA_TRUST_PROXY: '1',
     // RF-407: Ollama is offered (the double stands in for it; nothing connects to this address).
     ROSETTA_OLLAMA_URL: 'http://127.0.0.1:11434',
     // RF-1201: the landing page offers Request access only because this is set.
     ROSETTA_CONTACT_EMAIL: e2eContactEmail,
+    ...e2eServerKeyVariables(),
     ROSETTA_LOG_LEVEL: 'error',
     ROSETTA_TEST: '1',
     ROSETTA_TEST_DATABASE_URL: databaseUrl,

@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { useTempRoot } from '../../support/temp-root.js';
 import {
-  fullUnderstandRun,
   readJson,
   UNDERSTAND_TIMEOUT,
+  useSharedFullRun,
 } from '../../support/understand-full-run.js';
 import { createUnderstandHarness } from '../../support/understand-run-harness.js';
 
@@ -15,6 +15,8 @@ import { createUnderstandHarness } from '../../support/understand-run-harness.js
 // Services/CatalogService.cs:1-18 (its only file), the other areas read nothing.
 
 const temp = useTempRoot('rosetta-coverage-');
+// The two tests of the full run only read its files; the early-end test makes its own run.
+const full = useSharedFullRun('rosetta-coverage-shared-');
 
 const coverageSchema = z.object({
   schemaVersion: z.literal(1),
@@ -50,9 +52,9 @@ function areaOf(coverage: Coverage, name: string): Coverage['areas'][number] | u
   return coverage.areas.find((entry) => entry.area === name);
 }
 
-describe('an understand run on the C# fixture: coverage', UNDERSTAND_TIMEOUT, () => {
+describe('an understand run on the C# fixture: coverage', () => {
   it('RF-230 lists every file of each area as read with its line ranges or not read', async () => {
-    const { folder } = await fullUnderstandRun(temp.path);
+    const { folder } = full.current();
 
     const coverage = await coverageOf(folder);
     expect(coverage.areas.map((entry) => entry.area)).toEqual([
@@ -75,7 +77,7 @@ describe('an understand run on the C# fixture: coverage', UNDERSTAND_TIMEOUT, ()
   });
 
   it('RF-230 the run summary shows the percentage of area tokens read', async () => {
-    const { folder } = await fullUnderstandRun(temp.path);
+    const { folder } = full.current();
 
     const coverage = await coverageOf(folder);
     expect(areaOf(coverage, 'Services')?.readTokenShare).toBe(1);

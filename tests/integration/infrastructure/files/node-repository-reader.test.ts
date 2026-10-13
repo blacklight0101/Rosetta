@@ -1,9 +1,10 @@
 import { link, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Logger } from '../../../../src/application/ports/logger.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { grepLimits } from '../../../../src/infrastructure/files/grep-limits.js';
 import { NodeRepositoryReader } from '../../../../src/infrastructure/files/node-repository-reader.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { repositoryReaderContract } from '../../../contracts/repository-reader.contract.js';
@@ -208,28 +209,61 @@ describe('NodeRepositoryReader leaves the snapshot alone', () => {
   });
 });
 
+/** A snapshot whose one line makes `^(a+)+$` backtrack until the worker is stopped. */
+async function openSlowReader(
+  logger: Logger,
+  grepTimeoutMs: number,
+): Promise<NodeRepositoryReader> {
+  await writeTree(snapshotRoot(), {
+    'slow.txt': `${'a'.repeat(1999)}!
+`,
+  });
+  return NodeRepositoryReader.open({
+    root: snapshotRoot(),
+    ignoreRules: '',
+    allowDenied: [],
+    logger,
+    grepTimeoutMs,
+  });
+}
+
 describe('NodeRepositoryReader grep worker', () => {
-  it('RF-146 ^(a+)+$ on a long line times out after the default 2 s and stops the worker', async () => {
+  // The 2 s default is not waited for: the constant is asserted and the stop path runs with 1 s,
+  // enough for the next search to start its worker on a slow runner.
+  it('RF-146 ^(a+)+$ on a long line times out, the default is 2 s, and the worker stops', async () => {
     const logger = newLogger();
-    const reader = await openReader({ files: { 'slow.txt': `${'a'.repeat(1999)}!\n` } }, logger);
+    const reader = await openSlowReader(logger, 1000);
     const { result, ms } = await timedAsync(() => reader.grep({ pattern: '^(a+)+$' }));
 
+    expect(grepLimits.timeoutMs).toBe(2000);
     expect(refusalOf(result)).toMatchObject({ code: ERROR_CODES.grepTimedOut, reason: 'timeout' });
-    expect(ms).toBeGreaterThanOrEqual(1900);
-    expect(ms).toBeLessThan(4500);
+    expect(ms).toBeGreaterThanOrEqual(900);
+    expect(ms).toBeLessThan(3000);
     expect(securityCodes(logger)).toEqual([ERROR_CODES.grepTimedOut]);
     expect(await reader.grep({ pattern: '!' })).toMatchObject({ ok: true });
-  }, 10_000);
+  });
 
-  it('RF-146 the timeout is configurable', async () => {
-    await writeTree(snapshotRoot(), { 'slow.txt': `${'a'.repeat(1999)}!\n` });
+  it('RF-146 a reader opened without grepTimeoutMs arms the grep timer with the 2 s default', async () => {
+    await writeTree(snapshotRoot(), { 'a.txt': 'needle\n' });
     const reader = await NodeRepositoryReader.open({
       root: snapshotRoot(),
       ignoreRules: '',
       allowDenied: [],
       logger: newLogger(),
-      grepTimeoutMs: 200,
     });
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+
+    try {
+      expect(await reader.grep({ pattern: 'needle' })).toMatchObject({ ok: true });
+
+      expect(timers.mock.calls.map(([, delay]) => delay)).toContain(2000);
+    } finally {
+      timers.mockRestore();
+    }
+  });
+
+  it('RF-146 the timeout is configurable', async () => {
+    const reader = await openSlowReader(newLogger(), 200);
     const { result, ms } = await timedAsync(() => reader.grep({ pattern: '^(a+)+$' }));
 
     expect(refusalOf(result)).toMatchObject({ reason: 'timeout' });
