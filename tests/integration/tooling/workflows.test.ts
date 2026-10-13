@@ -110,6 +110,17 @@ describe('GitHub Actions workflows: hardening', () => {
   });
 });
 
+describe('GitHub Actions workflows: no lint cache', () => {
+  // ESLint's cache keys a file on its own content, but the type-aware rules also read the files it
+  // imports, so a cached "clean" can hide a new error (environments-and-delivery.md section 6).
+  it('RNF-001 lint runs in full, without a cache, locally and in CI', async () => {
+    const manifest = await readFile(join(process.cwd(), 'package.json'), 'utf8');
+
+    expect(manifest).toContain('"lint": "eslint . --max-warnings 0"');
+    expect(await ci()).not.toContain('--cache');
+  });
+});
+
 describe('GitHub Actions workflows: limits', () => {
   it('RNF-001 every job has a timeout-minutes', async () => {
     const found = await violations(({ lines }) =>

@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json && tsc --noEmit -p tests/unit/web/tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
-    "format:check": "prettier --check --cache --cache-strategy content .",
+    "format:check": "prettier --check .",
     "arch": "depcruise src tests web --config .dependency-cruiser.cjs",
     "deadcode": "knip",
     "test": "vitest run",

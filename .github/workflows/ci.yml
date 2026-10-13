@@ -105,35 +105,10 @@ jobs:
       # CI=true on the runner keeps lefthook from writing git hooks.
       - if: runner.os == 'Linux' || needs.changes.outputs.code == 'true'
         run: npm ci
-      # Prettier's cache holds a result per file content and options, so an older cache is safe to
-      # restore; a new one is saved on every run.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: runner.os == 'Linux'
-        with:
-          path: node_modules/.cache/prettier
-          key: prettier-${{ runner.os }}-${{ hashFiles('package-lock.json', '.prettierrc', '.prettierignore') }}-${{ github.sha }}
-          restore-keys: |
-            prettier-${{ runner.os }}-${{ hashFiles('package-lock.json', '.prettierrc', '.prettierignore') }}-
-            prettier-${{ runner.os }}-
       # The end-to-end project of test:ci drives Chromium; the browser is not part of npm ci.
-      - name: Playwright version
-        if: runner.os == 'Linux' && needs.changes.outputs.code == 'true'
-        id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      # Playwright's browsers are cached per installed version; on a hit only the system packages
-      # are installed, which the runner does not keep between runs.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: runner.os == 'Linux' && needs.changes.outputs.code == 'true'
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Chromium
-        if: runner.os == 'Linux' && needs.changes.outputs.code == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+        if: runner.os == 'Linux' && needs.changes.outputs.code == 'true'
         run: npx playwright install --with-deps chromium
-      - name: Install Chromium system dependencies (browser cached)
-        if: runner.os == 'Linux' && needs.changes.outputs.code == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
       - name: Database tests are skipped on Windows
         if: runner.os == 'Windows' && needs.changes.outputs.code == 'true'
         run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
@@ -164,7 +139,6 @@ jobs:
           npx vitest run
           tests/integration/docs
           tests/integration/tooling/workflows.test.ts
-          tests/integration/tooling/workflow-caches.test.ts
           tests/integration/tooling/workflow-docs-only.test.ts
           tests/integration/infrastructure/db/release-schema.test.ts
           tests/unit/web/status-badge.test.tsx
@@ -211,24 +185,9 @@ jobs:
           cache: npm
       - if: needs.changes.outputs.code == 'true'
         run: npm ci
-      # Playwright's browsers are cached per installed version; on a hit only the system packages
-      # are installed, which apt does not keep between runs.
-      - name: Playwright version
-        if: needs.changes.outputs.code == 'true'
-        id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - if: needs.changes.outputs.code == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Chromium
-        if: needs.changes.outputs.code == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+        if: needs.changes.outputs.code == 'true'
         run: npx playwright install --with-deps chromium
-      - name: Install Chromium system dependencies (browser cached)
-        if: needs.changes.outputs.code == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
       # One third of the Playwright project (RNF-005); the three shards together run every spec.
       - if: needs.changes.outputs.code == 'true'
         run: node scripts/run-e2e.mjs "--shard=$SHARD/3"
@@ -395,24 +354,9 @@ jobs:
           cache: npm
       - if: needs.changes.outputs.code == 'true'
         run: npm ci
-      # Playwright's browsers are cached per installed version; on a hit only the system packages
-      # are installed, which apt does not keep between runs.
-      - name: Playwright version
-        if: needs.changes.outputs.code == 'true'
-        id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - if: needs.changes.outputs.code == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Chromium
-        if: needs.changes.outputs.code == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+        if: needs.changes.outputs.code == 'true'
         run: npx playwright install --with-deps chromium
-      - name: Install Chromium system dependencies (browser cached)
-        if: needs.changes.outputs.code == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
       # A throwaway .env for this run: fresh random values, masked in the log, never committed
       # (RNF-003). The URL-safe hex keeps the passwords valid inside the database URLs.
       - name: Write a throwaway .env

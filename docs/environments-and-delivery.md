@@ -118,7 +118,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 |---|---|---|
 | Type check | `npm run typecheck` (`tsc --noEmit`) | yes |
 | Lint, zero warnings | `npm run lint` (`eslint . --max-warnings 0`) | yes |
-| Format | `npm run format:check` (`prettier --check --cache --cache-strategy content .`) | yes |
+| Format | `npm run format:check` (`prettier --check .`) | yes |
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
 | Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; on Linux with a database also the Playwright e2e project, after `npx playwright install --with-deps chromium`) | yes |
@@ -139,17 +139,17 @@ dead-code checks give the same answer on both operating systems, so running them
 what catches path, line-ending and process differences. Both job names stay the same, because both are required
 checks.
 
-**Caches** (added 2026-10-13), each through `actions/cache` pinned like every other action:
+**No caches beyond `setup-node`'s npm cache** (measured 2026-10-13 on pull request #304). The extra caches tried
+did not pay for themselves, so none is used:
 
-- *Prettier*: `format:check` keeps a content cache in `node_modules/.cache/prettier`. Prettier's cache holds a result
-  per file content and options, so the Linux `verify` job restores the newest cache for the same lockfile and
-  Prettier configuration (`restore-keys`) and saves a new one on every run.
-- *Playwright browsers*: every job that installs Chromium caches `~/.cache/ms-playwright` under the installed
-  `@playwright/test` version. On a hit the job runs only `npx playwright install-deps chromium` (the system
-  packages, which the runner does not keep); on a miss it runs `npx playwright install --with-deps chromium`.
-- *No ESLint cache.* ESLint's cache keys each file on its own content, but the type-aware rules of the
-  configuration also read the files it imports: a change in one file can create an error in another that the cache
-  then reports as clean. Lint therefore always runs in full.
+- *Playwright browsers* (`~/.cache/ms-playwright` per `@playwright/test` version): on a hit a job still has to run
+  `npx playwright install-deps chromium`, because the runner keeps no system packages. A cold
+  `install --with-deps` took 19 to 23 s; a cache restore plus `install-deps` took 15 to 26 s.
+- *Prettier* (`--cache --cache-strategy content`): the format check fell from about 7 s to about 3 s, and the
+  cache restore and save cost about the same.
+- *ESLint* (`--cache`): not used even though it is fast, because it is unsound here. ESLint's cache keys each file
+  on its own content, but the type-aware rules of the configuration also read the files it imports: a change in
+  one file can create an error in another that the cache then reports as clean. Lint always runs in full.
 
 **Documentation-only pull requests** (added 2026-10-13). A first job, `changes`, compares the pull request with its
 base using plain git (`git diff --name-only base...head`, full history, no third-party action) and sets
