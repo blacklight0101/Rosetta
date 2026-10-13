@@ -125,6 +125,7 @@ export class RunLifecycle {
         logger: 'runs',
         message: `Could not record ${what} of the ended run ${run.runKey}.`,
         runId: run.runKey,
+        userId: run.userId,
         ...(error instanceof RosettaError ? { code: error.code } : {}),
       });
       return undefined;

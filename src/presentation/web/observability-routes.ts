@@ -28,7 +28,8 @@ export interface ObservabilityServices {
   readonly listRunLogs: ListRunLogs;
 }
 
-const CALL_NUMBER = /^\d{1,9}$/;
+/** A call number as the page writes it: a plain decimal from 1, no leading zero, at most 9 digits. */
+const CALL_NUMBER = /^[1-9]\d{0,8}$/;
 
 function callView(call: RunCall) {
   return {

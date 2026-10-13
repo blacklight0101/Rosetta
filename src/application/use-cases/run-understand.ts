@@ -30,6 +30,7 @@ import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
+import { ownerLogger } from '../runs/owner-logger.js';
 import { ManifestCostRecorder } from '../runs/run-cost-record.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { ManifestSecurityRecorder } from '../runs/run-security-record.js';
@@ -124,7 +125,8 @@ export class RunUnderstand implements RunExecutor {
     if (execution.signal.aborted) return { endState: 'Interrupted' };
     const session = new UnderstandSession({
       ...prepared.value,
-      ...{ execution, updates, role: role.value, logger: this.deps.logger },
+      ...{ execution, updates, role: role.value },
+      logger: ownerLogger(this.deps.logger, execution.run.userId),
       settings: prepared.value.project.settings,
       deps: this.deps,
       source: this.cardSource(execution, prepared.value.scanned),

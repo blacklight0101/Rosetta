@@ -104,6 +104,16 @@ describe('an understand run: events', UNDERSTAND_TIMEOUT, () => {
   });
 });
 
+describe('an understand run: log entries', UNDERSTAND_TIMEOUT, () => {
+  it("RF-1011 every log entry that names the run's key also names its owner", async () => {
+    const { h, run } = await fullUnderstandRun(temp.path);
+
+    const named = h.logger.entries.filter((entry) => entry.runId === run.runKey);
+    expect(named.map((entry) => entry.message)).toContain('An agent task ended.');
+    expect(named.filter((entry) => entry.userId !== run.userId)).toEqual([]);
+  });
+});
+
 describe('an understand run and the snapshot', UNDERSTAND_TIMEOUT, () => {
   it('RF-005 the snapshot hashes the same before and after the run, and every write is in the workspace', async () => {
     const before = await hashTree(fixtureRoot('webforms-csharp'));
