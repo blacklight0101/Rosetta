@@ -90,6 +90,10 @@ export class MemoryUserRepository implements UserRepository {
     return current ? this.update(account) : Promise.resolve(false);
   }
 
+  markSignedIn(_read: UserAccount, _now: EpochMs): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
   countFailedSignIn(id: string, now: EpochMs): Promise<boolean> {
     const stored = this.accounts.get(id);
     if (stored === undefined) return Promise.resolve(false);

@@ -185,6 +185,10 @@ export class PgUserRepository implements UserRepository {
     return row !== undefined && countedRow.parse(row).failed_sign_ins >= maxFailures;
   }
 
+  markSignedIn(_read: UserAccount, _now: EpochMs): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+
   private async rows(sql: string, values: unknown[]): Promise<unknown[]> {
     try {
       const result = await this.pool.query<Record<string, unknown>>(sql, values);
