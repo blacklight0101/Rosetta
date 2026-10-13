@@ -109,6 +109,21 @@ async function checkPasswordChange(
   throw new RosettaError(ERROR_CODES.passwordChangeRequired);
 }
 
+// RNF-003: a log that cannot be written (it rejects or throws) never fails the request.
+async function logLookupFailure(logger: Logger, request: FastifyRequest): Promise<void> {
+  try {
+    await logger.log({
+      level: 'warn',
+      logger: 'http',
+      message: 'The session lookup failed; the page is shown to a visitor.',
+      code: ERROR_CODES.databaseQueryFailed,
+      data: { path: requestPath(request) },
+    });
+  } catch {
+    // Nothing else can report a failing logger; the visitor page is still shown.
+  }
+}
+
 /**
  * RF-1009, RF-1200: a public route that reads the session (the landing page) shows its visitor page
  * when the lookup fails, instead of answering 500; any other route lets the failure through. The
@@ -124,15 +139,7 @@ async function lookUp(
   try {
     return (await resolveSession.execute(sessionId)) ?? null;
   } catch {
-    await logger
-      .log({
-        level: 'warn',
-        logger: 'http',
-        message: 'The session lookup failed; the page is shown to a visitor.',
-        code: ERROR_CODES.databaseQueryFailed,
-        data: { path: requestPath(request) },
-      })
-      .catch(() => undefined);
+    await logLookupFailure(logger, request);
     return null;
   }
 }
