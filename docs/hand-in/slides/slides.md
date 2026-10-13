@@ -61,7 +61,7 @@ BlackLigth (blacklight0101) - Hito 1 (M1), entrega 2026-10-26
 4. **Report** - hallazgos, veredictos y coste; en el hito 1 en Markdown, y el HTML completo en P3.
 5. **Plan** - paquete de traspaso: especificación, decisiones, hoja de ruta y tareas (P3).
 
-En el hito 1 están **scan** y **understand** sobre un área de la aplicación de demostración, con la comprobación de citas, y el informe Markdown con un informe de ejemplo en GitHub Pages (P1-50, en curso). El HTML completo del informe y el plan llegan en la fase P3.
+En el hito 1 están **scan** y **understand** sobre un área de la aplicación de demostración, con la comprobación de citas, y el informe Markdown con un informe de ejemplo en GitHub Pages (P1-50; PR #361 abierto). El HTML completo del informe y el plan llegan en la fase P3.
 
 *Fuente: [RFC-001, secciones 4.5 y 6](../../rfc/RFC-001-rosetta.md); [handoff.md](../../../handoff.md) para el estado de cada parte*
 
@@ -145,12 +145,12 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 # Resultados: estado del proyecto
 
 - Fecha de referencia: 2026-10-13 (noche), según [handoff.md](../../../handoff.md): **123 de 182 tarjetas hechas**.
-- Última ejecución de `npm run verify` en la rama de entrega (commit `dd3b554`, 2026-10-14), con estas cifras:
-  - Pirámide de pruebas por nivel: unitarias 4579 (67 %), integración 2049 (30 %), E2E 166 (2 %); objetivo 60 / 30 / 10 con 10 puntos de tolerancia.
-  - Pruebas de Vitest: 6629 pasadas y 305 omitidas, en 507 archivos.
-  - Cobertura de sentencias: 91,7 %.
-  - Las pruebas E2E no se ejecutaron en local (no estaba definida `ROSETTA_TEST_DATABASE_URL`); la ejecución de CI es la referencia.
-- Fuente: el registro de `npm run verify` y el informe de `scripts/test-levels.mjs` de esa ejecución.
+- Verificación en CI de la cabeza actual de la rama (`9877eb0`), **a fecha 2026-10-13 (UTC), run 38478996250**, trabajo `verify (ubuntu-latest)`:
+  - Pirámide de pruebas por nivel: unitarias 4579 (65 %), integración 2348 (33 %), E2E 166 (2 %); objetivo 60 / 30 / 10 con 10 puntos de tolerancia.
+  - Pruebas de Vitest: 6928 pasadas y 6 omitidas, en 542 archivos pasados y 1 omitido (543 en total).
+  - Las 6 pruebas omitidas son de `tests/integration/image` (imagen de contenedor). Las pruebas E2E, en tres fragmentos de CI, pasaron en la misma ejecución.
+  - Cobertura de sentencias: 96,2 %.
+- Fuente: el registro del trabajo `verify (ubuntu-latest)` de esa ejecución y el informe de `scripts/test-levels.mjs`. Las cifras cambian con las fusiones posteriores; la ejecución y la fecha son las de referencia.
 - Lo que aún no está medido: la precisión y la cobertura del conjunto de referencia (ver la siguiente diapositiva).
 
 ---
