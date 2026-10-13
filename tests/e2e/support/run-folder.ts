@@ -42,7 +42,7 @@ export async function runFolderOf(page: Page, runUuid: string): Promise<RunFolde
 const callLine = z.looseObject({ seq: z.number() });
 
 /** Appends attempts to the run's provider call log, numbering them after the lines it holds. */
-export async function appendCalls(
+async function appendCalls(
   folder: RunFolder,
   make: (first: Record<string, unknown>) => readonly Record<string, unknown>[],
 ): Promise<void> {

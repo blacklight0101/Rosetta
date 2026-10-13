@@ -125,7 +125,7 @@ export const sampleCalls: readonly CallWire[] = [
   cloud(5, { agent: 'Services', agentTaskId: 'reader-002', ...failed }),
 ];
 
-export const sampleSummary = [
+const sampleSummary = [
   {
     provider: 'cloud',
     role: 'verifier',

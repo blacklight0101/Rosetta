@@ -8,7 +8,7 @@ export type LevelChoice = Readonly<Record<LogLevel, boolean>>;
 export const defaultLevels: LevelChoice = { debug: false, info: true, warn: true, error: true };
 
 /** Security events are the entries of the logger `security` (data-model.md section 3.14). */
-export const isSecurityEvent = (entry: Pick<LogRow, 'logger'>): boolean =>
+const isSecurityEvent = (entry: Pick<LogRow, 'logger'>): boolean =>
   entry.logger === 'security';
 
 // RF-1011

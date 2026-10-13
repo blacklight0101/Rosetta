@@ -22,7 +22,7 @@ export interface ListRunLogsDependencies {
 const AFTER_END_MS = 60_000;
 
 /** The most entries one answer lists, the newest; the counts always cover all of them. */
-export const MAX_LISTED_LOG_ENTRIES = 500;
+const MAX_LISTED_LOG_ENTRIES = 500;
 
 export interface RunLogsView {
   /** The run's folder name. */

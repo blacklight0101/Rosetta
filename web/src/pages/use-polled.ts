@@ -12,7 +12,7 @@ export type Polled<T> =
   | { readonly status: 'ready'; readonly value: T };
 
 /** How often the panels read again while the run goes on. */
-export const POLL_MS = 2000;
+const POLL_MS = 2000;
 
 type Read<T> = (client: ApiClient, signal: AbortSignal) => Promise<ApiResult<T>>;
 

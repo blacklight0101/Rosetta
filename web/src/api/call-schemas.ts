@@ -5,10 +5,10 @@ import { z } from 'zod';
 const count = z.number().int().nonnegative();
 const percentile = count.nullable();
 
-export const CALL_STATUSES = ['ok', 'retried', 'failed', 'refused-by-cap'] as const;
+const CALL_STATUSES = ['ok', 'retried', 'failed', 'refused-by-cap'] as const;
 export type CallStatus = (typeof CALL_STATUSES)[number];
 
-export const callSchema = z.object({
+const callSchema = z.object({
   seq: count,
   callId: z.string(),
   attempt: count,
@@ -44,7 +44,7 @@ export const callSchema = z.object({
 
 export type CallRow = z.output<typeof callSchema>;
 
-export const summarySchema = z.object({
+const summarySchema = z.object({
   provider: z.string(),
   role: z.string(),
   calls: count,
@@ -79,7 +79,7 @@ export type RunCalls = z.output<typeof callsSchema>;
 export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
-export const logEntrySchema = z.object({
+const logEntrySchema = z.object({
   at: z.string(),
   level: z.enum(LOG_LEVELS),
   logger: z.string(),
@@ -102,7 +102,7 @@ export const logsSchema = z.object({
 
 export type RunLogs = z.output<typeof logsSchema>;
 
-export const transcriptEntrySchema = z.object({
+const transcriptEntrySchema = z.object({
   seq: count,
   at: z.string(),
   callId: z.string(),
