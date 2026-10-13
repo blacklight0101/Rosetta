@@ -16,6 +16,7 @@ import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
 import { RunMeter } from './RunMeter.js';
 import { RunOverview } from './RunOverview.js';
+import { RunReport } from './RunReport.js';
 import { RunStatusBar } from './RunStatusBar.js';
 import { useRunEstimate } from './use-run-estimate.js';
 import type { RunStream } from './use-run-stream.js';
@@ -119,6 +120,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
         <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
       </p>
       <RunDownloads runId={run.id} stage={stage} ended={phase.kind === 'ended'} />
+      <RunReport runId={run.id} ended={phase.kind === 'ended'} />
       <RunOverview state={state} />
       <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
       <Agents state={state} />

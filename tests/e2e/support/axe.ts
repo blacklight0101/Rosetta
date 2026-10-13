@@ -22,3 +22,22 @@ export async function expectNoSeriousViolations(page: Page): Promise<void> {
   );
   throw new Error(`Accessibility violations on ${page.url()}:\n${lines.join('\n')}`);
 }
+
+/**
+ * Opens a page as a browser with JavaScript off sees it, and leaves it ready for axe. axe is itself
+ * a script, so it cannot run in a context that has JavaScript off (`javaScriptEnabled: false` makes
+ * `analyze` wait until the test times out). Script execution is therefore switched off for the page
+ * load only: the scripts of the page pass unrun, and switching it back on afterwards leaves the
+ * document exactly as a JavaScript-free browser shows it, with none of them running later.
+ */
+// RNF-010
+export async function gotoWithoutScripts(page: Page, url: string): Promise<void> {
+  const session = await page.context().newCDPSession(page);
+  try {
+    await session.send('Emulation.setScriptExecutionDisabled', { value: true });
+    await page.goto(url);
+    await session.send('Emulation.setScriptExecutionDisabled', { value: false });
+  } finally {
+    await session.detach();
+  }
+}
