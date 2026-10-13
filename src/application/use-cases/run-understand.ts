@@ -8,12 +8,11 @@ import {
   type PromptVersion,
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
-import { parseCommitSha } from '../../domain/sources/commit-sha.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { promptVersionsOf, type ReaderPrompts } from '../agent/reader-prompts.js';
 import { buildCostReport } from '../budget/cost-report.js';
 import type { AnswersFile } from '../ports/answers-file.js';
-import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
+import type { CardOutputs } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
 import type { CostLedger } from '../ports/cost-ledger.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
@@ -42,6 +41,7 @@ import {
   rolesUseTextToolProtocol,
   UNDERSTAND_ROLES,
 } from '../understand/understand-options.js';
+import { pinnedSourceOf } from '../understand/pinned-source.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
@@ -121,7 +121,7 @@ export class RunUnderstand implements RunExecutor {
       logger: ownerLogger(this.deps.logger, execution.run.userId),
       settings: prepared.value.project.settings,
       deps: this.deps,
-      source: this.cardSource(execution, prepared.value.scanned),
+      source: pinnedSourceOf(execution.manifest.source, prepared.value.scanned.source.commitSha),
       nextCallId,
       traceId: traceIdOf(execution.run),
       ids: this.deps.ids,
@@ -249,16 +249,6 @@ export class RunUnderstand implements RunExecutor {
       },
     );
     return failed(problem.code);
-  }
-
-  /** The pinned repository of the citations' permalinks (RF-125). */
-  private cardSource(execution: RunExecution, scanned: ScannedSource): CardSource {
-    const commitSha = parseCommitSha(scanned.source.commitSha);
-    if (!commitSha.ok) {
-      throw new RosettaError(ERROR_CODES.codeMapInvalid, 'The scan recorded no valid commit.');
-    }
-    const { owner, repo } = execution.manifest.source;
-    return { owner, repo, commitSha: commitSha.value };
   }
 
   /** RF-426: `cost.json` and `cost.md` at every end; a write that fails is logged, never thrown. */

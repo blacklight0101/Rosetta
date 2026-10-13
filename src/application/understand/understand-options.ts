@@ -4,7 +4,7 @@ import type { ProjectSettings } from '../projects/project-settings.js';
 import { needsCloudConsent } from '../providers/cloud-consent.js';
 
 // RF-200, RF-143, data-model.md section 3.6 (`options`): what the start request of an understand
-// run fixes: the areas to read (every area when absent) and the consent to send code to a cloud
+// run fixes: the areas to read (every area when absent or empty) and the consent to send code to a cloud
 // provider. Both are recorded in the manifest when the run is accepted and read back from it when
 // it starts, so nothing in a later request can change them.
 
