@@ -148,6 +148,10 @@ test('RF-1002 pressing Pause updates and Resume moves neither the button nor the
 }) => {
   await startUnderstand(page, ['Controllers']);
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
+  // The estimate and the role rows of the live meter above the panel arrive on their own; wait for them so the panel is at rest.
+  const meter = page.getByRole('region', { name: 'Run meter' });
+  await expect(meter).toContainText('Estimate', { timeout: 30_000 });
+  await expect(meter.getByRole('row', { name: /reader/u })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pause updates' })).toBeVisible();
   const before = {
     button: await boxOf(page.getByRole('button', { name: 'Pause updates' })),
