@@ -25,6 +25,10 @@ export interface ManifestRole {
   readonly modelVersion: string | null;
   /** The Ollama digest. */
   readonly modelDigest: string | null;
+  /** The Ollama context size sent as `num_ctx`, known after the first call (DEC-114). */
+  readonly contextTokens: number | null;
+  /** How the context size was chosen (`auto-fit`, `auto-floor`, ..., or `fixed`). */
+  readonly contextSource: string | null;
   readonly toolMode: string;
   readonly maxOutputTokens: number;
   readonly temperature: number | null;
@@ -224,6 +228,18 @@ export function recordManifestAgentTask(
     : [...manifest.agentTasks, task];
   return ok({ ...manifest, agentTasks });
 }
+
+/** Records the Ollama context size of a role and how it was chosen (RF-401, DEC-114). */
+// RF-401
+/* eslint-disable @typescript-eslint/no-unused-vars -- red stub, implemented in the next commit */
+export function recordManifestContext(
+  manifest: RunManifest,
+  _role: string,
+  _context: { readonly contextTokens: number; readonly contextSource: string },
+): Result<RunManifest, ManifestProblem> {
+  return manifest.endState === null ? ok(manifest) : err('already-ended');
+}
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /** Records the exact model version a role's provider reported, once it is known (RNF-004). */
 // RNF-004

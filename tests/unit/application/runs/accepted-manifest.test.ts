@@ -64,6 +64,30 @@ describe('acceptedManifest', () => {
   });
 });
 
+describe('acceptedManifest context', () => {
+  it('RF-401 holds a fixed Ollama context size of the role provider (DEC-114)', () => {
+    const manifest = acceptedManifest({
+      run: sampleRun(),
+      project: projectWith({ 'providers.ollama.contextTokens': 8192 }),
+      rosettaVersion: '1.2.3-test',
+      options: {},
+    });
+
+    expect(manifest.roles['reader']).toMatchObject({ contextTokens: 8192, contextSource: 'fixed' });
+  });
+
+  it('RF-401 leaves an auto context size unknown until the first call answers', () => {
+    const manifest = acceptedManifest({
+      run: sampleRun(),
+      project: projectWith({ 'providers.ollama.contextTokens': 'auto' }),
+      rosettaVersion: '1.2.3-test',
+      options: {},
+    });
+
+    expect(manifest.roles['reader']).toMatchObject({ contextTokens: null, contextSource: null });
+  });
+});
+
 describe('acceptedManifest roles', () => {
   it('RNF-004 holds the provider kind, model and parameters of every role', () => {
     const manifest = acceptedManifest({
