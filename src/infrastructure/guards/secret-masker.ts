@@ -62,7 +62,7 @@ const schemeNames =
 const tokenSchemeWord = String.raw`(?:"(?:${schemeNames})"|'(?:${schemeNames})'|(?:${schemeNames})(?![\w-]))`;
 // The run of scheme words is atomic (a lookahead capture, then a back reference), so a failed value
 // never retries a shorter run and the scan stays linear.
-const tokenScheme = String.raw`(?=(?<schemes>(?:${tokenSchemeWord}[ 	]+(?=\S))*))\k<schemes>`;
+const tokenScheme = String.raw`(?=(?<schemes>(?:${tokenSchemeWord}[ \t]+(?=\S))*))\k<schemes>`;
 // Not preceded by a letter, digit or dash, so `x--token` and `---token` are left alone.
 const optionStart = '(?<![A-Za-z0-9-])--';
 // A quoted part runs to its closing quote (or the end of the line), spaces included; the token goes
