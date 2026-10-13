@@ -20,6 +20,8 @@ const INSERT =
   'INSERT INTO runs (id, project_id, user_id, run_key, stage, commit_sha, snapshot_key, queue_state, end_state, queued_at, started_at, ended_at, cost_micros, input_tokens, output_tokens, cached_input_tokens) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT ON CONSTRAINT runs_run_key_key DO NOTHING';
 const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const LIST = SELECT + ' WHERE user_id = $1 AND project_id = $2 ORDER BY queued_at DESC, id';
+const KEY_USED_BY_OTHERS =
+  'SELECT 1 FROM runs WHERE run_key = $2 AND user_id <> $1 LIMIT 1';
 const LIST_QUEUED = SELECT + " WHERE queue_state = 'Queued' ORDER BY queued_at, id";
 const LIST_RUNNING = SELECT + " WHERE queue_state = 'Running' ORDER BY started_at, id";
 const START =
@@ -76,10 +78,10 @@ export class PgRunIndex implements RunIndex {
     return this.one(FIND, [userId, runId]);
   }
 
-  keyUsedByOthers(userId: string, runKey: string): Promise<boolean> {
-    void userId;
-    void runKey;
-    return Promise.resolve(false);
+  async keyUsedByOthers(userId: string, runKey: string): Promise<boolean> {
+    // Not a UUID cannot name a user; asking PostgreSQL would fail on the uuid cast.
+    if (!UUID.test(userId)) return false;
+    return (await this.run(KEY_USED_BY_OTHERS, [userId, runKey])).rowCount === 1;
   }
 
   async list(userId: string, projectId: string): Promise<readonly Run[]> {

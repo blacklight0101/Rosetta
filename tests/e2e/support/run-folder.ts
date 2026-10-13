@@ -70,3 +70,29 @@ export async function appendLogs(
   );
   await appendFile(file, `${lines.join('\n')}\n`, 'utf8');
 }
+
+/**
+ * A 429 that was retried and answered on the second attempt, and a call that timed out, both of an
+ * OpenAI verifier: the problems the recorded run does not have.
+ */
+export async function appendProblemCalls(folder: RunFolder): Promise<void> {
+  const cloud = {
+    ...{ provider: 'cloud', kind: 'openai', role: 'verifier' },
+    ...{ ollama: undefined, transcriptRef: undefined },
+  };
+  const none = { inputTokens: 0, outputTokens: 0, timeToFirstTokenMs: 0, finishReason: 'error' };
+  await appendCalls(folder, (first) => [
+    {
+      ...{ ...first, ...cloud, ...none, callId: `${folder.runKey}#90`, attempt: 1 },
+      ...{ status: 'retried', httpStatus: 429, errorCode: 'RST-1504', latencyMs: 300 },
+    },
+    {
+      ...{ ...first, ...cloud, callId: `${folder.runKey}#90`, attempt: 2, status: 'ok' },
+      ...{ latencyMs: 2000, timeToFirstTokenMs: 900 },
+    },
+    {
+      ...{ ...first, ...cloud, ...none, callId: `${folder.runKey}#91`, attempt: 1 },
+      ...{ status: 'failed', errorCode: 'RST-1505', latencyMs: 30_000 },
+    },
+  ]);
+}

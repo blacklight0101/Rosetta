@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
+import { sampleRun } from '../../../support/run-fixtures.js';
 import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
@@ -38,7 +39,18 @@ async function setup(): Promise<Setup> {
   const amyUser = await addUser(test, { userName: 'amy' });
   const bobUser = await addUser(test, { userName: 'bob' });
   const amyRun = await test.runs.start(actorOf(amyUser.account), 'understand');
-  const bobRun = await test.runs.start(actorOf(bobUser.account), 'understand');
+  // A run key is unique per project only: Bob's run has the same key as Amy's.
+  const inserted = await test.runs.runs.insert(
+    sampleRun({
+      userId: bobUser.account.id,
+      projectId: '00000000-0000-4000-a000-0000000000b1',
+      runKey: amyRun.runKey,
+      queuedAt: amyRun.queuedAt,
+      stage: 'understand',
+    }),
+  );
+  if (!inserted.ok) throw new Error('The run of Bob was not stored');
+  const bobRun = inserted.value;
   return {
     test,
     amyRun,
@@ -102,7 +114,9 @@ describe('GET /api/runs/:runId/logs', () => {
     expect(body.securityEvents).toBe(2);
     expect(body.entries.filter((entry) => entry.logger === 'security')).toHaveLength(2);
   });
+});
 
+describe('GET /api/runs/:runId/logs scoping', () => {
   it('RF-1105 shows a user only the entries of their own runs, even when both runs have the same run key', async () => {
     const { test, amy, bob, amyRun, bobRun } = await setup();
     expect(bobRun.runKey).toBe(amyRun.runKey);
@@ -143,7 +157,9 @@ describe('GET /api/runs/:runId/logs', () => {
     expect(messagesOf(await fetchLogs(amy, amyRun))).toEqual(['Amy with her id.', 'Amy by UUID.']);
     expect(messagesOf(await fetchLogs(bob, bobRun))).toEqual(['Bob with his id.', 'Bob by UUID.']);
   });
+});
 
+describe('GET /api/runs/:runId/logs run key of one user', () => {
   it('RF-1011 shows an entry that names only the run key while no other user has a run with that key', async () => {
     const test = createTestServer();
     current = test;
@@ -162,7 +178,9 @@ describe('GET /api/runs/:runId/logs', () => {
 
     expect(messagesOf(body)).toEqual(['The reader of area "Catalog" ended with no card.']);
   });
+});
 
+describe('GET /api/runs/:runId/logs size and refusals', () => {
   it('RF-1011 lists the newest 500 entries and counts all of them', async () => {
     const { test, amy, amyRun } = await setup();
     const own = { runId: amyRun.runKey, userId: amyRun.userId };
@@ -183,7 +201,9 @@ describe('GET /api/runs/:runId/logs', () => {
     expect(body.entries.at(-1)?.message).toBe('Entry 502.');
     expect(body.counts).toMatchObject({ info: 251, warn: 251 });
   });
+});
 
+describe('GET /api/runs/:runId/logs empty and refused', () => {
   it('RF-1011 answers an empty log for a run that has logged nothing yet', async () => {
     const { amy, amyRun } = await setup();
 

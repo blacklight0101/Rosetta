@@ -2,6 +2,7 @@ import type { ProviderCallRecord } from '../../src/application/ports/provider-ca
 import type { OutputWriter } from '../../src/application/ports/output-writer.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { sampleRecord } from '../contracts/provider-call-recorder.contract.js';
+import type { TestServer } from './web-server.js';
 
 // RF-1011, RF-408: provider call records and transcripts in a run folder, for tests of the "API
 // calls" panel. The files are written as the recorder writes them (data-model.md 3.10, 3.15).
@@ -56,7 +57,12 @@ export function localCall(
     inputTokens: sampleRecord.inputTokens,
     outputTokens: sampleRecord.outputTokens,
     costMicros: 0,
-    ollama: { loadDurationMs: 10, promptEvalDurationMs: 300, evalDurationMs: 900, tokensPerSecond: 42 },
+    ollama: {
+      loadDurationMs: 10,
+      promptEvalDurationMs: 300,
+      evalDurationMs: 900,
+      tokensPerSecond: 42,
+    },
     transcriptRef: 'transcripts/task-1.jsonl#1',
     ...overrides,
   };
@@ -107,4 +113,19 @@ export async function seedTranscript(
       line,
     );
   }
+}
+
+/**
+ * The files of a finished run in the access matrix: a hand-off folder for the zip routes (RF-008)
+ * and one call for the calls and transcript routes (RF-1011).
+ */
+export async function seedEndedRun(
+  test: Pick<TestServer, 'archives' | 'callFiles' | 'runs'>,
+  ended: Run,
+): Promise<void> {
+  test.archives.seed(test.runs.scopeOf(ended), {
+    'manifest.json': '{}',
+    'handoff/README.md': '# Hand-off',
+  });
+  await seedCallLog(test.callFiles, ended, [localCall(ended)]);
 }

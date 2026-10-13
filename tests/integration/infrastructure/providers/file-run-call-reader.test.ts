@@ -78,7 +78,9 @@ describe('FileRunCallReader calls', () => {
     expect(await readerOf().calls(scopeOf(bob))).toEqual([]);
     expect(await readerOf().calls(scopeOf(amy))).toHaveLength(1);
   });
+});
 
+describe('FileRunCallReader damaged lines', () => {
   it('RF-1011 leaves out a torn last line and a line that is not a record', async () => {
     await recorderOf(amy).record(sampleRecord);
     const file = join(runDirOf(amy), 'provider-calls.jsonl');
@@ -135,7 +137,9 @@ describe('FileRunCallReader transcript', () => {
       { id: 'tc-1', name: 'read_file', arguments: { path: 'a.cs' } },
     ]);
   });
+});
 
+describe('FileRunCallReader transcript files', () => {
   it('RF-1011 gives no messages for a task without a transcript and for a name that is not a plain file name', async () => {
     await recorderOf(amy).record(sampleRecord);
 

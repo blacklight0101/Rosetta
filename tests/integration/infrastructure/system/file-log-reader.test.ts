@@ -75,7 +75,9 @@ describe('FileApplicationLogReader', () => {
 
     expect(entries.map((entry) => entry.message)).toEqual(['Day two.']);
   });
+});
 
+describe('FileApplicationLogReader files', () => {
   it('RF-1011 gives no entries when there is no log folder yet', async () => {
     expect(await readerOf().read({ ...span, mentioning: [key] })).toEqual([]);
   });

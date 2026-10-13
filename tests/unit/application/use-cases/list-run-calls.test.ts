@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { RunCallReader, StoredCall } from '../../../../src/application/ports/run-call-reader.js';
+import type {
+  RunCallReader,
+  StoredCall,
+} from '../../../../src/application/ports/run-call-reader.js';
 import {
   ListRunCalls,
   MAX_LISTED_CALLS,

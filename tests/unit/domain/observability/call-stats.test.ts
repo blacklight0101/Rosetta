@@ -75,7 +75,9 @@ describe('summarizeCalls', () => {
 
     expect(row).toMatchObject({ calls: 5, retried: 1, failed: 2, refused: 1, errors: 3 });
   });
+});
 
+describe('summarizeCalls percentiles', () => {
   it('RF-1011 computes P50 and P95 of latency and of time to first token over the answered attempts', () => {
     const answered = Array.from({ length: 20 }, (_item, index) =>
       sample({ latencyMs: (index + 1) * 100, timeToFirstTokenMs: (index + 1) * 10 }),
@@ -115,7 +117,9 @@ describe('summarizeCalls', () => {
     expect(rows.find((row) => row.provider === 'ollama')?.tokensPerSecond).toBe(35);
     expect(rows.find((row) => row.provider === 'openai')?.tokensPerSecond).toBeNull();
   });
+});
 
+describe('summarizeCalls totals', () => {
   it('RF-1011 adds up the tokens and the cost of the group', () => {
     const [row] = summarizeCalls([
       sample({ inputTokens: 100, outputTokens: 10, costMicros: 5 }),

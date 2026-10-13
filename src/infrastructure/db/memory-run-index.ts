@@ -40,9 +40,10 @@ export class MemoryRunIndex implements RunIndex {
   }
 
   keyUsedByOthers(userId: string, runKey: string): Promise<boolean> {
-    void userId;
-    void runKey;
-    return Promise.resolve(false);
+    const shared = [...this.runs.values()].some(
+      (run) => run.runKey === runKey && run.userId !== userId,
+    );
+    return Promise.resolve(shared);
   }
 
   list(userId: string, projectId: string): Promise<readonly Run[]> {

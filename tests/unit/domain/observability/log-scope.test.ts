@@ -39,8 +39,8 @@ describe('entryBelongsToRun', () => {
   it('RF-1105 refuses an entry that names no run, and one that names another run', () => {
     expect(entryBelongsToRun({}, run, false)).toBe(false);
     expect(entryBelongsToRun({ userId: 'user-amy' }, run, false)).toBe(false);
-    expect(entryBelongsToRun({ runId: '20261011-091204-scan', userId: 'user-amy' }, run, false)).toBe(
-      false,
-    );
+    expect(
+      entryBelongsToRun({ runId: '20261011-091204-scan', userId: 'user-amy' }, run, false),
+    ).toBe(false);
   });
 });

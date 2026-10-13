@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { startUnderstand } from './support/live-run-page.js';
-import { appendCalls, appendLogs, runFolderOf } from './support/run-folder.js';
+import { appendLogs, appendProblemCalls, runFolderOf } from './support/run-folder.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
@@ -41,7 +41,7 @@ test('RF-1011 the calls of a run appear in the panel as it works, and the summar
   const row = summary.getByTestId('summary-row');
   await expect(row).toHaveCount(1);
   await expect(row).toContainText('reader');
-  await expect(row.getByRole('cell').nth(2)).toHaveText('3');
+  await expect(row.getByRole('cell').nth(1)).toHaveText('3');
   await expect(calls(page).getByRole('button', { name: 'Next error' })).toBeDisabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
@@ -51,11 +51,7 @@ test('RF-1011 errors and retries are highlighted, filtered and reached with Next
   page,
 }) => {
   const folder = await runFolderOf(page, livePath.split('/').at(-1) ?? '');
-  await appendCalls(folder, (first) => [
-    { ...first, provider: 'cloud', kind: 'openai', role: 'verifier', status: 'retried', httpStatus: 429, errorCode: 'RST-1504', finishReason: 'error', latencyMs: 300, timeToFirstTokenMs: 0, inputTokens: 0, outputTokens: 0, callId: `${folder.runKey}#90`, attempt: 1 },
-    { ...first, provider: 'cloud', kind: 'openai', role: 'verifier', status: 'ok', callId: `${folder.runKey}#90`, attempt: 2, latencyMs: 2000, timeToFirstTokenMs: 900 },
-    { ...first, provider: 'cloud', kind: 'openai', role: 'verifier', status: 'failed', errorCode: 'RST-1505', finishReason: 'error', latencyMs: 30_000, timeToFirstTokenMs: 0, inputTokens: 0, outputTokens: 0, callId: `${folder.runKey}#91`, attempt: 1 },
-  ]);
+  await appendProblemCalls(folder);
 
   await page.goto(`${livePath}/calls`);
 
@@ -85,7 +81,10 @@ test('RF-1011 RF-408 the link of a call opens its masked transcript as text', as
   await page.goto(`${livePath}/calls`);
   await expect(rows(page).first()).toBeVisible();
 
-  await rows(page).first().getByRole('link', { name: /^Transcript of call/u }).click();
+  await rows(page)
+    .first()
+    .getByRole('link', { name: /^Transcript of call/u })
+    .click();
 
   const selected = page.getByRole('region', { name: 'Selected call' });
   await expect(selected.getByTestId('transcript-message').first()).toBeVisible();
@@ -100,7 +99,12 @@ test('RF-1011 the Logs panel lists the entries of the run, filters them by level
   const folder = await runFolderOf(page, livePath.split('/').at(-1) ?? '');
   await appendLogs(folder, [
     { level: 'debug', logger: 'agent', message: 'Turn detail for the debug level.' },
-    { level: 'warn', logger: 'security', code: 'RST-2101', message: 'A secret was masked before it was sent.' },
+    {
+      level: 'warn',
+      logger: 'security',
+      code: 'RST-2101',
+      message: 'A secret was masked before it was sent.',
+    },
     { level: 'error', logger: 'provider.openai', code: 'RST-1505', message: 'Timeout after 30 s.' },
   ]);
 

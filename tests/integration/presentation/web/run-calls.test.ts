@@ -1,15 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
-import type { Run } from '../../../../src/domain/runs/run.js';
-import { cloudCall, localCall, seedCallLog, seedTranscript } from '../../../support/call-fixtures.js';
-import { sampleManifest } from '../../../support/run-fixtures.js';
-import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
-import { createTestServer, type TestServer } from '../../../support/web-server.js';
+import { cloudCall, localCall, seedCallLog } from '../../../support/call-fixtures.js';
+import { callsUrl, setupCalls, type CallsSetup } from '../../../support/call-routes-harness.js';
+import type { TestServer } from '../../../support/web-server.js';
 
-// RF-1011, RF-408, RF-1105: GET /api/runs/:runId/calls and /calls/:seq/transcript through the server
-// with a session. The call log is the real reader over a memory run folder, so what the routes
-// answer is what the recorder wrote.
+// RF-1011, RF-408, RF-1105: GET /api/runs/:runId/calls through the server with a session. The call
+// log is the real reader over a memory run folder, so what the route answers is what the recorder
+// wrote.
 
 let current: TestServer | undefined;
 
@@ -18,40 +15,11 @@ afterEach(async () => {
   current = undefined;
 });
 
-interface Setup {
-  readonly test: TestServer;
-  readonly amy: TestBrowser;
-  readonly bob: TestBrowser;
-  readonly run: Run;
+async function setup(): Promise<CallsSetup> {
+  const made = await setupCalls();
+  current = made.test;
+  return made;
 }
-
-async function setup(): Promise<Setup> {
-  const test = createTestServer();
-  current = test;
-  const amyUser = await addUser(test, { userName: 'amy' });
-  const bobUser = await addUser(test, { userName: 'bob' });
-  const run = await test.runs.start(actorOf(amyUser.account), 'understand');
-  await test.runs.manifests.write(
-    test.runs.scopeOf(run),
-    sampleManifest({
-      runId: run.runKey,
-      stage: 'understand',
-      agentTasks: [
-        { agentTaskId: 'reader-001', area: 'Catalog', role: 'reader', state: 'Done', turns: 2, cards: 1 },
-      ],
-    }),
-  );
-  return {
-    test,
-    run,
-    amy: await signedInBrowser(test.server, amyUser),
-    bob: await signedInBrowser(test.server, bobUser),
-  };
-}
-
-const callsUrl = (run: Run): string => `/api/runs/${run.id}/calls`;
-const transcriptUrl = (run: Run, seq: number | string): string =>
-  `/api/runs/${run.id}/calls/${String(seq)}/transcript`;
 
 describe('GET /api/runs/:runId/calls', () => {
   it('RF-1011 lists each attempt from the call log with provider, model, agent, latency, tokens, cost and status', async () => {
@@ -100,7 +68,9 @@ describe('GET /api/runs/:runId/calls', () => {
       hasTranscript: false,
     });
   });
+});
 
+describe('GET /api/runs/:runId/calls agents and retries', () => {
   it('RF-1011 names an agent task the manifest does not know by its id', async () => {
     const { test, amy, run } = await setup();
     await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-007' })]);
@@ -143,7 +113,9 @@ describe('GET /api/runs/:runId/calls', () => {
       httpStatus: 429,
     });
   });
+});
 
+describe('GET /api/runs/:runId/calls summary', () => {
   it('RF-1011 gives P50 and P95 latency and time to first token per provider and role, and Ollama tokens per second', async () => {
     const { test, amy, run } = await setup();
     const twenty = Array.from({ length: 20 }, (_item, index) =>
@@ -151,7 +123,12 @@ describe('GET /api/runs/:runId/calls', () => {
         callId: `${run.runKey}#${String(index + 1)}`,
         latencyMs: (index + 1) * 100,
         timeToFirstTokenMs: (index + 1) * 10,
-        ollama: { loadDurationMs: 1, promptEvalDurationMs: 1, evalDurationMs: 1, tokensPerSecond: 30 },
+        ollama: {
+          loadDurationMs: 1,
+          promptEvalDurationMs: 1,
+          evalDurationMs: 1,
+          tokensPerSecond: 30,
+        },
       }),
     );
     await seedCallLog(test.callFiles, run, [
@@ -186,7 +163,9 @@ describe('GET /api/runs/:runId/calls', () => {
       },
     ]);
   });
+});
 
+describe('GET /api/runs/:runId/calls while the run goes on', () => {
   it('RF-1011 shows the attempts recorded since the last request, and the run state, while the run goes on', async () => {
     const { test, amy, run } = await setup();
     await seedCallLog(test.callFiles, run, [localCall(run)]);
@@ -225,65 +204,5 @@ describe('GET /api/runs/:runId/calls', () => {
     expect(foreign.json()).toEqual(unknown.json());
     expect(foreign.json()).toEqual(malformed.json());
     expect(foreign.body).not.toContain(run.runKey);
-  });
-});
-
-describe('GET /api/runs/:runId/calls/:seq/transcript', () => {
-  const messages = (run: Run) => [
-    { callId: `${run.runKey}#1`, role: 'system', content: 'You read one area.' },
-    { callId: `${run.runKey}#1`, role: 'user', content: 'Read Catalog.' },
-    { callId: `${run.runKey}#1`, role: 'assistant', content: 'Reading.' },
-    { callId: `${run.runKey}#2`, role: 'tool', content: 'file text' },
-  ] as const;
-
-  it('RF-1011 gives the masked messages the call added to its agent task transcript', async () => {
-    const { test, amy, run } = await setup();
-    await seedCallLog(test.callFiles, run, [
-      localCall(run, { agentTaskId: 'reader-001' }),
-      localCall(run, { agentTaskId: 'reader-001', callId: `${run.runKey}#2` }),
-    ]);
-    await seedTranscript(test.callFiles, run, 'reader-001', messages(run));
-
-    const first = await amy.request({ method: 'GET', url: transcriptUrl(run, 1) });
-    const second = await amy.request({ method: 'GET', url: transcriptUrl(run, 2) });
-
-    expect(first.statusCode).toBe(200);
-    expect(first.headers['cache-control']).toBe('no-store');
-    const entries = first.json<{ entries: { role: string }[] }>().entries;
-    expect(entries.map((entry) => entry.role)).toEqual(['system', 'user', 'assistant']);
-    expect(entries[1]).toMatchObject({ seq: 2, content: 'Read Catalog.' });
-    expect(second.json()).toMatchObject({ entries: [{ role: 'tool', content: 'file text' }] });
-  });
-
-  it('RF-1011 gives an empty list for a call whose run kept no transcript', async () => {
-    const { test, amy, run } = await setup();
-    await seedCallLog(test.callFiles, run, [cloudCall(run, { agentTaskId: 'reader-001' })]);
-
-    const response = await amy.request({ method: 'GET', url: transcriptUrl(run, 1) });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({ entries: [] });
-  });
-
-  it('RF-1011 answers 404 for a call the log does not hold and for a call number that is not a number', async () => {
-    const { test, amy, run } = await setup();
-    await seedCallLog(test.callFiles, run, [localCall(run)]);
-
-    const missing = await amy.request({ method: 'GET', url: transcriptUrl(run, 9) });
-    const word = await amy.request({ method: 'GET', url: transcriptUrl(run, 'one') });
-
-    expect(missing.statusCode).toBe(404);
-    expect(word.statusCode).toBe(404);
-  });
-
-  it("RF-1105 answers 404 for another user's run, with nothing of the transcript", async () => {
-    const { test, bob, run } = await setup();
-    await seedCallLog(test.callFiles, run, [localCall(run, { agentTaskId: 'reader-001' })]);
-    await seedTranscript(test.callFiles, run, 'reader-001', messages(run));
-
-    const response = await bob.request({ method: 'GET', url: transcriptUrl(run, 1) });
-
-    expect(response.statusCode).toBe(404);
-    expect(response.body).not.toContain('You read one area.');
   });
 });

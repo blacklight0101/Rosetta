@@ -1,14 +1,18 @@
+import type { ToolCall } from './llm-provider.js';
 import type { ProviderCallRecord } from './provider-call-recorder.js';
 import type { RunScope } from './run-events.js';
-import type { ToolCall } from './llm-provider.js';
 
 // RF-1011, RF-408, data-model.md sections 3.10 and 3.15: what the "API calls" panel reads back from
 // a run folder. Every value is masked once more when it is read (RNF-003), and a record that does
 // not parse is left out, so a damaged line never hides the others.
 
-/** One attempt of the provider call log with the `seq` the recorder gave it. */
-export interface StoredCall extends ProviderCallRecord {
+/**
+ * One attempt of the provider call log with the `seq` the recorder gave it. The error code is the
+ * text on the line: a log written by a newer release may hold a code this one does not know.
+ */
+export interface StoredCall extends Omit<ProviderCallRecord, 'errorCode'> {
   readonly seq: number;
+  readonly errorCode?: string;
 }
 
 /** One message of an agent task's masked transcript. */

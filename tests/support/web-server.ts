@@ -30,7 +30,6 @@ import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-
 import { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
-import { FileRunCallReader } from '../../src/infrastructure/providers/file-run-call-reader.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
@@ -49,7 +48,7 @@ import { providerTestService } from './web-provider-test.js';
 import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
-import { MemoryLogReader } from './memory-log-reader.js';
+import { observabilityStore } from './observability-store.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
@@ -265,13 +264,10 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const [projects, costs] = [new MemoryProjectRepository(), new MemoryCostTotals()];
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
-  const archives = new MemoryArchiveWriter();
-  const files = answerStore(masker);
+  const [archives, files] = [new MemoryArchiveWriter(), answerStore(masker)];
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const keys = keyParts();
-  const callFiles = new MemoryOutputWriter();
-  const calls = new FileRunCallReader({ reader: callFiles, masker });
-  const logs = new MemoryLogReader(logger);
+  const { callFiles, calls, logs } = observabilityStore(masker, logger);
   const stores = { projects, keys: keys.keys, answers: files.answers, calls, logs, clock };
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
