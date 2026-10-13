@@ -66,3 +66,38 @@ export function projectOf(
     ...overrides,
   };
 }
+
+/** The totals of a project without a call: what `GET /api/projects/overview` answers for one. */
+export const zeroTotals = {
+  calls: 0,
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  cost: [],
+  unknownCostCalls: 0,
+  priceTableVersions: [],
+};
+
+/** A row of `GET /api/projects/overview`: the project, its run count, totals and latest run. */
+export function overviewRow(
+  project: Record<string, unknown>,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return { project, runs: 0, totals: zeroTotals, lastRun: null, ...overrides };
+}
+
+/** The latest run of an overview row; a queued one carries its `position`. */
+export function lastRunOf(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'r-1',
+    runId: '20261012-093000-scan',
+    stage: 'scan',
+    queueState: 'Ended',
+    endState: 'Completed',
+    queuedAt: '2026-10-12T09:30:00.000Z',
+    startedAt: '2026-10-12T09:30:00.000Z',
+    endedAt: '2026-10-12T09:31:00.000Z',
+    position: null,
+    ...overrides,
+  };
+}

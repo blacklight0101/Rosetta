@@ -35,10 +35,11 @@ const ownCapUrl = '/api/account/daily-cap';
 const caps = { runMicros: '500000', userDayMicros: '1000000', serverMonthMicros: '10000000' };
 const totalsUrl = '/api/account/totals';
 const costUrl = (context: Context): string => `/api/projects/${context.projectId}/cost`;
+const overviewUrl = '/api/projects/overview';
 
 /**
  * RF-1106, DEC-107: the server caps (administrator) and the user's own daily cap; RF-1010, RF-428:
- * the totals pill and a project's cost page.
+ * the totals pill and a project's cost page; RF-1008, RF-1108: the run columns of the Projects page.
  */
 export const budgetRoutes: Readonly<Record<string, readonly Probe[]>> = {
   'GET /api/account/totals': [{ method: 'GET', url: totalsUrl, expected: active(401, 200) }],
@@ -48,6 +49,8 @@ export const budgetRoutes: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'GET', url: () => '/api/projects/not-a-uuid/cost', expected: active(401, 404) },
   ],
   'HEAD /api/projects/:id/cost': [{ method: 'HEAD', url: costUrl, expected: ownerOnly(200) }],
+  'GET /api/projects/overview': [{ method: 'GET', url: overviewUrl, expected: active(401, 200) }],
+  'HEAD /api/projects/overview': [{ method: 'HEAD', url: overviewUrl, expected: active(401, 200) }],
   'GET /api/account/daily-cap': [{ method: 'GET', url: ownCapUrl, expected: active(401, 200) }],
   'HEAD /api/account/daily-cap': [{ method: 'HEAD', url: ownCapUrl, expected: active(401, 200) }],
   'PUT /api/account/daily-cap': [
