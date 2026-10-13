@@ -5,7 +5,12 @@ import type {
   AuditLog,
 } from '../../application/ports/audit-log.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { maskedDetailJson, storedAuditText, toAuditEvent } from './audit-rows.js';
+import {
+  maskedDetailJson,
+  storedAuditFilter,
+  storedAuditText,
+  toAuditEvent,
+} from './audit-rows.js';
 
 // Architecture section 7, RF-1109: the audit trail in memory, for unit tests. It masks and stores
 // the detail exactly as PgAuditLog does and passes the same contract suite.
@@ -52,17 +57,20 @@ export class MemoryAuditLog implements AuditLog {
   }
 
   list(filter: AuditFilter): Promise<readonly AuditEvent[]> {
+    const stored = storedAuditFilter(filter);
+    if (stored === null) return Promise.resolve([]);
     const matching = this.events.filter(
       ({ event, action }) =>
-        event.at.getTime() >= filter.since &&
-        (filter.actorUserId === undefined || event.actorUserId === filter.actorUserId) &&
-        (filter.action === undefined || action === filter.action),
+        event.at.getTime() >= stored.since &&
+        (stored.actorUserId === undefined ||
+          event.actorUserId?.toLowerCase() === stored.actorUserId) &&
+        (stored.action === undefined || action === stored.action),
     );
     const newestFirst = matching.sort(
       (left, right) =>
         right.event.at.getTime() - left.event.at.getTime() || right.sequence - left.sequence,
     );
-    const limited = newestFirst.slice(0, filter.limit ?? newestFirst.length);
+    const limited = newestFirst.slice(0, stored.limit ?? newestFirst.length);
     return Promise.resolve(limited.map((stored) => toAuditEvent(stored.row)));
   }
 

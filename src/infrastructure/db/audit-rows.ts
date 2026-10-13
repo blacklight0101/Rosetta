@@ -3,6 +3,7 @@ import type {
   AuditDetail,
   AuditEvent,
   AuditEventInput,
+  AuditFilter,
 } from '../../application/ports/audit-log.js';
 import { maskDeep } from '../guards/mask-deep.js';
 import type { TextMasker } from '../guards/secret-masker.js';
@@ -34,6 +35,24 @@ export function storedAuditText(
     targetType: event.targetType === null ? null : withoutNul(event.targetType),
     targetId: event.targetId === null ? null : withoutNul(event.targetId),
     ip: withoutNul(event.ip),
+  };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The filter as both adapters compare it with the stored rows (P1-101): the user id in lower case,
+ * as PostgreSQL prints a uuid, and every NUL in the action replaced, as in a stored action. Null
+ * when the user id is not a UUID, which names no user.
+ */
+// RF-1109
+export function storedAuditFilter(filter: AuditFilter): AuditFilter | null {
+  const { actorUserId, action } = filter;
+  if (actorUserId !== undefined && !UUID.test(actorUserId)) return null;
+  return {
+    ...filter,
+    ...(actorUserId === undefined ? {} : { actorUserId: actorUserId.toLowerCase() }),
+    ...(action === undefined ? {} : { action: withoutNul(action) }),
   };
 }
 

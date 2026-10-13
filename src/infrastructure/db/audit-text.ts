@@ -1,8 +1,8 @@
 // RF-1109, RNF-003, P1-77: what an audit row's text goes through before it is stored, on top of
 // the shared secret masking (P1-04). PostgreSQL text and jsonb cannot hold NUL, so every NUL
 // becomes U+FFFD and the row is still stored. A detail value is masked whole when a word of its
-// key names a secret (`secret`, `clientSecret`, `pass`, `pw`, `value`, ...), and the word after
-// "password is" (and the like) in free text is masked.
+// key names a secret (`secret`, `clientSecret`, `pass`, `pw`, `value`, ...), and the phrase after
+// "password is" (and the like) in free text is masked, quoted or not.
 
 const NUL = String.fromCodePoint(0);
 const REPLACEMENT = String.fromCodePoint(0xfffd);
@@ -18,8 +18,20 @@ const SECRET_KEY_WORDS: ReadonlySet<string> = new Set([
   'secrets',
   'value',
 ]);
-const SECRET_IN_TEXT =
-  /\b(?<keep>(?:password|passwd|passphrase|pwd|pw|pass|secret)\s+(?:is|was)\s*[:=]?\s*)(?!\[MASKED:)[^\s,;]+/giu;
+// The value is a phrase between a pair of quotes (straight, typographic or guillemets), taken whole
+// up to the closing quote that is followed by a space, a delimiter or the end, so an apostrophe
+// inside it does not end it; otherwise (no quotes, or a quote never closed) it is everything up to
+// the next comma, semicolon or newline, or the end of the text, so no word of a multi-word
+// password is kept (P1-101).
+const QUOTED = [/"[\s\S]*?"/u, /'[\s\S]*?'/u, /“[\s\S]*?”/u, /‘[\s\S]*?’/u, /«[\s\S]*?»/u];
+const QUOTED_SOURCE = QUOTED.map((quoted) => quoted.source).join('|');
+const UNQUOTED = /[^\s,;](?:[^,;\r\n]*[^\s,;\r\n])?/u.source;
+const KEYWORD =
+  /\b(?<keep>(?:password|passwd|passphrase|pwd|pw|pass|secret)\s+(?:is|was)\s*[:=]?\s*)/u;
+const SECRET_IN_TEXT = new RegExp(
+  `${KEYWORD.source}(?!\\[MASKED:)(?:(?:${QUOTED_SOURCE})(?=[\\s,;.]|$)|${UNQUOTED})`,
+  'giu',
+);
 
 /** The text with every NUL replaced by U+FFFD. */
 // RF-1109
