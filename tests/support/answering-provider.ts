@@ -12,14 +12,16 @@ import { ProviderCallError } from '../../src/infrastructure/providers/provider-c
 // show one role reachable and another with its error. It never touches the network. With
 // `holdUnderstandMs` the first reader call of each understand run waits that long, so the run is
 // still working when a second run is asked for and that one waits in the queue (P1-34); the later
-// calls of the run answer at once, so a run of several areas takes no longer than one hold.
+// calls of the run answer at once, so a run of several areas takes no longer than one hold. A run
+// is told apart by its trace id (one per run): the run key has one-second resolution and is shared
+// by every user of the server.
 
 export class AnsweringProvider implements LlmProvider {
   private readonly failing: ReadonlySet<string>;
 
   private readonly holdUnderstandMs: number;
 
-  /** The understand runs whose first reader call has been held. */
+  /** The trace ids of the understand runs whose first reader call has been held. */
   private readonly held = new Set<string>();
 
   constructor(failing: readonly string[] = [], holdUnderstandMs = 0) {
@@ -28,8 +30,7 @@ export class AnsweringProvider implements LlmProvider {
   }
 
   async complete(request: LlmRequest): Promise<LlmResponse> {
-    const { role, runId } = request.context;
-    if (this.holdsFirstReaderCall(role, runId)) {
+    if (this.holdsFirstReaderCall(request.context)) {
       await sleep(this.holdUnderstandMs, undefined, { signal: request.signal }).catch(
         () => undefined,
       );
@@ -46,12 +47,12 @@ export class AnsweringProvider implements LlmProvider {
     };
   }
 
-  private holdsFirstReaderCall(role: string, runId: string): boolean {
+  private holdsFirstReaderCall({ role, runId, traceId }: LlmRequest['context']): boolean {
     if (this.holdUnderstandMs <= 0 || role !== 'reader' || !runId.endsWith('-understand')) {
       return false;
     }
-    if (this.held.has(runId)) return false;
-    this.held.add(runId);
+    if (this.held.has(traceId)) return false;
+    this.held.add(traceId);
     return true;
   }
 }
