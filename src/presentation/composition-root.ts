@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger, LogRecord } from '../application/ports/logger.js';
+import type { Scheduler } from '../application/ports/scheduler.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { readAppVersion } from '../infrastructure/config/app-version.js';
 import type { Environment } from '../infrastructure/config/environment.js';
@@ -45,6 +46,8 @@ export interface ApplicationOptions {
   readonly output: { write(text: string): unknown };
   /** The fake GitHub and fake provider of the end-to-end tests; refused without ROSETTA_TEST=1. */
   readonly doubles?: TestDoubles;
+  /** Where the periodic jobs are registered; an `IntervalScheduler` unless a test passes its own. */
+  readonly scheduler?: Scheduler;
 }
 
 export interface Application {
@@ -231,7 +234,8 @@ export function composeApplication(options: ApplicationOptions): Application {
           address = await server.listen(options.listen);
         },
         startScheduler: () => {
-          cancels.push(...startScheduledTasks(createScheduler(logger), tasks));
+          const scheduler = options.scheduler ?? createScheduler(logger);
+          cancels.push(...startScheduledTasks(scheduler, tasks));
         },
       });
       return address;

@@ -1,5 +1,6 @@
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { transitionsDone } from './support/transitions.js';
 
 // RNF-005, RF-1303, RF-1201, RF-1009, RNF-010, P1-13: the smoke spec. It runs in every project of
 // playwright.config.ts (two viewports, light and dark) against the test server: the server answers
@@ -45,9 +46,16 @@ test.describe('smoke', () => {
 test.describe('smoke accessibility', () => {
   test('RNF-010 the sign-in page has no serious or critical accessibility violation', async ({
     page,
-  }) => {
+  }, info) => {
     await page.goto('/sign-in');
     await expect(page.locator('#root')).not.toBeEmpty();
+    // The theme is set after the first render, so in the dark scheme the Sign in button fades from
+    // the light brand colour to the dark one under dark ink (2.7:1 half-way): axe waits for it.
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-theme',
+      info.project.use.colorScheme ?? 'light',
+    );
+    await transitionsDone(page);
 
     await expectNoSeriousViolations(page);
   });

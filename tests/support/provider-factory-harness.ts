@@ -102,6 +102,8 @@ export interface FactoryHarnessOptions {
   readonly caps?: ServerCaps;
   /** The administrator's default models (DEC-106). */
   readonly defaultRoles?: DefaultRoles;
+  /** The application log the guards write to; a fresh in-memory one by default. */
+  readonly logger?: MemoryLogger;
 }
 
 export interface FactoryHarness extends FakeAdapters {
@@ -160,7 +162,7 @@ function runSinks(masker: SecretMasker): RunSinks {
 export function factoryHarness(options: FactoryHarnessOptions = {}): FactoryHarness {
   const clock = new FixedClock(factoryInstant);
   const masker = new SecretMasker();
-  const logger = new MemoryLogger(clock, masker);
+  const logger = options.logger ?? new MemoryLogger(clock, masker);
   const box = new AesGcmSecretBox({ current: fixtureSecret(1) });
   const keys = new MemoryProviderKeyRepository();
   const ledger = new SpyLedger(new MemoryCostLedger());

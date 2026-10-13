@@ -8,6 +8,7 @@ import './styles/components.css';
 import './styles/pages.css';
 import './styles/live-run.css';
 import './styles/live-run-controls.css';
+import './styles/live-coverage.css';
 import './styles/run-answers.css';
 import './styles/api-calls.css';
 import './styles/cost.css';

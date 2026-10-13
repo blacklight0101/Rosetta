@@ -122,6 +122,8 @@ export interface TestServerOptions
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
   readonly dummyHash?: string;
+  /** RF-1011: a data folder makes the calls and logs routes the composition root's, over its logs. */
+  readonly logDir?: string;
 }
 
 interface ProjectParts {
@@ -254,12 +256,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     report,
     providerRecordings,
     defaultRoles,
+    logDir,
     ...overrides
   } = options;
   const clock = new FixedClock('2026-10-11T09:00:00.000Z');
-  const masker = new SecretMasker();
+  const [masker, health] = [new SecretMasker(), new FakeDatabaseHealth(true)];
   const logger = new MemoryLogger(clock, masker);
-  const health = new FakeDatabaseHealth(true);
   const { users, sessions, usage, projects, costs, folders, snapshots } = memoryStores();
   const auditLog = new MemoryAuditLog(masker);
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
@@ -267,7 +269,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
   const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
-  const [keys, stores] = [keyParts(), { projects, ...files, clock }];
+  const [keys, stores] = [keyParts(), { projects, ...files, clock, masker, logDir }];
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
