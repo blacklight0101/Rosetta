@@ -7,7 +7,7 @@ import { overviewOf } from './run-summary.js';
 // so does a step the run never reached; at most one step is current. The report is built from the page
 // of a finished run, never by the run, so its step always waits.
 
-export type StepName = 'Snapshot' | 'Scan' | 'Understand' | 'Verify' | 'Report';
+type StepName = 'Snapshot' | 'Scan' | 'Understand' | 'Verify' | 'Report';
 export type StepStatus = 'done' | 'current' | 'waiting';
 
 export interface Step {

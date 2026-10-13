@@ -5,7 +5,7 @@ import { shareOf } from './run-summary.js';
 // top bar shows: the cost so far against the run's cap and its share. From 80% it warns and from 95%
 // it is in danger; the level is said in words as well, so colour is never the only signal.
 
-export type MeterLevel = 'ok' | 'warn' | 'danger';
+type MeterLevel = 'ok' | 'warn' | 'danger';
 
 export interface TopBarMeter {
   /** Whole percent of the cap spent, never above 100. */

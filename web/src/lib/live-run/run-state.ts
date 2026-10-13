@@ -71,7 +71,7 @@ export interface CapsState {
   readonly maxTokens: number;
 }
 
-export interface ScanState {
+interface ScanState {
   readonly files: number;
   readonly areas: number;
 }
