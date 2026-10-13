@@ -39,15 +39,17 @@ const keyStart = '(?<![A-Za-z0-9])';
 // The pieces of a `mysql` command line. An option is a word that starts with `-`, with at most one
 // bare or quoted value; it is atomic (a lookahead capture, then a back reference), so a value never
 // turns into a positional word on a retry and the scan stays linear. A positional word (a database
-// or table name) is an identifier, so prose with a comma or many words is not read as a command.
+// or table name, a file) is any word that does not start with `-` and holds no comma, semicolon,
+// quote or shell operator, so prose with a comma or many words is not read as a command.
 const mysqlValue = String.raw`(?:"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s"'-]\S*)`;
 const mysqlOption = (name: string): string =>
   String.raw`(?=(?<${name}>[ \t]+-\S+(?:[ \t]+${mysqlValue})?))\k<${name}>`;
-const mysqlWord = String.raw`[ \t]+[\w.$]+(?=[ \t])`;
+const mysqlWord = String.raw`[ \t]+[^\s\-,;"'<>|&=][^\s,;"'<>|&]*(?=[ \t])`;
 // At most three positional words, each followed by at most 16 options, anywhere before `-p`.
 const mysqlArguments = String.raw`(?:${mysqlOption('first')}){0,16}(?:${mysqlWord}(?:${mysqlOption('later')}){0,16}){0,3}`;
-// A quoted password runs to its closing quote (or the end of the line), spaces included.
-const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|\S+)`;
+// A quoted part runs to its closing quote (or the end of the line), spaces included; the token goes
+// on to the next space, so `-p"abc"def` is masked whole. The alternatives start differently.
+const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'])+`;
 // The start of the value of an XML element whose name ends in a password name, with an optional
 // prefix and attributes, and blanks before the value.
 const xmlPasswordOpen = String.raw`<[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>[ \t]{0,16}`;
@@ -141,7 +143,7 @@ const defaultRules: readonly MaskRule[] = [
     // in production -pretty much" is not read as a password.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>\bmysql(?:admin|dump)?${mysqlArguments}[ \t]+-p)${notMasked}${mysqlPassword}`,
+      String.raw`(?<keep>\bmysql(?:admin|dump)?(?:\.exe)?${mysqlArguments}[ \t]+-p)${notMasked}${mysqlPassword}`,
       'g',
     ),
   },
