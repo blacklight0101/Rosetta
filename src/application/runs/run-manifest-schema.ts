@@ -15,6 +15,9 @@ const roleSchema = z.object({
   model: text,
   modelVersion: nullableText,
   modelDigest: nullableText,
+  // Written from DEC-114 on; a role stored before that reads as unknown.
+  contextTokens: count.nullable().default(null),
+  contextSource: nullableText.default(null),
   toolMode: text,
   maxOutputTokens: count,
   temperature: z.number().nullable(),

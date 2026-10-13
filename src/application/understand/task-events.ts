@@ -1,5 +1,5 @@
 import type { AgentTaskRequest } from '../agent/agent-loop.js';
-import type { LlmProvider } from '../ports/llm-provider.js';
+import type { LlmProvider, LlmResponse } from '../ports/llm-provider.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
 
 // RF-1002, data-model.md section 3.9: the steps of one reader task as run events. The guarded
@@ -14,8 +14,8 @@ type AgentTools = AgentTaskRequest['tools'];
 export interface TaskEvents {
   readonly events: RunEventPublisher;
   readonly agentTaskId: string;
-  /** Called with the model version of each answer (RNF-004). */
-  readonly onModelVersion: (modelVersion: string) => Promise<void>;
+  /** Called with each answer: its model version (RNF-004) and the Ollama context it was sent with. */
+  readonly onAnswer: (response: LlmResponse) => Promise<void>;
 }
 
 /** The model calls the task has made so far; a tool call belongs to the latest one. */
@@ -55,7 +55,7 @@ export function providerWithEvents(
         { turn: turns.value, inputTokens, outputTokens },
         task.agentTaskId,
       );
-      await task.onModelVersion(response.modelVersion);
+      await task.onAnswer(response);
       return response;
     },
   };

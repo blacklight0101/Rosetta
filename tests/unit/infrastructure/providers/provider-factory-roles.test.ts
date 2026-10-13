@@ -7,6 +7,7 @@ import {
   serverKeyText,
   settingsFor,
   userKeyText,
+  withContextTokens,
   withKeySource,
 } from '../../../support/provider-factory-harness.js';
 import { sampleKeyRecord, sampleSealed } from '../../../support/provider-key-fixtures.js';
@@ -95,6 +96,19 @@ describe('the provider set of a run: role settings', () => {
         contextTokens: 'auto',
       },
     ]);
+  });
+
+  it('RF-401 hands the adapter the fixed context size the project sets (DEC-114)', async () => {
+    const harness = factoryHarness({ ollamaUrl: 'http://localhost:11434' });
+    const settings = withContextTokens(
+      settingsFor({ reader: { provider: 'ollama', model: 'gemma4:e4b' } }),
+      'ollama',
+      8192,
+    );
+
+    await harness.factory.build(harness.request({ settings, roles: ['reader'] }));
+
+    expect(harness.built).toMatchObject([{ kind: 'ollama', contextTokens: 8192 }]);
   });
 });
 
