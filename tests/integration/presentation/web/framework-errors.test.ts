@@ -1,4 +1,3 @@
-import { setTimeout as sleep } from 'node:timers/promises';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { fallbackSecurityHeaders } from '../../../../src/presentation/web/security-headers.js';
@@ -28,17 +27,71 @@ function server(): TestServer {
   return current;
 }
 
-async function listening(): Promise<{ app: TestServer; address: string }> {
+/** Promises that let the closing test wait for events instead of sleeping. */
+interface Gates {
+  /** The slow handler has started, so its request is in flight. */
+  readonly slowEntered: Promise<undefined>;
+  /** Lets the slow handler answer. */
+  readonly releaseSlow: () => void;
+  /** Fastify has begun to close: its closing flag is set and the `preClose` hooks run. */
+  readonly closeStarted: Promise<undefined>;
+  /** The server has received the request for the missing asset, still queued behind the slow one. */
+  readonly assetReceived: Promise<undefined>;
+}
+
+const missingAsset = '/assets/no-such-file.js';
+
+function addGates(app: TestServer): Gates {
+  const slowEntered = Promise.withResolvers<undefined>();
+  const release = Promise.withResolvers<undefined>();
+  const closeStarted = Promise.withResolvers<undefined>();
+  const assetReceived = Promise.withResolvers<undefined>();
+  app.server.get('/test/slow', { config: { access: 'public' } }, async () => {
+    slowEntered.resolve(undefined);
+    await release.promise;
+    return { ok: true };
+  });
+  app.server.addHook('preClose', () => {
+    closeStarted.resolve(undefined);
+  });
+  app.server.addHook('onRequest', (request, _reply, done) => {
+    if (request.url === missingAsset) assetReceived.resolve(undefined);
+    done();
+  });
+  return {
+    slowEntered: slowEntered.promise,
+    releaseSlow: () => {
+      release.resolve(undefined);
+    },
+    closeStarted: closeStarted.promise,
+    assetReceived: assetReceived.promise,
+  };
+}
+
+/**
+ * Whether the promise settles within `ms`. The wait is bounded so that a request the server refuses
+ * before routing fails the test on its status line, not on the test timeout.
+ */
+async function arrivesWithin(promise: Promise<undefined>, ms: number): Promise<boolean> {
+  const timer: { id?: NodeJS.Timeout } = {};
+  const late = new Promise<boolean>((resolve) => {
+    timer.id = setTimeout(() => {
+      resolve(false);
+    }, ms);
+  });
+  const arrived = await Promise.race([promise.then(() => true), late]);
+  clearTimeout(timer.id);
+  return arrived;
+}
+
+async function listening(): Promise<{ app: TestServer; address: string; gates: Gates }> {
   const app = server();
   app.server.post('/test/echo', { config: { access: 'public' } }, (request) => ({
     got: request.body,
   }));
-  app.server.get('/test/slow', { config: { access: 'public' } }, async () => {
-    await sleep(400);
-    return { ok: true };
-  });
+  const gates = addGates(app);
   const address = await app.server.listen({ host: '127.0.0.1', port: 0 });
-  return { app, address };
+  return { app, address, gates };
 }
 
 function expectProtected(headers: Map<string, string> | Record<string, unknown>): void {
@@ -185,18 +238,21 @@ describe('tunnelling requests', () => {
 
 describe('requests while the server closes', () => {
   it('RF-007 a request on a busy keep-alive connection during close() is served by the normal chain', async () => {
-    const { app, address } = await listening();
+    const { app, address, gates } = await listening();
     const connection = await openRawConnection(address);
 
     connection.write('GET /test/slow HTTP/1.1\r\nHost: localhost\r\n\r\n');
-    await sleep(100);
+    await gates.slowEntered;
     const closing = app.server.close();
-    await sleep(50);
-    connection.write('GET /assets/no-such-file.js HTTP/1.1\r\nHost: localhost\r\n\r\n');
+    await gates.closeStarted;
+    connection.write(`GET ${missingAsset} HTTP/1.1\r\nHost: localhost\r\n\r\n`);
+    const received = await arrivesWithin(gates.assetReceived, 1000);
+    gates.releaseSlow();
     const responses = parseRawResponses(await connection.settle());
     await closing;
 
     expect(responses.map((response) => response.status)).toEqual([200, 404]);
+    expect(received).toBe(true);
     expect(responses[1]?.headers.get('connection')).toBe('close');
     expectProtected(responses[1]?.headers ?? new Map());
     expect(JSON.parse(responses[1]?.body ?? '')).toMatchObject({ code: ERROR_CODES.notFound });
