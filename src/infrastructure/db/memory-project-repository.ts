@@ -54,6 +54,12 @@ export class MemoryProjectRepository implements ProjectRepository {
     return Promise.resolve(updated);
   }
 
+  remove(userId: string, projectId: string): Promise<boolean> {
+    if (this.owned(userId, projectId) === undefined) return Promise.resolve(false);
+    this.projects.delete(projectId);
+    return Promise.resolve(true);
+  }
+
   private owned(userId: string, projectId: string): Project | undefined {
     const project = this.projects.get(projectId);
     return project?.userId === userId ? project : undefined;

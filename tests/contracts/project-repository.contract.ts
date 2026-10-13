@@ -103,10 +103,37 @@ function updatingTests(name: string, fresh: FreshProjects): void {
   });
 }
 
+function removalTests(name: string, fresh: FreshProjects): void {
+  it(`RF-1012 ${name} removes the owner's project and keeps the others`, async () => {
+    const projects = await fresh();
+    const doomed = sampleProject({ userId: amy });
+    const kept = sampleProject({ userId: amy });
+    for (const project of [doomed, kept]) await projects.insertOrFind(project);
+
+    expect(await projects.remove(amy, doomed.id)).toBe(true);
+
+    expect(await projects.find(amy, doomed.id)).toBeUndefined();
+    expect(await projects.list(amy)).toEqual([kept]);
+    expect(await projects.remove(amy, doomed.id)).toBe(false);
+  });
+
+  it(`RF-1105 ${name} removes nothing for another user's project, an unknown id or a bad id`, async () => {
+    const projects = await fresh();
+    const project = sampleProject({ userId: amy });
+    await projects.insertOrFind(project);
+
+    expect(await projects.remove(bob, project.id)).toBe(false);
+    expect(await projects.remove(amy, unknownId)).toBe(false);
+    expect(await projects.remove(amy, 'not-a-uuid')).toBe(false);
+    expect(await projects.find(amy, project.id)).toEqual(project);
+  });
+}
+
 export const projectOwners: readonly string[] = [amy, bob];
 
 export function projectRepositoryContract(name: string, fresh: FreshProjects): void {
   storingTests(name, fresh);
   scopingTests(name, fresh);
   updatingTests(name, fresh);
+  removalTests(name, fresh);
 }

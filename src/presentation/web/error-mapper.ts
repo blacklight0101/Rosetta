@@ -54,6 +54,7 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.notFound]: 404,
   [ERROR_CODES.conflict]: 409,
   [ERROR_CODES.runStageNotAvailable]: 409,
+  [ERROR_CODES.deleteRefusedInUse]: 409,
   [ERROR_CODES.codeMapMissing]: 409,
   [ERROR_CODES.runInProgress]: 409,
   [ERROR_CODES.userNameTaken]: 409,
