@@ -25,7 +25,7 @@ export interface ListAuditRequest {
 /** The periods the audit view offers: the last 24 hours, 7 days or 30 days. */
 export const AUDIT_PERIOD_DAYS = [1, 7, 30] as const;
 
-export type AuditPeriodDays = (typeof AUDIT_PERIOD_DAYS)[number];
+type AuditPeriodDays = (typeof AUDIT_PERIOD_DAYS)[number];
 
 export interface AuditPage {
   /** The start of the window. */
