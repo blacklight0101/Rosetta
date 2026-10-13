@@ -1,13 +1,16 @@
 import { EstimateRun } from '../application/estimate/estimate-run.js';
+import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
+import { BuildReport } from '../application/use-cases/build-report.js';
 import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
 import { ListAnswers } from '../application/use-cases/list-answers.js';
 import { RecordAnswers } from '../application/use-cases/record-answers.js';
+import { ReadRunFile } from '../application/use-cases/read-run-file.js';
 import { RunScan } from '../application/use-cases/run-scan.js';
 import { StartRun } from '../application/use-cases/start-run.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
@@ -25,6 +28,8 @@ import { JsonlEventLog } from '../infrastructure/events/jsonl-event-log.js';
 import { SseBroadcaster } from '../infrastructure/events/sse-broadcaster.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
 import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
+import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
+import { NodeRunFileReader } from '../infrastructure/files/node-run-file-reader.js';
 import { YazlArchiveWriter } from '../infrastructure/files/yazl-archive-writer.js';
 import type { FetchFunction } from '../infrastructure/github/github-http-client.js';
 import { GitHubSnapshotFetcher } from '../infrastructure/github/github-snapshot-fetcher.js';
@@ -33,6 +38,7 @@ import type { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-reg
 import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import { FileReportWriter } from '../infrastructure/report/file-report-writer.js';
 import { StreamRegistry } from './web/event-stream.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { RunServices } from './web/run-routes.js';
@@ -43,6 +49,9 @@ import type { StartUpSteps } from './start-up.js';
 // routes. The executors of the stages are registered here as their cards land (the scan run of
 // P1-23, the understand run of P1-33); SubmitRun refuses a stage without one with RST-2305 (409), and `POST
 // /api/projects/:id/runs` starts the stages that have one (RF-003, RF-121, RF-126).
+
+// This file is at the same depth in `src/` and in the built `dist/`, so `../../` is the repository root.
+const reportTemplates = fileURLToPath(new URL('../../templates/report/', import.meta.url));
 
 export interface RunParts {
   readonly pool: DatabasePool;
@@ -125,6 +134,8 @@ function keepAliveScheduler(logger: Logger): IntervalScheduler {
 
 interface ServiceParts {
   readonly parts: RunParts;
+  readonly writer: NodeOutputWriter;
+  readonly manifests: FileRunManifestStore;
   readonly runs: PgRunIndex;
   readonly log: JsonlEventLog;
   readonly broadcaster: SseBroadcaster;
@@ -138,6 +149,7 @@ interface ServiceParts {
 /** The use cases behind the run routes (RF-003, RF-1006, RF-1108, RF-143). */
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
+  const { writer, manifests } = service;
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   return {
     startRun: new StartRun({
@@ -154,6 +166,12 @@ function runServices(service: ServiceParts): RunServices {
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
+    readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),
+    buildReport: new BuildReport({
+      ...{ runs, manifests, history: log },
+      files: new FileRunTextFiles(writer),
+      writer: new FileReportWriter({ writer, masker: parts.masker, assetsFolder: reportTemplates }),
+    }),
     listAnswers: new ListAnswers({ runs, answers }),
     recordAnswers: new RecordAnswers({ runs, answers }),
     heartbeat: keepAliveScheduler(parts.logger),
@@ -234,7 +252,7 @@ export function composeRuns(parts: RunParts): RunComposition {
   return {
     queue,
     services: runServices({
-      ...{ parts, runs, log, broadcaster, projects, submitRun, queue, answers },
+      ...{ parts, writer, manifests, runs, log, broadcaster, projects, submitRun, queue, answers },
       scans: composeScanResults({ dataDir, writer, manifests, logger }),
     }),
     submitRun,
