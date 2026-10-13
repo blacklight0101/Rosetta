@@ -1,7 +1,10 @@
 import { execFile } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 // RNF-005, P1-13: scripts/run-e2e.mjs builds the front end and runs the Playwright project against
 // a disposable database. In CI mode it is part of `npm run test:ci` on Linux only, and only where a
@@ -11,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 const run = promisify(execFile);
 const script = join(process.cwd(), 'scripts', 'run-e2e.mjs');
+const shardMap = z.record(z.string(), z.array(z.string()));
 const withoutDatabase = { ...process.env, ROSETTA_TEST_DATABASE_URL: '', ROSETTA_E2E_OWN_JOB: '' };
 const inOwnJob = {
   ...process.env,
@@ -37,5 +41,39 @@ describe('scripts/run-e2e.mjs', () => {
 
     await expect(attempt).rejects.toMatchObject({ code: 1 });
     await expect(attempt).rejects.toThrow(/ROSETTA_TEST_DATABASE_URL/u);
+  });
+});
+
+describe('scripts/run-e2e.mjs --shard selection (RNF-005)', () => {
+  const dryRun = { ...withoutDatabase, ROSETTA_E2E_DRY_RUN: '1' };
+
+  it('RNF-005 a shard runs exactly the spec files that shards.json gives it', async () => {
+    const { stdout } = await run('node', [script, '--shard=2/3'], { env: dryRun });
+    const map = shardMap.parse(
+      JSON.parse(await readFile(join(process.cwd(), 'tests', 'e2e', 'shards.json'), 'utf8')),
+    );
+
+    expect(JSON.parse(stdout)).toEqual(map['2']);
+  });
+
+  it('RNF-005 a shard the map does not have is refused with a plain message', async () => {
+    const attempt = run('node', [script, '--shard=4/3'], { env: withoutDatabase });
+
+    await expect(attempt).rejects.toMatchObject({ code: 1 });
+    await expect(attempt).rejects.toThrow(/has no spec files for shard 4/u);
+  });
+
+  it('RNF-005 an empty shard is refused, so it cannot run every spec in every shard', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'rosetta-shards-'));
+    try {
+      await mkdir(join(root, 'tests', 'e2e'), { recursive: true });
+      await writeFile(join(root, 'tests', 'e2e', 'shards.json'), JSON.stringify({ 1: [] }));
+      const attempt = run('node', [script, '--shard=1/3'], { cwd: root, env: dryRun });
+
+      await expect(attempt).rejects.toMatchObject({ code: 1 });
+      await expect(attempt).rejects.toThrow(/has no spec files for shard 1/u);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

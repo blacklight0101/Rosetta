@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Clock } from '../../../src/application/ports/clock.js';
-import { acquireCapsLock } from '../../e2e/support/caps-lock.js';
+import { acquireCapsLock, capsLockFolder } from '../../e2e/support/caps-lock.js';
 
 // RF-1106, P1-131: the caps of the administration page are server-wide, so the end-to-end specs
 // that write them take turns. The lock is a folder: only one process can create it.
@@ -17,7 +17,7 @@ describe('e2e caps lock', () => {
     folder = join(root, 'lock');
   });
   afterEach(async () => {
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it('RF-1106 lets a second taker in only after the first released', async () => {
@@ -56,7 +56,7 @@ describe('e2e caps lock, a holder that is gone', () => {
     folder = join(root, 'lock');
   });
   afterEach(async () => {
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it('RF-1106 takes over a lock whose holder is gone (older than the stale limit)', async () => {
@@ -93,7 +93,7 @@ describe('e2e caps lock, the takeover gate', () => {
     gate = `${folder}.takeover`;
   });
   afterEach(async () => {
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it('RF-1106 a takeover waits while another waiter holds the takeover gate', async () => {
@@ -139,7 +139,7 @@ describe('e2e caps lock, the re-check under the gate', () => {
     folder = join(root, 'lock');
   });
   afterEach(async () => {
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it('RF-1106 a waiter that judged the lock stale re-checks it under the gate before removing it', async () => {
@@ -159,5 +159,28 @@ describe('e2e caps lock, the re-check under the gate', () => {
 
     expect(lock.waitedMs).toBeGreaterThanOrEqual(400);
     await lock.release();
+  });
+});
+
+describe('e2e caps lock, one folder per run', () => {
+  it('RNF-005 a run key gives each run its own folder, so a killed run cannot hold the next one', async () => {
+    const before = process.env['ROSETTA_E2E_RUN_KEY'];
+    process.env['ROSETTA_E2E_RUN_KEY'] = 'killed-run';
+    const killed = capsLockFolder();
+    try {
+      // The killed run took the lock and never released it.
+      await acquireCapsLock(killed);
+      process.env['ROSETTA_E2E_RUN_KEY'] = 'next-run';
+
+      expect(capsLockFolder()).not.toBe(killed);
+      const lock = await acquireCapsLock(capsLockFolder());
+
+      expect(lock.waitedMs).toBeLessThan(200);
+      await lock.release();
+    } finally {
+      if (before === undefined) delete process.env['ROSETTA_E2E_RUN_KEY'];
+      else process.env['ROSETTA_E2E_RUN_KEY'] = before;
+      await rm(killed, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
   });
 });
