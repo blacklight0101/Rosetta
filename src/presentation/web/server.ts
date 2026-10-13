@@ -23,6 +23,7 @@ import { recordCsrfRefusal, registerAccessHooks } from './access-hooks.js';
 import { registerAccountRoutes } from './account-routes.js';
 import { registerAdminRoutes, type AdminServices } from './admin-routes.js';
 import { MAX_HEADER_BYTES } from './area-limits.js';
+import { registerErrorCatalogueRoutes } from './error-catalogue-routes.js';
 import { registerCapRoutes, type CapServices } from './cap-routes.js';
 import { registerCostRoutes } from './cost-routes.js';
 import { registerDefaultRoleRoutes, type DefaultRoleServices } from './default-role-routes.js';
@@ -245,6 +246,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     registerProjectRoutes(instance, options.projects);
     registerRunRoutes(instance, options.runs);
     registerCostRoutes(instance, options.projects);
+    registerErrorCatalogueRoutes(instance);
     registerHistoryRoutes(instance, options.history);
     done();
   });
