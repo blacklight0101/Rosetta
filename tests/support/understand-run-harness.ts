@@ -197,7 +197,7 @@ function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
         const events = await s.log.read(scopeOf(latest), 0);
         if (events.at(-1)?.type !== 'run.ended') throw new Error('No run.ended yet');
       },
-      { timeout: 20_000 },
+      { timeout: 20_000, interval: 2 },
     );
     if (latest === undefined) throw new Error('The run vanished');
     return latest;
