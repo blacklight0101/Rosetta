@@ -47,20 +47,22 @@ describe('GitHub Actions workflows: files', () => {
     expect(await ciJob('verify')).not.toContain('playwright install');
   });
 
-  it('RNF-005 the e2e project runs in two shards, and the matrix, the name and the step agree', async () => {
-    const shard = await ciJob('e2e-shard');
-
-    expect(shard).toContain('shard: [1, 2]');
-    expect(shard).toContain('name: e2e (shard ${{ matrix.shard }}/2)');
-    expect(shard).toContain('run: node scripts/run-e2e.mjs "--shard=$SHARD/2"');
-  });
-
   it('DEC-35 the pull request title reaches commitlint through env: TITLE and audit gets today', async () => {
     const text = await ci();
 
     expect(text).toContain('TITLE: ${{ github.event.pull_request.title }}');
     expect(text).toContain('"$TITLE"');
     expect(text).toContain('--today "$(date -u +%F)"');
+  });
+});
+
+describe('GitHub Actions workflows: e2e shards', () => {
+  it('RNF-005 the e2e project runs in two shards, and the matrix, the name and the step agree', async () => {
+    const shard = await ciJob('e2e-shard');
+
+    expect(shard).toContain('shard: [1, 2]');
+    expect(shard).toContain('name: e2e (shard ${{ matrix.shard }}/2)');
+    expect(shard).toContain('run: node scripts/run-e2e.mjs "--shard=$SHARD/2"');
   });
 });
 

@@ -147,14 +147,14 @@ jobs:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
 
   e2e-shard:
-    name: e2e (shard ${{ matrix.shard }}/3)
+    name: e2e (shard ${{ matrix.shard }}/2)
     needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2]
     services:
       # Disposable database for the end-to-end tests; the credentials are throwaway.
       postgres:
@@ -188,9 +188,9 @@ jobs:
       - name: Install Chromium
         if: needs.changes.outputs.code != 'false'
         run: npx playwright install --with-deps chromium
-      # One third of the Playwright project (RNF-005); the three shards together run every spec.
+      # One half of the Playwright project (RNF-005); the two shards together run every spec.
       - if: needs.changes.outputs.code != 'false'
-        run: node scripts/run-e2e.mjs "--shard=$SHARD/3"
+        run: node scripts/run-e2e.mjs "--shard=$SHARD/2"
         env:
           SHARD: ${{ matrix.shard }}
           ROSETTA_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/rosetta_test

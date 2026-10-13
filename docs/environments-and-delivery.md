@@ -122,7 +122,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
 | Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; the Playwright e2e project runs only in the `e2e-shard` jobs, which install Chromium with `npx playwright install --with-deps chromium`; `verify` installs no browser) | yes |
-| End-to-end tests | job `e2e-shard`: the Playwright project split in three shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/3`, each with its own PostgreSQL service); job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
+| End-to-end tests | job `e2e-shard`: the Playwright project split in two shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/2`, each with its own PostgreSQL service; two since 2026-10-13, when behavioural tests began to run in one Playwright project instead of four); job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
 | Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
 | Secret scan | gitleaks action | yes |
 | Static analysis | CodeQL (`javascript-typescript`), on pull requests and weekly | yes, for high and critical alerts |
