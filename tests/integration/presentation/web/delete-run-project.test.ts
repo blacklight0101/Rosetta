@@ -32,7 +32,7 @@ describe('DELETE /api/runs/:runId', () => {
     expect(test.folders.has({ userId, projectId })).toBe(true);
     const gone = await amy.request({ method: 'GET', url: `/api/runs/${done.id}` });
     expect(gone.statusCode).toBe(404);
-    const entry = test.logger.entries.find((candidate) => candidate.level === 'info');
+    const entry = test.logger.entries.find((candidate) => candidate.logger === 'history');
     expect(entry).toMatchObject({ data: { runKey: done.runKey, freedBytes: 5 } });
   });
 
@@ -134,7 +134,7 @@ describe('DELETE /api/projects/:id once its runs have ended', () => {
     }
     const totalsAfter = (await amy.request({ method: 'GET', url: '/api/account/totals' })).body;
     expect(totalsAfter).toBe(totalsBefore);
-    const entry = test.logger.entries.find((candidate) => candidate.level === 'info');
+    const entry = test.logger.entries.find((candidate) => candidate.logger === 'history');
     expect(entry).toMatchObject({ data: { projectId, freedBytes: 7 } });
   });
 });

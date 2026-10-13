@@ -77,7 +77,7 @@ describe('DELETE /api/admin/snapshots/:key', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ freedBytes: 18_400_000 });
     expect(test.snapshots.removals).toEqual([unusedKey]);
-    const entry = test.logger.entries.find((candidate) => candidate.level === 'info');
+    const entry = test.logger.entries.find((candidate) => candidate.logger === 'history');
     expect(entry).toMatchObject({ data: { snapshot: unusedKey, freedBytes: 18_400_000 } });
   });
 

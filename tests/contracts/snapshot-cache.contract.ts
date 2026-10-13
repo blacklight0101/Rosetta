@@ -6,7 +6,7 @@ import { sampleCachedSnapshot } from '../support/snapshot-listing-fixtures.js';
 // tests/support) passes this suite. RF-1012: complete snapshots are listed by repository, newest
 // download first, and a removal takes one snapshot and nothing else.
 
-export interface CacheUnderTest {
+interface CacheUnderTest {
   readonly cache: SnapshotCache;
   /** Puts a complete snapshot into the cache. */
   readonly add: (snapshot: CachedSnapshot) => Promise<void>;

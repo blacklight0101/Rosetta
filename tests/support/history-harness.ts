@@ -57,6 +57,7 @@ export async function createHistoryHarness(): Promise<HistoryHarness> {
   });
   test.runs.executor.settle(first.id, { endState: 'Completed' });
   const done = await test.runs.ended(first);
+  test.clock.advance(60_000);
   const live = await submit();
   await vi.waitFor(() => {
     if (test.runs.executor.started.length < 2) throw new Error('The second run has not started');

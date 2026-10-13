@@ -10,6 +10,7 @@ import type {
 import type { RunScope } from '../../application/ports/run-events.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { isRealFolder } from './real-folder.js';
 import { runPath, workspaceRoot } from './workspace-paths.js';
 
 // RF-008, RF-1105, RF-005, data-model.md section 2: the zip of a run folder, written while it is
@@ -34,13 +35,6 @@ function locate(realData: string, scope: RunScope, part: ArchivePart): string | 
     if (error instanceof RosettaError) return undefined;
     throw error;
   }
-}
-
-/** True when `folder` is a real folder: it exists, is not a link and no folder above it is one. */
-async function isRealFolder(folder: string): Promise<boolean> {
-  const info = await lstat(folder).catch(() => undefined);
-  if (!info?.isDirectory()) return false;
-  return (await realpath(folder)) === folder;
 }
 
 function byName(left: string, right: string): number {

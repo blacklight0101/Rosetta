@@ -22,6 +22,18 @@ function oldestStartFirst(left: Run, right: Run): number {
   return (left.startedAt ?? 0) - (right.startedAt ?? 0) || byId(left, right);
 }
 
+/** The use of a snapshot with one more run counted. */
+function withRun(key: string, before: SnapshotUsage | undefined, run: Run): SnapshotUsage {
+  const { runs = 0, active = 0, lastUsedAt = 0 } = before ?? {};
+  const used = run.endedAt ?? run.startedAt ?? run.queuedAt;
+  return {
+    snapshotKey: key,
+    runs: runs + 1,
+    active: active + (run.queueState === 'Ended' ? 0 : 1),
+    lastUsedAt: Math.max(lastUsedAt, used),
+  };
+}
+
 export class MemoryRunIndex implements RunIndex {
   private readonly runs = new Map<string, Run>();
 
@@ -73,19 +85,29 @@ export class MemoryRunIndex implements RunIndex {
   }
 
   removeEnded(userId: string, runId: string): Promise<boolean> {
-    void userId;
-    void runId;
-    return Promise.resolve(false);
+    const run = this.runs.get(runId);
+    if (run?.userId !== userId || run.queueState !== 'Ended') return Promise.resolve(false);
+    this.runs.delete(runId);
+    return Promise.resolve(true);
   }
 
   removeEndedOfProject(userId: string, projectId: string): Promise<void> {
-    void userId;
-    void projectId;
+    for (const run of [...this.runs.values()]) {
+      const own = run.userId === userId && run.projectId === projectId;
+      if (own && run.queueState === 'Ended') this.runs.delete(run.id);
+    }
     return Promise.resolve();
   }
 
   snapshotUsage(): Promise<readonly SnapshotUsage[]> {
-    return Promise.resolve([]);
+    const usage = new Map<string, SnapshotUsage>();
+    for (const run of this.runs.values()) {
+      if (run.snapshotKey !== null)
+        usage.set(run.snapshotKey, withRun(run.snapshotKey, usage.get(run.snapshotKey), run));
+    }
+    const byKey = (left: SnapshotUsage, right: SnapshotUsage): number =>
+      left.snapshotKey < right.snapshotKey ? -1 : 1;
+    return Promise.resolve([...usage.values()].sort(byKey));
   }
 
   private inState(state: Run['queueState']): Run[] {

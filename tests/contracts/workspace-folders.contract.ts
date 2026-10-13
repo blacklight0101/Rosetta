@@ -10,7 +10,7 @@ import type {
 
 export const folderUser = '00000000-0000-4000-9000-0000000000a1';
 export const folderProject = '00000000-0000-4000-a000-0000000000a1';
-export const otherProject = '00000000-0000-4000-a000-0000000000a2';
+const otherProject = '00000000-0000-4000-a000-0000000000a2';
 const firstRun = '20261012-100000-scan';
 const secondRun = '20261012-100100-understand';
 

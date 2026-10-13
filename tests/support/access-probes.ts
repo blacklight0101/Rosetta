@@ -102,8 +102,8 @@ const snapshotsUrl = '/api/admin/snapshots';
 
 /**
  * RF-1008, RF-1012, RF-1105: the history of a project, the deletion of a run and of a project (409
- * while one is in progress, so the owner's project with a running run answers 409) and the
- * administrator's snapshot list and deletion.
+ * for a run in progress; the project of the matrix has none) and the administrator's snapshot list
+ * and deletion.
  */
 const historyRoutes: Readonly<Record<string, readonly Probe[]>> = {
   'GET /api/projects/:id/history': [
@@ -117,7 +117,7 @@ const historyRoutes: Readonly<Record<string, readonly Probe[]>> = {
     { method: 'DELETE', url: () => '/api/runs/not-a-uuid', expected: active(401, 404) },
   ],
   'DELETE /api/projects/:id': [
-    { method: 'DELETE', url: (c) => `/api/projects/${c.projectId}`, expected: ownerOnly(409) },
+    { method: 'DELETE', url: (c) => `/api/projects/${c.projectId}`, expected: ownerOnly(200) },
     { method: 'DELETE', url: () => '/api/projects/not-a-uuid', expected: active(401, 404) },
   ],
   'GET /api/admin/snapshots': [{ method: 'GET', url: snapshotsUrl, expected: adminOnly(200) }],
