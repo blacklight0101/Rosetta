@@ -671,9 +671,18 @@ reached over HTTPS. The `image` job of CI builds the image, starts it against a 
 Test names start with the requirement id; failing tests are committed first (ADR-010). Rules:
 [conventions.md](conventions.md) section 7.
 
-**End-to-end harness (P1-13).** `playwright.config.ts` runs Chromium in four projects: the two viewports of the page
-walk (1280x800 for the web UI, 360x780 for the landing page, sign-in and report) in the light and the dark colour
-scheme. Playwright starts `tests/e2e/support/serve.ts`, the test server: it makes a disposable PostgreSQL schema
+**End-to-end harness (P1-13).** `playwright.config.ts` runs Chromium in four projects, the four views of the page walk
+(`tests/e2e/support/views.ts`): the two viewports (1280x800 for the web UI, 360x780 for the landing page, sign-in and
+report) in the light and the dark colour scheme. A test's tag decides where it runs, so a new spec needs no change to
+the configuration:
+
+| Tag | Runs in | For |
+|---|---|---|
+| none | `desktop-light` | behavioural tests: each runs once. Their axe checks (`expectNoSeriousViolations`) are made there in all four views on the page as it is (the viewport and `prefers-color-scheme` are switched, axe runs, the page is put back), so a state reached only inside a test, such as an open dialog or a paused run, keeps its check in light and dark at 1280 and 360 px |
+| `@visual` | all four projects | the visual sweep (`tests/e2e/visual/`, accounts `sweep-*` in `seed.ts`): every page the suite visits, with its data, is opened in each project and checked for axe (colour contrast among the rules), the colour scheme (`data-theme` and a light or dark background) and no sideways scroll (`scrollWidth <= clientWidth`, the 360 px check of RNF-010); also the few tests that read the project's colour scheme |
+| `@phone` | `desktop-light` and `phone-light` | tests about the 360 px layout; in `phone-light` such a test runs on its own, so it must not depend on an earlier test of its file |
+
+Playwright starts `tests/e2e/support/serve.ts`, the test server: it makes a disposable PostgreSQL schema
 (`rst_e2e_<port>`) in the database at `ROSETTA_TEST_DATABASE_URL`, sets `ROSETTA_TEST=1`, creates the seeded
 administrator through the bootstrap use case (RF-1102) and composes the application with `TestDoubles`, the only
 way the fake provider and the fake GitHub (`fetch` of the snapshot fetcher) reach the composition root; `TestDoubles.create`
