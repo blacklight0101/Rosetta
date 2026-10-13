@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { ApiClient, ApiResult } from './client.js';
 import {
   estimateSchema,
@@ -82,4 +83,28 @@ export function getRun(
 export function runDownloadPath(runId: string, part: 'zip' | 'handoff'): string {
   const file = part === 'zip' ? 'zip' : 'handoff.zip';
   return `/api/runs/${encodeURIComponent(runId)}/${file}`;
+}
+
+const reportBuiltSchema = z.object({ files: z.array(z.string()) });
+
+/**
+ * Asks for the report of an ended run (DEC-131): the server writes `report/` and lists the files.
+ * A run that is queued or running answers 409 `RST-1700`; another user's run answers 404.
+ */
+// RF-504
+export async function buildReport(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
+  const result = await client.request({
+    method: 'POST',
+    path: `/api/runs/${encodeURIComponent(runId)}/report`,
+    schema: reportBuiltSchema,
+  });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** The address of a file of the report of a run, served as a page by the run file route (RF-506). */
+export function reportFilePath(
+  runId: string,
+  file: 'report.html' | 'report.md' | 'replay.html',
+): string {
+  return `/runs/${encodeURIComponent(runId)}/files/report/${file}`;
 }
