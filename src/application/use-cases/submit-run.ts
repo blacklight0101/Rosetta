@@ -21,7 +21,7 @@ export interface SubmitRunDependencies {
   readonly runs: RunIndex;
   readonly manifests: RunManifestStore;
   readonly queue: RunQueue;
-  readonly ids: IdGenerator;
+  readonly ids: Pick<IdGenerator, 'runId' | 'uuid'>;
   readonly clock: Clock;
   readonly rosettaVersion: string;
 }

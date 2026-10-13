@@ -10,6 +10,7 @@ import type {
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { ScenarioOutcome } from '../../../contracts/llm-provider.contract.js';
 import { shippingCards } from '../../../support/agent-fixtures.js';
+import { tagOf } from '../../../support/data-block-tags.js';
 import {
   loopSetup,
   readOrder,
@@ -86,6 +87,19 @@ describe('runAgentTask and a model that errs', () => {
     expect(result.code).toBe(ERROR_CODES.agentRepeatedCalls);
     expect(fake.requests).toHaveLength(4);
     expect(logger.entries.at(-1)?.data).toMatchObject({ reason: 'repeated-calls' });
+  });
+
+  it('RF-145 answers a repeated call with a block that has a fresh tag of its own', async () => {
+    const { fake, request } = loopSetup([toolTurn([readOrder]), toolTurn([readOrder])], {
+      maxTurns: 2,
+    });
+
+    const result = await runAgentTask(request(fake));
+
+    const tags = result.messages.filter((m) => m.role === 'tool').map((m) => tagOf(m.content));
+    expect(tags).toHaveLength(2);
+    expect(tags.every((tag) => /^[a-z2-7]{24}$/.test(tag))).toBe(true);
+    expect(new Set(tags).size).toBe(2);
   });
 });
 

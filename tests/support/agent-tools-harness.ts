@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { ReadOnlyTools, type ToolOutcome } from '../../src/application/agent/read-only-tools.js';
 import type { ToolLimits } from '../../src/application/agent/tool-limits.js';
 import type { ToolCall } from '../../src/application/ports/llm-provider.js';
@@ -39,6 +40,7 @@ export function toolsSetup(
     area: ordersArea,
     logger,
     limits,
+    ids: new SequenceIdGenerator(),
   });
   const run = (name: string, args: unknown) =>
     tools.run({ id: 'call-1', name, arguments: args } satisfies ToolCall, context);

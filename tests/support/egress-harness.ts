@@ -1,3 +1,4 @@
+import { freshTag } from './data-block-tags.js';
 import type { OutputWriter, WriteRefusal } from '../../src/application/ports/output-writer.js';
 import type {
   LlmMessage,
@@ -119,11 +120,16 @@ export function toolResult(block: Partial<DataBlock> & { readonly text: string }
   return {
     role: 'tool',
     toolCallId: 'call-1',
-    content: renderDataBlock({
-      source: 'read_file',
-      excerpts: [{ path: 'src/Web.config', startLine: 1, endLine: block.text.split('\n').length }],
-      ...block,
-    }),
+    content: renderDataBlock(
+      {
+        source: 'read_file',
+        excerpts: [
+          { path: 'src/Web.config', startLine: 1, endLine: block.text.split('\n').length },
+        ],
+        ...block,
+      },
+      freshTag(),
+    ),
   };
 }
 

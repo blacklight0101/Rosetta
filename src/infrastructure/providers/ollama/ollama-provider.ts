@@ -14,7 +14,12 @@ import {
   type AttemptResult,
   type Sleep,
 } from '../retrying-call.js';
-import { contextSettingOf, type ContextChoice, type ContextSetting } from './ollama-context.js';
+import {
+  contextSettingOf,
+  PROBE_TIMEOUT_MS,
+  type ContextChoice,
+  type ContextSetting,
+} from './ollama-context.js';
 import { HttpContextProbe } from './ollama-context-probe.js';
 import {
   OllamaContextResolver,
@@ -45,6 +50,13 @@ export interface OllamaProviderOptions {
    * least 1024; a smaller number is refused with RST-1514.
    */
   readonly contextTokens?: ContextSetting;
+  /**
+   * The most an /api/show or /api/ps probe may take, in seconds (P1-69); 10 when not set, and never
+   * more than `timeoutSeconds`.
+   */
+  readonly probeTimeoutSeconds?: number;
+  /** The current time in milliseconds, for the back-off after a context fallback; Date.now by default. */
+  readonly now?: () => number;
   /** Receives the context-size warnings (RF-401, DEC-114). */
   readonly logger: Logger;
   /** Ollama's `think`; false when not set. */
@@ -90,12 +102,19 @@ export class OllamaProvider implements LlmProvider {
   constructor(options: OllamaProviderOptions) {
     this.options = options;
     this.contextSetting = contextSettingOf(options.contextTokens);
-    const timeoutMs = options.timeoutSeconds * 1000;
+    const loadTimeoutMs = options.timeoutSeconds * 1000;
+    const probeTimeoutMs = Math.min(
+      loadTimeoutMs,
+      options.probeTimeoutSeconds === undefined
+        ? PROBE_TIMEOUT_MS
+        : options.probeTimeoutSeconds * 1000,
+    );
     this.contexts = new OllamaContextResolver({
       serverUrl: options.baseUrl,
-      probe: new HttpContextProbe({ baseUrl: options.baseUrl, timeoutMs }),
+      probe: new HttpContextProbe({ baseUrl: options.baseUrl, loadTimeoutMs, probeTimeoutMs }),
       logger: options.logger,
       cache: processContextCache,
+      now: options.now ?? Date.now,
     });
   }
 
@@ -129,7 +148,9 @@ export class OllamaProvider implements LlmProvider {
     if (!result.ok) return result;
     const chat = parseChat(result.body);
     if (chat === undefined) return invalidAnswer();
-    if (context.source === 'fixed') await this.contexts.checkFixed(ref, context.tokens);
+    if (context.source === 'fixed') {
+      await untilAborted(this.contexts.checkFixed(ref, context.tokens), request.signal);
+    }
     const response = llmResponseOf(chat, {
       request,
       toolMode,

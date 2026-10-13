@@ -67,9 +67,15 @@ DEC-09, DEC-106). The runbook row is in [environments and delivery](environments
   (`/api/show` `model_info` `*.context_length`) and the ceiling `CONTEXT_CEILING` = 32 768. Load the model with
   `POST /api/generate` without a prompt at that size, read `/api/ps`, and while `size_vram` is below `size` halve the
   size, down to the floor `CONTEXT_FLOOR` = 4 096. If the floor still spills, use it and log one warning. A model
-  whose trained context is below the ceiling never gets more. If a probe fails, the ceiling is used, a warning is
-  logged and the result is not cached. A fixed number is sent unchanged; one warning is logged if `/api/ps` shows
-  the model partly on the CPU. The call log records `contextTokens` and `contextSource` (`auto-fit`, `auto-floor`,
+  whose trained context is below the ceiling never gets more. If a probe fails before any size spilled, the start
+  size is sent (the ceiling when `/api/show` itself fails or answers something Rosetta cannot read); if it fails
+  after a size spilled, no size is known to fit, so the floor is sent and never the size that spilled. Either way a
+  warning is logged and the fallback is reused for a back-off of 30 seconds (`FALLBACK_BACKOFF_MS`), retried attempts
+  included, before Ollama is probed again. `/api/show` and `/api/ps` have a probe timeout of 10 seconds
+  (`PROBE_TIMEOUT_MS`, never more than the call timeout), so a hanging server costs at most that; a model load keeps
+  the call timeout. A caller that stops while a measurement it shares is running ends at once as cancelled
+  (`RST-1501`) and the measurement goes on for the other callers. A fixed number is sent unchanged; one warning is logged if `/api/ps` shows
+  the model partly on the CPU; that check after the first call ends at once when the caller stops. The call log records `contextTokens` and `contextSource` (`auto-fit`, `auto-floor`,
   `auto-model-limit`, `auto-fallback`, `fixed`; data-model section 3.10). Probe answers are capped at 4 MiB.
 - `think: false` is sent by default (adapter option `think`): on the owner's machine the tool loop was about ten
   times faster with thinking off and as correct. Models that ignore it (for example gpt-oss, deepseek-r1) still

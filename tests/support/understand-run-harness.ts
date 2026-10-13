@@ -154,6 +154,7 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
     ledger: providers.ledger,
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts('prompts'),
+    ids: new SequenceIdGenerator(),
   });
 }
 

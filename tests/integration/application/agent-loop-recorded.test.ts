@@ -81,7 +81,7 @@ describe('reader agent task limits and planted instructions', () => {
     const read = egress.fake.requests[1]?.messages.find((message) => message.role === 'tool');
     const scan = read === undefined ? undefined : scanDataBlocks(read.content);
     expect(scan?.ok && scan.value.blocks).toBe(1);
-    expect(read?.content).toContain('<<-<END ROSETTA-DATA>>>');
+    expect(read?.content).toContain('<<<END ROSETTA|-DATA>>>');
     const lines = await egress.egressLines();
     expect(JSON.stringify(lines)).not.toContain('.env');
   });

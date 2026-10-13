@@ -71,6 +71,7 @@ export function toolsWithEvents(
   return {
     definitions: inner.definitions,
     areaOverview: () => inner.areaOverview(),
+    renderBlock: (source, text) => inner.renderBlock(source, text),
     async run(call, ids) {
       const turn = turns.value;
       const tool = call.name.slice(0, MAX_TOOL_NAME);

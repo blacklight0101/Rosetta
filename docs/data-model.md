@@ -261,7 +261,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request named some (none means every area), `cloudConsent` always (P1-33, RF-143) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004) |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v1.md`), its version (`v1`) and the SHA-256 of its bytes, names in code-unit order |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `caps` | object | run and role caps in force |
@@ -420,7 +420,7 @@ entries are not run events: the web UI logs panel receives them on its own strea
 | `status` | enum | `ok`, `retried`, `failed`, `refused-by-cap` |
 | `errorCode` | string | `RST-xxxx` when not `ok` |
 | `httpStatus` | int | when there was an HTTP response |
-| `ollama` | object | Ollama only: `{ loadDurationMs, promptEvalDurationMs, evalDurationMs, tokensPerSecond, contextTokens, contextSource }`; `contextTokens` is the `num_ctx` sent and `contextSource` how it was chosen: `auto-fit` (largest size that fits GPU memory), `auto-floor` (4 096 although the model spills), `auto-model-limit` (the model's trained context), `auto-fallback` (Ollama could not be measured, so 32 768 was sent and not cached) or `fixed` (the project's number); both are absent in records written before DEC-114 |
+| `ollama` | object | Ollama only: `{ loadDurationMs, promptEvalDurationMs, evalDurationMs, tokensPerSecond, contextTokens, contextSource }`; `contextTokens` is the `num_ctx` sent and `contextSource` how it was chosen: `auto-fit` (largest size that fits GPU memory), `auto-floor` (4 096 although the model spills), `auto-model-limit` (the model's trained context), `auto-fallback` (Ollama could not be measured, so the start size was sent, or 4 096 when a larger size had already spilled; reused for 30 seconds, then measured again) or `fixed` (the project's number); both are absent in records written before DEC-114 |
 | `transcriptRef` | string | `transcripts/<agentTaskId>.jsonl#<line>` when transcripts are on: the first transcript line the call added, or the transcript's last line when the call repeats the same messages; every attempt of the call carries the same link |
 
 An attempt that failed (`retried` or `failed`) has no usage from the provider: its token fields and `costMicros` are
@@ -448,7 +448,7 @@ the OpenTelemetry GenAI semantic conventions so an exporter can be added later w
 | `at` | instant | when the guard let the call through |
 | `callId` | string | the call's id, as in `provider-calls.jsonl` |
 | `provider`, `model`, `role`, `agentTaskId` | string | the provider's name in the project settings |
-| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with it broken, `<<<` as `<<-<`); each call repeats the earlier messages, so it lists their excerpts again |
+| `excerpts` | list | `{ path, startLine, endLine }` of every excerpt in the request's data blocks, in message order (a path with a marker look-alike is recorded with its name broken by a bar after `ROSETTA`); each call repeats the earlier messages, so it lists their excerpts again |
 | `maskedCounts` | object | the secrets masked in this call's request, per kind of section 3.6 (every kind, zero included) |
 
 Content is never copied here: no excerpt text, no message text, no secret. The line is masked like every file
