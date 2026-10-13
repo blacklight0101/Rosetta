@@ -1,0 +1,38 @@
+/*
+ * P1-105, RF-1008, RF-1108, design-system.md section 14 (Projects, queue notice): the run columns
+ * and the queue notices of the Projects page. Tokens only; every class carries the card prefix
+ * `rst-p1105-`.
+ */
+
+/*
+ * The table scrolls inside its own box and the page never scrolls sideways, 360 px included. The
+ * box is the containing block of the visually hidden names of the row links (positioned
+ * absolutely); without it they sit outside the box and widen the page (the verdict on #268).
+ */
+.rst-p1105-scroll {
+  position: relative;
+}
+
+.rst-p1105-note {
+  display: block;
+}
+
+.rst-p1105-notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p1105-notices:empty {
+  display: none;
+}
+
+.rst-p1105-notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+}
+
+.rst-p1105-notice p {
+  margin: 0;
+}

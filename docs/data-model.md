@@ -348,7 +348,7 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
 |---|---|
 | Purpose | the ordered story of a run, streamed live to the web UI and replayed by the report |
 | Writer | `JsonlEventLog` behind the `RunEventSink` port (RF-1006) |
-| Readers | web UI (late subscribers read it before live events), report replay (RF-506) |
+| Readers | web UI (late subscribers read it before live events, in batches; the last `seq` of a run not in memory comes from the last complete line, read from the end of the file), report replay (RF-506) |
 | Spec | RF-1002..RF-1006, RF-506 |
 
 Envelope of every line:

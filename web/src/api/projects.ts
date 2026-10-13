@@ -1,10 +1,6 @@
 import type { ApiClient, ApiResult } from './client.js';
-import {
-  projectListSchema,
-  projectSchema,
-  type Project,
-  type ProjectSettings,
-} from './project-schemas.js';
+import { projectOverviewSchema, type ProjectOverviewRow } from './overview-schemas.js';
+import { projectSchema, type Project, type ProjectSettings } from './project-schemas.js';
 
 // RF-010, RF-002, RF-1105: the project calls of the projects and project settings pages. Every
 // answer is parsed before use; another user's project answers 404 like an unknown one.
@@ -21,15 +17,16 @@ export function parseProject(body: unknown): Project | undefined {
   return parsed.success ? parsed.data : undefined;
 }
 
-// RF-010
-export async function listProjects(
+/** The user's projects with their run count, totals and latest run (RF-1008, RF-1108). */
+// RF-1008
+export async function listProjectOverview(
   client: ApiClient,
   signal: AbortSignal,
-): Promise<ApiResult<readonly Project[]>> {
+): Promise<ApiResult<readonly ProjectOverviewRow[]>> {
   const result = await client.request({
     method: 'GET',
-    path: '/api/projects',
-    schema: projectListSchema,
+    path: '/api/projects/overview',
+    schema: projectOverviewSchema,
     signal,
   });
   return result.ok ? { ok: true, value: result.value.projects } : result;
