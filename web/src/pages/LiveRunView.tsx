@@ -4,10 +4,12 @@ import type { ApiFailure } from '../api/client.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { cancelRun } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
+import { usePublishRunMeter, type RunMeterReading } from '../app/run-meter-signal.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Link } from '../components/Link.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
+import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { AgentPanel } from './AgentPanel.js';
 import { ClaimsList } from './ClaimsList.js';
 import { EventLog } from './EventLog.js';
@@ -17,7 +19,10 @@ import { RunFailure } from './RunFailure.js';
 import { RunMeter } from './RunMeter.js';
 import { RunOverview } from './RunOverview.js';
 import { RunReport } from './RunReport.js';
+import { PauseUpdates } from './PauseUpdates.js';
 import { RunStatusBar } from './RunStatusBar.js';
+import { RunStepper } from './RunStepper.js';
+import { usePauseUpdates } from './use-pause-updates.js';
 import { useRunEstimate } from './use-run-estimate.js';
 import type { RunStream } from './use-run-stream.js';
 
@@ -41,6 +46,14 @@ function sourceOf(state: RunState, run: RunRow): SourceState | undefined {
 function costOf(state: RunState, run: RunRow): number {
   const roles = Object.values(state.roleCostMicros).reduce((sum, each) => sum + each, 0);
   return Math.max(run.totals.costMicros, state.ended?.costMicros ?? 0, roles);
+}
+
+/** The run's cost against its cap for the top bar, only while the run works and its cap is known. */
+// RF-1003
+function meterOf(state: RunState, run: RunRow, phase: RunPhase): RunMeterReading | undefined {
+  const capMicros = state.caps?.maxCostMicros ?? 0;
+  if (phase.kind !== 'running' || !(capMicros > 0)) return undefined;
+  return { costMicros: costOf(state, run), capMicros };
 }
 
 function useStop(runId: string): {
@@ -100,7 +113,9 @@ function Connection({ stream }: { readonly stream: RunStream }): JSX.Element | n
 // RF-1002
 export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Element {
   const { state } = stream;
+  const view = usePauseUpdates(state);
   const stop = useStop(run.id);
+  usePublishRunMeter(meterOf(state, run, phase));
   const planned = state.agents.some((agent) => agent.state !== 'Planned');
   const estimate = useRunEstimate(
     run.projectId,
@@ -113,7 +128,14 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
       <RunStatusBar
         {...{ phase, stage, projectId: run.projectId, runKey: run.runId }}
         {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
+        updatesNote={view.note}
+        controls={
+          view.paused || phase.kind === 'running' ? (
+            <PauseUpdates paused={view.paused} waiting={view.waiting} onToggle={view.toggle} />
+          ) : null
+        }
       />
+      <RunStepper steps={stepperOf({ stage, commitSha: run.commitSha }, view.shown, phase)} />
       <Connection stream={stream} />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
       <p class="rst-p137-live-link">
@@ -121,12 +143,12 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
       </p>
       <RunDownloads runId={run.id} stage={stage} ended={phase.kind === 'ended'} />
       <RunReport runId={run.id} ended={phase.kind === 'ended'} />
-      <RunOverview state={state} />
+      <RunOverview state={view.shown} />
       <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
-      <Agents state={state} />
-      <ClaimsList claims={state.claims} source={sourceOf(state, run)} />
+      <Agents state={view.shown} />
+      <ClaimsList claims={view.shown.claims} source={sourceOf(state, run)} />
       {stage === 'understand' ? <RunAnswers runId={run.id} ended={phase.kind === 'ended'} /> : null}
-      <EventLog lines={state.log} startedAt={state.startedAt} />
+      <EventLog lines={view.shown.log} startedAt={view.shown.startedAt} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { RunEvent } from '../../api/run-events.js';
-import { endedData, resolvedData, startedData } from './event-data.js';
+import { endedData, resolvedData, scanData, startedData } from './event-data.js';
 import type { RunState, SourceState } from './run-state.js';
 
 // RF-1002, RF-1003, RF-1004: what the events of the run itself change: where it started, which
@@ -49,4 +49,12 @@ export function onRunEnded(state: RunState, event: RunEvent): RunState {
   if (!parsed.success) return state;
   const { endState, errorCode, totals } = parsed.data;
   return { ...state, ended: { endState, errorCode, costMicros: totals?.costMicros } };
+}
+
+/** The files and areas the scan found; an event that does not carry both changes nothing. */
+// RF-1002
+export function onScanCompleted(state: RunState, event: RunEvent): RunState {
+  const parsed = scanData.safeParse(event.data);
+  if (!parsed.success) return state;
+  return { ...state, scan: { files: parsed.data.files, areas: parsed.data.areas } };
 }

@@ -16,6 +16,8 @@ interface HeaderUser {
 export interface HeaderProps {
   readonly user: HeaderUser;
   readonly repository?: string;
+  /** The "This run" meter, beside the totals while a run is active (RF-1003). */
+  readonly runMeter?: ComponentChildren;
   /** The totals pill: always on screen once a card fills it. */
   readonly totals?: ComponentChildren;
   /** Extra header controls, for example the sign-out menu. */
@@ -37,6 +39,7 @@ export function Header(props: HeaderProps): JSX.Element {
         </span>
       )}
       <span class="rst-header__spacer" />
+      {props.runMeter}
       {props.totals === undefined ? null : (
         <div class="rst-header__totals" data-testid="header-totals">
           {props.totals}

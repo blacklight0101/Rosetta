@@ -97,3 +97,5 @@ export const endedData = z.looseObject({
   errorCode: text.optional(),
   totals: z.looseObject({ costMicros: micros.optional() }).optional(),
 });
+
+export const scanData = z.looseObject({ files: count, areas: count });
