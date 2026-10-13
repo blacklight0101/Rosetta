@@ -71,6 +71,24 @@ ${items.join('\n')}
 </section>`;
 }
 
+function areas(model: ReportModel): string {
+  if (model.areas.length === 0) return '';
+  const rows = model.areas.map(
+    (area) => `<tr><td>${renderModelText(area.name)}</td><td>${area.mapLevel}</td></tr>`,
+  );
+  return `<section aria-labelledby="areas">
+<h2 id="areas">Areas</h2>
+<div class="table-wrap" role="region" aria-label="Map level of the areas" tabindex="0">
+<table>
+<thead><tr><th scope="col">Area</th><th scope="col">Map level</th></tr></thead>
+<tbody>
+${rows.join('\n')}
+</tbody>
+</table>
+</div>
+</section>`;
+}
+
 function cardRow(card: ReportCard): string {
   const id = escapeHtml(card.id);
   const link = card.path === '' ? id : `<a href="../${escapeHtml(card.path)}">${id}</a>`;
@@ -106,6 +124,12 @@ ${model.cards.map(cardRow).join('\n')}
 
 // RF-504, RF-507, RF-1013, DEC-112
 export function renderReportHtml(model: ReportModel): string {
-  const main = ['<h1>Run report</h1>', facts(model), documents(model), cards(model)].join('\n');
+  const main = [
+    '<h1>Run report</h1>',
+    facts(model),
+    documents(model),
+    areas(model),
+    cards(model),
+  ].join('\n');
   return renderPage({ page: 'report', runKey: model.runKey, title: 'Run report', main });
 }

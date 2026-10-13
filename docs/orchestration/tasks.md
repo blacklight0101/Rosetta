@@ -622,7 +622,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-15, P1-35, P1-56, P1-42, P1-43, P1-97
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `docs/process-flows.md` flows 1, 2, 4 and 5; `docs/architecture.md` section 17.
 - **Do**: journeys on the harness with the fake provider and fixture repositories: visitor to landing to sign-in; first sign-in password change; create project, scan, understand one area, watch the live page, read the Markdown report and the replay, download the zip; the administrator creates a user and sets caps, a run stops at the cap and the totals still show it; a repository in a language without a pack completes scan, understand and report (RF-112); two users cannot see each other's projects.
 - **Delivers**: the journey specs under `tests/e2e/journeys/`; the pyramid line for the phase.
