@@ -111,8 +111,9 @@ const stackedCells = z.array(
 
 // A string, because the end-to-end project is compiled without the DOM types. A stacked table names
 // each cell by its column (`data-label`) and shows the label in the font of the column heading. A
-// cell is an action cell when it holds a button or sits in a column with no heading (Delete, Reset
-// password); a link alone does not exempt it, because a text column made of links has a heading.
+// cell is an action cell when it holds a button or sits in an action column: one with no heading or
+// the heading Actions (Delete, Reset password, projects); a link alone does not exempt it, because a
+// text column made of links has a heading of its own.
 const stackedCellsScript = `Array.from(document.querySelectorAll('table.rst-table--stack, table.stacked'))
   .flatMap((table) => {
     const name = table.getAttribute('aria-label') ?? table.querySelector('caption')?.textContent?.trim() ?? '(unnamed)';
@@ -125,7 +126,7 @@ const stackedCellsScript = `Array.from(document.querySelectorAll('table.rst-tabl
         table: name,
         column: head?.textContent?.trim() ?? '',
         label: cell.getAttribute('data-label'),
-        action: cell.querySelector('button') !== null || (head?.textContent?.trim() ?? '') === '',
+        action: cell.querySelector('button') !== null || ['', 'Actions'].includes(head?.textContent?.trim() ?? ''),
         empty: cell.textContent?.trim() === '' && cell.children.length === 0,
         labelFont: label.fontFamily,
         labelWeight: label.fontWeight,
@@ -137,7 +138,7 @@ const stackedCellsScript = `Array.from(document.querySelectorAll('table.rst-tabl
 
 /**
  * At 360 px every cell of a stacked table that holds text is named by its column: its data-label is
- * the heading of its column, except an action cell (a button, or a cell of a column with no heading)
+ * the heading of its column, except an action cell (a button, or a cell of an action column)
  * and an empty cell, which have none. A link-only text column (Transcript, Open) is checked. The label is in the page font, so a monospace cell does not make its label monospace.
  */
 async function expectStackedCellsNamed(page: Page): Promise<void> {
