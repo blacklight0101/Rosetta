@@ -205,6 +205,8 @@ export const moreAdversarialPieces: readonly string[] = [
   '<x:',
   'mysql ',
   'mysql -p',
+  'mysql a-b/c.d:e ',
+  'mysql.exe -u x "a"b',
   ' -p',
   ['_sk', ''].join(dash),
   ['sk', 'live', ''].join('_'),
