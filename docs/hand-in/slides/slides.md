@@ -58,12 +58,12 @@ BlackLigth (blacklight0101) - Hito 1 (M1), entrega 2026-10-26
 1. **Scan** - mapa del código sin IA: archivos, lenguajes, puntos de entrada y áreas.
 2. **Understand** - agentes leen cada área y escriben tarjetas con citas.
 3. **Verify** - el verificador comprueba cada cita contra las líneas indicadas.
-4. **Report** - informe HTML con hallazgos, veredictos y coste.
-5. **Plan** - paquete de traspaso: especificación, decisiones, hoja de ruta y tareas.
+4. **Report** - hallazgos, veredictos y coste; en el hito 1 en Markdown, y el HTML completo en P3.
+5. **Plan** - paquete de traspaso: especificación, decisiones, hoja de ruta y tareas (P3).
 
-En el hito 1 están **scan** y **understand** sobre un área de la aplicación de demostración, con la comprobación de citas. Report y plan llegan en fases posteriores.
+En el hito 1 están **scan** y **understand** sobre un área de la aplicación de demostración, con la comprobación de citas, y el informe Markdown con un informe de ejemplo en GitHub Pages (P1-50, en curso). El HTML completo del informe y el plan llegan en la fase P3.
 
-*Fuente: [RFC-001, secciones 4.5 y 6](../../rfc/RFC-001-rosetta.md)*
+*Fuente: [RFC-001, secciones 4.5 y 6](../../rfc/RFC-001-rosetta.md); [handoff.md](../../../handoff.md) para el estado de cada parte*
 
 ---
 
@@ -132,12 +132,13 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 
 # Método de construcción
 
-- **Especificación primero, pruebas primero** (ADR-010): cada escenario Dado/Cuando/Entonces tiene su prueba antes que el código.
-- El trabajo está dividido en **tarjetas de tarea**: 182 en total; 152 del hito 1; 63 de dificultad haiku, 97 sonnet y 22 opus.
-- Agentes de Claude construyen cada tarjeta en su propia rama y su propia solicitud de cambios.
-- La persona dueña del proyecto revisa y decide; las preguntas que la especificación no responde van a una lista con el valor por defecto aplicado.
+- **Especificación primero y pruebas primero** (ADR-010): cada comportamiento de la especificación tiene su prueba antes que el código; las tarjetas de código siguen ese protocolo.
+- Tarjetas de tarea: 63 haiku, 97 sonnet y 22 opus entre las 182 del total; el hito 1 tiene 152 tarjetas: 58 haiku, 79 sonnet y 15 opus entre las 152 del hito 1.
+- Agentes de Claude escriben cada tarjeta en su propia rama y solicitud de cambios.
+- El agente verificador, independiente del que escribió la tarjeta, repite las comprobaciones y publica su veredicto.
+- El orquestador fusiona cada tarjeta cuando la CI está en verde y el verificador da PASS. La persona dueña del proyecto decide la especificación, las ADR, el RFC, el registro de decisiones y CLAUDE.md.
 
-*Fuente: [docs/orchestration/tasks.md, Totales](../../orchestration/tasks.md), [docs/decision-log.md](../../decision-log.md) (DEC-101) y [ADR-010](../../adr/ADR-010-spec-driven-and-test-driven-development.md)*
+*Fuente: [docs/orchestration/tasks.md, Totales](../../orchestration/tasks.md), [DEC-96 en el registro de decisiones](../../decision-log.md) y [ADR-010](../../adr/ADR-010-spec-driven-and-test-driven-development.md)*
 
 ---
 
