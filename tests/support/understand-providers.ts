@@ -77,7 +77,8 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     keys: new MemoryProviderKeyRepository(),
     box: new AesGcmSecretBox({ current: fixtureSecret(3) }),
     serverKeys: {},
-    ollamaUrl: undefined,
+    // An Ollama provider needs the address (RF-401); the adapter is the fake, so it is never called.
+    ollamaUrl: 'http://127.0.0.1:11434',
     serverSettings: new MemoryServerSettings({}),
     ledger,
     priceTable: budgetTable,

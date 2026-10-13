@@ -38,8 +38,9 @@ async function runWithOllamaAnswering(code: ErrorCode) {
     dataDir: temp.path,
     recording: 'understand-csharp-full.json',
     settings: ollamaReader(),
-    beforeCall: async (call) => {
+    beforeCall: (call) => {
       if (call === 1) throw new RosettaError(code);
+      return Promise.resolve();
     },
   });
   await h.scan();
