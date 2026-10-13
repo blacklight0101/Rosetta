@@ -111,11 +111,13 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
   {
-    // `mysql -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and is left alone.
-    // The options before `-p` are bounded to 128 characters, so a `mysql` is never followed further.
+    // `mysql -u root -p<password>` (case-sensitive: `-P` is the port); `-p` alone prompts and is left
+    // alone. Command-line shape only: `mysql` is followed by options (a word that starts with `-`,
+    // each with at most one value), at most 16 of them, so prose such as "mysql is fast -pretty
+    // much" is not read as a password.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>\bmysql(?:admin|dump)?[ \t][^\r\n]{0,128}?[ \t]-p)${notMasked}[^\s]+`,
+      String.raw`(?<keep>\bmysql(?:admin|dump)?(?:[ \t]+-\S+(?:[ \t]+[^\s-]\S*)?){0,16}?[ \t]+-p)${notMasked}\S+`,
       'g',
     ),
   },

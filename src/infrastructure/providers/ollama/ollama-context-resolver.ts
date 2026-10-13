@@ -118,7 +118,7 @@ export class OllamaContextResolver {
     } else if (spills(residency.value)) {
       await this.warn(
         `contextTokens ${String(tokens)} leaves part of ${ref.model} on the CPU, which is slower; lower contextTokens or set it to auto.`,
-        { model: ref.model, contextTokens: tokens, ...bytes(residency.value) },
+        { model: ref.model, contextSize: tokens, ...bytes(residency.value) },
       );
     }
   }
@@ -154,7 +154,7 @@ export class OllamaContextResolver {
   private async floor(ref: ModelRef, tokens: number, residency: Residency): Promise<ContextChoice> {
     await this.warn(
       `Even ${String(tokens)} context tokens leave part of ${ref.model} on the CPU, which is slower; using ${String(tokens)}.`,
-      { model: ref.model, contextTokens: tokens, ...bytes(residency) },
+      { model: ref.model, contextSize: tokens, ...bytes(residency) },
     );
     return { tokens, source: 'auto-floor' };
   }
@@ -162,7 +162,7 @@ export class OllamaContextResolver {
   private async fallback(ref: ModelRef, tokens: number, reason: string): Promise<ContextChoice> {
     await this.warn(
       `Could not measure the context size for ${ref.model}; using ${String(tokens)} tokens and measuring again shortly.`,
-      { model: ref.model, contextTokens: tokens, reason },
+      { model: ref.model, contextSize: tokens, reason },
     );
     return { tokens, source: 'auto-fallback' };
   }
