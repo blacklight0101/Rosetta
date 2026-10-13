@@ -53,7 +53,9 @@ describe('pull request title check', () => {
     },
     timeout,
   );
+});
 
+describe('pull request title check for Dependabot', () => {
   it(
     'DEC-35 accepts the titles Dependabot writes for npm and GitHub Actions updates',
     async () => {
