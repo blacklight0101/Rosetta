@@ -33,7 +33,12 @@ describe('filterCalls', () => {
   });
 
   it('RF-1011 combines the filters', () => {
-    const filters: CallFilters = { provider: 'cloud', role: 'verifier', agent: 'Services', status: 'ok' };
+    const filters: CallFilters = {
+      provider: 'cloud',
+      role: 'verifier',
+      agent: 'Services',
+      status: 'ok',
+    };
 
     expect(seqs(filterCalls(sampleCalls, filters))).toEqual([]);
     expect(seqs(filterCalls(sampleCalls, { ...filters, status: 'failed' }))).toEqual([5]);
@@ -51,7 +56,12 @@ describe('optionsOf', () => {
 });
 
 describe('nextProblemSeq', () => {
-  const problems = [local(1), cloud(2, { status: 'retried' }), local(3), cloud(4, { status: 'failed' })];
+  const problems = [
+    local(1),
+    cloud(2, { status: 'retried' }),
+    local(3),
+    cloud(4, { status: 'failed' }),
+  ];
 
   it('RF-1011 finds the first error or retry when nothing is selected', () => {
     expect(nextProblemSeq(problems, undefined)).toBe(2);

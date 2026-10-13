@@ -1,4 +1,5 @@
 import { GalleryPage } from '../gallery/GalleryPage.js';
+import { ApiCallsPage } from '../pages/ApiCallsPage.js';
 import { AdminAuditPage } from '../pages/AdminAuditPage.js';
 import { AdminModelsPage } from '../pages/AdminModelsPage.js';
 import { AdminUsersPage } from '../pages/AdminUsersPage.js';
@@ -101,6 +102,13 @@ export const routes: readonly RouteDefinition[] = [
     access: 'user',
     chrome: 'shell',
     component: LiveRunPage,
+  },
+  {
+    path: '/runs/:runId/calls',
+    title: 'API calls and logs',
+    access: 'user',
+    chrome: 'shell',
+    component: ApiCallsPage,
   },
   {
     path: '/projects/:projectId/cost',

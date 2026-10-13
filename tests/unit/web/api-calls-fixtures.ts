@@ -165,7 +165,7 @@ export const sampleSummary = [
 export function callsBody(
   overrides: Record<string, unknown> = {},
   calls: readonly CallWire[] = sampleCalls,
-) {
+): Record<string, unknown> {
   return {
     runKey,
     runState: 'Running',
@@ -210,7 +210,7 @@ export const sampleLogs: readonly LogWire[] = [
   },
 ];
 
-export function logsBody(overrides: Record<string, unknown> = {}) {
+export function logsBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     runKey,
     runState: 'Running',

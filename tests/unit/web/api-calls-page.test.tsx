@@ -1,51 +1,12 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, screen, within } from '@testing-library/preact';
+import { describe, expect, it } from 'vitest';
 import { routes } from '../../../web/src/app/routes.js';
-import { ApiCallsPage } from '../../../web/src/pages/ApiCallsPage.js';
-import {
-  callsBody,
-  callsPath,
-  logsBody,
-  logsPath,
-  runKey,
-  runUuid,
-  sampleCalls,
-  transcriptPath,
-} from './api-calls-fixtures.js';
-import { failure, json, renderPage, type Answer } from './fake-api.js';
+import { callsBody, callsPath, runKey, sampleCalls } from './api-calls-fixtures.js';
+import { callsPanel, loaded, renderCalls, rowOf, rowSeqs, standard } from './api-calls-helpers.js';
+import { json } from './fake-api.js';
 
-// RF-1011, RF-408, RF-507 (P1-37): the "API calls" panel, its summary and the "Logs" panel of
-// `/runs/:runId/calls`. Everything on the page comes from the answers of the calls and logs routes.
-
-afterEach(() => {
-  vi.useRealTimers();
-});
-
-const standard: Readonly<Record<string, Answer>> = {
-  [`GET ${callsPath}`]: json(200, callsBody()),
-  [`GET ${logsPath}`]: json(200, logsBody()),
-};
-
-function renderCalls(answers: Readonly<Record<string, Answer>> = standard) {
-  return renderPage(<ApiCallsPage />, answers, undefined, { runId: runUuid });
-}
-
-const callsPanel = (): HTMLElement => screen.getByRole('region', { name: 'API calls' });
-const rowOf = (seq: number): HTMLElement => {
-  const found = within(callsPanel())
-    .getAllByTestId('call-row')
-    .find((row) => row.getAttribute('data-seq') === String(seq));
-  if (found === undefined) throw new Error(`No row for call ${String(seq)}.`);
-  return found;
-};
-const rowSeqs = (): string[] =>
-  within(callsPanel())
-    .queryAllByTestId('call-row')
-    .map((row) => row.getAttribute('data-seq') ?? '');
-
-async function loaded() {
-  await screen.findAllByTestId('call-row');
-}
+// RF-1011, RF-408 (P1-37): the API calls panel and its summary of `/runs/:runId/calls`. Everything on
+// the page comes from the answers of the calls and logs routes.
 
 describe('the route of the API calls and logs page', () => {
   it('RF-1011 is a signed-in page of the router table', () => {
@@ -97,7 +58,9 @@ describe('the API calls panel', () => {
 
     expect(await screen.findByText(/No provider calls yet/u)).toBeTruthy();
   });
+});
 
+describe('the filters of the API calls panel', () => {
   it('RF-1011 filters by provider, role, agent and status', async () => {
     renderCalls();
     await loaded();
@@ -137,7 +100,9 @@ describe('the API calls panel', () => {
       'Refused by cap',
     ]);
   });
+});
 
+describe('Next error', () => {
   it('RF-1011 Next error selects each error or retry in turn and starts again after the last', async () => {
     renderCalls();
     await loaded();
@@ -188,199 +153,5 @@ describe('the summary per provider and role', () => {
     for (const heading of ['Latency P50', 'Latency P95', 'First token P50', 'First token P95']) {
       expect(within(summary).getByRole('columnheader', { name: heading })).toBeTruthy();
     }
-  });
-});
-
-describe('the selected call and its transcript', () => {
-  const transcript = [
-    { seq: 1, at: '2026-10-11T09:18:11.000Z', callId: `${runKey}#1`, role: 'system', content: 'You read one area.' },
-    { seq: 2, at: '2026-10-11T09:18:11.000Z', callId: `${runKey}#1`, role: 'user', content: 'Read <b>Catalog</b>.' },
-  ];
-
-  it('RF-1011 RF-507 opens the masked transcript of a call as text', async () => {
-    const page = renderCalls({
-      ...standard,
-      [`GET ${transcriptPath(1)}`]: json(200, { entries: transcript }),
-    });
-    await loaded();
-
-    fireEvent.click(within(rowOf(1)).getByRole('link', { name: 'Transcript of call 1' }));
-
-    const selected = await screen.findByRole('region', { name: 'Selected call' });
-    await waitFor(() => {
-      expect(within(selected).getAllByTestId('transcript-message')).toHaveLength(2);
-    });
-    expect(selected.textContent).toContain('Read <b>Catalog</b>.');
-    expect(selected.querySelector('b')).toBeNull();
-    expect(page.calls.some((call) => call.path === transcriptPath(1))).toBe(true);
-    expect(rowOf(1).getAttribute('aria-current')).toBe('true');
-  });
-
-  it('RF-1011 links a call without a transcript to nothing', async () => {
-    renderCalls();
-    await loaded();
-
-    expect(within(rowOf(3)).queryByRole('link')).toBeNull();
-    expect(within(rowOf(1)).getByRole('link', { name: 'Transcript of call 1' })).toBeTruthy();
-  });
-
-  it("RF-408 shows Ollama's own timings and the finish reason of the selected call", async () => {
-    renderCalls({
-      ...standard,
-      [`GET ${transcriptPath(1)}`]: json(200, { entries: transcript }),
-    });
-    await loaded();
-
-    fireEvent.click(within(rowOf(1)).getByRole('link', { name: 'Transcript of call 1' }));
-
-    const selected = await screen.findByRole('region', { name: 'Selected call' });
-    expect(selected.textContent).toContain('Load');
-    expect(selected.textContent).toContain('210 ms');
-    expect(selected.textContent).toContain('1.9 s');
-    expect(selected.textContent).toContain('3.1 s');
-    expect(selected.textContent).toContain('38 tok/s');
-    expect(selected.textContent).toContain('stop');
-  });
-
-  it('RF-1105 shows the error when the transcript cannot be read', async () => {
-    renderCalls({ ...standard, [`GET ${transcriptPath(1)}`]: failure(404, 'RST-2003') });
-    await loaded();
-
-    fireEvent.click(within(rowOf(1)).getByRole('link', { name: 'Transcript of call 1' }));
-
-    const selected = await screen.findByRole('region', { name: 'Selected call' });
-    await waitFor(() => {
-      expect(selected.textContent).toContain('RST-2003');
-    });
-  });
-});
-
-describe('the Logs panel', () => {
-  const logsPanel = (): HTMLElement => screen.getByRole('region', { name: 'Logs' });
-  const messages = (): string[] =>
-    within(logsPanel())
-      .queryAllByTestId('log-entry')
-      .map((entry) => entry.textContent);
-
-  it('RF-1011 shows info, warn and error entries and hides debug until it is turned on', async () => {
-    renderCalls();
-    await screen.findAllByTestId('log-entry');
-
-    expect(messages().join('\n')).not.toContain('Turn 1 begins.');
-    expect(messages()).toHaveLength(4);
-
-    fireEvent.click(within(logsPanel()).getByRole('button', { name: 'debug' }));
-
-    expect(messages().join('\n')).toContain('Turn 1 begins.');
-    expect(messages()).toHaveLength(5);
-  });
-
-  it('RF-1011 filters the entries by level', async () => {
-    renderCalls();
-    await screen.findAllByTestId('log-entry');
-    const panel = within(logsPanel());
-
-    expect(panel.getByRole('button', { name: 'error' }).getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(panel.getByRole('button', { name: 'info' }));
-    fireEvent.click(panel.getByRole('button', { name: 'warn' }));
-
-    expect(messages()).toHaveLength(1);
-    expect(messages()[0]).toContain('Timeout after 30 s.');
-    expect(messages()[0]).toContain('RST-1505');
-  });
-
-  it('RF-1011 shows the number of security events and filters the log to them when it is pressed', async () => {
-    renderCalls();
-    await screen.findAllByTestId('log-entry');
-    const counter = within(logsPanel()).getByRole('button', { name: /Security events/u });
-    expect(counter.textContent).toContain('1');
-    expect(counter.getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(counter);
-
-    expect(counter.getAttribute('aria-pressed')).toBe('true');
-    expect(messages()).toHaveLength(1);
-    expect(messages()[0]).toContain('security');
-    fireEvent.click(counter);
-    expect(messages()).toHaveLength(4);
-  });
-
-  it('RF-1011 RF-507 shows a message as text', async () => {
-    renderCalls();
-    await screen.findAllByTestId('log-entry');
-
-    expect(logsPanel().textContent).toContain('Masked a <b>password</b> before it was sent.');
-    expect(logsPanel().querySelector('b')).toBeNull();
-  });
-
-  it('RF-1011 says when the run has logged nothing yet', async () => {
-    renderCalls({
-      ...standard,
-      [`GET ${logsPath}`]: json(
-        200,
-        logsBody({ total: 0, entries: [], counts: {}, securityEvents: 0 }),
-      ),
-    });
-
-    expect(await screen.findByText(/No log entries yet/u)).toBeTruthy();
-  });
-});
-
-describe('following the run live', () => {
-  function sequence(running: number): Readonly<Record<string, Answer>> {
-    const state = { calls: 0 };
-    return {
-      ...standard,
-      [`GET ${callsPath}`]: () => {
-        state.calls += 1;
-        const ended = state.calls > running;
-        return json(200, callsBody({ runState: ended ? 'Ended' : 'Running' }));
-      },
-    };
-  }
-
-  it('RF-1011 reads the calls and the logs again every few seconds while the run goes on, and stops after it ends', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
-    const page = renderCalls(sequence(2));
-    const reads = (path: string): number => page.calls.filter((call) => call.path === path).length;
-    await vi.advanceTimersByTimeAsync(0);
-    expect(reads(callsPath)).toBe(1);
-
-    await vi.advanceTimersByTimeAsync(2000);
-    expect(reads(callsPath)).toBe(2);
-    expect(reads(logsPath)).toBe(2);
-    await vi.advanceTimersByTimeAsync(2000);
-    expect(reads(callsPath)).toBe(3);
-    await vi.advanceTimersByTimeAsync(10_000);
-
-    expect(reads(callsPath)).toBe(3);
-  });
-
-  it('RF-1011 does not poll a run that has ended', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
-    const page = renderCalls({
-      [`GET ${callsPath}`]: json(200, callsBody({ runState: 'Ended' })),
-      [`GET ${logsPath}`]: json(200, logsBody({ runState: 'Ended' })),
-    });
-
-    await vi.advanceTimersByTimeAsync(10_000);
-
-    expect(page.calls.filter((call) => call.path === callsPath)).toHaveLength(1);
-    expect(page.calls.filter((call) => call.path === logsPath)).toHaveLength(1);
-  });
-});
-
-describe('a run the user cannot read', () => {
-  it("RF-1105 shows the error of another user's or an unknown run, with no panel", async () => {
-    renderCalls({
-      [`GET ${callsPath}`]: failure(404, 'RST-2003'),
-      [`GET ${logsPath}`]: failure(404, 'RST-2003'),
-    });
-
-    await waitFor(() => {
-      expect(document.body.textContent).toContain('RST-2003');
-    });
-    expect(screen.queryByRole('region', { name: 'API calls' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Logs' })).toBeNull();
   });
 });
