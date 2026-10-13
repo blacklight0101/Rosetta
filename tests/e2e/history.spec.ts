@@ -44,29 +44,31 @@ test('RF-1008 lists a finished run with its stage, commit, state and links, and 
   await expect(row).toContainText('Completed');
   await expect(row).toContainText('scan');
   await expect(row.getByRole('cell').nth(2)).toHaveText(/^[0-9a-f]{7}$/u);
-  await expect(row.getByRole('link', { name: /^Report of run/u })).toBeVisible();
+  await expect(row.getByRole('link', { name: /^View run /u })).toBeVisible();
   await expectNoSeriousViolations(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     row.getByRole('link', { name: /^Zip of run/u }).click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/-scan\.zip$/u);
-  await row.getByRole('link', { name: /^Report of run/u }).click();
+  await row.getByRole('link', { name: /^View run /u }).click();
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
 });
 
 test('RF-1012 disables Delete while a run is in progress, with the reason, until it is stopped', async ({
   page,
 }) => {
-  await startUnderstand(page, ['Catalog', 'Controllers']);
-  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
-  const live = page.url();
+  // P1-121: this step timed out on phone-light while it waited for the reader to run inside the
+  // 30 s test budget, after up to 8 s of the start stagger (removed by P1-120). The history checks
+  // no longer wait for the run to start: queued and running are both "in progress" for RF-1012.
+  // Only the stop waits for Controllers to run, so Catalog has spent what the next step counts.
+  const live = await startUnderstand(page, ['Catalog', 'Controllers']);
 
   await openHistory(page);
 
   const row = runRow(page, '-understand');
-  await expect(row).toContainText('Running');
-  const delete1 = row.getByRole('button', { name: /^Delete \(running\)/u });
+  await expect(row).toContainText(/Queued|Running/u);
+  const delete1 = row.getByRole('button', { name: /^Delete \((queued|running)\)/u });
   await expect(delete1).toBeDisabled();
   await expect(delete1).toHaveAttribute('title', 'Stop the run before deleting it');
   await expect(page.getByRole('button', { name: 'Delete project' })).toBeDisabled();
@@ -74,6 +76,7 @@ test('RF-1012 disables Delete while a run is in progress, with the reason, until
   await expectNoSeriousViolations(page);
 
   await page.goto(live);
+  await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await openHistory(page);
@@ -88,11 +91,14 @@ test('RF-1012 DEC-55 deleting a run asks first, frees its folder and leaves the 
 }) => {
   await openHistory(page);
   const pill = page.getByTestId('header-totals');
+  // P1-121: both counts are read only once their element shows data; a bare `count()` or
+  // `textContent()` read the page before its request had answered and kept 0 (seen on phone-dark).
+  await expect.poll(() => tokensOf(pill)).toBeGreaterThan(0);
   const before = await tokensOf(pill);
-  expect(before).toBeGreaterThan(0);
   const costPage = page.getByRole('navigation').getByRole('link', { name: 'Cost' });
   await costPage.click();
   const costRows = page.getByRole('table', { name: 'By run' }).getByRole('link');
+  await expect(costRows.first()).toBeVisible();
   const kept = await costRows.count();
   await openHistory(page);
 
