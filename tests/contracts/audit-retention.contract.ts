@@ -10,7 +10,7 @@ import { ERROR_CODES } from '../../src/domain/errors/codes.js';
 const DAY = 86_400_000;
 const MINUTE = 60_000;
 
-export interface RetentionHarness {
+interface RetentionHarness {
   readonly retention: AuditRetention;
   readonly audit: AuditLog;
   /** The store's own clock. */
