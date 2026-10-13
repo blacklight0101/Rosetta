@@ -546,8 +546,9 @@ names, and an answer replaces the text after `- Answer:` on that section's first
 line gets it after its last line). The answer is masked and written on one line (line breaks become spaces, so it can
 never start a heading or another field); an empty answer leaves `- Answer:` bare. No other line of the file changes,
 and writes to one project's file run one after another. A file saved with CRLF or lone CR (old Mac) line ends, or with a
-byte-order mark before its first line, is read like one with LF; the answers and the sections appended to it use the
-file's own line end, and the mark is kept (P1-126).
+byte-order mark before its first line, is read like one with LF. Every line keeps its own line end, also in a file that
+mixes them; a new answer line or appended section takes the end of the line before it, and the mark is kept, also in a
+file that holds only the mark (P1-126, P1-135).
 
 ### 3.17 Report and hand-off folders
 
