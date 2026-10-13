@@ -82,16 +82,17 @@ test('RF-1002 RF-504 the Report step of an ended run waits until the report is b
   const build = page.getByRole('button', { name: 'Build report' });
   await expect(build).toBeEnabled();
   await expect(step(page, 'Report')).toContainText('waiting');
-  // A mark on the document that a reload would lose: the step must turn done on this same page.
-  await page.evaluate(() => {
-    document.body.dataset['sameDocument'] = 'yes';
+  // A reload would load the page again: the step must turn done on this same page.
+  let loads = 0;
+  page.on('load', () => {
+    loads += 1;
   });
 
   await build.click();
 
   await expect(page.getByRole('link', { name: 'Open the run replay' })).toBeVisible();
   await expect(step(page, 'Report')).toContainText('done');
-  expect(await page.evaluate(() => document.body.dataset['sameDocument'])).toBe('yes');
+  expect(loads).toBe(0);
   await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
 
   await page.reload();
