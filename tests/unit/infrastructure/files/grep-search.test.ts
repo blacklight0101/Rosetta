@@ -32,6 +32,28 @@ describe('grep search', () => {
     });
   });
 
+  it('RF-146 stops reading further files once it is one match past the cap', () => {
+    const read: string[] = [];
+    const watched = (path: string, lines: readonly string[]) => ({
+      path,
+      get lines(): readonly string[] {
+        read.push(path);
+        return lines;
+      },
+    });
+    const many = [
+      watched('a.ts', ['hit', 'hit']),
+      watched('b.ts', ['hit', 'hit']),
+      watched('c.ts', ['hit']),
+    ];
+
+    const outcome = searchFiles({ pattern: 'hit', files: many, maxMatches: 2 });
+
+    expect(outcome.kind === 'matches' && outcome.matches).toHaveLength(3);
+    expect(read).toEqual(['a.ts', 'b.ts']);
+  });
+});
+describe('grep search errors', () => {
   it('RF-146 reports a pattern that is not a regular expression instead of throwing', () => {
     const outcome = searchFiles({ pattern: '(unclosed', files });
 

@@ -17,6 +17,7 @@ import {
   type Column,
 } from '../support/access-columns.js';
 import { budgetRoutes, outputRoutes, type Context, type Probe } from '../support/access-probes.js';
+import { seedEndedRun } from '../support/call-fixtures.js';
 import { createTestServer, type TestServer } from '../support/web-server.js';
 
 // RF-1105, RF-1009, conventions section 7: every route has a row in the access matrix with the answer
@@ -253,10 +254,7 @@ async function browserFor(
   const ended = await test.runs.start(owner);
   test.runs.executor.settle(ended.id, { endState: 'Completed' });
   await test.runs.ended(ended);
-  test.archives.seed(test.runs.scopeOf(ended), {
-    'manifest.json': '{}',
-    'handoff/README.md': '# Hand-off',
-  });
+  await seedEndedRun(test, ended);
   test.runFiles.seed(test.runs.scopeOf(ended), { 'manifest.json': '{}' });
   const running = await test.runs.start(owner);
   const context = {

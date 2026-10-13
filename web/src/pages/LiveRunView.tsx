@@ -5,6 +5,7 @@ import type { RunRow } from '../api/run-schemas.js';
 import { cancelRun } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
+import { Link } from '../components/Link.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { AgentPanel } from './AgentPanel.js';
@@ -114,6 +115,9 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
       />
       <Connection stream={stream} />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
+      <p class="rst-p137-live-link">
+        <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
+      </p>
       <RunDownloads runId={run.id} stage={stage} ended={phase.kind === 'ended'} />
       <RunOverview state={state} />
       <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
