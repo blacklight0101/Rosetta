@@ -1,7 +1,7 @@
 import type { BrowserContext } from '@playwright/test';
 import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
-import { expectNoSeriousViolations } from './support/axe.js';
+import { expectNoSeriousViolations, gotoWithoutScripts } from './support/axe.js';
 import { e2eOrigin } from './support/server-config.js';
 import { replayRunId } from './support/seed-replay.js';
 import { accountFor } from './support/seed.js';
@@ -105,5 +105,19 @@ test.describe('without JavaScript', () => {
     await expect(steps.locator('visible=true')).toHaveCount(await steps.count());
     await expect(page.getByRole('button', { name: 'Play' })).toHaveCount(0);
     await expect(page.locator('body')).toContainText('<script>');
+  });
+});
+
+test.describe('with the script of the page not run', () => {
+  test('RNF-010 passes axe on the replay page as a browser without JavaScript shows it', async ({
+    page,
+  }, info) => {
+    await gotoWithoutScripts(page, pagePath(info.project.name));
+
+    const steps = page.locator('[data-replay-steps] > li');
+    await expect(steps.locator('visible=true')).toHaveCount(await steps.count());
+    await expect(page.getByRole('button', { name: 'Play' })).toHaveCount(0);
+    await expectNoSeriousViolations(page);
+    await expect(page.getByRole('button', { name: 'Play' })).toHaveCount(0);
   });
 });
