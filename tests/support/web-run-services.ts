@@ -10,11 +10,19 @@ import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetRun } from '../../src/application/use-cases/get-run.js';
 import { ListAnswers } from '../../src/application/use-cases/list-answers.js';
 import { RecordAnswers } from '../../src/application/use-cases/record-answers.js';
+import { DeleteProject } from '../../src/application/use-cases/delete-project.js';
+import { DeleteRun } from '../../src/application/use-cases/delete-run.js';
+import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.js';
+import { ListHistory } from '../../src/application/use-cases/list-history.js';
+import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
 import { MemoryArchiveWriter } from './memory-archive-writer.js';
+import type { MemoryLogger } from './memory-logger.js';
+import type { MemorySnapshotCache } from './memory-snapshot-cache.js';
+import type { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
 import { MemoryRunFileReader } from './memory-run-file-reader.js';
 import { MapRunTextFiles, RecordingReportWriter } from './report-doubles.js';
 import { catalogAreas, estimatePrices, FixedScans } from './estimate-harness.js';
@@ -100,5 +108,24 @@ export function runServices(
       priceTable: estimatePrices,
     }),
     ...route,
+  };
+}
+
+/** RF-1008, RF-1012: the history, deletion and snapshot use cases over the harness's memory adapters. */
+export function historyServices(parts: {
+  readonly runs: RunHarness;
+  readonly projects: MemoryProjectRepository;
+  readonly folders: MemoryWorkspaceFolders;
+  readonly snapshots: MemorySnapshotCache;
+  readonly logger: MemoryLogger;
+}): ServerOptions['history'] {
+  const { projects, folders, snapshots, logger } = parts;
+  const runs = parts.runs.runs;
+  return {
+    listHistory: new ListHistory({ projects, runs, folders }),
+    deleteRun: new DeleteRun({ runs, folders, logger }),
+    deleteProject: new DeleteProject({ projects, runs, folders, logger }),
+    listSnapshots: new ListSnapshots({ snapshots, runs }),
+    deleteSnapshot: new DeleteSnapshot({ snapshots, runs, logger }),
   };
 }

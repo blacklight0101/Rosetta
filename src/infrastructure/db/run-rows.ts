@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { SnapshotUsage } from '../../application/ports/run-index.js';
 import { RUN_END_STATES, RUN_QUEUE_STATES, RUN_STAGES } from '../../domain/runs/run-states.js';
 import type { Run } from '../../domain/runs/run.js';
 
@@ -31,6 +32,24 @@ const runRowSchema = z.object({
   output_tokens: counter,
   cached_input_tokens: counter,
 });
+
+const snapshotUsageRow = z.object({
+  snapshot_key: z.string(),
+  runs: z.number().int(),
+  active: z.number().int(),
+  last_used_at: instant,
+});
+
+// RF-1012
+export function toSnapshotUsage(row: unknown): SnapshotUsage {
+  const parsed = snapshotUsageRow.parse(row);
+  return {
+    snapshotKey: parsed.snapshot_key,
+    runs: parsed.runs,
+    active: parsed.active,
+    lastUsedAt: parsed.last_used_at,
+  };
+}
 
 // RF-003
 export function toRun(row: unknown): Run {

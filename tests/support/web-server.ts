@@ -53,8 +53,8 @@ import { MemoryOutputWriter } from './memory-output-writer.js';
 import { templateSettings } from './project-fixtures.js';
 import { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
-import { runServices, type RunOutputGiven } from './web-run-services.js';
-import { memoryStores, outputsAndRoutes } from './web-server-parts.js';
+import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
+import { memoryStores, outputsAndRoutes, type HistoryDoubles } from './web-server-parts.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
@@ -64,7 +64,7 @@ export const testVersion = '1.2.3-test';
 /** The public URL of the test servers; state-changing requests send it as their Origin. */
 export const testPublicUrl = 'http://127.0.0.1:8080';
 
-export interface TestServer {
+export interface TestServer extends HistoryDoubles {
   readonly server: FastifyInstance;
   readonly logger: MemoryLogger;
   readonly health: FakeDatabaseHealth;
@@ -263,14 +263,13 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
   const health = new FakeDatabaseHealth(true);
-  const { users, sessions, usage, projects, costs } = memoryStores();
+  const { users, sessions, usage, projects, costs, folders, snapshots } = memoryStores();
   const auditLog = new MemoryAuditLog(masker);
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
-  const files = answerStore(masker);
+  const [files, keys] = [answerStore(masker), keyParts()];
   const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
-  const keys = keyParts();
   const stores = { projects, keys: keys.keys, answers: files.answers };
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
@@ -288,12 +287,13 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     }),
     projects: projectServices(projectParts),
     runs: runServices(runs, stores, route, outputs),
+    history: historyServices({ runs, projects, folders, snapshots, logger }),
     onRoute: recorder.onRoute,
     ...overrides,
   });
   return {
     ...{ server, logger, health, clock, users, sessions, audit: auditLog, hasher, usage, projects },
     ...{ serverSettings, runs, ...doubles, ...files, ...route, ...keys, providers, providerLedger },
-    costs,
+    ...{ costs, folders, snapshots },
   };
 }

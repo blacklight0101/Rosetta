@@ -15,7 +15,7 @@ it.each(paths)('RF-1105 %s is a page only an administrator may open', (path) => 
   expect(match?.route.chrome).toBe('shell');
 });
 
-it('RF-1102 lists the three pages under Administration for an administrator, in order', () => {
+it('RF-1102 lists the pages under Administration for an administrator, in order', () => {
   const groups = buildNavigation({
     routes,
     role: 'admin',
@@ -29,6 +29,8 @@ it('RF-1102 lists the three pages under Administration for an administrator, in 
     'Users and caps',
     'Audit',
     'Default models',
+    // RF-1012, P1-40: the downloaded snapshots.
+    'Snapshots',
   ]);
   expect(admin?.items.find((item) => item.current)?.label).toBe('Audit');
 });
