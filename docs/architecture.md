@@ -685,6 +685,12 @@ colour scheme with the console errors for the verifier's page walk. The server a
 answers with the built `index.html` (`/sign-in` without a session, every other page under the session rules), so the
 client router can draw it.
 
+**Milestone journeys (P1-46).** `tests/e2e/journeys/` holds one spec per journey of the milestone (visitor to sign-in,
+first sign-in password change, project to Markdown report, replay and zip, administrator and cap, a repository without
+a language pack, two users). They sign in through the sign-in page and use the pages the way a person does; only the
+accounts are seeded (`seed.ts`, kinds `journey-*`). The test server's fake GitHub also knows `octo/ledger`, the COBOL
+fixture, for the language-without-pack journey (RF-112).
+
 ## 18. Open architecture questions
 
 | Question | Link | Default |

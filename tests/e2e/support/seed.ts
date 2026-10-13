@@ -51,7 +51,12 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * its own run (RF-1011), `replay` owns a recorded run (seed-replay.ts) whose report and replay
  * page it opens (RF-506), `history` browses and deletes the runs of its own project (RF-1008,
  * RF-1012), `history-admin` is the administrator who deletes snapshots and `project-runs` reads the
- * run columns and cancels a queued run on the Projects page (RF-1008, RF-1108).
+ * run columns and cancels a queued run on the Projects page (RF-1008, RF-1108). The journey specs
+ * (P1-46) have accounts of their own: `journey` signs in through the pages, `journey-owner` owns
+ * a project and a run, `journey-other` is the second user who must not see them, `journey-force`
+ * must change its password at first sign-in, `journey-run` runs the pipeline on the C# fixture,
+ * `journey-language` on the COBOL one and `journey-admin` is the administrator who creates a user
+ * and saves the caps.
  */
 export type E2eAccountKind =
   | 'keys'
@@ -70,7 +75,14 @@ export type E2eAccountKind =
   | 'history-admin'
   | 'project-runs'
   | 'admin'
-  | 'replay';
+  | 'replay'
+  | 'journey'
+  | 'journey-owner'
+  | 'journey-other'
+  | 'journey-force'
+  | 'journey-run'
+  | 'journey-language'
+  | 'journey-admin';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -90,9 +102,22 @@ const accountKinds: readonly E2eAccountKind[] = [
   'project-runs',
   'admin',
   'replay',
+  'journey',
+  'journey-owner',
+  'journey-other',
+  'journey-force',
+  'journey-run',
+  'journey-language',
+  'journey-admin',
 ];
 
-const adminKinds: ReadonlySet<E2eAccountKind> = new Set(['force-admin', 'history-admin', 'admin']);
+const adminKinds: ReadonlySet<E2eAccountKind> = new Set([
+  'force-admin',
+  'history-admin',
+  'admin',
+  'journey-admin',
+]);
+const forceKinds: ReadonlySet<E2eAccountKind> = new Set(['force', 'force-admin', 'journey-force']);
 
 export function accountFor(kind: E2eAccountKind, project: string): Credentials {
   return {
@@ -145,7 +170,7 @@ export async function seedUsers(databaseUrl: string): Promise<void> {
         displayName: `E2E ${kind}`,
         role: adminKinds.has(kind) ? 'admin' : 'user',
         password,
-        mustChangePassword: kind.startsWith('force'),
+        mustChangePassword: forceKinds.has(kind),
         ip: 'e2e-seed',
       });
       if (!outcome.ok) throw new Error(`The account ${userName} was refused (${outcome.error}).`);
