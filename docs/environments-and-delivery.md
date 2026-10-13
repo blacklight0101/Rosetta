@@ -95,8 +95,9 @@ before commit (ADR-008).
   jobs as required status checks to the ruleset once P1-02 has merged the workflow; from then on no pull request can
   be merged with a red check.
 - **Required checks.** The owner adds these job names to the `main` ruleset as required status checks:
-  `verify (ubuntu-latest)`, `verify (windows-latest)`, `e2e`, `audit`, `gitleaks`, `dependency-review`, `pr-title` (all in
-  `.github/workflows/ci.yml`) and `codeql` (`.github/workflows/codeql.yml`). Jobs that later cards add to the table of
+  `verify (ubuntu-latest)`, `verify (windows-latest)`, `e2e`, `audit`, `gitleaks`, `dependency-review` (all in
+  `.github/workflows/ci.yml`), `pr-title` (`.github/workflows/pr-title.yml`) and `codeql`
+  (`.github/workflows/codeql.yml`). Jobs that later cards add to the table of
   section 6 (image build and scan, Compose smoke test) join this list in the card that adds them. The `audit` job
   runs `scripts/audit-check.mjs`, which reads `audit-exceptions.json`: a JSON array of
   `{ "id": "GHSA-xxxx-xxxx-xxxx", "reason": "...", "expires": "YYYY-MM-DD" }`, empty by default; an expired entry stops
@@ -122,7 +123,7 @@ disposable PostgreSQL service container on Linux; on Windows the database tests 
 | Architecture rule | `npm run arch` (dependency-cruiser) | yes |
 | Dead code and dependencies | `npm run deadcode` (knip) | yes |
 | Tests with coverage and level report | `npm run test:ci` (Vitest, coverage thresholds of [conventions](conventions.md) section 7; the Playwright e2e project runs only in the `e2e-shard` jobs, which install Chromium with `npx playwright install --with-deps chromium`; `verify` installs no browser) | yes |
-| End-to-end tests | job `e2e-shard`: the Playwright project split in three shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/3`, each with its own PostgreSQL service; two shards were tried on 2026-10-13 and left the slowest at about 5 minutes, so three are kept for wall time); job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
+| End-to-end tests | job `e2e-shard`: the Playwright project split in three shards that run in parallel (`node scripts/run-e2e.mjs --shard=N/3`, each with its own PostgreSQL service; two shards were tried on 2026-10-13 and left the slowest at about 5 minutes, so three are kept for wall time). The runner reads the spec files of shard N from `tests/e2e/shards.json`, which balances the shards by the duration of their tests (P1-146; Playwright's own `--shard` splits by test count and left shard 1 about twice as long as shard 3). Every spec file is in exactly one shard; `e2e-shards.test.ts` fails when one is not, so a new spec is added to the map. Job `e2e` is green only when every shard passed. The `verify` job sets `ROSETTA_E2E_OWN_JOB=1`, so `npm run test:ci` skips the project there (added 2026-10-13: the e2e project had grown to about 10 of the 14 minutes of the Linux job) | yes |
 | Dependency audit | `npm audit --audit-level=high --omit=dev` | yes |
 | Secret scan | gitleaks action | yes |
 | Static analysis | CodeQL (`javascript-typescript`), on pull requests and weekly | yes, for high and critical alerts |
@@ -168,6 +169,14 @@ documents: `tests/integration/docs/`, the workflow tests, `release-schema.test.t
 `workflow-docs-only.test.ts` fails when a test that reads `docs/` is missing from that list. `audit`, `gitleaks`,
 `dependency-review` and `pr-title` run as before. The `changes` job is not a required check: if it fails, the
 jobs that need it do not run and the required checks stay missing, so the pull request cannot merge.
+
+**Edits of a pull request** (P1-146). `ci.yml` runs on `opened`, `synchronize` and `reopened` only. An edit of the
+title or the body starts `pr-title.yml` alone, which runs `pr-title` and nothing else. The alternative, a job skipped
+by an `if:` on `edited`, was rejected: a skipped check reports as passed, so it would replace a failed result of the
+same commit and let a red pull request merge after an edit of its body, and the edit would also cancel a running
+run (the `ci-<ref>` concurrency group). An edit does not create a check run for `verify`, `e2e` or the other
+required checks, so the results of the run on the head commit stay the ones GitHub reads. `codeql.yml` does not
+list `edited` either, so GitHub's default types (`opened`, `synchronize`, `reopened`) apply to it.
 
 Workflow hardening: `timeout-minutes` on every job (15 for checks); `actions/setup-node` with `cache: npm`; `npm audit`
 exceptions only in `audit-exceptions.json`, each with a reason and an expiry date; top-level `permissions: contents: read`; third-party actions pinned to a full commit SHA with the
