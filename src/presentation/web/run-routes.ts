@@ -32,8 +32,8 @@ import { runView } from './run-view.js';
 //   (RST-2000, estimate-query.ts), a project without a completed scan 409 (RST-1203), another
 //   user's project 404.
 // - GET /api/runs/:runId gives the run as the start answered it (stage, queue and end state, project,
-//   totals so far): the live run page reads it for a run that has no event yet. Another user's run
-//   id answers 404 like an unknown one.
+//   totals so far) and `reportBuilt`, whether its report exists (P1-130): the live run page reads
+//   it for a run that has no event yet. Another user's run id answers 404 like an unknown one.
 // - GET /api/runs/:runId/events streams the run's events as server-sent events: the stored events
 //   after `Last-Event-ID` (or `?after=`), then the live ones, closing after `run.ended`. Another
 //   user's run id answers 404 like an unknown one.
@@ -210,7 +210,8 @@ function registerGet(server: FastifyInstance, services: RunServices): void {
         runId: request.params.runId,
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      return reply.status(200).send(runView(outcome.value));
+      const { run, reportBuilt } = outcome.value;
+      return reply.status(200).send({ ...runView(run), reportBuilt });
     },
   );
 }

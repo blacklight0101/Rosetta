@@ -73,19 +73,25 @@ async function restore(
   }
   const [first] = written;
   if (failures.length === 0 || first === undefined) return;
-  await logger.log({
-    level: 'error',
-    logger: 'cards',
-    message: 'Card files could not be restored after a failed write.',
-    userId: first.file.userId,
-    data: { failures },
-  });
+  // A log that cannot be written must not replace the refusal or error the caller receives.
+  await logger
+    .log({
+      level: 'error',
+      logger: 'cards',
+      message: 'Card files could not be restored after a failed write.',
+      userId: first.file.userId,
+      data: { failures },
+    })
+    .catch(() => undefined);
 }
 
 /**
  * Writes the files in order. On a refusal the earlier files are restored and the refusal is
  * returned; on a thrown error they are restored and the error is rethrown. A file that cannot be
- * restored is logged and never hides the original failure.
+ * restored is logged and never hides the original failure, not even when the logger throws.
+ *
+ * The caller must serialise the calls that write to one run folder: two calls running at once
+ * would each read the other's half-written files as "previous" content and restore them.
  */
 export async function writeOrRestore(
   writer: OutputWriter,

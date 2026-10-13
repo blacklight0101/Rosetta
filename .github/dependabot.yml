@@ -1,10 +1,23 @@
 # Weekly updates for npm packages and GitHub Actions, minor and patch grouped (DEC-42).
+# Commit messages use a lower-case Conventional Commits prefix so pull request titles pass commitlint
+# (the pr-title check): "build(deps): bump ..." for npm and "ci(deps): bump ..." for actions.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      # Revisit when typescript-eslint, knip and dependency-cruiser support TypeScript 7
+      # (typescript-eslint 8.71 peers typescript ">=4.8.4 <6.1.0"; TS 7 ships no JS compiler API yet).
+      - dependency-name: typescript
+        versions: ['>=7.0.0']
+      # @types/node follows the Node runtime major in .nvmrc (24); a higher major describes APIs the runtime lacks.
+      - dependency-name: '@types/node'
+        versions: ['>=25.0.0']
     groups:
       npm-minor-and-patch:
         update-types:
@@ -14,6 +27,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: ci
+      include: scope
     groups:
       actions-minor-and-patch:
         update-types:

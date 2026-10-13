@@ -36,6 +36,9 @@ export function settingsWith(changes: Readonly<Record<string, unknown>>): Record
   return copy;
 }
 
+/** DEC-117: the top of the run cost cap, 100 USD in micros. */
+export const maxRunCostMicros = 100_000_000;
+
 let projectCount = 0;
 
 /** A valid project with generated values; a test overrides what it needs. */
