@@ -134,4 +134,26 @@ describe('renderReportMarkdown and untrusted text', () => {
 
     expect(markdown).not.toContain(fakeOpenAiKey);
   });
+
+  it('RF-112 states the map level of every area, escaped like the other repository text', () => {
+    const markdown = renderReportMarkdown(
+      reportModel({
+        areas: [
+          { name: 'LEDGER', mapLevel: 'coarse' },
+          { name: '<b>orders</b>', mapLevel: 'symbols' },
+        ],
+      }),
+      masker,
+    );
+
+    expect(markdown).toContain(
+      ['## Areas', '', '| Area | Map level |', '|---|---|', '| LEDGER | coarse |'].join('\n'),
+    );
+    expect(markdown).toContain('| symbols |');
+    expect(markdown).not.toContain('<b>');
+  });
+
+  it('RF-112 leaves out the areas section when the report has no code map', () => {
+    expect(renderReportMarkdown(reportModel({ areas: [] }), masker)).not.toContain('## Areas');
+  });
 });

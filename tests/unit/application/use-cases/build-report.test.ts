@@ -7,6 +7,8 @@ import { RUN_END_STATES } from '../../../../src/domain/runs/run-states.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
 import { MemoryEventSink } from '../../../../src/infrastructure/events/memory-event-sink.js';
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
+import type { ScanResults } from '../../../../src/application/ports/scan-results.js';
+import { areaOf, FixedScans } from '../../../support/estimate-harness.js';
 import { MapRunTextFiles, RecordingReportWriter } from '../../../support/report-doubles.js';
 import {
   replayDemoEvents,
@@ -36,11 +38,14 @@ interface Parts {
   readonly files?: Readonly<Record<string, string>>;
   readonly withManifest?: boolean;
   readonly withEvents?: boolean;
+  readonly scans?: ScanResults;
+  readonly otherRuns?: readonly Run[];
 }
 
 async function setup(run: Run, parts: Parts = {}) {
   const runs = new MemoryRunIndex();
   await runs.insert(run);
+  for (const other of parts.otherRuns ?? []) await runs.insert(other);
   const manifests = new MemoryRunManifestStore();
   if (parts.withManifest !== false) {
     await manifests.write(
@@ -82,7 +87,8 @@ async function setup(run: Run, parts: Parts = {}) {
       'cost.md': '# Cost\n',
     },
   );
-  return { build: new BuildReport({ runs, manifests, history, files, writer }), writer };
+  const scans = parts.scans === undefined ? {} : { scans: parts.scans };
+  return { build: new BuildReport({ runs, manifests, history, files, writer, ...scans }), writer };
 }
 
 const request = (run: Run, actor: Actor = userAmy) => ({ actor, runId: run.id });
@@ -182,6 +188,66 @@ describe('BuildReport and the run folder', () => {
       totals: null,
     });
     expect(writer.written[0]?.model.replay.steps).toEqual([]);
+  });
+});
+
+describe('BuildReport and the map level', () => {
+  const ledger = { ...areaOf('LEDGER', 100), mapLevel: 'coarse' } as const;
+  const shop = { ...areaOf('shop', 200), mapLevel: 'symbols' } as const;
+  const scanRun = (overrides: Partial<Run> = {}): Run =>
+    sampleRun({
+      userId: userAmy.userId,
+      stage: 'scan',
+      queueState: 'Ended',
+      endState: 'Completed',
+      ...overrides,
+    });
+
+  it('RF-112 gives an understand run the map level of every area of its newest completed scan', async () => {
+    const scans = new FixedScans([ledger, shop]);
+    const scan = scanRun();
+    const run = endedRun();
+    const { build, writer } = await setup(run, { scans, otherRuns: [scan] });
+
+    await build.execute(request(run));
+
+    expect(writer.written[0]?.model.areas).toEqual([
+      { name: 'LEDGER', mapLevel: 'coarse' },
+      { name: 'shop', mapLevel: 'symbols' },
+    ]);
+    expect(scans.opened.map((opened) => opened.id)).toEqual([scan.id]);
+  });
+
+  it('RF-112 gives a scan run its own map level', async () => {
+    const scans = new FixedScans([ledger]);
+    const run = scanRun({ runKey: replayDemoRunKey });
+    const { build, writer } = await setup(run, { scans });
+
+    await build.execute(request(run));
+
+    expect(writer.written[0]?.model.areas).toEqual([{ name: 'LEDGER', mapLevel: 'coarse' }]);
+    expect(scans.opened.map((opened) => opened.id)).toEqual([run.id]);
+  });
+
+  it('RF-112 builds the report without areas when the project has no completed scan', async () => {
+    const run = endedRun();
+    const { build, writer } = await setup(run, { scans: new FixedScans([ledger]) });
+
+    const result = await build.execute(request(run));
+
+    expect(result.ok).toBe(true);
+    expect(writer.written[0]?.model.areas).toEqual([]);
+  });
+
+  it('RF-112 builds the report without areas when the scan output is gone', async () => {
+    const gone: ScanResults = { open: () => Promise.reject(new Error('the snapshot is gone')) };
+    const run = endedRun();
+    const { build, writer } = await setup(run, { scans: gone, otherRuns: [scanRun()] });
+
+    const result = await build.execute(request(run));
+
+    expect(result.ok).toBe(true);
+    expect(writer.written[0]?.model.areas).toEqual([]);
   });
 });
 
