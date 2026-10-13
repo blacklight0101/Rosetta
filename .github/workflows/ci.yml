@@ -105,10 +105,6 @@ jobs:
       # CI=true on the runner keeps lefthook from writing git hooks.
       - if: runner.os == 'Linux' || needs.changes.outputs.code == 'true'
         run: npm ci
-      # The end-to-end project of test:ci drives Chromium; the browser is not part of npm ci.
-      - name: Install Chromium
-        if: runner.os == 'Linux' && needs.changes.outputs.code == 'true'
-        run: npx playwright install --with-deps chromium
       - name: Database tests are skipped on Windows
         if: runner.os == 'Windows' && needs.changes.outputs.code == 'true'
         run: echo "::notice title=Database tests skipped::No PostgreSQL service container on Windows runners; the Linux job runs them."
