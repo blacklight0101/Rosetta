@@ -158,6 +158,11 @@ the decision log.
 | Q-21 | Does the teacher account start with a finished demo run? | Product owner | P1 (teacher account card) | No: it starts empty; the teacher runs the demo themselves with the server keys under the caps | Default applies |
 | Q-22 | Which caps apply to the administrator's own runs? The v1 board shows a $2.00 run cap while the hosted defaults are $0.50 per run and $1.00 per user per day (DEC-64). | Product owner | P1 (caps card) | The administrator is under the same caps as every user; the board's figures are illustrative only | Default applies |
 | Q-23 | Which limits does the automatic Ollama context size use (DEC-114)? | Product owner | P1 (P1-63) | Ceiling 32 768 tokens, floor 4 096, halving between them; the result is cached per Ollama server and model digest for the life of the process | Default applies |
+| Q-24 | Which codes name the two new card types (DEC-134)? | Product owner | P2 (flow and screen cards) | `FLOW` and `SCRN`, next to `FEAT`, `BR`, `ENT`, `INT` and `OQ` | Default applies |
+| Q-25 | Does understand write `FLOW` and `SCRN` cards in every area, or only in areas the code map marks as holding entry points or pages? | Product owner | P2 (flow and screen cards) | Only where the code map finds entry points (flows) or pages, forms and views (screens), so areas of plain libraries cost nothing extra | Default applies |
+| Q-26 | How is Mermaid drawn in the HTML report (RF-508)? | Product owner | P3 (HTML report) | A pinned Mermaid build vendored into the report folder, `securityLevel: 'strict'`, labels escaped by Rosetta's generator; the model never writes Mermaid | Default applies |
+| Q-27 | Which "main" journeys and screens get a target flow and a wireframe (RF-625, RF-626)? | Product owner | P3 (package) | Those the planning brief marks in scope, capped at 15 flows and 20 screens per package; the rest are listed with their legacy cards | Default applies |
+| Q-28 | Which format holds the API contract (RF-624)? | Product owner | P3 (package) | OpenAPI 3.1 in YAML, one file | Default applies |
 
 ## 5. Functional requirements (R1)
 
@@ -284,6 +289,12 @@ Verification: unit tests on fixtures taken from the demo app (cited, MIT).
 As a developer with an unusual stack I want Rosetta to work without a language pack so that no stack is excluded.
 - Given a repository in a language with no pack, when the full pipeline runs, then scan, understand and report complete, and the report states the map level per area.
 Verification: end-to-end test on a small fixture in a language without a pack.
+
+**RF-113 Warn about a code map from an older scanner** - R1 (M1) - Must - Source DEC-136 - ADR-004
+As a developer I want to know when my code map was built by an older version of the scanner so that a run does not waste time on areas the current scanner would leave out.
+- Given a project whose latest code map records a scanner version older than the running one, when the start page opens, then it says the code map is out of date, what changed (for example "third-party code is now left out"), and offers a new scan as the first action; starting understand on the old map needs an explicit confirmation.
+- Given a code map with no scanner version (made before this requirement), when the start page opens, then it is treated as out of date.
+Verification: integration test with a fixture code map of an older version; end-to-end test of the start page.
 
 **RF-120 Accept public GitHub URLs only** - R1 (M1) - Must - Source DEC-48 - ADR-012
 As a developer I want to point Rosetta at a public GitHub repository so that the analysed code is the one anyone can check.
@@ -419,6 +430,25 @@ As a developer using a small local model I want a text protocol for tools so tha
 - Given a model configured with `toolMode: text`, when the agent runs, then tool calls are requested and parsed as JSON blocks in plain text, with the same validation as native calls.
 Verification: integration test with recorded text-protocol responses.
 
+**RF-206 Read before answering** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer I want every reader agent to read its area before it describes it so that no card or question comes from a guess.
+- Given a reader agent that gives its final answer without having read any file of its area, when the answer arrives, then it is not accepted: the agent is told which files it has not read and gets its remaining turns to read them; if it still reads none, its area is reported in the coverage as "not read" and its cards are kept with the note "written without reading the area".
+- Given an area with no readable file (only binary or ignored files), when the agent ends, then this rule does not apply and the coverage says why.
+Verification: integration test with recorded responses (an agent that answers at turn 1).
+
+**RF-207 One-line citations** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer using a small local model I want a citation of one line accepted so that good cards are not thrown away over a format detail.
+- Given a citation written `path:N`, when the card is parsed, then it is read as `path:N-N`; `path:N-M` with N greater than M is still refused with the repair message.
+Verification: unit test of the citation parser; a recorded response with one-line citations produces cards.
+
+**RF-208 Keep what is valid and retry what failed** - R1 (M1) - Must - Source DEC-138 - ADR-005
+As a developer I want an agent's good cards kept and its failed work retried so that one formatting mistake does not remove an area from the specification.
+- Given an agent answer with JSON inside prose or a code fence, when it is parsed, then the JSON object is taken from it; a card whose other claims are valid keeps them, and only the invalid claims are dropped and listed with their problems; a card with no valid claim left is dropped and listed.
+- Given an answer that still fails after the first repair, when the agent has turns left, then it gets a second repair with only the remaining problems; an answer cut off by the output limit is asked to continue instead of starting again.
+- Given an agent task that ends with no usable cards, when the run continues, then the task is retried once from the start with a fresh conversation (and, for an area too large for the model's context, split in two); if that also fails, the area is reported as failed in the coverage and in the run summary, which offers "Retry failed areas".
+- Given a run in which some areas failed, when it ends, then its end state and summary say how many areas failed and why; it is never shown as a plain success.
+Verification: unit tests of the parser on answers recorded in the owner's 2026-10-14 runs; integration tests of the second repair, the continuation and the task retry with recorded responses.
+
 **RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks - ADR-005
 As a developer I want to know which files each agent actually read so that silent gaps are visible.
 - Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of area tokens read.
@@ -436,10 +466,52 @@ Verification: integration test with recorded responses.
 
 **RF-242 Answer interactively** - Withdrawn 2026-10-11 - see RF-1007 (DEC-59)
 
+**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer who does not know the legacy application I want to be asked only what the code cannot tell so that my answers add knowledge instead of doing the agents' reading.
+- Given an `OQ` card, when it is parsed, then it must say what the code shows, cite the code that raised the question, and ask about something outside the code: business intent, the reason for a rule, an external system, data volumes or who uses a feature; a question asking what the code, an area or the application does is refused with the repair message telling the agent to read instead.
+- Given questions from several areas, when the run ends, then duplicates are merged keeping every citation, and the questions are grouped by the feature or area they concern and ordered by how much of the specification depends on them.
+- Given a run on third-party or generated code only, when an agent finds no application logic, then it writes no `OQ` card; the coverage notes "no application logic".
+Verification: unit test of the refusal rule with example questions; integration test with recorded responses.
+
 **RF-250 Consolidate cards across areas** - R1 - Should - Source interview 2026-10-09 - ADR-005
 As a developer I want duplicate entities and rules found by several agents merged so that the specification has no repeats.
 - Given cards from several areas describing the same entity or rule, when consolidation runs with the `summariser` role, then they are merged into one card keeping every citation, and the merge is recorded.
 Verification: integration test with recorded responses.
+
+**RF-260 Flow cards** - R1 - Must - Source DEC-134 - ADR-005
+As a modernisation team I want each end-to-end journey of the legacy application described step by step so that we see how the system behaves, not only what it contains.
+- Given an area with a user-facing or scheduled entry point (a page action, an HTTP handler, a scheduled job, a message handler), when understand runs, then the agent may write `FLOW` cards; each holds a trigger, an ordered list of steps and an outcome, and every step names what it touches (a `SCRN`, `BR`, `ENT` or `INT` card id when one exists) and carries at least one citation.
+- Given a `FLOW` card with error or alternative paths found in the code, when it is written, then each path is a numbered branch of a step with its own citation; a path the agent only suspects becomes an `OQ` card, not a step.
+- Given a `FLOW` card, when the verifier checks it, then every step is a claim checked like any other (RF-300..RF-305); a step whose citation is invalid or rejected is marked on the card and the flow is listed as incomplete.
+- Given a verified `FLOW` card, when its file is written, then Rosetta adds a Mermaid sequence diagram generated by code from the steps (participants are the screens, handlers, rules, entities and integrations named); the model never writes Mermaid text.
+Verification: schema test of `FLOW`; integration test with recorded responses; snapshot test of the generated diagram, including names holding Mermaid syntax characters.
+
+**RF-261 Screen cards** - R1 - Must - Source DEC-134 - ADR-005
+As a modernisation team I want an inventory of the legacy screens so that we know the full surface the new user interface must cover.
+- Given an area holding pages, forms, views or templates, when understand runs, then the agent may write `SCRN` cards; each holds the route or page name, the roles that can open it, its fields (name, input kind, required or not, each validation with a citation), its actions (each naming the handler or `FLOW` card it starts) and the screens it leads to.
+- Given a repository with no user interface, when understand ends, then no `SCRN` card exists and the coverage of each area says "no screens found" instead of a gap.
+- Given verified `SCRN` cards, when the specification is written, then a screen map (a Mermaid flowchart generated by code from the "leads to" links) opens the screens section.
+Verification: schema test of `SCRN`; integration test with recorded responses on the WebForms demo; snapshot test of the screen map.
+
+**RF-262 Legacy data model** - R1 - Must - Source DEC-134 - ADR-005
+As a modernisation team I want one view of the legacy data model so that we can plan the data migration.
+- Given the verified `ENT` cards of a run, when the specification is written, then `data-model.md` lists every entity with its fields, keys and relations, each with the citation it came from, and a Mermaid entity-relationship diagram generated by code from those cards.
+- Given a relation whose cardinality the cards do not state, when the diagram is drawn, then it is drawn as unknown and listed under "to confirm" in the same file, never guessed.
+- Given consolidation (RF-250) merged two entity cards, when the data model is written, then the entity appears once with every citation.
+Verification: snapshot test from fixture cards; structure test (every `ENT` card appears once).
+
+**RF-263 Flows, screens and data model in the specification** - R1 - Must - Source DEC-134 - ADR-005
+As a reader I want `spec.md` to present the new material next to the existing cards so that one document describes the legacy system.
+- Given a run with `FLOW`, `SCRN` and `ENT` cards, when `spec.md` is written, then it has a flows section, a screens section (with the screen map) and a link to `data-model.md`, each item linking its card, and the coverage per area (RF-230) counts the new card types.
+- Given the new card types, when the run estimate is shown (RF-427), then it includes them; no new model role is added.
+Verification: snapshot test of `spec.md`.
+
+**RF-264 Overview of the application before any question** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer who has never seen the legacy application I want Rosetta to explain what the application does before it asks me anything so that I can understand the output and answer well.
+- Given an understand run that has ended, when its results are written, then the `summariser` role writes `overview.md` from the cards whose citations passed: what the application is in two or three sentences, who uses it, its main features, screens, data and integrations, each statement linking its cards, and what the run could not cover; it holds no statement without a card.
+- Given the run page, the specification and the report, when they are opened after the run, then the overview comes first and the open questions come after it, each linked to the overview section it concerns.
+- Given a run whose cards are too few to explain the application (for example most areas were third-party code), when the overview is written, then it says so plainly and suggests the next step (a new scan, or more areas) instead of guessing.
+Verification: integration test with recorded responses; snapshot test of `overview.md`; end-to-end test of the order on the run page.
 
 ### 5.4 Verifier (RF-300..RF-399)
 
@@ -628,6 +700,13 @@ As a developer I want a Markdown report before the HTML one exists so that the m
 - Given another user's run or an unknown run id, when the report is asked for, then the answer is the same 404 as for any missing run, so the run's existence is not revealed (DEC-131).
 Verification: snapshot test.
 
+**RF-508 Diagrams in the report** - R1 - Must - Source DEC-134 - ADR-013
+As a reader I want the flows, screen map and data model drawn in the HTML report so that I do not need another tool to see them.
+- Given Mermaid diagrams in the specification or the package, when the HTML report is built, then each is drawn by a pinned copy of Mermaid shipped with the report (no network), with `securityLevel: 'strict'`, and the Markdown keeps the Mermaid source.
+- Given a diagram whose labels hold text from the analysed code, when it is generated, then every label is escaped by the generator so that it cannot close the diagram, add a link or a click handler, or inject HTML; RF-507 applies to the drawn diagram.
+- Given a diagram that fails to draw, when the page is opened, then its source is shown as text with a note, and the rest of the page works.
+Verification: end-to-end test with a fixture whose names hold Mermaid syntax, HTML and a `javascript:` link; nothing runs.
+
 ### 5.7 Plan: the hand-off package (RF-600..RF-699)
 
 **RF-600 Produce the hand-off package** - Withdrawn 2026-10-11 - see RF-604 (DEC-59: no command-line interface; DEC-77, DEC-78: the planning brief replaces `--target`)
@@ -706,6 +785,102 @@ Verification: structure test of the package.
 As a developer I want to see what `plan` will cost before it starts so that it stays within my caps.
 - Given a saved brief, when I start `plan`, then the page shows the estimate for the `planner` role against my caps, and every call goes through the budget guard like any other run (RF-420..RF-429).
 Verification: integration test with the fake provider.
+
+**RF-620 Documentation set of the package** - R1 - Must - Source DEC-134 - ADR-018
+As a modernisation team I want the package to read like a complete project documentation set so that we can start building from it alone.
+- Given a produced package, when its README is opened, then the reading order lists, in this order: the product requirements document (RF-621), the technical requirements document (RF-622), the target data model (RF-623), the API contract (RF-624), the target flows (RF-625), the user-interface material (RF-626) and the implementation plan (RF-627), followed by the parts RF-601 already lists; each entry links its file.
+- Given any document of the set, when it states a requirement, a table, an endpoint, a flow or a screen, then it links the package requirement and the source card ids (RF-602).
+Verification: structure test of the package (every listed file exists, every link resolves).
+
+**RF-621 Product requirements document** - R1 - Must - Source DEC-134 - ADR-018
+As a product owner I want a PRD for the target system so that the business scope is agreed before the build.
+- Given the verified cards and the planning brief, when the package is written, then `prd.md` holds: the problem and the goal of the modernisation (from the brief), the users and roles (from the roles found in the code), the features in scope with a MoSCoW priority (each linked to its `FEAT` cards), the business rules that must be kept (linked to `BR` cards), what is out of scope, the non-functional expectations, and the success measures.
+- Given a section the code cannot answer (success measures, business goals beyond the brief), when the PRD is written, then it holds a marked placeholder and the question goes to the package's open-questions file with a default (DEC-80); nothing is invented.
+Verification: structure test; integration test with recorded responses.
+
+**RF-622 Technical requirements document** - R1 - Must - Source DEC-134 - ADR-018
+As a tech lead I want a TRD for the target system so that the technical choices are in one place.
+- Given the chosen style (RF-608), stack (RF-609) and migration strategy (RF-610), when the package is written, then `trd.md` holds: the architecture overview with a Mermaid component diagram, the stack per layer, the integrations to keep or replace (linked to `INT` cards), security and data protection, non-functional targets, deployment and environments, and the migration approach, each section linking the ADR that decided it.
+- Given a planned security control that works by listing forbidden patterns (a denylist), when the TRD is written, then it says so, states the invariant the control must keep, and recommends an allowlist or a rule that does not depend on the shape of the input where one exists (DEC-135).
+Verification: structure test; integration test with recorded responses.
+
+**RF-623 Target data model** - R1 - Must - Source DEC-134 - ADR-018
+As a developer I want the target data model table by table so that the first migration can be written without guessing.
+- Given the legacy data model (RF-262) and the chosen database, when the package is written, then `data-model.md` lists each target table with its columns, types in the chosen database, keys, constraints and indexes, and for each column the legacy entity and field it comes from (or "new"), plus a Mermaid entity-relationship diagram generated by code.
+- Given a legacy field with no target column, when the model is written, then it is listed as dropped with the reason; a type change that can lose data is listed as a migration risk.
+- Given the package must stay tool-agnostic (RF-603), when the model is written, then it holds no executable DDL; the first task card of the implementation plan writes the migrations in the chosen stack.
+Verification: structure test (every legacy `ENT` field is mapped or listed as dropped); snapshot test of the diagram.
+
+**RF-624 API contract** - R1 - Should - Source DEC-134 - ADR-018
+As a front-end and back-end team I want the service contract written down so that both sides can build in parallel.
+- Given a chosen stack whose front end is separate from its back end, when the package is written, then `api/openapi.yaml` (OpenAPI 3.1) describes every operation the target features and flows need, with request and response schemas derived from the target data model, error responses, and authentication; each operation lists the `FEAT` or `FLOW` card it serves.
+- Given a stack with a server-rendered front end and no public API, when the package is written, then the README says no API contract applies and why.
+Verification: the contract validates against the OpenAPI 3.1 schema in a test; structure test of the card links.
+
+**RF-625 Target flows** - R1 - Must - Source DEC-134 - ADR-018
+As a developer I want each main journey drawn over the target architecture so that I see where each step will live.
+- Given the verified `FLOW` cards and the target architecture, when the package is written, then `flows/` holds one file per main journey with the steps mapped to target components and a Mermaid sequence diagram generated by code, each file linking the legacy `FLOW` card it comes from; journeys the brief leaves out are listed as out of scope.
+Verification: structure test (every `FLOW` card is mapped or listed as out of scope).
+
+**RF-626 User-interface material** - R1 - Must - Source DEC-134 - ADR-018
+As a designer and a front-end developer I want the target screens planned so that the new interface covers every legacy screen on purpose.
+- Given the verified `SCRN` cards and the chosen front end, when the package is written, then `ux/` holds: a target screen map (Mermaid, generated by code) with each legacy screen kept, merged or dropped and why; a low-fidelity wireframe per main screen as a plain HTML file with no scripts and no styling beyond layout boxes, listing its fields, actions and navigation; and a design brief for an external design tool (audience, tone, components needed, accessibility target WCAG 2.1 AA).
+- Given the package, when it is produced, then it holds no generated visual design; the design itself comes from the team's design tool using the brief.
+Verification: structure test (every `SCRN` card is mapped); the wireframes pass an HTML check with no script, no event attribute and no external resource.
+
+**RF-627 Implementation plan** - R1 - Must - Source DEC-134 - ADR-018
+As a modernisation team I want an implementation plan that covers every document of the package so that nothing in it is left without work.
+- Given the package, when the plan is written, then the roadmap (RF-601) has phases with exit criteria and the task cards cover the whole set: every PRD feature, every target table, every API operation, every target flow and every main screen is named by at least one task card, and each card links the items it builds.
+- Given an item no card covers, when the package is checked, then it is listed as a gap in the package's checks file and the run is not reported as complete.
+Verification: structure test of the coverage of the plan.
+
+**RF-630 Task cards an agent can build without guessing** - R1 - Must - Source DEC-135 - ADR-018
+As a team building with AI agents I want each task card to state what must hold and how it will be attacked so that the first attempt meets the review.
+- Given a task card in the package, when it is written, then it states the invariant the work must make true (for example "no text from a user reaches the page as HTML, in any spelling"), not only the change to make, and its Done-when items are Given/When/Then scenarios with concrete inputs.
+- Given a card that adds a check, a filter, a limit or a parser, when it is written, then it has a "review probes" list of concrete hostile or edge inputs (other spellings and letter cases, encodings, neighbouring code paths doing the same thing, values one step past a limit), and the build method says the builder runs the same list before asking for review.
+Verification: structure test (every card has an invariant and concrete scenarios; every card of the kinds named has probes); review of the demo package.
+
+**RF-631 Behaviour to preserve** - R1 - Must - Source DEC-135 - ADR-018
+As a modernisation team I want every task card to name the legacy behaviour it must not change so that the rewrite does not regress what works today.
+- Given a task card that touches a feature, rule, flow or screen, when it is written, then it lists the `FEAT`, `BR`, `FLOW` or `SCRN` behaviours it must keep, each with its citation into the legacy code, and asks for an approval test of each before the change.
+- Given an open question raised while building, when the package states its default, then the default keeps the legacy behaviour; a default that would change what users see today is not allowed, and the question says so.
+Verification: structure test (every card touching a covered item lists its behaviours); the package's build method states the default rule.
+
+**RF-632 Realistic data shapes from the scan** - R1 - Should - Source DEC-135 - ADR-018
+As a developer I want test data shaped like the real repository and data so that limits and parsers are tested against what they will meet.
+- Given the scan of the legacy repository, when the package is written, then a `fixtures.md` lists measured shapes taken by code from the scan (largest files and their kinds, total size by kind such as source, generated maps, bundled third-party scripts, the deepest paths, unusual file names such as reserved device names or characters some systems refuse, encodings and line endings found) and the volumes the cards state for the data, and task cards that add a limit or a parser link the shapes they must handle.
+Verification: snapshot test of `fixtures.md` from a fixture scan.
+
+**RF-633 A failing test for every guard** - R1 - Must - Source DEC-135 - ADR-018
+As a reviewer I want every guard the build adds to be pinned by a test so that removing it is noticed.
+- Given the build method of the package, when it is written, then it requires that each branch, check or guard a card adds has a test that fails when that guard is removed, even when the code already behaves correctly, and that the reviewer confirms it by removing the guard (a mutation check).
+Verification: structure test of the build method and the card template.
+
+**RF-634 Parallel-safe cards** - R1 - Must - Source DEC-135 - ADR-018
+As a team running several builders at once I want cards that cannot collide so that parallel work merges cleanly.
+- Given the task cards, when the plan is written, then each card lists the files and folders it expects to change and the shared identifiers it needs (error codes, migration numbers, configuration keys, ports), allocated by the plan from ranges per card or named as taken from one registry file the first card creates.
+- Given two cards whose file lists or identifiers overlap, when the plan is written, then they are ordered by a dependency, never placed in the same parallel group; the roadmap lists the groups that can run together.
+Verification: structure test (no shared identifier allocated twice; no overlap inside a parallel group).
+
+**RF-635 Risk class per card** - R1 - Must - Source DEC-135 - ADR-018
+As a lead I want the risk of a card visible apart from its size so that a small card at a trust boundary still gets a careful build and review.
+- Given a task card, when it is written, then it has a risk class (`security boundary`, `data loss`, `money`, `none`) next to its difficulty, and the build method says that a card with a risk class other than `none` is built by at least the middle model tier and reviewed with its probes, whatever its difficulty.
+Verification: structure test.
+
+**RF-636 Agent operations** - R1 - Should - Source DEC-135 - ADR-018
+As a team building with AI agents I want the operational rules agents need written down so that a session does not lose hours to known traps.
+- Given AI-assisted build is chosen (RF-612), when `AGENTS.md` is written, then it has an operations section: merge one pull request at a time from a branch up to date with main, continuous-integration fixes first in the queue; a check shown as running long after its workflow finished is re-run, not waited on; never skip git hooks, and after a rejected push fetch and push again; never edit a script while it runs; reserve port ranges per agent and check the machine's excluded ranges; keep a register of known flaky tests with an owner card for each.
+Verification: structure test of `AGENTS.md`.
+
+**RF-637 Open questions linked to the cards they block** - R1 - Should - Source DEC-135 - ADR-018
+As a product owner I want each open question to name the cards waiting for it so that I answer in the order the build needs.
+- Given the package's open-questions file, when it is written, then each question lists its default and the task cards that depend on it, and the roadmap marks those cards as waiting on the question until it is answered or its default is accepted.
+Verification: structure test (every question names at least one card or says none).
+
+**RF-638 Build metrics in the plan** - R1 - Should - Source DEC-135 - ADR-018
+As a lead I want the plan to say how the build process is measured so that changes to it are judged by results.
+- Given the build method, when it is written, then it names a small set of measures (the share of cards passing review the first time, review rounds per card, cost or tokens per card, escaped defects found after merge), says where they are recorded, and says to change one thing in the process at a time and compare.
+Verification: structure test of the build method.
 
 ### 5.8 Milestone hand-in artefacts (RF-800..RF-899)
 
@@ -816,6 +991,38 @@ As a user I want the application hardened so that its session never leaks and in
 - Given a session, when its cookie is set, then it is `__Host-rosetta_session` with `HttpOnly`, `Secure`, `SameSite=Strict` and `Path=/`, and no session id or token ever appears in a URL.
 - Given the static report, when it is generated, then each page carries an equivalent content security policy in a `meta` element and `referrer` set to `no-referrer`.
 Verification: integration tests on response headers and cookie attributes.
+
+**RF-1014 Honest verification state** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a user I want the verification state to say what was checked and what was not so that a claim is never shown as waiting for a step that does not run.
+- Given a release in which only the citation check runs (the model judgement of RF-301 is not built yet), when a claim passed its citation check, then it is shown as "citations checked" with a short note that the judgement step comes in a later version, and the stepper and the run summary say the same; nothing is labelled "waiting" for a step that will not run.
+- Given the judgement step is built, when a claim is waiting for it, then "waiting for judgement" is shown only while that step is queued or running.
+Verification: unit test of the labels; end-to-end test of the live run page.
+
+**RF-1015 Run page in two modes** - R1 (M1) - Must - Source DEC-137 - ADR-012
+As a user who may not know the analysed code I want the run page to show one thing at a time so that I always know what is happening and what to do next.
+- Given a queued or running run, when its page opens, then it is in "while running" mode: the run journey (map the code, read, check citations, explain, your questions) with the current step, the living code map (RF-1016), the spend for the run against its cap, and up to three "working now" agents in plain words; cards so far, all agents, and activity (events, provider calls and logs) sit in tabs below, one list at a time.
+- Given a run that has ended, when its page opens, then it is in "after the run" mode: the overview (RF-264) first, a "Your turn" panel with the number of open questions and the next actions, and tabs for Your questions, Evidence (cards, claims, citations, coverage, code map) and Activity (replay, events, calls, logs); the page switches modes by itself when the run ends.
+- Given either mode, when it is used with the keyboard or a screen reader, then tabs follow the tab pattern, every state is carried by text and a glyph as well as colour, and RF-1002..RF-1005, RF-1007, RF-1010 and RF-1011 keep their content in these places.
+Verification: end-to-end tests of both modes and the switch; accessibility checks; the design proposal `docs/design/proposals/run-page-v2.html` is the reference.
+
+**RF-1016 Living code map** - R1 (M1) - Should - Source DEC-137 - ADR-012
+As a user watching a run I want to see the code being read so that the run is easy to follow and pleasant to watch.
+- Given the code map of the run, when the run page is in "while running" mode, then each area is a tile sized by its estimated tokens, showing its name, file count and state (waiting, being read with a moving highlight, read with one mark per card written, not covered, or third-party code left out, drawn hatched); a tile opens its agent and cards.
+- Given the operating system asks for reduced motion, when the map updates, then nothing moves; states change in place.
+Verification: component tests of the tile states; end-to-end test with recorded events; reduced-motion check.
+
+**RF-1017 Overview and questions after the run** - R1 (M1) - Must - Source DEC-137 - ADR-012
+As a user I want the end of a run to read like an explanation followed by a short request for help so that I understand the application before I answer anything.
+- Given an ended run, when its page opens, then the Overview tab shows the overview of RF-264 with its sections (features, screens, data, integrations), each item linking its cards, the honest verification note of RF-1014 and what was not covered.
+- Given open questions (RF-243), when the Your questions tab opens, then each shows the question, why the code cannot answer it with its citation, how many items depend on it, an answer field and the default that applies if it is skipped.
+Verification: end-to-end test with a recorded run.
+
+**RF-1018 Choose areas quickly** - R1 (M1) - Must - Source DEC-138 - ADR-012
+As a user on the start page I want to choose the areas of a run in a few clicks so that I can start the run without scrolling through a long list.
+- Given the list of areas, when the start page opens, then only the project's own code is listed and selected; third-party and generated code is left out and shown as one collapsed line after the list ("12 library areas left out: jQuery, Bootstrap, ... Show"), which expands to the areas with their reason and lets the user add any of them; buttons select all, select none and select own code only, and a filter narrows the list by name.
+- Given any number of areas, when the page is scrolled, then a summary bar stays visible at the bottom with the number of areas and files chosen, the estimate and the Start button; the list itself scrolls inside its panel.
+- Given a user who selects third-party areas, when they start the run, then the estimate shows what they add and the start asks for confirmation once.
+Verification: end-to-end test with 1 and 120 areas at desktop and phone widths.
 
 ### 5.10 Accounts, sessions, keys and administration (RF-1100..RF-1199)
 
@@ -996,12 +1203,18 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-140..RF-147 | DEC-16, DEC-57, DEC-118 | ADR-006, ADR-013, ADR-019 | P1 (RF-144: P2) | P1-04, P1-17, P1-28, P1-31, P1-33, P1-34, P2-07 |
 | RF-200..RF-205 | DEC-15, DEC-18 | ADR-003, ADR-005 | P1 | P1-25, P1-31, P1-32, P1-33 |
 | RF-230..RF-250 | DEC-15, DEC-18, DEC-98 | ADR-003, ADR-005 | P2 (RF-240: P1, DEC-98) | P1-33, P1-39, P2-04, P2-05, P2-06, P2-13 |
+| RF-113, RF-206, RF-207, RF-243, RF-264 | DEC-136 | ADR-004, ADR-005 | P1 (M1) | P1-166, P1-167, P1-168 |
+| RF-1014..RF-1018 | DEC-136, DEC-137, DEC-138 | ADR-005, ADR-012 | P1 (M1) | P1-166, P1-169, P1-170, P1-172 |
+| RF-208 | DEC-138 | ADR-005 | P1 (M1) | P1-171 |
+| RF-260..RF-263 | DEC-134 | ADR-005, ADR-013 | P2 | P2-18, P2-19, P2-20, P2-21, P2-22, P2-23, P3-22 |
 | RF-300, RF-302 | DEC-19 | ADR-005 | P1 | P1-32, P1-33 |
 | RF-301, RF-303..RF-305 | DEC-19, DEC-57 | ADR-005, ADR-008 | P2 | P2-01, P2-02, P2-03, P2-13 |
 | RF-400..RF-408 | DEC-09, DEC-23, DEC-50 | ADR-003 | P1 (RF-403, RF-404: P2) | P1-18, P1-24, P1-25, P1-26, P1-29, P1-37, P1-47, P2-09, P2-10 |
 | RF-420..RF-428 | DEC-13, DEC-49 | ADR-007 | P1 (RF-423, RF-427 and the second RF-425 scenario: P2; DEC-97) | P1-27, P1-30, P1-33, P1-34, P1-35, P1-36, P2-08 |
 | RF-500..RF-507 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57, DEC-131 | ADR-002, ADR-005, ADR-012, ADR-013 | P3 (RF-504, RF-506, RF-507: P1) | P1-12, P1-43, P1-50, P3-01, P3-02, P3-03, P3-04 |
 | RF-600..RF-613 | DEC-10, DEC-72..DEC-85 | ADR-005, ADR-007, ADR-018 | P3 (RF-600 withdrawn) | P3-05, P3-06, P3-07, P3-08, P3-09, P3-10, P3-11, P3-12 |
+| RF-620..RF-627, RF-508 | DEC-134 | ADR-013, ADR-018 | P3 | P3-14, P3-15, P3-16, P3-17, P3-18, P3-19, P3-20, P3-21, P3-22 |
+| RF-630..RF-638 | DEC-135 | ADR-018 | P3 | P3-23, P3-24, P3-25, P3-26 |
 | RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | P1-45, P1-50, P1-52, P1-53, P1-54, P1-55 |
 | RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57, DEC-120 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | P1-07, P1-09, P1-12, P1-22, P1-34, P1-35, P1-36, P1-37, P1-38, P1-39, P1-40, P1-42, P1-43, P1-45, P1-46, P2-02, P2-05, P3-01 |
 | RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69, DEC-119, DEC-122, DEC-123, DEC-124, DEC-127, DEC-132 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | P1-08, P1-09, P1-10, P1-11, P1-14, P1-18, P1-22, P1-27, P1-29, P1-34, P1-36, P1-41, P1-42, P1-46, P1-54, P1-55, P1-56, P2-10 |

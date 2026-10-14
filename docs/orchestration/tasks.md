@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 165 | 64 | 83 | 18 | 0 | 98 | 59 | 8 | 108 | 0 |
-| P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
-| P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **195** | **69** | **101** | **25** | **0** | **104** | **80** | **11** | **112** | **0** |
+| P1 Milestone slice (M1) | 172 | 64 | 90 | 18 | 0 | 99 | 65 | 8 | 111 | 0 |
+| P2 Full understand | 23 | 3 | 14 | 6 | 0 | 4 | 18 | 1 | 3 | 0 |
+| P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
+| **Total** | **221** | **69** | **126** | **26** | **0** | **106** | **104** | **11** | **115** | **0** |
 
 ## Conventions for every card
 
@@ -2057,6 +2057,102 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Done when**: each new test fails when its guard is removed; `npm run verify` green.
 - **Refs**: RF-507, RNF-005, RNF-008, RF-146, P1-84, P1-161, P1-164.
 
+### P1-166 - Follow-up: bugs from the owner's local test on 2026-10-14
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P1-108, P1-147
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the card parser and citation schema; `web/src/lib/live-run/claim-events.ts`; `web/src/pages/ClaimsList.tsx`; the start page; `docs/runbooks/local.md` section 1; the run page data loading.
+- **Do**: (1) accept `path:N` as `path:N-N` (RF-207); a recorded gemma4 answer with one-line citations must produce cards. (2) Honest verification labels (RF-1014): "citations checked" with the note, in the claims list, stepper and run summary. (3) Warn on a code map from an older scanner (RF-113): the code map records the scanner version; the start page offers a new scan first. (4) Runbook: an install that used the all-zero placeholder key moves it to `ROSETTA_SECRET_KEY_PREVIOUS` before setting a new key, so stored provider keys are re-encrypted, then removes it after the start-up log reports the re-encryption. (5) The live run page fetches `GET /api/runs/:id` several times a second during a run: refetch at most once per second, driven by the event stream.
+- **Review probes**: citations `a.cs:30`, `a.cs:30-30`, `a.cs:0`, `a.cs:31-30`, `a.cs:` and a Windows path; a code map without a version; a run with 500 events in 10 s (count the run reads).
+- **Delivers**: fixes, tests, the runbook text.
+- **Done when**: each item has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-113, RF-202, RF-207, RF-1004, RF-1014, RNF-003, DEC-136.
+
+### P1-167 - Read before answering and questions only the code cannot answer
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the agent loop; the reader prompt; the `OQ` schema; RF-206, RF-243; the `invalid-output` and transcripts of the owner's 2026-10-14 run as examples.
+- **Do**: refuse a final answer from a reader that has read none of its area's files and tell it which files to read (RF-206); the `OQ` schema needs what the code shows, a citation and a question about something outside the code, and a question asking what the code, an area or the application does is refused with a repair message (RF-243); duplicate questions across areas are merged and grouped by feature or area; an area of third-party or generated code writes no question. Prompts versioned; recordings.
+- **Review probes**: "What does this area do?", "What is the purpose of the application?", "What is the business logic of X?" (refused); "Who uses these pages?" with a citation (kept); the same question from three areas (merged once with three citations); an agent answering at turn 1 with no reads.
+- **Behaviour to preserve**: good `OQ` cards that cite code and ask about intent keep working; answers already in `answers.md` stay attached to their questions.
+- **Delivers**: loop and schema changes, prompts, recordings, tests.
+- **Done when**: every RF-206 and RF-243 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-202, RF-206, RF-240, RF-243, DEC-136.
+
+### P1-168 - Overview of the application before any question
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-167
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-264; the summariser role configuration; the spec writer.
+- **Do**: after understand, the `summariser` role writes `overview.md` from the cards whose citations passed (what the application is, who uses it, features, screens, data, integrations, what was not covered), each statement linking its cards and no statement without a card; a thin run says so and suggests the next step; `spec.md` and the Markdown report open with it; the run page shows it first (with P1-170). Prompt versioned; the budget guard and the estimate include the call.
+- **Review probes**: a run whose cards are mostly third-party (the overview says the run cannot explain the application yet); a model answer holding a statement with no card link (dropped); hostile card text (rendered as text).
+- **Delivers**: the use case, prompt, writer, recordings, tests.
+- **Done when**: every RF-264 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-204, RF-264, RF-420, RF-427, RF-504, RF-507, DEC-136.
+
+### P1-169 - Run page while running: journey, living code map and tabs
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design/proposals/run-page-v2.html` (the reference); `web/src/pages/LiveRunPage.tsx` and its parts; `docs/design-system.md`; RF-1002..RF-1005, RF-1010, RF-1011, RF-1015, RF-1016.
+- **Do**: rebuild the running state of the run page as the proposal shows: the run journey, the living code map (tiles sized by tokens, states, hatched third-party areas, reduced motion), spend for the run, "working now" (three agents in plain words), and tabs for cards so far, all agents and activity (events, calls, logs). Existing data sources and event handling are reused; no API change. Update `docs/design-system.md` with the new components.
+- **Review probes**: 1 area and 120 areas; a 60-character area name; an area name holding HTML; light and dark; 360 px wide; keyboard only; reduced motion; a run that fails at the first step.
+- **Behaviour to preserve**: every figure the current page shows (RF-1003 cost, RF-1010 project totals, RF-1011 calls and logs) is still reachable within one click.
+- **Delivers**: components, page, tests, design-system update.
+- **Done when**: every RF-1015 (first and third scenarios) and RF-1016 scenario has a passing test; the page matches the proposal in light and dark at desktop and phone widths; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1002..RF-1005, RF-1010, RF-1011, RF-1015, RF-1016, RNF-010, ADR-012, DEC-137.
+
+### P1-170 - Run page after the run: overview, your turn, questions, evidence
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-168, P1-169
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design/proposals/run-page-v2.html`; RF-1007, RF-1014, RF-1015, RF-1017.
+- **Do**: the ended state of the run page as the proposal shows: the Overview tab first, the "Your turn" panel with the run facts, the Your questions tab (question, why the code cannot answer it with its citation, what depends on it, answer field, default), the Evidence tab (cards, claims, coverage, code map) and the Activity tab (replay, events, calls, logs); the page switches modes when the run ends.
+- **Review probes**: a run with no questions; 40 questions; an overview that says the run could not explain the application; a failed run (no overview; the page says what failed and what to do); the switch while the page is open.
+- **Behaviour to preserve**: answering questions still writes `answers.md` (RF-240, RF-1007); report and download links stay one click away.
+- **Delivers**: components, page, tests.
+- **Done when**: every RF-1015 (second scenario) and RF-1017 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-240, RF-1007, RF-1008, RF-1014, RF-1015, RF-1017, RF-264, RNF-010, DEC-137.
+
+### P1-171 - Follow-up: keep valid cards and retry failed agent tasks
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the card parser and repair path (RF-202); the agent loop; the run end state; the `invalid-output` folders of the owner's runs `20261014-145748-understand`, `20261014-153115-understand` and `20261014-154704-understand` (11 of 41, 11 of 42 and 6 of 16 tasks failed; in the third run, with library areas left out, all 6 were one-line citations and they included Models, Services, ViewModel and Setup).
+- **Do**: as RF-208: take the JSON out of prose or a fence; keep valid claims and cards, drop and list invalid ones; a second, targeted repair; ask a cut-off answer to continue; retry a task with no usable cards once with a fresh conversation (split an area too large for the context); report failed areas in the coverage and the run summary with "Retry failed areas"; a run with failed areas never shows as a plain success.
+- **Review probes**: the recorded failing answers of both runs (each must yield its valid cards); an answer that is all prose; JSON with a trailing comma; an answer cut mid-string; a card whose every claim is invalid; a model that fails the same way three times (the run still ends, with the area marked failed and no endless loop).
+- **Behaviour to preserve**: valid answers parse exactly as today; the budget guard counts every repair and retry; a task never runs more than its turn limit plus one retry.
+- **Delivers**: parser, loop and summary changes, recordings, tests.
+- **Done when**: every RF-208 scenario has a passing test; replaying the two recorded runs loses no area to a format error; `npm run verify` green.
+- **Refs**: RF-201, RF-202, RF-208, RF-230, RF-420, DEC-138.
+
+### P1-172 - Follow-up: choose areas quickly on the start page
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the start page and its area list; P1-147 (third-party default); `docs/design/proposals/run-page-v2.html` (look and tokens); RF-1018.
+- **Do**: as RF-1018: only own code listed and selected; third-party and generated code folded into one collapsed line after the list ("12 library areas left out ... Show") that expands to the areas and their reason; Select all, Select none and Own code only buttons; a filter; the list scrolls inside its panel; a summary bar with areas, files, estimate and Start stays visible; a one-time confirmation when third-party areas are chosen.
+- **Review probes**: 1 area; 120 areas; every area third-party; a 60-character area name; keyboard only; 360 px wide; Start pressed with nothing selected (disabled, with the reason).
+- **Behaviour to preserve**: the estimate, caps and confirm-threshold behaviour of the start page (P1-91, P1-106) are unchanged.
+- **Delivers**: the page changes and tests.
+- **Done when**: every RF-1018 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1001, RF-1018, RF-427, RNF-010, DEC-138.
+
 ---
 
 ## Phase 2 - Full understand
@@ -2267,6 +2363,78 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Done when**: `npm run verify` and the Anthropic adapter contract tests are green on the new version; the audit check passes.
 - **Refs**: RF-404, ADR-013, DEC-125, P2-09 (owner chose the 0.128.0 pin on 2026-10-12).
 
+### P2-18 - Flow and screen card types
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-06
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/cards/card-vocabulary.ts`; `src/domain/cards/card.ts`; the card schema and parser; `docs/architecture.md` section 5 (state lists); `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md` (DEC-134 note).
+- **Do**: add `FLOW` and `SCRN` to the card vocabulary (Q-24) with their schemas: `FLOW` (trigger, ordered steps each with a target card id when one exists and at least one citation, numbered branches, outcome) and `SCRN` (route or page, roles, fields with input kind, required flag and cited validations, actions naming a handler or `FLOW` id, "leads to" links); parser, repair path (RF-202), stable ids (RF-203), card files under `cards/flow/` and `cards/scrn/`, `index.json`; architecture section 5 lists the new types.
+- **Delivers**: schemas, parser cases, card writers, tests.
+- **Done when**: a valid and an invalid fixture of each type pass and fail the schema as RF-202 requires; a step without a citation is refused; `npm run verify` green.
+- **Refs**: RF-202, RF-203, RF-204, RF-260, RF-261, ADR-005, DEC-134, Q-24.
+
+### P2-19 - Agent prompts and area planning for flows and screens
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P2-18
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `prompts/`; the area planner (RF-200); the code map; `tests/recordings/`; RF-427 estimate code.
+- **Do**: versioned prompt changes so the agent writes `FLOW` cards where the code map finds entry points (page actions, HTTP handlers, scheduled jobs, message handlers) and `SCRN` cards where it finds pages, forms, views or templates (Q-25); the code map marks those areas; suspected paths become `OQ` cards; record responses on the WebForms demo; the run estimate (RF-427) and coverage (RF-230) count the new types; an area with no pages reports "no screens found".
+- **Delivers**: prompts, planner and code-map changes, recordings, integration tests.
+- **Done when**: a recorded understand run of the demo yields `FLOW` cards for the order and catalogue journeys and `SCRN` cards for their pages, each step cited; a library-only area writes neither and its coverage says so; `npm run verify` green.
+- **Refs**: RF-200, RF-230, RF-260, RF-261, RF-263, RF-427, DEC-134, Q-25.
+
+### P2-20 - Verifier checks for flow steps and screen claims
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P2-18, P2-02
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the verifier (RF-300..RF-305); `src/domain/cards/claim-transitions.ts`.
+- **Do**: every `FLOW` step and every `SCRN` field validation and action is a claim checked by both verifier steps; a step whose citation is invalid or rejected is marked on the card and the flow is reported as incomplete in the card file, the specification and the coverage; calibration (RF-303) includes the new claims.
+- **Delivers**: verifier changes and tests with recorded responses.
+- **Done when**: a fixture flow with one bad step is shown as incomplete with that step marked; a fixture screen with a made-up validation has that claim `Rejected`; `npm run verify` green.
+- **Refs**: RF-260, RF-261, RF-300..RF-305, ADR-005, DEC-134.
+
+### P2-21 - Diagram generators with safe labels
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P2-18
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/security/threat-model.md`; RF-507; RF-508; the Mermaid syntax reference for sequence, flowchart and entity-relationship diagrams.
+- **Do**: pure functions in the domain or application layer that build Mermaid text from cards: a sequence diagram from a `FLOW` card, a flowchart screen map from `SCRN` cards, an entity-relationship diagram from `ENT` cards (unknown cardinality drawn as unknown); every label goes through one escaping function so that text from the analysed code cannot end a diagram, open a new statement, add a `click` or `href`, or carry HTML; ids are generated, never taken from the code. The model never writes Mermaid (DEC-134).
+- **Delivers**: the generators, the escaping function, snapshot and property tests.
+- **Done when**: names holding `end`, `;`, newlines, `-->`, `%%`, `click`, `<script>`, `"` and `javascript:` produce valid diagrams with the text shown literally (property test over generated names); the generated text parses with the pinned Mermaid parser in a test; `npm run verify` green.
+- **Refs**: RF-260, RF-261, RF-262, RF-507, RF-508, ADR-013, DEC-134, Q-26.
+
+### P2-22 - Legacy data model file and the new specification sections
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-19, P2-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the `spec.md` writer (RF-204); consolidation (RF-250).
+- **Do**: write `data-model.md` from verified `ENT` cards (entities, fields, keys, relations, citations, the generated ER diagram, a "to confirm" list for unknown relations; merged entities once); add the flows section, the screens section with the screen map, and the data-model link to `spec.md`, each item linking its card.
+- **Delivers**: the writers and snapshot tests.
+- **Done when**: every RF-262 and RF-263 scenario has a passing test; every `ENT` card appears once in `data-model.md`; `npm run verify` green.
+- **Refs**: RF-204, RF-250, RF-262, RF-263, DEC-134.
+
+### P2-23 - Golden set for flows, screens and the data model
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-11, P2-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the golden set and the evaluation runner (P2-11); RFC-001 section 7.
+- **Do**: add to the golden set the expected flows (journeys and their steps), screens (fields and actions) and entities with relations of the demo application, written by hand from the code; the evaluation runner reports step recall, screen field recall and relation precision next to the existing measures; P2-14's verification matrix includes RF-260..RF-263.
+- **Delivers**: golden-set files, runner measures, a measured baseline.
+- **Done when**: the runner prints the three new measures for a recorded run; the baseline is recorded in the PR; `npm run verify` green.
+- **Refs**: RF-260..RF-263, RNF-006, RNF-012, P2-11, P2-14, DEC-134.
+
 ---
 
 ## Phase 3 - Report and plan
@@ -2426,3 +2594,159 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the tests, the start-up call and the manifest fields (with their line in `docs/data-model.md`).
 - **Done when**: a catalogue with a 201-character rule or one bullet fails its test; a broken catalogue file stops start-up; the manifest of a run lists the version and sha; `npm run verify` green.
 - **Refs**: RF-606, ADR-018, P3-05 (verifier MINORs).
+
+### P3-14 - Diagrams in the HTML report
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-01, P2-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-507, RF-508; the HTML report (P3-01..P3-04); `package.json` dependency rules (DEC-125).
+- **Do**: ship a pinned Mermaid build inside the report folder (Q-26; version at least two weeks old, licence notice kept), draw every diagram of the specification and the package with `securityLevel: 'strict'` and no network; a diagram that fails shows its source as text with a note.
+- **Delivers**: the rendering, the vendored file, end-to-end tests.
+- **Done when**: every RF-508 scenario has a passing test, including the hostile fixture; the report works offline from disk and on GitHub Pages; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-505, RF-507, RF-508, RNF-010, ADR-013, DEC-125, DEC-134, Q-26.
+
+### P3-15 - Package documentation set and the PRD
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: ADR-018; RF-601..RF-604; the planner (P3-09).
+- **Do**: extend the package README reading order with the documentation set (RF-620); write `prd.md` from the brief and the verified cards (problem and goal, users and roles, features with MoSCoW and `FEAT` links, rules to keep with `BR` links, out of scope, non-functional expectations, success measures); sections the code cannot answer get a marked placeholder and an open question with its default; prompts versioned, recordings.
+- **Delivers**: writers, prompts, recordings, structure tests.
+- **Done when**: every RF-620 and RF-621 scenario has a passing test; no PRD statement lacks a card link or a placeholder marker; `npm run verify` green.
+- **Refs**: RF-601, RF-602, RF-620, RF-621, ADR-018, DEC-80, DEC-134.
+
+### P3-16 - Technical requirements document
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-10, P2-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-608..RF-610; the package ADR writers (P3-10).
+- **Do**: write `trd.md`: architecture overview with a generated Mermaid component diagram, stack per layer, integrations to keep or replace with `INT` links, security and data protection, non-functional targets, deployment and environments, migration approach; each section links the ADR that decided it.
+- **Delivers**: writer, prompt changes, recordings, structure tests.
+- **Done when**: every RF-622 scenario has a passing test; every section links an ADR or says why none applies; `npm run verify` green.
+- **Refs**: RF-608, RF-609, RF-610, RF-622, ADR-018, DEC-134.
+
+### P3-17 - Target data model
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-09, P2-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-262, RF-609, RF-623; the entity mapping written by P3-09.
+- **Do**: write the package `data-model.md`: each target table with columns, types in the chosen database, keys, constraints and indexes, the legacy source of each column or "new", dropped legacy fields with reasons, type changes that can lose data as migration risks, and a generated ER diagram; no executable DDL (RF-603); the entity mapping of RF-601 links it.
+- **Delivers**: writer, prompts, recordings, structure and snapshot tests.
+- **Done when**: every RF-623 scenario has a passing test; every legacy `ENT` field is mapped or listed as dropped; `npm run verify` green.
+- **Refs**: RF-601, RF-603, RF-623, ADR-018, DEC-134.
+
+### P3-18 - API contract
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-17
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-624; the target data model (P3-17); `package.json` dependency rules (DEC-125).
+- **Do**: when the chosen front end is separate from the back end, write `api/openapi.yaml` (OpenAPI 3.1, Q-28) covering every operation the target features and flows need, schemas from the target data model, errors and authentication, each operation naming its `FEAT` or `FLOW` card; otherwise the README says no contract applies and why; a dev-only OpenAPI schema validator checks the file in tests.
+- **Delivers**: writer, prompts, recordings, validation test.
+- **Done when**: every RF-624 scenario has a passing test; the demo package's contract validates; `npm run verify` green.
+- **Refs**: RF-603, RF-624, ADR-018, DEC-125, DEC-134, Q-28.
+
+### P3-19 - Target flows
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-16, P2-20
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-625; the TRD components (P3-16).
+- **Do**: write `flows/` with one file per main journey (Q-27): steps mapped to target components and a generated sequence diagram, each linking its legacy `FLOW` card; journeys outside the brief listed as out of scope.
+- **Delivers**: writer, prompts, recordings, structure tests.
+- **Done when**: every RF-625 scenario has a passing test; every verified `FLOW` card is mapped or listed; `npm run verify` green.
+- **Refs**: RF-625, ADR-018, DEC-134, Q-27.
+
+### P3-20 - User-interface material
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-19
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-626; `docs/design-system-brief.md` (as the model of a design brief); RF-507.
+- **Do**: write `ux/`: a generated target screen map with each legacy screen kept, merged or dropped and why; one low-fidelity wireframe per main screen (Q-27) as a plain HTML file (layout boxes, fields, actions, navigation; no script, no event attribute, no external resource, text escaped); a design brief for an external design tool (audience, tone, components, WCAG 2.1 AA).
+- **Delivers**: writers, prompts, recordings, an HTML check in tests.
+- **Done when**: every RF-626 scenario has a passing test; a hostile screen name renders as text in its wireframe; `npm run verify` green.
+- **Refs**: RF-507, RF-626, RNF-010, ADR-013, ADR-018, DEC-134, Q-27.
+
+### P3-21 - Implementation plan coverage
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-15, P3-17, P3-18, P3-19, P3-20
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-601, RF-627; the roadmap and task-card writers (P3-09).
+- **Do**: make the package roadmap and task cards cover the whole set: every PRD feature, target table, API operation, target flow and main screen named by at least one task card that links it; the first card writes the migrations in the chosen stack (RF-623); uncovered items go to the package checks file and the run is not reported complete.
+- **Delivers**: planner changes, a coverage check, tests.
+- **Done when**: every RF-627 scenario has a passing test; the demo package has no uncovered item; `npm run verify` green.
+- **Refs**: RF-601, RF-623, RF-627, ADR-018, DEC-134.
+
+### P3-22 - Documentation set journey and owner review
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-14, P3-21, P2-23
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: P3-12; the demo planning brief.
+- **Do**: an end-to-end journey that runs understand and plan on the demo with recorded responses and checks the whole documentation set (spec with flows, screens and data model; PRD, TRD, data model, API contract, flows, UX, implementation plan) and the report diagrams; publish the demo package with the sample report (RF-800) for the owner to read; record the owner's review changes as follow-up cards.
+- **Delivers**: the journey, the published sample, the review notes.
+- **Done when**: the journey passes in CI; the owner has read the sample package and the changes are filed; P3-12's verification matrix includes RF-260..RF-263, RF-508 and RF-620..RF-627.
+- **Refs**: RF-260..RF-263, RF-508, RF-620..RF-627, RF-800, P3-12, DEC-134.
+
+### P3-23 - Task-card quality: invariants, probes, guard tests and risk class
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-09, P3-10
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-601, RF-612, RF-630, RF-633, RF-635; the task-card writer (P3-09); the build-method writer (P3-10); `docs/orchestration/tasks.md` of this repository as a worked example.
+- **Do**: the card template of the package gains an invariant, Given/When/Then Done-when with concrete inputs, a "review probes" list for cards that add a check, filter, limit or parser, and a risk class next to the difficulty; the build method states the guard-test rule with the mutation check and the tier rule for risky cards; prompts versioned, recordings.
+- **Delivers**: template, writers, prompts, recordings, structure tests.
+- **Done when**: every RF-630, RF-633 and RF-635 scenario has a passing test; the demo package has no card without an invariant; `npm run verify` green.
+- **Refs**: RF-601, RF-612, RF-630, RF-633, RF-635, ADR-018, DEC-135.
+
+### P3-24 - Behaviour to preserve and realistic data shapes
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-23, P2-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-631, RF-632; the code map and scan statistics; the `FEAT`, `BR`, `FLOW` and `SCRN` cards.
+- **Do**: each card that touches a covered item lists the behaviours to keep with their citations and an approval test for each; the open-questions writer refuses a default that changes legacy behaviour; `fixtures.md` is generated by code from the scan (largest files, size by kind, deepest paths, unusual names, encodings, line endings) and linked from limit and parser cards.
+- **Delivers**: writers, a generator for `fixtures.md`, structure and snapshot tests.
+- **Done when**: every RF-631 and RF-632 scenario has a passing test; the demo's `fixtures.md` names its `.map` and bundled-script volume and any reserved device names found; `npm run verify` green.
+- **Refs**: RF-631, RF-632, ADR-018, DEC-80, DEC-135.
+
+### P3-25 - Parallel-safe cards and agent operations
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-23
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-612, RF-634, RF-636; the roadmap writer.
+- **Do**: each card lists expected files and the shared identifiers it needs, allocated by the plan per card or from one registry; overlapping cards are ordered, never in one parallel group; the roadmap lists parallel groups; `AGENTS.md` gains the operations section of RF-636.
+- **Delivers**: allocator, overlap check, writers, tests.
+- **Done when**: every RF-634 and RF-636 scenario has a passing test; a fixture plan with two cards needing an error code gets two different codes; `npm run verify` green.
+- **Refs**: RF-612, RF-634, RF-636, ADR-018, DEC-135.
+
+### P3-26 - Open questions linked to cards, build metrics and the catalogue
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-23, P3-05
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-606, RF-637, RF-638; the principle catalogue files (P3-05).
+- **Do**: each open question lists the cards it blocks and the roadmap marks them waiting; the build method names the measures of RF-638; the "AI-assisted build" group of the principle catalogue gains entries for the lessons of DEC-135 (shared probes, behaviour to preserve, guard tests, parallel-safe ids, risk class, agent operations, measure one change at a time) with a new catalogue version.
+- **Delivers**: writers, catalogue entries, tests.
+- **Done when**: every RF-637 and RF-638 scenario has a passing test; the catalogue version increases and the run manifest records it; `npm run verify` green.
+- **Refs**: RF-606, RF-637, RF-638, ADR-018, DEC-135.
