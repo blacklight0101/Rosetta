@@ -58,11 +58,16 @@ const optionValue = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s\-"'<>|&;][^\s"'
 const schemeNames =
   'bearer|basic|token|digest|negotiate|ntlm|kerberos|oauth|hawk|mutual|dpop|apikey|jwt|aws4-hmac-sha256';
 // A scheme word before the value of `--token` stays visible, bare or quoted, once or repeated, with
-// any run of blanks after it: `--token Bearer <value>`.
+// any run of blanks after it: `--token Bearer <value>`. A scheme word joins the run only when a value
+// starts after it; before a flag, a redirect or an operator it is the value (`--token Negotiate -v`).
 const tokenSchemeWord = String.raw`(?:"(?:${schemeNames})"|'(?:${schemeNames})'|(?:${schemeNames})(?![\w-]))`;
 // The run of scheme words is atomic (a lookahead capture, then a back reference), so a failed value
 // never retries a shorter run and the scan stays linear.
-const tokenScheme = String.raw`(?=(?<schemes>(?:${tokenSchemeWord}[ \t]+(?=\S))*))\k<schemes>`;
+const tokenScheme = String.raw`(?=(?<schemes>(?:${tokenSchemeWord}[ \t]+(?=[^\s\-<>|&;]))*))\k<schemes>`;
+// A word that starts with a scheme name and has more characters (`Bearer-x`, `Bearerx`) is a value,
+// and so is the word after it, so that word does not stay visible.
+const schemePrefixedValue = String.raw`(?:${schemeNames})[\w-]+(?:[ \t]+(?!\[MASKED:)(?=[^\s\-"'<>|&;])[^\s"'<>|&;]+)?`;
+const tokenValue = String.raw`(?:${schemePrefixedValue}|${optionValue})`;
 // Not preceded by a letter, digit or dash, so `x--token` and `---token` are left alone.
 const optionStart = '(?<![A-Za-z0-9-])--';
 // A quoted part runs to its closing quote (or the end of the line), spaces included; the token goes
@@ -167,7 +172,7 @@ const defaultRules: readonly MaskRule[] = [
     // `--token <value>` and `--token=<value>` on a command line.
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>${optionStart}token(?:[ \t]{1,16}|=)${tokenScheme})${notMasked}${optionValue}`,
+      String.raw`(?<keep>${optionStart}token(?:[ \t]{1,16}|=)${tokenScheme})${notMasked}${tokenValue}`,
       'gi',
     ),
   },
