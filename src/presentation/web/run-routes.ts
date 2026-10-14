@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { Clock } from '../../application/ports/clock.js';
+import type { SignedInSession } from '../../application/use-cases/resolve-session.js';
 import { z } from 'zod';
 import type { EstimateRun } from '../../application/estimate/estimate-run.js';
 import { Readable } from 'node:stream';
@@ -10,6 +12,7 @@ import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
 import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-run-events.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { isSessionExpired } from '../../domain/accounts/session-rules.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { MAX_AREAS, MAX_AREA_NAME, START_BODY_LIMIT_BYTES } from './area-limits.js';
@@ -50,8 +53,10 @@ export interface RunServices extends RunFileServices, AnswerServices, Observabil
   readonly exportZip: ExportZip;
   /** Drives the keep-alive comment of every open stream. */
   readonly heartbeat: Scheduler;
-  /** The open event streams; a closing server ends them. */
+  /** The open event streams; a closing server ends them, and so does the end of their session. */
   readonly streams: StreamRegistry;
+  /** RF-1101: the keep-alive ends a stream whose session has expired. */
+  readonly clock: Clock;
 }
 
 const KEEP_ALIVE_MS = 15_000;
@@ -80,13 +85,24 @@ function lastSeen(request: FastifyRequest<EventsRequest>): number {
   return Number(given);
 }
 
-/** The stream of a subscription that is sending: closes with its page, ends with its run. */
-function openStream(services: RunServices, close: () => void): EventStream {
+/**
+ * The stream of a subscription that is sending: closes with its page, ends with its run, and
+ * (RF-1101, P1-160) with its session: when it is signed out or ended (registry), or at the first
+ * keep-alive after the expiry it had when the stream opened (a page whose session moved on since
+ * reconnects and goes on).
+ */
+function openStream(
+  services: RunServices,
+  session: SignedInSession,
+  close: () => void,
+): EventStream {
   const stream = new EventStream();
-  services.streams.add(stream);
+  services.streams.add(stream, { userId: session.actor.userId, sessionId: session.sessionId });
   stream.onClose(close);
+  const expiresAt = session.expiresAt.getTime();
   const cancel = services.heartbeat.every(KEEP_ALIVE_MS, () => {
-    stream.keepAlive();
+    if (isSessionExpired(expiresAt, services.clock.now().getTime())) stream.destroy();
+    else stream.keepAlive();
     return Promise.resolve();
   });
   stream.onClose(cancel);
@@ -105,8 +121,9 @@ function registerEvents(server: FastifyInstance, services: RunServices): void {
     async (request, reply) => {
       // The stream exists once the subscription does, so a failure before that leaks nothing.
       const holder: { stream?: EventStream } = {};
+      const session = signedInOf(request);
       const outcome = await services.subscribeRunEvents.execute({
-        actor: signedInOf(request).actor,
+        actor: session.actor,
         runId: request.params.runId,
         afterSeq: lastSeen(request),
         onEvent: (event, stored) => {
@@ -123,7 +140,7 @@ function registerEvents(server: FastifyInstance, services: RunServices): void {
         },
       });
       if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      const stream = openStream(services, () => {
+      const stream = openStream(services, session, () => {
         outcome.value.close();
       });
       holder.stream = stream;

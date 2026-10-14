@@ -64,6 +64,8 @@ describe('ResolveSession', () => {
         role: 'admin',
         state: 'Active',
       },
+      // RF-1101, P1-160: 8 hours after this request (an open stream ends then).
+      expiresAt: new Date('2026-10-11T17:00:00.000Z'),
     });
   });
 

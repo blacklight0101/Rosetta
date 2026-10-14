@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
+import type { SessionStore } from '../../src/application/ports/session-store.js';
 import { ChangePassword } from '../../src/application/use-cases/change-password.js';
 import { CreateUser } from '../../src/application/use-cases/create-user.js';
 import { ListAudit } from '../../src/application/use-cases/list-audit.js';
@@ -24,38 +25,44 @@ import type { MemoryAccountUsage } from '../../src/infrastructure/db/memory-acco
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import type { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
-import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
+import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import type { MemorySessionStore } from '../../src/infrastructure/db/memory-session-store.js';
 import type { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import type { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
-import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
+import type { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
 import { DnsPublicHostCheck } from '../../src/infrastructure/security/public-host-check.js';
 import { DeleteProviderKey } from '../../src/application/use-cases/delete-provider-key.js';
 import { ListProviderKeys } from '../../src/application/use-cases/list-provider-keys.js';
 import { SaveProviderKey } from '../../src/application/use-cases/save-provider-key.js';
-import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
+import type { StreamRegistry } from '../../src/presentation/web/event-stream.js';
 import { buildServer, type ServerOptions } from '../../src/presentation/web/server.js';
 import { commonPasswords, FakePasswordHasher } from './account-fixtures.js';
 import type { MemoryArchiveWriter } from './memory-archive-writer.js';
 import type { MemoryRunFileReader } from './memory-run-file-reader.js';
 import type { RecordingReportWriter } from './report-doubles.js';
 import { FakeDatabaseHealth } from './fake-database-health.js';
-import { FakeHostResolver } from './fake-host-resolver.js';
+import type { FakeHostResolver } from './fake-host-resolver.js';
 import type { FakeAdapters, SpyLedger } from './provider-fakes.js';
 import { providerTestService } from './web-provider-test.js';
-import { fixtureSecret } from './provider-key-fixtures.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { answerStore, observabilityStore } from './observability-store.js';
 import type { MemoryOutputWriter } from './memory-output-writer.js';
 import { templateSettings } from './project-fixtures.js';
-import { ManualScheduler } from './manual-scheduler.js';
+import type { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
 import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
-import { memoryStores, outputsAndRoutes, type HistoryDoubles } from './web-server-parts.js';
+import {
+  keyParts,
+  memoryStores,
+  outputsAndRoutes,
+  streamRoute,
+  type HistoryDoubles,
+  type KeyParts,
+} from './web-server-parts.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
@@ -161,17 +168,11 @@ interface AuthParts {
   readonly usage: MemoryAccountUsage;
   readonly users: MemoryUserRepository;
   readonly hasher: PasswordHasher;
-  readonly sessions: MemorySessionStore;
+  readonly sessions: SessionStore;
   readonly auditLog: MemoryAuditLog;
   readonly logger: MemoryLogger;
   readonly clock: FixedClock;
   readonly dummyHash: string;
-}
-
-interface KeyParts {
-  readonly keys: MemoryProviderKeyRepository;
-  readonly secretBox: AesGcmSecretBox;
-  readonly resolver: FakeHostResolver;
 }
 
 /** RF-1104: the key use cases over memory adapters and the fake resolver. */
@@ -232,15 +233,6 @@ function runHarnessOf(
   });
 }
 
-/** RF-1104: the key store, its sealing box and the DNS stand-in of the base-URL check. */
-function keyParts(): KeyParts {
-  return {
-    keys: new MemoryProviderKeyRepository(),
-    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
-    resolver: new FakeHostResolver(),
-  };
-}
-
 /**
  * RF-1013, RF-1303, RF-1009: the HTTP server with fakes and memory adapters behind the session
  * API, for `fastify.inject`. A test may add routes before the first request; the caller closes
@@ -263,12 +255,12 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const [masker, health] = [new SecretMasker(), new FakeDatabaseHealth(true)];
   const logger = new MemoryLogger(clock, masker);
   const { users, sessions, usage, projects, costs, folders, snapshots } = memoryStores();
+  const { route, endingSessions } = streamRoute(clock, sessions);
   const auditLog = new MemoryAuditLog(masker);
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
   const runs = runHarnessOf(clock, logger, eventStore);
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
   const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
-  const route = { heartbeat: new ManualScheduler(() => undefined), streams: new StreamRegistry() };
   const [keys, stores] = [keyParts(), { projects, ...files, clock, masker, logDir }];
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
@@ -281,8 +273,8 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
     publicUrl: testPublicUrl,
     trustProxy: 0,
     auth: authServices({
-      ...{ users, hasher, sessions, auditLog, logger, clock, dummyHash, usage, keys },
-      ...{ serverSettings, testProviders },
+      ...{ users, hasher, auditLog, logger, clock, dummyHash, usage, keys },
+      ...{ sessions: endingSessions, serverSettings, testProviders },
     }),
     projects: projectServices(projectParts),
     runs: runServices(runs, { ...stores, keys: keys.keys }, route, outputs),

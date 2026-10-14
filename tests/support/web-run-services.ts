@@ -129,7 +129,7 @@ export function runServices(
     readonly logs: ApplicationLogReader;
     readonly clock: Clock;
   } & ObservedFiles,
-  route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams'>,
+  route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
   const { projects, keys, answers, calls, logs, clock } = stores;

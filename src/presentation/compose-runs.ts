@@ -40,7 +40,7 @@ import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import { FileReportWriter } from '../infrastructure/report/file-report-writer.js';
-import { StreamRegistry } from './web/event-stream.js';
+import type { StreamRegistry } from './web/event-stream.js';
 import { composeObservability } from './compose-observability.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { ObservabilityServices } from './web/observability-routes.js';
@@ -82,6 +82,8 @@ export interface RunParts {
   readonly ollamaUrl: string | undefined;
   /** The shipped price table the estimate prices the roles with (RF-425). */
   readonly priceTable: PriceTable;
+  /** RF-1101: the open event streams, ended with their session by the session store. */
+  readonly streams: StreamRegistry;
 }
 
 export interface RunComposition {
@@ -188,7 +190,8 @@ function runServices(service: ServiceParts): RunServices {
     recordAnswers: new RecordAnswers({ runs, answers }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
-    streams: new StreamRegistry(),
+    streams: parts.streams,
+    clock: parts.clock,
   };
 }
 

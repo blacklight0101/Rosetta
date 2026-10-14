@@ -90,23 +90,46 @@ export class EventStream extends Readable {
   }
 }
 
-/** The streams that are open, so a closing server can end them and a test can count them. */
+/** The session a stream was opened in, and its user (RF-1101). */
+export interface StreamOwner {
+  readonly userId: string;
+  readonly sessionId: string;
+}
+
+/**
+ * The streams that are open, so a closing server can end them and a test can count them. RF-1101,
+ * P1-160: a stream also ends with the session it was opened in, or with every session of its user.
+ */
 export class StreamRegistry {
-  private readonly streams = new Set<EventStream>();
+  private readonly streams = new Map<EventStream, StreamOwner>();
 
   get size(): number {
     return this.streams.size;
   }
 
   /** Tracks the stream until it is destroyed or has been read to its end. */
-  add(stream: EventStream): void {
-    this.streams.add(stream);
+  add(stream: EventStream, owner: StreamOwner): void {
+    this.streams.set(stream, owner);
     stream.onClose(() => {
       this.streams.delete(stream);
     });
   }
 
   finishAll(): void {
-    for (const stream of this.streams) stream.finish();
+    for (const stream of this.streams.keys()) stream.finish();
+  }
+
+  /** Ends at once every open stream of the session (every tab that shares its cookie). */
+  endSession(sessionId: string): void {
+    this.endWhere((owner) => owner.sessionId === sessionId);
+  }
+
+  /** Ends at once every open stream of the user, in any of the user's sessions. */
+  endUser(userId: string): void {
+    this.endWhere((owner) => owner.userId === userId);
+  }
+
+  private endWhere(matches: (owner: StreamOwner) => boolean): void {
+    for (const [stream, owner] of [...this.streams]) if (matches(owner)) stream.destroy();
   }
 }

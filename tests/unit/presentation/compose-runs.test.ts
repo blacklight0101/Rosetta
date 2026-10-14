@@ -9,6 +9,7 @@ import { GitHubSnapshotFetcher } from '../../../src/infrastructure/github/github
 import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
 import { LanguagePackRegistry } from '../../../src/infrastructure/scan/packs/pack-registry.js';
 import { composeRuns } from '../../../src/presentation/compose-runs.js';
+import { StreamRegistry } from '../../../src/presentation/web/event-stream.js';
 import { FixedClock } from '../../support/fixed-clock.js';
 import { MemoryLogger } from '../../support/memory-logger.js';
 
@@ -54,6 +55,7 @@ function composedRuns(dataDir: string) {
     providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
     ollamaUrl: undefined,
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
+    streams: new StreamRegistry(),
   });
   return { runs, logger, pool };
 }
