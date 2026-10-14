@@ -124,22 +124,32 @@ async function filesUnder(folder: string): Promise<string[]> {
  * The files of the server's data folder (run folders, reports, application logs) that hold `text`,
  * and how many files it looked at, so a check that finds nothing can show it looked.
  */
-export async function filesHolding(text: string): Promise<{ held: string[]; looked: number }> {
-  const files = await filesUnder(dataDir());
+export function filesHolding(text: string): Promise<{ held: string[]; looked: number }> {
+  return filesHoldingIn(dataDir(), text);
+}
+
+/**
+ * The same check over the folder `root`. A temporary file (`.tmp`) is the server's own write in
+ * progress, not a file of a run. A file the server renames away between the listing and its read is
+ * gone, so its read skips it; any other read error is the check's failure and is rethrown (P1-155).
+ */
+export async function filesHoldingIn(
+  root: string,
+  text: string,
+  read: (file: string) => Promise<string> = (file) => readFile(file, 'utf8'),
+): Promise<{ held: string[]; looked: number }> {
+  const files = (await filesUnder(root)).filter((file) => !file.endsWith('.tmp'));
   const held: string[] = [];
   for (const file of files) {
-    if ((await readFile(file, 'utf8')).includes(text)) held.push(file);
+    const content = await read(file).catch((error: unknown) => {
+      if (isNotFound(error)) return undefined;
+      throw error;
+    });
+    if (content?.includes(text)) held.push(file);
   }
   return { held, looked: files.length };
 }
 
-/** Stub until the check reads the listed files one by one (P1-155). */
-export function filesHoldingIn(
-  root: string,
-  text: string,
-  read?: (file: string) => Promise<string>,
-): Promise<{ held: string[]; looked: number }> {
-  return Promise.reject(
-    new Error(`not implemented: ${root} ${text} ${String(read !== undefined)}`),
-  );
+function isNotFound(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT';
 }
