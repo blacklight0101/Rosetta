@@ -48,6 +48,10 @@ task-card checks.
 - A new page (Plan setup), a brief schema, catalogue files and their tests must be built and kept current.
 - The catalogue's content has to be written and reviewed; it must stay in Rosetta's own words.
 
+## Notes
+
+- 2026-10-14 (DEC-134): the package becomes a documentation set: PRD, TRD, target data model, API contract, target flows, user-interface material and an implementation plan whose task cards cover every item (RF-620..RF-627), all built from `Supported` claims and the planning brief.
+
 ## References
 
 - RF-604..RF-613; RNF-004; Q-06 (answered by DEC-77, DEC-78).

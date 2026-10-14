@@ -13,9 +13,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P1 Milestone slice (M1) | 165 | 64 | 83 | 18 | 0 | 98 | 59 | 8 | 108 | 0 |
-| P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
-| P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **195** | **69** | **101** | **25** | **0** | **104** | **80** | **11** | **112** | **0** |
+| P2 Full understand | 23 | 3 | 14 | 6 | 0 | 4 | 18 | 1 | 3 | 0 |
+| P3 Report and plan | 22 | 2 | 18 | 2 | 0 | 2 | 18 | 2 | 1 | 0 |
+| **Total** | **210** | **69** | **115** | **26** | **0** | **104** | **95** | **11** | **112** | **0** |
 
 ## Conventions for every card
 
@@ -2267,6 +2267,78 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Done when**: `npm run verify` and the Anthropic adapter contract tests are green on the new version; the audit check passes.
 - **Refs**: RF-404, ADR-013, DEC-125, P2-09 (owner chose the 0.128.0 pin on 2026-10-12).
 
+### P2-18 - Flow and screen card types
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-06
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/domain/cards/card-vocabulary.ts`; `src/domain/cards/card.ts`; the card schema and parser; `docs/architecture.md` section 5 (state lists); `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md` (DEC-134 note).
+- **Do**: add `FLOW` and `SCRN` to the card vocabulary (Q-24) with their schemas: `FLOW` (trigger, ordered steps each with a target card id when one exists and at least one citation, numbered branches, outcome) and `SCRN` (route or page, roles, fields with input kind, required flag and cited validations, actions naming a handler or `FLOW` id, "leads to" links); parser, repair path (RF-202), stable ids (RF-203), card files under `cards/flow/` and `cards/scrn/`, `index.json`; architecture section 5 lists the new types.
+- **Delivers**: schemas, parser cases, card writers, tests.
+- **Done when**: a valid and an invalid fixture of each type pass and fail the schema as RF-202 requires; a step without a citation is refused; `npm run verify` green.
+- **Refs**: RF-202, RF-203, RF-204, RF-260, RF-261, ADR-005, DEC-134, Q-24.
+
+### P2-19 - Agent prompts and area planning for flows and screens
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P2-18
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `prompts/`; the area planner (RF-200); the code map; `tests/recordings/`; RF-427 estimate code.
+- **Do**: versioned prompt changes so the agent writes `FLOW` cards where the code map finds entry points (page actions, HTTP handlers, scheduled jobs, message handlers) and `SCRN` cards where it finds pages, forms, views or templates (Q-25); the code map marks those areas; suspected paths become `OQ` cards; record responses on the WebForms demo; the run estimate (RF-427) and coverage (RF-230) count the new types; an area with no pages reports "no screens found".
+- **Delivers**: prompts, planner and code-map changes, recordings, integration tests.
+- **Done when**: a recorded understand run of the demo yields `FLOW` cards for the order and catalogue journeys and `SCRN` cards for their pages, each step cited; a library-only area writes neither and its coverage says so; `npm run verify` green.
+- **Refs**: RF-200, RF-230, RF-260, RF-261, RF-263, RF-427, DEC-134, Q-25.
+
+### P2-20 - Verifier checks for flow steps and screen claims
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P2-18, P2-02
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the verifier (RF-300..RF-305); `src/domain/cards/claim-transitions.ts`.
+- **Do**: every `FLOW` step and every `SCRN` field validation and action is a claim checked by both verifier steps; a step whose citation is invalid or rejected is marked on the card and the flow is reported as incomplete in the card file, the specification and the coverage; calibration (RF-303) includes the new claims.
+- **Delivers**: verifier changes and tests with recorded responses.
+- **Done when**: a fixture flow with one bad step is shown as incomplete with that step marked; a fixture screen with a made-up validation has that claim `Rejected`; `npm run verify` green.
+- **Refs**: RF-260, RF-261, RF-300..RF-305, ADR-005, DEC-134.
+
+### P2-21 - Diagram generators with safe labels
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P2-18
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/security/threat-model.md`; RF-507; RF-508; the Mermaid syntax reference for sequence, flowchart and entity-relationship diagrams.
+- **Do**: pure functions in the domain or application layer that build Mermaid text from cards: a sequence diagram from a `FLOW` card, a flowchart screen map from `SCRN` cards, an entity-relationship diagram from `ENT` cards (unknown cardinality drawn as unknown); every label goes through one escaping function so that text from the analysed code cannot end a diagram, open a new statement, add a `click` or `href`, or carry HTML; ids are generated, never taken from the code. The model never writes Mermaid (DEC-134).
+- **Delivers**: the generators, the escaping function, snapshot and property tests.
+- **Done when**: names holding `end`, `;`, newlines, `-->`, `%%`, `click`, `<script>`, `"` and `javascript:` produce valid diagrams with the text shown literally (property test over generated names); the generated text parses with the pinned Mermaid parser in a test; `npm run verify` green.
+- **Refs**: RF-260, RF-261, RF-262, RF-507, RF-508, ADR-013, DEC-134, Q-26.
+
+### P2-22 - Legacy data model file and the new specification sections
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-19, P2-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the `spec.md` writer (RF-204); consolidation (RF-250).
+- **Do**: write `data-model.md` from verified `ENT` cards (entities, fields, keys, relations, citations, the generated ER diagram, a "to confirm" list for unknown relations; merged entities once); add the flows section, the screens section with the screen map, and the data-model link to `spec.md`, each item linking its card.
+- **Delivers**: the writers and snapshot tests.
+- **Done when**: every RF-262 and RF-263 scenario has a passing test; every `ENT` card appears once in `data-model.md`; `npm run verify` green.
+- **Refs**: RF-204, RF-250, RF-262, RF-263, DEC-134.
+
+### P2-23 - Golden set for flows, screens and the data model
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-11, P2-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the golden set and the evaluation runner (P2-11); RFC-001 section 7.
+- **Do**: add to the golden set the expected flows (journeys and their steps), screens (fields and actions) and entities with relations of the demo application, written by hand from the code; the evaluation runner reports step recall, screen field recall and relation precision next to the existing measures; P2-14's verification matrix includes RF-260..RF-263.
+- **Delivers**: golden-set files, runner measures, a measured baseline.
+- **Done when**: the runner prints the three new measures for a recorded run; the baseline is recorded in the PR; `npm run verify` green.
+- **Refs**: RF-260..RF-263, RNF-006, RNF-012, P2-11, P2-14, DEC-134.
+
 ---
 
 ## Phase 3 - Report and plan
@@ -2426,3 +2498,111 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: the tests, the start-up call and the manifest fields (with their line in `docs/data-model.md`).
 - **Done when**: a catalogue with a 201-character rule or one bullet fails its test; a broken catalogue file stops start-up; the manifest of a run lists the version and sha; `npm run verify` green.
 - **Refs**: RF-606, ADR-018, P3-05 (verifier MINORs).
+
+### P3-14 - Diagrams in the HTML report
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-01, P2-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-507, RF-508; the HTML report (P3-01..P3-04); `package.json` dependency rules (DEC-125).
+- **Do**: ship a pinned Mermaid build inside the report folder (Q-26; version at least two weeks old, licence notice kept), draw every diagram of the specification and the package with `securityLevel: 'strict'` and no network; a diagram that fails shows its source as text with a note.
+- **Delivers**: the rendering, the vendored file, end-to-end tests.
+- **Done when**: every RF-508 scenario has a passing test, including the hostile fixture; the report works offline from disk and on GitHub Pages; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-505, RF-507, RF-508, RNF-010, ADR-013, DEC-125, DEC-134, Q-26.
+
+### P3-15 - Package documentation set and the PRD
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-09
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: ADR-018; RF-601..RF-604; the planner (P3-09).
+- **Do**: extend the package README reading order with the documentation set (RF-620); write `prd.md` from the brief and the verified cards (problem and goal, users and roles, features with MoSCoW and `FEAT` links, rules to keep with `BR` links, out of scope, non-functional expectations, success measures); sections the code cannot answer get a marked placeholder and an open question with its default; prompts versioned, recordings.
+- **Delivers**: writers, prompts, recordings, structure tests.
+- **Done when**: every RF-620 and RF-621 scenario has a passing test; no PRD statement lacks a card link or a placeholder marker; `npm run verify` green.
+- **Refs**: RF-601, RF-602, RF-620, RF-621, ADR-018, DEC-80, DEC-134.
+
+### P3-16 - Technical requirements document
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-10, P2-21
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-608..RF-610; the package ADR writers (P3-10).
+- **Do**: write `trd.md`: architecture overview with a generated Mermaid component diagram, stack per layer, integrations to keep or replace with `INT` links, security and data protection, non-functional targets, deployment and environments, migration approach; each section links the ADR that decided it.
+- **Delivers**: writer, prompt changes, recordings, structure tests.
+- **Done when**: every RF-622 scenario has a passing test; every section links an ADR or says why none applies; `npm run verify` green.
+- **Refs**: RF-608, RF-609, RF-610, RF-622, ADR-018, DEC-134.
+
+### P3-17 - Target data model
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-09, P2-22
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-262, RF-609, RF-623; the entity mapping written by P3-09.
+- **Do**: write the package `data-model.md`: each target table with columns, types in the chosen database, keys, constraints and indexes, the legacy source of each column or "new", dropped legacy fields with reasons, type changes that can lose data as migration risks, and a generated ER diagram; no executable DDL (RF-603); the entity mapping of RF-601 links it.
+- **Delivers**: writer, prompts, recordings, structure and snapshot tests.
+- **Done when**: every RF-623 scenario has a passing test; every legacy `ENT` field is mapped or listed as dropped; `npm run verify` green.
+- **Refs**: RF-601, RF-603, RF-623, ADR-018, DEC-134.
+
+### P3-18 - API contract
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-17
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-624; the target data model (P3-17); `package.json` dependency rules (DEC-125).
+- **Do**: when the chosen front end is separate from the back end, write `api/openapi.yaml` (OpenAPI 3.1, Q-28) covering every operation the target features and flows need, schemas from the target data model, errors and authentication, each operation naming its `FEAT` or `FLOW` card; otherwise the README says no contract applies and why; a dev-only OpenAPI schema validator checks the file in tests.
+- **Delivers**: writer, prompts, recordings, validation test.
+- **Done when**: every RF-624 scenario has a passing test; the demo package's contract validates; `npm run verify` green.
+- **Refs**: RF-603, RF-624, ADR-018, DEC-125, DEC-134, Q-28.
+
+### P3-19 - Target flows
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-16, P2-20
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-625; the TRD components (P3-16).
+- **Do**: write `flows/` with one file per main journey (Q-27): steps mapped to target components and a generated sequence diagram, each linking its legacy `FLOW` card; journeys outside the brief listed as out of scope.
+- **Delivers**: writer, prompts, recordings, structure tests.
+- **Done when**: every RF-625 scenario has a passing test; every verified `FLOW` card is mapped or listed; `npm run verify` green.
+- **Refs**: RF-625, ADR-018, DEC-134, Q-27.
+
+### P3-20 - User-interface material
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-19
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-626; `docs/design-system-brief.md` (as the model of a design brief); RF-507.
+- **Do**: write `ux/`: a generated target screen map with each legacy screen kept, merged or dropped and why; one low-fidelity wireframe per main screen (Q-27) as a plain HTML file (layout boxes, fields, actions, navigation; no script, no event attribute, no external resource, text escaped); a design brief for an external design tool (audience, tone, components, WCAG 2.1 AA).
+- **Delivers**: writers, prompts, recordings, an HTML check in tests.
+- **Done when**: every RF-626 scenario has a passing test; a hostile screen name renders as text in its wireframe; `npm run verify` green.
+- **Refs**: RF-507, RF-626, RNF-010, ADR-013, ADR-018, DEC-134, Q-27.
+
+### P3-21 - Implementation plan coverage
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-15, P3-17, P3-18, P3-19, P3-20
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-601, RF-627; the roadmap and task-card writers (P3-09).
+- **Do**: make the package roadmap and task cards cover the whole set: every PRD feature, target table, API operation, target flow and main screen named by at least one task card that links it; the first card writes the migrations in the chosen stack (RF-623); uncovered items go to the package checks file and the run is not reported complete.
+- **Delivers**: planner changes, a coverage check, tests.
+- **Done when**: every RF-627 scenario has a passing test; the demo package has no uncovered item; `npm run verify` green.
+- **Refs**: RF-601, RF-623, RF-627, ADR-018, DEC-134.
+
+### P3-22 - Documentation set journey and owner review
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-14, P3-21, P2-23
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: P3-12; the demo planning brief.
+- **Do**: an end-to-end journey that runs understand and plan on the demo with recorded responses and checks the whole documentation set (spec with flows, screens and data model; PRD, TRD, data model, API contract, flows, UX, implementation plan) and the report diagrams; publish the demo package with the sample report (RF-800) for the owner to read; record the owner's review changes as follow-up cards.
+- **Delivers**: the journey, the published sample, the review notes.
+- **Done when**: the journey passes in CI; the owner has read the sample package and the changes are filed; P3-12's verification matrix includes RF-260..RF-263, RF-508 and RF-620..RF-627.
+- **Refs**: RF-260..RF-263, RF-508, RF-620..RF-627, RF-800, P3-12, DEC-134.
