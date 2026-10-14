@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, posix, sep } from 'node:path';
@@ -8,6 +8,8 @@ import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { checkPublishedIndex } from '../../../src/infrastructure/report/index-check.js';
 import { auditHtml } from '../../support/html-audit.js';
+import { secretCases } from '../../support/secret-fixture.js';
+import { secretFindings } from '../../support/secret-scan.js';
 
 // RF-800, RF-501, RF-507, RNF-003: the committed `site/` folder that GitHub Pages publishes from `main`
 // (its links, its drift from the build, its content), and the smoke script run against a loopback
@@ -172,6 +174,43 @@ describe('the committed site/ content', () => {
 
     expect(pages.map((page) => page.scripts)).toEqual([[], [], ['replay.js']]);
     expect(pages.flatMap((page) => page.foreignLinks)).toEqual([]);
+  });
+});
+
+describe('the committed site/ secret scan', () => {
+  it('RNF-003 no file of the site holds a secret by the patterns of the masker', async () => {
+    expect((await filesOf(siteFolder)).length).toBeGreaterThan(5);
+
+    expect(await secretFindings(siteFolder)).toEqual([]);
+  });
+
+  it('RNF-003 the scan finds every kind of fake secret planted in any file of a copy of the site', async () => {
+    const copy = await mkdtemp(join(tmpdir(), 'rosetta-site-secrets-'));
+    try {
+      const extensions = ['html', 'md', 'js', 'css', 'txt', 'nojekyll', ''];
+      const planted = secretCases.map((found, index) => {
+        const extension = extensions[index % extensions.length] ?? '';
+        return `nested/${String(index).padStart(3, '0')}${extension === '' ? '' : '.'}${extension}`;
+      });
+      await mkdir(join(copy, 'nested'), { recursive: true });
+      await Promise.all(
+        secretCases.map((found, index) =>
+          writeFile(
+            join(copy, planted[index] ?? ''),
+            `<p>${found.text}</p>
+`,
+            'utf8',
+          ),
+        ),
+      );
+
+      const findings = await secretFindings(copy);
+
+      expect(secretCases.length).toBeGreaterThan(10);
+      expect(findings.map((finding) => finding.split(': ')[0]).sort()).toEqual([...planted].sort());
+    } finally {
+      await rm(copy, { recursive: true, force: true });
+    }
   });
 });
 
