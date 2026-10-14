@@ -441,6 +441,14 @@ As a developer using a small local model I want a citation of one line accepted 
 - Given a citation written `path:N`, when the card is parsed, then it is read as `path:N-N`; `path:N-M` with N greater than M is still refused with the repair message.
 Verification: unit test of the citation parser; a recorded response with one-line citations produces cards.
 
+**RF-208 Keep what is valid and retry what failed** - R1 (M1) - Must - Source DEC-138 - ADR-005
+As a developer I want an agent's good cards kept and its failed work retried so that one formatting mistake does not remove an area from the specification.
+- Given an agent answer with JSON inside prose or a code fence, when it is parsed, then the JSON object is taken from it; a card whose other claims are valid keeps them, and only the invalid claims are dropped and listed with their problems; a card with no valid claim left is dropped and listed.
+- Given an answer that still fails after the first repair, when the agent has turns left, then it gets a second repair with only the remaining problems; an answer cut off by the output limit is asked to continue instead of starting again.
+- Given an agent task that ends with no usable cards, when the run continues, then the task is retried once from the start with a fresh conversation (and, for an area too large for the model's context, split in two); if that also fails, the area is reported as failed in the coverage and in the run summary, which offers "Retry failed areas".
+- Given a run in which some areas failed, when it ends, then its end state and summary say how many areas failed and why; it is never shown as a plain success.
+Verification: unit tests of the parser on answers recorded in the owner's 2026-10-14 runs; integration tests of the second repair, the continuation and the task retry with recorded responses.
+
 **RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks - ADR-005
 As a developer I want to know which files each agent actually read so that silent gaps are visible.
 - Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of area tokens read.
@@ -1009,6 +1017,13 @@ As a user I want the end of a run to read like an explanation followed by a shor
 - Given open questions (RF-243), when the Your questions tab opens, then each shows the question, why the code cannot answer it with its citation, how many items depend on it, an answer field and the default that applies if it is skipped.
 Verification: end-to-end test with a recorded run.
 
+**RF-1018 Choose areas quickly** - R1 (M1) - Must - Source DEC-138 - ADR-012
+As a user on the start page I want to choose the areas of a run in a few clicks so that I can start the run without scrolling through a long list.
+- Given the list of areas, when the start page opens, then the project's own code is selected and third-party or generated code is grouped apart, collapsed, unselected and labelled with the reason ("library, left out by default: jQuery, Bootstrap"); buttons select all, select none and select own code only, and a filter narrows the list by name.
+- Given any number of areas, when the page is scrolled, then a summary bar stays visible at the bottom with the number of areas and files chosen, the estimate and the Start button; the list itself scrolls inside its panel.
+- Given a user who selects third-party areas, when they start the run, then the estimate shows what they add and the start asks for confirmation once.
+Verification: end-to-end test with 1 and 120 areas at desktop and phone widths.
+
 ### 5.10 Accounts, sessions, keys and administration (RF-1100..RF-1199)
 
 **RF-1100 Sign in with a user name and password** - R1 (M1) - Must - Source DEC-62 - ADR-015
@@ -1189,7 +1204,8 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-200..RF-205 | DEC-15, DEC-18 | ADR-003, ADR-005 | P1 | P1-25, P1-31, P1-32, P1-33 |
 | RF-230..RF-250 | DEC-15, DEC-18, DEC-98 | ADR-003, ADR-005 | P2 (RF-240: P1, DEC-98) | P1-33, P1-39, P2-04, P2-05, P2-06, P2-13 |
 | RF-113, RF-206, RF-207, RF-243, RF-264 | DEC-136 | ADR-004, ADR-005 | P1 (M1) | P1-166, P1-167, P1-168 |
-| RF-1014..RF-1017 | DEC-136, DEC-137 | ADR-005, ADR-012 | P1 (M1) | P1-166, P1-169, P1-170 |
+| RF-1014..RF-1018 | DEC-136, DEC-137, DEC-138 | ADR-005, ADR-012 | P1 (M1) | P1-166, P1-169, P1-170, P1-172 |
+| RF-208 | DEC-138 | ADR-005 | P1 (M1) | P1-171 |
 | RF-260..RF-263 | DEC-134 | ADR-005, ADR-013 | P2 | P2-18, P2-19, P2-20, P2-21, P2-22, P2-23, P3-22 |
 | RF-300, RF-302 | DEC-19 | ADR-005 | P1 | P1-32, P1-33 |
 | RF-301, RF-303..RF-305 | DEC-19, DEC-57 | ADR-005, ADR-008 | P2 | P2-01, P2-02, P2-03, P2-13 |

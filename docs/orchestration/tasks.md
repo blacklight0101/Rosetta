@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 170 | 64 | 88 | 18 | 0 | 98 | 64 | 8 | 109 | 0 |
+| P1 Milestone slice (M1) | 172 | 64 | 90 | 18 | 0 | 99 | 65 | 8 | 111 | 0 |
 | P2 Full understand | 23 | 3 | 14 | 6 | 0 | 4 | 18 | 1 | 3 | 0 |
 | P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
-| **Total** | **219** | **69** | **124** | **26** | **0** | **105** | **103** | **11** | **113** | **0** |
+| **Total** | **221** | **69** | **126** | **26** | **0** | **106** | **104** | **11** | **115** | **0** |
 
 ## Conventions for every card
 
@@ -2124,6 +2124,34 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: components, page, tests.
 - **Done when**: every RF-1015 (second scenario) and RF-1017 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-240, RF-1007, RF-1008, RF-1014, RF-1015, RF-1017, RF-264, RNF-010, DEC-137.
+
+### P1-171 - Follow-up: keep valid cards and retry failed agent tasks
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the card parser and repair path (RF-202); the agent loop; the run end state; the `invalid-output` folders of the owner's runs `20261014-145748-understand` and `20261014-153115-understand` (11 of 41 and 11 of 42 tasks failed: one-line or line-less citations 7, no JSON found 3, cut off 1, a claim with no citation 1).
+- **Do**: as RF-208: take the JSON out of prose or a fence; keep valid claims and cards, drop and list invalid ones; a second, targeted repair; ask a cut-off answer to continue; retry a task with no usable cards once with a fresh conversation (split an area too large for the context); report failed areas in the coverage and the run summary with "Retry failed areas"; a run with failed areas never shows as a plain success.
+- **Review probes**: the recorded failing answers of both runs (each must yield its valid cards); an answer that is all prose; JSON with a trailing comma; an answer cut mid-string; a card whose every claim is invalid; a model that fails the same way three times (the run still ends, with the area marked failed and no endless loop).
+- **Behaviour to preserve**: valid answers parse exactly as today; the budget guard counts every repair and retry; a task never runs more than its turn limit plus one retry.
+- **Delivers**: parser, loop and summary changes, recordings, tests.
+- **Done when**: every RF-208 scenario has a passing test; replaying the two recorded runs loses no area to a format error; `npm run verify` green.
+- **Refs**: RF-201, RF-202, RF-208, RF-230, RF-420, DEC-138.
+
+### P1-172 - Follow-up: choose areas quickly on the start page
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the start page and its area list; P1-147 (third-party default); `docs/design/proposals/run-page-v2.html` (look and tokens); RF-1018.
+- **Do**: as RF-1018: own code selected, third-party and generated code grouped, collapsed, unselected and labelled with the reason; Select all, Select none and Own code only buttons; a filter; the list scrolls inside its panel; a summary bar with areas, files, estimate and Start stays visible; a one-time confirmation when third-party areas are chosen.
+- **Review probes**: 1 area; 120 areas; every area third-party; a 60-character area name; keyboard only; 360 px wide; Start pressed with nothing selected (disabled, with the reason).
+- **Behaviour to preserve**: the estimate, caps and confirm-threshold behaviour of the start page (P1-91, P1-106) are unchanged.
+- **Delivers**: the page changes and tests.
+- **Done when**: every RF-1018 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1001, RF-1018, RF-427, RNF-010, DEC-138.
 
 ---
 
