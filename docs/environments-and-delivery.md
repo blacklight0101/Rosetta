@@ -56,14 +56,14 @@ every variable with a comment and a safe example.
 |---|---|---|---|
 | `DATABASE_URL` | yes | yes | PostgreSQL URL for `rosetta_app` |
 | `DATABASE_MIGRATOR_URL` | no | yes | URL for `rosetta_migrator`; `DATABASE_URL` is used when absent |
-| `ROSETTA_SECRET_KEY` | yes | yes | 32 random bytes, base64; the provider-key encryption key is derived from it with HKDF (ADR-015, DEC-112) |
+| `ROSETTA_SECRET_KEY` | yes | yes | 32 random bytes, base64; the provider-key encryption key is derived from it with HKDF (ADR-015, DEC-112); a key of 32 equal bytes, such as the all-zero placeholder of `.env.example`, stops start-up with `RST-1008` |
 | `ROSETTA_SECRET_KEY_PREVIOUS` | no | yes | the previous key during a rotation; rows under it are re-encrypted at start-up |
 | `ROSETTA_PUBLIC_URL` | yes | no | the URL users open (`http://127.0.0.1:8080` locally); the `Origin` check compares with it |
 | `ROSETTA_DATA_DIR` | yes | no | `/data` in the image |
 | `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` | first start | yes | bootstrap administrator (RF-1102) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | no | yes | server keys (DEC-64) |
 | `ROSETTA_OLLAMA_URL` | no | no | `http://host.docker.internal:11434` locally; unset when hosted; the only source of the Ollama URL (DEC-112); a user name or password in it is refused (`RST-1000`) |
-| `ROSETTA_CONTACT_EMAIL` | no | no | the landing page's "Request access" address (Q-20) |
+| `ROSETTA_CONTACT_EMAIL` | no | no | the landing page's "Request access" address (Q-20); a plain `name@domain.tld` only, without quotes, spaces or `?`, `#`, `&` |
 | `ROSETTA_LOG_LEVEL`, `ROSETTA_LOG_RETENTION_DAYS` | no | no | `info`, 14 |
 | `GITHUB_TOKEN` | no | yes | raises GitHub rate limits for snapshot downloads (RF-123) |
 | `ROSETTA_TRUST_PROXY` | no | no | number of proxy hops to trust for the client IP (rate limits, audit); 0 locally, 1 behind the host's proxy (DEC-112) |
@@ -250,7 +250,7 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
   exact tag. Before the first release (v0.1.0), the hosted deployment runs the `sha-<short>` image that CI built from
   `main` (DEC-104).
 - The `Dockerfile` has a `test` stage with the fake provider and fake GitHub, used only by `compose.ci.yaml`; the
-  production stage contains no fakes, and `kind: fake` is refused unless `ROSETTA_TEST=1` (DEC-112).
+  runtime image ships no tests and no scripts; the compiled fakes inside `dist` are reachable only with `ROSETTA_TEST=1`, and `kind: fake` is refused without it (DEC-112).
 - After the GitHub Pages deploy, a smoke-test step fetches the published report's index and fails the job (`exit 1`)
   if it is missing or does not contain the run id.
 

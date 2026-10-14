@@ -7,13 +7,14 @@ import { hashSessionId } from '../../../src/infrastructure/security/session-ids.
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-1100, RF-1101: the composed application signs the bootstrap administrator in over HTTP with
 // the real scrypt hasher and PostgreSQL; the `sessions` row holds only the SHA-256 of the cookie's
 // id, and the cookie then opens `GET /api/session`.
 
 /** 32 bytes as base64, built at run time (RNF-003: no secret-like literal). */
-const testSecretKey = Buffer.alloc(32, 5).toString('base64');
+const testSecretKey = fixtureSecret(5);
 const publicUrl = 'http://127.0.0.1:8080';
 const adminName = ['start', 'admin'].join('.');
 const folders: string[] = [];

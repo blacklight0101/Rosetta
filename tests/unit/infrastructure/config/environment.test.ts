@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { loadEnvironment } from '../../../../src/infrastructure/config/environment.js';
+import { fixtureSecret } from '../../../support/provider-key-fixtures.js';
 
 // Fake values for tests only; none of them is a real credential.
-const FAKE_KEY = Buffer.alloc(32, 7).toString('base64');
-const FAKE_PREVIOUS_KEY = Buffer.alloc(32, 9).toString('base64');
+const FAKE_KEY = fixtureSecret(7);
+const FAKE_PREVIOUS_KEY = fixtureSecret(9);
 
 type Source = Record<string, string | undefined>;
 
