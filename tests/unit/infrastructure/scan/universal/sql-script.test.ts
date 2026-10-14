@@ -230,6 +230,39 @@ describe('an unterminated private key marker in a SQL script', () => {
   });
 });
 
+describe('an unterminated private key marker before a later key', () => {
+  it('RF-104 statements between an unterminated marker and a later complete key are kept', () => {
+    const endLine = ['-----END', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
+    const lines = [
+      `-- ${begin}`,
+      ...statements,
+      "INSERT INTO Keys (Pem) VALUES ('",
+      begin,
+      ...body,
+      endLine,
+      "');",
+      'SELECT a FROM t;',
+    ];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+    const text = JSON.stringify(found);
+
+    for (const part of body) expect(text).not.toContain(part.slice(0, 20));
+    expect(found.slice(0, 3).map((s) => [s.line, s.text])).toEqual([
+      [2, statements[0]],
+      [3, statements[1]],
+      [4, statements[2]],
+    ]);
+    expect(found.at(-1)).toMatchObject({ line: 12, text: 'SELECT a FROM t;' });
+  });
+
+  it('RF-104 a bare SELECT line after an unterminated marker is masked as key text, as built (owner question)', () => {
+    const lines = [`-- ${begin}`, 'SELECT', '  a FROM t;', ...statements];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+
+    expect(found.map((s) => s.line)).toEqual([4, 5, 6]);
+  });
+});
+
 describe('an unterminated private key marker, verb word in the key body', () => {
   it('RNF-003 a key body line that is only a SQL verb word does not end the masked span', () => {
     const lines = [
