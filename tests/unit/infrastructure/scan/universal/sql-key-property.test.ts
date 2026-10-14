@@ -39,7 +39,11 @@ function scriptWith(next: () => number, script: number): { lines: string[]; toke
     } else if (pick < 0.3) {
       lines.push(end);
       open = false;
-    } else if (pick < 0.6 || !open) {
+    } else if (pick < 0.4) {
+      // P1-154: one line that ends a key and begins the next (END then BEGIN).
+      lines.push(`${end} ${begin}`);
+      open = true;
+    } else if (pick < 0.65 || !open) {
       lines.push(statementLines[Math.floor(next() * statementLines.length)] ?? '');
     } else {
       const token = `Qk${String(script)}x${String(index)}Ab7Cd9Ef3Gh`;

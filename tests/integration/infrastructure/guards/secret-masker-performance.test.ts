@@ -68,3 +68,38 @@ describe('SecretMasker on --token scheme words before a flag or an operator', ()
     },
   );
 });
+
+describe('SecretMasker on --token continuations, dash values and quoted values', () => {
+  const masker = new SecretMasker();
+  const option = ['-', '-', 'token'].join('');
+  const backslash = String.fromCharCode(92);
+  const backtick = String.fromCharCode(96);
+  const maskedTail = ['[MASKED', 'bearer-token]'].join(':');
+
+  it.each([
+    ['backslash continuations', `Bearer ${backslash}\n`],
+    ['caret continuations with CRLF', 'Bearer ^\r\n  '],
+    ['backtick continuations and blanks', `Bearer${' '.repeat(8)}${backtick}${' '.repeat(8)}\n`],
+  ])(
+    `RF-141 masks 1 MB of --token and scheme words with %s within ${String(budgetMs)} ms`,
+    (_name, middle) => {
+      for (const tail of [maskedTail, ' --verbose', `${backslash}\n`]) {
+        const input = `${option} ${repeatTo(oneMegabyte, middle)}${tail}`;
+
+        expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+      }
+    },
+  );
+
+  it.each([
+    `${option} Bearer -`,
+    `${option} Bearer -abcdefgh `,
+    `${option} Bearer-x "`,
+    `${option} Bearer-x ${backslash}\n`,
+    `${option} Bearer ${backslash}\n`,
+  ])(`RF-141 masks 1 MB of repeated %j within ${String(budgetMs)} ms`, (piece) => {
+    const input = repeatTo(oneMegabyte, piece);
+
+    expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+  });
+});
