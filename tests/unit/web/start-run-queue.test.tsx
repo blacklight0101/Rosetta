@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/preact';
-import { vi, expect, it } from 'vitest';
+import { afterEach, vi, expect, it } from 'vitest';
 import { json, failure, type Answer } from './fake-api.js';
 import { runAnswer, runsPath } from './start-run-fixtures.js';
 import { renderStart, start } from './start-run-helpers.js';
@@ -102,4 +102,75 @@ it('RF-1108 reading stops when the page is left', async () => {
   await vi.advanceTimersByTimeAsync(10_000);
 
   expect(count()).toBe(1);
+});
+
+/** Moves the fake clock to `ms` after Start, in steps, so each checkpoint reads the run as of then. */
+function clockAt(): (ms: number) => Promise<void> {
+  let elapsed = 100;
+  return async (ms) => {
+    await vi.advanceTimersByTimeAsync(ms - elapsed);
+    elapsed = ms;
+  };
+}
+
+/** Sets the page visibility the way the browser does, then tells the page it changed. */
+function setHidden(hidden: boolean): void {
+  Reflect.deleteProperty(document, 'hidden');
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(document, 'hidden');
+});
+
+it('RF-1108 the queued read backs off: 2, 4, 8, 16 and then 30 seconds between reads', async () => {
+  const { answer, count } = reads(json(200, runBody('Queued', 3)));
+  await queuedAtThree(answer);
+  const at = clockAt();
+  // Each pair is a checkpoint half a second before and after the read that is due.
+  const checkpoints: readonly (readonly [number, number])[] = [
+    [1500, 0],
+    [2500, 1],
+    [5500, 1],
+    [6500, 2],
+    [13500, 2],
+    [14500, 3],
+    [29500, 3],
+    [30500, 4],
+    [59500, 4],
+    [60500, 5],
+    [89500, 5],
+    [90500, 6],
+  ];
+
+  for (const [ms, expected] of checkpoints) {
+    await at(ms);
+    expect(count(), `reads by ${String(ms)} ms`).toBe(expected);
+  }
+});
+
+it('RF-1108 reading stops while the page is hidden and goes on at once when it is shown', async () => {
+  const { answer, count } = reads(json(200, runBody('Queued', 3)));
+  await queuedAtThree(answer);
+  await vi.advanceTimersByTimeAsync(2500);
+  expect(count()).toBe(1);
+
+  setHidden(true);
+  await vi.advanceTimersByTimeAsync(120_000);
+  expect(count()).toBe(1);
+
+  setHidden(false);
+  await vi.advanceTimersByTimeAsync(100);
+  expect(count()).toBe(2);
+});
+
+it('RF-1108 no timer is left once the run has started', async () => {
+  const { answer } = reads(json(200, runBody('Running', null)));
+  await queuedAtThree(answer);
+
+  await vi.advanceTimersByTimeAsync(2500);
+
+  expect(noticeText()).toContain('Run started');
+  expect(vi.getTimerCount()).toBe(0);
 });

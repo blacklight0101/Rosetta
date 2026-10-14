@@ -102,3 +102,19 @@ describe('ListProjectOverview scope', () => {
     expect(rows.every((row) => row.runs === 2 && row.totals.calls === 1)).toBe(true);
   });
 });
+
+describe('ListProjectOverview truncation', () => {
+  it.each([
+    [LIMIT - 1, false],
+    [LIMIT, false],
+    [LIMIT + 1, true],
+  ])('RF-1008 with %i projects says whether more than the limit exist: %s', async (count, more) => {
+    const { overview, stores } = setup();
+    await seedProjects(stores, amy.userId, count);
+
+    const page = await overview.execute({ actor: amy });
+
+    expect(page.rows).toHaveLength(Math.min(count, LIMIT));
+    expect(page.truncated).toBe(more);
+  });
+});

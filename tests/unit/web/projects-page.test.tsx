@@ -172,3 +172,20 @@ it('RF-010 a refusal that names no field shows in a banner', async () => {
 
   expect((await screen.findByRole('alert')).textContent).toContain('RST-2005');
 });
+
+it('RF-1008 says only the newest 100 projects are shown when there are more', async () => {
+  renderProjects({
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(demo)], truncated: true }),
+  });
+
+  expect(await screen.findByText(/Only the newest 100 projects are shown/u)).not.toBeNull();
+});
+
+it('RF-1008 says nothing about the limit when every project is listed', async () => {
+  renderProjects({
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(demo)], truncated: false }),
+  });
+
+  await screen.findByText('octo/demo');
+  expect(screen.queryByText(/newest 100/u)).toBeNull();
+});
