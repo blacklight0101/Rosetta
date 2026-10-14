@@ -6,7 +6,7 @@ import { problemFor } from '../api/problems.js';
 import { cancelRun, startRun, type RunStageChoice, type StartRequest } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
 import { navigate } from '../app/router.js';
-import { dollarsToMicros } from '../lib/usd.js';
+import { dollarsToMicros, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import type { RunNoticeState } from './RunNotice.js';
 
 // RF-1001, RF-143, RF-1108, DEC-117: what pressing Start does, in order. Another address than the
@@ -88,9 +88,9 @@ function settingsWithLimits(project: Project, limits: Limits): Project['settings
 function limitsOf(
   inputs: ActionInputs,
 ): { readonly limits: Limits } | { readonly refusal: Refusals } {
-  const cap = dollarsToMicros(inputs.capText);
+  const cap = dollarsToMicros(inputs.capText, RUN_COST_MAX_MICROS);
   if (cap === undefined) return { refusal: { cap: notAnAmount } };
-  const threshold = dollarsToMicros(inputs.thresholdText);
+  const threshold = dollarsToMicros(inputs.thresholdText, RUN_COST_MAX_MICROS);
   if (threshold === undefined) return { refusal: { threshold: notAnAmount } };
   if (BigInt(threshold) > BigInt(cap)) return { refusal: { threshold: aboveCap } };
   return { limits: { cap: Number(cap), threshold: Number(threshold) } };
