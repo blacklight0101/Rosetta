@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -63,5 +63,37 @@ describe('RF-402 the .env file of the repository', () => {
 
     expect(result.status).toBe(2);
     expect(result.stdout).toContain('Set OPENAI_API_KEY in the environment first.');
+  });
+});
+
+describe('RF-402 the live check reads the key from the .env beside it', () => {
+  it('RF-402 a key in .env reaches the check without any flag, and is never printed', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'rosetta-live-root-'));
+    await mkdir(join(root, 'scripts'));
+    await copyFile(script, join(root, 'scripts', 'openai-live-check.mjs'));
+    await copyFile(
+      resolve(import.meta.dirname, '../../../scripts/load-env.mjs'),
+      join(root, 'scripts', 'load-env.mjs'),
+    );
+    // Built from pieces so no whole key literal sits in the source.
+    const fakeKey = ['sk', 'test', 'p191', 'not-a-real-key'].join('-');
+    await writeFile(join(root, '.env'), `OPENAI_API_KEY=${fakeKey}\n`);
+    try {
+      const env = Object.fromEntries(
+        Object.entries(process.env).filter(
+          ([key]) => key !== 'OPENAI_API_KEY' && key !== 'ROSETTA_TEST',
+        ),
+      );
+      const result = await runNode(
+        [join(root, 'scripts', 'openai-live-check.mjs'), 'gpt-5-nano'],
+        env,
+      );
+
+      expect(result.stdout).not.toContain('Set OPENAI_API_KEY');
+      expect(result.stdout).not.toContain(fakeKey);
+      expect(result.status).toBe(1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
