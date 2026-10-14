@@ -21,6 +21,9 @@ import { ObservedProvider } from './observed-provider.js';
 // innermost and records what the adapter really did. The architecture test
 // (tests/integration/tooling/provider-factory-boundary.test.ts) keeps these constructors here.
 
+/** P1-96: the longest a call waits for the run's budget events (they write one JSONL line). */
+const REPORT_TIMEOUT_MS = 5_000;
+
 export interface GuardedParts {
   readonly adapter: LlmProvider;
   readonly target: ProviderTarget;
@@ -72,6 +75,8 @@ export function guardedProvider(parts: GuardedParts): LlmProvider {
     recorder: sinks.recorder,
     costs: sinks.costs,
     stopRun: sinks.stopRun,
+    budgetEvents: sinks.budgetEvents,
     reservationTtlMs: parts.reservationTtlMs,
+    reportTimeoutMs: REPORT_TIMEOUT_MS,
   });
 }

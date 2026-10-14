@@ -12,6 +12,7 @@ import { RunUnderstand } from '../application/use-cases/run-understand.js';
 import { FileCostReportWriter } from '../infrastructure/budget/cost-report-files.js';
 import { FileCardOutputs } from '../infrastructure/cards/file-card-outputs.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
+import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import type { OutputWriter } from '../application/ports/output-writer.js';
@@ -89,6 +90,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     cards: new FileCardOutputs({ writer, masker, logger }),
     answers: parts.answers,
     ledger: new PgCostLedger(pool),
+    costTotals: new PgCostTotals(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(promptsFolder),
     textToolProtocol: () => loadTextToolProtocol(promptsFolder),
