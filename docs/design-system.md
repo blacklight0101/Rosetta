@@ -172,7 +172,9 @@ from tokens, and English text (DEC-45).
 | Log list | - | - | list; level toggles are `aria-pressed` buttons | time, level, logger, message |
 
 A component gallery page (development only: built only in development and served at `/dev/gallery`, DEC-126) renders every
-component in every state and both themes; the end-to-end suite screenshots it.
+component in every state and both themes; the end-to-end suite screenshots it. The production bundle has no
+`/dev/gallery` route, so the address is not a literal 404 there: a visitor without a session is redirected to sign-in,
+and a signed-in user gets the application shell, which draws its not-found page with status 200 (RF-1009).
 
 ## 6. Status badges
 

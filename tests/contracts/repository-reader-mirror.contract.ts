@@ -72,6 +72,21 @@ function grepPathTests(newReader: NewReader): void {
       value: { matches: [] },
     });
   });
+
+  it.each([
+    ['another case', 'SRC/CART.TS'],
+    ['a parent segment', '../src/cart.ts'],
+    ['a parent segment inside the root', 'src/../src/cart.ts'],
+    ['a dot segment', './src/cart.ts'],
+    ['a backslash', 'src\\cart.ts'],
+  ])('RF-146 grep with a path list spelled with %s searches nothing', async (_name, path) => {
+    const { reader } = await newReader(fixture);
+
+    expect(await reader.grep({ pattern: 'placeOrder', paths: [path] })).toMatchObject({
+      ok: true,
+      value: { matches: [] },
+    });
+  });
 }
 
 /** What the in-memory reader and the file reader must answer alike (P1-90). */

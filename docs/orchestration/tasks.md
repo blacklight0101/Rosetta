@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 153 | 59 | 79 | 15 | 0 | 91 | 54 | 8 | 96 | 0 |
+| P1 Milestone slice (M1) | 156 | 61 | 80 | 15 | 0 | 94 | 54 | 8 | 99 | 0 |
 | P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
 | P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **183** | **64** | **97** | **22** | **0** | **97** | **75** | **11** | **100** | **0** |
+| **Total** | **186** | **66** | **98** | **22** | **0** | **100** | **75** | **11** | **103** | **0** |
 
 ## Conventions for every card
 
@@ -1114,7 +1114,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `package-lock.json`; `docs/conventions.md` (install); `Dockerfile`.
 - **Do**: with npm 11.19 on Linux `npm ci` reports a missing `@emnapi` entry (also on `main`); find the cause, regenerate the lockfile so `npm ci --ignore-scripts` passes on the npm version CI uses and on the latest npm 11, and pin the npm version CI uses if needed. Then drop the `npm@11.6.2` pin and its comment from the `Dockerfile` (P1-44 pinned it because the lock file was written by the npm of Node.js 24.11.1) and check that both stages still pass `npm ci`.
 - **Delivers**: the lockfile fix.
@@ -1162,7 +1162,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-27
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `src/infrastructure/budget/`; `src/application/budget/`; `src/web/`; `docs/data-model.md`; `scripts/openai-live-check.mjs`; `package.json`.
 - **Do**: add a race test for the per-user lock; check that cost report sums stay below 2^53 or keep them as bigint; save `SetCaps` in one transaction; make the web dollar parser refuse `1,2,3` and values above the DEC-117 cost range; list the migration 0005 indexes in the data model; make `live:openai` load `.env` itself. Also test the comma cases of `web/src/lib/usd.ts` (`dollarsToMicros` strips every comma, so `1,5` becomes 15 and `1,2,3` becomes 123: refuse them), a `.5` input and more than six decimals, and give a negative dollar cap an `RST` code instead of a local refusal without one (P1-41 verifier MINORs).
 - **Delivers**: the changes with tests.
@@ -1258,7 +1258,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-75
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/scan/packs/`; `src/application/use-cases/compose-runs.ts`; `src/infrastructure/config/environment.ts`; `docs/environments-and-delivery.md`; `.env.example`.
 - **Do**: validate the parse budget `totalMs` (a positive whole number within a stated maximum; `NaN`, zero and negative values never silently mean "no budget" or "already spent") and read it from the configuration loader with the present 2 minutes as the default, listed in `docs/environments-and-delivery.md` and `.env.example`, instead of the fixed value in `compose-runs.ts`; test and document that a language pack that cannot be stopped overruns the budget by at most the file it is parsing. The time-based budget against the deterministic scan of RF-106 is an open owner question (handoff 2026-10-12); this card keeps the budget as built.
 - **Delivers**: the validation, the wiring, the document lines and tests.
@@ -1270,7 +1270,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-76
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/scan/universal/sql-script.ts`; the tests of the SQL script scan.
 - **Do**: finish the two cases P1-76 left: a bare statement verb on a line after an unterminated `BEGIN ... PRIVATE KEY` marker is masked as key text and its statement is lost (no leak, but it is lost), and an unterminated marker before a later complete key hides the statements between them (only the span after the last END is bounded). Keep each of these statements in the code map or record the notice that statements were hidden by masking, and never let a key body through. The trade-off for a bare `SELECT` line is an open owner question (handoff 2026-10-12); until it is answered keep the behaviour as built and add the tests that pin it.
 - **Delivers**: the change with fixture tests.
@@ -1294,7 +1294,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-70, P1-73, P1-90, P1-92
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/openai/openai-provider.ts`; `docs/providers.md`; `src/application/use-cases/compose-runs.ts`; `src/infrastructure/understand/tool-reads.ts`; the gallery route and its tests.
 - **Do**: add the tests the verifiers found missing: a key with U+00FF is accepted; the `RosettaError` code is kept when `compose-runs.ts` spreads an error; the post-filter of `tool-reads.ts` has a test; the mirror contract covers case, `..` and backslash paths; a leftover `ROSETTA_GALLERY` in the environment is ignored; and fix two lines: the RST-1511 row of `docs/providers.md` lists only 401 but the code also uses it for a refused key, and `/dev/gallery` answers a literal 404 in production (or the documentation says what it answers).
 - **Delivers**: the tests and the two document or route lines.
@@ -1570,7 +1570,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-111
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/ollama/ollama-context-resolver.ts` (find `processContextCache` with `grep -rn processContextCache src tests`); the resolver tests; `knip.json`; the verdict 6136577799 on #260.
 - **Do**: `processContextCache` is exported with public mutable `Map` and `Set` fields: narrow the export (an interface with the few methods callers use) or make the fields `readonly`, so no caller can reassign or clear them; keep knip and dependency-cruiser green. Add the missing test that the `retryAt` of a failed probe is reset after a later success (a failed probe sets it, a success clears it, the next call probes at once).
 - **Delivers**: the narrower type and the test.
@@ -1738,7 +1738,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-107
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/` (the start-run page and the administration caps page); `tests/e2e/start-run.spec.ts` and `admin-polish.spec.ts`; `tests/e2e/support/axe.ts`; the unit test of the cap banner; the verdict 6144206682 on #296.
 - **Do**: two gaps. The administrator cap banner has only a unit test: add an E2E check of the banner and an axe check of the page in both colour schemes. In the "none" estimate state, a refusal because the threshold is above the cap is shown in a field that is not on the page, so the user sees nothing: show the message where the page has a field for it, and test it.
 - **Delivers**: the E2E and axe checks, the message placement and its test.
@@ -1870,7 +1870,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-145, P1-146
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `tests/e2e/support/` (the start page helper, `caps-lock.ts`, `serve.ts`, the global setup); `scripts/run-e2e.mjs`; `tests/integration/tooling/workflows.test.ts` and `e2e-shards.test.ts`; `tests/e2e/api-calls.spec.ts`; `tests/support/understand-run-harness.ts`; the verdicts on #334, #344, #349 and #351.
 - **Do**: (1) the start page helper checks for "No projects yet" and then creates the project, so two parallel tests on one account can race: make the create idempotent. (2) No test covers the `--shard` selection of `run-e2e.mjs`: an empty selection would run every spec in every shard. (3) The workflow test checks the pr-title job id, not its `name: pr-title`, which the ruleset matches. (4) The caps lock folder is not cleared when an e2e run starts, so a killed run makes the next one wait up to 10 minutes: key it per run. (5) `api-calls.spec.ts:35` still times out about once in twenty repeats under four workers. (6) `tests/support/understand-run-harness.ts` is at the 300-line limit: split it.
 - **Delivers**: the six fixes with tests.
@@ -1882,7 +1882,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-136
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `tests/e2e/support/sweep.ts`; `web/src/` (`CallsTable.tsx`, `HistoryRuns.tsx`); `templates/report/report.css`; the verdict 6151652627 on #335.
 - **Do**: the stacked-table label check exempts cells that hold a link or a button, so a text column made only of links (Transcript in the calls table, Open in history) can lose its label unnoticed: check those cells too, by their link text. The static report's Cards table breaks words in the middle at 360 px ("Cata/log"): break at word boundaries only.
 - **Delivers**: the stricter check and the report CSS.
@@ -1906,12 +1906,48 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-148
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-command-shapes.ts`; the masker speed test; the verdict 6157434972 on #363.
 - **Do**: since P1-148 the run of scheme words after `--token` is atomic, so a scheme word followed by a flag or a shell operator is no longer masked (`--token Negotiate --verbose`, `--token Bearer > out`, `--token Bearer ; ls`); main before P1-148 masked them. Also `--token Bearer-x S` and `--token Bearerx S` take the word as the value and leave `S` visible. Mask these on the safe side without bringing back the quadratic case: keep the P1-148 speed cases green and masking idempotent.
 - **Delivers**: the masker change and its tests.
 - **Done when**: every shape above is masked; the P1-148 speed cases still pass at the 1 MB bound; `mask(mask(x))` equals `mask(x)`; `npm run verify` green.
 - **Refs**: RNF-005, RF-408, P1-148 (verdict 6157434972 on #363).
+
+### P1-154 - Follow-up: secret masking gaps after P1-153 and P1-100
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-153, P1-100
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `src/infrastructure/scan/universal/sql-script.ts`; `tests/support/secret-command-shapes.ts`; the masker speed test; `tests/unit/infrastructure/scan/universal/sql-key-property.test.ts`; the verdicts 6158526651 on #369 and 6159639314 on #373.
+- **Do**: these shapes still show a secret, all the same on main before the two cards: a shell line continuation (a backslash, `^` or a backtick at the end of the line) between `--token Bearer` and the value; `--token Bearer -<value>`; `--token Bearer-x "<value>"`; and in a SQL script, a line holding the END and the BEGIN of a key followed by a statement-looking line leaks key text. Mask each on the safe side, keep the P1-148 speed cases green at the 1 MB bound and masking idempotent, and add the new SQL shapes to the seeded property test.
+- **Delivers**: the masker and SQL script changes and their tests.
+- **Done when**: every shape above is masked or kept out of the statements; the speed and property tests still pass; `npm run verify` green.
+- **Refs**: RNF-005, RF-408, P1-153 (verdict 6158526651 on #369), P1-100 (verdict 6159639314 on #373).
+
+### P1-155 - Follow-up: test flakes seen on 2026-10-14
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-150
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/e2e/journeys/server-key-cap.spec.ts`; `tests/integration/infrastructure/files/grep-worker.test.ts`; `tests/e2e/support/caps-lock.ts`; `tests/e2e/support/live-run-page.ts`; the CI runs of #366 (38492853305) and #373; the verdicts on #367 and #372.
+- **Do**: (1) `server-key-cap.spec.ts` failed once on CI shard 1 with ENOENT on a `.tmp` file during a rename (#366): find the writer that races and make it safe. (2) `grep-worker.test.ts` crashed a worker on `verify (windows-latest)` with exit 0xC0000005 once (#373): find whether a worker is left running or killed too early and make the test deterministic. (3) The EPERM retry in `caps-lock.ts` has no test: inject the error through a seam and test the bounded retry. (4) The cause of the shared-account flake fixed by #372 is not pinned by a test (a reload right after the create click survived 15 repeats): add a test that fails with that reload, or say why none can.
+- **Delivers**: the fixes and tests.
+- **Done when**: each item has a test that fails without its fix, or, for a flake that cannot be forced, thirty green repeats with four workers before and after; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RNF-001, RNF-003, P1-150 (verdicts on #367 and #372).
+
+### P1-156 - Follow-up: small test and document gaps from 2026-10-14
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-125, P1-99, P1-102, P1-151
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/providers/ollama/ollama-provider.ts`; `src/infrastructure/config/environment.ts`; `tests/unit/infrastructure/config/environment-parse-budget.test.ts`; `docs/providers.md`; `templates/report/report.css`; the verdicts 6159080232 on #371, 6159923882 on #374, 6160341905 on #375 and 6158433278 on #366.
+- **Do**: (1) no test covers the Ollama provider default `options.contextCache ?? processCache` (a fresh cache per provider passes every test): add one. (2) No test pins `ROSETTA_SCAN_PARSE_BUDGET_MS=""` as unset (Compose passes an empty value when it is not set): add the case. (3) `docs/providers.md` RST-1511 row: also name the no-break space (U+00A0) that `isUsableKey` refuses. (4) The `templates/report/report.css` comment says "below 720 px" while the query is `max-width: 720px`: make the comment exact.
+- **Delivers**: the tests and the text fixes.
+- **Done when**: each new test fails when its guarded line is mutated; `npm run verify` green.
+- **Refs**: RF-401, RF-110, RNF-003, RNF-010, P1-125, P1-99, P1-102, P1-151.
 
 ---
 

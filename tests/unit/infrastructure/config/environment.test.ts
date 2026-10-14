@@ -29,6 +29,17 @@ function failureOf(source: Source): RosettaError {
   throw new Error('expected loadEnvironment to throw');
 }
 
+describe('environment: a leftover gallery switch', () => {
+  it('DEC-126 a leftover ROSETTA_GALLERY is ignored, in a production-like https environment too', () => {
+    const environment = loadEnvironment(
+      validSource({ ROSETTA_GALLERY: '1', ROSETTA_PUBLIC_URL: 'https://rosetta.example.com' }),
+    );
+
+    expect(environment).not.toHaveProperty('gallery');
+    expect(JSON.stringify(environment)).not.toContain('gallery');
+  });
+});
+
 describe('environment: the required variables', () => {
   it('RF-1305 reads the required variables from a complete environment', () => {
     const environment = loadEnvironment(validSource());
