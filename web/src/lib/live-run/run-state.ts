@@ -82,7 +82,7 @@ interface EndedState {
   readonly costMicros: number | undefined;
 }
 
-export interface RoleTokens {
+interface RoleTokens {
   readonly inputTokens: number;
   readonly outputTokens: number;
 }
