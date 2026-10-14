@@ -1,6 +1,11 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type { RunIndex, RunSource, SnapshotUsage } from '../../application/ports/run-index.js';
+import type {
+  ProjectRunSummary,
+  RunIndex,
+  RunSource,
+  SnapshotUsage,
+} from '../../application/ports/run-index.js';
 import { inQueueOrder } from '../../domain/runs/queue-rules.js';
 import { endRun, startRun, type Run, type RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
@@ -58,9 +63,24 @@ export class MemoryRunIndex implements RunIndex {
     return Promise.resolve(own.sort(newestFirst));
   }
 
-  // Stub until the bounded read is written.
-  projectSummaries(): Promise<never> {
-    return Promise.reject(new Error('Not implemented yet'));
+  // RF-1008
+  projectSummaries(
+    userId: string,
+    projectIds: readonly string[],
+  ): Promise<readonly ProjectRunSummary[]> {
+    const summaries = new Map<string, ProjectRunSummary>();
+    for (const run of this.runs.values()) {
+      if (run.userId !== userId || !projectIds.includes(run.projectId)) continue;
+      const known = summaries.get(run.projectId);
+      const newest =
+        known !== undefined && newestFirst(known.latest, run) <= 0 ? known.latest : run;
+      summaries.set(run.projectId, {
+        projectId: run.projectId,
+        runs: (known?.runs ?? 0) + 1,
+        latest: newest,
+      });
+    }
+    return Promise.resolve([...summaries.values()]);
   }
 
   listQueued(): Promise<readonly Run[]> {

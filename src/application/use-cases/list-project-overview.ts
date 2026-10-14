@@ -11,7 +11,15 @@ import type { Project } from '../projects/project.js';
 // signed-in user's projects, newest first, with the number of its runs, its totals summed from the
 // cost ledger (so a deleted run keeps its cost, DEC-55) and its latest run with the state and, while
 // that run is queued, its position in the server's queue. Only the user's own projects and runs are
-// read; the queue is read whole only to count the runs ahead.
+// read, in a fixed number of reads (the projects, the runs and totals of all of them, and the queue)
+// however many projects there are, and at most PROJECT_OVERVIEW_LIMIT projects (P1-137); the queue
+// is read whole only to count the runs ahead.
+
+/**
+ * The most projects one overview answers, the newest first. With the Projects page polling every
+ * 5 s, this bounds the rows each poll reads and sends however many projects a user has.
+ */
+const PROJECT_OVERVIEW_LIMIT = 100;
 
 export interface ProjectOverview {
   readonly project: Project;
@@ -39,31 +47,27 @@ export class ListProjectOverview {
 
   // RF-1008
   async execute(request: { readonly actor: Actor }): Promise<readonly ProjectOverview[]> {
-    const { projects, runs } = this.deps;
+    const { projects, runs, costs } = this.deps;
     const { userId } = request.actor;
-    const [owned, queued] = await Promise.all([projects.list(userId), runs.listQueued()]);
-    const positions = queuePositions(queued);
-    const rows: ProjectOverview[] = [];
-    for (const project of owned) rows.push(await this.rowOf(userId, project, positions));
-    return rows;
-  }
-
-  private async rowOf(
-    userId: string,
-    project: Project,
-    positions: ReadonlyMap<string, number>,
-  ): Promise<ProjectOverview> {
-    const [runs, groups] = await Promise.all([
-      this.deps.runs.list(userId, project.id),
-      this.deps.costs.projectGroups(userId, project.id),
+    const owned = await projects.list(userId, PROJECT_OVERVIEW_LIMIT);
+    const ids = owned.map((project) => project.id);
+    const [summaries, groups, queued] = await Promise.all([
+      runs.projectSummaries(userId, ids),
+      costs.projectSummaries(userId, ids),
+      runs.listQueued(),
     ]);
-    const lastRun = runs[0];
-    return {
-      project,
-      runs: runs.length,
-      totals: totalsOf(groups),
-      lastRun,
-      position: lastRun === undefined ? undefined : positions.get(lastRun.id),
-    };
+    const positions = queuePositions(queued);
+    const summaryOf = new Map(summaries.map((summary) => [summary.projectId, summary]));
+    return owned.map((project) => {
+      const summary = summaryOf.get(project.id);
+      const mine = groups.filter((group) => group.projectId === project.id);
+      return {
+        project,
+        runs: summary?.runs ?? 0,
+        totals: totalsOf(mine),
+        lastRun: summary?.latest,
+        position: summary === undefined ? undefined : positions.get(summary.latest.id),
+      };
+    });
   }
 }

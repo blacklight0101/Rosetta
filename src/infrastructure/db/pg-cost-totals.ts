@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import type { CostTotals, LedgerGroup, SummaryGroup } from '../../application/ports/cost-totals.js';
+import type {
+  CostTotals,
+  LedgerGroup,
+  ProjectSummaryGroup,
+  SummaryGroup,
+} from '../../application/ports/cost-totals.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { DatabasePool } from './pool.js';
@@ -21,6 +26,14 @@ const GROUPS = (scope: string): string =>
  */
 const USER_SUMMARY = `SELECT currency, cost_known, price_table_version, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 GROUP BY currency, cost_known, price_table_version ORDER BY currency COLLATE "C", cost_known, price_table_version COLLATE "C"`;
 
+/**
+ * RF-1008: the sums of every asked project in one scan of the user's rows, per project, currency,
+ * known cost and price table version; the number of groups does not grow with the runs or calls.
+ */
+const PROJECT_SUMMARIES = `SELECT project_id::text AS project_id, currency, cost_known, price_table_version, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 AND project_id = ANY($2::uuid[]) GROUP BY project_id, currency, cost_known, price_table_version ORDER BY project_id::text COLLATE "C", currency COLLATE "C", cost_known, price_table_version COLLATE "C"`;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const PROJECT_GROUPS = GROUPS('user_id = $1 AND project_id = $2');
 /** A provider test is the only row of no project (RF-407, data-model.md 3.13). */
 const PROVIDER_TEST_GROUPS = GROUPS('user_id = $1 AND project_id IS NULL');
@@ -38,6 +51,8 @@ const summaryRow = z.object({
   cached_input_tokens: count,
   cost_micros: integerText,
 });
+
+const projectSummaryRow = summaryRow.extend({ project_id: z.string() });
 
 const groupRow = summaryRow.extend({
   run_id: z.string().nullable(),
@@ -88,9 +103,18 @@ export class PgCostTotals implements CostTotals {
     return (await this.rows(USER_SUMMARY, [userId])).map((row) => toSummary(summaryRow.parse(row)));
   }
 
-  // Stub until the bounded read is written.
-  projectSummaries(): Promise<never> {
-    return Promise.reject(new Error('Not implemented yet'));
+  // RF-1008
+  async projectSummaries(
+    userId: string,
+    projectIds: readonly string[],
+  ): Promise<readonly ProjectSummaryGroup[]> {
+    const ids = projectIds.filter((id) => UUID.test(id));
+    if (!UUID.test(userId) || ids.length === 0) return [];
+    const rows = await this.rows(PROJECT_SUMMARIES, [userId, ids]);
+    return rows.map((row) => {
+      const parsed = projectSummaryRow.parse(row);
+      return { ...toSummary(parsed), projectId: parsed.project_id };
+    });
   }
 
   // RF-428
