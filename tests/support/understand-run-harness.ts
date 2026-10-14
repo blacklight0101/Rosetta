@@ -17,6 +17,7 @@ import {
   loadRecording,
   type Recording,
 } from '../../src/infrastructure/providers/fake/recording.js';
+import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
@@ -52,6 +53,8 @@ export interface UnderstandHarnessOptions {
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
   readonly decorateAnswer?: DecorateAnswer;
+  /** The shipped price table the provider factory uses; the budget harness table by default. */
+  readonly priceTable?: PriceTable;
   readonly beforeCall?: (
     call: number,
     harness: UnderstandHarness,
@@ -181,6 +184,7 @@ export async function createUnderstandHarness(
     ),
     beforeCall,
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
+    ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
   });
   const queue = await queueOf(s, providers);
   const harness = harnessOf({ s, queue, project, providers, dataDir: options.dataDir });
