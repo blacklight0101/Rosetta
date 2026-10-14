@@ -59,13 +59,28 @@ const csrfHeader = 'x-csrf-token';
 const defaultTimeoutMs = 15_000;
 /** RST-2006 is the catalogue's "unexpected error"; the wording is the client's own. */
 const unexpectedCode = 'RST-2006';
+/** RST-2009: the client could not reach Rosetta at all (a network failure, a timeout or an abort). */
+const unreachableCode = 'RST-2009';
 
-function unexpected(status: number, message: string, nextStep: string): ApiResult<never> {
-  return { ok: false, error: { status, code: unexpectedCode, message, nextStep, problems: [] } };
+function failure(
+  status: number,
+  code: string,
+  message: string,
+  nextStep: string,
+): ApiResult<never> {
+  return { ok: false, error: { status, code, message, nextStep, problems: [] } };
 }
 
+const unexpected = (status: number, message: string, nextStep: string): ApiResult<never> =>
+  failure(status, unexpectedCode, message, nextStep);
+
 const unreachable = (): ApiResult<never> =>
-  unexpected(0, 'Rosetta could not be reached.', 'Check your connection and try again.');
+  failure(
+    0,
+    unreachableCode,
+    'Rosetta could not be reached.',
+    'Check your connection and try again.',
+  );
 const unreadable = (status: number): ApiResult<never> =>
   unexpected(
     status,
@@ -119,7 +134,11 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     },
     async request<T>(request: ApiRequest<T>): Promise<ApiResult<T>> {
       if (!request.path.startsWith('/api/')) {
-        throw new Error(`API paths start with /api/, got ${request.path}`);
+        return unexpected(
+          0,
+          'Rosetta refused a request to a path outside its API.',
+          'Reload the page. If it happens again, report the code.',
+        );
       }
       const headers = headersOf(request, csrfToken);
       const timeout = AbortSignal.timeout(request.timeoutMs ?? timeoutMs);

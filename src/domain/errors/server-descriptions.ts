@@ -39,6 +39,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'The request did not come from a Rosetta page, so it was refused.',
     nextStep: 'Open Rosetta at its own address and try again from there.',
   },
+  'RST-2009': {
+    message: 'Rosetta could not be reached.',
+    nextStep: 'Check your connection and try again.',
+  },
   'RST-2008': {
     message: 'The security token of the request is missing or no longer valid.',
     nextStep: 'Reload the page and try again.',

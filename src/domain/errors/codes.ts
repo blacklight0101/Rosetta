@@ -108,6 +108,7 @@ export const ERROR_CODES = {
   unexpected: 'RST-2006',
   originRefused: 'RST-2007',
   csrfTokenInvalid: 'RST-2008',
+  apiUnreachable: 'RST-2009',
   secretMaskingFailed: 'RST-2101',
   logFileFailed: 'RST-2102',
   providerCallLogFailed: 'RST-2103',
