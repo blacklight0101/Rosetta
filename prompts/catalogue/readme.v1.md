@@ -16,17 +16,17 @@ written in Rosetta's own words; no course material is copied.
 
 ## Groups
 
-| Group | Entries |
-|---|---|
-| `design-principles` | SOLID, DRY, KISS, YAGNI, design patterns and when not to use them, antipatterns to avoid |
-| `method` | SDD, TDD with red-green-refactor, requirements with Given/When/Then and MoSCoW |
-| `architecture-styles` | layered (N-tier), modular monolith, hexagonal, Clean, event-driven, microservices |
-| `modernisation` | Strangler Fig, Parallel Change, Mikado, approval tests |
-| `quality-gates` | testing pyramid, honest coverage by layer, pre-commit and CI gates |
-| `documentation` | ADRs, documentation as code, API contracts |
-| `security` | security by design and by default, STRIDE, OWASP Top 10, secure development life cycle |
-| `delivery` | CI/CD built once, DORA metrics, containers, observability |
-| `ai-assisted-build` | agent instructions file, plan before build, human review |
+| Group                 | Entries                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `design-principles`   | SOLID, DRY, KISS, YAGNI, design patterns and when not to use them, antipatterns to avoid |
+| `method`              | SDD, TDD with red-green-refactor, requirements with Given/When/Then and MoSCoW           |
+| `architecture-styles` | layered (N-tier), modular monolith, hexagonal, Clean, event-driven, microservices        |
+| `modernisation`       | Strangler Fig, Parallel Change, Mikado, approval tests                                   |
+| `quality-gates`       | testing pyramid, honest coverage by layer, pre-commit and CI gates                       |
+| `documentation`       | ADRs, documentation as code, API contracts                                               |
+| `security`            | security by design and by default, STRIDE, OWASP Top 10, secure development life cycle   |
+| `delivery`            | CI/CD built once, DORA metrics, containers, observability                                |
+| `ai-assisted-build`   | agent instructions file, plan before build, human review                                 |
 
 A new planning brief switches on SOLID, KISS, DRY, YAGNI, TDD, SDD, ADRs, the testing pyramid with honest
 coverage, security by design and the CI quality gates; every other entry starts off (DEC-74). Each file states its

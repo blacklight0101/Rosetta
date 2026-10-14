@@ -3,25 +3,25 @@
 Source of truth for the design of Rosetta. Notes kept elsewhere (a vault, a wiki) may mirror this table and link
 here; they never hold a second copy of these documents.
 
-| Document | Purpose | Status | Date |
-|---|---|---|---|
-| [rfc/RFC-001-rosetta.md](rfc/RFC-001-rosetta.md) | Design proposal: problem, goals and non-goals, alternatives, proposed design, impact, phases, success metrics | Accepted | 2026-10-11 |
-| [spec/requirements.md](spec/requirements.md) | Requirements with Given/When/Then acceptance criteria, non-functional requirements, open questions, reserved ranges, traceability | Accepted | 2026-10-11 |
-| [decision-log.md](decision-log.md) | The product owner's decisions (DEC-nn), what each answers and where it is applied | Living | 2026-10-09 |
-| [journal/](journal/) | Curated per-session summary of what was decided and why, with DEC and Q ids; no conversations | Living | 2026-10-09 |
-| [adr/README.md](adr/README.md) | Architecture decision records index, counts by status, deferred decisions | Living | 2026-10-09 |
-| [architecture.md](architecture.md) | Layers and dependency rule, solution layout, domain model and state lists, use cases, ports, agent loop, security, testing approach | Living | 2026-10-10 |
-| [security/threat-model.md](security/threat-model.md) | Trust boundaries, STRIDE threats and controls, OWASP Top 10:2025 and LLM Top 10 mapping, secure lifecycle | Proposed | 2026-10-11 |
-| [verification/m1-matrix.md](verification/m1-matrix.md) | P1 exit evidence: every P1 requirement with its tests or manual check, the threat-model review with ranked findings, the RNF-014, RNF-003 and RNF-009 checks, proposed follow-up cards and the pyramid line | Living | 2026-10-14 |
-| [data-model.md](data-model.md) | PostgreSQL plus files: every table, constraint, grant and migration number, and the file formats in the data folder (snapshots, code map, run folder, cards, events, logs) with their schema versions | Proposed | 2026-10-11 |
-| [conventions.md](conventions.md) | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits | Proposed | 2026-10-10 |
-| [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases | Proposed | 2026-10-10 |
-| [design-system.md](design-system.md) | Web UI, landing page and published report: tokens (`design/tokens.css`), components, status badges, patterns, accessibility, verification, the hosted-application screens | Accepted (v1, amended by DEC-70, DEC-71, DEC-86) | 2026-10-11 |
-| [design-system-brief.md](design-system-brief.md) | The brief for the design board | Superseded | 2026-10-11 |
-| [roadmap.md](roadmap.md) | Phases P0..Pn with exit criteria, later releases with entry conditions, backlog by requirement id, deliberately not built | Living | 2026-10-09 |
-| [process-flows.md](process-flows.md) | Stakeholder flowcharts (Mermaid) with requirement ids in captions; source of any exported page or PDF | Reference | 2026-10-09 |
-| [orchestration/README.md](orchestration/README.md) | Build protocol: roles, builder tiers, card life cycle, builder rules, verifier checklist and verdict format, human gates G-nn, parallelism, stop conditions | Living | 2026-10-09 |
-| [orchestration/tasks.md](orchestration/tasks.md) | Task cards P1-01..Pn-nn with builder tier, size, dependencies, gate, reads, do, delivers, done-when checks, refs and status; totals by tier and phase | Living | 2026-10-09 |
+| Document                                                     | Purpose                                                                                                                                                                                                     | Status                                           | Date       |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------- |
+| [rfc/RFC-001-rosetta.md](rfc/RFC-001-rosetta.md)             | Design proposal: problem, goals and non-goals, alternatives, proposed design, impact, phases, success metrics                                                                                               | Accepted                                         | 2026-10-11 |
+| [spec/requirements.md](spec/requirements.md)                 | Requirements with Given/When/Then acceptance criteria, non-functional requirements, open questions, reserved ranges, traceability                                                                           | Accepted                                         | 2026-10-11 |
+| [decision-log.md](decision-log.md)                           | The product owner's decisions (DEC-nn), what each answers and where it is applied                                                                                                                           | Living                                           | 2026-10-09 |
+| [journal/](journal/)                                         | Curated per-session summary of what was decided and why, with DEC and Q ids; no conversations                                                                                                               | Living                                           | 2026-10-09 |
+| [adr/README.md](adr/README.md)                               | Architecture decision records index, counts by status, deferred decisions                                                                                                                                   | Living                                           | 2026-10-09 |
+| [architecture.md](architecture.md)                           | Layers and dependency rule, solution layout, domain model and state lists, use cases, ports, agent loop, security, testing approach                                                                         | Living                                           | 2026-10-10 |
+| [security/threat-model.md](security/threat-model.md)         | Trust boundaries, STRIDE threats and controls, OWASP Top 10:2025 and LLM Top 10 mapping, secure lifecycle                                                                                                   | Proposed                                         | 2026-10-11 |
+| [verification/m1-matrix.md](verification/m1-matrix.md)       | P1 exit evidence: every P1 requirement with its tests or manual check, the threat-model review with ranked findings, the RNF-014, RNF-003 and RNF-009 checks, proposed follow-up cards and the pyramid line | Living                                           | 2026-10-14 |
+| [data-model.md](data-model.md)                               | PostgreSQL plus files: every table, constraint, grant and migration number, and the file formats in the data folder (snapshots, code map, run folder, cards, events, logs) with their schema versions       | Proposed                                         | 2026-10-11 |
+| [conventions.md](conventions.md)                             | Compiler and lint rules, names, types, async, errors and the RST error-code catalogue, tests, formatting, commits                                                                                           | Proposed                                         | 2026-10-10 |
+| [environments-and-delivery.md](environments-and-delivery.md) | Environments, secrets, source control, CI gates, package and tool baseline, versioning and releases                                                                                                         | Proposed                                         | 2026-10-10 |
+| [design-system.md](design-system.md)                         | Web UI, landing page and published report: tokens (`design/tokens.css`), components, status badges, patterns, accessibility, verification, the hosted-application screens                                   | Accepted (v1, amended by DEC-70, DEC-71, DEC-86) | 2026-10-11 |
+| [design-system-brief.md](design-system-brief.md)             | The brief for the design board                                                                                                                                                                              | Superseded                                       | 2026-10-11 |
+| [roadmap.md](roadmap.md)                                     | Phases P0..Pn with exit criteria, later releases with entry conditions, backlog by requirement id, deliberately not built                                                                                   | Living                                           | 2026-10-09 |
+| [process-flows.md](process-flows.md)                         | Stakeholder flowcharts (Mermaid) with requirement ids in captions; source of any exported page or PDF                                                                                                       | Reference                                        | 2026-10-09 |
+| [orchestration/README.md](orchestration/README.md)           | Build protocol: roles, builder tiers, card life cycle, builder rules, verifier checklist and verdict format, human gates G-nn, parallelism, stop conditions                                                 | Living                                           | 2026-10-09 |
+| [orchestration/tasks.md](orchestration/tasks.md)             | Task cards P1-01..Pn-nn with builder tier, size, dependencies, gate, reads, do, delivers, done-when checks, refs and status; totals by tier and phase                                                       | Living                                           | 2026-10-09 |
 
 `legacy-sources.md` is not written: Rosetta replaces no system (DEC-03).
 
@@ -33,34 +33,34 @@ the builder (DEC-32, DEC-115).
 
 Ids are never renumbered or reused. A withdrawn item keeps its id and reads `Withdrawn YYYY-MM-DD - see <id>`.
 
-| Id | Meaning | Owned by (canonical list) |
-|---|---|---|
-| `RF-nnn` | Functional requirement; one range of a hundred per module (for example RF-001..RF-099 projects and runs, RF-100..RF-199 scan, RF-1100..RF-1199 accounts); three digits up to RF-999, four from RF-1000 | [spec/requirements.md](spec/requirements.md) section 5, ranges in section 1 |
-| `RNF-nnn` | Non-functional requirement | [spec/requirements.md](spec/requirements.md) section 6 |
-| `Q-nn` | Open question with owner, needed-by phase, default and status (`Open`, `Default applies`, `Answered (DEC-nn)`, `Withdrawn`) | [spec/requirements.md](spec/requirements.md) section 4 |
-| `DEC-nn` | Product owner decision, with what it answers and where it is applied | [decision-log.md](decision-log.md) |
-| `ADR-nnn` | Architecture decision record, file `adr/ADR-nnn-kebab-title.md`; status `Proposed`, `Accepted`, `Superseded by ADR-nnn` or `Amended` (dated note) | [adr/README.md](adr/README.md) |
-| `RFC-nnn` | Design proposal | [rfc/](rfc/) |
-| `G-nn` | Human gate; criteria in the orchestration protocol, state in `handoff.md` | [orchestration/README.md](orchestration/README.md) |
-| `P0..Pn` | Phase with exit criteria | [roadmap.md](roadmap.md) |
-| `P<phase>-nn` | Task card, for example `P1-03` | [orchestration/tasks.md](orchestration/tasks.md) |
+| Id            | Meaning                                                                                                                                                                                                | Owned by (canonical list)                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `RF-nnn`      | Functional requirement; one range of a hundred per module (for example RF-001..RF-099 projects and runs, RF-100..RF-199 scan, RF-1100..RF-1199 accounts); three digits up to RF-999, four from RF-1000 | [spec/requirements.md](spec/requirements.md) section 5, ranges in section 1 |
+| `RNF-nnn`     | Non-functional requirement                                                                                                                                                                             | [spec/requirements.md](spec/requirements.md) section 6                      |
+| `Q-nn`        | Open question with owner, needed-by phase, default and status (`Open`, `Default applies`, `Answered (DEC-nn)`, `Withdrawn`)                                                                            | [spec/requirements.md](spec/requirements.md) section 4                      |
+| `DEC-nn`      | Product owner decision, with what it answers and where it is applied                                                                                                                                   | [decision-log.md](decision-log.md)                                          |
+| `ADR-nnn`     | Architecture decision record, file `adr/ADR-nnn-kebab-title.md`; status `Proposed`, `Accepted`, `Superseded by ADR-nnn` or `Amended` (dated note)                                                      | [adr/README.md](adr/README.md)                                              |
+| `RFC-nnn`     | Design proposal                                                                                                                                                                                        | [rfc/](rfc/)                                                                |
+| `G-nn`        | Human gate; criteria in the orchestration protocol, state in `handoff.md`                                                                                                                              | [orchestration/README.md](orchestration/README.md)                          |
+| `P0..Pn`      | Phase with exit criteria                                                                                                                                                                               | [roadmap.md](roadmap.md)                                                    |
+| `P<phase>-nn` | Task card, for example `P1-03`                                                                                                                                                                         | [orchestration/tasks.md](orchestration/tasks.md)                            |
 
 ## Where counts and shared lists live
 
 State each of these in its canonical place only; other documents link there.
 
-| Fact | Canonical place |
-|---|---|
-| ADRs by status | [adr/README.md](adr/README.md) (Totals line under the index) |
-| Cards by tier and by phase | [orchestration/tasks.md](orchestration/tasks.md) (Totals table at the top) |
-| Open questions and their defaults | [spec/requirements.md](spec/requirements.md) section 4 |
-| Requirement id ranges per module | [spec/requirements.md](spec/requirements.md) section 1 |
-| State lists (claim status, run end state, agent task state) | [architecture.md](architecture.md) (domain model) |
-| Error codes `RST-xxxx` | [conventions.md](conventions.md) |
-| File formats and schema versions | [data-model.md](data-model.md) |
-| Package baseline and versions | [environments-and-delivery.md](environments-and-delivery.md) |
-| Phase scope and exit criteria | [roadmap.md](roadmap.md) |
-| Gate criteria / gate state | [orchestration/README.md](orchestration/README.md) / [../handoff.md](../handoff.md) |
+| Fact                                                        | Canonical place                                                                     |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| ADRs by status                                              | [adr/README.md](adr/README.md) (Totals line under the index)                        |
+| Cards by tier and by phase                                  | [orchestration/tasks.md](orchestration/tasks.md) (Totals table at the top)          |
+| Open questions and their defaults                           | [spec/requirements.md](spec/requirements.md) section 4                              |
+| Requirement id ranges per module                            | [spec/requirements.md](spec/requirements.md) section 1                              |
+| State lists (claim status, run end state, agent task state) | [architecture.md](architecture.md) (domain model)                                   |
+| Error codes `RST-xxxx`                                      | [conventions.md](conventions.md)                                                    |
+| File formats and schema versions                            | [data-model.md](data-model.md)                                                      |
+| Package baseline and versions                               | [environments-and-delivery.md](environments-and-delivery.md)                        |
+| Phase scope and exit criteria                               | [roadmap.md](roadmap.md)                                                            |
+| Gate criteria / gate state                                  | [orchestration/README.md](orchestration/README.md) / [../handoff.md](../handoff.md) |
 
 ## Status vocabulary for documents
 
@@ -72,12 +72,12 @@ State each of these in its canonical place only; other documents link there.
 
 ## Planned documents (not written yet)
 
-| Document | When | Content |
-|---|---|---|
-| `docs/releases.md` | P1, milestone card | release notes per version, starting with the M1 milestone |
-| `docs/golden-set.md` | P2, evaluation card | how the golden set for the demo app was built and how runs are scored |
-| `docs/providers.md` | P1, cards P1-24 to P1-26 | how to set up Ollama, OpenAI, Anthropic and OpenAI-compatible providers, with tested models and the recommended default models (DEC-106) |
-| `docs/runbooks/local.md`, `docs/runbooks/deploy.md` | P1, cards P1-45 and P1-55 | local Compose and hosted deployment: deploy, rollback, backup, restore, roles, teacher account |
+| Document                                            | When                      | Content                                                                                                                                  |
+| --------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/releases.md`                                  | P1, milestone card        | release notes per version, starting with the M1 milestone                                                                                |
+| `docs/golden-set.md`                                | P2, evaluation card       | how the golden set for the demo app was built and how runs are scored                                                                    |
+| `docs/providers.md`                                 | P1, cards P1-24 to P1-26  | how to set up Ollama, OpenAI, Anthropic and OpenAI-compatible providers, with tested models and the recommended default models (DEC-106) |
+| `docs/runbooks/local.md`, `docs/runbooks/deploy.md` | P1, cards P1-45 and P1-55 | local Compose and hosted deployment: deploy, rollback, backup, restore, roles, teacher account                                           |
 
 ## How to add things
 

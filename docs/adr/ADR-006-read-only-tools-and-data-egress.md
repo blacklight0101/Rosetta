@@ -38,10 +38,12 @@ excerpt size (RF-144).
 ## Consequences
 
 **Positive**
+
 - A clear privacy story: what leaves the machine is minimal, masked and recorded.
 - Local-only runs with Ollama keep everything on the machine (RNF-011).
 
 **Negative**
+
 - Secret patterns are heuristics: false negatives are possible, so the cloud warning and `.rosettaignore` stay
   necessary.
 - Masking can hide a value an agent needed to understand a rule (for example a feature flag that looks like a key).

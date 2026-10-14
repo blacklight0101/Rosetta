@@ -1,10 +1,10 @@
 # Providers
 
-| | |
-|---|---|
-| **Status** | Living (outline created by P1-24; each adapter card fills its section) |
-| **Date** | 2026-10-12 |
-| **Owner** | BlackLigth (blacklight0101) |
+|             |                                                                                                                                                                                                                                  |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**  | Living (outline created by P1-24; each adapter card fills its section)                                                                                                                                                           |
+| **Date**    | 2026-10-12                                                                                                                                                                                                                       |
+| **Owner**   | BlackLigth (blacklight0101)                                                                                                                                                                                                      |
 | **Related** | [ADR-003](adr/ADR-003-provider-swappable-agent-loop.md) - [ADR-008](adr/ADR-008-testing-with-recorded-responses.md) - [Architecture](architecture.md) sections 7 and 9 - [Data model](data-model.md) sections 3.1, 3.10 and 3.15 |
 
 How to set up each AI provider Rosetta talks to, which models were tested and which are recommended (RF-400..RF-408,
@@ -204,17 +204,17 @@ The package's own retries are off; the adapter uses the retry loop it shares wit
 (`src/infrastructure/providers/retrying-call.ts`), so every attempt reaches the attempt observer and the call log.
 Each attempt has its own timeout (`timeoutSeconds`) and the caller's abort signal.
 
-| Failure | Code | Retried |
-|---|---|---|
-| 429 rate limit | `RST-1504` | yes, never sooner than `retry-after-ms`, else `retry-after` (seconds or HTTP date) |
-| timeout of an attempt, or 408 | `RST-1505` | yes |
-| 5xx, or a failed connection | `RST-1506` | yes |
-| 401 rejected key | `RST-1511` | no; the message names the fix (account settings or `OPENAI_API_KEY`) |
-| key refused before any call (empty, spaces, control characters, a no-break space U+00A0 or a character above U+00FF) | `RST-1511` | no call is made; the message holds no part of the key and names no fix |
-| 404 `model_not_found` | `RST-1512` | no; the message names the model |
-| 429 `insufficient_quota` (no credit) | `RST-1513` | no; the message names the billing settings |
-| any other 4xx (for example 400 `context_length_exceeded`, 403) | `RST-1506` | no |
-| cancelled by the caller | `RST-1501` | no |
+| Failure                                                                                                              | Code       | Retried                                                                            |
+| -------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
+| 429 rate limit                                                                                                       | `RST-1504` | yes, never sooner than `retry-after-ms`, else `retry-after` (seconds or HTTP date) |
+| timeout of an attempt, or 408                                                                                        | `RST-1505` | yes                                                                                |
+| 5xx, or a failed connection                                                                                          | `RST-1506` | yes                                                                                |
+| 401 rejected key                                                                                                     | `RST-1511` | no; the message names the fix (account settings or `OPENAI_API_KEY`)               |
+| key refused before any call (empty, spaces, control characters, a no-break space U+00A0 or a character above U+00FF) | `RST-1511` | no call is made; the message holds no part of the key and names no fix             |
+| 404 `model_not_found`                                                                                                | `RST-1512` | no; the message names the model                                                    |
+| 429 `insufficient_quota` (no credit)                                                                                 | `RST-1513` | no; the message names the billing settings                                         |
+| any other 4xx (for example 400 `context_length_exceeded`, 403)                                                       | `RST-1506` | no                                                                                 |
+| cancelled by the caller                                                                                              | `RST-1501` | no                                                                                 |
 
 The back-off is the same as Ollama's (section 2.4): from one second, doubled per retry, capped at 30 seconds, with
 jitter, never shorter than the hint (capped at five minutes), up to `maxRetries` retries.
@@ -305,16 +305,16 @@ The package's own retries are off; the adapter uses the shared retry loop (`retr
 reaches the attempt observer and the call log. Each attempt has its own timeout (`timeoutSeconds`) and the caller's
 abort signal.
 
-| Failure | Code | Retried |
-|---|---|---|
-| 429 rate limit | `RST-1504` | yes, never sooner than `retry-after` (seconds or HTTP date) |
-| timeout of an attempt, or 408 | `RST-1505` | yes |
-| 5xx, 529 overloaded, or a failed connection | `RST-1506` | yes |
-| 401 rejected key | `RST-1518` | no; the message names the fix (account settings or `ANTHROPIC_API_KEY`) |
-| 402 billing error (no credit) | `RST-1520` | no; the message names the Console billing settings |
-| 404 unknown model | `RST-1519` | no; the message names the model |
-| any other 4xx (for example 400 prompt too long, 403, 413) | `RST-1506` | no |
-| cancelled by the caller | `RST-1501` | no |
+| Failure                                                   | Code       | Retried                                                                 |
+| --------------------------------------------------------- | ---------- | ----------------------------------------------------------------------- |
+| 429 rate limit                                            | `RST-1504` | yes, never sooner than `retry-after` (seconds or HTTP date)             |
+| timeout of an attempt, or 408                             | `RST-1505` | yes                                                                     |
+| 5xx, 529 overloaded, or a failed connection               | `RST-1506` | yes                                                                     |
+| 401 rejected key                                          | `RST-1518` | no; the message names the fix (account settings or `ANTHROPIC_API_KEY`) |
+| 402 billing error (no credit)                             | `RST-1520` | no; the message names the Console billing settings                      |
+| 404 unknown model                                         | `RST-1519` | no; the message names the model                                         |
+| any other 4xx (for example 400 prompt too long, 403, 413) | `RST-1506` | no                                                                      |
+| cancelled by the caller                                   | `RST-1501` | no                                                                      |
 
 The back-off is the same as Ollama's (section 2.4).
 

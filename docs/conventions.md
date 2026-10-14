@@ -1,10 +1,10 @@
 # Conventions
 
-| | |
-|---|---|
-| **Status** | Proposed (2026-10-09) |
-| **Date** | 2026-10-11 (review of the build plan, DEC-112) |
-| **Owner** | BlackLigth (blacklight0101) |
+|             |                                                                                                                                                                                                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**  | Proposed (2026-10-09)                                                                                                                                                                                                                                                  |
+| **Date**    | 2026-10-11 (review of the build plan, DEC-112)                                                                                                                                                                                                                         |
+| **Owner**   | BlackLigth (blacklight0101)                                                                                                                                                                                                                                            |
 | **Related** | [Architecture](architecture.md) - [Environments and delivery](environments-and-delivery.md) - [ADR-009](adr/ADR-009-clean-architecture.md) - [ADR-010](adr/ADR-010-spec-driven-and-test-driven-development.md) - [ADR-011](adr/ADR-011-toolchain-and-quality-gates.md) |
 
 The rules every builder applies the same way. Rules marked **(tool)** are enforced by a gate of `npm run verify`
@@ -26,22 +26,22 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 
 ## 2. Folders, files and names
 
-| Thing | Rule | Example |
-|---|---|---|
-| Layers | `src/domain`, `src/application`, `src/infrastructure`, `src/presentation` ([architecture](architecture.md)) | |
-| Files | kebab-case, one main export per file, named after it | `budget-guard.ts` exports `BudgetGuard` |
-| Types, classes | PascalCase; no `I` prefix on interfaces | `LlmProvider`, `CodeMap` |
-| Functions, variables | camelCase; verbs for functions | `parseCitation`, `estimateRun` |
-| Constants | camelCase for module constants; UPPER_SNAKE only for environment variable names | `defaultMaxTurns`, `OPENAI_API_KEY` |
-| Ports | a noun for the capability, in `src/application/ports/` | `RepositoryReader`, `Clock` |
-| Adapters | technology plus port, in `src/infrastructure/<area>/` | `OpenAiProvider`, `NodeRepositoryReader` |
-| Use cases | verb phrase, one per file in `src/application/use-cases/` | `RunUnderstand` |
-| Tests | next to nothing in `src`; under `tests/<level>/` mirroring `src` | `tests/unit/domain/citation.test.ts` |
-| Prompts | `prompts/<role>/<name>.v<n>.md`; a change creates a new version file | `prompts/reader/area.v2.md` |
-| SQL tables and columns | `snake_case`; tables plural; `id` primary key; `<singular>_id` foreign keys; `*_at` `timestamptz`; `*_micros` `bigint`; enumerations as `text` with `CHECK` ([data-model](data-model.md) section 1) | `cost_ledger.cost_micros` |
-| Migrations | `db/migrations/NNNN_snake_name.sql`, never edited after merge | `0001_accounts.sql` |
-| HTTP routes | pages at kebab-case paths; JSON API under `/api/`, plural nouns, ids as path segments | `GET /api/projects/:projectId/runs` |
-| Environment variables | `ROSETTA_` prefix for Rosetta's own; provider and database names as the ecosystem uses them | `ROSETTA_SECRET_KEY`, `DATABASE_URL` |
+| Thing                  | Rule                                                                                                                                                                                                | Example                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Layers                 | `src/domain`, `src/application`, `src/infrastructure`, `src/presentation` ([architecture](architecture.md))                                                                                         |                                          |
+| Files                  | kebab-case, one main export per file, named after it                                                                                                                                                | `budget-guard.ts` exports `BudgetGuard`  |
+| Types, classes         | PascalCase; no `I` prefix on interfaces                                                                                                                                                             | `LlmProvider`, `CodeMap`                 |
+| Functions, variables   | camelCase; verbs for functions                                                                                                                                                                      | `parseCitation`, `estimateRun`           |
+| Constants              | camelCase for module constants; UPPER_SNAKE only for environment variable names                                                                                                                     | `defaultMaxTurns`, `OPENAI_API_KEY`      |
+| Ports                  | a noun for the capability, in `src/application/ports/`                                                                                                                                              | `RepositoryReader`, `Clock`              |
+| Adapters               | technology plus port, in `src/infrastructure/<area>/`                                                                                                                                               | `OpenAiProvider`, `NodeRepositoryReader` |
+| Use cases              | verb phrase, one per file in `src/application/use-cases/`                                                                                                                                           | `RunUnderstand`                          |
+| Tests                  | next to nothing in `src`; under `tests/<level>/` mirroring `src`                                                                                                                                    | `tests/unit/domain/citation.test.ts`     |
+| Prompts                | `prompts/<role>/<name>.v<n>.md`; a change creates a new version file                                                                                                                                | `prompts/reader/area.v2.md`              |
+| SQL tables and columns | `snake_case`; tables plural; `id` primary key; `<singular>_id` foreign keys; `*_at` `timestamptz`; `*_micros` `bigint`; enumerations as `text` with `CHECK` ([data-model](data-model.md) section 1) | `cost_ledger.cost_micros`                |
+| Migrations             | `db/migrations/NNNN_snake_name.sql`, never edited after merge                                                                                                                                       | `0001_accounts.sql`                      |
+| HTTP routes            | pages at kebab-case paths; JSON API under `/api/`, plural nouns, ids as path segments                                                                                                               | `GET /api/projects/:projectId/runs`      |
+| Environment variables  | `ROSETTA_` prefix for Rosetta's own; provider and database names as the ecosystem uses them                                                                                                         | `ROSETTA_SECRET_KEY`, `DATABASE_URL`     |
 
 - **Named exports only**; no default exports. **(tool)**
 - No barrel files (`index.ts` re-exporting a folder) inside `src`; import the file you need. **(tool: knip,
@@ -100,24 +100,24 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 registry, `src/domain/errors/codes.ts`, one code per line, so two parallel pull requests that take the same number
 conflict visibly; the codes already shown on the design board are reserved there first (DEC-112):
 
-| Range | Area |
-|---|---|
+| Range          | Area                                                                            |
+| -------------- | ------------------------------------------------------------------------------- |
 | RST-1000..1099 | configuration: server environment and project settings (CLI usage until DEC-59) |
-| RST-1100..1199 | file system, ignore rules, output folder |
-| RST-1200..1299 | scan and language packs |
-| RST-1300..1399 | agent loop, tools and card parsing |
-| RST-1400..1499 | verifier |
-| RST-1500..1599 | providers |
-| RST-1600..1699 | budget and cost |
-| RST-1700..1799 | report and export |
-| RST-1800..1899 | plan |
-| RST-1900..1999 | GitHub sources (URL, ref resolution, snapshot download, rate limits) |
-| RST-2000..2099 | web UI and HTTP server (routes, validation, CSRF, headers) |
-| RST-2100..2199 | logging and observability |
-| RST-2200..2299 | accounts, sign-in, sessions, roles and audit (RF-1100..RF-1109) |
-| RST-2300..2399 | provider keys, caps and the run queue (RF-1104, RF-1106, RF-1108) |
-| RST-2400..2499 | database and migrations (RF-1302) |
-| RST-2500..2599 | deployment, start-up and health (RF-1300..RF-1306) |
+| RST-1100..1199 | file system, ignore rules, output folder                                        |
+| RST-1200..1299 | scan and language packs                                                         |
+| RST-1300..1399 | agent loop, tools and card parsing                                              |
+| RST-1400..1499 | verifier                                                                        |
+| RST-1500..1599 | providers                                                                       |
+| RST-1600..1699 | budget and cost                                                                 |
+| RST-1700..1799 | report and export                                                               |
+| RST-1800..1899 | plan                                                                            |
+| RST-1900..1999 | GitHub sources (URL, ref resolution, snapshot download, rate limits)            |
+| RST-2000..2099 | web UI and HTTP server (routes, validation, CSRF, headers)                      |
+| RST-2100..2199 | logging and observability                                                       |
+| RST-2200..2299 | accounts, sign-in, sessions, roles and audit (RF-1100..RF-1109)                 |
+| RST-2300..2399 | provider keys, caps and the run queue (RF-1104, RF-1106, RF-1108)               |
+| RST-2400..2499 | database and migrations (RF-1302)                                               |
+| RST-2500..2599 | deployment, start-up and health (RF-1300..RF-1306)                              |
 
 RST-2009 is the web client's own code (`web/src/api/client.ts`) for a request that got no answer at all (a network failure or a timeout, status 0); the server never sends it. RST-2010 is the same client's code for a request the caller cancelled itself, status 0, also never sent by the server. A request to a path outside `/api/` is refused by the client with RST-2006 before anything is sent.
 

@@ -1,10 +1,10 @@
 # Rosetta: design system brief (input for a design tool)
 
-| | |
-|---|---|
-| **Status** | Superseded 2026-10-11: the board drawn from it was approved without changes (DEC-56); the result is design-system.md v1 and `docs/design/board/`; kept for history only |
-| **Sent to** | Claude (Design canvas Artifact "Rosetta design board v1"), run with the owner on 2026-10-11; the owner may also run it in another design tool |
-| **Folded back into** | [design-system.md](design-system.md) (v1); after approval at G-02 the board is exported to `docs/design/board/` and this brief is marked Superseded |
+|                      |                                                                                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**           | Superseded 2026-10-11: the board drawn from it was approved without changes (DEC-56); the result is design-system.md v1 and `docs/design/board/`; kept for history only |
+| **Sent to**          | Claude (Design canvas Artifact "Rosetta design board v1"), run with the owner on 2026-10-11; the owner may also run it in another design tool                           |
+| **Folded back into** | [design-system.md](design-system.md) (v1); after approval at G-02 the board is exported to `docs/design/board/` and this brief is marked Superseded                     |
 
 ## What this is and what I want back
 

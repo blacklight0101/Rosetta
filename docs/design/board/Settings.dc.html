@@ -1,98 +1,349 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Rosetta - settings and keys</title>
-<script src="./support.js"></script>
-<link rel="stylesheet" href="./rosetta-tokens.css">
-</head>
-<body>
-<x-dc>
-<helmet>
-<style>
-body{margin:0}
-.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
-.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
-.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
-.nav .grp{margin:14px 12px 4px;font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:20px;box-shadow:var(--rst-shadow-1)}
-.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 14px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent;white-space:nowrap}
-.out{border-color:var(--rst-rule-strong);color:var(--rst-ink);background:transparent}
-.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
-.row{display:grid;grid-template-columns:minmax(160px,1fr) minmax(200px,2fr) auto;gap:12px 20px;align-items:center;padding:16px 0;border-top:1px solid var(--rst-rule)}
-input{height:36px;padding:0 10px;border-radius:var(--rst-radius-md);border:1px solid var(--rst-rule-strong);background:var(--rst-bg);color:var(--rst-ink);font:inherit;min-width:0}
-h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
-h2{margin:0;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
-</style>
-</helmet>
-<div class="rst-root" data-theme="{{theme}}" style="min-height: 1100px; display: flex; flex-direction: column;">
-  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
-    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
-    <div style="flex: 1 1 auto;"></div>
-    <div style="display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);"><span class="lbl">Your total</span><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$3.88</span><span class="lbl">today $0.62 of $1.00</span></div>
-    <div style="display: flex; align-items: center; gap: 10px;"><span>Ana Ruiz</span><span class="badge" style="background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);">user</span><a href="SignIn.dc.html">Sign out</a></div>
-  </header>
-  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
-    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
-      <a href="Projects.dc.html">Projects</a>
-      <a href="Settings.dc.html" aria-current="page">Settings and keys</a>
-      <sc-if value="{{isAdmin}}" hint-placeholder-val="{{ false }}">
-      <div class="grp">Administration</div>
-      <a href="AdminUsers.dc.html">Users and caps</a>
-      <a href="AdminAudit.dc.html">Audit</a>
-      </sc-if>
-    </nav>
-    <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; max-width: 1060px;">
-      <div><h1>Settings and keys</h1><div style="color: var(--rst-ink-muted); margin-top: 4px;">Your own provider keys are used first. Without one, your runs use the server's keys under your daily cap.</div></div>
-
-      <section class="card" aria-labelledby="keys">
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 4px;"><h2 id="keys" style="flex: 1 1 auto;">Provider keys</h2><button class="btn out" type="button">Test all</button></div>
-        <div class="lbl" style="margin-bottom: 8px;">Keys are encrypted on the server and never shown again after saving; you see only the last four characters. Replace and Delete ask for confirmation; Test makes one tiny call and adds its cost to your total.</div>
-
-        <div class="row">
-          <div><strong>OpenAI</strong><div class="lbl">verifier, summariser</div></div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;"><span class="rst-mono">sk-…7Qx2</span><span class="badge" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);">Your key · tested 14:01</span></div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px;"><button class="btn out" type="button">Test</button><button class="btn out" type="button">Replace</button><button class="btn" type="button" style="color: var(--rst-danger-ink); border-color: var(--rst-danger-solid); background: transparent;">Delete</button></div>
-        </div>
-
-        <div class="row">
-          <div><strong>Anthropic</strong><div class="lbl">not used by your projects yet</div></div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;"><label for="ak" class="lbl" style="flex: 1 1 100%;">API key</label><input id="ak" type="password" autocomplete="off" placeholder="Paste a key starting with sk-ant-" style="flex: 1 1 260px;"></div>
-          <div><button class="btn" type="button" style="background: var(--rst-brand); color: var(--rst-brand-ink);">Save key</button></div>
-        </div>
-
-        <div class="row">
-          <div><strong>OpenAI-compatible</strong><div class="lbl">OpenRouter, Groq, DeepSeek, Gemini</div></div>
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <label for="bu" class="lbl">Base URL</label>
-            <input id="bu" class="rst-mono" value="http://192.168.1.20:8000/v1" aria-invalid="true" aria-describedby="bu-err" style="border-color: var(--rst-danger-solid);">
-            <div id="bu-err" style="color: var(--rst-danger-ink); font-size: var(--rst-fs-sm);">The URL must use https and a public address. (RST-2304)</div>
+  <head>
+    <meta charset="utf-8" />
+    <title>Rosetta - settings and keys</title>
+    <script src="./support.js"></script>
+    <link rel="stylesheet" href="./rosetta-tokens.css" />
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <style>
+          body {
+            margin: 0;
+          }
+          .nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: var(--rst-radius-md);
+            color: var(--rst-ink-soft);
+            text-decoration: none;
+            font-weight: var(--rst-fw-label);
+          }
+          .nav a:hover {
+            background: var(--rst-surface-2);
+            color: var(--rst-ink);
+          }
+          .nav a[aria-current='page'] {
+            background: var(--rst-brand-tint);
+            color: var(--rst-brand);
+          }
+          .nav .grp {
+            margin: 14px 12px 4px;
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .card {
+            background: var(--rst-surface);
+            border: 1px solid var(--rst-rule);
+            border-radius: var(--rst-radius-lg);
+            padding: 20px;
+            box-shadow: var(--rst-shadow-1);
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: var(--rst-control-h);
+            padding: 0 14px;
+            border-radius: var(--rst-radius-md);
+            font: inherit;
+            font-weight: var(--rst-fw-label);
+            cursor: pointer;
+            border: 1px solid transparent;
+            white-space: nowrap;
+          }
+          .out {
+            border-color: var(--rst-rule-strong);
+            color: var(--rst-ink);
+            background: transparent;
+          }
+          .lbl {
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 22px;
+            padding: 0 9px;
+            border-radius: var(--rst-radius-pill);
+            font-size: var(--rst-fs-xs);
+            font-weight: var(--rst-fw-label);
+            white-space: nowrap;
+          }
+          .row {
+            display: grid;
+            grid-template-columns: minmax(160px, 1fr) minmax(200px, 2fr) auto;
+            gap: 12px 20px;
+            align-items: center;
+            padding: 16px 0;
+            border-top: 1px solid var(--rst-rule);
+          }
+          input {
+            height: 36px;
+            padding: 0 10px;
+            border-radius: var(--rst-radius-md);
+            border: 1px solid var(--rst-rule-strong);
+            background: var(--rst-bg);
+            color: var(--rst-ink);
+            font: inherit;
+            min-width: 0;
+          }
+          h1 {
+            margin: 0;
+            font-size: var(--rst-fs-2xl);
+            font-weight: var(--rst-fw-head);
+          }
+          h2 {
+            margin: 0;
+            font-size: var(--rst-fs-lg);
+            font-weight: var(--rst-fw-head);
+          }
+        </style>
+      </helmet>
+      <div
+        class="rst-root"
+        data-theme="{{theme}}"
+        style="min-height: 1100px; display: flex; flex-direction: column"
+      >
+        <header
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 24px;
+            padding: 12px 24px;
+            background: var(--rst-surface);
+            border-bottom: 1px solid var(--rst-rule);
+          "
+        >
+          <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Rosetta</div>
+          <div style="flex: 1 1 auto"></div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 14px;
+              padding: 6px 12px;
+              border: 1px solid var(--rst-rule);
+              border-radius: var(--rst-radius-md);
+              background: var(--rst-surface-2);
+            "
+          >
+            <span class="lbl">Your total</span
+            ><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head)">$3.88</span
+            ><span class="lbl">today $0.62 of $1.00</span>
           </div>
-          <div><button class="btn" type="button" style="background: var(--rst-brand); color: var(--rst-brand-ink);">Save key</button></div>
-        </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span>Ana Ruiz</span
+            ><span
+              class="badge"
+              style="background: var(--rst-neutral-bg); color: var(--rst-neutral-ink)"
+              >user</span
+            ><a href="SignIn.dc.html">Sign out</a>
+          </div>
+        </header>
+        <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto">
+          <nav
+            class="nav"
+            aria-label="Main"
+            style="
+              flex: 1 1 200px;
+              max-width: 240px;
+              padding: 16px 12px;
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+              border-right: 1px solid var(--rst-rule);
+              background: var(--rst-surface);
+            "
+          >
+            <a href="Projects.dc.html">Projects</a>
+            <a href="Settings.dc.html" aria-current="page">Settings and keys</a>
+            <sc-if value="{{isAdmin}}" hint-placeholder-val="{{ false }}">
+              <div class="grp">Administration</div>
+              <a href="AdminUsers.dc.html">Users and caps</a>
+              <a href="AdminAudit.dc.html">Audit</a>
+            </sc-if>
+          </nav>
+          <main
+            style="
+              flex: 999 1 560px;
+              min-width: 0;
+              padding: 28px 32px;
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+              max-width: 1060px;
+            "
+          >
+            <div>
+              <h1>Settings and keys</h1>
+              <div style="color: var(--rst-ink-muted); margin-top: 4px">
+                Your own provider keys are used first. Without one, your runs use the server's keys
+                under your daily cap.
+              </div>
+            </div>
 
-        <div class="row">
-          <div><strong>Server keys</strong><div class="lbl">set by the administrator</div></div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;"><span class="badge" style="background: var(--rst-info-bg); color: var(--rst-info-ink);">Allowed for your account</span><span class="lbl">OpenAI, Anthropic · daily cap $1.00 · used today $0.62</span></div>
-          <div></div>
-        </div>
-      </section>
+            <section class="card" aria-labelledby="keys">
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 12px;
+                  align-items: center;
+                  margin-bottom: 4px;
+                "
+              >
+                <h2 id="keys" style="flex: 1 1 auto">Provider keys</h2>
+                <button class="btn out" type="button">Test all</button>
+              </div>
+              <div class="lbl" style="margin-bottom: 8px">
+                Keys are encrypted on the server and never shown again after saving; you see only
+                the last four characters. Replace and Delete ask for confirmation; Test makes one
+                tiny call and adds its cost to your total.
+              </div>
 
-      <section class="card" aria-labelledby="pw" style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;">
-        <div style="flex: 1 1 360px;"><h2 id="pw">Password</h2><div class="lbl" style="margin-top: 4px;">Last changed Oct 10. Changing it signs you out on every other browser.</div></div>
-        <a class="btn out" href="ChangePassword.dc.html" style="text-decoration: none;">Change password</a>
-      </section>
-    </main>
-  </div>
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"role":{"editor":"enum","options":["user","admin"],"default":"user"},"$preview":{"width":1440,"height":1100}}'>
-class Component extends DCLogic {
-renderVals() {
-return { theme: this.props.theme ?? 'light', isAdmin: (this.props.role ?? 'user') === 'admin' };
-}
-}
-</script>
-</body>
+              <div class="row">
+                <div>
+                  <strong>OpenAI</strong>
+                  <div class="lbl">verifier, summariser</div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+                  <span class="rst-mono">sk-…7Qx2</span
+                  ><span
+                    class="badge"
+                    style="background: var(--rst-ok-bg); color: var(--rst-ok-ink)"
+                    >Your key · tested 14:01</span
+                  >
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                  <button class="btn out" type="button">Test</button
+                  ><button class="btn out" type="button">Replace</button
+                  ><button
+                    class="btn"
+                    type="button"
+                    style="
+                      color: var(--rst-danger-ink);
+                      border-color: var(--rst-danger-solid);
+                      background: transparent;
+                    "
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <strong>Anthropic</strong>
+                  <div class="lbl">not used by your projects yet</div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+                  <label for="ak" class="lbl" style="flex: 1 1 100%">API key</label
+                  ><input
+                    id="ak"
+                    type="password"
+                    autocomplete="off"
+                    placeholder="Paste a key starting with sk-ant-"
+                    style="flex: 1 1 260px"
+                  />
+                </div>
+                <div>
+                  <button
+                    class="btn"
+                    type="button"
+                    style="background: var(--rst-brand); color: var(--rst-brand-ink)"
+                  >
+                    Save key
+                  </button>
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <strong>OpenAI-compatible</strong>
+                  <div class="lbl">OpenRouter, Groq, DeepSeek, Gemini</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <label for="bu" class="lbl">Base URL</label>
+                  <input
+                    id="bu"
+                    class="rst-mono"
+                    value="http://192.168.1.20:8000/v1"
+                    aria-invalid="true"
+                    aria-describedby="bu-err"
+                    style="border-color: var(--rst-danger-solid)"
+                  />
+                  <div
+                    id="bu-err"
+                    style="color: var(--rst-danger-ink); font-size: var(--rst-fs-sm)"
+                  >
+                    The URL must use https and a public address. (RST-2304)
+                  </div>
+                </div>
+                <div>
+                  <button
+                    class="btn"
+                    type="button"
+                    style="background: var(--rst-brand); color: var(--rst-brand-ink)"
+                  >
+                    Save key
+                  </button>
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <strong>Server keys</strong>
+                  <div class="lbl">set by the administrator</div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+                  <span
+                    class="badge"
+                    style="background: var(--rst-info-bg); color: var(--rst-info-ink)"
+                    >Allowed for your account</span
+                  ><span class="lbl">OpenAI, Anthropic · daily cap $1.00 · used today $0.62</span>
+                </div>
+                <div></div>
+              </div>
+            </section>
+
+            <section
+              class="card"
+              aria-labelledby="pw"
+              style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center"
+            >
+              <div style="flex: 1 1 360px">
+                <h2 id="pw">Password</h2>
+                <div class="lbl" style="margin-top: 4px">
+                  Last changed Oct 10. Changing it signs you out on every other browser.
+                </div>
+              </div>
+              <a class="btn out" href="ChangePassword.dc.html" style="text-decoration: none"
+                >Change password</a
+              >
+            </section>
+          </main>
+        </div>
+      </div>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"role":{"editor":"enum","options":["user","admin"],"default":"user"},"$preview":{"width":1440,"height":1100}}'
+    >
+      class Component extends DCLogic {
+      renderVals() {
+      return { theme: this.props.theme ?? 'light', isAdmin: (this.props.role ?? 'user') === 'admin' };
+      }
+      }
+    </script>
+  </body>
 </html>

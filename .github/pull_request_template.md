@@ -6,13 +6,13 @@ Closes #<!-- issue number -->
 
 ## Traceability
 
-| Kind | Ids |
-|---|---|
-| Task card | <!-- P1-03, or "none" for documentation outside a card --> |
-| Requirements | <!-- RF-nnn, RNF-nnn --> |
-| ADRs | <!-- ADR-nnn --> |
-| Decisions | <!-- DEC-nn --> |
-| Difficulty / builder | <!-- 1-10 / haiku, sonnet, opus, fable (DEC-32) --> |
+| Kind                 | Ids                                                        |
+| -------------------- | ---------------------------------------------------------- |
+| Task card            | <!-- P1-03, or "none" for documentation outside a card --> |
+| Requirements         | <!-- RF-nnn, RNF-nnn -->                                   |
+| ADRs                 | <!-- ADR-nnn -->                                           |
+| Decisions            | <!-- DEC-nn -->                                            |
+| Difficulty / builder | <!-- 1-10 / haiku, sonnet, opus, fable (DEC-32) -->        |
 
 ## How it was verified
 
@@ -26,4 +26,5 @@ Closes #<!-- issue number -->
 <!-- Commands the product owner can run to see the change working (DEC-34). "Not applicable" for docs-only changes. -->
 
 ---
+
 Merged with squash: task-card pull requests by the orchestrator under the merge rules of `docs/orchestration/README.md` section 3.1 (DEC-96); pull requests labelled `needs-owner` only by the product owner (DEC-33, DEC-35).

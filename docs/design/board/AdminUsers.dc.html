@@ -1,139 +1,461 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Rosetta - users and caps</title>
-<script src="./support.js"></script>
-<link rel="stylesheet" href="./rosetta-tokens.css">
-</head>
-<body>
-<x-dc>
-<helmet>
-<style>
-body{margin:0}
-.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
-.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
-.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
-.nav .grp{margin:14px 12px 4px;font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:20px;box-shadow:var(--rst-shadow-1)}
-.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 12px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent;white-space:nowrap}
-.out{border-color:var(--rst-rule-strong);color:var(--rst-ink);background:transparent}
-.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
-table{border-collapse:collapse;width:100%;min-width:980px}
-th,td{text-align:left;padding:10px;border-bottom:1px solid var(--rst-rule);font-size:var(--rst-fs-sm);white-space:nowrap}
-th{font-weight:var(--rst-fw-label);color:var(--rst-ink-muted);font-size:var(--rst-fs-xs);background:var(--rst-surface-2)}
-td.n,th.n{text-align:right}
-.f{display:flex;flex-direction:column;gap:6px}
-.f label{font-weight:var(--rst-fw-label);font-size:var(--rst-fs-sm)}
-input,select{height:36px;padding:0 10px;border-radius:var(--rst-radius-md);border:1px solid var(--rst-rule-strong);background:var(--rst-bg);color:var(--rst-ink);font:inherit;min-width:0}
-.trk{height:10px;border-radius:999px;background:var(--rst-surface-2);overflow:hidden}
-.trk span{display:block;height:100%;border-radius:999px}
-h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
-h2{margin:0;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
-</style>
-</helmet>
-<div class="rst-root" data-theme="{{theme}}" style="min-height: 1300px; display: flex; flex-direction: column;">
-  <div role="status" style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 24px; background: var(--rst-warn-bg); color: var(--rst-warn-ink); border-bottom: 1px solid var(--rst-warn-solid);">
-    <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" style="flex: none;"><path d="M10 3 18 17H2L10 3Z M10 8v4 M10 14.5v.3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg>
-    <span style="flex: 1 1 360px;"><strong>The server has used 82% of its monthly cap ($8.20 of $10.00).</strong> Runs on server keys stop at the cap; users with their own keys are not affected.</span>
-    <a href="#caps" style="color: var(--rst-warn-ink);">Review caps</a>
-  </div>
-  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
-    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
-    <div style="flex: 1 1 auto;"></div>
-    <div style="display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);"><span class="lbl">Server, this month</span><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$8.20</span><span class="lbl">of $10.00</span></div>
-    <div style="display: flex; align-items: center; gap: 10px;"><span>BlackLigth</span><span class="badge" style="background: var(--rst-brand-tint); color: var(--rst-brand);">admin</span><a href="SignIn.dc.html">Sign out</a></div>
-  </header>
-  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
-    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
-      <a href="Projects.dc.html">Projects</a>
-      <a href="Settings.dc.html">Settings and keys</a>
-      <div class="grp">Administration</div>
-      <a href="AdminUsers.dc.html" aria-current="page">Users and caps</a>
-      <a href="AdminAudit.dc.html">Audit</a>
-    </nav>
-    <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; max-width: 1200px;">
-      <div><h1>Users and caps</h1><div style="color: var(--rst-ink-muted); margin-top: 4px;">There is no sign-up: every account starts here. Opening someone's workspace is recorded in the audit.</div></div>
-
-      <section class="card" aria-labelledby="ul">
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px;"><h2 id="ul" style="flex: 1 1 auto;">Accounts</h2><input aria-label="Filter accounts" placeholder="Filter by name" style="width: 220px;"></div>
-        <div style="overflow-x: auto;">
-          <table>
-            <thead><tr><th>User</th><th>Role</th><th>State</th><th>Last sign-in</th><th class="n">Projects</th><th class="n">Month to date</th><th>Server keys</th><th></th></tr></thead>
-            <tbody>
-              <sc-for list="{{users}}" as="u" hint-placeholder-count="4">
-                <tr>
-                  <td><strong>{{u.name}}</strong><div class="lbl rst-mono">{{u.login}}</div></td>
-                  <td>{{u.role}}</td>
-                  <td><span class="badge" style="{{u.style}}">{{u.state}}</span></td>
-                  <td>{{u.last}}</td><td class="n">{{u.projects}}</td><td class="n">{{u.cost}}</td><td>{{u.keys}}</td>
-                  <td><div style="display: flex; gap: 6px;"><sc-if value="{{u.canOpen}}" hint-placeholder-val="{{ true }}"><button class="btn out" type="button">Open workspace</button></sc-if><sc-if value="{{u.act1}}" hint-placeholder-val="{{ true }}"><button class="btn out" type="button">{{u.act1}}</button></sc-if><button class="btn out" type="button">Reset password</button></div></td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
+  <head>
+    <meta charset="utf-8" />
+    <title>Rosetta - users and caps</title>
+    <script src="./support.js"></script>
+    <link rel="stylesheet" href="./rosetta-tokens.css" />
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <style>
+          body {
+            margin: 0;
+          }
+          .nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: var(--rst-radius-md);
+            color: var(--rst-ink-soft);
+            text-decoration: none;
+            font-weight: var(--rst-fw-label);
+          }
+          .nav a:hover {
+            background: var(--rst-surface-2);
+            color: var(--rst-ink);
+          }
+          .nav a[aria-current='page'] {
+            background: var(--rst-brand-tint);
+            color: var(--rst-brand);
+          }
+          .nav .grp {
+            margin: 14px 12px 4px;
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .card {
+            background: var(--rst-surface);
+            border: 1px solid var(--rst-rule);
+            border-radius: var(--rst-radius-lg);
+            padding: 20px;
+            box-shadow: var(--rst-shadow-1);
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: var(--rst-control-h);
+            padding: 0 12px;
+            border-radius: var(--rst-radius-md);
+            font: inherit;
+            font-weight: var(--rst-fw-label);
+            cursor: pointer;
+            border: 1px solid transparent;
+            white-space: nowrap;
+          }
+          .out {
+            border-color: var(--rst-rule-strong);
+            color: var(--rst-ink);
+            background: transparent;
+          }
+          .lbl {
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 22px;
+            padding: 0 9px;
+            border-radius: var(--rst-radius-pill);
+            font-size: var(--rst-fs-xs);
+            font-weight: var(--rst-fw-label);
+            white-space: nowrap;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 980px;
+          }
+          th,
+          td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--rst-rule);
+            font-size: var(--rst-fs-sm);
+            white-space: nowrap;
+          }
+          th {
+            font-weight: var(--rst-fw-label);
+            color: var(--rst-ink-muted);
+            font-size: var(--rst-fs-xs);
+            background: var(--rst-surface-2);
+          }
+          td.n,
+          th.n {
+            text-align: right;
+          }
+          .f {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+          .f label {
+            font-weight: var(--rst-fw-label);
+            font-size: var(--rst-fs-sm);
+          }
+          input,
+          select {
+            height: 36px;
+            padding: 0 10px;
+            border-radius: var(--rst-radius-md);
+            border: 1px solid var(--rst-rule-strong);
+            background: var(--rst-bg);
+            color: var(--rst-ink);
+            font: inherit;
+            min-width: 0;
+          }
+          .trk {
+            height: 10px;
+            border-radius: 999px;
+            background: var(--rst-surface-2);
+            overflow: hidden;
+          }
+          .trk span {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+          }
+          h1 {
+            margin: 0;
+            font-size: var(--rst-fs-2xl);
+            font-weight: var(--rst-fw-head);
+          }
+          h2 {
+            margin: 0;
+            font-size: var(--rst-fs-lg);
+            font-weight: var(--rst-fw-head);
+          }
+        </style>
+      </helmet>
+      <div
+        class="rst-root"
+        data-theme="{{theme}}"
+        style="min-height: 1300px; display: flex; flex-direction: column"
+      >
+        <div
+          role="status"
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            align-items: center;
+            padding: 10px 24px;
+            background: var(--rst-warn-bg);
+            color: var(--rst-warn-ink);
+            border-bottom: 1px solid var(--rst-warn-solid);
+          "
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" style="flex: none">
+            <path
+              d="M10 3 18 17H2L10 3Z M10 8v4 M10 14.5v.3"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+            ></path>
+          </svg>
+          <span style="flex: 1 1 360px"
+            ><strong>The server has used 82% of its monthly cap ($8.20 of $10.00).</strong> Runs on
+            server keys stop at the cap; users with their own keys are not affected.</span
+          >
+          <a href="#caps" style="color: var(--rst-warn-ink)">Review caps</a>
         </div>
-      </section>
+        <header
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 24px;
+            padding: 12px 24px;
+            background: var(--rst-surface);
+            border-bottom: 1px solid var(--rst-rule);
+          "
+        >
+          <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Rosetta</div>
+          <div style="flex: 1 1 auto"></div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 14px;
+              padding: 6px 12px;
+              border: 1px solid var(--rst-rule);
+              border-radius: var(--rst-radius-md);
+              background: var(--rst-surface-2);
+            "
+          >
+            <span class="lbl">Server, this month</span
+            ><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head)">$8.20</span
+            ><span class="lbl">of $10.00</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span>BlackLigth</span
+            ><span class="badge" style="background: var(--rst-brand-tint); color: var(--rst-brand)"
+              >admin</span
+            ><a href="SignIn.dc.html">Sign out</a>
+          </div>
+        </header>
+        <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto">
+          <nav
+            class="nav"
+            aria-label="Main"
+            style="
+              flex: 1 1 200px;
+              max-width: 240px;
+              padding: 16px 12px;
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+              border-right: 1px solid var(--rst-rule);
+              background: var(--rst-surface);
+            "
+          >
+            <a href="Projects.dc.html">Projects</a>
+            <a href="Settings.dc.html">Settings and keys</a>
+            <div class="grp">Administration</div>
+            <a href="AdminUsers.dc.html" aria-current="page">Users and caps</a>
+            <a href="AdminAudit.dc.html">Audit</a>
+          </nav>
+          <main
+            style="
+              flex: 999 1 560px;
+              min-width: 0;
+              padding: 28px 32px;
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+              max-width: 1200px;
+            "
+          >
+            <div>
+              <h1>Users and caps</h1>
+              <div style="color: var(--rst-ink-muted); margin-top: 4px">
+                There is no sign-up: every account starts here. Opening someone's workspace is
+                recorded in the audit.
+              </div>
+            </div>
 
-      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        <section class="card" aria-labelledby="nu" style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 14px;">
-          <h2 id="nu">Create an account</h2>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-            <div class="f" style="flex: 1 1 180px;"><label for="un">User name</label><input id="un" class="rst-mono" value="teacher"></div>
-            <div class="f" style="flex: 1 1 180px;"><label for="dn">Display name</label><input id="dn" value="BIG School evaluators"></div>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-            <div class="f" style="flex: 1 1 180px;"><label for="ro">Role</label><select id="ro"><option>user</option><option>admin</option></select></div>
-            <div class="f" style="flex: 1 1 180px;"><label for="tp">Initial password</label><input id="tp" type="password" value="••••••••••••••"></div>
-          </div>
-          <label style="display: flex; gap: 8px; align-items: center;"><input type="checkbox" style="height: 18px; width: 18px;"> Must choose a new password at first sign-in</label>
-          <div class="lbl">Unchecked for the teacher account: the evaluators sign in with the password from the hand-in form (RF-1107).</div>
-          <label style="display: flex; gap: 8px; align-items: center;"><input type="checkbox" checked style="height: 18px; width: 18px;"> May use the server's keys</label>
-          <div style="display: flex; justify-content: flex-end;"><button class="btn" type="button" style="background: var(--rst-brand); color: var(--rst-brand-ink); height: 40px; padding: 0 18px;">Create account</button></div>
-          <div class="lbl">Give the password to the person outside Rosetta. It is never shown again.</div>
-        </section>
+            <section class="card" aria-labelledby="ul">
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 12px;
+                  align-items: center;
+                  margin-bottom: 12px;
+                "
+              >
+                <h2 id="ul" style="flex: 1 1 auto">Accounts</h2>
+                <input
+                  aria-label="Filter accounts"
+                  placeholder="Filter by name"
+                  style="width: 220px"
+                />
+              </div>
+              <div style="overflow-x: auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Role</th>
+                      <th>State</th>
+                      <th>Last sign-in</th>
+                      <th class="n">Projects</th>
+                      <th class="n">Month to date</th>
+                      <th>Server keys</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{users}}" as="u" hint-placeholder-count="4">
+                      <tr>
+                        <td>
+                          <strong>{{u.name}}</strong>
+                          <div class="lbl rst-mono">{{u.login}}</div>
+                        </td>
+                        <td>{{u.role}}</td>
+                        <td><span class="badge" style="{{u.style}}">{{u.state}}</span></td>
+                        <td>{{u.last}}</td>
+                        <td class="n">{{u.projects}}</td>
+                        <td class="n">{{u.cost}}</td>
+                        <td>{{u.keys}}</td>
+                        <td>
+                          <div style="display: flex; gap: 6px">
+                            <sc-if value="{{u.canOpen}}" hint-placeholder-val="{{ true }}"
+                              ><button class="btn out" type="button">Open workspace</button></sc-if
+                            ><sc-if value="{{u.act1}}" hint-placeholder-val="{{ true }}"
+                              ><button class="btn out" type="button">{{u.act1}}</button></sc-if
+                            ><button class="btn out" type="button">Reset password</button>
+                          </div>
+                        </td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
-        <section id="caps" class="card" aria-labelledby="cp" style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 14px;">
-          <h2 id="cp">Caps on server keys</h2>
-          <div role="meter" aria-label="Server spend this month" aria-valuemin="0" aria-valuemax="10" aria-valuenow="8.2" style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between;"><span>Server, this month</span><span><strong>$8.20</strong> <span class="lbl">of $10.00</span></span></div>
-            <div class="trk"><span style="width: 82%; background: var(--rst-warn-solid);"></span></div>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-            <div class="f" style="flex: 1 1 120px;"><label for="c1">Per run (USD)</label><input id="c1" value="0.50"></div>
-            <div class="f" style="flex: 1 1 120px;"><label for="c2">Per user per day</label><input id="c2" value="1.00"></div>
-            <div class="f" style="flex: 1 1 120px;"><label for="c3">Server per month</label><input id="c3" value="10.00"></div>
-          </div>
-          <div class="f"><label for="q">Runs at the same time</label><input id="q" value="2" style="width: 120px;"></div>
-          <div style="display: flex; justify-content: flex-end;"><button class="btn" type="button" style="background: var(--rst-brand); color: var(--rst-brand-ink); height: 40px; padding: 0 18px;">Save caps</button></div>
-          <div class="lbl">A call is refused before it is made when its worst case would cross any cap.</div>
-        </section>
+            <div style="display: flex; flex-wrap: wrap; gap: 20px">
+              <section
+                class="card"
+                aria-labelledby="nu"
+                style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 14px"
+              >
+                <h2 id="nu">Create an account</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px">
+                  <div class="f" style="flex: 1 1 180px">
+                    <label for="un">User name</label
+                    ><input id="un" class="rst-mono" value="teacher" />
+                  </div>
+                  <div class="f" style="flex: 1 1 180px">
+                    <label for="dn">Display name</label
+                    ><input id="dn" value="BIG School evaluators" />
+                  </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px">
+                  <div class="f" style="flex: 1 1 180px">
+                    <label for="ro">Role</label
+                    ><select id="ro">
+                      <option>user</option>
+                      <option>admin</option>
+                    </select>
+                  </div>
+                  <div class="f" style="flex: 1 1 180px">
+                    <label for="tp">Initial password</label
+                    ><input id="tp" type="password" value="••••••••••••••" />
+                  </div>
+                </div>
+                <label style="display: flex; gap: 8px; align-items: center"
+                  ><input type="checkbox" style="height: 18px; width: 18px" /> Must choose a new
+                  password at first sign-in</label
+                >
+                <div class="lbl">
+                  Unchecked for the teacher account: the evaluators sign in with the password from
+                  the hand-in form (RF-1107).
+                </div>
+                <label style="display: flex; gap: 8px; align-items: center"
+                  ><input type="checkbox" checked style="height: 18px; width: 18px" /> May use the
+                  server's keys</label
+                >
+                <div style="display: flex; justify-content: flex-end">
+                  <button
+                    class="btn"
+                    type="button"
+                    style="
+                      background: var(--rst-brand);
+                      color: var(--rst-brand-ink);
+                      height: 40px;
+                      padding: 0 18px;
+                    "
+                  >
+                    Create account
+                  </button>
+                </div>
+                <div class="lbl">
+                  Give the password to the person outside Rosetta. It is never shown again.
+                </div>
+              </section>
+
+              <section
+                id="caps"
+                class="card"
+                aria-labelledby="cp"
+                style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 14px"
+              >
+                <h2 id="cp">Caps on server keys</h2>
+                <div
+                  role="meter"
+                  aria-label="Server spend this month"
+                  aria-valuemin="0"
+                  aria-valuemax="10"
+                  aria-valuenow="8.2"
+                  style="display: flex; flex-direction: column; gap: 6px"
+                >
+                  <div style="display: flex; justify-content: space-between">
+                    <span>Server, this month</span
+                    ><span><strong>$8.20</strong> <span class="lbl">of $10.00</span></span>
+                  </div>
+                  <div class="trk">
+                    <span style="width: 82%; background: var(--rst-warn-solid)"></span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px">
+                  <div class="f" style="flex: 1 1 120px">
+                    <label for="c1">Per run (USD)</label><input id="c1" value="0.50" />
+                  </div>
+                  <div class="f" style="flex: 1 1 120px">
+                    <label for="c2">Per user per day</label><input id="c2" value="1.00" />
+                  </div>
+                  <div class="f" style="flex: 1 1 120px">
+                    <label for="c3">Server per month</label><input id="c3" value="10.00" />
+                  </div>
+                </div>
+                <div class="f">
+                  <label for="q">Runs at the same time</label
+                  ><input id="q" value="2" style="width: 120px" />
+                </div>
+                <div style="display: flex; justify-content: flex-end">
+                  <button
+                    class="btn"
+                    type="button"
+                    style="
+                      background: var(--rst-brand);
+                      color: var(--rst-brand-ink);
+                      height: 40px;
+                      padding: 0 18px;
+                    "
+                  >
+                    Save caps
+                  </button>
+                </div>
+                <div class="lbl">
+                  A call is refused before it is made when its worst case would cross any cap.
+                </div>
+              </section>
+            </div>
+          </main>
+        </div>
       </div>
-    </main>
-  </div>
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1300}}'>
-class Component extends DCLogic {
-renderVals() {
-const ok = 'background: var(--rst-ok-bg); color: var(--rst-ok-ink);';
-const warn = 'background: var(--rst-warn-bg); color: var(--rst-warn-ink);';
-const off = 'background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);';
-const danger = 'background: var(--rst-danger-bg); color: var(--rst-danger-ink);';
-return {
-theme: this.props.theme ?? 'light',
-users: [
-{ name: 'BlackLigth', login: 'blacklight', role: 'admin', style: ok, state: 'Active', last: 'today 13:40', projects: '2', cost: '$4.95', keys: 'own keys', canOpen: false, act1: '' },
-{ name: 'Ana Ruiz', login: 'ana.ruiz', role: 'user', style: ok, state: 'Active', last: 'today 14:01', projects: '3', cost: '$2.10', keys: 'allowed', canOpen: true, act1: 'Disable' },
-{ name: 'BIG School evaluators', login: 'teacher', role: 'user', style: ok, state: 'Active', last: 'never', projects: '0', cost: '$0.00', keys: 'allowed', canOpen: true, act1: 'Disable' },
-{ name: 'New tester', login: 'test1', role: 'user', style: warn, state: 'Must change password', last: 'never', projects: '0', cost: '$0.00', keys: 'allowed', canOpen: true, act1: 'Disable' },
-{ name: 'Old test account', login: 'test3', role: 'user', style: danger, state: 'Locked 12 min', last: 'Oct 9', projects: '1', cost: '$0.04', keys: 'allowed', canOpen: true, act1: 'Unlock' },
-{ name: 'Former tester', login: 'test2', role: 'user', style: off, state: 'Disabled', last: 'Oct 8', projects: '1', cost: '$0.00', keys: 'not allowed', canOpen: true, act1: 'Enable' }
-]
-};
-}
-}
-</script>
-</body>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1300}}'
+    >
+      class Component extends DCLogic {
+      renderVals() {
+      const ok = 'background: var(--rst-ok-bg); color: var(--rst-ok-ink);';
+      const warn = 'background: var(--rst-warn-bg); color: var(--rst-warn-ink);';
+      const off = 'background: var(--rst-neutral-bg); color: var(--rst-neutral-ink);';
+      const danger = 'background: var(--rst-danger-bg); color: var(--rst-danger-ink);';
+      return {
+      theme: this.props.theme ?? 'light',
+      users: [
+      { name: 'BlackLigth', login: 'blacklight', role: 'admin', style: ok, state: 'Active', last: 'today 13:40', projects: '2', cost: '$4.95', keys: 'own keys', canOpen: false, act1: '' },
+      { name: 'Ana Ruiz', login: 'ana.ruiz', role: 'user', style: ok, state: 'Active', last: 'today 14:01', projects: '3', cost: '$2.10', keys: 'allowed', canOpen: true, act1: 'Disable' },
+      { name: 'BIG School evaluators', login: 'teacher', role: 'user', style: ok, state: 'Active', last: 'never', projects: '0', cost: '$0.00', keys: 'allowed', canOpen: true, act1: 'Disable' },
+      { name: 'New tester', login: 'test1', role: 'user', style: warn, state: 'Must change password', last: 'never', projects: '0', cost: '$0.00', keys: 'allowed', canOpen: true, act1: 'Disable' },
+      { name: 'Old test account', login: 'test3', role: 'user', style: danger, state: 'Locked 12 min', last: 'Oct 9', projects: '1', cost: '$0.04', keys: 'allowed', canOpen: true, act1: 'Unlock' },
+      { name: 'Former tester', login: 'test2', role: 'user', style: off, state: 'Disabled', last: 'Oct 8', projects: '1', cost: '$0.00', keys: 'not allowed', canOpen: true, act1: 'Enable' }
+      ]
+      };
+      }
+      }
+    </script>
+  </body>
 </html>

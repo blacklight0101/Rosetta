@@ -1,259 +1,763 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Rosetta - plan setup</title>
-<script src="./support.js"></script>
-<link rel="stylesheet" href="./rosetta-tokens.css">
-</head>
-<body>
-<x-dc>
-<helmet>
-<style>
-body{margin:0}
-.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
-.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
-.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
-.nav .grp{margin:14px 12px 4px;font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:20px;box-shadow:var(--rst-shadow-1)}
-.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 14px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid var(--rst-rule-strong);background:var(--rst-surface);color:var(--rst-ink)}
-.btn.pri{background:var(--rst-brand);color:var(--rst-brand-ink);border-color:var(--rst-brand)}
-.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
-.chip{display:inline-flex;height:22px;align-items:center;padding:0 8px;border-radius:var(--rst-radius-sm);background:var(--rst-surface-2);font-family:var(--rst-mono);font-size:12px;color:var(--rst-ink-soft)}
-h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
-h2{margin:0;font-size:var(--rst-fs-xl);font-weight:var(--rst-fw-head)}
-h3{margin:0;font-size:var(--rst-fs-md);font-weight:var(--rst-fw-head)}
-p{margin:0}
-.steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
-.steps a{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:var(--rst-radius-pill);text-decoration:none;font-size:var(--rst-fs-sm);font-weight:var(--rst-fw-label);color:var(--rst-ink-soft);border:1px solid var(--rst-rule)}
-.steps a.done{color:var(--rst-ok-ink);background:var(--rst-ok-bg);border-color:transparent}
-.steps a[aria-current="step"],.rst-root .steps a[aria-current="step"]:hover{color:var(--rst-brand-ink);background:var(--rst-brand);border-color:var(--rst-brand)}
-.rst-root .steps a.done:hover{color:var(--rst-ok-ink)}
-.why{color:var(--rst-ink-soft);font-size:var(--rst-fs-sm)}
-.opt{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--rst-rule);border-radius:var(--rst-radius-md);background:var(--rst-surface);cursor:pointer}
-.opt.sel{border-color:var(--rst-brand);background:var(--rst-brand-tint);box-shadow:0 0 0 1px var(--rst-brand)}
-.opt input{margin-top:3px;accent-color:var(--rst-brand)}
-.opt ul{margin:6px 0 0;padding-left:18px;color:var(--rst-ink-soft);font-size:var(--rst-fs-sm)}
-.row{display:grid;grid-template-columns:minmax(0,1fr);gap:4px 12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--rst-rule)}
-.row:last-child{border-bottom:0}
-.tog{display:flex;gap:10px;align-items:flex-start}
-.tog input{margin-top:3px;width:16px;height:16px;accent-color:var(--rst-brand)}
-table{border-collapse:collapse;width:100%;min-width:600px;table-layout:fixed}
-th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rst-rule);font-size:var(--rst-fs-sm);vertical-align:top}
-th{font-weight:var(--rst-fw-label);color:var(--rst-ink-muted);font-size:var(--rst-fs-xs);background:var(--rst-surface-2)}
-td label{display:flex;gap:8px;align-items:flex-start}
-td input[type=radio]{margin-top:3px;accent-color:var(--rst-brand)}
-td input[type=text]{height:32px;width:100%;box-sizing:border-box;padding:0 8px;border:1px solid var(--rst-rule-strong);border-radius:var(--rst-radius-md);background:var(--rst-surface);color:var(--rst-ink);font:inherit}
-dl.rec{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;font-size:var(--rst-fs-sm)}
-dl.rec dt{color:var(--rst-ink-muted)}
-dl.rec dd{margin:0}
-</style>
-</helmet>
-<div class="rst-root" data-theme="{{theme}}" style="min-height: 1200px; display: flex; flex-direction: column;">
-  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
-    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
-    <div class="rst-mono" style="color: var(--rst-ink-soft); min-width: 0; overflow-wrap: anywhere;">dotnet-architecture/eShopModernizing</div>
-    <div style="flex: 1 1 auto;"></div>
-    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);">
-      <span class="lbl">Your total</span><span><strong>1,310,442</strong> tokens</span><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$3.99</span><span class="lbl">today $0.73</span><a href="#">Breakdown</a>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;"><span>BlackLigth</span><span class="badge" style="background: var(--rst-brand-tint); color: var(--rst-brand);">admin</span><a href="SignIn.dc.html">Sign out</a></div>
-  </header>
-  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
-    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
-      <a href="Projects.dc.html">Projects</a>
-      <a href="Settings.dc.html">Settings and keys</a>
-      <div class="grp">Project: eShopModernizing</div>
-      <a href="StartRun.dc.html">Start a run</a>
-      <a href="LiveRun.dc.html">Live run</a>
-      <a href="#">Verification</a>
-      <a href="#">Coverage</a>
-      <a href="ApiCalls.dc.html">API calls and logs</a>
-      <a href="#">Open questions</a>
-      <a href="PlanSetup.dc.html" aria-current="page">Plan setup</a>
-      <a href="History.dc.html">History and snapshots</a>
-      <div class="grp">Administration</div>
-      <a href="AdminUsers.dc.html">Users and caps</a>
-      <a href="AdminAudit.dc.html">Audit</a>
-    </nav>
-    <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; max-width: 1240px;">
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <h1>Plan setup</h1>
-        <p style="color: var(--rst-ink-muted); max-width: 72ch;">Rosetta writes the hand-off package from these choices. Every question has a default; answer what you know and the rest is listed as an open question in the package.</p>
-      </div>
-
-      <nav aria-label="Planning steps">
-        <ol class="steps">
-          <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
-            <li><a href="#" class="{{s.cls}}" aria-current="{{s.current}}"><sc-if value="{{s.done}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg></sc-if><sc-if value="{{s.isCurrent}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"></circle><circle cx="6" cy="6" r="2" fill="currentColor"></circle></svg></sc-if><sc-if value="{{s.todo}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"></circle></svg></sc-if>{{s.name}}</a></li>
-          </sc-for>
-        </ol>
-      </nav>
-
-      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
-        <section class="card" style="flex: 3 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
-
-          <sc-if value="{{isPrinciples}}" hint-placeholder-val="{{ false }}">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <h2>Which principles should the package apply?</h2>
-              <p class="why">Each one you keep becomes rules in the package's conventions and checks on its task cards. Ten are on by default.</p>
+  <head>
+    <meta charset="utf-8" />
+    <title>Rosetta - plan setup</title>
+    <script src="./support.js"></script>
+    <link rel="stylesheet" href="./rosetta-tokens.css" />
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <style>
+          body {
+            margin: 0;
+          }
+          .nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: var(--rst-radius-md);
+            color: var(--rst-ink-soft);
+            text-decoration: none;
+            font-weight: var(--rst-fw-label);
+          }
+          .nav a:hover {
+            background: var(--rst-surface-2);
+            color: var(--rst-ink);
+          }
+          .nav a[aria-current='page'] {
+            background: var(--rst-brand-tint);
+            color: var(--rst-brand);
+          }
+          .nav .grp {
+            margin: 14px 12px 4px;
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .card {
+            background: var(--rst-surface);
+            border: 1px solid var(--rst-rule);
+            border-radius: var(--rst-radius-lg);
+            padding: 20px;
+            box-shadow: var(--rst-shadow-1);
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: var(--rst-control-h);
+            padding: 0 14px;
+            border-radius: var(--rst-radius-md);
+            font: inherit;
+            font-weight: var(--rst-fw-label);
+            cursor: pointer;
+            border: 1px solid var(--rst-rule-strong);
+            background: var(--rst-surface);
+            color: var(--rst-ink);
+          }
+          .btn.pri {
+            background: var(--rst-brand);
+            color: var(--rst-brand-ink);
+            border-color: var(--rst-brand);
+          }
+          .lbl {
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 22px;
+            padding: 0 9px;
+            border-radius: var(--rst-radius-pill);
+            font-size: var(--rst-fs-xs);
+            font-weight: var(--rst-fw-label);
+            white-space: nowrap;
+          }
+          .chip {
+            display: inline-flex;
+            height: 22px;
+            align-items: center;
+            padding: 0 8px;
+            border-radius: var(--rst-radius-sm);
+            background: var(--rst-surface-2);
+            font-family: var(--rst-mono);
+            font-size: 12px;
+            color: var(--rst-ink-soft);
+          }
+          h1 {
+            margin: 0;
+            font-size: var(--rst-fs-2xl);
+            font-weight: var(--rst-fw-head);
+          }
+          h2 {
+            margin: 0;
+            font-size: var(--rst-fs-xl);
+            font-weight: var(--rst-fw-head);
+          }
+          h3 {
+            margin: 0;
+            font-size: var(--rst-fs-md);
+            font-weight: var(--rst-fw-head);
+          }
+          p {
+            margin: 0;
+          }
+          .steps {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+          }
+          .steps a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 34px;
+            padding: 0 12px;
+            border-radius: var(--rst-radius-pill);
+            text-decoration: none;
+            font-size: var(--rst-fs-sm);
+            font-weight: var(--rst-fw-label);
+            color: var(--rst-ink-soft);
+            border: 1px solid var(--rst-rule);
+          }
+          .steps a.done {
+            color: var(--rst-ok-ink);
+            background: var(--rst-ok-bg);
+            border-color: transparent;
+          }
+          .steps a[aria-current='step'],
+          .rst-root .steps a[aria-current='step']:hover {
+            color: var(--rst-brand-ink);
+            background: var(--rst-brand);
+            border-color: var(--rst-brand);
+          }
+          .rst-root .steps a.done:hover {
+            color: var(--rst-ok-ink);
+          }
+          .why {
+            color: var(--rst-ink-soft);
+            font-size: var(--rst-fs-sm);
+          }
+          .opt {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 14px;
+            border: 1px solid var(--rst-rule);
+            border-radius: var(--rst-radius-md);
+            background: var(--rst-surface);
+            cursor: pointer;
+          }
+          .opt.sel {
+            border-color: var(--rst-brand);
+            background: var(--rst-brand-tint);
+            box-shadow: 0 0 0 1px var(--rst-brand);
+          }
+          .opt input {
+            margin-top: 3px;
+            accent-color: var(--rst-brand);
+          }
+          .opt ul {
+            margin: 6px 0 0;
+            padding-left: 18px;
+            color: var(--rst-ink-soft);
+            font-size: var(--rst-fs-sm);
+          }
+          .row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 4px 12px;
+            align-items: start;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--rst-rule);
+          }
+          .row:last-child {
+            border-bottom: 0;
+          }
+          .tog {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+          }
+          .tog input {
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--rst-brand);
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 600px;
+            table-layout: fixed;
+          }
+          th,
+          td {
+            text-align: left;
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--rst-rule);
+            font-size: var(--rst-fs-sm);
+            vertical-align: top;
+          }
+          th {
+            font-weight: var(--rst-fw-label);
+            color: var(--rst-ink-muted);
+            font-size: var(--rst-fs-xs);
+            background: var(--rst-surface-2);
+          }
+          td label {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+          }
+          td input[type='radio'] {
+            margin-top: 3px;
+            accent-color: var(--rst-brand);
+          }
+          td input[type='text'] {
+            height: 32px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0 8px;
+            border: 1px solid var(--rst-rule-strong);
+            border-radius: var(--rst-radius-md);
+            background: var(--rst-surface);
+            color: var(--rst-ink);
+            font: inherit;
+          }
+          dl.rec {
+            margin: 0;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 8px 12px;
+            font-size: var(--rst-fs-sm);
+          }
+          dl.rec dt {
+            color: var(--rst-ink-muted);
+          }
+          dl.rec dd {
+            margin: 0;
+          }
+        </style>
+      </helmet>
+      <div
+        class="rst-root"
+        data-theme="{{theme}}"
+        style="min-height: 1200px; display: flex; flex-direction: column"
+      >
+        <header
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 24px;
+            padding: 12px 24px;
+            background: var(--rst-surface);
+            border-bottom: 1px solid var(--rst-rule);
+          "
+        >
+          <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Rosetta</div>
+          <div
+            class="rst-mono"
+            style="color: var(--rst-ink-soft); min-width: 0; overflow-wrap: anywhere"
+          >
+            dotnet-architecture/eShopModernizing
+          </div>
+          <div style="flex: 1 1 auto"></div>
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 6px 14px;
+              padding: 6px 12px;
+              border: 1px solid var(--rst-rule);
+              border-radius: var(--rst-radius-md);
+              background: var(--rst-surface-2);
+            "
+          >
+            <span class="lbl">Your total</span><span><strong>1,310,442</strong> tokens</span
+            ><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head)">$3.99</span
+            ><span class="lbl">today $0.73</span><a href="#">Breakdown</a>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span>BlackLigth</span
+            ><span class="badge" style="background: var(--rst-brand-tint); color: var(--rst-brand)"
+              >admin</span
+            ><a href="SignIn.dc.html">Sign out</a>
+          </div>
+        </header>
+        <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto">
+          <nav
+            class="nav"
+            aria-label="Main"
+            style="
+              flex: 1 1 200px;
+              max-width: 240px;
+              padding: 16px 12px;
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+              border-right: 1px solid var(--rst-rule);
+              background: var(--rst-surface);
+            "
+          >
+            <a href="Projects.dc.html">Projects</a>
+            <a href="Settings.dc.html">Settings and keys</a>
+            <div class="grp">Project: eShopModernizing</div>
+            <a href="StartRun.dc.html">Start a run</a>
+            <a href="LiveRun.dc.html">Live run</a>
+            <a href="#">Verification</a>
+            <a href="#">Coverage</a>
+            <a href="ApiCalls.dc.html">API calls and logs</a>
+            <a href="#">Open questions</a>
+            <a href="PlanSetup.dc.html" aria-current="page">Plan setup</a>
+            <a href="History.dc.html">History and snapshots</a>
+            <div class="grp">Administration</div>
+            <a href="AdminUsers.dc.html">Users and caps</a>
+            <a href="AdminAudit.dc.html">Audit</a>
+          </nav>
+          <main
+            style="
+              flex: 999 1 560px;
+              min-width: 0;
+              padding: 28px 32px;
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+              max-width: 1240px;
+            "
+          >
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h1>Plan setup</h1>
+              <p style="color: var(--rst-ink-muted); max-width: 72ch">
+                Rosetta writes the hand-off package from these choices. Every question has a
+                default; answer what you know and the rest is listed as an open question in the
+                package.
+              </p>
             </div>
-            <sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
-              <fieldset style="border: 0; margin: 0; padding: 0;">
-                <legend style="font-weight: var(--rst-fw-head); font-size: var(--rst-fs-md); padding: 0; margin-bottom: 4px;">{{g.name}}</legend>
-                <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
-                  <div class="row">
-                    <label class="tog"><sc-if value="{{i.on}}" hint-placeholder-val="{{ false }}"><input type="checkbox" checked></sc-if><sc-if value="{{i.not_on}}" hint-placeholder-val="{{ false }}"><input type="checkbox"></sc-if><span><strong>{{i.name}}</strong><span class="why" style="display: block;">{{i.rule}}</span></span></label>
-                    
+
+            <nav aria-label="Planning steps">
+              <ol class="steps">
+                <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+                  <li>
+                    <a href="#" class="{{s.cls}}" aria-current="{{s.current}}"
+                      ><sc-if value="{{s.done}}" hint-placeholder-val="{{ false }}"
+                        ><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                          <path
+                            d="M2 6.5 5 9l5-6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                          ></path></svg></sc-if
+                      ><sc-if value="{{s.isCurrent}}" hint-placeholder-val="{{ false }}"
+                        ><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                          <circle
+                            cx="6"
+                            cy="6"
+                            r="4.5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                          ></circle>
+                          <circle cx="6" cy="6" r="2" fill="currentColor"></circle></svg></sc-if
+                      ><sc-if value="{{s.todo}}" hint-placeholder-val="{{ false }}"
+                        ><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                          <circle
+                            cx="6"
+                            cy="6"
+                            r="4.5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                          ></circle></svg></sc-if
+                      >{{s.name}}</a
+                    >
+                  </li>
+                </sc-for>
+              </ol>
+            </nav>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+              <section
+                class="card"
+                style="
+                  flex: 3 1 520px;
+                  min-width: 0;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 16px;
+                "
+              >
+                <sc-if value="{{isPrinciples}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <h2>Which principles should the package apply?</h2>
+                    <p class="why">
+                      Each one you keep becomes rules in the package's conventions and checks on its
+                      task cards. Ten are on by default.
+                    </p>
                   </div>
-                </sc-for>
-              </fieldset>
-            </sc-for>
-            <p class="lbl">Catalogue 2026.10. Its curriculum follows the Master en Desarrollo con IA (BIG School); entries are written by Rosetta.</p>
-          </sc-if>
-
-          <sc-if value="{{isArchitecture}}" hint-placeholder-val="{{ false }}">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <h2>Which architecture should the new system follow?</h2>
-              <p class="why">It shapes the target architecture, an ADR in the package and the layout every task card builds into. Rosetta recommends two styles from what it found in the code.</p>
-            </div>
-            <div role="radiogroup" aria-label="Recommended styles" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px;">
-              <sc-for list="{{styles}}" as="o" hint-placeholder-count="2">
-                <label class="opt {{o.cls}}">
-                  <sc-if value="{{o.checked}}" hint-placeholder-val="{{ false }}"><input type="radio" name="style" checked></sc-if><sc-if value="{{o.not_checked}}" hint-placeholder-val="{{ false }}"><input type="radio" name="style"></sc-if>
-                  <span style="min-width: 0;">
-                    <span style="display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;"><strong>{{o.name}}</strong><sc-if value="{{o.rec}}" hint-placeholder-val="{{ false }}"><span class="badge" style="background: var(--rst-ok-bg); color: var(--rst-ok-ink);"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9l5-6" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Recommended</span></sc-if></span>
-                    <span class="why" style="display: block; margin-top: 4px;">{{o.fit}}</span>
-                    <ul><sc-for list="{{o.points}}" as="p" hint-placeholder-count="3"><li>{{p}}</li></sc-for></ul>
-                    <span style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px;"><span class="lbl">Evidence</span><sc-for list="{{o.evidence}}" as="e" hint-placeholder-count="3"><a class="chip" href="#">{{e}}</a></sc-for></span>
-                  </span>
-                </label>
-              </sc-for>
-            </div>
-            <details>
-              <summary style="cursor: pointer; color: var(--rst-brand); font-weight: var(--rst-fw-label);">Other styles (4)</summary>
-              <div role="radiogroup" aria-label="Other styles" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                <sc-for list="{{others}}" as="o" hint-placeholder-count="4">
-                  <label class="tog"><input type="radio" name="style"><span><strong>{{o.name}}</strong><span class="why" style="display: block;">{{o.fit}}</span></span></label>
-                </sc-for>
-              </div>
-            </details>
-          </sc-if>
-
-          <sc-if value="{{isStack}}" hint-placeholder-val="{{ false }}">
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <h2>Which technology for each layer?</h2>
-              <p class="why">Two options per layer, derived from the legacy stack (.NET Framework 4.7, Web Forms, SQL Server); option A stays closest to it. Each layer you choose becomes an ADR, and task cards use these technologies.</p>
-            </div>
-            <div style="overflow-x: auto;">
-              <table>
-                <thead><tr><th style="width: 22%;">Layer</th><th style="width: 28%;">Option A, closest to the legacy code</th><th style="width: 26%;">Option B</th><th>Your own</th></tr></thead>
-                <tbody>
-                  <sc-for list="{{layers}}" as="l" hint-placeholder-count="7">
-                    <tr>
-                      <td style="font-weight: var(--rst-fw-label);">{{l.layer}}</td>
-                      <td><label><sc-if value="{{l.aOn}}" hint-placeholder-val="{{ false }}"><input type="radio" name="{{l.id}}" checked></sc-if><sc-if value="{{l.not_aOn}}" hint-placeholder-val="{{ false }}"><input type="radio" name="{{l.id}}"></sc-if><span>{{l.a}}</span></label></td>
-                      <td><label><sc-if value="{{l.bOn}}" hint-placeholder-val="{{ false }}"><input type="radio" name="{{l.id}}" checked></sc-if><sc-if value="{{l.not_bOn}}" hint-placeholder-val="{{ false }}"><input type="radio" name="{{l.id}}"></sc-if><span>{{l.b}}</span></label></td>
-                      <td><input type="text" aria-label="Your own choice for {{l.layer}}" placeholder="Other"></td>
-                    </tr>
+                  <sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+                    <fieldset style="border: 0; margin: 0; padding: 0">
+                      <legend
+                        style="
+                          font-weight: var(--rst-fw-head);
+                          font-size: var(--rst-fs-md);
+                          padding: 0;
+                          margin-bottom: 4px;
+                        "
+                      >
+                        {{g.name}}
+                      </legend>
+                      <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+                        <div class="row">
+                          <label class="tog"
+                            ><sc-if value="{{i.on}}" hint-placeholder-val="{{ false }}"
+                              ><input type="checkbox" checked /></sc-if
+                            ><sc-if value="{{i.not_on}}" hint-placeholder-val="{{ false }}"
+                              ><input type="checkbox" /></sc-if
+                            ><span
+                              ><strong>{{i.name}}</strong
+                              ><span class="why" style="display: block">{{i.rule}}</span></span
+                            ></label
+                          >
+                        </div>
+                      </sc-for>
+                    </fieldset>
                   </sc-for>
-                </tbody>
-              </table>
+                  <p class="lbl">
+                    Catalogue 2026.10. Its curriculum follows the Master en Desarrollo con IA (BIG
+                    School); entries are written by Rosetta.
+                  </p>
+                </sc-if>
+
+                <sc-if value="{{isArchitecture}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <h2>Which architecture should the new system follow?</h2>
+                    <p class="why">
+                      It shapes the target architecture, an ADR in the package and the layout every
+                      task card builds into. Rosetta recommends two styles from what it found in the
+                      code.
+                    </p>
+                  </div>
+                  <div
+                    role="radiogroup"
+                    aria-label="Recommended styles"
+                    style="
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+                      gap: 12px;
+                    "
+                  >
+                    <sc-for list="{{styles}}" as="o" hint-placeholder-count="2">
+                      <label class="opt {{o.cls}}">
+                        <sc-if value="{{o.checked}}" hint-placeholder-val="{{ false }}"
+                          ><input type="radio" name="style" checked /></sc-if
+                        ><sc-if value="{{o.not_checked}}" hint-placeholder-val="{{ false }}"
+                          ><input type="radio" name="style"
+                        /></sc-if>
+                        <span style="min-width: 0">
+                          <span
+                            style="
+                              display: flex;
+                              flex-wrap: wrap;
+                              gap: 6px 8px;
+                              align-items: center;
+                            "
+                            ><strong>{{o.name}}</strong
+                            ><sc-if value="{{o.rec}}" hint-placeholder-val="{{ false }}"
+                              ><span
+                                class="badge"
+                                style="background: var(--rst-ok-bg); color: var(--rst-ok-ink)"
+                                ><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                                  <path
+                                    d="M2 6.5 5 9l5-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                  ></path></svg
+                                >Recommended</span
+                              ></sc-if
+                            ></span
+                          >
+                          <span class="why" style="display: block; margin-top: 4px">{{o.fit}}</span>
+                          <ul>
+                            <sc-for list="{{o.points}}" as="p" hint-placeholder-count="3"
+                              ><li>{{p}}</li></sc-for
+                            >
+                          </ul>
+                          <span
+                            style="
+                              display: flex;
+                              flex-wrap: wrap;
+                              gap: 6px;
+                              align-items: center;
+                              margin-top: 8px;
+                            "
+                            ><span class="lbl">Evidence</span
+                            ><sc-for list="{{o.evidence}}" as="e" hint-placeholder-count="3"
+                              ><a class="chip" href="#">{{e}}</a></sc-for
+                            ></span
+                          >
+                        </span>
+                      </label>
+                    </sc-for>
+                  </div>
+                  <details>
+                    <summary
+                      style="
+                        cursor: pointer;
+                        color: var(--rst-brand);
+                        font-weight: var(--rst-fw-label);
+                      "
+                    >
+                      Other styles (4)
+                    </summary>
+                    <div
+                      role="radiogroup"
+                      aria-label="Other styles"
+                      style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px"
+                    >
+                      <sc-for list="{{others}}" as="o" hint-placeholder-count="4">
+                        <label class="tog"
+                          ><input type="radio" name="style" /><span
+                            ><strong>{{o.name}}</strong
+                            ><span class="why" style="display: block">{{o.fit}}</span></span
+                          ></label
+                        >
+                      </sc-for>
+                    </div>
+                  </details>
+                </sc-if>
+
+                <sc-if value="{{isStack}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <h2>Which technology for each layer?</h2>
+                    <p class="why">
+                      Two options per layer, derived from the legacy stack (.NET Framework 4.7, Web
+                      Forms, SQL Server); option A stays closest to it. Each layer you choose
+                      becomes an ADR, and task cards use these technologies.
+                    </p>
+                  </div>
+                  <div style="overflow-x: auto">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style="width: 22%">Layer</th>
+                          <th style="width: 28%">Option A, closest to the legacy code</th>
+                          <th style="width: 26%">Option B</th>
+                          <th>Your own</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <sc-for list="{{layers}}" as="l" hint-placeholder-count="7">
+                          <tr>
+                            <td style="font-weight: var(--rst-fw-label)">{{l.layer}}</td>
+                            <td>
+                              <label
+                                ><sc-if value="{{l.aOn}}" hint-placeholder-val="{{ false }}"
+                                  ><input type="radio" name="{{l.id}}" checked /></sc-if
+                                ><sc-if value="{{l.not_aOn}}" hint-placeholder-val="{{ false }}"
+                                  ><input type="radio" name="{{l.id}}" /></sc-if
+                                ><span>{{l.a}}</span></label
+                              >
+                            </td>
+                            <td>
+                              <label
+                                ><sc-if value="{{l.bOn}}" hint-placeholder-val="{{ false }}"
+                                  ><input type="radio" name="{{l.id}}" checked /></sc-if
+                                ><sc-if value="{{l.not_bOn}}" hint-placeholder-val="{{ false }}"
+                                  ><input type="radio" name="{{l.id}}" /></sc-if
+                                ><span>{{l.b}}</span></label
+                              >
+                            </td>
+                            <td>
+                              <input
+                                type="text"
+                                aria-label="Your own choice for {{l.layer}}"
+                                placeholder="Other"
+                              />
+                            </td>
+                          </tr>
+                        </sc-for>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="lbl">Illustrative options for the demo repository.</p>
+                </sc-if>
+
+                <div
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    align-items: center;
+                    padding-top: 4px;
+                  "
+                >
+                  <button class="btn" type="button">Back</button>
+                  <button
+                    class="btn"
+                    type="button"
+                    style="
+                      border-color: transparent;
+                      color: var(--rst-brand);
+                      background: transparent;
+                    "
+                  >
+                    Use the defaults for the rest
+                  </button>
+                  <div style="flex: 1 1 auto"></div>
+                  <button class="btn pri" type="button">Save and continue</button>
+                </div>
+              </section>
+
+              <aside
+                class="card"
+                aria-labelledby="rec-title"
+                style="
+                  flex: 1 1 300px;
+                  min-width: 0;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 14px;
+                "
+              >
+                <h3 id="rec-title">What I recorded</h3>
+                <dl class="rec">
+                  <sc-for list="{{recorded}}" as="r" hint-placeholder-count="6">
+                    <dt>{{r.k}}</dt>
+                    <dd>
+                      {{r.v}}<sc-if value="{{r.def}}" hint-placeholder-val="{{ false }}">
+                        <span class="lbl">(default)</span></sc-if
+                      >
+                    </dd>
+                  </sc-for>
+                </dl>
+                <div
+                  style="
+                    border-top: 1px solid var(--rst-rule);
+                    padding-top: 12px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      gap: 8px;
+                      font-size: var(--rst-fs-sm);
+                    "
+                  >
+                    <span>Plan estimate</span
+                    ><span
+                      ><strong>$0.18</strong> <span class="lbl">likely, of $2.00 cap</span></span
+                    >
+                  </div>
+                  <p class="lbl">
+                    The planner writes the package under your caps. Questions left on their default
+                    appear as open questions in the package.
+                  </p>
+                  <button
+                    class="btn"
+                    type="button"
+                    disabled
+                    title="Save every step first"
+                    style="
+                      background: var(--rst-surface-2);
+                      color: var(--rst-ink-muted);
+                      border-color: var(--rst-rule);
+                      cursor: not-allowed;
+                      justify-content: center;
+                    "
+                  >
+                    Write the package (finish the steps)
+                  </button>
+                </div>
+              </aside>
             </div>
-            <p class="lbl">Illustrative options for the demo repository.</p>
-          </sc-if>
-
-          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-top: 4px;">
-            <button class="btn" type="button">Back</button>
-            <button class="btn" type="button" style="border-color: transparent; color: var(--rst-brand); background: transparent;">Use the defaults for the rest</button>
-            <div style="flex: 1 1 auto;"></div>
-            <button class="btn pri" type="button">Save and continue</button>
-          </div>
-        </section>
-
-        <aside class="card" aria-labelledby="rec-title" style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
-          <h3 id="rec-title">What I recorded</h3>
-          <dl class="rec">
-            <sc-for list="{{recorded}}" as="r" hint-placeholder-count="6">
-              <dt>{{r.k}}</dt><dd>{{r.v}}<sc-if value="{{r.def}}" hint-placeholder-val="{{ false }}"> <span class="lbl">(default)</span></sc-if></dd>
-            </sc-for>
-          </dl>
-          <div style="border-top: 1px solid var(--rst-rule); padding-top: 12px; display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; gap: 8px; font-size: var(--rst-fs-sm);"><span>Plan estimate</span><span><strong>$0.18</strong> <span class="lbl">likely, of $2.00 cap</span></span></div>
-            <p class="lbl">The planner writes the package under your caps. Questions left on their default appear as open questions in the package.</p>
-            <button class="btn" type="button" disabled title="Save every step first" style="background: var(--rst-surface-2); color: var(--rst-ink-muted); border-color: var(--rst-rule); cursor: not-allowed; justify-content: center;">Write the package (finish the steps)</button>
-          </div>
-        </aside>
+          </main>
+        </div>
       </div>
-    </main>
-  </div>
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"step":{"editor":"enum","options":["principles","architecture","stack"],"default":"architecture"},"$preview":{"width":1440,"height":1200}}'>
-class Component extends DCLogic {
-renderVals() {
-const step = this.props.step ?? 'architecture';
-const order = ['principles', 'architecture', 'migration', 'stack', 'context', 'method'];
-const names = { principles: 'Principles', architecture: 'Architecture', migration: 'Migration', stack: 'Stack', context: 'Project context', method: 'Build method' };
-const at = order.indexOf(step);
-const steps = order.map((k, i) => ({ name: names[k], done: i < at, isCurrent: i === at, todo: i > at, cls: i < at ? 'done' : '', current: i === at ? 'step' : 'false' }));
-const rec = [
-{ k: 'Principles', v: '10 on: SOLID, KISS, DRY, YAGNI, TDD, SDD, ADRs, testing pyramid, security by design, CI gates', def: true },
-{ k: 'Architecture', v: at > 1 ? 'Modular monolith' : 'not chosen yet', def: false },
-{ k: 'Migration', v: 'Strangler Fig', def: true },
-{ k: 'Stack', v: at > 3 ? '7 of 7 layers' : 'not chosen yet', def: false },
-{ k: 'Project context', v: 'no answers; listed as open questions', def: true },
-{ k: 'Build method', v: 'without AI-assisted build', def: true }
-];
-const neg = (o) => { for (const k of ['on', 'checked', 'aOn', 'bOn']) if (k in o) o['not_' + k] = !o[k]; return o; };
-const v = {
-theme: this.props.theme ?? 'light',
-isPrinciples: step === 'principles', isArchitecture: step === 'architecture', isStack: step === 'stack',
-steps, recorded: rec,
-groups: [
-{ name: 'Design principles', items: [
- { name: 'SOLID', rule: 'Each class has one reason to change and depends on abstractions; reviewers check it on every card.', on: true, def: true },
- { name: 'KISS', rule: 'The simplest design that meets the requirement; no layer without a reason in an ADR.', on: true, def: true },
- { name: 'DRY', rule: 'One place for each piece of knowledge; duplication is removed when it appears a third time.', on: true, def: true },
- { name: 'YAGNI', rule: 'Nothing is built until a requirement asks for it.', on: true, def: true },
- { name: 'Design patterns', rule: 'Named patterns only where they remove a real problem, with the reason in the card.', on: false, def: false } ] },
-{ name: 'Method', items: [
- { name: 'SDD, spec-driven', rule: 'Every card names its requirement ids; behaviour the spec does not describe becomes a requirement first.', on: true, def: true },
- { name: 'TDD, test-driven', rule: 'Red, green, refactor: each card lists the Given/When/Then tests written before the code.', on: true, def: true } ] },
-{ name: 'Quality and documentation', items: [
- { name: 'Testing pyramid with honest coverage', rule: 'Mostly unit tests; coverage set per layer, core logic highest.', on: true, def: true },
- { name: 'CI quality gates', rule: 'Type check, lint, tests and coverage block a merge when they fail.', on: true, def: true },
- { name: 'ADRs', rule: 'Every decision that is hard to reverse is recorded with the options and the reason.', on: true, def: true } ] },
-{ name: 'Security and delivery', items: [
- { name: 'Security by design', rule: 'Threats modelled with STRIDE, OWASP Top 10 checks on cards that touch input, auth or data.', on: true, def: true },
- { name: 'Observability', rule: 'Structured logs, error tracking and alerts defined before release.', on: false, def: false },
- { name: 'AI-assisted build', rule: 'An AGENTS.md with these rules, cards rated for builders, plan before build, a human reviews every pull request.', on: false, def: false } ] }
-],
-styles: [
-{ name: 'Modular monolith', rec: true, checked: true, cls: 'sel', fit: 'One deployable with a module per business area and clear boundaries between them.', points: ['Matches the 4 areas the readers found, each with its own entities', 'One database today; modules can own their tables first', 'Lowest operational cost for a small team'], evidence: ['ENT-001', 'ENT-003', 'BR-004'] },
-{ name: 'Clean Architecture', rec: false, checked: false, cls: '', fit: 'Concentric layers with the domain at the centre and frameworks at the edge.', points: ['Business rules sit in code-behind today (BR-002, BR-004) and need a home', 'More files and indirection for a small catalogue app', 'Pairs with a modular monolith later'], evidence: ['BR-002', 'BR-004'] }
-],
-others: [
-{ name: 'Layered (N-tier)', fit: 'The current shape of the legacy app; the least change, the least gain.' },
-{ name: 'Hexagonal (ports and adapters)', fit: 'Fits when many inputs and outputs must be swapped; the app has one UI and one database.' },
-{ name: 'Event-driven', fit: 'Fits when areas react to each other asynchronously; no such flows were found.' },
-{ name: 'Microservices', fit: 'Fits independent teams and scaling needs; not justified by the evidence here.' }
-],
-layers: [
-{ id: 'l1', layer: 'Language and runtime', a: 'C# on .NET 9', aRec: true, aOn: true, b: 'TypeScript on Node.js 24', bOn: false },
-{ id: 'l2', layer: 'Back-end framework', a: 'ASP.NET Core', aRec: true, aOn: true, b: 'NestJS', bOn: false },
-{ id: 'l3', layer: 'Front end', a: 'Blazor', aRec: true, aOn: false, b: 'React with Vite', bOn: true },
-{ id: 'l4', layer: 'Database', a: 'SQL Server (kept)', aRec: true, aOn: true, b: 'PostgreSQL', bOn: false },
-{ id: 'l5', layer: 'Data access', a: 'EF Core', aRec: true, aOn: true, b: 'Dapper', bOn: false },
-{ id: 'l6', layer: 'Testing', a: 'xUnit and Playwright', aRec: true, aOn: true, b: 'NUnit and Playwright', bOn: false },
-{ id: 'l7', layer: 'Hosting', a: 'Windows server with IIS', aRec: true, aOn: false, b: 'Container image', bOn: true }
-]
-};
-v.groups.forEach(g => g.items.forEach(neg)); v.styles.forEach(neg); v.layers.forEach(neg);
-return v;
-}
-}
-</script>
-</body>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"step":{"editor":"enum","options":["principles","architecture","stack"],"default":"architecture"},"$preview":{"width":1440,"height":1200}}'
+    >
+      class Component extends DCLogic {
+      renderVals() {
+      const step = this.props.step ?? 'architecture';
+      const order = ['principles', 'architecture', 'migration', 'stack', 'context', 'method'];
+      const names = { principles: 'Principles', architecture: 'Architecture', migration: 'Migration', stack: 'Stack', context: 'Project context', method: 'Build method' };
+      const at = order.indexOf(step);
+      const steps = order.map((k, i) => ({ name: names[k], done: i < at, isCurrent: i === at, todo: i > at, cls: i < at ? 'done' : '', current: i === at ? 'step' : 'false' }));
+      const rec = [
+      { k: 'Principles', v: '10 on: SOLID, KISS, DRY, YAGNI, TDD, SDD, ADRs, testing pyramid, security by design, CI gates', def: true },
+      { k: 'Architecture', v: at > 1 ? 'Modular monolith' : 'not chosen yet', def: false },
+      { k: 'Migration', v: 'Strangler Fig', def: true },
+      { k: 'Stack', v: at > 3 ? '7 of 7 layers' : 'not chosen yet', def: false },
+      { k: 'Project context', v: 'no answers; listed as open questions', def: true },
+      { k: 'Build method', v: 'without AI-assisted build', def: true }
+      ];
+      const neg = (o) => { for (const k of ['on', 'checked', 'aOn', 'bOn']) if (k in o) o['not_' + k] = !o[k]; return o; };
+      const v = {
+      theme: this.props.theme ?? 'light',
+      isPrinciples: step === 'principles', isArchitecture: step === 'architecture', isStack: step === 'stack',
+      steps, recorded: rec,
+      groups: [
+      { name: 'Design principles', items: [
+       { name: 'SOLID', rule: 'Each class has one reason to change and depends on abstractions; reviewers check it on every card.', on: true, def: true },
+       { name: 'KISS', rule: 'The simplest design that meets the requirement; no layer without a reason in an ADR.', on: true, def: true },
+       { name: 'DRY', rule: 'One place for each piece of knowledge; duplication is removed when it appears a third time.', on: true, def: true },
+       { name: 'YAGNI', rule: 'Nothing is built until a requirement asks for it.', on: true, def: true },
+       { name: 'Design patterns', rule: 'Named patterns only where they remove a real problem, with the reason in the card.', on: false, def: false } ] },
+      { name: 'Method', items: [
+       { name: 'SDD, spec-driven', rule: 'Every card names its requirement ids; behaviour the spec does not describe becomes a requirement first.', on: true, def: true },
+       { name: 'TDD, test-driven', rule: 'Red, green, refactor: each card lists the Given/When/Then tests written before the code.', on: true, def: true } ] },
+      { name: 'Quality and documentation', items: [
+       { name: 'Testing pyramid with honest coverage', rule: 'Mostly unit tests; coverage set per layer, core logic highest.', on: true, def: true },
+       { name: 'CI quality gates', rule: 'Type check, lint, tests and coverage block a merge when they fail.', on: true, def: true },
+       { name: 'ADRs', rule: 'Every decision that is hard to reverse is recorded with the options and the reason.', on: true, def: true } ] },
+      { name: 'Security and delivery', items: [
+       { name: 'Security by design', rule: 'Threats modelled with STRIDE, OWASP Top 10 checks on cards that touch input, auth or data.', on: true, def: true },
+       { name: 'Observability', rule: 'Structured logs, error tracking and alerts defined before release.', on: false, def: false },
+       { name: 'AI-assisted build', rule: 'An AGENTS.md with these rules, cards rated for builders, plan before build, a human reviews every pull request.', on: false, def: false } ] }
+      ],
+      styles: [
+      { name: 'Modular monolith', rec: true, checked: true, cls: 'sel', fit: 'One deployable with a module per business area and clear boundaries between them.', points: ['Matches the 4 areas the readers found, each with its own entities', 'One database today; modules can own their tables first', 'Lowest operational cost for a small team'], evidence: ['ENT-001', 'ENT-003', 'BR-004'] },
+      { name: 'Clean Architecture', rec: false, checked: false, cls: '', fit: 'Concentric layers with the domain at the centre and frameworks at the edge.', points: ['Business rules sit in code-behind today (BR-002, BR-004) and need a home', 'More files and indirection for a small catalogue app', 'Pairs with a modular monolith later'], evidence: ['BR-002', 'BR-004'] }
+      ],
+      others: [
+      { name: 'Layered (N-tier)', fit: 'The current shape of the legacy app; the least change, the least gain.' },
+      { name: 'Hexagonal (ports and adapters)', fit: 'Fits when many inputs and outputs must be swapped; the app has one UI and one database.' },
+      { name: 'Event-driven', fit: 'Fits when areas react to each other asynchronously; no such flows were found.' },
+      { name: 'Microservices', fit: 'Fits independent teams and scaling needs; not justified by the evidence here.' }
+      ],
+      layers: [
+      { id: 'l1', layer: 'Language and runtime', a: 'C# on .NET 9', aRec: true, aOn: true, b: 'TypeScript on Node.js 24', bOn: false },
+      { id: 'l2', layer: 'Back-end framework', a: 'ASP.NET Core', aRec: true, aOn: true, b: 'NestJS', bOn: false },
+      { id: 'l3', layer: 'Front end', a: 'Blazor', aRec: true, aOn: false, b: 'React with Vite', bOn: true },
+      { id: 'l4', layer: 'Database', a: 'SQL Server (kept)', aRec: true, aOn: true, b: 'PostgreSQL', bOn: false },
+      { id: 'l5', layer: 'Data access', a: 'EF Core', aRec: true, aOn: true, b: 'Dapper', bOn: false },
+      { id: 'l6', layer: 'Testing', a: 'xUnit and Playwright', aRec: true, aOn: true, b: 'NUnit and Playwright', bOn: false },
+      { id: 'l7', layer: 'Hosting', a: 'Windows server with IIS', aRec: true, aOn: false, b: 'Container image', bOn: true }
+      ]
+      };
+      v.groups.forEach(g => g.items.forEach(neg)); v.styles.forEach(neg); v.layers.forEach(neg);
+      return v;
+      }
+      }
+    </script>
+  </body>
 </html>

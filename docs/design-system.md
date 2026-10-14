@@ -1,13 +1,13 @@
 # Design system
 
-| | |
-|---|---|
-| **Status** | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56); hosted-application screens (section 14, artboards 7-13) approved as a G-02 amendment (DEC-70); artboards 1-6 revised and approved (DEC-71); the Plan setup artboard 14 approved (DEC-86) |
-| **Decisions** | DEC-44 (text wordmark, system fonts, deep teal accent, light and dark per OS, multi-page static report), DEC-45 (English only), DEC-46 (verbose, graphic live web UI), DEC-49 (project totals always visible), DEC-50 (API calls and logs), DEC-52 (Preact + Vite), DEC-55 (delete with confirmation); [ADR-012](adr/ADR-012-local-web-ui-and-github-sources.md) |
-| **Source artefacts** | [design-system-brief.md](design-system-brief.md) (what was asked); the v1 design board, exported to [`docs/design/board/`](design/board/) (open the `.dc.html` files in the design canvas; never edited after export); [`docs/design/tokens.css`](design/tokens.css) (the token file) |
-| **Devices** | desktop and laptop browsers, 1280 px and wider, mouse and keyboard (the web UI); the landing page, sign-in and the published report also on tablets and phones (360 px and wider) |
-| **Feeds** | the web UI shell card, the component gallery card, each web UI page card (RF-1000..RF-1012), the report cards (RF-500..RF-506), the landing page (RF-1200), sign-in, settings and administration (RF-1100..RF-1109) |
-| **Ancestry** | none |
+|                      |                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**           | Accepted, v1 (2026-10-11): design board approved by BlackLigth (blacklight0101) at G-02 with no changes (DEC-56); hosted-application screens (section 14, artboards 7-13) approved as a G-02 amendment (DEC-70); artboards 1-6 revised and approved (DEC-71); the Plan setup artboard 14 approved (DEC-86)                                                       |
+| **Decisions**        | DEC-44 (text wordmark, system fonts, deep teal accent, light and dark per OS, multi-page static report), DEC-45 (English only), DEC-46 (verbose, graphic live web UI), DEC-49 (project totals always visible), DEC-50 (API calls and logs), DEC-52 (Preact + Vite), DEC-55 (delete with confirmation); [ADR-012](adr/ADR-012-local-web-ui-and-github-sources.md) |
+| **Source artefacts** | [design-system-brief.md](design-system-brief.md) (what was asked); the v1 design board, exported to [`docs/design/board/`](design/board/) (open the `.dc.html` files in the design canvas; never edited after export); [`docs/design/tokens.css`](design/tokens.css) (the token file)                                                                            |
+| **Devices**          | desktop and laptop browsers, 1280 px and wider, mouse and keyboard (the web UI); the landing page, sign-in and the published report also on tablets and phones (360 px and wider)                                                                                                                                                                                |
+| **Feeds**            | the web UI shell card, the component gallery card, each web UI page card (RF-1000..RF-1012), the report cards (RF-500..RF-506), the landing page (RF-1200), sign-in, settings and administration (RF-1100..RF-1109)                                                                                                                                              |
+| **Ancestry**         | none                                                                                                                                                                                                                                                                                                                                                             |
 
 Every page of the web UI and the report is built with the tokens, components and patterns here. A page that needs a
 new component or token adds it to this document in the same branch. Hard-coded colours, sizes, fonts or user text
@@ -41,21 +41,21 @@ and background pair below was measured on 2026-10-11 and passes WCAG 2.1 AA; the
 
 ### 2.1 Colour
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `bg` | `#F4F6F6` | `#0D1413` | page background |
-| `surface` / `surface-2` / `surface-raised` | `#FFFFFF` / `#EAEFEE` / `#FFFFFF` | `#141D1C` / `#1B2625` / `#212E2D` | cards and inputs / headers, wells, table heads / dialogs |
-| `ink` / `ink-soft` / `ink-muted` | `#13201F` / `#364644` / `#56645F` | `#E5EDEC` / `#BAC8C6` / `#93A5A2` | text |
-| `rule` / `rule-strong` | `#D8DFDE` / `#7A8987` | `#2A3836` / `#66807C` | separators / control borders (at least 3:1) |
-| `brand` / `brand-hover` / `brand-ink` / `brand-tint` | `#0E6B6B` / `#0A5555` / `#FFFFFF` / `#DDEFEE` | `#45B8B0` / `#64CBC4` / `#04201E` / `#123533` | primary actions, active navigation, links / text on brand / selected navigation |
-| `ok-*` (`-ink`, `-bg`, `-solid`, `-solid-ink`) | `#1C6E37`, `#E2F2E7`, `#1C6E37`, `#FFFFFF` | `#63CC88`, `#12301D`, `#3DAA62`, `#04140A` | success, supported, done |
-| `warn-*` | `#7A4A00`, `#FBEBD2`, `#E39A1F`, `#1F1500` | `#F2BA5C`, `#36270B`, `#E39A1F`, `#1F1500` | cap reached, retried, unverified, open questions |
-| `danger-*` | `#A8211A`, `#FBE4E2`, `#B42318`, `#FFFFFF` | `#FF8E84`, `#3C1513`, `#EA5E55`, `#1C0403` | rejected, failed, delete, stop |
-| `info-*` | `#1B5799`, `#E2ECF8`, `#1B5799`, `#FFFFFF` | `#84B9F2`, `#10253D`, `#5B9DE4`, `#04121F` | running, in progress |
-| `neutral-*` | `#45524F`, `#E8ECEB`, `#56645F`, `#FFFFFF` | `#BAC8C6`, `#222E2D`, `#93A5A2`, `#0D1413` | planned, proposed, interrupted |
+| Token                                                                | Light                                         | Dark                                          | Use                                                                              |
+| -------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
+| `bg`                                                                 | `#F4F6F6`                                     | `#0D1413`                                     | page background                                                                  |
+| `surface` / `surface-2` / `surface-raised`                           | `#FFFFFF` / `#EAEFEE` / `#FFFFFF`             | `#141D1C` / `#1B2625` / `#212E2D`             | cards and inputs / headers, wells, table heads / dialogs                         |
+| `ink` / `ink-soft` / `ink-muted`                                     | `#13201F` / `#364644` / `#56645F`             | `#E5EDEC` / `#BAC8C6` / `#93A5A2`             | text                                                                             |
+| `rule` / `rule-strong`                                               | `#D8DFDE` / `#7A8987`                         | `#2A3836` / `#66807C`                         | separators / control borders (at least 3:1)                                      |
+| `brand` / `brand-hover` / `brand-ink` / `brand-tint`                 | `#0E6B6B` / `#0A5555` / `#FFFFFF` / `#DDEFEE` | `#45B8B0` / `#64CBC4` / `#04201E` / `#123533` | primary actions, active navigation, links / text on brand / selected navigation  |
+| `ok-*` (`-ink`, `-bg`, `-solid`, `-solid-ink`)                       | `#1C6E37`, `#E2F2E7`, `#1C6E37`, `#FFFFFF`    | `#63CC88`, `#12301D`, `#3DAA62`, `#04140A`    | success, supported, done                                                         |
+| `warn-*`                                                             | `#7A4A00`, `#FBEBD2`, `#E39A1F`, `#1F1500`    | `#F2BA5C`, `#36270B`, `#E39A1F`, `#1F1500`    | cap reached, retried, unverified, open questions                                 |
+| `danger-*`                                                           | `#A8211A`, `#FBE4E2`, `#B42318`, `#FFFFFF`    | `#FF8E84`, `#3C1513`, `#EA5E55`, `#1C0403`    | rejected, failed, delete, stop                                                   |
+| `info-*`                                                             | `#1B5799`, `#E2ECF8`, `#1B5799`, `#FFFFFF`    | `#84B9F2`, `#10253D`, `#5B9DE4`, `#04121F`    | running, in progress                                                             |
+| `neutral-*`                                                          | `#45524F`, `#E8ECEB`, `#56645F`, `#FFFFFF`    | `#BAC8C6`, `#222E2D`, `#93A5A2`, `#0D1413`    | planned, proposed, interrupted                                                   |
 | `role-reader` / `role-verifier` / `role-planner` / `role-summariser` | `#0E6B6B` / `#6A48B8` / `#B5520B` / `#1B5799` | `#45B8B0` / `#A98BF0` / `#F09A55` / `#84B9F2` | the agent role's dot, timeline lane and read bar; always next to the role's name |
-| `focus` | `#1B5799` | `#84B9F2` | 2 px focus outline, 2 px offset |
-| `scrim` | `rgba(10,20,19,.55)` | `rgba(0,0,0,.6)` | behind dialogs |
+| `focus`                                                              | `#1B5799`                                     | `#84B9F2`                                     | 2 px focus outline, 2 px offset                                                  |
+| `scrim`                                                              | `rgba(10,20,19,.55)`                          | `rgba(0,0,0,.6)`                              | behind dialogs                                                                   |
 
 Lowest measured pairs: light `rule-strong` on `surface-2` 3.14:1, `rule-strong` on `bg` 3.36:1 (control borders,
 need 3:1), `role-planner` on `surface-2` 4.33:1 (graphic, needs 3:1), `ink-muted` on `brand-tint` 5.22:1; dark
@@ -63,13 +63,13 @@ need 3:1), `role-planner` on `surface-2` 4.33:1 (graphic, needs 3:1), `ink-muted
 
 ### 2.2 Type
 
-| Token | Value | Use |
-|---|---|---|
-| `sans` | `system-ui, -apple-system, "Segoe UI", "Noto Sans", "Helvetica Neue", sans-serif` | everything (DEC-44: system fonts, nothing downloaded) |
-| `mono` | `ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace` | paths, citations, card and run ids, SHAs, model names, events, logs |
-| `fs-xs` .. `fs-3xl` | 12, 13, 14, 16, 20, 24, 32 px | captions to page titles; body is `fs-md` 14 px |
-| `fw-body` / `fw-label` / `fw-head` | 400 / 500 / 650 | |
-| `lh-body` / `lh-head` | 1.45 / 1.2 | |
+| Token                              | Value                                                                             | Use                                                                 |
+| ---------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `sans`                             | `system-ui, -apple-system, "Segoe UI", "Noto Sans", "Helvetica Neue", sans-serif` | everything (DEC-44: system fonts, nothing downloaded)               |
+| `mono`                             | `ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace`            | paths, citations, card and run ids, SHAs, model names, events, logs |
+| `fs-xs` .. `fs-3xl`                | 12, 13, 14, 16, 20, 24, 32 px                                                     | captions to page titles; body is `fs-md` 14 px                      |
+| `fw-body` / `fw-label` / `fw-head` | 400 / 500 / 650                                                                   |                                                                     |
+| `lh-body` / `lh-head`              | 1.45 / 1.2                                                                        |                                                                     |
 
 All numbers use tabular figures (`font-variant-numeric: tabular-nums` on the root), so counters do not jitter while
 they update. The wordmark is the word "Rosetta" in the sans stack, weight 700, letter-spacing -0.02em; there is no
@@ -77,29 +77,29 @@ logo (DEC-44).
 
 ### 2.3 Spacing
 
-| Token | Value |
-|---|---|
+| Token            | Value                           |
+| ---------------- | ------------------------------- |
 | `sp-1` .. `sp-8` | 4, 8, 12, 16, 24, 32, 48, 64 px |
 
 ### 2.4 Radius
 
-| Token | Value |
-|---|---|
+| Token                                                   | Value               |
+| ------------------------------------------------------- | ------------------- |
 | `radius-sm` / `radius-md` / `radius-lg` / `radius-pill` | 4 / 6 / 10 / 999 px |
 
 ### 2.5 Elevation
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `shadow-1` / `shadow-2` | soft 1-2 px / 12 px 32 px blur | stronger, same geometry | cards / dialogs |
-| `z-menu` / `z-banner` / `z-dialog` / `z-toast` | 40 / 45 / 50 / 60 | same | stacking order |
+| Token                                          | Light                          | Dark                    | Use             |
+| ---------------------------------------------- | ------------------------------ | ----------------------- | --------------- |
+| `shadow-1` / `shadow-2`                        | soft 1-2 px / 12 px 32 px blur | stronger, same geometry | cards / dialogs |
+| `z-menu` / `z-banner` / `z-dialog` / `z-toast` | 40 / 45 / 50 / 60              | same                    | stacking order  |
 
 ### 2.6 Motion
 
-| Token | Value | Use |
-|---|---|---|
-| `dur-fast` / `dur-base` | 120 / 200 ms | state transitions, panel updates |
-| `ease` | `cubic-bezier(0.2, 0, 0, 1)` | |
+| Token                   | Value                        | Use                              |
+| ----------------------- | ---------------------------- | -------------------------------- |
+| `dur-fast` / `dur-base` | 120 / 200 ms                 | state transitions, panel updates |
+| `ease`                  | `cubic-bezier(0.2, 0, 0, 1)` |                                  |
 
 The only looping animation is the "live" dot on running states (1.4 s pulse). Reduced-motion preference sets every
 duration to 0 and stops the pulse.
@@ -123,11 +123,11 @@ flowchart TB
   H --> B
 ```
 
-| Width | Navigation | Notes |
-|---|---|---|
-| 1440 px and wider | side navigation, 200-240 px | agent panels in up to 4 columns |
-| 1280-1439 px | side navigation | agent panels in 3 columns |
-| below 1280 px | side navigation stacks above content | supported but not optimised; nothing is hidden |
+| Width             | Navigation                           | Notes                                          |
+| ----------------- | ------------------------------------ | ---------------------------------------------- |
+| 1440 px and wider | side navigation, 200-240 px          | agent panels in up to 4 columns                |
+| 1280-1439 px      | side navigation                      | agent panels in 3 columns                      |
+| below 1280 px     | side navigation stacks above content | supported but not optimised; nothing is hidden |
 
 **Report** (static site, any width from 360 px): header with wordmark and the run's identity, tab navigation
 (Dashboard, Areas, Cards, Open questions, Run replay, Cost), centred content up to 1180 px wide; summary cards
@@ -151,25 +151,25 @@ reflow from four columns to one.
 All components share: a CSS class per component (`rst-<component>`), a test id per part, the focus outline, sizes
 from tokens, and English text (DEC-45).
 
-| Component | Variants | States | ARIA / keyboard | Notes |
-|---|---|---|---|---|
-| Header totals | project only; project + run meter | idle, live | totals are a labelled group; the run meter is `role="meter"` | always on screen (RF-1010); Breakdown opens per run, stage, provider and model |
-| Button | primary, secondary, ghost, danger, danger-outline | default, hover, focus, active, disabled (with reason), busy | native `button`; disabled ones keep a `title` with the reason | Stop run and Delete are the only danger buttons |
-| Field | URL, text, number, textarea, select, radio, checkbox | default, focus, invalid, disabled | label bound to input; `aria-describedby` for help and the error | URL errors show the `RST` code and a plain sentence; the error is a live region (`role="alert"`) unless the page moves focus to the invalid control after a refusal, which reads the error through `aria-describedby`, so it is not said twice |
-| Status badge | tint, solid | per section 6 | glyph is `aria-hidden`, the word is the label | one component for every state list |
-| Pipeline stepper | - | done, current (live), waiting | ordered list; current step `aria-current="step"` | Snapshot, Scan, Understand, Verify, Report |
-| Stat card | - | - | - | label, big number, caption; numbers tabular |
-| Agent panel | reader, verifier, planner, summariser | planned, running, done, failed and the other `AgentTaskState` values | `article` with the area as heading | role dot, area, model, current tool call, turn, files read, tokens, cost, read bar, card chips |
-| Coverage map | - | no areas yet, area with no file read, area filling in | a region with one labelled region per area; the read share is `role="meter"`; the tree is nested lists | one block per reader area in plan order: area name, files read and share of the run's files read, a bar in the reader role colour, the files read as a tree of folders (folders first, by name); it fills in from successful `read_file` calls (RF-1005) |
-| Timeline | live, replay | - | lanes are a list; each bar has a text alternative | one lane per agent, coloured by role; time axis |
-| Event stream | live, replay | - | `aria-live="polite"`, throttled | time, event type coloured by kind, one-line text; newest first |
-| Data table | calls, runs, snapshots, cards, projects | default, highlighted (error), selected | real `table` with headers; at 360 px rows stack, each cell named by its column (`data-label`); at 1280 px the columns stay | filter bar above; numeric columns right-aligned |
-| Cost meter | run, role | under 80%, 80-95% (warn), 95%+ (danger) | `role="meter"` with value and label | marker at the likely estimate |
-| Callout | warning, error, info | - | `role="alert"` for the cloud warning and errors | cloud warning includes the consent checkbox (RF-143) |
-| Dialog | confirm, destructive confirm | open | `role="dialog"`, `aria-modal`, focus trapped and restored | destructive confirm names the target, space freed, and what is kept |
-| Card view | FEAT, BR, ENT, INT, OQ | - | heading per card | id, title, area, confidence, summary, claims with status, verdict reason and permalink |
-| Replay player | - | playing, paused | buttons with `aria-label`; speed select | step back, play or pause, step forward, speed 1x/4x/16x |
-| Log list | - | - | list; level toggles are `aria-pressed` buttons | time, level, logger, message |
+| Component        | Variants                                             | States                                                               | ARIA / keyboard                                                                                                            | Notes                                                                                                                                                                                                                                                    |
+| ---------------- | ---------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header totals    | project only; project + run meter                    | idle, live                                                           | totals are a labelled group; the run meter is `role="meter"`                                                               | always on screen (RF-1010); Breakdown opens per run, stage, provider and model                                                                                                                                                                           |
+| Button           | primary, secondary, ghost, danger, danger-outline    | default, hover, focus, active, disabled (with reason), busy          | native `button`; disabled ones keep a `title` with the reason                                                              | Stop run and Delete are the only danger buttons                                                                                                                                                                                                          |
+| Field            | URL, text, number, textarea, select, radio, checkbox | default, focus, invalid, disabled                                    | label bound to input; `aria-describedby` for help and the error                                                            | URL errors show the `RST` code and a plain sentence; the error is a live region (`role="alert"`) unless the page moves focus to the invalid control after a refusal, which reads the error through `aria-describedby`, so it is not said twice           |
+| Status badge     | tint, solid                                          | per section 6                                                        | glyph is `aria-hidden`, the word is the label                                                                              | one component for every state list                                                                                                                                                                                                                       |
+| Pipeline stepper | -                                                    | done, current (live), waiting                                        | ordered list; current step `aria-current="step"`                                                                           | Snapshot, Scan, Understand, Verify, Report                                                                                                                                                                                                               |
+| Stat card        | -                                                    | -                                                                    | -                                                                                                                          | label, big number, caption; numbers tabular                                                                                                                                                                                                              |
+| Agent panel      | reader, verifier, planner, summariser                | planned, running, done, failed and the other `AgentTaskState` values | `article` with the area as heading                                                                                         | role dot, area, model, current tool call, turn, files read, tokens, cost, read bar, card chips                                                                                                                                                           |
+| Coverage map     | -                                                    | no areas yet, area with no file read, area filling in                | a region with one labelled region per area; the read share is `role="meter"`; the tree is nested lists                     | one block per reader area in plan order: area name, files read and share of the run's files read, a bar in the reader role colour, the files read as a tree of folders (folders first, by name); it fills in from successful `read_file` calls (RF-1005) |
+| Timeline         | live, replay                                         | -                                                                    | lanes are a list; each bar has a text alternative                                                                          | one lane per agent, coloured by role; time axis                                                                                                                                                                                                          |
+| Event stream     | live, replay                                         | -                                                                    | `aria-live="polite"`, throttled                                                                                            | time, event type coloured by kind, one-line text; newest first                                                                                                                                                                                           |
+| Data table       | calls, runs, snapshots, cards, projects              | default, highlighted (error), selected                               | real `table` with headers; at 360 px rows stack, each cell named by its column (`data-label`); at 1280 px the columns stay | filter bar above; numeric columns right-aligned                                                                                                                                                                                                          |
+| Cost meter       | run, role                                            | under 80%, 80-95% (warn), 95%+ (danger)                              | `role="meter"` with value and label                                                                                        | marker at the likely estimate                                                                                                                                                                                                                            |
+| Callout          | warning, error, info                                 | -                                                                    | `role="alert"` for the cloud warning and errors                                                                            | cloud warning includes the consent checkbox (RF-143)                                                                                                                                                                                                     |
+| Dialog           | confirm, destructive confirm                         | open                                                                 | `role="dialog"`, `aria-modal`, focus trapped and restored                                                                  | destructive confirm names the target, space freed, and what is kept                                                                                                                                                                                      |
+| Card view        | FEAT, BR, ENT, INT, OQ                               | -                                                                    | heading per card                                                                                                           | id, title, area, confidence, summary, claims with status, verdict reason and permalink                                                                                                                                                                   |
+| Replay player    | -                                                    | playing, paused                                                      | buttons with `aria-label`; speed select                                                                                    | step back, play or pause, step forward, speed 1x/4x/16x                                                                                                                                                                                                  |
+| Log list         | -                                                    | -                                                                    | list; level toggles are `aria-pressed` buttons                                                                             | time, level, logger, message                                                                                                                                                                                                                             |
 
 A component gallery page (development only: built only in development and served at `/dev/gallery`, DEC-126) renders every
 component in every state and both themes; the end-to-end suite screenshots it. The production bundle has no
@@ -180,26 +180,26 @@ and a signed-in user gets the application shell, which draws its not-found page 
 
 The state lists are canonical in [architecture](architecture.md) section 5; this table adds only their presentation.
 
-| State | Tone | Weight | Glyph | Meaning for the user |
-|---|---|---|---|---|
-| Claim `Proposed` | neutral | tint | open circle | an agent made the claim; not checked yet |
-| Claim `CitationInvalid` | danger | tint | broken link | the cited file or lines do not exist |
-| Claim `Supported` | ok | solid | check | the verifier agrees with the evidence |
-| Claim `Rejected` | danger | solid | cross | the evidence does not support the claim; kept, with the reason |
-| Claim `Unverified` | warn | tint | question mark | not checked because the run stopped; resume to check |
-| Agent `Planned` | neutral | tint | dashed circle | waiting to start |
-| Agent `Running` | info | solid | live dot | working now |
-| Agent `Done` | ok | tint | check | finished normally |
-| Agent `TurnLimitReached` | warn | tint | clock | stopped at the turn limit; cards so far are kept |
-| Agent `InvalidOutput` | danger | tint | brackets | the model's answer could not be parsed after one repair |
-| Agent `Failed` | danger | solid | exclamation | stopped by an error |
-| Agent `StoppedByCap` | warn | solid | square | stopped because the budget cap was reached |
-| Run `Completed` | ok | solid | check | |
-| Run `CapReached` | warn | solid | square | raise the cap and resume to finish |
-| Run `Failed` | danger | solid | exclamation | see the log and the error code |
-| Run `Interrupted` | neutral | solid | pause bars | stopped by the developer |
-| Question `Open` / `Answered` | warn tint / ok tint | | question mark / check | |
-| Call `ok` / `retried` / `failed` / `refused-by-cap` | ok tint / warn tint / danger solid / warn solid | | HTTP code or glyph | provider call status (RF-408) |
+| State                                               | Tone                                            | Weight | Glyph                 | Meaning for the user                                           |
+| --------------------------------------------------- | ----------------------------------------------- | ------ | --------------------- | -------------------------------------------------------------- |
+| Claim `Proposed`                                    | neutral                                         | tint   | open circle           | an agent made the claim; not checked yet                       |
+| Claim `CitationInvalid`                             | danger                                          | tint   | broken link           | the cited file or lines do not exist                           |
+| Claim `Supported`                                   | ok                                              | solid  | check                 | the verifier agrees with the evidence                          |
+| Claim `Rejected`                                    | danger                                          | solid  | cross                 | the evidence does not support the claim; kept, with the reason |
+| Claim `Unverified`                                  | warn                                            | tint   | question mark         | not checked because the run stopped; resume to check           |
+| Agent `Planned`                                     | neutral                                         | tint   | dashed circle         | waiting to start                                               |
+| Agent `Running`                                     | info                                            | solid  | live dot              | working now                                                    |
+| Agent `Done`                                        | ok                                              | tint   | check                 | finished normally                                              |
+| Agent `TurnLimitReached`                            | warn                                            | tint   | clock                 | stopped at the turn limit; cards so far are kept               |
+| Agent `InvalidOutput`                               | danger                                          | tint   | brackets              | the model's answer could not be parsed after one repair        |
+| Agent `Failed`                                      | danger                                          | solid  | exclamation           | stopped by an error                                            |
+| Agent `StoppedByCap`                                | warn                                            | solid  | square                | stopped because the budget cap was reached                     |
+| Run `Completed`                                     | ok                                              | solid  | check                 |                                                                |
+| Run `CapReached`                                    | warn                                            | solid  | square                | raise the cap and resume to finish                             |
+| Run `Failed`                                        | danger                                          | solid  | exclamation           | see the log and the error code                                 |
+| Run `Interrupted`                                   | neutral                                         | solid  | pause bars            | stopped by the developer                                       |
+| Question `Open` / `Answered`                        | warn tint / ok tint                             |        | question mark / check |                                                                |
+| Call `ok` / `retried` / `failed` / `refused-by-cap` | ok tint / warn tint / danger solid / warn solid |        | HTTP code or glyph    | provider call status (RF-408)                                  |
 
 ## 7. Patterns
 
@@ -270,17 +270,17 @@ DEC-59..DEC-69 add screens the v1 board does not show. They use only the tokens 
 fit; a new component is added to section 5 in the same branch. The artboards are drawn and approved before their
 cards are built (an amendment of G-02, recorded in `handoff.md`).
 
-| Screen | Requirements | Notes |
-|---|---|---|
-| Landing page | RF-1200, RF-1201 | product-quality marketing page: hero with the one-sentence promise, the pipeline as a graphic, a still of the live agent view, evidence cards with the verifier, cost control, security and privacy, technology, about the project, Sign in and Request access; works from 360 px and without JavaScript; light and dark |
-| Sign in | RF-1100 | user name, password and one generic error; a locked account shows the same message as a wrong password, so the page never reveals that an account exists; centred card on the landing background |
-| Change password | RF-1103, RF-1102 | forced at first sign-in; rules shown before typing |
-| Projects | RF-010, RF-1105 | the user's projects with last run, totals, New project |
-| Settings and keys | RF-1104, RF-407 | per provider: last four characters, replace, delete, Test; which key a run will use |
-| Administration: users | RF-1102, RF-1106, RF-1107 | table of accounts with role, state, last sign-in, month-to-date cost; create, disable, reset; caps form; server month meter with the 80% banner |
-| Administration: audit | RF-1109 | filterable table, last 30 days |
-| Plan setup | RF-605, RF-608, RF-609 | interview in small groups, each question with a default, the reason and the recommended option; architecture styles with evidence card ids; stack per layer; "What I recorded" summary; added 2026-10-11, artboard 14 (`PlanSetup.dc.html`, steps principles, architecture and stack), approved as a G-02 amendment (DEC-86) |
-| Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |
+| Screen                | Requirements              | Notes                                                                                                                                                                                                                                                                                                                        |
+| --------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Landing page          | RF-1200, RF-1201          | product-quality marketing page: hero with the one-sentence promise, the pipeline as a graphic, a still of the live agent view, evidence cards with the verifier, cost control, security and privacy, technology, about the project, Sign in and Request access; works from 360 px and without JavaScript; light and dark     |
+| Sign in               | RF-1100                   | user name, password and one generic error; a locked account shows the same message as a wrong password, so the page never reveals that an account exists; centred card on the landing background                                                                                                                             |
+| Change password       | RF-1103, RF-1102          | forced at first sign-in; rules shown before typing                                                                                                                                                                                                                                                                           |
+| Projects              | RF-010, RF-1105           | the user's projects with last run, totals, New project                                                                                                                                                                                                                                                                       |
+| Settings and keys     | RF-1104, RF-407           | per provider: last four characters, replace, delete, Test; which key a run will use                                                                                                                                                                                                                                          |
+| Administration: users | RF-1102, RF-1106, RF-1107 | table of accounts with role, state, last sign-in, month-to-date cost; create, disable, reset; caps form; server month meter with the 80% banner                                                                                                                                                                              |
+| Administration: audit | RF-1109                   | filterable table, last 30 days                                                                                                                                                                                                                                                                                               |
+| Plan setup            | RF-605, RF-608, RF-609    | interview in small groups, each question with a default, the reason and the recommended option; architecture styles with evidence card ids; stack per layer; "What I recorded" summary; added 2026-10-11, artboard 14 (`PlanSetup.dc.html`, steps principles, architecture and stack), approved as a G-02 amendment (DEC-86) |
+| Run queue state       | RF-1108                   | a `Queued` badge with the position on the start page and the run list                                                                                                                                                                                                                                                        |
 
 **Status (2026-10-11):** drawn as artboards 7-13 of the design board (artboard 14, Plan setup, follows in DEC-86) (`docs/design/board/Landing.dc.html`,
 `SignIn`, `ChangePassword`, `Projects`, `Settings`, `AdminUsers`, `AdminAudit`), with the Impeccable design
@@ -293,13 +293,13 @@ drawn on the Projects artboard (Queued badge, position and Cancel); the start pa
 
 Components these screens add to section 5:
 
-| Component | Where | Notes |
-|---|---|---|
-| Replay stage | landing first viewport | the live-run lanes, claim counts, event stream and cost meter of a sample run in one framed window; animates once per 10 s cycle, pauses on hover or focus, static under reduced motion; always labelled "Sample run" |
-| Pipeline rail | landing "How it works" | an ordered list drawn as a line with one node per stage; reader and verifier nodes take their role colours; each stage names the file it leaves |
-| Totals pill | every signed-in header | "Your total" for users, "Server, this month" against the cap for the administrator (RF-1010, RF-1106) |
-| Cap banner | administration pages | warning bar at 80% of the server's monthly cap (RF-1106) |
-| Queue notice | projects | info callout with the queue position and Cancel queued run (RF-1108) |
-| Callout tones | start run | `rst-callout--warn` (cloud notice, cap warning) and `rst-callout--info` (queue notice, the server key note of P1-107) beside the default error tone; the cap meter is `role="meter"` with the high estimate as a marker (P1-34) |
-| Administration rows and filters | administration | the row actions of an account stay on one line at 1280 px (`rst-admin__actions`; at 360 px they wrap inside the stacked row), the accounts filter by name (`rst-admin__filter`), the audit filters are User, Action, Period and Outcome; the cap banner sits in the shell's banner slot on every page (P1-107) |
-| Rule checklist | change password | each password rule with a pass or fail glyph and text, updated as the user types (RF-1103) |
+| Component                       | Where                  | Notes                                                                                                                                                                                                                                                                                                          |
+| ------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Replay stage                    | landing first viewport | the live-run lanes, claim counts, event stream and cost meter of a sample run in one framed window; animates once per 10 s cycle, pauses on hover or focus, static under reduced motion; always labelled "Sample run"                                                                                          |
+| Pipeline rail                   | landing "How it works" | an ordered list drawn as a line with one node per stage; reader and verifier nodes take their role colours; each stage names the file it leaves                                                                                                                                                                |
+| Totals pill                     | every signed-in header | "Your total" for users, "Server, this month" against the cap for the administrator (RF-1010, RF-1106)                                                                                                                                                                                                          |
+| Cap banner                      | administration pages   | warning bar at 80% of the server's monthly cap (RF-1106)                                                                                                                                                                                                                                                       |
+| Queue notice                    | projects               | info callout with the queue position and Cancel queued run (RF-1108)                                                                                                                                                                                                                                           |
+| Callout tones                   | start run              | `rst-callout--warn` (cloud notice, cap warning) and `rst-callout--info` (queue notice, the server key note of P1-107) beside the default error tone; the cap meter is `role="meter"` with the high estimate as a marker (P1-34)                                                                                |
+| Administration rows and filters | administration         | the row actions of an account stay on one line at 1280 px (`rst-admin__actions`; at 360 px they wrap inside the stacked row), the accounts filter by name (`rst-admin__filter`), the audit filters are User, Action, Period and Outcome; the cap banner sits in the shell's banner slot on every page (P1-107) |
+| Rule checklist                  | change password        | each password rule with a pass or fail glyph and text, updated as the user types (RF-1103)                                                                                                                                                                                                                     |

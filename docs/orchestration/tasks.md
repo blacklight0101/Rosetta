@@ -10,12 +10,12 @@ This table is the only canonical place for card counts. `handoff.md` and `README
 is re-checked against this table whenever a card is added, withdrawn or re-rated (README section 11). Bands follow
 DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts on fable (it is escalation only, with owner approval).
 
-| Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
-|---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 172 | 64 | 90 | 18 | 0 | 99 | 65 | 8 | 111 | 0 |
-| P2 Full understand | 23 | 3 | 14 | 6 | 0 | 4 | 18 | 1 | 3 | 0 |
-| P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
-| **Total** | **221** | **69** | **126** | **26** | **0** | **106** | **104** | **11** | **115** | **0** |
+| Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
+| ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
+| P1 Milestone slice (M1) | 172     | 64        | 90         | 18        | 0                  | 99      | 65      | 8      | 111        | 0         |
+| P2 Full understand      | 23      | 3         | 14         | 6         | 0                  | 4       | 18      | 1      | 3          | 0         |
+| P3 Report and plan      | 26      | 2         | 22         | 2         | 0                  | 3       | 21      | 2      | 1          | 0         |
+| **Total**               | **221** | **69**    | **126**    | **26**    | **0**              | **106** | **104** | **11** | **115**    | **0**     |
 
 ## Conventions for every card
 
@@ -28,7 +28,7 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 - **Status**: `Todo` | `In progress` | `In review` | `Done` | `Blocked (<reason>)` (README section 3). A part of a card
   can wait while the rest runs: `Todo; <part> Blocked (G-nn)`.
 - **Common Reads** for every card, not repeated on the cards: `CLAUDE.md`, `docs/architecture.md`,
-  `docs/conventions.md`, the requirement ids in *Refs* inside `docs/spec/requirements.md`, the ADRs in *Refs*, and
+  `docs/conventions.md`, the requirement ids in _Refs_ inside `docs/spec/requirements.md`, the ADRs in _Refs_, and
   for every card that touches a page `docs/design-system.md` and the named artboard in `docs/design/board/`.
 - **Test mix**: test-first on every card (README section 1). Unless a card says otherwise, domain and application
   work delivers unit tests; persistence, HTTP routes, adapters and file writers deliver integration tests plus unit
@@ -37,30 +37,30 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
   cards are P1-49, P2-14 and P3-12, which also report the pyramid against README section 1.
 - **Ownership** (one creator each; later cards add to it and depend on the owner):
 
-| Owner | Owns |
-|---|---|
-| P1-01 | `package.json` scripts, tool configuration, `scripts/test-levels.mjs`, the layer folders |
-| P1-02 | `.github/workflows/ci.yml`, `codeql.yml`, `.github/dependabot.yml` |
-| P1-03 | `src/domain/errors/` (Result, the error-code registry `codes.ts`), `Clock`, `IdGenerator`, `Scheduler`, `Money` |
-| P1-04 | `src/infrastructure/guards/secret-masker.ts`, the `Logger` port and loggers, security-event logging |
-| P1-05 | `src/infrastructure/config/environment.ts`, `.env.example` |
+| Owner | Owns                                                                                                                                                                                                                                         |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1-01 | `package.json` scripts, tool configuration, `scripts/test-levels.mjs`, the layer folders                                                                                                                                                     |
+| P1-02 | `.github/workflows/ci.yml`, `codeql.yml`, `.github/dependabot.yml`                                                                                                                                                                           |
+| P1-03 | `src/domain/errors/` (Result, the error-code registry `codes.ts`), `Clock`, `IdGenerator`, `Scheduler`, `Money`                                                                                                                              |
+| P1-04 | `src/infrastructure/guards/secret-masker.ts`, the `Logger` port and loggers, security-event logging                                                                                                                                          |
+| P1-05 | `src/infrastructure/config/environment.ts`, `.env.example`                                                                                                                                                                                   |
 | P1-06 | `db/migrations/0001_accounts.sql`, `0002_projects_runs.sql`, `0003_cost_ledger_audit.sql`, `0004_server_settings_defaults.sql`; the pool, `PgMigrator`, `tests/support/postgres.ts`; `compose.yaml` with the `db` service (P1-45 adds `app`) |
-| P1-07 | `src/presentation/main.ts`, `composition-root.ts`, the Fastify server, the error-to-status mapper |
-| P1-08 | `UserRepository`, `AuditLog`, `PasswordHasher` and their adapters |
-| P1-09 | `SessionStore`, the session, CSRF, Origin and role hooks, `tests/integration/access-matrix.test.ts` |
-| P1-12 | `web/` (Vite, Preact, tokens, shell, router `web/src/app/routes.ts`), `.claude/launch.json` |
-| P1-13 | `playwright.config.ts`, `tests/e2e/support/`, `scripts/page-shots.mjs` |
-| P1-16 | `SourceFetcher` and `src/infrastructure/github/` |
-| P1-17 | `RepositoryReader`, `OutputWriter`, `src/infrastructure/files/` |
-| P1-22 | `RunIndex`, `RunEventSink` adapters, the run queue, `RunManifest` writing |
-| P1-24 | `LlmProvider`, `FakeProvider`, `tests/contracts/llm-provider.contract.ts`, `ProviderCallRecorder`, `docs/providers.md` |
-| P1-27 | `PriceTable`, `BudgetGuard`, `CostLedger`, `prices/default-prices.yaml`, `server_settings` caps use cases |
-| P1-28 | `EgressGuard` |
-| P1-31 | the agent loop, tools, `prompts/reader/` |
-| P1-32 | the card schema, parser and card writers |
-| P1-55 | `.github/workflows/release.yml`, `docs/runbooks/deploy.md` |
-| P1-56 | `ArchiveWriter` and `YazlArchiveWriter` |
-| P3-05 | `prompts/catalogue/` |
+| P1-07 | `src/presentation/main.ts`, `composition-root.ts`, the Fastify server, the error-to-status mapper                                                                                                                                            |
+| P1-08 | `UserRepository`, `AuditLog`, `PasswordHasher` and their adapters                                                                                                                                                                            |
+| P1-09 | `SessionStore`, the session, CSRF, Origin and role hooks, `tests/integration/access-matrix.test.ts`                                                                                                                                          |
+| P1-12 | `web/` (Vite, Preact, tokens, shell, router `web/src/app/routes.ts`), `.claude/launch.json`                                                                                                                                                  |
+| P1-13 | `playwright.config.ts`, `tests/e2e/support/`, `scripts/page-shots.mjs`                                                                                                                                                                       |
+| P1-16 | `SourceFetcher` and `src/infrastructure/github/`                                                                                                                                                                                             |
+| P1-17 | `RepositoryReader`, `OutputWriter`, `src/infrastructure/files/`                                                                                                                                                                              |
+| P1-22 | `RunIndex`, `RunEventSink` adapters, the run queue, `RunManifest` writing                                                                                                                                                                    |
+| P1-24 | `LlmProvider`, `FakeProvider`, `tests/contracts/llm-provider.contract.ts`, `ProviderCallRecorder`, `docs/providers.md`                                                                                                                       |
+| P1-27 | `PriceTable`, `BudgetGuard`, `CostLedger`, `prices/default-prices.yaml`, `server_settings` caps use cases                                                                                                                                    |
+| P1-28 | `EgressGuard`                                                                                                                                                                                                                                |
+| P1-31 | the agent loop, tools, `prompts/reader/`                                                                                                                                                                                                     |
+| P1-32 | the card schema, parser and card writers                                                                                                                                                                                                     |
+| P1-55 | `.github/workflows/release.yml`, `docs/runbooks/deploy.md`                                                                                                                                                                                   |
+| P1-56 | `ArchiveWriter` and `YazlArchiveWriter`                                                                                                                                                                                                      |
+| P3-05 | `prompts/catalogue/`                                                                                                                                                                                                                         |
 
 - **Follow-up cards**: README section 9.
 - **Gates and open questions**: G-01 and G-03 gate P1-01, and every other card reaches P1-01 through its
@@ -78,6 +78,7 @@ the postponement order of roadmap.md applies (DEC-90): the delete part of P1-40,
 of P1-40, the verification view part of P1-35, then the queue part of P1-22 move to P2.
 
 ### P1-01 - Toolchain, quality gates and `npm run verify`
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: none
@@ -90,6 +91,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-001, RNF-005, RNF-013, ADR-009, ADR-010, ADR-011, DEC-27, DEC-30, DEC-39, DEC-40.
 
 ### P1-02 - CI workflows and repository security
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-01
@@ -102,6 +104,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-001, RNF-003, ADR-011, DEC-28, DEC-35, DEC-42, DEC-57.
 
 ### P1-03 - Domain kernel: results, error codes, clock, ids and money
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
@@ -114,6 +117,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-007, RNF-004, ADR-009, DEC-54.
 
 ### P1-04 - Secret masker and the application log
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-03
@@ -126,6 +130,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-141, RNF-003, ADR-006, ADR-013, DEC-50, DEC-57.
 
 ### P1-05 - Server configuration from the environment
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-03
@@ -138,6 +143,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1305, RNF-003, RNF-014, ADR-014.
 
 ### P1-06 - PostgreSQL, migrations and the release-1 schema
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-05
@@ -150,6 +156,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1302, RNF-002, ADR-016, DEC-65.
 
 ### P1-07 - HTTP server foundation, health and security headers
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-04, P1-06
@@ -162,6 +169,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-007, RF-1013, RF-1201, RF-1303, RNF-008, ADR-013, ADR-014, ADR-017.
 
 ### P1-08 - Users, passwords, audit log and the bootstrap administrator
+
 - **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-04, P1-06, P1-07
@@ -174,6 +182,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1102, RF-1103, RF-1109, RNF-003, ADR-015, ADR-016, DEC-62, DEC-66, DEC-69.
 
 ### P1-09 - Sign-in, sessions, CSRF and access control
+
 - **Difficulty**: 10 (opus)
 - **Size**: L
 - **Depends on**: P1-07, P1-08
@@ -186,6 +195,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1009, RF-1013, RF-1100, RF-1101, RF-1105, RF-1109, RNF-014, ADR-013, ADR-015, ADR-017, DEC-62, DEC-69.
 
 ### P1-10 - Change password and account administration API
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-09
@@ -198,6 +208,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1102, RF-1103, RF-1105, RF-1107, RF-1109, ADR-015, DEC-62, DEC-66.
 
 ### P1-11 - Encrypted provider keys
+
 - **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-09
@@ -210,6 +221,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1104, RF-1109, RNF-003, ADR-015, DEC-64.
 
 ### P1-12 - Web front end shell and design tokens
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-07
@@ -222,6 +234,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-507, RF-1013, RNF-008, RNF-010, ADR-012, DEC-26, DEC-44, DEC-52, DEC-56, DEC-70, DEC-71.
 
 ### P1-13 - End-to-end harness
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-09, P1-12, P1-16, P1-24
@@ -234,6 +247,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-008, ADR-010, DEC-39.
 
 ### P1-14 - Sign-in, change password and settings pages
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-10, P1-11, P1-13
@@ -246,6 +260,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1101, RF-1103, RF-1104, RNF-008, DEC-70.
 
 ### P1-15 - Landing page
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-13
@@ -258,6 +273,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1200, RF-1201, RNF-010, Q-19, Q-20, DEC-63, DEC-70.
 
 ### P1-16 - GitHub sources: URLs, commits and safe snapshot download
+
 - **Difficulty**: 10 (opus)
 - **Size**: L
 - **Depends on**: P1-04, P1-05
@@ -270,6 +286,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-005, RF-120, RF-121, RF-122, RF-123, RF-125, RF-126, RF-127, RNF-001, ADR-012, ADR-013, ADR-019, DEC-48, DEC-57.
 
 ### P1-17 - Repository reader, ignore rules, deny list and output writer
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-04
@@ -282,6 +299,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-005, RF-140, RF-146, RF-147, RNF-001, ADR-006, ADR-013, ADR-019, DEC-16, DEC-17, DEC-57.
 
 ### P1-18 - Projects and project settings API
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-09, P1-16
@@ -294,6 +312,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-002, RF-010, RF-405, RF-1105, RF-1109, ADR-012, ADR-015, ADR-016, DEC-48, DEC-66.
 
 ### P1-19 - Universal scan: files, languages, sizes, artefacts and SQL
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-17
@@ -306,6 +325,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-100, RF-101, RF-102, RF-103, RF-124, RNF-009, ADR-004, DEC-11.
 
 ### P1-20 - Areas, code map and scan summary
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-21
@@ -318,6 +338,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-104, RF-105, RF-106, RF-112, RNF-004, RNF-007, ADR-004.
 
 ### P1-21 - Language pack interface and the C# pack
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-07, P1-19
@@ -330,6 +351,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-110, RF-111, RNF-009, ADR-004, DEC-12.
 
 ### P1-22 - Runs: index, manifest, events and the run queue
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-18
@@ -342,6 +364,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-003, RF-126, RF-1006, RF-1105, RF-1108, RNF-002, RNF-004, ADR-005, ADR-012, ADR-014, DEC-46, DEC-61.
 
 ### P1-23 - Scan as a run
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-20, P1-22, P1-74
@@ -354,6 +377,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-003, RF-005, RF-100, RF-121, RF-126, ADR-004, ADR-012.
 
 ### P1-24 - Provider port, fake provider and the provider call log
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-04
@@ -366,6 +390,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-400, RF-408, RNF-003, RNF-004, RNF-005, ADR-003, ADR-008, DEC-09, DEC-50.
 
 ### P1-25 - Ollama adapter with the text tool protocol
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-24
@@ -378,6 +403,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-205, RF-401, RF-406, RF-408, RNF-011, ADR-003, ADR-008, DEC-23, DEC-53.
 
 ### P1-26 - OpenAI adapter with retries
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-24
@@ -390,6 +416,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-402, RF-406, RF-408, ADR-003, ADR-008, DEC-09.
 
 ### P1-27 - Prices, budget guard, caps and the cost ledger
+
 - **Difficulty**: 10 (opus)
 - **Size**: L
 - **Depends on**: P1-06, P1-09, P1-24
@@ -402,6 +429,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-420, RF-421, RF-422, RF-426, RF-428, RF-1106, ADR-007, ADR-016, DEC-13, DEC-49, DEC-54, DEC-64, Q-22.
 
 ### P1-28 - Egress guard
+
 - **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-17, P1-24
@@ -414,6 +442,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-141, RF-142, RF-143, RF-145, RNF-003, RNF-014, ADR-006, ADR-013, DEC-16, DEC-57.
 
 ### P1-29 - Provider set per run, key choice and the provider test
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-11, P1-13, P1-14, P1-18, P1-25, P1-26, P1-27, P1-28
@@ -426,6 +455,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-002, RF-405, RF-407, RF-1104, ADR-003, ADR-006, ADR-007, ADR-015, DEC-64.
 
 ### P1-30 - Run estimate
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-18, P1-20, P1-27
@@ -438,6 +468,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-425, ADR-007, DEC-13, DEC-97.
 
 ### P1-31 - Agent loop, read-only tools and the reader prompt
+
 - **Difficulty**: 9 (opus)
 - **Size**: L
 - **Depends on**: P1-17, P1-20, P1-24
@@ -450,6 +481,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-145, RF-146, RF-201, RNF-004, ADR-003, ADR-006, ADR-013, DEC-15, DEC-17, DEC-57, DEC-58.
 
 ### P1-32 - Card schema, parsing with repair, ids and card writers
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-03, P1-17
@@ -462,6 +494,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-125, RF-202, RF-203, RF-204, RF-302, ADR-005, DEC-18.
 
 ### P1-33 - Understand as a run: orchestration, citation check and answers file
+
 - **Difficulty**: 9 (opus)
 - **Size**: L
 - **Depends on**: P1-23, P1-29, P1-31, P1-32
@@ -474,6 +507,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-005, RF-143, RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007, DEC-15, DEC-19, DEC-98.
 
 ### P1-34 - Start run page
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-30, P1-33, P1-41
@@ -486,6 +520,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-143, RF-425, RF-1001, RF-1108, DEC-47, DEC-71.
 
 ### P1-35 - Live run page: agents, events, cost meter and claims
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-34
@@ -498,6 +533,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-424, RF-1002, RF-1003, RF-1004, DEC-46, DEC-51, DEC-71.
 
 ### P1-36 - Project totals header and cost page
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-14, P1-18, P1-22, P1-27
@@ -510,6 +546,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-428, RF-1010, RF-1106, DEC-49.
 
 ### P1-37 - API calls and logs panels
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-35
@@ -522,6 +559,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-408, RF-1011, DEC-50, DEC-51, DEC-57.
 
 ### P1-38 - Live coverage map
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-35
@@ -534,6 +572,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1005, DEC-51.
 
 ### P1-39 - Answer open questions in the page
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-35
@@ -546,6 +585,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-240, RF-1007, DEC-15, DEC-51.
 
 ### P1-40 - History and deletion
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33, P1-36, P1-56
@@ -558,6 +598,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1008, RF-1012, ADR-009, DEC-51, DEC-55.
 
 ### P1-41 - Projects and project settings pages
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-14, P1-18, P1-22
@@ -570,6 +611,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-002, RF-010, RF-1108, DEC-70.
 
 ### P1-42 - Administration pages
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-10, P1-14, P1-18, P1-27
@@ -582,6 +624,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1102, RF-1105, RF-1106, RF-1107, RF-1109, DEC-70, DEC-106.
 
 ### P1-43 - Markdown report, run replay page and safe rendering
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33
@@ -594,6 +637,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-504, RF-506, RF-507, RF-1013, ADR-005, ADR-013, DEC-04, DEC-46.
 
 ### P1-44 - Container image
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-02, P1-07, P1-12, P1-18, P1-27, P1-31
@@ -606,6 +650,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1300, RNF-001, RNF-003, ADR-014, DEC-61.
 
 ### P1-45 - Docker Compose, local runbook and smoke test
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-14, P1-15, P1-23, P1-44
@@ -618,6 +663,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-801, RF-1009, RF-1301, RNF-011, RNF-014, ADR-014, ADR-016, DEC-61.
 
 ### P1-46 - Milestone end-to-end journeys
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-15, P1-35, P1-56, P1-42, P1-43, P1-97
@@ -630,6 +676,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-112, RF-1001, RF-1002, RF-1105, RF-1106, RNF-005, ADR-008, ADR-010.
 
 ### P1-47 - Local reader model spike
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-25, P1-33
@@ -642,6 +689,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: Q-04, Q-10, RF-401, RNF-011, DEC-23, DEC-53.
 
 ### P1-48 - Host choice
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-45
@@ -654,6 +702,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: Q-18, ADR-014, DEC-61, DEC-104.
 
 ### P1-49 - Security review and the milestone verification matrix
+
 - **Difficulty**: 10 (opus)
 - **Size**: M
 - **Depends on**: P1-46
@@ -666,6 +715,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RNF-009, RNF-014, ADR-013, DEC-57, DEC-69.
 
 ### P1-50 - Sample report on GitHub Pages
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-02, P1-43
@@ -678,18 +728,20 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-800, RF-501, RNF-003, DEC-04.
 
 ### P1-51 - Documentation consistency tests
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
 - **Status**: Done
 - **Reads**: `docs/adr/README.md` (Totals); this file's Totals table; README section 11.
-- **Do**: unit tests under `tests/unit/docs/` that parse the ADR index Totals and every ADR's Status line, and the card counts by phase, difficulty band and size of this file, and fail on any drift; a test that every card's *Depends on* names an existing card.
+- **Do**: unit tests under `tests/unit/docs/` that parse the ADR index Totals and every ADR's Status line, and the card counts by phase, difficulty band and size of this file, and fail on any drift; a test that every card's _Depends on_ names an existing card.
 - **Delivers**: the tests.
 - **Done when**: the tests pass on `main`; changing one count in a disposable worktree makes them fail (verifier).
 - **Refs**: RNF-005, ADR-001, ADR-010.
 
 ### P1-52 - Release v0.1.0 and the quick start
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-49, P1-50
@@ -702,6 +754,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-801, DEC-29.
 
 ### P1-53 - Slides and video script
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-46
@@ -714,6 +767,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-802, Q-02, Q-03, DEC-04.
 
 ### P1-54 - Milestone hand-in
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-52, P1-53
@@ -726,6 +780,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-803, RF-1107, DEC-67.
 
 ### P1-55 - Hosted deployment and the teacher account
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-45, P1-48
@@ -738,6 +793,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1107, RF-1304, RNF-016, RNF-017, Q-18, Q-21, ADR-014, DEC-61, DEC-67, DEC-89, DEC-104, DEC-106.
 
 ### P1-56 - Zip export
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-17, P1-22
@@ -750,6 +806,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-008, RF-1105, ADR-009, DEC-24.
 
 ### P1-57 - Follow-up: format the documentation with Prettier
+
 - **Difficulty**: 2 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
@@ -762,6 +819,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-011, P1-01 (verifier MINOR 3).
 
 ### P1-58 - Follow-up: block outbound network in unit and integration tests
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
@@ -774,6 +832,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-008, P1-01 (verifier MINOR 7).
 
 ### P1-59 - Follow-up: cruise web/ in the architecture check
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-12
@@ -786,6 +845,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-013, DEC-112, P1-01 (verifier MINOR 6).
 
 ### P1-60 - Follow-up: lefthook install test hygiene
+
 - **Difficulty**: 2 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
@@ -798,6 +858,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-011, P1-01 (fix verifier MINORs 1 and 2).
 
 ### P1-61 - Follow-up: count contract tests and it.each rows in the level report
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
@@ -810,6 +871,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, DEC-30, P1-03 (verifier note).
 
 ### P1-62 - Follow-up: more secret shapes and key-name masking
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-04
@@ -822,6 +884,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-141, RNF-003, ADR-013, P1-04 (verifier MINOR 5 and open question).
 
 ### P1-63 - Follow-up: automatic Ollama context size
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-25
@@ -834,6 +897,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-401, RNF-004, ADR-003, DEC-114, Q-23.
 
 ### P1-64 - Follow-up: Windows pipe traversal and a test cast in the network guard
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-58
@@ -846,6 +910,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, ADR-008, P1-58 (verifier MINORs, round 3).
 
 ### P1-65 - Follow-up: keyed array secrets and a torn last line in the call log
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-24
@@ -858,6 +923,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RF-006, RF-408, P1-24 (verifier MINORs, round 2).
 
 ### P1-66 - Follow-up: Ollama adapter hardening
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-25
@@ -870,6 +936,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-205, RF-401, RNF-004, ADR-013, P1-25 (verifier MINORs 1, 2, 4, 7, 8).
 
 ### P1-67 - Follow-up: size caps on reads and grep
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-17
@@ -882,6 +949,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-144, RF-146, P1-17 (verifier MINOR 5, all rounds).
 
 ### P1-68 - Follow-up: bounded shutdown when the database hangs
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-07
@@ -894,6 +962,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1302, ADR-014, P1-07 (verifier MINOR, round 3).
 
 ### P1-69 - Follow-up: Ollama context probe fallback and timeouts
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-63
@@ -906,6 +975,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-401, DEC-114, Q-23, P1-63 (verifier MINORs 1-4).
 
 ### P1-70 - Follow-up: reject non-Latin-1 characters in an OpenAI key
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-26
@@ -918,6 +988,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RF-402, P1-26 (verifier MINOR, round 2).
 
 ### P1-71 - Follow-up: wire the Ollama context setting and record it in the manifest
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-18, P1-22, P1-63
@@ -930,6 +1001,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-401, RNF-004, DEC-114, P1-63 (verifier MINOR 5).
 
 ### P1-72 - Follow-up: stop a run before any work when Ollama is not ready
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-29
@@ -942,6 +1014,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-401, P1-25 (verifier MINOR 5).
 
 ### P1-73 - Follow-up: discard partial snapshot folders at start-up
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-07, P1-16
@@ -954,6 +1027,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-122, ADR-019, P1-16 (verifier note).
 
 ### P1-74 - Follow-up: private-key lines inside a SQL statement reach the code map
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-19
@@ -966,6 +1040,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RF-009, RF-104, P1-20 (verifier MINOR 1, round 3).
 
 ### P1-75 - Follow-up: a scan-wide parse budget for language packs
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-21
@@ -978,6 +1053,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-110, RNF-004, P1-21 (verifier note).
 
 ### P1-76 - Follow-up: an unterminated key marker hides later SQL statements
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-74
@@ -990,6 +1066,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RF-104, P1-74 (verifier MINORs 1 and 2, round 2).
 
 ### P1-77 - Follow-up: accounts and audit log hardening
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P1-08
@@ -1002,6 +1079,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1109, RNF-003, ADR-015, P1-08 (verifier-opus MINORs 1-5, 9).
 
 ### P1-78 - Follow-up: align the documents with the P1-08 defaults
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-08
@@ -1014,6 +1092,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1102, RF-1109, P1-08 (verifier-opus MINORs 6-8).
 
 ### P1-79 - Follow-up: sign-in and request protection hardening
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P1-09
@@ -1026,6 +1105,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1009, RF-1100, RF-1109, RF-1303, P1-09 (verifier-opus MINORs 1-5).
 
 ### P1-80 - Follow-up: project settings upper bounds and workspace audit
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-18
@@ -1038,6 +1118,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-002, RF-1105, RF-1109, P1-18 (verifier MINORs 2 and 6), DEC-116, DEC-117.
 
 ### P1-81 - Follow-up: run event delivery and queue shutdown hardening
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-22
@@ -1050,6 +1131,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1006, RF-1108, RNF-002, P1-22 (verifier MINORs, rounds 1 and 2).
 
 ### P1-82 - Follow-up: log the scan run fallbacks
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-23
@@ -1062,6 +1144,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-147, RNF-002, P1-23 (verifier MINORs, round 2).
 
 ### P1-83 - Follow-up: card writer logging and serialised writes
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-32
@@ -1074,6 +1157,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-002, RF-302, P1-32 (verifier-opus MINORs 1 and 2, round 3).
 
 ### P1-84 - Follow-up: web and end-to-end harness hardening
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-12, P1-13
@@ -1086,6 +1170,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-507, RNF-005, RNF-008, P1-12 and P1-13 (verifier MINORs).
 
 ### P1-85 - Follow-up: move the front end to Preact 11
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-12
@@ -1098,6 +1183,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: DEC-52, P1-12 (builder note).
 
 ### P1-86 - Follow-up: atomic sign-in failure counters
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-10
@@ -1110,6 +1196,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1102, RF-1103, DEC-112, P1-10 (verifier-opus MINORs, round 2).
 
 ### P1-87 - Follow-up: lockfile health on newer npm
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
@@ -1122,6 +1209,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, P1-13 (verifier note).
 
 ### P1-88 - Follow-up: provider key address check gaps
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-11
@@ -1134,6 +1222,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1104, DEC-112, P1-11 (verifier-opus MINORs 1-4).
 
 ### P1-89 - Follow-up: egress guard split-key carry and look-alike markers
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-28
@@ -1146,6 +1235,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-141, RF-145, P1-28 (verifier-opus MINORs, rounds 2 and 3).
 
 ### P1-90 - Follow-up: reader tools and repair turn gaps
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-31
@@ -1158,6 +1248,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-145, RF-200, P1-31 (verifier MINORs).
 
 ### P1-91 - Follow-up: cost ledger and caps hardening
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-27
@@ -1170,6 +1261,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-420, RF-428, DEC-117, P1-27 (verifier MINORs).
 
 ### P1-92 - Follow-up: remove the gallery environment switch
+
 - **Difficulty**: 2 (haiku)
 - **Size**: S
 - **Depends on**: P1-12
@@ -1182,6 +1274,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: DEC-126, P1-12.
 
 ### P1-93 - Follow-up: provider test rate-limit logging
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-29
@@ -1194,6 +1287,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-407, P1-29 (verifier MINOR 1, round 2).
 
 ### P1-94 - Follow-up: test timing flakes under full-suite load
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-01
@@ -1206,6 +1300,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-002, P1-29 and P1-31 builder and verifier notes.
 
 ### P1-95 - Live run page: stage stepper, Pause updates and the run meter in the top bar
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-35
@@ -1218,6 +1313,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1002, RF-1003, RF-424, RF-1010, RF-1006, DEC-46, DEC-49, DEC-71, P1-35 (verdict on #211; builder question answered by the owner 2026-10-12: build them).
 
 ### P1-96 - Follow-up: live cost per role from usage and budget events
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-27, P1-33, P1-35
@@ -1230,6 +1326,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-421, RF-422, RF-424, RF-1003, RF-1010, ADR-007, P1-33 (not done: usage and budget events), P1-35 (verdict: per-role cost).
 
 ### P1-97 - Follow-up: build the report from the run page and check the replay without JavaScript
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-35, P1-43
@@ -1242,6 +1339,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-504, RF-506, RF-507, RF-1013, RF-1008, DEC-131, P1-43 (verdict on #197: round 1 and 2 MINORs and builder questions).
 
 ### P1-98 - Follow-up: citation range check and stable ids in the understand run
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-33
@@ -1254,6 +1352,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-203, RF-300, RF-200, P1-33 (verifier MINORs).
 
 ### P1-99 - Follow-up: parse budget validation and configuration
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-75
@@ -1266,6 +1365,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-110, RF-106, RNF-004, P1-75 (verifier MINORs).
 
 ### P1-100 - Follow-up: statements hidden after an unterminated key marker
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-76
@@ -1278,6 +1378,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RF-104, P1-76 (verifier MINORs, round 2).
 
 ### P1-101 - Follow-up: audit filters, free-text masking and the cost bound
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-77
@@ -1290,6 +1391,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1109, RNF-003, ADR-015, P1-77 (verifier MINORs).
 
 ### P1-102 - Follow-up: test and document gaps from P1-70, P1-73, P1-90 and P1-92
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-70, P1-73, P1-90, P1-92
@@ -1302,6 +1404,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-402, RF-145, DEC-126, P1-70, P1-73, P1-90, P1-92 (verifier MINORs).
 
 ### P1-103 - Follow-up: Ollama and OpenAI adapter gaps found in P1-66
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P1-66
@@ -1314,6 +1417,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-205, RF-401, RF-402, RNF-004, ADR-013, P1-66 (verifier MINORs, rounds 1 and 2).
 
 ### P1-104 - Follow-up: Ollama tool results as framed data blocks
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P1-89, P1-25
@@ -1326,6 +1430,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-145, RF-205, ADR-013, DEC-129, P1-89 (builder note).
 
 ### P1-105 - Follow-up: run list read API and the Projects page run columns
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-41, P1-22
@@ -1338,6 +1443,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1001, RF-1008, RF-1108, RF-1105, P1-41 (verifier note).
 
 ### P1-106 - Follow-up: cap, spend and queue read APIs and a settings version check
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-34, P1-42
@@ -1350,6 +1456,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1001, RF-1106, RF-1108, RF-428, DEC-108, P1-34 and P1-42 (verifier MINORs and builder notes).
 
 ### P1-107 - Follow-up: start run and administration page polish
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-34, P1-42, P1-41
@@ -1362,6 +1469,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1001, RF-1100, RF-1106, RF-1109, DEC-71, P1-34, P1-41, P1-42 (verifier MINORs and builder notes).
 
 ### P1-108 - Follow-up: configuration, image and README gaps from P1-15, P1-44 and P1-45
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-15, P1-44, P1-45
@@ -1374,6 +1482,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RF-1301, RF-1302, RF-1303, P1-15, P1-44, P1-45 (verifier MINORs and builder notes).
 
 ### P1-109 - Follow-up: audit retention, a 365-day purge function and a daily task
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-06, P1-08, P1-79
@@ -1386,6 +1495,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1109, RNF-003, ADR-015, ADR-016, DEC-132, P1-08, P1-79 (the table is created by P1-06 and written by the audit log of P1-08; P1-10 only records events).
 
 ### P1-110 - Follow-up: egress test that a repeated call gets a fresh tag
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-89
@@ -1398,6 +1508,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-145, ADR-013, DEC-129, P1-89 (verifier finding, test gap).
 
 ### P1-111 - Follow-up: make `clearContextCache` test-only
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-69
@@ -1410,6 +1521,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-401, DEC-114, P1-69 (verifier MINOR).
 
 ### P1-112 - Follow-up: secret masking gaps found in P1-62
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-62
@@ -1422,6 +1534,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-141, RNF-003, P1-62 (verifier MINORs, verdict on #219).
 
 ### P1-113 - Follow-up: answers file parsing and route tests from P1-39
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-39
@@ -1434,6 +1547,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-203, RF-1005, RNF-003, DEC-98, P1-39 (verifier MINORs).
 
 ### P1-114 - Follow-up: bound the pill totals query and test the admin read from P1-36
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-36
@@ -1446,6 +1560,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-428, RF-1010, RF-1105, RNF-004, P1-36 (verifier MINORs).
 
 ### P1-115 - Follow-up: log the landing-page lookup failure and test fail-closed routes
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-79
@@ -1458,6 +1573,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1101, RF-1105, RNF-003, P1-79 (verifier MINORs).
 
 ### P1-116 - Follow-up: threshold and edge-case tests for settings ranges and OpenWorkspace
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-80
@@ -1470,6 +1586,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1106, DEC-117, P1-80 (verifier MINORs).
 
 ### P1-117 - Follow-up: zero-test guard and stale report in the level script
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-61
@@ -1482,6 +1599,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, README section 1 (test pyramid), P1-61 (verifier MINORs).
 
 ### P1-118 - Follow-up: fixtures and line length for the call log from P1-65
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-65
@@ -1494,6 +1612,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-408, RF-009, P1-65 (verifier MINORs).
 
 ### P1-119 - Follow-up: file reader and grep gaps from P1-67
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-67
@@ -1506,6 +1625,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-144, RF-146, RNF-004, ADR-006, P1-67 (verifier MINORs).
 
 ### P1-120 - Follow-up: remove the start stagger from the P1-35 E2E specs
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-35
@@ -1518,6 +1638,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-421, RF-1003, P1-35 (builder question, fixed by #212).
 
 ### P1-121 - Follow-up: history and deletion races, orphaned folders and the Report label from P1-40
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-40
@@ -1530,6 +1651,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1008, RF-1012, ADR-009, DEC-51, DEC-55, P1-40, P1-97 (verdict 6136190668 on #256).
 
 ### P1-122 - Follow-up: key-only log entries of deleted runs, route-level masking and percentile fixtures from P1-37 (priority)
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-37, P1-40
@@ -1542,6 +1664,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-408, RF-1011, RF-009, RNF-003, DEC-50, DEC-51, DEC-57, P1-37, P1-40 (verdict 6136282855 on #255).
 
 ### P1-123 - Follow-up: owner, grant and task tests for the audit purge function from P1-109
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-109
@@ -1554,6 +1677,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1109, RNF-003, ADR-015, ADR-016, DEC-132, P1-109 (verdict 6136064533 on #257).
 
 ### P1-124 - Follow-up: more secret masking gaps found in P1-112
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-112
@@ -1566,6 +1690,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-141, RNF-003, P1-112 (verdict 6136826590 on #259).
 
 ### P1-125 - Follow-up: narrow `processContextCache` and test the `retryAt` reset from P1-111
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-111
@@ -1578,6 +1703,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-401, DEC-114, P1-111 (verdict 6136577799 on #260).
 
 ### P1-126 - Follow-up: line ends and byte-order mark in the answers file from P1-113
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-113
@@ -1590,6 +1716,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-203, RF-1005, RNF-003, P1-113 (verdict 6137529664 on #261).
 
 ### P1-127 - Follow-up: reader-level grow test and the memory reader cut notice from P1-119
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-119
@@ -1602,6 +1729,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-144, RF-146, RNF-004, ADR-006, P1-119 (verdict 6137566727 on #262).
 
 ### P1-128 - Follow-up: drop the unused `userGroups` from the cost totals port in P1-114
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-114
@@ -1614,6 +1742,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-428, RF-1010, P1-114 (verdict 6137727261 on #263).
 
 ### P1-129 - Follow-up: settings range tests assert the code and cover both budget fields from P1-116
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-116
@@ -1626,6 +1755,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1106, DEC-117, P1-116 (verdict 6138390870 on #267).
 
 ### P1-130 - Follow-up: stepper Report step done once a report exists (P1-95)
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-95, P1-97
@@ -1638,6 +1768,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1002, RF-504, DEC-131, P1-95 (verdict 6139949379 on #268).
 
 ### P1-131 - Follow-up: journey with a server key and administrator caps (P1-46)
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-46
@@ -1650,6 +1781,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1105, RF-1106, RF-428, RNF-005, P1-46 (verdicts on #271).
 
 ### P1-132 - Follow-up: harness clock in the run folder helper and the phone-dark contrast flake
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-13
@@ -1662,6 +1794,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, P1-13 (CI flake and a hard-rule finding, 2026-10-13).
 
 ### P1-133 - Follow-up: a successful sign-in must not undo a concurrent disable
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P1-86
@@ -1674,6 +1807,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1102, RF-1103, RF-1109, P1-86 (verdict 6141942123 on #291).
 
 ### P1-134 - Follow-up: more secret-masking gaps in command lines
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-124
@@ -1686,6 +1820,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-009, RF-141, RNF-003, P1-124 (verdict 6142376462 on #285).
 
 ### P1-135 - Follow-up: BOM-only and mixed-line-end answers files
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-126
@@ -1698,6 +1833,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-203, RF-1005, RNF-003, P1-126 (verdict 6141894338 on #286).
 
 ### P1-136 - Follow-up: three tables scroll sideways at 360 px
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-107
@@ -1710,6 +1846,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-010, RF-1008, RF-1100, DEC-71, P1-107 (PR #307, verdict 6146557849).
 
 ### P1-137 - Follow-up: Projects overview query cost
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-105
@@ -1722,6 +1859,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1001, RF-1008, RF-1108, RF-1105, P1-105 (verdict 6144213653 on #294).
 
 ### P1-138 - Follow-up: deletion error route test and the folder removal outside the transaction
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-121
@@ -1734,6 +1872,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1012, RF-1008, ADR-009, DEC-55, P1-121 (verdict 6144290364 on #295).
 
 ### P1-139 - Follow-up: start and admin page gaps
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-107
@@ -1746,6 +1885,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1001, RF-1100, RF-1106, RNF-010, DEC-71, P1-107 (verdict 6144206682 on #296).
 
 ### P1-140 - Follow-up: small test and comment gaps
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-98, P1-81, P1-127, P1-132, P1-103
@@ -1758,6 +1898,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-203, RF-300, RF-1006, RF-205, RNF-004, P1-98, P1-81, P1-127, P1-132, P1-103 (verdicts 6144652613, 6144312780, 6144307484, 6142032481, 6144534207).
 
 ### P1-141 - Follow-up: test flakes seen on 2026-10-13
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-13
@@ -1770,6 +1911,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RNF-005, P1-13 (CI flakes of 2026-10-13).
 
 ### P1-142 - Follow-up: secret masking gaps after P1-134
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-134
@@ -1782,6 +1924,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, RF-408, P1-134 (verdict 6148899278 on #326).
 
 ### P1-143 - Follow-up: sign-in gaps after P1-133
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-133
@@ -1794,6 +1937,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1102, RNF-005, P1-133 (verdict on #322).
 
 ### P1-144 - Follow-up: small gaps after the 2026-10-13 merges
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-64, P1-72, P1-83, P1-129, P1-131, P1-140
@@ -1806,6 +1950,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, RF-1007, P1-64, P1-72, P1-83, P1-129, P1-131, P1-140 (verdicts on #331, #328, #321, #320, #308, #333).
 
 ### P1-145 - Follow-up: more test flakes seen on 2026-10-13
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-141
@@ -1818,6 +1963,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RNF-005, P1-141 (CI flakes of 2026-10-13).
 
 ### P1-146 - Follow-up: CI waste on pull request edits and uneven e2e shards
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-02
@@ -1830,6 +1976,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-001, DEC-42, P1-02 (CI time work of 2026-10-13, #297, #304, #307, #325).
 
 ### P1-147 - Follow-up: local acceptance fixes from the owner's first test
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-41, P1-34, P1-107
@@ -1842,6 +1989,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-010, RF-100, RF-1001, RF-1108, RNF-010, DEC-71, G-08 (the owner's local test of 2026-10-13, issue #353).
 
 ### P1-148 - Follow-up: secret masking gaps after P1-142
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-142
@@ -1854,6 +2002,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, RF-408, P1-142 (verdict 6151856171 on #345).
 
 ### P1-149 - Follow-up: sign-in lock precision and the counters note
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-143
@@ -1866,6 +2015,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1100, RF-1102, RNF-005, P1-143 (verdict 6152015674 on #346).
 
 ### P1-150 - Follow-up: end-to-end harness gaps after 2026-10-13
+
 - **Difficulty**: 5 (haiku)
 - **Size**: M
 - **Depends on**: P1-145, P1-146
@@ -1878,6 +2028,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-001, RNF-003, P1-141, P1-145, P1-146, P1-144 (verdicts on #334, #344, #349, #351).
 
 ### P1-151 - Follow-up: table label check and report word breaks
+
 - **Difficulty**: 4 (haiku)
 - **Size**: S
 - **Depends on**: P1-136
@@ -1890,6 +2041,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-010, DEC-71, P1-136 (verdict 6151652627 on #335).
 
 ### P1-152 - Follow-up: sweep the folders of deleted projects
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-138
@@ -1902,6 +2054,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1012, DEC-55, Q-16, P1-138 (verdict 6153137792 on #348).
 
 ### P1-153 - Follow-up: token scheme words before flags and operators
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-148
@@ -1914,6 +2067,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, RF-408, P1-148 (verdict 6157434972 on #363).
 
 ### P1-154 - Follow-up: secret masking gaps after P1-153 and P1-100
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-153, P1-100
@@ -1926,6 +2080,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-005, RF-408, P1-153 (verdict 6158526651 on #369), P1-100 (verdict 6159639314 on #373).
 
 ### P1-155 - Follow-up: test flakes seen on 2026-10-14
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-150
@@ -1938,6 +2093,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-001, RNF-003, P1-150 (verdicts on #367 and #372).
 
 ### P1-156 - Follow-up: small test and document gaps from 2026-10-14
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-125, P1-99, P1-102, P1-151
@@ -1950,6 +2106,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-401, RF-110, RNF-003, RNF-010, P1-125, P1-99, P1-102, P1-151.
 
 ### P1-157 - Follow-up: bound the audit writes of refused requests
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-49
@@ -1962,6 +2119,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1009, RF-1100, RF-1109, RF-009, DEC-124, DEC-132, P1-49 (F-01, verdicts 6165183598 and 6165270947 on #388).
 
 ### P1-158 - Follow-up: keep the migrator credentials out of the serving process
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-49
@@ -1974,6 +2132,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1302, RF-1305, ADR-014, ADR-016, P1-49 (F-02, F-19).
 
 ### P1-159 - Follow-up: security documentation drift from P1-49
+
 - **Difficulty**: 3 (haiku)
 - **Size**: S
 - **Depends on**: P1-49
@@ -1986,6 +2145,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: ADR-013, RNF-003, P1-49 (F-07, F-11, F-16, F-22, F-23, F-24).
 
 ### P1-160 - Follow-up: security hardening gaps from P1-49
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-49
@@ -1998,6 +2158,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-127, RF-146, RF-1101, RF-1109, RF-009, P1-49 (F-05, F-06, F-09, F-10, F-12, F-14).
 
 ### P1-161 - Follow-up: security test and supply-chain gaps from P1-49
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-49
@@ -2010,6 +2171,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-122, RF-127, RF-507, RF-1104, RNF-003, RNF-009, ADR-016, DEC-125, P1-49 (F-04, F-08, F-13, F-15, F-17, F-18, F-20, F-21, F-25).
 
 ### P1-162 - Follow-up: mask a token value after `--token=` and a line continuation
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-154
@@ -2022,6 +2184,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-003, RF-408, P1-154, P1-153.
 
 ### P1-163 - Follow-up: small gaps from P1-96, P1-104, P1-106, P1-137 and P1-155
+
 - **Difficulty**: 4 (haiku)
 - **Size**: M
 - **Depends on**: P1-96, P1-104, P1-106, P1-137, P1-155
@@ -2034,6 +2197,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-008, P1-96, P1-104, P1-106, P1-137, P1-155.
 
 ### P1-164 - Follow-up: Windows test-worker crashes in CI
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P1-155
@@ -2046,6 +2210,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RNF-008, P1-155.
 
 ### P1-165 - Follow-up: small gaps from P1-84, P1-161 and P1-164
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-84, P1-161, P1-164
@@ -2058,6 +2223,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-507, RNF-005, RNF-008, RF-146, P1-84, P1-161, P1-164.
 
 ### P1-166 - Follow-up: bugs from the owner's local test on 2026-10-14
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-108, P1-147
@@ -2071,6 +2237,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-113, RF-202, RF-207, RF-1004, RF-1014, RNF-003, DEC-136.
 
 ### P1-167 - Read before answering and questions only the code cannot answer
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-166
@@ -2085,6 +2252,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-202, RF-206, RF-240, RF-243, DEC-136.
 
 ### P1-168 - Overview of the application before any question
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-167
@@ -2098,6 +2266,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-204, RF-264, RF-420, RF-427, RF-504, RF-507, DEC-136.
 
 ### P1-169 - Run page while running: journey, living code map and tabs
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-166
@@ -2112,6 +2281,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-1002..RF-1005, RF-1010, RF-1011, RF-1015, RF-1016, RNF-010, ADR-012, DEC-137.
 
 ### P1-170 - Run page after the run: overview, your turn, questions, evidence
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-168, P1-169
@@ -2126,6 +2296,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-240, RF-1007, RF-1008, RF-1014, RF-1015, RF-1017, RF-264, RNF-010, DEC-137.
 
 ### P1-171 - Follow-up: keep valid cards and retry failed agent tasks
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-166
@@ -2140,6 +2311,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Refs**: RF-201, RF-202, RF-208, RF-230, RF-420, DEC-138.
 
 ### P1-172 - Follow-up: choose areas quickly on the start page
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P1-166
@@ -2160,6 +2332,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 Sized, not dated, until Q-01 is answered (roadmap.md).
 
 ### P2-01 - Resume a stopped run
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33, P1-35, P1-40
@@ -2172,6 +2345,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-006, RF-304, ADR-007, DEC-13.
 
 ### P2-02 - Verifier judgement step
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-33, P1-35
@@ -2184,6 +2358,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-301, RF-1004, ADR-005, ADR-013, DEC-19, DEC-57.
 
 ### P2-03 - Verification summary and verifier calibration
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P2-02, P2-11
@@ -2196,6 +2371,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-303, RF-305, ADR-005, ADR-008, DEC-57.
 
 ### P2-04 - Coverage per area
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33
@@ -2208,6 +2384,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-230, ADR-005.
 
 ### P2-05 - Re-run with answers
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-39
@@ -2220,6 +2397,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-241, RF-1007, ADR-003, DEC-15.
 
 ### P2-06 - Consolidate cards across areas
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-33
@@ -2232,6 +2410,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-250, ADR-005.
 
 ### P2-07 - Excerpt size limit
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-31
@@ -2244,6 +2423,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-144, ADR-006.
 
 ### P2-08 - Estimate confirmation, caps per role and unpriced models
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P1-30, P1-34
@@ -2256,6 +2436,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-423, RF-425, RF-427, ADR-007, DEC-97.
 
 ### P2-09 - Anthropic adapter
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P1-29
@@ -2268,6 +2449,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-404, ADR-003, ADR-008.
 
 ### P2-10 - OpenAI-compatible adapter
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P1-29
@@ -2280,6 +2462,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-403, RF-1104, ADR-003.
 
 ### P2-11 - Golden set and the evaluation runner
+
 - **Difficulty**: 9 (opus)
 - **Size**: L
 - **Depends on**: P2-02
@@ -2292,6 +2475,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RNF-006, RNF-012, RNF-015, ADR-008, DEC-57.
 
 ### P2-12 - Backups and restore drill
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P1-55
@@ -2304,6 +2488,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-1306, ADR-016.
 
 ### P2-13 - Full-understand end-to-end journeys
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P2-01, P2-03, P2-04, P2-05, P2-06, P2-08
@@ -2316,6 +2501,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-006, RF-241, RF-301, ADR-010.
 
 ### P2-14 - Phase 2 verification matrix and owner review
+
 - **Difficulty**: 9 (opus)
 - **Size**: S
 - **Depends on**: P2-09, P2-10, P2-11, P2-12, P2-13
@@ -2328,6 +2514,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RNF-005, RNF-006.
 
 ### P2-15 - Follow-up: settings sliders within the allowed ranges
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P1-14, P1-80
@@ -2340,6 +2527,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: DEC-116, DEC-117, RF-002.
 
 ### P2-16 - Follow-up: price Anthropic cache writes
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P2-09
@@ -2352,6 +2540,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-428, RF-404, ADR-007, P2-09 (verdict comment 6132492790 on #210; owner-approved 2026-10-12).
 
 ### P2-17 - Follow-up: move `@anthropic-ai/sdk` from 0.128.0 to the 0.133 line
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P2-09
@@ -2364,6 +2553,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-404, ADR-013, DEC-125, P2-09 (owner chose the 0.128.0 pin on 2026-10-12).
 
 ### P2-18 - Flow and screen card types
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P2-06
@@ -2376,6 +2566,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-202, RF-203, RF-204, RF-260, RF-261, ADR-005, DEC-134, Q-24.
 
 ### P2-19 - Agent prompts and area planning for flows and screens
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P2-18
@@ -2388,6 +2579,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-200, RF-230, RF-260, RF-261, RF-263, RF-427, DEC-134, Q-25.
 
 ### P2-20 - Verifier checks for flow steps and screen claims
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P2-18, P2-02
@@ -2400,6 +2592,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-260, RF-261, RF-300..RF-305, ADR-005, DEC-134.
 
 ### P2-21 - Diagram generators with safe labels
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P2-18
@@ -2412,6 +2605,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-260, RF-261, RF-262, RF-507, RF-508, ADR-013, DEC-134, Q-26.
 
 ### P2-22 - Legacy data model file and the new specification sections
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P2-19, P2-21
@@ -2424,6 +2618,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-204, RF-250, RF-262, RF-263, DEC-134.
 
 ### P2-23 - Golden set for flows, screens and the data model
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P2-11, P2-22
@@ -2440,6 +2635,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 ## Phase 3 - Report and plan
 
 ### P3-01 - HTML report: rendering approach and dashboard
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: L
 - **Depends on**: P1-43, P2-03
@@ -2452,6 +2648,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-500, RF-1010, RF-1013, ADR-005, DEC-44, DEC-52.
 
 ### P3-02 - Area and card pages with the evidence
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-01
@@ -2464,6 +2661,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-500, RF-502, RF-125, RF-507.
 
 ### P3-03 - Filters and the replay in the HTML report
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P3-02
@@ -2476,6 +2674,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-503, RF-506.
 
 ### P3-04 - Self-contained report, downloads and accessibility
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-03
@@ -2488,6 +2687,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-501, RF-505, RNF-010, DEC-24.
 
 ### P3-05 - Principle catalogue files
+
 - **Difficulty**: 5 (haiku)
 - **Size**: M
 - **Depends on**: P1-01
@@ -2500,6 +2700,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-606, ADR-018, DEC-73, DEC-74, DEC-84, DEC-85.
 
 ### P3-06 - Planning brief model and storage
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: M
 - **Depends on**: P3-05, P1-18
@@ -2512,6 +2713,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-605, ADR-018, DEC-72, DEC-80.
 
 ### P3-07 - Architecture recommendation and stack options
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-06, P2-03
@@ -2524,6 +2726,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-608, RF-609, ADR-007, ADR-018, DEC-76, DEC-77, DEC-78.
 
 ### P3-08 - Plan setup page
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-07, P3-09, P3-11
@@ -2536,6 +2739,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-605, RF-608, RF-609, RF-610, RF-611, DEC-72, DEC-86.
 
 ### P3-09 - Planner and the hand-off package
+
 - **Difficulty**: 9 (opus)
 - **Size**: L
 - **Depends on**: P3-06, P2-03
@@ -2548,6 +2752,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-601, RF-602, RF-603, RF-604, RNF-004, ADR-005, ADR-018, DEC-10, DEC-80.
 
 ### P3-10 - Principles, styles, stack, migration and build method in the package
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-09
@@ -2560,6 +2765,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-607, RF-608, RF-609, RF-610, RF-611, RF-612, ADR-018, DEC-75, DEC-76, DEC-79.
 
 ### P3-11 - Plan estimate and caps
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: S
 - **Depends on**: P3-09
@@ -2572,6 +2778,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-613, ADR-007, DEC-81.
 
 ### P3-12 - Release 1 journeys and verification matrix
+
 - **Difficulty**: 9 (opus)
 - **Size**: M
 - **Depends on**: P3-04, P3-08, P3-10, P3-11
@@ -2584,6 +2791,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-601, RF-604, RF-605, RNF-005, RNF-010.
 
 ### P3-13 - Follow-up: catalogue rule tests and the catalogue version in the run manifest
+
 - **Difficulty**: 5 (haiku)
 - **Size**: S
 - **Depends on**: P3-05
@@ -2596,6 +2804,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-606, ADR-018, P3-05 (verifier MINORs).
 
 ### P3-14 - Diagrams in the HTML report
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-01, P2-21
@@ -2608,6 +2817,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-505, RF-507, RF-508, RNF-010, ADR-013, DEC-125, DEC-134, Q-26.
 
 ### P3-15 - Package documentation set and the PRD
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-09
@@ -2620,6 +2830,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-601, RF-602, RF-620, RF-621, ADR-018, DEC-80, DEC-134.
 
 ### P3-16 - Technical requirements document
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-10, P2-21
@@ -2632,6 +2843,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-608, RF-609, RF-610, RF-622, ADR-018, DEC-134.
 
 ### P3-17 - Target data model
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-09, P2-22
@@ -2644,6 +2856,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-601, RF-603, RF-623, ADR-018, DEC-134.
 
 ### P3-18 - API contract
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-17
@@ -2656,6 +2869,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-603, RF-624, ADR-018, DEC-125, DEC-134, Q-28.
 
 ### P3-19 - Target flows
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-16, P2-20
@@ -2668,6 +2882,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-625, ADR-018, DEC-134, Q-27.
 
 ### P3-20 - User-interface material
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-19
@@ -2680,6 +2895,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-507, RF-626, RNF-010, ADR-013, ADR-018, DEC-134, Q-27.
 
 ### P3-21 - Implementation plan coverage
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-15, P3-17, P3-18, P3-19, P3-20
@@ -2692,6 +2908,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-601, RF-623, RF-627, ADR-018, DEC-134.
 
 ### P3-22 - Documentation set journey and owner review
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-14, P3-21, P2-23
@@ -2704,6 +2921,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-260..RF-263, RF-508, RF-620..RF-627, RF-800, P3-12, DEC-134.
 
 ### P3-23 - Task-card quality: invariants, probes, guard tests and risk class
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-09, P3-10
@@ -2716,6 +2934,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-601, RF-612, RF-630, RF-633, RF-635, ADR-018, DEC-135.
 
 ### P3-24 - Behaviour to preserve and realistic data shapes
+
 - **Difficulty**: 8 (sonnet)
 - **Size**: M
 - **Depends on**: P3-23, P2-22
@@ -2728,6 +2947,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-631, RF-632, ADR-018, DEC-80, DEC-135.
 
 ### P3-25 - Parallel-safe cards and agent operations
+
 - **Difficulty**: 7 (sonnet)
 - **Size**: M
 - **Depends on**: P3-23
@@ -2740,6 +2960,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Refs**: RF-612, RF-634, RF-636, ADR-018, DEC-135.
 
 ### P3-26 - Open questions linked to cards, build metrics and the catalogue
+
 - **Difficulty**: 6 (sonnet)
 - **Size**: S
 - **Depends on**: P3-23, P3-05

@@ -48,21 +48,21 @@ A sample report, made from recorded data of a demo repository, is published at <
 
 Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.md](docs/decision-log.md).
 
-| Question | Chosen | Instead of |
-|---|---|---|
-| Name and code | **Rosetta** (working name), code `RST` | - |
-| Product owner | **BlackLigth (blacklight0101)**, sole owner; master final project | - |
-| Replaces a system | **No.** Rosetta analyses third-party legacy codebases | - |
-| First milestone (2026-10-26) | **Docs plus a working slice**, public repo, sample report on GitHub Pages, slides, video (changed by DEC-67: the hosted application is the deployment URL) | Docs plus a compiling skeleton; docs only |
-| Repository | **`C:\BuildingFolder\Rosetta`, local git, public GitHub `blacklight0101/Rosetta`** | Local only, GitHub later |
-| Document language | **English** | Spanish; mixed |
-| Stack | **TypeScript on Node.js** (changed by DEC-59, DEC-61: a web application in one container image, no CLI) | .NET 10; Python |
-| AI access | **Own agent loop behind a provider interface** (Ollama first, then OpenAI, then Anthropic) | Claude Agent SDK (Claude only); Claude Code plugin only |
-| Last stage | **A tool-agnostic hand-off package**; no rebuild | An optional rebuild stage |
-| Legacy stacks | **Any stack**: universal scan plus language packs | C# / WebForms only |
-| Demo target | **Microsoft eShopLegacyWebForms** (MIT) first; a different-stack target later | BlogEngine.NET |
-| Cost control | **Estimate, hard caps, live meter, price table, cost report** | Logging only |
-| Builders | **Claude agents build, the owner reviews** | The owner codes by hand |
+| Question                     | Chosen                                                                                                                                                     | Instead of                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Name and code                | **Rosetta** (working name), code `RST`                                                                                                                     | -                                                       |
+| Product owner                | **BlackLigth (blacklight0101)**, sole owner; master final project                                                                                          | -                                                       |
+| Replaces a system            | **No.** Rosetta analyses third-party legacy codebases                                                                                                      | -                                                       |
+| First milestone (2026-10-26) | **Docs plus a working slice**, public repo, sample report on GitHub Pages, slides, video (changed by DEC-67: the hosted application is the deployment URL) | Docs plus a compiling skeleton; docs only               |
+| Repository                   | **`C:\BuildingFolder\Rosetta`, local git, public GitHub `blacklight0101/Rosetta`**                                                                         | Local only, GitHub later                                |
+| Document language            | **English**                                                                                                                                                | Spanish; mixed                                          |
+| Stack                        | **TypeScript on Node.js** (changed by DEC-59, DEC-61: a web application in one container image, no CLI)                                                    | .NET 10; Python                                         |
+| AI access                    | **Own agent loop behind a provider interface** (Ollama first, then OpenAI, then Anthropic)                                                                 | Claude Agent SDK (Claude only); Claude Code plugin only |
+| Last stage                   | **A tool-agnostic hand-off package**; no rebuild                                                                                                           | An optional rebuild stage                               |
+| Legacy stacks                | **Any stack**: universal scan plus language packs                                                                                                          | C# / WebForms only                                      |
+| Demo target                  | **Microsoft eShopLegacyWebForms** (MIT) first; a different-stack target later                                                                              | BlogEngine.NET                                          |
+| Cost control                 | **Estimate, hard caps, live meter, price table, cost report**                                                                                              | Logging only                                            |
+| Builders                     | **Claude agents build, the owner reviews**                                                                                                                 | The owner codes by hand                                 |
 
 ## Milestone hand-in (2026-10-26)
 

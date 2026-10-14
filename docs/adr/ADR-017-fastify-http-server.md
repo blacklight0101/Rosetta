@@ -33,9 +33,11 @@ cases only; plugins are registered in the composition root.
 ## Consequences
 
 **Positive**
+
 - Fewer hand-written security mechanisms; a request lifecycle with hooks for the session and audit.
 
 **Negative**
+
 - Six new runtime dependencies (environments-and-delivery.md section 7).
 
 ## References

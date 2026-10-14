@@ -1,280 +1,955 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Rosetta - landing page</title>
-<script src="./support.js"></script>
-<link rel="stylesheet" href="./rosetta-tokens.css">
-</head>
-<body>
-<x-dc>
-<helmet>
-<style>
-body{margin:0}
-.wrap{max-width:1312px;margin:0 auto;padding-left:64px;padding-right:64px}
-@media (max-width:720px){.wrap{padding-left:16px;padding-right:16px}.sec-band{padding-top:64px;padding-bottom:64px}}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border-radius:var(--rst-radius-md);font:inherit;font-weight:600;text-decoration:none;cursor:pointer;border:1px solid transparent;transition:background var(--rst-dur-fast) var(--rst-ease)}
-.pri,.rst-root a.pri{background:var(--rst-brand);color:var(--rst-brand-ink)}
-.rst-root a.pri:hover{background:var(--rst-brand-hover);color:var(--rst-brand-ink)}
-.sec,.rst-root a.sec{border-color:var(--rst-rule-strong);color:var(--rst-ink)}
-.rst-root a.sec:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
-.top a.lnk{color:var(--rst-ink-soft);text-decoration:none;font-weight:500}
-.top a.lnk:hover{color:var(--rst-ink)}
-.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:600;white-space:nowrap}
-.ok{background:var(--rst-ok-bg);color:var(--rst-ok-ink)}
-.no{background:var(--rst-danger-bg);color:var(--rst-danger-ink)}
-.wn{background:var(--rst-warn-bg);color:var(--rst-warn-ink)}
-.run{background:var(--rst-brand-tint);color:var(--rst-brand)}
-h1{margin:0;font-size:clamp(36px,4.2vw,56px);line-height:1.03;letter-spacing:-0.035em;font-weight:700;text-wrap:balance}
-h2{margin:0;font-size:clamp(28px,2.8vw,40px);line-height:1.08;letter-spacing:-0.025em;font-weight:700;text-wrap:balance}
-h3{margin:0;font-size:var(--rst-fs-lg);font-weight:var(--rst-fw-head)}
-p{margin:0}
-.lede{font-size:clamp(16px,1.3vw,19px);color:var(--rst-ink-soft);max-width:34em}
-.stage{border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);background:var(--rst-surface);overflow:hidden;box-shadow:var(--rst-shadow-2)}
-.lane{display:grid;grid-template-columns:minmax(150px,200px) 1fr auto;gap:14px;align-items:center;background:var(--rst-surface-2);border-radius:var(--rst-radius-md);padding:12px 14px}
-.tl{position:relative;height:16px;background:var(--rst-bg);border-radius:3px;overflow:hidden}
-.seg{position:absolute;top:0;bottom:0;border-radius:3px;transform-origin:left center;animation:grow 10s var(--rst-ease) infinite}
-@keyframes grow{0%{transform:scaleX(0)}35%,100%{transform:scaleX(1)}}
-.ev{display:grid;grid-template-columns:64px 1fr;gap:10px;font-size:var(--rst-fs-sm);padding:10px 0;border-bottom:1px solid var(--rst-rule);animation:arrive 10s var(--rst-ease) infinite}
-@keyframes arrive{0%{opacity:0;transform:translateY(-6px)}6%,100%{opacity:1;transform:none}}
-.fill{height:100%;background:var(--rst-warn-solid);transform-origin:left center;animation:grow 10s var(--rst-ease) infinite}
-.stage:hover .seg,.stage:hover .fill,.stage:hover .ev,.stage:focus-within .seg,.stage:focus-within .fill,.stage:focus-within .ev{animation-play-state:paused}
-@media (prefers-reduced-motion: reduce){.seg,.fill,.ev{animation:none}}
-.rail{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px 16px}
-.step{position:relative;display:flex;flex-direction:column;gap:8px;padding:40px 8px 0 0}
-.step::before{content:"";position:absolute;top:8px;left:0;right:-16px;height:2px;background:var(--rst-rule-strong)}
-.step:last-child::before{right:0}
-.step::after{content:"";position:absolute;top:1px;left:0;width:16px;height:16px;border-radius:50%;background:var(--rst-bg);border:2px solid var(--rst-rule-strong);box-sizing:border-box}
-.step.reader::after{background:var(--rst-role-reader);border-color:var(--rst-role-reader)}
-.step.verifier::after{background:var(--rst-role-verifier);border-color:var(--rst-role-verifier)}
-.step .out{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
-.swap{display:grid}
-.swap>*{grid-area:1/1;justify-self:end}
-.swap-a{animation:swapa 10s steps(1,end) infinite}
-.swap-b{opacity:0;animation:swapb 10s steps(1,end) infinite}
-@keyframes swapa{0%{opacity:1}62%,100%{opacity:0}}
-@keyframes swapb{0%{opacity:0}62%,100%{opacity:1}}
-.stage:hover .swap-a,.stage:hover .swap-b,.stage:focus-within .swap-a,.stage:focus-within .swap-b{animation-play-state:paused}
-@media (prefers-reduced-motion: reduce){.swap-a{animation:none;opacity:0}.swap-b{animation:none;opacity:1}}
-.nw{white-space:nowrap}
-.repo{min-width:0;max-width:100%;display:inline-flex;gap:0 6px;flex-wrap:wrap}
-.trunc{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
-.rst-root{min-height:100vh}
-@media (max-width:600px){.lane{grid-template-columns:1fr auto}.lane .tl{grid-column:1/-1;grid-row:2}.rail{grid-template-columns:1fr;gap:28px}.step{padding:0 0 0 36px}.step::before{top:16px;bottom:-28px;left:7px;right:auto;width:2px;height:auto}.step:last-child::before{display:none}.step::after{top:0}}
-.code{font-family:var(--rst-mono);font-size:13px;line-height:1.7;background:var(--rst-bg);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-md);padding:12px 0;overflow-x:auto}
-.code div{padding:0 16px;white-space:pre}
-.code .hl{background:var(--rst-brand-tint)}
-.code i{display:inline-block;width:28px;color:var(--rst-ink-muted);font-style:normal}
-.cap{display:flex;flex-direction:column;gap:6px;padding:18px 0;border-bottom:1px solid var(--rst-rule)}
-.trk{height:8px;border-radius:999px;background:var(--rst-surface-2);overflow:hidden}
-.trk span{display:block;height:100%;border-radius:999px}
-.sec-band{padding-top:104px;padding-bottom:104px;border-top:1px solid var(--rst-rule)}
-ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
-ul.plain li{display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:start}
-::selection{background:var(--rst-brand);color:var(--rst-brand-ink)}
-</style>
-</helmet>
-<div class="rst-root" data-theme="{{theme}}" style="min-height: 3200px;">
+  <head>
+    <meta charset="utf-8" />
+    <title>Rosetta - landing page</title>
+    <script src="./support.js"></script>
+    <link rel="stylesheet" href="./rosetta-tokens.css" />
+  </head>
+  <body>
+    <x-dc>
+      <helmet>
+        <style>
+          body {
+            margin: 0;
+          }
+          .wrap {
+            max-width: 1312px;
+            margin: 0 auto;
+            padding-left: 64px;
+            padding-right: 64px;
+          }
+          @media (max-width: 720px) {
+            .wrap {
+              padding-left: 16px;
+              padding-right: 16px;
+            }
+            .sec-band {
+              padding-top: 64px;
+              padding-bottom: 64px;
+            }
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 0 20px;
+            border-radius: var(--rst-radius-md);
+            font: inherit;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background var(--rst-dur-fast) var(--rst-ease);
+          }
+          .pri,
+          .rst-root a.pri {
+            background: var(--rst-brand);
+            color: var(--rst-brand-ink);
+          }
+          .rst-root a.pri:hover {
+            background: var(--rst-brand-hover);
+            color: var(--rst-brand-ink);
+          }
+          .sec,
+          .rst-root a.sec {
+            border-color: var(--rst-rule-strong);
+            color: var(--rst-ink);
+          }
+          .rst-root a.sec:hover {
+            background: var(--rst-surface-2);
+            color: var(--rst-ink);
+          }
+          .top a.lnk {
+            color: var(--rst-ink-soft);
+            text-decoration: none;
+            font-weight: 500;
+          }
+          .top a.lnk:hover {
+            color: var(--rst-ink);
+          }
+          .lbl {
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 22px;
+            padding: 0 9px;
+            border-radius: var(--rst-radius-pill);
+            font-size: var(--rst-fs-xs);
+            font-weight: 600;
+            white-space: nowrap;
+          }
+          .ok {
+            background: var(--rst-ok-bg);
+            color: var(--rst-ok-ink);
+          }
+          .no {
+            background: var(--rst-danger-bg);
+            color: var(--rst-danger-ink);
+          }
+          .wn {
+            background: var(--rst-warn-bg);
+            color: var(--rst-warn-ink);
+          }
+          .run {
+            background: var(--rst-brand-tint);
+            color: var(--rst-brand);
+          }
+          h1 {
+            margin: 0;
+            font-size: clamp(36px, 4.2vw, 56px);
+            line-height: 1.03;
+            letter-spacing: -0.035em;
+            font-weight: 700;
+            text-wrap: balance;
+          }
+          h2 {
+            margin: 0;
+            font-size: clamp(28px, 2.8vw, 40px);
+            line-height: 1.08;
+            letter-spacing: -0.025em;
+            font-weight: 700;
+            text-wrap: balance;
+          }
+          h3 {
+            margin: 0;
+            font-size: var(--rst-fs-lg);
+            font-weight: var(--rst-fw-head);
+          }
+          p {
+            margin: 0;
+          }
+          .lede {
+            font-size: clamp(16px, 1.3vw, 19px);
+            color: var(--rst-ink-soft);
+            max-width: 34em;
+          }
+          .stage {
+            border: 1px solid var(--rst-rule);
+            border-radius: var(--rst-radius-lg);
+            background: var(--rst-surface);
+            overflow: hidden;
+            box-shadow: var(--rst-shadow-2);
+          }
+          .lane {
+            display: grid;
+            grid-template-columns: minmax(150px, 200px) 1fr auto;
+            gap: 14px;
+            align-items: center;
+            background: var(--rst-surface-2);
+            border-radius: var(--rst-radius-md);
+            padding: 12px 14px;
+          }
+          .tl {
+            position: relative;
+            height: 16px;
+            background: var(--rst-bg);
+            border-radius: 3px;
+            overflow: hidden;
+          }
+          .seg {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            border-radius: 3px;
+            transform-origin: left center;
+            animation: grow 10s var(--rst-ease) infinite;
+          }
+          @keyframes grow {
+            0% {
+              transform: scaleX(0);
+            }
+            35%,
+            100% {
+              transform: scaleX(1);
+            }
+          }
+          .ev {
+            display: grid;
+            grid-template-columns: 64px 1fr;
+            gap: 10px;
+            font-size: var(--rst-fs-sm);
+            padding: 10px 0;
+            border-bottom: 1px solid var(--rst-rule);
+            animation: arrive 10s var(--rst-ease) infinite;
+          }
+          @keyframes arrive {
+            0% {
+              opacity: 0;
+              transform: translateY(-6px);
+            }
+            6%,
+            100% {
+              opacity: 1;
+              transform: none;
+            }
+          }
+          .fill {
+            height: 100%;
+            background: var(--rst-warn-solid);
+            transform-origin: left center;
+            animation: grow 10s var(--rst-ease) infinite;
+          }
+          .stage:hover .seg,
+          .stage:hover .fill,
+          .stage:hover .ev,
+          .stage:focus-within .seg,
+          .stage:focus-within .fill,
+          .stage:focus-within .ev {
+            animation-play-state: paused;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .seg,
+            .fill,
+            .ev {
+              animation: none;
+            }
+          }
+          .rail {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 32px 16px;
+          }
+          .step {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 40px 8px 0 0;
+          }
+          .step::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 0;
+            right: -16px;
+            height: 2px;
+            background: var(--rst-rule-strong);
+          }
+          .step:last-child::before {
+            right: 0;
+          }
+          .step::after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--rst-bg);
+            border: 2px solid var(--rst-rule-strong);
+            box-sizing: border-box;
+          }
+          .step.reader::after {
+            background: var(--rst-role-reader);
+            border-color: var(--rst-role-reader);
+          }
+          .step.verifier::after {
+            background: var(--rst-role-verifier);
+            border-color: var(--rst-role-verifier);
+          }
+          .step .out {
+            font-size: var(--rst-fs-xs);
+            color: var(--rst-ink-muted);
+          }
+          .swap {
+            display: grid;
+          }
+          .swap > * {
+            grid-area: 1/1;
+            justify-self: end;
+          }
+          .swap-a {
+            animation: swapa 10s steps(1, end) infinite;
+          }
+          .swap-b {
+            opacity: 0;
+            animation: swapb 10s steps(1, end) infinite;
+          }
+          @keyframes swapa {
+            0% {
+              opacity: 1;
+            }
+            62%,
+            100% {
+              opacity: 0;
+            }
+          }
+          @keyframes swapb {
+            0% {
+              opacity: 0;
+            }
+            62%,
+            100% {
+              opacity: 1;
+            }
+          }
+          .stage:hover .swap-a,
+          .stage:hover .swap-b,
+          .stage:focus-within .swap-a,
+          .stage:focus-within .swap-b {
+            animation-play-state: paused;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .swap-a {
+              animation: none;
+              opacity: 0;
+            }
+            .swap-b {
+              animation: none;
+              opacity: 1;
+            }
+          }
+          .nw {
+            white-space: nowrap;
+          }
+          .repo {
+            min-width: 0;
+            max-width: 100%;
+            display: inline-flex;
+            gap: 0 6px;
+            flex-wrap: wrap;
+          }
+          .trunc {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+          }
+          .rst-root {
+            min-height: 100vh;
+          }
+          @media (max-width: 600px) {
+            .lane {
+              grid-template-columns: 1fr auto;
+            }
+            .lane .tl {
+              grid-column: 1/-1;
+              grid-row: 2;
+            }
+            .rail {
+              grid-template-columns: 1fr;
+              gap: 28px;
+            }
+            .step {
+              padding: 0 0 0 36px;
+            }
+            .step::before {
+              top: 16px;
+              bottom: -28px;
+              left: 7px;
+              right: auto;
+              width: 2px;
+              height: auto;
+            }
+            .step:last-child::before {
+              display: none;
+            }
+            .step::after {
+              top: 0;
+            }
+          }
+          .code {
+            font-family: var(--rst-mono);
+            font-size: 13px;
+            line-height: 1.7;
+            background: var(--rst-bg);
+            border: 1px solid var(--rst-rule);
+            border-radius: var(--rst-radius-md);
+            padding: 12px 0;
+            overflow-x: auto;
+          }
+          .code div {
+            padding: 0 16px;
+            white-space: pre;
+          }
+          .code .hl {
+            background: var(--rst-brand-tint);
+          }
+          .code i {
+            display: inline-block;
+            width: 28px;
+            color: var(--rst-ink-muted);
+            font-style: normal;
+          }
+          .cap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 18px 0;
+            border-bottom: 1px solid var(--rst-rule);
+          }
+          .trk {
+            height: 8px;
+            border-radius: 999px;
+            background: var(--rst-surface-2);
+            overflow: hidden;
+          }
+          .trk span {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+          }
+          .sec-band {
+            padding-top: 104px;
+            padding-bottom: 104px;
+            border-top: 1px solid var(--rst-rule);
+          }
+          ul.plain {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+          }
+          ul.plain li {
+            display: grid;
+            grid-template-columns: 22px 1fr;
+            gap: 12px;
+            align-items: start;
+          }
+          ::selection {
+            background: var(--rst-brand);
+            color: var(--rst-brand-ink);
+          }
+        </style>
+      </helmet>
+      <div class="rst-root" data-theme="{{theme}}" style="min-height: 3200px">
+        <header class="top" style="border-bottom: 1px solid var(--rst-rule)">
+          <div
+            class="wrap"
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 12px 28px;
+              min-height: 68px;
+            "
+          >
+            <a
+              href="#"
+              style="
+                font-size: 22px;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                color: var(--rst-ink);
+                text-decoration: none;
+              "
+              >Rosetta</a
+            >
+            <nav aria-label="Sections" style="display: flex; flex-wrap: wrap; gap: 4px 24px">
+              <a class="lnk" href="#how">How it works</a><a class="lnk" href="#evidence">Evidence</a
+              ><a class="lnk" href="#cost">Cost</a><a class="lnk" href="#about">About</a>
+            </nav>
+            <div style="flex: 1 1 auto"></div>
+            <sc-if value="{{showAccess}}" hint-placeholder-val="{{ true }}"
+              ><a class="btn sec" href="mailto:{{contact}}">Request access</a></sc-if
+            >
+            <a class="btn pri" href="SignIn.dc.html">Sign in</a>
+          </div>
+        </header>
 
-  <header class="top" style="border-bottom: 1px solid var(--rst-rule);">
-    <div class="wrap" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; min-height: 68px;">
-      <a href="#" style="font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--rst-ink); text-decoration: none;">Rosetta</a>
-      <nav aria-label="Sections" style="display: flex; flex-wrap: wrap; gap: 4px 24px;">
-        <a class="lnk" href="#how">How it works</a><a class="lnk" href="#evidence">Evidence</a><a class="lnk" href="#cost">Cost</a><a class="lnk" href="#about">About</a>
-      </nav>
-      <div style="flex: 1 1 auto;"></div>
-      <sc-if value="{{showAccess}}" hint-placeholder-val="{{ true }}"><a class="btn sec" href="mailto:{{contact}}">Request access</a></sc-if>
-      <a class="btn pri" href="SignIn.dc.html">Sign in</a>
-    </div>
-  </header>
+        <section
+          class="wrap"
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 28px 64px;
+            padding-top: clamp(40px, 5vw, 72px);
+            padding-bottom: 32px;
+          "
+        >
+          <h1 style="flex: 1 1 560px; max-width: 800px">
+            Watch AI agents read your legacy code, and check every word they write.
+          </h1>
+          <div
+            style="
+              flex: 1 1 340px;
+              display: flex;
+              flex-direction: column;
+              gap: 18px;
+              align-items: flex-start;
+            "
+          >
+            <p class="lede">
+              Paste a public GitHub URL. Readers explore each area of the code, a verifier tests
+              every claim against the lines it cites, and the spend runs against a cap you set.
+            </p>
+            <a class="btn pri" href="SignIn.dc.html">Sign in to try it</a>
+          </div>
+        </section>
 
-  <section class="wrap" style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 28px 64px; padding-top: clamp(40px,5vw,72px); padding-bottom: 32px;">
-    <h1 style="flex: 1 1 560px; max-width: 800px;">Watch AI agents read your legacy code, and check every word they write.</h1>
-    <div style="flex: 1 1 340px; display: flex; flex-direction: column; gap: 18px; align-items: flex-start;">
-      <p class="lede">Paste a public GitHub URL. Readers explore each area of the code, a verifier tests every claim against the lines it cites, and the spend runs against a cap you set.</p>
-      <a class="btn pri" href="SignIn.dc.html">Sign in to try it</a>
-    </div>
-  </section>
-
-  <section class="wrap" aria-label="Replay of a sample run" style="padding-bottom: clamp(64px,8vw,104px);">
-    <div class="stage" tabindex="0">
-      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; min-height: 52px; padding: 8px 20px; border-bottom: 1px solid var(--rst-rule); background: var(--rst-surface-2);">
-        <span class="rst-live-dot" aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: var(--rst-ok-ink);"></span>
-        <strong>Replay</strong>
-        <span class="rst-mono repo" style="color: var(--rst-ink-soft);"><span class="trunc" title="eShopLegacyWebForms @ 3f2a9c1">eShopLegacyWebForms @ 3f2a9c1</span><span class="nw">· understand</span></span>
-        <span class="badge wn">Sample run</span>
-        <div style="flex: 1 1 auto;"></div>
-        <div role="meter" aria-label="Run cost" aria-valuemin="0" aria-valuemax="0.5" aria-valuenow="0.39" style="display: flex; align-items: center; gap: 10px; flex: 0 1 360px; min-width: 0;">
-          <span class="lbl">Cost</span>
-          <div class="trk" style="flex: 1 1 60px; max-width: 180px; min-width: 40px; background: var(--rst-bg); box-shadow: inset 0 0 0 1px var(--rst-rule);"><div class="fill" style="width: 78%;"></div></div>
-          <strong>$0.39</strong><span class="lbl nw">of $0.50 cap</span>
-        </div>
-      </div>
-      <div style="display: flex; flex-wrap: wrap;">
-        <div style="flex: 999 1 560px; min-width: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
-          <sc-for list="{{lanes}}" as="l" hint-placeholder-count="5">
-            <div class="lane">
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; flex: none; background: {{l.color}};"></span>
-                <div><strong>{{l.role}}</strong><div class="lbl">{{l.what}}</div></div>
+        <section
+          class="wrap"
+          aria-label="Replay of a sample run"
+          style="padding-bottom: clamp(64px, 8vw, 104px)"
+        >
+          <div class="stage" tabindex="0">
+            <div
+              style="
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px 18px;
+                min-height: 52px;
+                padding: 8px 20px;
+                border-bottom: 1px solid var(--rst-rule);
+                background: var(--rst-surface-2);
+              "
+            >
+              <span
+                class="rst-live-dot"
+                aria-hidden="true"
+                style="width: 8px; height: 8px; border-radius: 50%; background: var(--rst-ok-ink)"
+              ></span>
+              <strong>Replay</strong>
+              <span class="rst-mono repo" style="color: var(--rst-ink-soft)"
+                ><span class="trunc" title="eShopLegacyWebForms @ 3f2a9c1"
+                  >eShopLegacyWebForms @ 3f2a9c1</span
+                ><span class="nw">· understand</span></span
+              >
+              <span class="badge wn">Sample run</span>
+              <div style="flex: 1 1 auto"></div>
+              <div
+                role="meter"
+                aria-label="Run cost"
+                aria-valuemin="0"
+                aria-valuemax="0.5"
+                aria-valuenow="0.39"
+                style="display: flex; align-items: center; gap: 10px; flex: 0 1 360px; min-width: 0"
+              >
+                <span class="lbl">Cost</span>
+                <div
+                  class="trk"
+                  style="
+                    flex: 1 1 60px;
+                    max-width: 180px;
+                    min-width: 40px;
+                    background: var(--rst-bg);
+                    box-shadow: inset 0 0 0 1px var(--rst-rule);
+                  "
+                >
+                  <div class="fill" style="width: 78%"></div>
+                </div>
+                <strong>$0.39</strong><span class="lbl nw">of $0.50 cap</span>
               </div>
-              <div class="tl" aria-hidden="true"><span class="seg" style="left: {{l.start}}; width: {{l.width}}; background: {{l.color}}; animation-delay: {{l.delay}};"></span></div>
-              <span class="swap"><span class="badge {{l.cls}} {{l.anim}}">{{l.state}}</span><sc-if value="{{l.final}}" hint-placeholder-val="{{ false }}"><span class="badge {{l.finalCls}} swap-b">{{l.final}}</span></sc-if></span>
             </div>
-          </sc-for>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px 40px; padding-top: 10px;">
-            <div><div class="lbl">Supported</div><div style="font-size: 30px; font-weight: 700; color: var(--rst-ok-ink);">24</div></div>
-            <div><div class="lbl">Rejected</div><div style="font-size: 30px; font-weight: 700; color: var(--rst-danger-ink);">4</div></div>
-            <div><div class="lbl">Citation invalid</div><div style="font-size: 30px; font-weight: 700; color: var(--rst-warn-ink);">3</div></div>
-            <div><div class="lbl">Files read</div><div style="font-size: 30px; font-weight: 700;">71 <span class="lbl">of 74</span></div></div>
+            <div style="display: flex; flex-wrap: wrap">
+              <div
+                style="
+                  flex: 999 1 560px;
+                  min-width: 0;
+                  padding: 18px 20px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 10px;
+                "
+              >
+                <sc-for list="{{lanes}}" as="l" hint-placeholder-count="5">
+                  <div class="lane">
+                    <div style="display: flex; gap: 10px; align-items: center">
+                      <span
+                        aria-hidden="true"
+                        style="width: 10px; height: 10px; border-radius: 3px; flex: none; background: {{l.color}};"
+                      ></span>
+                      <div>
+                        <strong>{{l.role}}</strong>
+                        <div class="lbl">{{l.what}}</div>
+                      </div>
+                    </div>
+                    <div class="tl" aria-hidden="true">
+                      <span
+                        class="seg"
+                        style="left: {{l.start}}; width: {{l.width}}; background: {{l.color}}; animation-delay: {{l.delay}};"
+                      ></span>
+                    </div>
+                    <span class="swap"
+                      ><span class="badge {{l.cls}} {{l.anim}}">{{l.state}}</span
+                      ><sc-if value="{{l.final}}" hint-placeholder-val="{{ false }}"
+                        ><span class="badge {{l.finalCls}} swap-b">{{l.final}}</span></sc-if
+                      ></span
+                    >
+                  </div>
+                </sc-for>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px 40px; padding-top: 10px">
+                  <div>
+                    <div class="lbl">Supported</div>
+                    <div style="font-size: 30px; font-weight: 700; color: var(--rst-ok-ink)">
+                      24
+                    </div>
+                  </div>
+                  <div>
+                    <div class="lbl">Rejected</div>
+                    <div style="font-size: 30px; font-weight: 700; color: var(--rst-danger-ink)">
+                      4
+                    </div>
+                  </div>
+                  <div>
+                    <div class="lbl">Citation invalid</div>
+                    <div style="font-size: 30px; font-weight: 700; color: var(--rst-warn-ink)">
+                      3
+                    </div>
+                  </div>
+                  <div>
+                    <div class="lbl">Files read</div>
+                    <div style="font-size: 30px; font-weight: 700">
+                      71 <span class="lbl">of 74</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                aria-label="Event stream"
+                style="
+                  flex: 1 1 340px;
+                  border-left: 1px solid var(--rst-rule);
+                  padding: 8px 20px 16px;
+                "
+              >
+                <sc-for list="{{events}}" as="e" hint-placeholder-count="6">
+                  <div class="ev" style="animation-delay: {{e.delay}};">
+                    <span class="lbl">{{e.t}}</span><span>{{e.text}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
           </div>
-        </div>
-        <div aria-label="Event stream" style="flex: 1 1 340px; border-left: 1px solid var(--rst-rule); padding: 8px 20px 16px;">
-          <sc-for list="{{events}}" as="e" hint-placeholder-count="6">
-            <div class="ev" style="animation-delay: {{e.delay}};"><span class="lbl">{{e.t}}</span><span>{{e.text}}</span></div>
-          </sc-for>
-        </div>
-      </div>
-    </div>
-    <p class="lbl" style="margin-top: 12px;">Sample run of Microsoft's eShopLegacyWebForms (MIT), shown for illustration. Hover or focus the replay to pause it.</p>
-  </section>
+          <p class="lbl" style="margin-top: 12px">
+            Sample run of Microsoft's eShopLegacyWebForms (MIT), shown for illustration. Hover or
+            focus the replay to pause it.
+          </p>
+        </section>
 
-  <section id="how" class="sec-band">
-    <div class="wrap" style="display: flex; flex-direction: column; gap: 40px;">
-      <div style="display: flex; flex-wrap: wrap; gap: 16px 64px; align-items: flex-end;">
-        <h2 style="flex: 1 1 480px; max-width: 640px;">From a GitHub URL to a hand-off your team can build from.</h2>
-        <p class="lede" style="flex: 1 1 340px;">Six stages, each leaving files you can open. Rosetta never edits the code it reads and never rebuilds the system for you.</p>
-      </div>
-      <ol class="rail" aria-label="Pipeline">
-        <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
-          <li class="step {{s.cls}}"><h3>{{s.title}}</h3><p style="color: var(--rst-ink-soft); font-size: var(--rst-fs-sm);">{{s.text}}</p><span class="out">Leaves <span class="rst-mono" style="font-size: 12px;">{{s.cmd}}</span></span></li>
-        </sc-for>
-      </ol>
-    </div>
-  </section>
-
-  <section id="evidence" class="sec-band" style="background: var(--rst-surface);">
-    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 40px 64px; align-items: flex-start;">
-      <div style="flex: 1 1 380px; max-width: 460px; display: flex; flex-direction: column; gap: 18px;">
-        <h2>No claim without the lines that prove it.</h2>
-        <p class="lede">Each card cites a file and a line range at one commit. A check in code throws out citations that do not exist; a second model reads the cited lines and marks the claim supported or rejected. Rejected claims stay in the report, marked, never deleted.</p>
-      </div>
-      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
-        <article style="border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-lg); padding: 20px; background: var(--rst-bg); display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start;"><h3 style="font-size: var(--rst-fs-xl); flex: 1 1 280px;">A catalog item cannot be saved with a negative price.</h3><span class="badge ok"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5 5 9.5 10 3" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Supported</span></div>
-          <div style="display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline;"><a class="rst-mono" href="#" style="overflow-wrap: anywhere;">src/eShopLegacyWebForms/Catalog/Create.aspx.cs:41-47</a><span class="lbl">BR-007 · Catalog · business rule</span></div>
-          <div class="code" role="region" aria-label="Cited lines">
-            <div><i>41</i>if (!ModelState.IsValid) return;</div>
-            <div class="hl"><i>42</i>if (item.Price &lt; 0)</div>
-            <div class="hl"><i>43</i>    errors.Add("Price must be positive");</div>
-            <div><i>44</i>else</div>
-            <div><i>45</i>    service.CreateCatalogItem(item);</div>
+        <section id="how" class="sec-band">
+          <div class="wrap" style="display: flex; flex-direction: column; gap: 40px">
+            <div style="display: flex; flex-wrap: wrap; gap: 16px 64px; align-items: flex-end">
+              <h2 style="flex: 1 1 480px; max-width: 640px">
+                From a GitHub URL to a hand-off your team can build from.
+              </h2>
+              <p class="lede" style="flex: 1 1 340px">
+                Six stages, each leaving files you can open. Rosetta never edits the code it reads
+                and never rebuilds the system for you.
+              </p>
+            </div>
+            <ol class="rail" aria-label="Pipeline">
+              <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+                <li class="step {{s.cls}}">
+                  <h3>{{s.title}}</h3>
+                  <p style="color: var(--rst-ink-soft); font-size: var(--rst-fs-sm)">{{s.text}}</p>
+                  <span class="out"
+                    >Leaves <span class="rst-mono" style="font-size: 12px">{{s.cmd}}</span></span
+                  >
+                </li>
+              </sc-for>
+            </ol>
           </div>
-          <p class="lbl">Verifier: lines 42-43 reject a negative price before the item is saved.</p>
-        </article>
-        <article style="border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-lg); padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;">
-          <span class="badge no"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3 3 9" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Rejected</span>
-          <strong style="flex: 1 1 300px;">Orders over $100 get a 10% discount.</strong>
-          <span class="lbl" style="flex: 1 1 100%;">The cited lines in OrderService.cs compute a total; they apply no discount. Kept in the report so you can see what the model got wrong.</span>
-        </article>
-        <p class="lbl">Sample cards. Line numbers are illustrative until the first real demo run replaces them.</p>
-      </div>
-    </div>
-  </section>
+        </section>
 
-  <section id="cost" class="sec-band">
-    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 40px 64px; align-items: flex-start;">
-      <div style="flex: 1 1 380px; max-width: 460px; display: flex; flex-direction: column; gap: 18px;">
-        <h2>You see the price before, during and after.</h2>
-        <p class="lede">An estimate before the run, a live meter while it works, a cost report when it ends, and the total for the whole project always in the header. Local models through Ollama cost nothing and still count tokens.</p>
-      </div>
-      <div style="flex: 999 1 560px; min-width: 0;">
-        <div class="cap"><div style="display: flex; justify-content: space-between;"><strong>This run</strong><span><strong>$0.39</strong> <span class="lbl">of $0.50</span></span></div><div class="trk"><span style="width: 78%; background: var(--rst-warn-solid);"></span></div><span class="lbl">The run stops cleanly before a call that could cross the cap; finished cards are kept.</span></div>
-        <div class="cap"><div style="display: flex; justify-content: space-between;"><strong>Your day</strong><span><strong>$0.62</strong> <span class="lbl">of $1.00</span></span></div><div class="trk"><span style="width: 62%; background: var(--rst-brand);"></span></div><span class="lbl">A daily limit per account when runs use the server's keys.</span></div>
-        <div class="cap"><div style="display: flex; justify-content: space-between;"><strong>Bring your own key</strong><span class="badge run">Optional</span></div><span class="lbl">Store your own OpenAI or Anthropic key, encrypted. Your runs then bill your account, not the server's.</span></div>
-        <p class="lbl" style="margin-top: 12px;">Illustrative figures. The caps shown are the defaults; the administrator can change them.</p>
-      </div>
-    </div>
-  </section>
+        <section id="evidence" class="sec-band" style="background: var(--rst-surface)">
+          <div
+            class="wrap"
+            style="display: flex; flex-wrap: wrap; gap: 40px 64px; align-items: flex-start"
+          >
+            <div
+              style="
+                flex: 1 1 380px;
+                max-width: 460px;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+              "
+            >
+              <h2>No claim without the lines that prove it.</h2>
+              <p class="lede">
+                Each card cites a file and a line range at one commit. A check in code throws out
+                citations that do not exist; a second model reads the cited lines and marks the
+                claim supported or rejected. Rejected claims stay in the report, marked, never
+                deleted.
+              </p>
+            </div>
+            <div
+              style="
+                flex: 999 1 560px;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+              "
+            >
+              <article
+                style="
+                  border: 1px solid var(--rst-rule);
+                  border-radius: var(--rst-radius-lg);
+                  padding: 20px;
+                  background: var(--rst-bg);
+                  display: flex;
+                  flex-direction: column;
+                  gap: 12px;
+                "
+              >
+                <div style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start">
+                  <h3 style="font-size: var(--rst-fs-xl); flex: 1 1 280px">
+                    A catalog item cannot be saved with a negative price.
+                  </h3>
+                  <span class="badge ok"
+                    ><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                      <path
+                        d="M2 6.5 5 9.5 10 3"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      ></path></svg
+                    >Supported</span
+                  >
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline">
+                  <a class="rst-mono" href="#" style="overflow-wrap: anywhere"
+                    >src/eShopLegacyWebForms/Catalog/Create.aspx.cs:41-47</a
+                  ><span class="lbl">BR-007 · Catalog · business rule</span>
+                </div>
+                <div class="code" role="region" aria-label="Cited lines">
+                  <div><i>41</i>if (!ModelState.IsValid) return;</div>
+                  <div class="hl"><i>42</i>if (item.Price &lt; 0)</div>
+                  <div class="hl"><i>43</i> errors.Add("Price must be positive");</div>
+                  <div><i>44</i>else</div>
+                  <div><i>45</i> service.CreateCatalogItem(item);</div>
+                </div>
+                <p class="lbl">
+                  Verifier: lines 42-43 reject a negative price before the item is saved.
+                </p>
+              </article>
+              <article
+                style="
+                  border: 1px solid var(--rst-rule);
+                  border-radius: var(--rst-radius-lg);
+                  padding: 16px 20px;
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 8px 16px;
+                  align-items: center;
+                "
+              >
+                <span class="badge no"
+                  ><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                    <path
+                      d="M3 3l6 6M9 3 3 9"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    ></path></svg
+                  >Rejected</span
+                >
+                <strong style="flex: 1 1 300px">Orders over $100 get a 10% discount.</strong>
+                <span class="lbl" style="flex: 1 1 100%"
+                  >The cited lines in OrderService.cs compute a total; they apply no discount. Kept
+                  in the report so you can see what the model got wrong.</span
+                >
+              </article>
+              <p class="lbl">
+                Sample cards. Line numbers are illustrative until the first real demo run replaces
+                them.
+              </p>
+            </div>
+          </div>
+        </section>
 
-  <section class="sec-band" style="background: var(--rst-surface);">
-    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 40px 64px;">
-      <div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 20px;">
-        <h2>Built to read code it does not trust.</h2>
-        <ul class="plain">
-          <sc-for list="{{safety}}" as="x" hint-placeholder-count="5">
-            <li><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 2 18 5v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V5l7-3Z" fill="none" stroke="var(--rst-brand)" stroke-width="1.6"></path></svg><span><strong>{{x.title}}</strong> <span style="color: var(--rst-ink-soft);">{{x.text}}</span></span></li>
-          </sc-for>
-        </ul>
-      </div>
-      <div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 20px;">
-        <h2>Any stack. Any model.</h2>
-        <p class="lede">A universal scan maps code in any language; language packs add symbols where they exist (C# first). Each agent role picks its own provider and model: Ollama on your machine, OpenAI, Anthropic, or any OpenAI-compatible service.</p>
-        <p class="lbl">TypeScript on Node.js · Fastify · Preact · PostgreSQL · one container image</p>
-      </div>
-    </div>
-  </section>
+        <section id="cost" class="sec-band">
+          <div
+            class="wrap"
+            style="display: flex; flex-wrap: wrap; gap: 40px 64px; align-items: flex-start"
+          >
+            <div
+              style="
+                flex: 1 1 380px;
+                max-width: 460px;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+              "
+            >
+              <h2>You see the price before, during and after.</h2>
+              <p class="lede">
+                An estimate before the run, a live meter while it works, a cost report when it ends,
+                and the total for the whole project always in the header. Local models through
+                Ollama cost nothing and still count tokens.
+              </p>
+            </div>
+            <div style="flex: 999 1 560px; min-width: 0">
+              <div class="cap">
+                <div style="display: flex; justify-content: space-between">
+                  <strong>This run</strong
+                  ><span><strong>$0.39</strong> <span class="lbl">of $0.50</span></span>
+                </div>
+                <div class="trk">
+                  <span style="width: 78%; background: var(--rst-warn-solid)"></span>
+                </div>
+                <span class="lbl"
+                  >The run stops cleanly before a call that could cross the cap; finished cards are
+                  kept.</span
+                >
+              </div>
+              <div class="cap">
+                <div style="display: flex; justify-content: space-between">
+                  <strong>Your day</strong
+                  ><span><strong>$0.62</strong> <span class="lbl">of $1.00</span></span>
+                </div>
+                <div class="trk">
+                  <span style="width: 62%; background: var(--rst-brand)"></span>
+                </div>
+                <span class="lbl">A daily limit per account when runs use the server's keys.</span>
+              </div>
+              <div class="cap">
+                <div style="display: flex; justify-content: space-between">
+                  <strong>Bring your own key</strong><span class="badge run">Optional</span>
+                </div>
+                <span class="lbl"
+                  >Store your own OpenAI or Anthropic key, encrypted. Your runs then bill your
+                  account, not the server's.</span
+                >
+              </div>
+              <p class="lbl" style="margin-top: 12px">
+                Illustrative figures. The caps shown are the defaults; the administrator can change
+                them.
+              </p>
+            </div>
+          </div>
+        </section>
 
-  <section id="about" class="sec-band">
-    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 32px 64px; align-items: center;">
-      <div style="flex: 1 1 480px; display: flex; flex-direction: column; gap: 16px;">
-        <h2>A master's final project, built in the open.</h2>
-        <p class="lede">Rosetta is the final project of the Master en Desarrollo con IA at BIG School, by BlackLigth. The design documents, decisions and code are public under the MIT licence.</p>
-      </div>
-      <div style="flex: 1 1 320px; display: flex; flex-wrap: wrap; gap: 12px;">
-        <a class="btn pri" href="SignIn.dc.html">Sign in</a>
-        <a class="btn sec" href="https://github.com/blacklight0101/Rosetta">Read the source on GitHub</a>
-      </div>
-    </div>
-  </section>
+        <section class="sec-band" style="background: var(--rst-surface)">
+          <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 40px 64px">
+            <div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 20px">
+              <h2>Built to read code it does not trust.</h2>
+              <ul class="plain">
+                <sc-for list="{{safety}}" as="x" hint-placeholder-count="5">
+                  <li>
+                    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+                      <path
+                        d="M11 2 18 5v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V5l7-3Z"
+                        fill="none"
+                        stroke="var(--rst-brand)"
+                        stroke-width="1.6"
+                      ></path></svg
+                    ><span
+                      ><strong>{{x.title}}</strong>
+                      <span style="color: var(--rst-ink-soft)">{{x.text}}</span></span
+                    >
+                  </li>
+                </sc-for>
+              </ul>
+            </div>
+            <div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 20px">
+              <h2>Any stack. Any model.</h2>
+              <p class="lede">
+                A universal scan maps code in any language; language packs add symbols where they
+                exist (C# first). Each agent role picks its own provider and model: Ollama on your
+                machine, OpenAI, Anthropic, or any OpenAI-compatible service.
+              </p>
+              <p class="lbl">
+                TypeScript on Node.js · Fastify · Preact · PostgreSQL · one container image
+              </p>
+            </div>
+          </div>
+        </section>
 
-  <footer style="border-top: 1px solid var(--rst-rule);">
-    <div class="wrap lbl" style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding-top: 24px; padding-bottom: 32px;"><span>Rosetta · MIT licence</span><span>Not indexed by search engines</span><div style="flex: 1 1 auto;"></div><a href="https://github.com/blacklight0101/Rosetta/blob/main/SECURITY.md">Security</a></div>
-  </footer>
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"showAccess":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":3200}}'>
-class Component extends DCLogic {
-renderVals() {
-const reader = 'var(--rst-role-reader)', verifier = 'var(--rst-role-verifier)', summ = 'var(--rst-role-summariser)';
-return {
-theme: this.props.theme ?? 'dark',
-showAccess: this.props.showAccess ?? true,
-contact: 'access@example.org',
-lanes: [
-{ role: 'Reader', what: 'Catalog · 38 files', color: reader, start: '0%', width: '64%', delay: '0s', cls: 'ok', state: 'Done · 9 cards', anim: '', final: '' },
-{ role: 'Reader', what: 'Orders · 21 files', color: reader, start: '6%', width: '72%', delay: '.3s', cls: 'run', state: 'Turn 11', anim: 'swap-a', final: 'Done · 7 cards', finalCls: 'ok' },
-{ role: 'Reader', what: 'Account · 12 files', color: reader, start: '10%', width: '40%', delay: '.6s', cls: 'ok', state: 'Done · 4 cards', anim: '', final: '' },
-{ role: 'Verifier', what: '31 claims', color: verifier, start: '30%', width: '52%', delay: '1.2s', cls: 'run', state: 'Checking', anim: 'swap-a', final: 'Done · 31 verdicts', finalCls: 'ok' },
-{ role: 'Summariser', what: 'Waits for the readers', color: summ, start: '0%', width: '0%', delay: '0s', cls: '', state: 'Planned', anim: '', final: '' }
-],
-events: [
-{ t: '14:03:22', text: 'Verifier: BR-007 supported · Create.aspx.cs:41-47', delay: '2.4s' },
-{ t: '14:03:19', text: 'Reader Orders read Services/OrderService.cs, lines 1-120', delay: '2.0s' },
-{ t: '14:03:15', text: 'Verifier: BR-011 rejected · the cited lines apply no discount', delay: '1.6s' },
-{ t: '14:03:09', text: 'Reader Catalog wrote ENT-003 CatalogItem', delay: '1.2s' },
-{ t: '14:03:02', text: 'Reader Orders searched for "Status ="', delay: '.8s' },
-{ t: '14:02:57', text: 'Run started · cap $0.50 · 3 areas', delay: '.4s' }
-],
-steps: [
-{ cmd: 'snapshot.json', title: 'Pin a commit', text: 'A public GitHub URL is resolved to one commit and downloaded once, read-only.', cls: '' },
-{ cmd: 'codemap.json', title: 'Map the code', text: 'Files, languages, entry points and areas, without AI and with the same result every time.', cls: '' },
-{ cmd: 'cards/', title: 'Agents write cards', text: 'One reader per area explores with read-only tools and writes features, rules, entities and integrations.', cls: 'reader' },
-{ cmd: 'a verdict on every claim', title: 'Check every claim', text: 'Citations are checked in code, then a second model judges whether the lines support the claim.', cls: 'verifier' },
-{ cmd: 'answers.md', title: 'You decide', text: 'What the code cannot tell becomes an open question for you; your answers feed the next pass.', cls: '' },
-{ cmd: 'report/ and handoff/', title: 'Report and hand-off', text: 'An HTML report that replays the run, and a package with architecture, decisions, roadmap and task cards.', cls: '' }
-],
-safety: [
-{ title: 'Read-only.', text: 'Agents can list, read and search files. Nothing else.' },
-{ title: 'Masked before it leaves.', text: 'Secrets are masked and every excerpt sent to a provider is logged.' },
-{ title: 'Untrusted text stays text.', text: 'Code and model output are never run or rendered as HTML.' },
-{ title: 'Private by account.', text: 'Your projects and keys are yours; no one else sees them.' },
-{ title: 'Asked, not assumed.', text: 'Cloud providers are used only after you confirm, per run.' }
-]
-};
-}
-}
-</script>
-</body>
+        <section id="about" class="sec-band">
+          <div
+            class="wrap"
+            style="display: flex; flex-wrap: wrap; gap: 32px 64px; align-items: center"
+          >
+            <div style="flex: 1 1 480px; display: flex; flex-direction: column; gap: 16px">
+              <h2>A master's final project, built in the open.</h2>
+              <p class="lede">
+                Rosetta is the final project of the Master en Desarrollo con IA at BIG School, by
+                BlackLigth. The design documents, decisions and code are public under the MIT
+                licence.
+              </p>
+            </div>
+            <div style="flex: 1 1 320px; display: flex; flex-wrap: wrap; gap: 12px">
+              <a class="btn pri" href="SignIn.dc.html">Sign in</a>
+              <a class="btn sec" href="https://github.com/blacklight0101/Rosetta"
+                >Read the source on GitHub</a
+              >
+            </div>
+          </div>
+        </section>
+
+        <footer style="border-top: 1px solid var(--rst-rule)">
+          <div
+            class="wrap lbl"
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px 24px;
+              padding-top: 24px;
+              padding-bottom: 32px;
+            "
+          >
+            <span>Rosetta · MIT licence</span><span>Not indexed by search engines</span>
+            <div style="flex: 1 1 auto"></div>
+            <a href="https://github.com/blacklight0101/Rosetta/blob/main/SECURITY.md">Security</a>
+          </div>
+        </footer>
+      </div>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"showAccess":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":3200}}'
+    >
+      class Component extends DCLogic {
+      renderVals() {
+      const reader = 'var(--rst-role-reader)', verifier = 'var(--rst-role-verifier)', summ = 'var(--rst-role-summariser)';
+      return {
+      theme: this.props.theme ?? 'dark',
+      showAccess: this.props.showAccess ?? true,
+      contact: 'access@example.org',
+      lanes: [
+      { role: 'Reader', what: 'Catalog · 38 files', color: reader, start: '0%', width: '64%', delay: '0s', cls: 'ok', state: 'Done · 9 cards', anim: '', final: '' },
+      { role: 'Reader', what: 'Orders · 21 files', color: reader, start: '6%', width: '72%', delay: '.3s', cls: 'run', state: 'Turn 11', anim: 'swap-a', final: 'Done · 7 cards', finalCls: 'ok' },
+      { role: 'Reader', what: 'Account · 12 files', color: reader, start: '10%', width: '40%', delay: '.6s', cls: 'ok', state: 'Done · 4 cards', anim: '', final: '' },
+      { role: 'Verifier', what: '31 claims', color: verifier, start: '30%', width: '52%', delay: '1.2s', cls: 'run', state: 'Checking', anim: 'swap-a', final: 'Done · 31 verdicts', finalCls: 'ok' },
+      { role: 'Summariser', what: 'Waits for the readers', color: summ, start: '0%', width: '0%', delay: '0s', cls: '', state: 'Planned', anim: '', final: '' }
+      ],
+      events: [
+      { t: '14:03:22', text: 'Verifier: BR-007 supported · Create.aspx.cs:41-47', delay: '2.4s' },
+      { t: '14:03:19', text: 'Reader Orders read Services/OrderService.cs, lines 1-120', delay: '2.0s' },
+      { t: '14:03:15', text: 'Verifier: BR-011 rejected · the cited lines apply no discount', delay: '1.6s' },
+      { t: '14:03:09', text: 'Reader Catalog wrote ENT-003 CatalogItem', delay: '1.2s' },
+      { t: '14:03:02', text: 'Reader Orders searched for "Status ="', delay: '.8s' },
+      { t: '14:02:57', text: 'Run started · cap $0.50 · 3 areas', delay: '.4s' }
+      ],
+      steps: [
+      { cmd: 'snapshot.json', title: 'Pin a commit', text: 'A public GitHub URL is resolved to one commit and downloaded once, read-only.', cls: '' },
+      { cmd: 'codemap.json', title: 'Map the code', text: 'Files, languages, entry points and areas, without AI and with the same result every time.', cls: '' },
+      { cmd: 'cards/', title: 'Agents write cards', text: 'One reader per area explores with read-only tools and writes features, rules, entities and integrations.', cls: 'reader' },
+      { cmd: 'a verdict on every claim', title: 'Check every claim', text: 'Citations are checked in code, then a second model judges whether the lines support the claim.', cls: 'verifier' },
+      { cmd: 'answers.md', title: 'You decide', text: 'What the code cannot tell becomes an open question for you; your answers feed the next pass.', cls: '' },
+      { cmd: 'report/ and handoff/', title: 'Report and hand-off', text: 'An HTML report that replays the run, and a package with architecture, decisions, roadmap and task cards.', cls: '' }
+      ],
+      safety: [
+      { title: 'Read-only.', text: 'Agents can list, read and search files. Nothing else.' },
+      { title: 'Masked before it leaves.', text: 'Secrets are masked and every excerpt sent to a provider is logged.' },
+      { title: 'Untrusted text stays text.', text: 'Code and model output are never run or rendered as HTML.' },
+      { title: 'Private by account.', text: 'Your projects and keys are yours; no one else sees them.' },
+      { title: 'Asked, not assumed.', text: 'Cloud providers are used only after you confirm, per run.' }
+      ]
+      };
+      }
+      }
+    </script>
+  </body>
 </html>

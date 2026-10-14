@@ -46,10 +46,12 @@ We choose option 1.
 ## Consequences
 
 **Positive**
+
 - Transactions for caps and lockouts; SQL injection is ruled out by construction (parameterised queries only, a
   lint rule bans template literals passed to `query`).
 
 **Negative**
+
 - A database to run, migrate and back up, locally (Compose) and hosted (managed PostgreSQL).
 
 ## References
