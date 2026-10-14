@@ -17,7 +17,7 @@ afterEach(() => {
 /** Every worker the runner subscribes to; a thread that has ended reports `threadId` -1. */
 function trackWorkers(): () => Worker[] {
   const once = vi.spyOn(Worker.prototype, 'once');
-  return () => [...new Set(once.mock.contexts)];
+  return () => [...new Set(once.mock.contexts)].filter((context) => context instanceof Worker);
 }
 
 describe('grep runner', () => {
