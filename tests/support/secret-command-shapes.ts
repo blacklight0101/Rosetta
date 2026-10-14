@@ -110,6 +110,62 @@ export const commandSecretCases: readonly ShapeCase[] = [
     masked: `tool ${tokenOption}=[MASKED:bearer-token] > out.txt`,
     secrets: [token],
   },
+  {
+    name: 'a --token value after the scheme word Negotiate',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption} Negotiate ${shortToken} --verbose`,
+    masked: `tool ${tokenOption} Negotiate [MASKED:bearer-token] --verbose`,
+    secrets: [shortToken],
+  },
+  {
+    name: 'a --token value after a quoted scheme word',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption} 'Bearer' ${shortToken}`,
+    masked: `tool ${tokenOption} 'Bearer' [MASKED:bearer-token]`,
+    secrets: [shortToken],
+  },
+  {
+    name: 'a --token value after the scheme word repeated',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption} Bearer Bearer ${shortToken}`,
+    masked: `tool ${tokenOption} Bearer Bearer [MASKED:bearer-token]`,
+    secrets: [shortToken],
+  },
+  {
+    name: 'a --token value after the scheme word and many blanks',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption} Bearer${' '.repeat(40)}${shortToken}`,
+    masked: `tool ${tokenOption} Bearer${' '.repeat(40)}[MASKED:bearer-token]`,
+    secrets: [shortToken],
+  },
+  {
+    name: 'a mysql -p password after a 2>&1 redirect',
+    kind: 'password',
+    text: `mysql 2>&1 -u root -p${password}`,
+    masked: 'mysql 2>&1 -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after a >& redirect with a file',
+    kind: 'password',
+    text: `mysql >& out.sql -u root -p${password}`,
+    masked: 'mysql >& out.sql -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after an &> redirect and a 2>&1 redirect',
+    kind: 'password',
+    text: `mysql &> a 2>&1 -u root -p${password}`,
+    masked: 'mysql &> a 2>&1 -u root -p[MASKED:password]',
+    secrets: [password],
+  },
+  {
+    name: 'a mysql -p password after a >&- redirect',
+    kind: 'password',
+    text: `mysql >&- -u root -p${password}`,
+    masked: 'mysql >&- -u root -p[MASKED:password]',
+    secrets: [password],
+  },
 ];
 
 /** Text close to the new shapes that is not a secret. */
@@ -124,6 +180,8 @@ export const commandInnocentTexts: readonly string[] = [
   `tool ${doubleDash}no-password > out.txt`,
   `x${tokenOption} abc`,
   `-${tokenOption} abc`,
+  'mysql 2>&1 -u root -p',
+  'mysql >& out.sql -u root',
 ];
 
 /** Hostile pieces for the new patterns (RF-141 linear time), built from pieces like the cases. */
@@ -138,4 +196,11 @@ export const commandAdversarialPieces: readonly string[] = [
   `${passwordOption} "`,
   `${tokenOption}=`,
   `${tokenOption} '`,
+  `${tokenOption} Bearer `,
+  `${tokenOption} 'Bearer' `,
+  `${tokenOption} Bearer Bearer `,
+  `${tokenOption} Negotiate${' '.repeat(40)}`,
+  'mysql 2>&1 ',
+  'mysql >& ',
+  'mysql &> a 2>&1 ',
 ];
