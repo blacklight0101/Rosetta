@@ -236,14 +236,14 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   // Registered as a plugin, so the rate-limit plugin (loaded first) sees these routes.
   void server.register((instance, _options, done) => {
     registerSessionRoutes(instance, options.auth);
-    registerAccountRoutes(instance, options.auth.accounts);
+    registerAccountRoutes(instance, options.auth.accounts, options.auth.refusals);
     registerKeyRoutes(instance, options.auth.accounts);
     registerProviderTestRoutes(instance, options.auth.accounts, options.auth.refusals);
     registerAdminRoutes(instance, options.auth.accounts);
     registerCapRoutes(instance, options.auth.accounts);
     registerDefaultRoleRoutes(instance, options.auth.accounts);
     registerProjectRoutes(instance, options.projects);
-    registerRunRoutes(instance, options.runs);
+    registerRunRoutes(instance, options.runs, options.logger);
     registerCostRoutes(instance, options.projects);
     registerErrorCatalogueRoutes(instance);
     registerHistoryRoutes(instance, options.history);

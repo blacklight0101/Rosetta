@@ -76,11 +76,19 @@ function byFolder(path: readonly string[], name: string): boolean {
   return folders.some((folder) => LIBRARY_FOLDERS.has(folder)) && isLibraryName(name);
 }
 
+/**
+ * RF-104: whether a path alone says the file is a vendored library or a minified bundle (its name
+ * or its folder); the grep reads such files last (P1-160).
+ */
+export function isThirdPartyPath(path: string): boolean {
+  const segments = path.split('/');
+  const name = segments.pop() ?? '';
+  return MINIFIED.test(name) || byFolder(segments, name);
+}
+
 /** RF-104: whether one listed file is a vendored library or a minified bundle. */
 export function isThirdPartyFile(file: FileEntry): boolean {
-  const segments = file.path.split('/');
-  const name = segments.pop() ?? '';
-  return MINIFIED.test(name) || averageLineIsLong(file) || byFolder(segments, name);
+  return isThirdPartyPath(file.path) || averageLineIsLong(file);
 }
 
 /** RF-1001: the names of the areas whose every file is third-party. */

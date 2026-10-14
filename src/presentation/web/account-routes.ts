@@ -7,6 +7,8 @@ import type {
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { FieldProblemsError } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import type { RecordRefusedRequest } from '../../application/use-cases/record-refused-request.js';
+import { recordRateLimited } from './rate-limit-log.js';
 import { signedInOf } from './request-actor.js';
 import { secureCookie, SESSION_COOKIE } from './session-cookies.js';
 import { freshCsrfToken } from './session-routes.js';
@@ -23,7 +25,8 @@ import {
 //   new secret, like sign-in. A refused rule names its field so the form can show it there.
 // Like sign-in, the body is capped at 4 KiB, each password at 1,024 characters, attempts at 10 a
 // minute per address, and at most eight changes are verified at a time (429 beyond), which bounds
-// the scrypt queue (each change verifies one hash and makes one).
+// the scrypt queue (each change verifies one hash and makes one). That 429 is audited and logged
+// like a rate-limit hit, with its actor (RF-1109, P1-160).
 
 export interface AccountRouteOptions {
   readonly changePassword: ChangePassword;
@@ -45,7 +48,11 @@ function refusal(code: ChangePasswordProblem): RosettaError {
 }
 
 // RF-1103
-export function registerAccountRoutes(server: FastifyInstance, options: AccountRouteOptions): void {
+export function registerAccountRoutes(
+  server: FastifyInstance,
+  options: AccountRouteOptions,
+  refusals: RecordRefusedRequest,
+): void {
   let pending = 0;
   server.post(
     '/api/account/password',
@@ -56,7 +63,10 @@ export function registerAccountRoutes(server: FastifyInstance, options: AccountR
     async (request, reply) => {
       const body = changeBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
-      if (pending >= MAX_PENDING_CHANGES) throw new RosettaError(ERROR_CODES.rateLimited);
+      if (pending >= MAX_PENDING_CHANGES) {
+        await recordRateLimited(refusals, request);
+        throw new RosettaError(ERROR_CODES.rateLimited);
+      }
       pending += 1;
       const outcome = await options.changePassword
         .execute({

@@ -1,21 +1,20 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
+import type { Logger } from '../../application/ports/logger.js';
 import { z } from 'zod';
 import type { EstimateRun } from '../../application/estimate/estimate-run.js';
 import { Readable } from 'node:stream';
 import type { ArchivePart } from '../../application/ports/archive-writer.js';
-import type { Scheduler } from '../../application/ports/scheduler.js';
 import type { ExportZip } from '../../application/use-cases/export-zip.js';
 import type { GetRun } from '../../application/use-cases/get-run.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
-import type { SubscribeRunEvents } from '../../application/use-cases/subscribe-run-events.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { MAX_AREAS, MAX_AREA_NAME, START_BODY_LIMIT_BYTES } from './area-limits.js';
 import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
-import { EventStream, type StreamRegistry } from './event-stream.js';
 import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
+import { registerEventRoutes, type EventRouteServices } from './run-event-routes.js';
 import { registerRunFileRoutes, type RunFileServices } from './run-file-routes.js';
 import { signedInOf } from './request-actor.js';
 import { registerEstimateRoutes } from './estimate-routes.js';
@@ -31,9 +30,7 @@ import { runView } from './run-view.js';
 //   totals so far), `reportBuilt`, whether its report exists (P1-130), and `position`, the place of a
 //   queued run in the queue counted from 1 (null for any other run; the start page polls it,
 //   P1-106): the live run page reads it for a run that has no event yet. Another user's run id answers 404 like an unknown one.
-// - GET /api/runs/:runId/events streams the run's events as server-sent events: the stored events
-//   after `Last-Event-ID` (or `?after=`), then the live ones, closing after `run.ended`. Another
-//   user's run id answers 404 like an unknown one.
+// - GET /api/runs/:runId/events streams the run's events as server-sent events (run-event-routes.ts).
 // - GET /api/runs/:runId/zip and /api/runs/:runId/handoff.zip stream the run folder, or only its
 //   handoff/ folder, as a zip download (RF-008): 409 (RST-1700) while the run is queued or
 //   running, 404 for another user's run id, an unknown id and a run without that folder.
@@ -41,21 +38,14 @@ import { runView } from './run-view.js';
 //   stops) or cancels a queued one (200); a run that has ended answers 409.
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 
-export interface RunServices extends RunFileServices, AnswerServices, ObservabilityServices {
+export interface RunServices
+  extends RunFileServices, AnswerServices, ObservabilityServices, EventRouteServices {
   readonly startRun: StartRun;
   readonly estimateRun: EstimateRun;
   readonly getRun: GetRun;
-  readonly subscribeRunEvents: SubscribeRunEvents;
   readonly stopRun: StopRun;
   readonly exportZip: ExportZip;
-  /** Drives the keep-alive comment of every open stream. */
-  readonly heartbeat: Scheduler;
-  /** The open event streams; a closing server ends them. */
-  readonly streams: StreamRegistry;
 }
-
-const KEEP_ALIVE_MS = 15_000;
-const SEQ = /^\d{1,15}$/;
 
 const areaName = z.string().min(1).max(MAX_AREA_NAME);
 
@@ -65,82 +55,6 @@ const startBody = z.strictObject({
   areas: z.array(areaName).max(MAX_AREAS).optional(),
   cloudConsent: z.boolean().optional(),
 });
-
-interface EventsRequest {
-  readonly Params: { readonly runId: string };
-  readonly Querystring: { readonly after?: string };
-}
-
-/** The `seq` of the last event the page has: `Last-Event-ID` of a reconnect, else `?after=`. */
-function lastSeen(request: FastifyRequest<EventsRequest>): number {
-  const header = request.headers['last-event-id'];
-  const given = typeof header === 'string' ? header : request.query.after;
-  if (given === undefined || given === '') return 0;
-  if (!SEQ.test(given)) throw new RosettaError(ERROR_CODES.requestInvalid);
-  return Number(given);
-}
-
-/** The stream of a subscription that is sending: closes with its page, ends with its run. */
-function openStream(services: RunServices, close: () => void): EventStream {
-  const stream = new EventStream();
-  services.streams.add(stream);
-  stream.onClose(close);
-  const cancel = services.heartbeat.every(KEEP_ALIVE_MS, () => {
-    stream.keepAlive();
-    return Promise.resolve();
-  });
-  stream.onClose(cancel);
-  return stream;
-}
-
-function registerEvents(server: FastifyInstance, services: RunServices): void {
-  // A stream stays open for as long as its run, so closing the server ends the open ones first.
-  server.addHook('preClose', () => {
-    services.streams.finishAll();
-  });
-  server.get<EventsRequest>(
-    '/api/runs/:runId/events',
-    // A HEAD request would open a stream and close it at once; the route has no HEAD form.
-    { exposeHeadRoute: false, config: { access: 'user' } },
-    async (request, reply) => {
-      // The stream exists once the subscription does, so a failure before that leaks nothing.
-      const holder: { stream?: EventStream } = {};
-      const outcome = await services.subscribeRunEvents.execute({
-        actor: signedInOf(request).actor,
-        runId: request.params.runId,
-        afterSeq: lastSeen(request),
-        onEvent: (event, stored) => {
-          if (stored) holder.stream?.sendStored(event);
-          else holder.stream?.send(event);
-        },
-        onEnd: () => {
-          holder.stream?.finish();
-        },
-        drained: () => holder.stream?.drained() ?? Promise.resolve(),
-        // A page that stalls during the replay is dropped; it reconnects with `Last-Event-ID`.
-        onDrop: () => {
-          holder.stream?.destroy();
-        },
-      });
-      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
-      const stream = openStream(services, () => {
-        outcome.value.close();
-      });
-      holder.stream = stream;
-      reply
-        .header('content-type', 'text/event-stream; charset=utf-8')
-        .header('cache-control', 'no-store')
-        .header('x-accel-buffering', 'no')
-        .send(stream);
-      // The stored events go out after the stream is handed over, at the pace the page reads.
-      outcome.value.replay().catch((error: unknown) => {
-        request.log.error({ err: error }, 'The stored events of a run could not be sent');
-        stream.destroy();
-      });
-      return reply;
-    },
-  );
-}
 
 /** Streams one part of a run as an attachment; the file name comes from the run key, cleaned. */
 function registerDownload(
@@ -232,9 +146,13 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
 }
 
 // RF-1006, RF-1108, RF-1105
-export function registerRunRoutes(server: FastifyInstance, services: RunServices): void {
+export function registerRunRoutes(
+  server: FastifyInstance,
+  services: RunServices,
+  logger: Logger,
+): void {
   registerGet(server, services);
-  registerEvents(server, services);
+  registerEventRoutes(server, services, logger);
   registerDownload(server, services, { url: '/api/runs/:runId/zip', part: 'run' });
   registerDownload(server, services, { url: '/api/runs/:runId/handoff.zip', part: 'handoff' });
   registerRunFileRoutes(server, services);

@@ -38,6 +38,8 @@ import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-re
 import { PgServerCapsStore } from '../infrastructure/db/pg-server-caps-store.js';
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
 import { PgSessionStore } from '../infrastructure/db/pg-session-store.js';
+import { StreamRegistry } from './web/event-stream.js';
+import { StreamClosingSessionStore } from './web/stream-closing-sessions.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
@@ -105,13 +107,15 @@ export interface Auth {
   readonly priceTable: PriceTable;
   /** For the hourly purge of expired sessions (architecture section 7, `Scheduler`). */
   readonly sessions: SessionStore;
+  /** RF-1101: the open event streams, which end with their session (shared with the run routes). */
+  readonly streams: StreamRegistry;
 }
 
 interface AccountAdapters {
   readonly pool: DatabasePool;
   readonly secretBox: SecretBox;
   readonly users: PgUserRepository;
-  readonly sessions: PgSessionStore;
+  readonly sessions: SessionStore;
   readonly auditLog: PgAuditLog;
   readonly masker: TextMasker;
   readonly hasher: PasswordHasher;
@@ -203,11 +207,13 @@ export async function composeAuth(
     doubles: mode.doubles,
   });
   const users = new PgUserRepository(pool);
-  const sessions = new PgSessionStore(pool);
+  const streams = new StreamRegistry();
+  const sessions = new StreamClosingSessionStore(new PgSessionStore(pool), streams);
   const auditLog = new PgAuditLog(pool, masker);
   const dummyHash = await createDummyHash(hasher);
   return {
     sessions,
+    streams,
     providers: factory,
     priceTable,
     services: {

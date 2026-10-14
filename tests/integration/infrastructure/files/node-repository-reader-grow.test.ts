@@ -47,14 +47,16 @@ function grownPath(): string {
 }
 
 /** A reader over a 100-byte file that grows to 5,700 bytes between its `stat` and its read. */
-async function openGrowingReader(): Promise<NodeRepositoryReader> {
+async function openGrowingReader(
+  limits: { readonly maxFileBytes: number; readonly grepMaxTotalBytes?: number } = { maxFileBytes },
+): Promise<NodeRepositoryReader> {
   await writeTree(snapshotRoot(), { 'src/grows.txt': `${'a'.repeat(99)}\n` });
   const reader = await NodeRepositoryReader.open({
     root: snapshotRoot(),
     ignoreRules: '',
     allowDenied: [],
     logger: new MemoryLogger(new FixedClock('2026-10-13T09:00:00.000Z'), new SecretMasker()),
-    maxFileBytes,
+    ...limits,
   });
   armTrap(trap, grownPath(), () => appendFile(grownPath(), 'needle\n'.repeat(800)));
   return reader;
@@ -90,5 +92,14 @@ describe('NodeRepositoryReader when a file grows after its size check', () => {
     expect(trap.path).toBeUndefined();
     expect(result.ok && result.value.matches).toEqual([]);
     expect(result.ok && result.value.notice).toContain('scan.maxFileBytes');
+  });
+
+  it('RF-146 grep never reads a grown file past what is left of its byte budget (P1-160)', async () => {
+    const reader = await openGrowingReader({ maxFileBytes: 100_000, grepMaxTotalBytes: 1000 });
+
+    const result = await reader.grep({ pattern: 'needle' });
+
+    expect(trap.path).toBeUndefined();
+    expect(result.ok && result.value.matches).toEqual([]);
   });
 });

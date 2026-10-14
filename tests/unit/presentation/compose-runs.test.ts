@@ -9,6 +9,7 @@ import { GitHubSnapshotFetcher } from '../../../src/infrastructure/github/github
 import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
 import { LanguagePackRegistry } from '../../../src/infrastructure/scan/packs/pack-registry.js';
 import { composeRuns } from '../../../src/presentation/compose-runs.js';
+import { StreamRegistry } from '../../../src/presentation/web/event-stream.js';
 import { FixedClock } from '../../support/fixed-clock.js';
 import { MemoryLogger } from '../../support/memory-logger.js';
 
@@ -34,6 +35,7 @@ async function exists(path: string): Promise<boolean> {
 
 /** The runs composition against an unreachable database, so the queue step of `recover` rejects. */
 function composedRuns(dataDir: string) {
+  const streams = new StreamRegistry();
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -54,9 +56,20 @@ function composedRuns(dataDir: string) {
     providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
     ollamaUrl: undefined,
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
+    streams,
   });
-  return { runs, logger, pool };
+  return { runs, logger, pool, streams, clock };
 }
+
+describe('composeRuns streams', () => {
+  it('RF-1101 the run routes share the stream registry the session store ends, and the clock', async () => {
+    const { runs, pool, streams, clock } = composedRuns(tmpdir());
+
+    expect(runs.services.streams).toBe(streams);
+    expect(runs.services.clock).toBe(clock);
+    await pool.end();
+  });
+});
 
 describe('composeRuns', () => {
   it('RF-122 recover, the periodic queue sweep, does not discard the partial snapshot folders', async () => {

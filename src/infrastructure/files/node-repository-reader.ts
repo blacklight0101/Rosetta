@@ -14,8 +14,9 @@ import type {
   SkippedPaths,
 } from '../../application/ports/repository-reader.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { readTextUpTo, readUpTo } from './bounded-read.js';
+import { readTextUpTo, readUpTo, utf8Text } from './bounded-read.js';
 import { cutLine, grepLimits, isPatternTooLong } from './grep-limits.js';
+import { budgetOrder, inPathOrder } from './grep-order.js';
 import { grepResult, type SearchedFile, type SearchedFiles } from './grep-result.js';
 import { runGrep } from './grep-runner.js';
 import { IgnoreRules, pathFilter } from './ignore-rules.js';
@@ -40,6 +41,8 @@ export interface NodeRepositoryReaderOptions {
   readonly grepTimeoutMs?: number;
   /** The project's `scan.maxFileBytes`: larger files are never read or searched (RF-144, RF-146). */
   readonly maxFileBytes?: number;
+  /** P1-160: the bytes one grep reads across all files; defaults to 32 MiB. */
+  readonly grepMaxTotalBytes?: number;
 }
 
 interface ReaderState {
@@ -52,6 +55,7 @@ interface ReaderState {
   readonly logger: Logger;
   readonly timeoutMs: number;
   readonly maxFileBytes: number;
+  readonly grepBudget: number;
 }
 
 /** The default of `scan.maxFileBytes` (data-model.md 3.1), for a caller that has no settings. */
@@ -107,6 +111,7 @@ export class NodeRepositoryReader implements RepositoryReader {
       logger: options.logger,
       timeoutMs: options.grepTimeoutMs ?? grepLimits.timeoutMs,
       maxFileBytes: options.maxFileBytes ?? defaultMaxFileBytes,
+      grepBudget: options.grepMaxTotalBytes ?? grepLimits.maxTotalBytes,
     };
     await NodeRepositoryReader.#recordLifted(options.logger, rules.liftedDenyPatterns);
     return new NodeRepositoryReader(state);
@@ -177,19 +182,25 @@ export class NodeRepositoryReader implements RepositoryReader {
     }
   }
 
+  // RF-146, P1-160: a file is read only while the search's total stays within its byte budget;
+  // the repository's own files are read first (budgetOrder), and the answer keeps the path order.
   async #searchedFiles(request: GrepRequest): Promise<SearchedFiles> {
-    const selected = searchSelector(request);
+    const { maxFileBytes, grepBudget } = this.#state;
+    const paths = (await this.listFiles()).filter(searchSelector(request));
     const files: SearchedFile[] = [];
-    let tooLarge = 0;
-    for (const path of await this.listFiles()) {
-      if (!selected(path)) continue;
+    const counts = { tooLarge: 0, overBudget: 0 };
+    let left = grepBudget;
+    for (const path of budgetOrder(paths)) {
       const absolute = await this.#realFile(path);
       if (absolute === undefined) continue;
-      const text = await readTextUpTo(absolute, this.#state.maxFileBytes);
-      if (text === undefined) tooLarge += 1;
-      else files.push(searchedFile(path, text));
+      const read = await budgetedRead(absolute, maxFileBytes, left);
+      if (read.bytes === undefined) counts[read.skipped] += 1;
+      else {
+        left -= read.bytes.length;
+        files.push(searchedFile(path, utf8Text(read.bytes)));
+      }
     }
-    return { files, tooLarge };
+    return { files: inPathOrder(files, paths), ...counts, budget: grepBudget };
   }
 
   /**
@@ -253,6 +264,27 @@ function isUnderAny(path: string, folders: ReadonlySet<string>): boolean {
   if (folders.size === 0) return false;
   const parts = path.split('/');
   return parts.some((_, index) => folders.has(parts.slice(0, index + 1).join('/')));
+}
+
+type BudgetedRead =
+  | { readonly bytes: Uint8Array }
+  | { readonly bytes: undefined; readonly skipped: 'tooLarge' | 'overBudget' };
+
+/**
+ * P1-160: the bytes of a file a search reads, or why it is left out: larger than
+ * `scan.maxFileBytes`, past what is `left` of the search's byte budget, or grown since it was
+ * measured (read as too large). The read never takes more than the measured size.
+ */
+async function budgetedRead(
+  path: string,
+  maxFileBytes: number,
+  left: number,
+): Promise<BudgetedRead> {
+  const { size } = await stat(path);
+  if (size > maxFileBytes) return { bytes: undefined, skipped: 'tooLarge' };
+  if (size > left) return { bytes: undefined, skipped: 'overBudget' };
+  const bytes = await readUpTo(path, size, maxFileBytes);
+  return bytes === undefined ? { bytes, skipped: 'tooLarge' } : { bytes };
 }
 
 function searchedFile(path: string, text: string): SearchedFile {

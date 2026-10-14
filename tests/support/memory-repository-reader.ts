@@ -9,7 +9,7 @@ import type {
   RepositoryReader,
 } from '../../src/application/ports/repository-reader.js';
 import { err, ok, type Result } from '../../src/domain/errors/result.js';
-import { cutLine } from '../../src/infrastructure/files/grep-limits.js';
+import { cutLine, grepLimits } from '../../src/infrastructure/files/grep-limits.js';
 import { grepResult, type SearchedFile } from '../../src/infrastructure/files/grep-result.js';
 import { refusal } from '../../src/infrastructure/files/read-refusals.js';
 
@@ -124,7 +124,14 @@ export class MemoryRepositoryReader implements RepositoryReader {
       lines.flatMap((text, index) => (pattern.test(text) ? [{ path, line: index + 1 }] : [])),
     );
     const tooLarge = selected.length - searched.length;
-    return Promise.resolve(ok(grepResult({ files: searched, tooLarge }, matches)));
+    return Promise.resolve(
+      ok(
+        grepResult(
+          { files: searched, tooLarge, overBudget: 0, budget: grepLimits.maxTotalBytes },
+          matches,
+        ),
+      ),
+    );
   }
 
   readBytes(request: ReadBytesRequest): Promise<Result<FileBytes, ReadRefusal>> {

@@ -1,3 +1,12 @@
+import type { SessionStore } from '../../src/application/ports/session-store.js';
+import { StreamRegistry } from '../../src/presentation/web/event-stream.js';
+import { StreamClosingSessionStore } from '../../src/presentation/web/stream-closing-sessions.js';
+import type { FixedClock } from './fixed-clock.js';
+import { ManualScheduler } from './manual-scheduler.js';
+import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
+import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
+import { FakeHostResolver } from './fake-host-resolver.js';
+import { fixtureSecret } from './provider-key-fixtures.js';
 import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
@@ -49,4 +58,37 @@ export function outputsAndRoutes(given: RunOutputGiven): {
   const recorder = recordRoutes();
   const { outputs, doubles } = runOutputs(given);
   return { outputs, recorder, doubles: { ...doubles, routes: () => recorder.rows() } };
+}
+
+/**
+ * The keep-alive scheduler, the open streams and the clock of the run routes, and the session store
+ * the use cases are given: it ends the open streams of a session that ends (RF-1101).
+ */
+export function streamRoute(
+  clock: FixedClock,
+  sessions: SessionStore,
+): {
+  route: { heartbeat: ManualScheduler; streams: StreamRegistry; clock: FixedClock };
+  endingSessions: SessionStore;
+} {
+  const streams = new StreamRegistry();
+  return {
+    route: { heartbeat: new ManualScheduler(() => undefined), streams, clock },
+    endingSessions: new StreamClosingSessionStore(sessions, streams),
+  };
+}
+
+export interface KeyParts {
+  readonly keys: MemoryProviderKeyRepository;
+  readonly secretBox: AesGcmSecretBox;
+  readonly resolver: FakeHostResolver;
+}
+
+/** RF-1104: the key store, its sealing box and the DNS stand-in of the base-URL check. */
+export function keyParts(): KeyParts {
+  return {
+    keys: new MemoryProviderKeyRepository(),
+    secretBox: new AesGcmSecretBox({ current: fixtureSecret(1) }),
+    resolver: new FakeHostResolver(),
+  };
 }

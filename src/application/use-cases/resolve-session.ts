@@ -19,6 +19,8 @@ export interface SignedInSession {
   readonly sessionId: string;
   readonly actor: Actor;
   readonly user: SessionUser;
+  /** When the session expires unless a later request moves it on (an open stream ends then). */
+  readonly expiresAt: Date;
 }
 
 export interface ResolveSessionDependencies {
@@ -52,6 +54,11 @@ export class ResolveSession {
       });
       return undefined;
     }
-    return { sessionId, actor: actorOf(account), user: sessionUserOf(account) };
+    return {
+      sessionId,
+      actor: actorOf(account),
+      user: sessionUserOf(account),
+      expiresAt: session.expiresAt,
+    };
   }
 }
