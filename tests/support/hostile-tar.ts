@@ -22,7 +22,7 @@ export function plainFile(path: string, content = 'ok\n'): HostileEntry {
 
 /** An entry whose path is written exactly as given, so a hostile name reaches the extractor unchanged. */
 export function rawEntry(path: string, type: HostileEntryType = 'File'): HostileEntry {
-  return { path, type, content: type === 'File' ? 'must never be written\n' : undefined };
+  return type === 'File' ? { path, type, content: 'must never be written\n' } : { path, type };
 }
 
 function encode(entry: HostileEntry): Buffer[] {
