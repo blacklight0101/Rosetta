@@ -1,3 +1,4 @@
+import type { BudgetEvents } from '../../application/ports/budget-events.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type { CostLedger } from '../../application/ports/cost-ledger.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
@@ -63,6 +64,8 @@ export interface BudgetGuardOptions {
   readonly costs: RunCostRecorder;
   /** Aborts the run's one signal with the reason (the run ends `CapReached`). */
   readonly stopRun: (reason: RosettaError) => void;
+  /** The run's usage and budget events (P1-96); a failure is logged, never thrown. */
+  readonly budgetEvents: BudgetEvents;
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly logger: Logger;

@@ -72,6 +72,7 @@ export function guardedProvider(parts: GuardedParts): LlmProvider {
     recorder: sinks.recorder,
     costs: sinks.costs,
     stopRun: sinks.stopRun,
+    budgetEvents: sinks.budgetEvents,
     reservationTtlMs: parts.reservationTtlMs,
   });
 }

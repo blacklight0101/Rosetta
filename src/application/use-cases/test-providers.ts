@@ -15,6 +15,7 @@ import type { UserRepository } from '../ports/user-repository.js';
 import { settingsForNewProject } from '../projects/default-settings.js';
 import { ROLE_NAMES, type ProjectSettings } from '../projects/project-settings.js';
 import type { RoleProvider } from '../providers/provider-set.js';
+import { silentBudgetEvents } from '../runs/run-budget-events.js';
 
 // RF-407, RF-405, RF-002, ADR-003: the Test button of the settings page. For each role of a new
 // project (the template with the server's default models, DEC-106) it sends one tiny call through
@@ -110,6 +111,7 @@ export class TestProviders {
           },
         },
         stopRun: () => undefined,
+        budgetEvents: silentBudgetEvents,
       },
     });
     const chosen = built.ok ? built.value.get(role) : undefined;

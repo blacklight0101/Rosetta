@@ -98,6 +98,14 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expect(meter.getByRole('row', { name: /Total/u })).toContainText(
     tokens.toLocaleString('en-US'),
   );
+  // P1-96: the cost of the role and of each agent comes from the run's usage events; with one
+  // role, the role's cost is the run total the page reads from the run.
+  const costCell = (name: RegExp) => meter.getByRole('row', { name }).getByRole('cell').last();
+  await expect(costCell(/reader/u)).toHaveText(/^\$\d+\.\d+$/u);
+  await expect(costCell(/reader/u)).toHaveText((await costCell(/Total/u).textContent()) ?? '');
+  for (const area of areas)
+    await expect(valueOf(agentPanel(page, area), 'Cost')).toHaveText(/^\$/u);
+  await expect(meter).not.toContainText('shows a dash');
   await expect(meter.getByRole('meter', { name: 'Run tokens against cap' })).toBeVisible();
   await expect(meter.getByRole('meter', { name: 'Run cost against cap' })).toBeVisible();
   await expect(meter).toContainText('Estimate');

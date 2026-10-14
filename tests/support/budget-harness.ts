@@ -3,10 +3,11 @@ import type {
   LlmRequest,
   ProviderKind,
 } from '../../src/application/ports/llm-provider.js';
+import type { BudgetEvents, RecordedCall } from '../../src/application/ports/budget-events.js';
 import type { CostLedger } from '../../src/application/ports/cost-ledger.js';
 import type { Price } from '../../src/domain/budget/price.js';
 import type { KeySource, PriceTable } from '../../src/domain/budget/price-table.js';
-import type { UsageCap } from '../../src/domain/budget/usage-cap.js';
+import type { CapBreach, UsageCap } from '../../src/domain/budget/usage-cap.js';
 import type { RosettaError } from '../../src/domain/errors/rosetta-error.js';
 import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
 import { BudgetGuard } from '../../src/infrastructure/guards/budget-guard.js';
@@ -58,6 +59,29 @@ export interface BudgetHarnessOptions {
   /** The provider the guard wraps; the fake of `recording` by default. */
   readonly inner?: LlmProvider;
   readonly ledger?: CostLedger;
+  /** Where the guard reports usage and caps; by default a recorder kept in `reported`. */
+  readonly budgetEvents?: BudgetEvents;
+}
+
+/** What the guard reported to the run's budget events, in order (P1-96). */
+interface Reported {
+  readonly calls: RecordedCall[];
+  readonly caps: CapBreach[];
+}
+
+function eventsOf(given: BudgetEvents | undefined, reported: Reported): BudgetEvents {
+  return (
+    given ?? {
+      callRecorded: (call) => {
+        reported.calls.push(call);
+        return Promise.resolve();
+      },
+      capReached: (breach) => {
+        reported.caps.push(breach);
+        return Promise.resolve();
+      },
+    }
+  );
 }
 
 interface CostCall {
@@ -77,6 +101,7 @@ export interface BudgetHarness {
   readonly stops: RosettaError[];
   /** The calls the guard added to the run's totals. */
   readonly costs: CostCall[];
+  readonly reported: Reported;
 }
 
 export function budgetHarness(options: BudgetHarnessOptions = {}): BudgetHarness {
@@ -90,6 +115,7 @@ export function budgetHarness(options: BudgetHarnessOptions = {}): BudgetHarness
   const logger = new MemoryLogger(clock, new SecretMasker());
   const stops: RosettaError[] = [];
   const costs: CostCall[] = [];
+  const reported: Reported = { calls: [], caps: [] };
   const guard = new BudgetGuard({
     inner: options.inner ?? fake,
     target: { provider: 'main', kind: options.kind ?? 'openai', endpointHost: 'api.openai.com' },
@@ -110,12 +136,13 @@ export function budgetHarness(options: BudgetHarnessOptions = {}): BudgetHarness
       },
     },
     stopRun: (reason) => stops.push(reason),
+    budgetEvents: eventsOf(options.budgetEvents, reported),
     clock,
     ids: new SequenceIdGenerator(),
     logger,
     reservationTtlMs: 600_000,
   });
-  return { guard, fake, ledger, calls, logger, stops, costs };
+  return { guard, fake, ledger, calls, logger, stops, costs, reported };
 }
 
 /** The contract request with another call id, so parallel calls do not share one. */
