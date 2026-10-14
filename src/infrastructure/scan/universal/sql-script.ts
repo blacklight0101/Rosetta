@@ -1,4 +1,4 @@
-import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
+﻿import type { SqlVerb } from '../../../domain/code-map/vocabulary.js';
 import { leavesKeyOpen } from '../../guards/private-key-pieces.js';
 import type { TextMasker } from '../../guards/secret-masker.js';
 import type { SqlStatement } from './scan-types.js';
@@ -85,25 +85,39 @@ function startsStatement(line: string): boolean {
   return leadingVerb(line) !== undefined && /^[A-Za-z]+[\s(]\s*\S/u.test(line.trimStart());
 }
 
+/** A BEGIN or END line of a private key block, as the private-key rule of the SecretMasker spells it. */
+const keyDelimiter = /-----(BEGIN|END) (?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY(?: BLOCK)?-----/u;
+
+/** Whether the next key delimiter after line `index` is an END: the marker on `index` is then closed. */
+function closedByLaterEnd(lines: readonly string[], index: number): boolean {
+  for (let next = index + 1; next < lines.length; next += 1) {
+    const match = keyDelimiter.exec(cutLine(lines[next] ?? ''));
+    if (match !== null) return match[1] === 'END';
+  }
+  return false;
+}
+
 /**
  * RF-141, RNF-003: where the script is cut before masking. The masker masks a BEGIN marker with no
  * END after it to the end of its text, which would hide every later statement (a comment that only
- * names the marker is enough). So from each marker that is still open, the span it opens is bounded
- * at the next line that starts a statement: a key body or its header lines never start with a SQL
- * verb followed by a space and more text. Every marker is looked at, also one before a later
- * complete key block, so the statements between them are kept. Everything before a cut is still
- * masked.
+ * names the marker is enough). Such a stray marker, one whose next key delimiter is another BEGIN or
+ * none, opens a span that is bounded at the next line that starts a statement or at the next BEGIN.
+ * A key body or its header lines never start with a SQL verb followed by a space and more text.
+ * A marker whose next delimiter is its own END is closed by it and is left whole to the masker, so a
+ * statement-looking line inside a complete key block never splits the block. Everything before a
+ * cut is still masked. A stray marker before a later complete block is cut before that block, so
+ * the statements between them are kept.
  */
 function cutsAfterOpenKeys(lines: readonly string[]): readonly number[] {
   const cuts: number[] = [];
   let open = false;
   for (let index = 0; index < lines.length; index += 1) {
     const line = cutLine(lines[index] ?? '');
-    if (open && startsStatement(line)) {
+    if (open && (startsStatement(line) || leavesKeyOpen(line))) {
       cuts.push(index);
       open = false;
     }
-    if (!open) open = leavesKeyOpen(line);
+    if (!open) open = leavesKeyOpen(line) && !closedByLaterEnd(lines, index);
   }
   return cuts;
 }

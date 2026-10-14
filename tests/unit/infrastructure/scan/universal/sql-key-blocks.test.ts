@@ -49,4 +49,12 @@ describe('a complete key block with a statement-looking line inside', () => {
     for (const token of keyTokens(shortTail)) expect(text).not.toContain(token);
     expect(found[0]?.text).toBe('INSERT INTO Item (Id) VALUES (1);');
   });
+
+  it('RNF-003 a stray marker directly before a complete block leaks no key text', () => {
+    const lines = [`-- ${begin}`, begin, body[0] ?? '', 'SELECT a FROM t', ...shortTail, end];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+    const text = JSON.stringify(found);
+
+    for (const token of keyTokens(shortTail)) expect(text).not.toContain(token);
+  });
 });
