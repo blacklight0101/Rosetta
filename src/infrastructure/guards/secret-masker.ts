@@ -57,17 +57,30 @@ const mysqlArguments = String.raw`(?:${mysqlOption('first')}){0,16}(?:${mysqlWor
 const optionValue = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s\-"'<>|&;][^\s"'<>|&;]*)`;
 const schemeNames =
   'bearer|basic|token|digest|negotiate|ntlm|kerberos|oauth|hawk|mutual|dpop|apikey|jwt|aws4-hmac-sha256';
+// A blank, or a shell line continuation (a backslash, `^` or a backtick at the end of the line, then
+// the line break), so a value on the next line is still the value. The alternatives start with
+// different characters, so a run of them can be read one way only.
+const tokenBlank = String.raw`(?:[ \t]|[\\^\x60][ \t]*\r?\n)`;
+// A continuation mark that ends the line, which no value starts with (so a run of blanks that gives
+// back its last blank cannot make the mark a value, and masking stays idempotent).
+const notContinuation = String.raw`(?![\\^\x60][ \t]*(?:\r?\n|$))`;
+// What a value may start with: a character that is not a flag or an operator, or a dash and at least
+// six more characters (`-<value>`; a short `-v` is a flag). A lone continuation mark that ends the
+// line is not a value.
+const tokenValueStart = String.raw`(?=[^\s\-<>|&;]|-[^\s\-"'<>|&;][^\s"'<>|&;]{5,})${notContinuation}`;
+const dashValue = String.raw`-[^\s\-"'<>|&;][^\s"'<>|&;]{5,}`;
 // A scheme word before the value of `--token` stays visible, bare or quoted, once or repeated, with
-// any run of blanks after it: `--token Bearer <value>`. A scheme word joins the run only when a value
-// starts after it; before a flag, a redirect or an operator it is the value (`--token Negotiate -v`).
+// any run of blanks or continuations after it: `--token Bearer <value>`. A scheme word joins the run
+// only when a value starts after it; before a flag, a redirect or an operator it is the value
+// (`--token Negotiate -v`).
 const tokenSchemeWord = String.raw`(?:"(?:${schemeNames})"|'(?:${schemeNames})'|(?:${schemeNames})(?![\w-]))`;
 // The run of scheme words is atomic (a lookahead capture, then a back reference), so a failed value
 // never retries a shorter run and the scan stays linear.
-const tokenScheme = String.raw`(?=(?<schemes>(?:${tokenSchemeWord}[ \t]+(?=[^\s\-<>|&;]))*))\k<schemes>`;
+const tokenScheme = String.raw`(?=(?<schemes>(?:${tokenSchemeWord}${tokenBlank}+${tokenValueStart})*))\k<schemes>`;
 // A word that starts with a scheme name and has more characters (`Bearer-x`, `Bearerx`) is a value,
-// and so is the word after it, so that word does not stay visible.
-const schemePrefixedValue = String.raw`(?:${schemeNames})[\w-]+(?:[ \t]+(?!\[MASKED:)(?=[^\s\-"'<>|&;])[^\s"'<>|&;]+)?`;
-const tokenValue = String.raw`(?:${schemePrefixedValue}|${optionValue})`;
+// and so is the word after it, bare or quoted, so that word does not stay visible.
+const schemePrefixedValue = String.raw`(?:${schemeNames})[\w-]+(?:${tokenBlank}+(?!\[MASKED:)${tokenValueStart}(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'<>|&;]+))?`;
+const tokenValue = String.raw`(?:${schemePrefixedValue}|${dashValue}|${optionValue})`;
 // Not preceded by a letter, digit or dash, so `x--token` and `---token` are left alone.
 const optionStart = '(?<![A-Za-z0-9-])--';
 // A quoted part runs to its closing quote (or the end of the line), spaces included; the token goes
@@ -172,7 +185,7 @@ const defaultRules: readonly MaskRule[] = [
     // `--token <value>` and `--token=<value>` on a command line.
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>${optionStart}token(?:[ \t]{1,16}|=)${tokenScheme})${notMasked}${tokenValue}`,
+      String.raw`(?<keep>${optionStart}token(?:${tokenBlank}{1,16}|=)${notContinuation}${tokenScheme})${notMasked}${tokenValue}`,
       'gi',
     ),
   },
