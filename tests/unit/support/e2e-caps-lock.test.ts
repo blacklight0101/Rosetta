@@ -184,3 +184,59 @@ describe('e2e caps lock, one folder per run', () => {
     }
   });
 });
+
+/** A create that fails with `code` for the first `failures` calls, then makes the folder. */
+function flakyCreate(
+  code: string,
+  failures: number,
+): { create: (path: string) => Promise<void>; calls: () => number } {
+  let calls = 0;
+  return {
+    create: async (path: string) => {
+      calls += 1;
+      if (calls <= failures) throw Object.assign(new Error(`${code}: refused`), { code });
+      await mkdir(path);
+    },
+    calls: () => calls,
+  };
+}
+
+describe('e2e caps lock, a create that Windows refuses for a moment', () => {
+  let root: string;
+  let folder: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'rosetta-caps-lock-'));
+    folder = join(root, 'lock');
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  });
+
+  it('RNF-005 retries a create refused with EPERM and takes the lock when the refusal passes', async () => {
+    const flaky = flakyCreate('EPERM', 2);
+
+    const lock = await acquireCapsLock(folder, { createFolder: flaky.create });
+
+    expect(flaky.calls()).toBe(3);
+    await lock.release();
+  });
+
+  it('RNF-005 gives up after a bounded number of EPERM refusals and says so', async () => {
+    const flaky = flakyCreate('EPERM', Number.POSITIVE_INFINITY);
+
+    const attempt = acquireCapsLock(folder, { createFolder: flaky.create });
+
+    await expect(attempt).rejects.toThrow('The caps lock folder could not be created.');
+    expect(flaky.calls()).toBe(5);
+  });
+
+  it('RNF-005 does not retry a create refused for another reason', async () => {
+    const flaky = flakyCreate('EACCES', Number.POSITIVE_INFINITY);
+
+    await expect(acquireCapsLock(folder, { createFolder: flaky.create })).rejects.toThrow(
+      'The caps lock folder could not be created.',
+    );
+    expect(flaky.calls()).toBe(1);
+  });
+});

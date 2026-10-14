@@ -61,12 +61,18 @@ export interface CapsLock {
   release(): Promise<void>;
 }
 
+/** Creates the lock folder; it fails when the folder exists (EEXIST). */
+type CreateFolder = (folder: string) => Promise<unknown>;
+
 export interface CapsLockOptions {
   readonly staleAfterMs?: number;
   /** The harness clock; the system clock by default. */
   readonly clock?: Clock;
+  /** The create of the lock folder; `mkdir` by default. A seam for tests that refuse it (P1-155). */
+  readonly createFolder?: CreateFolder;
 }
 
+const defaultCreateFolder: CreateFolder = (folder) => mkdir(folder);
 const CREATE_ATTEMPTS = 5;
 const CREATE_RETRY_MS = 100;
 
@@ -74,10 +80,10 @@ function codeOf(error: unknown): unknown {
   return error instanceof Error && 'code' in error ? error.code : undefined;
 }
 
-async function tryTake(folder: string): Promise<boolean> {
+async function tryTake(folder: string, create: CreateFolder): Promise<boolean> {
   for (let attempt = 1; ; attempt += 1) {
     try {
-      await mkdir(folder);
+      await create(folder);
       return true;
     } catch (error) {
       if (codeOf(error) === 'EEXIST') return false;
@@ -105,9 +111,14 @@ async function isStale(folder: string, staleAfterMs: number, clock: Clock): Prom
  * This narrows the race between a stale takeover and a holder that is releasing; it does not
  * close it, because the removal and the release are not atomic.
  */
-async function takeOverIfStale(folder: string, staleAfterMs: number, clock: Clock): Promise<void> {
+async function takeOverIfStale(
+  folder: string,
+  staleAfterMs: number,
+  clock: Clock,
+  create: CreateFolder,
+): Promise<void> {
   const gate = `${folder}.takeover`;
-  if (!(await tryTake(gate))) {
+  if (!(await tryTake(gate, create))) {
     if (await isStale(gate, GATE_STALE_MS, clock)) await rm(gate, { recursive: true, force: true });
     return;
   }
@@ -128,9 +139,10 @@ export async function acquireCapsLock(
   const clock = options.clock ?? new SystemClock();
   const started = clock.now().getTime();
   await mkdir(dirname(folder), { recursive: true });
-  while (!(await tryTake(folder))) {
+  const create = options.createFolder ?? defaultCreateFolder;
+  while (!(await tryTake(folder, create))) {
     if (await isStale(folder, staleAfterMs, clock))
-      await takeOverIfStale(folder, staleAfterMs, clock);
+      await takeOverIfStale(folder, staleAfterMs, clock, create);
     await new Promise((resolve) => setTimeout(resolve, POLL_MS));
   }
   let released = false;
