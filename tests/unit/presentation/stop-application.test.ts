@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-1302, ADR-014 (P1-68): `stop()` of the composed application goes through the bounded stop.
 // The pool factory is replaced by a pool on a frozen database, whose `end()` never settles.
@@ -36,7 +37,7 @@ async function composed(lines: string[]) {
   folders.push(dataDir);
   const environment = loadEnvironment({
     DATABASE_URL: 'postgres://rosetta_app:secret@127.0.0.1:1/rosetta',
-    ROSETTA_SECRET_KEY: Buffer.alloc(32, 7).toString('base64'),
+    ROSETTA_SECRET_KEY: fixtureSecret(7),
     ROSETTA_PUBLIC_URL: 'http://127.0.0.1:8080',
     ROSETTA_DATA_DIR: dataDir,
   });

@@ -8,6 +8,7 @@ import type { DatabasePool } from '../../../src/infrastructure/db/pool.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { auditEvent, insert } from '../../support/db-rows.js';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-1109, DEC-132, architecture.md section 7: the composed application registers its periodic
 // jobs on the Scheduler port when it starts; the audit purge is one of them, every 24 hours. A
@@ -18,7 +19,7 @@ const HOUR = 3_600_000;
 const DAY = 86_400_000;
 
 /** 32 bytes as base64, built at run time (RNF-003: no secret-like literal). */
-const testSecretKey = Buffer.alloc(32, 7).toString('base64');
+const testSecretKey = fixtureSecret(7);
 
 /** A scheduler that only records what is registered; a test runs the jobs itself. */
 class RecordingScheduler implements Scheduler {

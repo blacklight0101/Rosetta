@@ -5,12 +5,13 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-122, P1-73: a partial snapshot folder left in `<data>/sources/` by an interrupted download is
 // discarded by the start-up sequence, before the server accepts runs; complete snapshots stay.
 
 /** 32 bytes as base64, built at run time (RNF-003: no secret-like literal). */
-const testSecretKey = Buffer.alloc(32, 7).toString('base64');
+const testSecretKey = fixtureSecret(7);
 const cleanups: string[] = [];
 
 afterAll(async () => {

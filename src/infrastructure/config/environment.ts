@@ -69,8 +69,20 @@ function isSecretKey(value: string): boolean {
   return bytes.length === SECRET_KEY_BYTES && bytes.toString('base64') === value;
 }
 
+// A plain address only: no quotes, query or fragment characters, comments or spaces. The value ends
+// up in a mailto link on the landing page, where `?cc=` or a quote would change what the link does.
+const EMAIL_PATTERN =
+  /^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
+const MAX_EMAIL_LENGTH = 254;
+
 function isEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return value.length <= MAX_EMAIL_LENGTH && EMAIL_PATTERN.test(value);
+}
+
+/** A key of 32 equal bytes (all zero is the placeholder of .env.example) is a known value. */
+function isRepeatedKey(value: string): boolean {
+  const bytes = Buffer.from(value, 'base64');
+  return bytes.every((byte) => byte === bytes[0]);
 }
 
 /** A string variable; an absent one reports "is missing", a broken one reports `rule`. */
@@ -204,6 +216,12 @@ export function loadEnvironment(source: EnvironmentSource = process.env): Enviro
     throw new RosettaError(
       ERROR_CODES.configurationInvalid,
       `Invalid server configuration: ${problems.join('; ')}.`,
+    );
+  }
+  if (isRepeatedKey(result.data.ROSETTA_SECRET_KEY)) {
+    throw new RosettaError(
+      ERROR_CODES.secretKeyKnown,
+      'ROSETTA_SECRET_KEY is a known value (32 equal bytes, such as the all-zero placeholder of .env.example); generate one with openssl rand -base64 32.',
     );
   }
   return toEnvironment(result.data);
