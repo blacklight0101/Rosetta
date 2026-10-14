@@ -70,7 +70,9 @@ both services are healthy.
 
 Open <http://127.0.0.1:8080>, choose Sign in and sign in as the administrator, `ROSETTA_ADMIN_USER` with the
 `ROSETTA_ADMIN_PASSWORD` printed above. The page asks you to choose a new password; after that you are on the start
-page, signed in. The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data,
+page, signed in. On the Projects page, Use the demo repository fills in the demo application (eShopLegacyWebForms)
+and Create project adds it. A scan needs no model; the agents of the understand stage need one: Ollama on the host
+(section 4 of the runbook) or your own provider key under Settings and keys. The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data,
 `docker compose down -v` deletes it. The steps in full (Ollama on the host, reset, rotating the passwords and
 troubleshooting) are in [docs/runbooks/local.md](docs/runbooks/local.md).
 

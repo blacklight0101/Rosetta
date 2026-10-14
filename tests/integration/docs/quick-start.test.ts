@@ -125,6 +125,12 @@ describe('README quick start: start and first sign-in', () => {
     expect(quickStart).toMatch(/choose a new password/iu);
   });
 
+  it('RF-801 names the demo repository button and what the understand stage needs', () => {
+    expect(quickStart).toContain('Use the demo repository');
+    expect(quickStart).toMatch(/scan needs no model/iu);
+    expect(quickStart).toMatch(/Ollama/u);
+  });
+
   it('RF-801 says how to stop, how to delete the data and links the runbook', () => {
     expect(quickStart).toContain('docker compose down');
     expect(quickStart).toContain('docker compose down -v');
