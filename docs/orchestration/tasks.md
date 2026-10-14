@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 152 | 58 | 79 | 15 | 0 | 90 | 54 | 8 | 95 | 0 |
+| P1 Milestone slice (M1) | 153 | 59 | 79 | 15 | 0 | 91 | 54 | 8 | 96 | 0 |
 | P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
 | P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **182** | **63** | **97** | **22** | **0** | **96** | **75** | **11** | **99** | **0** |
+| **Total** | **183** | **64** | **97** | **22** | **0** | **97** | **75** | **11** | **100** | **0** |
 
 ## Conventions for every card
 
@@ -670,7 +670,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-02, P1-43
 - **Gate**: G-08 (DEC-133)
-- **Status**: Todo
+- **Status**: In review (owner check: enable GitHub Pages and open the published sample, #361 merged)
 - **Reads**: `docs/environments-and-delivery.md` sections 2 and 8.
 - **Do**: a Pages workflow publishing `site/` from `main` with the smoke step that fetches the index and fails when the run id is missing; `site/` holding the escaped HTML report and the replay of the owner's demo run on the hosted URL (DEC-105), with a `.nojekyll` file, copied by the orchestrator after an output scan for secrets into a `needs-owner` pull request; the README link.
 - **Delivers**: `.github/workflows/pages.yml`, `site/`, the README link.
@@ -706,7 +706,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-46
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review (owner check: record the video, publish slides and video, fill the URLs, #362 merged)
 - **Reads**: `docs/rfc/RFC-001-rosetta.md` sections 1-4; `docs/process-flows.md`; Q-02 and Q-03.
 - **Do**: slides in Spanish (Q-03) presenting the problem, the pipeline, the live agents, evidence and the verifier, cost control, security, the build method and the results; a video script of about 5 minutes (Q-02) with the explainer and a clip of a real run; the owner records the video; both URLs added to the README.
 - **Delivers**: `docs/hand-in/slides/` source, `docs/hand-in/video-script.md`, README links.
@@ -1798,7 +1798,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-64, P1-72, P1-83, P1-129, P1-131, P1-140
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/unit/support/network-policy.test.ts`; `src/infrastructure/cards/write-or-restore.ts`; `tests/e2e/support/caps-lock.ts`; `src/application/understand/understand-options.ts`; `web/src/` (the `transitions.ts` comment); the verdicts on #331, #328, #321, #320, #308 and #333.
 - **Do**: P1-64: add a lone `.` segment and a trailing `..` to the Windows pipe path cases. P1-83: a logger that throws synchronously still replaces the refusal: keep the refusal and test it. P1-129: use the project import alias the verdict names. P1-131: the minor points of the stale-lock takeover in `caps-lock.ts` from the verdict. P1-140: the `transitions.ts` comment says `background-color` where the CSS uses `background`; the header of `understand-options.ts` still says "every area when absent". P1-72: `run-understand.ts` is at the 300-line limit; move one helper out so the next change has room.
 - **Delivers**: the tests and the small fixes above.
@@ -1810,7 +1810,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-141
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/start-run.spec.ts` (lines 171 and 212); `tests/e2e/live-run.spec.ts` (line 155); `tests/e2e/api-calls.spec.ts`; `tests/e2e/page-shots.spec.ts`; `tests/integration/infrastructure/events/jsonl-event-log.test.ts`; the CI logs of the P1-64 runs on #331.
 - **Do**: `start-run.spec.ts:171` and `live-run.spec.ts:155` failed once each in CI and passed on a re-run; `api-calls.spec.ts` (RF-1011) failed once under local load; `page-shots` misses its `/healthz` wait on a busy machine; `jsonl-event-log` times out under full-suite load. Find the shared cause (shared accounts, a fixed wait, a server start bound) and fix each without retries. `start-run.spec.ts:212` fails on every local run because of a stale "no OpenAI key" assumption: make it independent of the local `.env`.
 - **Delivers**: the fixed tests.
@@ -1834,7 +1834,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-41, P1-34, P1-107
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `web/src/pages/ProjectsPage.tsx`; `web/src/lib/live-run/run-failures.ts`; `src/domain/errors/descriptions.ts`; `src/presentation/web/run-routes.ts` and `estimate-query.ts`; the start page and its area list; the code map builder under `src/infrastructure/scan/codemap/`; `web/src/pages/ProviderTest.tsx`; issue #353.
 - **Do**: six bugs from the owner's hands-on local test of 2026-10-13. (a) The demo URL uses `/tree/master/`, but the demo repository's default branch is now `main`, so the scan fails with RST-1901: use `main`. (b) The live run failure text knows only a few codes and shows a generic message for the rest: show the catalogue message and next step for every code. (c) Starting a run has a 1 KB body limit while it allows 200 areas of up to 1 024 characters, so 42 real area names are refused with RST-2000: make the limit and the schema agree, and test the largest allowed body. (d) Long area names overflow the Stage and areas card on the start page: keep them inside the card at 1280 px and 360 px. (e) The code map offers vendored third-party JavaScript (jQuery bundles, MSAjax, esm and umd builds) as areas, and they dominate the estimate: leave areas made only of vendored or minified files unticked and marked "third-party", using a conservative, tested rule. (f) Test providers shows little progress during a cold model load: mark each role as being tested and the button busy.
 - **Delivers**: the six fixes with their tests and the documents that describe them.
@@ -1846,7 +1846,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-142
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-command-shapes.ts`; the masker tests and the speed bound; the verdict 6151856171 on #345.
 - **Do**: these shapes still leak the value: `--token Negotiate <value>` (and other scheme words), `--token 'Bearer' <value>`, `--token Bearer Bearer <value>`, `--token Bearer` followed by many spaces and a value; `mysql 2>&1 -u root -pSECRET` and `mysql >& out.sql -u root -pSECRET` are not masked. Mask them, keep the harmless neighbours visible and masking idempotent, and add hostile pieces for the new patterns to the adversarial speed input.
 - **Delivers**: the masker changes and their tests.
@@ -1858,7 +1858,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-143
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/db/pg-user-repository.ts`; `src/application/ports/user-repository.ts`; `tests/contracts/successful-sign-in.contract.ts`; the verdict 6152015674 on #346.
 - **Do**: a lock stored with more than millisecond precision (manual SQL, a database `now()`, a restore) reads back truncated, so the guarded sign-in write never matches and the account cannot sign in until an administrator resets it: compare at millisecond precision and add a contract case. Write the default that the failure counters are not compared into the port documentation. Shorten the long header comment of the contract file.
 - **Delivers**: the comparison change, the contract case and the two text fixes.
@@ -1870,7 +1870,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-145, P1-146
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `tests/e2e/support/` (the start page helper, `caps-lock.ts`, `serve.ts`, the global setup); `scripts/run-e2e.mjs`; `tests/integration/tooling/workflows.test.ts` and `e2e-shards.test.ts`; `tests/e2e/api-calls.spec.ts`; `tests/support/understand-run-harness.ts`; the verdicts on #334, #344, #349 and #351.
 - **Do**: (1) the start page helper checks for "No projects yet" and then creates the project, so two parallel tests on one account can race: make the create idempotent. (2) No test covers the `--shard` selection of `run-e2e.mjs`: an empty selection would run every spec in every shard. (3) The workflow test checks the pr-title job id, not its `name: pr-title`, which the ruleset matches. (4) The caps lock folder is not cleared when an e2e run starts, so a killed run makes the next one wait up to 10 minutes: key it per run. (5) `api-calls.spec.ts:35` still times out about once in twenty repeats under four workers. (6) `tests/support/understand-run-harness.ts` is at the 300-line limit: split it.
 - **Delivers**: the six fixes with tests.
@@ -1882,7 +1882,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-136
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `tests/e2e/support/sweep.ts`; `web/src/` (`CallsTable.tsx`, `HistoryRuns.tsx`); `templates/report/report.css`; the verdict 6151652627 on #335.
 - **Do**: the stacked-table label check exempts cells that hold a link or a button, so a text column made only of links (Transcript in the calls table, Open in history) can lose its label unnoticed: check those cells too, by their link text. The static report's Cards table breaks words in the middle at 360 px ("Cata/log"): break at word boundaries only.
 - **Delivers**: the stricter check and the report CSS.
@@ -1900,6 +1900,18 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the sweep and its tests.
 - **Done when**: an orphaned project folder is removed by the next sweep; a folder with a row is never removed; `npm run verify` green.
 - **Refs**: RF-1012, DEC-55, Q-16, P1-138 (verdict 6153137792 on #348).
+
+### P1-153 - Follow-up: token scheme words before flags and operators
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-148
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-command-shapes.ts`; the masker speed test; the verdict 6157434972 on #363.
+- **Do**: since P1-148 the run of scheme words after `--token` is atomic, so a scheme word followed by a flag or a shell operator is no longer masked (`--token Negotiate --verbose`, `--token Bearer > out`, `--token Bearer ; ls`); main before P1-148 masked them. Also `--token Bearer-x S` and `--token Bearerx S` take the word as the value and leave `S` visible. Mask these on the safe side without bringing back the quadratic case: keep the P1-148 speed cases green and masking idempotent.
+- **Delivers**: the masker change and its tests.
+- **Done when**: every shape above is masked; the P1-148 speed cases still pass at the 1 MB bound; `mask(mask(x))` equals `mask(x)`; `npm run verify` green.
+- **Refs**: RNF-005, RF-408, P1-148 (verdict 6157434972 on #363).
 
 ---
 
