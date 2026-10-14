@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 156 | 61 | 80 | 15 | 0 | 94 | 54 | 8 | 99 | 0 |
+| P1 Milestone slice (M1) | 164 | 63 | 83 | 18 | 0 | 97 | 59 | 8 | 107 | 0 |
 | P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
 | P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **186** | **66** | **98** | **22** | **0** | **100** | **75** | **11** | **103** | **0** |
+| **Total** | **194** | **68** | **101** | **25** | **0** | **103** | **80** | **11** | **111** | **0** |
 
 ## Conventions for every card
 
@@ -658,7 +658,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-46
 - **Gate**: G-08 (DEC-133)
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/security/threat-model.md`; `SECURITY.md`; `docs/roadmap.md` (P1 exit criteria); `docs/architecture.md` section 10.
 - **Do**: `docs/verification/m1-matrix.md`: every P1 Must and Should requirement with its passing test or recorded manual check, gaps listed; a review of every threat-model row against the code with findings ranked BLOCKING, MAJOR, MINOR; RNF-014 defaults checked on a Compose stack started from `.env.example`; an output scan of a full demo run folder and the logs for key patterns (RNF-003); licence review of fixtures (RNF-009); gaps and MAJOR findings are listed with a proposed card each; the orchestrator files them as follow-up cards (README section 9).
 - **Delivers**: the matrix with the security review and the list of gaps.
@@ -1078,7 +1078,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-12, P1-13
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `web-lint.config.ts`; `web/src/api/client.ts`; `eslint.config.ts`; `tests/e2e/support/serve.ts`.
 - **Do**: add `setHTMLUnsafe`, `createContextualFragment`, `parseHTMLUnsafe` and `srcdoc` to the RF-507 lint selectors; make `client.ts` match its "never throws" header for paths outside `/api/` (return a typed error); give client network failures their own catalogue code instead of reusing RST-2006; block a dynamic `import()` and a default import of `@playwright/test` in e2e specs; clean the e2e data folder with the writable-temp-root helper.
 - **Delivers**: the changes with tests.
@@ -1114,7 +1114,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `package-lock.json`; `docs/conventions.md` (install); `Dockerfile`.
 - **Do**: with npm 11.19 on Linux `npm ci` reports a missing `@emnapi` entry (also on `main`); find the cause, regenerate the lockfile so `npm ci --ignore-scripts` passes on the npm version CI uses and on the latest npm 11, and pin the npm version CI uses if needed. Then drop the `npm@11.6.2` pin and its comment from the `Dockerfile` (P1-44 pinned it because the lock file was written by the npm of Node.js 24.11.1) and check that both stages still pass `npm ci`.
 - **Delivers**: the lockfile fix.
@@ -1162,7 +1162,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-27
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `src/infrastructure/budget/`; `src/application/budget/`; `src/web/`; `docs/data-model.md`; `scripts/openai-live-check.mjs`; `package.json`.
 - **Do**: add a race test for the per-user lock; check that cost report sums stay below 2^53 or keep them as bigint; save `SetCaps` in one transaction; make the web dollar parser refuse `1,2,3` and values above the DEC-117 cost range; list the migration 0005 indexes in the data model; make `live:openai` load `.env` itself. Also test the comma cases of `web/src/lib/usd.ts` (`dollarsToMicros` strips every comma, so `1,5` becomes 15 and `1,2,3` becomes 123: refuse them), a `.5` input and more than six decimals, and give a negative dollar cap an `RST` code instead of a local refusal without one (P1-41 verifier MINORs).
 - **Delivers**: the changes with tests.
@@ -1222,7 +1222,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-27, P1-33, P1-35
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/budget/`; `src/application/budget/`; `src/application/understand/`; `docs/data-model.md` event table (`usage.recorded`, `budget.warning`, `budget.capReached`); `web/src/lib/live-run/`; ADR-007.
 - **Do**: make the budget guard of a run report to the run's event sink: `usage.recorded` after every recorded call with the fields of the data model (call id, role, provider, model, tokens, cost, run totals, project totals), `budget.warning` at 50, 80 and 95 percent of a cap and `budget.capReached` when a cap stops the run; the events never carry prompts, answers or keys, and a failing sink never fails the call or lets a call skip the guard. On the live run page show tokens and cost per role and per agent from `usage.recorded` instead of a dash, keep the total re-read from the run as the check, and remove the page note that says per-role cost is missing (P1-35).
 - **Delivers**: the guard reporting, the page change and their tests, including a recorded understand run whose events give a cost for each role.
@@ -1318,7 +1318,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-89, P1-25
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/ollama/`; `src/domain/egress/`; ADR-013; DEC-129; `docs/providers.md` section 2.
 - **Do**: the Ollama adapter sends tool results as JSON-stringified text, so the lines of a data-block frame reach the model as an escaped `\n` string and not as lines; send the result text as the content of the tool message so the opening and closing markers with their random tag (DEC-129) stand on their own lines, and add a contract test on the fake Ollama server that the request it receives holds the frame on separate lines; check that the OpenAI adapter does the same. This card depends on P1-89 because the tag comes from it.
 - **Delivers**: the change and the contract test.
@@ -1342,7 +1342,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-34, P1-42
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/web/`; `src/application/budget/`; `web/src/pages/EstimateSection.tsx`, `StageAreasSection.tsx`, `ServerMeter.tsx`; DEC-108; check P1-36 first.
 - **Do**: add the read APIs the start page and the administration page lack: the caps and spend remaining for the user's day and the server's month, for the estimate warning of DEC-108 (reuse the totals of P1-36 when they have landed instead of a second source; own-key spend stays out of the server total, RF-1106); the position of a queued run with polling on the start page; and a version check (`If-Match` or a version field) on the project settings `PUT` so two tabs or a cap edit and a settings save cannot overwrite each other.
 - **Delivers**: the routes, the client changes and tests including a lost-update race test on PostgreSQL.
@@ -1366,7 +1366,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-15, P1-44, P1-45
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `src/infrastructure/config/environment.ts`; `Dockerfile`; `compose.yaml`; `README.md`; `docs/runbooks/`; the surface contract text in `docs/design/`.
 - **Do**: refuse a malformed contact address (`isEmail` accepts `?cc=` and quotes) and refuse a known or all-zero `ROSETTA_SECRET_KEY` at start-up with a code; fix the stale status line of `README.md` ("documentation phase (P0)"); change the wording "no fakes" in the image documentation to say that no tests or scripts ship and the compiled fakes in `dist` are reachable only with `ROSETTA_TEST=1`; align the cap text of the surface contract with the 0.50 default (it says 2.00); remove the runtime `apt-get upgrade` from the image once Dependabot has moved the base image digest; document the rotation of the database role passwords in the runbook.
 - **Delivers**: the checks, the document edits and tests.
@@ -1714,7 +1714,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-105
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/presentation/web/project-overview-routes.ts`; `src/application/use-cases/list-project-overview.ts`; `web/src/pages/use-project-overview.ts`; `tests/integration/presentation/web/project-overview.test.ts`; the verdict 6144213653 on #294.
 - **Do**: `GET /api/projects/overview` makes two queries per project plus a queue read, and the Projects page polls it every 5 s, so the cost grows with the number of projects and the number of open tabs. Bound it: read the latest run and the totals of all the user's projects in a fixed number of queries (a join or a grouped query, scoped to the user), and cap the number of projects it answers with a documented limit. Test the bound by counting queries with 1, 10 and 50 projects (the count does not grow) and test the limit.
 - **Delivers**: the bounded query, the limit and the tests.
@@ -1918,7 +1918,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-153, P1-100
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `src/infrastructure/scan/universal/sql-script.ts`; `tests/support/secret-command-shapes.ts`; the masker speed test; `tests/unit/infrastructure/scan/universal/sql-key-property.test.ts`; the verdicts 6158526651 on #369 and 6159639314 on #373.
 - **Do**: these shapes still show a secret, all the same on main before the two cards: a shell line continuation (a backslash, `^` or a backtick at the end of the line) between `--token Bearer` and the value; `--token Bearer -<value>`; `--token Bearer-x "<value>"`; and in a SQL script, a line holding the END and the BEGIN of a key followed by a statement-looking line leaks key text. Mask each on the safe side, keep the P1-148 speed cases green at the 1 MB bound and masking idempotent, and add the new SQL shapes to the seeded property test.
 - **Delivers**: the masker and SQL script changes and their tests.
@@ -1930,7 +1930,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-150
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/e2e/journeys/server-key-cap.spec.ts`; `tests/integration/infrastructure/files/grep-worker.test.ts`; `tests/e2e/support/caps-lock.ts`; `tests/e2e/support/live-run-page.ts`; the CI runs of #366 (38492853305) and #373; the verdicts on #367 and #372.
 - **Do**: (1) `server-key-cap.spec.ts` failed once on CI shard 1 with ENOENT on a `.tmp` file during a rename (#366): find the writer that races and make it safe. (2) `grep-worker.test.ts` crashed a worker on `verify (windows-latest)` with exit 0xC0000005 once (#373): find whether a worker is left running or killed too early and make the test deterministic. (3) The EPERM retry in `caps-lock.ts` has no test: inject the error through a seam and test the bounded retry. (4) The cause of the shared-account flake fixed by #372 is not pinned by a test (a reload right after the create click survived 15 repeats): add a test that fails with that reload, or say why none can.
 - **Delivers**: the fixes and tests.
@@ -1942,12 +1942,108 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-125, P1-99, P1-102, P1-151
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/providers/ollama/ollama-provider.ts`; `src/infrastructure/config/environment.ts`; `tests/unit/infrastructure/config/environment-parse-budget.test.ts`; `docs/providers.md`; `templates/report/report.css`; the verdicts 6159080232 on #371, 6159923882 on #374, 6160341905 on #375 and 6158433278 on #366.
 - **Do**: (1) no test covers the Ollama provider default `options.contextCache ?? processCache` (a fresh cache per provider passes every test): add one. (2) No test pins `ROSETTA_SCAN_PARSE_BUDGET_MS=""` as unset (Compose passes an empty value when it is not set): add the case. (3) `docs/providers.md` RST-1511 row: also name the no-break space (U+00A0) that `isUsableKey` refuses. (4) The `templates/report/report.css` comment says "below 720 px" while the query is `max-width: 720px`: make the comment exact.
 - **Delivers**: the tests and the text fixes.
 - **Done when**: each new test fails when its guarded line is mutated; `npm run verify` green.
 - **Refs**: RF-401, RF-110, RNF-003, RNF-010, P1-125, P1-99, P1-102, P1-151.
+
+### P1-157 - Follow-up: bound the audit writes of refused requests
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-49
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/verification/m1-matrix.md` F-01 and PC-01; `src/presentation/web/access-hooks.ts`; `src/presentation/web/server.ts`; `src/presentation/web/session-routes.ts`; `src/presentation/web/route-access.ts`; `src/application/use-cases/record-refused-request.ts`; `docs/security/threat-model.md`; architecture section 10.
+- **Do**: owner question first (handoff agenda 28; DEC-124 keeps every refusal row, so this changes it). Default: one limit per client address covers every writer of a `request.refused` row (the `Origin` refusal, the route rate limits' `onExceeded`, the in-flight bounds of sign-in and password change, and any other): up to 30 rows a minute per address, then one `request.refused` row with reason `rate-limit` and a count for the rest of that minute, while the requests are still refused with their usual status; the stored path (audit `target_id`, the security event's message and data) is cut to 512 characters with a marker that it was cut. Record the DEC. Failing tests first; update architecture section 10 and the threat model.
+- **Delivers**: the limit, the cut, the tests and the document edits.
+- **Done when**: 1,000 cross-origin POSTs from one address in a minute write at most 31 audit rows; 1,000 same-origin `POST /api/session` requests from one address in a minute write at most 31 audit rows; a refused request with a 16 KB path stores at most 512 characters of it in the audit row and the log; a signed-in user's refusals below the limit still each write a row; the DEC row exists; `npm run verify` green.
+- **Refs**: RF-1009, RF-1100, RF-1109, RF-009, DEC-124, DEC-132, P1-49 (F-01, verdicts 6165183598 and 6165270947 on #388).
+
+### P1-158 - Follow-up: keep the migrator credentials out of the serving process
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-49
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/verification/m1-matrix.md` F-02, F-19 and PC-02; `compose.yaml`; `src/infrastructure/config/environment.ts`; the migration runner; ADR-014; ADR-016; `docs/runbooks/local.md`.
+- **Do**: run the migrations with `DATABASE_MIGRATOR_URL` in a one-off step (a `migrate` service or command in `compose.yaml`, the same in the P1-55 host procedure) that ends before the server starts, and start the server with `DATABASE_URL` only; the server refuses to start when given a migrator URL it does not need, and warns when `DATABASE_URL` connects as the schema owner. If this alters ADR-014 or ADR-016, open the amendment first as its own PR for the owner to merge (handoff agenda 29). Add the residual risk to the threat model until it lands.
+- **Delivers**: the Compose and start-up change, the tests, the runbook and threat-model edits.
+- **Done when**: the app container's environment holds no migrator password (`docker compose exec app env`); an integration test shows the server's credential cannot update or delete `audit_events` or `cost_ledger`; the Compose smoke job passes; `npm run verify` green.
+- **Refs**: RF-1302, RF-1305, ADR-014, ADR-016, P1-49 (F-02, F-19).
+
+### P1-159 - Follow-up: security documentation drift from P1-49
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: P1-49
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/verification/m1-matrix.md` PC-04; `docs/security/threat-model.md`; `SECURITY.md`; `src/presentation/web/server.ts`; `docs/orchestration/README.md` section 5.1.
+- **Do**: in `docs/security/threat-model.md` reword TB4 (model output used only as checked read-only paths), mark the release, SBOM and GHCR controls of TB7 and A03 as arriving with P1-55, and LLM09 and LLM10 as partial until P2-02 and P2-08; in `SECURITY.md` say no release is published yet; fix the comment at `src/presentation/web/server.ts:220`; list the three known false positives next to the greps of orchestration README section 5.1 in a note for the owner (that README is owner-merged; put the note in the PR body if the file cannot change here).
+- **Delivers**: the text fixes.
+- **Done when**: each listed sentence matches the code; `npm run verify` green.
+- **Refs**: ADR-013, RNF-003, P1-49 (F-07, F-11, F-16, F-22, F-23, F-24).
+
+### P1-160 - Follow-up: security hardening gaps from P1-49
+- **Difficulty**: 9 (opus)
+- **Size**: M
+- **Depends on**: P1-49
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/verification/m1-matrix.md` PC-05; the snapshot reader; `src/infrastructure/files/grep-runner.ts`; the event-stream routes; `access-hooks.ts`; architecture section 10.
+- **Do**: test first for each: count decompressed bytes (and skipped entries) against the snapshot byte limit; cap the total bytes one grep reads and set worker `resourceLimits`; end a user's open event streams when the session ends or the account is disabled; record the actor of a cross-origin refusal when a valid session cookie is present; audit the 429 of the password-change bound; send stream replay failures to the application log.
+- **Delivers**: the six fixes with tests.
+- **Done when**: each behaviour has a failing-then-passing test named after its requirement; architecture section 10 matches; `npm run verify` green.
+- **Refs**: RF-127, RF-146, RF-1101, RF-1109, RF-009, P1-49 (F-05, F-06, F-09, F-10, F-12, F-14).
+
+### P1-161 - Follow-up: security test and supply-chain gaps from P1-49
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-49
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/verification/m1-matrix.md` PC-06; the archive tests; `tests/e2e/live-run.spec.ts`; `tests/e2e/run-report.spec.ts`; `pages-site.test.ts`; `.github/dependabot.yml`; `.github/workflows/`; `src/infrastructure/db/`.
+- **Do**: hostile archives with backslash, drive-letter, device and FIFO entries; the hostile card in `live-run.spec.ts` and `run-report.spec.ts`; a test that fails while `PublicAddressAgent` is not used by an adapter that connects to a stored base URL (to be met by P2-09; mark it expected-to-fail with a reason if the runner allows, else document it in the PR); a key-pattern scan of `site/` in `pages-site.test.ts`; a Dependabot `docker` entry (with the DEC-125 cooldown); CI service images pinned by digest; a lint or test that finds SQL text built with `${` anywhere in `src/infrastructure/db/`; `CREATE` in `public` refused for `rosetta_app`; provenance notes for the remaining fixture and recording folders.
+- **Delivers**: the tests and the configuration changes.
+- **Done when**: each new test fails when its control is removed (verifier mutation); `npm run verify` green.
+- **Refs**: RF-122, RF-127, RF-507, RF-1104, RNF-003, RNF-009, ADR-016, DEC-125, P1-49 (F-04, F-08, F-13, F-15, F-17, F-18, F-20, F-21, F-25).
+
+### P1-162 - Follow-up: mask a token value after `--token=` and a line continuation
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P1-154
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-continuation-shapes.ts`; `tests/unit/infrastructure/guards/secret-masker.test.ts`; `secret-masker-performance.test.ts`; verdict 6165263754 on #389.
+- **Do**: `--token=` followed by a line continuation (`\`, `^` or a backtick at the end of the line, LF or CRLF) and then the value leaves the value visible (on main too). Add the shapes to the continuation fixture, failing first, then mask them; keep `mask(mask(x)) == mask(x)` and the P1-148 1 MB speed cases.
+- **Delivers**: the masker change and the tests.
+- **Done when**: the new shapes are masked and fail when the rule is removed; the speed cases stay green; `npm run verify` green.
+- **Refs**: RNF-003, RF-408, P1-154, P1-153.
+
+### P1-163 - Follow-up: small gaps from P1-96, P1-104, P1-106, P1-137 and P1-155
+- **Difficulty**: 4 (haiku)
+- **Size**: M
+- **Depends on**: P1-96, P1-104, P1-106, P1-137, P1-155
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/conventions.md`; `docs/data-model.md`; the web queue-position poll; `tests/integration/presentation/web/limits.test.ts`; `run-budget-events.ts`; `docs/architecture.md` (port rows near lines 314-325); the Projects page; `node-output-writer.ts`; the verdicts on #385, #384, #386, #387 and #382.
+- **Do**: (1) list RST-1007 (`settingsVersionStale`, 409) in `docs/conventions.md` and the settings sentence of `docs/data-model.md`. (2) The queued-run position poll retries every 2 s forever: back off (2 s doubling to 30 s) and stop when the page is hidden. (3) Move the `new Date` in `limits.test.ts` behind the `tests/support` clock. (4) Remove the duplicate comment and wrap the comment lines over 100 columns at `run-budget-events.ts:135`. (5) An end-to-end case sends a tool result holding backticks through the fake Ollama server and checks the fence is longer. (6) Add the new overview methods to the architecture port rows. (7) The Projects overview shows only the newest 100 projects: show a notice saying so when there are more (handoff agenda 34). (8) `node-output-writer`: a test for a non-ENOENT error after the folder is gone.
+- **Delivers**: the fixes and tests.
+- **Done when**: each code change has a test that fails without it; `npm run verify` green.
+- **Refs**: RNF-008, P1-96, P1-104, P1-106, P1-137, P1-155.
+
+### P1-164 - Follow-up: Windows test-worker crashes in CI
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P1-155
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/files/grep-runner.ts`; `tests/integration/infrastructure/files/grep-worker.test.ts`; `tests/integration/infrastructure/files/node-repository-reader.test.ts`; CI runs 38541463529 (#385, exit 3221226505 = 0xC0000409) and the #373 run (0xC0000005).
+- **Do**: the vitest fork worker on `windows-latest` dies with 0xC0000005 or 0xC0000409 while running the grep and repository-reader tests, about once a day; reruns pass. A candidate cause is `grep-runner.ts:43,48` terminating the worker thread right after its answer. Reproduce under load on Windows (repeat the two files 50 times with 4 workers), find the cause, fix it (for example let the worker exit on its own, or await `terminate()`), and add a test that fails on the old shape when possible; otherwise record the evidence in the PR.
+- **Delivers**: the fix and the evidence.
+- **Done when**: 50 repeats on Windows pass with no worker crash; `npm run verify` green.
+- **Refs**: RNF-008, P1-155.
 
 ---
 
