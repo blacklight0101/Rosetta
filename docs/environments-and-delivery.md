@@ -67,6 +67,7 @@ every variable with a comment and a safe example.
 | `ROSETTA_LOG_LEVEL`, `ROSETTA_LOG_RETENTION_DAYS` | no | no | `info`, 14 |
 | `GITHUB_TOKEN` | no | yes | raises GitHub rate limits for snapshot downloads (RF-123) |
 | `ROSETTA_TRUST_PROXY` | no | no | number of proxy hops to trust for the client IP (rate limits, audit); 0 locally, 1 behind the host's proxy (DEC-112) |
+| `ROSETTA_SCAN_PARSE_BUDGET_MS` | no | no | scan-wide time the language packs may spend on one scan (RF-110): a whole number of milliseconds from 1 to 3600000, default 120000; a value outside that range, zero, a negative value or a non-number is refused at start-up with `RST-1000` naming the variable; a pack that cannot stop part-way overruns it by at most the file it is parsing |
 | `ROSETTA_APP_DB_PASSWORD`, `ROSETTA_MIGRATOR_DB_PASSWORD` | local only | yes | read by the Compose init script that creates the database roles (data-model.md section 6) |
 | `ROSETTA_DB_ADMIN_PASSWORD` | local only | yes | password of the PostgreSQL image's bootstrap superuser `postgres` in the Compose `db` service; until the init script creates the roles (P1-45), local development may connect as that user |
 | `ROSETTA_TEST` | tests only | no | `1` enables the fake provider and fake GitHub and blocks real provider calls (ADR-008); refused when `ROSETTA_PUBLIC_URL` is https |

@@ -137,6 +137,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
   const runs = composeRuns({
     ...{ pool, logger, clock, masker, version },
     dataDir: environment.dataDir,
+    parseBudget: { totalMs: environment.scanParseBudgetMs },
     ...{ githubToken: environment.githubToken, ollamaUrl: environment.ollamaUrl },
     ...(doubles?.fetch === undefined ? {} : { fetch: doubles.fetch }),
     providers: auth.providers,
