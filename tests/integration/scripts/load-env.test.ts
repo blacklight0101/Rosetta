@@ -31,7 +31,7 @@ function runNode(args: readonly string[], env: NodeJS.ProcessEnv): Promise<Outco
 
 async function loadedValue(envFile: string, preset?: string): Promise<string> {
   const code = `import { loadEnvFileIfPresent } from ${JSON.stringify(helper)};
-loadEnvFileIfPresent(${JSON.stringify(envFile)});
+await loadEnvFileIfPresent(${JSON.stringify(envFile)});
 process.stdout.write(process.env.${probe} ?? 'unset');`;
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== probe));
   if (preset !== undefined) env[probe] = preset;
