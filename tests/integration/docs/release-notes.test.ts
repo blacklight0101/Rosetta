@@ -137,10 +137,11 @@ describe('links', () => {
     prefixes: [
       'https://github.com/blacklight0101/rosetta',
       'https://blacklight0101.github.io/rosetta',
+      'http://127.0.0.1:8080',
     ],
   };
 
-  it('RF-801 carries no link except the repository and the sample-report address of the README', () => {
+  it('RF-801 carries no link except the repository, the sample report and the local address', () => {
     expect(linksIn(releases).filter((link) => !isPermittedLink(link, allowed))).toEqual([]);
   });
 

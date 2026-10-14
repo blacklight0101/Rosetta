@@ -68,7 +68,7 @@ describe('README quick start: the secrets', () => {
     expect(sh).toContain('openssl rand -base64 32');
     expect(ps).toMatch(/RandomNumberGenerator/u);
     expect(ps).toMatch(/ToBase64String/u);
-    expect(ps).toMatch(/byte\[\]\s*32\b/u);
+    expect(ps).toContain('[Convert]::ToBase64String((New-RandomBytes 32))');
   });
 
   it('RF-801 generates the three database passwords and the administrator password as hex', () => {
