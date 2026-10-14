@@ -132,3 +132,14 @@ export async function filesHolding(text: string): Promise<{ held: string[]; look
   }
   return { held, looked: files.length };
 }
+
+/** Stub until the check reads the listed files one by one (P1-155). */
+export function filesHoldingIn(
+  root: string,
+  text: string,
+  read?: (file: string) => Promise<string>,
+): Promise<{ held: string[]; looked: number }> {
+  return Promise.reject(
+    new Error(`not implemented: ${root} ${text} ${String(read !== undefined)}`),
+  );
+}
