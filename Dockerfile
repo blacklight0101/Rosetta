@@ -50,9 +50,12 @@ CMD ["node", "dist/presentation/main.js"]
 
 # Stage 4: the runtime image. Production dependencies, the built server and front end, the migrations,
 # prompts, price table, templates and the common-password list; no source, tests, scripts, maps or build
-# tools. The compiled fakes stay in dist (they are part of the build) and are reachable only with ROSETTA_TEST=1. Operating-system packages are upgraded to the fixed versions the pinned base may lack (the
-# Trivy gate of CI fails on a fixable high finding), and the Node.js package manager is removed:
-# nothing in the running server needs it.
+# tools. The compiled fakes stay in dist (they are part of the build) and are reachable only with
+# ROSETTA_TEST=1.
+#
+# Operating-system packages are upgraded to the fixed versions the pinned base may lack (the Trivy gate
+# of CI fails on a fixable high finding), and the Node.js package manager is removed: nothing in the
+# running server needs it.
 FROM node:24-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS runtime
 ENV NODE_ENV=production ROSETTA_DATA_DIR=/data
 WORKDIR /app

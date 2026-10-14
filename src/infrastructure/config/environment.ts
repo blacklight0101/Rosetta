@@ -72,7 +72,7 @@ function isSecretKey(value: string): boolean {
 // A plain address only: no quotes, query or fragment characters, comments or spaces. The value ends
 // up in a mailto link on the landing page, where `?cc=` or a quote would change what the link does.
 const EMAIL_PATTERN =
-  /^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
+  /^[A-Za-z0-9._+-]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
 const MAX_EMAIL_LENGTH = 254;
 
 function isEmail(value: string): boolean {
