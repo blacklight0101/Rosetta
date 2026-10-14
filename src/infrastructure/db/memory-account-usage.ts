@@ -23,6 +23,13 @@ function byCurrency(left: CurrencyTotal, right: CurrencyTotal): number {
   return left.currency < right.currency ? -1 : 1;
 }
 
+function totalled(rows: readonly MemoryCostRow[]): CurrencyTotal[] {
+  const totals = new Map<string, bigint>();
+  for (const row of rows)
+    totals.set(row.currency, (totals.get(row.currency) ?? 0n) + row.costMicros);
+  return [...totals].map(([currency, costMicros]) => ({ currency, costMicros })).sort(byCurrency);
+}
+
 export class MemoryAccountUsage implements AccountUsage {
   private readonly projects: string[] = [];
   private readonly costs: MemoryCostRow[] = [];
@@ -54,8 +61,13 @@ export class MemoryAccountUsage implements AccountUsage {
     return Promise.resolve(usage);
   }
 
-  userDay(): Promise<UserSpend> {
-    return Promise.resolve({ server: [], own: [] });
+  // RF-1106, DEC-107
+  userDay(userId: string, since: EpochMs): Promise<UserSpend> {
+    const own = this.costs.filter((row) => row.userId === userId && row.at.getTime() >= since);
+    return Promise.resolve({
+      server: totalled(own.filter((row) => (row.keySource ?? 'server') === 'server')),
+      own: totalled(own.filter((row) => row.keySource === 'user')),
+    });
   }
 
   // RF-1106

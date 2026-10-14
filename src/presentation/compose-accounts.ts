@@ -17,6 +17,7 @@ import { ListAudit } from '../application/use-cases/list-audit.js';
 import { ListUsers } from '../application/use-cases/list-users.js';
 import { GetCaps } from '../application/use-cases/get-caps.js';
 import { GetDefaultRoles } from '../application/use-cases/get-default-roles.js';
+import { GetSpendLimits } from '../application/use-cases/get-spend-limits.js';
 import { GetOwnDailyCap } from '../application/use-cases/get-own-daily-cap.js';
 import { SetCaps } from '../application/use-cases/set-caps.js';
 import { SetDefaultRoles } from '../application/use-cases/set-default-roles.js';
@@ -139,8 +140,9 @@ function composeKeys(adapters: AccountAdapters): KeyServices {
 function composeCaps(adapters: AccountAdapters): CapServices & DefaultRoleServices {
   const { pool, users, auditLog, masker, logger, clock } = adapters;
   const settings = new PgServerSettings(pool);
+  const usage = new PgAccountUsage(pool);
   return {
-    getCaps: new GetCaps({ settings, usage: new PgAccountUsage(pool), clock }),
+    getCaps: new GetCaps({ settings, usage, clock }),
     setCaps: new SetCaps({
       settings,
       capsStore: new PgServerCapsStore(pool, masker),
@@ -150,6 +152,7 @@ function composeCaps(adapters: AccountAdapters): CapServices & DefaultRoleServic
     getDefaultRoles: new GetDefaultRoles({ settings }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),
     getOwnDailyCap: new GetOwnDailyCap({ users }),
+    getSpendLimits: new GetSpendLimits({ users, settings, usage, clock }),
     setOwnDailyCap: new SetOwnDailyCap({ users, auditLog, logger, clock }),
   };
 }

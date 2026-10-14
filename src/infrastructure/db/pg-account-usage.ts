@@ -22,8 +22,17 @@ const SPENT =
 const SERVER_SPENT =
   'SELECT currency, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE key_source = \'server\' AND at >= $1 GROUP BY currency ORDER BY currency COLLATE "C"';
 
+const USER_SPENT =
+  "SELECT key_source, currency, sum(cost_micros)::text AS cost_micros FROM cost_ledger WHERE user_id = $1 AND at >= $2 AND key_source IN ('server', 'user') GROUP BY key_source, currency ORDER BY currency COLLATE \"C\"";
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const projectRow = z.object({ user_id: z.string(), projects: z.number().int() });
 const serverRow = z.object({ currency: z.string(), cost_micros: z.string().regex(/^-?\d+$/) });
+const userSpentRow = z.object({
+  key_source: z.enum(['server', 'user']),
+  currency: z.string(),
+  cost_micros: z.string().regex(/^-?\d+$/),
+});
 const spentRow = z.object({
   user_id: z.string(),
   currency: z.string(),
@@ -71,8 +80,23 @@ export class PgAccountUsage implements AccountUsage {
     return usage;
   }
 
-  userDay(): Promise<UserSpend> {
-    return Promise.resolve({ server: [], own: [] });
+  // RF-1106, DEC-107
+  async userDay(userId: string, since: EpochMs): Promise<UserSpend> {
+    // Not a UUID cannot name a user; asking PostgreSQL would fail on the uuid cast.
+    if (!UUID.test(userId)) return { server: [], own: [] };
+    let rows: Record<string, unknown>[];
+    try {
+      rows = (await this.pool.query<Record<string, unknown>>(USER_SPENT, [userId, new Date(since)]))
+        .rows;
+    } catch (error) {
+      throw queryFailed(error);
+    }
+    const spend = rows.map((row) => userSpentRow.parse(row));
+    const totals = (source: 'server' | 'user'): CurrencyTotal[] =>
+      spend
+        .filter((row) => row.key_source === source)
+        .map((row) => ({ currency: row.currency, costMicros: BigInt(row.cost_micros) }));
+    return { server: totals('server'), own: totals('user') };
   }
 
   // RF-1106
