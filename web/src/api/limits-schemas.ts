@@ -25,4 +25,3 @@ export const limitsSchema = z.object({
 });
 
 export type SpendLimits = z.output<typeof limitsSchema>;
-export type LimitAmounts = z.output<typeof amounts>;
