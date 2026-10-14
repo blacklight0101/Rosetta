@@ -24,13 +24,25 @@ export const DEFAULT_EXTRACTION_LIMITS: ExtractionLimits = {
 const FILE_TYPES: ReadonlySet<string> = new Set(['File', 'OldFile', 'ContiguousFile']);
 const LINK_TYPES: ReadonlySet<string> = new Set(['Link', 'SymbolicLink']);
 
-/** An absolute path (POSIX or Windows) or any `..` segment, on either separator. */
+/** Windows device names, with or without an extension, a trailing dot or space, or a stream (`CON:x`). */
+const DEVICE_NAME = /^(con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])$/i;
+
+function isDeviceName(segment: string): boolean {
+  const base = segment.split(/[.:]/)[0] ?? '';
+  return DEVICE_NAME.test(base.trimEnd());
+}
+
+/**
+ * An absolute path (POSIX or Windows), any `..` segment, a drive letter at the start of any segment, or a
+ * Windows device name below the stripped top folder, on either separator (RF-122, ADR-019).
+ */
 function isUnsafePath(path: string): boolean {
+  if (path.startsWith('/') || path.startsWith('\\')) return true;
+  const segments = path.split(/[\\/]/);
   return (
-    path.startsWith('/') ||
-    path.startsWith('\\') ||
-    /^[A-Za-z]:/.test(path) ||
-    path.split(/[\\/]/).includes('..')
+    segments.includes('..') ||
+    segments.some((segment) => /^[A-Za-z]:/.test(segment)) ||
+    segments.slice(1).some(isDeviceName)
   );
 }
 
