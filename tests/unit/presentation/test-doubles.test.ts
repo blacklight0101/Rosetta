@@ -4,12 +4,13 @@ import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { TestDoubles } from '../../../src/presentation/test-doubles.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RNF-005, ADR-008, DEC-112: the fake GitHub and the fake provider reach the composition root only
 // through a factory that exists in test mode. A real deployment (no ROSETTA_TEST=1) is refused,
 // both when the doubles are made and when they are composed.
 
-const secretKey = Buffer.alloc(32, 5).toString('base64');
+const secretKey = fixtureSecret(5);
 const baseEnvironment = {
   DATABASE_URL: 'postgres://nobody@127.0.0.1:1/none',
   ROSETTA_SECRET_KEY: secretKey,

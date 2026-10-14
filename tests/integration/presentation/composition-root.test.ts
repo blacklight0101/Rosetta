@@ -33,13 +33,14 @@ import {
   useTestDatabase,
   type TestDatabase,
 } from '../../support/postgres.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-1302, RF-1303: the composed application applies the migrations, then serves /healthz with
 // the version of package.json, against the disposable PostgreSQL on a loopback port. RF-009: log
 // retention at start-up. P1-12: the built front end is served from `dist/web/`.
 
 /** 32 bytes as base64, built at run time (RNF-003: no secret-like literal). */
-const testSecretKey = Buffer.alloc(32, 7).toString('base64');
+const testSecretKey = fixtureSecret(7);
 
 /** The documented front-end build folder (tasks.md P1-12), from the repository root. */
 const frontEndFolder = fileURLToPath(new URL('../../../dist/web/', import.meta.url));

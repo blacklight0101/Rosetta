@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import { afterAll, describe, expect, it } from 'vitest';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-1300, RNF-003, ADR-014: the built image, inspected and started. Linux CI only: the `image` job of
 // ci.yml builds the image, exports its tag as ROSETTA_IMAGE and starts the disposable PostgreSQL;
@@ -123,7 +124,7 @@ describe.skipIf(!enabled)('the started container', () => {
 
   it('RF-1300 starts with the price table loaded, becomes healthy and answers /healthz', async () => {
     const schema = await database.createSchema({ migrate: false });
-    const secretKey = Buffer.alloc(32, 7).toString('base64');
+    const secretKey = fixtureSecret(7);
     await docker(
       'run',
       '--detach',

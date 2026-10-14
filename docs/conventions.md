@@ -119,6 +119,8 @@ conflict visibly; the codes already shown on the design board are reserved there
 | RST-2400..2499 | database and migrations (RF-1302) |
 | RST-2500..2599 | deployment, start-up and health (RF-1300..RF-1306) |
 
+RST-2009 is the web client's own code (`web/src/api/client.ts`) for a request that got no answer at all (a network failure or a timeout, status 0); the server never sends it. RST-2010 is the same client's code for a request the caller cancelled itself, status 0, also never sent by the server. A request to a path outside `/api/` is refused by the client with RST-2006 before anything is sent.
+
 ## 7. Tests
 
 - Vitest projects `unit`, `integration`, `e2e` under `tests/<level>/`; the level is the project, so every test has

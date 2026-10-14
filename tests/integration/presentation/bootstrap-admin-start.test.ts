@@ -7,6 +7,7 @@ import { loadEnvironment } from '../../../src/infrastructure/config/environment.
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-1102: at the first start of an empty database the composed application creates the
 // administrator from ROSETTA_ADMIN_USER and ROSETTA_ADMIN_PASSWORD, once, in MustChangePassword;
@@ -14,7 +15,7 @@ import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
 // second account.
 
 /** 32 bytes as base64, built at run time (RNF-003: no secret-like literal). */
-const testSecretKey = Buffer.alloc(32, 9).toString('base64');
+const testSecretKey = fixtureSecret(9);
 const adminName = ['first', 'admin'].join('.');
 const folders: string[] = [];
 
