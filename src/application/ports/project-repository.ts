@@ -29,8 +29,8 @@ export type SettingsUpdate =
 export interface ProjectRepository {
   /** Stores the project, or returns the owner's existing project with the same source. */
   insertOrFind(project: Project): Promise<StoredProject>;
-  /** The owner's projects, newest first. */
-  list(userId: string): Promise<readonly Project[]>;
+  /** The owner's projects, newest first; at most `limit` of them when it is given. */
+  list(userId: string, limit?: number): Promise<readonly Project[]>;
   /** Undefined for an unknown id and for another user's project. */
   find(userId: string, projectId: string): Promise<Project | undefined>;
   /**

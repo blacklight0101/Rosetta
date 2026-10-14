@@ -68,6 +68,17 @@ function scopingTests(name: string, fresh: FreshProjects): void {
     expect(await projects.list(bob)).toEqual([foreign]);
   });
 
+  it(`RF-1008 ${name} lists at most the limit asked for, the newest projects`, async () => {
+    const projects = await fresh();
+    const made = [1, 2, 3].map((number) =>
+      sampleProject({ userId: amy, createdAt: number * 1_000_000 }),
+    );
+    for (const project of made) await projects.insertOrFind(project);
+
+    expect(await projects.list(amy, 2)).toEqual([made[2], made[1]]);
+    expect(await projects.list(amy, 10)).toHaveLength(3);
+  });
+
   it(`RF-1105 ${name} finds nothing for another user's project id or an unknown id`, async () => {
     const projects = await fresh();
     const project = sampleProject({ userId: amy });
