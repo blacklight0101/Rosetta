@@ -32,6 +32,12 @@ export async function listTree(path: string): Promise<string[]> {
     .sort();
 }
 
+/** Removes `path` and everything under it, read-only files included; a missing path is not an error. */
+export async function removeWritableTree(path: string): Promise<void> {
+  // Stub: the fix commit implements the removal.
+  await Promise.resolve(path);
+}
+
 /** Like `useTempRoot`, for tests whose adapter leaves read-only trees behind (RF-005). */
 export function useWritableTempRoot(prefix: string): { readonly path: string } {
   const state = { path: '' };
