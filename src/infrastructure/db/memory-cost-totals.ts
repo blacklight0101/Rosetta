@@ -1,5 +1,10 @@
 import type { LedgerEntry } from '../../application/ports/cost-ledger.js';
-import type { CostTotals, LedgerGroup, SummaryGroup } from '../../application/ports/cost-totals.js';
+import type {
+  CostTotals,
+  LedgerGroup,
+  ProjectSummaryGroup,
+  SummaryGroup,
+} from '../../application/ports/cost-totals.js';
 
 // Architecture section 7, RF-428, RF-1010: the ledger sums in memory, for unit and route tests. A
 // test adds ledger rows; the adapter passes the same contract suite as PgCostTotals.
@@ -79,6 +84,21 @@ export class MemoryCostTotals implements CostTotals {
   userSummary(userId: string): Promise<readonly SummaryGroup[]> {
     const mine = this.entries.filter((entry) => entry.userId === userId);
     return Promise.resolve(summaryOf(mine));
+  }
+
+  // RF-1008
+  projectSummaries(
+    userId: string,
+    projectIds: readonly string[],
+  ): Promise<readonly ProjectSummaryGroup[]> {
+    const groups: ProjectSummaryGroup[] = [];
+    for (const projectId of projectIds) {
+      const mine = this.entries.filter(
+        (entry) => entry.userId === userId && entry.projectId === projectId,
+      );
+      groups.push(...summaryOf(mine).map((group) => ({ ...group, projectId })));
+    }
+    return Promise.resolve(groups);
   }
 
   projectGroups(userId: string, projectId: string): Promise<readonly LedgerGroup[]> {

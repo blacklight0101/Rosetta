@@ -134,7 +134,7 @@ export function runServices(
 ): ServerOptions['runs'] {
   const { projects, keys, answers, calls, logs, clock } = stores;
   return {
-    getRun: new GetRun({ runs: runs.runs, files: outputs.text }),
+    getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),

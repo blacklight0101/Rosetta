@@ -1,0 +1,96 @@
+import { expect, test } from './support/fixtures.js';
+import { expectNoSeriousViolations } from './support/axe.js';
+import { openScannedStartPage } from './support/cost-run.js';
+import { openStartPage, runStatus, startUnderstand } from './support/live-run-page.js';
+import { accountFor } from './support/seed.js';
+import { leaveOnlyThisInTheDay } from './support/seed-limits.js';
+import { signInAs } from './support/sign-in.js';
+import { transitionsDone } from './support/transitions.js';
+
+// RF-002, RF-1001, RF-1106, RF-1108, DEC-108, P1-106: what the start page and the settings page read
+// from the server, driven against the test server. Two tabs cannot overwrite each other's settings (a
+// save made from an older version is refused with RST-1007); a queued run's place is read again
+// while it waits and the notice turns to "started" when the run before it ends; the estimate warning
+// names what is really left of the user's day. The account is the one of the `start-run` kind, which
+// this spec file has to itself; the steps run in order because they share its project and runs, and
+// the last one leaves the account with an almost spent day.
+
+test.describe.configure({ mode: 'serial' });
+
+test.beforeEach(async ({ context }, info) => {
+  await signInAs(context, accountFor('start-run', info.project.name));
+});
+
+test('RF-002 a settings save made from an older version is refused with RST-1007', async ({
+  page,
+  context,
+}) => {
+  await openScannedStartPage(page);
+  await page.getByRole('link', { name: 'Project settings' }).click();
+  await expect(page.getByRole('heading', { name: 'Project settings', level: 1 })).toBeVisible();
+  const second = await context.newPage();
+  await second.goto(page.url());
+  await expect(second.getByLabel('Parallel readers')).toHaveValue('1');
+
+  await page.getByLabel('Parallel readers').fill('2');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await second.getByLabel('Parallel readers').fill('3');
+  await second.getByRole('button', { name: 'Save settings' }).click();
+
+  await expect(second.getByRole('alert')).toContainText('RST-1007');
+  await expect(second.getByText('Settings saved.')).toHaveCount(0);
+  await expectNoSeriousViolations(second);
+  await second.reload();
+  await expect(second.getByLabel('Parallel readers')).toHaveValue('2');
+  await second.getByLabel('Parallel readers').fill('1');
+  await second.getByRole('button', { name: 'Save settings' }).click();
+  await expect(second.getByText('Settings saved.')).toBeVisible();
+  await second.close();
+});
+
+test('RF-1108 a queued run turns to started on the start page when the run before it ends', async ({
+  page,
+  context,
+}) => {
+  const held = await startUnderstand(page, ['Controllers']);
+  await openStartPage(page);
+  await page.getByLabel('Scan only').check();
+  await page.getByRole('button', { name: /^Start run/u }).click();
+  const notice = page.getByTestId('run-notice');
+  await expect(notice).toContainText('Queued');
+  await expect(notice).toContainText('position 1');
+
+  const other = await context.newPage();
+  await other.goto(held);
+  await other.getByRole('button', { name: 'Stop run' }).click();
+  await expect(runStatus(other)).toContainText('Interrupted', { timeout: 30_000 });
+  await other.close();
+
+  await expect(notice).toContainText('Run started', { timeout: 30_000 });
+  await expect(notice.getByRole('button', { name: 'Cancel queued run' })).toHaveCount(0);
+  await expectNoSeriousViolations(page);
+});
+
+test('DEC-108 the warning names what is left of the day, not the whole cap', async ({
+  page,
+}, info) => {
+  await leaveOnlyThisInTheDay(accountFor('start-run', info.project.name).userName, 1n, 1_000_000n);
+  await openScannedStartPage(page);
+  await page.getByRole('link', { name: 'Project settings' }).click();
+  await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
+  await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(page.getByText('Settings saved.')).toBeVisible();
+  await page.getByRole('link', { name: 'Start a run' }).click();
+
+  const consent = 'I understand; send masked excerpts to OpenAI for this run';
+  await page.getByLabel(consent).check();
+
+  const warning = page.getByTestId('cap-warning');
+  await expect(warning).toContainText('daily cap today');
+  await expect(warning).toContainText('$0.000001 left of $1.00');
+  await expect(page.getByRole('button', { name: /^Start run/u })).toBeEnabled();
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+});

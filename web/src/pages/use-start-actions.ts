@@ -8,6 +8,7 @@ import { useApp } from '../app/app-context.js';
 import { navigate } from '../app/router.js';
 import { dollarsToMicros, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import type { RunNoticeState } from './RunNotice.js';
+import { useQueuePosition } from './use-queue-position.js';
 
 // RF-1001, RF-143, RF-1108, DEC-117: what pressing Start does, in order. Another address than the
 // project's is resolved to its own project and its start page. Otherwise a changed run cap or
@@ -140,7 +141,7 @@ async function saveLimits({ client, inputs, refuse }: Steps): Promise<boolean> {
   const read = await getProject(client, inputs.project.id, new AbortController().signal);
   if (!read.ok) return refuse({ start: read.error });
   const project = read.value;
-  const saved = await saveProjectSettings(client, project.id, settingsWithLimits(project, limits));
+  const saved = await saveProjectSettings(client, project, settingsWithLimits(project, limits));
   if (saved.ok) {
     inputs.onSaved(saved.value);
     return false;
@@ -183,6 +184,7 @@ export function useStartActions(inputs: ActionInputs): StartActions {
   const [attempts, setAttempts] = useState(0);
   const [refusals, setRefusals] = useState<Refusals>({});
   const [notice, setNotice] = useState<RunNoticeState | undefined>();
+  useQueuePosition(notice, setNotice);
   const steps: Steps = {
     ...{ client, inputs, show: setNotice },
     refuse: (next) => {

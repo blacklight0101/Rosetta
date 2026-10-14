@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { PgProjectRepository } from '../../../../src/infrastructure/db/pg-project-repository.js';
 import { PgServerSettings } from '../../../../src/infrastructure/db/pg-server-settings.js';
 import { PgUserRepository } from '../../../../src/infrastructure/db/pg-user-repository.js';
@@ -11,7 +12,7 @@ import {
   serverSettingsContract,
 } from '../../../contracts/server-settings.contract.js';
 import { sampleAccount } from '../../../support/account-fixtures.js';
-import { sampleProject } from '../../../support/project-fixtures.js';
+import { sampleProject, settingsWith } from '../../../support/project-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
 
 // Architecture section 7, ADR-016, RF-010: PgProjectRepository and PgServerSettings pass the
@@ -38,6 +39,39 @@ describe.skipIf(!hasTestDatabase)('PgProjectRepository', () => {
     await pool.query('UPDATE projects SET settings = \'{"schemaVersion": 1}\'::jsonb');
 
     await expect(projects.find(owner.id, project.id)).rejects.toThrow();
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('PgProjectRepository: lost updates', () => {
+  const database = useTestDatabase();
+
+  it('RF-002 parallel saves from the same version: exactly one is stored, the rest are stale', async () => {
+    const { pool } = await database.createSchema({ migrate: true });
+    const owner = sampleAccount({ userName: 'owner' });
+    await new PgUserRepository(pool).insert(owner);
+    const projects = new PgProjectRepository(pool);
+    const project = sampleProject({ userId: owner.id });
+    await projects.insertOrFind(project);
+    const saves = [2, 3, 4, 5, 6, 7].map((parallelism) => {
+      const parsed = parseProjectSettings(settingsWith({ 'agents.parallelism': parallelism }));
+      if (!parsed.ok) throw new Error('The settings were refused');
+      return projects.updateSettings({
+        userId: owner.id,
+        projectId: project.id,
+        settings: parsed.value,
+        updatedAt: 5_000_000 + parallelism,
+        expectedVersion: 1,
+      });
+    });
+
+    const outcomes = await Promise.all(saves);
+
+    expect(outcomes.filter((outcome) => outcome.kind === 'updated')).toHaveLength(1);
+    expect(outcomes.filter((outcome) => outcome.kind === 'stale')).toHaveLength(5);
+    const winner = outcomes.find((outcome) => outcome.kind === 'updated');
+    const stored = await projects.find(owner.id, project.id);
+    expect(stored?.settingsVersion).toBe(2);
+    expect(stored).toEqual(winner?.kind === 'updated' ? winner.project : undefined);
   });
 });
 

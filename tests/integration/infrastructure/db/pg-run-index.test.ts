@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PgProjectRepository } from '../../../../src/infrastructure/db/pg-project-repository.js';
 import { PgRunIndex } from '../../../../src/infrastructure/db/pg-run-index.js';
 import { PgUserRepository } from '../../../../src/infrastructure/db/pg-user-repository.js';
+import { runIndexOverviewContract } from '../../../contracts/run-index-overview.contract.js';
 import {
   amyProject,
   amySecondProject,
@@ -37,6 +38,7 @@ describe.skipIf(!hasTestDatabase)('PgRunIndex', () => {
   }
 
   runIndexContract('PgRunIndex', freshIndex);
+  runIndexOverviewContract('PgRunIndex', freshIndex);
 
   it('RF-003 the totals of a run come back as numbers, also past 32 bits', async () => {
     const index = await freshIndex();

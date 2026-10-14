@@ -7,6 +7,7 @@ import type { ProviderSet } from '../providers/provider-set.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import type { RunCostRecorder } from '../runs/run-cost-record.js';
 import type { RunSecurityRecorder } from '../runs/run-security-record.js';
+import type { BudgetEvents } from './budget-events.js';
 import type { EgressLog } from './egress-log.js';
 import type { AgentRole } from './llm-provider.js';
 import type { ProviderCallRecorder } from './provider-call-recorder.js';
@@ -47,6 +48,8 @@ export interface ProviderSinks {
   readonly costs: RunCostRecorder;
   /** Aborts the run's one signal with the reason; the run ends `CapReached` (RF-422). */
   readonly stopRun: (reason: RosettaError) => void;
+  /** `usage.recorded`, `budget.warning` and `budget.capReached` of the run (RF-1003). */
+  readonly budgetEvents: BudgetEvents;
 }
 
 export interface ProviderSetRequest {

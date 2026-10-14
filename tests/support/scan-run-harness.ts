@@ -6,6 +6,7 @@ import type {
 } from '../../src/application/ports/scan-pipeline.js';
 import type { RunScope } from '../../src/application/ports/run-events.js';
 import type { SourceFetcher } from '../../src/application/ports/source-fetcher.js';
+import type { SettingsChange } from '../../src/application/ports/project-repository.js';
 import type { Project } from '../../src/application/projects/project.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
@@ -211,6 +212,11 @@ function waitUntilEnded(runs: MemoryRunIndex, log: JsonlEventLog): (run: Run) =>
   };
 }
 
+function unconditionalChange(project: Project, settings: ProjectSettings): SettingsChange {
+  const { userId, id: projectId, updatedAt } = project;
+  return { userId, projectId, settings, updatedAt, expectedVersion: undefined };
+}
+
 // RF-003
 export async function createScanRunHarness(
   options: ScanRunHarnessOptions,
@@ -246,7 +252,7 @@ export async function createScanRunHarness(
       return started.value.run;
     },
     async updateSettings(settings) {
-      await projects.updateSettings(scanActor.userId, project.id, settings, project.updatedAt);
+      await projects.updateSettings(unconditionalChange(project, settings));
     },
     ended,
     scan: async () => ended(await submit()),

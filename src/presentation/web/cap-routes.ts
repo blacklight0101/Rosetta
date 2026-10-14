@@ -1,6 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { GetCaps } from '../../application/use-cases/get-caps.js';
+import type {
+  Amounts,
+  GetSpendLimits,
+  SpendLimits,
+} from '../../application/use-cases/get-spend-limits.js';
 import type { GetOwnDailyCap } from '../../application/use-cases/get-own-daily-cap.js';
 import type { SetCaps } from '../../application/use-cases/set-caps.js';
 import type { SetOwnDailyCap } from '../../application/use-cases/set-own-daily-cap.js';
@@ -19,11 +24,15 @@ import { signedInOf } from './request-actor.js';
 //   this UTC month on the server's keys only (per currency, micro-dollar strings).
 // - GET /api/account/daily-cap and PUT /api/account/daily-cap (every signed-in user): the optional
 //   daily cap on the user's own keys; null means none.
+// - GET /api/account/limits (every signed-in user): what is left of the user's day and of the
+//   server's month on the server's keys, and of their own daily cap on their own keys, for the
+//   start page's estimate warning (DEC-108); spend on own keys is outside the server's month.
 
 export interface CapServices {
   readonly getCaps: GetCaps;
   readonly setCaps: SetCaps;
   readonly getOwnDailyCap: GetOwnDailyCap;
+  readonly getSpendLimits: GetSpendLimits;
   readonly setOwnDailyCap: SetOwnDailyCap;
 }
 
@@ -127,8 +136,32 @@ function registerOwnCap(server: FastifyInstance, services: CapServices): void {
   );
 }
 
+const amountsView = (amounts: Amounts): Record<string, string> => ({
+  capMicros: amounts.capMicros.toString(),
+  spentMicros: amounts.spentMicros.toString(),
+  remainingMicros: amounts.remainingMicros.toString(),
+});
+
+function limitsView({ serverKeys, ownKeys }: SpendLimits): Record<string, unknown> {
+  return {
+    serverKeys: {
+      userDay: amountsView(serverKeys.userDay),
+      serverMonth: { remainingMicros: serverKeys.serverMonth.remainingMicros.toString() },
+    },
+    ownKeys: { day: ownKeys.day === null ? null : amountsView(ownKeys.day) },
+  };
+}
+
+function registerLimits(server: FastifyInstance, services: CapServices): void {
+  server.get('/api/account/limits', { config: { access: 'user' } }, async (request, reply) => {
+    const actor = signedInOf(request).actor;
+    return reply.status(200).send(limitsView(await services.getSpendLimits.execute({ actor })));
+  });
+}
+
 // RF-1106
 export function registerCapRoutes(server: FastifyInstance, services: CapServices): void {
   registerServerCaps(server, services);
   registerOwnCap(server, services);
+  registerLimits(server, services);
 }

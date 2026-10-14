@@ -18,6 +18,7 @@
     "tests/e2e/admin-audit.spec.ts",
     "tests/e2e/admin-models.spec.ts",
     "tests/e2e/admin-users.spec.ts",
+    "tests/e2e/create-project-slow.spec.ts",
     "tests/e2e/harness.spec.ts",
     "tests/e2e/history.spec.ts",
     "tests/e2e/journeys/pipeline.spec.ts",
@@ -40,6 +41,7 @@
     "tests/e2e/projects-runs.spec.ts",
     "tests/e2e/run-replay.spec.ts",
     "tests/e2e/settings-keys.spec.ts",
+    "tests/e2e/start-run-limits.spec.ts",
     "tests/e2e/start-run.spec.ts",
     "tests/e2e/visual/sweep-public.spec.ts",
     "tests/e2e/visual/sweep-runs.spec.ts"

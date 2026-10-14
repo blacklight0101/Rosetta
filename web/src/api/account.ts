@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ApiClient, ApiResult } from './client.js';
+import { limitsSchema, type SpendLimits } from './limits-schemas.js';
 import {
   keyAnswerSchema,
   keyListSchema,
@@ -145,4 +146,18 @@ export async function saveOwnDailyCap(
     schema: ownDailyCapSchema,
   });
   return result.ok ? { ok: true, value: result.value.ownDailyCapMicros } : result;
+}
+
+/** What is left of the user's day, the server's month and the own daily cap (RF-1106, DEC-108). */
+// RF-1106
+export function getSpendLimits(
+  client: ApiClient,
+  signal: AbortSignal,
+): Promise<ApiResult<SpendLimits>> {
+  return client.request({
+    method: 'GET',
+    path: '/api/account/limits',
+    schema: limitsSchema,
+    signal,
+  });
 }

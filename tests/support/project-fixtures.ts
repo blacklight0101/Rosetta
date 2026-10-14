@@ -53,6 +53,7 @@ export function sampleProject(overrides: Partial<Project> = {}): Project {
     ref: '',
     subpath: '',
     settings: templateSettings,
+    settingsVersion: 1,
     createdAt: fixtureNow,
     updatedAt: fixtureNow,
     ...overrides,

@@ -35,6 +35,18 @@ describe('GET /api/errors/:code', () => {
     });
   });
 
+  it('RF-002 RST-1007 (a stale settings save) is in the catalogue the pages read', async () => {
+    const { amy } = await setup();
+
+    const response = await amy.request({ method: 'GET', url: '/api/errors/RST-1007' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      code: ERROR_CODES.settingsVersionStale,
+      ...describeError(ERROR_CODES.settingsVersionStale),
+    });
+  });
+
   it.each(['RST-9999', 'RST-19', 'nonsense', 'RST-1901x'])(
     'RF-007 the code %s is not in the catalogue and answers 404 RST-2003',
     async (code) => {

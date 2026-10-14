@@ -66,16 +66,20 @@ export function getProject(
   });
 }
 
-/** Replaces the whole settings document of the project (RF-002). */
+/**
+ * Replaces the whole settings document of the project (RF-002). The save names the version of the
+ * settings it started from, so the server refuses it (RST-1007) when they were saved since.
+ */
 // RF-002
 export function saveProjectSettings(
   client: ApiClient,
-  projectId: string,
+  project: Pick<Project, 'id' | 'settingsVersion'>,
   settings: ProjectSettings,
 ): Promise<ApiResult<Project>> {
   return client.request({
     method: 'PUT',
-    path: `/api/projects/${encodeURIComponent(projectId)}/settings`,
+    path: `/api/projects/${encodeURIComponent(project.id)}/settings`,
+    ifMatch: `"${String(project.settingsVersion)}"`,
     body: settings,
     schema: projectSchema,
   });

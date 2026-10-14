@@ -17,6 +17,14 @@ export interface UserUsage {
   readonly spent: readonly CurrencyTotal[];
 }
 
+/** One user's spend since an instant, split by whose key paid; each ordered by currency. */
+export interface UserSpend {
+  /** Ledger rows paid with the server's keys: what the user's day cap on server keys counts. */
+  readonly server: readonly CurrencyTotal[];
+  /** Ledger rows paid with the user's own keys: what their own daily cap counts. */
+  readonly own: readonly CurrencyTotal[];
+}
+
 export interface AccountUsage {
   /** The usage of every user that has a project or a ledger row at or after `since`. */
   byUser(since: EpochMs): Promise<ReadonlyMap<string, UserUsage>>;
@@ -25,4 +33,6 @@ export interface AccountUsage {
    * ledger rows whose key source is `server`, so spend on users' own keys is left out (RF-1106).
    */
   serverMonth(since: EpochMs): Promise<readonly CurrencyTotal[]>;
+  /** The spend of one user since the instant (the start of their UTC day), by key source (RF-1106, DEC-107). */
+  userDay(userId: string, since: EpochMs): Promise<UserSpend>;
 }

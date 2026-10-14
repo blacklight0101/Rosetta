@@ -382,9 +382,9 @@ Event types (canonical list):
 | `agent.ended` | `{ state (AgentTaskState), turns, cards }` |
 | `verify.citation.checked` | `{ claimId, ok, reason?, text?, citations? }` where `text` is the claim text and `citations` its cited lines `[{ path, startLine, endLine }]`, so the live run page can list the claim and link its lines (RF-1004); readers that predate the two fields ignore them |
 | `verify.claim.judged` | `{ claimId, status, reason }` |
-| `usage.recorded` | `{ callId, role, provider, model, tokens, costMicros, runTotals, projectTotals }` (RF-1003, RF-1010) |
-| `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent |
-| `budget.capReached` | `{ scope, capMicros, spentMicros }` |
+| `usage.recorded` | `{ callId, role, provider, model, tokens, costMicros, runTotals, projectTotals }` (RF-1003, RF-1010), published by the run's budget guards (`RunBudgetEvents`) after each answered call's ledger row, with the call's agent task in the envelope; `tokens`, `runTotals` and `projectTotals` are `{ inputTokens, outputTokens, cachedInputTokens }` (the totals with `costMicros`), the totals starting from the run's ledger rows and the project's totals when the run opened its providers; `costMicros` is 0 for a local model and left out when the model has no price (RF-427); never a prompt, an answer or a key |
+| `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
+| `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead |
 | `question.answered` | `{ cardId }` (RF-1007) |
 | `run.ended` | `{ endState, totals, errorCode? }`; `errorCode` is the `RST` code of a `Failed` run |
 
@@ -663,6 +663,7 @@ the `Clock` port.
 | `source_url`, `ref`, `subpath` | `text` | normalised GitHub URL; `ref` empty = default branch; `subpath` empty = root; unique on (`user_id`, `source_url`, `ref`, `subpath`) |
 | `settings` | `jsonb` | the document of 3.1, validated by its zod schema on every write and read |
 | `created_at`, `updated_at` | `timestamptz` | |
+| `settings_version` | `integer` | starts at 1 and grows by 1 with every save of `settings` (migration `0009`); a save that names the version it started from (`If-Match`) is applied only if it is still the stored one, tested in the same `UPDATE`, so two tabs never overwrite each other; shown as `settingsVersion` and the `ETag` of the project |
 
 **`runs`** (RF-003, RF-1108)
 
@@ -810,7 +811,7 @@ runner; `rosetta_app` has no right on it.
 **Database migrations** (RF-1302): files `db/migrations/NNNN_snake_name.sql`, four digits, applied in order, each in
 a transaction, recorded in `schema_version` with its checksum. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`), `0100..` later
 releases.
 
 **File schema versions**:

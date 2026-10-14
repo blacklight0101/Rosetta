@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
+import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import {
@@ -41,6 +42,44 @@ async function recordedTokens(indexes: readonly number[]): Promise<number> {
     const { inputTokens, outputTokens } = attempt.response.usage;
     return total + inputTokens + outputTokens;
   }, 0);
+}
+
+/** Input and output tokens of the run as the server totals them (GET /api/runs/:runId). */
+async function runTokens(page: Page, runPage: string): Promise<number> {
+  const uuid = runPage.split('/').at(-1) ?? '';
+  const body: unknown = await page.evaluate(async (id) => {
+    const response = await fetch(`/api/runs/${id}`);
+    const json: unknown = await response.json();
+    return json;
+  }, uuid);
+  const totals: unknown =
+    typeof body === 'object' && body !== null ? Reflect.get(body, 'totals') : undefined;
+  const field = (name: string): number => {
+    const value: unknown =
+      typeof totals === 'object' && totals !== null ? Reflect.get(totals, name) : undefined;
+    return typeof value === 'number' ? value : Number.NaN;
+  };
+  return field('inputTokens') + field('outputTokens');
+}
+
+/**
+ * P1-96: the meter of a finished understand run. The reader's tokens and cost come from its usage
+ * events, so they cover every call the run made (the recorded reader calls and, for an Ollama
+ * reader, its check before the first task) and equal the totals the server keeps for the run.
+ */
+async function expectMeterFromUsage(page: Page, areas: readonly string[]): Promise<void> {
+  const tokens = await runTokens(page, finishedRun);
+  expect(tokens).toBeGreaterThanOrEqual(await recordedTokens([0, 1, 2, 4, 5, 6, 7]));
+  const meter = page.getByRole('region', { name: 'Run meter' });
+  const shown = tokens.toLocaleString('en-US');
+  await expect(meter.getByRole('row', { name: /reader/u })).toContainText(shown);
+  await expect(meter.getByRole('row', { name: /Total/u })).toContainText(shown);
+  const costCell = (name: RegExp) => meter.getByRole('row', { name }).getByRole('cell').last();
+  await expect(costCell(/reader/u)).toHaveText(/^\$\d+\.\d+$/u);
+  await expect(costCell(/reader/u)).toHaveText((await costCell(/Total/u).textContent()) ?? '');
+  for (const area of areas)
+    await expect(valueOf(agentPanel(page, area), 'Cost')).toHaveText(/^\$/u);
+  await expect(meter).not.toContainText('shows a dash');
 }
 
 test('RF-1002 a scan run opens from the start notice, ends complete and offers its zip', async ({
@@ -90,14 +129,8 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expect(log).toContainText('agent.tool.called');
   await expect(log).toContainText('agent.card.proposed');
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
-  const tokens = await recordedTokens([0, 1, 2, 4, 5, 6, 7]);
+  await expectMeterFromUsage(page, areas);
   const meter = page.getByRole('region', { name: 'Run meter' });
-  await expect(meter.getByRole('row', { name: /reader/u })).toContainText(
-    tokens.toLocaleString('en-US'),
-  );
-  await expect(meter.getByRole('row', { name: /Total/u })).toContainText(
-    tokens.toLocaleString('en-US'),
-  );
   await expect(meter.getByRole('meter', { name: 'Run tokens against cap' })).toBeVisible();
   await expect(meter.getByRole('meter', { name: 'Run cost against cap' })).toBeVisible();
   await expect(meter).toContainText('Estimate');

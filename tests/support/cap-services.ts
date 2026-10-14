@@ -2,6 +2,7 @@ import type { CapServices } from '../../src/presentation/web/cap-routes.js';
 import type { DefaultRoleServices } from '../../src/presentation/web/default-role-routes.js';
 import { GetCaps } from '../../src/application/use-cases/get-caps.js';
 import { GetDefaultRoles } from '../../src/application/use-cases/get-default-roles.js';
+import { GetSpendLimits } from '../../src/application/use-cases/get-spend-limits.js';
 import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-cap.js';
 import { MemoryServerCapsStore } from '../../src/infrastructure/db/memory-server-caps-store.js';
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
@@ -39,6 +40,7 @@ export function capServices(parts: CapParts): CapServices & DefaultRoleServices 
     getDefaultRoles: new GetDefaultRoles({ settings }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),
     getOwnDailyCap: new GetOwnDailyCap({ users }),
+    getSpendLimits: new GetSpendLimits({ users, settings, usage, clock }),
     setOwnDailyCap: new SetOwnDailyCap({ users, auditLog, logger, clock }),
   };
 }

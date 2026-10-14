@@ -1,10 +1,11 @@
-import type { EpochMs } from '../../domain/accounts/user.js';
+import { z } from 'zod';
 import type {
   ProjectRepository,
+  SettingsChange,
+  SettingsUpdate,
   StoredProject,
 } from '../../application/ports/project-repository.js';
 import type { Project } from '../../application/projects/project.js';
-import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { DatabaseClient, DatabasePool } from './pool.js';
@@ -20,11 +21,16 @@ const INSERT =
 const SELECT = 'SELECT ' + PROJECT_COLUMNS + ' FROM projects';
 const FIND_BY_SOURCE =
   SELECT + ' WHERE user_id = $1 AND source_url = $2 AND ref = $3 AND subpath = $4';
-const LIST = SELECT + ' WHERE user_id = $1 ORDER BY created_at DESC, id';
+// `LIMIT NULL` is no limit.
+const LIST = SELECT + ' WHERE user_id = $1 ORDER BY created_at DESC, id LIMIT $2::int';
 const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
+// P1-106: the version test and the write are one statement, so a second save from the same version
+// finds the row changed (PostgreSQL rechecks the WHERE after waiting for the row lock) and writes
+// nothing; `$5` null saves unconditionally.
 const UPDATE_SETTINGS =
-  'UPDATE projects SET settings = $3::jsonb, updated_at = $4 WHERE user_id = $1 AND id = $2 RETURNING ' +
+  'UPDATE projects SET settings = $3::jsonb, updated_at = $4, settings_version = settings_version + 1 WHERE user_id = $1 AND id = $2 AND ($5::int IS NULL OR settings_version = $5::int) RETURNING ' +
   PROJECT_COLUMNS;
+const VERSION_OF = 'SELECT settings_version FROM projects WHERE user_id = $1 AND id = $2';
 
 // RF-1012, P1-121: the removal is one transaction. It first locks the project row (`FOR UPDATE`
 // waits for a transaction that is inserting a run of the project, whose foreign key check holds a
@@ -90,9 +96,9 @@ export class PgProjectRepository implements ProjectRepository {
     return { project: toProject(row), created: false };
   }
 
-  async list(userId: string): Promise<readonly Project[]> {
+  async list(userId: string, limit?: number): Promise<readonly Project[]> {
     if (!UUID.test(userId)) return [];
-    return (await this.run(LIST, [userId])).rows.map(toProject);
+    return (await this.run(LIST, [userId, limit ?? null])).rows.map(toProject);
   }
 
   async find(userId: string, projectId: string): Promise<Project | undefined> {
@@ -102,22 +108,23 @@ export class PgProjectRepository implements ProjectRepository {
     return row === undefined ? undefined : toProject(row);
   }
 
-  async updateSettings(
-    userId: string,
-    projectId: string,
-    settings: ProjectSettings,
-    updatedAt: EpochMs,
-  ): Promise<Project | undefined> {
-    if (!UUID.test(userId) || !UUID.test(projectId)) return undefined;
+  async updateSettings(change: SettingsChange): Promise<SettingsUpdate> {
+    const { userId, projectId, settings, updatedAt } = change;
+    if (!UUID.test(userId) || !UUID.test(projectId)) return { kind: 'missing' };
     const [row] = (
       await this.run(UPDATE_SETTINGS, [
         userId,
         projectId,
         JSON.stringify(settings),
         new Date(updatedAt),
+        change.expectedVersion ?? null,
       ])
     ).rows;
-    return row === undefined ? undefined : toProject(row);
+    if (row !== undefined) return { kind: 'updated', project: toProject(row) };
+    // Nothing was written: no such project of this user, or its version is not the expected one.
+    const [current] = (await this.run(VERSION_OF, [userId, projectId])).rows;
+    if (current === undefined) return { kind: 'missing' };
+    return { kind: 'stale', currentVersion: z.number().int().parse(current['settings_version']) };
   }
 
   async remove(

@@ -16,6 +16,7 @@ import type { CardOutputs } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
 import type { CostLedger } from '../ports/cost-ledger.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
+import type { CostTotals } from '../ports/cost-totals.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
@@ -29,6 +30,7 @@ import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
+import { RunBudgetEvents } from '../runs/run-budget-events.js';
 import { ownerLogger } from '../runs/owner-logger.js';
 import { ManifestCostRecorder } from '../runs/run-cost-record.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -63,6 +65,8 @@ export interface RunUnderstandDependencies {
   readonly cards: CardOutputs;
   readonly answers: AnswersFile;
   readonly ledger: Pick<CostLedger, 'runEntries'>;
+  /** RF-1010: the project totals the run's usage events start from. */
+  readonly costTotals: Pick<CostTotals, 'projectGroups'>;
   readonly costReports: CostReportWriter;
   /** Reads the reader's prompt files with their versions and hashes (RNF-004). */
   readonly prompts: () => Promise<ReaderPrompts>;
@@ -148,15 +152,10 @@ export class RunUnderstand implements RunExecutor {
     const options = readUnderstandOptions(manifest.options);
     const tasks = planReaderTasks(scanned.codeMap.areas, options.areas);
     if (!tasks.ok) {
-      await this.log(
-        run,
-        ERROR_CODES.areaUnknown,
-        'An area named in the request is not in the code map.',
-        {
-          unknown: [...tasks.error.unknown],
-          valid: [...tasks.error.valid],
-        },
-      );
+      const message = 'An area named in the request is not in the code map.';
+      const { unknown, valid } = tasks.error;
+      const data = { unknown: [...unknown], valid: [...valid] };
+      await this.log(run, ERROR_CODES.areaUnknown, message, data);
       return stop(failed(ERROR_CODES.areaUnknown));
     }
     const prompts = await this.deps.prompts();
@@ -195,22 +194,13 @@ export class RunUnderstand implements RunExecutor {
     const { run, manifest } = execution;
     const account = await this.deps.users.findById(run.userId);
     if (account === undefined) return stop(failed(ERROR_CODES.notFound));
-    const scope = scopeOf(run);
-    const { manifests, runs } = this.deps;
     const built = await this.deps.providers.build({
       account,
       run: { id: run.id, userId: run.userId, projectId: run.projectId, stage: 'understand' },
       settings: project.settings,
       roles: UNDERSTAND_ROLES,
       cloudConsent: readUnderstandOptions(manifest.options).cloudConsent,
-      sinks: {
-        ...this.deps.runSinks(scope),
-        security: new ManifestSecurityRecorder({ manifests, scope, queue: updates.queue }),
-        costs: new ManifestCostRecorder({ manifests, runs, scope, queue: updates.queue }),
-        stopRun: (reason) => {
-          execution.stop(reason);
-        },
-      },
+      sinks: await this.sinksOf(execution, updates),
     });
     if (!built.ok) {
       for (const problem of built.error) {
@@ -232,6 +222,24 @@ export class RunUnderstand implements RunExecutor {
     });
     if (!ready.ok) return stop(await this.notReady(execution, ready.error));
     return { ok: true, value: reader };
+  }
+
+  /** The run's sinks for its guards: call log, egress log, manifest records, stop and events. */
+  private async sinksOf(execution: RunExecution, updates: ManifestUpdates): Promise<ProviderSinks> {
+    const { run, events } = execution;
+    const scope = scopeOf(run);
+    const { manifests, runs, ledger, costTotals } = this.deps;
+    const logger = ownerLogger(this.deps.logger, run.userId);
+    return {
+      ...this.deps.runSinks(scope),
+      security: new ManifestSecurityRecorder({ manifests, scope, queue: updates.queue }),
+      costs: new ManifestCostRecorder({ manifests, runs, scope, queue: updates.queue }),
+      stopRun: (reason) => {
+        execution.stop(reason);
+      },
+      // RF-1003, RF-1010: usage and budget events start from what the run and project spent.
+      budgetEvents: await RunBudgetEvents.open({ events, run, ledger, costTotals, logger }),
+    };
   }
 
   /** RF-401: an Ollama that cannot answer ends the run before its first task (a stop interrupts). */
