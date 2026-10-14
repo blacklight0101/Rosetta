@@ -35,6 +35,7 @@ async function exists(path: string): Promise<boolean> {
 
 /** The runs composition against an unreachable database, so the queue step of `recover` rejects. */
 function composedRuns(dataDir: string) {
+  const streams = new StreamRegistry();
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -55,10 +56,20 @@ function composedRuns(dataDir: string) {
     providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
     ollamaUrl: undefined,
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },
-    streams: new StreamRegistry(),
+    streams,
   });
-  return { runs, logger, pool };
+  return { runs, logger, pool, streams, clock };
 }
+
+describe('composeRuns streams', () => {
+  it('RF-1101 the run routes share the stream registry the session store ends, and the clock', async () => {
+    const { runs, pool, streams, clock } = composedRuns(tmpdir());
+
+    expect(runs.services.streams).toBe(streams);
+    expect(runs.services.clock).toBe(clock);
+    await pool.end();
+  });
+});
 
 describe('composeRuns', () => {
   it('RF-122 recover, the periodic queue sweep, does not discard the partial snapshot folders', async () => {
