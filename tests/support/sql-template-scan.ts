@@ -1,3 +1,5 @@
+import { readdir, readFile } from 'node:fs/promises';
+import { join, relative, sep } from 'node:path';
 import ts from 'typescript';
 
 // ADR-016, RNF-003, P1-49 F-20: SQL travels as a constant string and a values array, never as a
@@ -64,4 +66,23 @@ export function findSqlTemplates(source: string, fileName = 'file.ts'): SqlTempl
   };
   visit(tree);
   return found;
+}
+
+const SOURCE_FILE = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs)$/u;
+
+/** "<relative path>:<line> <kind>" for every finding in the source files under `folder`, sorted. */
+export async function scanFolder(folder: string): Promise<{ files: number; found: string[] }> {
+  const entries = await readdir(folder, { recursive: true, withFileTypes: true });
+  const files = entries.filter((entry) => entry.isFile() && SOURCE_FILE.test(entry.name));
+  const found = (
+    await Promise.all(
+      files.map(async (entry) => {
+        const path = join(entry.parentPath, entry.name);
+        const findings = findSqlTemplates(await readFile(path, 'utf8'), path);
+        const name = relative(folder, path).split(sep).join('/');
+        return findings.map((finding) => `${name}:${String(finding.line)} ${finding.kind}`);
+      }),
+    )
+  ).flat();
+  return { files: files.length, found: found.sort() };
 }
