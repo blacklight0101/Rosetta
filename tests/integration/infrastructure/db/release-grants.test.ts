@@ -96,3 +96,48 @@ describe.skipIf(!hasTestDatabase)('release-1 grants in use', () => {
     expect(await outcomeOf(pool, ddl, 'rosetta_app')).toBe(INSUFFICIENT_PRIVILEGE);
   });
 });
+
+describe.skipIf(!hasTestDatabase)('release-1 grants: no CREATE', () => {
+  let pool: DatabasePool;
+
+  beforeAll(async () => {
+    pool = await migratedSchema();
+  });
+
+  it.each([
+    ['a table in public', 'CREATE TABLE public.rst_probe (a int)'],
+    ['a table in public, quoted and upper case', 'CREATE TABLE "public"."RST_PROBE" (a int)'],
+    ['a table in the current schema', 'CREATE TABLE rst_probe (a int)'],
+    ['a view in public', 'CREATE VIEW public.rst_probe AS SELECT 1 AS a'],
+    [
+      'a function in public',
+      'CREATE FUNCTION public.rst_probe() RETURNS int LANGUAGE sql AS $$ SELECT 1 $$',
+    ],
+    ['a type in public', "CREATE TYPE public.rst_probe AS ENUM ('a')"],
+    ['a sequence in public', 'CREATE SEQUENCE public.rst_probe'],
+    ['a schema', 'CREATE SCHEMA rst_probe'],
+  ])('RF-1302 rosetta_app cannot CREATE %s', async (_label, sql) => {
+    expect(await outcomeOf(pool, { sql, params: [] }, 'rosetta_app')).toBe(INSUFFICIENT_PRIVILEGE);
+  });
+
+  it('RF-1302 rosetta_app holds no CREATE right on public, on its own schema or on the database', async () => {
+    const rights = await pool.query<{ schema: boolean; current: boolean; database: boolean }>(
+      `SELECT has_schema_privilege('rosetta_app', 'public', 'CREATE') AS schema,
+              has_schema_privilege('rosetta_app', current_schema(), 'CREATE') AS current,
+              has_database_privilege('rosetta_app', current_database(), 'CREATE') AS database`,
+    );
+
+    expect(rights.rows).toEqual([{ schema: false, current: false, database: false }]);
+  });
+
+  it('RF-1302 rosetta_app is not a superuser and cannot create roles or databases or bypass row security', async () => {
+    const role = await pool.query<Record<string, boolean>>(
+      'SELECT rolsuper, rolcreaterole, rolcreatedb, rolbypassrls FROM pg_roles WHERE rolname = $1',
+      ['rosetta_app'],
+    );
+
+    expect(role.rows).toEqual([
+      { rolsuper: false, rolcreaterole: false, rolcreatedb: false, rolbypassrls: false },
+    ]);
+  });
+});
