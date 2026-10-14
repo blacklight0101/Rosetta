@@ -41,7 +41,7 @@ describe('dollar amounts', () => {
     expect(dollarsToMicros(text)).toBe(micros);
   });
 
-  it.each(['abc', '1.0000001', '-1', '1e3', '', '.'])('DEC-107 refuses %j', (text) => {
+  it.each(['abc', '1.0000001', '1e3', '', '.'])('DEC-107 refuses %j', (text) => {
     expect(dollarsToMicros(text)).toBeUndefined();
   });
 
@@ -136,5 +136,26 @@ describe('own daily cap refusals', () => {
 
     expect((await within(slot).findByRole('alert')).textContent).toContain('RST-2006');
     expect(within(slot).queryByRole('button', { name: 'Save cap' })).toBeNull();
+  });
+});
+
+describe('negative own cap', () => {
+  it('RF-1106 a negative own cap goes to the server, which refuses it with RST-1003', async () => {
+    const { calls } = renderCap({
+      [`GET ${capRoute}`]: json(200, { ownDailyCapMicros: null }),
+      [`PUT ${capRoute}`]: failure(400, 'RST-1005', [
+        { field: 'ownDailyCapMicros', code: 'RST-1003' },
+      ]),
+    });
+    fireEvent.input(await capField(), { target: { value: '-1' } });
+
+    fireEvent.click(saveButton());
+
+    expect(
+      (await within(screen.getByTestId('own-daily-cap')).findByText(/RST-1003/u)).textContent,
+    ).toContain('RST-1003');
+    expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+      ownDailyCapMicros: '-1000000',
+    });
   });
 });

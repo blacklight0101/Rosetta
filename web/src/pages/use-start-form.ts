@@ -4,7 +4,7 @@ import type { Project } from '../api/project-schemas.js';
 import type { RunStageChoice } from '../api/runs.js';
 import { capWarnings, type CapWarning } from '../lib/cap-warnings.js';
 import { cloudRoles } from '../lib/estimate-math.js';
-import { dollarsToMicros, microsToDollars } from '../lib/usd.js';
+import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
 import type { EstimateLoad } from './use-estimate.js';
@@ -71,7 +71,7 @@ export function useStartForm(loaded: Project): StartForm {
   const stage = estimate.status === 'none' ? 'scan' : chosenStage;
   const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
   const names = providerNames(roles.map((role) => role.provider));
-  const typedCap = dollarsToMicros(capText);
+  const typedCap = dollarsToMicros(capText, RUN_COST_MAX_MICROS);
   const capMicros = typedCap === undefined ? runCapOf(project) : BigInt(typedCap);
   const warnings =
     stage === 'understand' && estimate.status === 'ready'

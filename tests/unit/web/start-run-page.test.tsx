@@ -238,3 +238,15 @@ it('RF-425 an estimate that cannot be read shows its error and Start stays off f
   expect((await screen.findByTestId('error-banner')).textContent).toContain('RST-2006');
   expect(start().disabled).toBe(true);
 });
+
+it('DEC-117 a typed cap above 100 USD does not replace the cap the warning compares with', async () => {
+  renderStart({
+    [`GET ${projectPath}`]: json(200, projectWithCap(10_000)),
+    [`GET ${estimatePath}`]: json(200, cloudEstimate),
+  });
+  await ready();
+
+  fireEvent.input(input('Run cap (USD)'), { target: { value: '150' } });
+
+  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.01');
+});

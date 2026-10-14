@@ -8,7 +8,7 @@ import { useApp } from '../app/app-context.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
-import { dollarsToMicros, microsToDollars } from '../lib/usd.js';
+import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { serverMonthOf } from './admin-month.js';
 import { ServerMeter } from './ServerMeter.js';
@@ -42,7 +42,13 @@ const textsOf = (caps: Caps): Texts => ({
 
 /** The caps in micro-dollars, or the fields whose text is not an amount. */
 function capsOf(texts: Texts): { readonly caps?: Caps; readonly bad: readonly CapField[] } {
-  const micros = capFields.map(({ name }) => [name, dollarsToMicros(texts[name])] as const);
+  const micros = capFields.map(
+    ({ name }) =>
+      [
+        name,
+        dollarsToMicros(texts[name], name === 'runMicros' ? RUN_COST_MAX_MICROS : undefined),
+      ] as const,
+  );
   const bad = micros.filter(([, value]) => value === undefined).map(([name]) => name);
   const [runMicros, userDayMicros, serverMonthMicros] = micros.map(([, value]) => value);
   if (runMicros === undefined || userDayMicros === undefined || serverMonthMicros === undefined) {
