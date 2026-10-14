@@ -48,8 +48,7 @@ const SEPARATORS = /[\\/]/;
 function isUnsafePath(path: string): boolean {
   if (path.startsWith('/') || path.startsWith('\\')) return true;
   const segments = path.split(SEPARATORS);
-  if (segments.some(isDotSegment) || DRIVE_FORM.test(segments[0] ?? '')) return true;
-  return path.includes('\\') && segments.some((segment) => DRIVE_FORM.test(segment));
+  return segments.some(isDotSegment) || DRIVE_FORM.test(segments[0] ?? '');
 }
 
 /**
