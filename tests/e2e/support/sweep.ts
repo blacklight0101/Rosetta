@@ -161,6 +161,43 @@ async function expectStackedCellsNamed(page: Page): Promise<void> {
   expect(describe(fonts), `${page.url()}: a data-label is not in the body font`).toEqual([]);
 }
 
+// A string, because the end-to-end project is compiled without the DOM types. A break inside a word
+// is a line break between two characters of one run of non-space characters, where the earlier one
+// is not a hyphen or a slash (the browser may break after those). Each broken word is reported.
+const midWordScript = `Array.from(document.querySelectorAll('table td, table th')).flatMap((cell) => {
+  const words = [];
+  const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    const text = node.textContent ?? '';
+    for (let index = 1; index < text.length; index++) {
+      const before = text[index - 1];
+      const after = text[index];
+      if (/\\s/u.test(before) || /\\s/u.test(after) || before === '-' || before === '/') continue;
+      const top = (at) => {
+        const range = document.createRange();
+        range.setStart(node, at);
+        range.setEnd(node, at + 1);
+        return Math.round(range.getBoundingClientRect().top);
+      };
+      if (Math.abs(top(index - 1) - top(index)) > 2) {
+        const start = text.lastIndexOf(' ', index - 1) + 1;
+        const end = text.indexOf(' ', index);
+        words.push(text.slice(start, end === -1 ? text.length : end));
+      }
+    }
+  }
+  return words;
+})`;
+
+/**
+ * No word of a table cell breaks inside itself (RNF-010, design-system.md section 8): a word breaks
+ * only at a space, a hyphen or a slash. Checked at 360 px in the report, where the cells are narrow.
+ */
+export async function expectNoMidWordBreak(page: Page): Promise<void> {
+  const broken: unknown = await page.evaluate(midWordScript);
+  expect(broken, `${page.url()}: a word of a table cell breaks inside itself`).toEqual([]);
+}
+
 /** The checks of the sweep on the page as it is now, once its colours have stopped moving. */
 // RNF-010
 export async function expectPageInView(page: Page, kind: PageKind = 'app'): Promise<void> {
