@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Clock } from '../../application/ports/clock.js';
+import type { Logger } from '../../application/ports/logger.js';
 import type { SignedInSession } from '../../application/use-cases/resolve-session.js';
 import { z } from 'zod';
 import type { EstimateRun } from '../../application/estimate/estimate-run.js';
@@ -109,7 +110,31 @@ function openStream(
   return stream;
 }
 
-function registerEvents(server: FastifyInstance, services: RunServices): void {
+/**
+ * RF-009, P1-160: a replay that failed, in the application log with its code, the run and the
+ * error's name only: the text of a file error can hold a data-folder path or a secret. A log that
+ * cannot be written never fails the request.
+ */
+function logReplayFailure(
+  logger: Logger,
+  request: FastifyRequest<EventsRequest>,
+  error: unknown,
+): void {
+  const code = error instanceof RosettaError ? error.code : ERROR_CODES.runEventLogFailed;
+  const name = error instanceof Error ? error.name : typeof error;
+  void Promise.allSettled([
+    logger.log({
+      level: 'error',
+      logger: 'http',
+      message: 'The stored events of a run could not be sent; the stream was closed.',
+      code,
+      runId: request.params.runId,
+      data: { requestId: request.id, error: name },
+    }),
+  ]);
+}
+
+function registerEvents(server: FastifyInstance, services: RunServices, logger: Logger): void {
   // A stream stays open for as long as its run, so closing the server ends the open ones first.
   server.addHook('preClose', () => {
     services.streams.finishAll();
@@ -151,7 +176,7 @@ function registerEvents(server: FastifyInstance, services: RunServices): void {
         .send(stream);
       // The stored events go out after the stream is handed over, at the pace the page reads.
       outcome.value.replay().catch((error: unknown) => {
-        request.log.error({ err: error }, 'The stored events of a run could not be sent');
+        logReplayFailure(logger, request, error);
         stream.destroy();
       });
       return reply;
@@ -249,9 +274,13 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
 }
 
 // RF-1006, RF-1108, RF-1105
-export function registerRunRoutes(server: FastifyInstance, services: RunServices): void {
+export function registerRunRoutes(
+  server: FastifyInstance,
+  services: RunServices,
+  logger: Logger,
+): void {
   registerGet(server, services);
-  registerEvents(server, services);
+  registerEvents(server, services, logger);
   registerDownload(server, services, { url: '/api/runs/:runId/zip', part: 'run' });
   registerDownload(server, services, { url: '/api/runs/:runId/handoff.zip', part: 'handoff' });
   registerRunFileRoutes(server, services);

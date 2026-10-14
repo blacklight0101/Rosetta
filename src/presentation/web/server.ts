@@ -243,7 +243,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     registerCapRoutes(instance, options.auth.accounts);
     registerDefaultRoleRoutes(instance, options.auth.accounts);
     registerProjectRoutes(instance, options.projects);
-    registerRunRoutes(instance, options.runs);
+    registerRunRoutes(instance, options.runs, options.logger);
     registerCostRoutes(instance, options.projects);
     registerErrorCatalogueRoutes(instance);
     registerHistoryRoutes(instance, options.history);
