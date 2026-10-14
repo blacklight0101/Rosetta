@@ -31,6 +31,7 @@ export const ERROR_CODES = {
   settingsBaseUrlRefused: 'RST-1004',
   settingsInvalid: 'RST-1005',
   settingValueInvalid: 'RST-1006',
+  settingsVersionStale: 'RST-1007',
   pathOutsideRoot: 'RST-1100',
   pathInvalid: 'RST-1101',
   pathIgnored: 'RST-1102',

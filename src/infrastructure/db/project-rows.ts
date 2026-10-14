@@ -35,6 +35,7 @@ export function toProject(row: unknown): Project {
     ref: parsed.ref,
     subpath: parsed.subpath,
     settings: parsed.settings,
+    settingsVersion: 1,
     createdAt: parsed.created_at,
     updatedAt: parsed.updated_at,
   };

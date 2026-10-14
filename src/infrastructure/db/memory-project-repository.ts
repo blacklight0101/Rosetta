@@ -1,10 +1,10 @@
-import type { EpochMs } from '../../domain/accounts/user.js';
 import type {
   ProjectRepository,
+  SettingsChange,
+  SettingsUpdate,
   StoredProject,
 } from '../../application/ports/project-repository.js';
 import type { Project } from '../../application/projects/project.js';
-import type { ProjectSettings } from '../../application/projects/project-settings.js';
 
 // Architecture section 7, RF-010, RF-1105: projects in memory, for unit tests. Passes the same
 // contract suite as PgProjectRepository: unique on user, source URL, ref and subpath; every
@@ -41,17 +41,13 @@ export class MemoryProjectRepository implements ProjectRepository {
     return Promise.resolve(this.owned(userId, projectId));
   }
 
-  updateSettings(
-    userId: string,
-    projectId: string,
-    settings: ProjectSettings,
-    updatedAt: EpochMs,
-  ): Promise<Project | undefined> {
+  updateSettings(change: SettingsChange): Promise<SettingsUpdate> {
+    const { userId, projectId, settings, updatedAt } = change;
     const project = this.owned(userId, projectId);
-    if (project === undefined) return Promise.resolve(undefined);
+    if (project === undefined) return Promise.resolve({ kind: 'missing' });
     const updated = { ...project, settings, updatedAt };
     this.projects.set(projectId, updated);
-    return Promise.resolve(updated);
+    return Promise.resolve({ kind: 'updated', project: updated });
   }
 
   async remove(

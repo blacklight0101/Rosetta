@@ -57,6 +57,10 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message: 'This setting has a value that is not allowed, or is not a setting.',
     nextStep: 'Check the name and the value against the settings page and try again.',
   },
+  'RST-1007': {
+    message: 'The settings were changed somewhere else after this page read them.',
+    nextStep: 'Reload the page to see the current settings, make your change again and save.',
+  },
   'RST-1300': {
     message:
       'The agent did not return cards in the required format, even after one repair attempt.',

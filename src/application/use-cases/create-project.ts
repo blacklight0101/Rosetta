@@ -67,6 +67,7 @@ export class CreateProject {
       userId: request.actor.userId,
       ...sourceOf(parsed.value),
       settings: await this.newSettings(),
+      settingsVersion: 1,
       createdAt: now,
       updatedAt: now,
     };

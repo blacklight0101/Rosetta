@@ -1,10 +1,10 @@
-import type { EpochMs } from '../../domain/accounts/user.js';
 import type {
   ProjectRepository,
+  SettingsChange,
+  SettingsUpdate,
   StoredProject,
 } from '../../application/ports/project-repository.js';
 import type { Project } from '../../application/projects/project.js';
-import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { DatabaseClient, DatabasePool } from './pool.js';
@@ -102,13 +102,9 @@ export class PgProjectRepository implements ProjectRepository {
     return row === undefined ? undefined : toProject(row);
   }
 
-  async updateSettings(
-    userId: string,
-    projectId: string,
-    settings: ProjectSettings,
-    updatedAt: EpochMs,
-  ): Promise<Project | undefined> {
-    if (!UUID.test(userId) || !UUID.test(projectId)) return undefined;
+  async updateSettings(change: SettingsChange): Promise<SettingsUpdate> {
+    const { userId, projectId, settings, updatedAt } = change;
+    if (!UUID.test(userId) || !UUID.test(projectId)) return { kind: 'missing' };
     const [row] = (
       await this.run(UPDATE_SETTINGS, [
         userId,
@@ -117,7 +113,7 @@ export class PgProjectRepository implements ProjectRepository {
         new Date(updatedAt),
       ])
     ).rows;
-    return row === undefined ? undefined : toProject(row);
+    return row === undefined ? { kind: 'missing' } : { kind: 'updated', project: toProject(row) };
   }
 
   async remove(

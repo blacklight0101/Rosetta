@@ -24,6 +24,8 @@ export interface UpdateProjectSettingsRequest {
   readonly projectId: string;
   /** The document as received; parsed here. */
   readonly settings: unknown;
+  /** The version of the settings the save started from; undefined saves unconditionally. */
+  readonly expectedVersion?: number;
 }
 
 export interface UpdateProjectSettingsDependencies {
@@ -48,12 +50,13 @@ export class UpdateProjectSettings {
     if (existing === undefined) return err({ code: ERROR_CODES.notFound });
     const parsed = parseProjectSettings(request.settings);
     if (!parsed.ok) return err({ code: ERROR_CODES.settingsInvalid, problems: parsed.error });
-    const updated = await projects.updateSettings(
+    const updated = await projects.updateSettings({
       userId,
-      request.projectId,
-      parsed.value,
-      clock.now().getTime(),
-    );
-    return updated === undefined ? err({ code: ERROR_CODES.notFound }) : ok(updated);
+      projectId: request.projectId,
+      settings: parsed.value,
+      updatedAt: clock.now().getTime(),
+      expectedVersion: request.expectedVersion,
+    });
+    return updated.kind === 'updated' ? ok(updated.project) : err({ code: ERROR_CODES.notFound });
   }
 }

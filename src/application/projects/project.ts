@@ -16,6 +16,8 @@ export interface Project {
   readonly ref: string;
   readonly subpath: string;
   readonly settings: ProjectSettings;
+  /** Counts the saves of the settings, from 1; a save may name the version it started from. */
+  readonly settingsVersion: number;
   readonly createdAt: EpochMs;
   readonly updatedAt: EpochMs;
 }

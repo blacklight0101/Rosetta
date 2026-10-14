@@ -1,5 +1,9 @@
 import { expect, it } from 'vitest';
-import type { ProjectRepository } from '../../src/application/ports/project-repository.js';
+import type {
+  ProjectRepository,
+  SettingsChange,
+} from '../../src/application/ports/project-repository.js';
+import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { settingsWith, sampleProject } from '../support/project-fixtures.js';
 import { parseProjectSettings } from '../../src/application/projects/project-settings.js';
 
@@ -75,18 +79,37 @@ function scopingTests(name: string, fresh: FreshProjects): void {
   });
 }
 
+function parsedSettings(parallelism: number): ProjectSettings {
+  const parsed = parseProjectSettings(settingsWith({ 'agents.parallelism': parallelism }));
+  if (!parsed.ok) throw new Error('The settings were refused');
+  return parsed.value;
+}
+
+function change(overrides: Partial<SettingsChange> = {}): SettingsChange {
+  return {
+    userId: amy,
+    projectId: unknownId,
+    settings: parsedSettings(3),
+    updatedAt: 5_000_000,
+    expectedVersion: undefined,
+    ...overrides,
+  };
+}
+
 function updatingTests(name: string, fresh: FreshProjects): void {
-  it(`RF-002 ${name} replaces the settings and the update time of the owner's project`, async () => {
+  it(`RF-002 ${name} replaces the settings and the update time of the owner's project and counts the version`, async () => {
     const projects = await fresh();
     const project = sampleProject({ userId: amy });
     await projects.insertOrFind(project);
-    const parsed = parseProjectSettings(settingsWith({ 'agents.parallelism': 3 }));
-    if (!parsed.ok) throw new Error('The settings were refused');
+    const settings = parsedSettings(3);
 
-    const updated = await projects.updateSettings(amy, project.id, parsed.value, 5_000_000);
+    const updated = await projects.updateSettings(
+      change({ projectId: project.id, settings, expectedVersion: 1 }),
+    );
 
-    expect(updated).toEqual({ ...project, settings: parsed.value, updatedAt: 5_000_000 });
-    expect(await projects.find(amy, project.id)).toEqual(updated);
+    const expected = { ...project, settings, updatedAt: 5_000_000, settingsVersion: 2 };
+    expect(updated).toEqual({ kind: 'updated', project: expected });
+    expect(await projects.find(amy, project.id)).toEqual(expected);
   });
 
   it(`RF-1105 ${name} changes nothing for another user's project or an unknown id`, async () => {
@@ -94,12 +117,43 @@ function updatingTests(name: string, fresh: FreshProjects): void {
     const project = sampleProject({ userId: amy });
     await projects.insertOrFind(project);
 
-    const foreign = await projects.updateSettings(bob, project.id, project.settings, 5_000_000);
-    const unknown = await projects.updateSettings(amy, unknownId, project.settings, 5_000_000);
+    const foreign = await projects.updateSettings(
+      change({ userId: bob, projectId: project.id, expectedVersion: 1 }),
+    );
+    const unknown = await projects.updateSettings(change({ expectedVersion: 1 }));
 
-    expect(foreign).toBeUndefined();
-    expect(unknown).toBeUndefined();
+    expect(foreign).toEqual({ kind: 'missing' });
+    expect(unknown).toEqual({ kind: 'missing' });
     expect(await projects.find(amy, project.id)).toEqual(project);
+  });
+}
+
+function versionTests(name: string, fresh: FreshProjects): void {
+  it(`RF-002 ${name} refuses a save made from an older version and keeps the stored settings`, async () => {
+    const projects = await fresh();
+    const project = sampleProject({ userId: amy });
+    await projects.insertOrFind(project);
+    await projects.updateSettings(change({ projectId: project.id, expectedVersion: 1 }));
+
+    const stale = await projects.updateSettings(
+      change({ projectId: project.id, settings: parsedSettings(5), expectedVersion: 1 }),
+    );
+
+    expect(stale).toEqual({ kind: 'stale', currentVersion: 2 });
+    expect((await projects.find(amy, project.id))?.settings).toEqual(parsedSettings(3));
+  });
+
+  it(`RF-002 ${name} saves without a version unconditionally and still counts the version`, async () => {
+    const projects = await fresh();
+    const project = sampleProject({ userId: amy });
+    await projects.insertOrFind(project);
+
+    await projects.updateSettings(change({ projectId: project.id }));
+    const second = await projects.updateSettings(
+      change({ projectId: project.id, settings: parsedSettings(4) }),
+    );
+
+    expect(second).toMatchObject({ kind: 'updated', project: { settingsVersion: 3 } });
   });
 }
 
@@ -166,5 +220,6 @@ export function projectRepositoryContract(name: string, fresh: FreshProjects): v
   storingTests(name, fresh);
   scopingTests(name, fresh);
   updatingTests(name, fresh);
+  versionTests(name, fresh);
   removalTests(name, fresh);
 }
