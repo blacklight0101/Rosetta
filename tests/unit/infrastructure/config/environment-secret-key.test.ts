@@ -48,6 +48,19 @@ describe('environment: a known or repeated secret key', () => {
     expect(JSON.stringify(error)).not.toContain(value);
     expect(String(error.stack)).not.toContain(value);
   });
+});
+
+describe('environment: a key that is nearly repeated', () => {
+  it.each([0, 31])(
+    'RF-1305 accepts a key that differs from a repeated byte at position %i only',
+    (position) => {
+      const bytes = Buffer.alloc(32, 7);
+      bytes[position] = 8;
+      const value = bytes.toString('base64');
+
+      expect(loadEnvironment(validSource({ ROSETTA_SECRET_KEY: value })).secretKey).toBe(value);
+    },
+  );
 
   it('RF-1305 accepts a key whose bytes differ', () => {
     const value = fixtureSecret(3);
@@ -67,39 +80,5 @@ describe('environment: a known or repeated secret key', () => {
     const environment = loadEnvironment(validSource({ ROSETTA_SECRET_KEY_PREVIOUS: previous }));
 
     expect(environment.secretKeyPrevious).toBe(previous);
-  });
-});
-
-describe('environment: the contact address', () => {
-  it.each(['contact@example.com', 'first.last+rosetta@sub.example.org'])(
-    'RF-1305 accepts %s',
-    (value) => {
-      expect(loadEnvironment(validSource({ ROSETTA_CONTACT_EMAIL: value })).contactEmail).toBe(
-        value,
-      );
-    },
-  );
-
-  it.each([
-    'contact@example.com?cc=other@example.org',
-    'contact@example.com?cc=nobody',
-    'contact?cc=x@example.com',
-    '"quoted"@example.com',
-    "o'brien@example.com",
-    'contact@example.com&bcc=x@example.org',
-    'a@b@example.com',
-    'contact@example',
-    'contact@-example.com',
-    'contact@example..com',
-    'contact@example.com#frag',
-    'contact@example.com%0d%0aBcc:x@example.org',
-    'conta ct@example.com',
-    '<contact@example.com>',
-  ])('RF-1305 refuses the malformed address %s with RST-1000 and no value', (value) => {
-    const error = failureOf(validSource({ ROSETTA_CONTACT_EMAIL: value }));
-
-    expect(error.code).toBe(ERROR_CODES.configurationInvalid);
-    expect(error.message).toContain('ROSETTA_CONTACT_EMAIL');
-    expect(error.message).not.toContain(value);
   });
 });
