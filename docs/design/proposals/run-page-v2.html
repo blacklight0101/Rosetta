@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run page v2</title>
+<style>
+/* Rosetta tokens v1 (docs/design/tokens.css), copied so this proposal opens on its own. */
+:root, [data-theme="light"] {
+  --rst-bg:#F4F6F6; --rst-surface:#FFFFFF; --rst-surface-2:#EAEFEE; --rst-surface-raised:#FFFFFF;
+  --rst-ink:#13201F; --rst-ink-soft:#364644; --rst-ink-muted:#56645F; --rst-rule:#D8DFDE; --rst-rule-strong:#7A8987;
+  --rst-brand:#0E6B6B; --rst-brand-hover:#0A5555; --rst-brand-ink:#FFFFFF; --rst-brand-tint:#DDEFEE;
+  --rst-ok-ink:#1C6E37; --rst-ok-bg:#E2F2E7; --rst-ok-solid:#1C6E37;
+  --rst-warn-ink:#7A4A00; --rst-warn-bg:#FBEBD2; --rst-warn-solid:#E39A1F;
+  --rst-danger-ink:#A8211A; --rst-danger-bg:#FBE4E2;
+  --rst-info-ink:#1B5799; --rst-info-bg:#E2ECF8;
+  --rst-neutral-ink:#45524F; --rst-neutral-bg:#E8ECEB;
+  --rst-role-reader:#0E6B6B; --rst-role-verifier:#6A48B8; --rst-role-planner:#B5520B; --rst-role-summariser:#1B5799;
+  --rst-focus:#1B5799; --rst-shadow-1:0 1px 2px rgba(16,32,31,.08),0 1px 1px rgba(16,32,31,.04); --rst-shadow-2:0 12px 32px rgba(16,32,31,.18);
+  --glow: rgba(14,107,107,.28); --hatch: rgba(19,32,31,.07);
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --rst-bg:#0D1413; --rst-surface:#141D1C; --rst-surface-2:#1B2625; --rst-surface-raised:#212E2D;
+  --rst-ink:#E5EDEC; --rst-ink-soft:#BAC8C6; --rst-ink-muted:#93A5A2; --rst-rule:#2A3836; --rst-rule-strong:#66807C;
+  --rst-brand:#45B8B0; --rst-brand-hover:#64CBC4; --rst-brand-ink:#04201E; --rst-brand-tint:#123533;
+  --rst-ok-ink:#63CC88; --rst-ok-bg:#12301D; --rst-ok-solid:#3DAA62;
+  --rst-warn-ink:#F2BA5C; --rst-warn-bg:#36270B; --rst-warn-solid:#E39A1F;
+  --rst-danger-ink:#FF8E84; --rst-danger-bg:#3C1513;
+  --rst-info-ink:#84B9F2; --rst-info-bg:#10253D;
+  --rst-neutral-ink:#BAC8C6; --rst-neutral-bg:#222E2D;
+  --rst-role-reader:#45B8B0; --rst-role-verifier:#A98BF0; --rst-role-planner:#F09A55; --rst-role-summariser:#84B9F2;
+  --rst-focus:#84B9F2; --rst-shadow-1:0 1px 2px rgba(0,0,0,.4); --rst-shadow-2:0 12px 32px rgba(0,0,0,.55);
+  --glow: rgba(69,184,176,.30); --hatch: rgba(229,237,236,.06);
+  color-scheme: dark;
+}
+:root {
+  --rst-sans: system-ui,-apple-system,"Segoe UI","Noto Sans","Helvetica Neue",sans-serif;
+  --rst-mono: ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+  --rst-dur-fast:120ms; --rst-dur-base:200ms; --rst-ease:cubic-bezier(.2,0,0,1); --out:cubic-bezier(.16,1,.3,1);
+}
+@media (prefers-reduced-motion: reduce){ :root{ --rst-dur-fast:0ms; --rst-dur-base:0ms; } }
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--rst-bg);color:var(--rst-ink);font:400 14px/1.45 var(--rst-sans);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+::selection{background:var(--rst-brand);color:var(--rst-brand-ink)}
+:focus-visible{outline:2px solid var(--rst-focus);outline-offset:2px;border-radius:4px}
+a{color:var(--rst-brand);text-underline-offset:3px}
+a:hover{color:var(--rst-brand-hover)}
+*{scrollbar-width:thin;scrollbar-color:var(--rst-rule-strong) transparent}
+.mono{font-family:var(--rst-mono);font-size:max(12px,.92em)}
+.muted{color:var(--rst-ink-muted)}
+.soft{color:var(--rst-ink-soft)}
+svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* proposal chrome (not part of the product) */
+.proposal{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:var(--rst-surface-2);border-bottom:1px solid var(--rst-rule);font-size:13px}
+.proposal b{font-weight:650}
+.seg{display:inline-flex;border:1px solid var(--rst-rule-strong);border-radius:999px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:5px 14px;font-weight:500;color:var(--rst-ink-soft)}
+.seg button[aria-pressed="true"]{background:var(--rst-brand);color:var(--rst-brand-ink)}
+
+/* app frame */
+.top{display:flex;align-items:center;gap:16px;padding:0 24px;height:52px;border-bottom:1px solid var(--rst-rule);background:var(--rst-surface)}
+.word{font-weight:650;font-size:16px;letter-spacing:-.01em}
+.crumbs{display:flex;gap:8px;align-items:center;color:var(--rst-ink-muted);font-size:13px;min-width:0}
+.crumbs b{color:var(--rst-ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.totals{margin-left:auto;display:flex;gap:18px;font-size:13px;color:var(--rst-ink-soft);white-space:nowrap}
+.totals span b{color:var(--rst-ink);font-weight:500}
+.wrap{max-width:1320px;margin:0 auto;padding:24px}
+
+/* run header */
+.runhead{display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:end;margin-bottom:20px}
+h1{font-size:24px;line-height:1.2;font-weight:650;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.sub{color:var(--rst-ink-muted);font-size:13px;margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+.state{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;font-weight:500;font-size:13px}
+.state.live{background:var(--rst-brand-tint);color:var(--rst-brand)}
+.state.done{background:var(--rst-ok-bg);color:var(--rst-ok-ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.live .dot{animation:pulse 1.4s var(--rst-ease) infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+/* journey (stepper) */
+.journey{display:flex;gap:0;margin:0 0 20px;padding:0;list-style:none;border:1px solid var(--rst-rule);border-radius:10px;background:var(--rst-surface);overflow:hidden}
+.journey li{flex:1;display:flex;gap:10px;align-items:center;padding:12px 16px;position:relative;min-width:0}
+.journey li+li{border-left:1px solid var(--rst-rule)}
+.journey .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:650;border:1.5px solid var(--rst-rule-strong);color:var(--rst-ink-muted);flex:none}
+.journey .t{display:flex;flex-direction:column;min-width:0}
+.journey .t b{font-weight:500;font-size:13px}
+.journey .t small{color:var(--rst-ink-muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journey li.ok .n{background:var(--rst-ok-solid);border-color:var(--rst-ok-solid);color:#fff}
+.journey li.now{background:linear-gradient(90deg,var(--rst-brand-tint),transparent)}
+.journey li.now .n{border-color:var(--rst-brand);color:var(--rst-brand)}
+.journey li.later .t b{color:var(--rst-ink-muted)}
+
+/* layout */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.grid>*,.wrap>*{min-width:0}
+.panel{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:10px}
+.ph{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--rst-rule)}
+.ph h2{font-size:16px;font-weight:650;margin:0}
+.ph .aside{margin-left:auto;font-size:12px;color:var(--rst-ink-muted);display:flex;gap:12px;align-items:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* living code map */
+.map{position:relative;padding:18px;display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:50px;gap:8px}
+.tile.short{flex-direction:row;align-items:center;gap:10px}
+.tile.short .nm{flex:1;min-width:0}
+.tile{position:relative;border-radius:8px;border:1px solid var(--rst-rule);background:var(--rst-surface-2);padding:9px 11px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;
+  transition:background var(--rst-dur-base) var(--out),border-color var(--rst-dur-base) var(--out),box-shadow 600ms var(--out),transform var(--rst-dur-base) var(--out)}
+.tile:hover{transform:translateY(-1px);border-color:var(--rst-rule-strong)}
+.tile .nm{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .meta{font-size:12px;color:var(--rst-ink-muted);display:flex;gap:8px;align-items:center;white-space:nowrap}
+.tile.waiting{background:transparent;border-style:dashed}
+.tile.reading{border-color:var(--rst-brand);box-shadow:0 0 0 1px var(--rst-brand),0 10px 30px -8px var(--glow);background:var(--rst-surface)}
+.tile.reading::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,var(--glow) 50%,transparent 70%);background-size:250% 100%;animation:sweep 2.2s var(--rst-ease) infinite}
+@keyframes sweep{from{background-position:120% 0}to{background-position:-120% 0}}
+.tile.done{background:var(--rst-brand-tint);border-color:transparent}
+.tile.done .meta{color:var(--rst-ink-soft)}
+.tile.gap{background:var(--rst-warn-bg);border-color:transparent}
+.tile.gap .meta{color:var(--rst-warn-ink)}
+.tile.lib{background:repeating-linear-gradient(135deg,var(--hatch) 0 6px,transparent 6px 12px);border-style:dashed;cursor:default}
+.tile.lib .nm{color:var(--rst-ink-muted);font-weight:400}
+.fill{position:absolute;left:0;bottom:0;height:3px;background:var(--rst-brand);transition:width 900ms var(--out)}
+.pips{display:flex;gap:3px;flex-wrap:wrap}
+.pip{width:6px;height:6px;border-radius:2px;background:var(--rst-brand);animation:pop 420ms var(--out) both}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.tile.reading::after,.pip,.live .dot{animation:none}}
+
+/* now rail */
+.rail{display:flex;flex-direction:column;gap:20px}
+.meter{padding:16px 18px}
+.meter .row{display:flex;justify-content:space-between;align-items:baseline}
+.meter .big{font-size:24px;font-weight:650;letter-spacing:-.01em}
+.bar{height:8px;border-radius:999px;background:var(--rst-surface-2);margin:10px 0 8px;overflow:hidden}
+.bar>span{display:block;height:100%;border-radius:inherit;background:var(--rst-brand);transition:width 900ms var(--out)}
+.agents{list-style:none;margin:0;padding:6px 0}
+.agents li{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 18px;align-items:start}
+.av{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff}
+.av.reader{background:var(--rst-role-reader)} .av.verifier{background:var(--rst-role-verifier)} .av.summariser{background:var(--rst-role-summariser)}
+[data-theme="dark"] .av{color:#04201E}
+.agents b{font-weight:500;font-size:13px}
+.agents p{margin:2px 0 0;font-size:12.5px;color:var(--rst-ink-soft)}
+.agents .file{color:var(--rst-ink-muted)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rst-rule);padding:0 10px;overflow-x:auto}
+.tabs button{all:unset;cursor:pointer;padding:12px 12px 11px;font-weight:500;font-size:13px;color:var(--rst-ink-muted);border-bottom:2px solid transparent;display:flex;gap:7px;align-items:center;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--rst-ink);border-color:var(--rst-brand)}
+.tabs .count{font-size:12px;padding:0 7px;border-radius:999px;background:var(--rst-surface-2);color:var(--rst-ink-soft)}
+.tabs .count.warn{background:var(--rst-warn-bg);color:var(--rst-warn-ink)}
+.tabpanel{padding:18px}
+.tabpanel[hidden]{display:none}
+
+/* lists */
+.feed{list-style:none;margin:0;padding:0;font-size:13px}
+.feed li{display:grid;grid-template-columns:72px 1fr;gap:12px;padding:7px 0;border-bottom:1px solid var(--rst-rule)}
+.feed time{color:var(--rst-ink-muted);font-family:var(--rst-mono);font-size:12px}
+.cards{list-style:none;margin:0;padding:0}
+.cards li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rst-rule)}
+.type{font-family:var(--rst-mono);font-size:12px;padding:2px 7px;border-radius:5px;background:var(--rst-surface-2);color:var(--rst-ink-soft)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;background:var(--rst-info-bg);color:var(--rst-info-ink);white-space:nowrap}
+
+/* results: overview */
+.overview{padding:28px 32px 32px}
+.lede{font-size:20px;line-height:1.45;letter-spacing:-.005em;max-width:62ch;margin:0 0 22px;text-wrap:pretty}
+.lede a{color:inherit;text-decoration:underline;text-decoration-color:var(--rst-rule-strong)}
+.ovgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 36px;margin-top:8px}
+.ov h3{font-size:13px;font-weight:650;margin:0 0 10px;display:flex;align-items:center;gap:8px;color:var(--rst-ink-soft)}
+.ov ul{margin:0;padding:0;list-style:none}
+.ov li{padding:6px 0;display:flex;gap:10px;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--rst-rule)}
+.ov li span:first-child{min-width:0}
+.ref{font-family:var(--rst-mono);font-size:12px;color:var(--rst-ink-muted);white-space:nowrap}
+.er{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.ent{border:1px solid var(--rst-rule-strong);border-radius:8px;padding:8px 10px;font-size:12.5px;background:var(--rst-surface-2);min-width:120px}
+.ent b{display:block;font-weight:650;font-size:13px;margin-bottom:2px}
+.link{color:var(--rst-ink-muted);font-size:12px}
+.honest{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:8px;background:var(--rst-info-bg);color:var(--rst-info-ink);font-size:13px;margin-top:26px}
+.gapnote{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:8px;background:var(--rst-warn-bg);color:var(--rst-warn-ink);font-size:13px;margin-top:10px}
+
+/* your turn */
+.turn{padding:18px}
+.turn h2{font-size:16px;margin:0 0 4px;font-weight:650}
+.turn p{margin:0 0 14px;color:var(--rst-ink-soft);font-size:13px}
+.turn .btn{width:100%;margin-top:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;height:36px;padding:0 16px;border-radius:6px;font-weight:500;font-size:13px;cursor:pointer;border:1px solid transparent;text-decoration:none}
+.btn.primary{background:var(--rst-brand);color:var(--rst-brand-ink)}
+.btn.primary:hover{background:var(--rst-brand-hover);color:var(--rst-brand-ink)}
+.btn.ghost{border-color:var(--rst-rule-strong);color:var(--rst-ink);background:transparent}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rst-rule);border-top:1px solid var(--rst-rule);border-radius:0 0 10px 10px;overflow:hidden}
+.facts div{background:var(--rst-surface);padding:12px 16px}
+.facts b{display:block;font-size:18px;font-weight:650}
+.facts span{font-size:12px;color:var(--rst-ink-muted)}
+.q{padding:16px 0;border-bottom:1px solid var(--rst-rule)}
+.q:last-child{border-bottom:0}
+.q .why{font-size:12.5px;color:var(--rst-ink-muted);margin:6px 0 10px}
+.q .qq{font-weight:500;font-size:14px;max-width:70ch}
+.q textarea{width:100%;min-height:60px;resize:vertical;border:1px solid var(--rst-rule-strong);border-radius:6px;background:var(--rst-surface);color:var(--rst-ink);font:inherit;padding:8px 10px}
+.q .default{font-size:12px;color:var(--rst-ink-soft);margin-top:6px}
+
+[data-mode="live"] .results{display:none} [data-mode="results"] .live{display:none}
+
+@media (max-width: 980px){
+  .grid{grid-template-columns:1fr}
+  .journey{overflow-x:auto} .journey li{min-width:150px}
+  .ovgrid{grid-template-columns:1fr}
+  .map{grid-template-columns:repeat(6,1fr)}
+  .totals{display:none}
+}
+@media (max-width: 560px){
+  .wrap{padding:16px}
+  .runhead{grid-template-columns:1fr}
+  .overview{padding:20px 18px}
+  .lede{font-size:17px}
+  .map{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto}
+  .map .tile{grid-column:span 1!important;grid-row:span 1!important;min-height:64px;flex-direction:column;align-items:stretch;gap:4px}
+  .journey{flex-direction:column} .journey li{min-width:0} .journey li+li{border-left:0;border-top:1px solid var(--rst-rule)}
+  .cards li{grid-template-columns:auto 1fr} .cards li .chip{grid-column:2;justify-self:start}
+  .ph .aside.legend{display:none}
+  .proposal{justify-content:flex-start}
+}
+</style>
+</head>
+<body data-mode="live">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-read" viewBox="0 0 24 24"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+  <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21 20c0-2.6-1.7-4.9-4-5.7"/></symbol>
+  <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 7V3M15 7V3M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="proposal" role="region" aria-label="Proposal controls">
+  <b>Run page v2 proposal</b><span class="muted">sample run on eShopLegacyWebForms, not live data</span>
+  <span class="seg" role="group" aria-label="Phase"><button aria-pressed="true" data-set-mode="live">While running</button><button aria-pressed="false" data-set-mode="results">After the run</button></span>
+  <span class="seg" role="group" aria-label="Theme"><button aria-pressed="true" data-set-theme="dark">Dark</button><button aria-pressed="false" data-set-theme="light">Light</button></span>
+</div>
+
+<header class="top">
+  <span class="word">Rosetta</span>
+  <nav class="crumbs" aria-label="Breadcrumb"><span>Projects</span><span aria-hidden="true">/</span><b>eShopModernizing</b><span aria-hidden="true">/</span><b>Understand</b></nav>
+  <div class="totals" aria-label="Project totals"><span>Project tokens <b>584,906</b></span><span>Project cost <b>$0.00</b></span></div>
+</header>
+
+<main class="wrap">
+  <section class="runhead">
+    <div>
+      <h1 class="live">Reading the eShop catalog application</h1>
+      <h1 class="results">What eShopLegacyWebForms does</h1>
+      <div class="sub"><span class="mono">dotnet-architecture/eShopModernizing @ 63bc9ec</span><span>gemma4:e4b on local Ollama</span><span class="live">started 14:57 · <span id="elapsed">2 min 41 s</span></span><span class="results">finished 15:06 · 9 min 12 s</span></div>
+    </div>
+    <div><span class="state live" role="status"><span class="dot"></span>Running</span><span class="state done results"><svg class="i"><use href="#i-check"/></svg>Finished</span></div>
+  </section>
+
+  <ol class="journey" aria-label="Run progress">
+    <li class="ok"><span class="n"><svg class="i" style="width:14px;height:14px"><use href="#i-check"/></svg></span><span class="t"><b>Map the code</b><small>11 areas, 30 library folders left out</small></span></li>
+    <li class="now live"><span class="n">2</span><span class="t"><b>Read</b><small id="readsub">5 of 11 areas</small></span></li>
+    <li class="ok results"><span class="n"><svg class="i" style="width:14px;height:14px"><use href="#i-check"/></svg></span><span class="t"><b>Read</b><small>11 of 11 areas</small></span></li>
+    <li class="later live"><span class="n">3</span><span class="t"><b>Check citations</b><small>as cards arrive</small></span></li>
+    <li class="ok results"><span class="n"><svg class="i" style="width:14px;height:14px"><use href="#i-check"/></svg></span><span class="t"><b>Check citations</b><small>86 of 86 passed</small></span></li>
+    <li class="later live"><span class="n">4</span><span class="t"><b>Explain</b><small>overview after reading</small></span></li>
+    <li class="ok results"><span class="n"><svg class="i" style="width:14px;height:14px"><use href="#i-check"/></svg></span><span class="t"><b>Explain</b><small>overview written</small></span></li>
+    <li class="later live"><span class="n">5</span><span class="t"><b>Your questions</b><small>after the overview</small></span></li>
+    <li class="now results"><span class="n">5</span><span class="t"><b>Your questions</b><small>3 to answer</small></span></li>
+  </ol>
+
+  <!-- ================= LIVE ================= -->
+  <div class="grid live">
+    <section class="panel" aria-labelledby="maph">
+      <div class="ph"><svg class="i"><use href="#i-read"/></svg><h2 id="maph">The code, area by area</h2>
+        <div class="aside legend"><span><i style="background:var(--rst-brand)"></i>reading</span><span><i style="background:var(--rst-brand-tint)"></i>read</span><span><i style="border:1px dashed var(--rst-rule-strong)"></i>waiting</span><span><i style="background:repeating-linear-gradient(135deg,var(--rst-rule-strong) 0 2px,transparent 2px 4px)"></i>library, left out</span></div>
+      </div>
+      <div class="map" id="map" aria-live="polite"></div>
+    </section>
+
+    <aside class="rail">
+      <section class="panel meter" aria-labelledby="costh">
+        <div class="row"><h2 id="costh" style="font-size:13px;font-weight:650;margin:0" class="soft">Spend for this run</h2><span class="muted" style="font-size:12px">cap $0.50</span></div>
+        <div class="row" style="margin-top:6px"><span class="big">$0.00</span><span class="muted" style="font-size:12px">local model, no charge</span></div>
+        <div class="bar" aria-hidden="true"><span id="tokbar" style="width:22%"></span></div>
+        <div class="row" style="font-size:12px"><span class="muted"><span id="tok">126,408</span> of 2,000,000 tokens</span><span class="muted">about 6 min left</span></div>
+      </section>
+      <section class="panel" aria-labelledby="nowh">
+        <div class="ph"><h2 id="nowh">Working now</h2><span class="aside">3 at work</span></div>
+        <ul class="agents" id="agents">
+          <li><span class="av reader"><svg class="i"><use href="#i-read"/></svg></span><div><b>Reader · Catalog</b><p>Reading <span class="mono file">Catalog/Create.aspx.cs</span>, lines 1–80</p></div></li>
+          <li><span class="av reader"><svg class="i"><use href="#i-read"/></svg></span><div><b>Reader · Models</b><p>Wrote a card: <span class="soft">Catalog item holds price and stock limits</span></p></div></li>
+          <li><span class="av verifier"><svg class="i"><use href="#i-shield"/></svg></span><div><b>Citation check</b><p>12 claims checked, all cite real lines</p></div></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <section class="panel live" style="margin-top:20px" aria-label="Run details">
+    <div class="tabs" role="tablist" aria-label="Run details">
+      <button role="tab" aria-selected="true" aria-controls="t-cards" id="b-cards">Cards so far <span class="count" id="ccount">23</span></button>
+      <button role="tab" aria-selected="false" aria-controls="t-agents" id="b-agents">All agents <span class="count">11</span></button>
+      <button role="tab" aria-selected="false" aria-controls="t-activity" id="b-activity">Activity <span class="count">212</span></button>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="t-cards" aria-labelledby="b-cards">
+      <ul class="cards">
+        <li><span class="type">FEAT</span><span>Create a catalog item from a validated form</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-shield"/></svg>citations checked</span></li>
+        <li><span class="type">ENT</span><span>Catalog item: name, price, stock, restock and maximum stock</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-shield"/></svg>citations checked</span></li>
+        <li><span class="type">BR</span><span>Mock data replaces the database when <span class="mono">UseMockData</span> is on</span><span class="chip"><svg class="i" style="width:13px;height:13px"><use href="#i-shield"/></svg>citations checked</span></li>
+      </ul>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="t-agents" aria-labelledby="b-agents" hidden><p class="muted" style="margin:0">One row per agent: area, turns, files read, cards written, tokens. Opens its transcript.</p></div>
+    <div class="tabpanel" role="tabpanel" id="t-activity" aria-labelledby="b-activity" hidden>
+      <ul class="feed">
+        <li><time>14:59:21</time><span>Reader · Catalog wrote 6 cards after one repair</span></li>
+        <li><time>14:58:52</time><span>Reader · Models opened <span class="mono">Models/CatalogItem.cs</span></span></li>
+        <li><time>14:58:36</time><span>Reader · Solution finished, 1 card</span></li>
+      </ul>
+      <p class="muted" style="font-size:12.5px;margin:12px 0 0">Provider calls and logs live here too, filtered by agent.</p>
+    </div>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <div class="grid results">
+    <article class="panel" aria-labelledby="ovh">
+      <div class="tabs" role="tablist" aria-label="Results">
+        <button role="tab" aria-selected="true" aria-controls="r-over" id="rb-over">Overview</button>
+        <button role="tab" aria-selected="false" aria-controls="r-q" id="rb-q">Your questions <span class="count warn">3</span></button>
+        <button role="tab" aria-selected="false" aria-controls="r-ev" id="rb-ev">Evidence <span class="count">64 cards</span></button>
+        <button role="tab" aria-selected="false" aria-controls="r-act" id="rb-act">Activity</button>
+      </div>
+
+      <div class="tabpanel overview" role="tabpanel" id="r-over" aria-labelledby="rb-over">
+        <h2 id="ovh" class="muted" style="font-size:13px;font-weight:650;margin:0 0 12px">In short</h2>
+        <p class="lede">An internal <a href="#">catalog administration site</a> for an online shop. Staff list the products with paging, and <a href="#">create, edit, view and delete</a> a product with its price, stock and stock limits. Data lives in SQL Server through Entity Framework, or in <a href="#">built-in sample data</a> when a setting is on.</p>
+        <div class="ovgrid">
+          <section class="ov"><h3><svg class="i"><use href="#i-spark"/></svg>Main features</h3><ul>
+            <li><span>Browse products, 10 per page</span><span class="ref">FEAT-022</span></li>
+            <li><span>Create a product from a validated form</span><span class="ref">FEAT-003</span></li>
+            <li><span>Edit, view details, delete</span><span class="ref">FEAT-004..006</span></li>
+          </ul></section>
+          <section class="ov"><h3><svg class="i"><use href="#i-screen"/></svg>Screens</h3><ul>
+            <li><span>Product list</span><span class="ref mono">Default.aspx</span></li>
+            <li><span>Create · Edit · Details · Delete</span><span class="ref mono">Catalog/*.aspx</span></li>
+            <li><span>About, Contact</span><span class="ref mono">About.aspx</span></li>
+          </ul></section>
+          <section class="ov"><h3><svg class="i"><use href="#i-db"/></svg>Data</h3>
+            <div class="er" aria-label="Entities and relations">
+              <div class="ent"><b>CatalogItem</b>price, stock, restock, max stock</div>
+              <span class="link" aria-hidden="true">many → one</span>
+              <div class="ent"><b>CatalogBrand</b>name</div>
+              <div class="ent"><b>CatalogType</b>name</div>
+            </div>
+            <p class="muted" style="font-size:12px;margin:8px 0 0">IDs come from a hi-lo generator <span class="ref">ENT-003</span></p>
+          </section>
+          <section class="ov"><h3><svg class="i"><use href="#i-plug"/></svg>Works with</h3><ul>
+            <li><span>SQL Server via Entity Framework 6</span><span class="ref">INT-006</span></li>
+            <li><span>Autofac for wiring services</span><span class="ref">BR-003</span></li>
+          </ul></section>
+        </div>
+        <div class="honest"><svg class="i"><use href="#i-info"/></svg><span><b>Citations checked, judgement later.</b> Every claim above points at real lines in the code, and all 86 citations passed. A second model that reads those lines and confirms each claim comes in a later version.</span></div>
+        <div class="gapnote"><svg class="i"><use href="#i-alert"/></svg><span><b>Not covered:</b> the shared layout and scripts were read only in part (62% of tokens). Ask for a follow-up run on those areas.</span></div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="r-q" aria-labelledby="rb-q" hidden style="padding:4px 24px 12px">
+        <div class="q"><div class="qq">Who uses these pages: shop staff only, or also customers?</div><div class="why">The pages have no sign-in or roles <span class="ref">Site.Master:1-40</span>, so the code cannot say who should reach them. Affects 6 features.</div><textarea aria-label="Your answer"></textarea><div class="default">If you skip it: staff only.</div></div>
+        <div class="q"><div class="qq">Is the sample-data switch ever on in production?</div><div class="why"><span class="mono">UseMockData</span> picks the data source <span class="ref">Global.asax.cs:22-31</span>. The code does not show where it is set for each environment.</div><textarea aria-label="Your answer"></textarea><div class="default">If you skip it: tests and demos only.</div></div>
+        <div class="q"><div class="qq">What should happen when stock falls below the restock threshold?</div><div class="why">The threshold is stored <span class="ref">CatalogItem.cs:28</span> but nothing in this code reads it, so it may be used by another system.</div><textarea aria-label="Your answer"></textarea><div class="default">If you skip it: it is kept as data only.</div></div>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="r-ev" aria-labelledby="rb-ev" hidden><p class="muted" style="margin:0">Cards by type and area with their claims and citations, the coverage per area, and the code map from the run. Filters: type, area, status.</p></div>
+      <div class="tabpanel" role="tabpanel" id="r-act" aria-labelledby="rb-act" hidden><p class="muted" style="margin:0">The replay, the event log, provider calls and logs for this run.</p></div>
+    </article>
+
+    <aside class="rail">
+      <section class="panel" aria-labelledby="turnh">
+        <div class="turn"><h2 id="turnh">Your turn</h2><p>Three things the code cannot tell us. Your answers improve the next run; skipped ones keep their default.</p>
+          <a class="btn primary" href="#" data-goto="rb-q">Answer 3 questions <svg class="i"><use href="#i-arrow"/></svg></a>
+          <a class="btn ghost" href="#">Open the report</a></div>
+        <div class="facts"><div><b>64</b><span>cards</span></div><div><b>86 / 86</b><span>citations passed</span></div><div><b>62%</b><span>of the code read</span></div><div><b>$0.00</b><span>584,906 tokens</span></div></div>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<script>
+(function(){
+  var body=document.body;
+  function press(group,attr,val){document.querySelectorAll('['+attr+']').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute(attr)===val));});}
+  document.querySelectorAll('[data-set-mode]').forEach(function(b){b.addEventListener('click',function(){body.dataset.mode=b.dataset.setMode;press('mode','data-set-mode',b.dataset.setMode);});});
+  document.querySelectorAll('[data-set-theme]').forEach(function(b){b.addEventListener('click',function(){document.documentElement.dataset.theme=b.dataset.setTheme;press('theme','data-set-theme',b.dataset.setTheme);});});
+  try{ if(window.matchMedia('(prefers-color-scheme: light)').matches){document.documentElement.dataset.theme='light';press('t','data-set-theme','light');} }catch(e){}
+  var h=location.hash;
+  if(/results/.test(h)){body.dataset.mode='results';press('m','data-set-mode','results');}
+  if(/light/.test(h)){document.documentElement.dataset.theme='light';press('t','data-set-theme','light');}
+  if(/dark/.test(h)){document.documentElement.dataset.theme='dark';press('t','data-set-theme','dark');}
+  document.querySelectorAll('[role=tablist]').forEach(function(list){
+    var tabs=list.querySelectorAll('[role=tab]');
+    tabs.forEach(function(t,i){
+      t.addEventListener('click',function(){select(t);});
+      t.addEventListener('keydown',function(e){var k=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(k){var n=tabs[(i+k+tabs.length)%tabs.length];n.focus();select(n);}});
+    });
+    function select(t){tabs.forEach(function(x){var on=x===t;x.setAttribute('aria-selected',String(on));x.tabIndex=on?0:-1;document.getElementById(x.getAttribute('aria-controls')).hidden=!on;});}
+  });
+  document.querySelectorAll('[data-goto]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();document.getElementById(a.dataset.goto).click();});});
+
+  // The living code map: tiles sized by tokens; libraries hatched and left out.
+  var areas=[
+    {n:'Catalog',f:12,c:6,s:'done',w:4,h:3},{n:'Models',f:6,c:5,s:'reading',w:3,h:2},{n:'Services',f:5,c:0,s:'reading',w:3,h:2},
+    {n:'App_Start',f:2,c:4,s:'done',w:2,h:2},{n:'Site pages',f:28,c:3,s:'done',w:4,h:2},{n:'Setup',f:4,c:0,s:'waiting',w:2,h:1},
+    {n:'Modules',f:2,c:0,s:'waiting',w:2,h:1},{n:'ViewModel',f:3,c:0,s:'waiting',w:2,h:1},{n:'Properties',f:1,c:1,s:'done',w:2,h:1},
+    {n:'Solution',f:2,c:1,s:'done',w:2,h:1},{n:'Own styles',f:3,c:0,s:'waiting',w:2,h:1},
+    {n:'jQuery, Bootstrap, Popper',f:38,s:'lib',w:4,h:1},{n:'MSAjax, WebForms scripts',f:24,s:'lib',w:4,h:1},{n:'Bootstrap CSS',f:12,s:'lib',w:4,h:1}
+  ];
+  var map=document.getElementById('map');
+  function render(){
+    map.innerHTML='';
+    areas.forEach(function(a){
+      var t=document.createElement('div');t.className='tile '+a.s+(a.h<2?' short':'');t.style.gridColumn='span '+a.w;t.style.gridRow='span '+a.h;
+      t.setAttribute('role','img');
+      var label=a.s==='lib'?'library, left out':a.s==='reading'?'being read':a.s==='done'?(a.c+' cards'):'waiting';
+      t.setAttribute('aria-label',a.n+': '+label);
+      var pips='';if(a.s==='done'||a.s==='reading'){for(var i=0;i<a.c;i++)pips+='<span class="pip'+'" style="animation-delay:'+(i*60)+'ms"></span>';}
+      t.innerHTML='<span class="nm">'+a.n+'</span><span class="meta">'+(a.s==='lib'?'library · '+a.f+' files':a.f+' files · '+label)+'</span>'+(pips?'<span class="pips" aria-hidden="true">'+pips+'</span>':'')+(a.s==='reading'?'<span class="fill" style="width:'+(30+Math.random()*40)+'%"></span>':'');
+      if(a.h<2&&pips){t.querySelector('.pips').remove();}
+      map.appendChild(t);
+    });
+  }
+  render();
+  var step=0, cards=23, tok=126408, reduce=false;
+  try{reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+  setInterval(function(){
+    if(body.dataset.mode!=='live')return;
+    var r=areas.filter(function(a){return a.s==='reading';}), w=areas.filter(function(a){return a.s==='waiting';});
+    if(!r.length&&!w.length){areas.forEach(function(a){if(a.s==='done'){a.s='reading';a.c=0;}});step=0;}
+    else{ if(r.length){var a=r[0];a.s='done';a.c=a.c||1+Math.floor(Math.random()*4);cards+=a.c;} if(w.length){w[0].s='reading';w[0].c=0;} }
+    tok+=21000+Math.floor(Math.random()*9000);
+    document.getElementById('ccount').textContent=cards;
+    document.getElementById('tok').textContent=tok.toLocaleString('en-US');
+    document.getElementById('tokbar').style.width=Math.min(96,tok/20000)+'%';
+    var done=areas.filter(function(a){return a.s==='done';}).length;document.getElementById('readsub').textContent=done+' of 11 areas';
+    render();
+  }, reduce?6000:2600);
+})();
+</script>
+</body>
+</html>

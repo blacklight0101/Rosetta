@@ -290,6 +290,12 @@ As a developer with an unusual stack I want Rosetta to work without a language p
 - Given a repository in a language with no pack, when the full pipeline runs, then scan, understand and report complete, and the report states the map level per area.
 Verification: end-to-end test on a small fixture in a language without a pack.
 
+**RF-113 Warn about a code map from an older scanner** - R1 (M1) - Must - Source DEC-136 - ADR-004
+As a developer I want to know when my code map was built by an older version of the scanner so that a run does not waste time on areas the current scanner would leave out.
+- Given a project whose latest code map records a scanner version older than the running one, when the start page opens, then it says the code map is out of date, what changed (for example "third-party code is now left out"), and offers a new scan as the first action; starting understand on the old map needs an explicit confirmation.
+- Given a code map with no scanner version (made before this requirement), when the start page opens, then it is treated as out of date.
+Verification: integration test with a fixture code map of an older version; end-to-end test of the start page.
+
 **RF-120 Accept public GitHub URLs only** - R1 (M1) - Must - Source DEC-48 - ADR-012
 As a developer I want to point Rosetta at a public GitHub repository so that the analysed code is the one anyone can check.
 - Given `https://github.com/<owner>/<repo>`, with optional `/tree/<ref>` and `/<subpath>`, when it is parsed, then owner, repo, ref (default branch when absent) and subpath are recorded.
@@ -424,6 +430,17 @@ As a developer using a small local model I want a text protocol for tools so tha
 - Given a model configured with `toolMode: text`, when the agent runs, then tool calls are requested and parsed as JSON blocks in plain text, with the same validation as native calls.
 Verification: integration test with recorded text-protocol responses.
 
+**RF-206 Read before answering** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer I want every reader agent to read its area before it describes it so that no card or question comes from a guess.
+- Given a reader agent that gives its final answer without having read any file of its area, when the answer arrives, then it is not accepted: the agent is told which files it has not read and gets its remaining turns to read them; if it still reads none, its area is reported in the coverage as "not read" and its cards are kept with the note "written without reading the area".
+- Given an area with no readable file (only binary or ignored files), when the agent ends, then this rule does not apply and the coverage says why.
+Verification: integration test with recorded responses (an agent that answers at turn 1).
+
+**RF-207 One-line citations** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer using a small local model I want a citation of one line accepted so that good cards are not thrown away over a format detail.
+- Given a citation written `path:N`, when the card is parsed, then it is read as `path:N-N`; `path:N-M` with N greater than M is still refused with the repair message.
+Verification: unit test of the citation parser; a recorded response with one-line citations produces cards.
+
 **RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks - ADR-005
 As a developer I want to know which files each agent actually read so that silent gaps are visible.
 - Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of area tokens read.
@@ -440,6 +457,13 @@ As a developer I want my answers used when areas are analysed again so that the 
 Verification: integration test with recorded responses.
 
 **RF-242 Answer interactively** - Withdrawn 2026-10-11 - see RF-1007 (DEC-59)
+
+**RF-243 Questions only the code cannot answer** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer who does not know the legacy application I want to be asked only what the code cannot tell so that my answers add knowledge instead of doing the agents' reading.
+- Given an `OQ` card, when it is parsed, then it must say what the code shows, cite the code that raised the question, and ask about something outside the code: business intent, the reason for a rule, an external system, data volumes or who uses a feature; a question asking what the code, an area or the application does is refused with the repair message telling the agent to read instead.
+- Given questions from several areas, when the run ends, then duplicates are merged keeping every citation, and the questions are grouped by the feature or area they concern and ordered by how much of the specification depends on them.
+- Given a run on third-party or generated code only, when an agent finds no application logic, then it writes no `OQ` card; the coverage notes "no application logic".
+Verification: unit test of the refusal rule with example questions; integration test with recorded responses.
 
 **RF-250 Consolidate cards across areas** - R1 - Should - Source interview 2026-10-09 - ADR-005
 As a developer I want duplicate entities and rules found by several agents merged so that the specification has no repeats.
@@ -473,6 +497,13 @@ As a reader I want `spec.md` to present the new material next to the existing ca
 - Given a run with `FLOW`, `SCRN` and `ENT` cards, when `spec.md` is written, then it has a flows section, a screens section (with the screen map) and a link to `data-model.md`, each item linking its card, and the coverage per area (RF-230) counts the new card types.
 - Given the new card types, when the run estimate is shown (RF-427), then it includes them; no new model role is added.
 Verification: snapshot test of `spec.md`.
+
+**RF-264 Overview of the application before any question** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a developer who has never seen the legacy application I want Rosetta to explain what the application does before it asks me anything so that I can understand the output and answer well.
+- Given an understand run that has ended, when its results are written, then the `summariser` role writes `overview.md` from the cards whose citations passed: what the application is in two or three sentences, who uses it, its main features, screens, data and integrations, each statement linking its cards, and what the run could not cover; it holds no statement without a card.
+- Given the run page, the specification and the report, when they are opened after the run, then the overview comes first and the open questions come after it, each linked to the overview section it concerns.
+- Given a run whose cards are too few to explain the application (for example most areas were third-party code), when the overview is written, then it says so plainly and suggests the next step (a new scan, or more areas) instead of guessing.
+Verification: integration test with recorded responses; snapshot test of `overview.md`; end-to-end test of the order on the run page.
 
 ### 5.4 Verifier (RF-300..RF-399)
 
@@ -953,6 +984,31 @@ As a user I want the application hardened so that its session never leaks and in
 - Given the static report, when it is generated, then each page carries an equivalent content security policy in a `meta` element and `referrer` set to `no-referrer`.
 Verification: integration tests on response headers and cookie attributes.
 
+**RF-1014 Honest verification state** - R1 (M1) - Must - Source DEC-136 - ADR-005
+As a user I want the verification state to say what was checked and what was not so that a claim is never shown as waiting for a step that does not run.
+- Given a release in which only the citation check runs (the model judgement of RF-301 is not built yet), when a claim passed its citation check, then it is shown as "citations checked" with a short note that the judgement step comes in a later version, and the stepper and the run summary say the same; nothing is labelled "waiting" for a step that will not run.
+- Given the judgement step is built, when a claim is waiting for it, then "waiting for judgement" is shown only while that step is queued or running.
+Verification: unit test of the labels; end-to-end test of the live run page.
+
+**RF-1015 Run page in two modes** - R1 (M1) - Must - Source DEC-137 - ADR-012
+As a user who may not know the analysed code I want the run page to show one thing at a time so that I always know what is happening and what to do next.
+- Given a queued or running run, when its page opens, then it is in "while running" mode: the run journey (map the code, read, check citations, explain, your questions) with the current step, the living code map (RF-1016), the spend for the run against its cap, and up to three "working now" agents in plain words; cards so far, all agents, and activity (events, provider calls and logs) sit in tabs below, one list at a time.
+- Given a run that has ended, when its page opens, then it is in "after the run" mode: the overview (RF-264) first, a "Your turn" panel with the number of open questions and the next actions, and tabs for Your questions, Evidence (cards, claims, citations, coverage, code map) and Activity (replay, events, calls, logs); the page switches modes by itself when the run ends.
+- Given either mode, when it is used with the keyboard or a screen reader, then tabs follow the tab pattern, every state is carried by text and a glyph as well as colour, and RF-1002..RF-1005, RF-1007, RF-1010 and RF-1011 keep their content in these places.
+Verification: end-to-end tests of both modes and the switch; accessibility checks; the design proposal `docs/design/proposals/run-page-v2.html` is the reference.
+
+**RF-1016 Living code map** - R1 (M1) - Should - Source DEC-137 - ADR-012
+As a user watching a run I want to see the code being read so that the run is easy to follow and pleasant to watch.
+- Given the code map of the run, when the run page is in "while running" mode, then each area is a tile sized by its estimated tokens, showing its name, file count and state (waiting, being read with a moving highlight, read with one mark per card written, not covered, or third-party code left out, drawn hatched); a tile opens its agent and cards.
+- Given the operating system asks for reduced motion, when the map updates, then nothing moves; states change in place.
+Verification: component tests of the tile states; end-to-end test with recorded events; reduced-motion check.
+
+**RF-1017 Overview and questions after the run** - R1 (M1) - Must - Source DEC-137 - ADR-012
+As a user I want the end of a run to read like an explanation followed by a short request for help so that I understand the application before I answer anything.
+- Given an ended run, when its page opens, then the Overview tab shows the overview of RF-264 with its sections (features, screens, data, integrations), each item linking its cards, the honest verification note of RF-1014 and what was not covered.
+- Given open questions (RF-243), when the Your questions tab opens, then each shows the question, why the code cannot answer it with its citation, how many items depend on it, an answer field and the default that applies if it is skipped.
+Verification: end-to-end test with a recorded run.
+
 ### 5.10 Accounts, sessions, keys and administration (RF-1100..RF-1199)
 
 **RF-1100 Sign in with a user name and password** - R1 (M1) - Must - Source DEC-62 - ADR-015
@@ -1132,6 +1188,8 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-140..RF-147 | DEC-16, DEC-57, DEC-118 | ADR-006, ADR-013, ADR-019 | P1 (RF-144: P2) | P1-04, P1-17, P1-28, P1-31, P1-33, P1-34, P2-07 |
 | RF-200..RF-205 | DEC-15, DEC-18 | ADR-003, ADR-005 | P1 | P1-25, P1-31, P1-32, P1-33 |
 | RF-230..RF-250 | DEC-15, DEC-18, DEC-98 | ADR-003, ADR-005 | P2 (RF-240: P1, DEC-98) | P1-33, P1-39, P2-04, P2-05, P2-06, P2-13 |
+| RF-113, RF-206, RF-207, RF-243, RF-264 | DEC-136 | ADR-004, ADR-005 | P1 (M1) | P1-166, P1-167, P1-168 |
+| RF-1014..RF-1017 | DEC-136, DEC-137 | ADR-005, ADR-012 | P1 (M1) | P1-166, P1-169, P1-170 |
 | RF-260..RF-263 | DEC-134 | ADR-005, ADR-013 | P2 | P2-18, P2-19, P2-20, P2-21, P2-22, P2-23, P3-22 |
 | RF-300, RF-302 | DEC-19 | ADR-005 | P1 | P1-32, P1-33 |
 | RF-301, RF-303..RF-305 | DEC-19, DEC-57 | ADR-005, ADR-008 | P2 | P2-01, P2-02, P2-03, P2-13 |

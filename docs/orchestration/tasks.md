@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 165 | 64 | 83 | 18 | 0 | 98 | 59 | 8 | 108 | 0 |
+| P1 Milestone slice (M1) | 170 | 64 | 88 | 18 | 0 | 98 | 64 | 8 | 109 | 0 |
 | P2 Full understand | 23 | 3 | 14 | 6 | 0 | 4 | 18 | 1 | 3 | 0 |
 | P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
-| **Total** | **214** | **69** | **119** | **26** | **0** | **105** | **98** | **11** | **112** | **0** |
+| **Total** | **219** | **69** | **124** | **26** | **0** | **105** | **103** | **11** | **113** | **0** |
 
 ## Conventions for every card
 
@@ -2056,6 +2056,74 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Delivers**: the fixes and tests.
 - **Done when**: each new test fails when its guard is removed; `npm run verify` green.
 - **Refs**: RF-507, RNF-005, RNF-008, RF-146, P1-84, P1-161, P1-164.
+
+### P1-166 - Follow-up: bugs from the owner's local test on 2026-10-14
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P1-108, P1-147
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the card parser and citation schema; `web/src/lib/live-run/claim-events.ts`; `web/src/pages/ClaimsList.tsx`; the start page; `docs/runbooks/local.md` section 1; the run page data loading.
+- **Do**: (1) accept `path:N` as `path:N-N` (RF-207); a recorded gemma4 answer with one-line citations must produce cards. (2) Honest verification labels (RF-1014): "citations checked" with the note, in the claims list, stepper and run summary. (3) Warn on a code map from an older scanner (RF-113): the code map records the scanner version; the start page offers a new scan first. (4) Runbook: an install that used the all-zero placeholder key moves it to `ROSETTA_SECRET_KEY_PREVIOUS` before setting a new key, so stored provider keys are re-encrypted, then removes it after the start-up log reports the re-encryption. (5) The live run page fetches `GET /api/runs/:id` several times a second during a run: refetch at most once per second, driven by the event stream.
+- **Review probes**: citations `a.cs:30`, `a.cs:30-30`, `a.cs:0`, `a.cs:31-30`, `a.cs:` and a Windows path; a code map without a version; a run with 500 events in 10 s (count the run reads).
+- **Delivers**: fixes, tests, the runbook text.
+- **Done when**: each item has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-113, RF-202, RF-207, RF-1004, RF-1014, RNF-003, DEC-136.
+
+### P1-167 - Read before answering and questions only the code cannot answer
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the agent loop; the reader prompt; the `OQ` schema; RF-206, RF-243; the `invalid-output` and transcripts of the owner's 2026-10-14 run as examples.
+- **Do**: refuse a final answer from a reader that has read none of its area's files and tell it which files to read (RF-206); the `OQ` schema needs what the code shows, a citation and a question about something outside the code, and a question asking what the code, an area or the application does is refused with a repair message (RF-243); duplicate questions across areas are merged and grouped by feature or area; an area of third-party or generated code writes no question. Prompts versioned; recordings.
+- **Review probes**: "What does this area do?", "What is the purpose of the application?", "What is the business logic of X?" (refused); "Who uses these pages?" with a citation (kept); the same question from three areas (merged once with three citations); an agent answering at turn 1 with no reads.
+- **Behaviour to preserve**: good `OQ` cards that cite code and ask about intent keep working; answers already in `answers.md` stay attached to their questions.
+- **Delivers**: loop and schema changes, prompts, recordings, tests.
+- **Done when**: every RF-206 and RF-243 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-202, RF-206, RF-240, RF-243, DEC-136.
+
+### P1-168 - Overview of the application before any question
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-167
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-264; the summariser role configuration; the spec writer.
+- **Do**: after understand, the `summariser` role writes `overview.md` from the cards whose citations passed (what the application is, who uses it, features, screens, data, integrations, what was not covered), each statement linking its cards and no statement without a card; a thin run says so and suggests the next step; `spec.md` and the Markdown report open with it; the run page shows it first (with P1-170). Prompt versioned; the budget guard and the estimate include the call.
+- **Review probes**: a run whose cards are mostly third-party (the overview says the run cannot explain the application yet); a model answer holding a statement with no card link (dropped); hostile card text (rendered as text).
+- **Delivers**: the use case, prompt, writer, recordings, tests.
+- **Done when**: every RF-264 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-204, RF-264, RF-420, RF-427, RF-504, RF-507, DEC-136.
+
+### P1-169 - Run page while running: journey, living code map and tabs
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-166
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design/proposals/run-page-v2.html` (the reference); `web/src/pages/LiveRunPage.tsx` and its parts; `docs/design-system.md`; RF-1002..RF-1005, RF-1010, RF-1011, RF-1015, RF-1016.
+- **Do**: rebuild the running state of the run page as the proposal shows: the run journey, the living code map (tiles sized by tokens, states, hatched third-party areas, reduced motion), spend for the run, "working now" (three agents in plain words), and tabs for cards so far, all agents and activity (events, calls, logs). Existing data sources and event handling are reused; no API change. Update `docs/design-system.md` with the new components.
+- **Review probes**: 1 area and 120 areas; a 60-character area name; an area name holding HTML; light and dark; 360 px wide; keyboard only; reduced motion; a run that fails at the first step.
+- **Behaviour to preserve**: every figure the current page shows (RF-1003 cost, RF-1010 project totals, RF-1011 calls and logs) is still reachable within one click.
+- **Delivers**: components, page, tests, design-system update.
+- **Done when**: every RF-1015 (first and third scenarios) and RF-1016 scenario has a passing test; the page matches the proposal in light and dark at desktop and phone widths; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-1002..RF-1005, RF-1010, RF-1011, RF-1015, RF-1016, RNF-010, ADR-012, DEC-137.
+
+### P1-170 - Run page after the run: overview, your turn, questions, evidence
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P1-168, P1-169
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `docs/design/proposals/run-page-v2.html`; RF-1007, RF-1014, RF-1015, RF-1017.
+- **Do**: the ended state of the run page as the proposal shows: the Overview tab first, the "Your turn" panel with the run facts, the Your questions tab (question, why the code cannot answer it with its citation, what depends on it, answer field, default), the Evidence tab (cards, claims, coverage, code map) and the Activity tab (replay, events, calls, logs); the page switches modes when the run ends.
+- **Review probes**: a run with no questions; 40 questions; an overview that says the run could not explain the application; a failed run (no overview; the page says what failed and what to do); the switch while the page is open.
+- **Behaviour to preserve**: answering questions still writes `answers.md` (RF-240, RF-1007); report and download links stay one click away.
+- **Delivers**: components, page, tests.
+- **Done when**: every RF-1015 (second scenario) and RF-1017 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-240, RF-1007, RF-1008, RF-1014, RF-1015, RF-1017, RF-264, RNF-010, DEC-137.
 
 ---
 
