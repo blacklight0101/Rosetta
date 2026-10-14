@@ -19,10 +19,26 @@ import type { DatabasePool } from './pool.js';
 // only insert and select (data-model.md section 6). The detail is masked and every NUL in the
 // text is replaced before it is stored (P1-77); the filter is compared the same way (P1-101).
 
-const INSERT =
+export const AUDIT_INSERT =
   'INSERT INTO audit_events (at, actor_user_id, action, target_type, target_id, ip, outcome, detail) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)';
 const LIST =
   'SELECT id::text AS id, at, actor_user_id::text AS actor_user_id, action, target_type, target_id, ip, outcome, detail FROM audit_events WHERE at >= $1 AND ($2::uuid IS NULL OR actor_user_id = $2::uuid) AND ($3::text IS NULL OR action = $3::text) AND ($5::text IS NULL OR outcome = $5::text) ORDER BY at DESC, id DESC LIMIT $4';
+
+/** The values of an audit row as stored by `AUDIT_INSERT`: detail masked, text without NULs. */
+// RF-1109
+export function auditRowValues(event: AuditEventInput, masker: TextMasker): unknown[] {
+  const text = storedAuditText(event);
+  return [
+    event.at,
+    event.actorUserId,
+    text.action,
+    text.targetType,
+    text.targetId,
+    text.ip,
+    event.outcome,
+    maskedDetailJson(event.detail, masker),
+  ];
+}
 
 function queryFailed(error: unknown): RosettaError {
   return new RosettaError(ERROR_CODES.databaseQueryFailed, undefined, { cause: error });
@@ -38,19 +54,8 @@ export class PgAuditLog implements AuditLog {
   }
 
   async record(event: AuditEventInput): Promise<void> {
-    const text = storedAuditText(event);
-    const values = [
-      event.at,
-      event.actorUserId,
-      text.action,
-      text.targetType,
-      text.targetId,
-      text.ip,
-      event.outcome,
-      maskedDetailJson(event.detail, this.masker),
-    ];
     try {
-      await this.pool.query(INSERT, values);
+      await this.pool.query(AUDIT_INSERT, auditRowValues(event, this.masker));
     } catch (error) {
       throw queryFailed(error);
     }

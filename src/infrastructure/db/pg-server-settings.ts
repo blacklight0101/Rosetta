@@ -13,7 +13,7 @@ import type { DatabasePool } from './pool.js';
 // and read back as bigint.
 
 const SELECT_VALUE = 'SELECT value FROM server_settings WHERE key = $1';
-const UPSERT_VALUE =
+export const UPSERT_VALUE =
   'INSERT INTO server_settings (key, value, updated_at, updated_by) VALUES ($1, $2::jsonb, $3, $4) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at, updated_by = EXCLUDED.updated_by';
 const valueRow = z.object({ value: z.unknown() });
 
@@ -36,6 +36,20 @@ function invalidSetting(key: string, cause: unknown): RosettaError {
       cause,
     },
   );
+}
+
+/** The caps as the JSON of `server_settings`; refused (RST-1000) unless each is a whole safe amount. */
+// RF-1106
+export function capsJson(caps: ServerCaps): string {
+  const largest = BigInt(Number.MAX_SAFE_INTEGER);
+  if (Object.values(caps).some((cap) => cap < 0n || cap > largest)) {
+    throw invalidSetting('caps', undefined);
+  }
+  return JSON.stringify({
+    runMicros: Number(caps.runMicros),
+    userDayMicros: Number(caps.userDayMicros),
+    serverMonthMicros: Number(caps.serverMonthMicros),
+  });
 }
 
 export class PgServerSettings implements ServerSettings {
@@ -83,17 +97,9 @@ export class PgServerSettings implements ServerSettings {
 
   // RF-1106
   async saveCaps(caps: ServerCaps, change: SettingChange): Promise<void> {
-    const largest = BigInt(Number.MAX_SAFE_INTEGER);
-    if (Object.values(caps).some((cap) => cap < 0n || cap > largest)) {
-      throw invalidSetting('caps', undefined);
-    }
-    const value = {
-      runMicros: Number(caps.runMicros),
-      userDayMicros: Number(caps.userDayMicros),
-      serverMonthMicros: Number(caps.serverMonthMicros),
-    };
+    const json = capsJson(caps);
     try {
-      await this.pool.query(UPSERT_VALUE, ['caps', JSON.stringify(value), change.at, change.by]);
+      await this.pool.query(UPSERT_VALUE, ['caps', json, change.at, change.by]);
     } catch (error) {
       throw queryFailed(error);
     }

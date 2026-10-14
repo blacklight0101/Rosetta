@@ -465,7 +465,9 @@ Written when the run ends (RF-426): `{ schemaVersion, runId, currency, priceTabl
 byAgentTask[], byProvider[], byModel[] }`, each entry with the token fields, `calls` and `costMicros`. `cost.md` is
 the readable table. `totals` also counts `unpricedCalls` (calls of an unpriced model on the user's own key, cost
 unknown, RF-427); `priceTableVersion` names every version the calls used, sorted and joined by `, `; each list is
-sorted by its key in code-unit order. Both files are built from the run's `cost_ledger` rows and masked.
+sorted by its key in code-unit order. Both files are built from the run's `cost_ledger` rows and masked. Every
+figure is a JSON number that must be a safe integer: a run whose totals pass the largest safe integer (2^53 - 1) is
+refused with RST-1605 rather than written with rounded figures.
 
 ### 3.13 Cost ledger (the `cost_ledger` table)
 
@@ -684,7 +686,7 @@ the `Clock` port.
 | `id` | `bigint` | identity primary key |
 | `at` | `timestamptz` | indexed with `user_id` and alone (server month) |
 | `user_id` | `uuid` | references `users` (accounts are disabled, never deleted) |
-| `project_id`, `run_id` | `uuid` null | no foreign key: rows outlive deleted projects and runs (DEC-55); null for a provider test (RF-407) |
+| `project_id`, `run_id` | `uuid` null | no foreign key: rows outlive deleted projects and runs (DEC-55); null for a provider test (RF-407); `run_id` is indexed (`cost_ledger_run_id_idx`, added by `0005`) for the run's cost report (RF-426) |
 | `stage`, `role`, `provider`, `model` | `text` | `stage` is a run stage or `provider-test` (`CHECK`) |
 | `call_id` | `text` | matches `provider-calls.jsonl` |
 | `attempt` | `int` | 1 for the first attempt; `CHECK (attempt >= 1)` |
@@ -702,7 +704,7 @@ the `Clock` port.
 | Column | Type | Rules |
 |---|---|---|
 | `call_id` | `text` | the call (`<runKey>#<n>`, or `provider-test-<uuid>#1`); unique only together with `user_id` and `run_id`, because a run key is unique only within a project (`UNIQUE NULLS NOT DISTINCT (user_id, run_id, call_id)` by `0007`, which replaced the `call_id` primary key) |
-| `user_id`, `run_id` | `uuid` | the run's owner and run; `run_id` is null for a provider test, which belongs to no run (RF-407; nullable by `0006`) |
+| `user_id`, `run_id` | `uuid` | the run's owner and run; `run_id` is null for a provider test, which belongs to no run (RF-407; nullable by `0006`); `user_id` is indexed (`cost_reservations_user_id_idx`, added by `0005`) for the user's sums (RF-422) |
 | `key_source` | `text` | as in `cost_ledger` |
 | `worst_case_micros` | `bigint` | prompt tokens plus maximum output, priced |
 | `worst_case_tokens` | `bigint` | prompt tokens plus maximum output, for the run token cap; `CHECK (worst_case_tokens >= 0)`; added by `0005` |
@@ -718,7 +720,7 @@ All periods are UTC calendar days and months (DEC-107).
 
 One row per key: `key text` primary key, `value jsonb`, `updated_at`, `updated_by uuid`. Keys:
 `caps` (`runMicros`, `userDayMicros`, `serverMonthMicros`), `queue` (`maxRunning`), `providers` (which server keys
-are offered), `defaultRoles` (provider and dated model id per role for new projects, DEC-106). Defaults are inserted
+are offered), `defaultRoles` (provider and dated model id per role for new projects, DEC-106). A caps change and its `admin.caps_changed` audit row are written in one transaction (RF-1106, RF-1109), so neither is saved without the other. Defaults are inserted
 by migration `0004_server_settings_defaults`: `caps` `{ runMicros: 500000, userDayMicros: 1000000,
 serverMonthMicros: 10000000 }` (RF-1106), `queue` `{ maxRunning: 2 }` (RF-1108) and `defaultRoles` `{}` (empty until
 the administrator sets it). The Ollama URL is only the environment
