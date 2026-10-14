@@ -5,6 +5,16 @@ export const grepLimits = {
   timeoutMs: 2000,
   /** Matches past this are dropped and the agent is told (P1-67). */
   maxMatches: 1000,
+  /** P1-160: the bytes one search reads across all its files; files past it are left out. */
+  maxTotalBytes: 32 * 1024 * 1024,
+} as const;
+
+/** P1-160: the V8 limits of the grep worker; a worker that passes them ends with RST-1112. */
+export const grepWorkerLimits = {
+  maxOldGenerationSizeMb: 256,
+  maxYoungGenerationSizeMb: 32,
+  codeRangeSizeMb: 16,
+  stackSizeMb: 4,
 } as const;
 
 export function isPatternTooLong(pattern: string): boolean {

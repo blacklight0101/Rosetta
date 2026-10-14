@@ -85,6 +85,10 @@ export function tooLargeNotice(files: number): string {
   return `${String(files)} file(s) larger than the project's scan.maxFileBytes were not searched.`;
 }
 
+export function budgetNotice(files: number, limit: number): string {
+  return `${String(files)} file(s) were not searched because the search reached its limit of ${String(limit)} bytes read; narrow it with a pathGlob.`;
+}
+
 export const matchCapNotice = `The search stopped at ${String(grepLimits.maxMatches)} matches; narrow the pattern or the pathGlob.`;
 
 export const cutNotice = `Lines longer than ${String(grepLimits.maxLineLength)} characters were cut to that length before the search.`;

@@ -32,7 +32,10 @@ export async function readTextUpTo(path: string, limit: number): Promise<string 
   const { size } = await stat(path);
   if (size > limit) return undefined;
   const bytes = await readUpTo(path, size, limit);
-  return bytes === undefined
-    ? undefined
-    : Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length).toString('utf8');
+  return bytes === undefined ? undefined : utf8Text(bytes);
+}
+
+/** The bytes read as UTF-8 text. */
+export function utf8Text(bytes: Uint8Array): string {
+  return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length).toString('utf8');
 }
