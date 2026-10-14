@@ -112,7 +112,7 @@ it('RNF-008 maps a network failure to a failure with status 0 instead of throwin
     path: '/api/session',
     schema: thing,
   });
-  expect(result).toMatchObject({ ok: false, error: { status: 0, code: 'RST-2006' } });
+  expect(result).toMatchObject({ ok: false, error: { status: 0, code: 'RST-2009' } });
 });
 
 it('RNF-008 treats an answer of the wrong shape as a failure, never as data', async () => {
@@ -176,13 +176,16 @@ it('RF-1009 sends JSON bodies with the session cookie of the same origin only', 
   expect(seen[0]?.headers.get('content-type')).toBe('application/json');
 });
 
-it('RF-1009 refuses to send the token to a path outside /api/', async () => {
+it('RF-1009 answers a typed failure and sends no token to a path outside /api/', async () => {
   const { fetch, seen } = fakeFetch(() => json(200, { name: 'a' }));
   const client = createApiClient({ fetch });
   client.setCsrfToken('token-1');
-  await expect(
-    client.request({ method: 'POST', path: 'https://evil.example/api/', schema: thing }),
-  ).rejects.toThrow(/\/api\//);
+  const result = await client.request({
+    method: 'POST',
+    path: 'https://evil.example/api/',
+    schema: thing,
+  });
+  expect(result).toMatchObject({ ok: false, error: { status: 0, code: 'RST-2006' } });
   expect(seen).toEqual([]);
 });
 
@@ -200,5 +203,5 @@ it('RNF-002 aborts a request that takes longer than the timeout', async () => {
     path: '/api/slow',
     schema: thing,
   });
-  expect(result).toMatchObject({ ok: false, error: { status: 0, code: 'RST-2006' } });
+  expect(result).toMatchObject({ ok: false, error: { status: 0, code: 'RST-2009' } });
 });
