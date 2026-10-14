@@ -92,3 +92,26 @@ describe('buildCostReport versions and empty runs', () => {
     expect(report.priceTableVersion).toBe('');
   });
 });
+
+describe('buildCostReport exact sums', () => {
+  const largest = BigInt(Number.MAX_SAFE_INTEGER);
+
+  it('RF-426 keeps a total exact up to the largest safe integer', () => {
+    const report = buildCostReport(ids.runId, [row({ costMicros: largest })]);
+
+    expect(report.totals.costMicros).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it('RST-1605 refuses a report whose cost total passes the largest safe integer', () => {
+    const over = [row({ costMicros: largest }), row({ costMicros: 1n })];
+    let thrown: unknown;
+
+    try {
+      buildCostReport(ids.runId, over);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toMatchObject({ code: 'RST-1605' });
+  });
+});

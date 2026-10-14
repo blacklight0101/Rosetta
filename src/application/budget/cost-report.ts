@@ -1,4 +1,6 @@
 import { byCodeUnit } from '../../domain/code-map/code-unit-order.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { LedgerEntry } from '../ports/cost-ledger.js';
 
 // RF-426, RF-428, data-model.md section 3.12: the cost report of a run, built from its ledger rows
@@ -74,10 +76,27 @@ function byModel(entries: readonly LedgerEntry[]): CostReport['byModel'] {
   });
 }
 
+// RF-426, RF-428: every figure is a JSON number, exact only up to the largest safe integer. Costs
+// and tokens are never negative, so a total past that limit stays past it: such a report is refused
+// (RST-1605) instead of written with rounded figures. Every line is at most the total, so the total
+// alone is checked.
+function exactOrRefused(figures: CostFigures): void {
+  const values = [
+    figures.inputTokens,
+    figures.outputTokens,
+    figures.cachedInputTokens,
+    figures.costMicros,
+  ];
+  if (!values.every((value) => Number.isSafeInteger(value))) {
+    throw new RosettaError(ERROR_CODES.costTotalOutOfRange);
+  }
+}
+
 // RF-426
 export function buildCostReport(runId: string, entries: readonly LedgerEntry[]): CostReport {
   const versions = [...new Set(entries.map((entry) => entry.priceTableVersion))].sort(byCodeUnit);
   const totals = entries.reduce(add, none);
+  exactOrRefused(totals);
   return {
     schemaVersion: 1,
     runId,

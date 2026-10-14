@@ -264,3 +264,16 @@ it('RF-002 shows a refusal of one override next to its field', async () => {
     expect(screen.getByLabelText('Override 1 model').getAttribute('aria-invalid')).toBe('true');
   });
 });
+
+it('DEC-117 a run cost cap above 100 USD is refused next to the field and nothing is sent', async () => {
+  const { calls } = renderSettings();
+  await loaded();
+  type('Run cost cap (USD)', '150');
+
+  save();
+
+  await waitFor(() => {
+    expect(inputOf('Run cost cap (USD)').getAttribute('aria-invalid')).toBe('true');
+  });
+  expect(calls.filter((call) => call.method === 'PUT')).toEqual([]);
+});

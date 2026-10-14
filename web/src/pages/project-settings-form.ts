@@ -1,5 +1,5 @@
 import type { PriceSettings, ProjectSettings, ProviderSettings } from '../api/project-schemas.js';
-import { dollarsToMicros, microsToDollars } from '../lib/usd.js';
+import { dollarsToMicros, microsToDollars, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import { providerDefaults } from './provider-choices.js';
 
 // RF-002, RF-405, DEC-116, DEC-117: the settings form as text. `draftOf` turns the stored document
@@ -153,8 +153,8 @@ class FieldReader {
   }
 
   /** Dollars as micro-dollars; zero (and a problem) when the text is not an amount that fits. */
-  micros(field: string, text: string): number {
-    const value = Number(dollarsToMicros(text) ?? Number.NaN);
+  micros(field: string, text: string, maxMicros?: bigint): number {
+    const value = Number(dollarsToMicros(text, maxMicros) ?? Number.NaN);
     if (Number.isSafeInteger(value)) return value;
     this.problems.push({ field, message: notDollars });
     return 0;
@@ -206,10 +206,14 @@ function budgetOf(
     ...base,
     run: {
       ...base.run,
-      maxCostMicros: reader.micros('budget.run.maxCostMicros', draft.runCost),
+      maxCostMicros: reader.micros('budget.run.maxCostMicros', draft.runCost, RUN_COST_MAX_MICROS),
       maxTokens: reader.whole('budget.run.maxTokens', draft.runTokens),
     },
-    confirmAboveCostMicros: reader.micros('budget.confirmAboveCostMicros', draft.confirmAbove),
+    confirmAboveCostMicros: reader.micros(
+      'budget.confirmAboveCostMicros',
+      draft.confirmAbove,
+      RUN_COST_MAX_MICROS,
+    ),
     allowUnpriced: draft.allowUnpriced,
     prices: prices.length === 0 ? undefined : prices,
   };

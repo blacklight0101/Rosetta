@@ -2,13 +2,17 @@
 // or CI (ADR-008). Usage, after `npm run build`:
 //   node scripts/openai-live-check.mjs <model>
 // The key is read here, by the script, from OPENAI_API_KEY and passed to the adapter, as the
-// provider set will (P1-29). The prompts are fixed and synthetic: no repository content leaves
-// this script. The two calls cost a fraction of a cent on the cheapest model; the budget and
-// egress guards are not built yet, so no other call is made.
+// provider set will (P1-29). The script loads the repository's `.env` itself (RF-402), so
+// `npm run live:openai` needs no flags; a key already exported wins over the file. The prompts are
+// fixed and synthetic: no repository content leaves this script. The two calls cost a fraction of
+// a cent on the cheapest model; the budget and egress guards are not built yet, so no other call
+// is made.
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { loadEnvFileIfPresent } from './load-env.mjs';
 
 const root = resolve(import.meta.dirname, '..');
+await loadEnvFileIfPresent(join(root, '.env'));
 const [model] = process.argv.slice(2);
 const apiKey = process.env.OPENAI_API_KEY ?? '';
 const write = (line) => process.stdout.write(`${line}\n`);
