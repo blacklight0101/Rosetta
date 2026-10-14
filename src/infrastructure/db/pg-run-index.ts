@@ -89,6 +89,11 @@ export class PgRunIndex implements RunIndex {
     return (await this.run(LIST, [userId, projectId])).rows.map(toRun);
   }
 
+  // Stub until the bounded read is written.
+  projectSummaries(): Promise<never> {
+    return Promise.reject(new Error('Not implemented yet'));
+  }
+
   async listQueued(): Promise<readonly Run[]> {
     return (await this.run(LIST_QUEUED, [])).rows.map(toRun);
   }

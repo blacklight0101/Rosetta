@@ -82,6 +82,7 @@ describe('GetAccountTotals', () => {
     costs.add(costEntry(amy.userId));
     const summaryOnly = {
       userSummary: (userId: string) => costs.userSummary(userId),
+      projectSummaries: () => Promise.reject(new Error('Not the pill.')),
       projectGroups: () => Promise.reject(new Error('Not the pill.')),
       providerTestGroups: () => Promise.reject(new Error('Not the pill.')),
     };

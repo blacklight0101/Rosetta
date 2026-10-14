@@ -47,6 +47,7 @@ export function costTotalsContract(name: string, fresh: Fresh): void {
   scopeCases(name, fresh);
   boundedCases(name, fresh);
   summaryCases(name, fresh);
+  perProjectCases(name, fresh);
 }
 
 function groupingCases(name: string, fresh: Fresh): void {
@@ -200,5 +201,44 @@ function summaryCases(name: string, fresh: Fresh): void {
       ]),
     );
     expect(await fixture.totals.userSummary(await fixture.addUser())).toEqual([]);
+  });
+}
+
+const secondProject = '00000000-0000-4000-8000-0000000000c2';
+
+function perProjectCases(name: string, fresh: Fresh): void {
+  it(`RF-1010 ${name} sums the rows of each asked project in one read, scoped to the user`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    const bob = await fixture.addUser();
+    await fixture.add(costEntry(amy));
+    await fixture.add(costEntry(amy, { runId: costRunB, costMicros: 300n }));
+    await fixture.add(costEntry(amy, { projectId: secondProject, costMicros: 5n }));
+    await fixture.add(costEntry(amy, { costKnown: false, costMicros: 0n }));
+    await fixture.add(providerTestEntry(amy, { costMicros: 9n }));
+    await fixture.add(costEntry(bob, { costMicros: 11n }));
+
+    const groups = await fixture.totals.projectSummaries(amy, [costProjectId, secondProject]);
+
+    const of = (projectId: string): string[] =>
+      groups
+        .filter((group) => group.projectId === projectId)
+        .map(
+          (group) =>
+            `${String(group.costKnown)}:${String(group.calls)}:${String(group.costMicros)}`,
+        )
+        .toSorted();
+    expect(of(costProjectId)).toEqual(['false:1:0', 'true:2:1000']);
+    expect(of(secondProject)).toEqual(['true:1:5']);
+    expect(groups).toHaveLength(3);
+  });
+
+  it(`RF-1010 ${name} leaves out a project that was not asked for and answers nothing for none`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    await fixture.add(costEntry(amy));
+
+    expect(await fixture.totals.projectSummaries(amy, [secondProject])).toEqual([]);
+    expect(await fixture.totals.projectSummaries(amy, [])).toEqual([]);
   });
 }

@@ -88,6 +88,11 @@ export class PgCostTotals implements CostTotals {
     return (await this.rows(USER_SUMMARY, [userId])).map((row) => toSummary(summaryRow.parse(row)));
   }
 
+  // Stub until the bounded read is written.
+  projectSummaries(): Promise<never> {
+    return Promise.reject(new Error('Not implemented yet'));
+  }
+
   // RF-428
   projectGroups(userId: string, projectId: string): Promise<readonly LedgerGroup[]> {
     return this.groups(PROJECT_GROUPS, [userId, projectId]);

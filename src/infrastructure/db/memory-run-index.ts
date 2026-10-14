@@ -58,6 +58,11 @@ export class MemoryRunIndex implements RunIndex {
     return Promise.resolve(own.sort(newestFirst));
   }
 
+  // Stub until the bounded read is written.
+  projectSummaries(): Promise<never> {
+    return Promise.reject(new Error('Not implemented yet'));
+  }
+
   listQueued(): Promise<readonly Run[]> {
     return Promise.resolve(this.inState('Queued').sort(inQueueOrder));
   }

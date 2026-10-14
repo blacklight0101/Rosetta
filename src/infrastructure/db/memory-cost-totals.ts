@@ -81,6 +81,11 @@ export class MemoryCostTotals implements CostTotals {
     return Promise.resolve(summaryOf(mine));
   }
 
+  // Stub until the bounded read is written.
+  projectSummaries(): Promise<never> {
+    return Promise.reject(new Error('Not implemented yet'));
+  }
+
   projectGroups(userId: string, projectId: string): Promise<readonly LedgerGroup[]> {
     const mine = this.entries.filter(
       (entry) => entry.userId === userId && entry.projectId === projectId,
