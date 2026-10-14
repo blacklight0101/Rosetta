@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { defaultParseBudgetMs, maxParseBudgetMs } from '../scan/packs/parse-budget.js';
 
 // RF-1305: all server configuration comes from the environment, is validated once at start-up
 // and is read nowhere else. Messages name a variable and the rule it broke, never its value.
@@ -26,6 +27,8 @@ export interface Environment {
   readonly logLevel: LogLevel;
   readonly logRetentionDays: number;
   readonly trustProxy: number;
+  /** The scan-wide parse budget of the language packs, in milliseconds (RF-110). */
+  readonly scanParseBudgetMs: number;
   readonly appDbPassword: string | undefined;
   readonly migratorDbPassword: string | undefined;
   readonly dbAdminPassword: string | undefined;
@@ -124,6 +127,11 @@ const SCHEMA = z.object({
     MAX_TRUST_PROXY_HOPS,
     `must be a whole number of proxy hops from 0 to ${String(MAX_TRUST_PROXY_HOPS)}`,
   ).optional(),
+  ROSETTA_SCAN_PARSE_BUDGET_MS: whole(
+    1,
+    maxParseBudgetMs,
+    `must be a whole number of milliseconds from 1 to ${String(maxParseBudgetMs)}`,
+  ).optional(),
   ROSETTA_APP_DB_PASSWORD: text().optional(),
   ROSETTA_MIGRATOR_DB_PASSWORD: text().optional(),
   ROSETTA_DB_ADMIN_PASSWORD: text().optional(),
@@ -169,6 +177,7 @@ function toEnvironment(parsed: Parsed): Environment {
     logLevel: parsed.ROSETTA_LOG_LEVEL ?? DEFAULT_LOG_LEVEL,
     logRetentionDays: parsed.ROSETTA_LOG_RETENTION_DAYS ?? DEFAULT_LOG_RETENTION_DAYS,
     trustProxy: parsed.ROSETTA_TRUST_PROXY ?? 0,
+    scanParseBudgetMs: parsed.ROSETTA_SCAN_PARSE_BUDGET_MS ?? defaultParseBudgetMs,
     appDbPassword: parsed.ROSETTA_APP_DB_PASSWORD,
     migratorDbPassword: parsed.ROSETTA_MIGRATOR_DB_PASSWORD,
     dbAdminPassword: parsed.ROSETTA_DB_ADMIN_PASSWORD,

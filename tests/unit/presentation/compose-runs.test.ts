@@ -48,6 +48,7 @@ function composedRuns(dataDir: string) {
     version: '1.2.3-test',
     githubToken: undefined,
     packs: new LanguagePackRegistry([]),
+    parseBudget: { totalMs: 120_000 },
     providers: { build: () => Promise.resolve({ ok: true, value: new Map() }) },
     ollamaUrl: undefined,
     priceTable: { version: '2026-10-11', currency: 'USD', prices: [] },

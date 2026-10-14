@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
+import type { ParseBudget } from '../infrastructure/scan/packs/parse-budget.js';
 import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
 import { BuildReport } from '../application/use-cases/build-report.js';
@@ -68,6 +69,8 @@ export interface RunParts {
   readonly githubToken: string | undefined;
   /** The language packs of this release (RF-110). */
   readonly packs: LanguagePackRegistry;
+  /** `ROSETTA_SCAN_PARSE_BUDGET_MS`: the scan-wide time the packs may spend on one scan (RF-110). */
+  readonly parseBudget: ParseBudget;
   /** Test mode only (TestDoubles): the fake GitHub behind the snapshot fetcher. */
   readonly fetch?: FetchFunction;
   /**
@@ -115,7 +118,13 @@ function composeScan(
     ...(parts.fetch === undefined ? {} : { fetch: parts.fetch }),
   });
   const pipeline = new SnapshotScanPipeline({
-    ...{ writer: stores.writer, masker, logger, packs: parts.packs },
+    ...{
+      writer: stores.writer,
+      masker,
+      logger,
+      packs: parts.packs,
+      parseBudget: parts.parseBudget,
+    },
   });
   const { manifests } = stores;
   return {

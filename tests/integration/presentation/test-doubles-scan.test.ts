@@ -1,11 +1,30 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type * as ScanPipelineModule from '../../../src/infrastructure/scan/scan-pipeline.js';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
 import { TestDoubles } from '../../../src/presentation/test-doubles.js';
 import { fixturePassword } from '../../support/account-fixtures.js';
-import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
+import { hasTestDatabase, useTestDatabase, type TestDatabase } from '../../support/postgres.js';
 import { useWritableTempRoot } from '../../support/writable-temp-root.js';
 import { demoGitHub } from '../../support/snapshot-fetcher-harness.js';
+
+// RF-110, RF-1305: the parse budget every scan pipeline is built with. The recording subclass keeps
+// the real pipeline and only remembers the options each one was constructed with.
+const recorded = vi.hoisted(() => {
+  const budgets: unknown[] = [];
+  return { budgets };
+});
+
+vi.mock('../../../src/infrastructure/scan/scan-pipeline.js', async (importOriginal) => {
+  const original = await importOriginal<typeof ScanPipelineModule>();
+  class RecordingPipeline extends original.SnapshotScanPipeline {
+    constructor(options: ConstructorParameters<typeof original.SnapshotScanPipeline>[0]) {
+      super(options);
+      recorded.budgets.push(options.parseBudget);
+    }
+  }
+  return { ...original, SnapshotScanPipeline: RecordingPipeline };
+});
 
 // RNF-005, ADR-008: a scan run started through the HTTP API fetches from the fake GitHub injected
 // through the test doubles, so the end-to-end journeys never reach github.com.
@@ -123,5 +142,67 @@ describe.skipIf(!hasTestDatabase)('test doubles in the composed application', ()
     } finally {
       await application.stop();
     }
+  }, 60_000);
+});
+
+/** Starts the composed application with `variables` on top of a test configuration, runs one scan and returns its end state. */
+async function scanWith(
+  database: TestDatabase,
+  dataPath: string,
+  variables: Readonly<Record<string, string>>,
+): Promise<string | null> {
+  const schema = await database.createSchema({ migrate: false });
+  const password = fixturePassword('Budget');
+  const environment = loadEnvironment({
+    DATABASE_URL: schema.url,
+    ROSETTA_SECRET_KEY: secretKey,
+    ROSETTA_PUBLIC_URL: 'http://127.0.0.1:8080',
+    ROSETTA_DATA_DIR: dataPath,
+    ROSETTA_ADMIN_USER: adminName,
+    ROSETTA_ADMIN_PASSWORD: password,
+    ROSETTA_TEST: '1',
+    ...variables,
+  });
+  const github = await demoGitHub('normal');
+  const application = composeApplication({
+    environment,
+    listen: { host: '127.0.0.1', port: 0 },
+    output: { write: () => true },
+    doubles: TestDoubles.create(environment, { fetch: github.fetch }),
+  });
+  try {
+    const address = await application.start();
+    await startScan(address, await signIn(address, password));
+    return await endState(async () => {
+      const rows = await schema.pool.query<{ end_state: string | null }>(
+        'SELECT end_state FROM runs',
+      );
+      return rows.rows[0]?.end_state;
+    });
+  } finally {
+    await application.stop();
+  }
+}
+
+describe.skipIf(!hasTestDatabase)('the scan parse budget from the environment (RF-110)', () => {
+  const database = useTestDatabase();
+  const data = useWritableTempRoot('rst-budget-wiring-');
+
+  it('RF-110 a scan runs with the parse budget the environment configures', async () => {
+    recorded.budgets.length = 0;
+
+    const ended = await scanWith(database, data.path, { ROSETTA_SCAN_PARSE_BUDGET_MS: '1' });
+
+    expect(ended).toBe('Completed');
+    expect(recorded.budgets).toEqual([{ totalMs: 1 }]);
+  }, 60_000);
+
+  it('RF-110 a scan runs with the two-minute default when the variable is unset', async () => {
+    recorded.budgets.length = 0;
+
+    const ended = await scanWith(database, data.path, {});
+
+    expect(ended).toBe('Completed');
+    expect(recorded.budgets).toEqual([{ totalMs: 120_000 }]);
   }, 60_000);
 });
