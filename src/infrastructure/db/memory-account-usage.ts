@@ -1,6 +1,7 @@
 import type {
   AccountUsage,
   CurrencyTotal,
+  UserSpend,
   UserUsage,
 } from '../../application/ports/account-usage.js';
 import type { EpochMs } from '../../domain/accounts/user.js';
@@ -20,6 +21,13 @@ export interface MemoryCostRow {
 function byCurrency(left: CurrencyTotal, right: CurrencyTotal): number {
   if (left.currency === right.currency) return 0;
   return left.currency < right.currency ? -1 : 1;
+}
+
+function totalled(rows: readonly MemoryCostRow[]): CurrencyTotal[] {
+  const totals = new Map<string, bigint>();
+  for (const row of rows)
+    totals.set(row.currency, (totals.get(row.currency) ?? 0n) + row.costMicros);
+  return [...totals].map(([currency, costMicros]) => ({ currency, costMicros })).sort(byCurrency);
 }
 
 export class MemoryAccountUsage implements AccountUsage {
@@ -51,6 +59,15 @@ export class MemoryAccountUsage implements AccountUsage {
       usage.set(userId, { projects: projects.get(userId) ?? 0, spent: totals.sort(byCurrency) });
     }
     return Promise.resolve(usage);
+  }
+
+  // RF-1106, DEC-107
+  userDay(userId: string, since: EpochMs): Promise<UserSpend> {
+    const own = this.costs.filter((row) => row.userId === userId && row.at.getTime() >= since);
+    return Promise.resolve({
+      server: totalled(own.filter((row) => (row.keySource ?? 'server') === 'server')),
+      own: totalled(own.filter((row) => row.keySource === 'user')),
+    });
   }
 
   // RF-1106

@@ -51,6 +51,7 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'settings jsonb',
     'created_at timestamptz',
     'updated_at timestamptz',
+    'settings_version int4',
   ],
   runs: [
     'id uuid',

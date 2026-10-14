@@ -10,10 +10,13 @@ import { parseProjectSettings } from '../projects/project-settings.js';
 // RF-002, RF-405, RF-1105: Update project settings checks the document against the settings schema
 // and replaces the project's settings. The owner check comes first, so another user's project id
 // is answered "not found" whatever the document holds; an invalid document changes nothing and each
-// problem comes back with its field and code.
+// problem comes back with its field and code. A save that names the version it started from is
+// refused with RST-1007 when the settings were saved since (P1-106); the version test comes after
+// the owner check, so another user's project is still "not found" (RF-1105).
 
 export type UpdateSettingsRefusal =
   | { readonly code: typeof ERROR_CODES.notFound }
+  | { readonly code: typeof ERROR_CODES.settingsVersionStale }
   | {
       readonly code: typeof ERROR_CODES.settingsInvalid;
       readonly problems: readonly FieldProblem[];
@@ -24,6 +27,8 @@ export interface UpdateProjectSettingsRequest {
   readonly projectId: string;
   /** The document as received; parsed here. */
   readonly settings: unknown;
+  /** The version of the settings the save started from; undefined saves unconditionally. */
+  readonly expectedVersion?: number;
 }
 
 export interface UpdateProjectSettingsDependencies {
@@ -48,12 +53,16 @@ export class UpdateProjectSettings {
     if (existing === undefined) return err({ code: ERROR_CODES.notFound });
     const parsed = parseProjectSettings(request.settings);
     if (!parsed.ok) return err({ code: ERROR_CODES.settingsInvalid, problems: parsed.error });
-    const updated = await projects.updateSettings(
+    const updated = await projects.updateSettings({
       userId,
-      request.projectId,
-      parsed.value,
-      clock.now().getTime(),
-    );
-    return updated === undefined ? err({ code: ERROR_CODES.notFound }) : ok(updated);
+      projectId: request.projectId,
+      settings: parsed.value,
+      updatedAt: clock.now().getTime(),
+      expectedVersion: request.expectedVersion,
+    });
+    if (updated.kind === 'updated') return ok(updated.project);
+    return err({
+      code: updated.kind === 'stale' ? ERROR_CODES.settingsVersionStale : ERROR_CODES.notFound,
+    });
   }
 }

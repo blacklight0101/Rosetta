@@ -162,7 +162,42 @@ export const project = projectOf('p-1', 'octo/demo', { ref: 'main', subpath: 'sr
 
 export const projectAnswer = json(200, project);
 export const noCodeMap = failure(409, 'RST-1203');
-export const noDailyCap = json(200, { ownDailyCapMicros: null });
+
+interface LimitsOptions {
+  /** What is left of the user's day on the server's keys, of a $1.00 cap. */
+  readonly dayLeft?: string;
+  /** What is left of the server's month on its keys. */
+  readonly monthLeft?: string;
+  /** The user's own daily cap and what they spent on their own keys today; none by default. */
+  readonly ownDay?: { readonly cap: string; readonly spent: string };
+}
+
+/** `GET /api/account/limits` (limit-routes.ts): amounts are decimal strings of micro-dollars. */
+export function limitsAnswer(options: LimitsOptions = {}): Response {
+  const { dayLeft = '1000000', monthLeft = '10000000', ownDay } = options;
+  const own =
+    ownDay === undefined
+      ? null
+      : {
+          capMicros: ownDay.cap,
+          spentMicros: ownDay.spent,
+          remainingMicros: (BigInt(ownDay.cap) - BigInt(ownDay.spent)).toString(),
+        };
+  return json(200, {
+    serverKeys: {
+      userDay: {
+        capMicros: '1000000',
+        spentMicros: (1_000_000n - BigInt(dayLeft)).toString(),
+        remainingMicros: dayLeft,
+      },
+      serverMonth: { remainingMicros: monthLeft },
+    },
+    ownKeys: { day: own },
+  });
+}
+
+/** Nothing spent: the whole default day and month are left. */
+export const roomyLimits = limitsAnswer();
 
 /** The settings document of the fixture project with a run cap of $2.00. */
 export function projectWithCap(capMicros: number): Record<string, unknown> {

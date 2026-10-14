@@ -30,6 +30,8 @@ function row(stage: string, queueState: RunRow['queueState'] = 'Running'): RunRo
     queueState,
     endState: null,
     commitSha: null,
+    startedAt: null,
+    position: null,
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     reportBuilt: false,
   };

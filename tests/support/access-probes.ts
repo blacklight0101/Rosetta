@@ -34,6 +34,7 @@ const roles = { reader: { provider: 'ollama', model: 'gemma4:e4b' } };
 const ownCapUrl = '/api/account/daily-cap';
 const caps = { runMicros: '500000', userDayMicros: '1000000', serverMonthMicros: '10000000' };
 const totalsUrl = '/api/account/totals';
+const limitsUrl = '/api/account/limits';
 const costUrl = (context: Context): string => `/api/projects/${context.projectId}/cost`;
 const overviewUrl = '/api/projects/overview';
 
@@ -44,6 +45,8 @@ const overviewUrl = '/api/projects/overview';
 export const budgetRoutes: Readonly<Record<string, readonly Probe[]>> = {
   'GET /api/account/totals': [{ method: 'GET', url: totalsUrl, expected: active(401, 200) }],
   'HEAD /api/account/totals': [{ method: 'HEAD', url: totalsUrl, expected: active(401, 200) }],
+  'GET /api/account/limits': [{ method: 'GET', url: limitsUrl, expected: active(401, 200) }],
+  'HEAD /api/account/limits': [{ method: 'HEAD', url: limitsUrl, expected: active(401, 200) }],
   'GET /api/projects/:id/cost': [
     { method: 'GET', url: costUrl, expected: ownerOnly(200) },
     { method: 'GET', url: () => '/api/projects/not-a-uuid/cost', expected: active(401, 404) },

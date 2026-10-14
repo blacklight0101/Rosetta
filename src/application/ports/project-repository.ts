@@ -12,6 +12,20 @@ export interface StoredProject {
   readonly created: boolean;
 }
 
+export interface SettingsChange {
+  readonly userId: string;
+  readonly projectId: string;
+  readonly settings: ProjectSettings;
+  readonly updatedAt: EpochMs;
+  /** The version the save started from; undefined saves whatever is stored. */
+  readonly expectedVersion: number | undefined;
+}
+
+export type SettingsUpdate =
+  | { readonly kind: 'updated'; readonly project: Project }
+  | { readonly kind: 'missing' }
+  | { readonly kind: 'stale'; readonly currentVersion: number };
+
 export interface ProjectRepository {
   /** Stores the project, or returns the owner's existing project with the same source. */
   insertOrFind(project: Project): Promise<StoredProject>;
@@ -19,13 +33,13 @@ export interface ProjectRepository {
   list(userId: string, limit?: number): Promise<readonly Project[]>;
   /** Undefined for an unknown id and for another user's project. */
   find(userId: string, projectId: string): Promise<Project | undefined>;
-  /** Replaces the settings; undefined for an unknown id and for another user's project. */
-  updateSettings(
-    userId: string,
-    projectId: string,
-    settings: ProjectSettings,
-    updatedAt: EpochMs,
-  ): Promise<Project | undefined>;
+  /**
+   * Replaces the settings and counts the version. With `expectedVersion` the save happens only if
+   * the stored version is still that one, decided in the same step as the write, so two saves from
+   * the same version never both succeed (P1-106); without it the save is unconditional. `missing`
+   * for an unknown id and for another user's project, whatever the version.
+   */
+  updateSettings(change: SettingsChange): Promise<SettingsUpdate>;
   /**
    * Removes the project (RF-1012); false for an unknown id and for another user's project, and
    * then `afterRowsGone` is not called. PostgreSQL also refuses (false) while a run of the project

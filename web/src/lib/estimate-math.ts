@@ -30,11 +30,21 @@ export function pricedTotal(estimate: RunEstimate, scenario: Scenario): bigint {
     .reduce((sum, role) => sum + BigInt(role[scenario].costMicros), 0n);
 }
 
+/** The cost of the priced roles that use the given key, whose caps limit it. */
+function keyTotal(estimate: RunEstimate, scenario: Scenario, source: 'user' | 'server'): bigint {
+  return estimate.roles
+    .filter((role) => role.priced && role.keySource === source)
+    .reduce((sum, role) => sum + BigInt(role[scenario].costMicros), 0n);
+}
+
 /** The cost of the roles that use the user's own key, which the daily cap on own keys limits. */
 export function ownKeyTotal(estimate: RunEstimate, scenario: Scenario): bigint {
-  return estimate.roles
-    .filter((role) => role.priced && role.keySource === 'user')
-    .reduce((sum, role) => sum + BigInt(role[scenario].costMicros), 0n);
+  return keyTotal(estimate, scenario, 'user');
+}
+
+/** The cost of the roles that use the server's key: the user's day and the server's month limit it. */
+export function serverKeyTotal(estimate: RunEstimate, scenario: Scenario): bigint {
+  return keyTotal(estimate, scenario, 'server');
 }
 
 export function totalTokens(role: Pick<RoleEstimate, Scenario>, scenario: Scenario): number {

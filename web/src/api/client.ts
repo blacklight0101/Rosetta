@@ -35,6 +35,8 @@ interface ApiRequest<T> {
   readonly body?: unknown;
   /** Parses the body of a good answer; `z.undefined()` for an empty 204. */
   readonly schema: z.ZodType<T>;
+  /** `If-Match`: the version the change started from, so a stale change is refused (RST-1007). */
+  readonly ifMatch?: string;
   readonly signal?: AbortSignal;
   /** Overrides the client's timeout for a call that is slow by nature (the provider test). */
   readonly timeoutMs?: number;
@@ -97,6 +99,14 @@ async function parseAnswer<T>(response: Response, schema: z.ZodType<T>): Promise
   return parsed.success ? { ok: true, value: parsed.data } : unreadable(response.status);
 }
 
+function headersOf(request: ApiRequest<unknown>, csrfToken: string | undefined): Headers {
+  const headers = new Headers({ accept: 'application/json' });
+  if (request.body !== undefined) headers.set('content-type', 'application/json');
+  if (request.ifMatch !== undefined) headers.set('if-match', request.ifMatch);
+  if (request.method !== 'GET' && csrfToken !== undefined) headers.set(csrfHeader, csrfToken);
+  return headers;
+}
+
 // RNF-008, RF-1009
 export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   const { timeoutMs = defaultTimeoutMs } = options;
@@ -111,9 +121,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       if (!request.path.startsWith('/api/')) {
         throw new Error(`API paths start with /api/, got ${request.path}`);
       }
-      const headers = new Headers({ accept: 'application/json' });
-      if (request.body !== undefined) headers.set('content-type', 'application/json');
-      if (request.method !== 'GET' && csrfToken !== undefined) headers.set(csrfHeader, csrfToken);
+      const headers = headersOf(request, csrfToken);
       const timeout = AbortSignal.timeout(request.timeoutMs ?? timeoutMs);
       const signal =
         request.signal === undefined ? timeout : AbortSignal.any([timeout, request.signal]);

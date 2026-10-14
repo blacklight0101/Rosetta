@@ -9,7 +9,7 @@ import { providerNames } from './provider-choices.js';
 import { startGate, type StartGate } from './start-gate.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { useEstimateChoice, type EstimateChoice } from './use-estimate-choice.js';
-import { useOwnDailyCap } from './use-own-daily-cap.js';
+import { useSpendLimits } from './use-spend-limits.js';
 import { useStartActions, type StartActions } from './use-start-actions.js';
 
 // RF-1001, RF-143, DEC-108, DEC-117: the state of the start page: the stage, the address, the run
@@ -66,7 +66,7 @@ export function useStartForm(loaded: Project): StartForm {
   const [checked, setChecked] = useState(false);
   const [refused, setRefused] = useState(false);
   const choice = useEstimateChoice(project.id);
-  const ownDailyCap = useOwnDailyCap();
+  const limits = useSpendLimits();
   const { estimate } = choice;
   const stage = estimate.status === 'none' ? 'scan' : chosenStage;
   const roles = stage === 'understand' ? consentRoles(estimate, refused) : [];
@@ -77,7 +77,7 @@ export function useStartForm(loaded: Project): StartForm {
     stage === 'understand' && estimate.status === 'ready'
       ? capWarnings({
           ...{ estimate: estimate.estimate, runCapMicros: capMicros },
-          ownDailyCapMicros: ownDailyCap,
+          limits,
         })
       : [];
   const actions = useStartActions({
