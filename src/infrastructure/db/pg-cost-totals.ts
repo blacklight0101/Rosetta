@@ -16,8 +16,12 @@ import type { DatabasePool } from './pool.js';
 const COLUMNS =
   'run_id, stage, role, provider, model, key_source, currency, cost_known, price_table_version';
 
-const GROUPS = (scope: string): string =>
-  `SELECT run_id::text AS run_id, stage, role, provider, model, key_source, currency, cost_known, price_table_version, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros, min(at) AS first_at FROM cost_ledger WHERE ${scope} GROUP BY ${COLUMNS} ORDER BY first_at, run_id, stage COLLATE "C", role COLLATE "C", provider COLLATE "C", model COLLATE "C", key_source, currency, cost_known, price_table_version COLLATE "C"`;
+const GROUPS_HEAD =
+  'SELECT run_id::text AS run_id, stage, role, provider, model, key_source, currency, cost_known, price_table_version, count(*)::int AS calls, sum(input_tokens)::text AS input_tokens, sum(output_tokens)::text AS output_tokens, sum(cached_input_tokens)::text AS cached_input_tokens, sum(cost_micros)::text AS cost_micros, min(at) AS first_at FROM cost_ledger WHERE ';
+const GROUPS_TAIL =
+  ' GROUP BY ' +
+  COLUMNS +
+  ' ORDER BY first_at, run_id, stage COLLATE "C", role COLLATE "C", provider COLLATE "C", model COLLATE "C", key_source, currency, cost_known, price_table_version COLLATE "C"';
 
 /**
  * RF-1010: the totals pill sums the user's rows per currency, known cost and price table version
@@ -34,9 +38,9 @@ const PROJECT_SUMMARIES = `SELECT project_id::text AS project_id, currency, cost
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const PROJECT_GROUPS = GROUPS('user_id = $1 AND project_id = $2');
+const PROJECT_GROUPS = GROUPS_HEAD + 'user_id = $1 AND project_id = $2' + GROUPS_TAIL;
 /** A provider test is the only row of no project (RF-407, data-model.md 3.13). */
-const PROVIDER_TEST_GROUPS = GROUPS('user_id = $1 AND project_id IS NULL');
+const PROVIDER_TEST_GROUPS = GROUPS_HEAD + 'user_id = $1 AND project_id IS NULL' + GROUPS_TAIL;
 
 const integerText = z.string().regex(/^-?\d+$/u);
 const count = integerText.transform(Number);
