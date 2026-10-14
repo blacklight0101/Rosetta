@@ -27,11 +27,38 @@ describe('fencedBlocks', () => {
 
     expect(fencedBlocks(text)).toEqual([{ lang: 'bash', body: 'cp a b' }]);
   });
+});
 
+describe('fencedBlocks: edge cases', () => {
   it('RF-801 does not close a long fence with a shorter one', () => {
     const text = `~~~~bash\n${fence}\ninner\n${fence}\n~~~~\n`;
 
     expect(fencedBlocks(text)).toEqual([{ lang: 'bash', body: `${fence}\ninner\n${fence}` }]);
+  });
+
+  it('RF-801 reads a block whose fences are indented by up to three spaces', () => {
+    const text = `   ${fence}bash
+cp a b
+   ${fence}
+`;
+
+    expect(fencedBlocks(text)).toEqual([{ lang: 'bash', body: 'cp a b' }]);
+  });
+
+  it('RF-801 does not close a block on a fence line that carries text', () => {
+    const text = `${fence}bash
+cp a b
+${fence} not a close
+${fence}
+`;
+
+    expect(fencedBlocks(text)).toEqual([
+      {
+        lang: 'bash',
+        body: `cp a b
+${fence} not a close`,
+      },
+    ]);
   });
 
   it('RF-801 ignores a block that never closes', () => {
@@ -89,6 +116,10 @@ describe('requirementIds', () => {
 
     expect(requirementIds(text)).toEqual(['RF-801', 'RNF-014', 'RF-1301']);
   });
+
+  it('RF-801 finds an id written only in lower case, as upper case', () => {
+    expect(requirementIds('see rnf-014 and rf-1301')).toEqual(['RNF-014', 'RF-1301']);
+  });
 });
 
 describe('hasIdRange', () => {
@@ -127,6 +158,12 @@ describe('matrixRows', () => {
     ]);
   });
 
+  it('RF-801 skips a row whose first column is more than a single id', () => {
+    expect(
+      matrixRows('| RF-801 and RF-802 | Quick start | Must | 0 | - | Gap | **Gap** |'),
+    ).toEqual([]);
+  });
+
   it('RF-801 skips a short row that only names an id', () => {
     expect(matrixRows('| RF-002 | Gap | pending |')).toEqual([]);
   });
@@ -146,6 +183,40 @@ describe('linksIn', () => {
       'e.github.io',
       'f.app',
     ]);
+  });
+
+  it('RF-801 leaves out the punctuation that ends a sentence after a link', () => {
+    const text =
+      'Visit https://example.com/path, then www.example.org. Also e.github.io; or f.app:';
+
+    expect(linksIn(text)).toEqual([
+      'https://example.com/path',
+      'www.example.org',
+      'e.github.io',
+      'f.app',
+    ]);
+  });
+});
+
+describe('linksIn: bare hosts', () => {
+  it.each([
+    'site.dev',
+    'a.b.page',
+    'x.cloud',
+    'y.me',
+    'z.ai',
+    'w.net',
+    'v.org',
+    'u.com',
+    't.app',
+    's.site',
+    'r.io',
+  ])('RF-801 finds the bare host %s', (host) => {
+    expect(linksIn(`open ${host} now`)).toEqual([host]);
+  });
+
+  it('RF-801 finds a www address without a scheme', () => {
+    expect(linksIn('open www.example.test/x now')).toEqual(['www.example.test/x']);
   });
 
   it('RF-801 finds nothing in text without links', () => {
