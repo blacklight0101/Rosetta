@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from './fixtures.js';
-import { ensureProject, runStatus, startAndOpenLiveRun, startLinkOf } from './live-run-page.js';
+import { openStartOf, runStatus, startAndOpenLiveRun } from './live-run-page.js';
 
 // P1-46: the steps the milestone journeys share, written as a person does them: through the
 // projects page, the start page and the live run page. Every repository is one the test server's
@@ -16,8 +16,7 @@ export const repositories = {
 export async function openProjectStart(page: Page, url: string): Promise<void> {
   await page.goto('/projects');
   await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible();
-  await ensureProject(page, url);
-  await startLinkOf(page, url).click();
+  await openStartOf(page, url);
   await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(url);
 }
