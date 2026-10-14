@@ -16,6 +16,7 @@ import type {
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { readTextUpTo, readUpTo, utf8Text } from './bounded-read.js';
 import { cutLine, grepLimits, isPatternTooLong } from './grep-limits.js';
+import { budgetOrder, inPathOrder } from './grep-order.js';
 import { grepResult, type SearchedFile, type SearchedFiles } from './grep-result.js';
 import { runGrep } from './grep-runner.js';
 import { IgnoreRules, pathFilter } from './ignore-rules.js';
@@ -181,15 +182,16 @@ export class NodeRepositoryReader implements RepositoryReader {
     }
   }
 
-  // RF-146, P1-160: a file is read only while the search's total stays within its byte budget.
+  // RF-146, P1-160: a file is read only while the search's total stays within its byte budget;
+  // the repository's own files are read first (budgetOrder), and the answer keeps the path order.
   async #searchedFiles(request: GrepRequest): Promise<SearchedFiles> {
     const { maxFileBytes, grepBudget } = this.#state;
-    const selected = searchSelector(request);
+    const paths = (await this.listFiles()).filter(searchSelector(request));
     const files: SearchedFile[] = [];
     const counts = { tooLarge: 0, overBudget: 0 };
     let left = grepBudget;
-    for (const path of await this.listFiles()) {
-      const absolute = selected(path) ? await this.#realFile(path) : undefined;
+    for (const path of budgetOrder(paths)) {
+      const absolute = await this.#realFile(path);
       if (absolute === undefined) continue;
       const read = await budgetedRead(absolute, maxFileBytes, left);
       if (read.bytes === undefined) counts[read.skipped] += 1;
@@ -198,7 +200,7 @@ export class NodeRepositoryReader implements RepositoryReader {
         files.push(searchedFile(path, utf8Text(read.bytes)));
       }
     }
-    return { files, ...counts, budget: grepBudget };
+    return { files: inPathOrder(files, paths), ...counts, budget: grepBudget };
   }
 
   /**

@@ -5,8 +5,12 @@ export const grepLimits = {
   timeoutMs: 2000,
   /** Matches past this are dropped and the agent is told (P1-67). */
   maxMatches: 1000,
-  /** P1-160: the bytes one search reads across all its files; files past it are left out. */
-  maxTotalBytes: 32 * 1024 * 1024,
+  /**
+   * P1-160: the bytes one search reads across all its files; files past it are left out. 128 MiB
+   * holds a repository such as eShopModernizing (43 MiB searchable) whole; a search of 128 MiB of
+   * 40-character lines took about 1.6 s on the development machine, inside the 2 s timeout.
+   */
+  maxTotalBytes: 128 * 1024 * 1024,
 } as const;
 
 /** P1-160: the V8 limits of the grep worker; a worker that passes them ends with RST-1112. */
