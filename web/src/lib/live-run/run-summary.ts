@@ -44,6 +44,11 @@ export function roleTotalsOf(state: RunState): readonly RoleTotals[] {
       output: sum.output + agent.outputTokens,
     });
   }
+  // P1-96: a role with usage events takes its tokens from them (every call of the role, the
+  // Ollama check included); the turns of its agents are the same calls, so they are not added.
+  for (const [role, used] of Object.entries(state.roleTokens)) {
+    totals.set(role, { input: used.inputTokens, output: used.outputTokens });
+  }
   for (const role of Object.keys(state.roleCostMicros)) {
     if (!totals.has(role)) totals.set(role, { input: 0, output: 0 });
   }

@@ -73,7 +73,13 @@ const micros = z.union([
     .transform(Number),
 ]);
 
-export const usageData = z.looseObject({ role: text.optional(), costMicros: micros.optional() });
+export const usageData = z.looseObject({
+  role: text.optional(),
+  costMicros: micros.optional(),
+  tokens: z.looseObject({ inputTokens: count, outputTokens: count }).optional(),
+});
+
+export type UsageData = z.output<typeof usageData>;
 
 const capPair = z.object({ maxCostMicros: z.number(), maxTokens: z.number() });
 

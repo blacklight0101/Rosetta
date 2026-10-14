@@ -384,7 +384,7 @@ Event types (canonical list):
 | `verify.claim.judged` | `{ claimId, status, reason }` |
 | `usage.recorded` | `{ callId, role, provider, model, tokens, costMicros, runTotals, projectTotals }` (RF-1003, RF-1010), published by the run's budget guards (`RunBudgetEvents`) after each answered call's ledger row, with the call's agent task in the envelope; `tokens`, `runTotals` and `projectTotals` are `{ inputTokens, outputTokens, cachedInputTokens }` (the totals with `costMicros`), the totals starting from the run's ledger rows and the project's totals when the run opened its providers; `costMicros` is 0 for a local model and left out when the model has no price (RF-427); never a prompt, an answer or a key |
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
-| `budget.capReached` | `{ scope, capMicros, spentMicros }` when a cap refuses a call and stops the run; `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead |
+| `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead |
 | `question.answered` | `{ cardId }` (RF-1007) |
 | `run.ended` | `{ endState, totals, errorCode? }`; `errorCode` is the `RST` code of a `Failed` run |
 

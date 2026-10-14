@@ -54,6 +54,7 @@ export function initialRunState(): RunState {
     claims: [],
     log: [],
     roleCostMicros: {},
+    roleTokens: {},
     ended: undefined,
   };
 }

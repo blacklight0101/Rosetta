@@ -82,6 +82,11 @@ interface EndedState {
   readonly costMicros: number | undefined;
 }
 
+export interface RoleTokens {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+}
+
 export interface RunState {
   readonly lastSeq: number;
   /** The `at` of `run.started`; the event log shows times from it. */
@@ -96,5 +101,7 @@ export interface RunState {
   readonly claims: readonly ClaimRow[];
   readonly log: readonly LogLine[];
   readonly roleCostMicros: Readonly<Record<string, number>>;
+  /** The tokens of each role from its `usage.recorded` events (P1-96); empty for older runs. */
+  readonly roleTokens: Readonly<Record<string, RoleTokens>>;
   readonly ended: EndedState | undefined;
 }
