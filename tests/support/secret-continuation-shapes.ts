@@ -55,6 +55,13 @@ export const continuationSecretCases: readonly ShapeCase[] = [
     secrets: [token],
   },
   {
+    name: 'a --token value on the line after a continuation right after the option',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption} ${continued(backslash, '\n')}${token}`,
+    masked: `tool ${tokenOption} ${continued(backslash, '\n')}[MASKED:bearer-token]`,
+    secrets: [token],
+  },
+  {
     name: 'a --token value that starts with a dash after the scheme word',
     kind: 'bearer-token',
     text: `tool ${tokenOption} Bearer -${shortToken} --verbose`,
