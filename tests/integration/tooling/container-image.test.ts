@@ -72,6 +72,15 @@ describe('Dockerfile', () => {
   });
 });
 
+describe('Dockerfile npm version', () => {
+  it('P1-87 no stage pins an npm version: the install stages use the npm of the base image, which reads the lock file', async () => {
+    const dockerfile = await read('Dockerfile');
+
+    expect(dockerfile).not.toMatch(/npm@\d/u);
+    expect(dockerfile).not.toMatch(/npm install --global/u);
+  });
+});
+
 describe('Dockerfile runtime stage', () => {
   it('RF-1300 the runtime stage takes production dependencies only, installed without install scripts', async () => {
     const found = await stages();
