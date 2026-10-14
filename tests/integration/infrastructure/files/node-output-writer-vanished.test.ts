@@ -12,8 +12,8 @@ import { useTempRoot } from '../../../support/temp-root.js';
 // between the temporary write and the rename, so the rename fails with ENOENT and the write is a
 // refusal (not-found). An ENOENT whose folder is still there is not that case and is rethrown.
 
-type Mode = 'off' | 'remove-folder' | 'enoent-only';
-const vanish = vi.hoisted((): { mode: Mode } => ({ mode: 'off' }));
+type Mode = 'off' | 'remove-folder' | 'remove-folder-eacces' | 'enoent-only';
+const vanish = vi.hoisted((): { mode: Mode; code: string } => ({ mode: 'off', code: 'EACCES' }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof FsPromises>();
@@ -23,9 +23,12 @@ vi.mock('node:fs/promises', async (importOriginal) => {
       const [from] = args;
       const mode = vanish.mode;
       vanish.mode = 'off';
-      if (mode === 'remove-folder') {
+      if (mode === 'remove-folder' || mode === 'remove-folder-eacces') {
         // The folder that holds the temporary file goes first, as a concurrent delete would do it.
         await actual.rm(dirname(String(from)), { recursive: true, force: true });
+      }
+      if (mode === 'remove-folder-eacces') {
+        throw Object.assign(new Error(`${vanish.code}: rename refused`), { code: vanish.code });
       }
       if (mode === 'enoent-only') {
         throw Object.assign(new Error('ENOENT: rename refused'), { code: 'ENOENT' });
@@ -78,4 +81,21 @@ describe('NodeOutputWriter when an ENOENT comes during the write', () => {
     ).rejects.toThrow('ENOENT: rename refused');
     expect(await temporaryFiles(userFolder())).toEqual([]);
   });
+});
+
+describe('NodeOutputWriter when a permission error comes with the folder gone', () => {
+  it.each(['EACCES', 'EPERM'])(
+    'RF-005 writeText rethrows a %s when the folder is gone: it is not a deleted folder',
+    async (code) => {
+      await mkdir(join(userFolder(), 'projects', 'run-3'), { recursive: true });
+      const writer = newWriter();
+      vanish.mode = 'remove-folder-eacces';
+      vanish.code = code;
+
+      await expect(
+        writer.writeText({ userId, path: 'projects/run-3/out.json' }, '{}\n'),
+      ).rejects.toThrow(`${code}: rename refused`);
+      expect(vanish.mode).toBe('off');
+    },
+  );
 });

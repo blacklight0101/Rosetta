@@ -51,6 +51,7 @@ it('RF-1008 shows the last run, its state, the runs, tokens and cost of each pro
         overviewRow(demo, { runs: 6, totals: paidTotals, lastRun: lastRunOf() }),
         overviewRow(shop),
       ],
+      truncated: false,
     }),
   });
 
@@ -72,7 +73,10 @@ it('RF-1008 shows the last run, its state, the runs, tokens and cost of each pro
 
 it('RF-1108 a queued latest run shows its position in the row and the queue notice', async () => {
   renderProjects({
-    [overviewPath]: json(200, { projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun })] }),
+    [overviewPath]: json(200, {
+      projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun })],
+      truncated: false,
+    }),
   });
 
   const row = await rowOf('octo/demo');
@@ -94,7 +98,7 @@ it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and re
       const lastRun = cancelled
         ? lastRunOf({ id: 'r-9', queueState: 'Ended', endState: 'Interrupted', position: null })
         : queuedRun;
-      return json(200, { projects: [overviewRow(demo, { runs: 1, lastRun })] });
+      return json(200, { projects: [overviewRow(demo, { runs: 1, lastRun })], truncated: false });
     },
     'POST /api/runs/r-9/stop': () => {
       cancelled = true;
@@ -120,7 +124,10 @@ it('RF-1108 Cancel queued run stops the run by its id with the CSRF token and re
 
 it('RF-1108 a cancel that fails shows its error in the notice and keeps the button', async () => {
   renderProjects({
-    [overviewPath]: json(200, { projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun })] }),
+    [overviewPath]: json(200, {
+      projects: [overviewRow(demo, { runs: 1, lastRun: queuedRun })],
+      truncated: false,
+    }),
     'POST /api/runs/r-9/stop': failure(409, 'RST-2001'),
   });
   const notice = await screen.findByTestId('queue-notice');

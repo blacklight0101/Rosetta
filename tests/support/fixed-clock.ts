@@ -20,3 +20,8 @@ export class FixedClock implements Clock {
     this.current = new Date(isoInstant).getTime();
   }
 }
+
+/** The instant `milliseconds` after `instant`, or before it when negative, for fixtures. */
+export function shifted(instant: Date, milliseconds: number): Date {
+  return new Date(instant.getTime() + milliseconds);
+}

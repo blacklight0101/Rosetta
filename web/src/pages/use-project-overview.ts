@@ -16,7 +16,12 @@ const pollMs = 5000;
 export type OverviewLoad =
   | { readonly status: 'loading' }
   | { readonly status: 'failed'; readonly error: ApiFailure }
-  | { readonly status: 'ready'; readonly rows: readonly ProjectOverviewRow[] };
+  | {
+      readonly status: 'ready';
+      readonly rows: readonly ProjectOverviewRow[];
+      /** True when the user has more projects than `rows` holds (P1-163). */
+      readonly truncated: boolean;
+    };
 
 const inProgress = (rows: readonly ProjectOverviewRow[]): boolean =>
   rows.some((row) => row.lastRun !== null && row.lastRun.queueState !== 'Ended');
@@ -37,10 +42,10 @@ export function useProjectOverview(): {
       const result = await listProjectOverview(client, abort.signal);
       if (abort.signal.aborted) return;
       setState((current) => {
-        if (result.ok) return { status: 'ready', rows: result.value };
+        if (result.ok) return { status: 'ready', ...result.value };
         return current.status === 'ready' ? current : { status: 'failed', error: result.error };
       });
-      if (result.ok && inProgress(result.value)) timer = setTimeout(() => void load(), pollMs);
+      if (result.ok && inProgress(result.value.rows)) timer = setTimeout(() => void load(), pollMs);
     };
     void load();
     return () => {
@@ -53,6 +58,7 @@ export function useProjectOverview(): {
     setState((current) => ({
       status: 'ready',
       rows: current.status === 'ready' ? [...current.rows, row] : [row],
+      truncated: current.status === 'ready' ? current.truncated : false,
     }));
   };
   const reload = (): void => {

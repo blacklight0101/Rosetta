@@ -22,14 +22,18 @@ export function parseProject(body: unknown): Project | undefined {
 export async function listProjectOverview(
   client: ApiClient,
   signal: AbortSignal,
-): Promise<ApiResult<readonly ProjectOverviewRow[]>> {
+): Promise<
+  ApiResult<{ readonly rows: readonly ProjectOverviewRow[]; readonly truncated: boolean }>
+> {
   const result = await client.request({
     method: 'GET',
     path: '/api/projects/overview',
     schema: projectOverviewSchema,
     signal,
   });
-  return result.ok ? { ok: true, value: result.value.projects } : result;
+  return result.ok
+    ? { ok: true, value: { rows: result.value.projects, truncated: result.value.truncated } }
+    : result;
 }
 
 // RF-010

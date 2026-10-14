@@ -124,7 +124,7 @@ Unknown keys are an error (RF-002), so a typo never silently changes behaviour. 
 complete. A save returns every problem with its dotted field and one of: RST-1001 (unknown provider kind, or a role
 naming a provider the project does not define), RST-1002 (a role missing or without a model), RST-1003 (a cap or
 price below zero), RST-1004 (a `baseUrl`), RST-1006 (any other value or key that is not allowed); RST-1005 is the
-code of the refusal as a whole. A new project takes `templates/project-settings.json` with `scan.ignoreRules` from
+code of the refusal as a whole; a save whose `If-Match` version is no longer the stored one answers RST-1007 with status 409. A new project takes `templates/project-settings.json` with `scan.ignoreRules` from
 `templates/ignore-rules.txt`, the provider and model of each role from the server setting `defaultRoles` where set,
 only the providers its roles use, and `agents.parallelism` 1 when the reader is Ollama (DEC-106). The numbers in
 `templates/project-settings.json` (run cap, confirmation threshold, output limits, turns, timeouts) are

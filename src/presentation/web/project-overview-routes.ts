@@ -36,7 +36,9 @@ export function registerProjectOverviewRoutes(
   services: ProjectOverviewServices,
 ): void {
   server.get('/api/projects/overview', { config: { access: 'user' } }, async (request, reply) => {
-    const rows = await services.listProjectOverview.execute({ actor: signedInOf(request).actor });
-    return reply.status(200).send({ projects: rows.map(overviewRow) });
+    const page = await services.listProjectOverview.execute({ actor: signedInOf(request).actor });
+    return reply
+      .status(200)
+      .send({ projects: page.rows.map(overviewRow), truncated: page.truncated });
   });
 }

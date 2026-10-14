@@ -17,9 +17,17 @@ import type { Project } from '../projects/project.js';
 
 /**
  * The most projects one overview answers, the newest first. With the Projects page polling every
- * 5 s, this bounds the rows each poll reads and sends however many projects a user has.
+ * 5 s, this bounds the rows each poll reads and sends however many projects a user has. One more
+ * project is read to tell whether the list is cut short (P1-163).
  */
 const PROJECT_OVERVIEW_LIMIT = 100;
+
+/** The overview rows and whether the user has more projects than the limit answers. */
+export interface ProjectOverviewPage {
+  readonly rows: readonly ProjectOverview[];
+  /** True when the user has more projects than `rows` holds: only the newest ones are listed. */
+  readonly truncated: boolean;
+}
 
 export interface ProjectOverview {
   readonly project: Project;
@@ -46,10 +54,12 @@ export class ListProjectOverview {
   }
 
   // RF-1008
-  async execute(request: { readonly actor: Actor }): Promise<readonly ProjectOverview[]> {
+  async execute(request: { readonly actor: Actor }): Promise<ProjectOverviewPage> {
     const { projects, runs, costs } = this.deps;
     const { userId } = request.actor;
-    const owned = await projects.list(userId, PROJECT_OVERVIEW_LIMIT);
+    const read = await projects.list(userId, PROJECT_OVERVIEW_LIMIT + 1);
+    const truncated = read.length > PROJECT_OVERVIEW_LIMIT;
+    const owned = read.slice(0, PROJECT_OVERVIEW_LIMIT);
     const ids = owned.map((project) => project.id);
     const [summaries, groups, queued] = await Promise.all([
       runs.projectSummaries(userId, ids),
@@ -58,7 +68,7 @@ export class ListProjectOverview {
     ]);
     const positions = queuePositions(queued);
     const summaryOf = new Map(summaries.map((summary) => [summary.projectId, summary]));
-    return owned.map((project) => {
+    const rows = owned.map((project) => {
       const summary = summaryOf.get(project.id);
       const mine = groups.filter((group) => group.projectId === project.id);
       return {
@@ -69,5 +79,6 @@ export class ListProjectOverview {
         position: summary === undefined ? undefined : positions.get(summary.latest.id),
       };
     });
+    return { rows, truncated };
   }
 }

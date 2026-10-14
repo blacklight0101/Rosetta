@@ -107,3 +107,22 @@ describe('data-block frames reach OpenAI on separate lines', () => {
     expect(frameOf(sent, frameTag(request))).toEqual(wanted);
   });
 });
+
+// RF-145 (P1-104): repository text with backticks cannot close the frame it sits in: the fence of
+// the tool result is longer than the longest run of backticks in the result, sent through the fake
+// Ollama server.
+describe('a tool result with backticks keeps its fence longer than any run in it', () => {
+  it.each([3, 4, 10])('RF-145 a run of %i backticks stays inside the fence', async (run) => {
+    const { provider, server } = await startOllama('contract-text', { toolMode: 'text' });
+    const harness = await egressHarness({ inner: provider });
+    const text = `before\n${'`'.repeat(run)}\nafter`;
+
+    await harness.guard.complete(requestWith(readConversation(toolResult({ text }))));
+
+    const lines = (contents(server.chatBodies()).at(-1) ?? '').split('\n');
+    const fence = /^`+/u.exec(lines[0] ?? '')?.[0] ?? '';
+    expect(fence.length).toBeGreaterThan(run);
+    expect(lines.at(-1)).toBe(fence);
+    expect(lines).toContain('`'.repeat(run));
+  });
+});

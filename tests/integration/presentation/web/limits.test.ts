@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
+import { shifted } from '../../../support/fixed-clock.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
 // RF-1106, RF-1001, DEC-107, DEC-108 (P1-106): GET /api/account/limits tells every signed-in user
@@ -62,7 +63,7 @@ describe('GET /api/account/limits', () => {
     const now = test.clock.now();
     const row = { currency: 'USD', keySource: 'server' as const };
     test.usage.addCost({ ...row, userId: id, at: now, costMicros: 400_000n });
-    test.usage.addCost({ ...row, userId: id, at: new Date(now.getTime() - day), costMicros: 9n });
+    test.usage.addCost({ ...row, userId: id, at: shifted(now, -day), costMicros: 9n });
     test.usage.addCost({ ...row, userId: other.id, at: now, costMicros: 300_000n });
     test.usage.addCost({
       userId: id,

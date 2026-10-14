@@ -30,4 +30,9 @@ const overviewRowSchema = z.object({
 
 export type ProjectOverviewRow = z.output<typeof overviewRowSchema>;
 
-export const projectOverviewSchema = z.object({ projects: z.array(overviewRowSchema) });
+export const projectOverviewSchema = z.object({
+  projects: z.array(overviewRowSchema),
+  // True when the user has more projects than the page lists: only the newest are shown
+  // (P1-163).
+  truncated: z.boolean(),
+});

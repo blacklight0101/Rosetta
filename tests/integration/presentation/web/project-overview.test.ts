@@ -4,6 +4,7 @@ import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { costEntry } from '../../../support/cost-fixtures.js';
 import { createHistoryHarness, type HistoryHarness } from '../../../support/history-harness.js';
+import { seedProjects } from '../../../support/overview-seed.js';
 
 // RF-1008, RF-1108, RF-1105, RF-1010: GET /api/projects/overview gives the Projects page each of the
 // signed-in user's projects with its run count, its totals from the cost ledger and its latest run
@@ -152,5 +153,35 @@ describe('GET /api/projects/overview scope', () => {
     expect(other.statusCode).toBe(404);
     expect(other.json()).toMatchObject({ code: ERROR_CODES.notFound });
     expect(rows[0]?.lastRun).toMatchObject({ id: queued.id, queueState: 'Queued', position: 1 });
+  });
+});
+
+describe('GET /api/projects/overview truncated', () => {
+  it('RF-1008 says the list is cut short only above 100 projects', async () => {
+    harness = await createHistoryHarness();
+    const { amy, test, userId } = harness;
+    const stores = {
+      projects: test.projects,
+      runs: test.runs.runs,
+      addCost: (entry: Parameters<typeof test.costs.add>[0]) => {
+        test.costs.add(entry);
+        return Promise.resolve();
+      },
+    };
+    // The harness's own project is the first of them: 99 more make 100, one more makes 101.
+    await seedProjects(stores, userId, 99);
+    const hundred = await amy.request({ method: 'GET', url: overviewUrl });
+    expect(hundred.json<{ truncated: boolean; projects: unknown[] }>()).toMatchObject({
+      truncated: false,
+    });
+    expect(hundred.json<{ projects: unknown[] }>().projects).toHaveLength(100);
+
+    await seedProjects(stores, userId, 100);
+    const more = await amy.request({ method: 'GET', url: overviewUrl });
+
+    expect(more.json<{ truncated: boolean; projects: unknown[] }>()).toMatchObject({
+      truncated: true,
+    });
+    expect(more.json<{ projects: unknown[] }>().projects).toHaveLength(100);
   });
 });
