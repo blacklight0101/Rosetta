@@ -129,6 +129,15 @@ it('RF-1001 without a scan the understand stage is off, the scan is chosen and t
   expect(screen.queryByRole('table', { name: 'Estimate per role' })).toBeNull();
 });
 
+it('RF-1001 with no code map the page shows the scan note and no run cap or threshold field', async () => {
+  renderStart({ [`GET ${estimatePath}`]: noCodeMap });
+
+  await screen.findByText(/A scan reads the repository/u);
+
+  expect(screen.queryByLabelText('Run cap (USD)')).toBeNull();
+  expect(screen.queryByLabelText('Ask before a run estimated above (USD)')).toBeNull();
+});
+
 it('RF-143 names the cloud provider and keeps Start off until the consent is given', async () => {
   const { calls } = renderStart({
     [`GET ${estimatePath}`]: json(200, cloudEstimate),
