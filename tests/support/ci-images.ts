@@ -45,3 +45,11 @@ export async function workflowImages(name: string): Promise<string[]> {
   const text = await readFile(join(process.cwd(), '.github', 'workflows', name), 'utf8');
   return imagesIn(parse(text));
 }
+
+/** `run:` lines that start a container (`docker run`, `pull`, `create`) without a sha256 digest on the line. */
+export function unpinnedDockerCommands(lines: readonly string[]): string[] {
+  return lines.filter(
+    (line) =>
+      /\bdocker\s+(?:run|pull|create)\b/u.test(line) && !/@sha256:[0-9a-f]{64}\b/u.test(line),
+  );
+}

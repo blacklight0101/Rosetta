@@ -3,7 +3,13 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import { imagesIn, isDigestPinned, workflowImages } from '../../support/ci-images.js';
+import {
+  imagesIn,
+  isDigestPinned,
+  unpinnedDockerCommands,
+  workflowImages,
+} from '../../support/ci-images.js';
+import { load, runLines } from '../../support/workflow-files.js';
 
 // RNF-003, DEC-125, P1-49 F-17 and F-18: the supply-chain controls that live in configuration files,
 // read as data: the images CI starts are pinned by digest, and Dependabot watches the Dockerfile
@@ -91,6 +97,37 @@ jobs:
       'postgres:17',
       'redis:7',
     ]);
+  });
+});
+
+describe('containers started from a run step', () => {
+  it('RNF-003 no workflow step starts a container from an image without a digest', async () => {
+    const found = (await load()).flatMap((workflow) =>
+      unpinnedDockerCommands(runLines(workflow.lines)).map(
+        (line) => `${workflow.name}: ${line.trim()}`,
+      ),
+    );
+
+    expect(found).toEqual([]);
+  });
+
+  it.each([
+    ['docker run', 'docker run --rm postgres:17'],
+    ['docker pull', 'docker pull postgres:17'],
+    ['docker create', 'docker create postgres:17'],
+    ['sudo docker run', 'sudo docker run -d redis'],
+    ['a short digest', `docker run postgres@sha256:${'a'.repeat(63)}`],
+  ])('RNF-003 flags %s without a digest', (_label, line) => {
+    expect(unpinnedDockerCommands([line])).toEqual([line]);
+  });
+
+  it.each([
+    ['a pinned run', `docker run --rm postgres:17@${DIGEST}`],
+    ['a build', 'docker build --tag rosetta:ci .'],
+    ['compose', 'docker compose up -d --wait'],
+    ['a plain command', 'npm run verify'],
+  ])('RNF-003 leaves %s alone', (_label, line) => {
+    expect(unpinnedDockerCommands([line])).toEqual([]);
   });
 });
 
