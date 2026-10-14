@@ -39,6 +39,10 @@ describe('environment: the scan parse budget (RF-110)', () => {
     expect(loadEnvironment(validSource({ [VARIABLE]: '45000' })).scanParseBudgetMs).toBe(45_000);
   });
 
+  it('RF-110 an empty variable, as Compose passes an unset one, means the two-minute default', () => {
+    expect(loadEnvironment(validSource({ [VARIABLE]: '' })).scanParseBudgetMs).toBe(120_000);
+  });
+
   it('RF-110 accepts the stated maximum of one hour', () => {
     expect(loadEnvironment(validSource({ [VARIABLE]: '3600000' })).scanParseBudgetMs).toBe(
       3_600_000,

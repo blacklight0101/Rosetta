@@ -25,7 +25,10 @@ export interface OllamaHarness {
 
 export type HarnessOverrides = Partial<
   Omit<OllamaProviderOptions, 'baseUrl' | 'textProtocolPrompt' | 'sleep' | 'logger'>
->;
+> & {
+  /** Leave the context cache option out, so the providers use the process-wide cache (DEC-114). */
+  readonly processCache?: boolean;
+};
 
 const promptsFolder = join(process.cwd(), 'prompts');
 
@@ -47,6 +50,8 @@ export function useFakeOllama(): (
     const { text: textProtocolPrompt } = await loadTextToolProtocol(promptsFolder);
     // Each harness starts from an empty context cache; `another` shares it, as one process would.
     const contextCache = newContextCache();
+    const { processCache, ...optionOverrides } = overrides;
+    const cacheOption = processCache === true ? {} : { contextCache };
     const create = (): OllamaProvider =>
       new OllamaProvider({
         baseUrl,
@@ -55,8 +60,8 @@ export function useFakeOllama(): (
         maxRetries: 3,
         testMode: true,
         random: () => 0.5,
-        contextCache,
-        ...overrides,
+        ...cacheOption,
+        ...optionOverrides,
         textProtocolPrompt,
         logger,
         sleep: (ms) => {
