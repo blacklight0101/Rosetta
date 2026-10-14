@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { Worker } from 'node:worker_threads';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { grepLimits } from '../../../../src/infrastructure/files/grep-limits.js';
 import { runGrep } from '../../../../src/infrastructure/files/grep-runner.js';
 
@@ -7,6 +8,16 @@ import { runGrep } from '../../../../src/infrastructure/files/grep-runner.js';
 
 function rows(count: number): string[] {
   return Array.from({ length: count }, () => 'row');
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+/** Every worker the runner subscribes to; a thread that has ended reports `threadId` -1. */
+function trackWorkers(): () => Worker[] {
+  const once = vi.spyOn(Worker.prototype, 'once');
+  return () => [...new Set(once.mock.contexts)];
 }
 
 describe('grep runner', () => {
@@ -24,5 +35,36 @@ describe('grep runner', () => {
     expect(matches).toHaveLength(grepLimits.maxMatches + 1);
     expect(matches.at(-1)).toEqual({ path: 'b.txt', line: 401 });
     expect(matches.some((match) => match.path === 'c.txt')).toBe(false);
+  });
+
+  it('P1-164 a worker that answered ends on its own: the runner never terminates it', async () => {
+    const terminate = vi.spyOn(Worker.prototype, 'terminate');
+
+    const outcome = await runGrep('row', [{ path: 'a.txt', lines: rows(3) }], 10_000);
+
+    expect(outcome.kind).toBe('matches');
+    expect(terminate).not.toHaveBeenCalled();
+  });
+
+  it('P1-164 the answer comes only after the worker thread has ended', async () => {
+    const workers = trackWorkers();
+
+    const outcome = await runGrep('row', [{ path: 'a.txt', lines: rows(3) }], 10_000);
+
+    expect(outcome.kind).toBe('matches');
+    expect(workers()).toHaveLength(1);
+    expect(workers().every((worker) => worker.threadId === -1)).toBe(true);
+  });
+
+  it('P1-164 a timeout resolves only after the terminated worker has ended', async () => {
+    const terminate = vi.spyOn(Worker.prototype, 'terminate');
+    const workers = trackWorkers();
+    const hostile = [{ path: 'a.txt', lines: [`${'a'.repeat(40)}!`] }];
+
+    const outcome = await runGrep('^(a+)+$', hostile, 100);
+
+    expect(outcome).toEqual({ kind: 'timeout' });
+    expect(terminate).toHaveBeenCalledTimes(1);
+    expect(workers().every((worker) => worker.threadId === -1)).toBe(true);
   });
 });
