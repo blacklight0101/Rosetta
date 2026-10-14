@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RNF-003: the secret patterns of the P1-04 card, defined here because the masker has not
 // landed yet. When P1-04 lands, this list is replaced by SecretMasker and its counts per kind.
@@ -91,10 +93,20 @@ describe('.env.example', () => {
     expect(uncommented).toEqual([]);
   });
 
-  it('RF-1305 parses successfully with the configuration schema', async () => {
+  it('RF-1305 parses with the configuration schema once the placeholder key is replaced', async () => {
     const values = parseDotenv(await readExample());
 
-    expect(() => loadEnvironment(values)).not.toThrow();
+    expect(() =>
+      loadEnvironment({ ...values, ROSETTA_SECRET_KEY: fixtureSecret(1) }),
+    ).not.toThrow();
+  });
+
+  it('RF-1305 RNF-003 the placeholder key of the example is refused at start-up', async () => {
+    const values = parseDotenv(await readExample());
+
+    expect(() => loadEnvironment(values)).toThrow(
+      expect.objectContaining({ code: ERROR_CODES.secretKeyKnown }),
+    );
   });
 
   it('RF-1305 RNF-003 contains no value matching a secret pattern', async () => {
