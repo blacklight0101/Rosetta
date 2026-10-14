@@ -1,4 +1,4 @@
-import { access, mkdir, rm } from 'node:fs/promises';
+import { access, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ import { TestDoubles } from '../../../src/presentation/test-doubles.js';
 import { FakeGitHub } from '../../support/fake-github.js';
 import { archiveOfFolder } from '../../support/tree-archive.js';
 import { FIXTURE_SHA, fixtureArchive } from '../../support/snapshot-fixtures.js';
+import { removeWritableTree } from '../../support/writable-temp-root.js';
 import { createDisposableSchema } from './database.js';
 import { createE2eProvider } from './e2e-provider.js';
 import { e2eContactEmail, e2ePort } from './server-config.js';
@@ -100,7 +101,7 @@ async function main(): Promise<void> {
   const port = e2ePort();
   const schema = await createDisposableSchema(databaseUrl, port);
   const dataDir = join(tmpdir(), `rosetta-e2e-${String(port)}`);
-  await rm(dataDir, { recursive: true, force: true });
+  await removeWritableTree(dataDir);
   await mkdir(dataDir, { recursive: true });
   const environment = loadEnvironment({
     DATABASE_URL: schema.url,
@@ -133,7 +134,7 @@ async function main(): Promise<void> {
     void (async () => {
       await application.stop();
       await schema.drop();
-      await rm(dataDir, { recursive: true, force: true });
+      await removeWritableTree(dataDir);
     })();
   };
   process.once('SIGTERM', shutDown);
