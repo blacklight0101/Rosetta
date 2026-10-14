@@ -18,7 +18,6 @@ function runWorker(workerData: unknown): Promise<WorkerRun> {
     let answer: unknown;
     worker.once('message', (message: unknown) => {
       answer = message;
-      void worker.terminate();
     });
     worker.once('error', (cause: unknown) => {
       reject(cause instanceof Error ? cause : new Error(String(cause)));
