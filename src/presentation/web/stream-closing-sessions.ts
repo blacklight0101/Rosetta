@@ -9,7 +9,8 @@ import type { StreamRegistry } from './event-stream.js';
 // RF-1101, P1-160: the session store every use case is given. Ending a session (sign-out) ends the
 // open event streams of that session, and ending every session of a user (an administrator's
 // disable or reset, a password change, a disabled account found at the next request) ends every
-// open stream of that user, so a stream never outlives the session it was opened in.
+// open stream of that user, so a stream never outlives the session it was opened in. The streams
+// end before the store is written, so they end even when that write fails.
 
 export class StreamClosingSessionStore implements SessionStore {
   readonly #inner: SessionStore;
@@ -28,18 +29,16 @@ export class StreamClosingSessionStore implements SessionStore {
     return this.#inner.touch(id, now);
   }
 
-  // RF-1101
-  async end(id: string): Promise<boolean> {
-    const ended = await this.#inner.end(id);
+  // RF-1101: the streams end first, so a failing database never keeps them open.
+  end(id: string): Promise<boolean> {
     this.#streams.endSession(id);
-    return ended;
+    return this.#inner.end(id);
   }
 
   // RF-1101
-  async endAllForUser(userId: string): Promise<number> {
-    const ended = await this.#inner.endAllForUser(userId);
+  endAllForUser(userId: string): Promise<number> {
     this.#streams.endUser(userId);
-    return ended;
+    return this.#inner.endAllForUser(userId);
   }
 
   purgeExpired(now: Date): Promise<number> {
