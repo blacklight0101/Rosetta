@@ -45,7 +45,7 @@ describe('scripts/run-e2e.mjs', () => {
 });
 
 describe('scripts/run-e2e.mjs --shard selection (RNF-005)', () => {
-  const dryRun = { ...withoutDatabase, ROSETTA_E2E_DRY_RUN: '1' };
+  const dryRun = { ...withoutDatabase, ROSETTA_E2E_DRY_RUN: '1', ROSETTA_E2E_DRY_RUN_ACK: '1' };
 
   it('RNF-005 a shard runs exactly the spec files that shards.json gives it', async () => {
     const { stdout } = await run('node', [script, '--shard=2/3'], { env: dryRun });
@@ -75,5 +75,24 @@ describe('scripts/run-e2e.mjs --shard selection (RNF-005)', () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe('scripts/run-e2e.mjs dry run needs an acknowledgement (RNF-005)', () => {
+  it('RNF-005 a dry run without ROSETTA_E2E_DRY_RUN_ACK refuses loudly and runs no tests', async () => {
+    const attempt = run('node', [script, '--shard=1/3'], {
+      env: { ...withoutDatabase, ROSETTA_E2E_DRY_RUN: '1' },
+    });
+
+    await expect(attempt).rejects.toMatchObject({ code: 1 });
+    await expect(attempt).rejects.toThrow(/no tests run/u);
+  });
+
+  it('RNF-005 an acknowledged dry run says it runs no tests', async () => {
+    const { stderr } = await run('node', [script, '--shard=1/3'], {
+      env: { ...withoutDatabase, ROSETTA_E2E_DRY_RUN: '1', ROSETTA_E2E_DRY_RUN_ACK: '1' },
+    });
+
+    expect(stderr).toContain('DRY RUN, no tests run');
   });
 });

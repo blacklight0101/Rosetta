@@ -4,7 +4,8 @@
 // With --ci (the step of `npm run test:ci`) it runs on Linux where a database is configured and
 // otherwise says it was skipped and succeeds; the Windows job has no database service.
 // With --ci and ROSETTA_E2E_OWN_JOB=1 it is skipped too: in CI the sharded e2e jobs run the project.
-// ROSETTA_E2E_DRY_RUN=1 prints the arguments Playwright would get and stops (the tests use it).
+// ROSETTA_E2E_DRY_RUN=1 with ROSETTA_E2E_DRY_RUN_ACK=1 prints the arguments Playwright would get
+// and stops (the tests use it); without the acknowledgement it refuses.
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -58,7 +59,16 @@ if (shardError !== undefined) {
   process.stderr.write(`${shardError.message}\n`);
   process.exitCode = 1;
 } else if (process.env.ROSETTA_E2E_DRY_RUN === '1') {
-  process.stdout.write(`${JSON.stringify(passThrough)}\n`);
+  // Both flags are needed: a stray DRY_RUN variable must not pass as a run that tested nothing.
+  if (process.env.ROSETTA_E2E_DRY_RUN_ACK === '1') {
+    process.stderr.write('DRY RUN, no tests run.\n');
+    process.stdout.write(`${JSON.stringify(passThrough)}\n`);
+  } else {
+    process.stderr.write(
+      'run-e2e: ROSETTA_E2E_DRY_RUN=1 also needs ROSETTA_E2E_DRY_RUN_ACK=1; refusing, no tests run.\n',
+    );
+    process.exitCode = 1;
+  }
 } else if (ci && (ownJob || process.platform !== 'linux' || database === '')) {
   const why = ownJob
     ? 'the e2e jobs of the workflow run them'

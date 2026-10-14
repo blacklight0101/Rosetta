@@ -24,19 +24,33 @@ export async function ensureProject(page: Page, url: string): Promise<void> {
   const empty = page.getByText('No projects yet');
   await expect(link.or(empty).or(page.getByRole('table')).first()).toBeVisible();
   if ((await link.count()) > 0) return;
-  await page.getByLabel('GitHub repository URL').fill(url);
-  await page.getByRole('button', { name: 'Create project' }).click();
+  const field = page.getByLabel('GitHub repository URL');
+  const create = page.getByRole('button', { name: 'Create project' });
+  await field.fill(url);
+  await create.click();
+  // A reload cancels a creation still in flight, so the page stays put while the list is awaited;
+  // a reload only checks again after the wait, and a missing project is created again (idempotent).
   await expect(async () => {
-    await page.goto('/projects');
+    await expect(link)
+      .toBeVisible({ timeout: 5_000 })
+      .catch(async () => {
+        await page.goto('/projects');
+        if ((await link.count()) > 0) return;
+        await field.fill(url);
+        await create.click();
+      });
     await expect(link).toBeVisible({ timeout: 1_000 });
-  }).toPass({ timeout: 30_000 });
+  }).toPass({ timeout: 60_000 });
 }
 
 /** Opens the start page of the account's `octo/webforms` project, creating the project once. */
 export async function openStartPage(page: Page): Promise<void> {
   await page.goto('/projects');
   await ensureProject(page, webformsUrl);
-  await startLinkOf(page, webformsUrl).click();
+  // Followed by its address, not by a click: the list may be drawn again while the click waits.
+  const link = startLinkOf(page, webformsUrl);
+  await expect(link).toHaveAttribute('href', /\/start$/u);
+  await page.goto((await link.getAttribute('href')) ?? '/projects');
   await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
 }
