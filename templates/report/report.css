@@ -240,6 +240,13 @@ td {
   overflow-wrap: anywhere;
 }
 
+/* P1-151: the Cards table breaks its cells at word boundaries only (a word too long for the cell
+   still breaks, rather than widening the table); stacked below 720 px, each cell has the full width. */
+table.cards th,
+table.cards td {
+  overflow-wrap: break-word;
+}
+
 th {
   color: var(--rst-ink-muted);
   font-size: 12px;

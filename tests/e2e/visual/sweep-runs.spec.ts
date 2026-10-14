@@ -12,7 +12,7 @@ import {
 } from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInAs } from '../support/sign-in.js';
-import { expectPageInView } from '../support/sweep.js';
+import { expectNoMidWordBreak, expectPageInView } from '../support/sweep.js';
 
 // RNF-010, RF-010, RF-002, RF-1001, RF-1002, RF-1008, RF-1010, RF-1011, RF-504, RF-506,
 // architecture.md section 17: the visual sweep of the pages of a project and its runs, in all four
@@ -138,6 +138,13 @@ test(
     await page.goto(report);
     await expect(page.getByRole('heading', { name: 'Run report', level: 1 })).toBeVisible();
     await expectPageInView(page, 'static');
+    // P1-151: a card title may carry long words; set one in the Cards table and check it breaks
+    // only at word boundaries, at every width (the phone projects see the narrow cells).
+    await page.evaluate(`(() => {
+      const title = document.querySelector('[aria-label="Cards of the run"] tbody tr td:last-child');
+      if (title !== null) title.textContent = 'Internationalization Authentication CitationInvalid';
+    })()`);
+    await expectNoMidWordBreak(page);
     await page.goto(replay);
     await expect(page.getByRole('heading', { name: 'Run replay', level: 1 })).toBeVisible();
     await expectPageInView(page, 'static');
