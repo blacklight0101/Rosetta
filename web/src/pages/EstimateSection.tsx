@@ -97,14 +97,8 @@ function Warnings({ warnings }: { readonly warnings: readonly CapWarning[] }): J
   );
 }
 
-/**
- * The run cap with its meter, and the confirm threshold beside it (DEC-117). Without an estimate
- * there is no meter, but both fields stay, so a refusal that names one has its field on the page.
- */
-function CapFields(props: {
-  readonly cap: CapField;
-  readonly estimate: RunEstimate | undefined;
-}): JSX.Element {
+/** The run cap with its meter, and the confirm threshold beside it (DEC-117). */
+function CapFields(props: { readonly cap: CapField; readonly estimate: RunEstimate }): JSX.Element {
   const { cap, estimate } = props;
   return (
     <>
@@ -119,7 +113,7 @@ function CapFields(props: {
           announce={false}
           onInput={cap.onInput}
         />
-        {estimate === undefined ? null : <CapMeter estimate={estimate} cap={cap.capMicros} />}
+        <CapMeter estimate={estimate} cap={cap.capMicros} />
       </div>
       <div class="rst-start__threshold">
         <Field
@@ -164,14 +158,7 @@ function Body(props: EstimateSectionProps & { readonly onRetry: () => void }): J
       </>
     );
   }
-  if (estimate.status === 'none') {
-    return (
-      <>
-        <CapFields cap={cap} estimate={undefined} />
-        <p class="rst-settings__note">No estimate yet.</p>
-      </>
-    );
-  }
+  if (estimate.status === 'none') return <p class="rst-settings__note">No estimate yet.</p>;
   return (
     <>
       <CapFields cap={cap} estimate={estimate.estimate} />
