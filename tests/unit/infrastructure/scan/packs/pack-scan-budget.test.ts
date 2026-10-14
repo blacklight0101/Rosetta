@@ -166,8 +166,26 @@ describe('analysis with language packs (parse budget details)', () => {
   });
 });
 
+describe('analysis with language packs (overrun of a pack that cannot stop)', () => {
+  it('RF-110 overruns the budget by at most the file being parsed', async () => {
+    const ticks = new FakeTicks();
+    const { run } = setup(new CostlyPack(ticks, 90), ticks, 100, ['a.tst', 'b.tst', 'c.tst']);
+
+    const result = await run();
+
+    // a runs 0-90; b starts at 90, inside the budget, and runs to 180; c starts past the budget.
+    expect(result.fileLevels.map((level) => level.mapLevel)).toEqual([
+      'symbols',
+      'symbols',
+      'coarse',
+    ]);
+    expect(ticks.now()).toBe(180);
+    expect(ticks.now() - 100).toBeLessThanOrEqual(90);
+  });
+});
+
 describe('analysis with language packs (invalid parse budget)', () => {
-  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1])(
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, 0, -1])(
     'RF-110 uses the default budget when the given one is %s',
     async (totalMs) => {
       const ticks = new FakeTicks();
