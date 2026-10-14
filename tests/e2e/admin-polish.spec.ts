@@ -1,6 +1,7 @@
 import { expect, test } from './support/fixtures.js';
 import { accountRow } from './support/admin-page.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { costAccountFor } from './support/seed-cost.js';
 import { accountFor, seededUser } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
@@ -56,6 +57,19 @@ test('RF-1109 the audit page narrows the events by period and outcome', async ({
   await page.getByLabel('Action').selectOption('key.deleted');
   await expect(page.getByText('No events match these filters in the last 24 hours.')).toBeVisible();
   await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+});
+
+test('RF-1106 the cap banner opens the users page from 80% of the server cap and links to the caps form', async ({
+  context,
+  page,
+}, info) => {
+  await signInAs(context, costAccountFor('cost-admin', info.project.name));
+  await page.goto('/admin/users');
+
+  const banner = page.getByRole('status').filter({ hasText: 'of its monthly cap' });
+  await expect(banner).toContainText(/The server has used (8[5-9]|9\d|100)% of its monthly cap/u);
+  await expect(banner.getByRole('link', { name: 'Review caps' })).toHaveAttribute('href', '#caps');
   await expectNoSeriousViolations(page);
 });
 
