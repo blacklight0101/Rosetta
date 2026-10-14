@@ -205,3 +205,24 @@ it('RNF-002 aborts a request that takes longer than the timeout', async () => {
   });
   expect(result).toMatchObject({ ok: false, error: { status: 0, code: 'RST-2009' } });
 });
+
+it('RNF-008 answers a cancelled code, not an outage, when the caller aborts', async () => {
+  const { fetch } = fakeFetch(
+    (_seen, signal) =>
+      new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => {
+          reject(new DOMException('aborted', 'AbortError'));
+        });
+      }),
+  );
+  const controller = new AbortController();
+  const pending = createApiClient({ fetch }).request({
+    method: 'GET',
+    path: '/api/slow',
+    schema: thing,
+    signal: controller.signal,
+  });
+  controller.abort();
+  const result = await pending;
+  expect(result).toMatchObject({ ok: false, error: { status: 0, code: 'RST-2010' } });
+});

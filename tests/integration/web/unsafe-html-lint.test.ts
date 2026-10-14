@@ -54,6 +54,21 @@ const sinkCases: [string, string][] = [
   ['srcdoc as a JSX attribute', 'export const a = <iframe srcdoc={x} />;'],
   ['srcdoc assignment', 'export function a(el: HTMLIFrameElement, x: string) { el.srcdoc = x; }'],
   ['srcdoc in a props object', 'export const a = h("iframe", { srcdoc: x });'],
+  ['srcDoc as a JSX attribute', 'export const a = <iframe srcDoc={x} />;'],
+  ['srcDoc in a props object', 'export const a = h("iframe", { srcDoc: x });'],
+  ['srcDoc assignment', 'export function a(el: HTMLIFrameElement, x: string) { el.srcDoc = x; }'],
+  [
+    'srcdoc set by setAttribute',
+    'export function a(el: Element, x: string) { el.setAttribute("srcdoc", x); }',
+  ],
+  [
+    'srcDoc set by setAttribute',
+    'export function a(el: Element, x: string) { el.setAttribute("srcDoc", x); }',
+  ],
+  [
+    'a bare parseHTMLUnsafe call',
+    'import { parseHTMLUnsafe } from "./html.js";\nexport function a(x: string) { return parseHTMLUnsafe(x); }',
+  ],
   ['document.write', 'export function a(x: string) { document.write(x); }'],
   [
     'DOMParser',
