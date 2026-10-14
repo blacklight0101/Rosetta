@@ -46,7 +46,7 @@ flowchart LR
 
 | Boundary | Threat (STRIDE) | Control | Requirement |
 |---|---|---|---|
-| TB1 GitHub download | Tampering: hostile archive writes outside the snapshot (path traversal, symbolic or hard link) | entry paths normalised; links refused; extraction in a temporary folder renamed when complete | RF-122, RF-127 |
+| TB1 GitHub download | Tampering: hostile archive writes outside the snapshot (path traversal, symbolic or hard link) | entry paths refused when absolute, with a backslash or drive-letter form, a dot-only segment (`..`, `...`) or a Windows device name (`CON`, `nul.txt`, `COM1`); links, FIFO and device entries skipped; extraction in a temporary folder renamed when complete | RF-122, RF-127 |
 | TB1 | Denial of service: huge archive or millions of entries | size and entry-count limits | RF-127 |
 | TB1 | Spoofing / SSRF: a URL or redirect leads somewhere other than GitHub | https only; host allowlist on every redirect; only `github.com` repository URLs parsed | RF-120, RF-127 |
 | TB2 code to the model | Elevation of privilege: indirect prompt injection in the analysed code steers the agents | tool results in delimited data blocks that end only at the closing line with their own random tag, never in the system prompt; prompts declare them data; read-only tools; citation check in code; caps | RF-145, RF-201, RF-300, RF-422 |
@@ -69,7 +69,7 @@ flowchart LR
 | TB8 | Repudiation: the audit trail is altered | the app role may only insert into `audit_events` and `cost_ledger`; the ledger is kept for the life of the deployment (DEC-110) and audit rows for 365 days (DEC-132), deleted only by the `SECURITY DEFINER` function `purge_audit_events_before`, which refuses a cut-off younger than 365 days on the database clock | data-model.md section 6 |
 | TB6 published report | Information disclosure: secrets or employer material published | masked transcripts; output scan in CI; DEC-03 | RNF-003, DEC-03 |
 | TB7 CI and release | Tampering: compromised dependency or action | lockfile and `npm ci`; actions pinned to a commit SHA; dependency review; CodeQL; gitleaks; SBOM on releases | environments-and-delivery.md sections 6 and 8 |
-| TB7 | Tampering: a vulnerable or altered container image | base image pinned by digest; non-root user; image scanned in CI; images tagged by version and commit in GHCR; secrets never baked in | RF-1300, environments-and-delivery.md |
+| TB7 | Tampering: a vulnerable or altered container image | base image and CI service images pinned by digest (a test fails on an unpinned one); Dependabot watches the Dockerfile after a 14-day cooldown; non-root user; image scanned in CI; images tagged by version and commit in GHCR; secrets never baked in | RF-1300, environments-and-delivery.md |
 | TB7 | Elevation of privilege: shell injection through a pull request title | titles passed through `env:`, never `${{ }}` inside `run:` | environments-and-delivery.md section 6 |
 
 ## 3. OWASP Top 10:2025 mapping
