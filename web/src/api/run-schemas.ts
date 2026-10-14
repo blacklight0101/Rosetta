@@ -14,6 +14,10 @@ export const runSchema = z.looseObject({
   queueState: z.enum(['Queued', 'Running', 'Ended']),
   endState: z.string().nullable(),
   commitSha: z.string().nullable(),
+  /** When the run began; null while it waits in the queue (or if it was stopped there). */
+  startedAt: z.string().nullable().default(null),
+  /** The place of a queued run in the server's queue, from 1; null for any other run. */
+  position: z.number().int().positive().nullable().default(null),
   totals: z.object({
     costMicros: count,
     inputTokens: count,
