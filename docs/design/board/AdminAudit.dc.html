@@ -1,317 +1,97 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Rosetta - audit</title>
-    <script src="./support.js"></script>
-    <link rel="stylesheet" href="./rosetta-tokens.css" />
-  </head>
-  <body>
-    <x-dc>
-      <helmet>
-        <style>
-          body {
-            margin: 0;
-          }
-          .nav a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            height: 36px;
-            padding: 0 12px;
-            border-radius: var(--rst-radius-md);
-            color: var(--rst-ink-soft);
-            text-decoration: none;
-            font-weight: var(--rst-fw-label);
-          }
-          .nav a:hover {
-            background: var(--rst-surface-2);
-            color: var(--rst-ink);
-          }
-          .nav a[aria-current='page'] {
-            background: var(--rst-brand-tint);
-            color: var(--rst-brand);
-          }
-          .nav .grp {
-            margin: 14px 12px 4px;
-            font-size: var(--rst-fs-xs);
-            color: var(--rst-ink-muted);
-          }
-          .card {
-            background: var(--rst-surface);
-            border: 1px solid var(--rst-rule);
-            border-radius: var(--rst-radius-lg);
-            padding: 20px;
-            box-shadow: var(--rst-shadow-1);
-          }
-          .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            height: var(--rst-control-h);
-            padding: 0 12px;
-            border-radius: var(--rst-radius-md);
-            font: inherit;
-            font-weight: var(--rst-fw-label);
-            cursor: pointer;
-            border: 1px solid transparent;
-            white-space: nowrap;
-          }
-          .lbl {
-            font-size: var(--rst-fs-xs);
-            color: var(--rst-ink-muted);
-          }
-          .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            height: 22px;
-            padding: 0 9px;
-            border-radius: var(--rst-radius-pill);
-            font-size: var(--rst-fs-xs);
-            font-weight: var(--rst-fw-label);
-            white-space: nowrap;
-          }
-          table {
-            border-collapse: collapse;
-            width: 100%;
-            min-width: 1000px;
-          }
-          th,
-          td {
-            text-align: left;
-            padding: 9px 10px;
-            border-bottom: 1px solid var(--rst-rule);
-            font-size: var(--rst-fs-sm);
-            white-space: nowrap;
-          }
-          th {
-            font-weight: var(--rst-fw-label);
-            color: var(--rst-ink-muted);
-            font-size: var(--rst-fs-xs);
-            background: var(--rst-surface-2);
-          }
-          .f {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-          }
-          .f label {
-            font-weight: var(--rst-fw-label);
-            font-size: var(--rst-fs-sm);
-          }
-          input,
-          select {
-            height: 36px;
-            padding: 0 10px;
-            border-radius: var(--rst-radius-md);
-            border: 1px solid var(--rst-rule-strong);
-            background: var(--rst-bg);
-            color: var(--rst-ink);
-            font: inherit;
-            min-width: 0;
-          }
-          h1 {
-            margin: 0;
-            font-size: var(--rst-fs-2xl);
-            font-weight: var(--rst-fw-head);
-          }
-        </style>
-      </helmet>
-      <div
-        class="rst-root"
-        data-theme="{{theme}}"
-        style="min-height: 1000px; display: flex; flex-direction: column"
-      >
-        <header
-          style="
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 12px 24px;
-            padding: 12px 24px;
-            background: var(--rst-surface);
-            border-bottom: 1px solid var(--rst-rule);
-          "
-        >
-          <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">Rosetta</div>
-          <div style="flex: 1 1 auto"></div>
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              gap: 14px;
-              padding: 6px 12px;
-              border: 1px solid var(--rst-rule);
-              border-radius: var(--rst-radius-md);
-              background: var(--rst-surface-2);
-            "
-          >
-            <span class="lbl">Server, this month</span
-            ><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head)">$8.20</span
-            ><span class="lbl">of $10.00</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px">
-            <span>BlackLigth</span
-            ><span class="badge" style="background: var(--rst-brand-tint); color: var(--rst-brand)"
-              >admin</span
-            ><a href="SignIn.dc.html">Sign out</a>
-          </div>
-        </header>
-        <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto">
-          <nav
-            class="nav"
-            aria-label="Main"
-            style="
-              flex: 1 1 200px;
-              max-width: 240px;
-              padding: 16px 12px;
-              display: flex;
-              flex-direction: column;
-              gap: 2px;
-              border-right: 1px solid var(--rst-rule);
-              background: var(--rst-surface);
-            "
-          >
-            <a href="Projects.dc.html">Projects</a>
-            <a href="Settings.dc.html">Settings and keys</a>
-            <div class="grp">Administration</div>
-            <a href="AdminUsers.dc.html">Users and caps</a>
-            <a href="AdminAudit.dc.html" aria-current="page">Audit</a>
-          </nav>
-          <main
-            style="
-              flex: 999 1 560px;
-              min-width: 0;
-              padding: 28px 32px;
-              display: flex;
-              flex-direction: column;
-              gap: 20px;
-              max-width: 1240px;
-            "
-          >
-            <div>
-              <h1>Audit</h1>
-              <div style="color: var(--rst-ink-muted); margin-top: 4px">
-                Sign-ins, account and key changes, and refused requests from the last 30 days.
-                Passwords and keys are never recorded.
-              </div>
-            </div>
-            <section
-              class="card"
-              aria-label="Filters"
-              style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end"
-            >
-              <div class="f" style="flex: 1 1 180px">
-                <label for="fu">User</label
-                ><select id="fu">
-                  <option>All users</option>
-                  <option>teacher</option>
-                  <option>ana.ruiz</option>
-                </select>
-              </div>
-              <div class="f" style="flex: 1 1 200px">
-                <label for="fa">Action</label
-                ><select id="fa">
-                  <option>All actions</option>
-                  <option>Sign-in</option>
-                  <option>Account change</option>
-                  <option>Key change</option>
-                  <option>Refused request</option>
-                </select>
-              </div>
-              <div class="f" style="flex: 1 1 200px">
-                <label for="fd">Period</label
-                ><select id="fd">
-                  <option>Last 24 hours</option>
-                  <option>Last 7 days</option>
-                  <option>Last 30 days</option>
-                </select>
-              </div>
-              <div class="f" style="flex: 1 1 160px">
-                <label for="fo">Outcome</label
-                ><select id="fo">
-                  <option>All</option>
-                  <option>ok</option>
-                  <option>refused</option>
-                  <option>failed</option>
-                </select>
-              </div>
-              <button
-                class="btn"
-                type="button"
-                style="
-                  border-color: var(--rst-rule-strong);
-                  color: var(--rst-ink);
-                  background: transparent;
-                  height: 36px;
-                "
-              >
-                Clear filters
-              </button>
-            </section>
-            <section class="card" aria-label="Audit events" style="padding: 0">
-              <div style="overflow-x: auto">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Time</th>
-                      <th>Actor</th>
-                      <th>Action</th>
-                      <th>Target</th>
-                      <th>IP address</th>
-                      <th>Outcome</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
-                      <tr>
-                        <td class="rst-mono">{{r.t}}</td>
-                        <td>{{r.actor}}</td>
-                        <td class="rst-mono">{{r.action}}</td>
-                        <td>{{r.target}}</td>
-                        <td class="rst-mono">{{r.ip}}</td>
-                        <td><span class="badge" style="{{r.style}}">{{r.outcome}}</span></td>
-                      </tr>
-                    </sc-for>
-                  </tbody>
-                </table>
-              </div>
-              <div class="lbl" style="padding: 12px 16px">
-                Showing 10 of 214 events · newest first
-              </div>
-            </section>
-          </main>
+<head>
+<meta charset="utf-8">
+<title>Rosetta - audit</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rosetta-tokens.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:var(--rst-radius-md);color:var(--rst-ink-soft);text-decoration:none;font-weight:var(--rst-fw-label)}
+.nav a:hover{background:var(--rst-surface-2);color:var(--rst-ink)}
+.nav a[aria-current="page"]{background:var(--rst-brand-tint);color:var(--rst-brand)}
+.nav .grp{margin:14px 12px 4px;font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.card{background:var(--rst-surface);border:1px solid var(--rst-rule);border-radius:var(--rst-radius-lg);padding:20px;box-shadow:var(--rst-shadow-1)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:var(--rst-control-h);padding:0 12px;border-radius:var(--rst-radius-md);font:inherit;font-weight:var(--rst-fw-label);cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.lbl{font-size:var(--rst-fs-xs);color:var(--rst-ink-muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--rst-radius-pill);font-size:var(--rst-fs-xs);font-weight:var(--rst-fw-label);white-space:nowrap}
+table{border-collapse:collapse;width:100%;min-width:1000px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rst-rule);font-size:var(--rst-fs-sm);white-space:nowrap}
+th{font-weight:var(--rst-fw-label);color:var(--rst-ink-muted);font-size:var(--rst-fs-xs);background:var(--rst-surface-2)}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-weight:var(--rst-fw-label);font-size:var(--rst-fs-sm)}
+input,select{height:36px;padding:0 10px;border-radius:var(--rst-radius-md);border:1px solid var(--rst-rule-strong);background:var(--rst-bg);color:var(--rst-ink);font:inherit;min-width:0}
+h1{margin:0;font-size:var(--rst-fs-2xl);font-weight:var(--rst-fw-head)}
+</style>
+</helmet>
+<div class="rst-root" data-theme="{{theme}}" style="min-height: 1000px; display: flex; flex-direction: column;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 12px 24px; background: var(--rst-surface); border-bottom: 1px solid var(--rst-rule);">
+    <div style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Rosetta</div>
+    <div style="flex: 1 1 auto;"></div>
+    <div style="display: flex; align-items: center; gap: 14px; padding: 6px 12px; border: 1px solid var(--rst-rule); border-radius: var(--rst-radius-md); background: var(--rst-surface-2);"><span class="lbl">Server, this month</span><span style="font-size: var(--rst-fs-lg); font-weight: var(--rst-fw-head);">$8.20</span><span class="lbl">of $10.00</span></div>
+    <div style="display: flex; align-items: center; gap: 10px;"><span>BlackLigth</span><span class="badge" style="background: var(--rst-brand-tint); color: var(--rst-brand);">admin</span><a href="SignIn.dc.html">Sign out</a></div>
+  </header>
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto;">
+    <nav class="nav" aria-label="Main" style="flex: 1 1 200px; max-width: 240px; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--rst-rule); background: var(--rst-surface);">
+      <a href="Projects.dc.html">Projects</a>
+      <a href="Settings.dc.html">Settings and keys</a>
+      <div class="grp">Administration</div>
+      <a href="AdminUsers.dc.html">Users and caps</a>
+      <a href="AdminAudit.dc.html" aria-current="page">Audit</a>
+    </nav>
+    <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; max-width: 1240px;">
+      <div><h1>Audit</h1><div style="color: var(--rst-ink-muted); margin-top: 4px;">Sign-ins, account and key changes, and refused requests from the last 30 days. Passwords and keys are never recorded.</div></div>
+      <section class="card" aria-label="Filters" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+        <div class="f" style="flex: 1 1 180px;"><label for="fu">User</label><select id="fu"><option>All users</option><option>teacher</option><option>ana.ruiz</option></select></div>
+        <div class="f" style="flex: 1 1 200px;"><label for="fa">Action</label><select id="fa"><option>All actions</option><option>Sign-in</option><option>Account change</option><option>Key change</option><option>Refused request</option></select></div>
+        <div class="f" style="flex: 1 1 200px;"><label for="fd">Period</label><select id="fd"><option>Last 24 hours</option><option>Last 7 days</option><option>Last 30 days</option></select></div>
+        <div class="f" style="flex: 1 1 160px;"><label for="fo">Outcome</label><select id="fo"><option>All</option><option>ok</option><option>refused</option><option>failed</option></select></div>
+        <button class="btn" type="button" style="border-color: var(--rst-rule-strong); color: var(--rst-ink); background: transparent; height: 36px;">Clear filters</button>
+      </section>
+      <section class="card" aria-label="Audit events" style="padding: 0;">
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>IP address</th><th>Outcome</th></tr></thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+                <tr><td class="rst-mono">{{r.t}}</td><td>{{r.actor}}</td><td class="rst-mono">{{r.action}}</td><td>{{r.target}}</td><td class="rst-mono">{{r.ip}}</td><td><span class="badge" style="{{r.style}}">{{r.outcome}}</span></td></tr>
+              </sc-for>
+            </tbody>
+          </table>
         </div>
-      </div>
-    </x-dc>
-    <script
-      type="text/x-dc"
-      data-dc-script
-      data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1000}}'
-    >
-      class Component extends DCLogic {
-      renderVals() {
-      const ok = 'background: var(--rst-ok-bg); color: var(--rst-ok-ink);';
-      const ref = 'background: var(--rst-danger-bg); color: var(--rst-danger-ink);';
-      const fail = 'background: var(--rst-warn-bg); color: var(--rst-warn-ink);';
-      return {
-      theme: this.props.theme ?? 'light',
-      rows: [
-      { t: 'Oct 11 14:06:51', actor: 'ana.ruiz', action: 'key.saved', target: 'provider openai', ip: '83.44.12.9', style: ok, outcome: 'ok' },
-      { t: 'Oct 11 14:01:02', actor: 'ana.ruiz', action: 'auth.sign_in', target: '-', ip: '83.44.12.9', style: ok, outcome: 'ok' },
-      { t: 'Oct 11 13:58:41', actor: 'system', action: 'auth.locked', target: 'user test3 · 15 min', ip: '185.220.101.4', style: ref, outcome: 'refused' },
-      { t: 'Oct 11 13:58:40', actor: 'anonymous', action: 'auth.sign_in', target: 'user test3', ip: '185.220.101.4', style: fail, outcome: 'failed' },
-      { t: 'Oct 11 13:52:13', actor: 'ana.ruiz', action: 'request.refused', target: 'GET /api/admin/users · role user', ip: '83.44.12.9', style: ref, outcome: 'refused' },
-      { t: 'Oct 11 13:44:09', actor: 'blacklight', action: 'admin.workspace_opened', target: 'user ana.ruiz', ip: '127.0.0.1', style: ok, outcome: 'ok' },
-      { t: 'Oct 11 13:40:27', actor: 'blacklight', action: 'user.created', target: 'user teacher', ip: '127.0.0.1', style: ok, outcome: 'ok' },
-      { t: 'Oct 11 13:40:01', actor: 'blacklight', action: 'caps.changed', target: 'server month $10.00', ip: '127.0.0.1', style: ok, outcome: 'ok' },
-      { t: 'Oct 11 13:39:30', actor: 'blacklight', action: 'auth.sign_in', target: '-', ip: '127.0.0.1', style: ok, outcome: 'ok' },
-      { t: 'Oct 11 12:15:44', actor: 'anonymous', action: 'request.refused', target: 'POST /api/projects · bad Origin', ip: '45.83.64.1', style: ref, outcome: 'refused' }
-      ]
-      };
-      }
-      }
-    </script>
-  </body>
+        <div class="lbl" style="padding: 12px 16px;">Showing 10 of 214 events · newest first</div>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+const ok = 'background: var(--rst-ok-bg); color: var(--rst-ok-ink);';
+const ref = 'background: var(--rst-danger-bg); color: var(--rst-danger-ink);';
+const fail = 'background: var(--rst-warn-bg); color: var(--rst-warn-ink);';
+return {
+theme: this.props.theme ?? 'light',
+rows: [
+{ t: 'Oct 11 14:06:51', actor: 'ana.ruiz', action: 'key.saved', target: 'provider openai', ip: '83.44.12.9', style: ok, outcome: 'ok' },
+{ t: 'Oct 11 14:01:02', actor: 'ana.ruiz', action: 'auth.sign_in', target: '-', ip: '83.44.12.9', style: ok, outcome: 'ok' },
+{ t: 'Oct 11 13:58:41', actor: 'system', action: 'auth.locked', target: 'user test3 · 15 min', ip: '185.220.101.4', style: ref, outcome: 'refused' },
+{ t: 'Oct 11 13:58:40', actor: 'anonymous', action: 'auth.sign_in', target: 'user test3', ip: '185.220.101.4', style: fail, outcome: 'failed' },
+{ t: 'Oct 11 13:52:13', actor: 'ana.ruiz', action: 'request.refused', target: 'GET /api/admin/users · role user', ip: '83.44.12.9', style: ref, outcome: 'refused' },
+{ t: 'Oct 11 13:44:09', actor: 'blacklight', action: 'admin.workspace_opened', target: 'user ana.ruiz', ip: '127.0.0.1', style: ok, outcome: 'ok' },
+{ t: 'Oct 11 13:40:27', actor: 'blacklight', action: 'user.created', target: 'user teacher', ip: '127.0.0.1', style: ok, outcome: 'ok' },
+{ t: 'Oct 11 13:40:01', actor: 'blacklight', action: 'caps.changed', target: 'server month $10.00', ip: '127.0.0.1', style: ok, outcome: 'ok' },
+{ t: 'Oct 11 13:39:30', actor: 'blacklight', action: 'auth.sign_in', target: '-', ip: '127.0.0.1', style: ok, outcome: 'ok' },
+{ t: 'Oct 11 12:15:44', actor: 'anonymous', action: 'request.refused', target: 'POST /api/projects · bad Origin', ip: '45.83.64.1', style: ref, outcome: 'refused' }
+]
+};
+}
+}
+</script>
+</body>
 </html>
