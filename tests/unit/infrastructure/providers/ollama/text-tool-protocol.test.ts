@@ -125,8 +125,24 @@ describe('rendering the protocol', () => {
 
   it('RF-205 a tool result is rendered as a tool_result block with its call id', () => {
     expect(toolResultBlock('call-1', 'line 1\nline 2')).toBe(
-      `${fence}tool_result\n{"id":"call-1","content":"line 1\\nline 2"}\n${fence}`,
+      `${fence}tool_result\nid: call-1\ncontent:\nline 1\nline 2\n${fence}`,
     );
+  });
+
+  it('RF-145 the lines of a data-block frame stay lines in the tool_result block', () => {
+    const frame = '<<<ROSETTA-DATA tag {"a":1}>>>\nclass A {}\n<<<END ROSETTA-DATA tag>>>';
+
+    const lines = toolResultBlock('call-1', frame).split('\n');
+
+    expect(lines).toContain('<<<END ROSETTA-DATA tag>>>');
+    expect(lines).toContain('<<<ROSETTA-DATA tag {"a":1}>>>');
+  });
+
+  it('RF-205 a result holding backticks cannot close the tool_result block early', () => {
+    const block = toolResultBlock('call-1', `before\n${fence}\nafter`);
+
+    expect(block.startsWith('````tool_result\n')).toBe(true);
+    expect(block.endsWith('\n````')).toBe(true);
   });
 
   it('RF-205 the system prompt gets the protocol with the tool definitions', () => {

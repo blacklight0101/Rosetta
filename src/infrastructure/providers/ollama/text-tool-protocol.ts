@@ -117,10 +117,22 @@ export function toolCallBlock(call: ToolCall): string {
   return `${fence}${toolCallLabel}\n${json}\n${fence}`;
 }
 
-/** A tool result, sent back as a user message. */
+/** The longest run of backticks in the text. */
+function longestBacktickRun(text: string): number {
+  let longest = 0;
+  for (const run of text.matchAll(/`+/g)) longest = Math.max(longest, run[0].length);
+  return longest;
+}
+
+/**
+ * A tool result, sent back as a user message. The content goes in as it is, after an `id:` line
+ * and a `content:` line, so the lines of its data-block frame (RF-145) reach the model as lines
+ * and not as one JSON string with escaped line breaks. The fence is longer than any backtick run
+ * of the content, so repository text cannot close the block early.
+ */
 export function toolResultBlock(toolCallId: string, content: string): string {
-  const json = JSON.stringify({ id: toolCallId, content });
-  return `${fence}${toolResultLabel}\n${json}\n${fence}`;
+  const resultFence = '`'.repeat(Math.max(fence.length, longestBacktickRun(content) + 1));
+  return `${resultFence}${toolResultLabel}\nid: ${toolCallId}\ncontent:\n${content}\n${resultFence}`;
 }
 
 /** The system prompt with the protocol and the tool definitions appended. */
