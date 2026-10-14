@@ -128,6 +128,37 @@ it('RF-1106 saves the caps in micro-dollars from dollars', async () => {
   });
 });
 
+it('RF-1106 a negative run cap goes to the server and shows its code next to the field', async () => {
+  const { calls } = render({
+    'PUT /api/admin/caps': failure(422, 'RST-1005', [{ field: 'runMicros', code: 'RST-1003' }]),
+  });
+  await screen.findByText('ana.ruiz');
+  const caps = within(screen.getByRole('region', { name: 'Caps on server keys' }));
+
+  fireEvent.input(caps.getByLabelText('Per run (USD)'), { target: { value: '-1' } });
+  fireEvent.click(caps.getByRole('button', { name: 'Save caps' }));
+
+  const error = await screen.findByTestId('field-error');
+  expect(error.textContent).toContain('RST-1003');
+  expect(calls.find((call) => call.method === 'PUT')?.body).toEqual({
+    runMicros: '-1000000',
+    userDayMicros: '1000000',
+    serverMonthMicros: '10000000',
+  });
+});
+
+it('DEC-117 a run cap above 100 USD is refused on its field without a request', async () => {
+  const { calls } = render();
+  await screen.findByText('ana.ruiz');
+  const caps = within(screen.getByRole('region', { name: 'Caps on server keys' }));
+
+  fireEvent.input(caps.getByLabelText('Per run (USD)'), { target: { value: '100.5' } });
+  fireEvent.click(caps.getByRole('button', { name: 'Save caps' }));
+
+  expect(await screen.findByText('Enter an amount in dollars, for example 0.50.')).toBeTruthy();
+  expect(calls.some((call) => call.method === 'PUT')).toBe(false);
+});
+
 it('RF-1106 at 82% of the monthly cap shows the meter and leaves the banner to the shell slot', async () => {
   render({
     'GET /api/admin/caps': json(200, cap('500000', '1000000', '10000000', spent('8200000'))),

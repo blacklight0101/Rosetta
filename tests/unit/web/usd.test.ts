@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dollarsToMicros } from '../../../web/src/lib/usd.js';
+import { dollarsToMicros, RUN_COST_MAX_MICROS } from '../../../web/src/lib/usd.js';
 
 // DEC-107, DEC-117, RF-1106: the web dollar parser. Thousands separators are accepted only in
 // groups of three; anything else with a comma is refused. Positive amounts above the run cost
@@ -35,11 +35,15 @@ describe('DEC-107 decimals', () => {
 
 describe('DEC-117 run cost range', () => {
   it('DEC-117 accepts the top of the range', () => {
-    expect(dollarsToMicros('100')).toBe('100000000');
+    expect(dollarsToMicros('100', RUN_COST_MAX_MICROS)).toBe('100000000');
   });
 
   it.each(['100.000001', '1,000', '100.5'])('DEC-117 refuses %j above 100 USD', (text) => {
-    expect(dollarsToMicros(text)).toBeUndefined();
+    expect(dollarsToMicros(text, RUN_COST_MAX_MICROS)).toBeUndefined();
+  });
+
+  it('DEC-107 leaves a cap without a range unbounded above 100 USD', () => {
+    expect(dollarsToMicros('12,000.10')).toBe('12000100000');
   });
 });
 
