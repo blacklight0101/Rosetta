@@ -1,6 +1,7 @@
 import type {
   AccountUsage,
   CurrencyTotal,
+  UserSpend,
   UserUsage,
 } from '../../application/ports/account-usage.js';
 import type { EpochMs } from '../../domain/accounts/user.js';
@@ -51,6 +52,10 @@ export class MemoryAccountUsage implements AccountUsage {
       usage.set(userId, { projects: projects.get(userId) ?? 0, spent: totals.sort(byCurrency) });
     }
     return Promise.resolve(usage);
+  }
+
+  userDay(): Promise<UserSpend> {
+    return Promise.resolve({ server: [], own: [] });
   }
 
   // RF-1106

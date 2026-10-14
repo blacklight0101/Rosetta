@@ -4,6 +4,7 @@ import { failure, json } from './fake-api.js';
 import {
   cloudEstimate,
   estimatePath,
+  limitsAnswer,
   localEstimate,
   noCodeMap,
   ownKeyEstimate,
@@ -222,7 +223,7 @@ it('RF-1001 the warning follows the cap field and the meter shows the likely cos
 it('RF-1001 a likely cost above the daily cap on the own keys warns and names that cap', async () => {
   renderStart({
     [`GET ${estimatePath}`]: json(200, ownKeyEstimate),
-    'GET /api/account/daily-cap': json(200, { ownDailyCapMicros: '300000' }),
+    'GET /api/account/limits': limitsAnswer({ ownDay: { cap: '300000', spent: '0' } }),
   });
   await ready();
 

@@ -4,18 +4,18 @@ import { json, renderPage, type Answer, type RenderedPage } from './fake-api.js'
 import {
   estimatePath,
   localEstimate,
-  noDailyCap,
   projectAnswer,
   projectPath,
+  roomyLimits,
 } from './start-run-fixtures.js';
 
 // The start page under test (P1-34): the real page over the fake API of fake-api.tsx, with the
-// answers every test needs (a project, a local estimate, no daily cap) unless it replaces them.
+// answers every test needs (a project, a local estimate, nothing spent) unless it replaces them.
 
 const baseAnswers: Readonly<Record<string, Answer>> = {
   [`GET ${projectPath}`]: projectAnswer,
   [`GET ${estimatePath}`]: json(200, localEstimate),
-  'GET /api/account/daily-cap': noDailyCap,
+  'GET /api/account/limits': roomyLimits,
 };
 
 export const renderStart = (answers: Readonly<Record<string, Answer>> = {}): RenderedPage =>

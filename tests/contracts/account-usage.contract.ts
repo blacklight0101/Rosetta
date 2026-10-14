@@ -73,6 +73,7 @@ export function accountUsageContract(
     expect(usage.has(idle)).toBe(false);
   });
   serverMonthContract(name, fresh);
+  userDayContract(name, fresh);
 }
 
 function serverMonthContract(name: string, fresh: () => Promise<AccountUsageFixture>): void {
@@ -100,5 +101,37 @@ function serverMonthContract(name: string, fresh: () => Promise<AccountUsageFixt
     await fixture.addCost(amy, { at: atMinutes(5), costMicros: 90_000n, keySource: 'user' });
 
     expect(await fixture.usage.serverMonth(monthStart.getTime())).toEqual([]);
+  });
+}
+
+function userDayContract(name: string, fresh: () => Promise<AccountUsageFixture>): void {
+  it(`RF-1106 ${name} totals one user's spend from the instant on, split by who paid, per currency`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    const bob = await fixture.addUser();
+    await fixture.addCost(amy, { at: atMinutes(5), costMicros: 400n, keySource: 'server' });
+    await fixture.addCost(amy, { at: atMinutes(6), costMicros: 100n, keySource: 'server' });
+    await fixture.addCost(amy, { at: atMinutes(7), costMicros: 90_000n, keySource: 'user' });
+    await fixture.addCost(amy, { at: atMinutes(8), costMicros: 7n, currency: 'EUR' });
+    await fixture.addCost(amy, { at: atMinutes(-5), costMicros: 800n, keySource: 'server' });
+    await fixture.addCost(bob, { at: atMinutes(9), costMicros: 5_000n, keySource: 'server' });
+
+    const spend = await fixture.usage.userDay(amy, monthStart.getTime());
+
+    expect(spend).toEqual({
+      server: [
+        { currency: 'EUR', costMicros: 7n },
+        { currency: 'USD', costMicros: 500n },
+      ],
+      own: [{ currency: 'USD', costMicros: 90_000n }],
+    });
+  });
+
+  it(`RF-1105 ${name} totals nothing for a user without spend since the instant`, async () => {
+    const fixture = await fresh();
+    const amy = await fixture.addUser();
+    await fixture.addCost(amy, { at: atMinutes(-60), costMicros: 10n });
+
+    expect(await fixture.usage.userDay(amy, monthStart.getTime())).toEqual({ server: [], own: [] });
   });
 }

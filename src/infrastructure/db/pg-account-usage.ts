@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type {
   AccountUsage,
   CurrencyTotal,
+  UserSpend,
   UserUsage,
 } from '../../application/ports/account-usage.js';
 import type { EpochMs } from '../../domain/accounts/user.js';
@@ -68,6 +69,10 @@ export class PgAccountUsage implements AccountUsage {
       usage.set(userId, { projects: projects.get(userId) ?? 0, spent: spent.get(userId) ?? [] });
     }
     return usage;
+  }
+
+  userDay(): Promise<UserSpend> {
+    return Promise.resolve({ server: [], own: [] });
   }
 
   // RF-1106
