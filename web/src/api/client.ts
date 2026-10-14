@@ -59,8 +59,10 @@ const csrfHeader = 'x-csrf-token';
 const defaultTimeoutMs = 15_000;
 /** RST-2006 is the catalogue's "unexpected error"; the wording is the client's own. */
 const unexpectedCode = 'RST-2006';
-/** RST-2009: the client could not reach Rosetta at all (a network failure, a timeout or an abort). */
+/** RST-2009: the client could not reach Rosetta at all (a network failure or a timeout). */
 const unreachableCode = 'RST-2009';
+/** RST-2010: the caller cancelled the request through its own AbortSignal; not an outage. */
+const cancelledCode = 'RST-2010';
 
 function failure(
   status: number,
@@ -80,6 +82,13 @@ const unreachable = (): ApiResult<never> =>
     unreachableCode,
     'Rosetta could not be reached.',
     'Check your connection and try again.',
+  );
+const cancelled = (): ApiResult<never> =>
+  failure(
+    0,
+    cancelledCode,
+    'The request was cancelled before Rosetta answered.',
+    'Try the action again.',
   );
 const unreadable = (status: number): ApiResult<never> =>
   unexpected(
@@ -155,7 +164,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
         request.onStatus?.(response.status);
         return await parseAnswer(response, request.schema);
       } catch {
-        return unreachable();
+        return request.signal?.aborted === true ? cancelled() : unreachable();
       }
     },
   };

@@ -43,6 +43,10 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'Rosetta could not be reached.',
     nextStep: 'Check your connection and try again.',
   },
+  'RST-2010': {
+    message: 'The request was cancelled before Rosetta answered.',
+    nextStep: 'Try the action again.',
+  },
   'RST-2008': {
     message: 'The security token of the request is missing or no longer valid.',
     nextStep: 'Reload the page and try again.',
