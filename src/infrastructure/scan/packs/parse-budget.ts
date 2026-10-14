@@ -4,11 +4,16 @@ import { performance } from 'node:perf_hooks';
 // Once it is spent, no further file goes to a pack, and a pack that can stop part-way is told to
 // stop through `PackFile.shouldStop`; a pack that cannot overruns it by at most one file.
 
-/** The default total parse time of one scan: two minutes. */
-const defaultParseBudgetMs = 120_000;
+/** The default total parse time of one scan: two minutes (`ROSETTA_SCAN_PARSE_BUDGET_MS`). */
+export const defaultParseBudgetMs = 120_000;
+/** The largest budget the configuration accepts: one hour. */
+export const maxParseBudgetMs = 3_600_000;
 
 export interface ParseBudget {
-  /** The total milliseconds the packs may spend on one scan; not finite or negative means the default. */
+  /**
+   * The total milliseconds the packs may spend on one scan. A value that is not finite or not
+   * positive means the default: zero or a negative value must never mean "already spent".
+   */
   readonly totalMs: number;
   /** A monotonic clock in milliseconds; `performance.now` when absent. Tests pass a fake one. */
   readonly now?: () => number;
@@ -22,8 +27,8 @@ export class ParseTimer {
   private startedAt: number | undefined;
 
   constructor(budget: ParseBudget = { totalMs: defaultParseBudgetMs }) {
-    // NaN would never trip and a negative value would skip every file: both fall back to the default.
-    const valid = Number.isFinite(budget.totalMs) && budget.totalMs >= 0;
+    // NaN would never trip, a negative or zero value would skip every file: all fall back to the default.
+    const valid = Number.isFinite(budget.totalMs) && budget.totalMs > 0;
     this.totalMs = valid ? budget.totalMs : defaultParseBudgetMs;
     this.now = budget.now ?? (() => performance.now());
   }
