@@ -24,6 +24,8 @@ import { SESSION_COOKIE } from './session-cookies.js';
 // RF-1009, RF-1101, RF-1102, RF-1109, DEC-112: the request hooks, in this order.
 // 1. Origin: a state-changing request whose `Origin` is not the public URL's origin (or is
 //    missing) is refused with 403 RST-2007; this also protects sign-in, which has no session yet.
+//    The refusal is audited with the actor of a valid session cookie (P1-160); a cookie that is
+//    unknown, expired or of a disabled account, or a lookup that fails, records none.
 // 2. Session: the `__Host-rosetta_session` cookie becomes `request.signedIn` (or null). A public
 //    route skips the lookup unless it reads the session (`readsSession`, the landing page), so
 //    /healthz still answers 503 with a cookie while the database is down (RF-1303); if that
@@ -144,6 +146,24 @@ async function lookUp(
   }
 }
 
+/**
+ * RF-1109, P1-160: the session of a request refused for its `Origin`, only to name its actor in the
+ * audit row. A lookup that fails counts as no session, so the refusal still answers 403.
+ */
+async function refusedSession(
+  resolveSession: ResolveSession,
+  request: FastifyRequest,
+): Promise<SignedInSession | null> {
+  const sessionId = request.cookies[SESSION_COOKIE];
+  if (sessionId === undefined) return null;
+  try {
+    return (await resolveSession.execute(sessionId)) ?? null;
+  } catch {
+    // The request is refused either way; the audit row then has no actor.
+    return null;
+  }
+}
+
 // RF-1009
 export function registerAccessHooks(server: FastifyInstance, options: AccessHookOptions): void {
   const { resolveSession, refusals, logger } = options;
@@ -152,6 +172,7 @@ export function registerAccessHooks(server: FastifyInstance, options: AccessHook
 
   server.addHook('onRequest', async (request) => {
     if (!isStateChanging(request) || request.headers.origin === origin) return;
+    request.signedIn = await refusedSession(resolveSession, request);
     await refuse(refusals, request, 'origin');
     throw new RosettaError(ERROR_CODES.originRefused);
   });
