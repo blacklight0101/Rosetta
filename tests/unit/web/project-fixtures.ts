@@ -61,6 +61,7 @@ export function projectOf(
     ref: '',
     subpath: '',
     settings: templateSettings(),
+    settingsVersion: 1,
     createdAt: '2026-10-12T09:30:00.000Z',
     updatedAt: '2026-10-12T09:30:00.000Z',
     ...overrides,

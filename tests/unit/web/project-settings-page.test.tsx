@@ -96,6 +96,7 @@ it('RF-002 saves the edited document whole, with the CSRF token, and says so', a
     method: 'PUT',
     path: settingsRoute,
     csrf: 'csrf-0',
+    ifMatch: '"1"',
     body: expected,
   });
 });
