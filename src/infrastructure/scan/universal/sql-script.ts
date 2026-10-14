@@ -97,29 +97,73 @@ function closedByLaterEnd(lines: readonly string[], index: number): boolean {
   return false;
 }
 
+/** The text a key line is replaced with: the marker the SecretMasker writes for a private key. */
+const keyLineMarker = '[MASKED:private-key]';
+
+/** Where the script is cut, and which lines are key text (see `keySpans`). */
+interface KeySpans {
+  readonly cuts: readonly number[];
+  readonly keyLines: ReadonlySet<number>;
+}
+
 /**
- * RF-141, RNF-003: where the script is cut before masking. The masker masks a BEGIN marker with no
- * END after it to the end of its text, which would hide every later statement (a comment that only
- * names the marker is enough). Such a stray marker, one whose next key delimiter is another BEGIN or
- * none, opens a span that is bounded at the next line that starts a statement or at the next BEGIN.
- * A key body or its header lines never start with a SQL verb followed by a space and more text.
- * A marker whose next delimiter is its own END is closed by it and is left whole to the masker, so a
- * statement-looking line inside a complete key block never splits the block. Everything before a
- * cut is still masked. A stray marker before a later complete block is cut before that block, so
- * the statements between them are kept.
+ * RF-141, RNF-003: where the script is cut before masking, and which lines are key text. The masker
+ * masks a BEGIN marker with no END after it to the end of its text, which would hide every later
+ * statement (a comment that only names the marker is enough). A stray marker is one whose next key
+ * delimiter is another BEGIN or none. Its span starts at the next statement line, or at a BEGIN that
+ * is itself stray, and ends at the next BEGIN or END line. Inside a span a statement line is kept and
+ * every other non-blank line is key text, so a key body never reaches a statement, also when a
+ * statement-looking line sits between two markers. A marker whose next delimiter is its own END is
+ * closed by it and is left whole to the masker, so a statement-looking line inside a complete key
+ * block never splits the block. A stray marker before a later complete block keeps the statements
+ * between them.
  */
-function cutsAfterOpenKeys(lines: readonly string[]): readonly number[] {
-  const cuts: number[] = [];
-  let open = false;
+/** Where the scan stands: a stray marker still open (not cut yet), or a span after a cut. */
+interface SpanState {
+  readonly stray: boolean;
+  readonly span: boolean;
+}
+
+const noSpan: SpanState = { stray: false, span: false };
+
+/** The state after a BEGIN line that leaves a key open. A BEGIN that ends an open marker or span is a cut. */
+/** The cuts and key lines found so far. */
+interface Spans {
+  readonly cuts: number[];
+  readonly keyLines: Set<number>;
+}
+
+function afterBegin(
+  lines: readonly string[],
+  index: number,
+  state: SpanState,
+  spans: Spans,
+): SpanState {
+  const cut = state.stray || state.span;
+  if (cut) spans.cuts.push(index);
+  const stray = !closedByLaterEnd(lines, index);
+  const span = cut && stray;
+  if (span) spans.keyLines.add(index);
+  return { stray, span };
+}
+
+function keySpans(lines: readonly string[]): KeySpans {
+  const spans: Spans = { cuts: [], keyLines: new Set<number>() };
+  let state = noSpan;
   for (let index = 0; index < lines.length; index += 1) {
     const line = cutLine(lines[index] ?? '');
-    if (open && (startsStatement(line) || leavesKeyOpen(line))) {
-      cuts.push(index);
-      open = false;
+    if (leavesKeyOpen(line)) {
+      state = afterBegin(lines, index, state, spans);
+    } else if (keyDelimiter.test(line)) {
+      state = noSpan;
+    } else if (state.span) {
+      if (line.trim() !== '' && !startsStatement(line)) spans.keyLines.add(index);
+    } else if (state.stray && startsStatement(line)) {
+      spans.cuts.push(index);
+      state = { stray: false, span: true };
     }
-    if (!open) open = leavesKeyOpen(line) && !closedByLaterEnd(lines, index);
   }
-  return cuts;
+  return { cuts: spans.cuts, keyLines: spans.keyLines };
 }
 
 /**
@@ -128,10 +172,12 @@ function cutsAfterOpenKeys(lines: readonly string[]): readonly number[] {
  * opens a block comment). Masking keeps the line breaks of a block, so line numbers do not move.
  */
 function maskedLines(lines: readonly string[], masker: TextMasker): readonly string[] {
+  const { cuts, keyLines } = keySpans(lines);
+  const text = lines.map((line, index) => (keyLines.has(index) ? keyLineMarker : line));
   const masked: string[] = [];
   let start = 0;
-  for (const end of [...cutsAfterOpenKeys(lines), lines.length]) {
-    masked.push(...masker.mask(lines.slice(start, end).join('\n')).text.split('\n'));
+  for (const end of [...cuts, text.length]) {
+    masked.push(...masker.mask(text.slice(start, end).join('\n')).text.split('\n'));
     start = end;
   }
   return masked;

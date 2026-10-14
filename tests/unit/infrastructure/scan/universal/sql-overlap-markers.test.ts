@@ -47,3 +47,25 @@ describe('overlapping key markers in a script', () => {
     for (const token of tokens) expect(text).not.toContain(token);
   });
 });
+
+describe('a stray marker after an open span', () => {
+  it('RF-104 starts a span of its own: the statement before it keeps its text', () => {
+    const lines = [
+      begin,
+      'INSERT INTO q VALUES (1)',
+      begin,
+      shortLine,
+      body[0] ?? '',
+      begin,
+      body[1] ?? '',
+      end,
+    ];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+
+    expect(found.map((s) => s.line)).toEqual([2]);
+    const text = found[0]?.text ?? '';
+    expect(text.startsWith('INSERT INTO q VALUES (1)')).toBe(true);
+    // Each key line of the span (the second marker, the short line and the first body line) is its own marker.
+    expect(text.match(/\[MASKED:private-key\]/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
+  });
+});
