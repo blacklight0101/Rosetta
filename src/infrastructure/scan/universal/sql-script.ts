@@ -80,9 +80,6 @@ function isComment(line: string): boolean {
   return line.startsWith('--') || line.startsWith('/*') || line.startsWith('*');
 }
 
-// The END line of a private key block, as the private-key rule of the SecretMasker spells it.
-const keyEnd = /-----END (?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY(?: BLOCK)?-----/;
-
 /** A verb word followed by more text. A line that is only a verb word is key text, not a statement. */
 function startsStatement(line: string): boolean {
   return leadingVerb(line) !== undefined && /^[A-Za-z]+[\s(]\s*\S/u.test(line.trimStart());
@@ -91,22 +88,16 @@ function startsStatement(line: string): boolean {
 /**
  * RF-141, RNF-003: where the script is cut before masking. The masker masks a BEGIN marker with no
  * END after it to the end of its text, which would hide every later statement (a comment that only
- * names the marker is enough). Such a marker can only follow the last END line, so from there the
- * span it opens is bounded at the next line that starts a statement: a key body or its header lines
- * never start with a SQL verb followed by a space and more text. Everything before the cut is still
+ * names the marker is enough). So from each marker that is still open, the span it opens is bounded
+ * at the next line that starts a statement: a key body or its header lines never start with a SQL
+ * verb followed by a space and more text. Every marker is looked at, also one before a later
+ * complete key block, so the statements between them are kept. Everything before a cut is still
  * masked.
  */
 function cutsAfterOpenKeys(lines: readonly string[]): readonly number[] {
   const cuts: number[] = [];
   let open = false;
-  for (
-    let index = Math.max(
-      lines.findLastIndex((line) => keyEnd.test(line)),
-      0,
-    );
-    index < lines.length;
-    index += 1
-  ) {
+  for (let index = 0; index < lines.length; index += 1) {
     const line = cutLine(lines[index] ?? '');
     if (open && startsStatement(line)) {
       cuts.push(index);
