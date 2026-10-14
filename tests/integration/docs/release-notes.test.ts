@@ -166,6 +166,14 @@ describe('README status and links', () => {
     expect(status).not.toMatch(/in progress/iu);
   });
 
+  it('RF-801 the milestone hand-in list links the release notes and says who creates the tag', async () => {
+    const readme = await read('README.md');
+    const line = readme.split('\n').find((text) => text.startsWith('- Release notes:'));
+
+    expect(line).toContain('(docs/releases.md)');
+    expect(line).toMatch(/owner creates the tag/u);
+  });
+
   it('RF-801 the README holds the hosted URL placeholder without an address', async () => {
     const readme = await read('README.md');
     const line = readme.split('\n').find((text) => text.startsWith('- Hosted application URL:'));

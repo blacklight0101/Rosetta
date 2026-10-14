@@ -35,10 +35,29 @@ describe('README quick start: the two shells', () => {
     ]);
   });
 
-  it('RF-801 clones the repository into a new folder and enters it', () => {
-    expect(commands).toContain('git clone https://github.com/blacklight0101/Rosetta.git');
-    expect(commands).toMatch(/^cd Rosetta$/mu);
-  });
+  it.each(shells)(
+    'RF-801 the %s block clones the repository and enters the folder',
+    (_name, body) => {
+      expect(
+        body.startsWith('git clone https://github.com/blacklight0101/Rosetta.git\ncd Rosetta\n'),
+      ).toBe(true);
+    },
+  );
+
+  it.each(shells)(
+    'RF-801 the %s block copies, fills in, starts and prints, in that order',
+    (_n, body) => {
+      const steps = [
+        body.search(/\.env\.example\s+\.env(?=\s|$)/u),
+        body.indexOf('ROSETTA_SECRET_KEY'),
+        body.indexOf('docker compose up -d --build --wait'),
+        body.lastIndexOf('ROSETTA_ADMIN_USER'),
+      ];
+
+      expect(steps.every((at) => at >= 0)).toBe(true);
+      expect(steps).toEqual([...steps].sort((a, b) => a - b));
+    },
+  );
 
   it('RF-801 gives one block for Windows PowerShell and one for bash', () => {
     expect(powershell).toHaveLength(1);
@@ -46,7 +65,7 @@ describe('README quick start: the two shells', () => {
   });
 
   it.each(shells)('RF-801 the %s block copies .env.example and sets every value', (_name, body) => {
-    expect(body).toMatch(/\.env\.example\s+\.env\b/u);
+    expect(body).toMatch(/\.env\.example\s+\.env(?=\s|$)/u);
     expect(REQUIRED_NAMES.filter((name) => !body.includes(name))).toEqual([]);
   });
 
