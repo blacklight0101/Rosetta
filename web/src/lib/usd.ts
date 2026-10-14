@@ -8,9 +8,9 @@ const fractionDigits = 6;
 export const RUN_COST_MAX_MICROS = 100_000_000n;
 
 // An optional minus sign (refused by the server on its field, RST-1003), an optional dollar sign,
-// whole dollars with either no separator or thousands separators in groups of three, and up to six
-// decimals after a dot that has digits before it.
-const amountPattern = /^(-?)\$?(\d+|\d{1,3}(?:,\d{3})+)(?:\.(\d{1,6}))?$/u;
+// whole dollars with either no separator or thousands separators in groups of three (the first
+// group does not start with a zero), and up to six decimals after a dot that has digits before it.
+const amountPattern = /^(-?)\$?([1-9]\d{0,2}(?:,\d{3})+|\d+)(?:\.(\d{1,6}))?$/u;
 
 /**
  * Dollars as typed (`2.5`, `$2.50`, `1,200`, `-1`) to micro-dollars; undefined when it is not an
