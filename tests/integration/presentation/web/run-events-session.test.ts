@@ -129,6 +129,21 @@ describe('event streams and administrator changes', () => {
   });
 });
 
+describe('event streams and an account disabled elsewhere', () => {
+  it('RF-1101 the next request of a disabled account ends that user streams, not another user', async () => {
+    const { test, reader } = await setup();
+    const [amy, bob] = [await reader('amy'), await reader('bob')];
+    const [tab, other] = [await amy.open(), await bob.open()];
+    await test.users.update({ ...amy.user.account, state: 'Disabled' });
+
+    const response = await amy.browser.request({ method: 'GET', url: '/api/session' });
+
+    expect(response.statusCode).toBe(401);
+    await expectEnded(tab);
+    await expectOpen(test, other);
+  });
+});
+
 describe('event streams and the user own changes', () => {
   it('RF-1101 changing the own password ends the streams of the old session', async () => {
     const { test, reader } = await setup();
