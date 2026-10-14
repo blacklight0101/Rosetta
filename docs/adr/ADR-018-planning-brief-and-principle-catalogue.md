@@ -51,6 +51,7 @@ task-card checks.
 ## Notes
 
 - 2026-10-14 (DEC-134): the package becomes a documentation set: PRD, TRD, target data model, API contract, target flows, user-interface material and an implementation plan whose task cards cover every item (RF-620..RF-627), all built from `Supported` claims and the planning brief.
+- 2026-10-14 (DEC-135): the task cards and the build method carry the lessons of building Rosetta itself with agents: invariants with concrete probes, behaviour to preserve with citations, realistic data shapes from the scan, a failing test for every guard, parallel-safe identifiers, a risk class, an agent operations section and build measures (RF-630..RF-638); the catalogue's AI-assisted build group gains matching entries.
 
 ## References
 

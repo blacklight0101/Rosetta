@@ -762,6 +762,7 @@ Verification: structure test; integration test with recorded responses.
 **RF-622 Technical requirements document** - R1 - Must - Source DEC-134 - ADR-018
 As a tech lead I want a TRD for the target system so that the technical choices are in one place.
 - Given the chosen style (RF-608), stack (RF-609) and migration strategy (RF-610), when the package is written, then `trd.md` holds: the architecture overview with a Mermaid component diagram, the stack per layer, the integrations to keep or replace (linked to `INT` cards), security and data protection, non-functional targets, deployment and environments, and the migration approach, each section linking the ADR that decided it.
+- Given a planned security control that works by listing forbidden patterns (a denylist), when the TRD is written, then it says so, states the invariant the control must keep, and recommends an allowlist or a rule that does not depend on the shape of the input where one exists (DEC-135).
 Verification: structure test; integration test with recorded responses.
 
 **RF-623 Target data model** - R1 - Must - Source DEC-134 - ADR-018
@@ -793,6 +794,54 @@ As a modernisation team I want an implementation plan that covers every document
 - Given the package, when the plan is written, then the roadmap (RF-601) has phases with exit criteria and the task cards cover the whole set: every PRD feature, every target table, every API operation, every target flow and every main screen is named by at least one task card, and each card links the items it builds.
 - Given an item no card covers, when the package is checked, then it is listed as a gap in the package's checks file and the run is not reported as complete.
 Verification: structure test of the coverage of the plan.
+
+**RF-630 Task cards an agent can build without guessing** - R1 - Must - Source DEC-135 - ADR-018
+As a team building with AI agents I want each task card to state what must hold and how it will be attacked so that the first attempt meets the review.
+- Given a task card in the package, when it is written, then it states the invariant the work must make true (for example "no text from a user reaches the page as HTML, in any spelling"), not only the change to make, and its Done-when items are Given/When/Then scenarios with concrete inputs.
+- Given a card that adds a check, a filter, a limit or a parser, when it is written, then it has a "review probes" list of concrete hostile or edge inputs (other spellings and letter cases, encodings, neighbouring code paths doing the same thing, values one step past a limit), and the build method says the builder runs the same list before asking for review.
+Verification: structure test (every card has an invariant and concrete scenarios; every card of the kinds named has probes); review of the demo package.
+
+**RF-631 Behaviour to preserve** - R1 - Must - Source DEC-135 - ADR-018
+As a modernisation team I want every task card to name the legacy behaviour it must not change so that the rewrite does not regress what works today.
+- Given a task card that touches a feature, rule, flow or screen, when it is written, then it lists the `FEAT`, `BR`, `FLOW` or `SCRN` behaviours it must keep, each with its citation into the legacy code, and asks for an approval test of each before the change.
+- Given an open question raised while building, when the package states its default, then the default keeps the legacy behaviour; a default that would change what users see today is not allowed, and the question says so.
+Verification: structure test (every card touching a covered item lists its behaviours); the package's build method states the default rule.
+
+**RF-632 Realistic data shapes from the scan** - R1 - Should - Source DEC-135 - ADR-018
+As a developer I want test data shaped like the real repository and data so that limits and parsers are tested against what they will meet.
+- Given the scan of the legacy repository, when the package is written, then a `fixtures.md` lists measured shapes taken by code from the scan (largest files and their kinds, total size by kind such as source, generated maps, bundled third-party scripts, the deepest paths, unusual file names such as reserved device names or characters some systems refuse, encodings and line endings found) and the volumes the cards state for the data, and task cards that add a limit or a parser link the shapes they must handle.
+Verification: snapshot test of `fixtures.md` from a fixture scan.
+
+**RF-633 A failing test for every guard** - R1 - Must - Source DEC-135 - ADR-018
+As a reviewer I want every guard the build adds to be pinned by a test so that removing it is noticed.
+- Given the build method of the package, when it is written, then it requires that each branch, check or guard a card adds has a test that fails when that guard is removed, even when the code already behaves correctly, and that the reviewer confirms it by removing the guard (a mutation check).
+Verification: structure test of the build method and the card template.
+
+**RF-634 Parallel-safe cards** - R1 - Must - Source DEC-135 - ADR-018
+As a team running several builders at once I want cards that cannot collide so that parallel work merges cleanly.
+- Given the task cards, when the plan is written, then each card lists the files and folders it expects to change and the shared identifiers it needs (error codes, migration numbers, configuration keys, ports), allocated by the plan from ranges per card or named as taken from one registry file the first card creates.
+- Given two cards whose file lists or identifiers overlap, when the plan is written, then they are ordered by a dependency, never placed in the same parallel group; the roadmap lists the groups that can run together.
+Verification: structure test (no shared identifier allocated twice; no overlap inside a parallel group).
+
+**RF-635 Risk class per card** - R1 - Must - Source DEC-135 - ADR-018
+As a lead I want the risk of a card visible apart from its size so that a small card at a trust boundary still gets a careful build and review.
+- Given a task card, when it is written, then it has a risk class (`security boundary`, `data loss`, `money`, `none`) next to its difficulty, and the build method says that a card with a risk class other than `none` is built by at least the middle model tier and reviewed with its probes, whatever its difficulty.
+Verification: structure test.
+
+**RF-636 Agent operations** - R1 - Should - Source DEC-135 - ADR-018
+As a team building with AI agents I want the operational rules agents need written down so that a session does not lose hours to known traps.
+- Given AI-assisted build is chosen (RF-612), when `AGENTS.md` is written, then it has an operations section: merge one pull request at a time from a branch up to date with main, continuous-integration fixes first in the queue; a check shown as running long after its workflow finished is re-run, not waited on; never skip git hooks, and after a rejected push fetch and push again; never edit a script while it runs; reserve port ranges per agent and check the machine's excluded ranges; keep a register of known flaky tests with an owner card for each.
+Verification: structure test of `AGENTS.md`.
+
+**RF-637 Open questions linked to the cards they block** - R1 - Should - Source DEC-135 - ADR-018
+As a product owner I want each open question to name the cards waiting for it so that I answer in the order the build needs.
+- Given the package's open-questions file, when it is written, then each question lists its default and the task cards that depend on it, and the roadmap marks those cards as waiting on the question until it is answered or its default is accepted.
+Verification: structure test (every question names at least one card or says none).
+
+**RF-638 Build metrics in the plan** - R1 - Should - Source DEC-135 - ADR-018
+As a lead I want the plan to say how the build process is measured so that changes to it are judged by results.
+- Given the build method, when it is written, then it names a small set of measures (the share of cards passing review the first time, review rounds per card, cost or tokens per card, escaped defects found after merge), says where they are recorded, and says to change one thing in the process at a time and compare.
+Verification: structure test of the build method.
 
 ### 5.8 Milestone hand-in artefacts (RF-800..RF-899)
 
@@ -1091,6 +1140,7 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-500..RF-507 | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57, DEC-131 | ADR-002, ADR-005, ADR-012, ADR-013 | P3 (RF-504, RF-506, RF-507: P1) | P1-12, P1-43, P1-50, P3-01, P3-02, P3-03, P3-04 |
 | RF-600..RF-613 | DEC-10, DEC-72..DEC-85 | ADR-005, ADR-007, ADR-018 | P3 (RF-600 withdrawn) | P3-05, P3-06, P3-07, P3-08, P3-09, P3-10, P3-11, P3-12 |
 | RF-620..RF-627, RF-508 | DEC-134 | ADR-013, ADR-018 | P3 | P3-14, P3-15, P3-16, P3-17, P3-18, P3-19, P3-20, P3-21, P3-22 |
+| RF-630..RF-638 | DEC-135 | ADR-018 | P3 | P3-23, P3-24, P3-25, P3-26 |
 | RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | P1-45, P1-50, P1-52, P1-53, P1-54, P1-55 |
 | RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57, DEC-120 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | P1-07, P1-09, P1-12, P1-22, P1-34, P1-35, P1-36, P1-37, P1-38, P1-39, P1-40, P1-42, P1-43, P1-45, P1-46, P2-02, P2-05, P3-01 |
 | RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69, DEC-119, DEC-122, DEC-123, DEC-124, DEC-127, DEC-132 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | P1-08, P1-09, P1-10, P1-11, P1-14, P1-18, P1-22, P1-27, P1-29, P1-34, P1-36, P1-41, P1-42, P1-46, P1-54, P1-55, P1-56, P2-10 |
