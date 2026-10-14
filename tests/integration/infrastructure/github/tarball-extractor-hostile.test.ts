@@ -32,7 +32,6 @@ const REFUSED_PATHS: readonly (readonly [string, string])[] = [
   ['a drive-absolute path', 'C:\\x'],
   ['a drive-absolute path with a slash', 'C:/x'],
   ['a lower-case drive letter', 'c:x'],
-  ['a drive letter after a backslash', `${TOP}\\C:\\x`],
   ['a drive letter at the start with a backslash tail', 'D:\\a\\b'],
   ['a POSIX absolute path', '/abs/x'],
   ['a dot-dot segment between separators', `${TOP}/a/../../x`],
@@ -61,6 +60,7 @@ const SKIPPED_PATHS: readonly (readonly [string, string])[] = [
   ['a stream', 'con:stream'],
   ['the console input', 'CONIN$'],
   ['a drive form below the top folder', 'C:x'],
+  ['a drive form after a backslash', 'a\\C:\\x'],
   ['a device after a backslash', 'src\\COM2.txt'],
 ];
 

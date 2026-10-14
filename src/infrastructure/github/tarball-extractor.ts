@@ -11,7 +11,7 @@ export interface ExtractionLimits {
 }
 
 export interface ExtractionResult {
-  /** Symbolic and hard link entries that were skipped (RF-127). */
+  /** Link entries and entries with a name Windows cannot write that were skipped (RF-122, RF-127). */
   readonly skippedLinks: number;
 }
 
@@ -37,18 +37,31 @@ function isDotSegment(segment: string): boolean {
   return segment !== '.' && /^[. ]+$/.test(segment);
 }
 
+const DRIVE_FORM = /^[A-Za-z]:/;
+const SEPARATORS = /[\\/]/;
+
 /**
- * An absolute path (POSIX or Windows), any `..` segment, a drive letter at the start of any segment, or a
- * Windows device name below the stripped top folder, on either separator (RF-122, ADR-019).
+ * An absolute path (POSIX or Windows), a UNC or backslash-rooted path, a `..` or dot-only segment, or a
+ * drive letter at the start of the path, on either separator
+ * (RF-122, ADR-019). Such an entry stops the fetch.
  */
 function isUnsafePath(path: string): boolean {
   if (path.startsWith('/') || path.startsWith('\\')) return true;
-  const segments = path.split(/[\\/]/);
-  return (
-    segments.some(isDotSegment) ||
-    segments.some((segment) => /^[A-Za-z]:/.test(segment)) ||
-    segments.slice(1).some(isDeviceName)
-  );
+  const segments = path.split(SEPARATORS);
+  if (segments.some(isDotSegment) || DRIVE_FORM.test(segments[0] ?? '')) return true;
+  return path.includes('\\') && segments.some((segment) => DRIVE_FORM.test(segment));
+}
+
+/**
+ * A name Windows cannot write below the stripped top folder: a device name (`aux.c`, `COM1`) or a
+ * `:` in a segment. Real repositories hold them (the Linux kernel has `aux.c`), so the entry is
+ * skipped and counted, never a reason to stop the fetch; the result does not depend on the OS.
+ */
+function isUnwritableName(path: string): boolean {
+  return path
+    .split(SEPARATORS)
+    .slice(1)
+    .some((segment) => segment.includes(':') || isDeviceName(segment));
 }
 
 export function tooLarge(what: 'entries' | 'bytes', limit: number): RosettaError {
@@ -85,7 +98,7 @@ class EntryGate {
         ),
       );
     }
-    if (LINK_TYPES.has(entry.type)) {
+    if (LINK_TYPES.has(entry.type) || isUnwritableName(path)) {
       this.skippedLinks += 1;
       return false;
     }

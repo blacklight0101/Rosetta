@@ -14,13 +14,20 @@ import { filesConstructing } from '../../../support/agent-usage.js';
 // the test a plain one. Wiring the agent is not part of the card P1-161.
 
 describe('PublicAddressAgent in the provider adapters', () => {
+  // Outside `it.fails`: a failure in the test below would also count as the expected one, so a
+  // rename of the folder must fail here, as a plain test.
+  it('RF-1104 the adapter folder the wiring test scans exists and holds adapters', async () => {
+    const folder = join(process.cwd(), 'src/infrastructure/providers');
+
+    expect((await stat(folder)).isDirectory()).toBe(true);
+    expect(
+      await filesConstructing(process.cwd(), 'src/infrastructure/providers', 'OpenAiProvider'),
+    ).not.toEqual([]);
+  });
+
   it.fails(
     'RF-1104 P2-09 P2-10: an adapter that connects to a stored base URL builds a PublicAddressAgent (expected to fail until that adapter is wired)',
     async () => {
-      // A rename of the folder must not keep this test "failing as expected" for the wrong reason.
-      expect((await stat(join(process.cwd(), 'src/infrastructure/providers'))).isDirectory()).toBe(
-        true,
-      );
       const users = await filesConstructing(
         process.cwd(),
         'src/infrastructure/providers',

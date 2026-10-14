@@ -46,7 +46,7 @@ flowchart LR
 
 | Boundary | Threat (STRIDE) | Control | Requirement |
 |---|---|---|---|
-| TB1 GitHub download | Tampering: hostile archive writes outside the snapshot (path traversal, symbolic or hard link) | entry paths refused when absolute, with a backslash or drive-letter form, a dot-only segment (`..`, `...`) or a Windows device name (`CON`, `nul.txt`, `COM1`); links, FIFO and device entries skipped; extraction in a temporary folder renamed when complete | RF-122, RF-127 |
+| TB1 GitHub download | Tampering: hostile archive writes outside the snapshot (path traversal, symbolic or hard link) | entry paths refused when absolute, rooted with a backslash or a drive letter, or holding a dot-only segment (`..`, `...`); links, FIFO and device entries, and names Windows cannot write (device names such as `aux.c` or `COM1`, a `:` in a segment) skipped and counted, never a reason to stop, because real repositories hold them; extraction in a temporary folder renamed when complete | RF-122, RF-127 |
 | TB1 | Denial of service: huge archive or millions of entries | size and entry-count limits | RF-127 |
 | TB1 | Spoofing / SSRF: a URL or redirect leads somewhere other than GitHub | https only; host allowlist on every redirect; only `github.com` repository URLs parsed | RF-120, RF-127 |
 | TB2 code to the model | Elevation of privilege: indirect prompt injection in the analysed code steers the agents | tool results in delimited data blocks that end only at the closing line with their own random tag, never in the system prompt; prompts declare them data; read-only tools; citation check in code; caps | RF-145, RF-201, RF-300, RF-422 |

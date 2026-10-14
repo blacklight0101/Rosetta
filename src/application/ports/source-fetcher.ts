@@ -15,7 +15,7 @@ export interface SnapshotInfo {
   readonly downloadedAt: string;
   readonly fileCount: number;
   readonly totalBytes: number;
-  /** Symbolic and hard link entries skipped during extraction (RF-127). */
+  /** Link entries and entries with a name Windows cannot write (a device name, a colon) skipped during extraction (RF-122, RF-127). */
   readonly skippedLinks: number;
   /** `sha256:` of the sorted path and file SHA-256 pairs. */
   readonly snapshotHash: string;

@@ -16,6 +16,9 @@ const SQL_SHAPES: readonly RegExp[] = [
   /\bdelete\s+from\b/iu,
   /\b(?:create|alter|drop|truncate)\s+(?:or\s+replace\s+)?(?:table|index|role|schema|function|view|type|extension|trigger|sequence|user)\b/iu,
   /\b(?:grant|revoke)\b[\s\S]*\b(?:to|from|on)\b/iu,
+  /\b(?:truncate|vacuum|reindex)\b/iu,
+  /\block\s+table\b/iu,
+  /\bcomment\s+on\b/iu,
   /\bwhere\b/iu,
   /\b(?:order|group)\s+by\b/iu,
   /\bvalues\s*\(/iu,
@@ -40,7 +43,10 @@ function isQueryArgument(node: ts.Node): boolean {
   const callee = call.expression;
   return (
     (ts.isIdentifier(callee) && callee.text === 'query') ||
-    (ts.isPropertyAccessExpression(callee) && callee.name.text === 'query')
+    (ts.isPropertyAccessExpression(callee) && callee.name.text === 'query') ||
+    (ts.isElementAccessExpression(callee) &&
+      ts.isStringLiteralLike(callee.argumentExpression) &&
+      callee.argumentExpression.text === 'query')
   );
 }
 
