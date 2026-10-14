@@ -8,7 +8,7 @@
 # (P1-87), so no npm version is pinned here.
 
 # Stage 1: install every dependency, compile the server and build the front end.
-FROM node:24-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS build
+FROM node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -22,7 +22,7 @@ RUN npm run build \
 
 # Stage 2: production dependencies only, without the maps and test files the packages ship. Install
 # scripts stay off; the tree-sitter C# grammar ships its WebAssembly file and needs no compiler.
-FROM node:24-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS deps
+FROM node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts \
@@ -33,7 +33,7 @@ RUN npm ci --omit=dev --ignore-scripts \
 # Stage 3: the test image used only by compose.ci.yaml (RNF-005, DEC-112). It adds the test support
 # code (the fake provider and the fake GitHub) to the full build, and sets ROSETTA_TEST=1, which the
 # server refuses on an https public URL. The command that starts the doubles belongs to compose.ci.yaml.
-FROM node:24-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS test
+FROM node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS test
 ENV NODE_ENV=production ROSETTA_TEST=1 ROSETTA_DATA_DIR=/data
 WORKDIR /app
 COPY --from=build /app ./
@@ -56,7 +56,7 @@ CMD ["node", "dist/presentation/main.js"]
 # Operating-system packages are upgraded to the fixed versions the pinned base may lack (the Trivy gate
 # of CI fails on a fixable high finding), and the Node.js package manager is removed: nothing in the
 # running server needs it.
-FROM node:24-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS runtime
+FROM node:25-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS runtime
 ENV NODE_ENV=production ROSETTA_DATA_DIR=/data
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
