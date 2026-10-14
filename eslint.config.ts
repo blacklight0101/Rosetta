@@ -67,7 +67,8 @@ export default defineConfig(
     },
   },
   {
-    // The network guard lives in the `test` of the fixtures file; a spec must use that one.
+    // The network guard lives in the `test` of the fixtures file; a spec must use that one, and no
+    // spec may load a module dynamically, since that would slip past the static import checks (RNF-005).
     files: ['tests/e2e/**/*.spec.ts'],
     rules: {
       'no-restricted-imports': [
@@ -80,7 +81,21 @@ export default defineConfig(
               message:
                 'Import test and expect from tests/e2e/support/fixtures.js: its test carries the network guard (RNF-005).',
             },
+            {
+              name: '@playwright/test',
+              importNames: ['default'],
+              message:
+                'Import from tests/e2e/support/fixtures.js, not the default export of @playwright/test: the network guard is in its test (RNF-005).',
+            },
           ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportExpression',
+          message:
+            'RNF-005: a spec may not load a module with a dynamic import(); import it statically.',
         },
       ],
     },
