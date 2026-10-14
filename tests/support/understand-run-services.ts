@@ -5,6 +5,7 @@ import { RunUnderstand } from '../../src/application/use-cases/run-understand.js
 import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-report-files.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
+import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
@@ -91,6 +92,7 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
     cards: new FileCardOutputs({ writer, masker, logger }),
     answers: new FileAnswersFile({ writer, masker }),
     ledger: providers.ledger,
+    costTotals: new MemoryCostTotals(),
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts('prompts'),
     textToolProtocol: () => loadTextToolProtocol('prompts'),

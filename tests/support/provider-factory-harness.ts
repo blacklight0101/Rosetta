@@ -37,6 +37,7 @@ import { templateSettings } from './project-fixtures.js';
 import { scopeFor } from './run-event-fixtures.js';
 import { sampleManifest } from './run-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
+import { silentBudgetEvents } from '../../src/application/runs/run-budget-events.js';
 
 // RF-405, RF-407, RF-1104, RF-002, ADR-003: the provider factory over memory adapters. Every
 // adapter it builds is a FakeProvider that answers with the contract's text answer; the harness
@@ -146,6 +147,7 @@ function runSinks(masker: SecretMasker): RunSinks {
       },
     },
     stopRun: (reason) => stops.push(reason),
+    budgetEvents: silentBudgetEvents,
   };
   const egressPath = `${runPath(runScope.projectId, runScope.runKey)}/egress.log.jsonl`;
   const egressLines = async (): Promise<unknown[]> => {

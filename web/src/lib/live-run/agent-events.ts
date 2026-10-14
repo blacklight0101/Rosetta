@@ -7,6 +7,7 @@ import {
   toolResultData,
   turnData,
   usageData,
+  type UsageData,
 } from './event-data.js';
 import { readPathOf, toolText } from './tool-text.js';
 import type { AgentPanelState, AgentState, RunState } from './run-state.js';
@@ -138,22 +139,44 @@ export function onAgentEnded(state: RunState, event: RunEvent): RunState {
   }));
 }
 
-/** RF-424: cost per agent and per role, from the events that carry it. */
+/** A role's cost and tokens with one more call's added; what the call did not report stays. */
+function withRoleUsage(state: RunState, role: string, used: UsageData): RunState {
+  const { costMicros, tokens } = used;
+  const roleCostMicros =
+    costMicros === undefined
+      ? state.roleCostMicros
+      : { ...state.roleCostMicros, [role]: (state.roleCostMicros[role] ?? 0) + costMicros };
+  const before = state.roleTokens[role] ?? { inputTokens: 0, outputTokens: 0 };
+  const roleTokens =
+    tokens === undefined
+      ? state.roleTokens
+      : {
+          ...state.roleTokens,
+          [role]: {
+            inputTokens: before.inputTokens + tokens.inputTokens,
+            outputTokens: before.outputTokens + tokens.outputTokens,
+          },
+        };
+  return { ...state, roleCostMicros, roleTokens };
+}
+
+/**
+ * RF-424, RF-1003: cost per agent, and cost and tokens per role, from the usage events. A call of no
+ * agent panel (the Ollama check before the first task, RF-401) counts for its role only: usage
+ * never adds a panel.
+ */
 export function onUsage(state: RunState, event: RunEvent): RunState {
   const parsed = usageData.safeParse(event.data);
-  if (!parsed.success || parsed.data.costMicros === undefined) return state;
+  if (!parsed.success) return state;
   const { costMicros } = parsed.data;
-  const withAgentCost = withAgent(state, event, (agent) => ({
-    ...agent,
-    costMicros: (agent.costMicros ?? 0) + costMicros,
-  }));
-  const role =
-    parsed.data.role ??
-    withAgentCost.agents.find((agent) => agent.agentTaskId === event.agentTaskId)?.role;
-  if (role === undefined) return withAgentCost;
-  const before = withAgentCost.roleCostMicros[role] ?? 0;
-  return {
-    ...withAgentCost,
-    roleCostMicros: { ...withAgentCost.roleCostMicros, [role]: before + costMicros },
-  };
+  const agent = state.agents.find((each) => each.agentTaskId === event.agentTaskId);
+  const withAgentCost =
+    agent === undefined || costMicros === undefined
+      ? state
+      : withAgent(state, event, (each) => ({
+          ...each,
+          costMicros: (each.costMicros ?? 0) + costMicros,
+        }));
+  const role = parsed.data.role ?? agent?.role;
+  return role === undefined ? withAgentCost : withRoleUsage(withAgentCost, role, parsed.data);
 }

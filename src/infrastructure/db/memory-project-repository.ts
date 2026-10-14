@@ -32,9 +32,9 @@ export class MemoryProjectRepository implements ProjectRepository {
     return Promise.resolve({ project, created: true });
   }
 
-  list(userId: string): Promise<readonly Project[]> {
+  list(userId: string, limit?: number): Promise<readonly Project[]> {
     const own = [...this.projects.values()].filter((project) => project.userId === userId);
-    return Promise.resolve(own.sort(newestFirst));
+    return Promise.resolve(own.sort(newestFirst).slice(0, limit));
   }
 
   find(userId: string, projectId: string): Promise<Project | undefined> {

@@ -20,6 +20,7 @@ import type { Recording } from '../../src/infrastructure/providers/fake/recordin
 import { JsonlProviderCallLog } from '../../src/infrastructure/providers/jsonl-provider-call-log.js';
 import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
 import { AesGcmSecretBox } from '../../src/infrastructure/security/aes-gcm-secret-box.js';
+import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { budgetTable } from './budget-harness.js';
 import type { FixedClock } from './fixed-clock.js';
 import { SpyLedger } from './provider-fakes.js';
@@ -78,6 +79,8 @@ export interface UnderstandProviderParts {
   readonly recording: Recording;
   readonly beforeCall?: BeforeCall;
   readonly decorateAnswer?: DecorateAnswer;
+  /** The shipped price table the provider factory uses; the budget harness table by default. */
+  readonly priceTable?: PriceTable;
 }
 
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
@@ -92,7 +95,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     ollamaUrl: 'http://127.0.0.1:11434',
     serverSettings: new MemoryServerSettings({}),
     ledger,
-    priceTable: budgetTable,
+    priceTable: parts.priceTable ?? budgetTable,
     masker,
     adapters: () => adapter,
     clock,

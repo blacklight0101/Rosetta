@@ -1,3 +1,4 @@
+import type { BudgetEvents } from '../../application/ports/budget-events.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type { CostLedger } from '../../application/ports/cost-ledger.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
@@ -42,6 +43,10 @@ import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './bu
 //      was sent is a row without usage; a call never sent (blocked by the egress guard) only frees
 //      its reservation. A row that cannot be written fails the call (RST-1604): the answer never
 //      reaches the caller unmetered (RF-421).
+// It reports to the run's budget events (P1-96, RF-1003): each answered call's ledger row after it
+// is written (`usage.recorded` and the warnings) and each cap refusal (`budget.capReached`). A
+// reporter that fails, or does not answer within `reportTimeoutMs`, is logged; it never fails or
+// holds back a call, nor changes a refusal or the stop.
 // Guarantee: reservations make the check and the claim one step, so in-flight calls can never
 // together reserve past a cap. A cap can be passed only by the amount a call's actual usage
 // exceeds its reserved worst case; the output never exceeds the reserved maximum, so only the
@@ -63,11 +68,15 @@ export interface BudgetGuardOptions {
   readonly costs: RunCostRecorder;
   /** Aborts the run's one signal with the reason (the run ends `CapReached`). */
   readonly stopRun: (reason: RosettaError) => void;
+  /** The run's usage and budget events (P1-96); a failure is logged, never thrown. */
+  readonly budgetEvents: BudgetEvents;
   readonly clock: Clock;
   readonly ids: IdGenerator;
   readonly logger: Logger;
   /** How long a reservation counts: the call's timeout with its retries, plus a margin. */
   readonly reservationTtlMs: number;
+  /** How long the guard waits for the budget events before it goes on (P1-96). */
+  readonly reportTimeoutMs: number;
 }
 
 /** A call the guard let through: its price and its worst case. */
@@ -77,6 +86,21 @@ interface CallPlan {
 }
 
 const spanIdLength = 16;
+
+/** The work, or RST-2104 once `limitMs` has passed without it settling (P1-96). */
+async function withinTimeLimit(work: Promise<void>, limitMs: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(new RosettaError(ERROR_CODES.runEventLogFailed, 'The budget events did not answer.'));
+    }, limitMs);
+  });
+  try {
+    await Promise.race([work, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export class BudgetGuard implements LlmProvider {
   private readonly options: BudgetGuardOptions;
@@ -158,6 +182,10 @@ export class BudgetGuard implements LlmProvider {
         needed: breach.needed.toString(),
       },
     });
+    // RF-422: the run's cap event; a reporter that fails changes neither the stop nor the refusal.
+    await this.report('The cap event could not be published.', request, () =>
+      this.options.budgetEvents.capReached(breach),
+    );
     stopRun(refusal);
     throw refusal;
   }
@@ -172,14 +200,20 @@ export class BudgetGuard implements LlmProvider {
     const { usage } = response;
     const costMicros = plan.price.price === undefined ? 0n : costOf(plan.price.price, usage).micros;
     const outcome: CallOutcome = { attempt: Math.max(attempts, 1), usage, costMicros };
+    const entry = this.entryOf(request, plan, outcome);
     try {
-      await this.options.ledger.settle(this.entryOf(request, plan, outcome));
+      await this.options.ledger.settle(entry);
     } catch (error) {
       throw new RosettaError(ERROR_CODES.costRecordFailed, undefined, { cause: error });
     }
     const { inputTokens, outputTokens, cachedInputTokens } = usage;
     await this.quietly('The run totals could not be updated.', request, () =>
       this.options.costs.addCall({ inputTokens, outputTokens, cachedInputTokens, costMicros }),
+    );
+    // RF-1003: the run's usage event, after the row is written; it never fails the call.
+    const { caps, budgetEvents } = this.options;
+    await this.report('The usage event could not be published.', request, () =>
+      budgetEvents.callRecorded({ entry, caps }),
     );
   }
 
@@ -201,6 +235,13 @@ export class BudgetGuard implements LlmProvider {
   private entryOf(request: LlmRequest, plan: CallPlan, outcome: CallOutcome) {
     const at = this.options.clock.now();
     return ledgerEntryOf(this.caller, request, { at, price: plan.price, outcome });
+  }
+
+  /** P1-96: reports to the budget events, waiting at most `reportTimeoutMs`; a failure is logged. */
+  private report(message: string, request: LlmRequest, work: () => Promise<void>): Promise<void> {
+    return this.quietly(message, request, () =>
+      withinTimeLimit(work(), this.options.reportTimeoutMs),
+    );
   }
 
   /** Runs bookkeeping whose failure must not hide the call's own outcome; a failure is logged. */
