@@ -86,8 +86,8 @@ describe('Ollama chat body without tools or in text mode', () => {
         role: 'assistant',
         content: 'Reading.\n\n```tool_call\n{"name":"read_file","arguments":{"path":"a.cs"}}\n```',
       },
-      { role: 'user', content: '```tool_result\n{"id":"call-1","content":"class A {}"}\n```' },
-      { role: 'user', content: '```tool_result\n{"id":"call-9","content":"unknown call"}\n```' },
+      { role: 'user', content: '```tool_result\nid: call-1\ncontent:\nclass A {}\n```' },
+      { role: 'user', content: '```tool_result\nid: call-9\ncontent:\nunknown call\n```' },
     ]);
   });
 });
