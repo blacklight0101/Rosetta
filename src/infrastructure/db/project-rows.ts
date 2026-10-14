@@ -8,7 +8,7 @@ import { projectSettingsSchema } from '../../application/projects/project-settin
 
 /** Every column, in table order. */
 export const PROJECT_COLUMNS =
-  'id::text AS id, user_id::text AS user_id, name, source_url, ref, subpath, settings, created_at, updated_at';
+  'id::text AS id, user_id::text AS user_id, name, source_url, ref, subpath, settings, settings_version, created_at, updated_at';
 
 const instant = z.date().transform((date) => date.getTime());
 
@@ -20,6 +20,7 @@ const projectRowSchema = z.object({
   ref: z.string(),
   subpath: z.string(),
   settings: projectSettingsSchema,
+  settings_version: z.number().int().min(1),
   created_at: instant,
   updated_at: instant,
 });
@@ -35,7 +36,7 @@ export function toProject(row: unknown): Project {
     ref: parsed.ref,
     subpath: parsed.subpath,
     settings: parsed.settings,
-    settingsVersion: 1,
+    settingsVersion: parsed.settings_version,
     createdAt: parsed.created_at,
     updatedAt: parsed.updated_at,
   };

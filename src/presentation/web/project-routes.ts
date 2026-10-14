@@ -19,7 +19,9 @@ import { signedInOf } from './request-actor.js';
 // - GET /api/projects lists the signed-in user's projects.
 // - GET /api/projects/:id shows one; another user's id answers 404 like an unknown one.
 // - PUT /api/projects/:id/settings replaces the settings document; each problem comes back with its
-//   field and error code (400).
+//   field and error code (400). `If-Match: "<settingsVersion>"` (the ETag of a read) makes the save
+//   apply only if the settings were not saved since; otherwise 409 with RST-1007 and nothing is
+//   written (P1-106); a malformed value answers 400; without the header the save is unconditional.
 // - GET /api/admin/users/:id/projects (administrator) reads another user's projects and writes an
 //   audit row.
 // The `userId` of a project never leaves the server.
@@ -51,9 +53,28 @@ export function projectView(project: Project): Record<string, unknown> {
     ref: project.ref,
     subpath: project.subpath,
     settings: project.settings,
+    settingsVersion: project.settingsVersion,
     createdAt: formatInstant(project.createdAt),
     updatedAt: formatInstant(project.updatedAt),
   };
+}
+
+/** The ETag of a project: the version of its settings, quoted. */
+const etagOf = (project: Project): string => `"${String(project.settingsVersion)}"`;
+
+const IF_MATCH = /^"([1-9]\d{0,8})"$/u;
+
+/** The version a save names in `If-Match`; undefined when it names none; anything else is refused. */
+function expectedVersionOf(header: string | undefined): number | undefined {
+  if (header === undefined) return undefined;
+  const match = IF_MATCH.exec(header);
+  if (match?.[1] === undefined) throw new RosettaError(ERROR_CODES.requestInvalid);
+  return Number(match[1]);
+}
+
+function versionOf(header: string | undefined): { readonly expectedVersion?: number } {
+  const expectedVersion = expectedVersionOf(header);
+  return expectedVersion === undefined ? {} : { expectedVersion };
 }
 
 function notFound(): RosettaError {
@@ -96,7 +117,10 @@ function registerRead(server: FastifyInstance, services: ProjectServices): void 
         projectId: request.params.id,
       });
       if (!outcome.ok) throw notFound();
-      return reply.status(200).send(projectView(outcome.value));
+      return reply
+        .status(200)
+        .header('etag', etagOf(outcome.value))
+        .send(projectView(outcome.value));
     },
   );
 }
@@ -110,10 +134,18 @@ function registerSettings(server: FastifyInstance, services: ProjectServices): v
         actor: signedInOf(request).actor,
         projectId: request.params.id,
         settings: request.body,
+        ...versionOf(request.headers['if-match']),
       });
-      if (outcome.ok) return reply.status(200).send(projectView(outcome.value));
-      if (outcome.error.code === ERROR_CODES.notFound) throw notFound();
-      throw new FieldProblemsError(outcome.error.code, outcome.error.problems);
+      if (outcome.ok) {
+        return reply
+          .status(200)
+          .header('etag', etagOf(outcome.value))
+          .send(projectView(outcome.value));
+      }
+      const { error } = outcome;
+      if (error.code === ERROR_CODES.notFound) throw notFound();
+      if (error.code === ERROR_CODES.settingsVersionStale) throw new RosettaError(error.code);
+      throw new FieldProblemsError(error.code, error.problems);
     },
   );
 }

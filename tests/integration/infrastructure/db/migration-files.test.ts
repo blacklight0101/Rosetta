@@ -53,6 +53,7 @@ describe('release migrations', () => {
       '0006_cost_reservations_without_run.sql',
       '0007_cost_reservations_per_run_call.sql',
       '0008_audit_retention_purge.sql',
+      '0009_project_settings_version.sql',
     ]);
   });
 

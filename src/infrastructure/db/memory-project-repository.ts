@@ -42,10 +42,18 @@ export class MemoryProjectRepository implements ProjectRepository {
   }
 
   updateSettings(change: SettingsChange): Promise<SettingsUpdate> {
-    const { userId, projectId, settings, updatedAt } = change;
+    const { userId, projectId, settings, updatedAt, expectedVersion } = change;
     const project = this.owned(userId, projectId);
     if (project === undefined) return Promise.resolve({ kind: 'missing' });
-    const updated = { ...project, settings, updatedAt };
+    if (expectedVersion !== undefined && expectedVersion !== project.settingsVersion) {
+      return Promise.resolve({ kind: 'stale', currentVersion: project.settingsVersion });
+    }
+    const updated = {
+      ...project,
+      settings,
+      updatedAt,
+      settingsVersion: project.settingsVersion + 1,
+    };
     this.projects.set(projectId, updated);
     return Promise.resolve({ kind: 'updated', project: updated });
   }

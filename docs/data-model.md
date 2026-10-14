@@ -662,6 +662,7 @@ the `Clock` port.
 | `name` | `text` | defaults to `<owner>/<repo>` |
 | `source_url`, `ref`, `subpath` | `text` | normalised GitHub URL; `ref` empty = default branch; `subpath` empty = root; unique on (`user_id`, `source_url`, `ref`, `subpath`) |
 | `settings` | `jsonb` | the document of 3.1, validated by its zod schema on every write and read |
+| `settings_version` | `integer` | starts at 1 and grows by 1 with every save of `settings` (migration `0009`); a save that names the version it started from (`If-Match`) is applied only if it is still the stored one, tested in the same `UPDATE`, so two tabs never overwrite each other; shown as `settingsVersion` and the `ETag` of the project |
 | `created_at`, `updated_at` | `timestamptz` | |
 
 **`runs`** (RF-003, RF-1108)
@@ -810,7 +811,7 @@ runner; `rosetta_app` has no right on it.
 **Database migrations** (RF-1302): files `db/migrations/NNNN_snake_name.sql`, four digits, applied in order, each in
 a transaction, recorded in `schema_version` with its checksum. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`), `0100..` later
 releases.
 
 **File schema versions**:
