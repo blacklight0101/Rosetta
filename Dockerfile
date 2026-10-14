@@ -4,14 +4,12 @@
 # The base is Node.js 24 slim pinned by digest; Dependabot proposes a newer digest (DEC-42).
 # No secret is built into any stage: configuration comes from the environment at run time.
 
-# The lock file was written by the npm of Node.js 24.11.1 (.nvmrc). The npm of a newer slim image
-# rejects it ("Missing: @emnapi/core ... from lock file" for optional dev packages), so the install
-# stages use that exact npm. Regenerating the lock file for the newer npm is a follow-up.
+# The install stages use the npm of the base image; the lock file is written so that every npm 11 accepts it
+# (P1-87), so no npm version is pinned here.
 
 # Stage 1: install every dependency, compile the server and build the front end.
 FROM node:24-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS build
 WORKDIR /app
-RUN npm install --global --ignore-scripts npm@11.6.2
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY tsconfig.json tsconfig.build.json ./
@@ -26,7 +24,6 @@ RUN npm run build \
 # scripts stay off; the tree-sitter C# grammar ships its WebAssembly file and needs no compiler.
 FROM node:24-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS deps
 WORKDIR /app
-RUN npm install --global --ignore-scripts npm@11.6.2
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts \
   && find node_modules -name '*.map' -delete \
