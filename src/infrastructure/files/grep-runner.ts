@@ -38,30 +38,38 @@ export function runGrep(
     const worker = new Worker(workerUrl, {
       workerData: { pattern, files, maxMatches: grepLimits.maxMatches },
     });
-    const timer = setTimeout(() => {
-      resolve({ kind: 'timeout' });
-      void worker.terminate();
-    }, timeoutMs);
-    const finish = (settle: () => void): void => {
-      clearTimeout(timer);
-      settle();
-      void worker.terminate();
+    // P1-164: the first verdict wins, but the caller hears it only once the thread has ended, so no
+    // worker outlives the call. A worker that answered ends on its own (P1-155): terminating it
+    // while it tears down is what killed the Windows test workers (0xC0000005, 0xC0000409).
+    let verdict: (() => void) | undefined;
+    const decide = (settle: () => void): void => {
+      verdict ??= settle;
     };
     const fail = (cause: unknown): void => {
-      finish(() => {
+      decide(() => {
         reject(new RosettaError(ERROR_CODES.grepFailed, undefined, { cause }));
       });
     };
+    const timer = setTimeout(() => {
+      decide(() => {
+        resolve({ kind: 'timeout' });
+      });
+      void worker.terminate();
+    }, timeoutMs);
     worker.once('message', (message: unknown) => {
       const parsed = outcome.safeParse(message);
       if (parsed.success)
-        finish(() => {
+        decide(() => {
           resolve(parsed.data);
         });
       else fail(parsed.error);
     });
     worker.once('error', fail);
-    // A worker that ends without an answer failed; after an answer this is a no-op.
-    worker.once('exit', fail);
+    worker.once('exit', () => {
+      clearTimeout(timer);
+      // A worker that ends without a verdict failed.
+      if (verdict === undefined) fail(new Error('The grep worker ended without an answer'));
+      verdict?.();
+    });
   });
 }
