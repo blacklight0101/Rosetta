@@ -38,7 +38,10 @@ afterEach(() => {
 
 it('RF-010 lists the projects with branch, folder and a link to their settings', async () => {
   renderProjects({
-    'GET /api/projects/overview': json(200, { projects: [demo, other].map((p) => overviewRow(p)) }),
+    'GET /api/projects/overview': json(200, {
+      projects: [demo, other].map((p) => overviewRow(p)),
+      truncated: false,
+    }),
   });
 
   const row = (await screen.findByText('octo/demo')).closest('tr');
@@ -58,7 +61,7 @@ it('RF-010 lists the projects with branch, folder and a link to their settings',
 });
 
 it('RF-010 with no project says so and offers the demo repository', async () => {
-  renderProjects({ 'GET /api/projects/overview': json(200, { projects: [] }) });
+  renderProjects({ 'GET /api/projects/overview': json(200, { projects: [], truncated: false }) });
 
   await screen.findByText(/No projects yet/u);
   fireEvent.click(screen.getByRole('button', { name: 'Use the demo repository' }));
@@ -78,7 +81,7 @@ it('RF-1105 a list that cannot be loaded shows the error and still offers the fo
 
 it('RF-010 creates a project from the URL with the CSRF token and lists it', async () => {
   const { calls } = renderProjects({
-    'GET /api/projects/overview': json(200, { projects: [overviewRow(other)] }),
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(other)], truncated: false }),
     'POST /api/projects': json(201, demo),
   });
   await screen.findByText('acme/shop');
@@ -99,7 +102,7 @@ it('RF-010 creates a project from the URL with the CSRF token and lists it', asy
 
 it('RF-010 the same URL again opens the existing project and adds nothing', async () => {
   renderProjects({
-    'GET /api/projects/overview': json(200, { projects: [overviewRow(demo)] }),
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(demo)], truncated: false }),
     'POST /api/projects': json(200, demo),
   });
   await screen.findByText('octo/demo');
@@ -114,7 +117,7 @@ it('RF-010 the same URL again opens the existing project and adds nothing', asyn
 
 it('RF-010 a URL that is not a GitHub repository is refused next to the field and nothing is added', async () => {
   renderProjects({
-    'GET /api/projects/overview': json(200, { projects: [overviewRow(other)] }),
+    'GET /api/projects/overview': json(200, { projects: [overviewRow(other)], truncated: false }),
     'POST /api/projects': json(400, {
       code: 'RST-1900',
       message: 'The address is not a public GitHub repository URL.',
@@ -148,7 +151,7 @@ it('RF-010 a URL that is not a GitHub repository is refused next to the field an
 
 it('RNF-010 a refusal read through the focused field is not also announced as an alert', async () => {
   renderProjects({
-    'GET /api/projects/overview': json(200, { projects: [] }),
+    'GET /api/projects/overview': json(200, { projects: [], truncated: false }),
     'POST /api/projects': failure(400, 'RST-1900', [{ field: 'url', code: 'RST-1900' }]),
   });
   await screen.findByText(/No projects yet/u);
@@ -163,7 +166,7 @@ it('RNF-010 a refusal read through the focused field is not also announced as an
 
 it('RF-010 a refusal that names no field shows in a banner', async () => {
   renderProjects({
-    'GET /api/projects/overview': json(200, { projects: [] }),
+    'GET /api/projects/overview': json(200, { projects: [], truncated: false }),
     'POST /api/projects': failure(429, 'RST-2005'),
   });
   await screen.findByText(/No projects yet/u);

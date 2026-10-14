@@ -49,7 +49,7 @@ describe('ListProjectOverview reads', () => {
       const { overview, stores, count } = setup();
       await seedProjects(stores, amy.userId, projects);
 
-      const rows = await overview.execute({ actor: amy });
+      const { rows } = await overview.execute({ actor: amy });
 
       expect(rows).toHaveLength(projects);
       counts.push(count.calls);
@@ -63,7 +63,7 @@ describe('ListProjectOverview rows', () => {
     const { overview, stores } = setup();
     await seedProjects(stores, amy.userId, 3);
 
-    const rows = await overview.execute({ actor: amy });
+    const { rows } = await overview.execute({ actor: amy });
 
     expect(rows.map((row) => row.project.name)).toEqual([
       'owner/seed-3',
@@ -83,7 +83,7 @@ describe('ListProjectOverview scope', () => {
     const { overview, stores } = setup();
     await seedProjects(stores, amy.userId, LIMIT + 5);
 
-    const rows = await overview.execute({ actor: amy });
+    const { rows } = await overview.execute({ actor: amy });
 
     expect(rows).toHaveLength(LIMIT);
     expect(rows[0]?.project.name).toBe(`owner/seed-${String(LIMIT + 5)}`);
@@ -95,7 +95,7 @@ describe('ListProjectOverview scope', () => {
     await seedProjects(stores, amy.userId, 2);
     await seedProjects(stores, bob.userId, 3);
 
-    const rows = await overview.execute({ actor: amy });
+    const { rows } = await overview.execute({ actor: amy });
 
     expect(rows).toHaveLength(2);
     expect(rows.every((row) => row.project.userId === amy.userId)).toBe(true);

@@ -39,7 +39,7 @@ describe.skipIf(!hasTestDatabase)('ListProjectOverview on PostgreSQL', () => {
         const overview = new ListProjectOverview({ ...stores, costs: new PgCostTotals(pool) });
         const spy = vi.spyOn(pool, 'query');
 
-        const rows = await overview.execute({ actor: { userId: amy.id, role: 'user' } });
+        const { rows } = await overview.execute({ actor: { userId: amy.id, role: 'user' } });
 
         expect(rows).toHaveLength(projects);
         expect(rows.every((row) => row.project.userId === amy.id && row.runs === 2)).toBe(true);

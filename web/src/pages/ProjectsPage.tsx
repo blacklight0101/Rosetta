@@ -32,6 +32,11 @@ function YourProjects(props: {
   if (state.rows.length > 0) {
     return (
       <>
+        {state.truncated ? (
+          <p class="rst-settings__lead" role="note">
+            Only the newest 100 projects are shown. Older projects are not listed on this page.
+          </p>
+        ) : null}
         <QueueNotices rows={state.rows} onCancelled={onCancelled} />
         <ProjectRunsTable rows={state.rows} />
       </>
