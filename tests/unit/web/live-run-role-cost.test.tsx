@@ -69,3 +69,39 @@ it('RF-401 the usage of the Ollama check before the first task adds no agent pan
   expect(screen.queryByLabelText('Agent ollama-preflight')).toBeNull();
   expect(screen.getAllByLabelText(/^Agent /u)).toHaveLength(1);
 });
+
+it('RF-1003 the tokens of a role come from its usage events, the Ollama check included, never twice', async () => {
+  const { stream } = renderLive();
+  const connection = await stream.connection();
+  const tokens = (inputTokens: number, outputTokens: number) => ({
+    inputTokens,
+    outputTokens,
+    cachedInputTokens: 0,
+  });
+  const usageWith = (seq: number, agent: string, used: ReturnType<typeof tokens>) =>
+    ev(
+      seq,
+      'usage.recorded',
+      { callId: `c#${String(seq)}`, role: 'reader', costMicros: 0, tokens: used },
+      agent,
+    );
+
+  connection.event(ev(1, 'run.started', startedData));
+  connection.event(usageWith(2, 'ollama-preflight', tokens(30, 2)));
+  connection.event(planned(3, 'reader-001', 'Catalog'));
+  connection.event(agentStarted(4, 'reader-001', 'Catalog'));
+  connection.event(usageWith(5, 'reader-001', tokens(900, 40)));
+  connection.event(turn(6, 'reader-001', 1, [900, 40]));
+
+  const meter = await screen.findByRole('region', { name: 'Run meter' });
+  await waitFor(() => {
+    expect(valueOf(screen.getByLabelText('Agent Catalog'), 'Tokens')).toBe('940');
+  });
+  const reader = within(meter).getByRole('row', { name: /reader/u });
+  expect([...reader.querySelectorAll('td')].map((cell) => cell.textContent)).toEqual([
+    '930',
+    '42',
+    '972',
+    '$0.00',
+  ]);
+});

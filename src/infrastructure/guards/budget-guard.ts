@@ -74,6 +74,8 @@ export interface BudgetGuardOptions {
   readonly logger: Logger;
   /** How long a reservation counts: the call's timeout with its retries, plus a margin. */
   readonly reservationTtlMs: number;
+  /** How long the guard waits for the budget events before it goes on (P1-96). */
+  readonly reportTimeoutMs: number;
 }
 
 /** A call the guard let through: its price and its worst case. */

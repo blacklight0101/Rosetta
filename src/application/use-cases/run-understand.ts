@@ -229,6 +229,7 @@ export class RunUnderstand implements RunExecutor {
     const { run, events } = execution;
     const scope = scopeOf(run);
     const { manifests, runs, ledger, costTotals } = this.deps;
+    const logger = ownerLogger(this.deps.logger, run.userId);
     return {
       ...this.deps.runSinks(scope),
       security: new ManifestSecurityRecorder({ manifests, scope, queue: updates.queue }),
@@ -237,7 +238,7 @@ export class RunUnderstand implements RunExecutor {
         execution.stop(reason);
       },
       // RF-1003, RF-1010: usage and budget events start from what the run and project spent.
-      budgetEvents: await RunBudgetEvents.open({ events, run, ledger, costTotals }),
+      budgetEvents: await RunBudgetEvents.open({ events, run, ledger, costTotals, logger }),
     };
   }
 

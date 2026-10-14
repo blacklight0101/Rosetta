@@ -3,6 +3,7 @@ import type { RunEventType } from '../../domain/runs/run-event.js';
 import type { BudgetEvents, RecordedCall } from '../ports/budget-events.js';
 import type { CostLedger, LedgerEntry } from '../ports/cost-ledger.js';
 import type { CostTotals } from '../ports/cost-totals.js';
+import type { Logger } from '../ports/logger.js';
 
 // RF-421, RF-422, RF-1003, RF-1010, ADR-007, data-model.md section 3.9: the budget events of one
 // run. One instance serves every guarded provider of the run, so the totals and the warnings are
@@ -44,7 +45,14 @@ export interface RunBudgetEventsParts {
 
 export interface OpenRunBudgetEvents {
   readonly events: BudgetEventEmitter;
-  readonly run: { readonly userId: string; readonly id: string; readonly projectId: string };
+  readonly run: {
+    readonly userId: string;
+    readonly id: string;
+    readonly projectId: string;
+    readonly runKey: string;
+  };
+  /** Where a totals read that failed is logged; the reporter then starts from zero. */
+  readonly logger: Logger;
   readonly ledger: Pick<CostLedger, 'runEntries'>;
   readonly costTotals: Pick<CostTotals, 'projectGroups'>;
 }

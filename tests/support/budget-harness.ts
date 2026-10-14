@@ -61,6 +61,18 @@ export interface BudgetHarnessOptions {
   readonly ledger?: CostLedger;
   /** Where the guard reports usage and caps; by default a recorder kept in `reported`. */
   readonly budgetEvents?: BudgetEvents;
+  /** How long the guard waits for the reporter (P1-96); 5 seconds by default. */
+  readonly reportTimeoutMs?: number;
+  /** Also called with each stop, after it is kept in `stops`. */
+  readonly stopRun?: (reason: RosettaError) => void;
+}
+
+/** How long a reservation counts and how long the guard waits for the reporter. */
+function timesOf(options: BudgetHarnessOptions): {
+  reservationTtlMs: number;
+  reportTimeoutMs: number;
+} {
+  return { reservationTtlMs: 600_000, reportTimeoutMs: options.reportTimeoutMs ?? 5_000 };
 }
 
 /** What the guard reported to the run's budget events, in order (P1-96). */
@@ -135,12 +147,15 @@ export function budgetHarness(options: BudgetHarnessOptions = {}): BudgetHarness
         return Promise.resolve();
       },
     },
-    stopRun: (reason) => stops.push(reason),
+    stopRun: (reason) => {
+      stops.push(reason);
+      options.stopRun?.(reason);
+    },
     budgetEvents: eventsOf(options.budgetEvents, reported),
     clock,
     ids: new SequenceIdGenerator(),
     logger,
-    reservationTtlMs: 600_000,
+    ...timesOf(options),
   });
   return { guard, fake, ledger, calls, logger, stops, costs, reported };
 }

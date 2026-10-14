@@ -1,61 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import type { LedgerEntry } from '../../../../src/application/ports/cost-ledger.js';
-import type { LedgerGroup } from '../../../../src/application/ports/cost-totals.js';
 import {
   RunBudgetEvents,
-  type BudgetEventEmitter,
   type SpendTotals,
 } from '../../../../src/application/runs/run-budget-events.js';
 import type { UsageCap } from '../../../../src/domain/budget/usage-cap.js';
+import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { FixedClock } from '../../../support/fixed-clock.js';
+import { MemoryLogger } from '../../../support/memory-logger.js';
+import {
+  budgetEventEmitter as emitter,
+  ledgerEntryFixture as entry,
+  ledgerGroupFixture as projectGroup,
+  type Emitted,
+} from '../../../support/budget-event-fixtures.js';
 
 // RF-421, RF-422, RF-1003, RF-1010, ADR-007, P1-96: what the budget guard of a run reports to the
 // run's events: `usage.recorded` after each recorded call, `budget.warning` once at 50, 80 and 95
 // percent of the run's caps and `budget.capReached` when a cap stops the run. Generated test data.
 
-interface Emitted {
-  readonly type: string;
-  readonly data: Readonly<Record<string, unknown>>;
-  readonly agentTaskId: string | undefined;
-}
-
-function emitter(): BudgetEventEmitter & { readonly emitted: Emitted[] } {
-  const emitted: Emitted[] = [];
-  return {
-    emitted,
-    emit: (type, data, agentTaskId) => {
-      emitted.push({ type, data, agentTaskId });
-      return Promise.resolve(undefined);
-    },
-  };
-}
-
 const zero: SpendTotals = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, costMicros: 0n };
-
-function entry(change: Partial<LedgerEntry> = {}): LedgerEntry {
-  return {
-    at: new Date('2026-10-12T10:00:00.000Z'),
-    userId: 'user-1',
-    projectId: 'project-1',
-    runId: 'run-1',
-    agentTaskId: 'reader-001',
-    stage: 'understand',
-    role: 'reader',
-    provider: 'cloud',
-    model: 'model-a',
-    callId: '20261012-100000-understand#1',
-    attempt: 1,
-    keySource: 'server',
-    inputTokens: 100,
-    outputTokens: 20,
-    cachedInputTokens: 10,
-    usageSource: 'reported',
-    costMicros: 1_500n,
-    costKnown: true,
-    currency: 'USD',
-    priceTableVersion: '2026-10-11',
-    ...change,
-  };
-}
 
 const caps: readonly UsageCap[] = [
   { kind: 'run-cost', limit: 10_000n },
@@ -253,7 +216,8 @@ describe('RunBudgetEvents.open', () => {
     const group = { costMicros: 3_000n, inputTokens: 10, outputTokens: 2, cachedInputTokens: 0 };
     const reporter = await RunBudgetEvents.open({
       events,
-      run: { userId: 'user-1', id: 'run-1', projectId: 'project-1' },
+      run: { userId: 'user-1', id: 'run-1', projectId: 'project-1', runKey: 'run-key-1' },
+      logger: new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker()),
       ledger: { runEntries: () => Promise.resolve([entry({ costMicros: 1_000n })]) },
       costTotals: {
         projectGroups: () => Promise.resolve([projectGroup(group), projectGroup(group)]),
@@ -268,22 +232,3 @@ describe('RunBudgetEvents.open', () => {
     });
   });
 });
-
-function projectGroup(
-  sums: Pick<LedgerGroup, 'costMicros' | 'inputTokens' | 'outputTokens' | 'cachedInputTokens'>,
-): LedgerGroup {
-  return {
-    ...sums,
-    currency: 'USD',
-    costKnown: true,
-    priceTableVersion: '2026-10-11',
-    calls: 1,
-    runId: 'run-0',
-    stage: 'understand',
-    role: 'reader',
-    provider: 'cloud',
-    model: 'model-a',
-    keySource: 'server',
-    firstAt: new Date('2026-10-11T10:00:00.000Z'),
-  };
-}
