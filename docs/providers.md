@@ -221,11 +221,13 @@ jitter, never shorter than the hint (capped at five minutes), up to `maxRetries`
   run it against
   `tests/support/fake-openai-server.ts`, which replays the hand-written recordings under `tests/recordings/openai/`
   with a FAKE key, and run the contract suite on it.
-- Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key in `OPENAI_API_KEY`:
+- Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key in `OPENAI_API_KEY` (exported, or in the repository `.env`, which the script loads itself; an exported key wins):
 
   ```text
   npm run live:openai -- gpt-5-nano
   ```
+
+  The model argument is required: without it the script exits with status 2 and prints the usage line.
 
   It builds Rosetta, then makes two calls with fixed synthetic prompts (a short text answer and one `read_file` tool
   call) and prints both answers, with the dated model id, the request id and the usage, or the error code and its
