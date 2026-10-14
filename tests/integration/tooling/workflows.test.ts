@@ -97,6 +97,10 @@ describe('GitHub Actions workflows: edited pull requests', () => {
     ]);
   });
 
+  it('RNF-001 the pr-title job is named pr-title, the name the ruleset matches', async () => {
+    expect(await workflowText('pr-title.yml')).toMatch(/^ {4}name: pr-title$/mu);
+  });
+
   it('RNF-001 the pr-title check is reported by its own workflow and not by ci.yml', async () => {
     expect(await jobIds('ci.yml')).not.toContain('pr-title');
     expect(await jobIds('pr-title.yml')).toEqual(['pr-title']);

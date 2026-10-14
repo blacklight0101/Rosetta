@@ -111,7 +111,12 @@ export default defineConfig(
   },
   {
     // Tools load their configuration and Playwright its global teardown through a default export.
-    files: ['*.config.ts', 'web/vite.config.ts', 'tests/e2e/support/global-teardown.ts'],
+    files: [
+      '*.config.ts',
+      'web/vite.config.ts',
+      'tests/e2e/support/global-setup.ts',
+      'tests/e2e/support/global-teardown.ts',
+    ],
     rules: { 'no-restricted-exports': 'off' },
   },
   prettier,
