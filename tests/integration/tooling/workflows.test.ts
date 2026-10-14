@@ -237,7 +237,7 @@ describe('Dependabot configuration', () => {
   it('DEC-125 Dependabot waits two weeks before it proposes a new version', async () => {
     const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
 
-    expect(dependabot.match(/cooldown:\n\s+default-days: 14\n/gu) ?? []).toHaveLength(2);
+    expect(dependabot.match(/cooldown:\n\s+default-days: 14\n/gu) ?? []).toHaveLength(3);
   });
 
   it('P2-17 Dependabot leaves the Anthropic SDK pin to its card', async () => {
