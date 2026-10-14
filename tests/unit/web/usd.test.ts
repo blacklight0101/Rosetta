@@ -15,7 +15,7 @@ describe('DEC-107 comma handling', () => {
     expect(dollarsToMicros(text)).toBe(micros);
   });
 
-  it.each(['1,5', '1,2,3', '12,34', '1,5.5', ',500', '1,200,', '1,,200'])(
+  it.each(['1,5', '1,2,3', '12,34', '1,5.5', ',500', '1,200,', '1,,200', '0,500', '0,001'])(
     'refuses a comma that is not a thousands group: %j',
     (text) => {
       expect(dollarsToMicros(text)).toBeUndefined();

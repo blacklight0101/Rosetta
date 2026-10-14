@@ -251,3 +251,16 @@ it('RF-1001 saving the run cap keeps what changed in the settings since the page
     roles: { reader: { model: 'changed-elsewhere' } },
   });
 });
+
+it('DEC-117 a run cap above 100 USD is refused next to the field and nothing is sent', async () => {
+  const { calls } = renderStart();
+  await ready();
+
+  fireEvent.input(input('Run cap (USD)'), { target: { value: '150' } });
+  fireEvent.click(start());
+
+  await waitFor(() => {
+    expect(input('Run cap (USD)').getAttribute('aria-invalid')).toBe('true');
+  });
+  expect(calls.filter((call) => call.method !== 'GET')).toEqual([]);
+});
