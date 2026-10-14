@@ -7,6 +7,7 @@ import { fixturePassword } from '../../support/account-fixtures.js';
 import { hasTestDatabase, useTestDatabase, type TestDatabase } from '../../support/postgres.js';
 import { useWritableTempRoot } from '../../support/writable-temp-root.js';
 import { demoGitHub } from '../../support/snapshot-fetcher-harness.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-110, RF-1305: the parse budget every scan pipeline is built with. The recording subclass keeps
 // the real pipeline and only remembers the options each one was constructed with.
@@ -29,7 +30,7 @@ vi.mock('../../../src/infrastructure/scan/scan-pipeline.js', async (importOrigin
 // RNF-005, ADR-008: a scan run started through the HTTP API fetches from the fake GitHub injected
 // through the test doubles, so the end-to-end journeys never reach github.com.
 
-const secretKey = Buffer.alloc(32, 6).toString('base64');
+const secretKey = fixtureSecret(6);
 const adminName = ['e2e', 'admin'].join('.');
 
 type Headers = Record<string, string>;

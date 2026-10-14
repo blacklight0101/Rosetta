@@ -61,6 +61,11 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     message: 'The settings were changed somewhere else after this page read them.',
     nextStep: 'Reload the page to see the current settings, make your change again and save.',
   },
+  'RST-1008': {
+    message:
+      'ROSETTA_SECRET_KEY is a known or repeated value, such as the all-zero placeholder of .env.example, so the server did not start.',
+    nextStep: 'Generate a new key with openssl rand -base64 32, set it in .env and start again.',
+  },
   'RST-1300': {
     message:
       'The agent did not return cards in the required format, even after one repair attempt.',

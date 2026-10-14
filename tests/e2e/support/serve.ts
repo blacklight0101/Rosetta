@@ -19,6 +19,7 @@ import { seededAdmin, seedUsers } from './seed.js';
 import { seedCost } from './seed-cost.js';
 import { seedReplayRuns } from './seed-replay.js';
 import { clearSessions } from './sign-in.js';
+import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RNF-005, ADR-008, P1-13: the end-to-end test server. Usage (from the repository root):
 //   node --import ./scripts/register-ts.mjs tests/e2e/support/serve.ts
@@ -105,7 +106,7 @@ async function main(): Promise<void> {
   await mkdir(dataDir, { recursive: true });
   const environment = loadEnvironment({
     DATABASE_URL: schema.url,
-    ROSETTA_SECRET_KEY: Buffer.alloc(32, 3).toString('base64'),
+    ROSETTA_SECRET_KEY: fixtureSecret(3),
     ROSETTA_PUBLIC_URL: `http://127.0.0.1:${String(port)}`,
     ROSETTA_DATA_DIR: dataDir,
     ROSETTA_ADMIN_USER: seededAdmin.userName,

@@ -29,10 +29,11 @@ Set these values in `.env` (the rest of the file is optional):
 | `ROSETTA_ADMIN_PASSWORD` | the temporary password of the first administrator (at least 12 characters, not a common one) | `openssl rand -hex 16` |
 
 The three database passwords end up inside database URLs, so use URL-safe characters (hex is). Keep a copy of
-`ROSETTA_SECRET_KEY` somewhere safe: without it the stored provider keys cannot be decrypted.
+`ROSETTA_SECRET_KEY` somewhere safe: without it the stored provider keys cannot be decrypted. The server refuses to start
+with a key of 32 equal bytes, such as the all-zero placeholder of `.env.example` (error `RST-1008`).
 
 The role passwords are applied when the database volume is first created. Changing them in `.env` later does not
-change the roles; reset the stack (section 5) or change the roles with `psql`.
+change the roles; reset the stack (section 5) or rotate the passwords in place (section 6).
 
 Optional values: `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` (server keys, used under the caps you set in the app),
 `GITHUB_TOKEN` (raises the GitHub rate limit for snapshot downloads), `ROSETTA_OLLAMA_URL` (section 4),
@@ -107,12 +108,40 @@ passwords and the first administrator is created from `ROSETTA_ADMIN_USER` and `
 Back up before you reset anything you want to keep: `docker compose exec db pg_dump -U postgres rosetta > rosetta.sql`
 for the database, and a copy of the `rosetta-data` volume for the files.
 
-## Troubleshooting
+## 6. Rotate the database role passwords
 
+Rotate `ROSETTA_APP_DB_PASSWORD` and `ROSETTA_MIGRATOR_DB_PASSWORD` (and, if you want, the superuser's
+`ROSETTA_DB_ADMIN_PASSWORD`) without losing data. The roles keep their rights; only the passwords change. Expect the
+app to fail its database calls for the short time between steps 2 and 3.
+
+1. Generate the new values: `openssl rand -hex 24` for each (hex is URL-safe, section 1).
+2. Change the roles in the running database. `\password` hashes the value in `psql`, so it appears in no statement,
+   log or shell history. Type the new value when it asks:
+
+   ```
+   docker compose exec db psql -U postgres -d rosetta
+   \password rosetta_app
+   \password rosetta_migrator
+   \password postgres
+   \q
+   ```
+
+   Run `\password postgres` only when you rotate `ROSETTA_DB_ADMIN_PASSWORD`.
+3. Put the same values in `.env` (`ROSETTA_APP_DB_PASSWORD`, `ROSETTA_MIGRATOR_DB_PASSWORD`,
+   `ROSETTA_DB_ADMIN_PASSWORD`) and run `docker compose up -d`. Compose recreates the containers whose environment
+   changed; the volumes, and so the data, stay.
+4. Check `curl http://127.0.0.1:8080/healthz` and sign in. If the app logs `password authentication failed`, a value
+   in `.env` differs from the one typed in step 2: repeat step 2 with the `.env` value.
+
+On a hosted deployment the same steps apply with the host's `psql` as the administrative role, and the new values go
+into the host's secret store in step 3. Rotate after anyone who knew the old values leaves, and at least once a year.
+The previous values stop working at step 2, so nothing else needs revoking.
+
+## Troubleshooting
 | Symptom | Likely cause and fix |
 |---|---|
 | `docker compose` stops with `Set ... in .env` | a required value is empty; set it in `.env` (section 1) |
-| `password authentication failed for user "rosetta_app"` | the volume was created with other passwords; reset (section 5) or fix the roles with `psql` |
+| `password authentication failed for user "rosetta_app"` | the volume was created with other passwords; rotate the passwords (section 6) or reset (section 5) |
 | Port 8080 or 5432 already in use | stop the other program; the ports are fixed to `127.0.0.1:8080` and `127.0.0.1:5432` |
 | The app cannot reach Ollama | section 4: Ollama must listen on an address the container reaches |
 | You forgot the administrator password | another administrator resets it in the app; with none left, reset the stack (section 5) |

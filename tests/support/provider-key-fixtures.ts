@@ -12,9 +12,11 @@ export function fixtureKey(tag: string): string {
   return ['fixture', 'provider', 'key', 'Zq9Wm4', tag].join('_');
 }
 
-/** A server secret: 32 bytes of one value, as base64 (ROSETTA_SECRET_KEY form). */
+/** A server secret: 32 bytes counting up from `fill`, as base64 (ROSETTA_SECRET_KEY form). */
 export function fixtureSecret(fill: number): string {
-  return Buffer.alloc(32, fill).toString('base64');
+  return Buffer.from(Array.from({ length: 32 }, (_, index) => (fill + index) % 256)).toString(
+    'base64',
+  );
 }
 
 /** Hexadecimal of bytes, so tests compare stored bytes whatever their class. */

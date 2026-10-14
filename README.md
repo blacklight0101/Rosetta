@@ -11,8 +11,10 @@ the cost of every run visible and capped. It is a web application with accounts:
 spawns, live, and the published report replays their work. One container image runs it on your machine with Docker
 Compose or on a server for invited users.
 
-**Status: documentation phase (P0).** No code exists yet. This repository holds the design documents that
-development will follow. See [docs/README.md](docs/README.md) for the full map.
+**Status: phase P1, the milestone slice, is in progress.** The server, the web application and the container image
+exist and run with Docker Compose; the pipeline is built card by card. The design documents they follow are in this
+repository: [docs/roadmap.md](docs/roadmap.md) has the phases, [handoff.md](handoff.md) the current state and
+[docs/README.md](docs/README.md) the full map.
 
 ## Quick start
 
