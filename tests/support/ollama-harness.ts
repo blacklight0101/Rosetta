@@ -4,9 +4,8 @@ import {
   OllamaProvider,
   type OllamaProviderOptions,
 } from '../../src/infrastructure/providers/ollama/ollama-provider.js';
-import { processContextCache } from '../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
+import { newContextCache } from '../../src/infrastructure/providers/ollama/ollama-context-resolver.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
-import { clearContextCache } from './ollama-context-cache.js';
 import { FakeOllamaServer, loadOllamaRecording } from './fake-ollama-server.js';
 import { RecordingLogger } from './recording-logger.js';
 
@@ -38,7 +37,6 @@ export function useFakeOllama(): (
   const servers: FakeOllamaServer[] = [];
   afterEach(async () => {
     await Promise.all(servers.splice(0).map((server) => server.stop()));
-    clearContextCache(processContextCache);
   });
   return async (recording, overrides = {}) => {
     const server = new FakeOllamaServer(await loadOllamaRecording(recording));
@@ -47,6 +45,8 @@ export function useFakeOllama(): (
     const waits: number[] = [];
     const logger = new RecordingLogger();
     const { text: textProtocolPrompt } = await loadTextToolProtocol(promptsFolder);
+    // Each harness starts from an empty context cache; `another` shares it, as one process would.
+    const contextCache = newContextCache();
     const create = (): OllamaProvider =>
       new OllamaProvider({
         baseUrl,
@@ -55,6 +55,7 @@ export function useFakeOllama(): (
         maxRetries: 3,
         testMode: true,
         random: () => 0.5,
+        contextCache,
         ...overrides,
         textProtocolPrompt,
         logger,
