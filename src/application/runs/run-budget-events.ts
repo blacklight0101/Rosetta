@@ -15,8 +15,9 @@ import type { Logger } from '../ports/logger.js';
 //     calls cost 0), and the run's and project's totals after it. No prompt, answer or key.
 //   - `budget.warning` once per level, the first time the run's share of a run cap (cost or
 //     tokens, whichever is higher) reaches 50, 80 or 95 percent.
-//   - `budget.capReached` once, when a cap first refuses a call (parallel refusals give one): the cap's kind as the scope, its limit and
-//     what was spent or reserved; the token cap reports tokens.
+//   - `budget.capReached` once, when a cap first refuses a call (parallel refusals give one): the
+//     cap's kind as the scope, its limit and what was spent or reserved; the token cap
+//     reports tokens.
 // The totals start from the run's ledger rows and the project's totals when the run opens it, and
 // add every call after; the ledger stays the source of truth (the page re-reads the run's total).
 
@@ -132,7 +133,6 @@ export class RunBudgetEvents implements BudgetEvents {
     this.project = parts.project;
   }
 
-  /** RF-1010: a reporter whose totals start from the run's ledger rows and the project's totals. */
   /**
    * RF-1010: a reporter whose totals start from the run's ledger rows and the project's totals. A
    * read that fails only costs the reporting its starting point: it is logged and the totals start

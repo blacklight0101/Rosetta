@@ -7,11 +7,11 @@ import { microsToDollars } from '../lib/usd.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1003, RF-424, design-system.md section 14 (live run): the run meter: tokens and cost per role
-// and in total, the cap as a bar, and the estimate beside it for comparison. The tokens and cost
-// of each role add up its usage.recorded events (P1-96; the turns of its agents for a run without
-// them), and the total cost is read from the run (the server adds every call to it), so the two can be checked against
-// each other. A number the page does not have (a role whose model has no price) is a dash, never
-// zero; a local model's calls cost zero.
+// and in total, the cap as a bar, and the estimate beside it for comparison. The tokens and cost of
+// each role add up its usage.recorded events (P1-96; the turns of its agents for a run without
+// them), and the total cost is read from the run (the server adds every call to it), so the two can
+// be checked against each other. A number the page does not have (a role whose model has no price)
+// is a dash, never zero; a local model's calls cost zero.
 
 export interface RunMeterProps {
   readonly state: RunState;
