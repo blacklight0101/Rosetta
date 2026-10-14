@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -17,6 +17,10 @@ describe('PublicAddressAgent in the provider adapters', () => {
   it.fails(
     'RF-1104 P2-09 P2-10: an adapter that connects to a stored base URL builds a PublicAddressAgent (expected to fail until that adapter is wired)',
     async () => {
+      // A rename of the folder must not keep this test "failing as expected" for the wrong reason.
+      expect((await stat(join(process.cwd(), 'src/infrastructure/providers'))).isDirectory()).toBe(
+        true,
+      );
       const users = await filesConstructing(
         process.cwd(),
         'src/infrastructure/providers',

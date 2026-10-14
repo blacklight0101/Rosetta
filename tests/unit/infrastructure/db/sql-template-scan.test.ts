@@ -22,6 +22,24 @@ describe('findSqlTemplates', () => {
     ['a DELETE', 'const Q = `DELETE FROM t WHERE a = ${a}`;'],
     ['a DDL statement', 'const Q = `CREATE TABLE ${name} (a int)`;'],
     ['a GRANT', 'const Q = `GRANT SELECT ON t TO ${role}`;'],
+  ])('finds %s', (_label, source) => {
+    expect(findSqlTemplates(source)).not.toEqual([]);
+  });
+});
+
+describe('findSqlTemplates finds more', () => {
+  it.each([
+    ['a TRUNCATE', 'const Q = `TRUNCATE ${t}`;'],
+    ['a lower-case truncate', 'const Q = `truncate ${t} restart identity`;'],
+    ['a LOCK TABLE', 'const Q = `LOCK TABLE ${t} IN ACCESS EXCLUSIVE MODE`;'],
+    ['a lock over lines', 'const Q = `lock\n  table ${t}`;'],
+    ['a VACUUM', 'const Q = `VACUUM ${t}`;'],
+    ['a REINDEX', 'const Q = `REINDEX TABLE ${t}`;'],
+    ['a COMMENT ON', 'const Q = `COMMENT ON TABLE ${t} IS x`;'],
+    ['a bracket call of query', 'pool["query"](`${text}`, []);'],
+    ['a bracket call with single quotes', "pool['query'](`${text}`, []);"],
+    ['an optional call of query', 'pool?.query(`${text}`, []);'],
+    ['a bracket call on a call result', 'getPool()["query"](`${text}`);'],
     ['a SET ROLE', 'const Q = `SET ROLE ${role}`;'],
     ['a clause only', 'const Q = `ORDER BY ${column}`;'],
     ['a template nested in another', 'const Q = `x ${`select a from t where ${b}`}`;'],

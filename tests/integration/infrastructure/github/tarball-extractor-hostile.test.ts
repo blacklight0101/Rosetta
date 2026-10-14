@@ -32,29 +32,66 @@ const REFUSED_PATHS: readonly (readonly [string, string])[] = [
   ['a drive-absolute path', 'C:\\x'],
   ['a drive-absolute path with a slash', 'C:/x'],
   ['a lower-case drive letter', 'c:x'],
-  ['a drive letter below the top folder', `${TOP}/C:x`],
   ['a drive letter after a backslash', `${TOP}\\C:\\x`],
+  ['a drive letter at the start with a backslash tail', 'D:\\a\\b'],
   ['a POSIX absolute path', '/abs/x'],
   ['a dot-dot segment between separators', `${TOP}/a/../../x`],
   ['a trailing dot-dot', `${TOP}/..`],
-  ['a device name', `${TOP}/CON`],
-  ['a device name in lower case', `${TOP}/nul`],
-  ['a device name with an extension', `${TOP}/nul.txt`],
-  ['a device name with several extensions', `${TOP}/prn.tar.gz`],
-  ['a numbered port device', `${TOP}/COM1`],
-  ['a numbered printer device', `${TOP}/lpt9.log`],
-  ['a superscript-numbered port', `${TOP}/COM\u00B9`],
-  ['a device name with a trailing dot', `${TOP}/aux.`],
-  ['a device name with a trailing space', `${TOP}/con `],
-  ['a device name with a colon stream', `${TOP}/con:stream`],
-  ['a device name in a folder', `${TOP}/src/NUL/x.cs`],
-  ['a device name after a backslash', `${TOP}\\src\\COM2.txt`],
-  ['the console input device', `${TOP}/CONIN$`],
   ['a dot-dot with a trailing space', `${TOP}/.. /x`],
   ['three dots', `${TOP}/.../x`],
   ['dots and a space', `${TOP}/. ./x`],
   ['a dot-dot with a trailing space at the end', `${TOP}/a/.. `],
 ];
+
+const SKIPPED_PATHS: readonly (readonly [string, string])[] = [
+  ['a kernel driver file', 'drivers/net/aux.c'],
+  ['a header', 'include/con.h'],
+  ['a folder', 'aux/readme.txt'],
+  ['a dependency', 'node_modules/nul/nul.js'],
+  ['an upper-case name', 'Properties/PRN.cs'],
+  ['a colon in a file name', 'docs/a:b.txt'],
+  ['a device name', 'CON'],
+  ['a device name in lower case', 'nul'],
+  ['several extensions', 'prn.tar.gz'],
+  ['a numbered port', 'COM1'],
+  ['a numbered printer', 'lpt9.log'],
+  ['a superscript-numbered port', 'COM¹'],
+  ['a trailing dot', 'aux.'],
+  ['a trailing space', 'con '],
+  ['a stream', 'con:stream'],
+  ['the console input', 'CONIN$'],
+  ['a drive form below the top folder', 'C:x'],
+  ['a device after a backslash', 'src\\COM2.txt'],
+];
+
+describe('extractTarball names Windows cannot use', () => {
+  it.each(SKIPPED_PATHS)(
+    'RF-122 skips an entry with %s, counts it and extracts the rest',
+    async (_label, name) => {
+      const result = await extract([plainFile('README.md'), rawEntry(`${TOP}/${name}`)]);
+
+      expect(await listTree(targetDir())).toEqual(['README.md']);
+      expect(result.skippedLinks).toBe(1);
+    },
+  );
+
+  it('RF-122 skips a device-named folder with everything below it and keeps the other files', async () => {
+    const result = await extract([
+      plainFile('aux/a.txt'),
+      plainFile('aux/deep/b.txt'),
+      plainFile('src/ok.cs'),
+    ]);
+
+    expect(await listTree(targetDir())).toEqual(['src/ok.cs']);
+    expect(result.skippedLinks).toBe(2);
+  });
+
+  it('RF-122 a skipped entry does not hide a hostile one after it', async () => {
+    await expect(extract([rawEntry(`${TOP}/aux.c`), rawEntry('/abs/x')])).rejects.toMatchObject({
+      code: 'RST-1906',
+    });
+  });
+});
 
 describe('extractTarball hostile entry names', () => {
   it.each(REFUSED_PATHS)(
