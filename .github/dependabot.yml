@@ -42,3 +42,13 @@ updates:
         update-types:
           - minor
           - patch
+  # The base image of the Dockerfile is pinned by digest; a newer digest is proposed after the cooldown.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: build
+      include: scope

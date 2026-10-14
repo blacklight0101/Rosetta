@@ -195,7 +195,7 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
   private async reportSkippedLinks(key: string, skippedLinks: number): Promise<void> {
     if (skippedLinks === 0) return;
     await this.logger.securityEvent(ERROR_CODES.snapshotEntryRefused, {
-      message: `Skipped ${String(skippedLinks)} link entries while extracting ${key}.`,
+      message: `Skipped ${String(skippedLinks)} link or unwritable-name entries while extracting ${key}.`,
       data: { snapshot: key, skippedLinks },
     });
   }

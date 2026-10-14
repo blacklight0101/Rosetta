@@ -22,10 +22,14 @@ const UPSERT =
   'INSERT INTO provider_keys (user_id, provider, base_url, ciphertext, iv, auth_tag, key_version, last4, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ' +
   'ON CONFLICT (user_id, provider) DO UPDATE SET base_url = EXCLUDED.base_url, ciphertext = EXCLUDED.ciphertext, iv = EXCLUDED.iv, auth_tag = EXCLUDED.auth_tag, key_version = EXCLUDED.key_version, last4 = EXCLUDED.last4, updated_at = EXCLUDED.updated_at ' +
   "RETURNING (xmax::text <> '0') AS replaced";
-const FIND = `SELECT ${COLUMNS} FROM provider_keys WHERE user_id = $1 AND provider = $2`;
-const LIST_FOR_USER = `SELECT ${COLUMNS} FROM provider_keys WHERE user_id = $1 ORDER BY provider COLLATE "C"`;
+const FIND = 'SELECT ' + COLUMNS + ' FROM provider_keys WHERE user_id = $1 AND provider = $2';
+const LIST_FOR_USER =
+  'SELECT ' + COLUMNS + ' FROM provider_keys WHERE user_id = $1 ORDER BY provider COLLATE "C"';
 const DELETE = 'DELETE FROM provider_keys WHERE user_id = $1 AND provider = $2';
-const LIST_OUTSIDE = `SELECT ${COLUMNS} FROM provider_keys WHERE key_version <> $1 ORDER BY user_id::text COLLATE "C", provider COLLATE "C"`;
+const LIST_OUTSIDE =
+  'SELECT ' +
+  COLUMNS +
+  ' FROM provider_keys WHERE key_version <> $1 ORDER BY user_id::text COLLATE "C", provider COLLATE "C"';
 const RESEAL =
   'UPDATE provider_keys SET ciphertext = $3, iv = $4, auth_tag = $5, key_version = $6 WHERE user_id = $1 AND provider = $2 AND key_version = $7 AND iv = $8';
 

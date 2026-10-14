@@ -11,6 +11,8 @@ import {
   startUnderstand,
   valueOf,
 } from './support/live-run-page.js';
+import { hostileTexts, expectNothingInjected, watchDialogs } from './support/hostile-card.js';
+import { replayRunId } from './support/seed-replay.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
@@ -241,6 +243,25 @@ test('RF-1006 a stream asked from an event number sends the stored events after 
   expect(ids[0]).toBe(11);
   expect(ids).toEqual(ids.map((_, index) => 11 + index));
   expect(body).toContain('event: run.ended');
+});
+
+test('RF-507 RF-1002 the hostile card of a recorded run is text on the live page: nothing runs and no element is injected', async ({
+  page,
+  context,
+}, info) => {
+  await signInAs(context, accountFor('replay', info.project.name));
+  const dialogs = watchDialogs(page);
+
+  await page.goto(`/runs/${replayRunId(info.project.name)}`);
+
+  await expect(runStatus(page)).toContainText('Completed');
+  await transitionsDone(page);
+  await expect(page.locator('body')).toContainText(hostileTexts.script);
+  await expect(page.locator('body')).toContainText(hostileTexts.image);
+  await expect(page.locator('body')).toContainText(hostileTexts.link);
+  await expect(page.locator('body')).toContainText(hostileTexts.svg);
+  await expectNothingInjected(page, dialogs);
+  await expectNoSeriousViolations(page);
 });
 
 test('RF-1105 a run id that is not the account own shows the error and no page of a run', async ({

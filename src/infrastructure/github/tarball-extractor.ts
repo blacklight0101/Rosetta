@@ -11,7 +11,7 @@ export interface ExtractionLimits {
 }
 
 export interface ExtractionResult {
-  /** Symbolic and hard link entries that were skipped (RF-127). */
+  /** Link entries and entries with a name Windows cannot write that were skipped (RF-122, RF-127). */
   readonly skippedLinks: number;
 }
 
@@ -24,14 +24,43 @@ export const DEFAULT_EXTRACTION_LIMITS: ExtractionLimits = {
 const FILE_TYPES: ReadonlySet<string> = new Set(['File', 'OldFile', 'ContiguousFile']);
 const LINK_TYPES: ReadonlySet<string> = new Set(['Link', 'SymbolicLink']);
 
-/** An absolute path (POSIX or Windows) or any `..` segment, on either separator. */
+/** Windows device names, with or without an extension, a trailing dot or space, or a stream (`CON:x`). */
+const DEVICE_NAME = /^(con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])$/i;
+
+function isDeviceName(segment: string): boolean {
+  const base = segment.split(/[.:]/)[0] ?? '';
+  return DEVICE_NAME.test(base.trimEnd());
+}
+
+/** `..`, and the segments Windows trims to `..` or to nothing: only dots and spaces, other than a lone `.`. */
+function isDotSegment(segment: string): boolean {
+  return segment !== '.' && /^[. ]+$/.test(segment);
+}
+
+const DRIVE_FORM = /^[A-Za-z]:/;
+const SEPARATORS = /[\\/]/;
+
+/**
+ * An absolute path (POSIX or Windows), a UNC or backslash-rooted path, a `..` or dot-only segment, or a
+ * drive letter at the start of the path, on either separator
+ * (RF-122, ADR-019). Such an entry stops the fetch.
+ */
 function isUnsafePath(path: string): boolean {
-  return (
-    path.startsWith('/') ||
-    path.startsWith('\\') ||
-    /^[A-Za-z]:/.test(path) ||
-    path.split(/[\\/]/).includes('..')
-  );
+  if (path.startsWith('/') || path.startsWith('\\')) return true;
+  const segments = path.split(SEPARATORS);
+  return segments.some(isDotSegment) || DRIVE_FORM.test(segments[0] ?? '');
+}
+
+/**
+ * A name Windows cannot write below the stripped top folder: a device name (`aux.c`, `COM1`) or a
+ * `:` in a segment. Real repositories hold them (the Linux kernel has `aux.c`), so the entry is
+ * skipped and counted, never a reason to stop the fetch; the result does not depend on the OS.
+ */
+function isUnwritableName(path: string): boolean {
+  return path
+    .split(SEPARATORS)
+    .slice(1)
+    .some((segment) => segment.includes(':') || isDeviceName(segment));
 }
 
 export function tooLarge(what: 'entries' | 'bytes', limit: number): RosettaError {
@@ -68,7 +97,7 @@ class EntryGate {
         ),
       );
     }
-    if (LINK_TYPES.has(entry.type)) {
+    if (LINK_TYPES.has(entry.type) || isUnwritableName(path)) {
       this.skippedLinks += 1;
       return false;
     }

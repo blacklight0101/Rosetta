@@ -14,6 +14,16 @@ operating system. None of the content comes from a real repository (DEC-03); the
 | `oversized.tar.gz` | one 64 KiB file `big.bin` (compresses to under 200 bytes) | RF-127 the byte limit stops the extraction, not the download size |
 | `many-entries.tar.gz` | 30 files `f/00.txt` .. `f/29.txt` | RF-127 the entry-count limit |
 
+The hostile entry names of RF-122 and RF-127 that need no committed archive (backslashes, drive letters, Windows device
+names, FIFO and device entries) are built in memory by `tests/support/hostile-tar.ts` for
+`tests/integration/infrastructure/github/tarball-extractor-hostile.test.ts`.
+
+## Provenance (RNF-009)
+
+Every archive was generated for this repository by the Rosetta contributors with the script above and is covered by the
+repository's MIT licence. The files inside are made-up text; the top-level folder name and the commit SHA are made-up
+values. Nothing here comes from the owner's employer (DEC-03).
+
 The redirect-to-another-host case of RF-127 is a behaviour of the fake GitHub server (`tests/support/fake-github.ts`)
 and uses `normal.tar.gz`.
 
