@@ -96,6 +96,8 @@ export class NodeOutputWriter implements OutputWriter, TextLineReader {
       await rename(temporary, target.value);
     } catch (error: unknown) {
       await rm(temporary, { force: true });
+      // RF-005: a folder deleted during the write (a run or a project) is a refusal, not a fault.
+      if (hasCode(error, 'ENOENT')) return this.#refuse('not-found', file);
       throw error;
     }
     return ok(undefined);
