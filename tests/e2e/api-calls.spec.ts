@@ -45,6 +45,10 @@ const entries = (page: Page): Locator => logs(page).getByTestId('log-entry');
 test('RF-1011 the calls of a run appear in the panel as it works, and the summary counts them', async ({
   page,
 }) => {
+  // The run may wait in the server's queue behind the runs of other specs (two run slots, RF-1108)
+  // before the first scan starts; the 30 s test limit then cut the wait short (P1-150).
+  test.setTimeout(120_000);
+
   await openStartPage(page);
   await page.getByLabel('Scan only').check();
   await startAndOpenLiveRun(page);

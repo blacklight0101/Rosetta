@@ -8,18 +8,49 @@ import { expect } from './fixtures.js';
 const webformsUrl = 'https://github.com/octo/webforms';
 const startButton = { name: /^Start run/u } as const;
 
+/** The start link of the project of a repository address on the projects page. */
+export function startLinkOf(page: Page, url: string): Locator {
+  return page.getByRole('link', { name: `Start run for ${new URL(url).pathname.slice(1)}` });
+}
+
+/**
+ * Makes sure the account has the project of a repository address, creating it when it has not.
+ * Two tests of one account can run at once and both see the empty list. The second creation is
+ * refused and its page keeps the empty list, so the list is read again until the project shows
+ * (P1-150); the same holds when the first creation is still in flight.
+ */
+export async function ensureProject(page: Page, url: string): Promise<void> {
+  const link = startLinkOf(page, url);
+  const empty = page.getByText('No projects yet');
+  await expect(link.or(empty).or(page.getByRole('table')).first()).toBeVisible();
+  if ((await link.count()) > 0) return;
+  const field = page.getByLabel('GitHub repository URL');
+  const create = page.getByRole('button', { name: 'Create project' });
+  await field.fill(url);
+  await create.click();
+  // A reload cancels a creation still in flight, so the page stays put while the list is awaited;
+  // a reload only checks again after the wait, and a missing project is created again (idempotent).
+  await expect(async () => {
+    await expect(link)
+      .toBeVisible({ timeout: 5_000 })
+      .catch(async () => {
+        await page.goto('/projects');
+        if ((await link.count()) > 0) return;
+        await field.fill(url);
+        await create.click();
+      });
+    await expect(link).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 60_000 });
+}
+
 /** Opens the start page of the account's `octo/webforms` project, creating the project once. */
 export async function openStartPage(page: Page): Promise<void> {
   await page.goto('/projects');
-  const link = page.getByRole('link', { name: 'Start run for octo/webforms' });
-  const empty = page.getByText('No projects yet');
-  await expect(link.or(empty).first()).toBeVisible();
-  if (await empty.isVisible()) {
-    await page.getByLabel('GitHub repository URL').fill(webformsUrl);
-    await page.getByRole('button', { name: 'Create project' }).click();
-    await expect(link).toBeVisible();
-  }
-  await link.click();
+  await ensureProject(page, webformsUrl);
+  // Followed by its address, not by a click: the list may be drawn again while the click waits.
+  const link = startLinkOf(page, webformsUrl);
+  await expect(link).toHaveAttribute('href', /\/start$/u);
+  await page.goto((await link.getAttribute('href')) ?? '/projects');
   await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
 }

@@ -42,6 +42,7 @@ export default defineConfig({
   testDir: 'tests/e2e',
   testMatch: '**/*.spec.ts',
   outputDir: 'test-results',
+  globalSetup: './tests/e2e/support/global-setup.ts',
   globalTeardown: './tests/e2e/support/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: true,

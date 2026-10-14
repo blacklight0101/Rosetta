@@ -1,4 +1,6 @@
+import { rm } from 'node:fs/promises';
 import { dropDisposableSchema } from './database.js';
+import { capsLockFolder } from './caps-lock.js';
 import { e2ePort } from './server-config.js';
 import { clearSessions } from './sign-in.js';
 
@@ -7,6 +9,7 @@ import { clearSessions } from './sign-in.js';
 
 export default async function globalTeardown(): Promise<void> {
   await clearSessions();
+  await rm(capsLockFolder(), { recursive: true, force: true });
   const databaseUrl = process.env['ROSETTA_TEST_DATABASE_URL'];
   if (databaseUrl === undefined || databaseUrl === '') return;
   await dropDisposableSchema(databaseUrl, e2ePort());

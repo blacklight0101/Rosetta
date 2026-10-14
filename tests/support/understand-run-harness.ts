@@ -2,47 +2,26 @@ import { join } from 'node:path';
 import { expect, vi } from 'vitest';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { Project } from '../../src/application/projects/project.js';
-import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
-import { RunQueue } from '../../src/application/runs/run-queue.js';
+import type { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
-import { RunScan } from '../../src/application/use-cases/run-scan.js';
-import { RunUnderstand } from '../../src/application/use-cases/run-understand.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { Actor } from '../../src/domain/accounts/actor.js';
 import type { RunEvent } from '../../src/domain/runs/run-event.js';
 import type { RunManifest } from '../../src/domain/runs/run-manifest.js';
 import type { Run } from '../../src/domain/runs/run.js';
-import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-report-files.js';
-import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
-import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
-import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
-import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
-import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
-import { FanOutSink } from '../../src/infrastructure/events/fan-out-sink.js';
-import { JsonlEventLog } from '../../src/infrastructure/events/jsonl-event-log.js';
-import { FileRunManifestStore } from '../../src/infrastructure/files/file-run-manifest-store.js';
-import { NodeOutputWriter } from '../../src/infrastructure/files/node-output-writer.js';
+import type { MemoryLogger } from './memory-logger.js';
+import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
-import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-fetcher.js';
-import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
-import { loadReaderPrompts } from '../../src/infrastructure/prompts/prompt-files.js';
 import {
   loadRecording,
   type Recording,
 } from '../../src/infrastructure/providers/fake/recording.js';
-import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
-import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
-import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
-import { SnapshotScanPipeline } from '../../src/infrastructure/scan/scan-pipeline.js';
-import { FileScanResults } from '../../src/infrastructure/scan/scan-results.js';
 import { sampleAccount } from './account-fixtures.js';
-import { FixedClock } from './fixed-clock.js';
-import { MemoryLogger } from './memory-logger.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
-import { fixtureRoot } from './scan-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
+import { queueOf, stores, type Stores } from './understand-run-services.js';
 import {
   understandProviders,
   type BeforeCall,
@@ -56,7 +35,6 @@ import {
 
 const account = sampleAccount({ userName: 'understand.user' });
 const understandActor: Actor = { userId: account.id, role: 'user' };
-const commitSha = 'c'.repeat(40);
 
 /** The fake reader, one task at a time (the fake replays its calls in order). */
 export function understandSettings(
@@ -102,95 +80,6 @@ export interface UnderstandHarness {
   /** The absolute folder of a run, and of the project. */
   runFolder(run: Run): string;
   projectFolder(): string;
-}
-
-function fixtureFetcher(clock: FixedClock): FakeSourceFetcher {
-  return new FakeSourceFetcher(
-    [
-      {
-        owner: 'octo',
-        repo: 'demo',
-        defaultBranch: 'main',
-        refs: { main: commitSha },
-        rootDir: fixtureRoot('webforms-csharp'),
-        snapshotHash: `sha256:${'cd'.repeat(32)}`,
-        fileCount: 13,
-        totalBytes: 4096,
-      },
-    ],
-    clock,
-  );
-}
-
-interface Stores {
-  readonly clock: FixedClock;
-  readonly masker: SecretMasker;
-  readonly logger: MemoryLogger;
-  readonly writer: NodeOutputWriter;
-  readonly manifests: FileRunManifestStore;
-  readonly log: JsonlEventLog;
-  readonly runs: MemoryRunIndex;
-  readonly projects: MemoryProjectRepository;
-  readonly users: MemoryUserRepository;
-}
-
-function stores(dataDir: string): Stores {
-  const clock = new FixedClock('2026-10-12T10:00:00.000Z');
-  const masker = new SecretMasker();
-  const logger = new MemoryLogger(clock, masker);
-  const writer = new NodeOutputWriter({ dataDir, logger });
-  return {
-    ...{ clock, masker, logger, writer },
-    manifests: new FileRunManifestStore({ writer, masker }),
-    log: new JsonlEventLog({ writer, masker }),
-    runs: new MemoryRunIndex(),
-    projects: new MemoryProjectRepository(),
-    users: new MemoryUserRepository(),
-  };
-}
-
-function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnderstand {
-  const { writer, masker, logger, manifests, clock } = s;
-  return new RunUnderstand({
-    ...{ projects: s.projects, runs: s.runs, users: s.users, manifests, clock, logger },
-    scans: new FileScanResults({
-      writer,
-      manifests,
-      snapshotRoot: () => fixtureRoot('webforms-csharp'),
-      logger,
-    }),
-    providers: providers.factory,
-    runSinks: providers.runSinks,
-    cards: new FileCardOutputs({ writer, masker, logger }),
-    answers: new FileAnswersFile({ writer, masker }),
-    ledger: providers.ledger,
-    costReports: new FileCostReportWriter({ writer, masker }),
-    prompts: () => loadReaderPrompts('prompts'),
-    textToolProtocol: () => loadTextToolProtocol('prompts'),
-    ids: new SequenceIdGenerator(),
-  });
-}
-
-async function queueOf(s: Stores, providers: UnderstandProviders): Promise<RunQueue> {
-  const { runs, manifests, log, clock, logger, projects, writer, masker } = s;
-  const pipeline = new SnapshotScanPipeline({
-    ...{ writer, masker, logger },
-    packs: new LanguagePackRegistry([await CSharpPack.create()]),
-  });
-  const fetcher = fixtureFetcher(clock);
-  const lifecycle = new RunLifecycle({
-    ...{ runs, manifests, clock, logger },
-    sink: new FanOutSink([log]),
-    history: log,
-  });
-  return new RunQueue({
-    ...{ runs, lifecycle, clock, logger },
-    executors: {
-      scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
-      understand: understandExecutor(s, providers),
-    },
-    maxRunning: 2,
-  });
 }
 
 function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
