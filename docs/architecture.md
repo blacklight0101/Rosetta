@@ -285,7 +285,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 |---|---|---|
 | `LlmProvider` | chat with tools; returns text, tool calls, usage (ADR-003) | `OllamaProvider`, `OpenAiProvider`, `OpenAiCompatibleProvider`, `AnthropicProvider`, `FakeProvider` (recordings) |
 | `SourceFetcher` | resolve a GitHub URL and ref to a commit and provide its snapshot (ADR-012); the start-up sequence calls `GitHubSnapshotFetcher.discardPartialFolders()` once, as its own step after the bootstrap administrator and before the runs recovery, the server listening and the queue accepting runs (RF-122, P1-73); the minute queue sweep (`recover`) never does, as it would delete the folder of a download running at that moment; a failure to discard is logged as a `start-up` warning (error code or name and folder name only) and does not stop the start-up | `GitHubSnapshotFetcher`, `FakeSourceFetcher` |
-| `RepositoryReader` | list files, read line ranges, grep in a snapshot, read the size and bytes of one file up to a limit (`readBytes`, for the universal scan: a larger file is measured, never read); read-only (no write operation), ignore rules and the RF-147 deny list applied, grep in a `node:worker_threads` worker with the RF-146 limits (the worker loads the search module next to it, never one named by its input); a file above `scan.maxFileBytes` is refused by `readLines` (`RST-1114`) and left out of `grep`, and `grep` returns at most 1000 matches, each cut with a notice (RF-144, RF-146, P1-67); every path is resolved against the real root and refused outside it: a subpath that is or passes through a link, a file under a linked folder, a hard-linked file (`nlink > 1`) or a file that vanished between `realpath` and `stat` answers `RST-1100`; `skippedPaths` records the links and the invalid names left out of the index, names only | `NodeRepositoryReader` |
+| `RepositoryReader` | list files, read line ranges, grep in a snapshot, read the size and bytes of one file up to a limit (`readBytes`, for the universal scan: a larger file is measured, never read); read-only (no write operation), ignore rules and the RF-147 deny list applied, grep in a `node:worker_threads` worker with the RF-146 limits and V8 resource limits (the worker loads the search module next to it, never one named by its input); one grep reads at most 32 MiB across its files (P1-160); a file above `scan.maxFileBytes` is refused by `readLines` (`RST-1114`) and left out of `grep`, and `grep` returns at most 1000 matches, each cut with a notice (RF-144, RF-146, P1-67); every path is resolved against the real root and refused outside it: a subpath that is or passes through a link, a file under a linked folder, a hard-linked file (`nlink > 1`) or a file that vanished between `realpath` and `stat` answers `RST-1100`; `skippedPaths` records the links and the invalid names left out of the index, names only | `NodeRepositoryReader` |
 | `OutputWriter` | write, read and remove files inside the user's workspace only | `NodeOutputWriter` |
 | `LanguagePack` | symbols, references (links), routes and candidate entities for the files of some extensions, one file at a time (ADR-004, RF-110); the port is `src/application/ports/language-pack.ts`; `LanguagePackRegistry` maps an extension to its pack (two packs on one extension is `RST-1201`) and the composition root builds it (`composeLanguagePacks`); `analyseWithPacks` runs the packs over the universal scan's files through `RepositoryReader.readBytes`, keeps a file whose pack throws at `coarse` with an `RST-1200` warning (path and pack only, never the failure text), drops links to files outside the scan, and sorts every list; `web-tree-sitter` is imported only under `src/infrastructure/scan/packs/` (dependency-cruiser rule `tree-sitter-only-in-packs`); the C# pack refuses a tree with syntax errors, so that file stays `coarse` instead of carrying partial data; the runner yields to the event loop after every file; a scan-wide parse budget (`ParseBudget` in `parse-budget.ts`, two minutes by default, injectable with a fake monotonic clock; only time inside the packs counts) bounds the total pack time: once it is spent, no further file reaches a pack and a running parse is stopped through `PackFile.shouldStop` (the C# pack checks it in its tree-sitter progress callback and resets the parser after a halted parse), the remaining claimed files stay `coarse` with an `RST-1204` warning, one aggregated log line is written and `scan-summary.md` counts them (P1-75); `knip.json` ignores the `tree-sitter-c-sharp` dependency only because its grammar file is found by `createRequire().resolve`, which knip cannot see (JSON has no comments) | `CSharpPack` (tree-sitter, WebAssembly grammar; `.cs` symbols and `DbSet` entities, `.aspx`/`.ascx`/`.master` code-behind links), `TestLanguagePack` (tests) |
 | `ConfigSource` | load and validate the server environment (RF-1305) and project settings | `EnvConfigSource`, `DbProjectSettings` |
@@ -511,7 +511,9 @@ sequenceDiagram
   the server for every route (ADR-015; RF-1009, RF-1100, RF-1101).
 - **Request protection** (`presentation/web/access-hooks.ts`, P1-09), in this order on every request: (1) a
   state-changing request (any method but GET, HEAD, OPTIONS) whose `Origin` is missing or differs from
-  `ROSETTA_PUBLIC_URL` answers 403 `RST-2007` (this also protects `POST /api/session`, DEC-112); (2) the
+  `ROSETTA_PUBLIC_URL` answers 403 `RST-2007` (this also protects `POST /api/session`, DEC-112); its audit row and
+  security event name the actor of a valid session cookie, and none for a cookie that is unknown, expired or of a
+  disabled account or when that lookup fails, which still answers 403 (P1-160); (2) the
   `__Host-rosetta_session` cookie becomes `request.signedIn` (actor, user) through `ResolveSession`, except on a
   public route that does not read the session (only the landing page sets `config.readsSession`), so `/healthz`
   answers 503 with a session cookie while the database is down (RF-1303); (3) a route
@@ -536,8 +538,17 @@ sequenceDiagram
   write to an id no account has). The failure count is one guarded, incrementing `UPDATE` of the counter columns
   only, skipped while the account is locked, so parallel failures (sign-in or a wrong current password) each count
   and never undo a concurrent disable or reset (P1-86). Attempts on one user name also run one after another. `POST /api/account/password` has the same body, password, rate
-  and concurrency caps; the administrator routes that take a password cap the body at 4 KiB and the password at
+  and concurrency caps, and the 429 of its bound of eight is audited and logged the same way, with its actor
+  (P1-160); the administrator routes that take a password cap the body at 4 KiB and the password at
   1,024 characters.
+- An open event stream (`GET /api/runs/:runId/events`) ends with the session it was opened in (RF-1101, P1-160): the
+  session store every use case is given (`StreamClosingSessionStore` around the real one) ends the open streams of a
+  session it ends (sign-out) and of a user whose sessions it all ends (an administrator's disable or reset, a password
+  change, a disabled account found at the next request), before it writes the database, so a failing write still
+  ends them; other users' streams go on. A stream also ends at the first keep-alive (15 s) after the expiry its
+  session had when the stream opened; a page whose session has moved on since reconnects with `Last-Event-ID`. A
+  replay of stored events that fails closes the stream and writes an `error` entry to the application log with its
+  `RST` code, the run id and the error's name, never its text (RF-009).
 - Every query and file path is scoped by the signed-in user; another user's id answers 404; administrator access to
   another workspace is audited (RF-1105, RF-1109).
 - Server provider keys come from the environment (the host's secret store); user keys are encrypted with AES-256-GCM
@@ -548,10 +559,18 @@ sequenceDiagram
 - Snapshot extraction rejects archive entries that would land outside the snapshot folder (RF-122).
 - The repository reader resolves every path against the snapshot root and refuses anything outside it or matched by
   ignore rules (RF-140); the output writer does the same for the output folder (RF-005).
+- One `grep` reads at most 32 MiB across its files (`grepLimits.maxTotalBytes`); a file that would pass that budget
+  is not read and the agent's notice counts it. The grep worker runs under V8 resource limits (256 MB old space, 32 MB
+  young space, 16 MB code, 4 MB stack), so a worker that runs out of memory ends the call with `RST-1112` and the
+  process goes on (RF-146, P1-160).
 - Model output is data: it is parsed with schemas, never executed, never used as a shell command or an unchecked path.
 - The egress guard masks secrets before any call and logs what was sent (RF-141, RF-142); if masking fails the call
   is blocked (fail closed).
-- Downloads use https to GitHub hosts only, with size and entry limits, and refuse link entries (RF-127).
+- Downloads use https to GitHub hosts only, with size and entry limits, and refuse link entries (RF-127). The byte
+  limit holds against what the archive decompresses to, not only what its regular files declare: the declared size of
+  every entry (skipped ones included) and every decompressed byte (headers, metadata, skipped bodies, anything after
+  the end blocks) count, so a zip bomb stops with `RST-1905` and no chunk past the limit, or after any refused entry,
+  is parsed (P1-160).
 - Repository and model text is rendered as text only; the pages and the report carry a content security policy and
   no referrer (RF-507, RF-1013).
 - Refused requests, failed sign-ins, refused reads, skipped links and blocked calls are logged as security events
