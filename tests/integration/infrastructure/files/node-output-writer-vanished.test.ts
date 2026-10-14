@@ -9,21 +9,26 @@ import { MemoryLogger } from '../../../support/memory-logger.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 // RF-005, P1-155: a run or a project deleted while its file is being written removes the folder
-// between the temporary write and the rename. The rename then fails with ENOENT; that is a
-// refusal of the write, not a server fault, and the temporary file is not left behind.
+// between the temporary write and the rename, so the rename fails with ENOENT and the write is a
+// refusal (not-found). An ENOENT whose folder is still there is not that case and is rethrown.
 
-const vanish = vi.hoisted(() => ({ armed: false }));
+type Mode = 'off' | 'remove-folder' | 'enoent-only';
+const vanish = vi.hoisted((): { mode: Mode } => ({ mode: 'off' }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof FsPromises>();
   return {
     ...actual,
     rename: async (...args: Parameters<typeof actual.rename>) => {
-      if (vanish.armed) {
-        vanish.armed = false;
+      const [from] = args;
+      const mode = vanish.mode;
+      vanish.mode = 'off';
+      if (mode === 'remove-folder') {
         // The folder that holds the temporary file goes first, as a concurrent delete would do it.
-        const [from] = args;
         await actual.rm(dirname(String(from)), { recursive: true, force: true });
+      }
+      if (mode === 'enoent-only') {
+        throw Object.assign(new Error('ENOENT: rename refused'), { code: 'ENOENT' });
       }
       return actual.rename(...args);
     },
@@ -47,19 +52,30 @@ async function temporaryFiles(root: string): Promise<string[]> {
   return entries.filter((entry) => entry.endsWith('.tmp'));
 }
 
-describe('NodeOutputWriter when the folder is deleted during the write', () => {
+describe('NodeOutputWriter when an ENOENT comes during the write', () => {
   it('RF-005 writeText answers not-found when the folder goes before the rename', async () => {
     await mkdir(join(userFolder(), 'projects', 'run-1'), { recursive: true });
     const writer = newWriter();
-    vanish.armed = true;
+    vanish.mode = 'remove-folder';
 
     const result = await writer.writeText(
       { userId, path: 'projects/run-1/out.json' },
       '{"ok":true}\n',
     );
 
-    expect(vanish.armed).toBe(false);
+    expect(vanish.mode).toBe('off');
     expect(result).toMatchObject({ ok: false, error: { reason: 'not-found' } });
+    expect(await temporaryFiles(userFolder())).toEqual([]);
+  });
+
+  it('RF-005 writeText rethrows an ENOENT when the folder is still there', async () => {
+    await mkdir(join(userFolder(), 'projects', 'run-2'), { recursive: true });
+    const writer = newWriter();
+    vanish.mode = 'enoent-only';
+
+    await expect(
+      writer.writeText({ userId, path: 'projects/run-2/out.json' }, '{}\n'),
+    ).rejects.toThrow('ENOENT: rename refused');
     expect(await temporaryFiles(userFolder())).toEqual([]);
   });
 });
