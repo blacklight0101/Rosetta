@@ -86,7 +86,7 @@ describe('OllamaProvider with contextTokens auto across calls', () => {
 
   it('RF-401 without a context cache option, providers in one process share the process-wide cache', async () => {
     const { provider, server, another } = await start('context-spill-then-fit', {
-      contextCache: undefined,
+      processCache: true,
     });
 
     await provider.complete(contractRequest());
