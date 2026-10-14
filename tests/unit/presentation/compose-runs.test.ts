@@ -2,6 +2,8 @@ import { access, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
+import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import { createPool } from '../../../src/infrastructure/db/pool.js';
 import { GitHubSnapshotFetcher } from '../../../src/infrastructure/github/github-snapshot-fetcher.js';
 import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
@@ -103,6 +105,22 @@ describe('composeRuns', () => {
     expect(warning?.message).not.toContain('unreadable');
     expect(warning?.message).toContain('Error');
     expect(warning?.message).toContain('sources');
+    await pool.end();
+  });
+});
+
+describe('start-up discard warning codes', () => {
+  it('RF-122 a RosettaError from the discard keeps its code on the warning and not its text', async () => {
+    vi.spyOn(GitHubSnapshotFetcher.prototype, 'discardPartialFolders').mockRejectedValue(
+      new RosettaError(ERROR_CODES.snapshotWriteFailed, 'sources folder unreadable'),
+    );
+    const { runs, logger, pool } = composedRuns('unused');
+
+    await runs.discardPartialSnapshots();
+
+    const warning = logger.entries.find((entry) => entry.level === 'warn');
+    expect(warning?.code).toBe(ERROR_CODES.snapshotWriteFailed);
+    expect(warning?.message).not.toContain('unreadable');
     await pool.end();
   });
 });

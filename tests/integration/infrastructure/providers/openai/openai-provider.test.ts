@@ -260,4 +260,11 @@ describe('OpenAiProvider keys beyond Latin-1', () => {
     expect(error instanceof Error ? error.cause : undefined).toBeUndefined();
     for (const spy of logged) expect(spy).not.toHaveBeenCalled();
   });
+
+  it('RNF-003 a key with U+00FF, the last character the check accepts, is built and sent', async () => {
+    const apiKey = pieces.join(String.fromCodePoint(0xff));
+    const { provider } = await start('contract-text', { apiKey });
+
+    await expect(provider.complete(contractRequest())).resolves.toBeDefined();
+  });
 });
