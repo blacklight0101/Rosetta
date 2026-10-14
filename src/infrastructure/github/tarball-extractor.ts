@@ -1,4 +1,4 @@
-import { Readable } from 'node:stream';
+import { Readable, Transform, type TransformCallback } from 'node:stream';
 import { createGunzip } from 'node:zlib';
 import { extract as tarExtract, ReadEntry } from 'tar';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -75,6 +75,7 @@ class EntryGate {
   failure: RosettaError | undefined;
   private entries = 0;
   private bytes = 0;
+  private streamBytes = 0;
   private readonly limits: ExtractionLimits;
   private readonly stop: (error: RosettaError) => void;
 
@@ -97,14 +98,25 @@ class EntryGate {
         ),
       );
     }
+    // P1-160: every entry's declared body counts, skipped ones included, before it arrives.
+    this.bytes += entry.size;
+    if (this.bytes > this.limits.maxBytes)
+      return this.refuse(tooLarge('bytes', this.limits.maxBytes));
     if (LINK_TYPES.has(entry.type) || isUnwritableName(path)) {
       this.skippedLinks += 1;
       return false;
     }
-    if (entry.type === 'Directory') return true;
-    if (!FILE_TYPES.has(entry.type)) return false;
-    this.bytes += entry.size;
-    return this.bytes > this.limits.maxBytes
+    return entry.type === 'Directory' || FILE_TYPES.has(entry.type);
+  };
+
+  /**
+   * P1-160: counts the decompressed stream (headers, metadata, skipped bodies and anything after
+   * the end of the archive); false once it passes the byte limit, so no byte past it is parsed.
+   */
+  readonly allowBytes = (count: number): boolean => {
+    if (this.failure !== undefined) return false;
+    this.streamBytes += count;
+    return this.streamBytes > this.limits.maxBytes
       ? this.refuse(tooLarge('bytes', this.limits.maxBytes))
       : true;
   };
@@ -116,9 +128,20 @@ class EntryGate {
   }
 }
 
+/** Passes the decompressed bytes on while the gate allows them, and drops the rest. */
+function byteCounter(gate: EntryGate): Transform {
+  return new Transform({
+    transform(chunk: Buffer, _encoding: BufferEncoding, done: TransformCallback): void {
+      if (gate.allowBytes(chunk.length)) done(null, chunk);
+      else done();
+    },
+  });
+}
+
 /**
  * Streams a gzipped tarball into `targetDir` with the filter of ADR-019: no absolute paths, no `..`,
- * links skipped and counted, entry and byte limits; the top-level folder GitHub adds is stripped.
+ * links skipped and counted, entry and byte limits (the byte limit counts the decompressed stream
+ * as well as the declared entry sizes); the top-level folder GitHub adds is stripped.
  * On any failure the caller deletes `targetDir`.
  */
 // RF-122, RF-127
@@ -141,11 +164,13 @@ export async function extractTarball(
   try {
     await new Promise<void>((resolve, reject) => {
       const gunzip = createGunzip();
+      const counter = byteCounter(gate);
       source.on('error', reject);
       gunzip.on('error', reject);
+      counter.on('error', reject);
       unpack.on('error', reject);
       unpack.on('end', resolve);
-      source.pipe(gunzip).pipe(unpack);
+      source.pipe(gunzip).pipe(counter).pipe(unpack);
     });
   } catch (error) {
     if (gate.failure !== undefined) throw gate.failure;
