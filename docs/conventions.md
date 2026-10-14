@@ -185,6 +185,9 @@ too. ESLint never formats (`eslint-config-prettier` last). **(tool)**
 - Commits: Conventional Commits, `type(scope): subject` in the imperative, at most 72 characters, types `feat`,
   `fix`, `test`, `refactor`, `docs`, `chore`, `ci`, `build`, `perf`; body explains why; footer `Refs:` with card,
   `RF`, `ADR` and `DEC` ids. **(tool: commitlint)**
+- Attribution (DEC-139): a commit written by an agent ends with a `Co-Authored-By:` line naming the tool and model that
+  wrote it, and a pull request opened by an agent ends with one line naming the tool; the exact forms are in `AGENTS.md`.
+  No tool or model is fixed: Claude, Codex or any other agent uses its own line.
 - TDD order on every code card: `test:` commit(s) with failing tests, then `feat:`/`fix:`, then optional
   `refactor:` (ADR-010).
 - Pull requests use the template, close their issue, and are merged with squash, by the orchestrator under `docs/orchestration/README.md` section 3.1 or, when labelled `needs-owner`, by the owner (DEC-96); the squash title is the
