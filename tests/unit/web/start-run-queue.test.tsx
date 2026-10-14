@@ -53,7 +53,7 @@ it('RF-1108 the queued notice shows the place moving up while the run waits', as
   await vi.advanceTimersByTimeAsync(2000);
   expect(noticeText()).toContain('position 2');
 
-  await vi.advanceTimersByTimeAsync(2000);
+  await vi.advanceTimersByTimeAsync(4000);
   expect(noticeText()).toContain('position 1');
 });
 
@@ -87,7 +87,7 @@ it('RF-1108 a read that fails keeps the last place and the next read goes on', a
 
   await vi.advanceTimersByTimeAsync(2000);
   expect(noticeText()).toContain('position 3');
-  await vi.advanceTimersByTimeAsync(2000);
+  await vi.advanceTimersByTimeAsync(4000);
 
   expect(noticeText()).toContain('position 1');
 });

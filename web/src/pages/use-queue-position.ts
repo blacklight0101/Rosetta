@@ -4,15 +4,18 @@ import type { RunRow } from '../api/run-schemas.js';
 import { useApp } from '../app/app-context.js';
 import type { RunNoticeState } from './RunNotice.js';
 
-// RF-1108, RF-1001 (P1-106): while the start page's notice says the run is queued, the page reads
-// the run again every few seconds and keeps the notice true: the place moves up as the runs ahead of
-// it end; a run that began becomes "started" (with its link to the live page); a run that ended
-// without ever starting was stopped elsewhere, so the notice says it was cancelled. A read that
-// fails keeps what the page shows and tries again. Reading stops with the page, and with the notice
-// once it is no longer queued.
+// RF-1108, RF-1001 (P1-106, P1-163): while the start page's notice says the run is queued, the page
+// reads the run again and keeps the notice true: the place moves up as the runs ahead of it end; a
+// run that began becomes "started" (with its link to the live page); a run that ended without ever
+// starting was stopped elsewhere, so the notice says it was cancelled. The reads wait 2 s, then 4,
+// 8 and 16 s, then 30 s each time. A read that fails keeps what the page shows and tries again.
+// Reading pauses while the page is hidden and goes on at once when it is shown. Reading stops with
+// the page, and with the notice once it is no longer queued.
 
-/** How often the queued notice reads the run again. */
+/** The first wait between two reads of the queued run. */
 const POLL_MS = 2000;
+/** The longest wait between two reads of the queued run. */
+const POLL_MAX_MS = 30_000;
 
 type SetNotice = Dispatch<StateUpdater<RunNoticeState | undefined>>;
 
@@ -38,8 +41,23 @@ export function useQueuePosition(notice: RunNoticeState | undefined, setNotice: 
     if (runId === undefined) return undefined;
     const abort = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let wait = POLL_MS;
+    let busy = false;
+    const stopTimer = (): void => {
+      clearTimeout(timer);
+      timer = undefined;
+    };
+    const schedule = (): void => {
+      if (document.hidden) return;
+      timer = setTimeout(() => void tick(), wait);
+      wait = Math.min(wait * 2, POLL_MAX_MS);
+    };
     const tick = async (): Promise<void> => {
+      timer = undefined;
+      if (document.hidden) return;
+      busy = true;
       const result = await getRun(client, runId, abort.signal);
+      busy = false;
       if (abort.signal.aborted) return;
       const left = result.ok ? leftQueue(result.value) : undefined;
       if (left !== undefined) {
@@ -47,12 +65,21 @@ export function useQueuePosition(notice: RunNoticeState | undefined, setNotice: 
         return;
       }
       if (result.ok) setNotice(movedTo(result.value.position));
-      timer = setTimeout(() => void tick(), POLL_MS);
+      schedule();
     };
-    timer = setTimeout(() => void tick(), POLL_MS);
+    const onVisibility = (): void => {
+      if (document.hidden) {
+        stopTimer();
+        return;
+      }
+      if (timer === undefined && !busy) void tick();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    schedule();
     return () => {
       abort.abort();
-      clearTimeout(timer);
+      stopTimer();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [client, runId, setNotice]);
 }
