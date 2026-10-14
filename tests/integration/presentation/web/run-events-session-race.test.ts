@@ -46,4 +46,17 @@ describe('an event stream and a sign-out during its subscription', () => {
       expect(test.heartbeat.activeJobs).toBe(0);
     });
   });
+
+  it('RF-1105 an unknown run id answers 404 and leaves no stream in the registry', async () => {
+    const test = createTestServer();
+    current = test;
+    const amy = await addUser(test, { userName: 'amy' });
+    const browser = await signedInBrowser(test.server, amy);
+
+    const url = '/api/runs/00000000-0000-4000-8000-00000000abcd/events';
+    const response = await browser.request({ method: 'GET', url });
+
+    expect(response.statusCode).toBe(404);
+    expect(test.streams.size).toBe(0);
+  });
 });
