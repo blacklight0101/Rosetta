@@ -83,6 +83,18 @@ describe('OllamaProvider with contextTokens auto across calls', () => {
     expect(server.bodiesOf('/api/ps')).toHaveLength(2);
     expect(numCtx(server.chatBodies())).toEqual([16_384, 16_384]);
   });
+
+  it('RF-401 without a context cache option, providers in one process share the process-wide cache', async () => {
+    const { provider, server, another } = await start('context-spill-then-fit', {
+      contextCache: undefined,
+    });
+
+    await provider.complete(contractRequest());
+    await another().complete(contractRequest());
+
+    expect(server.bodiesOf('/api/show')).toHaveLength(1);
+    expect(numCtx(server.chatBodies())).toEqual([16_384, 16_384]);
+  });
 });
 
 describe('OllamaProvider with contextTokens auto when Ollama cannot be probed', () => {

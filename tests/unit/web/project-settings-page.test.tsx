@@ -277,3 +277,18 @@ it('DEC-117 a run cost cap above 100 USD is refused next to the field and nothin
   });
   expect(calls.filter((call) => call.method === 'PUT')).toEqual([]);
 });
+
+it('DEC-117 a confirm-above amount of 100.01 USD is refused next to the field and nothing is sent', async () => {
+  const { calls } = renderSettings();
+  await loaded();
+  type('Ask before a run estimated above (USD)', '100.01');
+
+  save();
+
+  await waitFor(() => {
+    expect(inputOf('Ask before a run estimated above (USD)').getAttribute('aria-invalid')).toBe(
+      'true',
+    );
+  });
+  expect(calls.filter((call) => call.method === 'PUT')).toEqual([]);
+});
