@@ -1,14 +1,34 @@
 import type { JSX } from 'preact';
+import { useEffect, useState } from 'preact/hooks';
+import { getErrorDescription, type ErrorDescription } from '../api/error-catalogue.js';
+import { useApp } from '../app/app-context.js';
 import { Link } from '../components/Link.js';
-import { failureTextFor } from '../lib/live-run/run-failures.js';
+import { fixFor, GENERIC_FAILURE } from '../lib/live-run/run-failures.js';
 
 // RF-1108, RNF-008: a run that ended with an error shows the code, what it means and what to do, as
-// every error of the application does. A run refused for a missing provider key (RST-2302) links to
-// the settings where the key is saved.
+// every error of the application does: the words are the server's catalogue for any code (read from
+// GET /api/errors/:code; the generic text shows until it answers, or when it cannot). A run refused
+// for a missing provider key (RST-2302) links to the settings where the key is saved.
+
+function useDescription(code: string): ErrorDescription {
+  const { client } = useApp();
+  const [found, setFound] = useState<ErrorDescription | undefined>(undefined);
+  useEffect(() => {
+    const abort = new AbortController();
+    void getErrorDescription(client, code, abort.signal).then((result) => {
+      if (!abort.signal.aborted && result.ok) setFound(result.value);
+    });
+    return () => {
+      abort.abort();
+    };
+  }, [client, code]);
+  return found ?? GENERIC_FAILURE;
+}
 
 // RF-1108
 export function RunFailure({ code }: { readonly code: string }): JSX.Element {
-  const text = failureTextFor(code);
+  const text = useDescription(code);
+  const fix = fixFor(code);
   return (
     <section class="rst-callout rst-callout--error" data-testid="run-failure">
       <p class="rst-callout__message">
@@ -16,10 +36,10 @@ export function RunFailure({ code }: { readonly code: string }): JSX.Element {
       </p>
       <p class="rst-callout__next-step">
         {text.nextStep}
-        {text.fix === undefined ? null : (
+        {fix === undefined ? null : (
           <>
             {' '}
-            <Link href={text.fix.href}>{text.fix.label}</Link>
+            <Link href={fix.href}>{fix.label}</Link>
           </>
         )}
       </p>

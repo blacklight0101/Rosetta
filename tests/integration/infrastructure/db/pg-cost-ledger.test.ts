@@ -45,6 +45,32 @@ describe.skipIf(!hasTestDatabase)('PgCostLedger under concurrency', () => {
 
     expect(results.filter((result) => result.ok)).toHaveLength(1);
   });
+});
+
+describe.skipIf(!hasTestDatabase)('PgCostLedger per-user lock', () => {
+  const database = useTestDatabase();
+
+  it('RF-1106 the per-user lock: forty-eight own-key racers of one user pass a day cap of three calls exactly three times', async () => {
+    const { pool } = await database.createSchema({ migrate: true });
+    const ledger = new PgCostLedger(pool);
+    const userId = await addUser(pool);
+    const caps = [{ kind: 'own-day', limit: 1_000n }] as const;
+    // Own-key reservations take only the user lock; server-key ones also take the server lock,
+    // which would serialise them whatever the user lock does.
+    const racers = Array.from({ length: 48 }, () =>
+      reservationOf({ userId, runId: newId() }, { keySource: 'user', ...worst(300n) }),
+    );
+
+    const results = await Promise.all(
+      racers.map((reservation) => ledger.reserve({ reservation, caps, at: ledgerNow })),
+    );
+
+    expect(results.filter((result) => result.ok)).toHaveLength(3);
+  });
+});
+
+describe.skipIf(!hasTestDatabase)('PgCostLedger under concurrency, server keys', () => {
+  const database = useTestDatabase();
 
   it('RF-1106 parallel users of the server keys never pass the server month together', async () => {
     const { pool } = await database.createSchema({ migrate: true });

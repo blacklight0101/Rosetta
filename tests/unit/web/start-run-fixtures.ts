@@ -67,8 +67,8 @@ function estimateOf(roles: readonly RoleBody[]): Record<string, unknown> {
     priceTableVersion: '2026-10-11',
     currency: 'USD',
     areas: [
-      { name: 'Catalog', estimatedTokens: 12_000 },
-      { name: 'Models', estimatedTokens: 8000 },
+      { name: 'Catalog', estimatedTokens: 12_000, thirdParty: false },
+      { name: 'Models', estimatedTokens: 8000, thirdParty: false },
     ],
     assumptions: {
       turnsPerArea: { low: 4, likely: 8, high: 12 },

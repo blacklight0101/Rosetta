@@ -2,12 +2,58 @@ import { expect, it } from 'vitest';
 import type { UserRepository } from '../../src/application/ports/user-repository.js';
 import { fixtureNow, minutes, sampleAccount } from '../support/account-fixtures.js';
 
-// RF-1100, RF-1102, P1-133: every UserRepository adapter records a successful sign-in in one write
-// of the sign-in columns only (failure counters, lock, last sign-in time). The write is refused
-// for a Disabled account or one whose password hash changed since it was read, so a concurrent
-// disable, reset or lock written by another server instance is never undone. A lock that ends exactly now no longer locks (`<=`).
+// RF-1100, RF-1102, P1-133, P1-149: every UserRepository adapter records a successful sign-in in
+// one write of the sign-in columns only (failure counters, lock, last sign-in time). The write is
+// refused for a Disabled account, or one whose password hash or lock changed since it was read, so
+// a concurrent disable, reset or lock is never undone. A lock ending exactly now no longer locks.
 
 type Fresh = () => Promise<UserRepository>;
+
+/** Stores a lock with the given instant text (microseconds kept), for adapters that can. */
+type StoreLockedUntil = (id: string, instant: string) => Promise<void>;
+
+export interface SignInContractOptions {
+  readonly storeLockedUntil?: StoreLockedUntil;
+}
+
+function subMillisecondTests(name: string, fresh: Fresh, storeLock: StoreLockedUntil): void {
+  it(`RF-1102 ${name} lets a correct sign-in through when a lock below a millisecond has expired`, async () => {
+    const users = await fresh();
+    const account = sampleAccount({ failedSignIns: 5, firstFailedAt: fixtureNow - minutes(20) });
+    await users.insert(account);
+    await storeLock(account.id, '2026-10-11T08:55:00.123456Z');
+    const read = await users.findById(account.id);
+    if (read === undefined) throw new Error('the account was not stored');
+
+    const stored = await users.markSignedIn(read, fixtureNow);
+
+    expect(stored).toBe(true);
+    expect(await users.findById(account.id)).toEqual({
+      ...account,
+      failedSignIns: 0,
+      firstFailedAt: null,
+      lockedUntil: null,
+      lastSignInAt: fixtureNow,
+    });
+  });
+
+  it(`RF-1102 ${name} refuses a sign-in whose lock below a millisecond was renewed since it was read`, async () => {
+    const users = await fresh();
+    const account = sampleAccount({ failedSignIns: 5, firstFailedAt: fixtureNow - minutes(20) });
+    await users.insert(account);
+    await storeLock(account.id, '2026-10-11T08:55:00.123456Z');
+    const read = await users.findById(account.id);
+    if (read === undefined) throw new Error('the account was not stored');
+    await storeLock(account.id, '2026-10-11T09:05:00.123456Z');
+
+    const stored = await users.markSignedIn(read, fixtureNow);
+
+    expect(stored).toBe(false);
+    expect((await users.findById(account.id))?.lockedUntil).toBe(
+      Date.parse('2026-10-11T09:05:00.123Z'),
+    );
+  });
+}
 
 function writeTests(name: string, fresh: Fresh): void {
   it(`RF-1100 ${name} clears the counters and the lock and records the sign-in time`, async () => {
@@ -139,9 +185,15 @@ function keepTests(name: string, fresh: Fresh): void {
   });
 }
 
-export function successfulSignInContract(name: string, fresh: Fresh): void {
+export function successfulSignInContract(
+  name: string,
+  fresh: Fresh,
+  options: SignInContractOptions = {},
+): void {
   writeTests(name, fresh);
   raceTests(name, fresh);
   lockRaceTests(name, fresh);
   keepTests(name, fresh);
+  if (options.storeLockedUntil !== undefined)
+    subMillisecondTests(name, fresh, options.storeLockedUntil);
 }

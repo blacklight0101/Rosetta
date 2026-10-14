@@ -208,30 +208,52 @@ describe('SnapshotScanPipeline discard failures', () => {
   });
 });
 
-/** A pipeline with the C# pack and a scan-wide parse budget of `totalMs` on a clock that stands still. */
-async function budgetedPipeline(totalMs: number): Promise<SnapshotScanPipeline> {
+/**
+ * A pipeline with the C# pack and a scan-wide parse budget of `totalMs`. The clock moves
+ * `msPerRead` on every read, so 0 keeps it still and a larger step spends the budget at once.
+ */
+async function budgetedPipeline(totalMs: number, msPerRead: number): Promise<SnapshotScanPipeline> {
   const logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), new SecretMasker());
+  let now = 0;
   return new SnapshotScanPipeline({
     writer: new NodeOutputWriter({ dataDir: temp.path, logger }),
     masker: new SecretMasker(),
     logger,
     packs: new LanguagePackRegistry([await CSharpPack.create()]),
-    parseBudget: { totalMs, now: () => 0 },
+    parseBudget: {
+      totalMs,
+      now: () => {
+        now += msPerRead;
+        return now;
+      },
+    },
   });
 }
 
 describe('SnapshotScanPipeline parse budget', () => {
   it('RF-110 finishes a scan past its parse budget with the remaining files not analysed', async () => {
-    const roomy = await (await budgetedPipeline(1)).scan(request({}, new AbortController().signal));
+    const roomy = await (
+      await budgetedPipeline(1, 0)
+    ).scan(request({}, new AbortController().signal));
     expect(roomy.mapLevels.symbols).toBeGreaterThan(0);
 
     const report = await (
-      await budgetedPipeline(0)
+      await budgetedPipeline(1, 1000)
     ).scan(request({}, new AbortController().signal));
 
-    expect(report.mapLevels).toEqual({ coarse: roomy.files, symbols: 0 });
+    const notAnalysed = roomy.mapLevels.symbols - report.mapLevels.symbols;
+    expect(notAnalysed).toBeGreaterThan(0);
+    expect(report.mapLevels.coarse).toBe(roomy.files - report.mapLevels.symbols);
     const summary = await readFile(join(folder(), 'scan-summary.md'), 'utf8');
     expect(summary).toContain(`not analysed: parse budget reached`);
-    expect(summary).toContain(`${String(roomy.mapLevels.symbols)} not analysed`);
+    expect(summary).toContain(`${String(notAnalysed)} not analysed`);
+  });
+
+  it('RF-110 treats a zero parse budget as the default, not as an already spent budget', async () => {
+    const report = await (
+      await budgetedPipeline(0, 0)
+    ).scan(request({}, new AbortController().signal));
+
+    expect(report.mapLevels.symbols).toBeGreaterThan(0);
   });
 });

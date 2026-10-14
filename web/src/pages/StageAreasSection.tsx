@@ -8,6 +8,8 @@ import type { RunStageChoice } from '../api/runs.js';
 export interface AreaChoice {
   readonly name: string;
   readonly estimatedTokens: number | undefined;
+  /** Only vendored or minified files (RF-1001): unticked by default and marked. */
+  readonly thirdParty: boolean;
   readonly checked: boolean;
 }
 
@@ -82,35 +84,55 @@ function Stages(props: StageAreasProps): JSX.Element {
   );
 }
 
+function AreaRow(props: {
+  readonly area: AreaChoice;
+  readonly id: string;
+  readonly onArea: (name: string) => void;
+}): JSX.Element {
+  const { area, id, onArea } = props;
+  const described = [
+    area.estimatedTokens === undefined ? '' : `${id}-tokens`,
+    area.thirdParty ? `${id}-third-party` : '',
+  ].filter((each) => each !== '');
+  return (
+    <div class="rst-start__area">
+      <input
+        type="checkbox"
+        id={id}
+        checked={area.checked}
+        aria-describedby={described.length === 0 ? undefined : described.join(' ')}
+        onChange={() => {
+          onArea(area.name);
+        }}
+      />
+      <label for={id} class="rst-mono rst-start__area-name" title={area.name}>
+        {area.name}
+      </label>
+      {area.estimatedTokens === undefined ? null : (
+        <span id={`${id}-tokens`} class="rst-table__sub rst-start__area-tokens">
+          {area.estimatedTokens.toLocaleString('en-US')} tokens
+        </span>
+      )}
+      {area.thirdParty ? (
+        <span
+          id={`${id}-third-party`}
+          class="rst-badge rst-badge--neutral-tint rst-start__area-note"
+        >
+          third-party
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function Areas(props: StageAreasProps): JSX.Element {
   const { areas, areasError, onArea } = props;
   return (
     <fieldset class="rst-start__group">
       <legend>Areas from the code map</legend>
-      {areas.map((area, index) => {
-        const id = `area-${String(index)}`;
-        return (
-          <div key={area.name} class="rst-start__choice">
-            <input
-              type="checkbox"
-              id={id}
-              checked={area.checked}
-              aria-describedby={area.estimatedTokens === undefined ? undefined : `${id}-tokens`}
-              onChange={() => {
-                onArea(area.name);
-              }}
-            />
-            <label for={id} class="rst-mono">
-              {area.name}
-            </label>
-            {area.estimatedTokens === undefined ? null : (
-              <span id={`${id}-tokens`} class="rst-table__sub">
-                {area.estimatedTokens.toLocaleString('en-US')} tokens
-              </span>
-            )}
-          </div>
-        );
-      })}
+      {areas.map((area, index) => (
+        <AreaRow key={area.name} area={area} id={`area-${String(index)}`} onArea={onArea} />
+      ))}
       {areasError === undefined ? null : (
         <p class="rst-field__error" data-testid="field-error" role="alert">
           {areasError.code} · {areasError.message}

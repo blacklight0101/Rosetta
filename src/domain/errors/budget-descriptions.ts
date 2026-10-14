@@ -31,4 +31,9 @@ export const BUDGET_ERROR_DESCRIPTIONS: Readonly<Record<BudgetErrorCode, ErrorDe
     message: 'The cost of a model call could not be recorded, so its answer was not used.',
     nextStep: 'Check that PostgreSQL is running and reachable, then start the run again.',
   },
+  'RST-1605': {
+    message:
+      'The cost report of the run has a total above the largest whole number a report can hold exactly.',
+    nextStep: 'Report this as a bug: no run can reach that much cost under the caps.',
+  },
 };

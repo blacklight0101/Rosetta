@@ -17,11 +17,11 @@ import {
 // package baseline.
 
 describe('GitHub Actions workflows: files', () => {
-  it('RNF-001 ships the CI, CodeQL and pull request title workflows and Dependabot configuration', async () => {
+  it('RNF-001 ships the CI, CodeQL, Pages and pull request title workflows and Dependabot configuration', async () => {
     const names = (await load()).map((workflow) => workflow.name);
     const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
 
-    expect(names).toEqual(['ci.yml', 'codeql.yml', 'pr-title.yml']);
+    expect(names).toEqual(['ci.yml', 'codeql.yml', 'pages.yml', 'pr-title.yml']);
     expect(dependabot).toContain('package-ecosystem: npm');
     expect(dependabot).toContain('package-ecosystem: github-actions');
   });
@@ -95,6 +95,10 @@ describe('GitHub Actions workflows: edited pull requests', () => {
       'reopened',
       'edited',
     ]);
+  });
+
+  it('RNF-001 the pr-title job is named pr-title, the name the ruleset matches', async () => {
+    expect(await workflowText('pr-title.yml')).toMatch(/^ {4}name: pr-title$/mu);
   });
 
   it('RNF-001 the pr-title check is reported by its own workflow and not by ci.yml', async () => {

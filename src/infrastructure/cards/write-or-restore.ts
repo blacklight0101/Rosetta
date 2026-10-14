@@ -73,16 +73,19 @@ async function restore(
   }
   const [first] = written;
   if (failures.length === 0 || first === undefined) return;
-  // A log that cannot be written must not replace the refusal or error the caller receives.
-  await logger
-    .log({
-      level: 'error',
-      logger: 'cards',
-      message: 'Card files could not be restored after a failed write.',
-      userId: first.file.userId,
-      data: { failures },
-    })
-    .catch(() => undefined);
+  // A log that cannot be written must not replace the refusal or error the caller receives. The
+  // executor turns a logger that throws synchronously into a rejection too.
+  await new Promise<void>((resolve) => {
+    resolve(
+      logger.log({
+        level: 'error',
+        logger: 'cards',
+        message: 'Card files could not be restored after a failed write.',
+        userId: first.file.userId,
+        data: { failures },
+      }),
+    );
+  }).catch(() => undefined);
 }
 
 /**

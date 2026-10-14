@@ -74,12 +74,13 @@ ${items.join('\n')}
 function areas(model: ReportModel): string {
   if (model.areas.length === 0) return '';
   const rows = model.areas.map(
-    (area) => `<tr><td>${renderModelText(area.name)}</td><td>${area.mapLevel}</td></tr>`,
+    (area) =>
+      `<tr><td data-label="Area">${renderModelText(area.name)}</td><td data-label="Map level">${area.mapLevel}</td></tr>`,
   );
   return `<section aria-labelledby="areas">
 <h2 id="areas">Areas</h2>
 <div class="table-wrap" role="region" aria-label="Map level of the areas" tabindex="0">
-<table>
+<table class="stacked">
 <thead><tr><th scope="col">Area</th><th scope="col">Map level</th></tr></thead>
 <tbody>
 ${rows.join('\n')}
@@ -99,7 +100,8 @@ function cardRow(card: ReportCard): string {
     claimsText(card.claimCounts),
     renderModelText(card.title),
   ];
-  return `<tr>${cells.map((cell) => `<td>${cell}</td>`).join('')}</tr>`;
+  const labels = ['Card', 'Type', 'Area', 'Claims', 'Title'];
+  return `<tr>${cells.map((cell, index) => `<td data-label="${labels[index] ?? ''}">${cell}</td>`).join('')}</tr>`;
 }
 
 function cards(model: ReportModel): string {
@@ -109,7 +111,7 @@ function cards(model: ReportModel): string {
       ? ''
       : `
 <div class="table-wrap" role="region" aria-label="Cards of the run" tabindex="0">
-<table>
+<table class="cards stacked">
 <thead><tr><th scope="col">Card</th><th scope="col">Type</th><th scope="col">Area</th><th scope="col">Claims</th><th scope="col">Title</th></tr></thead>
 <tbody>
 ${model.cards.map(cardRow).join('\n')}

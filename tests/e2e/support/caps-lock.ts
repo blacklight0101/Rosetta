@@ -1,4 +1,4 @@
-import { mkdir, rm, stat } from 'node:fs/promises';
+import { mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { Clock } from '../../../src/application/ports/clock.js';
@@ -13,13 +13,46 @@ import { e2ePort } from './server-config.js';
 /** The tag of a test that writes the server-wide caps. */
 export const capsTag = '@caps';
 
-/** The lock of this run (one run per port). */
+const CAPS_LOCK_PREFIX = 'rosetta-e2e-caps-lock-';
+
+/**
+ * Removes the caps lock folders under `root` that are older than `maxAgeMs`: a run killed while it
+ * held the lock leaves its folder behind. Returns how many were removed (P1-150).
+ */
+export async function removeStaleCapsLocks(
+  root: string,
+  nowMs: number,
+  maxAgeMs: number,
+): Promise<number> {
+  let removed = 0;
+  for (const name of await readdir(root)) {
+    if (!name.startsWith(CAPS_LOCK_PREFIX)) continue;
+    const folder = join(root, name);
+    const modified = await stat(folder).then(
+      (info) => info.mtimeMs,
+      () => undefined,
+    );
+    if (modified === undefined || nowMs - modified <= maxAgeMs) continue;
+    await rm(folder, { recursive: true, force: true });
+    removed += 1;
+  }
+  return removed;
+}
+
+/**
+ * The lock of this run: keyed by the run key that global-setup.ts sets, so a run killed while it
+ * held the lock leaves a folder that no later run looks at (P1-150).
+ */
 export function capsLockFolder(): string {
-  return join(tmpdir(), `rosetta-e2e-caps-lock-${String(e2ePort())}`);
+  const run = process.env['ROSETTA_E2E_RUN_KEY'] ?? 'unkeyed';
+  return join(tmpdir(), `${CAPS_LOCK_PREFIX}${String(e2ePort())}-${run}`);
 }
 
 const POLL_MS = 100;
 const DEFAULT_STALE_MS = 600_000;
+// The takeover gate is held for a stat and a removal, so a gate older than this was left by a
+// process that died while holding it.
+const GATE_STALE_MS = 10_000;
 
 export interface CapsLock {
   /** How long the taker waited for the turn. */
@@ -34,13 +67,27 @@ export interface CapsLockOptions {
   readonly clock?: Clock;
 }
 
+const CREATE_ATTEMPTS = 5;
+const CREATE_RETRY_MS = 100;
+
+function codeOf(error: unknown): unknown {
+  return error instanceof Error && 'code' in error ? error.code : undefined;
+}
+
 async function tryTake(folder: string): Promise<boolean> {
-  try {
-    await mkdir(folder);
-    return true;
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'EEXIST') return false;
-    throw new Error('The caps lock folder could not be created.', { cause: error });
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await mkdir(folder);
+      return true;
+    } catch (error) {
+      if (codeOf(error) === 'EEXIST') return false;
+      // Windows refuses a create with EPERM for a moment after a removal; the lock is retried, not failed.
+      if (codeOf(error) === 'EPERM' && attempt < CREATE_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, CREATE_RETRY_MS));
+        continue;
+      }
+      throw new Error('The caps lock folder could not be created.', { cause: error });
+    }
   }
 }
 
@@ -49,6 +96,26 @@ async function isStale(folder: string, staleAfterMs: number, clock: Clock): Prom
     return clock.now().getTime() - (await stat(folder)).mtimeMs > staleAfterMs;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Removes a stale lock folder under the takeover gate, so two waiters that both judged it stale
+ * cannot both remove it: the second one would remove the lock the first one took in its place.
+ * This narrows the race between a stale takeover and a holder that is releasing; it does not
+ * close it, because the removal and the release are not atomic.
+ */
+async function takeOverIfStale(folder: string, staleAfterMs: number, clock: Clock): Promise<void> {
+  const gate = `${folder}.takeover`;
+  if (!(await tryTake(gate))) {
+    if (await isStale(gate, GATE_STALE_MS, clock)) await rm(gate, { recursive: true, force: true });
+    return;
+  }
+  try {
+    if (await isStale(folder, staleAfterMs, clock))
+      await rm(folder, { recursive: true, force: true });
+  } finally {
+    await rm(gate, { recursive: true, force: true });
   }
 }
 
@@ -63,7 +130,7 @@ export async function acquireCapsLock(
   await mkdir(dirname(folder), { recursive: true });
   while (!(await tryTake(folder))) {
     if (await isStale(folder, staleAfterMs, clock))
-      await rm(folder, { recursive: true, force: true });
+      await takeOverIfStale(folder, staleAfterMs, clock);
     await new Promise((resolve) => setTimeout(resolve, POLL_MS));
   }
   let released = false;

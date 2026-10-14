@@ -6,6 +6,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
+import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -100,6 +101,7 @@ export class EstimateRun {
     const tasks = planReaderTasks(codeMap.areas, request.areas);
     if (!tasks.ok) return err(ERROR_CODES.areaUnknown);
     const areas = tasks.value.map((task) => task.area);
+    const thirdParty = thirdPartyAreaNames(codeMap);
     const assumptions = assumptionsOf(project.settings);
     const reader = readerTokens(areas, assumptions);
     const roles = await Promise.all([
@@ -109,7 +111,10 @@ export class EstimateRun {
     return ok({
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
-      areas: areas.map(({ name, estimatedTokens }) => ({ name, estimatedTokens })),
+      areas: areas.map(({ name, estimatedTokens }) => ({
+        ...{ name, estimatedTokens },
+        thirdParty: thirdParty.has(name),
+      })),
       assumptions,
       roles,
       total: sumPoints(roles.map((role) => role.points)),

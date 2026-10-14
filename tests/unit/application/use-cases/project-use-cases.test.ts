@@ -29,7 +29,7 @@ describe('CreateProject', () => {
 
     const outcome = await test.createProject.execute({
       actor: amy,
-      url: 'https://github.com/Dotnet-Architecture/eShopModernizing/tree/master/eShopLegacyWebFormsSolution',
+      url: 'https://github.com/Dotnet-Architecture/eShopModernizing/tree/main/eShopLegacyWebFormsSolution',
     });
 
     expect(outcome.ok).toBe(true);
@@ -39,7 +39,7 @@ describe('CreateProject', () => {
       userId: amy.userId,
       name: 'Dotnet-Architecture/eShopModernizing',
       sourceUrl: 'https://github.com/dotnet-architecture/eshopmodernizing',
-      ref: 'master',
+      ref: 'main',
       subpath: 'eShopLegacyWebFormsSolution',
       settings: newProjectSettings,
     });

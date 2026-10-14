@@ -13,7 +13,7 @@ import { useProjectOverview, type OverviewLoad } from './use-project-overview.js
 // with Cancel queued run for a project whose latest run waits, and the New project form.
 
 const demoUrl =
-  'https://github.com/dotnet-architecture/eShopModernizing/tree/master/eShopLegacyWebFormsSolution';
+  'https://github.com/dotnet-architecture/eShopModernizing/tree/main/eShopLegacyWebFormsSolution';
 
 function YourProjects(props: {
   readonly state: OverviewLoad;

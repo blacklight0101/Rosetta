@@ -8,19 +8,51 @@ import { expect } from './fixtures.js';
 const webformsUrl = 'https://github.com/octo/webforms';
 const startButton = { name: /^Start run/u } as const;
 
+/** The start link of the project of a repository address on the projects page. */
+function startLinkOf(page: Page, url: string): Locator {
+  return page.getByRole('link', { name: `Start run for ${new URL(url).pathname.slice(1)}` });
+}
+
+/** The heading of the start page of a project. */
+function startHeadingOf(page: Page): Locator {
+  return page.getByRole('heading', { name: 'Start a run', level: 1 });
+}
+
+/**
+ * Makes sure the account has the project of a repository address, creating it when it has not.
+ * A create has one of two answers, and the page waits for it where it was made (P1-150): the project
+ * is added to this list, or the project already exists and the form opens its start page. Reloading
+ * during the create could cancel it, or let its navigation land after the reload, so no reload is
+ * made here.
+ */
+export async function ensureProject(page: Page, url: string): Promise<void> {
+  const link = startLinkOf(page, url);
+  const empty = page.getByText('No projects yet');
+  await expect(link.or(empty).or(page.getByRole('table')).first()).toBeVisible();
+  if ((await link.count()) > 0) return;
+  await page.getByLabel('GitHub repository URL').fill(url);
+  await page.getByRole('button', { name: 'Create project' }).click();
+  await expect(link.or(startHeadingOf(page))).toBeVisible({ timeout: 30_000 });
+}
+
+/**
+ * Opens the start page of the account's project for a repository address, creating the project
+ * first. The page is either on the start page already (the answer of a create that found the project)
+ * or on the projects list, where the link leads to it.
+ */
+export async function openStartOf(page: Page, url: string): Promise<void> {
+  await ensureProject(page, url);
+  if (await startHeadingOf(page).isVisible()) return;
+  const link = startLinkOf(page, url);
+  await expect(link).toHaveAttribute('href', /\/start$/u);
+  await page.goto((await link.getAttribute('href')) ?? '/projects');
+}
+
 /** Opens the start page of the account's `octo/webforms` project, creating the project once. */
 export async function openStartPage(page: Page): Promise<void> {
   await page.goto('/projects');
-  const link = page.getByRole('link', { name: 'Start run for octo/webforms' });
-  const empty = page.getByText('No projects yet');
-  await expect(link.or(empty).first()).toBeVisible();
-  if (await empty.isVisible()) {
-    await page.getByLabel('GitHub repository URL').fill(webformsUrl);
-    await page.getByRole('button', { name: 'Create project' }).click();
-    await expect(link).toBeVisible();
-  }
-  await link.click();
-  await expect(page.getByRole('heading', { name: 'Start a run', level: 1 })).toBeVisible();
+  await openStartOf(page, webformsUrl);
+  await expect(startHeadingOf(page)).toBeVisible();
   await expect(page.getByLabel('GitHub repository URL')).toHaveValue(webformsUrl);
 }
 

@@ -10,7 +10,7 @@ import { StreamServer } from './stream-server.js';
 
 export const runUuid = '2f0c4b1e-0000-4000-8000-000000000001';
 export const runPath = `/api/runs/${runUuid}`;
-export const estimatePath = '/api/projects/p-1/estimate?areas=Catalog&areas=Services';
+export const estimatePath = '/api/projects/p-1/estimate';
 
 interface RowOptions {
   readonly stage?: string;

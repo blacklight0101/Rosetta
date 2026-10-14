@@ -89,14 +89,21 @@ it('RF-425 Re-estimate asks for the estimate again', async () => {
 
 it('RF-425 choosing fewer areas estimates only those areas', async () => {
   const { calls } = renderStart({
-    [`GET ${estimatePath}?areas=Catalog`]: json(200, localEstimate),
+    [`POST ${estimatePath}`]: json(200, localEstimate),
   });
   await ready();
 
   fireEvent.click(input('Models'));
 
   await waitFor(() => {
-    expect(calls.map((call) => call.path)).toContain(`${estimatePath}?areas=Catalog`);
+    expect(
+      calls.some(
+        (call) =>
+          call.method === 'POST' &&
+          call.path === estimatePath &&
+          JSON.stringify(call.body) === JSON.stringify({ areas: ['Catalog'] }),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -120,6 +127,15 @@ it('RF-1001 without a scan the understand stage is off, the scan is chosen and t
   expect(input('Scan only').checked).toBe(true);
   expect(start().disabled).toBe(false);
   expect(screen.queryByRole('table', { name: 'Estimate per role' })).toBeNull();
+});
+
+it('RF-1001 with no code map the page shows the scan note and no run cap or threshold field', async () => {
+  renderStart({ [`GET ${estimatePath}`]: noCodeMap });
+
+  await screen.findByText(/A scan reads the repository/u);
+
+  expect(screen.queryByLabelText('Run cap (USD)')).toBeNull();
+  expect(screen.queryByLabelText('Ask before a run estimated above (USD)')).toBeNull();
 });
 
 it('RF-143 names the cloud provider and keeps Start off until the consent is given', async () => {
@@ -221,4 +237,16 @@ it('RF-425 an estimate that cannot be read shows its error and Start stays off f
 
   expect((await screen.findByTestId('error-banner')).textContent).toContain('RST-2006');
   expect(start().disabled).toBe(true);
+});
+
+it('DEC-117 a typed cap above 100 USD does not replace the cap the warning compares with', async () => {
+  renderStart({
+    [`GET ${projectPath}`]: json(200, projectWithCap(10_000)),
+    [`GET ${estimatePath}`]: json(200, cloudEstimate),
+  });
+  await ready();
+
+  fireEvent.input(input('Run cap (USD)'), { target: { value: '150' } });
+
+  expect(screen.getByTestId('cap-warning').textContent).toContain('$0.01');
 });

@@ -206,6 +206,7 @@ Each attempt has its own timeout (`timeoutSeconds`) and the caller's abort signa
 | timeout of an attempt, or 408 | `RST-1505` | yes |
 | 5xx, or a failed connection | `RST-1506` | yes |
 | 401 rejected key | `RST-1511` | no; the message names the fix (account settings or `OPENAI_API_KEY`) |
+| key refused before any call (empty, spaces, control characters or a character above U+00FF) | `RST-1511` | no call is made; the message holds no part of the key and names no fix |
 | 404 `model_not_found` | `RST-1512` | no; the message names the model |
 | 429 `insufficient_quota` (no credit) | `RST-1513` | no; the message names the billing settings |
 | any other 4xx (for example 400 `context_length_exceeded`, 403) | `RST-1506` | no |
@@ -221,11 +222,13 @@ jitter, never shorter than the hint (capped at five minutes), up to `maxRetries`
   run it against
   `tests/support/fake-openai-server.ts`, which replays the hand-written recordings under `tests/recordings/openai/`
   with a FAKE key, and run the contract suite on it.
-- Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key in `OPENAI_API_KEY`:
+- Manual live check (gate G-04), with `ROSETTA_TEST` unset and the owner's key in `OPENAI_API_KEY` (exported, or in the repository `.env`, which the script loads itself; an exported key wins):
 
   ```text
   npm run live:openai -- gpt-5-nano
   ```
+
+  The model argument is required: without it the script exits with status 2 and prints the usage line.
 
   It builds Rosetta, then makes two calls with fixed synthetic prompts (a short text answer and one `read_file` tool
   call) and prints both answers, with the dated model id, the request id and the usage, or the error code and its

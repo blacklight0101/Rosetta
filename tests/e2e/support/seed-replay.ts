@@ -7,7 +7,7 @@ import { replayDemoRunKey } from '../../support/replay-fixture.js';
 import { sampleProject } from '../../support/project-fixtures.js';
 import { writeRunFolder } from '../../support/run-output-harness.js';
 import { sampleRun } from '../../support/run-fixtures.js';
-import { accountFor } from './seed.js';
+import { preseededAccountFor } from './seed.js';
 
 // RF-506, RF-507: the recorded run (tests/fixtures/runs/replay-demo) of every `replay` account of an
 // end-to-end run, as an ended understand run with its files in the data folder. The report and the
@@ -34,7 +34,7 @@ export async function seedReplayRuns(databaseUrl: string, dataDir: string): Prom
     const projects = new PgProjectRepository(pool);
     const runs = new PgRunIndex(pool);
     for (const name of projectNames) {
-      const user = await users.findByUserName(accountFor('replay', name).userName);
+      const user = await users.findByUserName(preseededAccountFor('replay', name).userName);
       if (user === undefined) throw new Error(`The replay account of ${name} does not exist.`);
       await projects.insertOrFind(
         sampleProject({ id: projectId(name), userId: user.id, name: 'octo/demo' }),

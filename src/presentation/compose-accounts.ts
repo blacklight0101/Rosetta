@@ -34,6 +34,7 @@ import type { Environment } from '../infrastructure/config/environment.js';
 import { PgAccountUsage } from '../infrastructure/db/pg-account-usage.js';
 import { PgAuditLog } from '../infrastructure/db/pg-audit-log.js';
 import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-repository.js';
+import { PgServerCapsStore } from '../infrastructure/db/pg-server-caps-store.js';
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
 import { PgSessionStore } from '../infrastructure/db/pg-session-store.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
@@ -111,6 +112,7 @@ interface AccountAdapters {
   readonly users: PgUserRepository;
   readonly sessions: PgSessionStore;
   readonly auditLog: PgAuditLog;
+  readonly masker: TextMasker;
   readonly hasher: PasswordHasher;
   readonly logger: Logger;
   readonly clock: Clock;
@@ -135,11 +137,16 @@ function composeKeys(adapters: AccountAdapters): KeyServices {
 
 // RF-1106, DEC-107: the server caps (administrator) and the user's own daily cap.
 function composeCaps(adapters: AccountAdapters): CapServices & DefaultRoleServices {
-  const { pool, users, auditLog, logger, clock } = adapters;
+  const { pool, users, auditLog, masker, logger, clock } = adapters;
   const settings = new PgServerSettings(pool);
   return {
     getCaps: new GetCaps({ settings, usage: new PgAccountUsage(pool), clock }),
-    setCaps: new SetCaps({ settings, auditLog, logger, clock }),
+    setCaps: new SetCaps({
+      settings,
+      capsStore: new PgServerCapsStore(pool, masker),
+      logger,
+      clock,
+    }),
     getDefaultRoles: new GetDefaultRoles({ settings }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),
     getOwnDailyCap: new GetOwnDailyCap({ users }),
@@ -202,7 +209,18 @@ export async function composeAuth(
     priceTable,
     services: {
       accounts: await composeAccounts({
-        ...{ pool, secretBox, users, sessions, auditLog, hasher, logger, clock, testProviders },
+        ...{
+          pool,
+          secretBox,
+          users,
+          sessions,
+          auditLog,
+          masker,
+          hasher,
+          logger,
+          clock,
+          testProviders,
+        },
       }),
       signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
       signOut: new SignOut({ sessions, auditLog, logger, clock }),

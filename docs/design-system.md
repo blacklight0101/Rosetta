@@ -172,7 +172,9 @@ from tokens, and English text (DEC-45).
 | Log list | - | - | list; level toggles are `aria-pressed` buttons | time, level, logger, message |
 
 A component gallery page (development only: built only in development and served at `/dev/gallery`, DEC-126) renders every
-component in every state and both themes; the end-to-end suite screenshots it.
+component in every state and both themes; the end-to-end suite screenshots it. The production bundle has no
+`/dev/gallery` route, so the address is not a literal 404 there: a visitor without a session is redirected to sign-in,
+and a signed-in user gets the application shell, which draws its not-found page with status 200 (RF-1009).
 
 ## 6. Status badges
 
@@ -202,7 +204,7 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
 ## 7. Patterns
 
 - **Start a run**: URL field, Resolve shows repository, pinned commit, subpath, licence and whether the snapshot is
-  cached; stage and areas; the estimate table (low, likely, high per role); the cloud warning with a consent
+  cached; stage and areas (an area name wraps inside its card and keeps its full text in a title; an area that holds only vendored or minified files is marked "third-party" and starts unticked, the others start ticked); the estimate table (low, likely, high per role); the cloud warning with a consent
   checkbox when a role uses a cloud provider; Start is enabled only when the URL resolved and consent is given.
 - **Destructive confirmation**: a dialog that names the target, the space it frees, what is kept (the snapshot, the
   project totals), and "This cannot be undone"; the danger button repeats the verb ("Delete run").

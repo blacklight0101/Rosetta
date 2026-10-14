@@ -27,6 +27,7 @@
     "live:openai": "npm run build && node scripts/openai-live-check.mjs",
     "live:ollama": "npm run build && node scripts/ollama-live-check.mjs",
     "live:anthropic": "npm run build && node --env-file=.env scripts/anthropic-live-check.mjs",
+    "site:build": "node --import ./scripts/register-ts.mjs scripts/build-sample-site.mjs",
     "hooks:install": "lefthook install"
   },
   "devDependencies": {
