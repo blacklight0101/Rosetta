@@ -6,12 +6,13 @@ import {
 } from '../../../../src/infrastructure/files/grep-limits.js';
 
 describe('grep limits', () => {
-  it('RF-146 the limits are a 200-character pattern, a 2,000-character line, a 2 s timeout and 1000 matches', () => {
+  it('RF-146 the limits are a 200-character pattern, a 2,000-character line, a 2 s timeout, 1000 matches and 32 MiB read', () => {
     expect(grepLimits).toEqual({
       maxPatternLength: 200,
       maxLineLength: 2000,
       timeoutMs: 2000,
       maxMatches: 1000,
+      maxTotalBytes: 32 * 1024 * 1024,
     });
   });
 
