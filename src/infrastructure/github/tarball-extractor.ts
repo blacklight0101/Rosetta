@@ -32,6 +32,11 @@ function isDeviceName(segment: string): boolean {
   return DEVICE_NAME.test(base.trimEnd());
 }
 
+/** `..`, and the segments Windows trims to `..` or to nothing: only dots and spaces, other than a lone `.`. */
+function isDotSegment(segment: string): boolean {
+  return segment !== '.' && /^[. ]+$/.test(segment);
+}
+
 /**
  * An absolute path (POSIX or Windows), any `..` segment, a drive letter at the start of any segment, or a
  * Windows device name below the stripped top folder, on either separator (RF-122, ADR-019).
@@ -40,7 +45,7 @@ function isUnsafePath(path: string): boolean {
   if (path.startsWith('/') || path.startsWith('\\')) return true;
   const segments = path.split(/[\\/]/);
   return (
-    segments.includes('..') ||
+    segments.some(isDotSegment) ||
     segments.some((segment) => /^[A-Za-z]:/.test(segment)) ||
     segments.slice(1).some(isDeviceName)
   );
