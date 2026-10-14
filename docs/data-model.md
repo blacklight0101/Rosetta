@@ -662,8 +662,8 @@ the `Clock` port.
 | `name` | `text` | defaults to `<owner>/<repo>` |
 | `source_url`, `ref`, `subpath` | `text` | normalised GitHub URL; `ref` empty = default branch; `subpath` empty = root; unique on (`user_id`, `source_url`, `ref`, `subpath`) |
 | `settings` | `jsonb` | the document of 3.1, validated by its zod schema on every write and read |
-| `settings_version` | `integer` | starts at 1 and grows by 1 with every save of `settings` (migration `0009`); a save that names the version it started from (`If-Match`) is applied only if it is still the stored one, tested in the same `UPDATE`, so two tabs never overwrite each other; shown as `settingsVersion` and the `ETag` of the project |
 | `created_at`, `updated_at` | `timestamptz` | |
+| `settings_version` | `integer` | starts at 1 and grows by 1 with every save of `settings` (migration `0009`); a save that names the version it started from (`If-Match`) is applied only if it is still the stored one, tested in the same `UPDATE`, so two tabs never overwrite each other; shown as `settingsVersion` and the `ETag` of the project |
 
 **`runs`** (RF-003, RF-1108)
 
