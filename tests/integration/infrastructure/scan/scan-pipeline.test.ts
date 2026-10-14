@@ -208,7 +208,6 @@ describe('SnapshotScanPipeline discard failures', () => {
   });
 });
 
-/** A pipeline with the C# pack and a scan-wide parse budget of `totalMs` on a clock that stands still. */
 /**
  * A pipeline with the C# pack and a scan-wide parse budget of `totalMs`. The clock moves
  * `msPerRead` on every read, so 0 keeps it still and a larger step spends the budget at once.
