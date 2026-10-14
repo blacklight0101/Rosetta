@@ -2,6 +2,7 @@ import { freshTag } from './data-block-tags.js';
 import type { OutputWriter, WriteRefusal } from '../../src/application/ports/output-writer.js';
 import type {
   LlmMessage,
+  LlmProvider,
   LlmRequest,
   ProviderKind,
 } from '../../src/application/ports/llm-provider.js';
@@ -42,6 +43,8 @@ export interface EgressHarnessOptions {
   /** The masker of the guard; the egress log and the logger always mask with a working one. */
   readonly masker?: TextMasker;
   readonly recording?: Recording;
+  /** The provider the guard wraps; the fake provider by default (P1-104: a real adapter). */
+  readonly inner?: LlmProvider;
   readonly writer?: OutputWriter;
   readonly manifests?: RunManifestStore;
 }
@@ -60,6 +63,15 @@ function textRecording(calls = 3): Recording {
   return recordingOf(...Array.from({ length: calls }, () => contractScenarios.text));
 }
 
+/** The given manifest store, or an in-memory one, holding the run's manifest. */
+async function seededManifests(given: RunManifestStore | undefined): Promise<RunManifestStore> {
+  const manifests = given ?? new MemoryRunManifestStore();
+  if ((await manifests.read(egressScope)) === undefined) {
+    await manifests.write(egressScope, sampleManifest({ runId: egressScope.runKey }));
+  }
+  return manifests;
+}
+
 export async function egressHarness(options: EgressHarnessOptions = {}): Promise<EgressHarness> {
   const clock = new FixedClock(egressInstant);
   const logMasker = new SecretMasker();
@@ -67,14 +79,11 @@ export async function egressHarness(options: EgressHarnessOptions = {}): Promise
     testMode: true,
     recording: options.recording ?? textRecording(),
   });
-  const manifests = options.manifests ?? new MemoryRunManifestStore();
-  if ((await manifests.read(egressScope)) === undefined) {
-    await manifests.write(egressScope, sampleManifest({ runId: egressScope.runKey }));
-  }
+  const manifests = await seededManifests(options.manifests);
   const logger = new MemoryLogger(clock, logMasker);
   const writer = options.writer ?? new MemoryOutputWriter();
   const guard = new EgressGuard({
-    inner: fake,
+    inner: options.inner ?? fake,
     target: {
       provider: 'main',
       kind: options.kind ?? 'ollama',

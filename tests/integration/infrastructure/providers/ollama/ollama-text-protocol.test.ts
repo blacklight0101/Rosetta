@@ -104,7 +104,7 @@ describe('OllamaProvider text protocol history and final answers', () => {
       },
       {
         role: 'user',
-        content: '```tool_result\n{"id":"call-1","content":"class Catalog {}"}\n```',
+        content: '```tool_result\nid: call-1\ncontent:\nclass Catalog {}\n```',
       },
     ]);
   });
