@@ -112,17 +112,21 @@ async function checkPasswordChange(
 }
 
 // RNF-003: a log that cannot be written (it rejects or throws) never fails the request.
-async function logLookupFailure(logger: Logger, request: FastifyRequest): Promise<void> {
+async function logLookupFailure(
+  logger: Logger,
+  request: FastifyRequest,
+  outcome: string,
+): Promise<void> {
   try {
     await logger.log({
       level: 'warn',
       logger: 'http',
-      message: 'The session lookup failed; the page is shown to a visitor.',
+      message: `The session lookup failed; ${outcome}.`,
       code: ERROR_CODES.databaseQueryFailed,
       data: { path: requestPath(request) },
     });
   } catch {
-    // Nothing else can report a failing logger; the visitor page is still shown.
+    // Nothing else can report a failing logger; the request goes on as described.
   }
 }
 
@@ -141,7 +145,7 @@ async function lookUp(
   try {
     return (await resolveSession.execute(sessionId)) ?? null;
   } catch {
-    await logLookupFailure(logger, request);
+    await logLookupFailure(logger, request, 'the page is shown to a visitor');
     return null;
   }
 }
@@ -152,6 +156,7 @@ async function lookUp(
  */
 async function refusedSession(
   resolveSession: ResolveSession,
+  logger: Logger,
   request: FastifyRequest,
 ): Promise<SignedInSession | null> {
   const sessionId = request.cookies[SESSION_COOKIE];
@@ -159,7 +164,8 @@ async function refusedSession(
   try {
     return (await resolveSession.execute(sessionId)) ?? null;
   } catch {
-    // The request is refused either way; the audit row then has no actor.
+    // The request is refused either way; the audit row then has no actor (RNF-003: path only).
+    await logLookupFailure(logger, request, 'the refused request is audited without an actor');
     return null;
   }
 }
@@ -172,7 +178,7 @@ export function registerAccessHooks(server: FastifyInstance, options: AccessHook
 
   server.addHook('onRequest', async (request) => {
     if (!isStateChanging(request) || request.headers.origin === origin) return;
-    request.signedIn = await refusedSession(resolveSession, request);
+    request.signedIn = await refusedSession(resolveSession, logger, request);
     await refuse(refusals, request, 'origin');
     throw new RosettaError(ERROR_CODES.originRefused);
   });
