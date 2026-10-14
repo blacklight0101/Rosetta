@@ -49,9 +49,6 @@ export function newContextCache(): ContextCache {
   return { auto: new Map(), retryAt: new Map(), fixedChecked: new Set() };
 }
 
-/** The cache every Ollama provider of this process shares (DEC-114: once per process). */
-export const processContextCache: ContextCache = newContextCache();
-
 export interface ContextResolverDeps {
   /** The Ollama base URL, part of the cache key. */
   readonly serverUrl: string;

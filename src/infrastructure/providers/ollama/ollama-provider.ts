@@ -23,7 +23,8 @@ import {
 import { HttpContextProbe } from './ollama-context-probe.js';
 import {
   OllamaContextResolver,
-  processContextCache,
+  newContextCache,
+  type ContextCache,
   type ModelRef,
 } from './ollama-context-resolver.js';
 import { modelMissing } from './ollama-errors.js';
@@ -57,6 +58,8 @@ export interface OllamaProviderOptions {
   readonly probeTimeoutSeconds?: number;
   /** The current time in milliseconds, for the back-off after a context fallback; Date.now by default. */
   readonly now?: () => number;
+  /** The context-size cache; the process-wide one by default (DEC-114). Tests pass a fresh one. */
+  readonly contextCache?: ContextCache;
   /** Receives the context-size warnings (RF-401, DEC-114). */
   readonly logger: Logger;
   /** Ollama's `think`; false when not set. */
@@ -65,6 +68,9 @@ export interface OllamaProviderOptions {
   /** A random number in [0, 1) for the back-off jitter. */
   readonly random?: () => number;
 }
+
+// DEC-114: one context cache per process. It is private to this module, so no caller can empty it.
+const processCache: ContextCache = newContextCache();
 
 function cancelled(signal: AbortSignal): RosettaError {
   return new RosettaError(ERROR_CODES.providerCallCancelled, undefined, { cause: signal.reason });
@@ -113,7 +119,7 @@ export class OllamaProvider implements LlmProvider {
       serverUrl: options.baseUrl,
       probe: new HttpContextProbe({ baseUrl: options.baseUrl, loadTimeoutMs, probeTimeoutMs }),
       logger: options.logger,
-      cache: processContextCache,
+      cache: options.contextCache ?? processCache,
       now: options.now ?? Date.now,
     });
   }

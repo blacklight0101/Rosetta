@@ -21,7 +21,7 @@ const unavailable: ProbeResult<never> = { ok: false, reason: 'HTTP 404' };
 
 interface SimulatedGpu {
   /** The model's trained context; undefined when /api/show names none; null when it fails. */
-  readonly trained: number | undefined | null;
+  trained: number | undefined | null;
   /** The largest context that keeps the whole model in GPU memory. */
   readonly fitsUpTo: number;
   readonly psFails?: boolean;
@@ -191,6 +191,31 @@ describe('automatic Ollama context size when Ollama cannot be probed', () => {
 
     expect(await resolver.auto(gemma)).toEqual({ tokens: 8_192, source: 'auto-fallback' });
     expect(warnings(logger)).toHaveLength(1);
+  });
+});
+
+describe('Ollama context size back-off reset', () => {
+  it('RF-401 a successful probe after a fallback clears the back-off, so the next call reuses the result', async () => {
+    const gpu: SimulatedGpu = { trained: null, fitsUpTo: 65_536 };
+    const { probe, resolver, clock } = resolverFor(gpu);
+    expect(await resolver.auto(gemma)).toEqual({ tokens: 32_768, source: 'auto-fallback' });
+
+    gpu.trained = 131_072;
+    clock.ms += FALLBACK_BACKOFF_MS;
+    expect(await resolver.auto(gemma)).toEqual({ tokens: 32_768, source: 'auto-fit' });
+    expect(await resolver.auto(gemma)).toEqual({ tokens: 32_768, source: 'auto-fit' });
+
+    expect(probe.shows).toBe(2);
+  });
+
+  it('RF-401 clearing the cache forgets a fallback back-off', async () => {
+    const { resolver, cache } = resolverFor({ trained: null, fitsUpTo: 65_536 });
+    await resolver.auto(gemma);
+    expect(cache.retryAt.size).toBe(1);
+
+    clearContextCache(cache);
+
+    expect(cache.retryAt.size).toBe(0);
   });
 });
 
