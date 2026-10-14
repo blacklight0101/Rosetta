@@ -199,7 +199,13 @@ function holding(body: object): { answer: Answer; release: () => void; count: ()
       ? new Response(stream, { status: 200, headers: { 'content-type': 'application/json' } })
       : json(200, runBody('Queued', 3));
   };
-  return { answer, release: () => release(), count: () => count };
+  return {
+    answer,
+    release: () => {
+      release();
+    },
+    count: () => count,
+  };
 }
 
 it('RF-1108 hiding and showing during a read starts no second read', async () => {
