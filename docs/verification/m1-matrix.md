@@ -27,7 +27,7 @@ has a proposed card in section 10 for the orchestrator to file (orchestration RE
 | RNF-009 licence review of fixtures | passed; one MINOR provenance gap (F-25) |
 | Threat-model rows reviewed | 25 of 25, plus the OWASP Top 10:2025 and LLM Top 10 tables and the hard-rule greps |
 | Findings | **BLOCKING 0**, **MAJOR 3** (F-01..F-03), **MINOR 23** (F-04..F-26) |
-| Pyramid for P1 | Unit 4740 / Integration 2395 / E2E 168 (65% / 33% / 2%; target 60 / 30 / 10, a guideline that warns, DEC-30) |
+| Pyramid for P1 | Unit 4740 / Integration 2395 / E2E 168 from the local Windows run (65% / 33% / 2%; target 60 / 30 / 10, a guideline that warns, DEC-30); CI Linux on the same commit prints Integration 2410 (section 11) |
 
 No BLOCKING finding is open: nothing found lets one user reach another user's data, leaks a key or a password, lets a
 run pass a cap, or lets a hostile repository or archive reach the host.
@@ -135,7 +135,7 @@ owner's check is still open; **Gap** means no evidence yet.
 | RF-1010 | Project tokens and cost always visible | Must | 19 / 7 / 5 | `tests/integration/presentation/web/project-cost.test.ts:207` | - | Tests pass |
 | RF-1011 | Live provider calls and logs view | Should | 46 / 33 / 4 | `tests/integration/application/understand-run-records.test.ts:111` | - | Tests pass |
 | RF-1012 | Delete snapshots and runs from the page | Should | 56 / 39 / 5 | `tests/integration/application/deletion-ledger.test.ts:66` | - | Tests pass |
-| RF-1013 | Security headers and cookies | Must | 6 / 25 / 1 | `tests/integration/presentation/composition-root.test.ts:177` | - | Tests pass |
+| RF-1013 | Security headers and cookies | Must | 6 / 25 / 1 | `tests/integration/presentation/web/security-headers.test.ts:47` | - | Tests pass |
 | RF-1100 | Sign in with a user name and password | Must | 49 / 56 / 8 | `tests/integration/application/sign-in-database-work.test.ts:82` | - | Tests pass |
 | RF-1101 | Sessions and sign-out | Must | 35 / 31 / 2 | `tests/integration/presentation/sign-in-start.test.ts:35` | - | Tests pass |
 | RF-1102 | Administer accounts | Must | 97 / 61 / 14 | `tests/integration/application/account-races.test.ts:54` | - | Tests pass |
@@ -331,7 +331,7 @@ finding was confirmed in the code at `6cb4d0e8`.
 
 | Id | Rank | Boundary | Finding | Where | Card |
 |---|---|---|---|---|---|
-| F-01 | MAJOR | TB5 | Anyone can grow the audit table and the log without signing in: every state-changing request with a missing or foreign `Origin`, to any path, writes a `request.refused` audit row and a security event before any rate limit applies (the rate limit is per route and not global). DEC-124 keeps every refusal row and DEC-132 lets no row be deleted for 365 days, so the growth is bounded only by the attacker's request rate: a disk and database denial of service on the hosted URL. No data leaks. | `src/presentation/web/access-hooks.ts:153-157`, `server.ts:164` | PC-01 |
+| F-01 | MAJOR | TB5 | Refused requests write audit rows without any bound. Every path that refuses a request writes one `request.refused` audit row and one security event per request: (a) a state-changing request with a missing or foreign `Origin`, to any path, before any rate limit (`access-hooks.ts:153-157`); (b) every request over a route's rate limit, because `@fastify/rate-limit` 11.2.0 calls `onExceeded` on each over-limit request, not once per window (`server.ts:162-166`, `rate-limit-log.ts`); (c) every sign-in or password change past the in-flight bound (`session-routes.ts:72-74`). A script, unlike a browser, can send the matching `Origin` header, so (b) and (c) are reachable on `POST /api/session` without a session or a CSRF token. Each row stores the full request path without its query (`route-access.ts:34-37`, `record-refused-request.ts:47-61`), so up to about 16 KB per row under Node's header limit. DEC-124 keeps every refusal row and DEC-132 keeps rows for 365 days, so storage grows with the attacker's request rate: a disk and database denial of service on the hosted URL. No data leaks. | `src/presentation/web/access-hooks.ts:153-157`, `server.ts:162-166`, `session-routes.ts:72-74`, `rate-limit-log.ts`, `route-access.ts:34-37` | PC-01 |
 | F-02 | MAJOR | TB8 | The serving process holds the credentials of the role that owns the audit table. `compose.yaml` passes `DATABASE_MIGRATOR_URL` (the `rosetta_migrator` password) into the app container for its whole life; the composition root closes the migrator pool after migrating but the variable stays in the environment. `rosetta_migrator` owns `audit_events` and `cost_ledger`, so code running in the app process can update or delete audit and ledger rows and step around the 365-day floor. The threat model presents the `rosetta_app` grants as the boundary and its residual risks do not mention this. | `compose.yaml:49`, `src/presentation/composition-root.ts:88-95`, `db/init/roles.sh` | PC-02 |
 | F-03 | MAJOR | TB8, RNF-014 | The all-zero `ROSETTA_SECRET_KEY` placeholder of `.env.example` is accepted at start with no warning (checked on the Compose stack, section 4). A deployment that copies `.env.example` and fills only the empty passwords, as the file invites, seals every stored provider key under a publicly known key, and nothing tells the operator. | `.env.example:15`, `src/infrastructure/config/environment.ts:42,69,100` | PC-03 |
 | F-04 | MINOR | TB1 | The hostile-archive fixtures cover `..` and an absolute path only; backslash, drive-letter, device and FIFO entries are handled by the code but untested. | `tests/support/snapshot-fixtures.ts:7` | PC-06 |
@@ -365,15 +365,21 @@ grouped into three cards by kind. The matrix gaps already have cards (section 3.
 the specification does not describe yet, so each starts with a spec question for the owner (ADR-010); the default
 the card would apply is stated.
 
-**PC-01 - Follow-up: bound the audit writes of unauthenticated refusals** (F-01)
-- **Difficulty**: 9 (opus). **Size**: M. **Refs**: RF-1009, RF-1109, DEC-124, DEC-132, P1-49.
-- **Do**: ask the owner (new Q, default: refusals without a session are limited per client address, 30 a minute; past
-  the limit the request answers 429 `RST-2005` and one `request.refused` row with reason `rate-limit` is written per
-  address and minute, so DEC-124 still holds for every refusal that is answered without the limit); record the DEC;
-  write the failing test that sends 1,000 cross-origin POSTs from one address; apply the limit before the audit write
-  in the access hooks; update architecture section 10 and the threat model.
-- **Done when**: 1,000 cross-origin POSTs from one address in a minute write at most 31 audit rows; a signed-in
-  user's refusals are unaffected below the limit; the DEC row exists; `npm run verify` green.
+**PC-01 - Follow-up: bound the audit writes of refused requests** (F-01)
+- **Difficulty**: 9 (opus). **Size**: M. **Refs**: RF-1009, RF-1100, RF-1109, RF-009, DEC-124, DEC-132, P1-49.
+- **Do**: ask the owner (new Q; DEC-124 keeps every refusal row, so this changes it). Default: one limit per client
+  address covers every refusal that writes a row (the `Origin` refusal, the route rate limits' `onExceeded`, the
+  in-flight bounds of sign-in and password change, and any other `request.refused` writer): up to 30 rows a minute per
+  address, then one `request.refused` row with reason `rate-limit` and a count for the rest of that minute, while the
+  requests themselves are still refused with their usual status; the stored path (audit `target_id`, the security
+  event's message and data) is cut to 512 characters with a marker that it was cut. Record the DEC. Write the failing
+  tests first, then apply the limit and the cut where the row is written (`record-refused-request.ts` or a guard in
+  front of it); update architecture section 10 and the threat model.
+- **Done when**: 1,000 cross-origin POSTs from one address in a minute write at most 31 audit rows; 1,000
+  same-origin `POST /api/session` requests from one address in a minute (past the rate limit and the in-flight bound)
+  write at most 31 audit rows; a refused request with a 16 KB path stores at most 512 characters of it in the audit row
+  and the log; a signed-in user's refusals below the limit still each write a row; the DEC row exists; `npm run verify`
+  green.
 
 **PC-02 - Follow-up: keep the migrator credentials out of the serving process** (F-02, F-19)
 - **Difficulty**: 9 (opus). **Size**: M. **Refs**: RF-1302, RF-1305, ADR-014, ADR-016, P1-49.
@@ -426,6 +432,9 @@ the card would apply is stated.
 
 ## 11. Pyramid for P1
 
-`npm run test:levels` on `6cb4d0e8`: **Unit 4740 / Integration 2395 / E2E 168**, shares 65% / 33% / 2% against the
+`npm run test:levels` on `6cb4d0e8`, local Windows run with a disposable PostgreSQL: **Unit 4740 / Integration 2395 /
+E2E 168**, shares 65% / 33% / 2% against the
 target 60% / 30% / 10% with 10 points of tolerance (DEC-30). The end-to-end share is low by count because each
-Playwright journey covers many requirements at once; it is inside the tolerance.
+Playwright journey covers many requirements at once; it is inside the tolerance. CI on Linux at the same commit (run 38528246211) prints **Unit 4740 / Integration 2410 /
+E2E 168**: the 15 more integration tests are the Linux-only ones skipped on Windows (container image, links on disk,
+POSIX shell steps).
