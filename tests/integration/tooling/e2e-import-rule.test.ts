@@ -19,28 +19,60 @@ const eslint = new ESLint({
   ],
 });
 
-async function restrictedImports(source: string, filePath = specPath): Promise<string[]> {
+async function restrictedBy(
+  ruleId: string,
+  source: string,
+  filePath = specPath,
+): Promise<string[]> {
   const [result] = await eslint.lintText(source, { filePath });
   return (result?.messages ?? [])
-    .filter((message) => message.ruleId === 'no-restricted-imports')
+    .filter((message) => message.ruleId === ruleId)
     .map((message) => message.message);
 }
+
+const restrictedImports = (source: string, filePath = specPath): Promise<string[]> =>
+  restrictedBy('no-restricted-imports', source, filePath);
 
 describe('e2e import rule', () => {
   it.each([
     "import { test } from '@playwright/test';\nexport { test };\n",
     "import { expect } from '@playwright/test';\nexport { expect };\n",
     "import { test as base } from '@playwright/test';\nexport { base };\n",
-  ])('RNF-005 refuses test and expect from @playwright/test in a spec: %s', async (source) => {
-    const found = await restrictedImports(source);
+    "import pw from '@playwright/test';\nexport { pw };\n",
+  ])(
+    'RNF-005 refuses test, expect and the default export of @playwright/test in a spec: %s',
+    async (source) => {
+      const found = await restrictedImports(source);
 
-    expect(found).toHaveLength(1);
-    expect(found[0]).toContain('tests/e2e/support/fixtures');
-  });
+      expect(found).toHaveLength(1);
+      expect(found[0]).toContain('tests/e2e/support/fixtures');
+    },
+  );
 
   it('RNF-005 allows types from @playwright/test in a spec', async () => {
     const found = await restrictedImports(
       "import type { Page } from '@playwright/test';\nexport type P = Page;\n",
+    );
+
+    expect(found).toEqual([]);
+  });
+});
+
+describe('e2e dynamic import rule', () => {
+  it.each([
+    "export async function load() {\n  return await import('./helper.js');\n}\n",
+    "export async function load() {\n  return await import('@playwright/test');\n}\n",
+  ])('RNF-005 refuses a dynamic import() in a spec: %s', async (source) => {
+    const found = await restrictedBy('no-restricted-syntax', source);
+
+    expect(found).toHaveLength(1);
+    expect(found[0]).toContain('RNF-005');
+  });
+
+  it('RNF-005 allows a static import of a helper in a spec', async () => {
+    const found = await restrictedBy(
+      'no-restricted-syntax',
+      "import { helper } from './helper.js';\nexport { helper };\n",
     );
 
     expect(found).toEqual([]);

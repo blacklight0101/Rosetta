@@ -26,32 +26,58 @@ async function restrictedMessages(code: string, path = 'web/src/probe.tsx'): Pro
     .map((message) => message.message);
 }
 
+const sinkCases: [string, string][] = [
+  [
+    'dangerouslySetInnerHTML as a JSX attribute',
+    'export const a = <div dangerouslySetInnerHTML={{ __html: x }} />;',
+  ],
+  [
+    'dangerouslySetInnerHTML in a props object',
+    'export const a = h("div", { dangerouslySetInnerHTML: { __html: x } });',
+  ],
+  ['innerHTML assignment', 'export function a(el: Element, x: string) { el.innerHTML = x; }'],
+  ['outerHTML assignment', 'export function a(el: Element, x: string) { el.outerHTML = x; }'],
+  [
+    'innerHTML by computed key',
+    'export function a(el: Element, x: string) { el["innerHTML"] = x; }',
+  ],
+  [
+    'insertAdjacentHTML',
+    'export function a(el: Element, x: string) { el.insertAdjacentHTML("beforeend", x); }',
+  ],
+  ['setHTMLUnsafe', 'export function a(el: Element, x: string) { el.setHTMLUnsafe(x); }'],
+  ['parseHTMLUnsafe', 'export function a(x: string) { return Document.parseHTMLUnsafe(x); }'],
+  [
+    'createContextualFragment',
+    'export function a(r: Range, x: string) { return r.createContextualFragment(x); }',
+  ],
+  ['srcdoc as a JSX attribute', 'export const a = <iframe srcdoc={x} />;'],
+  ['srcdoc assignment', 'export function a(el: HTMLIFrameElement, x: string) { el.srcdoc = x; }'],
+  ['srcdoc in a props object', 'export const a = h("iframe", { srcdoc: x });'],
+  ['srcDoc as a JSX attribute', 'export const a = <iframe srcDoc={x} />;'],
+  ['srcDoc in a props object', 'export const a = h("iframe", { srcDoc: x });'],
+  ['srcDoc assignment', 'export function a(el: HTMLIFrameElement, x: string) { el.srcDoc = x; }'],
+  [
+    'srcdoc set by setAttribute',
+    'export function a(el: Element, x: string) { el.setAttribute("srcdoc", x); }',
+  ],
+  [
+    'srcDoc set by setAttribute',
+    'export function a(el: Element, x: string) { el.setAttribute("srcDoc", x); }',
+  ],
+  [
+    'a bare parseHTMLUnsafe call',
+    'import { parseHTMLUnsafe } from "./html.js";\nexport function a(x: string) { return parseHTMLUnsafe(x); }',
+  ],
+  ['document.write', 'export function a(x: string) { document.write(x); }'],
+  [
+    'DOMParser',
+    'export function a(x: string) { return new DOMParser().parseFromString(x, "text/html"); }',
+  ],
+];
+
 describe('RF-507 lint rule against HTML sinks', () => {
-  it.each([
-    [
-      'dangerouslySetInnerHTML as a JSX attribute',
-      'export const a = <div dangerouslySetInnerHTML={{ __html: x }} />;',
-    ],
-    [
-      'dangerouslySetInnerHTML in a props object',
-      'export const a = h("div", { dangerouslySetInnerHTML: { __html: x } });',
-    ],
-    ['innerHTML assignment', 'export function a(el: Element, x: string) { el.innerHTML = x; }'],
-    ['outerHTML assignment', 'export function a(el: Element, x: string) { el.outerHTML = x; }'],
-    [
-      'innerHTML by computed key',
-      'export function a(el: Element, x: string) { el["innerHTML"] = x; }',
-    ],
-    [
-      'insertAdjacentHTML',
-      'export function a(el: Element, x: string) { el.insertAdjacentHTML("beforeend", x); }',
-    ],
-    ['document.write', 'export function a(x: string) { document.write(x); }'],
-    [
-      'DOMParser',
-      'export function a(x: string) { return new DOMParser().parseFromString(x, "text/html"); }',
-    ],
-  ])('RF-507 rejects %s in web/', async (_name, code) => {
+  it.each(sinkCases)('RF-507 rejects %s in web/', async (_name, code) => {
     const messages = await restrictedMessages(code);
     expect(messages.length).toBeGreaterThan(0);
     expect(messages.every((message) => message.startsWith('RF-507'))).toBe(true);
