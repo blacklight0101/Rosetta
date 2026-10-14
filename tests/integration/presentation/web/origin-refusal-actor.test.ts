@@ -107,7 +107,9 @@ describe('a cross-origin refusal without a valid session', () => {
 
     expect(await refusedActors(test)).toEqual([null]);
   });
+});
 
+describe('a cross-origin refusal whose session lookup fails', () => {
   it('RF-1009 a failing session lookup still answers 403 RST-2007, audited without an actor', async () => {
     const { test, browser } = await setup();
     vi.spyOn(test.sessions, 'touch').mockRejectedValue(new Error('database down'));
@@ -117,5 +119,22 @@ describe('a cross-origin refusal without a valid session', () => {
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ code: ERROR_CODES.originRefused });
     expect(await refusedActors(test)).toEqual([null]);
+  });
+
+  it('RF-009 a failing session lookup of a refused request is logged at warn, without the error text', async () => {
+    const { test, browser } = await setup();
+    vi.spyOn(test.sessions, 'touch').mockRejectedValue(new Error('database down at db.internal'));
+
+    await browser.request({ method: 'POST', url: '/api/probe', origin: evil });
+
+    expect(test.logger.entries).toContainEqual(
+      expect.objectContaining({
+        level: 'warn',
+        logger: 'http',
+        code: ERROR_CODES.databaseQueryFailed,
+        data: { path: '/api/probe' },
+      }),
+    );
+    expect(test.logger.text()).not.toContain('db.internal');
   });
 });
