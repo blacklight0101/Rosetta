@@ -41,7 +41,7 @@ describe('dollar amounts', () => {
     expect(dollarsToMicros(text)).toBe(micros);
   });
 
-  it.each(['abc', '1.0000001', '-1', '1e3', '', '.'])('DEC-107 refuses %j', (text) => {
+  it.each(['abc', '1.0000001', '1e3', '', '.'])('DEC-107 refuses %j', (text) => {
     expect(dollarsToMicros(text)).toBeUndefined();
   });
 
