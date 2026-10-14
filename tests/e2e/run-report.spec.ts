@@ -11,6 +11,9 @@ import { signInAs } from './support/sign-in.js';
 
 const runPage = (project: string): string => `/runs/${replayRunId(project)}`;
 
+// The first test needs the report not built yet and the last builds it, so they run in this order.
+test.describe.configure({ mode: 'serial' });
+
 test.beforeEach(async ({ context }, info) => {
   await signInAs(context, accountFor('replay', info.project.name));
 });
