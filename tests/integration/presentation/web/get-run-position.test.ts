@@ -31,7 +31,7 @@ async function setup(): Promise<Setup> {
   const bobUser = await addUser(test, { userName: 'bob' });
   const running = await test.runs.start(actorOf(amyUser.account));
   const first = await test.runs.start(actorOf(amyUser.account));
-  const second = await test.runs.start(actorOf(bobUser.account));
+  const second = await test.runs.start(actorOf(amyUser.account));
   return {
     ...{ test, running, first, second },
     amy: await signedInBrowser(test.server, amyUser),
@@ -46,10 +46,10 @@ async function positionOf(browser: TestBrowser, run: Run): Promise<unknown> {
 
 describe('GET /api/runs/:runId: the place in the queue', () => {
   it('RF-1108 a queued run shows its place, counted from 1 in queue order', async () => {
-    const { amy, bob, first, second } = await setup();
+    const { amy, first, second } = await setup();
 
     expect(await positionOf(amy, first)).toBe(1);
-    expect(await positionOf(bob, second)).toBe(2);
+    expect(await positionOf(amy, second)).toBe(2);
   });
 
   it('RF-1108 a running run has no place', async () => {
@@ -59,16 +59,16 @@ describe('GET /api/runs/:runId: the place in the queue', () => {
   });
 
   it('RF-1108 the place moves up as the runs ahead end, and is null once the run starts', async () => {
-    const { test, bob, running, first, second } = await setup();
+    const { test, amy, running, first, second } = await setup();
     test.runs.executor.settle(running.id, { endState: 'Completed' });
     await test.runs.ended(running);
     await test.runs.queue.dispatch();
 
-    expect(await positionOf(bob, second)).toBe(1);
+    expect(await positionOf(amy, second)).toBe(1);
     test.runs.executor.settle(first.id, { endState: 'Completed' });
     await test.runs.ended(first);
     await test.runs.queue.dispatch();
-    expect(await positionOf(bob, second)).toBeNull();
+    expect(await positionOf(amy, second)).toBeNull();
   });
 
   it('RF-1105 another user cannot read the place of a run', async () => {

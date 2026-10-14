@@ -9,7 +9,8 @@ import { scopeOf } from '../runs/run-scope.js';
 // the run's stage and queue state before its first event, its project, its totals so far and
 // whether its report has been built (P1-130), so the Report step of the stepper is done on load.
 // Only an ended run can have a report (DEC-131), so the folder of any other run is not read.
-// Another user's run id and an unknown id give the same answer.
+// A queued run also gets its place in the server's queue (RF-1108, P1-106). Another user's run id and
+// an unknown id give the same answer.
 
 /** Where a queued run stands in the server's queue (the run queue implements it). */
 export interface QueuePositions {
@@ -49,7 +50,14 @@ export class GetRun {
   }): Promise<Result<RunDetail, 'not-found'>> {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
-    return ok({ run, reportBuilt: await this.reportBuilt(run), position: null });
+    const [reportBuilt, position] = await Promise.all([this.reportBuilt(run), this.position(run)]);
+    return ok({ run, reportBuilt, position });
+  }
+
+  /** Only a queued run has a place; the queue is not asked about any other. */
+  private async position(run: Run): Promise<number | null> {
+    if (run.queueState !== 'Queued') return null;
+    return (await this.deps.queue.positionOf(run.id)) ?? null;
   }
 
   private async reportBuilt(run: Run): Promise<boolean> {
