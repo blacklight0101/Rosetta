@@ -43,6 +43,9 @@ import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './bu
 //      was sent is a row without usage; a call never sent (blocked by the egress guard) only frees
 //      its reservation. A row that cannot be written fails the call (RST-1604): the answer never
 //      reaches the caller unmetered (RF-421).
+// It reports to the run's budget events (P1-96, RF-1003): each answered call's ledger row after it
+// is written (`usage.recorded` and the warnings) and each cap refusal (`budget.capReached`). A
+// reporter that fails is logged; it never fails a call nor changes a refusal or the stop.
 // Guarantee: reservations make the check and the claim one step, so in-flight calls can never
 // together reserve past a cap. A cap can be passed only by the amount a call's actual usage
 // exceeds its reserved worst case; the output never exceeds the reserved maximum, so only the
@@ -161,6 +164,10 @@ export class BudgetGuard implements LlmProvider {
         needed: breach.needed.toString(),
       },
     });
+    // RF-422: the run's cap event; a reporter that fails changes neither the stop nor the refusal.
+    await this.quietly('The cap event could not be published.', request, () =>
+      this.options.budgetEvents.capReached(breach),
+    );
     stopRun(refusal);
     throw refusal;
   }
@@ -175,14 +182,20 @@ export class BudgetGuard implements LlmProvider {
     const { usage } = response;
     const costMicros = plan.price.price === undefined ? 0n : costOf(plan.price.price, usage).micros;
     const outcome: CallOutcome = { attempt: Math.max(attempts, 1), usage, costMicros };
+    const entry = this.entryOf(request, plan, outcome);
     try {
-      await this.options.ledger.settle(this.entryOf(request, plan, outcome));
+      await this.options.ledger.settle(entry);
     } catch (error) {
       throw new RosettaError(ERROR_CODES.costRecordFailed, undefined, { cause: error });
     }
     const { inputTokens, outputTokens, cachedInputTokens } = usage;
     await this.quietly('The run totals could not be updated.', request, () =>
       this.options.costs.addCall({ inputTokens, outputTokens, cachedInputTokens, costMicros }),
+    );
+    // RF-1003: the run's usage event, after the row is written; it never fails the call.
+    const { caps, budgetEvents } = this.options;
+    await this.quietly('The usage event could not be published.', request, () =>
+      budgetEvents.callRecorded({ entry, caps }),
     );
   }
 

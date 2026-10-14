@@ -143,10 +143,15 @@ export function onUsage(state: RunState, event: RunEvent): RunState {
   const parsed = usageData.safeParse(event.data);
   if (!parsed.success || parsed.data.costMicros === undefined) return state;
   const { costMicros } = parsed.data;
-  const withAgentCost = withAgent(state, event, (agent) => ({
-    ...agent,
-    costMicros: (agent.costMicros ?? 0) + costMicros,
-  }));
+  // A call of no agent panel (the Ollama check before the first task, RF-401) counts for its role
+  // only: usage never adds a panel.
+  const known = state.agents.some((agent) => agent.agentTaskId === event.agentTaskId);
+  const withAgentCost = known
+    ? withAgent(state, event, (agent) => ({
+        ...agent,
+        costMicros: (agent.costMicros ?? 0) + costMicros,
+      }))
+    : state;
   const role =
     parsed.data.role ??
     withAgentCost.agents.find((agent) => agent.agentTaskId === event.agentTaskId)?.role;

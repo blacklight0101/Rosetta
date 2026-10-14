@@ -8,8 +8,10 @@ import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1003, RF-424, design-system.md section 14 (live run): the run meter: tokens and cost per role
 // and in total, the cap as a bar, and the estimate beside it for comparison. Tokens come from the
-// turns of the agents; the cost so far comes from the run (the server adds every call to it). A
-// number the page does not have is shown as a dash, never as zero.
+// turns of the agents; the cost of each role adds up its usage.recorded events (P1-96), and the
+// total is read from the run (the server adds every call to it), so the two can be checked against
+// each other. A number the page does not have (a role whose model has no price) is a dash, never
+// zero; a local model's calls cost zero.
 
 export interface RunMeterProps {
   readonly state: RunState;
@@ -177,10 +179,6 @@ export function RunMeter({ state, costMicros, estimate }: RunMeterProps): JSX.El
       <Bars caps={state.caps} tokens={tokens} costMicros={costMicros} />
       <RoleTable state={state} costMicros={costMicros} />
       <Estimate estimate={estimate} />
-      <p class="rst-settings__note">
-        Cost is the run's total so far. The cost of each role and agent shows a dash until the
-        server reports it per call.
-      </p>
     </section>
   );
 }
