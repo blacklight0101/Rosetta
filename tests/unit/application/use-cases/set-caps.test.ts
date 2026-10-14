@@ -3,6 +3,7 @@ import type { AuditEvent, AuditLog } from '../../../../src/application/ports/aud
 import type { Clock } from '../../../../src/application/ports/clock.js';
 import { SetCaps } from '../../../../src/application/use-cases/set-caps.js';
 import type { Actor } from '../../../../src/domain/accounts/actor.js';
+import { MemoryServerCapsStore } from '../../../../src/infrastructure/db/memory-server-caps-store.js';
 import { MemoryServerSettings } from '../../../../src/infrastructure/db/memory-server-settings.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { MemoryLogger } from '../../../support/memory-logger.js';
@@ -29,7 +30,7 @@ describe('RF-1106 caps change and audit row', () => {
     const settings = new MemoryServerSettings({});
     const setCaps = new SetCaps({
       settings,
-      auditLog: new FailingAuditLog(),
+      capsStore: new MemoryServerCapsStore(settings, new FailingAuditLog()),
       logger: new MemoryLogger(clock, new SecretMasker()),
       clock,
     });

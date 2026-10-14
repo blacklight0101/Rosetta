@@ -3,6 +3,7 @@ import type { DefaultRoleServices } from '../../src/presentation/web/default-rol
 import { GetCaps } from '../../src/application/use-cases/get-caps.js';
 import { GetDefaultRoles } from '../../src/application/use-cases/get-default-roles.js';
 import { GetOwnDailyCap } from '../../src/application/use-cases/get-own-daily-cap.js';
+import { MemoryServerCapsStore } from '../../src/infrastructure/db/memory-server-caps-store.js';
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
 import { SetDefaultRoles } from '../../src/application/use-cases/set-default-roles.js';
 import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
@@ -29,7 +30,12 @@ export function capServices(parts: CapParts): CapServices & DefaultRoleServices 
   const { serverSettings: settings, users, usage, auditLog, logger, clock } = parts;
   return {
     getCaps: new GetCaps({ settings, usage, clock }),
-    setCaps: new SetCaps({ settings, auditLog, logger, clock }),
+    setCaps: new SetCaps({
+      settings,
+      capsStore: new MemoryServerCapsStore(settings, auditLog),
+      logger,
+      clock,
+    }),
     getDefaultRoles: new GetDefaultRoles({ settings }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),
     getOwnDailyCap: new GetOwnDailyCap({ users }),

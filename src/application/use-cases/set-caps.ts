@@ -3,15 +3,16 @@ import type { ServerCaps } from '../../domain/budget/budget.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import type { FieldProblem } from '../../domain/errors/field-problems.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type { AuditLog } from '../ports/audit-log.js';
 import type { Clock } from '../ports/clock.js';
 import type { Logger } from '../ports/logger.js';
+import type { ServerCapsStore } from '../ports/server-caps-store.js';
 import type { ServerSettings } from '../ports/server-settings.js';
 
 // RF-1106, RF-1109, DEC-107: the administrator sets the caps on the server keys. A cap below zero
 // is refused on its field (RST-1003); a saved change writes an `admin.caps_changed` audit row with
-// the new and the previous figures (decimal strings of micro-dollars). Caps take effect for the
-// calls checked after the change; a call already reserved keeps its reservation.
+// the new and the previous figures (decimal strings of micro-dollars), in the same step as the
+// change (ServerCapsStore). Caps take effect for the calls checked after the change; a call already
+// reserved keeps its reservation.
 
 export interface SetCapsRequest {
   readonly actor: Actor;
@@ -21,7 +22,7 @@ export interface SetCapsRequest {
 
 export interface SetCapsDependencies {
   readonly settings: ServerSettings;
-  readonly auditLog: AuditLog;
+  readonly capsStore: ServerCapsStore;
   readonly logger: Logger;
   readonly clock: Clock;
 }
@@ -46,20 +47,29 @@ export class SetCaps {
       .filter((field) => caps[field] < 0n)
       .map((field) => ({ field, code: ERROR_CODES.settingsCapNegative }));
     if (problems.length > 0) return err(problems);
-    const { settings, auditLog, logger, clock } = this.deps;
+    const { settings, capsStore, logger, clock } = this.deps;
     const previous = await settings.caps();
     const at = clock.now();
-    await settings.saveCaps(caps, { by: actor.userId, at });
     const detail = Object.fromEntries(
       capFields.flatMap((field) => [
         [field, caps[field].toString()],
         [previousName(field), previous[field].toString()],
       ]),
     );
-    await auditLog.record({
-      ...{ at, actorUserId: actor.userId, action: 'admin.caps_changed', ip, outcome: 'ok' },
-      ...{ targetType: 'server_settings', targetId: 'caps', detail },
-    });
+    await capsStore.saveCaps(
+      caps,
+      { by: actor.userId, at },
+      {
+        at,
+        actorUserId: actor.userId,
+        action: 'admin.caps_changed',
+        targetType: 'server_settings',
+        targetId: 'caps',
+        ip,
+        outcome: 'ok',
+        detail,
+      },
+    );
     await logger.log({
       level: 'info',
       logger: 'budget',
