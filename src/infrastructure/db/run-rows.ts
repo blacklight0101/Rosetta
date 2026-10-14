@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { SnapshotUsage } from '../../application/ports/run-index.js';
+import type { ProjectRunSummary, SnapshotUsage } from '../../application/ports/run-index.js';
 import { RUN_END_STATES, RUN_QUEUE_STATES, RUN_STAGES } from '../../domain/runs/run-states.js';
 import type { Run } from '../../domain/runs/run.js';
 
@@ -49,6 +49,14 @@ export function toSnapshotUsage(row: unknown): SnapshotUsage {
     active: parsed.active,
     lastUsedAt: parsed.last_used_at,
   };
+}
+
+const runCountRow = z.object({ run_count: z.number().int() });
+
+// RF-1008
+export function toProjectRunSummary(row: unknown): ProjectRunSummary {
+  const run = toRun(row);
+  return { projectId: run.projectId, runs: runCountRow.parse(row).run_count, latest: run };
 }
 
 // RF-003
