@@ -178,6 +178,28 @@ describe('a secret cut by the 4000-character line limit', () => {
     expect(leaked).toEqual([]);
   });
 });
+describe('an unterminated key marker before a complete key, in the code map', () => {
+  const body = ['Qp4Rt8', 'Vn2Ky6'].map((part) => part.repeat(11));
+  const begin = ['-----BEGIN', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
+  const end = ['-----END', 'RSA', 'PRIVATE', 'KEY-----'].join(' ');
+
+  it('RF-104 the statements between the marker and the key are kept and no key body is written', () => {
+    const lines = [
+      `-- ${begin}`,
+      'INSERT INTO Item (Id) VALUES (1);',
+      "INSERT INTO Keys (Pem) VALUES ('",
+      begin,
+      ...body,
+      end,
+      "');",
+    ];
+    const text = textOf(buildWith(extractScriptStatements('db/a.sql', lines, new SecretMasker())));
+
+    for (const part of body) expect(text).not.toContain(part.slice(0, 20));
+    expect(text).toContain('INSERT INTO Item (Id) VALUES (1);');
+  });
+});
+
 describe('masking of paths, area names and the subpath', () => {
   it('RF-141 two file paths that differ only by a secret stay two distinct masked paths', () => {
     const second = ['sk', 'proj', 'Other'.repeat(8)].join('-');
