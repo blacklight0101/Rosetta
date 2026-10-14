@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RunScope } from '../../../../src/application/ports/run-events.js';
 import type { RunTextFiles } from '../../../../src/application/ports/run-text-files.js';
-import { GetRun } from '../../../../src/application/use-cases/get-run.js';
+import { GetRun, type QueuePositions } from '../../../../src/application/use-cases/get-run.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryRunIndex } from '../../../../src/infrastructure/db/memory-run-index.js';
 import { runningRun, sampleRun } from '../../../support/run-fixtures.js';
@@ -30,10 +30,29 @@ class ReportFolders implements RunTextFiles {
 const endedRun = (runKey: string): Run =>
   sampleRun({ userId: userAmy.userId, runKey, queueState: 'Ended', endState: 'Completed' });
 
-async function setup(run: Run, files: ReportFolders): Promise<GetRun> {
+/** A queue that knows the positions it is given, and records every run it is asked about. */
+class FakeQueue implements QueuePositions {
+  readonly asked: string[] = [];
+  private readonly positions: ReadonlyMap<string, number>;
+
+  constructor(positions: ReadonlyMap<string, number> = new Map()) {
+    this.positions = positions;
+  }
+
+  positionOf(runId: string): Promise<number | undefined> {
+    this.asked.push(runId);
+    return Promise.resolve(this.positions.get(runId));
+  }
+}
+
+async function setup(
+  run: Run,
+  files: ReportFolders,
+  queue: QueuePositions = new FakeQueue(),
+): Promise<GetRun> {
   const runs = new MemoryRunIndex();
   await runs.insert(run);
-  return new GetRun({ runs, files });
+  return new GetRun({ runs, files, queue });
 }
 
 describe('GetRun', () => {
@@ -43,7 +62,7 @@ describe('GetRun', () => {
 
     const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
 
-    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: true } });
+    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: true, position: null } });
   });
 
   it('RF-1002 says the report is not built for an ended run without one', async () => {
@@ -52,7 +71,7 @@ describe('GetRun', () => {
 
     const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
 
-    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false } });
+    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false, position: null } });
   });
 
   it('RF-504 does not look for a report of a run that has not ended, which cannot have one', async () => {
@@ -62,7 +81,7 @@ describe('GetRun', () => {
 
     const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
 
-    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false } });
+    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false, position: null } });
     expect(files.asked).toEqual([]);
   });
 
@@ -77,5 +96,46 @@ describe('GetRun', () => {
     expect(other).toEqual({ ok: false, error: 'not-found' });
     expect(unknown).toEqual({ ok: false, error: 'not-found' });
     expect(files.asked).toEqual([]);
+  });
+});
+
+describe('GetRun: the place in the queue', () => {
+  it('RF-1108 gives a queued run the place the queue says it holds', async () => {
+    const run = sampleRun({ userId: userAmy.userId });
+    const getRun = await setup(run, new ReportFolders(), new FakeQueue(new Map([[run.id, 3]])));
+
+    const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
+
+    expect(outcome).toEqual({ ok: true, value: { run, reportBuilt: false, position: 3 } });
+  });
+
+  it('RF-1108 gives a queued run that the queue no longer holds no place', async () => {
+    const run = sampleRun({ userId: userAmy.userId });
+    const getRun = await setup(run, new ReportFolders());
+
+    const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
+
+    expect(outcome).toMatchObject({ ok: true, value: { position: null } });
+  });
+
+  it('RF-1108 does not ask the queue about a run that is not queued', async () => {
+    const run = runningRun({ userId: userAmy.userId });
+    const queue = new FakeQueue(new Map([[run.id, 1]]));
+    const getRun = await setup(run, new ReportFolders(), queue);
+
+    const outcome = await getRun.execute({ actor: userAmy, runId: run.id });
+
+    expect(outcome).toMatchObject({ ok: true, value: { position: null } });
+    expect(queue.asked).toEqual([]);
+  });
+
+  it('RF-1105 does not ask the queue about another user run', async () => {
+    const run = sampleRun({ userId: userAmy.userId });
+    const queue = new FakeQueue(new Map([[run.id, 1]]));
+    const getRun = await setup(run, new ReportFolders(), queue);
+
+    await getRun.execute({ actor: userBob, runId: run.id });
+
+    expect(queue.asked).toEqual([]);
   });
 });

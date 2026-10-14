@@ -11,8 +11,15 @@ import { scopeOf } from '../runs/run-scope.js';
 // Only an ended run can have a report (DEC-131), so the folder of any other run is not read.
 // Another user's run id and an unknown id give the same answer.
 
+/** Where a queued run stands in the server's queue (the run queue implements it). */
+export interface QueuePositions {
+  /** Counted from 1; undefined when the run is not queued. */
+  positionOf(runId: string): Promise<number | undefined>;
+}
+
 export interface GetRunDependencies {
   readonly runs: RunIndex;
+  readonly queue: QueuePositions;
   /** Where the run folder is looked at for `report/report.md`. */
   readonly files: RunTextFiles;
 }
@@ -21,6 +28,8 @@ export interface RunDetail {
   readonly run: Run;
   /** True when the run folder holds the report that Build report writes (RF-504). */
   readonly reportBuilt: boolean;
+  /** The place of a queued run in the server's queue, counted from 1; null for any other run. */
+  readonly position: number | null;
 }
 
 /** The file of `report/` that tells a report was built; the writer always writes it. */
@@ -40,7 +49,7 @@ export class GetRun {
   }): Promise<Result<RunDetail, 'not-found'>> {
     const run = await this.deps.runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
-    return ok({ run, reportBuilt: await this.reportBuilt(run) });
+    return ok({ run, reportBuilt: await this.reportBuilt(run), position: null });
   }
 
   private async reportBuilt(run: Run): Promise<boolean> {

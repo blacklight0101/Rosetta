@@ -174,7 +174,7 @@ function runServices(service: ServiceParts): RunServices {
       keys: new PgProviderKeyRepository(parts.pool),
       priceTable: parts.priceTable,
     }),
-    getRun: new GetRun({ runs, files: new FileRunTextFiles(writer) }),
+    getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
