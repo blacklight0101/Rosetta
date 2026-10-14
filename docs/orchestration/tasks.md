@@ -2146,7 +2146,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Gate**: none
 - **Status**: Todo
 - **Reads**: the start page and its area list; P1-147 (third-party default); `docs/design/proposals/run-page-v2.html` (look and tokens); RF-1018.
-- **Do**: as RF-1018: own code selected, third-party and generated code grouped, collapsed, unselected and labelled with the reason; Select all, Select none and Own code only buttons; a filter; the list scrolls inside its panel; a summary bar with areas, files, estimate and Start stays visible; a one-time confirmation when third-party areas are chosen.
+- **Do**: as RF-1018: only own code listed and selected; third-party and generated code folded into one collapsed line after the list ("12 library areas left out ... Show") that expands to the areas and their reason; Select all, Select none and Own code only buttons; a filter; the list scrolls inside its panel; a summary bar with areas, files, estimate and Start stays visible; a one-time confirmation when third-party areas are chosen.
 - **Review probes**: 1 area; 120 areas; every area third-party; a 60-character area name; keyboard only; 360 px wide; Start pressed with nothing selected (disabled, with the reason).
 - **Behaviour to preserve**: the estimate, caps and confirm-threshold behaviour of the start page (P1-91, P1-106) are unchanged.
 - **Delivers**: the page changes and tests.

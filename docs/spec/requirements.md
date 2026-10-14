@@ -1019,7 +1019,7 @@ Verification: end-to-end test with a recorded run.
 
 **RF-1018 Choose areas quickly** - R1 (M1) - Must - Source DEC-138 - ADR-012
 As a user on the start page I want to choose the areas of a run in a few clicks so that I can start the run without scrolling through a long list.
-- Given the list of areas, when the start page opens, then the project's own code is selected and third-party or generated code is grouped apart, collapsed, unselected and labelled with the reason ("library, left out by default: jQuery, Bootstrap"); buttons select all, select none and select own code only, and a filter narrows the list by name.
+- Given the list of areas, when the start page opens, then only the project's own code is listed and selected; third-party and generated code is left out and shown as one collapsed line after the list ("12 library areas left out: jQuery, Bootstrap, ... Show"), which expands to the areas with their reason and lets the user add any of them; buttons select all, select none and select own code only, and a filter narrows the list by name.
 - Given any number of areas, when the page is scrolled, then a summary bar stays visible at the bottom with the number of areas and files chosen, the estimate and the Start button; the list itself scrolls inside its panel.
 - Given a user who selects third-party areas, when they start the run, then the estimate shows what they add and the start asks for confirmation once.
 Verification: end-to-end test with 1 and 120 areas at desktop and phone widths.
