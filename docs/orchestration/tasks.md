@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1 Milestone slice (M1) | 164 | 63 | 83 | 18 | 0 | 97 | 59 | 8 | 107 | 0 |
+| P1 Milestone slice (M1) | 165 | 64 | 83 | 18 | 0 | 98 | 59 | 8 | 108 | 0 |
 | P2 Full understand | 17 | 3 | 9 | 5 | 0 | 4 | 12 | 1 | 3 | 0 |
 | P3 Report and plan | 13 | 2 | 9 | 2 | 0 | 2 | 9 | 2 | 1 | 0 |
-| **Total** | **194** | **68** | **101** | **25** | **0** | **103** | **80** | **11** | **111** | **0** |
+| **Total** | **195** | **69** | **101** | **25** | **0** | **104** | **80** | **11** | **112** | **0** |
 
 ## Conventions for every card
 
@@ -1078,7 +1078,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-12, P1-13
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `web-lint.config.ts`; `web/src/api/client.ts`; `eslint.config.ts`; `tests/e2e/support/serve.ts`.
 - **Do**: add `setHTMLUnsafe`, `createContextualFragment`, `parseHTMLUnsafe` and `srcdoc` to the RF-507 lint selectors; make `client.ts` match its "never throws" header for paths outside `/api/` (return a typed error); give client network failures their own catalogue code instead of reusing RST-2006; block a dynamic `import()` and a default import of `@playwright/test` in e2e specs; clean the e2e data folder with the writable-temp-root helper.
 - **Delivers**: the changes with tests.
@@ -1366,7 +1366,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-15, P1-44, P1-45
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `src/infrastructure/config/environment.ts`; `Dockerfile`; `compose.yaml`; `README.md`; `docs/runbooks/`; the surface contract text in `docs/design/`.
 - **Do**: refuse a malformed contact address (`isEmail` accepts `?cc=` and quotes) and refuse a known or all-zero `ROSETTA_SECRET_KEY` at start-up with a code; fix the stale status line of `README.md` ("documentation phase (P0)"); change the wording "no fakes" in the image documentation to say that no tests or scripts ship and the compiled fakes in `dist` are reachable only with `ROSETTA_TEST=1`; align the cap text of the surface contract with the 0.50 default (it says 2.00); remove the runtime `apt-get upgrade` from the image once Dependabot has moved the base image digest; document the rotation of the database role passwords in the runbook.
 - **Delivers**: the checks, the document edits and tests.
@@ -1990,7 +1990,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-49
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/verification/m1-matrix.md` PC-05; the snapshot reader; `src/infrastructure/files/grep-runner.ts`; the event-stream routes; `access-hooks.ts`; architecture section 10.
 - **Do**: test first for each: count decompressed bytes (and skipped entries) against the snapshot byte limit; cap the total bytes one grep reads and set worker `resourceLimits`; end a user's open event streams when the session ends or the account is disabled; record the actor of a cross-origin refusal when a valid session cookie is present; audit the 429 of the password-change bound; send stream replay failures to the application log.
 - **Delivers**: the six fixes with tests.
@@ -2002,7 +2002,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-49
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/verification/m1-matrix.md` PC-06; the archive tests; `tests/e2e/live-run.spec.ts`; `tests/e2e/run-report.spec.ts`; `pages-site.test.ts`; `.github/dependabot.yml`; `.github/workflows/`; `src/infrastructure/db/`.
 - **Do**: hostile archives with backslash, drive-letter, device and FIFO entries; the hostile card in `live-run.spec.ts` and `run-report.spec.ts`; a test that fails while `PublicAddressAgent` is not used by an adapter that connects to a stored base URL (to be met by P2-09; mark it expected-to-fail with a reason if the runner allows, else document it in the PR); a key-pattern scan of `site/` in `pages-site.test.ts`; a Dependabot `docker` entry (with the DEC-125 cooldown); CI service images pinned by digest; a lint or test that finds SQL text built with `${` anywhere in `src/infrastructure/db/`; `CREATE` in `public` refused for `rosetta_app`; provenance notes for the remaining fixture and recording folders.
 - **Delivers**: the tests and the configuration changes.
@@ -2026,7 +2026,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-96, P1-104, P1-106, P1-137, P1-155
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/conventions.md`; `docs/data-model.md`; the web queue-position poll; `tests/integration/presentation/web/limits.test.ts`; `run-budget-events.ts`; `docs/architecture.md` (port rows near lines 314-325); the Projects page; `node-output-writer.ts`; the verdicts on #385, #384, #386, #387 and #382.
 - **Do**: (1) list RST-1007 (`settingsVersionStale`, 409) in `docs/conventions.md` and the settings sentence of `docs/data-model.md`. (2) The queued-run position poll retries every 2 s forever: back off (2 s doubling to 30 s) and stop when the page is hidden. (3) Move the `new Date` in `limits.test.ts` behind the `tests/support` clock. (4) Remove the duplicate comment and wrap the comment lines over 100 columns at `run-budget-events.ts:135`. (5) An end-to-end case sends a tool result holding backticks through the fake Ollama server and checks the fence is longer. (6) Add the new overview methods to the architecture port rows. (7) The Projects overview shows only the newest 100 projects: show a notice saying so when there are more (handoff agenda 34). (8) `node-output-writer`: a test for a non-ENOENT error after the folder is gone.
 - **Delivers**: the fixes and tests.
@@ -2038,12 +2038,24 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-155
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/files/grep-runner.ts`; `tests/integration/infrastructure/files/grep-worker.test.ts`; `tests/integration/infrastructure/files/node-repository-reader.test.ts`; CI runs 38541463529 (#385, exit 3221226505 = 0xC0000409) and the #373 run (0xC0000005).
 - **Do**: the vitest fork worker on `windows-latest` dies with 0xC0000005 or 0xC0000409 while running the grep and repository-reader tests, about once a day; reruns pass. A candidate cause is `grep-runner.ts:43,48` terminating the worker thread right after its answer. Reproduce under load on Windows (repeat the two files 50 times with 4 workers), find the cause, fix it (for example let the worker exit on its own, or await `terminate()`), and add a test that fails on the old shape when possible; otherwise record the evidence in the PR.
 - **Delivers**: the fix and the evidence.
 - **Done when**: 50 repeats on Windows pass with no worker crash; `npm run verify` green.
 - **Refs**: RNF-008, P1-155.
+
+### P1-165 - Follow-up: small gaps from P1-84, P1-161 and P1-164
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P1-84, P1-161, P1-164
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web-lint.config.ts`; `tests/e2e/support/serve.ts`; the writable-temp-root helper; `tests/support/sql-template-scan.ts`; `src/infrastructure/files/grep-runner.ts`; the verdicts on #391, #403 and #402.
+- **Do**: (1) the RF-507 lint does not refuse `el.setAttributeNS(null, "srcdoc", x)`, destructuring (`const { setHTMLUnsafe } = el`) or a template-literal computed key: add fixtures, failing first, then the selectors. (2) No test shows `serve.ts` clears the data folder through the writable helper: add one. (3) The helper can `chmod` through a symlinked root: refuse a symlinked root. (4) The SQL `${}` scan misses a template in `COPY ... TO STDOUT` outside a `query(` argument: add the case. (5) `grep-runner.ts`: the "worker exits without an answer" branch and "first verdict wins" have no test: add both (a fake worker).
+- **Delivers**: the fixes and tests.
+- **Done when**: each new test fails when its guard is removed; `npm run verify` green.
+- **Refs**: RF-507, RNF-005, RNF-008, RF-146, P1-84, P1-161, P1-164.
 
 ---
 
