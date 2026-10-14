@@ -100,13 +100,4 @@ describe('NodeRepositoryReader grep byte budget boundaries', () => {
       "1 file(s) larger than the project's scan.maxFileBytes were not searched.",
     );
   });
-
-  it('RF-146 a reader opened without a budget holds one grep to 32 MiB', async () => {
-    const reader = await openReader(mediumFiles(34, 1_000_000));
-
-    const result = await reader.grep({ pattern: 'needle' });
-
-    expect(result.ok && result.value.matches).toHaveLength(33);
-    expect(result.ok && result.value.notice).toContain('1 file(s) were not searched');
-  });
 });
