@@ -50,6 +50,10 @@ const REFUSED_PATHS: readonly (readonly [string, string])[] = [
   ['a device name in a folder', `${TOP}/src/NUL/x.cs`],
   ['a device name after a backslash', `${TOP}\\src\\COM2.txt`],
   ['the console input device', `${TOP}/CONIN$`],
+  ['a dot-dot with a trailing space', `${TOP}/.. /x`],
+  ['three dots', `${TOP}/.../x`],
+  ['dots and a space', `${TOP}/. ./x`],
+  ['a dot-dot with a trailing space at the end', `${TOP}/a/.. `],
 ];
 
 describe('extractTarball hostile entry names', () => {
@@ -72,6 +76,10 @@ describe('extractTarball hostile entry names', () => {
     `${TOP}/lpt.txt`,
     `${TOP}/.config`,
     `${TOP}/a..b/x`,
+    `${TOP}/..foo/x`,
+    `${TOP}/x../y`,
+    `${TOP}/./x`,
+    `${TOP}/ CON`,
     `${TOP}/src/auxiliary/x.cs`,
   ])('RF-122 keeps the ordinary name %s', async (path) => {
     await extract([rawEntry(path)]);
