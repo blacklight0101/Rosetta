@@ -1,5 +1,5 @@
 import { mkdir, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type * as FsPromises from 'node:fs/promises';
 import { describe, expect, it, vi } from 'vitest';
 import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
@@ -23,7 +23,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
         vanish.armed = false;
         // The folder that holds the temporary file goes first, as a concurrent delete would do it.
         const [from] = args;
-        await actual.rm(join(from, '..'), { recursive: true, force: true });
+        await actual.rm(dirname(String(from)), { recursive: true, force: true });
       }
       return actual.rename(...args);
     },
