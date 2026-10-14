@@ -24,6 +24,11 @@ export interface SummaryGroup {
   readonly costMicros: bigint;
 }
 
+/** A summary group of one project (RF-1008). */
+export interface ProjectSummaryGroup extends SummaryGroup {
+  readonly projectId: string;
+}
+
 /** The ledger rows that share every column below, summed. */
 export interface LedgerGroup extends SummaryGroup {
   /** Null for a provider test (RF-407): never joined to a run. */
@@ -44,6 +49,15 @@ export interface CostTotals {
    * (RF-1010).
    */
   userSummary(userId: string): Promise<readonly SummaryGroup[]>;
+  /**
+   * RF-1008: the user's ledger rows of the asked projects, summed per project, currency, known
+   * cost and price table version, in one read however many projects are asked. A project with no
+   * rows has no group; a provider test, of no project, is never in it.
+   */
+  projectSummaries(
+    userId: string,
+    projectIds: readonly string[],
+  ): Promise<readonly ProjectSummaryGroup[]>;
   /** The user's ledger rows of one project, grouped. */
   projectGroups(userId: string, projectId: string): Promise<readonly LedgerGroup[]>;
   /** The user's provider tests (RF-407): the rows of no project, grouped. */

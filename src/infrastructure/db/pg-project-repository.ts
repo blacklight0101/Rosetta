@@ -20,7 +20,8 @@ const INSERT =
 const SELECT = 'SELECT ' + PROJECT_COLUMNS + ' FROM projects';
 const FIND_BY_SOURCE =
   SELECT + ' WHERE user_id = $1 AND source_url = $2 AND ref = $3 AND subpath = $4';
-const LIST = SELECT + ' WHERE user_id = $1 ORDER BY created_at DESC, id';
+// `LIMIT NULL` is no limit.
+const LIST = SELECT + ' WHERE user_id = $1 ORDER BY created_at DESC, id LIMIT $2::int';
 const FIND = SELECT + ' WHERE user_id = $1 AND id = $2';
 const UPDATE_SETTINGS =
   'UPDATE projects SET settings = $3::jsonb, updated_at = $4 WHERE user_id = $1 AND id = $2 RETURNING ' +
@@ -90,9 +91,9 @@ export class PgProjectRepository implements ProjectRepository {
     return { project: toProject(row), created: false };
   }
 
-  async list(userId: string): Promise<readonly Project[]> {
+  async list(userId: string, limit?: number): Promise<readonly Project[]> {
     if (!UUID.test(userId)) return [];
-    return (await this.run(LIST, [userId])).rows.map(toProject);
+    return (await this.run(LIST, [userId, limit ?? null])).rows.map(toProject);
   }
 
   async find(userId: string, projectId: string): Promise<Project | undefined> {
