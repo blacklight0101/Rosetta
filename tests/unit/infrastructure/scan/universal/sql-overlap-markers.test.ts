@@ -48,6 +48,25 @@ describe('overlapping key markers in a script', () => {
   });
 });
 
+describe('two stray markers in a row', () => {
+  it('RF-104 keep both statements after them and write no key text', () => {
+    const lines = [
+      begin,
+      begin,
+      shortLine,
+      'INSERT INTO b VALUES (2);',
+      'INSERT INTO c VALUES (3);',
+    ];
+    const found = extractScriptStatements('db/a.sql', lines, new SecretMasker());
+
+    expect(found.map((s) => [s.line, s.text])).toEqual([
+      [4, 'INSERT INTO b VALUES (2);'],
+      [5, 'INSERT INTO c VALUES (3);'],
+    ]);
+    for (const token of tokens) expect(JSON.stringify(found)).not.toContain(token);
+  });
+});
+
 describe('a stray marker after an open span', () => {
   it('RF-104 starts a span of its own: the statement before it keeps its text', () => {
     const lines = [
