@@ -240,13 +240,11 @@ td {
   overflow-wrap: anywhere;
 }
 
-/* P1-151: at 360 px the narrower padding gives the Cards table room, so its words stay whole; the
-   table keeps the box width and never scrolls sideways. */
-@media (max-width: 420px) {
-  th,
-  td {
-    padding: 8px;
-  }
+/* P1-151: the Cards table breaks its cells at word boundaries only (a word too long for the cell
+   still breaks, rather than widening the table); stacked below 720 px, each cell has the full width. */
+table.cards th,
+table.cards td {
+  overflow-wrap: break-word;
 }
 
 th {
