@@ -237,12 +237,11 @@ td {
   text-align: left;
   vertical-align: top;
   border-bottom: 1px solid var(--rst-rule);
-  /* P1-151: a cell breaks at word boundaries; a word too long for its cell still breaks inside it. */
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
-/* P1-151: at 360 px the five columns of the Cards table (its unbreakable words) fit the box only with
-   the narrower padding; the table never scrolls sideways. */
+/* P1-151: at 360 px the narrower padding gives the Cards table room, so its words stay whole; the
+   table keeps the box width and never scrolls sideways. */
 @media (max-width: 420px) {
   th,
   td {
