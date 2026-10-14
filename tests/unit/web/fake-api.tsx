@@ -15,7 +15,7 @@ interface RecordedCall {
   readonly path: string;
   readonly csrf: string | null;
   /** The `If-Match` header, for a save that names the version it started from. */
-  readonly ifMatch: string | null;
+  readonly ifMatch?: string;
   readonly body: unknown;
 }
 
@@ -58,7 +58,9 @@ function recordedCall(input: RequestInfo | URL, init: RequestInit | undefined): 
   const body: unknown = text === undefined ? undefined : JSON.parse(text);
   const headers = new Headers(init?.headers);
   const csrf = headers.get('x-csrf-token');
-  return { method: init?.method ?? 'GET', path, csrf, ifMatch: headers.get('if-match'), body };
+  const ifMatch = headers.get('if-match');
+  const named = ifMatch === null ? {} : { ifMatch };
+  return { method: init?.method ?? 'GET', path, csrf, ...named, body };
 }
 
 function answerTo(answers: Readonly<Record<string, Answer>>, call: RecordedCall): Response {

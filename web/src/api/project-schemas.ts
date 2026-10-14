@@ -64,6 +64,8 @@ export const projectSchema = z.object({
   ref: z.string(),
   subpath: z.string(),
   settings: settingsSchema,
+  /** Counts the saves of the settings; a save names it in If-Match (P1-106). */
+  settingsVersion: z.number().int().min(1),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

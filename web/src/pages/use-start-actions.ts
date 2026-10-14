@@ -140,7 +140,7 @@ async function saveLimits({ client, inputs, refuse }: Steps): Promise<boolean> {
   const read = await getProject(client, inputs.project.id, new AbortController().signal);
   if (!read.ok) return refuse({ start: read.error });
   const project = read.value;
-  const saved = await saveProjectSettings(client, project.id, settingsWithLimits(project, limits));
+  const saved = await saveProjectSettings(client, project, settingsWithLimits(project, limits));
   if (saved.ok) {
     inputs.onSaved(saved.value);
     return false;

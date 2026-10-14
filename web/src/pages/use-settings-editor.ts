@@ -98,6 +98,7 @@ function bannerOf(refusal: Refusal | undefined, draft: SettingsDraft): ApiFailur
 export function useSettingsSave(project: Project, draft: SettingsDraft): SettingsSave {
   const { client } = useApp();
   const [base, setBase] = useState(project.settings);
+  const [version, setVersion] = useState(project.settingsVersion);
   const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<Refusal | undefined>();
   const [savedDraft, setSavedDraft] = useState<SettingsDraft | undefined>();
@@ -109,13 +110,18 @@ export function useSettingsSave(project: Project, draft: SettingsDraft): Setting
       return;
     }
     setBusy(true);
-    const answer = await saveProjectSettings(client, project.id, built.settings);
+    const answer = await saveProjectSettings(
+      client,
+      { id: project.id, settingsVersion: version },
+      built.settings,
+    );
     setBusy(false);
     if (!answer.ok) {
       setRefusal({ failure: answer.error, local: [] });
       return;
     }
     setBase(answer.value.settings);
+    setVersion(answer.value.settingsVersion);
     setRefusal(undefined);
     setSavedDraft(draft);
   };
