@@ -54,3 +54,17 @@ describe('SecretMasker on hostile input', () => {
     },
   );
 });
+
+describe('SecretMasker on --token scheme words before a flag or an operator', () => {
+  const masker = new SecretMasker();
+
+  it.each([' --verbose', ' > out', ' ; ls'])(
+    `RF-141 masks 1 MB of --token and scheme words ending in %j within ${String(budgetMs)} ms`,
+    (tail) => {
+      const option = ['-', '-', 'token'].join('');
+      const input = `${option} ${repeatTo(oneMegabyte, 'Bearer ')}${tail}`;
+
+      expect(elapsedMs(() => masker.mask(input))).toBeLessThan(budgetMs);
+    },
+  );
+});
