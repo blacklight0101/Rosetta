@@ -44,6 +44,6 @@ describe('common passwords', () => {
     const failure = await failureOf(loadCommonPasswords(join(tmpdir(), 'rst-missing-list.txt')));
 
     expect(failure).toBeInstanceOf(RosettaError);
-    expect(failure).toMatchObject({ code: ERROR_CODES.commonPasswordsUnreadable });
+    expect(failure).toMatchObject({ code: ERROR_CODES.blocklistUnreadable });
   });
 });

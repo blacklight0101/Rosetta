@@ -145,7 +145,7 @@ export const ERROR_CODES = {
   databaseQueryFailed: 'RST-2404',
   migrationPending: 'RST-2405',
   versionUnreadable: 'RST-2500',
-  commonPasswordsUnreadable: 'RST-2501',
+  blocklistUnreadable: 'RST-2501',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
