@@ -99,7 +99,7 @@ describe('an understand run whose tasks end early: coverage', UNDERSTAND_TIMEOUT
       dataDir: temp.path,
       recording: 'understand-coverage-early-ends.json',
       beforeCall: async (call, harness) => {
-        if (call === 6) await harness.stopRunning();
+        if (call === 11) await harness.stopRunning();
       },
     });
     await h.scan();

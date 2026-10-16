@@ -116,3 +116,12 @@ export async function parseCardsWithRepair(
   if (second.ok) return ok({ drafts: second.value, repaired: true });
   return invalid(second.error, [raw, repairedRaw]);
 }
+
+// RF-208: skeleton so the tests of the next commit fail on their assertions.
+export function parseCardsLenient(raw: string): {
+  drafts: readonly CardDraft[];
+  problems: readonly OutputProblem[];
+  cutOff: boolean;
+} {
+  return { drafts: [], problems: raw.length < 0 ? [{ path: '', message: '' }] : [], cutOff: false };
+}

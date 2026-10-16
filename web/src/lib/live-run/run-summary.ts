@@ -89,3 +89,10 @@ export function progressOf(state: RunState): number {
   ).length;
   return turns + ended + (state.ended === undefined ? 0 : 1);
 }
+
+// RF-208: skeleton so the tests of the next commit fail on their assertions.
+export function failedAreasOf(
+  state: RunState,
+): readonly { readonly area: string; readonly why: string }[] {
+  return state.agents.length < 0 ? [{ area: '', why: '' }] : [];
+}

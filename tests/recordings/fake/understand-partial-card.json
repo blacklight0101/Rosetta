@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "description": "The Catalog task reads Catalog/Details.aspx.cs lines 5-8 and answers a card with one valid claim and one claim whose citation has no line numbers; its two repairs answer the same, so the claim stays dropped and the card is kept. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 5,
+                  "endLine": 8
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "{\"cards\":[{\"type\":\"FEAT\",\"title\":\"Product details page\",\"area\":\"Catalog\",\"summary\":\"The page that shows one product.\",\"confidence\":\"High\",\"claims\":[{\"text\":\"The page shows the product name.\",\"citations\":[\"Catalog/Details.aspx.cs:5-8\"]},{\"text\":\"The page shows a price.\",\"citations\":[\"Catalog/Details.aspx line 3\"]}]}]}",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "{\"cards\":[{\"type\":\"FEAT\",\"title\":\"Product details page\",\"area\":\"Catalog\",\"summary\":\"The page that shows one product.\",\"confidence\":\"High\",\"claims\":[{\"text\":\"The page shows the product name.\",\"citations\":[\"Catalog/Details.aspx.cs:5-8\"]},{\"text\":\"The page shows a price.\",\"citations\":[\"Catalog/Details.aspx line 3\"]}]}]}",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "{\"cards\":[{\"type\":\"FEAT\",\"title\":\"Product details page\",\"area\":\"Catalog\",\"summary\":\"The page that shows one product.\",\"confidence\":\"High\",\"claims\":[{\"text\":\"The page shows the product name.\",\"citations\":[\"Catalog/Details.aspx.cs:5-8\"]},{\"text\":\"The page shows a price.\",\"citations\":[\"Catalog/Details.aspx line 3\"]}]}]}",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
