@@ -60,7 +60,9 @@ it('RF-1002 RF-1004 the current step is marked and carries the counts of agents 
     expect(step('Understand').textContent).toContain('1 of 2 agents done');
   });
   expect(step('Understand').getAttribute('aria-current')).toBe('step');
-  expect(step('Verify').textContent).toContain('1 of 3 claims checked');
+  expect(step('Verify').textContent).toContain(
+    '1 of 3 citations checked. Judgement comes in a later version.',
+  );
   expect(step('Snapshot').hasAttribute('aria-current')).toBe(false);
   expect(pipeline().querySelectorAll('[aria-current="step"]')).toHaveLength(1);
 });

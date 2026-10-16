@@ -155,7 +155,7 @@ it('RF-1002 when the run ends while paused, the status shows how it ended and th
 it('RF-1002 the stepper is held with the panels, so it never disagrees with them', async () => {
   const { connection } = await runningRun();
   const pipeline = screen.getByRole('list', { name: 'Pipeline' });
-  expect(pipeline.textContent).not.toContain('claims checked');
+  expect(pipeline.textContent).not.toContain('citations checked');
   fireEvent.click(screen.getByRole('button', { name: 'Pause updates' }));
 
   connection.event(
@@ -169,10 +169,12 @@ it('RF-1002 the stepper is held with the panels, so it never disagrees with them
   await waitFor(() => {
     expect(count()).toContain('1 event waiting');
   });
-  expect(pipeline.textContent).not.toContain('claims checked');
+  expect(pipeline.textContent).not.toContain('citations checked');
   fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
   await waitFor(() => {
-    expect(pipeline.textContent).toContain('0 of 2 claims checked');
+    expect(pipeline.textContent).toContain(
+      '0 of 2 citations checked. Judgement comes in a later version.',
+    );
   });
 });
 

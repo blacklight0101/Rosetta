@@ -127,7 +127,9 @@ test('RF-1002 RF-1004 the stepper of an understand run moves from Understand to 
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
   await expect(step(page, 'Understand')).toContainText('4 of 4 agents done');
   await expect(step(page, 'Understand')).toContainText('done');
-  await expect(step(page, 'Verify')).toContainText('7 of 7 claims checked');
+  await expect(step(page, 'Verify')).toContainText(
+    '7 of 7 citations checked. Judgement comes in a later version.',
+  );
   await expect(step(page, 'Verify')).toContainText('done');
   await expect(step(page, 'Report')).toContainText('waiting');
   await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
