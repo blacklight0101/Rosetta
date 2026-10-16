@@ -1,17 +1,12 @@
 import type { JSX } from 'preact';
 import type { RunStageChoice } from '../api/runs.js';
+import { AreaPicker } from './AreaPicker.js';
+import { chosenOf, type AreaChoice } from './area-selection.js';
+import { LibraryChoiceNotice } from './LibraryChoiceNotice.js';
 
-// RF-1001, RF-200, design-system.md section 14 (Start run): the stage and, for an understand run,
-// the areas of the code map. Verify is drawn as the artboard has it but cannot be chosen: the
-// server starts only a scan and an understand run in this release (RST-2305).
-
-export interface AreaChoice {
-  readonly name: string;
-  readonly estimatedTokens: number | undefined;
-  /** Only vendored or minified files (RF-1001): unticked by default and marked. */
-  readonly thirdParty: boolean;
-  readonly checked: boolean;
-}
+// RF-1001, RF-200, RF-1018, design-system.md section 14 (Start run): the stage and, for an
+// understand run, the areas of the code map (AreaPicker.tsx). Verify is drawn as the artboard has it but cannot be
+// chosen: the server starts only a scan and an understand run in this release (RST-2305).
 
 export interface StageAreasProps {
   readonly stage: RunStageChoice;
@@ -21,6 +16,10 @@ export interface StageAreasProps {
   readonly areasError: { readonly code: string; readonly message: string } | undefined;
   readonly onStage: (stage: RunStageChoice) => void;
   readonly onArea: (name: string) => void;
+  readonly onChoose: (names: readonly string[]) => void;
+  /** RF-1018: library areas are chosen and the user said they are wanted. */
+  readonly libraryConfirmed: boolean;
+  readonly onLibraryConfirm: (confirmed: boolean) => void;
 }
 
 function StageChoice(props: {
@@ -84,61 +83,25 @@ function Stages(props: StageAreasProps): JSX.Element {
   );
 }
 
-function AreaRow(props: {
-  readonly area: AreaChoice;
-  readonly id: string;
-  readonly onArea: (name: string) => void;
-}): JSX.Element {
-  const { area, id, onArea } = props;
-  const described = [
-    area.estimatedTokens === undefined ? '' : `${id}-tokens`,
-    area.thirdParty ? `${id}-third-party` : '',
-  ].filter((each) => each !== '');
-  return (
-    <div class="rst-start__area">
-      <input
-        type="checkbox"
-        id={id}
-        checked={area.checked}
-        aria-describedby={described.length === 0 ? undefined : described.join(' ')}
-        onChange={() => {
-          onArea(area.name);
-        }}
-      />
-      <label for={id} class="rst-mono rst-start__area-name" title={area.name}>
-        {area.name}
-      </label>
-      {area.estimatedTokens === undefined ? null : (
-        <span id={`${id}-tokens`} class="rst-table__sub rst-start__area-tokens">
-          {area.estimatedTokens.toLocaleString('en-US')} tokens
-        </span>
-      )}
-      {area.thirdParty ? (
-        <span
-          id={`${id}-third-party`}
-          class="rst-badge rst-badge--neutral-tint rst-start__area-note"
-        >
-          third-party
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
 function Areas(props: StageAreasProps): JSX.Element {
-  const { areas, areasError, onArea } = props;
+  const { areas, areasError, onArea, onChoose } = props;
+  const chosen = chosenOf(areas);
   return (
-    <fieldset class="rst-start__group">
-      <legend>Areas from the code map</legend>
-      {areas.map((area, index) => (
-        <AreaRow key={area.name} area={area} id={`area-${String(index)}`} onArea={onArea} />
-      ))}
+    <div class="rst-start__areas">
+      <AreaPicker areas={areas} onArea={onArea} onChoose={onChoose} />
+      {chosen.libraryAreas === 0 ? null : (
+        <LibraryChoiceNotice
+          chosen={chosen}
+          confirmed={props.libraryConfirmed}
+          onConfirm={props.onLibraryConfirm}
+        />
+      )}
       {areasError === undefined ? null : (
         <p class="rst-field__error" data-testid="field-error" role="alert">
           {areasError.code} · {areasError.message}
         </p>
       )}
-    </fieldset>
+    </div>
   );
 }
 

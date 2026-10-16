@@ -35,6 +35,7 @@ import { buildServer } from './web/server.js';
 const repositoryRoot = new URL('../../', import.meta.url);
 const staticRoot = fileURLToPath(new URL('dist/web/', repositoryRoot));
 const templatesFolder = fileURLToPath(new URL('templates/', repositoryRoot));
+const promptsFolder = fileURLToPath(new URL('prompts/', repositoryRoot));
 
 export interface ApplicationOptions {
   readonly environment: Environment;
@@ -127,7 +128,10 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     streams: auth.streams,
     packs: await composeLanguagePacks(),
   });
-  const projects = await composeProjects({ pool, logger, clock, masker, templatesFolder });
+  const projects = await composeProjects({
+    ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
+    dataDir: environment.dataDir,
+  });
   const server = buildServer({
     logger,
     databaseHealth: new PgDatabaseHealth(pool),
