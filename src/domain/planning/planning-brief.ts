@@ -18,16 +18,16 @@ export const stackLayers = [
   'testing',
   'hosting',
 ] as const;
-export type StackLayer = (typeof stackLayers)[number];
+type StackLayer = (typeof stackLayers)[number];
 
 /** RF-610; the first is the default. */
 export const migrationStrategies = ['strangler-fig', 'parallel-change', 'rewrite'] as const;
-export type MigrationStrategy = (typeof migrationStrategies)[number];
+type MigrationStrategy = (typeof migrationStrategies)[number];
 
 /** The style a brief takes when nothing was chosen and nothing is recommended (first in RF-608). */
-export const defaultArchitectureStyle: ArchitectureStyleId = 'layered';
+const defaultArchitectureStyle: ArchitectureStyleId = 'layered';
 
-export interface StackChoice {
+interface StackChoice {
   readonly layer: StackLayer;
   /** The chosen technology, free text (untrusted, ADR-013). */
   readonly choice: string;
@@ -35,7 +35,7 @@ export interface StackChoice {
   readonly custom: boolean;
 }
 
-export interface ProjectContext {
+interface ProjectContext {
   readonly teamSize: number | null;
   readonly experience: string | null;
   readonly deadline: string | null;
