@@ -85,6 +85,7 @@ export class SubmitRun {
         startedAt: null,
         endedAt: null,
         totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
+        failedAreas: 0,
       };
       const inserted = await runs.insert(run);
       if (inserted.ok) return run;

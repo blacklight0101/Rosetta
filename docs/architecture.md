@@ -126,7 +126,7 @@ src/
                         run events (`runReaderTask`, `providerWithEvents`, `toolsWithEvents`), the cards of the
                         run as tasks end (`RunCards`: ids in area order, citation check), the pinned repository
                         of the citations (`pinnedSourceOf`, RF-125) and `UnderstandSession`
-    cards/              the card schema, parsing with one repair attempt, the repair request (RF-202)
+    cards/              the card schema, lenient parsing that keeps valid cards and claims (`parseCardsLenient`), the repair request (RF-202, RF-208)
     verifier/           citation check (step 1, `checkCitations`, P1-33), judgement step (P2)
     estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30)
     contracts/          event and API contract types shared with the front end in web/
@@ -182,7 +182,7 @@ scripts/                build and test helper scripts (test levels, page screens
 .env.example            every environment variable with a safe example (RF-1305)
 prompts/                versioned prompts per role (reader/, verifier/, planner/, summariser/) and shared/
                         (prompts every role may get, such as the text tool protocol of RF-205),
-                        cards/ (the card format an agent answers in and the repair request, RF-202)
+                        cards/ (the card format an agent answers in, the repair request and the continue request, RF-202, RF-208)
                         and catalogue/ (principles, styles and practices for plan, ADR-018)
 tests/
   unit/                 mirrors src/
@@ -405,7 +405,7 @@ sequenceDiagram
       L->>T: validated arguments (zod)
       T-->>L: result or error result
     else final answer
-      L->>L: parse cards (zod); one repair attempt on failure
+      L->>L: parse cards (zod), keep the valid ones; up to two repairs or a continuation for the rest
     end
   end
   L-->>O: cards, transcript, state, usage
@@ -426,8 +426,11 @@ sequenceDiagram
   the lines it returns), grep at most 100 matches and listings at most 200 entries, each with a notice.
 - **Loop** (`runAgentTask`): the first user message is `prompts/reader/task.v2.md` with the area's file list as a
   data block; after each tool turn a user message from `prompts/reader/turns-left.v2.md` gives the turns left. The
-  task ends `Done` (final answer parsed with one repair, RF-202; the repair turn is a turn like any other, under the
-  same turn limit, context share and stop checks), `InvalidOutput`, `TurnLimitReached` (the
+  task ends `Done` (final answer read leniently, RF-202, RF-208: valid cards and claims are kept and the invalid ones
+  are dropped and listed; problems earn up to two repairs, the second with only the problems that remain, and an answer
+  cut off by the output limit earns up to two continuations (`prompts/cards/continue.v1.md`) instead of a new start;
+  every follow-up is a turn like any other, under the same turn limit, context share and stop checks, and a stop
+  keeps the cards read so far), `InvalidOutput` (no valid card after the follow-ups), `TurnLimitReached` (the
   configured maximum turns, `RST-1304`, or the context share, `RST-1305`), or `Failed` with a recorded reason: a
   model that repeats one call three times (`RST-1303`; a repeated call is answered with an error, not run again) or
   names unknown tools three times (`RST-1302`), a stop through the shared signal (checked before every turn and
@@ -437,8 +440,8 @@ sequenceDiagram
   cap, ends `StoppedByCap` with reason `cap-reached` and keeps what it learned; any other stop stays `Failed`
   with `RST-1501`.
 - **Prompts** (RNF-004): the reader's system prompt is `prompts/reader/area.v2.md` followed by
-  `prompts/cards/card-format.v1.md`; `loadReaderPrompts` reads the five files it uses (the two above, the task, the
-  turns-left notice and `prompts/cards/repair.v1.md`), refuses a template without its one placeholder or a file
+  `prompts/cards/card-format.v1.md`; `loadReaderPrompts` reads the six files it uses (the two above, the task, the
+  turns-left notice, `prompts/cards/repair.v1.md` and `prompts/cards/continue.v1.md`), refuses a template without its one placeholder or a file
   that holds a data block marker, and returns each with its version and the SHA-256 of its bytes; the run records
   them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
   text inside data blocks is data, never instructions, and that a block ends only at the closing line with its own

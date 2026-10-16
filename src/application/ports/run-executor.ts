@@ -41,6 +41,8 @@ export interface RunOutcome {
   readonly endState: RunEndState;
   /** The error code of a `Failed` run; shown with `run.ended`. */
   readonly errorCode?: ErrorCode;
+  /** RF-208: areas of a `Completed` run that gave no usable card; shown with `run.ended`. */
+  readonly failedAreas?: number;
 }
 
 export interface RunExecutor {

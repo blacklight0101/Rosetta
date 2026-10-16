@@ -169,14 +169,15 @@ describe('runAgentTask final answer repair', () => {
     expect(repair?.content).toContain('Fix these problems:\n- (answer): No JSON found');
   });
 
-  it('RF-202 a second invalid answer ends as InvalidOutput with both raw outputs', async () => {
-    const { fake, request } = loopSetup([textTurn('first'), textTurn('second')]);
+  it('RF-202 RF-208 an answer still invalid after two repairs ends as InvalidOutput with all raw outputs', async () => {
+    const { fake, request } = loopSetup([textTurn('first'), textTurn('second'), textTurn('third')]);
 
     const result = await runAgentTask(request(fake));
 
     expect(result.state).toBe('InvalidOutput');
     expect(result.reason).toBe('invalid-output');
     expect(result.code).toBe(ERROR_CODES.cardOutputInvalid);
-    expect(result.rawOutputs).toEqual(['first', 'second']);
+    expect(result.rawOutputs).toEqual(['first', 'second', 'third']);
+    expect(fake.requests).toHaveLength(3);
   });
 });

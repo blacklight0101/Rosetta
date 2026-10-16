@@ -96,9 +96,15 @@ export class MemoryRunIndex implements RunIndex {
     return Promise.resolve(this.keep(run === undefined ? undefined : startRun(run, at)));
   }
 
-  end(runId: string, endState: RunEndState, at: EpochMs): Promise<Run | undefined> {
+  end(
+    runId: string,
+    endState: RunEndState,
+    at: EpochMs,
+    failedAreas = 0,
+  ): Promise<Run | undefined> {
     const run = this.runs.get(runId);
-    return Promise.resolve(this.keep(run === undefined ? undefined : endRun(run, endState, at)));
+    const ended = run === undefined ? undefined : endRun(run, endState, at, failedAreas);
+    return Promise.resolve(this.keep(ended));
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

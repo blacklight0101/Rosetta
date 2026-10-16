@@ -115,6 +115,7 @@ export const testReaderPrompts: ReaderPrompts = {
   task: prompt('reader/task.v1.md', 'Describe the area below.\n\n{{area}}'),
   turnsLeft: prompt('reader/turns-left.v1.md', 'Turns left: {{turns}}.'),
   repair: prompt('cards/repair.v1.md', 'Fix these problems:\n{{problems}}'),
+  continue: prompt('cards/continue.v1.md', 'Continue where you stopped.'),
 };
 
 /** A valid final answer with one card citing the shipping rule. */

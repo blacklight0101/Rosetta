@@ -58,7 +58,12 @@ export interface RunIndex {
    * `Running` -> `Ended`, or `Queued` -> `Ended` as `Interrupted`; the end state is set once.
    * Undefined for an unknown run, one that has ended and a queued run ended any other way.
    */
-  end(runId: string, endState: RunEndState, at: EpochMs): Promise<Run | undefined>;
+  end(
+    runId: string,
+    endState: RunEndState,
+    at: EpochMs,
+    failedAreas?: number,
+  ): Promise<Run | undefined>;
   /** Records the pinned commit and the snapshot folder; undefined for an unknown or ended run. */
   recordSource(runId: string, source: RunSource): Promise<Run | undefined>;
   /** Replaces the running totals; undefined for an unknown or ended run. */

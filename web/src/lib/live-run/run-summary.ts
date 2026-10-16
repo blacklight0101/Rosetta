@@ -1,4 +1,4 @@
-import type { ClaimRow, RunState } from './run-state.js';
+import type { AgentPanelState, ClaimRow, RunState } from './run-state.js';
 
 // RF-1002, RF-1003, RF-1004: the figures the overview and the meter show, taken from the state.
 
@@ -32,6 +32,37 @@ export function overviewOf(state: RunState): Overview {
     done: count(['Done', 'TurnLimitReached']),
     failed: count(['Failed', 'InvalidOutput', 'StoppedByCap']),
   };
+}
+
+export interface FailedArea {
+  readonly area: string;
+  /** The agent state, in a few words: `invalid output`, `failed`, `turn limit reached`... */
+  readonly why: string;
+}
+
+const failureWords: Readonly<Record<string, string>> = {
+  InvalidOutput: 'invalid output',
+  Failed: 'failed',
+  TurnLimitReached: 'turn limit reached without a card',
+  StoppedByCap: 'stopped by a cap without a card',
+};
+
+/**
+ * RF-208: whether the agent ended without a usable card. An agent that stopped at its turn limit or
+ * at a cap still counts as done when it gave cards (see `overviewOf`). The failed areas of the
+ * notice and the gap tiles of the code map (`code-map-tiles.ts`) are decided by this one rule.
+ */
+export function endedWithoutCard(agent: AgentPanelState): boolean {
+  return failureWords[agent.state] !== undefined && agent.cards.length === 0;
+}
+
+/** RF-208: the areas whose agent ended without a usable card, with why. */
+// RF-208
+export function failedAreasOf(state: RunState): readonly FailedArea[] {
+  return state.agents.flatMap((agent) => {
+    const why = failureWords[agent.state];
+    return why === undefined || !endedWithoutCard(agent) ? [] : [{ area: agent.area, why }];
+  });
 }
 
 // RF-1003

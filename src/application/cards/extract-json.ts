@@ -15,7 +15,7 @@ function startsLikeJson(text: string, at: number): boolean {
   return jsonStart.test(text);
 }
 
-function safeParse(text: string): { readonly value: unknown } | undefined {
+function parseJson(text: string): { readonly value: unknown } | undefined {
   try {
     const value: unknown = JSON.parse(text, (key: string, item: unknown) =>
       forbiddenKeys.has(key) ? undefined : item,
@@ -24,6 +24,36 @@ function safeParse(text: string): { readonly value: unknown } | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** Whether the next character that is not white space closes an object or a list. */
+function closesAfter(text: string, from: number): boolean {
+  let index = from;
+  while (index < text.length && /\s/u.test(text[index] ?? '')) index += 1;
+  return text[index] === '}' || text[index] === ']';
+}
+
+/** RF-208: the text without the commas that sit right before a closing brace or bracket. */
+function withoutTrailingCommas(text: string): string {
+  let result = '';
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index] ?? '';
+    if (char === '"') {
+      const end = stringEnd(text, index);
+      result += text.slice(index, end + 1);
+      index = end;
+    } else if (char === ',' && closesAfter(text, index + 1)) {
+      continue;
+    } else result += char;
+  }
+  return result;
+}
+
+/** Valid JSON, or JSON that is valid once its trailing commas are taken out (RF-208). */
+function safeParse(text: string): { readonly value: unknown } | undefined {
+  const parsed = parseJson(text);
+  if (parsed !== undefined) return parsed;
+  return parseJson(withoutTrailingCommas(text));
 }
 
 /** The index of the quote that closes the string opened at `open`, or the end of the text. */
@@ -56,6 +86,8 @@ interface Candidates {
   capped: boolean;
   /** JSON was started (see `startsLikeJson`) but never closed, or is not valid JSON. */
   truncated: boolean;
+  /** JSON was started but never closed: the answer ends inside it (RF-208). */
+  unclosed: boolean;
 }
 
 function addFences(text: string, found: Candidates): void {
@@ -84,7 +116,9 @@ function addBraceGroups(text: string, found: Candidates): void {
     }
     const end = balancedEnd(text, start.index);
     if (end < 0) {
-      found.truncated ||= startsLikeJson(text, start.index);
+      const started = startsLikeJson(text, start.index);
+      found.truncated ||= started;
+      found.unclosed ||= started;
       continue;
     }
     found.texts.push(text.slice(start.index, end + 1));
@@ -98,11 +132,18 @@ export interface JsonSearch {
   readonly capped: boolean;
   /** Some JSON was started but is cut off or not valid; braces in prose do not count. */
   readonly truncated: boolean;
+  /** Some JSON was started and the answer ends before it is closed (RF-208). */
+  readonly unclosed: boolean;
 }
 
 /** Every JSON value found in the answer, from at most `maxJsonCandidates` candidate texts. */
 export function searchJson(text: string): JsonSearch {
-  const found: Candidates = { texts: [text.trim()], capped: false, truncated: false };
+  const found: Candidates = {
+    texts: [text.trim()],
+    capped: false,
+    truncated: false,
+    unclosed: false,
+  };
   addFences(text, found);
   if (!found.capped) addBraceGroups(text, found);
   const values: unknown[] = [];
@@ -111,5 +152,10 @@ export function searchJson(text: string): JsonSearch {
     if (parsed !== undefined) values.push(parsed.value);
     else if (startsLikeJson(candidate, 0)) found.truncated = true;
   }
-  return { values, capped: found.capped, truncated: found.truncated };
+  return {
+    values,
+    capped: found.capped,
+    truncated: found.truncated,
+    unclosed: found.unclosed,
+  };
 }

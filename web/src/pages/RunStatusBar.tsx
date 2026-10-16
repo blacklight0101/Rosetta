@@ -2,6 +2,7 @@ import type { ComponentChildren, JSX } from 'preact';
 import type { ApiFailure } from '../api/client.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
+import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
@@ -16,6 +17,8 @@ export interface RunStatusBarProps {
   readonly stage: string;
   readonly projectId: string;
   readonly phase: RunPhase;
+  /** RF-208: the areas of the run that gave no usable card, shown next to an ended state. */
+  readonly failedAreas?: number;
   readonly stopping: boolean;
   readonly busy: boolean;
   readonly stopError: ApiFailure | undefined;
@@ -48,6 +51,9 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
         <span class="rst-live-head__stage">{props.stage}</span>
         <span role="status" data-testid="run-status" class="rst-live-head__state">
           <Badge phase={phase} />
+          {phase.kind === 'ended' ? (
+            <FailedAreasNote count={props.failedAreas ?? 0} class="rst-live-head__note" />
+          ) : null}
           {stopping && phase.kind !== 'ended' ? (
             <span class="rst-live-head__note">Stopping…</span>
           ) : null}

@@ -1,8 +1,6 @@
 import type { DataBlockSource } from '../../domain/egress/data-block.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { parseCardsWithRepair, type OutputProblem } from '../cards/parse-cards.js';
-import { renderRepairRequest } from '../cards/repair-request.js';
 import type {
   AgentRole,
   LlmMessage,
@@ -12,6 +10,7 @@ import type {
   ToolDefinition,
 } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
+import { collectCards } from './answer-collector.js';
 import {
   failedCallEnd,
   stoppedEnd,
@@ -100,7 +99,6 @@ class AgentTask {
   /** Tokens of the conversation at the last answer, and characters added since. */
   private reportedTokens = 0;
   private charsSince = 0;
-  private repairFailure: AgentTaskEnd | undefined;
 
   constructor(request: AgentTaskRequest) {
     this.request = request;
@@ -228,26 +226,30 @@ class AgentTask {
     };
   }
 
-  /** RF-202: parses the final answer, with one repair turn when it is not valid cards. */
+  /**
+   * RF-202, RF-208: reads the final answer and asks the follow-ups it earns (two repairs, or a
+   * continuation of a cut-off answer). The valid cards are kept whatever happens to the rest.
+   */
   private async finish(text: string): Promise<AgentTaskEnd> {
-    const parsed = await parseCardsWithRepair(text, (problems) => this.repair(text, problems));
-    if (this.repairFailure !== undefined) return this.repairFailure;
-    if (parsed.ok) return { reason: 'final-answer', drafts: parsed.value.drafts };
-    const { code, problems, rawOutputs } = parsed.error;
-    return { reason: 'invalid-output', code, problems, rawOutputs };
+    const { prompts } = this.request;
+    const collected = await collectCards(
+      text,
+      (previous, message) => this.followUp(previous, message),
+      prompts,
+    );
+    const { drafts, problems, rawOutputs, stopped } = collected;
+    const left = { drafts, problems, rawOutputs: problems.length === 0 ? [] : rawOutputs };
+    if (stopped !== undefined) return { ...stopped, ...left };
+    if (drafts.length > 0 || problems.length === 0) return { reason: 'final-answer', ...left };
+    return { reason: 'invalid-output', code: ERROR_CODES.cardOutputInvalid, ...left };
   }
 
-  private async repair(
-    text: string,
-    problems: readonly OutputProblem[],
-  ): Promise<string | undefined> {
-    this.messages.push({ role: 'assistant', content: text });
-    const content = renderRepairRequest(this.request.prompts.repair.text, problems).trimEnd();
+  /** One more turn after the model's text: it is a turn like any other (limit, context, stop). */
+  private async followUp(previous: string, content: string): Promise<Result<string, AgentTaskEnd>> {
+    this.messages.push({ role: 'assistant', content: previous });
     this.add({ role: 'user', content });
     const answer = await this.turn();
-    if (answer.ok) return answer.value.text;
-    this.repairFailure = answer.error;
-    return undefined;
+    return answer.ok ? ok(answer.value.text) : err(answer.error);
   }
 
   private add(message: LlmMessage): void {

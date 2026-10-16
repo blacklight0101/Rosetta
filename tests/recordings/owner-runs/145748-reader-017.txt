@@ -1,0 +1,49 @@
+=== attempt 1 ===
+```json
+{
+  "cards": [
+    {
+      "type": "OQ",
+      "title": "Lack of Application Logic in Scripting Area",
+      "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts",
+      "summary": "The listed files in this area appear to be external, minified JavaScript libraries and their corresponding source maps.",
+      "confidence": "High",
+      "claims": [
+        {
+          "text": "The files present are 'eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/jquery-3.3.1.min.js' (JavaScript) and 'eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/jquery-3.3.1.min.map' (unknown).",
+          "citations": [
+            "<<<ROSETTA-DATA p2ze4osfl3d7ugvtwp3lzdd6"
+          ]
+        }
+      ],
+      "question": "What application-specific JavaScript logic, user features, or business rules are implemented within this scripting directory?",
+      "whyItMatters": "The current files only represent a dependency (jQuery) and do not describe any functionality within the eShop application."
+    }
+  ]
+}
+```
+
+=== attempt 2 ===
+```json
+{
+  "cards": [
+    {
+      "type": "OQ",
+      "title": "Lack of Application Logic in Scripting Area",
+      "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts",
+      "summary": "The listed files in this area appear to be external, minified JavaScript libraries and their corresponding source maps.",
+      "confidence": "High",
+      "claims": [
+        {
+          "text": "The files present are 'eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/jquery-3.3.1.min.js' (JavaScript) and 'eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/jquery-3.3.1.min.map' (unknown).",
+          "citations": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts#11"
+          ]
+        }
+      ],
+      "question": "What application-specific JavaScript logic, user features, or business rules are implemented within this scripting directory?",
+      "whyItMatters": "The current files only represent a dependency (jQuery) and do not describe any functionality within the eShop application."
+    }
+  ]
+}
+```

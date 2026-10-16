@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { runDownloadPath } from '../api/runs.js';
 import type { HistoryRun } from '../api/history-schemas.js';
 import { Button } from '../components/Button.js';
+import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
@@ -25,7 +26,12 @@ const minutes = (instant: string): string =>
 function StateBadge({ run }: { readonly run: HistoryRun }): JSX.Element {
   const ended = stateLists.RunEndState.find((each) => each === run.endState);
   if (run.queueState === 'Ended' && ended !== undefined) {
-    return <StatusBadge list="RunEndState" value={ended} />;
+    return (
+      <>
+        <StatusBadge list="RunEndState" value={ended} />
+        <FailedAreasNote count={run.failedAreas} />
+      </>
+    );
   }
   return <StatusBadge list="RunQueueState" value={run.queueState} />;
 }

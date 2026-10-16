@@ -17,6 +17,7 @@ const lastRunSchema = z.object({
   startedAt: z.string().nullable(),
   endedAt: z.string().nullable(),
   position: z.number().int().positive().nullable(),
+  failedAreas: z.number().int().nonnegative().default(0),
 });
 
 export type LastRun = z.output<typeof lastRunSchema>;

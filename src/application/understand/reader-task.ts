@@ -4,6 +4,7 @@ import {
   recordManifestModelVersion,
 } from '../../domain/runs/run-manifest.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
+import type { Area } from '../../domain/code-map/area.js';
 import { runAgentTask } from '../agent/agent-loop.js';
 import type { AgentTaskResult } from '../agent/agent-task-result.js';
 import { ReadOnlyTools } from '../agent/read-only-tools.js';
@@ -50,6 +51,18 @@ export interface ReaderTaskContext {
 
 const READER = 'reader';
 
+/**
+ * RF-208: how a retry differs from the first run of a task. It is a fresh conversation, so its
+ * transcript and calls are kept under their own id; it may read only part of the area; and its
+ * turns may be cut so a split retry stays within one turn limit.
+ */
+export interface TaskAttempt {
+  /** The id its transcript and provider calls carry, a plain file name (data-model 3.15). */
+  readonly callTaskId: string;
+  readonly area: Area;
+  readonly maxTurns?: number;
+}
+
 /** The task's span id: the run's trace prefix and the task's number, 16 hexadecimal characters. */
 function spanIdOf(traceId: string, task: ReaderTask): string {
   const number = Number.parseInt(task.agentTaskId.replace(/\D/gu, ''), 10);
@@ -84,9 +97,11 @@ export async function runReaderTask(
   context: ReaderTaskContext,
   task: ReaderTask,
   reads: TaskReads,
+  attempt?: TaskAttempt,
 ): Promise<AgentTaskResult> {
   const { execution, scanned, role, updates, logger } = context;
   const { agentTaskId } = task;
+  const area = attempt?.area ?? task.area;
   await recordTaskState(context, task, { state: 'Running', turns: 0, cards: 0 });
   await execution.events.emit(
     'agent.started',
@@ -100,7 +115,7 @@ export async function runReaderTask(
   };
   const turns = new TurnCounter();
   const tools = new ReadOnlyTools({
-    ...{ reader: scanned.reader, codeMap: scanned.codeMap, area: task.area, logger },
+    ...{ reader: scanned.reader, codeMap: scanned.codeMap, area, logger },
     limits: readerToolLimits(context.settings),
     ids: context.ids,
   });
@@ -109,10 +124,13 @@ export async function runReaderTask(
     tools: toolsWithEvents(toolsWithReads(tools, reads), events, turns),
     prompts: context.prompts,
     logger,
-    settings: readerTaskSettings(context.settings, role),
+    settings: {
+      ...readerTaskSettings(context.settings, role),
+      ...(attempt?.maxTurns === undefined ? {} : { maxTurns: attempt.maxTurns }),
+    },
     context: {
       runId: execution.run.runKey,
-      agentTaskId,
+      agentTaskId: attempt?.callTaskId ?? agentTaskId,
       role: READER,
       traceId: context.traceId,
       parentSpanId: spanIdOf(context.traceId, task),

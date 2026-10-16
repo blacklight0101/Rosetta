@@ -54,7 +54,7 @@ function ignoringCase<T extends string>(values: readonly [T, ...T[]]) {
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
-const claim = z.object({
+export const agentClaimSchema = z.object({
   text: text(cardLimits.maxClaimChars),
   citations: z
     .array(citation)
@@ -62,7 +62,7 @@ const claim = z.object({
     .max(cardLimits.maxCitations),
 });
 
-const card = z
+export const agentCardSchema = z
   .object({
     type: ignoringCase(CARD_TYPES),
     title: text(cardLimits.maxTitleChars),
@@ -71,7 +71,10 @@ const card = z
     area: text(cardLimits.maxAreaChars),
     summary: text(cardLimits.maxSummaryChars),
     confidence: ignoringCase(CONFIDENCES),
-    claims: z.array(claim).min(1, 'A card needs at least one claim.').max(cardLimits.maxClaims),
+    claims: z
+      .array(agentClaimSchema)
+      .min(1, 'A card needs at least one claim.')
+      .max(cardLimits.maxClaims),
     question: text(cardLimits.maxQuestionChars).optional(),
     whyItMatters: text(cardLimits.maxQuestionChars).optional(),
   })
@@ -89,4 +92,6 @@ const card = z
   });
 
 /** `{ "cards": [...] }`, at most `maxCards` cards. */
-export const agentCardsSchema = z.object({ cards: z.array(card).max(cardLimits.maxCards) });
+export const agentCardsSchema = z.object({
+  cards: z.array(agentCardSchema).max(cardLimits.maxCards),
+});

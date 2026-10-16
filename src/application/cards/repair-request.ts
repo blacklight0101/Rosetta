@@ -1,4 +1,4 @@
-import type { OutputProblem } from './parse-cards.js';
+import type { OutputProblem } from './output-problem.js';
 
 // RF-202, RNF-004: the words of the repair request live in a versioned prompt file
 // (`prompts/cards/repair.v1.md`); this fills in its one placeholder.

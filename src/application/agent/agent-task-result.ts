@@ -3,7 +3,7 @@ import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
-import type { OutputProblem } from '../cards/parse-cards.js';
+import type { OutputProblem } from '../cards/output-problem.js';
 import type { LlmMessage } from '../ports/llm-provider.js';
 
 // RF-201, RF-202, architecture section 5 (`AgentTaskState`): how one agent task ended and what it
