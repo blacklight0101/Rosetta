@@ -60,7 +60,7 @@ every variable with a comment and a safe example.
 | `ROSETTA_SECRET_KEY_PREVIOUS` | no | yes | the previous key during a rotation; rows under it are re-encrypted at start-up |
 | `ROSETTA_PUBLIC_URL` | yes | no | the URL users open (`http://127.0.0.1:8080` locally); the `Origin` check compares with it |
 | `ROSETTA_DATA_DIR` | yes | no | `/data` in the image |
-| `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` | first start | yes | bootstrap administrator (RF-1102) |
+| `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` | first start on an empty `users` table | yes | bootstrap administrator (RF-1102): needed only while the `users` table is empty. On an empty table with either one missing, start-up logs a warning and creates no account, so nobody can sign in. On a table with accounts they are ignored (an info line only), so they may be removed. A name or password that breaks the rules stops start-up with its RST code, naming the variable (DEC-119) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | no | yes | server keys (DEC-64) |
 | `ROSETTA_OLLAMA_URL` | no | no | `http://host.docker.internal:11434` locally; unset when hosted; the only source of the Ollama URL (DEC-112); a user name or password in it is refused (`RST-1000`) |
 | `ROSETTA_CONTACT_EMAIL` | no | no | the landing page's "Request access" address (Q-20); a plain `name@domain.tld` only, without quotes, spaces or `?`, `#`, `&` |
@@ -211,7 +211,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Zip export | `yazl` | 3.3 | streaming zip writer (RF-008) |
 | Snapshot extraction | `tar` | 7.5 | GitHub tarball extraction with an entry filter, `src/infrastructure/github/` only (ADR-019, RF-122, RF-127) |
 | Ignore rules | `ignore` | 7.0 | gitignore-syntax matching for `.rosettaignore` and the deny list, `src/infrastructure/files/` only (ADR-019, RF-140) |
-| Web UI and report components | `preact` | 10.29 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52); 11.0.0 was published 2026-09-30, inside the two-week rule, so P1-12 pins 10.29.8 and a follow-up moves to 11 |
+| Web UI and report components | `preact` | 11.0.0 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52); pinned exactly by P1-85 (DEC-125): 11.0.0 was published 2026-09-30, and 11.0.1 (published 2026-10-08) is adopted only from 2026-10-22, when it is two weeks old |
 
 **Development**
 

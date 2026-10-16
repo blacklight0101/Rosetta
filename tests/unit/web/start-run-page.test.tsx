@@ -60,7 +60,9 @@ it('RF-425 shows tokens and cost per role as low, likely and high with the assum
   expect(within(reader).getByText('22,000 tokens')).not.toBeNull();
   const total = screen.getByRole('row', { name: /Total/u });
   expect(within(total).getByText('$0.39')).not.toBeNull();
-  expect(screen.getByText(/2 areas/u).textContent).toContain('price table 2026-10-11');
+  expect(screen.getByText(/2 areas.*price table/su).textContent).toContain(
+    'price table 2026-10-11',
+  );
 });
 
 it('RF-425 a model without a price shows its cost as unknown and the total as incomplete', async () => {

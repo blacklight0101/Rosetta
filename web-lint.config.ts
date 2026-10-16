@@ -5,6 +5,9 @@
 
 const htmlSinks =
   '/^(innerHTML|outerHTML|insertAdjacentHTML|setHTMLUnsafe|parseHTMLUnsafe|createContextualFragment|srcdoc)$/i';
+// A computed key written as a template literal without substitutions (`innerHTML`).
+const templateKey = (pattern: string): string =>
+  `MemberExpression[computed=true][property.type="TemplateLiteral"][property.quasis.0.value.cooked=${pattern}]`;
 const htmlProperty = '/^(innerHTML|outerHTML|dangerouslySetInnerHTML|srcdoc)$/i';
 
 export const unsafeHtmlSelectors: readonly {
@@ -24,12 +27,18 @@ export const unsafeHtmlSelectors: readonly {
     message: 'RF-507: never pass HTML to an element; render text and let Preact escape it.',
   },
   {
-    selector: `MemberExpression[property.name=${htmlSinks}], MemberExpression[computed=true][property.value=${htmlSinks}]`,
+    selector: `MemberExpression[property.name=${htmlSinks}], MemberExpression[computed=true][property.value=${htmlSinks}], ${templateKey(htmlSinks)}`,
     message:
       'RF-507: innerHTML, outerHTML, insertAdjacentHTML, setHTMLUnsafe, parseHTMLUnsafe, createContextualFragment and srcdoc are banned; use text nodes.',
   },
   {
-    selector: 'CallExpression[callee.property.name="setAttribute"][arguments.0.value=/^srcdoc$/i]',
+    selector: `ObjectPattern > Property[key.name=${htmlSinks}], ObjectPattern > Property[key.value=${htmlSinks}]`,
+    message:
+      'RF-507: taking an HTML sink out of an element by destructuring is banned; use text nodes.',
+  },
+  {
+    selector:
+      'CallExpression[callee.property.name="setAttribute"][arguments.0.value=/^srcdoc$/i], CallExpression[callee.property.name="setAttributeNS"][arguments.1.value=/^srcdoc$/i]',
     message: 'RF-507: setting srcdoc renders a document; use text nodes.',
   },
   {

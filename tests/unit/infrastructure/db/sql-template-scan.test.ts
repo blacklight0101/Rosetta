@@ -40,6 +40,11 @@ describe('findSqlTemplates finds more', () => {
     ['a bracket call with single quotes', "pool['query'](`${text}`, []);"],
     ['an optional call of query', 'pool?.query(`${text}`, []);'],
     ['a bracket call on a call result', 'getPool()["query"](`${text}`);'],
+    ['a COPY TO STDOUT outside query()', 'const Q = `COPY ${t} TO STDOUT`;'],
+    ['a lower-case copy to stdout', 'const Q = `copy ${t} (a, b) to stdout with csv`;'],
+    ['a COPY FROM STDIN', 'const Q = `COPY ${t} FROM STDIN`;'],
+    ['a COPY over lines', 'const Q = `COPY ${t}\n  TO PROGRAM ${cmd}`;'],
+    ['a COPY to a server file', "const Q = `COPY ${t} TO '/tmp/out.csv'`;"],
     ['a SET ROLE', 'const Q = `SET ROLE ${role}`;'],
     ['a clause only', 'const Q = `ORDER BY ${column}`;'],
     ['a template nested in another', 'const Q = `x ${`select a from t where ${b}`}`;'],
@@ -80,6 +85,10 @@ describe('findSqlTemplates leaves alone', () => {
     ['a key', 'const k = `${userId.toLowerCase()} ${provider}`;'],
     ['a message with the word from', 'const m = `Read ${count} files from the folder.`;'],
     ['a replacement pattern', 'const r = text.replace(re, `$<keep>${MASKED}`);'],
+    [
+      'a message with the word copy',
+      'const m = `Failed to copy ${count} files to the output folder.`;',
+    ],
     ['a concatenation of constants', "const Q = 'SELECT a FROM t ' + 'WHERE id = $1';"],
   ])('%s', (_label, source) => {
     expect(findSqlTemplates(source)).toEqual([]);

@@ -18,6 +18,7 @@ const SQL_SHAPES: readonly RegExp[] = [
   /\b(?:grant|revoke)\b[\s\S]*\b(?:to|from|on)\b/iu,
   /\b(?:truncate|vacuum|reindex)\b/iu,
   /\block\s+table\b/iu,
+  /\bcopy\b[\s\S]*\b(?:to|from)\s+(?:stdout|stdin|program|')/iu,
   /\bcomment\s+on\b/iu,
   /\bwhere\b/iu,
   /\b(?:order|group)\s+by\b/iu,

@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch, type StateUpdater } from 'preact/hooks';
+import { useLayoutEffect, type Dispatch, type StateUpdater } from 'preact/hooks';
 import { getRun } from '../api/runs.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { useApp } from '../app/app-context.js';
@@ -37,7 +37,8 @@ function movedTo(
 export function useQueuePosition(notice: RunNoticeState | undefined, setNotice: SetNotice): void {
   const { client } = useApp();
   const runId = notice?.kind === 'queued' ? notice.runId : undefined;
-  useEffect(() => {
+  // A layout effect: its cleanup (timer, listener, read) runs as the page is left, not after paint.
+  useLayoutEffect(() => {
     if (runId === undefined) return undefined;
     const abort = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;

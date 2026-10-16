@@ -40,7 +40,10 @@ export const estimateSchema = z.object({
   priceTableVersion: z.string(),
   currency: z.string(),
   areas: z.array(
-    z.object({ name: z.string(), estimatedTokens: z.number(), thirdParty: z.boolean() }),
+    z.object({
+      ...{ name: z.string(), estimatedTokens: z.number(), files: z.number() },
+      thirdParty: z.boolean(),
+    }),
   ),
   assumptions: z.looseObject({ turnsPerArea: scenarioNumbers }),
   roles: z.array(roleEstimate),

@@ -166,6 +166,9 @@ function registerSessionPlugins(server: FastifyInstance, refusals: RecordRefused
       void recordRateLimited(refusals, request);
     },
   });
+  // RF-1109, DEC-141: the counts of refusals past the per-address limit are written before the
+  // database pool closes (the pool ends after the server, shutdown.ts).
+  server.addHook('onClose', () => refusals.flushAll());
 }
 
 // RF-007: every failure answers { code, message, nextStep } with the status of its cause. With a
@@ -217,7 +220,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     // no RST code; RF-007 lists no 503 and in-flight work completes on SIGTERM.
     return503OnClosing: false,
     // Trust the `trustProxy` nearest hops, as a number does in Fastify (its types omit numbers).
-    // With a trusted proxy, `request.host` also follows X-Forwarded-Host (the Origin check, P1-09).
+    // With a trusted proxy, `request.host` also follows X-Forwarded-Host; the Origin check does not (P1-09).
     trustProxy: (_address, hop) => hop < options.trustProxy,
     frameworkErrors: frameworkErrorHandler(options.logger, options.publicUrl),
     clientErrorHandler: clientErrorHandler(options.logger, options.publicUrl),

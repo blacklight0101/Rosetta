@@ -36,6 +36,12 @@ export interface StartForm {
     readonly confirmed: boolean;
     readonly set: (confirmed: boolean) => void;
   };
+  /** RF-1018: library areas are chosen, and whether the user confirmed reading them. */
+  readonly library: {
+    readonly chosen: boolean;
+    readonly confirmed: boolean;
+    readonly set: (confirmed: boolean) => void;
+  };
   readonly project: Project;
   readonly choice: EstimateChoice;
   readonly stage: RunStageChoice;
@@ -76,6 +82,7 @@ export function useStartForm(loaded: Project): StartForm {
   );
   const [checked, setChecked] = useState(false);
   const [oldMapConfirmed, setOldMapConfirmed] = useState(false);
+  const [libraryConfirmed, setLibraryConfirmed] = useState(false);
   const [refused, setRefused] = useState(false);
   const choice = useEstimateChoice(project.id);
   const limits = useSpendLimits();
@@ -99,15 +106,18 @@ export function useStartForm(loaded: Project): StartForm {
       setRefused(true);
     },
   });
+  const libraryChosen = choice.areas.some((area) => area.checked && area.thirdParty);
   const gate = startGate({
     ...{ stage, estimate, consentNeeded: names, consentGiven: checked },
     chosenAreas: choice.chosen.length,
     oldMapUnconfirmed: isOutdated(estimate) && !oldMapConfirmed,
+    libraryUnconfirmed: libraryChosen && !libraryConfirmed,
   });
   return {
     ...{ project, choice, stage, setStage, url, setUrl, capText, setCapText, capMicros },
     ...{ thresholdText, setThresholdText },
     ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions },
+    library: { chosen: libraryChosen, confirmed: libraryConfirmed, set: setLibraryConfirmed },
     oldMap: { outdated: isOutdated(estimate), confirmed: oldMapConfirmed, set: setOldMapConfirmed },
   };
 }

@@ -1,4 +1,4 @@
-import type { JSX } from 'preact';
+import type { JSX, TargetedInputEvent } from 'preact';
 
 // design-system.md section 5: a labelled form field with help and error text. The label is bound
 // to the control, the help and the error through aria-describedby, and the error carries the
@@ -143,19 +143,27 @@ function SelectControl(props: SelectField): JSX.Element {
 }
 
 function InputControl(props: TextField): JSX.Element {
-  return (
-    <input
-      {...commonAttributes(props)}
-      class={props.kind === 'url' ? 'rst-field__control rst-mono' : 'rst-field__control'}
-      type={props.kind}
-      value={props.value}
-      placeholder={props.placeholder}
-      autoComplete={props.autoComplete}
-      onInput={(event) => {
-        props.onInput(valueOf(event));
-      }}
-    />
-  );
+  const attributes = {
+    ...commonAttributes(props),
+    class: props.kind === 'url' ? 'rst-field__control rst-mono' : 'rst-field__control',
+    value: props.value,
+    placeholder: props.placeholder,
+    autoComplete: props.autoComplete,
+    onInput: (event: TargetedInputEvent<HTMLInputElement>) => {
+      props.onInput(valueOf(event));
+    },
+  };
+  // Preact 11 types the `type` attribute per input kind, so each kind is written out with its literal.
+  switch (props.kind) {
+    case 'number':
+      return <input {...attributes} type="number" />;
+    case 'url':
+      return <input {...attributes} type="url" />;
+    case 'password':
+      return <input {...attributes} type="password" />;
+    case 'text':
+      return <input {...attributes} type="text" />;
+  }
 }
 
 function TextareaControl(props: TextareaField): JSX.Element {

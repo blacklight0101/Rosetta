@@ -8,7 +8,7 @@ import { useEffect } from 'preact/hooks';
 const target = '[aria-invalid="true"], [data-testid="error-banner"]';
 
 // RNF-010
-export function useRefusalFocus(form: RefObject<HTMLElement>, refusal: unknown): void {
+export function useRefusalFocus(form: RefObject<HTMLElement | null>, refusal: unknown): void {
   useEffect(() => {
     if (refusal === undefined || refusal === 0) return;
     form.current?.querySelector<HTMLElement>(target)?.focus();

@@ -116,8 +116,8 @@ export class EstimateRun {
       },
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
-      areas: areas.map(({ name, estimatedTokens }) => ({
-        ...{ name, estimatedTokens },
+      areas: areas.map(({ name, estimatedTokens, files }) => ({
+        ...{ name, estimatedTokens, files: files.length },
         thirdParty: thirdParty.has(name),
       })),
       assumptions,
