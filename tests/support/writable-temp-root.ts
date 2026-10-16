@@ -1,4 +1,4 @@
-import { chmod, mkdtemp, readdir, rm } from 'node:fs/promises';
+import { chmod, lstat, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach } from 'vitest';
@@ -35,6 +35,10 @@ export async function listTree(path: string): Promise<string[]> {
 /** Removes `path` and everything under it, read-only files included; a missing path is not an error. */
 export async function removeWritableTree(path: string): Promise<void> {
   try {
+    // A symbolic link (or junction) as the root would send chmod to whatever it points at.
+    if ((await lstat(path)).isSymbolicLink()) {
+      throw new Error(`Refusing to clear ${path}: the root is a symbolic link.`);
+    }
     await makeWritable(path);
   } catch (error) {
     if (isMissing(error)) return;
