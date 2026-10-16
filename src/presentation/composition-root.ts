@@ -5,10 +5,8 @@ import type { Scheduler } from '../application/ports/scheduler.js';
 import { RosettaError } from '../domain/errors/rosetta-error.js';
 import { readAppVersion } from '../infrastructure/config/app-version.js';
 import type { Environment } from '../infrastructure/config/environment.js';
-import { readMigrationFiles } from '../infrastructure/db/migration-files.js';
 import { PgDatabaseHealth } from '../infrastructure/db/pg-database-health.js';
-import { PgMigrator } from '../infrastructure/db/pg-migrator.js';
-import { createAppPool, createMigratorPool, type DatabasePool } from '../infrastructure/db/pool.js';
+import { createAppPool, type DatabasePool } from '../infrastructure/db/pool.js';
 import { CSharpPack } from '../infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-registry.js';
 import { SecretMasker, type TextMasker } from '../infrastructure/guards/secret-masker.js';
@@ -22,6 +20,7 @@ import { ScryptPasswordHasher } from '../infrastructure/security/scrypt-password
 import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './compose-accounts.js';
 import type { Auth } from './compose-accounts.js';
 import { composeHistory } from './compose-history.js';
+import { checkSchema } from './compose-migrations.js';
 import { composeProjects } from './compose-projects.js';
 import { scheduledTasks, startScheduledTasks } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
@@ -32,9 +31,8 @@ import { buildServer } from './web/server.js';
 
 // Architecture section 2: the only place that creates adapters and wires them together. This file
 // is at the same depth in `src/` and in the built `dist/`, so `../../` is the repository root (the
-// image's app folder) from both: migrations in `db/migrations/`, the front end in `dist/web/` (P1-12).
+// image's app folder) from both: the front end in `dist/web/` (P1-12), the templates in `templates/`.
 const repositoryRoot = new URL('../../', import.meta.url);
-const migrationsFolder = fileURLToPath(new URL('db/migrations/', repositoryRoot));
 const staticRoot = fileURLToPath(new URL('dist/web/', repositoryRoot));
 const templatesFolder = fileURLToPath(new URL('templates/', repositoryRoot));
 
@@ -51,7 +49,10 @@ export interface ApplicationOptions {
 }
 
 export interface Application {
-  /** Applies the migrations, listens and starts the scheduled jobs; returns the listening URL. */
+  /**
+   * Checks that the migrate step brought the schema up to date (DEC-140), listens and starts the
+   * scheduled jobs; returns the listening URL. The server never migrates.
+   */
   start(): Promise<string>;
   /**
    * Stops the jobs, closes the server and the database pool, all within one deadline (P1-68);
@@ -83,25 +84,6 @@ function createLoggers(options: ApplicationOptions, clock: Clock): Loggers {
   });
   const stdout = new StdoutJsonLogger({ output, clock, masker, minLevel: environment.logLevel });
   return { file, logger: new FanOutLogger([stdout, file]), masker };
-}
-
-// RF-1302: migrations run as `rosetta_migrator` on a pool of their own, closed afterwards.
-async function migrate(environment: Environment, clock: Clock, logger: Logger): Promise<void> {
-  const pool = createMigratorPool(environment, (error) => {
-    logSettled(logger, { level: 'warn', logger: 'db', message: error.message });
-  });
-  try {
-    const migrations = await readMigrationFiles(migrationsFolder);
-    const applied = await new PgMigrator({ pool, migrations, clock }).migrate();
-    await logger.log({
-      level: 'info',
-      logger: 'db',
-      message: `Applied ${String(applied.length)} migration(s).`,
-      data: { applied: applied.map((migration) => migration.name) },
-    });
-  } finally {
-    await pool.end();
-  }
 }
 
 function failureRecord(error: unknown): LogRecord {
@@ -227,7 +209,7 @@ export function composeApplication(options: ApplicationOptions): Application {
       const tasks = scheduledTasks({ file, auth, pool, clock, runs: runs.queue, logger });
       let address = '';
       await startUp({
-        migrate: () => migrate(environment, clock, logger),
+        checkSchema: () => checkSchema(pool, logger),
         reEncryptKeys: () => reEncryptProviderKeys({ pool, logger, secretBox }),
         bootstrapAdmin: () =>
           bootstrapAdministrator({ environment, pool, logger, clock, masker, hasher }),

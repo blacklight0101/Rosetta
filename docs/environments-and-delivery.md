@@ -55,7 +55,7 @@ every variable with a comment and a safe example.
 | Variable | Required | Secret | Meaning |
 |---|---|---|---|
 | `DATABASE_URL` | yes | yes | PostgreSQL URL for `rosetta_app` |
-| `DATABASE_MIGRATOR_URL` | no | yes | URL for `rosetta_migrator`; `DATABASE_URL` is used when absent |
+| `DATABASE_MIGRATOR_URL` | migrate step only | yes | URL for `rosetta_migrator`, read only by the one-off migrate step (required there, no fallback to `DATABASE_URL`); the server refuses to start when it is set (DEC-140) |
 | `ROSETTA_SECRET_KEY` | yes | yes | 32 random bytes, base64; the provider-key encryption key is derived from it with HKDF (ADR-015, DEC-112); a key of 32 equal bytes, such as the all-zero placeholder of `.env.example`, stops start-up with `RST-1008` |
 | `ROSETTA_SECRET_KEY_PREVIOUS` | no | yes | the previous key during a rotation; rows under it are re-encrypted at start-up |
 | `ROSETTA_PUBLIC_URL` | yes | no | the URL users open (`http://127.0.0.1:8080` locally); the `Origin` check compares with it |
@@ -268,8 +268,11 @@ TypeScript itself; the build uses `tsc`); lodash-style utility grab-bags; a seco
 ## 9. Database deployment
 
 PostgreSQL 17 (ADR-016). Locally the `db` service of `compose.yaml` with the `pgdata` volume; hosted a managed
-PostgreSQL. The app applies pending migrations at start-up before it listens (RF-1302); a migration that fails stops
-the start and leaves the previous schema. The roles of data-model.md section 6 are created locally by the Compose init
+PostgreSQL. A one-off migrate step of the same image (`node dist/presentation/migrate.js`, the `migrate` service of
+`compose.yaml`; a one-off job before the deploy when hosted) applies pending migrations with `DATABASE_MIGRATOR_URL`
+and ends; the app starts only after it succeeded, with `DATABASE_URL` only, and refuses a pending (RST-2405), changed
+or unknown migration (RF-1302, DEC-140). A migration that fails ends the step with an error, leaves the previous
+schema, and the app is not started. The roles of data-model.md section 6 are created locally by the Compose init
 script `db/init/roles.sh` (passwords from `.env`) and hosted in the host's console (runbook); migrations only grant
 (DEC-112).
 
@@ -280,7 +283,8 @@ script `db/init/roles.sh` (passwords from `.env`) and hosted in the host's conso
    (RF-801, RF-1301).
 3. Release pull request, merge, tag; the release job pushes the image to GHCR.
 4. Hosted: run the OWASP ZAP baseline scan against the local Compose stack (threat model section 5); back up the
-   database (host snapshot), set the new image tag on the host, wait for `/healthz`, run the smoke test (landing,
+   database (host snapshot), run the migrate step of the new image as a one-off job that holds `DATABASE_MIGRATOR_URL`
+   as its only secret (DEC-140), set the new image tag on the host, wait for `/healthz`, run the smoke test (landing,
    sign-in with the teacher account, a cheap scan, which needs no provider) (RF-1304).
 5. Regenerate the sample report into `site/` in a pull request; merge; GitHub Pages publishes it (RF-800).
 6. Record the deployed tag and date in `docs/runbooks/deploy.md` and `handoff.md`.

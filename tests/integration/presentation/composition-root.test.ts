@@ -35,8 +35,8 @@ import {
 } from '../../support/postgres.js';
 import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
-// RF-1302, RF-1303: the composed application applies the migrations, then serves /healthz with
-// the version of package.json, against the disposable PostgreSQL on a loopback port. RF-009: log
+// RF-1302, RF-1303: the composed application checks that the migrate step brought the schema up
+// to date, then serves /healthz with the version of package.json, against the disposable PostgreSQL on a loopback port. RF-009: log
 // retention at start-up. P1-12: the built front end is served from `dist/web/`.
 
 /** 32 bytes as base64, built at run time (RNF-003: no secret-like literal). */
@@ -90,8 +90,9 @@ interface Composed {
 
 const cleanups: string[] = [];
 
-async function composed(database: TestDatabase, migrate = false): Promise<Composed> {
-  const schema = await database.createSchema({ migrate });
+/** A schema the migrate step has brought up to date (DEC-140: the server never migrates). */
+async function composed(database: TestDatabase): Promise<Composed> {
+  const schema = await database.createSchema({ migrate: true });
   const dataDir = await mkdtemp(join(tmpdir(), 'rst-root-'));
   cleanups.push(dataDir);
   const environment = loadEnvironment({
@@ -115,7 +116,7 @@ afterAll(async () => {
 describe.skipIf(!hasTestDatabase)('composition root', () => {
   const database = useTestDatabase();
 
-  it('RF-1302 applies the migrations before it serves, then RF-1303 /healthz answers 200', async () => {
+  it('RF-1302 serves a schema the migrate step brought up to date, and RF-1303 /healthz answers 200', async () => {
     const { application, pool } = await composed(database);
 
     try {
@@ -153,7 +154,7 @@ describe.skipIf(!hasTestDatabase)('composition root and runs', () => {
   const database = useTestDatabase();
 
   it('RNF-002 ends a run left running by the earlier process as Interrupted before it serves', async () => {
-    const { application, pool, dataDir } = await composed(database, true);
+    const { application, pool, dataDir } = await composed(database);
     const left = await seedRunningRun(pool, dataDir);
 
     try {

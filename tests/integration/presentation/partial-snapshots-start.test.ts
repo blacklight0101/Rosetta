@@ -31,7 +31,7 @@ describe.skipIf(!hasTestDatabase)('start-up with partial snapshot folders', () =
   const database = useTestDatabase();
 
   it('RF-122 a .partial- folder left in sources/ is gone after start()', async () => {
-    const schema = await database.createSchema({ migrate: false });
+    const schema = await database.createSchema({ migrate: true });
     const dataDir = await mkdtemp(join(tmpdir(), 'rst-partial-'));
     cleanups.push(dataDir);
     const partial = join(dataDir, 'sources', '.partial-interrupted');

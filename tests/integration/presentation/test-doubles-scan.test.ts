@@ -108,7 +108,7 @@ describe.skipIf(!hasTestDatabase)('test doubles in the composed application', ()
   const data = useWritableTempRoot('rst-doubles-');
 
   it('RNF-005 a scan run fetches from the injected fake GitHub', async () => {
-    const schema = await database.createSchema({ migrate: false });
+    const schema = await database.createSchema({ migrate: true });
     const password = fixturePassword('Doubles');
     const environment = loadEnvironment({
       DATABASE_URL: schema.url,
@@ -152,7 +152,7 @@ async function scanWith(
   dataPath: string,
   variables: Readonly<Record<string, string>>,
 ): Promise<string | null> {
-  const schema = await database.createSchema({ migrate: false });
+  const schema = await database.createSchema({ migrate: true });
   const password = fixturePassword('Budget');
   const environment = loadEnvironment({
     DATABASE_URL: schema.url,

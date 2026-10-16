@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { startUp } from '../../../src/presentation/start-up.js';
 
-// RF-1302: migrations are applied before the server accepts requests; the scheduler starts after.
+// RF-1302, DEC-140: the schema check (the migrate step ran before the server) comes before the
+// server accepts requests; the scheduler starts after.
 // RF-1102: the bootstrap administrator is created after the migrations and before the server
 // listens (architecture section 4, main.ts). RF-1108, RNF-002: runs left running by the earlier
 // process end as interrupted before the server listens. RF-1104, DEC-112: provider keys sealed
 // under ROSETTA_SECRET_KEY_PREVIOUS are re-encrypted right after the migrations.
 
 type Step =
-  | 'migrate'
+  | 'checkSchema'
   | 'reEncryptKeys'
   | 'bootstrapAdmin'
   | 'discardPartialSnapshots'
@@ -27,7 +28,7 @@ function recordingSteps(failAt?: Step): {
   return {
     calls,
     steps: {
-      migrate: step('migrate'),
+      checkSchema: step('checkSchema'),
       reEncryptKeys: step('reEncryptKeys'),
       bootstrapAdmin: step('bootstrapAdmin'),
       discardPartialSnapshots: step('discardPartialSnapshots'),
@@ -41,13 +42,13 @@ function recordingSteps(failAt?: Step): {
 }
 
 describe('start-up', () => {
-  it('RF-1302 RF-1104 RF-1102 RF-1108 migrates, re-encrypts keys, creates the bootstrap admin, discards partial snapshots, recovers runs, listens, then starts the scheduler', async () => {
+  it('RF-1302 RF-1104 RF-1102 RF-1108 checks the schema, re-encrypts keys, creates the bootstrap admin, discards partial snapshots, recovers runs, listens, then starts the scheduler', async () => {
     const { calls, steps } = recordingSteps();
 
     await startUp(steps);
 
     expect(calls).toEqual([
-      'migrate',
+      'checkSchema',
       'reEncryptKeys',
       'bootstrapAdmin',
       'discardPartialSnapshots',
@@ -62,7 +63,7 @@ describe('start-up', () => {
 
     await expect(startUp(steps)).rejects.toThrow('reEncryptKeys failed');
 
-    expect(calls).toEqual(['migrate', 'reEncryptKeys']);
+    expect(calls).toEqual(['checkSchema', 'reEncryptKeys']);
   });
 });
 
@@ -72,15 +73,15 @@ describe('start-up failures', () => {
 
     await expect(startUp(steps)).rejects.toThrow('bootstrapAdmin failed');
 
-    expect(calls).toEqual(['migrate', 'reEncryptKeys', 'bootstrapAdmin']);
+    expect(calls).toEqual(['checkSchema', 'reEncryptKeys', 'bootstrapAdmin']);
   });
 
-  it('RF-1302 a failing migration stops the start-up before the server listens', async () => {
-    const { calls, steps } = recordingSteps('migrate');
+  it('RF-1302 a schema the migrate step has not brought up to date stops the start-up before the server listens', async () => {
+    const { calls, steps } = recordingSteps('checkSchema');
 
-    await expect(startUp(steps)).rejects.toThrow('migrate failed');
+    await expect(startUp(steps)).rejects.toThrow('checkSchema failed');
 
-    expect(calls).toEqual(['migrate']);
+    expect(calls).toEqual(['checkSchema']);
   });
 
   it('RF-1302 the scheduler does not start when the server cannot listen', async () => {
@@ -89,7 +90,7 @@ describe('start-up failures', () => {
     await expect(startUp(steps)).rejects.toThrow('listen failed');
 
     expect(calls).toEqual([
-      'migrate',
+      'checkSchema',
       'reEncryptKeys',
       'bootstrapAdmin',
       'discardPartialSnapshots',
@@ -104,7 +105,7 @@ describe('start-up failures', () => {
     await expect(startUp(steps)).rejects.toThrow('recoverRuns failed');
 
     expect(calls).toEqual([
-      'migrate',
+      'checkSchema',
       'reEncryptKeys',
       'bootstrapAdmin',
       'discardPartialSnapshots',
