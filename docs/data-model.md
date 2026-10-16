@@ -730,7 +730,7 @@ the `Clock` port.
 | `call_id` | `text` | the call (`<runKey>#<n>`, or `provider-test-<uuid>#1`); unique only together with `user_id` and `run_id`, because a run key is unique only within a project (`UNIQUE NULLS NOT DISTINCT (user_id, run_id, call_id)` by `0007`, which replaced the `call_id` primary key) |
 | `user_id`, `run_id` | `uuid` | the run's owner and run; `run_id` is null for a provider test, which belongs to no run (RF-407; nullable by `0006`); `user_id` is indexed (`cost_reservations_user_id_idx`, added by `0005`) for the user's sums (RF-422) |
 | `key_source` | `text` | as in `cost_ledger` |
-| `role` | `text` null | the role of the call, as in `cost_ledger`, for the role caps (RF-423); added by `0011`, null only for a row that predates it |
+| `role` | `text` null | the role of the call, as in `cost_ledger`, for the role caps (RF-423); added by `0012`, null only for a row that predates it |
 | `worst_case_micros` | `bigint` | prompt tokens plus maximum output, priced |
 | `worst_case_tokens` | `bigint` | prompt tokens plus maximum output, for the run token cap; `CHECK (worst_case_tokens >= 0)`; added by `0005` |
 | `expires_at` | `timestamptz` | call timeout plus a margin; expired rows are ignored and purged |
@@ -840,7 +840,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0011_cost_reservations_role`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`), `0100..` later
 releases.
 
 **File schema versions**:
