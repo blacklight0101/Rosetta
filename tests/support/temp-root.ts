@@ -16,7 +16,7 @@ export function useTempRoot(prefix: string): { readonly path: string } {
   });
 
   afterEach(async () => {
-    await rm(state.path, { recursive: true, force: true });
+    await rm(state.path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   return state;

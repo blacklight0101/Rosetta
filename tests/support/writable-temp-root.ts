@@ -44,7 +44,7 @@ export async function removeWritableTree(path: string): Promise<void> {
     if (isMissing(error)) return;
     throw error;
   }
-  await rm(path, { recursive: true, force: true });
+  await rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
 
 function isMissing(error: unknown): boolean {
