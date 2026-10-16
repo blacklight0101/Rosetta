@@ -70,6 +70,7 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'input_tokens int8',
     'output_tokens int8',
     'cached_input_tokens int8',
+    'failed_areas int4',
   ],
   cost_ledger: [
     'id int8',
