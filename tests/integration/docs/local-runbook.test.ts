@@ -56,3 +56,12 @@ describe('README quick start', () => {
     expect(quickStart).toContain('docs/runbooks/local.md');
   });
 });
+
+it('RNF-003 preserves the placeholder before rotating stored provider keys', async () => {
+  const text = await read('docs/runbooks/local.md');
+  const prepare = text.split('## 2. Start the stack')[0] ?? '';
+  expect(prepare).toMatch(/all-zero placeholder[\s\S]*ROSETTA_SECRET_KEY_PREVIOUS/u);
+  expect(prepare).toMatch(/ROSETTA_SECRET_KEY_PREVIOUS[\s\S]*before[\s\S]*new key/u);
+  expect(prepare).toContain('Re-encrypted');
+  expect(prepare).toMatch(/remove[\s\S]*ROSETTA_SECRET_KEY_PREVIOUS/u);
+});

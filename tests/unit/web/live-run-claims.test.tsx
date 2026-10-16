@@ -18,7 +18,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('RF-1004 DEC-103 lists the claims with their status, reason and a link to the cited lines', async () => {
+it('RF-1014 lists the claims with their status, reason and a link to the cited lines', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
 
@@ -36,7 +36,16 @@ it('RF-1004 DEC-103 lists the claims with their status, reason and a link to the
   });
   const [first = claims, second] = within(claims).getAllByTestId('claim');
   expect(first.textContent).toContain('BR-001.c1');
-  expect(first.textContent).toContain('Awaiting model verification');
+  expect(first.textContent).toContain('Citations checked');
+  expect(claims.textContent).toContain('Judgement comes in a later version');
+  expect(screen.getByRole('region', { name: 'Overview' }).textContent).toContain(
+    '1 citations checked',
+  );
+  expect(screen.getByRole('region', { name: 'Overview' }).textContent).toContain(
+    'Judgement comes in a later version',
+  );
+  expect(screen.getByTestId('stepper').textContent).toContain('citations checked');
+  expect(screen.getByTestId('stepper').textContent).toContain('Judgement comes in a later version');
   const link = within(first).getByRole('link', {
     name: 'Catalog/Edit.aspx.cs:40-80',
   });
@@ -55,7 +64,7 @@ it('RF-1004 a claim changes its status and reason when the verdict arrives', asy
   connection.event(citationChecked(3, 'reader-001', 'BR-001.c1', true));
   const claim = await screen.findByTestId('claim');
   await waitFor(() => {
-    expect(claim.textContent).toContain('Awaiting model verification');
+    expect(claim.textContent).toContain('Citations checked');
   });
 
   connection.event(
@@ -70,7 +79,7 @@ it('RF-1004 a claim changes its status and reason when the verdict arrives', asy
     expect(claim.textContent).toContain('Rejected');
   });
   expect(claim.textContent).toContain('the lines do not set the price');
-  expect(claim.textContent).not.toContain('Awaiting model verification');
+  expect(claim.textContent).not.toContain('Citations checked');
 });
 
 it('RF-507 shows the text of a claim and of a card as text, never as markup', async () => {
