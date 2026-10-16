@@ -75,7 +75,10 @@ it('RF-002 every numeric setting has a slider bounded by its DEC-117 range', asy
   await loaded();
   for (const [label, min, max, step] of bounds) {
     const slider = sliderOf(label);
-    expect([slider.min, slider.max, slider.step], label).toEqual([min, max, step]);
+    expect({ label, range: [slider.min, slider.max, slider.step] }).toEqual({
+      label,
+      range: [min, max, step],
+    });
   }
 });
 
@@ -88,6 +91,14 @@ it('RF-002 the confirm slider stops at the run cost cap', async () => {
   expect(sliderOf('Ask before a run estimated above (USD)').max).toBe('0.3');
   type('Ask before a run estimated above (USD)', '0.4');
   expect(sliderOf('Ask before a run estimated above (USD)').value).toBe('0.3');
+});
+
+it('RF-002 the confirm slider never goes above its own 100 USD range', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Run cost cap (USD)', '150');
+  expect(sliderOf('Ask before a run estimated above (USD)').max).toBe('100');
 });
 
 it('RF-002 moving a slider sets its number field and the saved value', async () => {
@@ -132,7 +143,7 @@ it('RF-002 a value away from the default shows a warning that suggests the defau
   const warning = screen.getByText(
     'Differs from the default of 4. Keep the default unless you have a reason to change it.',
   );
-  expect(described(sliderOf('Parallel readers'))).toContain(warning.textContent ?? '');
+  expect(described(sliderOf('Parallel readers'))).toContain(warning.textContent);
   await waitFor(() => {
     expect(sliderOf('Parallel readers').value).toBe('6');
   });

@@ -5,7 +5,7 @@ import { failure, json, renderPage, type Answer } from './fake-api.js';
 import { projectOf, templateSettings } from './project-fixtures.js';
 
 // RF-002, RF-010, DEC-116, DEC-117, design-system.md section 14: the settings page of one project.
-// The numbers are plain number fields (the sliders are card P2-15); the server decides what is
+// The numbers are number fields with sliders (P2-15); the server decides what is
 // allowed and each of its refusals shows next to its field with the code.
 
 const route = '/api/projects/p-1';

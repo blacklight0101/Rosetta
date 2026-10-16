@@ -1,42 +1,54 @@
 import type { JSX } from 'preact';
 import { Field } from '../components/Field.js';
-import { NumberSetting } from './SettingFields.js';
+import { LimitSetting } from './LimitSetting.js';
 import type { SectionProps } from './settings-section.js';
+import { confirmCeiling, ranges, templateDefaults } from './setting-limits.js';
 
 // RF-002, RF-422, RF-425, DEC-116, DEC-117: the run caps, the scan limits and the ignore rules.
-// The numbers are plain number fields (the sliders are card P2-15). Dollars are typed as dollars
-// and saved as micro-dollars; the server refuses a value outside its range and names the field.
+// Each number is a number field with a slider bounded by its DEC-117 range (card P2-15). Dollars
+// are typed as dollars and saved as micro-dollars; the server refuses a value outside its range and
+// names the field.
 
 function CapNumbers({ editor, errorFor }: SectionProps): JSX.Element {
   const { draft, change } = editor;
   return (
     <div class="rst-settings__grid">
-      <NumberSetting
+      <LimitSetting
         id="cap-run-cost"
         label="Run cost cap (USD)"
         path="budget.run.maxCostMicros"
         errorFor={errorFor}
+        range={ranges.runCost}
+        unit="dollars"
+        defaultValue={templateDefaults.runCost}
         value={draft.runCost}
         onInput={(runCost) => {
           change({ runCost });
         }}
       />
-      <NumberSetting
+      <LimitSetting
         id="cap-run-tokens"
         label="Run token cap"
         path="budget.run.maxTokens"
         errorFor={errorFor}
+        range={ranges.runTokens}
+        unit="count"
+        defaultValue={templateDefaults.runTokens}
         value={draft.runTokens}
         onInput={(runTokens) => {
           change({ runTokens });
         }}
       />
-      <NumberSetting
+      <LimitSetting
         id="cap-confirm"
         label="Ask before a run estimated above (USD)"
         path="budget.confirmAboveCostMicros"
         help="The start page asks you to confirm a run whose estimate is higher."
         errorFor={errorFor}
+        range={ranges.confirmAbove}
+        max={confirmCeiling(draft.runCost)}
+        unit="dollars"
+        defaultValue={templateDefaults.confirmAbove}
         value={draft.confirmAbove}
         onInput={(confirmAbove) => {
           change({ confirmAbove });
@@ -78,34 +90,43 @@ function ScanNumbers({ editor, errorFor }: SectionProps): JSX.Element {
   const { draft, change } = editor;
   return (
     <div class="rst-settings__grid">
-      <NumberSetting
+      <LimitSetting
         id="scan-max-file-bytes"
         label="Largest file to read (bytes)"
         path="scan.maxFileBytes"
         help="Larger files are listed as skipped."
         errorFor={errorFor}
+        range={ranges.maxFileBytes}
+        unit="count"
+        defaultValue={templateDefaults.maxFileBytes}
         value={draft.maxFileBytes}
         onInput={(maxFileBytes) => {
           change({ maxFileBytes });
         }}
       />
-      <NumberSetting
+      <LimitSetting
         id="scan-area-budget"
         label="Area token budget"
         path="scan.areaTokenBudget"
         help="How much code one area holds before it is split."
         errorFor={errorFor}
+        range={ranges.areaTokenBudget}
+        unit="count"
+        defaultValue={templateDefaults.areaTokenBudget}
         value={draft.areaTokenBudget}
         onInput={(areaTokenBudget) => {
           change({ areaTokenBudget });
         }}
       />
-      <NumberSetting
+      <LimitSetting
         id="scan-excerpt-lines"
         label="Excerpt length (lines)"
         path="scan.excerptMaxLines"
         help="The most lines of one file an agent may be shown at a time."
         errorFor={errorFor}
+        range={ranges.excerptMaxLines}
+        unit="count"
+        defaultValue={templateDefaults.excerptMaxLines}
         value={draft.excerptMaxLines}
         onInput={(excerptMaxLines) => {
           change({ excerptMaxLines });
@@ -118,12 +139,15 @@ function ScanNumbers({ editor, errorFor }: SectionProps): JSX.Element {
 function ParallelReaders({ editor, errorFor }: SectionProps): JSX.Element {
   return (
     <div class="rst-settings__grid">
-      <NumberSetting
+      <LimitSetting
         id="agents-parallelism"
         label="Parallel readers"
         path="agents.parallelism"
         help="Reader tasks that run at the same time."
         errorFor={errorFor}
+        range={ranges.parallelism}
+        unit="count"
+        defaultValue={templateDefaults.parallelism}
         value={editor.draft.parallelism}
         onInput={(parallelism) => {
           editor.change({ parallelism });

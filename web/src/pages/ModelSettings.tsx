@@ -1,10 +1,12 @@
 import type { JSX } from 'preact';
 import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
-import { NumberSetting, ProviderSetting, TextSetting } from './SettingFields.js';
+import { LimitSetting } from './LimitSetting.js';
+import { ProviderSetting, TextSetting } from './SettingFields.js';
 import type { SectionProps } from './settings-section.js';
+import { ranges, templateDefaults } from './setting-limits.js';
 
-// RF-002, RF-405, DEC-116, design-system.md section 14: the provider, model and output limit of
-// each agent role; only the reader has a turn limit.
+// RF-002, RF-405, DEC-116, DEC-117, design-system.md section 14: the provider, model and output
+// limit of each agent role; only the reader has a turn limit. The limits are sliders (P2-15).
 
 const roleText: Readonly<Record<RoleName, { readonly title: string; readonly purpose: string }>> = {
   reader: { title: 'Reader', purpose: 'Reads each area of the code and writes the cards.' },
@@ -15,15 +17,40 @@ const roleText: Readonly<Record<RoleName, { readonly title: string; readonly pur
 
 function ReaderTurns({ editor, errorFor }: SectionProps): JSX.Element {
   return (
-    <NumberSetting
+    <LimitSetting
       id="role-reader-turns"
       label="Reader max turns"
       path="roles.reader.maxTurns"
       help="Model calls one reader task may make before it stops."
       errorFor={errorFor}
+      range={ranges.maxTurns}
+      unit="count"
+      defaultValue={templateDefaults.maxTurns}
       value={editor.draft.roles.reader.maxTurns}
       onInput={(maxTurns) => {
         editor.changeRole('reader', { maxTurns });
+      }}
+    />
+  );
+}
+
+function OutputTokens({
+  editor,
+  errorFor,
+  role,
+}: SectionProps & { readonly role: RoleName }): JSX.Element {
+  return (
+    <LimitSetting
+      id={`role-${role}-output`}
+      label={`${roleText[role].title} max output tokens`}
+      path={`roles.${role}.maxOutputTokens`}
+      errorFor={errorFor}
+      range={ranges.maxOutputTokens}
+      unit="count"
+      defaultValue={templateDefaults.maxOutputTokens[role]}
+      value={editor.draft.roles[role].maxOutputTokens}
+      onInput={(maxOutputTokens) => {
+        editor.changeRole(role, { maxOutputTokens });
       }}
     />
   );
@@ -62,16 +89,7 @@ function RoleFields(props: SectionProps & { readonly role: RoleName }): JSX.Elem
             editor.changeRole(role, { model });
           }}
         />
-        <NumberSetting
-          id={`role-${role}-output`}
-          label={`${title} max output tokens`}
-          path={`${path}.maxOutputTokens`}
-          errorFor={errorFor}
-          value={draft.maxOutputTokens}
-          onInput={(maxOutputTokens) => {
-            editor.changeRole(role, { maxOutputTokens });
-          }}
-        />
+        <OutputTokens {...props} role={role} />
         {role === 'reader' ? <ReaderTurns {...props} /> : null}
       </div>
     </div>
