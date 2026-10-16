@@ -48,7 +48,7 @@ export interface UnderstandSessionParts extends ReaderTaskContext {
   readonly tasks: readonly ReaderTask[];
   readonly source: CardSource;
   /** RF-250: the role that merges the duplicate cards of several areas, and its prompt. */
-  readonly summariser: RoleProvider;
+  readonly summariser: RoleProvider | undefined;
   readonly mergePrompt: PromptFile;
 }
 
@@ -149,7 +149,9 @@ export class UnderstandSession {
   /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */
   private async consolidate(): Promise<void> {
     const { deps, execution, source } = this.parts;
-    const merged = await consolidateCards(this.consolidation(), this.latest.cards);
+    const consolidation = this.consolidation();
+    if (consolidation === undefined) return;
+    const merged = await consolidateCards(consolidation, this.latest.cards);
     if (merged.merges.length === 0) return;
     const kept = new Set(merged.cards.map((card) => card.id));
     const mergedAway = this.latest.cards.filter((card) => !kept.has(card.id));
@@ -159,8 +161,9 @@ export class UnderstandSession {
     await deps.cards.writeCards(scopeOf(execution.run), set);
   }
 
-  private consolidation(): ConsolidationParts {
+  private consolidation(): ConsolidationParts | undefined {
     const { summariser, mergePrompt, logger, ids, execution, nextCallId, traceId } = this.parts;
+    if (summariser === undefined) return undefined;
     const { name, version, sha256 } = mergePrompt;
     const record = (response: LlmResponse): Promise<void> =>
       this.parts.updates.update((manifest) => {

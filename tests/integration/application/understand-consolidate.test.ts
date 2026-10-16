@@ -10,6 +10,7 @@ import { useTempRoot } from '../../support/temp-root.js';
 import { readJson, UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
 import {
   createUnderstandHarness,
+  understandSettings,
   type UnderstandHarness,
   type UnderstandHarnessOptions,
 } from '../../support/understand-run-harness.js';
@@ -242,5 +243,23 @@ describe('an understand run: when the summariser is not asked', UNDERSTAND_TIMEO
     expect(run.endState).toBe('Interrupted');
     const roles = h.providers.requests().map((request) => request.context.role);
     expect(roles).not.toContain('summariser');
+  });
+});
+
+describe('an understand run: a summariser that cannot be served', UNDERSTAND_TIMEOUT, () => {
+  const temp = useTempRoot('rosetta-consolidate-');
+
+  it('RF-250 a summariser with no key does not stop the run, the cards are not merged', async () => {
+    const settings = understandSettings((base) => ({
+      ...base,
+      roles: { ...base.roles, summariser: { ...base.roles.summariser, provider: 'openai' } },
+    }));
+
+    const { h, run, folder } = await made(temp.path, { settings });
+
+    expect(run.endState).toBe('Completed');
+    expect(await cardFiles(folder, 'BR')).toEqual(['BR-001.md', 'BR-002.md']);
+    const roles = h.providers.requests().map((request) => request.context.role);
+    expect(roles).toEqual(['reader', 'reader', 'reader', 'reader', 'reader']);
   });
 });

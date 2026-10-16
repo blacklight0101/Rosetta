@@ -522,7 +522,7 @@ sequenceDiagram
   other ids stay as they are, so ids have gaps and do not change between reruns of the same answers. A call that fails,
   an answer that is not a list, an id the summariser was not shown, ids of two types, cards of one area or an `OQ`
   card leave the cards as they were (a warning in the log); a stopped run asks nothing. The set is written again when
-  any merge was made. The merge prompt and the summariser's model version go to the manifest after the first answer.- **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
+  any merge was made. The merge prompt and the summariser's model version go to the manifest after the first answer. The summariser is wanted, not required: when only its provider cannot be served (no key, unpriced model, no consent) the run goes on with the reader alone and merges nothing (`buildUnderstandRoles`).- **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.
 
 ## 9. Provider integration
