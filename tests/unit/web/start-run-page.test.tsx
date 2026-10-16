@@ -158,6 +158,8 @@ it('RF-143 names the cloud provider and keeps Start off until the consent is giv
   fireEvent.click(input(consentLabel));
   expect(start().disabled).toBe(false);
   fireEvent.click(start());
+  // RF-425: the likely cost ($0.39) is above the project's $0.25 threshold, so the run is confirmed.
+  fireEvent.click(await screen.findByRole('button', { name: 'Confirm and start' }));
 
   await screen.findByTestId('run-notice');
   expect(calls.at(-1)?.body).toEqual({

@@ -1,6 +1,6 @@
 import type { ComponentChildren, JSX } from 'preact';
 import { useId, useLayoutEffect, useRef } from 'preact/hooks';
-import { Button } from './Button.js';
+import { Button, type ButtonVariant } from './Button.js';
 
 // RF-1012, design-system.md section 7 (destructive confirmation): a modal dialog that names its
 // target and what the action frees and keeps, closes with Esc or Cancel, returns the focus to the
@@ -14,6 +14,8 @@ export interface ConfirmDialogProps {
   readonly children: ComponentChildren;
   /** The verb of the danger button, for example `Delete run`. */
   readonly confirmLabel: string;
+  /** The look of the confirm button; `danger` unless the action destroys nothing. */
+  readonly confirmVariant?: ButtonVariant;
   /** The deletion is under way: the danger button cannot be pressed again. */
   readonly busy?: boolean;
   readonly onConfirm: () => void;
@@ -71,7 +73,11 @@ export function ConfirmDialog(props: ConfirmDialogProps): JSX.Element {
       </div>
       <div class="rst-p140-dialog__actions">
         <Button onClick={props.onCancel}>Cancel</Button>
-        <Button variant="danger" busy={props.busy === true} onClick={props.onConfirm}>
+        <Button
+          variant={props.confirmVariant ?? 'danger'}
+          busy={props.busy === true}
+          onClick={props.onConfirm}
+        >
           {props.confirmLabel}
         </Button>
       </div>

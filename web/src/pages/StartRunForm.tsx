@@ -7,6 +7,7 @@ import { CloudNotice } from './CloudNotice.js';
 import { EstimateSection } from './EstimateSection.js';
 import { RepositorySection } from './RepositorySection.js';
 import { RunNotice } from './RunNotice.js';
+import { StartConfirmDialog } from './StartConfirmDialog.js';
 import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
 import { SummaryBar } from './SummaryBar.js';
@@ -54,6 +55,23 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
   );
 }
 
+/** RF-425: the question before an understand run whose likely cost is above the threshold. */
+function Confirmation({ form }: { readonly form: StartForm }): JSX.Element | null {
+  const { actions, choice } = form;
+  const { estimate } = choice;
+  if (!actions.confirmation.asking || estimate.status !== 'ready') return null;
+  return (
+    <StartConfirmDialog
+      estimate={estimate.estimate}
+      thresholdMicros={form.thresholdMicros}
+      capMicros={form.capMicros}
+      busy={actions.busy}
+      onConfirm={actions.confirmation.confirm}
+      onCancel={actions.confirmation.cancel}
+    />
+  );
+}
+
 // RF-1001
 export function StartRunForm({ project }: { readonly project: Project }): JSX.Element {
   const form = useStartForm(project);
@@ -92,6 +110,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
         <RunNotice notice={actions.notice} busy={actions.busy} onCancel={actions.cancel} />
       )}
       <SummaryBar form={form} />
+      <Confirmation form={form} />
     </div>
   );
 }
