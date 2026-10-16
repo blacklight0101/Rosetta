@@ -1,5 +1,5 @@
 import { Pool, type PoolClient } from 'pg';
-import type { Environment } from '../config/environment.js';
+import type { Environment, MigrationEnvironment } from '../config/environment.js';
 
 // ADR-016: the only place that creates `pg` pools. Every query has a statement timeout, every
 // connection attempt a connection timeout, and an idle client that fails is reported instead of
@@ -41,12 +41,12 @@ export function createAppPool(
 }
 
 /**
- * The migration runner's pool, as `rosetta_migrator`: `DATABASE_MIGRATOR_URL`, or `DATABASE_URL`
- * when it is not set (resolved by the environment). Migrations may run longer than a request.
+ * The pool of the one-off migrate step, as `rosetta_migrator` (`DATABASE_MIGRATOR_URL`, DEC-140);
+ * the server never creates one. Migrations may run longer than a request.
  */
 // RF-1302
 export function createMigratorPool(
-  environment: Pick<Environment, 'databaseMigratorUrl'>,
+  environment: Pick<MigrationEnvironment, 'databaseMigratorUrl'>,
   onIdleError: (error: Error) => void,
 ): DatabasePool {
   return createPool({

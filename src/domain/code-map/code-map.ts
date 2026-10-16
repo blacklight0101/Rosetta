@@ -53,8 +53,12 @@ interface LanguagePackUse {
   readonly version: string;
 }
 
+/** RF-113: increase when scanner changes make older maps worth rebuilding. */
+export const CURRENT_SCANNER_VERSION = 1;
+
 export interface CodeMap {
   readonly schemaVersion: 1;
+  readonly scannerVersion?: number;
   readonly source: CodeMapSource;
   readonly files: readonly FileEntry[];
   readonly areas: readonly Area[];
@@ -148,6 +152,7 @@ export function createCodeMap(input: CodeMapInput): Result<CodeMap, CodeMapProbl
   if (referencesUnknownFile(input, new Set(paths))) return err('reference-to-unknown-file');
   return ok({
     schemaVersion: 1,
+    ...(input.scannerVersion === undefined ? {} : { scannerVersion: input.scannerVersion }),
     source: { ...input.source },
     files: [...input.files].sort((a, b) => byCodeUnit(a.path, b.path)),
     areas: [...input.areas].sort((a, b) => byCodeUnit(a.name, b.name)),

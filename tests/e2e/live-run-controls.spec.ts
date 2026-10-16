@@ -4,6 +4,7 @@ import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
 import {
   agentPanel,
+  openRunTab,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
@@ -59,8 +60,8 @@ test('RF-1002 the stepper of a scan run goes from the snapshot to the scan with 
 
   await startAndOpenLiveRun(page);
 
-  await expect(pipeline(page)).toBeVisible();
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await expect(pipeline(page)).toBeVisible();
   await expect(step(page, 'Scan')).toContainText(/\d+ files, \d+ areas/u);
   await expect(step(page, 'Snapshot')).toContainText('done');
   await expect(step(page, 'Scan')).toContainText('done');
@@ -103,31 +104,32 @@ test('RF-1002 RF-504 the Report step of an ended run waits until the report is b
   await expectNoSeriousViolations(page);
 });
 
-test('RF-1002 RF-1004 the stepper of an understand run moves from Understand to Verify with the agents done and the claims checked', async ({
+test('RF-1002 RF-1004 the journey of an understand run reads while it runs and the stepper ends with the agents done and the claims checked', async ({
   page,
 }) => {
   await startUnderstand(page, ['(root)', 'Catalog', 'Database', 'Services']);
 
-  await expect(pipeline(page).getByRole('listitem')).toHaveText([
-    /^Snapshot/u,
-    /^Scan/u,
-    /^Understand/u,
-    /^Verify/u,
-    /^Report/u,
+  const journey = page.getByRole('list', { name: 'Run progress' });
+  await expect(journey.getByRole('listitem')).toHaveText([
+    /Map the code/u,
+    /Read/u,
+    /Check citations/u,
+    /Explain/u,
+    /Your questions/u,
   ]);
-  await expect(step(page, 'Understand')).toHaveAttribute('aria-current', 'step', {
-    timeout: 30_000,
-  });
-  await expect(step(page, 'Snapshot')).toContainText('done');
-  await expect(step(page, 'Scan')).toContainText('done');
-  await expect(step(page, 'Understand')).toContainText(/\d of 4 agents done/u);
+  const read = journey.getByRole('listitem').filter({ hasText: /Read\d/u });
+  await expect(read).toHaveAttribute('aria-current', 'step', { timeout: 30_000 });
+  await expect(journey.getByRole('listitem').first()).toContainText('done');
+  await expect(read).toContainText(/\d of 4 areas/u);
   await expectNoSeriousViolations(page);
   await transitionsDone(page);
 
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
   await expect(step(page, 'Understand')).toContainText('4 of 4 agents done');
   await expect(step(page, 'Understand')).toContainText('done');
-  await expect(step(page, 'Verify')).toContainText('7 of 7 claims checked');
+  await expect(step(page, 'Verify')).toContainText(
+    '7 of 7 citations checked. Judgement comes in a later version.',
+  );
   await expect(step(page, 'Verify')).toContainText('done');
   await expect(step(page, 'Report')).toContainText('waiting');
   await expect(pipeline(page).locator('[aria-current="step"]')).toHaveCount(0);
@@ -139,6 +141,7 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   page,
 }) => {
   await startUnderstand(page, ['Catalog', 'Controllers']);
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toBeVisible();
   const overview = page.getByRole('region', { name: 'Overview' });
   const log = page.getByRole('log', { name: 'Event log' });
@@ -152,11 +155,13 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   const held = {
     catalog: (await agentPanel(page, 'Catalog').textContent()) ?? '',
     done: (await valueOf(overview, 'Done').textContent()) ?? '',
-    lines: await log.getByRole('listitem').count(),
+    lines: 0,
   };
   await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(2);
   expect(await agentPanel(page, 'Catalog').textContent()).toBe(held.catalog);
   await expect(valueOf(overview, 'Done')).toHaveText(held.done);
+  await openRunTab(page, 'Activity');
+  held.lines = await log.getByRole('listitem').count();
   await expect(log.getByRole('listitem')).toHaveCount(held.lines);
   await expect(page.getByRole('button', { name: 'Stop run' })).toBeEnabled();
   await transitionsDone(page);
@@ -168,8 +173,11 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   await expect(runStatus(page)).toContainText('Updates resumed');
   expect(await boxOf(page.getByRole('button', { name: 'Pause updates' }))).toEqual(pauseBox);
   await expect(page.getByRole('button', { name: 'Pause updates' })).toBeVisible();
+  await expect
+    .poll(() => log.getByRole('listitem').count(), { timeout: 30_000 })
+    .toBeGreaterThan(held.lines);
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
-  expect(await log.getByRole('listitem').count()).toBeGreaterThan(held.lines);
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
@@ -180,6 +188,7 @@ test('RF-1002 pressing Pause updates and Resume moves neither the button nor the
   page,
 }) => {
   await startUnderstand(page, ['Controllers']);
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
   // The estimate and the role rows of the live meter above the panel arrive on their own; wait for them so the panel is at rest.
   const meter = page.getByRole('region', { name: 'Run meter' });
@@ -208,6 +217,7 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
   page,
 }) => {
   await startUnderstand(page, ['Catalog', 'Controllers']);
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toBeVisible();
   await page.getByRole('button', { name: 'Pause updates' }).click();
   const held = (await agentPanel(page, 'Controllers').textContent()) ?? '';
@@ -232,6 +242,7 @@ test(
     test.setTimeout(90_000);
     await openScannedStartPage(page);
     await startUnderstand(page, ['Catalog', 'Controllers']);
+    await openRunTab(page, 'All agents');
 
     const group = page.getByTestId('topbar-run-meter');
     await expect(group).toBeVisible({ timeout: 30_000 });

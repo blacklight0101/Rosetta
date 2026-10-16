@@ -6,7 +6,7 @@ import type { RunState } from '../lib/live-run/run-state.js';
 // running, done and failed, the cards proposed and the claims by status.
 
 const claimWords: readonly (readonly [string, string])[] = [
-  ['AwaitingModel', 'awaiting model verification'],
+  ['CitationsChecked', 'citations checked'],
   ['CitationInvalid', 'citation invalid'],
   ['Supported', 'supported'],
   ['Rejected', 'rejected'],
@@ -57,6 +57,7 @@ export function RunOverview({ state }: { readonly state: RunState }): JSX.Elemen
         <h2 class="rst-live-tile__title">Claims</h2>
         <p class="rst-live-tile__figure">{state.claims.length}</p>
         <p class="rst-live-tile__note">{claimLine(state)}</p>
+        <p class="rst-live-tile__note">Judgement comes in a later version.</p>
       </div>
     </section>
   );

@@ -29,11 +29,11 @@ async function hrefOf(page: Page, name: string): Promise<string> {
 
 /** Watches the understand run of the Catalog area on its live page until it has ended complete. */
 async function watchCatalogRun(page: Page): Promise<void> {
-  await expect(agentPanel(page, 'Catalog')).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Overview' })).toContainText('Running');
-  await expectNoSeriousViolations(page);
-  await transitionsDone(page);
+  // The run is short: the running page is checked by live-run-running.spec.ts, so this journey
+  // waits for the end and reads the page of the ended run.
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
   const overview = page.getByRole('region', { name: 'Overview' });
   await expect(valueOf(overview, 'Done')).toHaveText('1');
   await expect(valueOf(overview, 'Failed')).toHaveText('0');

@@ -12,6 +12,8 @@ export interface StartGateInput {
   /** Names of the providers whose notice must be confirmed; empty when none is needed. */
   readonly consentNeeded: string;
   readonly consentGiven: boolean;
+  /** RF-113: the code map is out of date and its use has not been confirmed. */
+  readonly oldMapUnconfirmed?: boolean;
 }
 
 export interface StartGate {
@@ -33,6 +35,9 @@ export function startGate(input: StartGateInput): StartGate {
   if (input.stage === 'scan') return plain;
   const reason = understandReason(input);
   if (reason !== undefined) return { label: plain.label, reason };
+  if (input.oldMapUnconfirmed === true) {
+    return { label: plain.label, reason: 'Confirm the use of the old code map, or scan again.' };
+  }
   if (input.consentNeeded === '' || input.consentGiven) return plain;
   return {
     label: `Start run (confirm the ${input.consentNeeded} notice)`,

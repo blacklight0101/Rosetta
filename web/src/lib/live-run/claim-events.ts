@@ -2,8 +2,8 @@ import type { RunEvent } from '../../api/run-events.js';
 import { cardData, citationCheckedData, claimJudgedData } from './event-data.js';
 import type { ClaimRow, ClaimShown, RunState } from './run-state.js';
 
-// RF-1004, DEC-103: what the events of a claim change in the claims list. A claim is `Proposed`
-// when its card appears, `AwaitingModel` when it passed the citation check (the model step of the
+// RF-1004, RF-1014, DEC-136: what the events of a claim change in the claims list. A claim is `Proposed`
+// when its card appears, `CitationsChecked` when it passed the citation check (the model step of the
 // verifier is not built yet, so nothing moves it further in this release), `CitationInvalid` when
 // the check failed, and `Supported`, `Rejected` or `Unverified` when a verdict arrives. Nothing is
 // ever removed from the list.
@@ -56,7 +56,7 @@ export function onClaimsProposed(state: RunState, event: RunEvent): RunState {
   return next;
 }
 
-// RF-1004, DEC-103
+// RF-1004, RF-1014, DEC-136
 export function onCitationChecked(state: RunState, event: RunEvent): RunState {
   const parsed = citationCheckedData.safeParse(event.data);
   if (!parsed.success) return state;
@@ -65,7 +65,7 @@ export function onCitationChecked(state: RunState, event: RunEvent): RunState {
     ...claim,
     text: text ?? claim.text,
     citations: citations ?? claim.citations,
-    status: ok ? 'AwaitingModel' : 'CitationInvalid',
+    status: ok ? 'CitationsChecked' : 'CitationInvalid',
     reason: ok ? undefined : reason,
   }));
 }

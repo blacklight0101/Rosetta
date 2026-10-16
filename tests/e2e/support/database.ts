@@ -2,7 +2,7 @@ import { createPool, type DatabasePool } from '../../../src/infrastructure/db/po
 
 // ADR-016, data-model.md section 8: the disposable database of an end-to-end run. A schema of its
 // own is made in the PostgreSQL at ROSETTA_TEST_DATABASE_URL (dropped first when a killed earlier
-// run left it), and the server migrates it at start-up. The role the release migrations grant to is
+// run left it); serve.ts then runs the migrate step on it, because the server never migrates (DEC-140). The role the release migrations grant to is
 // created here because migrations never create roles.
 
 const ENSURE_APP_ROLE = `

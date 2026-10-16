@@ -61,6 +61,12 @@ interface EstimatedArea {
 }
 
 export interface RunEstimate {
+  /** RF-113: freshness of the completed scan used for this estimate. */
+  readonly codeMap?: {
+    readonly scannerVersion: number | null;
+    readonly currentScannerVersion: number;
+    readonly outdated: boolean;
+  };
   readonly priceTableVersion: string;
   readonly currency: 'USD';
   /** The areas the estimate covers, in the code map's order. */

@@ -58,7 +58,7 @@ describe.skipIf(!hasTestDatabase)('bootstrap administrator at start-up', () => {
   const database = useTestDatabase();
 
   it('RF-1102 creates the administrator once, and a second start creates no second account', async () => {
-    const schema = await database.createSchema({ migrate: false });
+    const schema = await database.createSchema({ migrate: true });
     const password = fixturePassword('Start');
 
     const first = await startOnce(schema.url, password);
@@ -75,7 +75,7 @@ describe.skipIf(!hasTestDatabase)('bootstrap administrator at start-up', () => {
   });
 
   it('RF-1102 never writes the user name or the password to the log', async () => {
-    const schema = await database.createSchema({ migrate: false });
+    const schema = await database.createSchema({ migrate: true });
     const password = fixturePassword('Log');
 
     const started = await startOnce(schema.url, password);
@@ -88,7 +88,7 @@ describe.skipIf(!hasTestDatabase)('bootstrap administrator at start-up', () => {
   });
 
   it('RF-1103 a weak bootstrap password stops the start-up and creates nothing', async () => {
-    const schema = await database.createSchema({ migrate: false });
+    const schema = await database.createSchema({ migrate: true });
     const password = ['Ab1', 'Cd2'].join('-');
 
     const started = await startOnce(schema.url, password);

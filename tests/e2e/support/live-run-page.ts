@@ -101,3 +101,16 @@ export function valueOf(scope: Locator, label: string): Locator {
 export function runStatus(page: Page): Locator {
   return page.getByTestId('run-status');
 }
+
+/**
+ * Opens a tab of the run details of the page while the run works (P1-169): the cards so far, all
+ * agents or the activity. The page of an ended run has no tabs.
+ */
+export async function openRunTab(
+  page: Page,
+  name: 'Cards so far' | 'All agents' | 'Activity',
+): Promise<void> {
+  const tab = page.getByRole('tab', { name: new RegExp(`^${name}`, 'u') });
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}

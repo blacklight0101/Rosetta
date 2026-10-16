@@ -10,6 +10,7 @@ import {
   startedData,
   turn,
 } from './live-run-fixtures.js';
+import { openTabWhenReady } from './live-run-running-helpers.js';
 import { findAgentPanel, renderLive, runPath, valueOf } from './live-run-helpers.js';
 
 // RF-1002..RF-1006, RF-1108, RF-008, RF-507, DEC-103 (P1-35): a live run page that loses its connection or its run. Whatever the page shows comes from
@@ -24,6 +25,7 @@ const retry = 'retry: 5\n\n';
 it('RF-1006 reconnects after a break with the last event id and shows each event once', async () => {
   const { stream } = renderLive();
   const first = await stream.connection(0);
+  await openTabWhenReady('All agents');
   first.raw(retry);
   first.event(ev(1, 'run.started', startedData));
   first.event(planned(2, 'reader-001', 'Catalog'));

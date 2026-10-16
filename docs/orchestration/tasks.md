@@ -1954,7 +1954,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-49
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `docs/verification/m1-matrix.md` F-01 and PC-01; `src/presentation/web/access-hooks.ts`; `src/presentation/web/server.ts`; `src/presentation/web/session-routes.ts`; `src/presentation/web/route-access.ts`; `src/application/use-cases/record-refused-request.ts`; `docs/security/threat-model.md`; architecture section 10.
 - **Do**: owner question first (handoff agenda 28; DEC-124 keeps every refusal row, so this changes it). Default: one limit per client address covers every writer of a `request.refused` row (the `Origin` refusal, the route rate limits' `onExceeded`, the in-flight bounds of sign-in and password change, and any other): up to 30 rows a minute per address, then one `request.refused` row with reason `rate-limit` and a count for the rest of that minute, while the requests are still refused with their usual status; the stored path (audit `target_id`, the security event's message and data) is cut to 512 characters with a marker that it was cut. Record the DEC. Failing tests first; update architecture section 10 and the threat model.
 - **Delivers**: the limit, the cut, the tests and the document edits.
@@ -1966,7 +1966,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-49
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/verification/m1-matrix.md` F-02, F-19 and PC-02; `compose.yaml`; `src/infrastructure/config/environment.ts`; the migration runner; ADR-014; ADR-016; `docs/runbooks/local.md`.
 - **Do**: run the migrations with `DATABASE_MIGRATOR_URL` in a one-off step (a `migrate` service or command in `compose.yaml`, the same in the P1-55 host procedure) that ends before the server starts, and start the server with `DATABASE_URL` only; the server refuses to start when given a migrator URL it does not need, and warns when `DATABASE_URL` connects as the schema owner. If this alters ADR-014 or ADR-016, open the amendment first as its own PR for the owner to merge (handoff agenda 29). Add the residual risk to the threat model until it lands.
 - **Delivers**: the Compose and start-up change, the tests, the runbook and threat-model edits.
@@ -2062,7 +2062,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-108, P1-147
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the card parser and citation schema; `web/src/lib/live-run/claim-events.ts`; `web/src/pages/ClaimsList.tsx`; the start page; `docs/runbooks/local.md` section 1; the run page data loading.
 - **Do**: (1) accept `path:N` as `path:N-N` (RF-207); a recorded gemma4 answer with one-line citations must produce cards. (2) Honest verification labels (RF-1014): "citations checked" with the note, in the claims list, stepper and run summary. (3) Warn on a code map from an older scanner (RF-113): the code map records the scanner version; the start page offers a new scan first. (4) Runbook: an install that used the all-zero placeholder key moves it to `ROSETTA_SECRET_KEY_PREVIOUS` before setting a new key, so stored provider keys are re-encrypted, then removes it after the start-up log reports the re-encryption. (5) The live run page fetches `GET /api/runs/:id` several times a second during a run: refetch at most once per second, driven by the event stream.
 - **Review probes**: citations `a.cs:30`, `a.cs:30-30`, `a.cs:0`, `a.cs:31-30`, `a.cs:` and a Windows path; a code map without a version; a run with 500 events in 10 s (count the run reads).
@@ -2130,7 +2130,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: the card parser and repair path (RF-202); the agent loop; the run end state; the `invalid-output` folders of the owner's runs `20261014-145748-understand`, `20261014-153115-understand` and `20261014-154704-understand` (11 of 41, 11 of 42 and 6 of 16 tasks failed; in the third run, with library areas left out, all 6 were one-line citations and they included Models, Services, ViewModel and Setup).
 - **Do**: as RF-208: take the JSON out of prose or a fence; keep valid claims and cards, drop and list invalid ones; a second, targeted repair; ask a cut-off answer to continue; retry a task with no usable cards once with a fresh conversation (split an area too large for the context); report failed areas in the coverage and the run summary with "Retry failed areas"; a run with failed areas never shows as a plain success.
 - **Review probes**: the recorded failing answers of both runs (each must yield its valid cards); an answer that is all prose; JSON with a trailing comma; an answer cut mid-string; a card whose every claim is invalid; a model that fails the same way three times (the run still ends, with the area marked failed and no endless loop).
@@ -2144,7 +2144,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: the start page and its area list; P1-147 (third-party default); `docs/design/proposals/run-page-v2.html` (look and tokens); RF-1018.
 - **Do**: as RF-1018: only own code listed and selected; third-party and generated code folded into one collapsed line after the list ("12 library areas left out ... Show") that expands to the areas and their reason; Select all, Select none and Own code only buttons; a filter; the list scrolls inside its panel; a summary bar with areas, files, estimate and Start stays visible; a one-time confirmation when third-party areas are chosen.
 - **Review probes**: 1 area; 120 areas; every area third-party; a 60-character area name; keyboard only; 360 px wide; Start pressed with nothing selected (disabled, with the reason).

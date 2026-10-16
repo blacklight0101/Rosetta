@@ -1,0 +1,378 @@
+/* The rest of the run page while it runs (P1-169, RF-1015, DEC-137, design-system.md section 14,
+   proposal docs/design/proposals/run-page-v2.html): the run journey, the grid of the code map and its
+   rail, the spend, "working now", the tabs and the card rows. Owns the rst-running, rst-journey,
+   rst-spend, rst-now, rst-tabs and rst-cardrow prefixes; colours, spacing and type come from the
+   tokens. The code map has its own sheet (live-run-map.css). */
+
+.rst-running__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-1) var(--rst-sp-4);
+  margin: 0;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-running__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--rst-sp-5);
+  align-items: start;
+}
+
+.rst-running__grid > * {
+  min-inline-size: 0;
+}
+
+.rst-running__rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-5);
+}
+
+.rst-running__details {
+  padding: 0;
+}
+
+/* Run journey */
+
+.rst-journey {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-lg);
+  background: var(--rst-surface);
+  list-style: none;
+}
+
+.rst-journey__step {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+  padding: var(--rst-sp-3) var(--rst-sp-4);
+}
+
+.rst-journey__step + .rst-journey__step {
+  border-inline-start: 1px solid var(--rst-rule);
+}
+
+.rst-journey__n {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border: 1.5px solid var(--rst-rule-strong);
+  border-radius: 50%;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-journey__text {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.rst-journey__title {
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-journey__detail {
+  overflow: hidden;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rst-journey__step--done .rst-journey__n {
+  border-color: var(--rst-ok-solid);
+  background: var(--rst-ok-solid);
+  color: var(--rst-ok-solid-ink);
+}
+
+.rst-journey__step--current {
+  background: linear-gradient(90deg, var(--rst-brand-tint), transparent);
+}
+
+.rst-journey__step--current .rst-journey__n {
+  border-color: var(--rst-brand);
+  color: var(--rst-brand);
+}
+
+.rst-journey__step--later .rst-journey__title {
+  color: var(--rst-ink-muted);
+}
+
+/* Spend for this run */
+
+.rst-spend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+}
+
+.rst-spend__head,
+.rst-now__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rst-sp-2);
+}
+
+.rst-spend__heading,
+.rst-now__heading {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-spend__cap,
+.rst-now__count,
+.rst-spend__tokens {
+  margin: 0;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-spend__cost {
+  margin: 0;
+  font-size: var(--rst-fs-2xl);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-spend__more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rst-sp-2);
+  padding-block-start: var(--rst-sp-2);
+  border-block-start: 1px solid var(--rst-rule);
+  font-size: var(--rst-fs-sm);
+}
+
+/* Working now */
+
+.rst-now {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+}
+
+.rst-now__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-now__item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--rst-sp-3);
+  align-items: start;
+}
+
+.rst-now__avatar {
+  display: grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-role-reader);
+  color: var(--rst-surface);
+}
+
+.rst-now__avatar--verifier {
+  background: var(--rst-role-verifier);
+}
+
+.rst-now__avatar--planner {
+  background: var(--rst-role-planner);
+}
+
+.rst-now__avatar--summariser {
+  background: var(--rst-role-summariser);
+}
+
+.rst-now__title {
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+  overflow-wrap: anywhere;
+}
+
+.rst-now__text {
+  margin: 2px 0 0;
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Tabs */
+
+.rst-tabs__list {
+  display: flex;
+  gap: var(--rst-sp-1);
+  padding: 0 var(--rst-sp-3);
+  overflow-x: auto;
+  border-block-end: 1px solid var(--rst-rule);
+}
+
+.rst-tabs__tab {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--rst-sp-2);
+  padding: var(--rst-sp-3);
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: transparent;
+  color: var(--rst-ink-muted);
+  font: inherit;
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rst-tabs__tab[aria-selected='true'] {
+  border-block-end-color: var(--rst-brand);
+  color: var(--rst-ink);
+}
+
+.rst-tabs__count {
+  padding: 0 var(--rst-sp-2);
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-surface-2);
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-tabs__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-4);
+  padding: var(--rst-sp-4);
+}
+
+.rst-tabs__panel[hidden] {
+  display: none;
+}
+
+.rst-agents-focus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rst-sp-2);
+}
+
+.rst-agents-focus__note {
+  margin: 0;
+  color: var(--rst-ink-soft);
+}
+
+/* Cards so far */
+
+.rst-cardrows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-cardrow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--rst-sp-3);
+  align-items: center;
+  padding: var(--rst-sp-3) 0;
+  border-block-end: 1px solid var(--rst-rule);
+}
+
+.rst-cardrow__type {
+  padding: 2px var(--rst-sp-2);
+  border-radius: var(--rst-radius-sm);
+  background: var(--rst-surface-2);
+  color: var(--rst-ink-soft);
+  font-family: var(--rst-mono);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-cardrow__title {
+  overflow-wrap: anywhere;
+}
+
+.rst-cardrow__id {
+  color: var(--rst-ink-muted);
+}
+
+.rst-cardrow__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-1);
+  padding: 3px var(--rst-sp-2);
+  border-radius: var(--rst-radius-pill);
+  background: var(--rst-info-bg);
+  color: var(--rst-info-ink);
+  font-size: var(--rst-fs-xs);
+  white-space: nowrap;
+}
+
+.rst-cardrow__chip--invalid {
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+}
+
+.rst-cardrow__chip--waiting {
+  background: var(--rst-neutral-bg);
+  color: var(--rst-neutral-ink);
+}
+
+@media (max-width: 980px) {
+  .rst-running__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rst-journey {
+    overflow-x: auto;
+  }
+
+  .rst-journey__step {
+    min-inline-size: 150px;
+  }
+}
+
+@media (max-width: 560px) {
+  .rst-journey {
+    flex-direction: column;
+  }
+
+  .rst-journey__step {
+    min-inline-size: 0;
+  }
+
+  .rst-journey__step + .rst-journey__step {
+    border-block-start: 1px solid var(--rst-rule);
+    border-inline-start: 0;
+  }
+
+  .rst-cardrow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rst-cardrow__chip {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

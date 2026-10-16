@@ -113,7 +113,7 @@ describe.skipIf(!hasTestDatabase)('event streams in the composed application', (
   const database = useTestDatabase();
 
   it('RF-1101 signing out ends a stream opened through the composed run routes', async () => {
-    const schema = await database.createSchema({ migrate: false });
+    const schema = await database.createSchema({ migrate: true });
     const dataDir = await mkdtemp(join(tmpdir(), 'rst-stream-'));
     folders.push(dataDir);
     const application = composed(schema.url, dataDir);
