@@ -3,6 +3,7 @@ import type { ConfiguredArea, GroupingProblem } from '../../../domain/code-map/a
 import { groupIntoAreas } from '../../../domain/code-map/area-grouping.js';
 import {
   createCodeMap,
+  CURRENT_SCANNER_VERSION,
   type CodeEntity,
   type CodeLink,
   type CodeMap,
@@ -100,6 +101,7 @@ export function buildCodeMap(input: BuildCodeMapInput): Result<CodeMap, BuildCod
   });
   if (!areas.ok) return err(areas.error);
   const raw = createCodeMap({
+    scannerVersion: CURRENT_SCANNER_VERSION,
     source: input.source,
     files: files.value,
     areas: areas.value,

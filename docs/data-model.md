@@ -189,6 +189,7 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 | Field | Type | Notes |
 |---|---|---|
 | `schemaVersion` | int | 1 |
+| `scannerVersion` | optional non-negative int | RF-113: scanner revision, currently 1. New scans record it; older files without it remain readable and are treated as out of date. Increase the revision when scanner behaviour warrants rebuilding existing maps. |
 | `source` | object | `{ owner, repo, commitSha, subpath }` |
 | `files[]` | list, sorted by `path` | `{ path, language, lines, estimatedTokens, sha256, artefactKinds[], mapLevel, skipped? }`; `skipped` is `too-large`, `binary` or absent; `sha256` is absent on a `too-large` file (it is never read), and `lines` and `estimatedTokens` are 0 on any skipped file; a binary format named by its extension (images, archives, `.dll`) is left out of the list, while a file whose first 8 000 bytes hold a zero byte is listed as `skipped: binary` |
 | `areas[]` | list, sorted by `name` | `{ name, files[] (paths), estimatedTokens, mapLevel, origin }`; `origin` is `folder`, `references` or `config` (RF-104) |

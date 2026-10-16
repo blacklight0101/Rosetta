@@ -61,6 +61,7 @@ export function maskCodeMap(map: CodeMap, masker: TextMasker): Result<CodeMap, C
     mask,
   );
   return createCodeMap({
+    ...(map.scannerVersion === undefined ? {} : { scannerVersion: map.scannerVersion }),
     source: { ...map.source, subpath: mask(map.source.subpath) },
     files: map.files.map((file) => ({ ...file, path: maskPath(file.path) })),
     areas: map.areas.map((area) => ({
