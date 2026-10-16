@@ -165,32 +165,44 @@ it('RF-425 Escape closes the question with the keyboard and gives the focus back
   expect(starts(calls)).toBe(0);
 });
 
+let estimate: Record<string, unknown> = cloudEstimate;
+
+async function afterAFailedStart() {
+  estimate = cloudEstimate;
+  const page = await cloudPage({
+    [`GET ${estimatePath}`]: () => json(200, estimate),
+    [`POST ${runsPath}`]: failure(400, 'RST-2302'),
+  });
+  fireEvent.click(start());
+  await screen.findByRole('dialog', { name: /Start this run\?/u });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm and start' }));
+  await screen.findByTestId('error-banner');
+  return page;
+}
+
+async function reestimate(next: Record<string, unknown>, calls: readonly { path: string }[]) {
+  const before = calls.filter((call) => call.path === estimatePath).length;
+  estimate = next;
+  fireEvent.click(screen.getByRole('button', { name: 'Re-estimate' }));
+  await waitFor(() => {
+    expect(calls.filter((call) => call.path === estimatePath).length).toBeGreaterThan(before);
+  });
+  await ready();
+}
+
+it('RF-425 a figure that was only cancelled is asked about again', async () => {
+  const { calls } = await cloudPage();
+  fireEvent.click(start());
+  await screen.findByRole('dialog', { name: /Start this run\?/u });
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+  fireEvent.click(start());
+
+  expect(await screen.findByRole('dialog', { name: /Start this run\?/u })).not.toBeNull();
+  expect(starts(calls)).toBe(0);
+});
+
 describe('the question is asked once for a figure', () => {
-  let estimate: Record<string, unknown> = cloudEstimate;
-
-  async function afterAFailedStart() {
-    estimate = cloudEstimate;
-    const page = await cloudPage({
-      [`GET ${estimatePath}`]: () => json(200, estimate),
-      [`POST ${runsPath}`]: failure(400, 'RST-2302'),
-    });
-    fireEvent.click(start());
-    await screen.findByRole('dialog', { name: /Start this run\?/u });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm and start' }));
-    await screen.findByTestId('error-banner');
-    return page;
-  }
-
-  async function reestimate(next: Record<string, unknown>, calls: readonly { path: string }[]) {
-    const before = calls.filter((call) => call.path === estimatePath).length;
-    estimate = next;
-    fireEvent.click(screen.getByRole('button', { name: 'Re-estimate' }));
-    await waitFor(() => {
-      expect(calls.filter((call) => call.path === estimatePath).length).toBeGreaterThan(before);
-    });
-    await ready();
-  }
-
   it('RF-425 pressing Start again after a refused start does not ask again', async () => {
     const { calls } = await afterAFailedStart();
 
@@ -223,17 +235,5 @@ describe('the question is asked once for a figure', () => {
     const dialog = await screen.findByRole('dialog', { name: /Start this run\?/u });
     expect(dialog.textContent).toContain('$0.50');
     expect(starts(calls)).toBe(1);
-  });
-
-  it('RF-425 a figure that was only cancelled is asked about again', async () => {
-    const { calls } = await cloudPage();
-    fireEvent.click(start());
-    await screen.findByRole('dialog', { name: /Start this run\?/u });
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    fireEvent.click(start());
-
-    expect(await screen.findByRole('dialog', { name: /Start this run\?/u })).not.toBeNull();
-    expect(starts(calls)).toBe(0);
   });
 });
