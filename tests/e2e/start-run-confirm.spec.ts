@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
@@ -38,34 +38,49 @@ async function endTheRun(page: Page): Promise<void> {
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });
 }
 
-test('RF-425 a likely estimate above the threshold asks before the run starts, with the keyboard alone', async ({
-  page,
-}) => {
-  await openWithCloudReader(page);
-  // A tiny threshold puts the likely cost above it whatever the demo project costs.
-  await page.getByLabel('Run cap (USD)').fill('2.00');
-  await page.getByLabel('Ask before a run estimated above (USD)').fill('0.000001');
-  const start = page.getByRole('button', startButton);
-  await start.focus();
-  await page.keyboard.press('Enter');
+/** The dialog fits the viewport (1280 or 360 px wide) and does not scroll sideways (RNF-010). */
+async function expectInsideTheViewport(page: Page, dialog: Locator): Promise<void> {
+  const box = await dialog.boundingBox();
+  const view = page.viewportSize();
+  if (box === null || view === null) throw new Error('The dialog or the viewport has no size.');
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(view.width);
+  const sideways: unknown = await dialog.evaluate('(el) => el.scrollWidth - el.clientWidth');
+  expect(sideways).toBe(0);
+}
 
-  const dialog = page.getByRole('dialog', { name: 'Start this run?' });
-  await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('The likely cost is');
-  await expect(dialog).toContainText('openai / gpt-5-nano');
-  await expect(page.getByRole('button', { name: 'Cancel' })).toBeFocused();
-  await expectNoSeriousViolations(page);
-  await page.keyboard.press('Escape');
-  await expect(dialog).toHaveCount(0);
-  await expect(start).toBeFocused();
-  await expect(page.getByTestId('run-notice')).toHaveCount(0);
+test(
+  'RF-425 a likely estimate above the threshold asks before the run starts, with the keyboard alone',
+  { tag: '@phone' },
+  async ({ page }) => {
+    test.setTimeout(90_000);
+    await openWithCloudReader(page);
+    // A tiny threshold puts the likely cost above it whatever the demo project costs.
+    await page.getByLabel('Run cap (USD)').fill('2.00');
+    await page.getByLabel('Ask before a run estimated above (USD)').fill('0.000001');
+    const start = page.getByRole('button', startButton);
+    await start.focus();
+    await page.keyboard.press('Enter');
 
-  await page.keyboard.press('Enter');
-  await expect(dialog).toBeVisible();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Confirm and start' })).toBeFocused();
-  await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog', { name: 'Start this run?' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('The likely cost is');
+    await expect(dialog).toContainText('openai / gpt-5-nano');
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeFocused();
+    await expectInsideTheViewport(page, dialog);
+    await expectNoSeriousViolations(page);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(start).toBeFocused();
+    await expect(page.getByTestId('run-notice')).toHaveCount(0);
 
-  await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
-  await endTheRun(page);
-});
+    await page.keyboard.press('Enter');
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Confirm and start' })).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByTestId('run-notice')).toContainText(/Run started|Queued/u);
+    await endTheRun(page);
+  },
+);
