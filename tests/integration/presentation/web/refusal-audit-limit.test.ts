@@ -107,7 +107,7 @@ describe('refusal rows shared by every writer', () => {
     const test = serve();
     const browser = new TestBrowser(test.server);
     for (let index = 0; index < 20; index += 1) await crossOrigin(test, {});
-    for (let index = 0; index < 20; index += 1) {
+    for (let index = 0; index < 25; index += 1) {
       await browser.signIn(`nobody${String(index)}`, fixturePassword('X'), {
         remoteAddress: attacker,
       });
@@ -118,7 +118,7 @@ describe('refusal rows shared by every writer', () => {
 
     expect(rows).toHaveLength(31);
     expect(countRows(rows)).toHaveLength(1);
-    expect(countRows(rows)[0]?.detail).toMatchObject({ count: 20 });
+    expect(countRows(rows)[0]?.detail).toMatchObject({ count: 5 });
   });
 
   it('RF-1109 two addresses each get their own 30 rows', async () => {
