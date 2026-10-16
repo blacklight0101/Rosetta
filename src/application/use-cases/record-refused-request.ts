@@ -61,4 +61,14 @@ export class RecordRefusedRequest {
       data: { reason, method, path, ip },
     });
   }
+
+  /** P1-157 test stub. */
+  flushEnded(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  /** P1-157 test stub. */
+  flushAll(): Promise<void> {
+    return Promise.resolve();
+  }
 }

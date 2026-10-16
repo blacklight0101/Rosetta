@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AuditRetention } from '../../../src/application/ports/audit-retention.js';
+import { RecordRefusedRequest } from '../../../src/application/use-cases/record-refused-request.js';
+import { MemoryAuditLog } from '../../../src/infrastructure/db/memory-audit-log.js';
+import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
 import {
   auditRetentionTask,
+  refusalCountTask,
   startScheduledTasks,
   type ScheduledTask,
 } from '../../../src/presentation/compose-schedule.js';
@@ -110,5 +114,32 @@ describe('startScheduledTasks', () => {
     await vi.waitFor(() => {
       expect(healthy).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe('refusalCountTask', () => {
+  it('RF-1109 writes the count row of an ended minute at the next one-minute tick', async () => {
+    const clock = new FixedClock('2026-10-16T09:00:00.000Z');
+    const auditLog = new MemoryAuditLog(new SecretMasker());
+    const refusals = new RecordRefusedRequest({ auditLog, logger: new RecordingLogger(), clock });
+    const refused = {
+      actor: null,
+      reason: 'origin',
+      method: 'POST',
+      path: '/',
+      ip: '203.0.113.9',
+    } as const;
+    for (let index = 0; index < 32; index += 1) await refusals.execute(refused);
+    const scheduler = new ManualScheduler(() => undefined);
+    startScheduledTasks(scheduler, [refusalCountTask(refusals)]);
+    clock.advance(60_000);
+
+    await scheduler.tick();
+
+    expect(scheduler.intervals).toEqual([60_000]);
+    const rows = await auditLog.list({ since: 0, action: 'request.refused' });
+    expect(rows.map((row) => row.detail)).toContainEqual(
+      expect.objectContaining({ reason: 'rate-limit', count: 2 }),
+    );
   });
 });

@@ -64,6 +64,11 @@ export function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] 
   ];
 }
 
+/** P1-157 test stub. */
+export function refusalCountTask(refusals: { flushAll(): Promise<void> }): ScheduledTask {
+  return { intervalMs: dayMs, job: () => refusals.flushAll() };
+}
+
 /** RF-1109, DEC-132: audit rows older than 365 days are deleted at start-up and every 24 hours. */
 export function auditRetentionTask(deps: AuditRetentionDeps): ScheduledTask {
   return { intervalMs: dayMs, runAtStart: true, job: auditRetentionJob(deps) };
