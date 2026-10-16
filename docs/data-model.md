@@ -189,6 +189,7 @@ No `schemaVersion`: the format is the standard gitignore syntax.
 | Field | Type | Notes |
 |---|---|---|
 | `schemaVersion` | int | 1 |
+| `scannerVersion` | optional non-negative int | RF-113: scanner revision, currently 1. New scans record it; older files without it remain readable and are treated as out of date. Increase the revision when scanner behaviour warrants rebuilding existing maps. |
 | `source` | object | `{ owner, repo, commitSha, subpath }` |
 | `files[]` | list, sorted by `path` | `{ path, language, lines, estimatedTokens, sha256, artefactKinds[], mapLevel, skipped? }`; `skipped` is `too-large`, `binary` or absent; `sha256` is absent on a `too-large` file (it is never read), and `lines` and `estimatedTokens` are 0 on any skipped file; a binary format named by its extension (images, archives, `.dll`) is left out of the list, while a file whose first 8 000 bytes hold a zero byte is listed as `skipped: binary` |
 | `areas[]` | list, sorted by `name` | `{ name, files[] (paths), estimatedTokens, mapLevel, origin }`; `origin` is `folder`, `references` or `config` (RF-104) |
@@ -742,6 +743,8 @@ of another shape is refused at read time.
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
 | `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, a key whose last word is `token` or `authorization` such as `accessToken`, and the whole phrase after "password is" or "was": a quoted one up to its closing quote, an unquoted one up to the next comma, semicolon or newline or the end of the text); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
 
+The bootstrap administrator (RF-1102) is created at start-up, before the server listens, and writes one `user.created` row only when it creates the account: `actor_user_id` null (no actor), `target_type` `user`, `target_id` the new account's id, `ip` `start-up` (no client address), `outcome` `ok`, and `detail` `{"role":"admin","source":"environment"}`. The row holds no user name and no password, and neither value of `ROSETTA_ADMIN_USER` or `ROSETTA_ADMIN_PASSWORD` is audited or logged. A start-up that finds accounts writes no row.
+
 Retention (DEC-132, RF-1109): audit rows are kept for 365 days and then deleted by a daily task of the server (at
 start-up and every 24 hours). `rosetta_app` has no `UPDATE` or `DELETE` on this table; the only deletion is the
 function `purge_audit_events_before(cut_off timestamptz)` (migration `0008_audit_retention_purge`), which returns
@@ -787,16 +790,18 @@ migration.
 
 | Role | Rights | Used by |
 |---|---|---|
-| `rosetta_migrator` | owns the schema; `CREATE`, `ALTER`, `DROP` | the migration runner at start-up only (`DATABASE_MIGRATOR_URL`, or `DATABASE_URL` when the host offers one role) |
-| `rosetta_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables (including `cost_reservations`); `INSERT`, `SELECT` only on `cost_ledger` and `audit_events` (no update or delete); `EXECUTE` on the function `purge_audit_events_before` and on no other function (DEC-132) | the server (`DATABASE_URL`) |
+| `rosetta_migrator` | owns the schema; `CREATE`, `ALTER`, `DROP` | the one-off migrate step only (`DATABASE_MIGRATOR_URL`; the one role's URL when the host offers one role); never the server, which refuses that variable (DEC-140) |
+| `rosetta_app` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the tables (including `cost_reservations`); `INSERT`, `SELECT` only on `cost_ledger` and `audit_events` (no update or delete); `EXECUTE` on the function `purge_audit_events_before` and on no other function (DEC-132); `SELECT` only on `schema_version` (migration `0010`, DEC-140) | the server (`DATABASE_URL`) |
 
 The roles are created outside the migrations, because a committed file cannot hold their passwords: locally by a
 Compose init script (`db/init/roles.sh`) that reads the passwords from `.env`, hosted by the runbook in the host's
 console; migrations only `GRANT` and `ALTER DEFAULT PRIVILEGES` (DEC-112).
 
-When the host provides a single database user, both roles collapse into it and the runbook records that. Each
+When the host provides a single database user, both roles collapse into it and the runbook records that; the server
+then logs a warning at every start, because it runs as the owner of the audit and ledger tables (DEC-140). Each
 migration therefore grants to `rosetta_app` only when that role exists. `schema_version` belongs to the migration
-runner; `rosetta_app` has no right on it.
+runner; `rosetta_app` may only read it, so the server can refuse a schema with a pending, changed or unknown migration
+(RST-2405, RST-2401, RST-2402) instead of migrating it.
 
 **Files**:
 
@@ -809,9 +814,10 @@ runner; `rosetta_app` has no right on it.
 ## 7. Migrations and schema versions
 
 **Database migrations** (RF-1302): files `db/migrations/NNNN_snake_name.sql`, four digits, applied in order, each in
-a transaction, recorded in `schema_version` with its checksum. An applied file is never edited; a fix is a new
+a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
+(`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`), `0100..` later
 releases.
 
 **File schema versions**:

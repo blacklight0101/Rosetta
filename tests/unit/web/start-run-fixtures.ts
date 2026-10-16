@@ -64,6 +64,7 @@ const sum = (parts: readonly string[]): string =>
 
 function estimateOf(roles: readonly RoleBody[]): Record<string, unknown> {
   return {
+    codeMap: { scannerVersion: 1, currentScannerVersion: 1, outdated: false },
     priceTableVersion: '2026-10-11',
     currency: 'USD',
     areas: [

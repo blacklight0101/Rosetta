@@ -1,6 +1,6 @@
 {
   "name": "rosetta",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Turns a legacy codebase into a verified functional specification and a modernisation hand-off package.",
   "private": true,
   "license": "MIT",

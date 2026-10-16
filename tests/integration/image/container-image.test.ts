@@ -32,6 +32,21 @@ function containerDatabaseUrl(schemaUrl: string): string {
   return url.toString();
 }
 
+/** DEC-140: the one-off migrate step of the same image; the server never migrates. */
+async function migrateInContainer(schemaUrl: string): Promise<void> {
+  await docker(
+    'run',
+    '--rm',
+    '--add-host',
+    'host.docker.internal:host-gateway',
+    '--env',
+    `DATABASE_MIGRATOR_URL=${containerDatabaseUrl(schemaUrl)}`,
+    image,
+    'node',
+    'dist/presentation/migrate.js',
+  );
+}
+
 const wait = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
@@ -89,6 +104,7 @@ describe.skipIf(!enabled)('the container image contents', () => {
     expect(files).toContain('/app/src/infrastructure/security/common-passwords.txt');
     expect(files.some((file) => file.startsWith('/app/prompts/reader/'))).toBe(true);
     expect(files).toContain('/app/dist/presentation/main.js');
+    expect(files).toContain('/app/dist/presentation/migrate.js');
     expect(files).toContain('/app/dist/web/index.html');
   });
 
@@ -122,9 +138,10 @@ describe.skipIf(!enabled)('the started container', () => {
     await run('docker', ['rm', '--force', containerName]).catch(() => undefined);
   });
 
-  it('RF-1300 starts with the price table loaded, becomes healthy and answers /healthz', async () => {
+  it('RF-1300 RF-1302 migrates in a one-off step, then starts with the price table loaded, becomes healthy and answers /healthz', async () => {
     const schema = await database.createSchema({ migrate: false });
     const secretKey = fixtureSecret(7);
+    await migrateInContainer(schema.url);
     await docker(
       'run',
       '--detach',

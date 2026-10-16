@@ -8,8 +8,10 @@
 #
 # The db image is pinned by digest (postgres:17, PostgreSQL 17.11). On the first start of an empty
 # pgdata volume the image creates its bootstrap superuser postgres with ROSETTA_DB_ADMIN_PASSWORD and
-# the empty rosetta database, then db/init/roles.sh creates rosetta_migrator and rosetta_app. The app
-# applies the migrations as rosetta_migrator before it listens, then serves as rosetta_app.
+# the empty rosetta database, then db/init/roles.sh creates rosetta_migrator and rosetta_app. The
+# one-off migrate service applies the migrations as rosetta_migrator and ends; the app starts only
+# after it ended with 0 and serves as rosetta_app, holding no migrator credential (DEC-140). Run the
+# step by hand with `docker compose run --rm migrate`; running it again applies nothing.
 # The passwords sit in database URLs, so use URL-safe ones (for example `openssl rand -hex 24`).
 
 name: rosetta
@@ -36,6 +38,25 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # The one-off migrate step (RF-1302, DEC-140): the same image, the migrator URL as its only
+  # credential, no port and no volume. It ends when the migrations are applied.
+  migrate:
+    build:
+      context: .
+      target: runtime
+    image: rosetta:local
+    command: ['node', 'dist/presentation/migrate.js']
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_MIGRATOR_URL: postgres://rosetta_migrator:${ROSETTA_MIGRATOR_DB_PASSWORD:?Set ROSETTA_MIGRATOR_DB_PASSWORD in .env}@db:5432/rosetta
+      ROSETTA_LOG_LEVEL: ${ROSETTA_LOG_LEVEL:-info}
+    # The image's health check probes the server, which this container does not run.
+    healthcheck:
+      disable: true
+    restart: 'no'
+
   app:
     build:
       context: .
@@ -44,9 +65,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgres://rosetta_app:${ROSETTA_APP_DB_PASSWORD:?Set ROSETTA_APP_DB_PASSWORD in .env}@db:5432/rosetta
-      DATABASE_MIGRATOR_URL: postgres://rosetta_migrator:${ROSETTA_MIGRATOR_DB_PASSWORD:?Set ROSETTA_MIGRATOR_DB_PASSWORD in .env}@db:5432/rosetta
       ROSETTA_SECRET_KEY: ${ROSETTA_SECRET_KEY:?Set ROSETTA_SECRET_KEY in .env (openssl rand -base64 32)}
       ROSETTA_SECRET_KEY_PREVIOUS: ${ROSETTA_SECRET_KEY_PREVIOUS:-}
       ROSETTA_PUBLIC_URL: http://127.0.0.1:8080

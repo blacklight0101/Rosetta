@@ -36,6 +36,15 @@ describe('docs/runbooks/local.md', () => {
     expect(await read('docs/runbooks/local.md')).toMatch(/owner check/iu);
   });
 
+  it('RF-1302 DEC-140 explains the one-off migrate step, its failures and the upgrade from a .env with a migrator URL', async () => {
+    const text = await read('docs/runbooks/local.md');
+
+    expect(text).toContain('docker compose run --rm migrate');
+    expect(text).toContain('docker compose logs migrate');
+    expect(text).toContain('DATABASE_MIGRATOR_URL');
+    expect(text).toContain('RST-2405');
+  });
+
   it('RNF-003 shows no password value, only how to generate one', async () => {
     const text = await read('docs/runbooks/local.md');
 
@@ -55,4 +64,13 @@ describe('README quick start', () => {
     expect(quickStart).toContain('http://127.0.0.1:8080');
     expect(quickStart).toContain('docs/runbooks/local.md');
   });
+});
+
+it('RNF-003 preserves the placeholder before rotating stored provider keys', async () => {
+  const text = await read('docs/runbooks/local.md');
+  const prepare = text.split('## 2. Start the stack')[0] ?? '';
+  expect(prepare).toMatch(/all-zero placeholder[\s\S]*ROSETTA_SECRET_KEY_PREVIOUS/u);
+  expect(prepare).toMatch(/ROSETTA_SECRET_KEY_PREVIOUS[\s\S]*before[\s\S]*new key/u);
+  expect(prepare).toContain('Re-encrypted');
+  expect(prepare).toMatch(/remove[\s\S]*ROSETTA_SECRET_KEY_PREVIOUS/u);
 });

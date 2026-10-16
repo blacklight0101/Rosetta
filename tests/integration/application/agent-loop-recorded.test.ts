@@ -86,3 +86,16 @@ describe('reader agent task limits and planted instructions', () => {
     expect(JSON.stringify(lines)).not.toContain('.env');
   });
 });
+
+it('RF-207 a recorded gemma4-style one-line answer produces cards without repair', async () => {
+  const { result } = await runRecordedAgent({
+    fixture: 'webforms-csharp',
+    recording: 'reader-gemma4-single-line.json',
+    area: 'Services',
+  });
+  expect(result.state).toBe('Done');
+  expect(result.turns).toBe(3);
+  expect(result.drafts[0]?.claims[0]?.citations).toEqual([
+    { path: 'Services/CatalogService.cs', startLine: 12, endLine: 12 },
+  ]);
+});

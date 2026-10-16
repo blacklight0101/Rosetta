@@ -6,22 +6,22 @@ import { citationHref } from '../lib/live-run/claim-links.js';
 import { formatCitationRef } from '../lib/live-run/citation-label.js';
 import type { ClaimRow, SourceState } from '../lib/live-run/run-state.js';
 
-// RF-1004, DEC-103, RF-507: the claims of the run with their status, the reason and a link to the
+// RF-1004, RF-1014, DEC-136, RF-507: the claims of the run with their status, the reason and a link to the
 // cited lines. In this release the model step of the verifier is not built, so a claim that passed
-// the citation check is labelled "awaiting model verification". Claim text comes from a model and is
+// the citation check is labelled "citations checked". Claim text comes from a model and is
 // shown as text.
 
 /** More claims than this are summarised, so a long run does not draw thousands of rows. */
 const MAX_SHOWN = 300;
 
 function StatusOf({ claim }: { readonly claim: ClaimRow }): JSX.Element {
-  if (claim.status !== 'AwaitingModel') {
+  if (claim.status !== 'CitationsChecked') {
     return <StatusBadge list="ClaimStatus" value={claim.status} />;
   }
   return (
     <span class="rst-badge rst-badge--info-tint" data-testid="status-badge">
-      <Glyph name="clock" />
-      Awaiting model verification
+      <Glyph name="check" />
+      Citations checked
     </span>
   );
 }
@@ -87,6 +87,9 @@ export function ClaimsList(props: {
   return (
     <section class="rst-live-claims rst-card" aria-label="Claims">
       <h2 class="rst-live-section__title">Claims</h2>
+      <p class="rst-settings__note">
+        Judgement comes in a later version; citations checked does not mean the claim is supported.
+      </p>
       {claims.length === 0 ? (
         <p class="rst-settings__note">
           No claims yet. They appear here as the agents propose cards, and change status as they are

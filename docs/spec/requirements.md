@@ -1097,9 +1097,9 @@ As a user I want my run to wait its turn when the server is busy so that the ser
 - Given the server restarts while runs are running or queued, when it starts again, then running runs end as `Interrupted` (resumable with RF-006) and queued runs stay queued in their order (DEC-112).
 Verification: integration test with the fake provider.
 
-**RF-1109 Security audit trail** - R1 (M1) - Must - Source DEC-69, DEC-124, DEC-132 - ADR-013, ADR-015
+**RF-1109 Security audit trail** - R1 (M1) - Must - Source DEC-69, DEC-124, DEC-132, DEC-141 - ADR-013, ADR-015
 As the administrator I want account and key events recorded so that I can see who did what.
-- Given a sign-in (success or failure), lockout, sign-out, account change, key change, administrator access to another workspace, or a refused request, when it happens, then an audit row with time, actor, action, target, IP address and outcome is stored and a `warn` or `info` log entry is written (RF-009); no row contains a password or key. Every refused request keeps its `request.refused` row; none is dropped or sampled (DEC-124).
+- Given a sign-in (success or failure), lockout, sign-out, account change, key change, administrator access to another workspace, or a refused request, when it happens, then an audit row with time, actor, action, target, IP address and outcome is stored and a `warn` or `info` log entry is written (RF-009); no row contains a password or key. Refused requests write `request.refused` rows up to 30 a minute per client address; past that, one `request.refused` row with reason `rate-limit` counts the rest of that minute, and the requests are still refused with their usual status. The stored path is cut to 512 characters with a marker (DEC-124, DEC-141).
 - Given the administration page, when I open the audit view, then I can filter the last 30 days by user and action.
 - Given audit rows older than 365 days, when the daily retention task runs, then they are deleted and rows from the last 365 days are kept; the server role can delete no audit row younger than 365 days (DEC-132).
 Verification: integration tests per event; a retention test on PostgreSQL.
@@ -1217,7 +1217,7 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-630..RF-638 | DEC-135 | ADR-018 | P3 | P3-23, P3-24, P3-25, P3-26 |
 | RF-800..RF-803 | DEC-04, DEC-67 | ADR-002, ADR-014, ADR-015 | P1 | P1-45, P1-50, P1-52, P1-53, P1-54, P1-55 |
 | RF-1000..RF-1013 | DEC-46, DEC-47, DEC-49, DEC-50, DEC-55, DEC-57, DEC-120 | ADR-012, ADR-013 | P1 (all, DEC-51; postponement order RF-1012, RF-1011, RF-1005, RF-1007, RF-1008, RF-1004) | P1-07, P1-09, P1-12, P1-22, P1-34, P1-35, P1-36, P1-37, P1-38, P1-39, P1-40, P1-42, P1-43, P1-45, P1-46, P2-02, P2-05, P3-01 |
-| RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69, DEC-119, DEC-122, DEC-123, DEC-124, DEC-127, DEC-132 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | P1-08, P1-09, P1-10, P1-11, P1-14, P1-18, P1-22, P1-27, P1-29, P1-34, P1-36, P1-41, P1-42, P1-46, P1-54, P1-55, P1-56, P2-10 |
+| RF-1100..RF-1109 | DEC-62, DEC-64, DEC-66, DEC-69, DEC-119, DEC-122, DEC-123, DEC-124, DEC-127, DEC-132, DEC-141 | ADR-015, ADR-016, ADR-017 | P1 (RF-1108: Should) | P1-08, P1-09, P1-10, P1-11, P1-14, P1-18, P1-22, P1-27, P1-29, P1-34, P1-36, P1-41, P1-42, P1-46, P1-54, P1-55, P1-56, P1-157, P2-10 |
 | RF-1200..RF-1201 | DEC-63 | ADR-012, ADR-014 | P1 | P1-07, P1-15 |
 | RF-1300..RF-1306 | DEC-61, DEC-65, DEC-67 | ADR-014, ADR-016 | P1 (RF-1306: P2) | P1-05, P1-06, P1-07, P1-44, P1-45, P1-48, P1-55, P2-12 |
 | RNF-001..RNF-017 | DEC-13, DEC-16, DEC-20, DEC-21, DEC-30, DEC-31, DEC-57 | ADR-002, ADR-006, ADR-007, ADR-008, ADR-009, ADR-013 | all | P1-01, P1-02, P1-03, P1-04, P1-05, P1-06, P1-07, P1-08, P1-09, P1-11, P1-12, P1-13, P1-14, P1-15, P1-16, P1-17, P1-19, P1-20, P1-21, P1-22, P1-24, P1-25, P1-28, P1-31, P1-33, P1-44, P1-45, P1-46, P1-47, P1-48, P1-49, P1-50, P1-51, P1-55, P2-11, P2-14, P3-04, P3-09, P3-12 |

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import '../../support/block-network.js';
 import { loadEnvironment } from '../../../src/infrastructure/config/environment.js';
 import { composeApplication } from '../../../src/presentation/composition-root.js';
+import { migrateDatabase } from '../../../src/presentation/compose-migrations.js';
 import { TestDoubles } from '../../../src/presentation/test-doubles.js';
 import { FakeGitHub } from '../../support/fake-github.js';
 import { archiveOfFolder } from '../../support/tree-archive.js';
@@ -27,8 +28,8 @@ import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 // archives; it makes a disposable schema, ROSETTA_TEST=1, the answering provider double and a fake GitHub that
 // knows octo/demo, creates the seeded administrator through the bootstrap use case and the seeded
 // user through CreateUser, listens on 127.0.0.1 at ROSETTA_E2E_PORT and removes everything on
-// SIGTERM or SIGINT. The accounts exist before the port answers: a first start on a free port
-// applies the migrations and bootstraps the administrator, the user is seeded, and only then the
+// SIGTERM or SIGINT. The accounts exist before the port answers: the migrate step runs on the
+// schema, a first start on a free port bootstraps the administrator, the user is seeded, and only then the
 // server starts on the port Playwright waits for.
 
 const frontEnd = fileURLToPath(new URL('../../../dist/web/index.html', import.meta.url));
@@ -92,6 +93,16 @@ async function composer(environment: ReturnType<typeof loadEnvironment>): Promis
     });
 }
 
+/** The disposable schema after the one-off migrate step, as Compose runs it before the server (DEC-140). */
+async function migratedSchema(databaseUrl: string, port: number) {
+  const schema = await createDisposableSchema(databaseUrl, port);
+  await migrateDatabase({
+    environment: { databaseMigratorUrl: schema.url, logLevel: 'error' },
+    output: { write: () => true },
+  });
+  return schema;
+}
+
 async function main(): Promise<void> {
   const databaseUrl = process.env['ROSETTA_TEST_DATABASE_URL'];
   if (databaseUrl === undefined || databaseUrl === '') {
@@ -100,7 +111,7 @@ async function main(): Promise<void> {
   await requireFrontEnd();
   await clearSessions();
   const port = e2ePort();
-  const schema = await createDisposableSchema(databaseUrl, port);
+  const schema = await migratedSchema(databaseUrl, port);
   const dataDir = join(tmpdir(), `rosetta-e2e-${String(port)}`);
   await removeWritableTree(dataDir);
   await mkdir(dataDir, { recursive: true });

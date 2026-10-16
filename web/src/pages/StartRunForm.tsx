@@ -8,6 +8,7 @@ import { CloudNotice } from './CloudNotice.js';
 import { EstimateSection } from './EstimateSection.js';
 import { RepositorySection } from './RepositorySection.js';
 import { RunNotice } from './RunNotice.js';
+import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
 import { useStartForm, type StartForm } from './use-start-form.js';
 
@@ -94,6 +95,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
         onUrl={form.setUrl}
         onResolve={actions.resolve}
       />
+      <StaleCodeMapNotice form={form} />
       <Columns form={form} />
       {consent.roles.length === 0 ? null : (
         <CloudNotice

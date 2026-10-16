@@ -52,7 +52,7 @@ flowchart LR
 | TB2 code to the model | Elevation of privilege: indirect prompt injection in the analysed code steers the agents | tool results in delimited data blocks that end only at the closing line with their own random tag, never in the system prompt; prompts declare them data; read-only tools; citation check in code; caps | RF-145, RF-201, RF-300, RF-422 |
 | TB2 | Denial of service: model-chosen regular expression blocks the process | pattern and line limits; grep in a worker with a timeout | RF-146 |
 | TB3 egress | Information disclosure: secrets or ignored files sent to a provider | built-in deny list, ignore rules (project setting plus the repository's `.rosettaignore`, which can only add exclusions), masking that fails closed, egress log, cloud warning | RF-140, RF-141, RF-142, RF-143, RF-147 |
-| TB4 model output | Tampering: output written as code, commands or paths | output parsed with schemas; never executed; never used as a path or command | RF-202, architecture section 10 |
+| TB4 model output | Tampering: output written as code, commands or paths | output parsed with schemas; never executed; never used as a command; a path, pattern or glob from a tool call is checked first and then only read through the four read-only tools | RF-202, RF-201, architecture section 10 |
 | TB4 | Tampering: output rendered as HTML (stored XSS in the page or the report) | text-only rendering; no raw HTML; only `https://github.com/` links | RF-507 |
 | TB5 web | Spoofing: password guessing or credential stuffing | scrypt hashes; 12-character minimum and common-password check; lockout after 5 failures; rate limit per IP; same message and timing for unknown users | RF-1100, RF-1103 |
 | TB5 | Spoofing: session theft or fixation | random 256-bit id rotated at sign-in; only its hash stored; `__Host-` cookie with `HttpOnly`, `Secure`, `SameSite=Strict`; idle and absolute expiry; HSTS | RF-1101, RF-1013 |
@@ -67,10 +67,10 @@ flowchart LR
 | TB5 | Denial of service: a script without a session fills the audit table and the log with refused requests (P1-49 F-01) | one limit per client address over every writer of a `request.refused` row: 30 rows and security events a minute, then one `rate-limit` row with the count of the rest; the stored path cut to 512 characters with a marker; the limiter keeps at most 10,000 addresses; the address is `request.ip`, which follows `X-Forwarded-For` only through `ROSETTA_TRUST_PROXY`; the requests are still refused with 403 or 429 (architecture section 10) | RF-1109, DEC-141 |
 | TB8 database | Tampering: SQL injection | parameterised queries only, enforced by a lint rule (conventions section 10) and the verifier's grep; the app role cannot change the schema | ADR-016 |
 | TB8 | Information disclosure: a database dump exposes keys or passwords | keys encrypted with AES-256-GCM under `ROSETTA_SECRET_KEY` held outside the database; passwords and session ids hashed | RF-1104, ADR-015 |
-| TB8 | Repudiation: the audit trail is altered | the app role may only insert into `audit_events` and `cost_ledger`; the ledger is kept for the life of the deployment (DEC-110) and audit rows for 365 days (DEC-132), deleted only by the `SECURITY DEFINER` function `purge_audit_events_before`, which refuses a cut-off younger than 365 days on the database clock | data-model.md section 6 |
+| TB8 | Repudiation: the audit trail is altered | the server holds only the app role's credential (`DATABASE_URL`): the migrations run in a one-off migrate step with `DATABASE_MIGRATOR_URL`, the server refuses to start when given that URL and warns when `DATABASE_URL` is the schema owner (DEC-140); the app role may only insert into `audit_events` and `cost_ledger`; the ledger is kept for the life of the deployment (DEC-110) and audit rows for 365 days (DEC-132), deleted only by the `SECURITY DEFINER` function `purge_audit_events_before`, which refuses a cut-off younger than 365 days on the database clock | data-model.md section 6, ADR-016 |
 | TB6 published report | Information disclosure: secrets or employer material published | masked transcripts; output scan in CI; DEC-03 | RNF-003, DEC-03 |
-| TB7 CI and release | Tampering: compromised dependency or action | lockfile and `npm ci`; actions pinned to a commit SHA; dependency review; CodeQL; gitleaks; SBOM on releases | environments-and-delivery.md sections 6 and 8 |
-| TB7 | Tampering: a vulnerable or altered container image | base image and CI service images pinned by digest (a test fails on an unpinned one); Dependabot watches the Dockerfile after a 14-day cooldown; non-root user; image scanned in CI; images tagged by version and commit in GHCR; secrets never baked in | RF-1300, environments-and-delivery.md |
+| TB7 CI and release | Tampering: compromised dependency or action | lockfile and `npm ci`; actions pinned to a commit SHA; dependency review; CodeQL; gitleaks; SBOM on releases (arrives with P1-55) | environments-and-delivery.md sections 6 and 8 |
+| TB7 | Tampering: a vulnerable or altered container image | base image and CI service images pinned by digest (a test fails on an unpinned one); Dependabot watches the Dockerfile after a 14-day cooldown; non-root user; image scanned in CI; images tagged by version and commit in GHCR (arrives with P1-55); secrets never baked in | RF-1300, environments-and-delivery.md |
 | TB7 | Elevation of privilege: shell injection through a pull request title | titles passed through `env:`, never `${{ }}` inside `run:` | environments-and-delivery.md section 6 |
 
 ## 3. OWASP Top 10:2025 mapping
@@ -79,7 +79,7 @@ flowchart LR
 |---|---|---|
 | A01 Broken access control | covered | sign-in on every route but the public ones; roles checked on the server; per-user scoping; CSRF and `Origin` checks (RF-1009, RF-1102, RF-1105) |
 | A02 Security misconfiguration | covered | secure defaults (RNF-014); security headers and HSTS (RF-1013); configuration validated at start (RF-1305); local port on `127.0.0.1` |
-| A03 Software supply chain failures | covered | lockfile, pinned actions and base image, Dependabot, dependency review, `npm audit`, image scan, SBOM (environments section 6, 8) |
+| A03 Software supply chain failures | partial | lockfile, pinned actions and base image, Dependabot, dependency review, `npm audit`, image scan (environments section 6, 8); the SBOM on releases and the GHCR image tags arrive with P1-55 |
 | A04 Cryptographic failures | covered | scrypt for passwords, SHA-256 for session ids, AES-256-GCM for keys, HTTPS with HSTS when hosted (ADR-015) |
 | A05 Injection | covered | parameterised SQL (ADR-016); output never executed or rendered as HTML (RF-507); no shell |
 | A06 Insecure design | covered | this threat model; ADR-013; caps against cost abuse (RF-1106) |
@@ -104,8 +104,8 @@ when saved and again when each call connects (DEC-112).
 | LLM06 Excessive agency | covered | read-only tools only; no write, network or shell tool (RF-201, RF-005) |
 | LLM07 System prompt leakage | accepted | prompts are public in the repository; they hold no secrets |
 | LLM08 Vector and embedding weaknesses | not applicable | no vector store (DEC-58) |
-| LLM09 Misinformation | covered | evidence-cited claims and the two-step verifier (ADR-005) |
-| LLM10 Unbounded consumption | covered | caps per run and role, estimate, live meter (RF-420..RF-428) |
+| LLM09 Misinformation | partial | evidence-cited claims (RF-202); the two-step verifier arrives with P2-02 (ADR-005) |
+| LLM10 Unbounded consumption | partial | caps per run, estimate and live meter (RF-420..RF-428); the caps per role arrive with P2-08 |
 
 ## 5. Secure development lifecycle
 
@@ -136,6 +136,10 @@ deployment procedure (environments-and-delivery.md section 10).
 - Losing `ROSETTA_SECRET_KEY` makes stored user keys unreadable; leaking it together with a database dump exposes
   them. It lives only in the host's secret store and the owner's git-ignored `.env`.
 - The host provider and its staff are trusted with the database and the disk.
+- On a host that offers a single database role, the server runs as the owner of `audit_events` and `cost_ledger`, so
+  code in the server process could change or delete audit and ledger rows. The server logs a warning at every start
+  in that case (DEC-140); the mitigation is to create `rosetta_app` (data-model.md section 6). The migrate step holds
+  the migrator credential only while it runs, and so does whoever runs it by hand from a `.env` that holds it.
 - A process on the owner's machine can read the local volumes; Rosetta does not defend against a compromised machine.
 - The output writer checks every folder on the way to a workspace file for links, then checks the folder's real path
   again just before the temporary file is created, before the rename and before the append, but the file system

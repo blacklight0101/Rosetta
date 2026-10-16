@@ -22,7 +22,7 @@ export async function loadCommonPasswords(path: string): Promise<ReadonlySet<str
   try {
     text = await readFile(path, 'utf8');
   } catch (error) {
-    throw new RosettaError(ERROR_CODES.commonPasswordsUnreadable, undefined, { cause: error });
+    throw new RosettaError(ERROR_CODES.blocklistUnreadable, undefined, { cause: error });
   }
   const entries = text
     .split(/\r?\n/)

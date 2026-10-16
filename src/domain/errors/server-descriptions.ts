@@ -183,6 +183,11 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     message: 'The database could not complete the request.',
     nextStep: 'Check that PostgreSQL is running and reachable, then try again.',
   },
+  'RST-2405': {
+    message: 'The database schema is older than this version of Rosetta.',
+    nextStep:
+      'Run the migrate step first (docker compose up runs it; by hand: docker compose run --rm migrate), then start the server again.',
+  },
   'RST-2500': {
     message: 'The Rosetta version could not be read from package.json.',
     nextStep: 'Rebuild or reinstall Rosetta so that package.json ships next to the server.',

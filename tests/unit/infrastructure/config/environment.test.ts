@@ -92,23 +92,6 @@ describe('environment: DATABASE_URL and DATABASE_MIGRATOR_URL', () => {
       'DATABASE_URL',
     );
   });
-
-  it('RF-1305 uses DATABASE_URL for the migrator when DATABASE_MIGRATOR_URL is absent', () => {
-    const environment = loadEnvironment(validSource());
-
-    expect(environment.databaseMigratorUrl).toBe(environment.databaseUrl);
-  });
-
-  it('RF-1305 uses DATABASE_MIGRATOR_URL when it is set and validates it', () => {
-    const url = 'postgres://rosetta_migrator@127.0.0.1:5432/rosetta';
-
-    expect(loadEnvironment(validSource({ DATABASE_MIGRATOR_URL: url })).databaseMigratorUrl).toBe(
-      url,
-    );
-    expect(failureOf(validSource({ DATABASE_MIGRATOR_URL: 'nope' })).message).toContain(
-      'DATABASE_MIGRATOR_URL',
-    );
-  });
 });
 
 describe('environment: ROSETTA_SECRET_KEY', () => {

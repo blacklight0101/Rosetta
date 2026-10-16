@@ -15,7 +15,9 @@ const service = z.object({
   environment: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   volumes: z.array(z.string()).optional(),
   extra_hosts: z.array(z.string()).optional(),
-  healthcheck: z.object({ test: z.array(z.string()) }).optional(),
+  healthcheck: z
+    .object({ test: z.array(z.string()).optional(), disable: z.boolean().optional() })
+    .optional(),
   restart: z.string().optional(),
   depends_on: z.record(z.string(), z.object({ condition: z.string() })).optional(),
 });
@@ -117,23 +119,21 @@ describe('compose.yaml: app service', () => {
     const app = appOf(file);
 
     expect(app.depends_on?.['db']?.condition).toBe('service_healthy');
-    expect(app.healthcheck?.test.join(' ')).toContain('/healthz');
-    expect(dbOf(file).healthcheck?.test.join(' ')).toContain('pg_isready');
+    expect(app.healthcheck?.test?.join(' ')).toContain('/healthz');
+    expect(dbOf(file).healthcheck?.test?.join(' ')).toContain('pg_isready');
     expect(app.restart).toBe('unless-stopped');
     expect(dbOf(file).restart).toBe('unless-stopped');
   });
 });
 
 describe('compose.yaml: app service configuration', () => {
-  it('RF-1302 migrates as rosetta_migrator and serves as rosetta_app, with the passwords from .env', async () => {
+  it('RF-1302 serves as rosetta_app with the password from .env (DATABASE_URL only, DEC-140)', async () => {
     const environment = environmentOf(appOf(await load(COMPOSE)));
 
     expect(environment['DATABASE_URL']).toMatch(
       /^postgres:\/\/rosetta_app:\$\{ROSETTA_APP_DB_PASSWORD:\?[^}]+\}@db:5432\/rosetta$/u,
     );
-    expect(environment['DATABASE_MIGRATOR_URL']).toMatch(
-      /^postgres:\/\/rosetta_migrator:\$\{ROSETTA_MIGRATOR_DB_PASSWORD:\?[^}]+\}@db:5432\/rosetta$/u,
-    );
+    expect(environment).not.toHaveProperty('DATABASE_MIGRATOR_URL');
   });
 
   it('RF-1301 sets the public URL to the published address and the data folder to /data', async () => {

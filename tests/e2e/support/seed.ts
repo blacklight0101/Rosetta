@@ -53,7 +53,7 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
  * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
  * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001), `live-run` watches
- * the runs of its own project on the live page (RF-1002), `live-controls` pauses and meters its own runs (P1-95), `live-coverage` watches the coverage map of its own runs (RF-1005), `live-coverage-pause` is the second test of that spec, with a project and runs of its own (P1-141), `api-calls` reads the calls and logs of
+ * the runs of its own project on the live page (RF-1002), `live-controls` pauses and meters its own runs (P1-95), `live-coverage` watches the coverage map of its own runs (RF-1005), `live-coverage-pause` is the second test of that spec, with a project and runs of its own (P1-141), `live-running` watches the page of a run while it runs (P1-169), `api-calls` reads the calls and logs of
  * its own run (RF-1011), `replay` owns a recorded run (seed-replay.ts) whose report and replay
  * page it opens (RF-506), `history` browses and deletes the runs of its own project (RF-1008,
  * RF-1012), `history-admin` is the administrator who deletes snapshots and `project-runs` reads the
@@ -80,6 +80,7 @@ export type E2eAccountKind =
   | 'live-controls'
   | 'live-coverage'
   | 'live-coverage-pause'
+  | 'live-running'
   | 'api-calls'
   | 'history'
   | 'history-admin'
@@ -112,6 +113,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'live-controls',
   'live-coverage',
   'live-coverage-pause',
+  'live-running',
   'api-calls',
   'history',
   'history-admin',
