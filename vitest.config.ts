@@ -1,7 +1,14 @@
 import preact from '@preact/preset-vite';
 import { defineConfig } from 'vitest/config';
 
-const shared = { environment: 'node', env: { ROSETTA_TEST: '1' } } as const;
+// Vitest's 5 s test timeout is a limit for a quiet machine. A test that takes 1 s alone takes
+// several times that when the CPU and disk are shared, so the default is 60 s; a hung test still fails.
+const shared = {
+  environment: 'node',
+  env: { ROSETTA_TEST: '1' },
+  testTimeout: 60_000,
+  hookTimeout: 60_000,
+} as const;
 const offline = { ...shared, setupFiles: 'tests/support/block-network.ts' } as const;
 
 export default defineConfig({

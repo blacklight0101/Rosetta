@@ -585,6 +585,77 @@
   }
 }
 
+/* RF-1018: the area picker: a toolbar, the list in a panel that scrolls, the folded line of library
+   areas, and the summary bar that stays at the bottom of the window. */
+.rst-start__picker,
+.rst-start__areas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-start__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--rst-sp-2) var(--rst-sp-3);
+}
+
+.rst-start__filter {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+}
+
+.rst-start__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-2);
+}
+
+.rst-start__area-list {
+  max-block-size: 20rem;
+  overflow-y: auto;
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+}
+
+/* The line names areas, and a path has no spaces, so it breaks anywhere. */
+.rst-start__library-line {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--rst-ink-muted);
+}
+
+.rst-start__bar {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+  padding: var(--rst-sp-3) var(--rst-sp-4);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-raised);
+  box-shadow: var(--rst-shadow-2);
+}
+
+.rst-start__bar-text {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.rst-start__bar-text p {
+  margin: 0;
+}
+
+.rst-start__bar-totals {
+  font-variant-numeric: tabular-nums;
+}
+
 .rst-start__choices {
   display: flex;
   flex-wrap: wrap;

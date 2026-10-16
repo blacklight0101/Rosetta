@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. The tool-call scenario: one read_file call with JSON-string arguments. Hand-written in the documented shape of an OpenAI-compatible Chat Completions answer (POST <base URL>/chat/completions, stream false), as services such as OpenRouter, Groq or DeepSeek send it; no real service was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req-FAKE-compatible-0002"
+      },
+      "body": {
+        "id": "gen-FAKE0000000000000002",
+        "object": "chat.completion",
+        "created": 1791700000,
+        "model": "contract-vendor/contract-model",
+        "provider": "FakeHost",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": null,
+              "tool_calls": [
+                {
+                  "id": "call-1",
+                  "type": "function",
+                  "function": {
+                    "name": "read_file",
+                    "arguments": "{\"path\":\"src/Catalog.cs\",\"startLine\":1,\"endLine\":40}"
+                  }
+                }
+              ]
+            },
+            "finish_reason": "tool_calls"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 900,
+          "completion_tokens": 30,
+          "total_tokens": 930
+        }
+      }
+    }
+  ]
+}

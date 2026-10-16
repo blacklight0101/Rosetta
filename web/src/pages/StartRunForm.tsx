@@ -1,7 +1,6 @@
 import type { JSX } from 'preact';
 import { useRef } from 'preact/hooks';
 import type { Project } from '../api/project-schemas.js';
-import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { CloudNotice } from './CloudNotice.js';
@@ -10,11 +9,12 @@ import { RepositorySection } from './RepositorySection.js';
 import { RunNotice } from './RunNotice.js';
 import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
 import { StageAreasSection } from './StageAreasSection.js';
+import { SummaryBar } from './SummaryBar.js';
 import { useStartForm, type StartForm } from './use-start-form.js';
 
-// RF-1001, RF-143, RF-425, RF-1108, DEC-108, design-system.md section 14 (Start run): the page
-// body. Repository, stage and areas, the estimate with the run cap, the cloud notice with its
-// consent, the queue notice, Start. A refusal shows next to the field it names and focus moves to
+// RF-1001, RF-143, RF-425, RF-1108, RF-1018, DEC-108, design-system.md section 14 (Start run): the
+// page body. Repository, stage and areas, the estimate with the run cap, the cloud notice with its
+// consent, the queue notice, and the summary bar with Start (SummaryBar.tsx). A refusal shows next to the field it names and focus moves to
 // the first of them; one that names no field shows above Start.
 
 function Columns({ form }: { readonly form: StartForm }): JSX.Element {
@@ -29,6 +29,9 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
         areasError={actions.refusals.areas}
         onStage={form.setStage}
         onArea={choice.toggle}
+        onChoose={choice.choose}
+        libraryConfirmed={form.library.confirmed}
+        onLibraryConfirm={form.library.set}
       />
       <EstimateSection
         scanOnly={stage === 'scan'}
@@ -47,27 +50,6 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
           },
         }}
       />
-    </div>
-  );
-}
-
-function Actions({ form }: { readonly form: StartForm }): JSX.Element {
-  const { actions, gate, choice, stage } = form;
-  const waiting = actions.notice?.kind === 'queued' || actions.notice?.kind === 'started';
-  const canEstimate = stage === 'understand' || choice.estimate.status === 'none';
-  return (
-    <div class="rst-start__actions">
-      {canEstimate ? <Button onClick={choice.reestimate}>Re-estimate</Button> : null}
-      {waiting ? null : (
-        <Button
-          variant="primary"
-          busy={actions.busy}
-          {...(gate.reason === undefined ? {} : { disabledReason: gate.reason })}
-          onClick={actions.submit}
-        >
-          {gate.label}
-        </Button>
-      )}
     </div>
   );
 }
@@ -109,7 +91,7 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
       {actions.notice === undefined ? null : (
         <RunNotice notice={actions.notice} busy={actions.busy} onCancel={actions.cancel} />
       )}
-      <Actions form={form} />
+      <SummaryBar form={form} />
     </div>
   );
 }

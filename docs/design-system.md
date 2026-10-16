@@ -204,7 +204,7 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
 ## 7. Patterns
 
 - **Start a run**: URL field, Resolve shows repository, pinned commit, subpath, licence and whether the snapshot is
-  cached; stage and areas (an area name wraps inside its card and keeps its full text in a title; an area that holds only vendored or minified files is marked "third-party" and starts unticked, the others start ticked); the estimate table (low, likely, high per role); the cloud warning with a consent
+  cached; stage and areas (an area name wraps inside its card and keeps its full text in a title; only the project's own areas are listed and ticked, in a panel that scrolls (`max-block-size` 20rem) under a filter and the buttons Select all, Select none and Own code only; an area that holds only vendored or minified files is left out and named in one line after the list ("12 library areas left out: jQuery, Bootstrap, ... Show") that opens to the areas with their reason; choosing one asks once, in a notice that says what it adds, before Start); the summary bar (`position: sticky` at the bottom of the window): areas and files chosen, the likely cost, Re-estimate and Start, with the reason when Start is off (RF-1018); the estimate table (low, likely, high per role); the cloud warning with a consent
   checkbox when a role uses a cloud provider; Start is enabled only when the URL resolved and consent is given.
 - **Destructive confirmation**: a dialog that names the target, the space it frees, what is kept (the snapshot, the
   project totals), and "This cannot be undone"; the danger button repeats the verb ("Delete run").

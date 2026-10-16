@@ -1,7 +1,10 @@
 import type { Logger } from '../../application/ports/logger.js';
-import type { AdapterBuilder } from './adapter-spec.js';
+import { PublicAddressAgent } from '../security/public-address-agent.js';
+import type { AdapterBuilder, AdapterSpec } from './adapter-spec.js';
 import { AnthropicProvider } from './anthropic/anthropic-provider.js';
 import { OllamaProvider } from './ollama/ollama-provider.js';
+import { publicAddressFetch } from './openai/agent-fetch.js';
+import { OpenAiCompatibleProvider } from './openai/openai-compatible-provider.js';
 import { OpenAiProvider } from './openai/openai-provider.js';
 
 // ADR-003, ADR-006, ADR-007, RNF-005: the one place that constructs the provider adapters of this
@@ -21,7 +24,25 @@ export interface RealAdapterParts {
   readonly logger: Logger;
 }
 
-// RF-401, RF-402, RF-404
+/**
+ * RF-403, RF-1104, DEC-112, threat model TB5: the OpenAI-compatible adapter connects to the base
+ * URL a user stored with their key, so every request goes through the public-address agent: each
+ * connect resolves the host again and refuses an internal address or IP literal (DNS rebinding).
+ */
+function compatibleAdapter(
+  spec: AdapterSpec,
+  testMode: boolean,
+): OpenAiCompatibleProvider | undefined {
+  const { baseUrl, timeoutSeconds, maxRetries, apiKey } = spec;
+  if (apiKey === undefined) return undefined;
+  const transport = publicAddressFetch(new PublicAddressAgent());
+  return new OpenAiCompatibleProvider({
+    ...{ baseUrl, timeoutSeconds, maxRetries, testMode, apiKey },
+    transport,
+  });
+}
+
+// RF-401, RF-402, RF-403, RF-404
 export function realAdapters(parts: RealAdapterParts): AdapterBuilder {
   const { testMode, textProtocolPrompt, logger } = parts;
   return (spec) => {
@@ -46,6 +67,7 @@ export function realAdapters(parts: RealAdapterParts): AdapterBuilder {
           apiKey: spec.apiKey,
         });
       case 'openai-compatible':
+        return compatibleAdapter(spec, testMode);
       case 'fake':
         return undefined;
     }

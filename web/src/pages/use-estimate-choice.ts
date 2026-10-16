@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import type { AreaChoice } from './StageAreasSection.js';
+import type { AreaChoice } from './area-selection.js';
 import { useEstimate, type EstimateLoad } from './use-estimate.js';
 
 // RF-425, RF-200, RF-1001: the estimate together with the choice of areas. The names come from the
@@ -10,6 +10,7 @@ import { useEstimate, type EstimateLoad } from './use-estimate.js';
 interface KnownArea {
   readonly name: string;
   readonly estimatedTokens: number;
+  readonly files: number;
   readonly thirdParty: boolean;
 }
 
@@ -18,6 +19,8 @@ export interface EstimateChoice {
   readonly areas: readonly AreaChoice[];
   readonly chosen: readonly string[];
   readonly toggle: (name: string) => void;
+  /** Replaces the choice at once: every name given is ticked, the others are not. */
+  readonly choose: (names: readonly string[]) => void;
   readonly reestimate: () => void;
 }
 
@@ -38,6 +41,9 @@ export function useEstimateChoice(projectId: string): EstimateChoice {
     areas: known.map((area) => ({ ...area, checked: chosen.includes(area.name) })),
     toggle: (name) => {
       const next = names.filter((each) => (each === name) !== chosen.includes(each));
+      setPicked(next);
+    },
+    choose: (next) => {
       setPicked(next);
     },
     reestimate: () => {

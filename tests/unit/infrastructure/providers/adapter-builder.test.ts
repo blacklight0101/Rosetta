@@ -4,6 +4,7 @@ import { realAdapters } from '../../../../src/infrastructure/providers/adapter-b
 import type { AdapterSpec } from '../../../../src/infrastructure/providers/adapter-spec.js';
 import { AnthropicProvider } from '../../../../src/infrastructure/providers/anthropic/anthropic-provider.js';
 import { OllamaProvider } from '../../../../src/infrastructure/providers/ollama/ollama-provider.js';
+import { OpenAiCompatibleProvider } from '../../../../src/infrastructure/providers/openai/openai-compatible-provider.js';
 import { OpenAiProvider } from '../../../../src/infrastructure/providers/openai/openai-provider.js';
 import { contractRequest } from '../../../contracts/llm-provider.contract.js';
 import { failureOf } from '../../../support/failure-of.js';
@@ -41,12 +42,9 @@ describe('realAdapters', () => {
     expect(adapter).toBeInstanceOf(OpenAiProvider);
   });
 
-  it.each(['openai-compatible', 'fake'] as const)(
-    'RF-400 builds no adapter for kind %s in this release',
-    (kind) => {
-      expect(build(spec({ kind, apiKey: 'k'.repeat(20) }))).toBeUndefined();
-    },
-  );
+  it('RF-400 builds no adapter for kind fake (the fake is built only by the test composition)', () => {
+    expect(build(spec({ kind: 'fake', apiKey: 'k'.repeat(20) }))).toBeUndefined();
+  });
 
   it('RF-402 builds no OpenAI adapter without a key', () => {
     expect(build(spec({ kind: 'openai', apiKey: undefined }))).toBeUndefined();
@@ -55,6 +53,40 @@ describe('realAdapters', () => {
   it('RNF-005 an adapter built in test mode refuses a real host before it leaves the process', async () => {
     const adapter = build(
       spec({ kind: 'openai', baseUrl: 'https://api.openai.com/v1', apiKey: 'k'.repeat(20) }),
+    );
+
+    const failure = await failureOf(adapter?.complete(contractRequest()) ?? Promise.resolve());
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.realProviderRefusedInTests });
+  });
+});
+
+describe('realAdapters: OpenAI-compatible', () => {
+  it('RF-403 builds the OpenAI-compatible adapter for kind openai-compatible with its key', () => {
+    const adapter = build(
+      spec({
+        kind: 'openai-compatible',
+        baseUrl: 'https://llm.example.com/v1',
+        apiKey: 'k'.repeat(20),
+      }),
+    );
+
+    expect(adapter).toBeInstanceOf(OpenAiCompatibleProvider);
+  });
+
+  it('RF-403 builds no OpenAI-compatible adapter without a key', () => {
+    expect(
+      build(spec({ kind: 'openai-compatible', baseUrl: 'https://llm.example.com/v1' })),
+    ).toBeUndefined();
+  });
+
+  it('RNF-005 an OpenAI-compatible adapter built in test mode refuses a real host', async () => {
+    const adapter = build(
+      spec({
+        kind: 'openai-compatible',
+        baseUrl: 'https://llm.example.com/v1',
+        apiKey: 'k'.repeat(20),
+      }),
     );
 
     const failure = await failureOf(adapter?.complete(contractRequest()) ?? Promise.resolve());

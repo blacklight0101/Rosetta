@@ -194,7 +194,8 @@ interface ReadParts {
 function waitUntilEnded(runs: MemoryRunIndex, log: JsonlEventLog): (run: Run) => Promise<Run> {
   return async (run) => {
     let latest: Run | undefined;
-    // 2 ms poll instead of the default 50 ms; the timeout stays at the 1 s default.
+    // 2 ms poll instead of the default 50 ms. The 30 s budget replaces the 1 s default, which a loaded
+    // machine can exceed for a scan; the wait ends as soon as the run has ended.
     await vi.waitFor(
       async () => {
         latest = await runs.find(run.userId, run.id);
@@ -205,7 +206,7 @@ function waitUntilEnded(runs: MemoryRunIndex, log: JsonlEventLog): (run: Run) =>
           throw new Error('The run has not published its end');
         }
       },
-      { interval: 2 },
+      { interval: 2, timeout: 30_000 },
     );
     if (latest === undefined) throw new Error('The run vanished');
     return latest;

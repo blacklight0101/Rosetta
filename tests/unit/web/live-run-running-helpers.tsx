@@ -14,7 +14,8 @@ export interface CodeMapArea {
 
 /** What `GET /api/projects/p-1/estimate` answers: the areas of the code map, own and library. */
 export function codeMapAnswer(areas: readonly CodeMapArea[]): Response {
-  return json(200, { ...localEstimate, areas });
+  // The server always sends the file count of an area (RF-1018).
+  return json(200, { ...localEstimate, areas: areas.map((area) => ({ ...area, files: 1 })) });
 }
 
 export const ownAreas: readonly CodeMapArea[] = [

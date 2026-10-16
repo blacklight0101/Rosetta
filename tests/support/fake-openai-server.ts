@@ -20,13 +20,16 @@ const recordingSchema = z.strictObject({
 
 export type OpenAiRecording = z.infer<typeof recordingSchema>;
 
-const recordingsFolder = join(process.cwd(), 'tests', 'recordings', 'openai');
+const recordingsRoot = join(process.cwd(), 'tests', 'recordings');
 
 const chatCompletionsPath = '/v1/chat/completions';
 
-/** Parses `tests/recordings/openai/<name>.json`. */
-export async function loadOpenAiRecording(name: string): Promise<OpenAiRecording> {
-  const text = await readFile(join(recordingsFolder, `${name}.json`), 'utf8');
+/** Parses `tests/recordings/<folder>/<name>.json` (`openai` by default; `openai-compatible` for RF-403). */
+export async function loadOpenAiRecording(
+  name: string,
+  folder: 'openai' | 'openai-compatible' = 'openai',
+): Promise<OpenAiRecording> {
+  const text = await readFile(join(recordingsRoot, folder, `${name}.json`), 'utf8');
   return recordingSchema.parse(JSON.parse(text));
 }
 

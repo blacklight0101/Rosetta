@@ -343,7 +343,94 @@ or turn on `allowUnpriced` for the user's own key (RF-427).
 
 ## 5. OpenAI-compatible services
 
-To be filled by P2-10: base URL rules (RF-1104), tested services.
+`OpenAiCompatibleProvider` (`src/infrastructure/providers/openai/openai-compatible-provider.ts`, RF-403) talks to any
+service that speaks OpenAI's Chat Completions API at a base URL of the user's choice: OpenRouter, Groq, DeepSeek,
+Gemini's compatible endpoint and similar. It sends and reads the same wire shapes as the OpenAI adapter (section 3.2)
+through the same `openai` package, which is why it lives in `src/infrastructure/providers/openai/` (the
+dependency-cruiser rule `openai-sdk-only-in-openai-adapter`). The adapter builder builds it for kind
+`openai-compatible` only when the provider factory chose a key, so every call passes
+`BudgetGuard(EgressGuard(ObservedProvider(adapter)))` and needs the run's cloud consent.
+
+### 5.1 Key and base URL (RF-1104, DEC-112)
+
+- There is no server key for this kind: a role on `openai-compatible` uses the user's own key, stored in the account
+  settings with its base URL. That key row is the only place a base URL is set; project settings never set one.
+- The base URL is the service's API root, to which the adapter appends `/chat/completions`, for example
+  `https://openrouter.ai/api/v1`, `https://api.groq.com/openai/v1` or `https://api.deepseek.com/v1`.
+- When the key is saved the URL must use `https`, have no user name, password, query or fragment (an Azure URL with
+  `?api-version=` is refused), be at most 2 048 characters, and its host must resolve within 5 seconds to public
+  addresses only; otherwise it is refused with `RST-2304`. The key must have 16 to 512 visible characters (`RST-2301`).
+- The adapter refuses again, before any call, a base URL with a user name, password, query or fragment (`RST-2304`),
+  and a key outside 16 to 512 visible characters up to U+00FF (`RST-1511`); neither message holds any part of the key.
+- The key goes only into the `Authorization` header. The package's environment defaults (`OPENAI_API_KEY`,
+  `OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_CUSTOM_HEADERS` and the rest) never apply, as for OpenAI (section 3.1).
+  The service's error text is never copied into an error, its cause, a log or the call log: it may quote the key
+  (RNF-003).
+
+### 5.2 Every connection is checked again (threat model TB5)
+
+Every request goes through `publicAddressFetch` (`src/infrastructure/providers/openai/agent-fetch.ts`), a fetch over
+`node:https` on a `PublicAddressAgent` (`src/infrastructure/security/public-address-agent.ts`) that the adapter
+builder creates for each adapter:
+
+- each connect resolves the host again through `publicOnlyLookup` and hands the socket only addresses that are all
+  public, so a name that was public when the key was saved and resolves inside later (DNS rebinding) never gets a
+  socket; a name that does not resolve within 5 seconds is refused too;
+- an IP literal is checked without a lookup, in every spelling the URL parser accepts (`127.0.0.1`, `127.1`,
+  `0x7f000001`, `2130706433`, `0177.0.0.1`, `[::1]`, `[::ffff:127.0.0.1]`); the refused ranges are those of
+  `public-address.ts` (private, loopback, link-local with the metadata address `169.254.169.254`, CGNAT, unique-local
+  `fc00::/7`, IPv4-mapped and the rest of the special-purpose registries);
+- only `https` is sent; a URL of another scheme is refused before anything happens;
+- a redirect is never followed: a 3xx answer fails the attempt with `RST-1506` (not retried) and its `Location` is
+  never called;
+- only the headers Rosetta means to send are sent, and the answer is read with a size limit of 8 MiB.
+
+A refused address fails the call with `RST-2304` at once, without a retry; the message names the host, never the key.
+
+### 5.3 What every call sends and reads
+
+As for OpenAI (section 3.2): the same request body (`max_completion_tokens`, tools as functions, earlier tool calls by
+id) and the same reading of the answer. `modelVersion` is the answer's `model` as the service reports it (often a
+vendor-prefixed id); `requestId` is the `x-request-id` header when the service sends one. A usage without
+`prompt_tokens_details` counts no cached tokens; an answer without usage is estimated (RF-421). Services differ in
+what they accept (some refuse `max_completion_tokens` or tools for some models); such a refusal is a 4xx and fails
+with `RST-1506`.
+
+### 5.4 Retries and permanent errors (RF-406)
+
+The same retry loop and back-off as OpenAI (section 3.3). The codes are those of the OpenAI table, with messages that
+name the OpenAI-compatible service and the account settings instead of OpenAI and `OPENAI_API_KEY`:
+
+| Failure | Code | Retried |
+|---|---|---|
+| 429 rate limit | `RST-1504` | yes |
+| timeout of an attempt, or 408 | `RST-1505` | yes |
+| 5xx, or a failed connection | `RST-1506` | yes |
+| 401 rejected key | `RST-1511` | no; the message names the key and base URL in the account settings |
+| 404 `model_not_found` | `RST-1512` | no; the message names the model |
+| 429 `insufficient_quota` | `RST-1513` | no |
+| a redirect, any other 4xx, an answer past the size limit or one that is not a chat completion | `RST-1506` | no |
+| an address the public-address agent refused, or a scheme other than `https` | `RST-2304` | no |
+| cancelled by the caller | `RST-1501` | no |
+
+### 5.5 Prices
+
+The shipped price table holds no OpenAI-compatible service, so a role on one is refused with `RST-1601` unless the
+project settings add a price for its model or turn on `allowUnpriced` for the user's own key (RF-427).
+
+### 5.6 Tests and tested services
+
+- Automated tests never call a real service (ADR-008). The contract suite runs on the adapter against
+  `tests/support/fake-openai-server.ts` replaying the hand-written recordings under
+  `tests/recordings/openai-compatible/`, with a FAKE key, through the adapter's own transport code over plain HTTP on
+  a plain agent (`tests/support/openai-compatible-harness.ts`), because the public-address agent refuses loopback by
+  design. The guard has its own tests
+  (`tests/integration/infrastructure/providers/openai/openai-compatible-guard.test.ts`): the adapter on
+  `publicAddressFetch`, and adapters made by the adapter builder, refuse every internal literal above, names a fake
+  resolver answers with internal addresses, and a name that rebinds after the save check, while a loopback listener
+  confirms that no connection was opened. Under `ROSETTA_TEST=1` the adapter also refuses every URL but a registered
+  loopback fake server with `RST-1509` (section 2.5).
+- Tested services: none yet. There is no live check script for this kind.
 
 ## 6. Fake provider (tests only)
 
