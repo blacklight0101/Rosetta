@@ -98,6 +98,7 @@ describe('an area that still fails', UNDERSTAND_TIMEOUT, () => {
       ['Services', 'Done'],
     ]);
     expect(await endDataOf(h, run)).toMatchObject({ endState: 'Completed', failedAreas: 1 });
+    expect(run.failedAreas).toBe(1);
     const folder = h.runFolder(run);
     const coverage = coverageSchema.parse(await readJson(join(folder, 'coverage.json')));
     expect(coverage.areas.map((entry) => [entry.area, entry.failure])).toEqual([
@@ -126,6 +127,7 @@ describe('an area that still fails', UNDERSTAND_TIMEOUT, () => {
 
     expect(run.endState).toBe('Completed');
     expect(await endDataOf(h, run)).toMatchObject({ endState: 'Completed', failedAreas: 1 });
+    expect(run.failedAreas).toBe(1);
   });
 });
 

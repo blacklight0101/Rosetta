@@ -34,6 +34,8 @@ export interface Run {
   readonly startedAt: EpochMs | null;
   readonly endedAt: EpochMs | null;
   readonly totals: RunTotals;
+  /** RF-208: the areas of an understand run that gave no usable card; 0 for any other run. */
+  readonly failedAreas: number;
 }
 
 export type StartProblem = 'not-queued';

@@ -81,5 +81,6 @@ export function toRun(row: unknown): Run {
       outputTokens: parsed.output_tokens,
       cachedInputTokens: parsed.cached_input_tokens,
     },
+    failedAreas: 0,
   };
 }

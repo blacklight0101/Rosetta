@@ -178,3 +178,19 @@ it('RF-208 a retry the project refuses for missing cloud consent shows why and p
     '/projects/p-1/start',
   );
 });
+
+it('RF-208 two clicks on Retry failed areas start one run, not two', async () => {
+  const { stream, calls } = renderLive({ [`POST ${startPath}`]: started });
+  const connection = await stream.connection();
+  for (const event of twoAreas) connection.event(event);
+  connection.event(runEnded(7, 'Completed', undefined, 1));
+  const button = await screen.findByRole('button', { name: 'Retry failed areas' });
+
+  fireEvent.click(button);
+  fireEvent.click(button);
+
+  await waitFor(() => {
+    expect(window.location.pathname).toBe('/runs/run-2');
+  });
+  expect(calls.filter((call) => call.path === startPath)).toHaveLength(1);
+});

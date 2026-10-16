@@ -146,6 +146,24 @@ function endingTests(name: string, fresh: FreshRuns): void {
   });
 }
 
+function failedAreasTests(name: string, fresh: FreshRuns): void {
+  it(`RF-208 ${name} keeps the number of failed areas given at the end, 0 when none is given`, async () => {
+    const index = await fresh();
+    const withFailures = await stored(index, amyRun());
+    const without = await stored(index, amyRun());
+    await index.start(withFailures.id, 5_000);
+    await index.start(without.id, 5_000);
+
+    const ended = await index.end(withFailures.id, 'Completed', 9_000, 3);
+    const plain = await index.end(without.id, 'Completed', 9_000);
+
+    expect(ended?.failedAreas).toBe(3);
+    expect(plain?.failedAreas).toBe(0);
+    expect((await index.find(runAmy, withFailures.id))?.failedAreas).toBe(3);
+    expect((await index.find(runAmy, without.id))?.failedAreas).toBe(0);
+  });
+}
+
 function recordingTests(name: string, fresh: FreshRuns): void {
   it(`RF-126 ${name} records the commit and the snapshot folder of a run that has not ended`, async () => {
     const index = await fresh();
@@ -272,6 +290,7 @@ export function runIndexContract(name: string, fresh: FreshRuns): void {
   scopingTests(name, fresh);
   queueTests(name, fresh);
   endingTests(name, fresh);
+  failedAreasTests(name, fresh);
   recordingTests(name, fresh);
   removalTests(name, fresh);
   projectRemovalTests(name, fresh);

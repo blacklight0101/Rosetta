@@ -161,6 +161,17 @@ describe('parseCardsLenient reads sloppy JSON', () => {
     expect(parsed.drafts).toHaveLength(1);
   });
 
+  it('RF-208 a trailing comma followed by 200 spaces and newlines before the bracket is read', () => {
+    const gap = `${' '.repeat(200)}
+${' '.repeat(200)}`;
+    const raw = `{"cards": [${JSON.stringify(cardObject())},${gap}],${gap}}`;
+
+    const parsed = parseCardsLenient(raw);
+
+    expect(parsed.problems).toEqual([]);
+    expect(parsed.drafts).toHaveLength(1);
+  });
+
   it('RF-208 a comma before a bracket inside a string is not touched', () => {
     const card = cardObject({ summary: 'Lists items like [a,] and {b,} in text.' });
     const raw = `{"cards": [${JSON.stringify(card)},],}`;
