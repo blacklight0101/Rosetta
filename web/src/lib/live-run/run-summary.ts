@@ -34,6 +34,32 @@ export function overviewOf(state: RunState): Overview {
   };
 }
 
+export interface FailedArea {
+  readonly area: string;
+  /** The agent state, in a few words: `invalid output`, `failed`, `turn limit reached`... */
+  readonly why: string;
+}
+
+const failureWords: Readonly<Record<string, string>> = {
+  InvalidOutput: 'invalid output',
+  Failed: 'failed',
+  TurnLimitReached: 'turn limit reached without a card',
+  StoppedByCap: 'stopped by a cap without a card',
+};
+
+/**
+ * RF-208: the areas whose agent ended without a usable card, with why. An agent that stopped at its
+ * turn limit still counts as done when it gave cards (see `overviewOf`).
+ */
+// RF-208
+export function failedAreasOf(state: RunState): readonly FailedArea[] {
+  return state.agents.flatMap((agent) => {
+    const why = failureWords[agent.state];
+    const gaveCards = agent.cards.length > 0;
+    return why === undefined || gaveCards ? [] : [{ area: agent.area, why }];
+  });
+}
+
 // RF-1003
 export function roleTotalsOf(state: RunState): readonly RoleTotals[] {
   const totals = new Map<string, { input: number; output: number }>();
@@ -88,11 +114,4 @@ export function progressOf(state: RunState): number {
     (agent) => !['Planned', 'Running'].includes(agent.state),
   ).length;
   return turns + ended + (state.ended === undefined ? 0 : 1);
-}
-
-// RF-208: skeleton so the tests of the next commit fail on their assertions.
-export function failedAreasOf(
-  state: RunState,
-): readonly { readonly area: string; readonly why: string }[] {
-  return state.agents.length < 0 ? [{ area: '', why: '' }] : [];
 }

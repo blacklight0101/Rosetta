@@ -101,6 +101,8 @@ export const resolvedData = z.looseObject({ url: text.optional(), commitSha: tex
 export const endedData = z.looseObject({
   endState: text,
   errorCode: text.optional(),
+  /** RF-208: areas of a completed run that gave no usable card. */
+  failedAreas: count.optional(),
   totals: z.looseObject({ costMicros: micros.optional() }).optional(),
 });
 

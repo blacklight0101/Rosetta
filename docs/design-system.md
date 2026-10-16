@@ -191,7 +191,7 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
 | Agent `Running` | info | solid | live dot | working now |
 | Agent `Done` | ok | tint | check | finished normally |
 | Agent `TurnLimitReached` | warn | tint | clock | stopped at the turn limit; cards so far are kept |
-| Agent `InvalidOutput` | danger | tint | brackets | the model's answer could not be parsed after one repair |
+| Agent `InvalidOutput` | danger | tint | brackets | the model's answer held no valid card after its repairs |
 | Agent `Failed` | danger | solid | exclamation | stopped by an error |
 | Agent `StoppedByCap` | warn | solid | square | stopped because the budget cap was reached |
 | Run `Completed` | ok | solid | check | |
@@ -281,6 +281,7 @@ cards are built (an amendment of G-02, recorded in `handoff.md`).
 | Administration: audit | RF-1109 | filterable table, last 30 days |
 | Plan setup | RF-605, RF-608, RF-609 | interview in small groups, each question with a default, the reason and the recommended option; architecture styles with evidence card ids; stack per layer; "What I recorded" summary; added 2026-10-11, artboard 14 (`PlanSetup.dc.html`, steps principles, architecture and stack), approved as a G-02 amendment (DEC-86) |
 | Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |
+| Failed areas notice | RF-208, RF-1002 | a `rst-callout--warn` under the head of the live run page when a run ended with areas that gave no usable card: "Completed with 2 areas failed" (or "2 areas failed"), each area with why, and a **Retry failed areas** button that starts a run of those areas; it is not shown for a stopped run |
 
 **Status (2026-10-11):** drawn as artboards 7-13 of the design board (artboard 14, Plan setup, follows in DEC-86) (`docs/design/board/Landing.dc.html`,
 `SignIn`, `ChangePassword`, `Projects`, `Settings`, `AdminUsers`, `AdminAudit`), with the Impeccable design
