@@ -5,6 +5,7 @@ import { LiveRunPage } from '../../../web/src/pages/LiveRunPage.js';
 import { renderPage } from './fake-api.js';
 import { agentStarted, ev, planned, startedData, turn } from './live-run-fixtures.js';
 import { runPath, runRow, runUuid } from './live-run-helpers.js';
+import { openTabWhenReady } from './live-run-running-helpers.js';
 import { StreamServer } from './stream-server.js';
 
 // RF-1010, P1-36: the live run page tells the signed-in shell each time a model call completes, so
@@ -27,6 +28,7 @@ it('RF-1010 the live run page announces each completed model turn to the header 
     { runId: runUuid },
   );
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));

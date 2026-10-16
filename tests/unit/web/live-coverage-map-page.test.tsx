@@ -9,6 +9,7 @@ import {
   toolResult,
 } from './live-run-fixtures.js';
 import { renderLive } from './live-run-helpers.js';
+import { openTabWhenReady } from './live-run-running-helpers.js';
 
 // RF-1005, DEC-51 (P1-38): the coverage map on the live run page fills in from the `read_file`
 // events the test pushes into the fake stream: per area a tree of the files read and the area's
@@ -25,6 +26,7 @@ const areaOf = (area: string): HTMLElement =>
 it('RF-1005 shows every planned area, empty, before any file is read', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
@@ -41,6 +43,7 @@ it('RF-1005 shows every planned area, empty, before any file is read', async () 
 it('RF-1005 fills in the tree of an area and its read share as files are read', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
@@ -75,6 +78,7 @@ it('RF-1005 fills in the tree of an area and its read share as files are read', 
 it('RF-1005 a scan run has no coverage map', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', { ...startedData, stage: 'scan' }));
 
@@ -85,6 +89,7 @@ it('RF-1005 a scan run has no coverage map', async () => {
 it('RF-1005 RF-1002 the coverage map is held while updates are paused and applies the held reads on Resume', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
   connection.event(planned(3, 'reader-002', 'Services'));

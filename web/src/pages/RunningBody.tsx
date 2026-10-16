@@ -1,0 +1,149 @@
+import type { JSX } from 'preact';
+import { useState } from 'preact/hooks';
+import type { RunEstimate } from '../api/estimate-schemas.js';
+import type { RunRow } from '../api/run-schemas.js';
+import { Tabs, type TabSpec } from '../components/Tabs.js';
+import { tilesOf } from '../lib/live-run/code-map-tiles.js';
+import { journeyOf } from '../lib/live-run/journey.js';
+import type { RunPhase } from '../lib/live-run/run-phase.js';
+import type { RunState, SourceState } from '../lib/live-run/run-state.js';
+import { roleTotalsOf } from '../lib/live-run/run-summary.js';
+import { workingNowOf } from '../lib/live-run/working-now.js';
+import { ActivityTab } from './ActivityTab.js';
+import { AgentsTab } from './AgentsTab.js';
+import { CardsTab } from './CardsTab.js';
+import { CodeMap } from './CodeMap.js';
+import { RunJourney } from './RunJourney.js';
+import { SpendPanel } from './SpendPanel.js';
+import { useCodeAreas } from './use-code-areas.js';
+import { WorkingNow } from './WorkingNow.js';
+
+// RF-1015, DEC-137, design-system.md section 14 (live run): the page of a run while it runs (queued
+// or working): the run journey, the living code map, the spend against the cap and the agents at
+// work, and below them one list at a time in tabs: cards so far, all agents, activity. The proposal
+// `docs/design/proposals/run-page-v2.html` is the reference. The ended run keeps the earlier page
+// until P1-170 builds the after-run mode.
+
+export interface RunningBodyProps {
+  readonly run: RunRow;
+  /** What the panels show: the live state, or the one frozen by Pause updates. */
+  readonly state: RunState;
+  readonly phase: RunPhase;
+  readonly stage: string;
+  readonly costMicros: number;
+  readonly estimate: RunEstimate | undefined;
+  readonly source: SourceState | undefined;
+}
+
+const tabIds = ['cards', 'agents', 'activity'] as const;
+type TabId = (typeof tabIds)[number];
+
+const tabOf = (id: string): TabId => tabIds.find((each) => each === id) ?? 'cards';
+
+function Facts(props: Pick<RunningBodyProps, 'state' | 'source'>): JSX.Element {
+  const { source, state } = props;
+  const models = [...new Set(state.agents.map((agent) => agent.model).filter((m) => m !== ''))];
+  const commit = source?.commitSha?.slice(0, 7);
+  return (
+    <p class="rst-running__facts">
+      {source === undefined ? null : (
+        <span class="rst-mono">{`${source.owner}/${source.repo}${commit === undefined ? '' : ` @ ${commit}`}`}</span>
+      )}
+      {models.length === 0 ? null : <span>{models.join(', ')}</span>}
+    </p>
+  );
+}
+
+function noteOf(phase: RunPhase, state: RunState): string {
+  if (phase.kind === 'queued') return 'The run is waiting in the queue.';
+  return state.agents.length === 0
+    ? 'The agents start when the run has planned its work.'
+    : 'No agent is working at this moment.';
+}
+
+function tabsOf(state: RunState): readonly TabSpec[] {
+  return [
+    { id: 'cards', label: 'Cards so far', count: state.cards.length },
+    { id: 'agents', label: 'All agents', count: state.agents.length },
+    { id: 'activity', label: 'Activity', count: state.log.length },
+  ];
+}
+
+interface DetailsProps extends RunningBodyProps {
+  readonly tab: TabId;
+  readonly area: string | undefined;
+  readonly open: (id: TabId, area?: string) => void;
+}
+
+function Details(props: DetailsProps): JSX.Element {
+  const { run, state, stage, tab, area, open } = props;
+  return (
+    <section class="rst-card rst-running__details" aria-label="Run details">
+      <Tabs
+        label="Run details"
+        tabs={tabsOf(state)}
+        selected={tab}
+        onSelect={(id) => {
+          open(tabOf(id));
+        }}
+      >
+        {tab === 'cards' ? (
+          <CardsTab state={state} claims={state.claims} source={props.source} />
+        ) : null}
+        {tab === 'agents' ? (
+          <AgentsTab
+            {...{ state, stage, area }}
+            costMicros={props.costMicros}
+            estimate={props.estimate}
+            onShowAll={() => {
+              open('agents');
+            }}
+          />
+        ) : null}
+        {tab === 'activity' ? <ActivityTab state={state} runId={run.id} /> : null}
+      </Tabs>
+    </section>
+  );
+}
+
+// RF-1015
+export function RunningBody(props: RunningBodyProps): JSX.Element {
+  const { run, state, phase, stage } = props;
+  const [tab, setTab] = useState<TabId>('cards');
+  const [area, setArea] = useState<string | undefined>();
+  const areas = useCodeAreas(run.projectId, stage);
+  const tiles = tilesOf(state, areas);
+  const open = (id: TabId, only?: string): void => {
+    setTab(id);
+    setArea(only);
+  };
+  const tokens = roleTotalsOf(state).reduce((sum, r) => sum + r.inputTokens + r.outputTokens, 0);
+  return (
+    <>
+      <Facts state={state} source={props.source} />
+      <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />
+      <div class="rst-running__grid">
+        <CodeMap
+          tiles={tiles}
+          stage={stage}
+          onOpenArea={(name) => {
+            open('agents', name);
+          }}
+        />
+        <div class="rst-running__rail">
+          <SpendPanel
+            runId={run.id}
+            costMicros={props.costMicros}
+            tokens={tokens}
+            caps={state.caps}
+            onOpenRoles={() => {
+              open('agents');
+            }}
+          />
+          <WorkingNow items={workingNowOf(state)} waitingNote={noteOf(phase, state)} />
+        </div>
+      </div>
+      <Details {...props} {...{ tab, area, open }} />
+    </>
+  );
+}
