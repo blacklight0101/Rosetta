@@ -246,6 +246,24 @@ describe('an understand run: when the summariser is not asked', UNDERSTAND_TIMEO
   });
 });
 
+describe('an understand run: a summariser on Ollama', UNDERSTAND_TIMEOUT, () => {
+  const temp = useTempRoot('rosetta-consolidate-');
+
+  it('RF-401 RF-250 only the reader is checked before the run, the summariser is not', async () => {
+    const settings = understandSettings((base) => ({
+      ...base,
+      roles: { ...base.roles, summariser: { ...base.roles.summariser, provider: 'ollama' } },
+    }));
+
+    const { h, run } = await made(temp.path, { settings });
+
+    expect(run.endState).toBe('Completed');
+    const roles = h.providers.requests().map((request) => request.context.role);
+    expect(roles.filter((role) => role === 'summariser')).toHaveLength(2);
+    expect(roles).toHaveLength(7);
+  });
+});
+
 describe('an understand run: a summariser that cannot be served', UNDERSTAND_TIMEOUT, () => {
   const temp = useTempRoot('rosetta-consolidate-');
 

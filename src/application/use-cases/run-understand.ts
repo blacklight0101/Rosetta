@@ -224,7 +224,8 @@ export class RunUnderstand implements RunExecutor {
     const reader = built.value.get('reader');
     const summariser = built.value.get('summariser');
     if (reader === undefined) return stop(failed(ERROR_CODES.providerUnavailable));
-    const ready = await preflightOllama(built.value, {
+    // Only the reader is checked: a summariser that is not ready fails its own call, which is skipped.
+    const ready = await preflightOllama(new Map([['reader', reader]]), {
       runId: run.runKey,
       traceId: traceIdOf(run),
       nextCallId,
