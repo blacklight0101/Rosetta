@@ -112,8 +112,8 @@ describe('OpenAiCompatibleProvider refuses internal IP literals', () => {
 
   it('RF-1104 a plain http base URL is refused by the transport without a connection', async () => {
     const listener = await listen();
-    const resolver = new FakeHostResolver().answer('llm.example.com', ['93.184.215.14']);
-    const provider = guarded(`http://llm.example.com:${String(listener.port)}/v1`, resolver);
+    const resolver = new FakeHostResolver().answer('localhost', ['93.184.215.14']);
+    const provider = guarded(`http://localhost:${String(listener.port)}/v1`, resolver);
 
     const error = await failureOf(provider.complete(contractRequest()));
 
@@ -123,53 +123,61 @@ describe('OpenAiCompatibleProvider refuses internal IP literals', () => {
   });
 });
 
+// The test network block opens sockets only to loopback names, so the host name in these URLs is
+// always `localhost` and the fake resolver plays the DNS: it answers what a real name would. Without
+// the guard, Node would resolve `localhost` itself and reach the listener, which counts it.
 describe('OpenAiCompatibleProvider resolves the host on every connect', () => {
   it.each([
-    ['localhost', ['127.0.0.1']],
-    ['LOCALHOST', ['127.0.0.1', '::1']],
-    ['localhost.', ['127.0.0.1']],
-    ['api.localhost', ['127.0.0.1']],
-    ['llm.internal.example', ['10.20.30.40']],
-    ['metadata.example', ['169.254.169.254']],
-    ['mixed.example', ['93.184.215.14', '192.168.0.10']],
-    ['v6.internal.example', ['fd00::5']],
-  ])('RF-1104 a name that resolves to %s %j is refused', async (host, addresses) => {
+    ['loopback', ['127.0.0.1']],
+    ['IPv6 loopback', ['::1']],
+    ['a private address', ['10.20.30.40']],
+    ['the cloud metadata address', ['169.254.169.254']],
+    ['a public and a private address', ['93.184.215.14', '192.168.0.10']],
+    ['a unique-local IPv6 address', ['fd00::5']],
+    ['an IPv4-mapped loopback', ['::ffff:127.0.0.1']],
+  ])(
+    'RF-1104 a name that resolves to %s is refused without a connection',
+    async (_name, addresses) => {
+      const listener = await listen();
+      const resolver = new FakeHostResolver().answer('localhost', addresses);
+      const provider = guarded(`https://localhost:${String(listener.port)}/v1`, resolver);
+
+      const error = await failureOf(provider.complete(contractRequest()));
+
+      expect(error).toMatchObject({ code: ERROR_CODES.baseUrlRejected });
+      expect(resolver.lookups).toEqual(['localhost']);
+      expect(listener.connections).toBe(0);
+    },
+  );
+
+  it('RF-1104 a name that does not resolve is refused without a connection', async () => {
     const listener = await listen();
-    const resolver = new FakeHostResolver().answer(host, addresses);
-    const provider = guarded(`https://${host}:${String(listener.port)}/v1`, resolver);
+    const provider = guarded(
+      `https://LOCALHOST:${String(listener.port)}/v1`,
+      new FakeHostResolver(),
+    );
 
     const error = await failureOf(provider.complete(contractRequest()));
 
     expect(error).toMatchObject({ code: ERROR_CODES.baseUrlRejected });
-    expect(resolver.lookups.length).toBeGreaterThan(0);
     expect(listener.connections).toBe(0);
   });
+});
 
-  it('RF-1104 a name that does not resolve is refused', async () => {
-    const provider = guarded('https://nowhere.example:443/v1', new FakeHostResolver());
-
-    const error = await failureOf(provider.complete(contractRequest()));
-
-    expect(error).toMatchObject({ code: ERROR_CODES.baseUrlRejected });
-  });
-
+describe('OpenAiCompatibleProvider against DNS rebinding', () => {
   it('RF-1104 a name public when the key was saved and internal at the call is refused (DNS rebinding)', async () => {
     const listener = await listen();
-    const resolver = new FakeHostResolver().answer(
-      'rebind.example.com',
-      ['93.184.215.14'],
-      ['127.0.0.1'],
-    );
+    const resolver = new FakeHostResolver().answer('localhost', ['93.184.215.14'], ['127.0.0.1']);
     const saved = await new DnsPublicHostCheck({ resolver: resolver.resolve }).isPublicHost(
-      'rebind.example.com',
+      'localhost',
     );
-    const provider = guarded(`https://rebind.example.com:${String(listener.port)}/v1`, resolver);
+    const provider = guarded(`https://localhost:${String(listener.port)}/v1`, resolver);
 
     const error = await failureOf(provider.complete(contractRequest()));
 
     expect(saved).toBe(true);
     expect(error).toMatchObject({ code: ERROR_CODES.baseUrlRejected });
-    expect(resolver.lookups).toEqual(['rebind.example.com', 'rebind.example.com']);
+    expect(resolver.lookups).toEqual(['localhost', 'localhost']);
     expect(listener.connections).toBe(0);
   });
 });
