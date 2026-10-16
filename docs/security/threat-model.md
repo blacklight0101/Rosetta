@@ -63,7 +63,8 @@ flowchart LR
 | TB5 | Information disclosure: secrets in responses, errors or logs | no key returned after saving; no stack trace in any response; masked logs; output scan test | RF-007, RF-1104, RNF-003 |
 | TB5 | Spoofing / SSRF: a user points the server at an internal address through a provider base URL | one base URL per provider, stored with the user's key; https and a public address checked on save and again on every connect (DNS rebinding); project settings cannot set a base URL; Ollama only at the operator's `ROSETTA_OLLAMA_URL` (DEC-112) | RF-1104 |
 | TB5 | Information disclosure: the landing page is indexed | `noindex`; `robots.txt` disallows all | RF-1201 |
-| TB5, TB6 | Repudiation and blind spots: refused requests and reads leave no trace | security events logged as `warn` and counted in the page; account and key events in the audit table | RF-009, RF-1011, RF-1109 |
+| TB5, TB6 | Repudiation and blind spots: refused requests and reads leave no trace | security events logged as `warn` and counted in the page; account and key events in the audit table; refused requests up to 30 rows a minute per address and then one counted row (DEC-141) | RF-009, RF-1011, RF-1109 |
+| TB5 | Denial of service: a script without a session fills the audit table and the log with refused requests (P1-49 F-01) | one limit per client address over every writer of a `request.refused` row: 30 rows and security events a minute, then one `rate-limit` row with the count of the rest; the stored path cut to 512 characters with a marker; the limiter keeps at most 10,000 addresses; the address is `request.ip`, which follows `X-Forwarded-For` only through `ROSETTA_TRUST_PROXY`; the requests are still refused with 403 or 429 (architecture section 10) | RF-1109, DEC-141 |
 | TB8 database | Tampering: SQL injection | parameterised queries only, enforced by a lint rule (conventions section 10) and the verifier's grep; the app role cannot change the schema | ADR-016 |
 | TB8 | Information disclosure: a database dump exposes keys or passwords | keys encrypted with AES-256-GCM under `ROSETTA_SECRET_KEY` held outside the database; passwords and session ids hashed | RF-1104, ADR-015 |
 | TB8 | Repudiation: the audit trail is altered | the app role may only insert into `audit_events` and `cost_ledger`; the ledger is kept for the life of the deployment (DEC-110) and audit rows for 365 days (DEC-132), deleted only by the `SECURITY DEFINER` function `purge_audit_events_before`, which refuses a cut-off younger than 365 days on the database clock | data-model.md section 6 |
@@ -124,6 +125,12 @@ deployment procedure (environments-and-delivery.md section 10).
 
 - A prompt injection may still bias the wording of a card that cites real lines; the verifier's model step can be
   fooled the same way. The report always shows the cited lines, so a reader can check.
+- Refused requests are bounded per client address (DEC-141), not in total: many addresses (a botnet, or the
+  2^64 addresses of one IPv6 /64) can each write 31 refusal rows a minute, and beyond 10,000 addresses in a minute an
+  address pushed out of the limiter starts a new minute when it comes back. The counts of minutes not yet ended are
+  written when the server closes, but lost if the process is killed. The `http` access log entry of each response
+  still holds the full request URL (up to Node's header limit), bounded by the log retention (RF-009), not by
+  DEC-141.
 - No multi-factor sign-in and no e-mail reset in release 1 (ADR-015); accounts are few and created by hand, and the
   teacher password is delivered only in the hand-in form.
 - Losing `ROSETTA_SECRET_KEY` makes stored user keys unreadable; leaking it together with a database dump exposes

@@ -737,7 +737,7 @@ of another shape is refused at read time.
 | `at` | `timestamptz` | indexed |
 | `actor_user_id` | `uuid` null | null for anonymous sign-in attempts |
 | `action` | `text` | for example `auth.sign_in`, `auth.locked`, `user.created`, `user.password_changed`, `user.password_reset`, `user.disabled`, `user.enabled`, `user.own_daily_cap_changed`, `key.saved`, `key.deleted`, `admin.workspace_opened`, `admin.caps_changed`, `request.refused` |
-| `target_type`, `target_id` | `text` null | |
+| `target_type`, `target_id` | `text` null | for `request.refused`, `route` and `METHOD path` with the path cut to 512 characters and `[cut]` (DEC-141); null id on the count row, whose `detail` is `{ reason: 'rate-limit', count, windowStart }` (architecture section 10) |
 | `ip` | `text` | |
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
 | `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, a key whose last word is `token` or `authorization` such as `accessToken`, and the whole phrase after "password is" or "was": a quoted one up to its closing quote, an unquoted one up to the next comma, semicolon or newline or the end of the text); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
