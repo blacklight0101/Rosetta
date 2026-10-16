@@ -60,7 +60,7 @@ every variable with a comment and a safe example.
 | `ROSETTA_SECRET_KEY_PREVIOUS` | no | yes | the previous key during a rotation; rows under it are re-encrypted at start-up |
 | `ROSETTA_PUBLIC_URL` | yes | no | the URL users open (`http://127.0.0.1:8080` locally); the `Origin` check compares with it |
 | `ROSETTA_DATA_DIR` | yes | no | `/data` in the image |
-| `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` | first start | yes | bootstrap administrator (RF-1102) |
+| `ROSETTA_ADMIN_USER`, `ROSETTA_ADMIN_PASSWORD` | first start on an empty `users` table | yes | bootstrap administrator (RF-1102): needed only while the `users` table is empty. On an empty table with either one missing, start-up logs a warning and creates no account, so nobody can sign in. On a table with accounts they are ignored (an info line only), so they may be removed. A name or password that breaks the rules stops start-up with its RST code, naming the variable (DEC-119) |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | no | yes | server keys (DEC-64) |
 | `ROSETTA_OLLAMA_URL` | no | no | `http://host.docker.internal:11434` locally; unset when hosted; the only source of the Ollama URL (DEC-112); a user name or password in it is refused (`RST-1000`) |
 | `ROSETTA_CONTACT_EMAIL` | no | no | the landing page's "Request access" address (Q-20); a plain `name@domain.tld` only, without quotes, spaces or `?`, `#`, `&` |

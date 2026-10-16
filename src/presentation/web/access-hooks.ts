@@ -38,7 +38,8 @@ import { SESSION_COOKIE } from './session-cookies.js';
 // 4. CSRF: a state-changing request on a non-public route needs the token of
 //    @fastify/csrf-protection in the `x-csrf-token` header (403 RST-2008, recorded by the error
 //    handler through `recordCsrfRefusal`).
-// Every 403 writes an audit row and a security event.
+// Every 403 writes an audit row and a security event, up to the per-address limit of DEC-141
+// (RecordRefusedRequest).
 
 declare module 'fastify' {
   interface FastifyRequest {

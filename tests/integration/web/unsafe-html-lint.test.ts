@@ -69,6 +69,34 @@ const sinkCases: [string, string][] = [
     'a bare parseHTMLUnsafe call',
     'import { parseHTMLUnsafe } from "./html.js";\nexport function a(x: string) { return parseHTMLUnsafe(x); }',
   ],
+  [
+    'srcdoc set by setAttributeNS',
+    'export function a(el: Element, x: string) { el.setAttributeNS(null, "srcdoc", x); }',
+  ],
+  [
+    'srcDoc set by an optional setAttributeNS',
+    'export function a(el: Element, x: string) { el?.setAttributeNS(null, "srcDoc", x); }',
+  ],
+  [
+    'setHTMLUnsafe taken by destructuring',
+    'export function a(el: Element, x: string) { const { setHTMLUnsafe } = el; setHTMLUnsafe.call(el, x); }',
+  ],
+  [
+    'setHTMLUnsafe taken by destructuring under a string key',
+    'export function a(el: Element) { const { "setHTMLUnsafe": f } = el; return f; }',
+  ],
+  [
+    'innerHTML taken by destructuring and renamed',
+    'export function a(el: Element) { const { innerHTML: html } = el; return html; }',
+  ],
+  [
+    'setHTMLUnsafe by a template-literal computed key',
+    'export function a(el: Element, x: string) { el[`setHTMLUnsafe`](x); }',
+  ],
+  [
+    'innerHTML assigned by a template-literal computed key',
+    'export function a(el: Element, x: string) { el[`innerHTML`] = x; }',
+  ],
   ['document.write', 'export function a(x: string) { document.write(x); }'],
   [
     'DOMParser',
@@ -81,6 +109,12 @@ describe('RF-507 lint rule against HTML sinks', () => {
     const messages = await restrictedMessages(code);
     expect(messages.length).toBeGreaterThan(0);
     expect(messages.every((message) => message.startsWith('RF-507'))).toBe(true);
+  });
+
+  it('RF-507 accepts destructuring and template keys that are not HTML sinks', async () => {
+    const code =
+      'export function a(el: Element, k: string) { const { textContent, id } = el; return [textContent, id, el[`title`], el[k]]; }';
+    expect(await restrictedMessages(code)).toEqual([]);
   });
 
   it('RF-507 accepts text rendering', async () => {

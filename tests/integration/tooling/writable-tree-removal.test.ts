@@ -1,4 +1,4 @@
-import { access, chmod, mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { access, chmod, mkdir, mkdtemp, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -26,5 +26,21 @@ describe('removal of a folder that may hold read-only files', () => {
     const missing = join(tmpdir(), `rosetta-removal-missing-${String(process.pid)}`);
 
     await expect(removeWritableTree(missing)).resolves.toBeUndefined();
+  });
+
+  it('RNF-005 refuses a root that is a symbolic link, and changes nothing behind it', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'rosetta-removal-link-'));
+    const target = join(root, 'elsewhere');
+    await mkdir(target);
+    await writeFile(join(target, 'keep.txt'), 'content');
+    await chmod(join(target, 'keep.txt'), 0o444);
+    // A junction on Windows (no privilege needed), a symbolic link elsewhere.
+    await symlink(target, join(root, 'data'), 'junction');
+
+    await expect(removeWritableTree(join(root, 'data'))).rejects.toThrow(/symbolic link/u);
+
+    const kept = await stat(join(target, 'keep.txt'));
+    expect(kept.mode & 0o222).toBe(0);
+    await removeWritableTree(root);
   });
 });
