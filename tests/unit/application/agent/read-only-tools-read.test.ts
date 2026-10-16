@@ -70,22 +70,6 @@ describe('read_file ranges', () => {
     ]);
   });
 
-  it('RF-201 read_file refuses a range longer than the limit with an error the model can correct', async () => {
-    const { run, reader } = toolsSetup({ maxReadLines: 2 });
-
-    const outcome = await run('read_file', {
-      path: 'src/Orders/Order.cs',
-      startLine: 1,
-      endLine: 3,
-    });
-    const block = blockOf(outcome.content);
-
-    expect(outcome.error?.code).toBe(ERROR_CODES.toolArgumentsInvalid);
-    expect(block.text).toContain('at most 2 lines');
-    expect(block.excerpts).toEqual([]);
-    expect(reader.reads).toEqual([]);
-  });
-
   it('RF-201 read_file refuses a start after the end', async () => {
     const { run } = toolsSetup();
 

@@ -15,7 +15,7 @@ interface LinesRequest {
   readonly endLine: number;
 }
 
-// RF-201
+// RF-144, RF-201
 export async function readLinesBounded(
   reader: RepositoryReader,
   request: LinesRequest,
@@ -24,10 +24,19 @@ export async function readLinesBounded(
   const read = await reader.readLines(request);
   if (!read.ok) return err({ code: read.error.code, message: read.error.message });
   const lines = read.value.lines.map((line) => cutLine(line, limits.maxLineChars));
-  const kept = lines.slice(0, Math.max(1, linesThatFit(lines, limits.maxResultChars)));
+  const fitting = Math.max(1, linesThatFit(lines, limits.maxResultChars));
+  const kept = lines.slice(0, Math.min(fitting, limits.maxReadLines));
   const { path, startLine } = read.value;
   const endLine = startLine + kept.length - 1;
-  return ok({ excerpts: [{ path, startLine, endLine }], text: kept.join('\n') });
+  const notice = omittedNotice(endLine + 1, read.value.endLine);
+  const text = notice === undefined ? kept.join('\n') : `${kept.join('\n')}\n${notice}`;
+  return ok({ excerpts: [{ path, startLine, endLine }], text });
+}
+
+/** RF-144: the lines of a cut read that the agent did not get, and how to ask for them. */
+function omittedNotice(first: number, last: number): string | undefined {
+  if (first > last) return undefined;
+  return `Lines ${String(first)}-${String(last)} not shown; ask for them in another read_file call.`;
 }
 
 interface GrepOptions {
