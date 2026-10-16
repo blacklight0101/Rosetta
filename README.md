@@ -45,7 +45,7 @@ $lines = Get-Content .env | ForEach-Object {
 }
 Set-Content .env $lines -Encoding ascii
 docker compose up -d --build --wait
-Select-String -Path .env -Pattern '^(ROSETTA_ADMIN_USER|ROSETTA_ADMIN_PASSWORD)='
+Select-String -Path .env -Pattern '^ROSETTA_ADMIN_USER='
 ```
 
 ```bash
@@ -58,23 +58,26 @@ done
 sed -i.bak "s|^ROSETTA_SECRET_KEY=.*|ROSETTA_SECRET_KEY=$(openssl rand -base64 32)|" .env
 rm .env.bak
 docker compose up -d --build --wait
-grep -E '^(ROSETTA_ADMIN_USER|ROSETTA_ADMIN_PASSWORD)=' .env
+grep -E '^ROSETTA_ADMIN_USER=' .env
 ```
 
 The commands copy `.env.example` to `.env` (git-ignored), fill in the three database passwords, the administrator's
-password and a new `ROSETTA_SECRET_KEY` (32 random bytes in base64), then build the image and start the database and
-the app, and print the administrator's name and password. The secret key step is not optional: the all-zero key in
-`.env.example` is a public value, so the server refuses to start with it (error `RST-1008`). Keep a copy of your key;
-without it the stored provider keys cannot be decrypted. The first build takes a few minutes; the command returns when
-both services are healthy.
+password and a new `ROSETTA_SECRET_KEY` (32 random bytes in base64), then build the image, start the database and the
+app, and print the administrator's name. The administrator's password stays in `.env` and is never printed. The secret
+key step is not optional: the all-zero key in `.env.example` is a public value, so the server refuses to start with it
+(error `RST-1008`). Keep a copy of your key; without it the stored provider keys cannot be decrypted. The first build
+takes a few minutes; the command returns when both services are healthy.
 
-Open <http://127.0.0.1:8080>, choose Sign in and sign in as the administrator, `ROSETTA_ADMIN_USER` with the
-`ROSETTA_ADMIN_PASSWORD` printed above. The page asks you to choose a new password; after that you are on the start
-page, signed in. On the Projects page, Use the demo repository fills in the demo application (eShopLegacyWebForms)
-and Create project adds it. A scan needs no model; the agents of the understand stage need one: Ollama on the host
-(section 4 of the runbook) or your own provider key under Settings and keys. The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data,
-`docker compose down -v` deletes it. The steps in full (Ollama on the host, reset, rotating the passwords and
-troubleshooting) are in [docs/runbooks/local.md](docs/runbooks/local.md).
+Open <http://127.0.0.1:8080>, choose Sign in and sign in as the administrator: the user name is `ROSETTA_ADMIN_USER` and
+the password is `ROSETTA_ADMIN_PASSWORD`, both in `.env`. The port is fixed at 8080 (`compose.yaml`); if another program
+uses it, see the troubleshooting table of the runbook. The page asks you to choose a new password before anything else
+opens. On the Projects page, Use the demo repository fills in the address of the demo application
+(eShopLegacyWebForms); choose Create project to add it. A scan needs no model. The agents of the understand stage need
+one: Ollama on the host (section 4 of the runbook) or your own provider key under Settings and keys.
+
+The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data, `docker compose down -v`
+deletes it. The steps in full (Ollama on the host, reset, rotating the passwords and troubleshooting) are in
+[docs/runbooks/local.md](docs/runbooks/local.md).
 
 A sample report, made from recorded data of a demo repository, is published at <https://blacklight0101.github.io/Rosetta/> once GitHub Pages is enabled for the repository (source: GitHub Actions).
 

@@ -109,9 +109,15 @@ describe('README quick start: start and first sign-in', () => {
     expect(commands).not.toMatch(/docker compose up -d --build(?! --wait)/u);
   });
 
-  it('RF-801 shows the administrator name and password so the first sign-in can follow', () => {
-    expect(commands).toContain('ROSETTA_ADMIN_USER');
-    expect(commands).toContain('ROSETTA_ADMIN_PASSWORD');
+  it('RF-801 prints the administrator name and never the administrator password', () => {
+    const printing = blocks
+      .map((block) => block.body)
+      .flatMap((body) => body.split('\n'))
+      .filter((line) => /Select-String|grep /u.test(line))
+      .join('\n');
+
+    expect(printing).toContain('ROSETTA_ADMIN_USER');
+    expect(printing).not.toContain('ROSETTA_ADMIN_PASSWORD');
   });
 
   it('RF-801 says what the all-zero key of .env.example does and why the key is generated', () => {

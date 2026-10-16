@@ -42,7 +42,7 @@ owner (see Pending owner checks). Each id has passing tests in the matrix except
 | Web UI | RF-1001, RF-1002 (pending), RF-1003, RF-1004, RF-1005, RF-1006, RF-1007, RF-1008, RF-1009, RF-1010, RF-1011, RF-1012, RF-1013 | Start a run from the browser, watch every agent live, live cost and budget, the verification view, the coverage map, stored run events, answers to open questions in the page, run history and downloads, protection of every request, project tokens and cost always visible, provider calls and logs, deletion of snapshots and runs, security headers and cookies. |
 | Accounts, sessions and keys | RF-1100, RF-1101, RF-1102, RF-1103, RF-1104, RF-1105, RF-1106, RF-1107 (pending), RF-1108, RF-1109 | Sign in with a user name and password, sessions and sign-out, administrator-managed accounts, password change, your own provider keys stored encrypted, private workspaces, usage caps, a teacher account, a run queue and a security audit trail. |
 | Landing page | RF-1200, RF-1201 | A public landing page and its reach settings. |
-| Container and deployment | RF-1300, RF-1301, RF-1302, RF-1303, RF-1305 | One container image, a local Docker Compose stack bound to `127.0.0.1`, migrations applied at start-up, a health endpoint and configuration from the environment, with a server that refuses the all-zero placeholder secret key (`RST-1008`). |
+| Container and deployment | RF-1300, RF-1301, RF-1302, RF-1303, RF-1305 | One container image, a local Docker Compose stack bound to `127.0.0.1`, migrations applied by a one-off `migrate` step before the app starts (DEC-140), a health endpoint and configuration from the environment, with a server that refuses the all-zero placeholder secret key (`RST-1008`). |
 | Non-functional | RNF-001, RNF-002, RNF-003, RNF-004, RNF-005, RNF-007, RNF-008, RNF-009, RNF-010, RNF-013, RNF-014 | Portability, robustness, no secret in code or output, reproducible runs, offline tests, scan speed, usability, licence review of fixtures, accessibility checks, Clean Architecture enforced by a gate and secure defaults on the local stack. |
 
 ### Not in v0.1.0
@@ -68,15 +68,16 @@ Requirements the matrix marks as a gap, and the card that closes each:
 
 Findings the matrix ranks MAJOR, none of them BLOCKING:
 
-- **F-01** (open, card P1-157): refused requests write audit rows without a bound, so a script can grow the audit table
+- **F-01** (open, card P1-157 in review): refused requests write audit rows without a bound, so a script can grow the audit table
   on a hosted deployment. It needs the owner's answer on DEC-124 first. The local stack is published on `127.0.0.1` only.
-- **F-02** (open, card P1-158): the serving process still holds the migrator database credentials in its environment,
-  so code running inside the app process could change audit and ledger rows. The matrix found no route that exposes it.
+- **F-02** (fixed in card P1-158, merged after the matrix review): the serving process no longer receives the migrator
+  database credentials; the `migrate` service of `compose.yaml` applies the migrations and the app holds only the
+  `rosetta_app` credential (DEC-140). The matrix row keeps its reviewed state until its next revision.
 - **F-03** (fixed in card P1-108): the all-zero `ROSETTA_SECRET_KEY` placeholder of `.env.example` is refused at
   start-up with `RST-1008`. This is why the quick start generates a key before the first start.
 
-The MINOR findings F-04 to F-25 are tracked by cards P1-159, P1-160 and P1-161; see
-[tasks.md](orchestration/tasks.md) for their state. F-26 is an owner action that matters to the sample report: the
+The MINOR findings F-04 to F-25 are tracked by cards P1-159, P1-160 and P1-161; P1-160 and P1-161 are merged and P1-159
+is open. See [tasks.md](orchestration/tasks.md) for their state. F-26 is an owner action that matters to the sample report: the
 Pages workflow fails on `main` until the owner enables GitHub Pages.
 
 ### Pending owner checks
