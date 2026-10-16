@@ -217,7 +217,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     // no RST code; RF-007 lists no 503 and in-flight work completes on SIGTERM.
     return503OnClosing: false,
     // Trust the `trustProxy` nearest hops, as a number does in Fastify (its types omit numbers).
-    // With a trusted proxy, `request.host` also follows X-Forwarded-Host (the Origin check, P1-09).
+    // With a trusted proxy, `request.host` also follows X-Forwarded-Host; the Origin check does not (P1-09).
     trustProxy: (_address, hop) => hop < options.trustProxy,
     frameworkErrors: frameworkErrorHandler(options.logger, options.publicUrl),
     clientErrorHandler: clientErrorHandler(options.logger, options.publicUrl),

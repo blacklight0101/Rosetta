@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import { agentStarted, ev, planned, startedData, turn } from './live-run-fixtures.js';
 import { renderLive, runPath, runRow, valueOf } from './live-run-helpers.js';
+import { openTabWhenReady } from './live-run-running-helpers.js';
 
 // RF-1003, RF-424, P1-96: the live run page shows tokens and cost per role and per agent from the
 // `usage.recorded` events of the run, keeps the total read from the run, and no longer says that
@@ -18,6 +19,7 @@ function usage(seq: number, agent: string, role: string, costMicros: number) {
 it('RF-1003 shows the cost of each role and each agent from the usage events, and the run total', async () => {
   const { stream } = renderLive({ [`GET ${runPath}`]: () => runRow({ costMicros: 4_100 }) });
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
@@ -45,6 +47,7 @@ it('RF-1003 shows the cost of each role and each agent from the usage events, an
 it('RF-1003 calls of a local model show a cost of zero for the role and the agent', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
@@ -60,6 +63,7 @@ it('RF-1003 calls of a local model show a cost of zero for the role and the agen
 it('RF-401 the usage of the Ollama check before the first task adds no agent panel', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(usage(2, 'ollama-preflight', 'reader', 0));
@@ -73,6 +77,7 @@ it('RF-401 the usage of the Ollama check before the first task adds no agent pan
 it('RF-1003 the tokens of a role come from its usage events, the Ollama check included, never twice', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
   const tokens = (inputTokens: number, outputTokens: number) => ({
     inputTokens,
     outputTokens,

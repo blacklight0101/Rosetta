@@ -10,6 +10,7 @@ import {
   turn,
 } from './live-run-fixtures.js';
 import { findAgentPanel, renderLive, runPath, valueOf } from './live-run-helpers.js';
+import { openTab, openTabWhenReady } from './live-run-running-helpers.js';
 
 // RF-1002, design-system.md section 1 (principle 6) and section 4 (Pause updates) (P1-95): the live
 // run page can freeze its agent panels, overview and event log for reading while the stream keeps
@@ -31,6 +32,7 @@ const logItems = (): HTMLElement[] =>
 async function runningRun() {
   const live = renderLive();
   const connection = await live.stream.connection();
+  await openTabWhenReady('All agents');
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
   connection.event(agentStarted(3, 'reader-001', 'Catalog'));
@@ -66,6 +68,7 @@ it('RF-1002 Pause updates holds the panels, the overview and the log while the c
   expect(valueOf(panel, 'Tokens')).toBe('940');
   expect(panel.textContent).toContain('Running');
   expect(valueOf(screen.getByRole('region', { name: 'Overview' }), 'Done')).toBe('0');
+  openTab('Activity');
   expect(logItems()).toHaveLength(4);
   connection.event(turn(7, 'reader-001', 3, [1, 1]));
   await waitFor(() => {
@@ -89,6 +92,7 @@ it('RF-1002 Resume applies the held events in order and the button reads Pause u
     expect(valueOf(panel, 'Tokens')).toBe('1,050');
   });
   expect(panel.textContent).toContain('Done');
+  openTab('Activity');
   const types = logItems().map((item) => item.textContent);
   expect(types[0]).toContain('agent.ended');
   expect(types[1]).toContain('agent.turn');
@@ -135,7 +139,7 @@ it('RF-1003 Stop run stays usable while updates are paused', async () => {
 });
 
 it('RF-1002 when the run ends while paused, the status shows how it ended and the panels stay held until Resume', async () => {
-  const { connection, panel } = await runningRun();
+  const { connection } = await runningRun();
   fireEvent.click(screen.getByRole('button', { name: 'Pause updates' }));
 
   connection.event(agentEnded(5, 'reader-001', 'Done', 0));
@@ -144,17 +148,17 @@ it('RF-1002 when the run ends while paused, the status shows how it ended and th
   await waitFor(() => {
     expect(screen.getByTestId('run-status').textContent).toContain('Completed');
   });
-  expect(panel.textContent).toContain('Running');
+  expect((await findAgentPanel('Catalog')).textContent).toContain('Running');
   expect(screen.queryByRole('button', { name: 'Pause updates' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
   await waitFor(() => {
-    expect(panel.textContent).toContain('Done');
+    expect(screen.getByLabelText('Agent Catalog').textContent).toContain('Done');
   });
 });
 
-it('RF-1002 the stepper is held with the panels, so it never disagrees with them', async () => {
+it('RF-1002 the journey is held with the panels, so it never disagrees with them', async () => {
   const { connection } = await runningRun();
-  const pipeline = screen.getByRole('list', { name: 'Pipeline' });
+  const pipeline = screen.getByTestId('journey');
   expect(pipeline.textContent).not.toContain('citations checked');
   fireEvent.click(screen.getByRole('button', { name: 'Pause updates' }));
 
@@ -172,9 +176,8 @@ it('RF-1002 the stepper is held with the panels, so it never disagrees with them
   expect(pipeline.textContent).not.toContain('citations checked');
   fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
   await waitFor(() => {
-    expect(pipeline.textContent).toContain(
-      '0 of 2 citations checked. Judgement comes in a later version.',
-    );
+    expect(pipeline.textContent).toContain('0 of 2 citations checked');
+    expect(pipeline.textContent).toContain('Judgement comes in a later version');
   });
 });
 

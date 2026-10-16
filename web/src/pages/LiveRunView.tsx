@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
 import type { ApiFailure } from '../api/client.js';
+import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { cancelRun } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
@@ -10,7 +11,7 @@ import { Link } from '../components/Link.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
-import { AgentPanel } from './AgentPanel.js';
+import { AgentsGrid } from './AgentsGrid.js';
 import { ClaimsList } from './ClaimsList.js';
 import { CoverageMap } from './CoverageMap.js';
 import { EventLog } from './EventLog.js';
@@ -22,6 +23,7 @@ import { RunOverview } from './RunOverview.js';
 import { RunReport } from './RunReport.js';
 import { PauseUpdates } from './PauseUpdates.js';
 import { RunStatusBar } from './RunStatusBar.js';
+import { RunningBody } from './RunningBody.js';
 import { RunStepper } from './RunStepper.js';
 import { usePauseUpdates } from './use-pause-updates.js';
 import { useRunEstimate } from './use-run-estimate.js';
@@ -95,27 +97,6 @@ function useReportBuilt(run: RunRow): { readonly built: boolean; readonly onBuil
   };
 }
 
-function Agents({ state }: { readonly state: RunState }): JSX.Element {
-  const emptyText =
-    state.stage === 'scan'
-      ? 'This run has no agents. A scan reads the repository without a model.'
-      : 'No agents yet. They appear when the run plans its work.';
-  return (
-    <section class="rst-live-agents" aria-label="Agents">
-      <h2 class="rst-live-section__title">Agents</h2>
-      {state.agents.length === 0 ? (
-        <p class="rst-settings__note">{emptyText}</p>
-      ) : (
-        <div class="rst-live-agents__grid">
-          {state.agents.map((agent) => (
-            <AgentPanel key={agent.agentTaskId} agent={agent} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
 function Connection({ stream }: { readonly stream: RunStream }): JSX.Element | null {
   if (stream.failure !== undefined) return <ErrorBanner error={stream.failure} />;
   if (stream.connection !== 'reconnecting') return null;
@@ -126,20 +107,58 @@ function Connection({ stream }: { readonly stream: RunStream }): JSX.Element | n
   );
 }
 
-// RF-1002
+interface BodyProps {
+  readonly run: RunRow;
+  readonly state: RunState;
+  readonly shown: RunState;
+  readonly phase: RunPhase;
+  readonly stage: string;
+  readonly estimate: RunEstimate | undefined;
+}
+
+/** The run has ended: the page as it was before the running mode, until P1-170 builds the after-run one. */
+function EndedBody(props: BodyProps): JSX.Element {
+  const { run, state, shown, phase, stage, estimate } = props;
+  const report = useReportBuilt(run);
+  return (
+    <>
+      <RunStepper
+        steps={stepperOf(
+          { stage, commitSha: run.commitSha, reportBuilt: report.built },
+          shown,
+          phase,
+        )}
+      />
+      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
+      <p class="rst-p137-live-link">
+        <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
+      </p>
+      <RunDownloads runId={run.id} stage={stage} ended />
+      <RunReport runId={run.id} ended onBuilt={report.onBuilt} />
+      <RunOverview state={shown} />
+      <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
+      <AgentsGrid state={shown} />
+      {stage === 'understand' ? <CoverageMap state={shown} /> : null}
+      <ClaimsList claims={shown.claims} source={sourceOf(state, run)} />
+      {stage === 'understand' ? <RunAnswers runId={run.id} ended /> : null}
+      <EventLog lines={shown.log} startedAt={shown.startedAt} />
+    </>
+  );
+}
+
+// RF-1002, RF-1015
 export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Element {
   const { state } = stream;
   const view = usePauseUpdates(state);
   const stop = useStop(run.id);
   usePublishRunMeter(meterOf(state, run, phase));
   const planned = state.agents.some((agent) => agent.state !== 'Planned');
+  const stage = state.stage ?? run.stage;
   const estimate = useRunEstimate(
     run.projectId,
-    state.stage ?? run.stage,
+    stage,
     planned ? state.agents.map((agent) => agent.area) : [],
   );
-  const stage = state.stage ?? run.stage;
-  const report = useReportBuilt(run);
   return (
     <div class="rst-live">
       <RunStatusBar
@@ -152,27 +171,17 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
           ) : null
         }
       />
-      <RunStepper
-        steps={stepperOf(
-          { stage, commitSha: run.commitSha, reportBuilt: report.built },
-          view.shown,
-          phase,
-        )}
-      />
       <Connection stream={stream} />
-      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
-      <p class="rst-p137-live-link">
-        <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
-      </p>
-      <RunDownloads runId={run.id} stage={stage} ended={phase.kind === 'ended'} />
-      <RunReport runId={run.id} ended={phase.kind === 'ended'} onBuilt={report.onBuilt} />
-      <RunOverview state={view.shown} />
-      <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
-      <Agents state={view.shown} />
-      {stage === 'understand' ? <CoverageMap state={view.shown} /> : null}
-      <ClaimsList claims={view.shown.claims} source={sourceOf(state, run)} />
-      {stage === 'understand' ? <RunAnswers runId={run.id} ended={phase.kind === 'ended'} /> : null}
-      <EventLog lines={view.shown.log} startedAt={view.shown.startedAt} />
+      {phase.kind === 'ended' ? (
+        <EndedBody {...{ run, state, phase, stage, estimate }} shown={view.shown} />
+      ) : (
+        <RunningBody
+          {...{ run, phase, stage, estimate }}
+          state={view.shown}
+          costMicros={costOf(state, run)}
+          source={sourceOf(state, run)}
+        />
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from './live-run-fixtures.js';
 import { json } from './fake-api.js';
 import { renderLive, runPath, runRow, runUuid } from './live-run-helpers.js';
+import { openTabWhenReady } from './live-run-running-helpers.js';
 
 // RF-1002..RF-1006, RF-1108, RF-008, RF-507, DEC-103 (P1-35): the claims, downloads and refusal of the live run page. Whatever the page shows comes from
 // the events the test pushes into the fake stream.
@@ -38,14 +39,8 @@ it('RF-1014 lists the claims with their status, reason and a link to the cited l
   expect(first.textContent).toContain('BR-001.c1');
   expect(first.textContent).toContain('Citations checked');
   expect(claims.textContent).toContain('Judgement comes in a later version');
-  expect(screen.getByRole('region', { name: 'Overview' }).textContent).toContain(
-    '1 citations checked',
-  );
-  expect(screen.getByRole('region', { name: 'Overview' }).textContent).toContain(
-    'Judgement comes in a later version',
-  );
-  expect(screen.getByTestId('stepper').textContent).toContain('citations checked');
-  expect(screen.getByTestId('stepper').textContent).toContain('Judgement comes in a later version');
+  expect(screen.getByTestId('journey').textContent).toContain('2 of 2 citations checked');
+  expect(screen.getByTestId('journey').textContent).toContain('Judgement comes in a later version');
   const link = within(first).getByRole('link', {
     name: 'Catalog/Edit.aspx.cs:40-80',
   });
@@ -54,6 +49,10 @@ it('RF-1014 lists the claims with their status, reason and a link to the cited l
   );
   expect(second?.textContent).toContain('Citation invalid');
   expect(second?.textContent).toContain('line 140 is past the end of the file');
+  const agents = await openTabWhenReady('All agents');
+  const overview = within(agents).getByRole('region', { name: 'Overview' });
+  expect(overview.textContent).toContain('1 citations checked');
+  expect(overview.textContent).toContain('Judgement comes in a later version');
 });
 
 it('RF-1004 a claim changes its status and reason when the verdict arrives', async () => {
@@ -113,17 +112,14 @@ it('RF-507 shows the text of a claim and of a card as text, never as markup', as
   expect(container.querySelector('script')).toBeNull();
 });
 
-it('RF-008 keeps both download buttons disabled while the run is queued or running and enables the zip when it ends', async () => {
+it('RF-008 offers no download while the run is queued or running and the zip when it ends', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
 
-  const zip = await screen.findByRole('button', { name: 'Download zip' });
-  expect(zip.hasAttribute('disabled')).toBe(true);
-  expect(zip.getAttribute('title')).toMatch(/ends/u);
-  expect(
-    screen.getByRole('button', { name: 'Download hand-off zip' }).hasAttribute('disabled'),
-  ).toBe(true);
+  await screen.findByRole('tablist', { name: 'Run details' });
+  expect(screen.queryByRole('button', { name: 'Download zip' })).toBeNull();
+  expect(screen.queryByRole('link', { name: 'Download zip' })).toBeNull();
 
   connection.event(runEnded(2, 'Completed'));
 

@@ -10,6 +10,7 @@ import {
 } from './support/history-page.js';
 import {
   agentPanel,
+  openRunTab,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
@@ -76,6 +77,7 @@ test('RF-1012 disables Delete while a run is in progress, with the reason, until
   await expectNoSeriousViolations(page);
 
   await page.goto(live);
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });

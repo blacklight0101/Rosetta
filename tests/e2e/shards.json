@@ -25,6 +25,7 @@
     "tests/e2e/journeys/visitor.spec.ts",
     "tests/e2e/live-coverage.spec.ts",
     "tests/e2e/live-run-controls.spec.ts",
+    "tests/e2e/live-run-running.spec.ts",
     "tests/e2e/project-cost.spec.ts",
     "tests/e2e/run-report.spec.ts",
     "tests/e2e/settings-provider-test.spec.ts",

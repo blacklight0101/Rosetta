@@ -12,8 +12,10 @@ export type RunPhase =
 // RF-1108
 export function phaseOf(row: RunRow, state: RunState): RunPhase {
   if (state.ended !== undefined) return { kind: 'ended', endState: state.ended.endState };
+  // A run the row calls ended stays ended while its events replay: the page never goes back to the
+  // running mode (RF-1015).
+  if (row.queueState === 'Ended') return { kind: 'ended', endState: row.endState ?? 'Interrupted' };
   if (state.startedAt !== undefined) return { kind: 'running' };
   if (row.queueState === 'Queued') return { kind: 'queued' };
-  if (row.queueState === 'Ended') return { kind: 'ended', endState: row.endState ?? 'Interrupted' };
   return { kind: 'running' };
 }
