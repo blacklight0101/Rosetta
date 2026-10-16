@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "description": "An understand run over every area of the webforms-csharp fixture in which two areas describe the same entity and two areas state different rules about one item, followed by the summariser merging both pairs (RF-250). (root) answers no card, Catalog and Controllers each answer a BR, Database and Services each answer an ENT for the catalog item. The summariser then answers one merge for the BR cards and one for the ENT cards. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": []\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 700,
+              "outputTokens": 20,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Details page shows a fixed name\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page sets the name label.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The name label is set to the text Item when the page loads.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1200,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Item lookup returns text\",\n      \"area\": \"Controllers\",\n      \"summary\": \"The controller answers a lookup with a text built from the id.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"Get returns the text item followed by the id.\",\n          \"citations\": [\n            \"Controllers/CatalogController.cs:7-10\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1100,
+              "outputTokens": 180,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Catalog item\",\n      \"area\": \"Database\",\n      \"summary\": \"A catalog item has an id, a name and a price.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The CatalogItem table has the columns Id, Name and Price.\",\n          \"citations\": [\n            \"Database/schema.sql:2-6\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1100,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Stock item\",\n      \"area\": \"Services\",\n      \"summary\": \"The catalog service reads items with their price.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The list query selects Id, Name and Price from CatalogItem.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:7-7\"\n          ]\n        },\n        {\n          \"text\": \"An update statement lowers Stock on CatalogItem.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:12-12\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1300,
+              "outputTokens": 220,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"merges\": [\n    {\n      \"ids\": [\n        \"BR-001\",\n        \"BR-002\"\n      ],\n      \"title\": \"Catalog item name and lookup\",\n      \"summary\": \"The details page and the controller both present a catalog item, and they word it differently.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 120,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"merges\": [\n    {\n      \"ids\": [\n        \"ENT-001\",\n        \"ENT-002\"\n      ],\n      \"title\": \"Catalog item\",\n      \"summary\": \"A catalog item with an id, a name, a price and a stock.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 800,
+              "outputTokens": 100,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
