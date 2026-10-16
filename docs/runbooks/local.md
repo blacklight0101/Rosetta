@@ -28,6 +28,19 @@ Set these values in `.env` (the rest of the file is optional):
 | `ROSETTA_ADMIN_USER` | the name of the first administrator | for example `admin` |
 | `ROSETTA_ADMIN_PASSWORD` | the temporary password of the first administrator (at least 12 characters, not a common one) | `openssl rand -hex 16` |
 
+The [README quick start](../../README.md#quick-start) generates and writes all of these for you, in PowerShell or bash.
+To make a value by hand on Windows, where OpenSSL is usually missing, PowerShell makes the same values:
+
+```powershell
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+$bytes = New-Object byte[] 24
+$rng.GetBytes($bytes)
+($bytes | ForEach-Object { $_.ToString('x2') }) -join ''   # 48 hex characters: a password
+$key = New-Object byte[] 32
+$rng.GetBytes($key)
+[Convert]::ToBase64String($key)                            # 32 random bytes in base64: ROSETTA_SECRET_KEY
+```
+
 The three database passwords end up inside database URLs, so use URL-safe characters (hex is). Keep a copy of
 `ROSETTA_SECRET_KEY` somewhere safe: without it the stored provider keys cannot be decrypted. The server refuses to start
 with a key of 32 equal bytes, such as the all-zero placeholder of `.env.example` (error `RST-1008`).
@@ -52,12 +65,12 @@ Optional values: `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` (server keys, used und
 ## 2. Start the stack
 
 ```
-docker compose up -d --build
+docker compose up -d --build --wait
 ```
 
 The first run builds the image (a few minutes), starts the database, creates the roles, runs the one-off `migrate`
 service, which applies the migrations as `rosetta_migrator` and ends, and then starts the app, which holds only the
-`rosetta_app` credential (DEC-140). `--wait` can be added to return only when the services are healthy. Check the
+`rosetta_app` credential (DEC-140). `--wait` (Compose v2.1 or later) returns only when the services are healthy. Check the
 result:
 
 ```
