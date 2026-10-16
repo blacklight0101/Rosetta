@@ -135,9 +135,9 @@ export class UnderstandSession {
   }
 
   /**
-   * RF-1108, RF-208: stopped runs are `Interrupted`; a run in which no area gave a card is
-   * `Failed`; one in which some areas failed is `Completed` and says how many (`failedAreas`), so
-   * it is never shown as a plain success.
+   * RF-1108, RF-208: stopped runs are `Interrupted`; a run whose every task failed is
+   * `Failed`; one with areas that gave no card is `Completed` as before and says how many
+   * (`failedAreas`), so it is never shown as a plain success.
    */
   outcome(): RunOutcome {
     if (this.parts.execution.signal.aborted) return { endState: 'Interrupted' };
@@ -146,8 +146,10 @@ export class UnderstandSession {
     const ends = [...this.ends.values()];
     const failed = ends.filter((end) => areaFailureOf(end) !== undefined);
     if (failed.length === 0) return { endState: 'Completed' };
-    if (failed.length < ends.length) return { endState: 'Completed', failedAreas: failed.length };
-    const code = failed.find((end) => end.code !== undefined)?.code;
+    if (!ends.every((end) => end.state === 'Failed')) {
+      return { endState: 'Completed', failedAreas: failed.length };
+    }
+    const code = ends.find((end) => end.code !== undefined)?.code;
     return code === undefined ? { endState: 'Failed' } : { endState: 'Failed', errorCode: code };
   }
 

@@ -394,7 +394,7 @@ Event types (canonical list):
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead |
 | `question.answered` | `{ cardId }` (RF-1007) |
-| `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run in which no area gave a card ends `Failed` |
+| `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run ends `Failed` only when every task failed (a provider failure), as before |
 
 New event types may be added without a version bump; a reader ignores types it does not know. Each line is masked before
 it is stored (RNF-003). A crash can leave a last line without its line break: readers ignore it and the writer removes it
