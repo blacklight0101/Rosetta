@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. The permanent-failure scenario: a 401 for a rejected key, not retried. Hand-written in the documented shape of an OpenAI-compatible Chat Completions answer (POST <base URL>/chat/completions, stream false), as services such as OpenRouter, Groq or DeepSeek send it; no real service was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 401,
+      "headers": {
+        "x-request-id": "req-FAKE-compatible-0401"
+      },
+      "body": {
+        "error": {
+          "message": "No auth credentials found",
+          "code": 401
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. A 404 for a model the service does not offer. Hand-written in the documented shape of an OpenAI-compatible Chat Completions answer (POST <base URL>/chat/completions, stream false), as services such as OpenRouter, Groq or DeepSeek send it; no real service was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 404,
+      "body": {
+        "error": {
+          "message": "The model does not exist.",
+          "type": "invalid_request_error",
+          "code": "model_not_found"
+        }
+      }
+    }
+  ]
+}
