@@ -18,7 +18,7 @@ export interface CardMerge {
   readonly summary: string;
 }
 
-export type MergeProblem =
+type MergeProblem =
   | 'too-few-cards'
   | 'unknown-card'
   | 'repeated-card'
