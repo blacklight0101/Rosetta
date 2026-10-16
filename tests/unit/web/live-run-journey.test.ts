@@ -137,4 +137,5 @@ it('RF-1015 has the map done with its files and areas once the scan completed', 
   const steps = journeyOf({ stage: 'scan', phase: running, state, tiles: [] });
 
   expect(steps[0]).toMatchObject({ status: 'done', detail: '120 files, 7 areas' });
+  expect(steps[1]).toMatchObject({ status: 'later', detail: 'in an Understand run' });
 });

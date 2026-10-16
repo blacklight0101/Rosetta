@@ -4,6 +4,7 @@ import {
   agentEnded,
   agentStarted,
   cardProposed,
+  ev,
   planned,
   stateAfter,
   toolCalled,
@@ -135,6 +136,15 @@ it('RF-1016 are the areas of its agents in plan order, all of one size', () => {
     ['Catalog', 'waiting', 4, 3],
     ['Services', 'waiting', 4, 3],
   ]);
+});
+
+it('RF-1016 leave out the agents that are not readers, which have no area of their own', () => {
+  const state = stateAfter(
+    planned(1, 'r1', 'Catalog'),
+    ev(2, 'agent.planned', { area: 'all', role: 'verifier', model: 'm' }, 'v-1'),
+  );
+
+  expect(tilesOf(state, undefined).map((tile) => tile.name)).toEqual(['Catalog']);
 });
 
 it('RF-1016 are none for a run without agents', () => {

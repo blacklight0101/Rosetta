@@ -3,6 +3,7 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import {
   agentPanel,
+  openRunTab,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
@@ -69,6 +70,7 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
   await scanProject(page);
 
   await startUnderstand(page, ['(root)', 'Controllers', 'Services']);
+  await openRunTab(page, 'All agents');
   const map = page.getByRole('region', { name: 'Coverage map' });
   // The condition the map depends on: the first `read_file` event is applied to the tree. The
   // planned areas, Controllers among them, are on the map by then.
@@ -107,6 +109,7 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   await scanProject(page);
   // One reader at a time: `(root)` reads Default.aspx.cs first, `Services` reads CatalogService.cs after it.
   await startUnderstand(page, ['(root)', 'Services']);
+  await openRunTab(page, 'All agents');
   const map = page.getByRole('region', { name: 'Coverage map' });
   const root = coverageOf(page, '(root)');
   await expect(root.getByText('Default.aspx.cs', { exact: true })).toBeVisible({ timeout: 30_000 });

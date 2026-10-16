@@ -246,8 +246,9 @@ it('RF-1015 the tabs follow the tab pattern with the arrow keys, Home and End', 
 it('RF-1015 only the selected tab draws its list', async () => {
   await openRunning();
 
-  expect(screen.queryByRole('log', { name: 'Event log' })).toBeNull();
-  expect(screen.queryByLabelText('Agent Catalog')).toBeNull();
+  expect(document.querySelectorAll('[data-testid="card-row"]')).toHaveLength(1);
+  expect(document.querySelector('[role="log"]')).toBeNull();
+  expect(document.querySelector('[aria-label="Agent Catalog"]')).toBeNull();
 });
 
 it('RF-1015 a queued run shows the journey waiting and no tiles', async () => {

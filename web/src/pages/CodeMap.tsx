@@ -71,7 +71,9 @@ function TileFace({ tile }: { readonly tile: Tile }): JSX.Element {
       </span>
       <span class="rst-tile__meta">
         <Glyph name={glyphOf[tile.state]} />
-        {metaOf(tile)}
+        <span class="rst-tile__words" title={metaOf(tile)}>
+          {metaOf(tile)}
+        </span>
       </span>
       {tile.rows > 1 && tile.cards > 0 ? <Pips cards={tile.cards} /> : null}
       {tile.progress === undefined ? null : (
