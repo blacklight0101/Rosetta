@@ -170,3 +170,13 @@ Container Apps in Spain Central.
    P1-55 deploy job.
 9. Domain: the `*.railway.app` domain is enough for the hand-in; a custom domain needs a CNAME and a TXT record [S19].
 10. Tell the orchestrator that G-07 is open.
+
+## Notes
+
+- 2026-10-16 (DEC-140, P1-158): the server refuses `DATABASE_MIGRATOR_URL`, so step 6 of the appendix stores only
+  `DATABASE_URL` (the `rosetta_app` URL) on `app`. The migrations run in a one-off migrate step from the same image
+  (`node dist/presentation/migrate.js`) that holds `DATABASE_MIGRATOR_URL` (the `rosetta_migrator` URL, or the one
+  role's URL when one role is used) as its only sealed variable and runs before each new `app` image is deployed; the
+  exact Railway mechanism (a separate service with restart policy Never, or a job of the deploy workflow) is chosen by
+  P1-55 and written in `docs/runbooks/deploy.md`.
+
