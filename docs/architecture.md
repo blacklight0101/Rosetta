@@ -227,9 +227,18 @@ and API contract types in `src/application/contracts/` (dependency-cruiser rule,
 | `RunEndState` | `Completed`, `CapReached`, `Failed`, `Interrupted` | set once when the run ends |
 | `RunQueueState` | `Queued`, `Running`, `Ended` | `Queued` -> `Running` when a slot frees; `Running` -> `Ended` with a `RunEndState`; `Queued` -> `Ended` (`Interrupted`) when cancelled (RF-1108) |
 | `Role` | `admin`, `user` | changed only by an administrator (RF-1102) |
-| `AccountState` | `Active`, `MustChangePassword`, `Locked`, `Disabled` | `MustChangePassword` -> `Active` on change; `Active` -> `Locked` after 5 failures, back after 15 minutes; any -> `Disabled` by an administrator (RF-1100, RF-1102) |
+| `AccountState` | `Active`, `MustChangePassword`, `Locked`, `Disabled` | the account transitions below the table (RF-1100, RF-1102, RF-1103) |
 | `MapLevel` | `coarse`, `symbols` | per file, from the scan (RF-110) |
 | `Confidence` | `High`, `Medium`, `Low` | set by the agent, never by the verifier |
+
+**Account transitions** (as built by P1-08; `src/domain/accounts/account-transitions.ts` and the use cases in `src/application/use-cases/`). `Locked` is not stored: it is `Active` with `locked_until` in the future.
+
+- **Change password** (the user, RF-1103): `MustChangePassword` or `Active` -> `Active`, with a new hash, and the failure counters and the lock cleared. Refused on a `Disabled` account (RST-2208); a locked account is refused as an incorrect current password (RST-2211).
+- **Sign-in** (RF-1100): five failed sign-ins within 15 minutes, or wrong current passwords on change-password, lock the account for 15 minutes; a successful sign-in clears the counters and the lock. A sign-in to a `Disabled` or locked account is refused and not counted as a failure.
+- **Reset password** (an administrator, RF-1102): any state except `Disabled` -> `MustChangePassword`, with a new hash; every session of the account ends. A reset does not clear the failure counters or a running lock. Refused on a `Disabled` account (RST-2208).
+- **Disable** (an administrator, RF-1102): any state -> `Disabled`; every session of the account ends.
+- **Enable** (an administrator, RF-1102): `Disabled` -> `Active`, and the failure counters and the lock are cleared. Refused on any other state (RST-2208).
+- Only an administrator changes another account (RST-2002 otherwise). An administrator cannot disable or reset their own account (RST-2213). An unknown id is RST-2003.
 
 ## 6. Application services (use cases)
 

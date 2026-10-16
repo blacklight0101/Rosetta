@@ -743,6 +743,8 @@ of another shape is refused at read time.
 | `outcome` | `text` | `CHECK (outcome IN ('ok','refused','failed'))` |
 | `detail` | `jsonb` | masked (the secret masking, plus a whole value under a key naming a secret such as `secret`, `pass`, `pw` or `value`, a key whose last word is `token` or `authorization` such as `accessToken`, and the whole phrase after "password is" or "was": a quoted one up to its closing quote, an unquoted one up to the next comma, semicolon or newline or the end of the text); never a password, key or session id. In `action`, `target_type`, `target_id`, `ip` and `detail` every NUL is stored as U+FFFD |
 
+The bootstrap administrator (RF-1102) is created at start-up, before the server listens, and writes one `user.created` row only when it creates the account: `actor_user_id` null (no actor), `target_type` `user`, `target_id` the new account's id, `ip` `start-up` (no client address), `outcome` `ok`, and `detail` `{"role":"admin","source":"environment"}`. The row holds no user name and no password, and neither value of `ROSETTA_ADMIN_USER` or `ROSETTA_ADMIN_PASSWORD` is audited or logged. A start-up that finds accounts writes no row.
+
 Retention (DEC-132, RF-1109): audit rows are kept for 365 days and then deleted by a daily task of the server (at
 start-up and every 24 hours). `rosetta_app` has no `UPDATE` or `DELETE` on this table; the only deletion is the
 function `purge_audit_events_before(cut_off timestamptz)` (migration `0008_audit_retention_purge`), which returns
