@@ -1,0 +1,217 @@
+import type { Run } from '../runs/run.js';
+import { defaultPrinciples, type ArchitectureStyleId, type Catalogue } from './catalogue.js';
+
+// RF-605, ADR-018, DEC-72, DEC-80, data-model.md section 3.20: the planning brief, the answers Plan
+// setup saves for a project. A question the user did not answer takes its default and is listed in
+// `defaulted`, so the package can report it as an open question (RF-604); nothing is invented
+// (DEC-80). A stack layer, the deadline and the other free answers have no default value: unanswered
+// they stay empty and are listed. The default migration strategy is Strangler Fig (RF-610), the
+// default principles are the catalogue's switched-on entries (DEC-74).
+
+/** The layers of RF-609, in the order the page asks about them. */
+export const stackLayers = [
+  'language-runtime',
+  'backend-framework',
+  'front-end',
+  'database',
+  'data-access',
+  'testing',
+  'hosting',
+] as const;
+type StackLayer = (typeof stackLayers)[number];
+
+/** RF-610; the first is the default. */
+export const migrationStrategies = ['strangler-fig', 'parallel-change', 'rewrite'] as const;
+type MigrationStrategy = (typeof migrationStrategies)[number];
+
+/** The style a brief takes when nothing was chosen and nothing is recommended (first in RF-608). */
+const defaultArchitectureStyle: ArchitectureStyleId = 'layered';
+
+interface StackChoice {
+  readonly layer: StackLayer;
+  /** The chosen technology, free text (untrusted, ADR-013). */
+  readonly choice: string;
+  /** True when the user typed their own instead of picking a pre-filled option. */
+  readonly custom: boolean;
+}
+
+interface ProjectContext {
+  readonly teamSize: number | null;
+  readonly experience: string | null;
+  readonly deadline: string | null;
+  readonly keepIntegrations: readonly string[];
+  readonly dataMigration: string | null;
+}
+
+export interface PlanningBrief {
+  readonly schemaVersion: 1;
+  /** ISO 8601 UTC instant of the save. */
+  readonly savedAt: string;
+  readonly catalogueVersion: number;
+  /** Catalogue entry ids of the chosen principles and practices, sorted. */
+  readonly principles: readonly string[];
+  readonly architecture: {
+    readonly style: ArchitectureStyleId;
+    /** The styles Rosetta recommended when the user chose (RF-608). */
+    readonly recommended: readonly ArchitectureStyleId[];
+    /** Card ids behind the recommendation. */
+    readonly evidence: readonly string[];
+  };
+  readonly migration: MigrationStrategy;
+  /** One entry per answered layer, in layer order. */
+  readonly stack: readonly StackChoice[];
+  readonly context: ProjectContext;
+  readonly buildMethod: { readonly aiAssisted: boolean };
+  /** The questions that took their default, in question order. */
+  readonly defaulted: readonly string[];
+}
+
+/** A brief that has not been saved yet. */
+export type UnsavedBrief = Omit<PlanningBrief, 'savedAt'>;
+
+/** What a save carries; every part may be left out, and a part left out takes its default. */
+export interface BriefAnswers {
+  readonly principles?: readonly string[] | undefined;
+  readonly architecture?:
+    | {
+        readonly style: ArchitectureStyleId;
+        readonly recommended?: readonly ArchitectureStyleId[] | undefined;
+        readonly evidence?: readonly string[] | undefined;
+      }
+    | undefined;
+  readonly migration?: MigrationStrategy | undefined;
+  readonly stack?: readonly StackChoice[] | undefined;
+  readonly context?:
+    | {
+        readonly teamSize?: number | null | undefined;
+        readonly experience?: string | null | undefined;
+        readonly deadline?: string | null | undefined;
+        readonly keepIntegrations?: readonly string[] | undefined;
+        readonly dataMigration?: string | null | undefined;
+      }
+    | undefined;
+  readonly buildMethod?: { readonly aiAssisted: boolean } | undefined;
+}
+
+export interface BriefProblem {
+  readonly field: string;
+  readonly reason: string;
+}
+
+const contextQuestions = [
+  'teamSize',
+  'experience',
+  'deadline',
+  'keepIntegrations',
+  'dataMigration',
+] as const;
+
+function layerOrder(layer: StackLayer): number {
+  return stackLayers.indexOf(layer);
+}
+
+function isPrinciple(catalogue: Catalogue, id: string): boolean {
+  return catalogue.entries.some(
+    (entry) => entry.id === id && entry.group !== 'architecture-styles',
+  );
+}
+
+/** What is wrong with the answers of a save: an unknown principle, a repeated layer or entry. */
+// RF-605
+export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): BriefProblem[] {
+  const problems: BriefProblem[] = [];
+  const principles = answers.principles ?? [];
+  principles.forEach((id, index) => {
+    if (!isPrinciple(catalogue, id)) {
+      problems.push({ field: `principles.${String(index)}`, reason: `${id} is not a principle.` });
+    }
+  });
+  if (new Set(principles).size !== principles.length) {
+    problems.push({ field: 'principles', reason: 'A principle is listed twice.' });
+  }
+  const layers = (answers.stack ?? []).map((entry) => entry.layer);
+  if (new Set(layers).size !== layers.length) {
+    problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
+  }
+  return problems;
+}
+
+function contextOf(given: BriefAnswers['context']): ProjectContext {
+  const answered = given ?? {};
+  return {
+    teamSize: answered.teamSize ?? null,
+    experience: answered.experience ?? null,
+    deadline: answered.deadline ?? null,
+    keepIntegrations: answered.keepIntegrations ?? [],
+    dataMigration: answered.dataMigration ?? null,
+  };
+}
+
+function architectureOf(given: BriefAnswers['architecture']): UnsavedBrief['architecture'] {
+  return {
+    style: given?.style ?? defaultArchitectureStyle,
+    recommended: given?.recommended ?? [],
+    evidence: given?.evidence ?? [],
+  };
+}
+
+function defaultedQuestions(answers: BriefAnswers): string[] {
+  const given = answers.context;
+  const answeredLayers = new Set((answers.stack ?? []).map((entry) => entry.layer));
+  return [
+    ...(answers.principles === undefined ? ['principles'] : []),
+    ...(answers.architecture === undefined ? ['architecture'] : []),
+    ...(answers.migration === undefined ? ['migration'] : []),
+    ...stackLayers.filter((layer) => !answeredLayers.has(layer)).map((layer) => `stack.${layer}`),
+    ...contextQuestions
+      .filter((question) => given?.[question] === undefined || given[question] === null)
+      .map((question) => `context.${question}`),
+    ...(answers.buildMethod === undefined ? ['buildMethod'] : []),
+  ];
+}
+
+/** The brief for these answers with every unanswered question at its default (DEC-80). */
+// RF-605, RF-606
+export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): UnsavedBrief {
+  return {
+    schemaVersion: 1,
+    catalogueVersion: catalogue.version,
+    principles: [...(answers.principles ?? defaultPrinciples(catalogue))].sort(),
+    architecture: architectureOf(answers.architecture),
+    migration: answers.migration ?? migrationStrategies[0],
+    stack: [...(answers.stack ?? [])].sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
+    context: contextOf(answers.context),
+    buildMethod: answers.buildMethod ?? { aiAssisted: false },
+    defaulted: defaultedQuestions(answers),
+  };
+}
+
+function contentOf(brief: UnsavedBrief): string {
+  const { catalogueVersion, principles, architecture, migration, stack, context } = brief;
+  const fields = [catalogueVersion, principles, architecture, migration, stack, context];
+  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted]);
+}
+
+/** Whether two briefs hold the same answers, whatever instant they were saved at. */
+// RF-605
+export function sameBrief(left: UnsavedBrief, right: UnsavedBrief): boolean {
+  return contentOf(left) === contentOf(right);
+}
+
+/** The start of the newest completed plan run, or undefined when no package exists. */
+function newestPackageStart(runs: readonly Run[]): number | undefined {
+  const starts = runs
+    .filter((run) => run.stage === 'plan' && run.endState === 'Completed')
+    .map((run) => run.startedAt ?? run.queuedAt);
+  return starts.length === 0 ? undefined : Math.max(...starts);
+}
+
+/**
+ * RF-605: the brief is out of date when it was saved after the newest completed `plan` run started,
+ * because that package was written from an earlier brief. Without a package it cannot be.
+ */
+// RF-605
+export function isBriefOutOfDate(savedAt: string, runs: readonly Run[]): boolean {
+  const start = newestPackageStart(runs);
+  return start !== undefined && Date.parse(savedAt) > start;
+}
