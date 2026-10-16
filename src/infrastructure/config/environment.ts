@@ -12,7 +12,6 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 export interface Environment {
   readonly databaseUrl: string;
-  readonly databaseMigratorUrl: string;
   readonly secretKey: string;
   readonly secretKeyPrevious: string | undefined;
   readonly publicUrl: string;
@@ -108,7 +107,6 @@ const switchOn = z.literal('1', { error: 'must be 1 when set' });
 
 const SCHEMA = z.object({
   DATABASE_URL: text(postgresUrl),
-  DATABASE_MIGRATOR_URL: text(postgresUrl).optional(),
   ROSETTA_SECRET_KEY: text(secretKey),
   ROSETTA_SECRET_KEY_PREVIOUS: text(secretKey).optional(),
   ROSETTA_PUBLIC_URL: text({
@@ -154,13 +152,25 @@ const SCHEMA = z.object({
 type Parsed = z.output<typeof SCHEMA>;
 
 /** An empty value counts as unset, because Compose passes unset variables through as "". */
+function setOrUndefined(value: string | undefined): string | undefined {
+  return value === '' ? undefined : value;
+}
+
 function pick(source: EnvironmentSource): Record<string, string | undefined> {
   const input: Record<string, string | undefined> = {};
   for (const name of Object.keys(SCHEMA.shape)) {
-    const value = source[name];
-    input[name] = value === undefined || value === '' ? undefined : value;
+    input[name] = setOrUndefined(source[name]);
   }
   return input;
+}
+
+// DEC-140 (P1-49 F-02): the migrator role owns audit_events and cost_ledger, so its URL belongs to
+// the one-off migrate step only; a server given it refuses to start and says what to change.
+function refusedMigratorUrl(source: EnvironmentSource): string[] {
+  if (setOrUndefined(source['DATABASE_MIGRATOR_URL']) === undefined) return [];
+  return [
+    'DATABASE_MIGRATOR_URL is set, but the server must not hold the migrator credentials: remove it from the server environment (the migrations run in the migrate step: docker compose runs its migrate service; from source, node dist/presentation/migrate.js; see docs/runbooks/local.md)',
+  ];
 }
 
 function refusedTestOnly(input: Record<string, string | undefined>): string[] {
@@ -174,7 +184,6 @@ function refusedTestOnly(input: Record<string, string | undefined>): string[] {
 function toEnvironment(parsed: Parsed): Environment {
   return Object.freeze({
     databaseUrl: parsed.DATABASE_URL,
-    databaseMigratorUrl: parsed.DATABASE_MIGRATOR_URL ?? parsed.DATABASE_URL,
     secretKey: parsed.ROSETTA_SECRET_KEY,
     secretKeyPrevious: parsed.ROSETTA_SECRET_KEY_PREVIOUS,
     publicUrl: parsed.ROSETTA_PUBLIC_URL,
@@ -198,17 +207,43 @@ function toEnvironment(parsed: Parsed): Environment {
   });
 }
 
-/** The configuration of the one-off migrate step (DEC-140). */
+/** The configuration of the one-off migrate step (DEC-140): the migrator URL and the log level. */
 export interface MigrationEnvironment {
   readonly databaseMigratorUrl: string;
   readonly logLevel: LogLevel;
 }
 
-/** Not implemented yet (P1-158 red step). */
+const MIGRATION_SCHEMA = z.object({
+  DATABASE_MIGRATOR_URL: text(postgresUrl),
+  ROSETTA_LOG_LEVEL: SCHEMA.shape.ROSETTA_LOG_LEVEL,
+});
+
+/**
+ * Parses the configuration of the migrate step. DATABASE_MIGRATOR_URL is required: it never falls
+ * back to DATABASE_URL (P1-49 F-19). Throws RST-1000 naming the variable, never its value.
+ */
+// RF-1302
 export function loadMigrationEnvironment(
   source: EnvironmentSource = process.env,
 ): MigrationEnvironment {
-  throw new Error(`not implemented: ${String(Object.keys(source).length)}`);
+  const input = {
+    DATABASE_MIGRATOR_URL: setOrUndefined(source['DATABASE_MIGRATOR_URL']),
+    ROSETTA_LOG_LEVEL: setOrUndefined(source['ROSETTA_LOG_LEVEL']),
+  };
+  const result = MIGRATION_SCHEMA.safeParse(input);
+  if (!result.success) {
+    const problems = result.error.issues.map(
+      (issue) => `${String(issue.path[0])} ${issue.message}`,
+    );
+    throw new RosettaError(
+      ERROR_CODES.configurationInvalid,
+      `Invalid migrate step configuration: ${problems.join('; ')}.`,
+    );
+  }
+  return Object.freeze({
+    databaseMigratorUrl: result.data.DATABASE_MIGRATOR_URL,
+    logLevel: result.data.ROSETTA_LOG_LEVEL ?? DEFAULT_LOG_LEVEL,
+  });
 }
 
 /**
@@ -223,6 +258,7 @@ export function loadEnvironment(source: EnvironmentSource = process.env): Enviro
     ...(result.success
       ? []
       : result.error.issues.map((issue) => `${String(issue.path[0])} ${issue.message}`)),
+    ...refusedMigratorUrl(source),
     ...refusedTestOnly(input),
   ];
   if (!result.success || problems.length > 0) {

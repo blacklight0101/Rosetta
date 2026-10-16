@@ -3,6 +3,7 @@
   "ignoreDependencies": ["tree-sitter-c-sharp"],
   "entry": [
     "src/presentation/main.ts",
+    "src/presentation/migrate.ts",
     "scripts/*.mjs",
     "tests/**/*.test.ts",
     "src/infrastructure/files/grep-worker.ts",

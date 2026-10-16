@@ -38,10 +38,21 @@ export function pendingMigrations(
   return ordered.filter((file) => !applied.has(file.version));
 }
 
-/** Not implemented yet (P1-158 red step). */
+/**
+ * Refuses to serve a schema the migrate step has not brought up to date (DEC-140): a changed or
+ * unknown migration as in `pendingMigrations`, and any pending one with RST-2405. `undefined`
+ * means the server could not read `schema_version` (absent, or from before migration 0010).
+ */
+// RF-1302
 export function requireCurrentSchema(
   recorded: readonly RecordedMigration[] | undefined,
   known: readonly MigrationFile[],
 ): void {
-  if (recorded === undefined && known.length < 0) throw new Error('not implemented');
+  const pending = pendingMigrations(recorded ?? [], known);
+  const first = pending[0];
+  if (first === undefined) return;
+  throw new RosettaError(
+    ERROR_CODES.migrationPending,
+    `The database schema is older than this version of Rosetta: ${String(pending.length)} migration(s) are not applied, starting with ${first.name}. Run the migrate step first.`,
+  );
 }

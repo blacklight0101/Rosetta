@@ -15,7 +15,9 @@ const service = z.object({
   environment: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   volumes: z.array(z.string()).optional(),
   extra_hosts: z.array(z.string()).optional(),
-  healthcheck: z.object({ test: z.array(z.string()) }).optional(),
+  healthcheck: z
+    .object({ test: z.array(z.string()).optional(), disable: z.boolean().optional() })
+    .optional(),
   restart: z.string().optional(),
   depends_on: z.record(z.string(), z.object({ condition: z.string() })).optional(),
 });
@@ -117,8 +119,8 @@ describe('compose.yaml: app service', () => {
     const app = appOf(file);
 
     expect(app.depends_on?.['db']?.condition).toBe('service_healthy');
-    expect(app.healthcheck?.test.join(' ')).toContain('/healthz');
-    expect(dbOf(file).healthcheck?.test.join(' ')).toContain('pg_isready');
+    expect(app.healthcheck?.test?.join(' ')).toContain('/healthz');
+    expect(dbOf(file).healthcheck?.test?.join(' ')).toContain('pg_isready');
     expect(app.restart).toBe('unless-stopped');
     expect(dbOf(file).restart).toBe('unless-stopped');
   });
