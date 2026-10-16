@@ -126,7 +126,9 @@ describe('RefusalLimiter memory', () => {
     });
     expect(limiter.size).toBe(2);
   });
+});
 
+describe('RefusalLimiter and a clock that went back', () => {
   it('RF-1109 a clock that went back does not hide an ended minute behind a newer one', () => {
     const limiter = new RefusalLimiter();
     admitMany(limiter, '203.0.113.1', 31, start + 30_000);
@@ -136,6 +138,19 @@ describe('RefusalLimiter memory', () => {
 
     expect(ended).toEqual([{ ip: '203.0.113.2', windowStartMs: start, count: 1 }]);
     expect(limiter.size).toBe(1);
+  });
+
+  it('RF-1109 a clock that went back still starts a new minute for an ended address', () => {
+    const limiter = new RefusalLimiter();
+    admitMany(limiter, '203.0.113.1', 1, start + 30_000);
+    admitMany(limiter, '203.0.113.2', 31, start);
+
+    const next = limiter.admit('203.0.113.2', start + MINUTE);
+
+    expect(next).toEqual({
+      write: true,
+      ended: [{ ip: '203.0.113.2', windowStartMs: start, count: 1 }],
+    });
   });
 
   it('RF-1109 takeAll hands back every pending count, ended or not, and empties the limiter', () => {

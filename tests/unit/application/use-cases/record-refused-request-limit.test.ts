@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuditEventInput, AuditLog } from '../../../../src/application/ports/audit-log.js';
+import type { Logger } from '../../../../src/application/ports/logger.js';
 import {
   RecordRefusedRequest,
   type RefusedRequest,
@@ -167,6 +168,30 @@ describe('RecordRefusedRequest rows below the limit', () => {
     expect(await rows(parts)).toHaveLength(31);
     const failure = parts.logger.records.find((record) => record.level === 'error');
     expect(failure).toMatchObject({ logger: 'security', data: { count: 1 } });
+  });
+});
+
+describe('RecordRefusedRequest failing writes', () => {
+  it('RF-1109 a count row and its failure log that both fail never fail the refusal', async () => {
+    const recording = new RecordingLogger();
+    const logger: Logger = {
+      log: (record) =>
+        record.level === 'error' ? Promise.reject(new Error('disk full')) : recording.log(record),
+      securityEvent: (code, detail) => recording.securityEvent(code, detail),
+    };
+    const memory = new MemoryAuditLog(new SecretMasker());
+    const auditLog: AuditLog = {
+      record: (event) =>
+        'count' in event.detail ? Promise.reject(new Error('database down')) : memory.record(event),
+      list: (filter) => memory.list(filter),
+    };
+    const clock = new FixedClock('2026-10-16T09:00:00.000Z');
+    const refusals = new RecordRefusedRequest({ auditLog, logger, clock });
+    for (let index = 0; index < 31; index += 1) await refusals.execute(refused());
+    clock.advance(MINUTE);
+
+    await expect(refusals.execute(refused({ ip: '198.51.100.1' }))).resolves.toBeUndefined();
+    expect(await memory.list({ since: 0 })).toHaveLength(31);
   });
 });
 
