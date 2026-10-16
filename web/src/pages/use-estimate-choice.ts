@@ -44,7 +44,7 @@ export function useEstimateChoice(projectId: string): EstimateChoice {
       setPicked(next);
     },
     choose: (next) => {
-      setPicked(names.filter((each) => next.includes(each)));
+      setPicked(next);
     },
     reestimate: () => {
       setVersion((current) => current + 1);

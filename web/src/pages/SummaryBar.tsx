@@ -11,7 +11,6 @@ import type { StartForm } from './use-start-form.js';
 function estimateText(form: StartForm, chosenAreas: number): string | undefined {
   const { estimate } = form.choice;
   if (chosenAreas === 0) return undefined;
-  if (estimate.status === 'loading') return 'Estimating';
   if (estimate.status !== 'ready') return undefined;
   const more = unpricedRoles(estimate.estimate).length > 0 ? ' or more' : '';
   return `Likely ${dollars(pricedTotal(estimate.estimate, 'likely'))}${more}`;

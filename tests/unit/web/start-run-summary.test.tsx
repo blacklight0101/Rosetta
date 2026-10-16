@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
 import { estimateAnswers, library, own } from './start-run-areas-fixtures.js';
-import { cloudEstimate, runAnswer, runsPath } from './start-run-fixtures.js';
+import { cloudEstimate, runAnswer, runsPath, unpricedEstimate } from './start-run-fixtures.js';
 import { input, ready, renderStart, start } from './start-run-helpers.js';
 
 // RF-1018 (P1-172): the summary bar (areas and files chosen, the estimate, Start with the reason
@@ -33,6 +33,13 @@ it('RF-1018 the summary bar shows the areas and files chosen, the estimate and S
   expect(bar().textContent).toContain('8 files');
   expect(bar().textContent).toContain('Likely $0.39');
   expect(within(bar()).getByRole('button', { name: /^Start run/u })).toBe(start());
+});
+
+it('RF-1018 an estimate that leaves out a model without a price reads as a lower bound', async () => {
+  renderStart(estimateAnswers(mixed, unpricedEstimate));
+  await ready();
+
+  expect(bar().textContent).toContain('Likely $0.00 or more');
 });
 
 it('RF-1018 the summary counts the files of the areas ticked, library areas included', async () => {
