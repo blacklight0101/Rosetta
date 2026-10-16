@@ -12,7 +12,7 @@ export interface Citation {
 
 export type CitationProblem = 'invalid-format' | 'invalid-path' | 'invalid-lines';
 
-const textForm = /^(.+):(\d{1,9})-(\d{1,9})$/;
+const textForm = /^(.+):(\d{1,9})(?:-(\d{1,9}))?$/;
 
 // RF-202
 export function createCitation(
@@ -26,11 +26,11 @@ export function createCitation(
   return ok({ path, startLine, endLine });
 }
 
-/** Reads `path:a-b`; the path ends at the last colon, so it may hold colons itself. */
+/** RF-207: reads `path:a` as `path:a-a`, or `path:a-b`; the path ends at the last colon, so it may hold colons itself. */
 export function parseCitation(text: string): Result<Citation, CitationProblem> {
   const parts = textForm.exec(text);
   if (parts === null) return err('invalid-format');
-  const [, path = '', start = '', end = ''] = parts;
+  const [, path = '', start = '', end = start] = parts;
   return createCitation(path, Number(start), Number(end));
 }
 
