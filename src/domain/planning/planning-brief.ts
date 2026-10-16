@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- placeholder of the TDD red step, replaced by the next commit */
 import type { Run } from '../runs/run.js';
-import type { ArchitectureStyleId, Catalogue } from './catalogue.js';
+import { defaultPrinciples, type ArchitectureStyleId, type Catalogue } from './catalogue.js';
 
 // RF-605, ADR-018, DEC-72, DEC-80, data-model.md section 3.20: the planning brief, the answers Plan
 // setup saves for a project. A question the user did not answer takes its default and is listed in
@@ -99,35 +98,120 @@ export interface BriefProblem {
   readonly reason: string;
 }
 
-// Placeholder behaviour: the tests of the next commit fail on it, the implementation follows.
-export function briefProblems(_answers: BriefAnswers, _catalogue: Catalogue): BriefProblem[] {
-  return [];
+const contextQuestions = [
+  'teamSize',
+  'experience',
+  'deadline',
+  'keepIntegrations',
+  'dataMigration',
+] as const;
+
+function layerOrder(layer: StackLayer): number {
+  return stackLayers.indexOf(layer);
 }
 
-export function buildBrief(_answers: BriefAnswers, catalogue: Catalogue): UnsavedBrief {
+function isPrinciple(catalogue: Catalogue, id: string): boolean {
+  return catalogue.entries.some(
+    (entry) => entry.id === id && entry.group !== 'architecture-styles',
+  );
+}
+
+/** What is wrong with the answers of a save: an unknown principle, a repeated layer or entry. */
+// RF-605
+export function briefProblems(answers: BriefAnswers, catalogue: Catalogue): BriefProblem[] {
+  const problems: BriefProblem[] = [];
+  const principles = answers.principles ?? [];
+  principles.forEach((id, index) => {
+    if (!isPrinciple(catalogue, id)) {
+      problems.push({ field: `principles.${String(index)}`, reason: `${id} is not a principle.` });
+    }
+  });
+  if (new Set(principles).size !== principles.length) {
+    problems.push({ field: 'principles', reason: 'A principle is listed twice.' });
+  }
+  const layers = (answers.stack ?? []).map((entry) => entry.layer);
+  if (new Set(layers).size !== layers.length) {
+    problems.push({ field: 'stack', reason: 'A layer is listed twice.' });
+  }
+  return problems;
+}
+
+function contextOf(given: BriefAnswers['context']): ProjectContext {
+  const answered = given ?? {};
   return {
-    schemaVersion: 1,
-    catalogueVersion: catalogue.version,
-    principles: [],
-    architecture: { style: defaultArchitectureStyle, recommended: [], evidence: [] },
-    migration: 'rewrite',
-    stack: [],
-    context: {
-      teamSize: null,
-      experience: null,
-      deadline: null,
-      keepIntegrations: [],
-      dataMigration: null,
-    },
-    buildMethod: { aiAssisted: false },
-    defaulted: [],
+    teamSize: answered.teamSize ?? null,
+    experience: answered.experience ?? null,
+    deadline: answered.deadline ?? null,
+    keepIntegrations: answered.keepIntegrations ?? [],
+    dataMigration: answered.dataMigration ?? null,
   };
 }
 
-export function sameBrief(_left: UnsavedBrief, _right: UnsavedBrief): boolean {
-  return true;
+function architectureOf(given: BriefAnswers['architecture']): UnsavedBrief['architecture'] {
+  return {
+    style: given?.style ?? defaultArchitectureStyle,
+    recommended: given?.recommended ?? [],
+    evidence: given?.evidence ?? [],
+  };
 }
 
-export function isBriefOutOfDate(_savedAt: string, _runs: readonly Run[]): boolean {
-  return false;
+function defaultedQuestions(answers: BriefAnswers): string[] {
+  const given = answers.context;
+  const answeredLayers = new Set((answers.stack ?? []).map((entry) => entry.layer));
+  return [
+    ...(answers.principles === undefined ? ['principles'] : []),
+    ...(answers.architecture === undefined ? ['architecture'] : []),
+    ...(answers.migration === undefined ? ['migration'] : []),
+    ...stackLayers.filter((layer) => !answeredLayers.has(layer)).map((layer) => `stack.${layer}`),
+    ...contextQuestions
+      .filter((question) => given?.[question] === undefined || given[question] === null)
+      .map((question) => `context.${question}`),
+    ...(answers.buildMethod === undefined ? ['buildMethod'] : []),
+  ];
+}
+
+/** The brief for these answers with every unanswered question at its default (DEC-80). */
+// RF-605, RF-606
+export function buildBrief(answers: BriefAnswers, catalogue: Catalogue): UnsavedBrief {
+  return {
+    schemaVersion: 1,
+    catalogueVersion: catalogue.version,
+    principles: [...(answers.principles ?? defaultPrinciples(catalogue))].sort(),
+    architecture: architectureOf(answers.architecture),
+    migration: answers.migration ?? migrationStrategies[0],
+    stack: [...(answers.stack ?? [])].sort((a, b) => layerOrder(a.layer) - layerOrder(b.layer)),
+    context: contextOf(answers.context),
+    buildMethod: answers.buildMethod ?? { aiAssisted: false },
+    defaulted: defaultedQuestions(answers),
+  };
+}
+
+function contentOf(brief: UnsavedBrief): string {
+  const { catalogueVersion, principles, architecture, migration, stack, context } = brief;
+  const fields = [catalogueVersion, principles, architecture, migration, stack, context];
+  return JSON.stringify([...fields, brief.buildMethod, brief.defaulted]);
+}
+
+/** Whether two briefs hold the same answers, whatever instant they were saved at. */
+// RF-605
+export function sameBrief(left: UnsavedBrief, right: UnsavedBrief): boolean {
+  return contentOf(left) === contentOf(right);
+}
+
+/** The start of the newest completed plan run, or undefined when no package exists. */
+function newestPackageStart(runs: readonly Run[]): number | undefined {
+  const starts = runs
+    .filter((run) => run.stage === 'plan' && run.endState === 'Completed')
+    .map((run) => run.startedAt ?? run.queuedAt);
+  return starts.length === 0 ? undefined : Math.max(...starts);
+}
+
+/**
+ * RF-605: the brief is out of date when it was saved after the newest completed `plan` run started,
+ * because that package was written from an earlier brief. Without a package it cannot be.
+ */
+// RF-605
+export function isBriefOutOfDate(savedAt: string, runs: readonly Run[]): boolean {
+  const start = newestPackageStart(runs);
+  return start !== undefined && Date.parse(savedAt) > start;
 }

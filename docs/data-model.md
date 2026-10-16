@@ -609,6 +609,19 @@ defaulted: [questionId] }`. `defaulted` lists the questions that took their defa
 as open questions (RF-604). Free-text answers are untrusted input: they reach the planner only inside labelled data
 blocks (ADR-013). `plan` copies the brief and the catalogue version into the run manifest (RNF-004).
 
+Rules (P3-06): a question the user did not answer takes its default and is named in `defaulted`, as `principles`,
+`architecture`, `migration`, `stack.<layer>` (one per layer of RF-609: `language-runtime`, `backend-framework`,
+`front-end`, `database`, `data-access`, `testing`, `hosting`), `context.<field>` and `buildMethod`. The defaults are:
+the catalogue entries switched on (DEC-74) for `principles`, `strangler-fig` for `migration` (RF-610),
+`layered` for `architecture.style` with no recommendation, `{ aiAssisted: false }`, no `stack` entry for an
+unanswered layer, and `null` or an empty list for the context fields; nothing is invented (DEC-80). `principles`
+holds catalogue entry ids other than the architecture styles, sorted and without repeats; `stack` holds at most one
+entry per layer, in layer order, each choice at most 200 characters; the context texts at most 500 characters, up to
+20 integrations, `teamSize` a whole number from 1 to 10000. The file is replaced whole by each save and not touched
+when the answers are the same as the stored ones, so `savedAt` moves only with a change. The brief is *out of date*
+when `savedAt` is later than the start of the newest `Completed` run of stage `plan` of the project (the package
+was written from an earlier brief); a project with no such run is never out of date.
+
 ## 4. Tables (PostgreSQL)
 
 Added 2026-10-11 (DEC-65, ADR-016). PostgreSQL 17. Every table is created by a numbered migration (section 7). Ids
