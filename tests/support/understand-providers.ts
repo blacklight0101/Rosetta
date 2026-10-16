@@ -13,6 +13,7 @@ import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
+import { keyAdditionalData } from '../../src/domain/accounts/provider-keys.js';
 import { JsonlEgressLog } from '../../src/infrastructure/guards/jsonl-egress-log.js';
 import type { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { FakeProvider } from '../../src/infrastructure/providers/fake/fake-provider.js';
@@ -24,7 +25,7 @@ import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { budgetTable } from './budget-harness.js';
 import type { FixedClock } from './fixed-clock.js';
 import { SpyLedger } from './provider-fakes.js';
-import { fixtureSecret } from './provider-key-fixtures.js';
+import { fixtureSecret, sampleKeyRecord } from './provider-key-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 // RF-200, ADR-008: the provider side of an understand run in tests: the real provider factory over
@@ -81,16 +82,27 @@ export interface UnderstandProviderParts {
   readonly decorateAnswer?: DecorateAnswer;
   /** The shipped price table the provider factory uses; the budget harness table by default. */
   readonly priceTable?: PriceTable;
+  /** RF-427: the server's OpenAI key (a cloud reader on the server's key). */
+  readonly serverOpenAiKey?: string;
+  /** RF-427: an OpenAI key of this user's own (a cloud reader on the user's key). */
+  readonly ownOpenAiKey?: { readonly userId: string; readonly key: string };
 }
 
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
   const { dataDir, writer, masker, clock, logger } = parts;
   const adapter = new HookedProvider(parts.recording, parts.beforeCall, parts.decorateAnswer);
   const ledger = new SpyLedger(new MemoryCostLedger());
+  const keys = new MemoryProviderKeyRepository();
+  const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
+  const own = parts.ownOpenAiKey;
+  if (own !== undefined) {
+    const sealed = box.seal(own.key, keyAdditionalData(own.userId, 'openai'));
+    void keys.upsert(sampleKeyRecord(own.userId, 'openai', { sealed, last4: own.key.slice(-4) }));
+  }
   const factory = new GuardedProviderFactory({
-    keys: new MemoryProviderKeyRepository(),
-    box: new AesGcmSecretBox({ current: fixtureSecret(3) }),
-    serverKeys: {},
+    keys,
+    box,
+    serverKeys: parts.serverOpenAiKey === undefined ? {} : { openai: parts.serverOpenAiKey },
     // An Ollama provider needs the address (RF-401); the adapter is the fake, so it is never called.
     ollamaUrl: 'http://127.0.0.1:11434',
     serverSettings: new MemoryServerSettings({}),

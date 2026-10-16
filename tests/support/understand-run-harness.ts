@@ -27,6 +27,7 @@ import {
   understandProviders,
   type BeforeCall,
   type DecorateAnswer,
+  type UnderstandProviderParts,
   type UnderstandProviders,
 } from './understand-providers.js';
 
@@ -55,6 +56,8 @@ export interface UnderstandHarnessOptions {
   readonly decorateAnswer?: DecorateAnswer;
   /** The shipped price table the provider factory uses; the budget harness table by default. */
   readonly priceTable?: PriceTable;
+  /** RF-427: the server's OpenAI key, or one the run's user owns; a cloud reader needs one. */
+  readonly openAiKey?: { readonly of: 'server' | 'user'; readonly key: string };
   readonly beforeCall?: (
     call: number,
     harness: UnderstandHarness,
@@ -160,6 +163,13 @@ function repeated(recording: Recording, times: number): Recording {
   return { ...recording, calls: Array.from({ length: times }, () => recording.calls).flat() };
 }
 
+function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<UnderstandProviderParts> {
+  if (given === undefined) return {};
+  return given.of === 'server'
+    ? { serverOpenAiKey: given.key }
+    : { ownOpenAiKey: { userId: account.id, key: given.key } };
+}
+
 // RF-200
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
@@ -185,6 +195,7 @@ export async function createUnderstandHarness(
     beforeCall,
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
+    ...keysOf(options.openAiKey),
   });
   const queue = await queueOf(s, providers);
   const harness = harnessOf({ s, queue, project, providers, dataDir: options.dataDir });
