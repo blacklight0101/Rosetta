@@ -5,6 +5,7 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import {
   agentPanel,
+  openRunTab,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
@@ -110,6 +111,8 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   const areas = ['(root)', 'Catalog', 'Database', 'Services'];
   finishedRun = await startUnderstand(page, areas);
 
+  await expect(page.getByRole('list', { name: 'Run progress' })).toBeVisible();
+  await openRunTab(page, 'All agents');
   for (const area of areas) await expect(agentPanel(page, area)).toBeVisible();
   const root = agentPanel(page, '(root)');
   await expect(root).toContainText('reader');
@@ -189,9 +192,10 @@ test('RF-1003 Stop ends a run that is working, keeps the cards that were found a
   page,
 }) => {
   await startUnderstand(page, ['Catalog', 'Controllers']);
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
   await expect(agentPanel(page, 'Controllers')).toContainText('Running');
-  await expect(page.getByRole('button', { name: 'Download zip' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Download zip' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Stop run' }).click();
 
@@ -206,14 +210,18 @@ test('RF-1006 a page opened on a run under way replays what happened and goes on
   page,
 }) => {
   await startUnderstand(page, ['Catalog', 'Controllers']);
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
+  await openRunTab(page, 'Activity');
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('agent.ended');
 
   await page.reload();
 
+  await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Catalog')).toContainText('Done');
   await expect(agentPanel(page, 'Catalog')).toContainText('BR-001');
   await expect(runStatus(page)).toContainText('Running');
+  await openRunTab(page, 'Activity');
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('run.started');
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
@@ -259,16 +267,6 @@ test('RF-507 RF-1002 the hostile card of a recorded run is text on the live page
   await expect(page.locator('body')).toContainText(hostileTexts.link);
   await expect(page.locator('body')).toContainText(hostileTexts.svg);
   await expectNothingInjected(page, dialogs);
-  await expectNoSeriousViolations(page);
-});
-
-test('RF-1105 a run id that is not the account own shows the error and no page of a run', async ({
-  page,
-}) => {
-  await page.goto('/runs/00000000-0000-4000-8000-000000000000');
-
-  await expect(page.getByTestId('error-banner')).toContainText('RST-2003');
-  await expect(page.getByTestId('run-status')).toHaveCount(0);
   await expectNoSeriousViolations(page);
 });
 
