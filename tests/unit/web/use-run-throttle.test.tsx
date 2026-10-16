@@ -53,9 +53,7 @@ it('RF-1004 unmount cancels a pending refresh', async () => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(0);
   });
-  act(() => {
-    fireEvent.click(screen.getByRole('button'));
-  });
+  fireEvent.click(screen.getByRole('button'));
   view.unmount();
   await vi.advanceTimersByTimeAsync(2000);
   expect(view.calls).toHaveLength(1);
