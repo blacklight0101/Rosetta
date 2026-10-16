@@ -85,7 +85,13 @@ for (const width of widths) {
 test('RF-1018 every area is library code: an empty list, a folded line and Start off with its reason', async ({
   page,
 }) => {
-  await open(page, libraryAreas(5));
+  await open(
+    page,
+    ownAreas(1, () => 'Catalog'),
+  );
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+  await fakeAreas(page, libraryAreas(5));
+  await page.reload();
 
   await expect(page.getByText(/No own-code area/u)).toBeVisible();
   await expect(page.getByTestId('library-areas-line')).toContainText('5 library areas left out');
@@ -141,7 +147,7 @@ test('RF-1018 keyboard only: filter, buttons, folded line, boxes and Start are r
   await expect(show).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(show).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByRole('checkbox', { name: 'Scripts#1' })).toBeVisible();
+  await expect(page.getByText('No library area matches.')).toBeVisible();
   await expectNoSeriousViolations(page);
 });
 

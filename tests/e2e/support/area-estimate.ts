@@ -33,6 +33,8 @@ export function libraryAreas(count: number): readonly FakeArea[] {
 export async function fakeAreas(page: Page, areas: readonly FakeArea[]): Promise<void> {
   await page.route('**/api/projects/*/estimate', async (route) => {
     const response = await route.fetch({ method: 'GET', postData: '' });
+    // Before the first scan the server answers RST-1203: that answer stays as it is.
+    if (!response.ok()) return route.fulfill({ response });
     const body = estimateBody.parse(await response.json());
     const wanted = named.safeParse(route.request().postDataJSON());
     const chosen = wanted.success
