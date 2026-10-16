@@ -50,7 +50,7 @@ function agentsDone(state: RunState): string | undefined {
 function claimsChecked(state: RunState): string | undefined {
   if (state.claims.length === 0) return undefined;
   const checked = state.claims.filter((claim) => claim.status !== 'Proposed').length;
-  return `${String(checked)} of ${String(state.claims.length)} claims checked`;
+  return `${String(checked)} of ${String(state.claims.length)} citations checked. Judgement comes in a later version.`;
 }
 
 function everyAgentEnded(state: RunState): boolean {

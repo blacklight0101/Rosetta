@@ -32,6 +32,15 @@ The three database passwords end up inside database URLs, so use URL-safe charac
 `ROSETTA_SECRET_KEY` somewhere safe: without it the stored provider keys cannot be decrypted. The server refuses to start
 with a key of 32 equal bytes, such as the all-zero placeholder of `.env.example` (error `RST-1008`).
 
+If an existing install used the all-zero placeholder, preserve that exact old value in
+`ROSETTA_SECRET_KEY_PREVIOUS` before replacing `ROSETTA_SECRET_KEY` with a new key generated above.
+Keep both variables set and recreate the app with `docker compose up -d`. Start-up
+re-encrypts stored provider keys under the new secret. Check `docker compose logs app` for
+`Re-encrypted ... provider key(s) under the current secret; 0 could not be read.` before you
+remove `ROSETTA_SECRET_KEY_PREVIOUS` and recreate the app again. If any key could not be read, keep
+the previous key and resolve that warning first. An install with no stored keys has nothing to
+re-encrypt and prints no re-encryption summary. Do not delete the database volume to rotate a key.
+
 The role passwords are applied when the database volume is first created. Changing them in `.env` later does not
 change the roles; reset the stack (section 5) or rotate the passwords in place (section 6).
 

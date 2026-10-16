@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openScannedStartPage } from './support/cost-run.js';
@@ -47,6 +48,36 @@ test('RF-002 a settings save made from an older version is refused with RST-1007
   await second.getByRole('button', { name: 'Save settings' }).click();
   await expect(second.getByText('Settings saved.')).toBeVisible();
   await second.close();
+});
+
+test('RF-113 the start page announces an outdated code map and holds an Understand start until it is confirmed', async ({
+  page,
+}) => {
+  await openScannedStartPage(page);
+  await page.route('**/api/projects/*/estimate*', async (route) => {
+    const response = await route.fetch();
+    const body = z.record(z.string(), z.unknown()).parse(await response.json());
+    await route.fulfill({
+      response,
+      json: {
+        ...body,
+        codeMap: { scannerVersion: null, currentScannerVersion: 1, outdated: true },
+      },
+    });
+  });
+  await openStartPage(page);
+  await expect(page.getByText('The code map is out of date.')).toBeVisible();
+  const startButton = page.getByRole('button', { name: /^Start run/u });
+  await expect(page.getByLabel('Understand')).toBeChecked();
+  await expect(startButton).toBeDisabled();
+  await page.getByLabel('Use the old code map for this run').check();
+  await expect(startButton).toBeEnabled();
+  await expectNoSeriousViolations(page);
+  await page.getByRole('button', { name: 'Scan again' }).click();
+  await expect(page.getByLabel('Scan only')).toBeChecked();
+  await expect(page.getByText('The code map is out of date.')).toHaveCount(0);
+  await expect(startButton).toBeEnabled();
+  await page.unroute('**/api/projects/*/estimate*');
 });
 
 test('RF-1108 a queued run turns to started on the start page when the run before it ends', async ({

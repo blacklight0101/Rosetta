@@ -35,7 +35,7 @@ export interface AgentPanelState {
 }
 
 export type ClaimShown =
-  'Proposed' | 'AwaitingModel' | 'CitationInvalid' | 'Supported' | 'Rejected' | 'Unverified';
+  'Proposed' | 'CitationsChecked' | 'CitationInvalid' | 'Supported' | 'Rejected' | 'Unverified';
 
 export interface CitationRef {
   readonly path: string;

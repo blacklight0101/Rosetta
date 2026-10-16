@@ -18,7 +18,7 @@ describe('the claims', () => {
     ]);
   });
 
-  it('RF-1004 DEC-103 marks a claim that passed the citation check as awaiting model verification', () => {
+  it('RF-1014 marks a claim that passed the citation check as citations checked', () => {
     const state = stateAfter(
       cardProposed(1, 'reader-001', 'BR-001'),
       citationChecked(2, 'reader-001', 'BR-001.c1', true),
@@ -29,7 +29,7 @@ describe('the claims', () => {
       cardId: 'BR-001',
       text: 'Claim BR-001.c1',
       citations: [{ path: 'Catalog/Edit.aspx.cs', startLine: 40, endLine: 80 }],
-      status: 'AwaitingModel',
+      status: 'CitationsChecked',
       reason: undefined,
     });
   });
@@ -85,7 +85,7 @@ describe('the verdicts', () => {
     );
 
     expect(state.claims.map((claim) => [claim.claimId, claim.cardId, claim.status])).toEqual([
-      ['FEAT-004.c2', 'FEAT-004', 'AwaitingModel'],
+      ['FEAT-004.c2', 'FEAT-004', 'CitationsChecked'],
     ]);
   });
 });

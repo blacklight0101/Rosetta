@@ -30,6 +30,13 @@ const roleEstimate = z.object({
 export type RoleEstimate = z.output<typeof roleEstimate>;
 
 export const estimateSchema = z.object({
+  codeMap: z
+    .object({
+      scannerVersion: z.number().int().nonnegative().nullable(),
+      currentScannerVersion: z.number().int().nonnegative(),
+      outdated: z.boolean(),
+    })
+    .optional(),
   priceTableVersion: z.string(),
   currency: z.string(),
   areas: z.array(

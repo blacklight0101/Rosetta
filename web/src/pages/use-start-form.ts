@@ -24,7 +24,18 @@ interface CloudConsent {
   readonly set: (checked: boolean) => void;
 }
 
+/** RF-113: the estimate says the code map comes from an older scanner. */
+function isOutdated(estimate: EstimateLoad): boolean {
+  return estimate.status === 'ready' && estimate.estimate.codeMap?.outdated === true;
+}
+
 export interface StartForm {
+  /** RF-113: an outdated code map, and whether the user confirmed using it for an understand run. */
+  readonly oldMap: {
+    readonly outdated: boolean;
+    readonly confirmed: boolean;
+    readonly set: (confirmed: boolean) => void;
+  };
   readonly project: Project;
   readonly choice: EstimateChoice;
   readonly stage: RunStageChoice;
@@ -64,6 +75,7 @@ export function useStartForm(loaded: Project): StartForm {
     microsToDollars(String(project.settings.budget.confirmAboveCostMicros)),
   );
   const [checked, setChecked] = useState(false);
+  const [oldMapConfirmed, setOldMapConfirmed] = useState(false);
   const [refused, setRefused] = useState(false);
   const choice = useEstimateChoice(project.id);
   const limits = useSpendLimits();
@@ -90,10 +102,12 @@ export function useStartForm(loaded: Project): StartForm {
   const gate = startGate({
     ...{ stage, estimate, consentNeeded: names, consentGiven: checked },
     chosenAreas: choice.chosen.length,
+    oldMapUnconfirmed: isOutdated(estimate) && !oldMapConfirmed,
   });
   return {
     ...{ project, choice, stage, setStage, url, setUrl, capText, setCapText, capMicros },
     ...{ thresholdText, setThresholdText },
     ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions },
+    oldMap: { outdated: isOutdated(estimate), confirmed: oldMapConfirmed, set: setOldMapConfirmed },
   };
 }

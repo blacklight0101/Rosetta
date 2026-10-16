@@ -25,7 +25,6 @@ describe('citation', () => {
 
   it.each([
     ['no lines', 'src/a.cs'],
-    ['a single number', 'src/a.cs:5'],
     ['text lines', 'src/a.cs:x-y'],
     ['an empty path', ':1-2'],
   ])('RF-202 refuses %s', (_name, text) => {
@@ -42,4 +41,14 @@ describe('citation', () => {
   ] as const)('RF-202 refuses %s', (_name, [path, startLine, endLine], problem) => {
     expect(createCitation(path, startLine, endLine)).toEqual({ ok: false, error: problem });
   });
+});
+
+// RF-207 review probes preserve repository-path and line guards.
+it.each(['a.cs:30', 'a.cs:30-30'])('RF-207 normalises %s', (text) => {
+  const parsed = parseCitation(text);
+  expect(parsed).toEqual({ ok: true, value: { path: 'a.cs', startLine: 30, endLine: 30 } });
+  expect(parsed.ok && formatCitation(parsed.value)).toBe('a.cs:30-30');
+});
+it.each(['a.cs:0', 'a.cs:31-30', 'a.cs:', 'C:\\a.cs:30'])('RF-207 refuses %s', (text) => {
+  expect(parseCitation(text).ok).toBe(false);
 });

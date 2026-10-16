@@ -28,6 +28,7 @@ export function estimateView(estimate: RunEstimate): Record<string, unknown> {
   const { priceTableVersion, currency, areas, assumptions } = estimate;
   return {
     ...{ priceTableVersion, currency, areas, assumptions },
+    codeMap: estimate.codeMap,
     roles: estimate.roles.map((role) => ({
       ...{ role: role.role, provider: role.provider, kind: role.kind, model: role.model },
       ...{ keySource: role.keySource, priced: role.priced },

@@ -140,7 +140,7 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expectNoSeriousViolations(page);
 });
 
-test('RF-1004 DEC-103 the claims list marks a claim awaiting model verification or citation invalid, with its reason and a link to the lines', async ({
+test('RF-1014 the claims list marks a claim citations checked or citation invalid, with its reason and a link to the lines', async ({
   page,
 }) => {
   await page.goto(finishedRun);
@@ -148,9 +148,7 @@ test('RF-1004 DEC-103 the claims list marks a claim awaiting model verification 
   const claims = page.getByRole('region', { name: 'Claims' });
   await expect(claims.getByTestId('claim')).toHaveCount(7);
   await expect(claims.getByTestId('claim').filter({ hasText: 'Citation invalid' })).toHaveCount(2);
-  await expect(
-    claims.getByTestId('claim').filter({ hasText: 'Awaiting model verification' }),
-  ).toHaveCount(5);
+  await expect(claims.getByTestId('claim').filter({ hasText: 'Citations checked' })).toHaveCount(5);
   const missing = claims.getByTestId('claim').filter({ hasText: 'BR-001.c3' });
   await expect(missing).toContainText('Citation invalid');
   await expect(missing.getByTestId('claim-reason')).not.toBeEmpty();

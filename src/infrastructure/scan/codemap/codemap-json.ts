@@ -92,6 +92,7 @@ const entitySchema = z.strictObject({
 
 const codeMapSchema = z.strictObject({
   schemaVersion: z.literal(1),
+  scannerVersion: z.number().int().nonnegative().optional(),
   source: z.strictObject({
     owner: z.string().min(1).max(100),
     repo: z.string().min(1).max(100),
@@ -149,6 +150,7 @@ function linkJson(link: CodeLink): Record<string, unknown> {
 export function serialiseCodeMap(map: CodeMap): string {
   const json = {
     schemaVersion: map.schemaVersion,
+    ...(map.scannerVersion === undefined ? {} : { scannerVersion: map.scannerVersion }),
     source: {
       owner: map.source.owner,
       repo: map.source.repo,
@@ -225,6 +227,7 @@ export function parseCodeMap(text: string): Result<CodeMap, CodeMapParseProblem>
   const files = validFiles(row.files);
   if (!files.ok) return files;
   return createCodeMap({
+    ...(row.scannerVersion === undefined ? {} : { scannerVersion: row.scannerVersion }),
     source: row.source,
     files: files.value,
     areas: row.areas,
