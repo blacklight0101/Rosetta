@@ -211,7 +211,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Zip export | `yazl` | 3.3 | streaming zip writer (RF-008) |
 | Snapshot extraction | `tar` | 7.5 | GitHub tarball extraction with an entry filter, `src/infrastructure/github/` only (ADR-019, RF-122, RF-127) |
 | Ignore rules | `ignore` | 7.0 | gitignore-syntax matching for `.rosettaignore` and the deny list, `src/infrastructure/files/` only (ADR-019, RF-140) |
-| Web UI and report components | `preact` | 10.29 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52); 11.0.0 was published 2026-09-30, inside the two-week rule, so P1-12 pins 10.29.8 and a follow-up moves to 11 |
+| Web UI and report components | `preact` | 11.0.0 | bundled into static assets at build time; the server ships no front-end dependency at runtime (DEC-52); pinned exactly by P1-85 (DEC-125): 11.0.0 was published 2026-09-30, and 11.0.1 (published 2026-10-08) is adopted only from 2026-10-22, when it is two weeks old |
 
 **Development**
 
