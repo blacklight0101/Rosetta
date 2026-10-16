@@ -22,6 +22,7 @@ const mixed = [
 const every = ['Catalog', 'Models', 'jQuery#1', 'Bootstrap#1', 'Scripts#2'];
 const list = (): HTMLElement => screen.getByRole('group', { name: 'Areas from the code map' });
 const foldedLine = (): HTMLElement => screen.getByTestId('library-areas-line');
+const toggle = (): HTMLElement => within(foldedLine()).getByRole('button');
 const show = (): HTMLElement => within(foldedLine()).getByRole('button', { name: /^Show/u });
 const filter = (): HTMLElement => screen.getByLabelText('Filter areas');
 const estimateBodies = (calls: readonly { method: string; path: string; body: unknown }[]) =>
@@ -70,7 +71,7 @@ it('RF-1018 Show expands the library areas with their reason and lets the user a
 
   fireEvent.click(show());
 
-  expect(show().getAttribute('aria-expanded')).toBe('true');
+  expect(toggle().getAttribute('aria-expanded')).toBe('true');
   const box = input('Bootstrap#1');
   expect(box.checked).toBe(false);
   expect(box.parentElement?.textContent).toContain('Only vendored or minified files');
@@ -80,7 +81,7 @@ it('RF-1018 Show expands the library areas with their reason and lets the user a
   await waitFor(() => {
     expect(estimateBodies(calls)).toContainEqual({ areas: ['Catalog', 'Models', 'Bootstrap#1'] });
   });
-  fireEvent.click(show());
+  fireEvent.click(within(foldedLine()).getByRole('button', { name: /^Hide/u }));
   expect(screen.queryByLabelText('Bootstrap#1')).toBeNull();
 });
 

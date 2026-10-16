@@ -21,7 +21,8 @@ const mixed = [
 const bar = (): HTMLElement => screen.getByRole('region', { name: 'Run summary' });
 const show = (): HTMLElement =>
   within(screen.getByTestId('library-areas-line')).getByRole('button', { name: /^Show/u });
-const libraryNotice = (): HTMLElement => screen.getByRole('region', { name: 'Library areas chosen' });
+const libraryNotice = (): HTMLElement =>
+  screen.getByRole('region', { name: 'Library areas chosen' });
 const confirmLabel = 'Read the library areas too';
 
 it('RF-1018 the summary bar shows the areas and files chosen, the estimate and Start', async () => {
