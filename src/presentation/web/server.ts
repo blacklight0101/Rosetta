@@ -166,6 +166,9 @@ function registerSessionPlugins(server: FastifyInstance, refusals: RecordRefused
       void recordRateLimited(refusals, request);
     },
   });
+  // RF-1109, DEC-141: the counts of refusals past the per-address limit are written before the
+  // database pool closes (the pool ends after the server, shutdown.ts).
+  server.addHook('onClose', () => refusals.flushAll());
 }
 
 // RF-007: every failure answers { code, message, nextStep } with the status of its cause. With a
