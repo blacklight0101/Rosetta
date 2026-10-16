@@ -31,15 +31,18 @@ async function endedRun(answers: Parameters<typeof renderLive>[0]) {
   return page;
 }
 
-it('RF-504 keeps Build report disabled, with the reason, while the run is running', async () => {
+it('RF-504 offers Build report only once the run has ended, not on the running page', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
 
-  const button = await screen.findByRole('button', { name: 'Build report' });
+  await screen.findByRole('tablist', { name: 'Run details' });
+  expect(screen.queryByRole('button', { name: 'Build report' })).toBeNull();
 
-  expect(button.hasAttribute('disabled')).toBe(true);
-  expect(button.getAttribute('title')).toBe('Available when the run ends.');
+  connection.event(runEnded(2, 'Completed'));
+
+  const button = await screen.findByRole('button', { name: 'Build report' });
+  expect(button.hasAttribute('disabled')).toBe(false);
 });
 
 it('RF-504 builds the report of an ended run from the page and links the report and the replay', async () => {

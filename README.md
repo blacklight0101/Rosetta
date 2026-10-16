@@ -11,24 +11,73 @@ the cost of every run visible and capped. It is a web application with accounts:
 spawns, live, and the published report replays their work. One container image runs it on your machine with Docker
 Compose or on a server for invited users.
 
-**Status: phase P1, the milestone slice, is in progress.** The server, the web application and the container image
-exist and run with Docker Compose; the pipeline is built card by card. The design documents they follow are in this
+**Status: version v0.1.0 (the milestone slice) is prepared; the owner creates the tag.** The server, the web
+application and the container image run with Docker Compose: you can create a project from a public GitHub URL, scan
+it, run the agents that write the cited specification, watch them live and replay a run. The hosted application, the
+`plan` stage and the other phases are not built yet. [docs/releases.md](docs/releases.md) lists what v0.1.0 delivers
+by requirement area, the known gaps and the checks that wait for the owner. The design documents are in this
 repository: [docs/roadmap.md](docs/roadmap.md) has the phases, [handoff.md](handoff.md) the current state and
 [docs/README.md](docs/README.md) the full map.
 
 ## Quick start
 
-Run the whole system on your machine with Docker Compose (Docker with Compose v2 or later; Node.js is not needed):
+Run the whole system on your machine with Docker Compose. You need Git and Docker with Compose v2.1 or later (for
+`--wait`); Node.js is not needed. Run the commands in an empty folder, in the block for your shell: Windows PowerShell
+(5.1 or 7) or bash.
 
-```
-cp .env.example .env     # then set the passwords, ROSETTA_SECRET_KEY and the first administrator in .env
-docker compose up -d --build
+```powershell
+git clone https://github.com/blacklight0101/Rosetta.git
+cd Rosetta
+Copy-Item .env.example .env
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+function New-RandomBytes([int]$count) { $bytes = New-Object byte[] $count; $rng.GetBytes($bytes); , $bytes }
+function New-HexSecret { -join ((New-RandomBytes 24) | ForEach-Object { $_.ToString('x2') }) }
+$values = @{
+  ROSETTA_DB_ADMIN_PASSWORD    = New-HexSecret
+  ROSETTA_APP_DB_PASSWORD      = New-HexSecret
+  ROSETTA_MIGRATOR_DB_PASSWORD = New-HexSecret
+  ROSETTA_ADMIN_PASSWORD       = New-HexSecret
+  ROSETTA_SECRET_KEY           = [Convert]::ToBase64String((New-RandomBytes 32))
+}
+$lines = Get-Content .env | ForEach-Object {
+  $name = ($_ -split '=', 2)[0]
+  if ($values.ContainsKey($name)) { "$name=$($values[$name])" } else { $_ }
+}
+Set-Content .env $lines -Encoding ascii
+docker compose up -d --build --wait
+Select-String -Path .env -Pattern '^ROSETTA_ADMIN_USER='
 ```
 
-Open <http://127.0.0.1:8080> and sign in as the administrator you set in `.env`; the page asks you to choose a new
-password. The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data,
-`docker compose down -v` deletes it. The steps in full (generating the secrets, Ollama on the host, reset and
-troubleshooting) are in [docs/runbooks/local.md](docs/runbooks/local.md).
+```bash
+git clone https://github.com/blacklight0101/Rosetta.git
+cd Rosetta
+cp .env.example .env
+for name in ROSETTA_DB_ADMIN_PASSWORD ROSETTA_APP_DB_PASSWORD ROSETTA_MIGRATOR_DB_PASSWORD ROSETTA_ADMIN_PASSWORD; do
+  sed -i.bak "s|^$name=.*|$name=$(openssl rand -hex 24)|" .env
+done
+sed -i.bak "s|^ROSETTA_SECRET_KEY=.*|ROSETTA_SECRET_KEY=$(openssl rand -base64 32)|" .env
+rm .env.bak
+docker compose up -d --build --wait
+grep -E '^ROSETTA_ADMIN_USER=' .env
+```
+
+The commands copy `.env.example` to `.env` (git-ignored), fill in the three database passwords, the administrator's
+password and a new `ROSETTA_SECRET_KEY` (32 random bytes in base64), then build the image, start the database and the
+app, and print the administrator's name. The administrator's password stays in `.env` and is never printed. The secret
+key step is not optional: the all-zero key in `.env.example` is a public value, so the server refuses to start with it
+(error `RST-1008`). Keep a copy of your key; without it the stored provider keys cannot be decrypted. The first build
+takes a few minutes; the command returns when both services are healthy.
+
+Open <http://127.0.0.1:8080>, choose Sign in and sign in as the administrator: the user name is `ROSETTA_ADMIN_USER` and
+the password is `ROSETTA_ADMIN_PASSWORD`, both in `.env`. The port is fixed at 8080 (`compose.yaml`); if another program
+uses it, see the troubleshooting table of the runbook. The page asks you to choose a new password before anything else
+opens. On the Projects page, Use the demo repository fills in the address of the demo application
+(eShopLegacyWebForms); choose Create project to add it. A scan needs no model. The agents of the understand stage need
+one: Ollama on the host (section 4 of the runbook) or your own provider key under Settings and keys.
+
+The app is published on `127.0.0.1` only. `docker compose down` stops it and keeps your data, `docker compose down -v`
+deletes it. The steps in full (Ollama on the host, reset, rotating the passwords and troubleshooting) are in
+[docs/runbooks/local.md](docs/runbooks/local.md).
 
 A sample report, made from recorded data of a demo repository, is published at <https://blacklight0101.github.io/Rosetta/> once GitHub Pages is enabled for the repository (source: GitHub Actions).
 
@@ -66,6 +115,8 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 
 ## Milestone hand-in (2026-10-26)
 
+- Release notes: [docs/releases.md](docs/releases.md) (v0.1.0; the owner creates the tag).
+- Hosted application URL: [PENDIENTE: URL de la aplicación alojada]. The hosted deployment is card P1-55.
 - Slides URL: [PENDIENTE: URL de las diapositivas]. Source: [docs/hand-in/slides/slides.md](docs/hand-in/slides/slides.md) (Spanish).
 - Video URL: [PENDIENTE: URL del vídeo]. Script: [docs/hand-in/video-script.md](docs/hand-in/video-script.md) (Spanish, about 5 minutes).
 

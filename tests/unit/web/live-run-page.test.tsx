@@ -25,6 +25,7 @@ import {
   runUuid,
   valueOf,
 } from './live-run-helpers.js';
+import { openTabWhenReady } from './live-run-running-helpers.js';
 import { localEstimate } from './start-run-fixtures.js';
 
 // RF-1002..RF-1006, RF-1108, RF-008, RF-507, DEC-103 (P1-35): the panels, overview, meter and Stop of the live run page. Whatever the page shows comes from
@@ -45,6 +46,7 @@ it('RF-1002 the page is a signed-in page of the router table', () => {
 it('RF-1002 shows one panel per agent with area, role, model, state, turns, tool call, files, cards and tokens', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.raw(retry);
   connection.event(ev(1, 'run.started', startedData));
@@ -81,6 +83,7 @@ it('RF-1002 shows one panel per agent with area, role, model, state, turns, tool
 it('RF-1002 shows the overview of planned, running, done and failed agents and the verbose event log', async () => {
   const { stream } = renderLive();
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
@@ -97,6 +100,7 @@ it('RF-1002 shows the overview of planned, running, done and failed agents and t
   expect(valueOf(overview, 'Planned')).toBe('1');
   expect(valueOf(overview, 'Running')).toBe('1');
   expect(valueOf(overview, 'Done')).toBe('0');
+  await openTabWhenReady('Activity');
   const items = within(screen.getByRole('log', { name: 'Event log' })).getAllByRole('listitem');
   expect(items).toHaveLength(7);
   expect(items[0]?.textContent).toContain('agent.ended');
@@ -114,6 +118,7 @@ it('RF-1003 RF-424 shows tokens per role and in total, the cap as a bar, the cos
     [`POST ${estimatePath}`]: json(200, localEstimate),
   });
   const connection = await stream.connection();
+  await openTabWhenReady('All agents');
 
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'reader-001', 'Catalog'));
