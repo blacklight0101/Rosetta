@@ -79,6 +79,23 @@ function micros(text: string, saved: number): bigint {
   return typed === undefined ? BigInt(saved) : BigInt(typed);
 }
 
+/** DEC-108: the cap warnings of an understand estimate that has loaded. */
+function warningsOf(input: {
+  readonly stage: RunStageChoice;
+  readonly estimate: EstimateLoad;
+  readonly capMicros: bigint;
+  readonly limits: ReturnType<typeof useSpendLimits>;
+}): readonly CapWarning[] {
+  const { stage, estimate, capMicros, limits } = input;
+  if (stage !== 'understand' || estimate.status !== 'ready') return [];
+  return capWarnings({ estimate: estimate.estimate, runCapMicros: capMicros, limits });
+}
+
+/** RF-425: the likely cost of the priced roles, the figure the threshold is compared with. */
+function likelyOf(estimate: EstimateLoad): bigint | undefined {
+  return estimate.status === 'ready' ? pricedTotal(estimate.estimate, 'likely') : undefined;
+}
+
 // RF-1001, RF-143, DEC-108
 export function useStartForm(loaded: Project): StartForm {
   const [project, setProject] = useState(loaded);
@@ -101,17 +118,10 @@ export function useStartForm(loaded: Project): StartForm {
   const { budget } = project.settings;
   const capMicros = micros(capText, budget.run.maxCostMicros);
   const thresholdMicros = micros(thresholdText, budget.confirmAboveCostMicros);
-  const warnings =
-    stage === 'understand' && estimate.status === 'ready'
-      ? capWarnings({
-          ...{ estimate: estimate.estimate, runCapMicros: capMicros },
-          limits,
-        })
-      : [];
+  const warnings = warningsOf({ stage, estimate, capMicros, limits });
   const actions = useStartActions({
     ...{ project, stage, url, capText, thresholdText, areas: choice.chosen, consent: checked },
-    likelyMicros:
-      estimate.status === 'ready' ? pricedTotal(estimate.estimate, 'likely') : undefined,
+    likelyMicros: likelyOf(estimate),
     onSaved: setProject,
     onConsentRefused: () => {
       setRefused(true);
