@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 // The CI job `pr-title` pipes the pull request title through commitlint (environments-and-delivery.md
 // section 6). The job feeds the title to stdin exactly as this test does.
-// commitlint cold start can exceed Vitest's 5 s default under load.
-const timeout = 20_000;
+// commitlint cold start can exceed Vitest's 5 s default under load, and took over 20 s when other agents shared the disk.
+const timeout = 60_000;
 const commitlint = join(process.cwd(), 'node_modules', '@commitlint', 'cli', 'cli.js');
 
 function lint(title: string): Promise<{ code: number | null; output: string }> {

@@ -140,7 +140,7 @@ describe.skipIf(!hasTestDatabase)('event streams in the composed application', (
 
       expect(stream.status).toBe(200);
       expect(signOut.status).toBe(204);
-      await expect.poll(() => ended, { timeout: 5000 }).toBe(true);
+      await expect.poll(() => ended, { timeout: 15_000 }).toBe(true);
     } finally {
       await application.stop();
     }

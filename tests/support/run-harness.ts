@@ -140,7 +140,7 @@ function waitUntilEnded(runs: MemoryRunIndex): RunHarness['ended'] {
         latest = await runs.find(run.userId, run.id);
         if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
       },
-      { interval: 2, timeout: 20_000 },
+      { interval: 2, timeout: 30_000 },
     );
     if (latest === undefined) throw new Error('The run vanished');
     return latest;

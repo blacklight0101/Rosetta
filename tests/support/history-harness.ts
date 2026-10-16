@@ -63,7 +63,7 @@ export async function createHistoryHarness(): Promise<HistoryHarness> {
     () => {
       if (test.runs.executor.started.length < 2) throw new Error('The second run has not started');
     },
-    { timeout: 20_000 },
+    { timeout: 30_000 },
   );
   const folder = { userId, projectId };
   test.folders.seed({ ...folder, runKey: done.runKey }, { 'manifest.json': '12345' });
