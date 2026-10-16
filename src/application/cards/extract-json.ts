@@ -26,6 +26,13 @@ function parseJson(text: string): { readonly value: unknown } | undefined {
   }
 }
 
+/** Whether the next character that is not white space closes an object or a list. */
+function closesAfter(text: string, from: number): boolean {
+  let index = from;
+  while (index < text.length && /\s/u.test(text[index] ?? '')) index += 1;
+  return text[index] === '}' || text[index] === ']';
+}
+
 /** RF-208: the text without the commas that sit right before a closing brace or bracket. */
 function withoutTrailingCommas(text: string): string {
   let result = '';
@@ -35,7 +42,7 @@ function withoutTrailingCommas(text: string): string {
       const end = stringEnd(text, index);
       result += text.slice(index, end + 1);
       index = end;
-    } else if (char === ',' && /^\s*[}\]]/u.test(text.slice(index + 1, index + 65))) {
+    } else if (char === ',' && closesAfter(text, index + 1)) {
       continue;
     } else result += char;
   }

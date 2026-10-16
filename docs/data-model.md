@@ -687,6 +687,7 @@ the `Clock` port.
 | `end_state` | `text` null | `RunEndState`, `CHECK` on the list; set once; set exactly when `queue_state` is `Ended` (`CHECK`) |
 | `queued_at`, `started_at`, `ended_at` | `timestamptz` | the last two null until reached |
 | `cost_micros`, `input_tokens`, `output_tokens`, `cached_input_tokens` | `bigint` | running totals for lists; the ledger is the source of truth |
+| `failed_areas` | `integer` | default 0, `CHECK (failed_areas >= 0)`; set with the end state: the areas of an understand run whose task gave no usable card (RF-208), so lists can say "Completed, 2 areas failed" without the run's events; migration `0011` |
 
 **`cost_ledger`** (RF-428, RF-1106)
 
@@ -824,7 +825,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`), `0100..` later
 releases.
 
 **File schema versions**:

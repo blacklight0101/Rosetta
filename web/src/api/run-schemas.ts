@@ -25,6 +25,8 @@ export const runSchema = z.looseObject({
     cachedInputTokens: count,
   }),
   reportBuilt: z.boolean().default(false),
+  /** RF-208: the areas of the run that gave no usable card. */
+  failedAreas: count.default(0),
 });
 
 export type RunRow = z.output<typeof runSchema>;

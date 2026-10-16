@@ -51,6 +51,7 @@ function runRow({ run, sizeBytes }: HistoryRun): Record<string, unknown> {
     startedAt: instantOrNull(run.startedAt),
     endedAt: instantOrNull(run.endedAt),
     totals: run.totals,
+    failedAreas: run.failedAreas,
     sizeBytes,
   };
 }

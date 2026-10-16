@@ -85,7 +85,12 @@ export class RunLifecycle {
   // RF-003, RNF-002
   async finish(run: Run, endState: RunEndState, detail: EndDetail = {}): Promise<Run | undefined> {
     const now = this.deps.clock.now();
-    const ended = await this.deps.runs.end(run.id, endState, now.getTime());
+    const ended = await this.deps.runs.end(
+      run.id,
+      endState,
+      now.getTime(),
+      detail.failedAreas ?? 0,
+    );
     if (ended === undefined) return undefined;
     const manifest = await this.attempt(ended, 'the manifest', () =>
       this.endManifestOf(ended, endState, now.toISOString()),

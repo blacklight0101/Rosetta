@@ -48,10 +48,15 @@ export function startRun(run: Run, at: EpochMs): Result<Run, StartProblem> {
 }
 
 // RF-003, RF-1108
-export function endRun(run: Run, endState: RunEndState, at: EpochMs): Result<Run, EndProblem> {
+export function endRun(
+  run: Run,
+  endState: RunEndState,
+  at: EpochMs,
+  failedAreas = 0,
+): Result<Run, EndProblem> {
   if (run.queueState === 'Ended') return err('already-ended');
   if (run.queueState === 'Queued' && endState !== 'Interrupted') {
     return err('queued-run-can-only-be-interrupted');
   }
-  return ok({ ...run, queueState: 'Ended', endState, endedAt: at });
+  return ok({ ...run, queueState: 'Ended', endState, endedAt: at, failedAreas });
 }

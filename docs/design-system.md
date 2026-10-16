@@ -281,7 +281,7 @@ cards are built (an amendment of G-02, recorded in `handoff.md`).
 | Administration: audit | RF-1109 | filterable table, last 30 days |
 | Plan setup | RF-605, RF-608, RF-609 | interview in small groups, each question with a default, the reason and the recommended option; architecture styles with evidence card ids; stack per layer; "What I recorded" summary; added 2026-10-11, artboard 14 (`PlanSetup.dc.html`, steps principles, architecture and stack), approved as a G-02 amendment (DEC-86) |
 | Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |
-| Failed areas notice | RF-208, RF-1002 | a `rst-callout--warn` under the head of the live run page when a run ended with areas that gave no usable card: "Completed with 2 areas failed" (or "2 areas failed"), each area with why, and a **Retry failed areas** button that starts a run of those areas; it is not shown for a stopped run |
+| Failed areas notice | RF-208, RF-1002 | a `rst-callout--warn` under the head of the live run page when a run ended with areas that gave no usable card: "Completed with 2 areas failed" (or "2 areas failed"), each area with why, and a **Retry failed areas** button that starts a run of those areas; it is not shown for a stopped run. Next to the state of an ended run, in the history list, the Projects table and the top bar of the run page, a quiet note "2 areas failed" ("1 area failed") says the same; a code map tile is a gap exactly for an area that the notice lists |
 
 **Status (2026-10-11):** drawn as artboards 7-13 of the design board (artboard 14, Plan setup, follows in DEC-86) (`docs/design/board/Landing.dc.html`,
 `SignIn`, `ChangePassword`, `Projects`, `Settings`, `AdminUsers`, `AdminAudit`), with the Impeccable design

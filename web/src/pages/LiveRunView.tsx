@@ -165,6 +165,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
     <div class="rst-live">
       <RunStatusBar
         {...{ phase, stage, projectId: run.projectId, runKey: run.runId }}
+        failedAreas={state.ended?.failedAreas ?? run.failedAreas}
         {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
         updatesNote={view.note}
         controls={

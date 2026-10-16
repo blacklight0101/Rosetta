@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import type { LastRun, ProjectOverviewRow } from '../api/overview-schemas.js';
+import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { tokensText, totalCostText } from '../lib/cost-text.js';
@@ -20,7 +21,12 @@ function lastRunText(run: LastRun | null): string {
 function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null {
   if (run === null) return null;
   if (run.queueState === 'Ended' && run.endState !== null) {
-    return <StatusBadge list="RunEndState" value={run.endState} />;
+    return (
+      <>
+        <StatusBadge list="RunEndState" value={run.endState} />
+        <FailedAreasNote count={run.failedAreas} />
+      </>
+    );
   }
   return (
     <>
