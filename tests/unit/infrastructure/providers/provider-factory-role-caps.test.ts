@@ -23,7 +23,10 @@ function withRoleCaps(roles: NonNullable<ProjectSettings['budget']['roles']>): P
 }
 
 async function setUp(settings: ProjectSettings, test = false) {
-  const harness = factoryHarness({ serverKeys: { openai: serverKeyText } });
+  const harness = factoryHarness({
+    serverKeys: { openai: serverKeyText },
+    ollamaUrl: 'http://localhost:11434',
+  });
   const request = harness.request({ settings, roles: ['reader', 'verifier'], cloudConsent: true });
   const built = await harness.factory.build(test ? { ...request, run: testRun } : request);
   if (!built.ok) throw new Error('The set was not built.');
@@ -38,7 +41,7 @@ const kindsOf = (caps: readonly { readonly kind: string }[]): string[] =>
 
 describe('role caps of the provider factory', () => {
   it('RF-423 gives a role its own cost and token caps, and only that role', async () => {
-    const settings = withRoleCaps({ reader: { maxCostMicros: 500, maxTokens: 9_000 } });
+    const settings = withRoleCaps({ reader: { maxCostMicros: 500_000, maxTokens: 9_000 } });
     const { harness, reader, verifier } = await setUp(settings);
 
     await reader.complete(callFor('reader', 'contract-model', 1));
@@ -48,7 +51,7 @@ describe('role caps of the provider factory', () => {
     expect(readerHeld?.reservation.role).toBe('reader');
     expect(readerHeld?.caps).toEqual(
       expect.arrayContaining([
-        { kind: 'role-cost', limit: 500n },
+        { kind: 'role-cost', limit: 500_000n },
         { kind: 'role-tokens', limit: 9_000n },
       ]),
     );
