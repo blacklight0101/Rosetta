@@ -1,7 +1,7 @@
 # ADR-016: PostgreSQL for accounts and indexes, files on a persistent disk for snapshots and runs
 
 **Date**: 2026-10-11
-**Status**: Accepted
+**Status**: Amended
 **Deciders**: BlackLigth (blacklight0101)
 
 ## Context
@@ -55,3 +55,17 @@ We choose option 1.
 ## References
 
 - DEC-37, DEC-65; RF-1302; data-model.md sections 4..9.
+
+## Notes
+
+- 2026-10-16 (DEC-140, P1-158, from the P1-49 review F-02 and F-19): the migrations no longer run inside the serving
+  process. A one-off **migrate step** (the same image, `node dist/presentation/migrate.js`; the `migrate` service of
+  `compose.yaml` locally, its own one-off job hosted) applies them with `DATABASE_MIGRATOR_URL` only, under the
+  advisory lock, and exits; running it again applies nothing. The server starts only after it has succeeded, holds
+  `DATABASE_URL` only and never migrates: it refuses to start (RST-1000) when `DATABASE_MIGRATOR_URL` is set and names
+  the variable to remove. So that a new image still never serves an old schema, `rosetta_app` may `SELECT` (and do
+  nothing else on) `schema_version` (migration `0010`), and the server refuses to start when a migration is pending
+  (RST-2405), changed (RST-2401) or unknown (RST-2402). When `DATABASE_URL` connects as the owner of the schema (a
+  host that offers one role), the server starts and logs a warning, because that role can change audit and ledger
+  rows. The decision bullets above still hold, with "a small runner at start-up" read as "a one-off step before the
+  server starts" and "the server refuses to start when the database has a migration it does not know" kept as is.

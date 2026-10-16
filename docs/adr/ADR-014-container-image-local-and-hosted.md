@@ -63,3 +63,8 @@ We choose option 1.
 ## Notes
 
 - 2026-10-11 (review, DEC-107): caps are not environment variables; they live in `server_settings` and are edited on the administration page. The first hosted deployment runs the `sha-<short>` image tag until v0.1.0 is released (DEC-104).
+- 2026-10-16 (DEC-140, P1-158): "Start-up" now has two steps. A one-off migrate step of the same image runs the
+  migrations with `DATABASE_MIGRATOR_URL` and exits; the server starts only after it succeeded, with `DATABASE_URL`
+  only, and refuses to start on a pending, changed or unknown migration (ADR-016 note of the same date). Locally it is
+  the `migrate` service of `compose.yaml`, which the `app` service waits for (`service_completed_successfully`); hosted
+  it is a one-off job that runs before the new image is deployed, so the app's variables never hold the migrator URL.
