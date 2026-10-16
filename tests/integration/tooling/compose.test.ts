@@ -125,15 +125,13 @@ describe('compose.yaml: app service', () => {
 });
 
 describe('compose.yaml: app service configuration', () => {
-  it('RF-1302 migrates as rosetta_migrator and serves as rosetta_app, with the passwords from .env', async () => {
+  it('RF-1302 serves as rosetta_app with the password from .env (DATABASE_URL only, DEC-140)', async () => {
     const environment = environmentOf(appOf(await load(COMPOSE)));
 
     expect(environment['DATABASE_URL']).toMatch(
       /^postgres:\/\/rosetta_app:\$\{ROSETTA_APP_DB_PASSWORD:\?[^}]+\}@db:5432\/rosetta$/u,
     );
-    expect(environment['DATABASE_MIGRATOR_URL']).toMatch(
-      /^postgres:\/\/rosetta_migrator:\$\{ROSETTA_MIGRATOR_DB_PASSWORD:\?[^}]+\}@db:5432\/rosetta$/u,
-    );
+    expect(environment).not.toHaveProperty('DATABASE_MIGRATOR_URL');
   });
 
   it('RF-1301 sets the public URL to the published address and the data folder to /data', async () => {

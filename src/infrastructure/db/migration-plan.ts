@@ -3,7 +3,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { inVersionOrder, type MigrationFile } from './migration-files.js';
 
 /** A row of `schema_version`: what the database says was applied. */
-interface RecordedMigration {
+export interface RecordedMigration {
   readonly version: number;
   readonly checksum: string;
 }
@@ -36,4 +36,12 @@ export function pendingMigrations(
   }
   const applied = new Set(recorded.map((row) => row.version));
   return ordered.filter((file) => !applied.has(file.version));
+}
+
+/** Not implemented yet (P1-158 red step). */
+export function requireCurrentSchema(
+  recorded: readonly RecordedMigration[] | undefined,
+  known: readonly MigrationFile[],
+): void {
+  if (recorded === undefined && known.length < 0) throw new Error('not implemented');
 }

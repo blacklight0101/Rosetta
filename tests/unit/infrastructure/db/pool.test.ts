@@ -57,7 +57,7 @@ describe('server pools', () => {
     expect(pool.options.connectionString).toBe(appUrl);
   });
 
-  it('RF-1302 the migration pool uses DATABASE_MIGRATOR_URL as resolved by the environment', () => {
+  it('RF-1302 the pool of the migrate step uses DATABASE_MIGRATOR_URL', () => {
     const pool = track(createMigratorPool({ databaseMigratorUrl: migratorUrl }, ignore));
 
     expect(pool.options.connectionString).toBe(migratorUrl);

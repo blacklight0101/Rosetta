@@ -198,6 +198,19 @@ function toEnvironment(parsed: Parsed): Environment {
   });
 }
 
+/** The configuration of the one-off migrate step (DEC-140). */
+export interface MigrationEnvironment {
+  readonly databaseMigratorUrl: string;
+  readonly logLevel: LogLevel;
+}
+
+/** Not implemented yet (P1-158 red step). */
+export function loadMigrationEnvironment(
+  source: EnvironmentSource = process.env,
+): MigrationEnvironment {
+  throw new Error(`not implemented: ${String(Object.keys(source).length)}`);
+}
+
 /**
  * Parses the server configuration once. Throws RST-1000 naming every missing or invalid
  * variable; the message never contains a value.

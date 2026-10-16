@@ -53,8 +53,8 @@ describe.skipIf(!hasTestDatabase)('release-1 grants', () => {
     expect(await privilegesOf(pool, table)).toEqual(['SELECT', 'INSERT']);
   });
 
-  it('RF-1302 rosetta_app has no right on schema_version', async () => {
-    expect(await privilegesOf(pool, 'schema_version')).toEqual([]);
+  it('RF-1302 DEC-140 rosetta_app may only select schema_version, so the server can check it', async () => {
+    expect(await privilegesOf(pool, 'schema_version')).toEqual(['SELECT']);
   });
 });
 

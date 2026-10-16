@@ -34,7 +34,7 @@ describe.skipIf(!hasTestDatabase)('sign-in in the composed application', () => {
   const database = useTestDatabase();
 
   it('RF-1101 signs in, stores only the SHA-256 of the session id and opens the session', async () => {
-    const schema = await database.createSchema({ migrate: false });
+    const schema = await database.createSchema({ migrate: true });
     const dataDir = await mkdtemp(join(tmpdir(), 'rst-sign-in-'));
     folders.push(dataDir);
     const password = fixturePassword('Start');

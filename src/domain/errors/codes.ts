@@ -143,6 +143,7 @@ export const ERROR_CODES = {
   migrationUnknown: 'RST-2402',
   migrationFailed: 'RST-2403',
   databaseQueryFailed: 'RST-2404',
+  migrationPending: 'RST-2405',
   versionUnreadable: 'RST-2500',
   commonPasswordsUnreadable: 'RST-2501',
 } as const;

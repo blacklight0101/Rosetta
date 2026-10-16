@@ -36,6 +36,15 @@ describe('docs/runbooks/local.md', () => {
     expect(await read('docs/runbooks/local.md')).toMatch(/owner check/iu);
   });
 
+  it('RF-1302 DEC-140 explains the one-off migrate step, its failures and the upgrade from a .env with a migrator URL', async () => {
+    const text = await read('docs/runbooks/local.md');
+
+    expect(text).toContain('docker compose run --rm migrate');
+    expect(text).toContain('docker compose logs migrate');
+    expect(text).toContain('DATABASE_MIGRATOR_URL');
+    expect(text).toContain('RST-2405');
+  });
+
   it('RNF-003 shows no password value, only how to generate one', async () => {
     const text = await read('docs/runbooks/local.md');
 
