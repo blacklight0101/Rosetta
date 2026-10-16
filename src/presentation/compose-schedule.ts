@@ -24,7 +24,10 @@ const minuteMs = 60_000;
 
 interface ScheduledParts {
   readonly file: JsonlFileLogger;
-  readonly auth: { readonly sessions: SessionStore };
+  readonly auth: {
+    readonly sessions: SessionStore;
+    readonly services: { readonly refusals: { flushEnded(): Promise<void> } };
+  };
   readonly pool: DatabasePool;
   readonly clock: Clock;
   readonly runs: RunQueue;
@@ -35,7 +38,8 @@ interface ScheduledParts {
  * The periodic jobs of architecture section 7: log retention daily (RF-009), the purge of expired
  * sessions and cost reservations hourly (RF-1101, data-model.md section 9) and the run queue sweep
  * every minute (RF-1108): runs left `Running` without a process end as `Interrupted` and a free
- * slot gets its next queued run; audit retention daily and at start-up (RF-1109, DEC-132).
+ * slot gets its next queued run; audit retention daily and at start-up (RF-1109, DEC-132); the
+ * count rows of refused requests every minute (RF-1109, DEC-141).
  */
 export function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] {
   const { file, auth, pool, clock, runs, logger } = parts;
@@ -61,7 +65,16 @@ export function scheduledTasks(parts: ScheduledParts): readonly ScheduledTask[] 
     },
     { intervalMs: minuteMs, job: () => runs.recover() },
     auditRetentionTask({ retention: new PgAuditRetention(pool), clock, logger }),
+    refusalCountTask(auth.services.refusals),
   ];
+}
+
+/**
+ * RF-1109, DEC-141: once a minute the count rows of ended minutes are written, so a flood that
+ * stops is still counted without waiting for the next refused request.
+ */
+export function refusalCountTask(refusals: { flushEnded(): Promise<void> }): ScheduledTask {
+  return { intervalMs: minuteMs, job: () => refusals.flushEnded() };
 }
 
 /** RF-1109, DEC-132: audit rows older than 365 days are deleted at start-up and every 24 hours. */

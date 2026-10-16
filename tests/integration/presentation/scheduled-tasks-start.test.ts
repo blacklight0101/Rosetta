@@ -11,8 +11,9 @@ import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
 import { fixtureSecret } from '../../support/provider-key-fixtures.js';
 
 // RF-1109, DEC-132, architecture.md section 7: the composed application registers its periodic
-// jobs on the Scheduler port when it starts; the audit purge is one of them, every 24 hours. A
-// task dropped from the composition root fails here.
+// jobs on the Scheduler port when it starts; the audit purge is one of them, every 24 hours, and the
+// count rows of refused requests another, every minute (DEC-141). A task dropped from the
+// composition root fails here.
 
 const MINUTE = 60_000;
 const HOUR = 3_600_000;
@@ -85,6 +86,7 @@ describe.skipIf(!hasTestDatabase)('composition root scheduled tasks', () => {
         HOUR,
         MINUTE,
         DAY,
+        MINUTE,
       ]);
       await insert(pool, oldAuditRow('after-start'));
       await scheduler.runEvery(DAY);
