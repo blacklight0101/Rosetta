@@ -35,18 +35,13 @@ const lineNumber = z.union(
 const path = z.string().trim().min(1).max(maxPathChars);
 const query = z.string().trim().min(1).max(maxQueryChars);
 
-function readFileSchema(maxReadLines: number) {
-  return z
-    .object({ path, startLine: lineNumber, endLine: lineNumber })
-    .refine((args) => args.startLine <= args.endLine, {
-      path: ['endLine'],
-      message: 'must not be before startLine',
-    })
-    .refine((args) => args.endLine - args.startLine < maxReadLines, {
-      path: ['endLine'],
-      message: `the range must be at most ${String(maxReadLines)} lines; read the file in pieces`,
-    });
-}
+// RF-144: a range longer than scan.excerptMaxLines is valid; the read is cut to the limit.
+const readFileSchema = z
+  .object({ path, startLine: lineNumber, endLine: lineNumber })
+  .refine((args) => args.startLine <= args.endLine, {
+    path: ['endLine'],
+    message: 'must not be before startLine',
+  });
 
 const grepSchema = z.object({
   pattern: z.string().min(1).max(maxQueryChars),
@@ -90,13 +85,12 @@ function parsed<T>(
 export function parseToolArguments(
   tool: ReaderToolName,
   args: unknown,
-  maxReadLines: number,
 ): Result<ToolRequest, string> {
   switch (tool) {
     case 'list_area_files':
       return parsed(tool, z.object({}).safeParse(args), () => ({ tool }));
     case 'read_file':
-      return parsed(tool, readFileSchema(maxReadLines).safeParse(args), (value) => ({
+      return parsed(tool, readFileSchema.safeParse(args), (value) => ({
         tool,
         ...value,
       }));

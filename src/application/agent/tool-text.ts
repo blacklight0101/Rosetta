@@ -32,8 +32,12 @@ export function boundedList(
   return left === 0 ? kept : [...kept, `(${String(left)} more ${what} not shown)`];
 }
 
+/** A line cut to `maxChars` units, never ending in half of a surrogate pair (one character). */
 export function cutLine(line: string, maxChars: number): string {
-  return line.length > maxChars ? line.slice(0, maxChars) : line;
+  if (line.length <= maxChars) return line;
+  const lastKept = line.charCodeAt(maxChars - 1);
+  const end = lastKept >= 0xd800 && lastKept <= 0xdbff ? maxChars - 1 : maxChars;
+  return line.slice(0, end);
 }
 
 /** The language and size of a listed file, or why the scan skipped it. */

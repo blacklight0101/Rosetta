@@ -402,8 +402,8 @@ sequenceDiagram
 
 - **Tools** (RF-201): `list_area_files`, `read_file(path, startLine, endLine)`, `grep(pattern, pathGlob)`,
   `codemap_query(symbol | path)` (`src/application/agent/read-only-tools.ts`). Arguments are model output and are
-  checked with zod first (a line number sent as a numeric string counts as a number; a read range at most
-  `scan.excerptMaxLines` lines; a pattern, glob or symbol at most 200 characters; a path at most 512); an invalid call,
+  checked with zod first (a line number sent as a numeric string counts as a number; a read longer than
+  `scan.excerptMaxLines` lines is cut there and its result names the lines left out (RF-144); a pattern, glob or symbol at most 200 characters; a path at most 512); an invalid call,
   an unknown tool (the error names the valid ones), a path the code map does not list and a file the scan skipped
   each return an error result (`RST-1301`, `RST-1302`, `RST-1104`, `RST-1306`) that the model can correct, and every
   error is logged. The tools read only files the code map lists, through the `RepositoryReader`; a path the model
