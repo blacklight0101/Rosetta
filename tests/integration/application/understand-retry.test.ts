@@ -119,13 +119,13 @@ describe('an area that still fails', UNDERSTAND_TIMEOUT, () => {
     expect(run.queueState).toBe('Ended');
   });
 
-  it('RF-208 a run in which no area gave a card is Failed, never Completed', async () => {
+  it('RF-208 a run in which no area gave a card ends Completed as before, and names every area failed', async () => {
     const h = await started({ recording: 'understand-read-then-invalid.json' });
 
     const run = await h.understand({ areas: ['Catalog'] });
 
-    expect(run.endState).toBe('Failed');
-    expect(await endDataOf(h, run)).toMatchObject({ endState: 'Failed', errorCode: 'RST-1300' });
+    expect(run.endState).toBe('Completed');
+    expect(await endDataOf(h, run)).toMatchObject({ endState: 'Completed', failedAreas: 1 });
   });
 });
 
@@ -142,7 +142,7 @@ describe('the turn limit holds for a task and its retry', UNDERSTAND_TIMEOUT, ()
     expect(h.providers.requests()).toHaveLength(6);
     const manifest = await h.manifestOf(run);
     expect(manifest.agentTasks.map((task) => task.state)).toEqual(['TurnLimitReached']);
-    expect(run.endState).toBe('Failed');
+    expect(run.endState).toBe('Completed');
   });
 });
 
@@ -179,7 +179,7 @@ describe('the retry of an area that cannot be split', UNDERSTAND_TIMEOUT, () => 
     expect(h.providers.requests()).toHaveLength(1);
     const coverage = coverageSchema.parse(await readJson(join(h.runFolder(run), 'coverage.json')));
     expect(coverage.areas[0]?.failure).toMatch(/^turn limit reached without a card \(RST-/u);
-    expect(run.endState).toBe('Failed');
+    expect(run.endState).toBe('Completed');
   });
 
   it('RF-208 RF-201 the two halves of a split area share one turn limit: 4 turns, 1 call, then 2 and 2', async () => {
