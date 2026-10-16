@@ -45,6 +45,12 @@ function requirePlaceholder(file: PromptFile, placeholder: string): PromptFile {
   return file;
 }
 
+/** The summariser's merge prompt (RF-250), checked and hashed. */
+// RNF-004
+export function loadMergePrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'summariser/merge.v1.md');
+}
+
 /** The reader's prompt files (RF-201), checked and hashed. */
 // RNF-004
 export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPrompts> {

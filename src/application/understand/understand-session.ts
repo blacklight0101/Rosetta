@@ -4,12 +4,20 @@ import type { CardDraft } from '../../domain/cards/card-ids.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import {
+  recordManifestModelVersion,
+  recordPromptVersions,
+} from '../../domain/runs/run-manifest.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
 import type { OutputProblem } from '../cards/output-problem.js';
+import type { PromptFile } from '../agent/prompt-file.js';
+import { consolidateCards, type ConsolidationParts } from '../consolidate/consolidate-cards.js';
 import type { AnswersFile, OpenQuestion } from '../ports/answers-file.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
+import type { LlmResponse } from '../ports/llm-provider.js';
 import type { RunOutcome } from '../ports/run-executor.js';
+import type { RoleProvider } from '../providers/provider-set.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
 import { areaFailureOf } from './area-failure.js';
@@ -39,6 +47,9 @@ export interface UnderstandSessionParts extends ReaderTaskContext {
   readonly deps: UnderstandSessionDependencies;
   readonly tasks: readonly ReaderTask[];
   readonly source: CardSource;
+  /** RF-250: the role that merges the duplicate cards of several areas, and its prompt. */
+  readonly summariser: RoleProvider;
+  readonly mergePrompt: PromptFile;
 }
 
 /** How a task ended, as far as the run's outputs are concerned. */
@@ -125,6 +136,7 @@ export class UnderstandSession {
   // RF-203, DEC-98
   async finish(): Promise<void> {
     await this.announce(true);
+    await this.consolidate();
     const { deps, execution } = this.parts;
     const { run } = execution;
     const questions = this.latest.cards
@@ -132,6 +144,34 @@ export class UnderstandSession {
       .map((card) => questionOf(card, run.runKey));
     if (questions.length === 0) return;
     await deps.answers.addQuestions({ userId: run.userId, projectId: run.projectId }, questions);
+  }
+
+  /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */
+  private async consolidate(): Promise<void> {
+    const { deps, execution, source } = this.parts;
+    const merged = await consolidateCards(this.consolidation(), this.latest.cards);
+    if (merged.merges.length === 0) return;
+    const kept = new Set(merged.cards.map((card) => card.id));
+    const mergedAway = this.latest.cards.filter((card) => !kept.has(card.id));
+    this.latest = { ...this.latest, cards: merged.cards };
+    const areasWithoutCards = this.cards.areasWithoutCards();
+    const set = { cards: merged.cards, source, areasWithoutCards, mergedAway };
+    await deps.cards.writeCards(scopeOf(execution.run), set);
+  }
+
+  private consolidation(): ConsolidationParts {
+    const { summariser, mergePrompt, logger, ids, execution, nextCallId, traceId } = this.parts;
+    const { name, version, sha256 } = mergePrompt;
+    const record = (response: LlmResponse): Promise<void> =>
+      this.parts.updates.update((manifest) => {
+        const recorded = recordPromptVersions(manifest, { [name]: { version, sha256 } });
+        return recordManifestModelVersion(recorded, 'summariser', response.modelVersion);
+      });
+    return {
+      ...{ provider: summariser.provider, role: summariser, prompt: mergePrompt, logger, ids },
+      ...{ runId: execution.run.runKey, traceId, nextCallId, signal: execution.signal },
+      onAnswer: record,
+    };
   }
 
   /**

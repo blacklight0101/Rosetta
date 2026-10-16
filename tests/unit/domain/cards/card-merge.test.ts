@@ -69,7 +69,12 @@ describe('applyMerges: the merged card', () => {
 describe('applyMerges: what a merge keeps', () => {
   it('RF-250 a rejected claim keeps its status and verdict in the merged card', () => {
     const [first, rule, second, ...rest] = cardsAcrossAreas();
-    const verdict = { step: 'citation', reason: 'No such file.', model: 'citation-check', at: 'T' };
+    const verdict = {
+      step: 'citation' as const,
+      reason: 'No such file.',
+      model: 'citation-check',
+      at: 'T',
+    };
     const marked = second && transitionClaim(second, 'ENT-002.c1', 'CitationInvalid', verdict);
     if (!marked?.ok || !first || !rule) throw new Error('fixture');
 

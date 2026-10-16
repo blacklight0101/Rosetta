@@ -13,7 +13,7 @@ import { renderYamlHeader } from './yaml-header.js';
 const schemaVersion = 1;
 
 /** Where a card's file lives, relative to the run folder. */
-export function cardPath(card: Card): string {
+export function cardPath(card: Pick<Card, 'id' | 'type'>): string {
   return `cards/${card.type}/${card.id}.md`;
 }
 

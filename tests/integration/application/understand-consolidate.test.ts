@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
+import type { LlmResponse } from '../../../src/application/ports/llm-provider.js';
 import type { Run } from '../../../src/domain/runs/run.js';
 import { useTempRoot } from '../../support/temp-root.js';
 import { readJson, UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
@@ -149,7 +150,7 @@ describe('an understand run: a summariser that gives nothing usable', UNDERSTAND
   const temp = useTempRoot('rosetta-consolidate-');
 
   it('RF-250 an answer that is not a list of merges leaves those cards, the run goes on', async () => {
-    const decorateAnswer = (call: number, response: { text: string }) =>
+    const decorateAnswer = (call: number, response: LlmResponse) =>
       call === BR_CALL ? { ...response, text: 'They look alike to me.' } : response;
 
     const { h, run, folder } = await made(temp.path, { decorateAnswer });
@@ -166,24 +167,44 @@ describe('an understand run: a summariser that gives nothing usable', UNDERSTAND
         ? Promise.reject(new RosettaError(ERROR_CODES.providerCallFailed, 'Down.'))
         : Promise.resolve();
 
-    const { run, folder } = await made(temp.path, { beforeCall });
+    const { h, run, folder } = await made(temp.path, { beforeCall });
 
     expect(run.endState).toBe('Completed');
     expect(await cardFiles(folder, 'BR')).toEqual(['BR-001.md', 'BR-002.md']);
-    expect(await cardFiles(folder, 'ENT')).toEqual(['ENT-001.md']);
+    const warned = h.logger.entries.filter((entry) => entry.level === 'warn');
+    expect(warned.map((entry) => entry.code)).toContain(ERROR_CODES.providerCallFailed);
   });
+});
+
+describe('an understand run: a summariser that names the wrong cards', UNDERSTAND_TIMEOUT, () => {
+  const temp = useTempRoot('rosetta-consolidate-');
 
   it('RF-250 a merge that names cards of two types is skipped, the others apply', async () => {
     const wrong = JSON.stringify({
       merges: [{ ids: ['ENT-001', 'BR-001'], title: 'Mixed', summary: 'Mixed.' }],
     });
-    const decorateAnswer = (call: number, response: { text: string }) =>
+    const decorateAnswer = (call: number, response: LlmResponse) =>
       call === ENT_CALL ? { ...response, text: wrong } : response;
 
     const { folder } = await made(temp.path, { decorateAnswer });
 
     expect(await cardFiles(folder, 'ENT')).toEqual(['ENT-001.md', 'ENT-002.md']);
     expect(await cardFiles(folder, 'BR')).toEqual(['BR-001.md']);
+  });
+
+  it('RF-250 a merge that names cards the summariser was not shown is skipped', async () => {
+    const forBr = JSON.stringify({
+      merges: [{ ids: ['BR-001', 'BR-002'], title: 'Unseen', summary: 'Unseen.' }],
+    });
+    const decorateAnswer = (call: number, response: LlmResponse) => {
+      if (call === BR_CALL) return { ...response, text: '{"merges": []}' };
+      return call === ENT_CALL ? { ...response, text: forBr } : response;
+    };
+
+    const { folder } = await made(temp.path, { decorateAnswer });
+
+    expect(await cardFiles(folder, 'BR')).toEqual(['BR-001.md', 'BR-002.md']);
+    expect(await cardFiles(folder, 'ENT')).toEqual(['ENT-001.md', 'ENT-002.md']);
   });
 });
 

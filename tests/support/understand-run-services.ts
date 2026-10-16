@@ -15,7 +15,10 @@ import { FileRunManifestStore } from '../../src/infrastructure/files/file-run-ma
 import { NodeOutputWriter } from '../../src/infrastructure/files/node-output-writer.js';
 import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-fetcher.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
-import { loadReaderPrompts } from '../../src/infrastructure/prompts/prompt-files.js';
+import {
+  loadMergePrompt,
+  loadReaderPrompts,
+} from '../../src/infrastructure/prompts/prompt-files.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
@@ -95,6 +98,7 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
     costTotals: new MemoryCostTotals(),
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts('prompts'),
+    mergePrompt: () => loadMergePrompt('prompts'),
     textToolProtocol: () => loadTextToolProtocol('prompts'),
     ids: new SequenceIdGenerator(),
   });

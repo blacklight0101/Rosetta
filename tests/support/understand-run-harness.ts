@@ -42,7 +42,10 @@ const understandActor: Actor = { userId: account.id, role: 'user' };
 export function understandSettings(
   change: (settings: ProjectSettings) => ProjectSettings = (s) => s,
 ): ProjectSettings {
-  const base = settingsFor({ reader: { provider: 'fake', model: 'fake-model' } });
+  const base = settingsFor({
+    reader: { provider: 'fake', model: 'fake-model' },
+    summariser: { provider: 'fake', model: 'fake-model' },
+  });
   return change({ ...base, agents: { parallelism: 1 } });
 }
 
