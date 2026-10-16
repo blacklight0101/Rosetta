@@ -32,3 +32,9 @@ export function openTab(name: string): HTMLElement {
   fireEvent.click(tab(name));
   return screen.getByRole('tabpanel');
 }
+
+/** Waits for the tabs of the page, then opens the one with this name. */
+export async function openTabWhenReady(name: string): Promise<HTMLElement> {
+  await screen.findByRole('tab', { name: new RegExp(`^${name}`, 'u') });
+  return openTab(name);
+}

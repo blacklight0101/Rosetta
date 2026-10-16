@@ -85,7 +85,9 @@ it('RF-1016 the code map has a tile per area with its state in words, and librar
   const catalog = within(tiles()).getByRole('button', { name: /Catalog/u });
   expect(catalog.textContent).toContain('being read');
   expect(within(tiles()).getByRole('button', { name: /Models/u }).textContent).toContain('1 card');
-  expect(within(tiles()).getByRole('button', { name: /Setup/u }).textContent).toContain('waiting');
+  expect(within(tiles()).getByRole('button', { name: /Setup/u }).textContent).toContain(
+    'not covered',
+  );
   const library = within(tiles()).getByText('jQuery').closest('li');
   expect(library?.textContent).toContain('library, left out');
   expect(library?.querySelector('button')).toBeNull();
@@ -154,12 +156,13 @@ it('RF-1015 working now says in words what at most three agents do', async () =>
   await openRunning();
 
   const now = screen.getByRole('region', { name: 'Working now' });
-  const items = within(now).getAllByRole('listitem');
-  expect(items.length).toBeLessThanOrEqual(3);
+  await waitFor(() => {
+    expect(now.textContent).toContain('1 claim checked, all cite real lines');
+  });
+  expect(within(now).getAllByRole('listitem').length).toBeLessThanOrEqual(3);
   expect(now.textContent).toContain('Reader · Catalog');
   expect(now.textContent).toContain('Reading Catalog/Create.aspx.cs, lines 1–80');
   expect(now.textContent).toContain('Citation check');
-  expect(now.textContent).toContain('1 claim checked, all cite real lines');
 });
 
 it('RF-1003 the spend shows the cost against its cap and reaches the per-role table and the estimate in one click', async () => {

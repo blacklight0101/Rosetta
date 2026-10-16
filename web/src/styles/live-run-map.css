@@ -1,1 +1,323 @@
-/* Living code map and the running page (P1-169). */
+/* The living code map of the run page while it runs (P1-169, RF-1016, DEC-137, design-system.md
+   section 14, proposal docs/design/proposals/run-page-v2.html): the areas of the code as tiles sized
+   by their estimated tokens. Owns the rst-codemap, rst-codemap-panel and rst-tile prefixes; colours,
+   spacing and type come from the tokens. Reduced motion stops the highlight, the marks and the
+   fill, so states change in place. */
+
+.rst-codemap-panel {
+  --rst-glow: color-mix(in srgb, var(--rst-brand) 28%, transparent);
+  --rst-hatch: color-mix(in srgb, var(--rst-ink) 7%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-codemap-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rst-sp-2) var(--rst-sp-4);
+}
+
+.rst-codemap-panel__title {
+  font-size: var(--rst-fs-lg);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-codemap__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-1) var(--rst-sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-codemap__key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-1);
+}
+
+.rst-codemap__swatch {
+  inline-size: 10px;
+  block-size: 10px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.rst-codemap__swatch--reading {
+  background: var(--rst-brand);
+}
+
+.rst-codemap__swatch--done {
+  background: var(--rst-brand-tint);
+  border-color: var(--rst-rule-strong);
+}
+
+.rst-codemap__swatch--waiting {
+  border: 1px dashed var(--rst-rule-strong);
+}
+
+.rst-codemap__swatch--gap {
+  background: var(--rst-warn-bg);
+  border-color: var(--rst-warn-solid);
+}
+
+.rst-codemap__swatch--library {
+  background: repeating-linear-gradient(135deg, var(--rst-rule-strong) 0 2px, transparent 2px 4px);
+}
+
+/* The grid: twelve columns, rows of 50 px, many areas scroll inside the panel */
+
+.rst-codemap {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 50px;
+  gap: var(--rst-sp-2);
+  max-block-size: 36rem;
+  margin: 0;
+  padding: var(--rst-sp-1);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.rst-codemap__cell {
+  display: flex;
+  min-inline-size: 0;
+}
+
+.rst-codemap__cell--cols-2 {
+  grid-column: span 2;
+}
+
+.rst-codemap__cell--cols-3 {
+  grid-column: span 3;
+}
+
+.rst-codemap__cell--cols-4 {
+  grid-column: span 4;
+}
+
+.rst-codemap__cell--rows-1 {
+  grid-row: span 1;
+}
+
+.rst-codemap__cell--rows-2 {
+  grid-row: span 2;
+}
+
+.rst-codemap__cell--rows-3 {
+  grid-row: span 3;
+}
+
+/* A tile */
+
+.rst-tile {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  min-inline-size: 0;
+  padding: var(--rst-sp-2) var(--rst-sp-3);
+  overflow: hidden;
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface-2);
+  color: var(--rst-ink);
+  font: inherit;
+  text-align: start;
+  appearance: none;
+  transition:
+    background var(--rst-dur-base) var(--rst-ease),
+    border-color var(--rst-dur-base) var(--rst-ease),
+    transform var(--rst-dur-base) var(--rst-ease);
+}
+
+button.rst-tile {
+  cursor: pointer;
+}
+
+button.rst-tile:hover {
+  transform: translateY(-1px);
+  border-color: var(--rst-rule-strong);
+}
+
+.rst-tile--short {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--rst-sp-3);
+}
+
+.rst-tile__name {
+  min-inline-size: 0;
+  overflow: hidden;
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rst-tile--short .rst-tile__name {
+  flex: 1;
+}
+
+.rst-tile__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-1);
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  white-space: nowrap;
+}
+
+.rst-tile--waiting {
+  border-style: dashed;
+  background: transparent;
+}
+
+.rst-tile--reading {
+  border-color: var(--rst-brand);
+  background: var(--rst-surface);
+  box-shadow:
+    0 0 0 1px var(--rst-brand),
+    0 10px 30px -8px var(--rst-glow);
+}
+
+.rst-tile--reading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, var(--rst-glow) 50%, transparent 70%);
+  background-size: 250% 100%;
+  pointer-events: none;
+  animation: rst-tile-sweep 2.2s var(--rst-ease) infinite;
+}
+
+.rst-tile--reading .rst-tile__meta {
+  color: var(--rst-brand);
+}
+
+.rst-tile--done {
+  border-color: transparent;
+  background: var(--rst-brand-tint);
+}
+
+.rst-tile--done .rst-tile__meta {
+  color: var(--rst-ink-soft);
+}
+
+.rst-tile--gap {
+  border-color: transparent;
+  background: var(--rst-warn-bg);
+}
+
+.rst-tile--gap .rst-tile__meta {
+  color: var(--rst-warn-ink);
+}
+
+.rst-tile--library {
+  border-style: dashed;
+  background: repeating-linear-gradient(135deg, var(--rst-hatch) 0 6px, transparent 6px 12px);
+}
+
+.rst-tile--library .rst-tile__name {
+  color: var(--rst-ink-muted);
+  font-weight: var(--rst-fw-body);
+}
+
+.rst-tile__fill {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  block-size: 3px;
+  background: var(--rst-brand);
+  transition: inline-size 900ms var(--rst-ease);
+}
+
+.rst-tile__pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.rst-tile__pip {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 2px;
+  background: var(--rst-brand);
+  animation: rst-tile-pop 420ms var(--rst-ease) both;
+}
+
+@keyframes rst-tile-sweep {
+  from {
+    background-position: 120% 0;
+  }
+
+  to {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes rst-tile-pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rst-tile--reading::after,
+  .rst-tile__pip {
+    animation: none;
+  }
+
+  .rst-tile,
+  .rst-tile__fill {
+    transition: none;
+  }
+
+  button.rst-tile:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .rst-codemap {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .rst-codemap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: auto;
+  }
+
+  .rst-codemap .rst-codemap__cell {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+
+  .rst-codemap .rst-tile,
+  .rst-codemap .rst-tile--short {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--rst-sp-1);
+    min-block-size: 64px;
+  }
+
+  .rst-codemap__legend {
+    display: none;
+  }
+}
