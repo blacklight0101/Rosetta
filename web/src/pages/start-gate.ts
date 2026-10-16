@@ -14,6 +14,8 @@ export interface StartGateInput {
   readonly consentGiven: boolean;
   /** RF-113: the code map is out of date and its use has not been confirmed. */
   readonly oldMapUnconfirmed?: boolean;
+  /** RF-1018: library areas are chosen and the user has not confirmed reading them. */
+  readonly libraryUnconfirmed?: boolean;
 }
 
 export interface StartGate {
@@ -37,6 +39,9 @@ export function startGate(input: StartGateInput): StartGate {
   if (reason !== undefined) return { label: plain.label, reason };
   if (input.oldMapUnconfirmed === true) {
     return { label: plain.label, reason: 'Confirm the use of the old code map, or scan again.' };
+  }
+  if (input.libraryUnconfirmed === true) {
+    return { label: plain.label, reason: 'Confirm the library areas, or choose own code only.' };
   }
   if (input.consentNeeded === '' || input.consentGiven) return plain;
   return {

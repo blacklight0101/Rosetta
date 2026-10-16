@@ -4,9 +4,9 @@ import { json } from './fake-api.js';
 import { estimatePath, localEstimate, runAnswer, runsPath } from './start-run-fixtures.js';
 import { input, ready, renderStart, start } from './start-run-helpers.js';
 
-// RF-1001, RF-200 (P1-147): the areas that hold only vendored or minified files are marked
-// "third-party" on the start page and start unticked, so a default run does not read them. They stay
-// in the list and can be ticked.
+// RF-1001, RF-200 (P1-147), RF-1018 (P1-172): the areas that hold only vendored or minified files
+// start unticked and out of the list, so a default run does not read them. They wait behind "Show"
+// and can be ticked there.
 
 afterEach(() => {
   window.history.pushState({}, '', '/');
@@ -15,10 +15,13 @@ afterEach(() => {
 const withVendored = {
   ...localEstimate,
   areas: [
-    { name: 'Catalog', estimatedTokens: 12_000, thirdParty: false },
-    { name: 'Models', estimatedTokens: 8000, thirdParty: false },
-    { name: 'Scripts#1', estimatedTokens: 900_000, thirdParty: true },
+    { name: 'Catalog', estimatedTokens: 12_000, files: 5, thirdParty: false },
+    { name: 'Models', estimatedTokens: 8000, files: 3, thirdParty: false },
+    { name: 'Scripts#1', estimatedTokens: 900_000, files: 9, thirdParty: true },
   ],
+};
+const showLibrary = (): void => {
+  fireEvent.click(within(screen.getByTestId('library-areas-line')).getByRole('button'));
 };
 const ownAreas = {
   ...withVendored,
@@ -37,6 +40,7 @@ const answers = {
 it('RF-1001 an area of third-party files starts unticked and is marked, the others are ticked', async () => {
   renderStart(answers);
   await ready();
+  showLibrary();
 
   await waitFor(() => {
     expect(input('Scripts#1').checked).toBe(false);
@@ -44,12 +48,12 @@ it('RF-1001 an area of third-party files starts unticked and is marked, the othe
   expect(input('Catalog').checked).toBe(true);
   expect(input('Models').checked).toBe(true);
   const row = input('Scripts#1').parentElement;
-  expect(row?.textContent).toContain('third-party');
+  expect(row?.textContent).toContain('Only vendored or minified files');
   expect(
-    within(screen.getByRole('group', { name: 'Areas from the code map' })).getAllByText(
-      'third-party',
+    within(screen.getByRole('group', { name: 'Areas from the code map' })).queryByText(
+      /vendored or minified/u,
     ),
-  ).toHaveLength(1);
+  ).toBeNull();
 });
 
 it('RF-1001 the estimate of the default selection leaves the third-party areas out', async () => {
@@ -83,6 +87,7 @@ it('RF-1001 starting the run sends the own areas only', async () => {
 it('RF-1001 ticking a third-party area adds it to the selection', async () => {
   const { calls } = renderStart(answers);
   await ready();
+  showLibrary();
   await waitFor(() => {
     expect(input('Scripts#1').checked).toBe(false);
   });
@@ -101,6 +106,7 @@ it('RF-1001 ticking a third-party area adds it to the selection', async () => {
 it('RNF-010 every area keeps its full name in a title, so a wrapped path can be read whole', async () => {
   renderStart(answers);
   await ready();
+  showLibrary();
 
   const label = screen.getByText('Scripts#1', { selector: 'label' });
 
