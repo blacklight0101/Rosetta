@@ -12,6 +12,10 @@ import { FieldProblemsError } from '../../domain/errors/field-problems.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { formatInstant } from '../../infrastructure/system/instant.js';
 import type { CostServices } from './cost-routes.js';
+import {
+  registerPlanningBriefRoutes,
+  type PlanningBriefServices,
+} from './planning-brief-routes.js';
 import { signedInOf } from './request-actor.js';
 
 // RF-010, RF-002, RF-1105, RF-1109: the projects API.
@@ -22,12 +26,13 @@ import { signedInOf } from './request-actor.js';
 //   field and error code (400). `If-Match: "<settingsVersion>"` (the ETag of a read) makes the save
 //   apply only if the settings were not saved since; otherwise 409 with RST-1007 and nothing is
 //   written (P1-106); a malformed value answers 400; without the header the save is unconditional.
+// - GET and PUT /api/projects/:id/planning-brief: the planning brief (planning-brief-routes.ts).
 // - GET /api/admin/users/:id/projects (administrator) reads another user's projects and writes an
 //   audit row.
 // The `userId` of a project never leaves the server.
 
 /** The cost routes (RF-428, RF-1010) read the same projects, so they share these services. */
-export interface ProjectServices extends CostServices {
+export interface ProjectServices extends CostServices, PlanningBriefServices {
   readonly createProject: CreateProject;
   readonly listProjects: ListProjects;
   readonly getProject: GetProject;
@@ -172,5 +177,6 @@ export function registerProjectRoutes(server: FastifyInstance, services: Project
   registerCreate(server, services);
   registerRead(server, services);
   registerSettings(server, services);
+  registerPlanningBriefRoutes(server, services);
   registerWorkspace(server, services);
 }
