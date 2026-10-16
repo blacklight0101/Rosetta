@@ -72,9 +72,23 @@ async function chooseAreas(page: Page, names: readonly string[]): Promise<void> 
   }
 }
 
+/**
+ * Presses Start; when the likely cost is above the confirm threshold (RF-425) the run is asked
+ * about first, and the question is confirmed.
+ */
+export async function pressStart(page: Page): Promise<void> {
+  await page.getByRole('button', startButton).click();
+  const question = page.getByRole('dialog', { name: 'Start this run?' });
+  const notice = page.getByTestId('run-notice');
+  await expect(question.or(notice)).toBeVisible();
+  if (await question.isVisible()) {
+    await page.getByRole('button', { name: 'Confirm and start' }).click();
+  }
+}
+
 /** Presses Start and follows the link of the notice to the live page; returns its path. */
 export async function startAndOpenLiveRun(page: Page): Promise<string> {
-  await page.getByRole('button', startButton).click();
+  await pressStart(page);
   const notice = page.getByTestId('run-notice');
   await expect(notice).toContainText(/Run started|Queued/u);
   await notice.getByRole('link', { name: 'Open the live run' }).click();

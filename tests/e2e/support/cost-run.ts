@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect } from './fixtures.js';
-import { openStartPage, runStatus } from './live-run-page.js';
+import { openStartPage, pressStart, runStatus } from './live-run-page.js';
 
 // RF-1010, P1-36: what the totals spec does on the start page and the live page, so the spec reads
 // as steps. The runs replay the recorded understand run of the C# fixture (serve.ts).
@@ -14,7 +14,7 @@ export async function tokensOf(pill: Locator): Promise<number> {
 
 /** Presses Start and follows the notice to the live page. */
 async function startAndFollow(page: Page): Promise<void> {
-  await page.getByRole('button', { name: /^Start run/u }).click();
+  await pressStart(page);
   const notice = page.getByTestId('run-notice');
   await expect(notice).toContainText(/Run started|Queued/u);
   await notice.getByRole('link', { name: 'Open the live run' }).click();
