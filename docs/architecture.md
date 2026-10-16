@@ -762,8 +762,9 @@ RF-207: a citation `path:N` is read as `path:N-N`; everything else about a citat
 RF-113: the estimate response includes `codeMap` with `scannerVersion` (null for a map without one),
 `currentScannerVersion` and `outdated`. The scanner revision belongs to the code-map domain model; new
 scans record it, and serialisation, parsing and secret masking keep it. For an older or unversioned map the
-start page shows a notice with a "Scan again" button; the old map stays usable and the chosen stage does
-not change.
+start page shows a notice with "Scan again" as the first action; while the stage is Understand, Start stays
+blocked until the user ticks "Use the old code map for this run" (DEC-136). The default stage and the scan path
+are unchanged, and an estimate without `codeMap` is not gated.
 
 RF-1014: a claim that passed the citation check is shown as "citations checked" (the UI state
 `CitationsChecked`, separate from the verdicts of the model step), with the note that judgement comes in a
