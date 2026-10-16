@@ -1,5 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact';
-import { useEffect, useId, useRef } from 'preact/hooks';
+import { useId, useLayoutEffect, useRef } from 'preact/hooks';
 import { Button } from './Button.js';
 
 // RF-1012, design-system.md section 7 (destructive confirmation): a modal dialog that names its
@@ -20,10 +20,14 @@ export interface ConfirmDialogProps {
   readonly onCancel: () => void;
 }
 
-/** Opens the dialog as a modal and gives the focus back to what had it when the dialog goes. */
+/**
+ * Opens the dialog as a modal and gives the focus back to what had it when the dialog goes. A layout
+ * effect, because Preact 11 runs the cleanup of a passive effect after paint, and the focus must
+ * come back as the dialog is removed.
+ */
 function useModal(): { readonly ref: { current: HTMLDialogElement | null } } {
   const ref = useRef<HTMLDialogElement | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = ref.current;
     const opener = document.activeElement;
     if (dialog !== null && typeof dialog.showModal === 'function' && !dialog.open) {

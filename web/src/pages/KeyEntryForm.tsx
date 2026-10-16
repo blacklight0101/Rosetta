@@ -69,7 +69,7 @@ function useKeyFocus(
   failure: ApiFailure | undefined,
   focusOnShow: boolean,
   providerId: string,
-): RefObject<HTMLFormElement> {
+): RefObject<HTMLFormElement | null> {
   const formRef = useRef<HTMLFormElement>(null);
   useRefusalFocus(formRef, failure);
   useEffect(() => {

@@ -28,7 +28,7 @@ type Mode = 'view' | 'replace' | 'delete';
 const savedOn = (updatedAt: string): string => updatedAt.slice(0, 'YYYY-MM-DD'.length);
 
 /** RNF-010: the confirmation takes focus when it appears, so it is read out; a failure, the banner. */
-function useConfirmationFocus(failure: ApiFailure | undefined): RefObject<HTMLDivElement> {
+function useConfirmationFocus(failure: ApiFailure | undefined): RefObject<HTMLDivElement | null> {
   const group = useRef<HTMLDivElement>(null);
   useRefusalFocus(group, failure);
   useEffect(() => {

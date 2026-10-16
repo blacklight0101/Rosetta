@@ -222,6 +222,8 @@ it('RF-1108 hiding and showing during a read starts no second read', async () =>
   held.release();
   await vi.advanceTimersByTimeAsync(100);
   page.unmount();
+  // Preact 11 paints after a render with a 35 ms timer of its own; let it run out before counting.
+  await vi.advanceTimersByTimeAsync(200);
   expect(vi.getTimerCount()).toBe(0);
 });
 
