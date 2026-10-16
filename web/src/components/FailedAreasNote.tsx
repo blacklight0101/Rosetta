@@ -11,7 +11,7 @@ export interface FailedAreasNoteProps {
 }
 
 /** `1 area failed`, `2 areas failed`. */
-export function failedAreasText(count: number): string {
+function failedAreasText(count: number): string {
   return `${String(count)} ${count === 1 ? 'area' : 'areas'} failed`;
 }
 
