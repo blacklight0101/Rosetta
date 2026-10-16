@@ -45,7 +45,9 @@ async function expectInsideTheViewport(page: Page, dialog: Locator): Promise<voi
   if (box === null || view === null) throw new Error('The dialog or the viewport has no size.');
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(view.width);
-  const sideways: unknown = await dialog.evaluate('(el) => el.scrollWidth - el.clientWidth');
+  const sideways: unknown = await page.evaluate(
+    `(() => { const d = document.querySelector('dialog[open]'); return d.scrollWidth - d.clientWidth; })()`,
+  );
   expect(sideways).toBe(0);
 }
 
