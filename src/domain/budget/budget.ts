@@ -8,6 +8,7 @@ import type { UsageCap } from './usage-cap.js';
 //   default) and the server's monthly cap.
 // - With the user's own key: the project's run caps and the user's own daily cap when set.
 // - Without a key (a local model): the project's run caps; its cost is zero but its tokens count.
+// - Every key source: the caps of the call's role in the project settings, when set (RF-423).
 
 /** The project's caps for one run (`budget.run` of the project settings). */
 interface RunBudget {
@@ -47,8 +48,21 @@ function lower(left: bigint, right: bigint): bigint {
   return left < right ? left : right;
 }
 
-// RF-422, RF-1106
+/** RF-423: the caps of the call's role, added to the caps of its key source. */
+function roleCaps(role: RoleBudget | undefined): readonly UsageCap[] {
+  const caps: UsageCap[] = [];
+  if (role?.maxCostMicros !== undefined)
+    caps.push({ kind: 'role-cost', limit: role.maxCostMicros });
+  if (role?.maxTokens !== undefined) caps.push({ kind: 'role-tokens', limit: role.maxTokens });
+  return caps;
+}
+
+// RF-422, RF-423, RF-1106
 export function capsFor(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
+  return [...keyCaps(keySource, inputs), ...roleCaps(inputs.role)];
+}
+
+function keyCaps(keySource: KeySource, inputs: CapInputs): readonly UsageCap[] {
   const { run, server, account } = inputs;
   const tokens: UsageCap = { kind: 'run-tokens', limit: run.maxTokens };
   switch (keySource) {

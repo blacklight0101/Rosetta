@@ -47,7 +47,7 @@ const writers: Readonly<Record<string, Writer>> = {
   'usage.recorded': (data) => `${field(data, 'role')} ${field(data, 'costMicros')} micro-dollars`,
   'budget.warning': (data) =>
     `${field(data, 'scope')} at ${field(data, 'sharePercent')}% of its cap`,
-  'budget.capReached': (data) => `${field(data, 'scope')} reached its cap`,
+  'budget.capReached': (data) => `${field(data, 'role')} ${field(data, 'scope')} reached its cap`,
   'run.ended': (data) =>
     `${field(data, 'endState')}${data['errorCode'] === undefined ? '' : ` · ${field(data, 'errorCode')}`}`,
 };

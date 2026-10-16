@@ -6,7 +6,8 @@ import { err, ok, type Result } from '../errors/result.js';
 // micro-dollars; the run token cap counts tokens.
 
 /**
- * `run-cost` and `run-tokens`: the run; `user-day`: one user's server-key spend in a UTC day;
+ * `run-cost` and `run-tokens`: the run; `role-cost` and `role-tokens`: one role's calls in the run
+ * (RF-423); `user-day`: one user's server-key spend in a UTC day;
  * `own-day`: one user's own-key spend in a UTC day; `server-month`: every user's server-key spend
  * in a UTC month (DEC-107).
  */
@@ -48,7 +49,7 @@ export interface CapBreach {
 }
 
 function neededFor(kind: CapKind, worstCase: WorstCase): bigint {
-  return kind === 'run-tokens' ? worstCase.tokens : worstCase.micros;
+  return kind === 'run-tokens' || kind === 'role-tokens' ? worstCase.tokens : worstCase.micros;
 }
 
 /** The first cap the call's worst case would pass, or ok (RF-422, RF-1106). */

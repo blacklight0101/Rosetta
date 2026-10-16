@@ -18,11 +18,12 @@ export const LOCK_SERVER = "SELECT pg_advisory_xact_lock(hashtext('rosetta.budge
 
 /**
  * What is spent and reserved against each kind of cap, in one statement so the sums read one
- * snapshot: $1 run, $2 user, $3 now (unexpired reservations), $4..$5 the UTC day, $6..$7 the month.
+ * snapshot: $1 run, $2 user, $3 now (unexpired reservations), $4..$5 the UTC day, $6..$7 the month, $8 the
+ * call's role (RF-423).
  * A reservation counts until it expires, whatever day it was made.
  */
 export const SPENT = `WITH held AS (
-  SELECT user_id, run_id, key_source, worst_case_micros, worst_case_tokens
+  SELECT user_id, run_id, role, key_source, worst_case_micros, worst_case_tokens
   FROM cost_reservations WHERE expires_at > $3
 )
 SELECT
@@ -30,6 +31,13 @@ SELECT
     + (SELECT coalesce(sum(worst_case_micros), 0) FROM held WHERE run_id = $1))::text AS run_cost,
   ((SELECT coalesce(sum(input_tokens + output_tokens), 0) FROM cost_ledger WHERE run_id = $1)
     + (SELECT coalesce(sum(worst_case_tokens), 0) FROM held WHERE run_id = $1))::text AS run_tokens,
+  ((SELECT coalesce(sum(cost_micros), 0) FROM cost_ledger WHERE run_id = $1 AND role = $8)
+    + (SELECT coalesce(sum(worst_case_micros), 0) FROM held
+      WHERE run_id = $1 AND role = $8))::text AS role_cost,
+  ((SELECT coalesce(sum(input_tokens + output_tokens), 0) FROM cost_ledger
+      WHERE run_id = $1 AND role = $8)
+    + (SELECT coalesce(sum(worst_case_tokens), 0) FROM held
+      WHERE run_id = $1 AND role = $8))::text AS role_tokens,
   ((SELECT coalesce(sum(cost_micros), 0) FROM cost_ledger
       WHERE user_id = $2 AND key_source = 'server' AND at >= $4 AND at < $5)
     + (SELECT coalesce(sum(worst_case_micros), 0) FROM held
@@ -44,7 +52,7 @@ SELECT
       WHERE key_source = 'server'))::text AS server_month`;
 
 export const INSERT_RESERVATION =
-  'INSERT INTO cost_reservations (call_id, user_id, run_id, key_source, worst_case_micros, worst_case_tokens, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+  'INSERT INTO cost_reservations (call_id, user_id, run_id, key_source, worst_case_micros, worst_case_tokens, expires_at, role) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)';
 
 export const INSERT_ENTRY =
   'INSERT INTO cost_ledger (at, user_id, project_id, run_id, agent_task_id, stage, role, provider, model, call_id, attempt, key_source, input_tokens, output_tokens, cached_input_tokens, usage_source, cost_micros, cost_known, currency, price_table_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)';
@@ -69,6 +77,8 @@ const count = integerText.transform(Number);
 const spentRow = z.object({
   run_cost: integerText,
   run_tokens: integerText,
+  role_cost: integerText,
+  role_tokens: integerText,
   user_day: integerText,
   own_day: integerText,
   server_month: integerText,
@@ -101,7 +111,12 @@ const entryRow = z.object({
 export function spentValues(reservation: Reservation, at: Date): unknown[] {
   const { dayStart, dayEnd, monthStart, monthEnd } = utcPeriodsOf(at);
   const instants = [at.getTime(), dayStart, dayEnd, monthStart, monthEnd];
-  return [reservation.runId, reservation.userId, ...instants.map((ms) => new Date(ms))];
+  return [
+    reservation.runId,
+    reservation.userId,
+    ...instants.map((ms) => new Date(ms)),
+    reservation.role,
+  ];
 }
 
 export function toSpent(row: unknown): CapSpent {
@@ -109,6 +124,8 @@ export function toSpent(row: unknown): CapSpent {
   return {
     'run-cost': BigInt(parsed.run_cost),
     'run-tokens': BigInt(parsed.run_tokens),
+    'role-cost': BigInt(parsed.role_cost),
+    'role-tokens': BigInt(parsed.role_tokens),
     'user-day': BigInt(parsed.user_day),
     'own-day': BigInt(parsed.own_day),
     'server-month': BigInt(parsed.server_month),
@@ -116,9 +133,9 @@ export function toSpent(row: unknown): CapSpent {
 }
 
 export function reservationValues(reservation: Reservation): unknown[] {
-  const { callId, userId, runId, keySource, worstCase, expiresAt } = reservation;
+  const { callId, userId, runId, keySource, worstCase, expiresAt, role } = reservation;
   const { micros, tokens } = worstCase;
-  return [callId, userId, runId, keySource, micros.toString(), tokens.toString(), expiresAt];
+  return [callId, userId, runId, keySource, micros.toString(), tokens.toString(), expiresAt, role];
 }
 
 export function entryValues(entry: LedgerEntry): unknown[] {

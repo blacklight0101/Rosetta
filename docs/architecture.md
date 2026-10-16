@@ -379,8 +379,12 @@ unknown and only the token cap applies. A request without `maxOutputTokens` has 
 (`RST-1603`). The caps of a call: server key - run cost (the lower of the project's and the administrator's), run
 tokens, the user's day (`users.daily_cap_micros`, else the server default) and the server month; user key - run
 cost, run tokens and the optional own daily cap; no key (local) - run cost and run tokens. Days and months are UTC
-calendar periods. A refusal (`RST-1600`) records the call as `refused-by-cap`, logs a `warn` entry and stops the run
-through `RunExecution.stop`; the run's other tasks end `StoppedByCap` and the run `CapReached`.
+calendar periods. A role cap of the project (`budget.roles.<role>`, RF-423) adds a cost cap and a token cap to the
+caps of that role's calls: the ledger sums the role's own rows and reservations in the run (`cost_reservations.role`).
+A refusal (`RST-1600`) records the call as `refused-by-cap`, logs a `warn` entry and stops the run
+through `RunExecution.stop`; the run's other tasks end `StoppedByCap` and the run `CapReached`. A refusal by a role cap
+does the same except for the stop: only that role's calls are refused, the run's other roles go on, and the run ends
+`CapReached` when it finishes with a task stopped by a cap.
 
 **The guarantee** (RF-1106): calls in flight can never together reserve past a cap, across runs, users and
 parallel tasks, because each reservation is checked against the sum of every settled row and live reservation

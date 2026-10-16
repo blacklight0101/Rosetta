@@ -37,7 +37,9 @@ import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './bu
 //   2. it reserves the worst case (the whole prompt, estimated at four characters per token, plus
 //      the maximum output, priced) against every cap that applies, as one step of the CostLedger;
 //      a call that would pass a cap is not made: it is recorded as `refused-by-cap`, the run's
-//      signal is aborted with RST-1600 and the refusal is thrown;
+//      signal is aborted with RST-1600 and the refusal is thrown; the cap of a role (RF-423) is
+//      the exception: it refuses that role's calls with the same error but leaves the run's
+//      signal alone, so the run's other roles go on;
 //   3. after the call, one ledger row: the reported or estimated usage, priced, with the number of
 //      the last attempt; the reservation is deleted in the same step. A call that failed after it
 //      was sent is a row without usage; a call never sent (blocked by the egress guard) only frees
@@ -153,6 +155,7 @@ export class BudgetGuard implements LlmProvider {
       callId: request.context.callId,
       userId: run.userId,
       runId: run.id,
+      role: request.context.role,
       keySource,
       worstCase: plan.worstCase,
       expiresAt: new Date(at.getTime() + reservationTtlMs),
@@ -165,6 +168,9 @@ export class BudgetGuard implements LlmProvider {
   private async refuse(request: LlmRequest, breach: CapBreach, at: Date): Promise<never> {
     const { recorder, ids, logger, stopRun, target } = this.options;
     const refusal = new RosettaError(ERROR_CODES.budgetCapReached);
+    // RF-423: the cap of a role stops that role's calls only; any other cap stops the whole run.
+    const roleStop = breach.kind === 'role-cost' || breach.kind === 'role-tokens';
+    const reported: CapBreach = roleStop ? { ...breach, role: request.context.role } : breach;
     const spanId = ids.uuid().replaceAll('-', '').slice(-spanIdLength);
     await this.quietly('The refused call could not be recorded.', request, () =>
       recorder.record(refusedRecord(target, request, { at, spanId })),
@@ -177,6 +183,7 @@ export class BudgetGuard implements LlmProvider {
       ...this.ids(request),
       data: {
         cap: breach.kind,
+        ...(roleStop ? { role: request.context.role } : {}),
         limit: breach.limit.toString(),
         spent: breach.spent.toString(),
         needed: breach.needed.toString(),
@@ -184,9 +191,9 @@ export class BudgetGuard implements LlmProvider {
     });
     // RF-422: the run's cap event; a reporter that fails changes neither the stop nor the refusal.
     await this.report('The cap event could not be published.', request, () =>
-      this.options.budgetEvents.capReached(breach),
+      this.options.budgetEvents.capReached(reported),
     );
-    stopRun(refusal);
+    if (!roleStop) stopRun(refusal);
     throw refusal;
   }
 
