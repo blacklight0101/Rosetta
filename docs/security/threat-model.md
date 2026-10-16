@@ -66,7 +66,7 @@ flowchart LR
 | TB5, TB6 | Repudiation and blind spots: refused requests and reads leave no trace | security events logged as `warn` and counted in the page; account and key events in the audit table | RF-009, RF-1011, RF-1109 |
 | TB8 database | Tampering: SQL injection | parameterised queries only, enforced by a lint rule (conventions section 10) and the verifier's grep; the app role cannot change the schema | ADR-016 |
 | TB8 | Information disclosure: a database dump exposes keys or passwords | keys encrypted with AES-256-GCM under `ROSETTA_SECRET_KEY` held outside the database; passwords and session ids hashed | RF-1104, ADR-015 |
-| TB8 | Repudiation: the audit trail is altered | the app role may only insert into `audit_events` and `cost_ledger`; the ledger is kept for the life of the deployment (DEC-110) and audit rows for 365 days (DEC-132), deleted only by the `SECURITY DEFINER` function `purge_audit_events_before`, which refuses a cut-off younger than 365 days on the database clock | data-model.md section 6 |
+| TB8 | Repudiation: the audit trail is altered | the server holds only the app role's credential (`DATABASE_URL`): the migrations run in a one-off migrate step with `DATABASE_MIGRATOR_URL`, the server refuses to start when given that URL and warns when `DATABASE_URL` is the schema owner (DEC-140); the app role may only insert into `audit_events` and `cost_ledger`; the ledger is kept for the life of the deployment (DEC-110) and audit rows for 365 days (DEC-132), deleted only by the `SECURITY DEFINER` function `purge_audit_events_before`, which refuses a cut-off younger than 365 days on the database clock | data-model.md section 6, ADR-016 |
 | TB6 published report | Information disclosure: secrets or employer material published | masked transcripts; output scan in CI; DEC-03 | RNF-003, DEC-03 |
 | TB7 CI and release | Tampering: compromised dependency or action | lockfile and `npm ci`; actions pinned to a commit SHA; dependency review; CodeQL; gitleaks; SBOM on releases | environments-and-delivery.md sections 6 and 8 |
 | TB7 | Tampering: a vulnerable or altered container image | base image and CI service images pinned by digest (a test fails on an unpinned one); Dependabot watches the Dockerfile after a 14-day cooldown; non-root user; image scanned in CI; images tagged by version and commit in GHCR; secrets never baked in | RF-1300, environments-and-delivery.md |
@@ -129,6 +129,10 @@ deployment procedure (environments-and-delivery.md section 10).
 - Losing `ROSETTA_SECRET_KEY` makes stored user keys unreadable; leaking it together with a database dump exposes
   them. It lives only in the host's secret store and the owner's git-ignored `.env`.
 - The host provider and its staff are trusted with the database and the disk.
+- On a host that offers a single database role, the server runs as the owner of `audit_events` and `cost_ledger`, so
+  code in the server process could change or delete audit and ledger rows. The server logs a warning at every start
+  in that case (DEC-140); the mitigation is to create `rosetta_app` (data-model.md section 6). The migrate step holds
+  the migrator credential only while it runs, and so does whoever runs it by hand from a `.env` that holds it.
 - A process on the owner's machine can read the local volumes; Rosetta does not defend against a compromised machine.
 - The output writer checks every folder on the way to a workspace file for links, then checks the folder's real path
   again just before the temporary file is created, before the rename and before the append, but the file system
