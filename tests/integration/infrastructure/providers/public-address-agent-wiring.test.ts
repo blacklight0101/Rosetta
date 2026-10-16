@@ -48,7 +48,7 @@ describe('the wiring scan', () => {
   });
 
   afterEach(async () => {
-    await rm(base, { recursive: true, force: true });
+    await rm(base, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   it('RF-1104 finds the adapter file that builds the agent, in a sub-folder, and no other', async () => {

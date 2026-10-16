@@ -15,7 +15,11 @@ const testSecretKey = fixtureSecret(7);
 const cleanups: string[] = [];
 
 afterAll(async () => {
-  await Promise.all(cleanups.map((path) => rm(path, { recursive: true, force: true })));
+  await Promise.all(
+    cleanups.map((path) =>
+      rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }),
+    ),
+  );
 });
 
 async function exists(path: string): Promise<boolean> {

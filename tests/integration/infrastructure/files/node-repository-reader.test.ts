@@ -111,7 +111,12 @@ describe('NodeRepositoryReader after open()', () => {
     await writeFile(join(outside, 'main.ts'), 'needle outside\n', 'utf8');
     const logger = newLogger();
     const reader = await openReader({ files: { 'src/main.ts': 'needle inside\n' } }, logger);
-    await rm(join(snapshotRoot(), 'src'), { recursive: true, force: true });
+    await rm(join(snapshotRoot(), 'src'), {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 100,
+    });
     await symlink(outside, join(snapshotRoot(), 'src'), 'junction');
 
     const refusal = refusalOf(
@@ -163,7 +168,7 @@ async function canHardLink(): Promise<boolean> {
   } catch {
     return false;
   } finally {
-    await rm(folder, { recursive: true, force: true });
+    await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }
 

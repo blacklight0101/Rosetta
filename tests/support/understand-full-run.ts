@@ -43,7 +43,8 @@ export function useSharedFullRun(prefix: string): { current(): FullRun } {
   }, UNDERSTAND_TIMEOUT.timeout);
 
   afterAll(async () => {
-    if (state.dir !== undefined) await rm(state.dir, { recursive: true, force: true });
+    if (state.dir !== undefined)
+      await rm(state.dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   return {

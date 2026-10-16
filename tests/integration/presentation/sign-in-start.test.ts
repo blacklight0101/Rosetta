@@ -20,7 +20,11 @@ const adminName = ['start', 'admin'].join('.');
 const folders: string[] = [];
 
 afterAll(async () => {
-  await Promise.all(folders.map((folder) => rm(folder, { recursive: true, force: true })));
+  await Promise.all(
+    folders.map((folder) =>
+      rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }),
+    ),
+  );
 });
 
 function sessionCookie(response: Response): string {

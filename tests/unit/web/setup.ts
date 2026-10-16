@@ -1,4 +1,4 @@
-import { cleanup } from '@testing-library/preact';
+import { cleanup, configure } from '@testing-library/preact';
 import { afterEach } from 'vitest';
 
 // Vitest setup for the `web` project: unmount what a test rendered, because Testing Library only
@@ -6,3 +6,7 @@ import { afterEach } from 'vitest';
 afterEach(() => {
   cleanup();
 });
+
+// `waitFor` and `findBy*` give up after 1 s by default; a page that renders in 50 ms alone can take
+// seconds when the machine is shared, so they wait up to 10 s and still fail on a real hang.
+configure({ asyncUtilTimeout: 10_000 });

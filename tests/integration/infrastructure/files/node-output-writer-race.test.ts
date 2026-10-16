@@ -71,7 +71,7 @@ async function seedSnapshot(): Promise<string> {
 /** Replaces `<user>/projects` by a junction to the snapshot's `files` folder. */
 async function swapProjectsForJunction(): Promise<void> {
   const projects = join(userFolder(), 'projects');
-  await rm(projects, { recursive: true, force: true });
+  await rm(projects, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   await symlink(join(snapshotFolder(), 'files'), projects, 'junction');
 }
 

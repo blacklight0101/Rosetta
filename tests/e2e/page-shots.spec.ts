@@ -44,7 +44,7 @@ test.describe('page shots', () => {
       expect(report).toMatchObject({ path: '/sign-in', screenshots: expectedShots, errors: [] });
       expect(network.takeBlocked()).toEqual([]);
     } finally {
-      await rm(out, { recursive: true, force: true });
+      await rm(out, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });
 });

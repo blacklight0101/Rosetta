@@ -209,7 +209,7 @@ describe('the committed site/ secret scan', () => {
       expect(secretCases.length).toBeGreaterThan(10);
       expect(findings.map((finding) => finding.split(': ')[0]).sort()).toEqual([...planted].sort());
     } finally {
-      await rm(copy, { recursive: true, force: true });
+      await rm(copy, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });
 });
@@ -229,7 +229,7 @@ describe('the committed site/ drift', () => {
         expect(await readFile(join(out, name))).toEqual(await readFile(join(siteFolder, name)));
       }
     } finally {
-      await rm(out, { recursive: true, force: true });
+      await rm(out, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });
 });
@@ -268,7 +268,7 @@ describe('scripts/pages-smoke.mjs', () => {
 
       expect((await smoke(baseUrl, copy)).code).toBe(0);
     } finally {
-      await rm(copy, { recursive: true, force: true });
+      await rm(copy, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });
 });

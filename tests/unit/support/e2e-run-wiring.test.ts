@@ -32,7 +32,7 @@ describe('e2e run wiring, the setup', () => {
   afterEach(async () => {
     if (savedKey === undefined) delete process.env['ROSETTA_E2E_RUN_KEY'];
     else process.env['ROSETTA_E2E_RUN_KEY'] = savedKey;
-    await rm(root, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   it('RNF-005 every run gets a fresh key, never the unkeyed one', async () => {

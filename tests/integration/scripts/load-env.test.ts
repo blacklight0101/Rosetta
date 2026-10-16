@@ -13,7 +13,7 @@ const script = resolve(import.meta.dirname, '../../../scripts/openai-live-check.
 const probe = 'ROSETTA_LOAD_PROBE';
 
 const folder = await mkdtemp(join(tmpdir(), 'rosetta-load-env-'));
-afterAll(() => rm(folder, { recursive: true, force: true }));
+afterAll(() => rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
 
 interface Outcome {
   readonly status: number;
@@ -93,7 +93,7 @@ describe('RF-402 the live check reads the key from the .env beside it', () => {
       expect(result.stdout).not.toContain(fakeKey);
       expect(result.status).toBe(1);
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });
 });

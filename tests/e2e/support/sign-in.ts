@@ -36,7 +36,7 @@ function sessionFolder(): string {
 
 /** Removes the kept sessions of an earlier run on this port. */
 export async function clearSessions(): Promise<void> {
-  await rm(sessionFolder(), { recursive: true, force: true });
+  await rm(sessionFolder(), { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
 
 function sessionFile(userName: string): string {
