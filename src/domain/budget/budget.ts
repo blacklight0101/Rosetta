@@ -30,8 +30,15 @@ interface AccountCaps {
   readonly ownDailyCapMicros: bigint | null;
 }
 
+/** The caps of the role that makes the call (`budget.roles.<role>`, RF-423); none when unset. */
+export interface RoleBudget {
+  readonly maxCostMicros?: bigint;
+  readonly maxTokens?: bigint;
+}
+
 export interface CapInputs {
   readonly run: RunBudget;
+  readonly role?: RoleBudget;
   readonly server: ServerCaps;
   readonly account: AccountCaps;
 }

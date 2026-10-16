@@ -10,7 +10,8 @@ import { err, ok, type Result } from '../errors/result.js';
  * `own-day`: one user's own-key spend in a UTC day; `server-month`: every user's server-key spend
  * in a UTC month (DEC-107).
  */
-type CapKind = 'run-cost' | 'run-tokens' | 'user-day' | 'own-day' | 'server-month';
+type CapKind =
+  'run-cost' | 'run-tokens' | 'role-cost' | 'role-tokens' | 'user-day' | 'own-day' | 'server-month';
 
 export interface UsageCap {
   readonly kind: CapKind;
@@ -23,6 +24,8 @@ export type CapSpent = Readonly<Record<CapKind, bigint>>;
 export const noSpend: CapSpent = {
   'run-cost': 0n,
   'run-tokens': 0n,
+  'role-cost': 0n,
+  'role-tokens': 0n,
   'user-day': 0n,
   'own-day': 0n,
   'server-month': 0n,
@@ -40,6 +43,8 @@ export interface CapBreach {
   readonly limit: bigint;
   readonly spent: bigint;
   readonly needed: bigint;
+  /** The role of a role cap's breach (RF-423); set by the budget guard. */
+  readonly role?: string;
 }
 
 function neededFor(kind: CapKind, worstCase: WorstCase): bigint {
