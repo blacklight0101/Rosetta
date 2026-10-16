@@ -55,6 +55,7 @@ describe('release migrations', () => {
       '0008_audit_retention_purge.sql',
       '0009_project_settings_version.sql',
       '0010_schema_version_read.sql',
+      '0011_runs_failed_areas.sql',
     ]);
   });
 

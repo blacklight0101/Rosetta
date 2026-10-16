@@ -83,16 +83,21 @@ export class RunLifecycle {
 
   /** Ends the run once; undefined when it had already ended. */
   // RF-003, RNF-002
-  async finish(run: Run, endState: RunEndState, errorCode?: ErrorCode): Promise<Run | undefined> {
+  async finish(run: Run, endState: RunEndState, detail: EndDetail = {}): Promise<Run | undefined> {
     const now = this.deps.clock.now();
-    const ended = await this.deps.runs.end(run.id, endState, now.getTime());
+    const ended = await this.deps.runs.end(
+      run.id,
+      endState,
+      now.getTime(),
+      detail.failedAreas ?? 0,
+    );
     if (ended === undefined) return undefined;
     const manifest = await this.attempt(ended, 'the manifest', () =>
       this.endManifestOf(ended, endState, now.toISOString()),
     );
     await this.attempt(ended, 'run.ended', async () => {
       const events = await RunEventPublisher.open({ scope: scopeOf(ended), ...this.eventParts() });
-      await events.emit('run.ended', endData(ended, endState, manifest, errorCode));
+      await events.emit('run.ended', endData(ended, endState, manifest, detail));
     });
     return ended;
   }
@@ -133,15 +138,23 @@ export class RunLifecycle {
   }
 }
 
+/** What `run.ended` says besides the end state: the error code, and (RF-208) the failed areas. */
+export interface EndDetail {
+  readonly errorCode?: ErrorCode;
+  readonly failedAreas?: number;
+}
+
 function endData(
   run: Run,
   endState: RunEndState,
   manifest: RunManifest | undefined,
-  errorCode: ErrorCode | undefined,
+  detail: EndDetail,
 ): Record<string, unknown> {
+  const { errorCode, failedAreas } = detail;
   return {
     endState,
     totals: { ...manifest?.totals, ...run.totals, calls: manifest?.totals.calls ?? 0 },
     ...(errorCode === undefined ? {} : { errorCode }),
+    ...(failedAreas === undefined ? {} : { failedAreas }),
   };
 }

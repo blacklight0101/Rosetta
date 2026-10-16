@@ -9,8 +9,8 @@ import {
 import { settingsFor } from '../../../support/provider-factory-harness.js';
 import { userAmy } from '../../../support/run-harness.js';
 
-// RF-1001, RF-425 (P1-147): the estimate says which areas hold only vendored or minified files, so
-// the start page can leave them unticked.
+// RF-1001, RF-1018, RF-425 (P1-147, P1-172): the estimate says how many files each area holds and
+// which hold only vendored or minified files, so the start page can leave them out of the list.
 
 const local = settingsFor({
   reader: { provider: 'ollama', model: 'gemma4:e4b' },
@@ -32,8 +32,8 @@ describe('RF-1001 third-party areas', () => {
     const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
 
     expect(outcome.ok && outcome.value.areas).toEqual([
-      { name: 'Catalog', estimatedTokens: 500, thirdParty: false },
-      { name: 'Scripts#1', estimatedTokens: 1000, thirdParty: true },
+      { name: 'Catalog', estimatedTokens: 500, files: 1, thirdParty: false },
+      { name: 'Scripts#1', estimatedTokens: 1000, files: 2, thirdParty: true },
     ]);
   });
 });

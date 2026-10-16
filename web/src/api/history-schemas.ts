@@ -23,6 +23,8 @@ const historyRunSchema = z.object({
     cachedInputTokens: count,
   }),
   sizeBytes: count,
+  /** RF-208: the areas of the run that gave no usable card. */
+  failedAreas: count.default(0),
 });
 
 export type HistoryRun = z.output<typeof historyRunSchema>;

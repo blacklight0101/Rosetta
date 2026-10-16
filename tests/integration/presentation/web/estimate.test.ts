@@ -44,7 +44,10 @@ const point = z.object({
 });
 const estimateBody = z.object({
   areas: z.array(
-    z.object({ name: z.string(), estimatedTokens: z.number(), thirdParty: z.boolean() }),
+    z.object({
+      ...{ name: z.string(), estimatedTokens: z.number(), files: z.number() },
+      thirdParty: z.boolean(),
+    }),
   ),
   roles: z.array(z.object({ role: z.string(), low: point, likely: point, high: point }).loose()),
   total: z.object({ low: point, likely: point, high: point }),
@@ -102,7 +105,7 @@ describe('GET /api/projects/:id/estimate answers', () => {
     });
 
     expect(bodyOf(one).areas).toEqual([
-      { name: 'Orders', estimatedTokens: 4000, thirdParty: false },
+      { name: 'Orders', estimatedTokens: 4000, files: 1, thirdParty: false },
     ]);
     expect(bodyOf(both).areas.map((area) => area.name)).toEqual(['Catalog', 'Orders']);
   });

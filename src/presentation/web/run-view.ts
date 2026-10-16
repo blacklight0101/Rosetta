@@ -21,5 +21,6 @@ export function runView(run: Run): Record<string, unknown> {
     endedAt: instantOrNull(run.endedAt),
     commitSha: run.commitSha,
     totals: run.totals,
+    failedAreas: run.failedAreas,
   };
 }

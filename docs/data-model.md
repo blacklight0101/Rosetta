@@ -321,8 +321,13 @@ In the header a citation is the string `path:startLine-endLine`; absent optional
 double-quoted scalar, so model text cannot add a key. `cards/index.json` has `schemaVersion` and `cards`, and its
 `claimCounts` always lists all five statuses.
 
-When a task's answer is still not valid after the one repair attempt (RF-202), the task ends `InvalidOutput` (RST-1300) and
-both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separated by `=== attempt n ===` lines.
+The valid cards and claims of an answer are kept; invalid claims and cards are dropped and listed in the application log (RF-208).
+When no valid card is left after the follow-ups (up to two repairs, or continuations of a cut-off answer), the task ends
+`InvalidOutput` (RST-1300). The raw answers of a task that ended `InvalidOutput`, or that kept cards but dropped something, are
+saved, masked, in `invalid-output/<agentTaskId>.txt`, separated by `=== attempt n ===` lines; those of a task that was run again
+(RF-208) are all kept, the first run's first. A task that ends with no usable card is run once more from the start with a fresh
+conversation (an area that met its context limit, in two halves); the retry's transcript and calls carry the id
+`<agentTaskId>-retry`, or `<agentTaskId>-retry-1` and `-retry-2` for the halves (3.15).
 
 `cards/index.json` lists every card `{ id, type, title, area, path, claimCounts per status }`, sorted by `id`.
 
@@ -333,7 +338,9 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
   is listed with its status, rejected ones included. A last section, `## Areas without cards`, names every area whose
   reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
 - `coverage.json`: `{ schemaVersion: 1, areas }` where each area is
-  `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare }`; feeds the web UI
+  `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare, failure? }`, where `failure`
+  (RF-208) is present only for an area whose task gave no usable card, in a few words with the code (`invalid output
+  (RST-1300)`); feeds the web UI
   coverage map (RF-1005) and the report. Areas keep the order of the run and list only tasks that ended; `files` is
   every file of the area in the area's order, `read` the line ranges the task's tools returned (a read, the lines of
   grep matches, the statements of a code map entry), cut to the file, sorted and merged, empty for a file not read;
@@ -343,7 +350,7 @@ both raw answers are saved, masked, in `invalid-output/<agentTaskId>.txt`, separ
   the cards after every task that ends (P2-04).
 - `coverage.md` is its readable form (RF-230): a `## Run summary` table with, per area and for all areas, the files
   read of the files listed and the percentage of area tokens read, then one `## Area: <name>` table per area with each
-  file and its read lines or `not read`.
+  file and its read lines or `not read`. When an area failed (RF-208) a `## Failed areas` list follows the run summary.
 
 ### 3.9 `events.jsonl` (run events)
 
@@ -387,7 +394,7 @@ Event types (canonical list):
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead |
 | `question.answered` | `{ cardId }` (RF-1007) |
-| `run.ended` | `{ endState, totals, errorCode? }`; `errorCode` is the `RST` code of a `Failed` run |
+| `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run ends `Failed` only when every task failed (a provider failure), as before |
 
 New event types may be added without a version bump; a reader ignores types it does not know. Each line is masked before
 it is stored (RNF-003). A crash can leave a last line without its line break: readers ignore it and the writer removes it
@@ -609,6 +616,19 @@ defaulted: [questionId] }`. `defaulted` lists the questions that took their defa
 as open questions (RF-604). Free-text answers are untrusted input: they reach the planner only inside labelled data
 blocks (ADR-013). `plan` copies the brief and the catalogue version into the run manifest (RNF-004).
 
+Rules (P3-06): a question the user did not answer takes its default and is named in `defaulted`, as `principles`,
+`architecture`, `migration`, `stack.<layer>` (one per layer of RF-609: `language-runtime`, `backend-framework`,
+`front-end`, `database`, `data-access`, `testing`, `hosting`), `context.<field>` and `buildMethod`. The defaults are:
+the catalogue entries switched on (DEC-74) for `principles`, `strangler-fig` for `migration` (RF-610),
+`layered` for `architecture.style` with no recommendation, `{ aiAssisted: false }`, no `stack` entry for an
+unanswered layer, and `null` or an empty list for the context fields; nothing is invented (DEC-80). `principles`
+holds catalogue entry ids other than the architecture styles, sorted and without repeats; `stack` holds at most one
+entry per layer, in layer order, each choice at most 200 characters; the context texts at most 500 characters, up to
+20 integrations, `teamSize` a whole number from 1 to 10000. The file is replaced whole by each save and not touched
+when the answers are the same as the stored ones, so `savedAt` moves only with a change. The brief is *out of date*
+when `savedAt` is later than the start of the newest `Completed` run of stage `plan` of the project (the package
+was written from an earlier brief); a project with no such run is never out of date.
+
 ## 4. Tables (PostgreSQL)
 
 Added 2026-10-11 (DEC-65, ADR-016). PostgreSQL 17. Every table is created by a numbered migration (section 7). Ids
@@ -680,6 +700,7 @@ the `Clock` port.
 | `end_state` | `text` null | `RunEndState`, `CHECK` on the list; set once; set exactly when `queue_state` is `Ended` (`CHECK`) |
 | `queued_at`, `started_at`, `ended_at` | `timestamptz` | the last two null until reached |
 | `cost_micros`, `input_tokens`, `output_tokens`, `cached_input_tokens` | `bigint` | running totals for lists; the ledger is the source of truth |
+| `failed_areas` | `integer` | default 0, `CHECK (failed_areas >= 0)`; set with the end state: the areas of an understand run whose task gave no usable card (RF-208), so lists can say "Completed, 2 areas failed" without the run's events; migration `0011` |
 
 **`cost_ledger`** (RF-428, RF-1106)
 
@@ -817,7 +838,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`), `0100..` later
 releases.
 
 **File schema versions**:

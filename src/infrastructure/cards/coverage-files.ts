@@ -11,7 +11,7 @@ import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 const schemaVersion = 1;
 
 export function serialiseCoverage(coverage: readonly AreaCoverage[], masker: TextMasker): string {
-  const areas = coverage.map(({ area, files, tokens, readTokens, readTokenShare }) => ({
+  const areas = coverage.map(({ area, files, tokens, readTokens, readTokenShare, failure }) => ({
     area,
     files: files.map(({ path, read }) => ({
       path,
@@ -20,6 +20,7 @@ export function serialiseCoverage(coverage: readonly AreaCoverage[], masker: Tex
     tokens,
     readTokens,
     readTokenShare,
+    failure,
   }));
   return `${JSON.stringify(maskDeep({ schemaVersion, areas }, masker), null, 2)}\n`;
 }
@@ -64,6 +65,21 @@ function runSummary(coverage: readonly AreaCoverage[], esc: MarkdownEscaper): st
     '|---|---|---|',
     ...rows,
     total,
+    '',
+    ...failedAreas(coverage, esc),
+  ];
+}
+
+/** RF-208: the areas whose task gave no usable card, with why; nothing when there are none. */
+function failedAreas(coverage: readonly AreaCoverage[], esc: MarkdownEscaper): string[] {
+  const failed = coverage.filter((area) => area.failure !== undefined);
+  if (failed.length === 0) return [];
+  return [
+    '## Failed areas',
+    '',
+    'These areas gave no usable card, so the specification has nothing about them.',
+    '',
+    ...failed.map((area) => `- ${esc.inline(area.area)}: ${esc.inline(area.failure ?? '')}`),
     '',
   ];
 }

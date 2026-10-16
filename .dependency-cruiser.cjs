@@ -97,11 +97,11 @@ module.exports = {
     {
       name: 'adapters-only-via-adapter-builder',
       comment:
-        'the Ollama, OpenAI, Anthropic and fake adapters are imported only by the adapter builder of the provider factory, so every provider is wrapped in the guards (ADR-003, ADR-006, ADR-007)',
+        'the Ollama, OpenAI, OpenAI-compatible, Anthropic and fake adapters are imported only by the adapter builder of the provider factory, so every provider is wrapped in the guards (ADR-003, ADR-006, ADR-007)',
       severity: 'error',
       from: { path: '^src/', pathNot: '^src/infrastructure/providers/adapter-builder\\.ts$' },
       to: {
-        path: '^src/infrastructure/providers/(ollama/ollama-provider|openai/openai-provider|anthropic/anthropic-provider|fake/fake-provider)\\.ts$',
+        path: '^src/infrastructure/providers/(ollama/ollama-provider|openai/openai-provider|openai/openai-compatible-provider|anthropic/anthropic-provider|fake/fake-provider)\\.ts$',
       },
     },
     {

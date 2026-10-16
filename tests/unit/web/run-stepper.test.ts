@@ -34,6 +34,7 @@ function row(stage: string, queueState: RunRow['queueState'] = 'Running'): RunRo
     position: null,
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
     reportBuilt: false,
+    failedAreas: 0,
   };
 }
 

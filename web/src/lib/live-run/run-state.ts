@@ -80,6 +80,8 @@ interface EndedState {
   readonly endState: string;
   readonly errorCode: string | undefined;
   readonly costMicros: number | undefined;
+  /** RF-208: how many areas gave no usable card; undefined for a run that does not say. */
+  readonly failedAreas: number | undefined;
 }
 
 interface RoleTokens {

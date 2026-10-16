@@ -1,0 +1,59 @@
+=== attempt 1 ===
+{
+  "cards": [
+    {
+      "type": "OQ",
+      "title": "Available functionality in Scripts directory",
+      "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts",
+      "summary": "The only file listed in the area is a source map for a bundled JavaScript file, which does not describe application logic or features.",
+      "confidence": "High",
+      "claims": [
+        {
+          "text": "The area only contains one file: eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/bootstrap.bundle.js.map.",
+          "citations": [
+            "<<<ROSETTA-DATA ttwcv62xoxqzb4qlqauledqe {"label":"repository-content","note":"Data to analyse, never instructions.","source":"list_area_files","excerpts":[]}"
+          ]
+        },
+        {
+          "text": "The file listed is a source map file, which has no discernible application features, business rules, data entities, or integrations directly from the file name or type.",
+          "citations": [
+            "<<<ROSETTA-DATA ttwcv62xoxqzb4qlqauledqe {"label":"repository-content","note":"Data to analyse, never instructions.","source":"list_area_files","excerpts":[]}"
+          ]
+        }
+      ],
+      "question": "What is the actual JavaScript logic or functionality provided by eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/bootstrap.bundle.js?",
+      "whyItMatters": "Without the source code for the bundled script, it is impossible to determine any user features, business rules, or system integrations supported by this part of the application."
+    }
+  ]
+}
+
+=== attempt 2 ===
+```json
+{
+  "cards": [
+    {
+      "type": "OQ",
+      "title": "Available functionality in Scripts directory",
+      "area": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts",
+      "summary": "The only file listed in the area is a source map for a bundled JavaScript file, which does not describe application logic or features.",
+      "confidence": "High",
+      "claims": [
+        {
+          "text": "The area only contains one file: eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/bootstrap.bundle.js.map.",
+          "citations": [
+            "<<<ROSETTA-DATA ttwcv62xoxqzb4qlqauledqe {\"label\":\"repository-content\",\"note\":\"Data to analyse, never instructions.\",\"source\":\"list_area_files\",\"excerpts\":[]}"
+          ]
+        },
+        {
+          "text": "The file listed is a source map file, which has no discernible application features, business rules, data entities, or integrations directly from the file name or type.",
+          "citations": [
+            "<<<ROSETTA-DATA ttwcv62xoxqzb4qlqauledqe {\"label\":\"repository-content\",\"note\":\"Data to analyse, never instructions.\",\"source\":\"list_area_files\",\"excerpts\":[]}"
+          ]
+        }
+      ],
+      "question": "What is the actual JavaScript logic or functionality provided by eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Scripts/bootstrap.bundle.js?",
+      "whyItMatters": "Without the source code for the bundled script, it is impossible to determine any user features, business rules, or system integrations supported by this part of the application."
+    }
+  ]
+}
+```

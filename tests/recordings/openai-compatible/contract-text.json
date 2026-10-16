@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "description": "FAKE recording, no real key or secret. The text scenario: a text answer with 1024 cached input tokens. Hand-written in the documented shape of an OpenAI-compatible Chat Completions answer (POST <base URL>/chat/completions, stream false), as services such as OpenRouter, Groq or DeepSeek send it; no real service was called and no key is held (ADR-008).",
+  "chat": [
+    {
+      "status": 200,
+      "headers": {
+        "x-request-id": "req-FAKE-compatible-0001"
+      },
+      "body": {
+        "id": "gen-FAKE0000000000000001",
+        "object": "chat.completion",
+        "created": 1791700000,
+        "model": "contract-vendor/contract-model",
+        "provider": "FakeHost",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "The Catalog area lists products from the database."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 1200,
+          "completion_tokens": 80,
+          "total_tokens": 1280,
+          "prompt_tokens_details": {
+            "cached_tokens": 1024
+          }
+        }
+      }
+    }
+  ]
+}

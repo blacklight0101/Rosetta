@@ -108,6 +108,25 @@ const projectRows: Rows = {
   'HEAD /api/projects/:id/estimate': [
     { method: 'HEAD', url: projectUrl('/estimate'), expected: ownerOnly(200) },
   ],
+  'GET /api/projects/:id/planning-brief': [
+    { method: 'GET', url: projectUrl('/planning-brief'), expected: ownerOnly(200) },
+    {
+      method: 'GET',
+      url: () => '/api/projects/not-a-uuid/planning-brief',
+      expected: active(401, 404),
+    },
+  ],
+  'HEAD /api/projects/:id/planning-brief': [
+    { method: 'HEAD', url: projectUrl('/planning-brief'), expected: ownerOnly(200) },
+  ],
+  'PUT /api/projects/:id/planning-brief': [
+    {
+      method: 'PUT',
+      url: projectUrl('/planning-brief'),
+      payload: () => ({}),
+      expected: ownerOnly(200),
+    },
+  ],
   'GET /api/admin/users/:id/projects': [
     { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
     { method: 'GET', url: workspaceUrl(() => unknownUser), expected: adminOnly(404) },

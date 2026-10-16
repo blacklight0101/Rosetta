@@ -14,8 +14,10 @@ export interface ReaderPrompts {
   readonly task: PromptFile;
   /** `reader/turns-left.v<n>.md`: the user message after each tool turn. */
   readonly turnsLeft: PromptFile;
-  /** `cards/repair.v<n>.md`: the one repair request (RF-202). */
+  /** `cards/repair.v<n>.md`: the repair request, sent up to twice with the problems left (RF-208). */
   readonly repair: PromptFile;
+  /** `cards/continue.v<n>.md`: asks an answer cut off by the output limit to go on (RF-208). */
+  readonly continue: PromptFile;
 }
 
 /** The one placeholder each template prompt must hold. */
@@ -47,6 +49,7 @@ export function promptVersionsOf(prompts: ReaderPrompts): Record<string, PromptV
     prompts.task,
     prompts.turnsLeft,
     prompts.repair,
+    prompts.continue,
   ];
   return Object.fromEntries(
     files.map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),

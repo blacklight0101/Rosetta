@@ -694,7 +694,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-49, P1-50
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` section 8; `README.md`.
 - **Do**: `docs/releases.md` with the v0.1.0 notes; the README status, quick start (checked against `docs/runbooks/local.md`) and links (hosted URL, sample report, slides, video placeholders); the version bump; a walk-through of the quick start on a clean folder recorded in the pull request; the tag is created by the owner.
 - **Delivers**: `docs/releases.md`, README updates, the version bump.
@@ -1006,7 +1006,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-08
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/architecture.md` section 5; `docs/environments-and-delivery.md`; `docs/data-model.md` section 4.
 - **Do**: list the account transitions P1-08 built (enable clears the failure counters, reset sets MustChangePassword, both refused on a Disabled account except enable) in architecture section 5; mark `ROSETTA_ADMIN_USER` and `ROSETTA_ADMIN_PASSWORD` as needed only on an empty `users` table (a warning otherwise); describe the bootstrap audit row (no actor, `ip = start-up`, no user name) in the data model.
 - **Delivers**: the three document edits.
@@ -1090,7 +1090,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-12
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` package baseline; `web/`.
 - **Do**: once Preact 11.0.x is at least two weeks old (11.0.0 was published 2026-09-30), pin it exactly, update the baseline row and fix any breaking change.
 - **Delivers**: the upgrade.
@@ -1198,7 +1198,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `tests/`; `vitest.config.ts`.
 - **Do**: find why `jsonl-event-log.test.ts`, `architecture-rules.test.ts` and the run-scan tests time out under full-suite load on Windows (EBUSY temp-directory cleanup, depcruise runs); fix the slow path or give those files their own timeout with a comment saying why. Set a default `maxWorkers` for the local Vitest run that keeps a Windows machine below the load that causes the flakes, so agents need not pass `--maxWorkers`.
 - **Delivers**: the fix.
@@ -1954,7 +1954,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-49
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/verification/m1-matrix.md` F-01 and PC-01; `src/presentation/web/access-hooks.ts`; `src/presentation/web/server.ts`; `src/presentation/web/session-routes.ts`; `src/presentation/web/route-access.ts`; `src/application/use-cases/record-refused-request.ts`; `docs/security/threat-model.md`; architecture section 10.
 - **Do**: owner question first (handoff agenda 28; DEC-124 keeps every refusal row, so this changes it). Default: one limit per client address covers every writer of a `request.refused` row (the `Origin` refusal, the route rate limits' `onExceeded`, the in-flight bounds of sign-in and password change, and any other): up to 30 rows a minute per address, then one `request.refused` row with reason `rate-limit` and a count for the rest of that minute, while the requests are still refused with their usual status; the stored path (audit `target_id`, the security event's message and data) is cut to 512 characters with a marker that it was cut. Record the DEC. Failing tests first; update architecture section 10 and the threat model.
 - **Delivers**: the limit, the cut, the tests and the document edits.
@@ -1978,7 +1978,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-49
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/verification/m1-matrix.md` PC-04; `docs/security/threat-model.md`; `SECURITY.md`; `src/presentation/web/server.ts`; `docs/orchestration/README.md` section 5.1.
 - **Do**: in `docs/security/threat-model.md` reword TB4 (model output used only as checked read-only paths), mark the release, SBOM and GHCR controls of TB7 and A03 as arriving with P1-55, and LLM09 and LLM10 as partial until P2-02 and P2-08; in `SECURITY.md` say no release is published yet; fix the comment at `src/presentation/web/server.ts:220`; list the three known false positives next to the greps of orchestration README section 5.1 in a note for the owner (that README is owner-merged; put the note in the PR body if the file cannot change here).
 - **Delivers**: the text fixes.
@@ -2050,7 +2050,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-84, P1-161, P1-164
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web-lint.config.ts`; `tests/e2e/support/serve.ts`; the writable-temp-root helper; `tests/support/sql-template-scan.ts`; `src/infrastructure/files/grep-runner.ts`; the verdicts on #391, #403 and #402.
 - **Do**: (1) the RF-507 lint does not refuse `el.setAttributeNS(null, "srcdoc", x)`, destructuring (`const { setHTMLUnsafe } = el`) or a template-literal computed key: add fixtures, failing first, then the selectors. (2) No test shows `serve.ts` clears the data folder through the writable helper: add one. (3) The helper can `chmod` through a symlinked root: refuse a symlinked root. (4) The SQL `${}` scan misses a template in `COPY ... TO STDOUT` outside a `query(` argument: add the case. (5) `grep-runner.ts`: the "worker exits without an answer" branch and "first verdict wins" have no test: add both (a fake worker).
 - **Delivers**: the fixes and tests.
@@ -2102,7 +2102,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/proposals/run-page-v2.html` (the reference); `web/src/pages/LiveRunPage.tsx` and its parts; `docs/design-system.md`; RF-1002..RF-1005, RF-1010, RF-1011, RF-1015, RF-1016.
 - **Do**: rebuild the running state of the run page as the proposal shows: the run journey, the living code map (tiles sized by tokens, states, hatched third-party areas, reduced motion), spend for the run, "working now" (three agents in plain words), and tabs for cards so far, all agents and activity (events, calls, logs). Existing data sources and event handling are reused; no API change. Update `docs/design-system.md` with the new components.
 - **Review probes**: 1 area and 120 areas; a 60-character area name; an area name holding HTML; light and dark; 360 px wide; keyboard only; reduced motion; a run that fails at the first step.
@@ -2130,7 +2130,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: In progress
+- **Status**: In review
 - **Reads**: the card parser and repair path (RF-202); the agent loop; the run end state; the `invalid-output` folders of the owner's runs `20261014-145748-understand`, `20261014-153115-understand` and `20261014-154704-understand` (11 of 41, 11 of 42 and 6 of 16 tasks failed; in the third run, with library areas left out, all 6 were one-line citations and they included Models, Services, ViewModel and Setup).
 - **Do**: as RF-208: take the JSON out of prose or a fence; keep valid claims and cards, drop and list invalid ones; a second, targeted repair; ask a cut-off answer to continue; retry a task with no usable cards once with a fresh conversation (split an area too large for the context); report failed areas in the coverage and the run summary with "Retry failed areas"; a run with failed areas never shows as a plain success.
 - **Review probes**: the recorded failing answers of both runs (each must yield its valid cards); an answer that is all prose; JSON with a trailing comma; an answer cut mid-string; a card whose every claim is invalid; a model that fails the same way three times (the run still ends, with the area marked failed and no endless loop).
@@ -2144,7 +2144,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: the start page and its area list; P1-147 (third-party default); `docs/design/proposals/run-page-v2.html` (look and tokens); RF-1018.
 - **Do**: as RF-1018: only own code listed and selected; third-party and generated code folded into one collapsed line after the list ("12 library areas left out ... Show") that expands to the areas and their reason; Select all, Select none and Own code only buttons; a filter; the list scrolls inside its panel; a summary bar with areas, files, estimate and Start stays visible; a one-time confirmation when third-party areas are chosen.
 - **Review probes**: 1 area; 120 areas; every area third-party; a 60-character area name; keyboard only; 360 px wide; Start pressed with nothing selected (disabled, with the reason).
@@ -2164,7 +2164,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33, P1-35, P1-40
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/architecture.md` section 8; `docs/data-model.md` section 3.6.
 - **Do**: `ResumeRun`: after the cap is raised, process only unfinished tasks and `Unverified` claims into the same run folder and manifest; the Resume button on the run and history pages; claims left unjudged at a cap are `Unverified`.
 - **Delivers**: the use case, route and buttons; integration tests with the fake provider; an E2E spec.
@@ -2212,7 +2212,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-39
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/data-model.md` section 3.16; `docs/architecture.md` section 6 (`RunUnderstand` options).
 - **Do**: the "with answers" option of `RunUnderstand`: affected areas run again with the answers as context, answered `OQ` cards marked `Answered`, new and changed cards listed in the run summary.
 - **Delivers**: the option, prompt changes as a new prompt version, recordings; integration tests.
@@ -2224,7 +2224,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `docs/architecture.md` section 8 (summariser role).
 - **Do**: consolidation with the `summariser` role: duplicate entities and rules from several areas merged into one card keeping every citation; the merge recorded; `prompts/summariser/merge.v1.md`.
 - **Delivers**: the step, prompt, recordings; integration tests.
@@ -2236,7 +2236,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P1-31
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.1 (limits).
 - **Do**: `read_file` cuts a request beyond the configured maximum lines and tells the agent the remaining range.
 - **Delivers**: the change and unit tests.
@@ -2248,7 +2248,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-30, P1-34
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `docs/adr/ADR-007-cost-control.md`.
 - **Do**: the confirmation threshold on the start page (RF-425 second scenario); caps per role in the budget guard; a non-local model missing from the price table stops the run unless allowed, then cost shows as unknown and only the token cap applies.
 - **Delivers**: the changes; integration and E2E tests.
@@ -2272,7 +2272,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-29
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-003-provider-swappable-agent-loop.md`; RF-1104; DEC-112; `docs/security/threat-model.md` (SSRF row); `src/infrastructure/security/public-address-agent.ts`.
 - **Do**: `OpenAiCompatibleProvider` with a base URL and key from the provider set (URL rules of RF-1104), same contract; a section in `docs/providers.md`.
 - **Delivers**: the adapter, recordings, the contract suite run on it.
@@ -2332,7 +2332,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P1-14, P1-80
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: DEC-117; `docs/design-system.md`; `src/web/` settings page; P1-80.
 - **Do**: show each numeric project setting as a slider limited to its DEC-117 range, with the template default marked; show a warning that suggests keeping the default when a value moves away from it; keyboard and screen-reader use as for the other controls.
 - **Delivers**: the sliders, their warnings and tests.
@@ -2504,7 +2504,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-05, P1-18
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.20.
 - **Do**: domain `PlanningBrief`, `CatalogueEntry`, `ArchitectureStyle`, `StackChoice`; the `planning-brief.json` schema; save and load per project with defaults for every unanswered question (DEC-80); "out of date" when the brief changes after a package exists.
 - **Delivers**: domain types, schema, use cases and routes; unit and integration tests.
@@ -2588,7 +2588,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-05
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `src/infrastructure/prompts/catalogue-files.ts`; `src/infrastructure/prompts/catalogue-entry-file.ts`; `src/domain/planning/catalogue.ts`; `src/domain/runs/run-manifest.ts`; RF-606; the verdict on #208.
 - **Do**: add the two schema tests P3-05 lacks (a rule longer than 200 characters is refused; the bullets list needs at least two items, `min(2)`). `loadCatalogue` is not called at start-up (RF-606): call it once in the composition root so a broken catalogue stops start-up with a code, and record the catalogue version and its sha256 in the run manifest of a run that uses it.
 - **Delivers**: the tests, the start-up call and the manifest fields (with their line in `docs/data-model.md`).

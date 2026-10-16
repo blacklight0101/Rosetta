@@ -1,4 +1,5 @@
 import type { AgentPanelState, RunState } from './run-state.js';
+import { endedWithoutCard } from './run-summary.js';
 
 // RF-1016, DEC-137: the tiles of the living code map. One tile per area of the code map, sized by the
 // tokens its area is estimated to take, in the state its reader agents are in. Third-party areas
@@ -35,7 +36,6 @@ interface Known {
 
 const MAX_PROGRESS = 95;
 const MIN_PROGRESS = 5;
-const FAILED: readonly string[] = ['Failed', 'InvalidOutput', 'StoppedByCap'];
 
 function readersOf(state: RunState): readonly AgentPanelState[] {
   return state.agents.filter((agent) => agent.role === 'reader' && agent.area !== '');
@@ -45,7 +45,7 @@ function readersOf(state: RunState): readonly AgentPanelState[] {
 function stateOfAgents(agents: readonly AgentPanelState[]): TileState {
   if (agents.some((agent) => agent.state === 'Running')) return 'reading';
   if (agents.some((agent) => agent.state === 'Planned')) return 'waiting';
-  if (agents.some((agent) => FAILED.includes(agent.state))) return 'gap';
+  if (agents.some(endedWithoutCard)) return 'gap';
   return 'done';
 }
 

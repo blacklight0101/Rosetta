@@ -45,6 +45,7 @@ describe('an understand run: cost and prompts', () => {
     const manifest = await h.manifestOf(run);
     expect(Object.keys(manifest.promptVersions)).toEqual([
       'cards/card-format.v1.md',
+      'cards/continue.v1.md',
       'cards/repair.v1.md',
       'reader/area.v2.md',
       'reader/task.v2.md',

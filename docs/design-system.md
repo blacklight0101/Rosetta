@@ -191,7 +191,7 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
 | Agent `Running` | info | solid | live dot | working now |
 | Agent `Done` | ok | tint | check | finished normally |
 | Agent `TurnLimitReached` | warn | tint | clock | stopped at the turn limit; cards so far are kept |
-| Agent `InvalidOutput` | danger | tint | brackets | the model's answer could not be parsed after one repair |
+| Agent `InvalidOutput` | danger | tint | brackets | the model's answer held no valid card after its repairs |
 | Agent `Failed` | danger | solid | exclamation | stopped by an error |
 | Agent `StoppedByCap` | warn | solid | square | stopped because the budget cap was reached |
 | Run `Completed` | ok | solid | check | |
@@ -204,7 +204,7 @@ The state lists are canonical in [architecture](architecture.md) section 5; this
 ## 7. Patterns
 
 - **Start a run**: URL field, Resolve shows repository, pinned commit, subpath, licence and whether the snapshot is
-  cached; stage and areas (an area name wraps inside its card and keeps its full text in a title; an area that holds only vendored or minified files is marked "third-party" and starts unticked, the others start ticked); the estimate table (low, likely, high per role); the cloud warning with a consent
+  cached; stage and areas (an area name wraps inside its card and keeps its full text in a title; only the project's own areas are listed and ticked, in a panel that scrolls (`max-block-size` 20rem) under a filter and the buttons Select all, Select none and Own code only; an area that holds only vendored or minified files is left out and named in one line after the list ("12 library areas left out: jQuery, Bootstrap, ... Show") that opens to the areas with their reason; choosing one asks once, in a notice that says what it adds, before Start); the summary bar (`position: sticky` at the bottom of the window): areas and files chosen, the likely cost, Re-estimate and Start, with the reason when Start is off (RF-1018); the estimate table (low, likely, high per role); the cloud warning with a consent
   checkbox when a role uses a cloud provider; Start is enabled only when the URL resolved and consent is given.
 - **Destructive confirmation**: a dialog that names the target, the space it frees, what is kept (the snapshot, the
   project totals), and "This cannot be undone"; the danger button repeats the verb ("Delete run").
@@ -281,6 +281,7 @@ cards are built (an amendment of G-02, recorded in `handoff.md`).
 | Administration: audit | RF-1109 | filterable table, last 30 days |
 | Plan setup | RF-605, RF-608, RF-609 | interview in small groups, each question with a default, the reason and the recommended option; architecture styles with evidence card ids; stack per layer; "What I recorded" summary; added 2026-10-11, artboard 14 (`PlanSetup.dc.html`, steps principles, architecture and stack), approved as a G-02 amendment (DEC-86) |
 | Run queue state | RF-1108 | a `Queued` badge with the position on the start page and the run list |
+| Failed areas notice | RF-208, RF-1002 | a `rst-callout--warn` under the head of the live run page when a run ended with areas that gave no usable card: "Completed with 2 areas failed" (or "2 areas failed"), each area with why, and a **Retry failed areas** button that starts a run of those areas; it is not shown for a stopped run. Next to the state of an ended run, in the history list, the Projects table and the top bar of the run page, a quiet note "2 areas failed" ("1 area failed") says the same; a code map tile is a gap exactly for an area that the notice lists |
 
 **Status (2026-10-11):** drawn as artboards 7-13 of the design board (artboard 14, Plan setup, follows in DEC-86) (`docs/design/board/Landing.dc.html`,
 `SignIn`, `ChangePassword`, `Projects`, `Settings`, `AdminUsers`, `AdminAudit`), with the Impeccable design

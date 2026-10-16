@@ -38,6 +38,11 @@ export function toolsWithReads(inner: AgentTools, reads: TaskReads): AgentTools 
   };
 }
 
+export interface TaskCoverageEnd {
+  readonly reads: TaskReads;
+  readonly failure: string | undefined;
+}
+
 /** The coverage of the ended tasks of a run, in area order (never in the order they ended). */
 export class RunCoverage {
   private readonly tasks: readonly ReaderTask[];
@@ -47,9 +52,14 @@ export class RunCoverage {
     this.tasks = tasks;
   }
 
+  /** RF-230, RF-208: `failure` says why an area gave no usable card; undefined when it did. */
   // RF-230
-  record(task: ReaderTask, codeMap: Pick<CodeMap, 'files'>, reads: TaskReads): void {
-    this.ended.set(task.agentTaskId, areaCoverage(task.area, codeMap.files, reads.all()));
+  record(task: ReaderTask, codeMap: Pick<CodeMap, 'files'>, end: TaskCoverageEnd): void {
+    const coverage = areaCoverage(task.area, codeMap.files, end.reads.all());
+    this.ended.set(
+      task.agentTaskId,
+      end.failure === undefined ? coverage : { ...coverage, failure: end.failure },
+    );
   }
 
   areas(): readonly AreaCoverage[] {

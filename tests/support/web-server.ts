@@ -1,4 +1,6 @@
 import type { FastifyInstance } from 'fastify';
+import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
+import type { RunIndex } from '../../src/application/ports/run-index.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import type { SessionStore } from '../../src/application/ports/session-store.js';
@@ -64,6 +66,7 @@ import {
   type KeyParts,
 } from './web-server-parts.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
+import { briefServices } from './planning-brief-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
@@ -102,6 +105,8 @@ export interface TestServer extends HistoryDoubles {
   readonly answerFiles: MemoryOutputWriter;
   /** RF-1011: the run folders the call log and transcript routes read; `seedCallLog` fills them. */
   readonly callFiles: MemoryOutputWriter;
+  /** RF-605: the projects' planning-brief.json files the planning brief routes read and write. */
+  readonly briefFiles: MemoryOutputWriter;
   /** The scheduler behind the SSE keep-alive; a test ticks it. */
   readonly heartbeat: ManualScheduler;
   /** The open event streams of the run routes. */
@@ -145,7 +150,11 @@ interface ProjectParts {
 }
 
 /** RF-010, RF-1105: the project use cases over memory adapters and predictable ids. */
-function projectServices(parts: ProjectParts): ServerOptions['projects'] {
+function projectServices(
+  parts: ProjectParts,
+  briefs: PlanningBriefStore,
+  runs: RunIndex,
+): ServerOptions['projects'] {
   const { projects, serverSettings, users, auditLog, logger, clock, costs, usage } = parts;
   const ids = new SequenceIdGenerator();
   const caps = new GetCaps({ settings: serverSettings, usage, clock });
@@ -158,6 +167,7 @@ function projectServices(parts: ProjectParts): ServerOptions['projects'] {
     openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),
+    ...briefServices({ projects, runs, briefs, clock }),
   };
 }
 
@@ -276,7 +286,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ users, hasher, auditLog, logger, clock, dummyHash, usage, keys },
       ...{ sessions: endingSessions, serverSettings, testProviders },
     }),
-    projects: projectServices(projectParts),
+    projects: projectServices(projectParts, files.briefs, runs.runs),
     runs: runServices(runs, { ...stores, keys: keys.keys }, route, outputs),
     history: historyServices({ runs, projects, folders, snapshots, logger, costs }),
     onRoute: recorder.onRoute,

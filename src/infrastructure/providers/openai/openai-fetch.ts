@@ -18,7 +18,8 @@ function isAllowed(name: string): boolean {
   return allowedHeaders.has(name) || name.startsWith('x-stainless-');
 }
 
-function allowedOnly(headers: RequestInit['headers']): Headers {
+/** The headers Rosetta means to send, and no other (the SDK would add `OPENAI_CUSTOM_HEADERS`). */
+export function allowedOnly(headers: RequestInit['headers']): Headers {
   const kept = new Headers();
   for (const [name, value] of new Headers(headers)) {
     if (isAllowed(name)) kept.set(name, value);

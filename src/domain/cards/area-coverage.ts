@@ -28,6 +28,8 @@ export interface AreaCoverage {
   readonly readTokens: number;
   /** `readTokens / tokens`, 0 to 1, four decimals; 0 for an area without tokens. */
   readonly readTokenShare: number;
+  /** RF-208: why the area's task gave no usable card; left out for an area that gave cards. */
+  readonly failure?: string;
 }
 
 export type CoverageArea = Pick<Area, 'name' | 'files' | 'estimatedTokens'>;

@@ -110,11 +110,17 @@ export const citationChecked = (
 export const agentEnded = (seq: number, task: string, state: string, cards = 0): RunEvent =>
   ev(seq, 'agent.ended', { state, turns: 3, cards }, task);
 
-export const runEnded = (seq: number, endState: string, errorCode?: string): RunEvent =>
+export const runEnded = (
+  seq: number,
+  endState: string,
+  errorCode?: string,
+  failedAreas?: number,
+): RunEvent =>
   ev(seq, 'run.ended', {
     endState,
     totals: { costMicros: 4_100, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, calls: 0 },
     ...(errorCode === undefined ? {} : { errorCode }),
+    ...(failedAreas === undefined ? {} : { failedAreas }),
   });
 
 /** The state after the events, applied in order from an empty run. */

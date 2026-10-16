@@ -19,6 +19,7 @@ const readerPromptNames = {
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
   repair: 'cards/repair.v1.md',
+  continue: 'cards/continue.v1.md',
 } as const;
 
 const versionPattern = /\.(v\d+)\.md$/;
@@ -48,12 +49,13 @@ function requirePlaceholder(file: PromptFile, placeholder: string): PromptFile {
 // RNF-004
 export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPrompts> {
   const load = (name: string) => loadPromptFile(promptsFolder, name);
-  const [system, cardFormat, task, turnsLeft, repair] = await Promise.all([
+  const [system, cardFormat, task, turnsLeft, repair, resume] = await Promise.all([
     load(readerPromptNames.system),
     load(readerPromptNames.cardFormat),
     load(readerPromptNames.task),
     load(readerPromptNames.turnsLeft),
     load(readerPromptNames.repair),
+    load(readerPromptNames.continue),
   ]);
   return {
     system,
@@ -61,5 +63,6 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
     task: requirePlaceholder(task, readerPlaceholders.task),
     turnsLeft: requirePlaceholder(turnsLeft, readerPlaceholders.turnsLeft),
     repair: requirePlaceholder(repair, readerPlaceholders.repair),
+    continue: resume,
   };
 }

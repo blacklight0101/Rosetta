@@ -1,19 +1,15 @@
 import type { CardDraft } from '../../domain/cards/card-ids.js';
-import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { agentCardsSchema } from './card-schema.js';
 import { cardLimits } from './card-limits.js';
-import { searchJson } from './extract-json.js';
+import { searchJson, type JsonSearch } from './extract-json.js';
+import { readCard } from './lenient-cards.js';
+import type { OutputProblem } from './output-problem.js';
 
-// RF-202: parses an agent's final answer into card drafts. Invalid output gets one repair attempt
-// with the located validation errors; a second failure ends the task as `InvalidOutput` and the
-// raw outputs are kept for the user (the task state itself belongs to the orchestrator).
-
-/** One validation problem; `path` is dotted (`cards.0.claims.1.citations`), empty for the answer. */
-export interface OutputProblem {
-  readonly path: string;
-  readonly message: string;
-}
+// RF-202, RF-208: parses an agent's final answer into card drafts. The JSON is taken out of prose
+// or a code fence; the valid cards and claims are kept and the invalid ones are dropped and listed
+// with their problems, so one formatting slip no longer costs the whole area. What happens after
+// that (repairs, continuation, retry) belongs to the agent loop and the orchestrator.
 
 const noJson: OutputProblem = {
   path: '',
@@ -36,6 +32,11 @@ const tooLong: OutputProblem = {
   message: `The answer is larger than the limit of ${String(cardLimits.maxOutputChars)} characters.`,
 };
 
+const tooMany: OutputProblem = {
+  path: `cards.${String(cardLimits.maxCards)}`,
+  message: `Only the first ${String(cardLimits.maxCards)} cards are used; send the rest in a separate answer.`,
+};
+
 function bounded(problems: readonly OutputProblem[]): readonly OutputProblem[] {
   return problems.slice(0, cardLimits.maxProblems).map((problem) => ({
     path: problem.path,
@@ -51,68 +52,83 @@ function asCardList(value: unknown): unknown {
   return Array.isArray(value) && value.length > 0 ? { cards: value } : value;
 }
 
-function validate(value: unknown): Result<readonly CardDraft[], readonly OutputProblem[]> {
-  const parsed = agentCardsSchema.safeParse(asCardList(value));
-  if (parsed.success) return ok(parsed.data.cards);
-  return err(
-    bounded(
-      parsed.error.issues.map((issue) => ({
-        path: issue.path.map(String).join('.'),
-        message: issue.message,
-      })),
-    ),
-  );
+/** What one answer gave: the cards that are valid and why the rest was dropped. */
+export interface CardParse {
+  readonly drafts: readonly CardDraft[];
+  /** Empty when the whole answer was valid; otherwise what was dropped, or why nothing was found. */
+  readonly problems: readonly OutputProblem[];
+  /** No card was found and the answer ends inside JSON it started: ask it to continue (RF-208). */
+  readonly cutOff: boolean;
 }
 
-/** The first JSON value of the answer that is a valid card list, else why there is none. */
+function cardItems(value: unknown): readonly unknown[] | undefined {
+  const list = asCardList(value);
+  if (typeof list !== 'object' || list === null || !('cards' in list)) return undefined;
+  return Array.isArray(list.cards) ? list.cards : undefined;
+}
+
+function strictProblems(value: unknown): readonly OutputProblem[] {
+  const parsed = agentCardsSchema.safeParse(asCardList(value));
+  if (parsed.success) return [];
+  return parsed.error.issues.map((issue) => ({
+    path: issue.path.map(String).join('.'),
+    message: issue.message,
+  }));
+}
+
+function readValue(value: unknown): Pick<CardParse, 'drafts' | 'problems'> {
+  const items = cardItems(value);
+  if (items === undefined) return { drafts: [], problems: strictProblems(value) };
+  const drafts: CardDraft[] = [];
+  const problems: OutputProblem[] = items.length > cardLimits.maxCards ? [tooMany] : [];
+  items.slice(0, cardLimits.maxCards).forEach((item, index) => {
+    const card = readCard(item, index);
+    if (card.draft !== undefined) drafts.push(card.draft);
+    problems.push(...card.problems);
+  });
+  return { drafts, problems };
+}
+
+/** A value that is a card list with nothing wrong in it, even an empty list. */
+function isClean(read: Pick<CardParse, 'drafts' | 'problems'>): boolean {
+  return read.problems.length === 0;
+}
+
+/** The best of the JSON values of an answer: a clean one first, else the one with most cards. */
+function bestRead(values: readonly unknown[]): Pick<CardParse, 'drafts' | 'problems'> | undefined {
+  let best: Pick<CardParse, 'drafts' | 'problems'> | undefined;
+  for (const value of values) {
+    const read = readValue(value);
+    if (isClean(read)) return read;
+    if (best === undefined || read.drafts.length > best.drafts.length) best = read;
+  }
+  return best;
+}
+
+/** No card was found: the answer was cut off, held too much to search, or held no JSON of cards. */
+function nothingFound(search: JsonSearch, found: readonly OutputProblem[]): CardParse {
+  if (search.capped) return { drafts: [], problems: bounded([capped, ...found]), cutOff: false };
+  if (search.truncated) return { drafts: [], problems: [cutOff], cutOff: search.unclosed };
+  return { drafts: [], problems: bounded(found.length > 0 ? found : [noJson]), cutOff: false };
+}
+
+// RF-208
+export function parseCardsLenient(raw: string): CardParse {
+  if (raw.length > cardLimits.maxOutputChars) {
+    return { drafts: [], problems: [tooLong], cutOff: false };
+  }
+  const search = searchJson(raw);
+  const best = bestRead(search.values);
+  if (best !== undefined && (best.drafts.length > 0 || isClean(best))) {
+    return { ...best, problems: bounded(best.problems), cutOff: false };
+  }
+  return nothingFound(search, best?.problems ?? []);
+}
+
+/** Strict reading, for the answers that must be entirely valid: every card and claim, or why not. */
 export function parseCardOutput(
   raw: string,
 ): Result<readonly CardDraft[], readonly OutputProblem[]> {
-  if (raw.length > cardLimits.maxOutputChars) return err([tooLong]);
-  const search = searchJson(raw);
-  let firstProblems: readonly OutputProblem[] | undefined;
-  for (const value of search.values) {
-    const checked = validate(value);
-    if (checked.ok) return checked;
-    firstProblems ??= checked.error;
-  }
-  if (search.capped) return err(bounded([capped, ...(firstProblems ?? [])]));
-  if (search.truncated) return err([cutOff]);
-  return err(firstProblems ?? [noJson]);
-}
-
-export interface ParsedCards {
-  readonly drafts: readonly CardDraft[];
-  readonly repaired: boolean;
-}
-
-/** The task ends `InvalidOutput`; the raw outputs are saved by `writeInvalidOutput`. */
-export interface InvalidCardOutput {
-  readonly state: 'InvalidOutput';
-  readonly code: ErrorCode;
-  readonly problems: readonly OutputProblem[];
-  readonly rawOutputs: readonly string[];
-}
-
-/** Asks the model to correct its answer; `undefined` when no repair can be requested. */
-export type RequestRepair = (problems: readonly OutputProblem[]) => Promise<string | undefined>;
-
-export async function parseCardsWithRepair(
-  raw: string,
-  requestRepair: RequestRepair,
-): Promise<Result<ParsedCards, InvalidCardOutput>> {
-  const first = parseCardOutput(raw);
-  if (first.ok) return ok({ drafts: first.value, repaired: false });
-  const invalid = (problems: readonly OutputProblem[], rawOutputs: readonly string[]) =>
-    err<InvalidCardOutput>({
-      state: 'InvalidOutput',
-      code: ERROR_CODES.cardOutputInvalid,
-      problems,
-      rawOutputs,
-    });
-  const repairedRaw = await requestRepair(first.error);
-  if (repairedRaw === undefined) return invalid(first.error, [raw]);
-  const second = parseCardOutput(repairedRaw);
-  if (second.ok) return ok({ drafts: second.value, repaired: true });
-  return invalid(second.error, [raw, repairedRaw]);
+  const parsed = parseCardsLenient(raw);
+  return parsed.problems.length === 0 ? ok(parsed.drafts) : err(parsed.problems);
 }

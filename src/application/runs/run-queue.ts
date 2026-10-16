@@ -10,7 +10,7 @@ import type { Logger } from '../ports/logger.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunIndex } from '../ports/run-index.js';
 import { KeyedQueue } from '../support/keyed-queue.js';
-import type { RunLifecycle, StartedRun } from './run-lifecycle.js';
+import type { EndDetail, RunLifecycle, StartedRun } from './run-lifecycle.js';
 
 // RF-1108, RF-003, RNF-002, DEC-61, DEC-112: the run queue of this server process (one instance
 // assumed). Queued runs start in queue order while fewer than `maxRunning` run and their user has
@@ -52,6 +52,15 @@ function stoppedOutcome(signal: AbortSignal, outcome: RunOutcome): RunOutcome {
     return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
   }
   return outcome.endState === 'Failed' ? { endState: 'Interrupted' } : outcome;
+}
+
+/** The parts of the outcome `run.ended` carries besides the end state (RF-208). */
+function endDetailOf(outcome: RunOutcome): EndDetail {
+  const { errorCode, failedAreas } = outcome;
+  return {
+    ...(errorCode === undefined ? {} : { errorCode }),
+    ...(failedAreas === undefined ? {} : { failedAreas }),
+  };
 }
 
 function failureOf(error: unknown): RunOutcome {
@@ -194,7 +203,7 @@ export class RunQueue {
   /** Records the end of a run; a failure is logged, because the run row is the record that counts. */
   private async endQuietly(run: Run, outcome: RunOutcome): Promise<void> {
     try {
-      await this.deps.lifecycle.finish(run, outcome.endState, outcome.errorCode);
+      await this.deps.lifecycle.finish(run, outcome.endState, endDetailOf(outcome));
     } catch (error) {
       await this.report(run, 'could not end', error);
     }

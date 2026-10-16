@@ -109,7 +109,7 @@ export class ReadOnlyTools {
       const message = `There is no tool named "${shown}". The tools are: ${readerToolNames.join(', ')}.`;
       return this.failed('unknown_tool', { code: ERROR_CODES.toolUnknown, message }, ids);
     }
-    const request = parseToolArguments(call.name, call.arguments, this.limits.maxReadLines);
+    const request = parseToolArguments(call.name, call.arguments);
     const answer = request.ok
       ? await this.answer(request.value, ids)
       : err({ code: ERROR_CODES.toolArgumentsInvalid, message: request.error });

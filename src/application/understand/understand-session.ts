@@ -5,18 +5,21 @@ import type { ErrorCode } from '../../domain/errors/codes.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
+import type { OutputProblem } from '../cards/output-problem.js';
 import type { AnswersFile, OpenQuestion } from '../ports/answers-file.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
-import { recordTaskState, runReaderTask, type ReaderTaskContext } from './reader-task.js';
+import { areaFailureOf } from './area-failure.js';
+import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
 import { cardsOf, RunCards } from './run-cards.js';
 import { RunCoverage, TaskReads } from './run-coverage.js';
 import { runPool } from './task-pool.js';
+import { runReaderTaskWithRetry } from './task-retry.js';
 
 // RF-200, RF-202, RF-203, RF-230, RF-300, RF-1002, DEC-98, RNF-002: the reader tasks of one understand run
 // and what they leave. Every task that ends adds its cards; the cards of the run so far are then
@@ -45,11 +48,13 @@ interface TaskOutcome {
   readonly turns: number;
   readonly drafts: readonly CardDraft[];
   readonly rawOutputs: readonly string[];
+  /** What was dropped from the answer (RF-208), or why the answer was not usable. */
+  readonly problems: readonly OutputProblem[];
 }
 
 function failedOutcome(error: unknown): TaskOutcome {
   const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
-  return { state: 'Failed', code, turns: 0, drafts: [], rawOutputs: [] };
+  return { state: 'Failed', code, turns: 0, drafts: [], rawOutputs: [], problems: [] };
 }
 
 /** One line for `answers.md`: the first citation and claim of the card. */
@@ -100,11 +105,14 @@ export class UnderstandSession {
     const options = { parallelism: readerParallelism(settings), signal: execution.signal };
     await runPool(tasks, options, async (task) => {
       const reads = new TaskReads();
-      const outcome = await runReaderTask(this.parts, task, reads).catch(async (error: unknown) => {
-        await this.logFailure(task, error);
-        return failedOutcome(error);
-      });
-      this.coverage.record(task, this.parts.scanned.codeMap, reads);
+      const outcome = await runReaderTaskWithRetry(this.parts, task, reads).catch(
+        async (error: unknown) => {
+          await this.logFailure(task, error);
+          return failedOutcome(error);
+        },
+      );
+      const failure = areaFailureOf(outcome);
+      this.coverage.record(task, this.parts.scanned.codeMap, { reads, failure });
       await this.ended(task, outcome).catch(async (error: unknown) => {
         // RNF-002: an output that cannot be written fails the run, never the other tasks.
         await this.logFailure(task, error);
@@ -126,14 +134,21 @@ export class UnderstandSession {
     await deps.answers.addQuestions({ userId: run.userId, projectId: run.projectId }, questions);
   }
 
-  /** RF-1108: stopped runs are `Interrupted`; a run whose every task failed is `Failed`. */
+  /**
+   * RF-1108, RF-208: stopped runs are `Interrupted`; a run whose every task failed is
+   * `Failed`; one with areas that gave no card is `Completed` as before and says how many
+   * (`failedAreas`), so it is never shown as a plain success.
+   */
   outcome(): RunOutcome {
     if (this.parts.execution.signal.aborted) return { endState: 'Interrupted' };
     if (this.outputFailure !== undefined)
       return { endState: 'Failed', errorCode: this.outputFailure };
     const ends = [...this.ends.values()];
-    const failed = ends.length > 0 && ends.every((end) => end.state === 'Failed');
-    if (!failed) return { endState: 'Completed' };
+    const failed = ends.filter((end) => areaFailureOf(end) !== undefined);
+    if (failed.length === 0) return { endState: 'Completed' };
+    if (!ends.every((end) => end.state === 'Failed')) {
+      return { endState: 'Completed', failedAreas: failed.length };
+    }
     const code = ends.find((end) => end.code !== undefined)?.code;
     return code === undefined ? { endState: 'Failed' } : { endState: 'Failed', errorCode: code };
   }
@@ -142,7 +157,9 @@ export class UnderstandSession {
   private async ended(task: ReaderTask, outcome: TaskOutcome): Promise<void> {
     const { deps, execution } = this.parts;
     const { agentTaskId } = task;
-    if (outcome.state === 'InvalidOutput') await this.keepInvalid(task, outcome.rawOutputs);
+    if (outcome.rawOutputs.length > 0) await this.keepInvalid(task, outcome.rawOutputs);
+    if (outcome.state === 'Done' && outcome.problems.length > 0)
+      await this.logDropped(task, outcome);
     const withoutCards = outcome.state === 'Done' && outcome.drafts.length === 0;
     if (withoutCards) await this.logWithoutCards(task);
     this.ends.set(agentTaskId, outcome);
@@ -201,6 +218,18 @@ export class UnderstandSession {
   private async keepInvalid(task: ReaderTask, rawOutputs: readonly string[]): Promise<void> {
     const { deps, execution } = this.parts;
     await deps.cards.writeInvalidOutput(scopeOf(execution.run), task.agentTaskId, rawOutputs);
+  }
+
+  /** RF-208: what was dropped from the answers of a task that still gave cards. */
+  private logDropped(task: ReaderTask, outcome: TaskOutcome): Promise<void> {
+    const listed = outcome.problems.map(({ path, message }) => `${path || '(answer)'}: ${message}`);
+    return this.parts.logger.log({
+      level: 'warn',
+      logger: 'understand',
+      message: `The reader of area "${task.area.name}" gave cards, but some claims or cards were dropped: ${listed.join(' | ')}`,
+      runId: this.parts.execution.run.runKey,
+      agentTaskId: task.agentTaskId,
+    });
   }
 
   private logWithoutCards(task: ReaderTask): Promise<void> {

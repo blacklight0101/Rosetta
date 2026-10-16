@@ -15,6 +15,7 @@ import { AgentsGrid } from './AgentsGrid.js';
 import { ClaimsList } from './ClaimsList.js';
 import { CoverageMap } from './CoverageMap.js';
 import { EventLog } from './EventLog.js';
+import { FailedAreas } from './FailedAreas.js';
 import { RunAnswers } from './RunAnswers.js';
 import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
@@ -130,6 +131,7 @@ function EndedBody(props: BodyProps): JSX.Element {
         )}
       />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
+      <FailedAreas state={shown} projectId={run.projectId} />
       <p class="rst-p137-live-link">
         <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
       </p>
@@ -163,6 +165,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
     <div class="rst-live">
       <RunStatusBar
         {...{ phase, stage, projectId: run.projectId, runKey: run.runId }}
+        failedAreas={state.ended?.failedAreas ?? run.failedAreas}
         {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
         updatesNote={view.note}
         controls={
