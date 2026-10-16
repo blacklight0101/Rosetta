@@ -29,6 +29,12 @@ export interface AnswerEntry {
   readonly answer: string;
 }
 
+/** A question with an answer, for the re-run with answers (RF-241). */
+export interface AnsweredQuestion extends RecordedQuestion {
+  /** The folder name of the run that found it. */
+  readonly runKey: string;
+}
+
 export interface ProjectRef {
   readonly userId: string;
   readonly projectId: string;
@@ -39,6 +45,8 @@ export interface AnswersFile {
   addQuestions(project: ProjectRef, questions: readonly OpenQuestion[]): Promise<void>;
   /** RF-1007: the questions the run with that folder name added, in file order. */
   questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]>;
+  /** RF-241: the questions with an answer, of every run, in file order. */
+  answeredQuestions(project: ProjectRef): Promise<readonly AnsweredQuestion[]>;
   /**
    * RF-1007: writes the answers into the sections of the run's questions and keeps every other
    * line; a card id the run has no question for writes nothing and answers `unknown-question`.

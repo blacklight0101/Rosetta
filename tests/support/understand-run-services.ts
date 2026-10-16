@@ -27,6 +27,7 @@ import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pa
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
 import { SnapshotScanPipeline } from '../../src/infrastructure/scan/scan-pipeline.js';
 import { FileScanResults } from '../../src/infrastructure/scan/scan-results.js';
+import { FailingCardOutputs } from './failing-card-outputs.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { fixtureRoot } from './scan-harness.js';
@@ -95,7 +96,11 @@ export function stores(dataDir: string, refuseRemoval = false): Stores {
   };
 }
 
-function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnderstand {
+function understandExecutor(
+  s: Stores,
+  providers: UnderstandProviders,
+  cardWritesFail: () => boolean,
+): RunUnderstand {
   const { writer, masker, logger, manifests, clock } = s;
   return new RunUnderstand({
     ...{ projects: s.projects, runs: s.runs, users: s.users, manifests, clock, logger },
@@ -107,7 +112,7 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
     }),
     providers: providers.factory,
     runSinks: providers.runSinks,
-    cards: new FileCardOutputs({ writer, masker, logger }),
+    cards: new FailingCardOutputs(new FileCardOutputs({ writer, masker, logger }), cardWritesFail),
     answers: new FileAnswersFile({ writer, masker }),
     ledger: providers.ledger,
     costTotals: new MemoryCostTotals(),
@@ -119,7 +124,11 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
   });
 }
 
-export async function queueOf(s: Stores, providers: UnderstandProviders): Promise<RunQueue> {
+export async function queueOf(
+  s: Stores,
+  providers: UnderstandProviders,
+  cardWritesFail: () => boolean = () => false,
+): Promise<RunQueue> {
   const { runs, manifests, log, clock, logger, projects, writer, masker } = s;
   const pipeline = new SnapshotScanPipeline({
     ...{ writer, masker, logger },
@@ -135,7 +144,7 @@ export async function queueOf(s: Stores, providers: UnderstandProviders): Promis
     ...{ runs, lifecycle, clock, logger },
     executors: {
       scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
-      understand: understandExecutor(s, providers),
+      understand: understandExecutor(s, providers, cardWritesFail),
     },
     maxRunning: 2,
   });

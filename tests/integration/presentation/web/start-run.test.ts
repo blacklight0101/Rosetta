@@ -207,3 +207,26 @@ describe('POST /api/projects/:id/runs and access', () => {
     expect(test.runs.executor.started).toHaveLength(0);
   });
 });
+
+describe('POST /api/projects/:id/runs with the answers option', () => {
+  it('RF-241 records the answers option in the manifest and refuses a non-boolean one', async () => {
+    const { test, amy, project } = await setup();
+    const url = startUrl(project.id);
+
+    const accepted = await amy.request({
+      ...{ method: 'POST', url },
+      payload: { stage: 'understand', withAnswers: true },
+    });
+    const refused = await amy.request({
+      ...{ method: 'POST', url },
+      payload: { stage: 'understand', withAnswers: 'yes' },
+    });
+
+    expect(accepted.statusCode).toBe(202);
+    expect(test.runs.executor.started[0]?.manifest.options).toEqual({
+      cloudConsent: false,
+      withAnswers: true,
+    });
+    expect(refused.statusCode).toBe(400);
+  });
+});

@@ -1,4 +1,5 @@
 import type {
+  AnsweredQuestion,
   AnswerEntry,
   AnswersFile,
   OpenQuestion,
@@ -75,6 +76,11 @@ export class FileAnswersFile implements AnswersFile {
   // RF-1007
   async questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]> {
     return questionsOfRun(await this.read(fileOf(project)), runKey);
+  }
+
+  // RF-241
+  answeredQuestions(): Promise<readonly AnsweredQuestion[]> {
+    return Promise.resolve([]);
   }
 
   // RF-1007

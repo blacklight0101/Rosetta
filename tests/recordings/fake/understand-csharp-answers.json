@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "The re-run with answers of the (root) area of the webforms-csharp fixture: one call answers a changed FEAT card and a new BR card once the owner said that sold-out items stay listed. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FEAT\",\n      \"title\": \"Home page lists the catalog\",\n      \"area\": \"(root)\",\n      \"summary\": \"The home page binds the catalog list to a grid.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The page loads every catalog item into the grid when it opens, zero stock included, as the owner confirmed.\",\n          \"citations\": [\n            \"Default.aspx.cs:8-12\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Items with zero stock stay listed\",\n      \"area\": \"(root)\",\n      \"summary\": \"The owner confirmed that sold-out items remain on the home page.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The page binds the whole list without a stock filter.\",\n          \"citations\": [\n            \"Default.aspx.cs:10-10\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1700,
+              "outputTokens": 300,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

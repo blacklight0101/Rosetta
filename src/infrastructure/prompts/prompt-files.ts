@@ -72,3 +72,8 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
     continue: resume,
   };
 }
+
+/** RF-241: the prompt that carries the owner's answers (stub). */
+export function loadAnswersPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'reader/answers.v1.md');
+}
