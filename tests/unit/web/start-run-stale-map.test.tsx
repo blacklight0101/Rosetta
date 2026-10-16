@@ -21,7 +21,7 @@ it.each([0, null])(
     const buttons = screen.getAllByRole('button').map((button) => button.textContent);
     expect(buttons.indexOf('Scan again')).toBeGreaterThanOrEqual(0);
     expect(buttons.indexOf('Scan again')).toBeLessThan(
-      buttons.findIndex((text) => text?.startsWith('Start run')),
+      buttons.findIndex((text) => text.startsWith('Start run')),
     );
   },
 );
