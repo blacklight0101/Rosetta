@@ -106,7 +106,6 @@ column of the `projects` table, edited on the project's settings page. The sourc
 | `roles` | `reader`, `verifier`, `planner`, `summariser` | object | - | each `{ provider, model, maxOutputTokens, temperature?, maxTurns? }`; `maxTurns` for `reader` only (RF-201, RF-405); `maxOutputTokens` 256 to 32 768, `maxTurns` 1 to 50 |
 | `budget` | `run.maxCostMicros`, `run.maxTokens` | int | template values | hard caps per run (RF-422); cost 0 to 100 000 000 micros (100 USD), tokens 0 to 50 000 000 |
 | `budget` | `roles.<role>.maxCostMicros`, `roles.<role>.maxTokens` | int, optional | none | caps of one role's calls in a run (RF-423); added to the run caps, never replacing them, so role caps may add up to more than the run cap and the run cap still binds. A role at its cap has its calls refused with `RST-1600` while the run's other roles go on; the run then ends `CapReached` when it has finished. Not applied to a provider test (RF-407) |
-| | `roles.<role>.maxCostMicros`, `roles.<role>.maxTokens` | int | none | caps per role (RF-423) |
 | | `confirmAboveCostMicros` | int | template value | estimate threshold that asks to continue (RF-425); 0 up to the run cost cap |
 | | `prices` | list | none | overrides of the shipped price table, same shape as 3.18; applied only to calls with the user's own keys (DEC-107) |
 | | `allowUnpriced` | bool | false | run a non-local model missing from the price table, only with the user's own key (RF-427, DEC-112) |

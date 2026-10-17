@@ -89,3 +89,29 @@ describe('role caps of the provider factory', () => {
     expect(kindsOf(harness.ledger.reservations[0]?.caps ?? [])).toEqual([]);
   });
 });
+
+describe('role caps of zero', () => {
+  it('RF-423 a role cost cap of zero alone is a cap, not an absent one', async () => {
+    const { harness, reader } = await setUp(withRoleCaps({ reader: { maxCostMicros: 0 } }));
+
+    await failureOf(reader.complete(callFor('reader', 'contract-model', 1)));
+
+    const [held] = harness.ledger.reservations;
+    expect(held?.caps.filter((cap) => cap.kind.startsWith('role'))).toEqual([
+      { kind: 'role-cost', limit: 0n },
+    ]);
+    expect(harness.ledger.entries).toEqual([]);
+  });
+
+  it('RF-423 a role token cap of zero alone is a cap, not an absent one', async () => {
+    const { harness, reader } = await setUp(withRoleCaps({ reader: { maxTokens: 0 } }));
+
+    await failureOf(reader.complete(callFor('reader', 'contract-model', 1)));
+
+    const [held] = harness.ledger.reservations;
+    expect(held?.caps.filter((cap) => cap.kind.startsWith('role'))).toEqual([
+      { kind: 'role-tokens', limit: 0n },
+    ]);
+    expect(harness.ledger.entries).toEqual([]);
+  });
+});
