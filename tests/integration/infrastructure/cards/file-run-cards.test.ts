@@ -85,7 +85,12 @@ describe('FileRunCards: refusals', () => {
 
   it('RF-604 an index that names a file outside the cards stops the read with RST-1802', async () => {
     const writer = await written();
-    const index = JSON.stringify({ cards: [{ path: '../../../other/cards/FEAT/FEAT-001.md' }] });
+    const card = await writer.readText({ userId, path: `${runFolder}/cards/FEAT/FEAT-001.md` });
+    await writer.writeText(
+      { userId, path: `${runFolder}/notes/FEAT-001.md` },
+      card.ok ? card.value : '',
+    );
+    const index = JSON.stringify({ cards: [{ path: 'notes/FEAT-001.md' }] });
     await writer.writeText({ userId, path: `${runFolder}/cards/index.json` }, index);
 
     await expect(new FileRunCards(writer).cardsOf(scope)).rejects.toMatchObject({
