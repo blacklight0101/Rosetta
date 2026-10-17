@@ -36,6 +36,19 @@ const refused = [
   'Describe what the Orders area does.',
   'What is this application for?',
   'What is the role of the Catalog area?',
+  'What does the Orders area actually do?',
+  'What is this area responsible for?',
+  'What does OrderService do?',
+  'Explain how the checkout code works.',
+  'Describe what the Orders area does.',
+];
+
+// Fullwidth letters, a Cyrillic look-alike and zero-width characters must not hide a refused question.
+const disguised = [
+  'Ｗｈａｔ does this area do?',
+  'Whаt does this area do?',
+  'What do​es this ar⁠ea do?',
+  'W​hat is the purpose of the application?',
 ];
 
 const kept = [
@@ -47,6 +60,11 @@ const kept = [
   'Which external system receives the invoice export?',
   'Who decided that a refund needs two approvals?',
   'What does the finance team expect when the discount is zero?',
+  'Explain why orders over 5000 need a second approver.',
+  'Describe how many orders per day this service handles.',
+  'Explain the reason for the rounding rule in the invoice total.',
+  'Describe who approves a refund over 200.',
+  'What does the finance team do with the unmatched payments?',
 ];
 
 describe('RF-243 questions asking what the code does', () => {
@@ -64,6 +82,13 @@ describe('RF-243 questions asking what the code does', () => {
       );
     },
   );
+
+  it.each(disguised)('RF-243 refuses a disguised "%s"', (question) => {
+    const result = parsed(openQuestion(question));
+
+    expect(result.drafts).toEqual([]);
+    expect(result.problems[0]?.path).toBe('cards.0.question');
+  });
 
   it.each(kept)('RF-243 keeps "%s"', (question) => {
     const result = parsed(openQuestion(question));
