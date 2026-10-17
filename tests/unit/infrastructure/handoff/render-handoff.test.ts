@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
-import { assemblePlan } from '../../../../src/domain/planning/plan-content.js';
-import type { PlanDraft } from '../../../../src/domain/planning/plan-draft.js';
-import { buildBrief } from '../../../../src/domain/planning/planning-brief.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
+import { handoffOf } from '../../../support/handoff-package-fixture.js';
 import { fakeOpenAiKey } from '../../../support/secret-fixture.js';
-import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 
 // RF-601, RF-602, RF-603, RNF-003, ADR-013: the files of the hand-off package as they are written.
 // Model and repository text shows as text: it adds no HTML, link, heading, table cell or fence,
@@ -17,50 +13,6 @@ const hostile = [
   '# Title',
   '```js',
 ].join('\n');
-
-function draft(text: string): PlanDraft {
-  return {
-    summary: text,
-    requirements: [{ title: text, statement: text, sources: ['FEAT-001'] }],
-    components: [
-      { name: text, responsibility: text, dependsOn: ['Store'] },
-      { name: 'Store', responsibility: 'Keeps data.', dependsOn: [] },
-    ],
-    decisions: [{ title: text, context: text, decision: text, consequences: text, sources: [] }],
-    entities: [{ legacy: text, target: text, notes: text, sources: ['FEAT-001'] }],
-    phases: [{ name: text, goal: text, exitCriteria: [text] }],
-    tasks: [{ title: text, phase: 1, requirements: [1], acceptanceCriteria: [text] }],
-    risks: [{ text, sources: ['FEAT-001'] }],
-  };
-}
-
-function handoffOf(text: string): HandoffPackage {
-  const brief = { ...buildBrief({}, shippedCatalogue), savedAt: '2026-10-12T09:30:00.000Z' };
-  return {
-    repository: { url: 'https://github.com/octo/demo', commitSha: 'c'.repeat(40) },
-    sourceRun: '20261012-090000-understand',
-    brief,
-    style: { id: 'layered', title: 'Layered', rule: 'Layers call down.' },
-    principles: [{ id: 'kiss', title: text, rule: text }],
-    content: assemblePlan(draft(text), new Set(['FEAT-001'])).content,
-    sources: [
-      {
-        ...{ id: 'FEAT-001', type: 'FEAT', title: text, summary: text, area: text },
-        claims: [
-          {
-            claimId: 'FEAT-001.c1',
-            text,
-            citations: [{ path: 'src/a`b.cs', startLine: 1, endLine: 2 }],
-            status: 'Supported',
-          },
-        ],
-      },
-    ],
-    excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
-    briefQuestions: [{ id: 'migration', question: text, answer: text }],
-    openQuestions: [{ cardId: 'OQ-001', question: text }],
-  };
-}
 
 const masker = new SecretMasker();
 

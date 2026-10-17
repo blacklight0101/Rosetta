@@ -97,4 +97,22 @@ describe('FileRunCards: refusals', () => {
       code: ERROR_CODES.planSourceMissing,
     });
   });
+
+  it.each([
+    ['a link', 'x](javascript:alert(1))'],
+    ['a heading', 'FEAT-1' + String.fromCharCode(10) + '# Heading'],
+  ])('RF-603 a card id carrying %s stops the read with RST-1802', async (_what, id) => {
+    const writer = await written();
+    const path = `${runFolder}/cards/FEAT/FEAT-001.md`;
+    const read = await writer.readText({ userId, path });
+    const text = read.ok ? read.value : '';
+    await writer.writeText(
+      { userId, path },
+      text.replace('id: "FEAT-001"', `id: ${JSON.stringify(id)}`),
+    );
+
+    await expect(new FileRunCards(writer).cardsOf(scope)).rejects.toMatchObject({
+      code: ERROR_CODES.planSourceMissing,
+    });
+  });
 });

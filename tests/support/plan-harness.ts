@@ -24,9 +24,11 @@ import { FileHandoffWriter } from '../../src/infrastructure/handoff/file-handoff
 import { loadPlannerPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { sampleAccount } from './account-fixtures.js';
+import { contractPrice } from './budget-harness.js';
 import { cardSource } from './card-fixtures.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
 import { sampleProject } from './project-fixtures.js';
+import { serverKeyText } from './provider-factory-harness.js';
 import { sampleManifest, sampleRun } from './run-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { understandSettings } from './understand-run-harness.js';
@@ -50,11 +52,22 @@ export interface PlanHarness {
   understandRun(seed: UnderstandSeed): Promise<Run>;
   answer(run: Run, answers: readonly AnswerEntry[]): Promise<void>;
   saveBrief(answers: BriefAnswers): Promise<void>;
-  /** Starts a plan run as the queue does and waits for its end. */
-  plan(): Promise<Run>;
+  /** Starts a plan run with these options as the queue does and waits for its end. */
+  plan(options?: Readonly<Record<string, unknown>>): Promise<Run>;
+  /** Stops every running run, as the owner's stop does. */
+  stopRunning(): Promise<void>;
+  /** The folder of the run under the data folder. */
+  runFolder(run: Run): string;
   manifestOf(run: Run): Promise<RunManifest>;
   /** Every file under the run's `handoff/`, by its path inside it. */
   handoffOf(run: Run): Promise<Readonly<Record<string, string>>>;
+}
+
+export interface PlanHarnessOptions {
+  /** RF-143: the planner on OpenAI with the server's key, a provider that needs consent. */
+  readonly cloudPlanner?: boolean;
+  /** Runs before the planner call reaches the fake. */
+  readonly beforeCall?: (harness: PlanHarness) => Promise<void>;
 }
 
 interface UnderstandSeed {
@@ -164,14 +177,14 @@ async function seedRun(s: Stores, project: Project, seed: UnderstandSeed): Promi
 }
 
 /** The user and the project of the plan runs; the planner is the fake model. */
-async function projectOf(s: Stores): Promise<Project> {
+async function projectOf(s: Stores, cloud: boolean): Promise<Project> {
   await s.users.insert(account);
+  const planner = cloud
+    ? { provider: 'openai', model: contractPrice.model }
+    : { provider: 'fake', model: 'fake-model' };
   const settings = understandSettings((base) => ({
     ...base,
-    roles: {
-      ...base.roles,
-      planner: { ...base.roles.planner, provider: 'fake', model: 'fake-model' },
-    },
+    roles: { ...base.roles, planner: { ...base.roles.planner, ...planner } },
   }));
   const project = sampleProject({
     userId: account.id,
@@ -182,26 +195,27 @@ async function projectOf(s: Stores): Promise<Project> {
   return project;
 }
 
-// RF-604
-export async function createPlanHarness(
-  dataDir: string,
-  recording: Recording,
-): Promise<PlanHarness> {
-  const s = stores(dataDir);
-  const project = await projectOf(s);
-  const { writer, masker, logger, clock } = s;
-  const providers = understandProviders({ dataDir, writer, masker, clock, logger, recording });
-  const queue = queueOf(s, providers);
+interface HarnessParts {
+  readonly s: Stores;
+  readonly dataDir: string;
+  readonly project: Project;
+  readonly providers: UnderstandProviders;
+  readonly queue: RunQueue;
+}
+
+function harnessOf(parts: HarnessParts): PlanHarness {
+  const { s, dataDir, project, providers, queue } = parts;
+  const { writer, masker } = s;
   const submit = new SubmitRun({
-    ...{ runs: s.runs, manifests: s.manifests, queue, clock },
+    ...{ runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
     ids: new SequenceIdGenerator(),
     rosettaVersion: '1.2.3-test',
   });
   const ref = { userId: account.id, projectId: project.id };
+  const folderOf = (run: Run): string =>
+    join(dataDir, 'users', account.id, runPath(run.projectId, run.runKey));
   return {
-    s,
-    project,
-    providers,
+    ...{ s, project, providers },
     understandRun: (seed) => seedRun(s, project, seed),
     async answer(run, answers) {
       await new FileAnswersFile({ writer, masker }).recordAnswers(ref, run.runKey, answers);
@@ -213,8 +227,8 @@ export async function createPlanHarness(
       };
       await new FilePlanningBriefStore({ writer, masker }).write(ref, brief);
     },
-    async plan() {
-      const submitted = await submit.execute({ actor, project, stage: 'plan', options: {} });
+    async plan(options = {}) {
+      const submitted = await submit.execute({ actor, project, stage: 'plan', options });
       if (!submitted.ok) throw new Error(`The plan run was refused: ${submitted.error}`);
       return ended(s, submitted.value.run);
     },
@@ -223,7 +237,32 @@ export async function createPlanHarness(
       if (manifest === undefined) throw new Error('The run has no manifest');
       return manifest;
     },
-    handoffOf: (run) =>
-      filesUnder(join(dataDir, 'users', account.id, runPath(run.projectId, run.runKey), 'handoff')),
+    async stopRunning() {
+      for (const run of await s.runs.listRunning()) await queue.stop(run.userId, run.id);
+    },
+    runFolder: folderOf,
+    handoffOf: (run) => filesUnder(join(folderOf(run), 'handoff')),
   };
+}
+
+// RF-604
+export async function createPlanHarness(
+  dataDir: string,
+  recording: Recording,
+  options: PlanHarnessOptions = {},
+): Promise<PlanHarness> {
+  const s = stores(dataDir);
+  const cloud = options.cloudPlanner === true;
+  const project = await projectOf(s, cloud);
+  const { writer, masker, logger, clock } = s;
+  const made: { harness?: PlanHarness } = {};
+  const providers = understandProviders({
+    ...{ dataDir, writer, masker, clock, logger, recording },
+    ...(cloud ? { serverOpenAiKey: serverKeyText } : {}),
+    beforeCall: async () => {
+      if (made.harness !== undefined) await options.beforeCall?.(made.harness);
+    },
+  });
+  made.harness = harnessOf({ s, dataDir, project, providers, queue: queueOf(s, providers) });
+  return made.harness;
 }

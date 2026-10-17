@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { cardLimits } from '../../../../src/application/cards/card-limits.js';
 import { parsePlanAnswer } from '../../../../src/application/plan/plan-answer.js';
 
 // RF-601, ADR-013: the planner's answer is untrusted text read as one bounded JSON object.
@@ -48,5 +49,15 @@ describe('parsePlanAnswer', () => {
     const long = { ...requirement, statement: 'x'.repeat(2001) };
 
     expect(parsePlanAnswer(JSON.stringify({ requirements: [long] }))).toBeUndefined();
+  });
+});
+
+describe('parsePlanAnswer: the output cap', () => {
+  it('RF-601 reads no JSON past the output cap', () => {
+    const padding = ' '.repeat(cardLimits.maxOutputChars);
+
+    expect(parsePlanAnswer(`${padding}${JSON.stringify({ requirements: [requirement] })}`)).toBe(
+      undefined,
+    );
   });
 });
