@@ -124,6 +124,8 @@ test('RF-1004 RF-301 the claims list shows the recorded verdicts Supported and R
   await expect(claims.getByTestId('claim')).toHaveCount(7);
   const counts = { 'Citation invalid': 2, Supported: 4, Rejected: 1 };
   for (const [text, count] of Object.entries(counts)) await expect(claim(text)).toHaveCount(count);
+  // RF-1014: the judgement step is built and has ended, so nothing waits and nothing says "later".
+  await expect(claims).not.toContainText(/later version|Waiting for judgement|not judged/u);
   await expect(claim('BR-001.c1')).toContainText('Supported');
   const reason = (id: string) => claim(id).getByTestId('claim-reason');
   await expect(reason('BR-001.c1')).toHaveText(

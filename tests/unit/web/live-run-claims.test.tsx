@@ -15,6 +15,10 @@ import { openTabWhenReady } from './live-run-running-helpers.js';
 // RF-1002..RF-1006, RF-1108, RF-008, RF-507, DEC-103 (P1-35): the claims, downloads and refusal of the live run page. Whatever the page shows comes from
 // the events the test pushes into the fake stream.
 
+const WAITING_NOTE = "Claims that passed the citation check wait for the verifier's judgement.";
+const NOT_JUDGED_NOTE =
+  'Citations checked means the cited lines exist; those claims were not judged.';
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -37,10 +41,11 @@ it('RF-1014 lists the claims with their status, reason and a link to the cited l
   });
   const [first = claims, second] = within(claims).getAllByTestId('claim');
   expect(first.textContent).toContain('BR-001.c1');
-  expect(first.textContent).toContain('Citations checked');
-  expect(claims.textContent).toContain('Judgement comes in a later version');
+  expect(first.textContent).toContain('Waiting for judgement');
+  expect(claims.textContent).toContain(WAITING_NOTE);
+  expect(claims.textContent).not.toContain('later version');
   expect(screen.getByTestId('journey').textContent).toContain('2 of 2 citations checked');
-  expect(screen.getByTestId('journey').textContent).toContain('Judgement comes in a later version');
+  expect(screen.getByTestId('journey').textContent).not.toContain('later version');
   const link = within(first).getByRole('link', {
     name: 'Catalog/Edit.aspx.cs:40-80',
   });
@@ -52,7 +57,38 @@ it('RF-1014 lists the claims with their status, reason and a link to the cited l
   const agents = await openTabWhenReady('All agents');
   const overview = within(agents).getByRole('region', { name: 'Overview' });
   expect(overview.textContent).toContain('1 citations checked');
-  expect(overview.textContent).toContain('Judgement comes in a later version');
+  expect(overview.textContent).toContain(WAITING_NOTE);
+  expect(overview.textContent).not.toContain('later version');
+});
+
+it('RF-1014 RF-301 shows the verdict once the judgement step ends, and a claim left unjudged as not judged', async () => {
+  const { stream } = renderLive();
+  const connection = await stream.connection();
+  connection.event(ev(1, 'run.started', startedData));
+  connection.event(cardProposed(2, 'reader-001', 'BR-001', 2));
+  connection.event(citationChecked(3, 'reader-001', 'BR-001.c1', true));
+  connection.event(citationChecked(4, 'reader-001', 'BR-001.c2', true));
+  connection.event(ev(5, 'verify.judgement.started', { claims: 2 }));
+  const claims = await screen.findByRole('region', { name: 'Claims' });
+  await waitFor(() => {
+    expect(within(claims).getAllByTestId('claim')).toHaveLength(2);
+  });
+
+  const reason = 'Line 7 sets the label.';
+  const verdict = { claimId: 'BR-001.c1', status: 'Supported', reason };
+  connection.event(ev(6, 'verify.claim.judged', verdict));
+  connection.event(runEnded(7, 'Interrupted'));
+
+  const [first = claims, second = claims] = within(claims).getAllByTestId('claim');
+  await waitFor(() => {
+    expect(first.textContent).toContain('Supported');
+  });
+  expect(first.textContent).toContain(reason);
+  expect(second.textContent).toContain('Citations checked');
+  expect(second.textContent).not.toContain('Waiting');
+  expect(claims.textContent).toContain(NOT_JUDGED_NOTE);
+  expect(claims.textContent).not.toContain(WAITING_NOTE);
+  expect(claims.textContent).not.toContain('later version');
 });
 
 it('RF-1004 a claim changes its status and reason when the verdict arrives', async () => {
@@ -63,7 +99,7 @@ it('RF-1004 a claim changes its status and reason when the verdict arrives', asy
   connection.event(citationChecked(3, 'reader-001', 'BR-001.c1', true));
   const claim = await screen.findByTestId('claim');
   await waitFor(() => {
-    expect(claim.textContent).toContain('Citations checked');
+    expect(claim.textContent).toContain('Waiting for judgement');
   });
 
   connection.event(
@@ -79,6 +115,7 @@ it('RF-1004 a claim changes its status and reason when the verdict arrives', asy
   });
   expect(claim.textContent).toContain('the lines do not set the price');
   expect(claim.textContent).not.toContain('Citations checked');
+  expect(claim.textContent).not.toContain('Waiting for judgement');
 });
 
 it('RF-507 shows the text of a claim and of a card as text, never as markup', async () => {

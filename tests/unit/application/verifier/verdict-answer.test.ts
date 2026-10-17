@@ -58,6 +58,7 @@ describe('verdict answer: invalid answers', () => {
     ['an empty reason', 'Reason:\nVerdict: Supported'],
     ['a reason with a control character', `Reason: The label${bell} is set.\nVerdict: Supported`],
     ['JSON', '{"reason": "The label is set.", "verdict": "Supported"}'],
+    ['a long s that folds to s', 'Reason: The label is set.\nVerdict: ſupported'],
   ])('RF-301 %s is not a verdict', (_name, text) => {
     const parsed = parseVerdictAnswer(answer(text));
 

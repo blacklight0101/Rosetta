@@ -75,6 +75,22 @@ describe('an understand run: judgement', () => {
   });
 });
 
+describe('an understand run: the judgement step events', () => {
+  it('RF-1014 marks the start and the end of the judgement step around its verdicts', async () => {
+    const { h, run } = full.current();
+
+    const events = await h.eventsOf(run);
+    const types = events.map((event) => event.type);
+    const start = types.indexOf('verify.judgement.started');
+    const end = types.indexOf('verify.judgement.ended');
+    expect(events[start]?.data).toEqual({ claims: 5 });
+    expect(events[end]?.data).toEqual({ supported: 4, rejected: 1, unverified: 0, notJudged: 0 });
+    expect(start).toBeGreaterThan(types.lastIndexOf('verify.citation.checked'));
+    expect(start).toBeLessThan(types.indexOf('verify.claim.judged'));
+    expect(end).toBeGreaterThan(types.lastIndexOf('verify.claim.judged'));
+  });
+});
+
 describe('an understand run: judgement and egress', () => {
   it('RF-301 ADR-006 each verifier call leaves through the egress guard with only its cited lines', async () => {
     const { h, folder } = full.current();

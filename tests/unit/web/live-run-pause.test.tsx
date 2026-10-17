@@ -177,7 +177,7 @@ it('RF-1002 the journey is held with the panels, so it never disagrees with them
   fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
   await waitFor(() => {
     expect(pipeline.textContent).toContain('0 of 2 citations checked');
-    expect(pipeline.textContent).toContain('Judgement comes in a later version');
+    expect(pipeline.textContent).not.toContain('later version');
   });
 });
 

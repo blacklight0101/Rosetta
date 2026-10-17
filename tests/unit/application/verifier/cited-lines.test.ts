@@ -72,6 +72,29 @@ describe('cited lines: limits and refusals', () => {
       error: 'The cited lines are too long to judge in one call (55 characters, at most 20).',
     });
   });
+});
+
+describe('cited lines: ranges', () => {
+  it.each([
+    ['reversed', 9, 5],
+    ['negative', -3, 2],
+    ['zero-start', 0, 2],
+    ['not whole', 2.5, 4],
+  ])(
+    'ADR-013 a %s range is refused before the margin is added, and nothing is read',
+    async (_name, startLine, endLine) => {
+      const reader = new MemoryRepositoryReader({ 'src/A.cs': file });
+      const citation = { path: 'src/A.cs', startLine, endLine };
+
+      const read = await readCitedLines(reader, [citation], limits);
+
+      expect(read).toEqual({
+        ok: false,
+        error: `The cited range src/A.cs:${String(startLine)}-${String(endLine)} is not a range of lines.`,
+      });
+      expect(reader.reads).toEqual([]);
+    },
+  );
 
   it('RF-301 a file the reader refuses gives the refusal, never other content', async () => {
     const reader = new MemoryRepositoryReader({ 'src/A.cs': file });
