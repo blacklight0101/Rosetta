@@ -13,8 +13,8 @@ import { scopeOf } from '../runs/run-scope.js';
 
 // RF-604, DEC-80: what a plan run is written from: the project, its saved planning brief, the
 // newest understand run of the project that ended `Completed`, that run's cards and the open
-// questions it found with their answers. A project without a saved brief (RST-1800), without such
-// a run, or whose run has no supported claim (RST-1801) stops the run before any model call.
+// questions it found with their answers. A project without a saved brief (RST-1801), without such
+// a run, or whose run has no supported claim (RST-1802) stops the run before any model call.
 
 export interface PlanInputDependencies {
   readonly projects: ProjectRepository;

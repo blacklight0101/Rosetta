@@ -14,7 +14,7 @@ import { runPath } from '../files/workspace-paths.js';
 // card files `cards/index.json` lists, whose YAML header is the data (the claims with their status
 // after the judgement step and consolidation). The files were written by Rosetta, but a person can
 // edit them, so the paths, the header and every citation are checked; a card that does not read
-// rejects the whole read (RST-1801), so a plan never silently leaves claims out.
+// rejects the whole read (RST-1802), so a plan never silently leaves claims out.
 
 const indexSchema = z.object({ cards: z.array(z.object({ path: z.string() })) });
 const headerSchema = z.object({

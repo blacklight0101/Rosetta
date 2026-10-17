@@ -28,7 +28,7 @@ import {
 // into the `handoff/` folder of its run folder, through the workspace guard. Every file is plain
 // Markdown (Mermaid inside fences); every piece of text is masked and escaped as it is written,
 // and the finished file is masked once more as a last guard. The same package gives the same
-// bytes. Each file is written whole or not at all; a refusal or a disk failure is RST-1803.
+// bytes. Each file is written whole or not at all; a refusal or a disk failure is RST-1804.
 
 export interface FileHandoffWriterOptions {
   readonly writer: OutputWriter;
