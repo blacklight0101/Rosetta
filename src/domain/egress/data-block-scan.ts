@@ -1,6 +1,7 @@
 import { createCitation, type Citation } from '../cards/citation.js';
 import { err, ok, type Result } from '../errors/result.js';
 import {
+  type DataBlockSource,
   DATA_BLOCK_CLOSE,
   DATA_BLOCK_OPEN,
   DATA_BLOCK_SOURCES,
@@ -38,6 +39,8 @@ interface DataBlockPart {
   /** A header or footer line. */
   readonly frame: boolean;
   readonly text: string;
+  /** The source of the block the text stands in; undefined for a frame or text outside blocks. */
+  readonly source?: DataBlockSource;
   /** The excerpts of the block the text stands in; empty for a frame or text outside blocks. */
   readonly excerpts: readonly Citation[];
 }
@@ -78,6 +81,7 @@ function citationsOf(value: unknown): Citation[] | undefined {
 
 interface Header {
   readonly tag: string;
+  readonly source: DataBlockSource;
   readonly excerpts: Citation[];
 }
 
@@ -100,7 +104,7 @@ function headerOf(line: string): Header | undefined {
   const source = DATA_BLOCK_SOURCES.find((each) => each === header['source']);
   if (source === undefined || header['label'] !== dataBlockLabel(source)) return undefined;
   const excerpts = citationsOf(header['excerpts']);
-  return excerpts === undefined ? undefined : { tag, excerpts };
+  return excerpts === undefined ? undefined : { tag, source, excerpts };
 }
 
 /** The scan so far: the lines between frames wait in `pending` until a frame or the end. */
@@ -116,6 +120,14 @@ interface ScanState {
   current: readonly Citation[];
   /** The tag of the block the scan is inside. */
   tag: string;
+  /** The source of the block the scan is inside. */
+  source: DataBlockSource | undefined;
+}
+
+/** The part of text between frames: inside a block it carries the block's source and excerpts. */
+function partOf(state: ScanState, text: string): DataBlockPart {
+  if (!state.inside || state.source === undefined) return { frame: false, text, excerpts: [] };
+  return { frame: false, text, source: state.source, excerpts: state.current };
 }
 
 /** Closes the pending lines as one part; refuses a marker, or the block's own tag, in them. */
@@ -125,7 +137,7 @@ function flush(state: ScanState): boolean {
   if (holdsDataMarker(text)) return false;
   if (state.inside && holdsTag(text, state.tag)) return false;
   if (!state.inside && text.trim() !== '') state.textOutside = true;
-  state.parts.push({ frame: false, text, excerpts: state.inside ? state.current : [] });
+  state.parts.push(partOf(state, text));
   state.pending = [];
   return true;
 }
@@ -143,6 +155,7 @@ function takeLine(state: ScanState, line: string): boolean {
   if (header !== undefined) {
     state.current = header.excerpts;
     state.tag = header.tag;
+    state.source = header.source;
     state.tags.push(header.tag);
     state.excerpts.push(...header.excerpts);
     state.blocks += 1;
@@ -163,6 +176,7 @@ export function scanDataBlocks(content: string): Result<DataBlockScan, DataBlock
     pending: [],
     current: [],
     tag: '',
+    source: undefined,
   };
   for (const line of content.split('\n')) {
     if (!takeLine(state, line)) return err('malformed-block');

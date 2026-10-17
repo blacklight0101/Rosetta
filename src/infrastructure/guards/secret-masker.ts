@@ -33,7 +33,16 @@ const notMasked = String.raw`(?!\[MASKED:)`;
 // excludes (whitespace, a quote, `/`, `;`, `<`), so a value has no length limit and is still read
 // once, and it ends where the next anchor could start.
 const passwordName = '(?:password|passwd|pwd)';
-const passwordKey = String.raw`${passwordName}["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}`;
+// A blank, or a shell line continuation (a backslash, `^` or a backtick at the end of the line, then
+// any line terminator: LF, CRLF, a lone CR, U+2028 or U+2029), so a value on the next line is still
+// the value. The alternatives start with different characters, so a run of them can be read one
+// way only.
+const lineEnd = String.raw`(?:\r\n|[\n\r\u2028\u2029])`;
+const tokenBlank = String.raw`(?:[ \t]|[\\^\x60][ \t]*${lineEnd})`;
+// A continuation mark that ends the line, which no value starts with (so a run of blanks that gives
+// back its last blank cannot make the mark a value, and masking stays idempotent).
+const notContinuation = String.raw`(?![\\^\x60][ \t]*(?:${lineEnd}|$))`;
+const passwordKey = String.raw`${passwordName}["']?[ \t]{0,16}(?::=|[:=])${tokenBlank}{0,16}${notContinuation}`;
 // Not preceded by a letter or digit: an underscore before the key is allowed (`prod_sk-...`).
 const keyStart = '(?<![A-Za-z0-9])';
 
@@ -58,13 +67,6 @@ const mysqlArguments = String.raw`(?:${mysqlOption('first')}){0,16}(?:${mysqlWor
 const optionValue = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s\-"'<>|&;][^\s"'<>|&;]*)`;
 const schemeNames =
   'bearer|basic|token|digest|negotiate|ntlm|kerberos|oauth|hawk|mutual|dpop|apikey|jwt|aws4-hmac-sha256';
-// A blank, or a shell line continuation (a backslash, `^` or a backtick at the end of the line, then
-// the line break), so a value on the next line is still the value. The alternatives start with
-// different characters, so a run of them can be read one way only.
-const tokenBlank = String.raw`(?:[ \t]|[\\^\x60][ \t]*\r?\n)`;
-// A continuation mark that ends the line, which no value starts with (so a run of blanks that gives
-// back its last blank cannot make the mark a value, and masking stays idempotent).
-const notContinuation = String.raw`(?![\\^\x60][ \t]*(?:\r?\n|$))`;
 // What a value may start with: a character that is not a flag or an operator, or a dash and at least
 // six more characters (`-<value>`; a short `-v` is a flag). A lone continuation mark that ends the
 // line is not a value.
@@ -201,7 +203,7 @@ const defaultRules: readonly MaskRule[] = [
     // `--password <value>` on a command line; `--password=<value>` is masked by the rule above.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>${optionStart}${passwordName}[ \t]{1,16})${notMasked}${optionValue}`,
+      String.raw`(?<keep>${optionStart}${passwordName}${tokenBlank}{1,16}${notContinuation})${notMasked}${optionValue}`,
       'gi',
     ),
   },

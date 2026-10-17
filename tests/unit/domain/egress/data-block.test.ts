@@ -107,7 +107,7 @@ describe('scanDataBlocks reads blocks', () => {
     expect(scan.value.parts).toEqual([
       { frame: false, text: 'Intro', excerpts: [] },
       { frame: true, text: rendered.split('\n')[0], excerpts: [] },
-      { frame: false, text: block.text, excerpts: block.excerpts },
+      { frame: false, text: block.text, source: 'read_file', excerpts: block.excerpts },
       { frame: true, text: DATA_BLOCK_FOOTER, excerpts: [] },
     ]);
     expect(scan.value.parts.map((part) => part.text).join('\n')).toBe(`Intro\n${rendered}`);
