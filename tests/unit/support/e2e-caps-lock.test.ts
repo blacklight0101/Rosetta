@@ -163,24 +163,34 @@ describe('e2e caps lock, the re-check under the gate', () => {
 });
 
 describe('e2e caps lock, one folder per run', () => {
+  let root: string;
+
+  beforeEach(async () => {
+    // A root of this test process alone: a stale folder that a killed run left in the shared temp
+    // folder is never looked at, so it cannot make this run wait for its stale timeout.
+    root = await mkdtemp(join(tmpdir(), 'rosetta-caps-run-'));
+  });
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  });
+
   it('RNF-005 a run key gives each run its own folder, so a killed run cannot hold the next one', async () => {
     const before = process.env['ROSETTA_E2E_RUN_KEY'];
     process.env['ROSETTA_E2E_RUN_KEY'] = 'killed-run';
-    const killed = capsLockFolder();
+    const killed = capsLockFolder(root);
     try {
       // The killed run took the lock and never released it.
       await acquireCapsLock(killed);
       process.env['ROSETTA_E2E_RUN_KEY'] = 'next-run';
 
-      expect(capsLockFolder()).not.toBe(killed);
-      const lock = await acquireCapsLock(capsLockFolder());
+      expect(capsLockFolder(root)).not.toBe(killed);
+      const lock = await acquireCapsLock(capsLockFolder(root));
 
       expect(lock.waitedMs).toBeLessThan(200);
       await lock.release();
     } finally {
       if (before === undefined) delete process.env['ROSETTA_E2E_RUN_KEY'];
       else process.env['ROSETTA_E2E_RUN_KEY'] = before;
-      await rm(killed, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });

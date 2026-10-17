@@ -357,6 +357,8 @@ how the task ended (an `AgentTaskState` after `Running`), `cards` its cards with
 and verdict (the same data as the card files' headers), `coverage` its entry of `coverage.json`. Tasks keep the area order.
 A `FLOW` card keeps its `flow` and the `target` and numbered `branches` of its steps, a `SCRN` card its `screen`, and the
 coverage its `surface`, so a resumed run keeps them whole (RF-260, RF-261, P2-19).
+A card keeps its `mergedFrom`, `mergedAreas` and `note`, and the coverage its `failure` and `note`, so a resumed run reports the
+same coverage failures and merged areas as an uninterrupted one (RF-206, RF-208, RF-250, P2-28).
 The file is masked like every file Rosetta writes. A resume keeps a task when the manifest lists it `Done`, `TurnLimitReached`
 or `InvalidOutput` and this file holds its result for the same area; any other task, and a finished task without a result,
 runs again. New cards are numbered after the kept ones, so an id once given never moves. A file that is not a version 1
