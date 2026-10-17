@@ -24,7 +24,7 @@ export const ORPHAN_FOLDER_MIN_AGE_MS = 3_600_000;
  * Up to this many orphan folders of one kind are always swept; above it, the sweep refuses when
  * they are more than half of the folders looked at (a new, restored or wrong database).
  */
-export const MAX_ORPHANS_ALWAYS_SWEPT = 2;
+const MAX_ORPHANS_ALWAYS_SWEPT = 2;
 
 export interface FolderSweepDeps {
   readonly projects: ProjectRepository;
