@@ -25,7 +25,10 @@ import { MemoryProviderKeyRepository } from '../../infrastructure/db/memory-prov
 import { MemoryServerSettings } from '../../infrastructure/db/memory-server-settings.js';
 import { FileCalibrationOutput } from '../../infrastructure/eval/calibration-files.js';
 import type { LoadedCalibrationSet } from '../../infrastructure/eval/calibration-set-file.js';
-import { openCalibrationSource } from '../../infrastructure/eval/calibration-source.js';
+import {
+  openCalibrationSource,
+  skipLookupOf,
+} from '../../infrastructure/eval/calibration-source.js';
 import type { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
 import type { ServerKeys } from '../../infrastructure/providers/provider-access.js';
@@ -80,6 +83,7 @@ interface Guarded {
 /** What every model of the calibration shares. */
 interface Shared {
   readonly reader: CalibrationModel['judge']['reader'];
+  readonly skipReason: CalibrationModel['judge']['skipReason'];
   readonly prompts: VerifierPrompts;
 }
 
@@ -151,6 +155,7 @@ async function modelOf(
     ...role,
     judge: {
       ...{ role: chosen, prompts: shared.prompts, reader: shared.reader, ids: parts.ids },
+      skipReason: shared.skipReason,
       limits: { ...defaultEvidenceLimits, maxLines: settings.scan.excerptMaxLines },
       call: { runId: 'calibration', traceId, nextCallId, signal: new AbortController().signal },
     },
@@ -169,11 +174,17 @@ export async function runCalibration(
     parts.logger,
   );
   if (!source.ok) return err({ code: ERROR_CODES.configurationInvalid, message: source.error });
+  const cited = loaded.set.claims.flatMap((claim) => claim.citations.map((each) => each.path));
+  const skipReason = await skipLookupOf(source.value, cited, parts.settings.scan.maxFileBytes);
   const prompts = await loadVerifierPrompts(parts.promptsFolder);
   const guarded = await guardedOf(parts);
   const models: CalibrationModel[] = [];
   for (const role of roles) {
-    const model = await modelOf(parts, guarded, role, { reader: source.value, prompts });
+    const model = await modelOf(parts, guarded, role, {
+      reader: source.value,
+      skipReason,
+      prompts,
+    });
     if (!model.ok) return model;
     models.push(model.value);
   }

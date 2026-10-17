@@ -78,10 +78,10 @@ async function unreadable(
   model: CalibrationModel,
   claims: readonly CalibrationClaim[],
 ): Promise<string[]> {
-  const { reader, limits } = model.judge;
+  const { reader, limits, skipReason } = model.judge;
   const problems: string[] = [];
   for (const claim of claims) {
-    const read = await readCitedLines(reader, claim.citations, limits);
+    const read = await readCitedLines(reader, claim.citations, limits, skipReason);
     if (!read.ok) problems.push(`${claim.id}: ${read.error}`);
   }
   return problems;
