@@ -5,6 +5,7 @@
 
 import type { SecretKind } from '../../src/infrastructure/guards/secret-masker.js';
 import { fakeValue } from './fake-value.js';
+import { boundarySecretCases } from './secret-boundary-shapes.js';
 
 interface ShapeCase {
   readonly name: string;
@@ -25,13 +26,14 @@ const token = `Tk${fakeValue(20)}`;
 const shortToken = `Tk${fakeValue(8)}`;
 const apiKeyValue = `${fakeValue(5)}:${fakeValue(5)}-${fakeValue(3)}!${fakeValue(9)}`;
 const apiKeyName = ['api', 'key'].join('_');
+const apiKeyPlaceholderVar = '${API_KEY}';
 
 /** The line continuation of a shell with blanks after its mark, then the next line, indented. */
 const continuedAfterBlanks = (mark: string, lineBreak: string): string =>
   `${mark} \t${lineBreak}    `;
 
 /** One case per item of P2-40, in the order of the card. */
-export const precisionSecretCases: readonly ShapeCase[] = [
+const precisionCases: readonly ShapeCase[] = [
   {
     name: 'a Bearer header value that holds a comma',
     kind: 'bearer-token',
@@ -139,6 +141,12 @@ export const precisionSecretCases: readonly ShapeCase[] = [
   },
 ];
 
+/** Every case of P2-40, with the boundary cases. */
+export const precisionSecretCases: readonly ShapeCase[] = [
+  ...precisionCases,
+  ...boundarySecretCases,
+];
+
 /** Text close to the new shapes that is not a secret: placeholders and prose. */
 export const precisionInnocentTexts: readonly string[] = [
   `${header} <token>`,
@@ -158,7 +166,17 @@ export const precisionInnocentTexts: readonly string[] = [
   `${apiKeyName}=YOUR_API_KEY`,
   `${apiKeyName}=<your-api-key-here>`,
   `apiKey: process.env.OPENAI_API_KEY`,
-  `${apiKeyName} = config.service.key`,
+  `${apiKeyName} = config.apiKey`,
+  `${apiKeyName}=process.env.SERVICE_KEY`,
+  `${apiKeyName}=${apiKeyPlaceholderVar}`,
+  `${header} $API_TOKEN`,
+  `${header} <access-token>`,
+  `${tokenOption}= flag`,
+  `the ${tokenOption}= argument is optional`,
+  `${tokenOption}= value, then more`,
+  `${tokenOption}= switch`,
+  `${tokenOption}= is set elsewhere`,
+  `${apiKeyName}=abcd123`,
   'apiKey: string;',
   `if (${apiKeyName} == expected) { return; }`,
 ];
