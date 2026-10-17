@@ -111,6 +111,27 @@ describe('the HTTP handlers of an area', () => {
   );
 });
 
+// RF-261, P2-29 review: a test file is no view, so it gets no marks; an HTML page is a screen, not a flow.
+describe('the test files and the HTML pages of an area', () => {
+  it.each(['tests/a.test.tsx', 'src/ui/Cart.spec.tsx', 'src/__tests__/Cart.tsx'])(
+    'RF-261 %s is a test file: no flow and no screen',
+    (path) => {
+      const files = [entry(path)];
+
+      expect(surfaceOf(areaOf(files), mapOf(files))).toEqual({ entryPoints: [], pages: [] });
+    },
+  );
+
+  it('RF-261 docs/index.html is a screen and not an entry point', () => {
+    const files = [entry('docs/index.html')];
+
+    expect(surfaceOf(areaOf(files), mapOf(files))).toEqual({
+      entryPoints: [],
+      pages: ['docs/index.html'],
+    });
+  });
+});
+
 describe('the area boundary', () => {
   it('Q-25 an area of plain libraries is marked for neither flows nor screens', () => {
     const files = [entry('Services/OrderService.cs'), entry('Services/Prices.cs')];
