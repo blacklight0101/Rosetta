@@ -13,11 +13,13 @@ import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetCallTranscript } from '../../src/application/use-cases/get-call-transcript.js';
 import { GetRun } from '../../src/application/use-cases/get-run.js';
 import { CountAnsweredQuestions } from '../../src/application/use-cases/count-answered-questions.js';
-import type { PriorCards } from '../../src/application/ports/prior-cards.js';
+import type { Logger } from '../../src/application/ports/logger.js';
+import type { PriorCards, QuestionReopener } from '../../src/application/ports/prior-cards.js';
 import { ListAnswers } from '../../src/application/use-cases/list-answers.js';
 import { ListRunCalls } from '../../src/application/use-cases/list-run-calls.js';
 import { ListRunLogs } from '../../src/application/use-cases/list-run-logs.js';
 import { RecordAnswers } from '../../src/application/use-cases/record-answers.js';
+import { ReopenQuestion } from '../../src/application/use-cases/reopen-question.js';
 import { DeleteProject } from '../../src/application/use-cases/delete-project.js';
 import { DeleteRun } from '../../src/application/use-cases/delete-run.js';
 import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.js';
@@ -121,6 +123,30 @@ function observability(
   };
 }
 
+interface AnswerStores {
+  readonly projects: MemoryProjectRepository;
+  readonly answers: AnswersFile;
+  readonly priorCards: PriorCards & QuestionReopener;
+  readonly logger: Logger;
+}
+
+/** RF-1007, RF-241: the answers use cases of the harness, over the answers file and the cards. */
+function answerServices(
+  runs: RunHarness,
+  stores: AnswerStores,
+): Pick<
+  ServerOptions['runs'],
+  'listAnswers' | 'recordAnswers' | 'reopenQuestion' | 'countAnswered'
+> {
+  const { projects, answers, priorCards: cards, logger } = stores;
+  return {
+    listAnswers: new ListAnswers({ runs: runs.runs, answers, cards }),
+    recordAnswers: new RecordAnswers({ runs: runs.runs, answers, cards }),
+    reopenQuestion: new ReopenQuestion({ runs: runs.runs, answers, cards, logger }),
+    countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
+  };
+}
+
 /** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
 export function runServices(
   runs: RunHarness,
@@ -128,7 +154,8 @@ export function runServices(
     readonly projects: MemoryProjectRepository;
     readonly keys: MemoryProviderKeyRepository;
     readonly answers: AnswersFile;
-    readonly priorCards: PriorCards;
+    readonly priorCards: PriorCards & QuestionReopener;
+    readonly logger: Logger;
     readonly calls: RunCallReader;
     readonly logs: ApplicationLogReader;
     readonly clock: Clock;
@@ -136,7 +163,7 @@ export function runServices(
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
-  const { projects, keys, answers, priorCards, calls, logs, clock } = stores;
+  const { projects, keys, calls, logs, clock } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     subscribeRunEvents: runs.subscribe,
@@ -156,9 +183,7 @@ export function runServices(
       scans: new FixedScans(catalogAreas),
       logger: new RecordingLogger(),
     }),
-    listAnswers: new ListAnswers({ runs: runs.runs, answers, cards: priorCards }),
-    recordAnswers: new RecordAnswers({ runs: runs.runs, answers, cards: priorCards }),
-    countAnswered: new CountAnsweredQuestions({ projects, answers, cards: priorCards }),
+    ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, submit: runs.submit }),
     // RF-425: every project's scan has the same fixed code map (Catalog and Orders).

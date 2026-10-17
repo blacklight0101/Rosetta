@@ -25,6 +25,7 @@ export type RunEventType =
   | 'budget.capReached'
   | 'cards.merged'
   | 'question.answered'
+  | 'question.skipped'
   | 'run.ended';
 
 /** The type of the last event of every run. */

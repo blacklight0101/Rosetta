@@ -30,3 +30,13 @@ export interface PriorCards {
     cardIds: readonly string[],
   ): Promise<readonly string[]>;
 }
+
+/** RF-241: the way back for a question that was marked `Answered` and whose answer has changed. */
+export interface QuestionReopener {
+  /** Marks these `OQ` cards of the run `Open` again; the ids of those it changed. */
+  reopen(
+    project: ProjectRef,
+    runKey: string,
+    cardIds: readonly string[],
+  ): Promise<readonly string[]>;
+}
