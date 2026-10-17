@@ -61,7 +61,7 @@ describe('the claims of a SCRN card: what is left out', () => {
       { text: 'Two.', citations: [first, second] },
     ];
 
-    const action = claimsOf({ ...screenDraft(), claims })[4];
+    const action = claimsOf({ ...screenDraft(), claims })[3];
 
     expect(action?.text).toBe('Action Pay starts the handler PayButton_Click.');
     expect(action?.citations).toEqual([first, second]);
