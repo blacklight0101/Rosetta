@@ -44,6 +44,12 @@ const templateExtensions: ReadonlySet<string> = new Set([
 /** WebForms HTTP handlers: a file that starts behaviour when a request reaches it (P2-29). */
 const httpHandlerExtensions: ReadonlySet<string> = new Set(['ashx', 'asmx']);
 
+/** A static HTML page is a screen only: it shows content and starts no behaviour (P2-29 review). */
+const screenOnlyExtensions: ReadonlySet<string> = new Set(['html']);
+
+/** Test and spec files are never views, so an area with only tests gets no marks (P2-29 review). */
+const testFile = /(?:^|\/)(?:__tests__|tests)\/|\.(?:test|spec)\./u;
+
 /** A class that runs on a schedule or on a message: a job, a handler, a consumer, singular or plural. */
 const handlerClass = /(?:Handlers?|Jobs?|Consumers?|Listeners?|Subscribers?|Workers?)$/u;
 
@@ -60,6 +66,22 @@ function handlerPaths(map: Mapped): ReadonlySet<string> {
   return new Set(symbols.map((symbol) => symbol.path));
 }
 
+/** Whether a file starts behaviour: an entry point by kind, name, HTTP handler extension, or a view (not HTML). */
+function startsBehaviour(
+  path: string,
+  kinds: readonly ArtefactKind[],
+  handlers: ReadonlySet<string>,
+  view: boolean,
+): boolean {
+  const extension = extensionOf(path);
+  return (
+    (view && !screenOnlyExtensions.has(extension)) ||
+    httpHandlerExtensions.has(extension) ||
+    handlers.has(path) ||
+    kinds.some((kind) => entryKinds.has(kind))
+  );
+}
+
 // RF-260, RF-261, Q-25
 export function surfaceOf(area: Pick<Area, 'files'>, map: Mapped): AreaSurface {
   const known = new Map(map.files.map((file) => [file.path, file]));
@@ -68,14 +90,11 @@ export function surfaceOf(area: Pick<Area, 'files'>, map: Mapped): AreaSurface {
   const pages: string[] = [];
   for (const path of area.files) {
     const kinds = known.get(path)?.artefactKinds ?? [];
-    const isPage = kinds.includes('page') || templateExtensions.has(extensionOf(path));
+    const extension = extensionOf(path);
+    const view = templateExtensions.has(extension) && !testFile.test(path);
+    const isPage = kinds.includes('page') || view;
     if (isPage) pages.push(path);
-    const isEntry =
-      isPage ||
-      httpHandlerExtensions.has(extensionOf(path)) ||
-      handlers.has(path) ||
-      kinds.some((kind) => entryKinds.has(kind));
-    if (isEntry) {
+    if (startsBehaviour(path, kinds, handlers, view)) {
       entryPoints.push(path);
     }
   }
