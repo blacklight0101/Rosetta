@@ -67,6 +67,9 @@ function summaryOf(repetitions: readonly RepetitionResult[]): Results['summary']
     strictPrecision: of((r) => r.overall.strictPrecision),
     recall: of((r) => r.overall.recall),
     recallAll: of((r) => r.overall.recallAll),
+    stepRecall: of((r) => r.overall.stepRecall),
+    screenFieldRecall: of((r) => r.overall.screenFieldRecall),
+    relationPrecision: of((r) => r.overall.relationPrecision),
     citationValidity: of((r) => r.citationValidity.rate),
     costMicros: of((r) => r.costMicros),
     costPerSupportedClaimMicros: of((r) => r.costPerSupportedClaimMicros),
@@ -83,6 +86,9 @@ function casesOf(golden: GoldenSet, repetitions: readonly RepetitionResult[]): R
       precision: spreadOf(scores.map((s) => s.precision)),
       recall: spreadOf(scores.map((s) => s.recall)),
       recallAll: spreadOf(scores.map((s) => s.recallAll)),
+      stepRecall: spreadOf(scores.map((s) => s.stepRecall)),
+      screenFieldRecall: spreadOf(scores.map((s) => s.screenFieldRecall)),
+      relationPrecision: spreadOf(scores.map((s) => s.relationPrecision)),
     };
   });
 }

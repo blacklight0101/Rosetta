@@ -1,0 +1,20 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`overview.md > RF-264 lists each statement with links to its cards and the questions of its section (snapshot) 1`] = `
+"# Overview
+
+## What the application is
+
+- A small shop front. ([FEAT-001](cards/FEAT/FEAT-001.md))
+
+## Main features
+
+- Orders are placed at checkout. ([FEAT-001](cards/FEAT/FEAT-001.md), [ENT-001](cards/ENT/ENT-001.md))
+
+Open questions about this section: [OQ-001](cards/OQ/OQ-001.md)
+
+## What was not covered
+
+- Vendor: third\\-party code; nothing about the application was read from it.
+"
+`;

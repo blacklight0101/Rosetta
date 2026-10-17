@@ -32,10 +32,11 @@ describe('an understand run on the C# fixture: tasks', () => {
       task(4, 'Database', 2, 1),
       task(5, 'Services', 3, 1),
     ]);
-    // The recording has no answer for the summariser's one call (RF-250, two BR cards of two areas).
+    // The recording has no answer for the summariser's two calls: the merge of the two BR cards of
+    // two areas (RF-250) and the overview of the cards that passed (RF-264).
     const roles = h.providers.requests().map((request) => request.context.role);
     expect(roles.filter((role) => role === 'reader')).toHaveLength(11);
-    expect(roles.filter((role) => role !== 'reader')).toEqual(['summariser']);
+    expect(roles.filter((role) => role !== 'reader')).toEqual(['summariser', 'summariser']);
     expect(manifest.codemapHash).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.source.commitSha).toBe('c'.repeat(40));
   });

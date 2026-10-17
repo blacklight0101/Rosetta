@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-264: the understand run of understand-csharp-full.json followed by the summariser comparing the two BR cards (no merge) and writing the overview of the application: statements with cards, one without a card, one with a card nobody wrote, and one holding hostile text. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Default.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 14
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FEAT\",\n      \"title\": \"Home page lists the catalog\",\n      \"area\": \"(root)\",\n      \"summary\": \"The home page binds the catalog list to a grid.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The page loads every catalog item into the grid when it opens.\",\n          \"citations\": [\n            \"Default.aspx.cs:8-12\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Hidden items on the home page\",\n      \"area\": \"(root)\",\n      \"summary\": \"The list call has no filter in the page.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The page shows whatever CatalogService.List returns.\",\n          \"citations\": [\n            \"Default.aspx.cs:10-10\"\n          ]\n        }\n      ],\n      \"question\": \"Is a catalog item with zero stock still shown on the home page?\",\n      \"whyItMatters\": \"The new system must show the same items.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 300,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Details page shows a fixed name\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page sets the name label.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The name label is set to the text Item when the page loads.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        },\n        {\n          \"text\": \"The page reads the price from the database.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:40-60\"\n          ]\n        },\n        {\n          \"text\": \"A missing helper formats the name.\",\n          \"citations\": [\n            \"Catalog/Missing.cs:1-2\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1200,
+              "outputTokens": 250,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Controllers/CatalogController.cs",
+                  "startLine": 1,
+                  "endLine": 12
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": []\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 800,
+              "outputTokens": 20,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Database/schema.sql",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Catalog item\",\n      \"area\": \"Database\",\n      \"summary\": \"A catalog item has an id, a name and a price.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The CatalogItem table has the columns Id, Name and Price.\",\n          \"citations\": [\n            \"Database/schema.sql:2-6\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1100,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "list_area_files",
+                "arguments": {}
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-9",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Services/CatalogService.cs",
+                  "startLine": 1,
+                  "endLine": 18
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-10",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Stock goes down by one per update\",\n      \"area\": \"Services\",\n      \"summary\": \"The catalog service lowers the stock of an item by one.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"An update statement subtracts one from the stock of the item with the given id.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:12-12\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-11",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{ \"merges\": [] }\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-11",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"application\": [\n    {\n      \"text\": \"A catalog web site that lists items and shows one item.\",\n      \"cards\": [\n        \"FEAT-001\",\n        \"ENT-001\"\n      ]\n    }\n  ],\n  \"users\": [\n    {\n      \"text\": \"Visitors browse the catalog.\",\n      \"cards\": [\n        \"FEAT-001\"\n      ]\n    }\n  ],\n  \"features\": [\n    {\n      \"text\": \"The home page lists every catalog item.\",\n      \"cards\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"text\": \"The stock of an item goes down by one on each update.\",\n      \"cards\": [\n        \"BR-002\"\n      ]\n    },\n    {\n      \"text\": \"The site will certainly send an email on every order.\",\n      \"cards\": []\n    },\n    {\n      \"text\": \"The site takes card payments.\",\n      \"cards\": [\n        \"INT-404\"\n      ]\n    }\n  ],\n  \"screens\": [\n    {\n      \"text\": \"<script>window.__pwned = 1</script> <img src=x onerror=alert(1)> and a [link](javascript:alert(1))\",\n      \"cards\": [\n        \"FEAT-001\"\n      ]\n    }\n  ],\n  \"data\": [\n    {\n      \"text\": \"A catalog item has an id, a name and a price.\",\n      \"cards\": [\n        \"ENT-001\"\n      ]\n    }\n  ],\n  \"integrations\": []\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-11",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

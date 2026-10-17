@@ -1,6 +1,7 @@
 import type { Card } from '../../domain/cards/card.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
+import type { Consolidation } from '../consolidate/consolidate-cards.js';
 
 /** Publishes the given cards, with the citation check of each claim (RF-1002). */
 export async function announceCards(
@@ -28,5 +29,16 @@ export async function announceCards(
       const data = { claimId: claim.claimId, ok: check.ok, ...reason, ...shown };
       await events.emit('verify.citation.checked', data, agentTaskId);
     }
+  }
+}
+
+/** RF-250, RF-1004: the merge renumbered claims; the pages move their verdicts by these events. */
+export async function announceMerges(
+  events: RunEventPublisher,
+  merged: Consolidation,
+): Promise<void> {
+  for (const move of merged.moves) {
+    const task = merged.cards.find((card) => card.id === move.cardId)?.agentTaskId;
+    await events.emit('cards.merged', { ...move }, task);
   }
 }
