@@ -6,10 +6,14 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
 import type { OutputProblem } from '../cards/output-problem.js';
+import type { PromptFile } from '../agent/prompt-file.js';
+import { consolidateCards } from '../consolidate/consolidate-cards.js';
+import { consolidationParts } from '../consolidate/consolidation-parts.js';
 import type { AnswersFile, OpenQuestion } from '../ports/answers-file.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
 import type { RunOutcome } from '../ports/run-executor.js';
+import type { RoleProvider } from '../providers/provider-set.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
 import { areaFailureOf } from './area-failure.js';
@@ -39,6 +43,9 @@ export interface UnderstandSessionParts extends ReaderTaskContext {
   readonly deps: UnderstandSessionDependencies;
   readonly tasks: readonly ReaderTask[];
   readonly source: CardSource;
+  /** RF-250: the role that merges the duplicate cards of several areas, and its prompt. */
+  readonly summariser: RoleProvider;
+  readonly mergePrompt: PromptFile;
 }
 
 /** How a task ended, as far as the run's outputs are concerned. */
@@ -121,10 +128,19 @@ export class UnderstandSession {
     });
   }
 
-  /** Publishes the cards not announced yet and adds the open questions to `answers.md`. */
-  // RF-203, DEC-98
+  /**
+   * Publishes the cards not announced yet, adds the open questions to `answers.md` and merges the
+   * duplicates of several areas. The questions come first: OQ cards are never merged, and a merge
+   * whose files cannot be written must not take them with it.
+   */
+  // RF-203, DEC-98, RF-250
   async finish(): Promise<void> {
     await this.announce(true);
+    await this.addQuestions();
+    await this.consolidate();
+  }
+
+  private async addQuestions(): Promise<void> {
     const { deps, execution } = this.parts;
     const { run } = execution;
     const questions = this.latest.cards
@@ -132,6 +148,21 @@ export class UnderstandSession {
       .map((card) => questionOf(card, run.runKey));
     if (questions.length === 0) return;
     await deps.answers.addQuestions({ userId: run.userId, projectId: run.projectId }, questions);
+  }
+
+  /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */
+  private async consolidate(): Promise<void> {
+    const { deps, execution, source } = this.parts;
+    const runId = execution.run.runKey;
+    const parts = { ...this.parts, runId, signal: execution.signal };
+    const merged = await consolidateCards(consolidationParts(parts), this.latest.cards);
+    if (merged.merges.length === 0) return;
+    const kept = new Set(merged.cards.map((card) => card.id));
+    const mergedAway = this.latest.cards.filter((card) => !kept.has(card.id));
+    this.latest = { ...this.latest, cards: merged.cards };
+    const areasWithoutCards = this.cards.areasWithoutCards();
+    const set = { cards: merged.cards, source, areasWithoutCards, mergedAway };
+    await deps.cards.writeCards(scopeOf(execution.run), set);
   }
 
   /**

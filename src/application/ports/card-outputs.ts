@@ -24,6 +24,11 @@ export interface CardSet {
    * slip), so `spec.md` names them.
    */
   readonly areasWithoutCards: readonly string[];
+  /**
+   * Cards an earlier write of this run made that consolidation has since merged into another card
+   * (RF-250): their files are removed once the set is written, so each card is in the folder once.
+   */
+  readonly mergedAway?: readonly Pick<Card, 'id' | 'type'>[];
 }
 
 export interface CardOutputs {

@@ -8,8 +8,12 @@ import { needsCloudConsent } from '../providers/cloud-consent.js';
 // provider. Both are recorded in the manifest when the run is accepted and read back from it when
 // it starts, so nothing in a later request can change them.
 
-/** The roles an understand run calls in this release: the readers (the judgement step is P2). */
-export const UNDERSTAND_ROLES: readonly AgentRole[] = ['reader'];
+/**
+ * The roles an understand run calls in this release: the readers and, once they have ended, the
+ * summariser that merges duplicate cards (RF-250). Both take part in the consent, the estimate, the
+ * Ollama check and the unpriced rule (RF-143, RF-425, RF-401, RF-427). The judgement step is P2.
+ */
+export const UNDERSTAND_ROLES: readonly AgentRole[] = ['reader', 'summariser'];
 
 export interface UnderstandOptions {
   readonly areas?: readonly string[];
@@ -57,12 +61,11 @@ export function rolesNeedCloudConsent(
 }
 
 /**
- * RF-205, RNF-004: whether a role of the run uses Ollama in the text tool mode, whose adapter
- * appends the text tool protocol prompt to the system prompt; the run then records that file too.
+ * RF-205, RNF-004: whether the reader uses Ollama in the text tool mode, whose adapter appends the
+ * text tool protocol prompt to the system prompt; the run then records that file too. The
+ * summariser sends no tool, so its provider never uses the protocol.
  */
 export function rolesUseTextToolProtocol(settings: ProjectSettings): boolean {
-  return UNDERSTAND_ROLES.some((role) => {
-    const provider = settings.providers[settings.roles[role].provider];
-    return provider?.kind === 'ollama' && provider.toolMode === 'text';
-  });
+  const provider = settings.providers[settings.roles.reader.provider];
+  return provider?.kind === 'ollama' && provider.toolMode === 'text';
 }

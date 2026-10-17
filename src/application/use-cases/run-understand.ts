@@ -3,14 +3,12 @@ import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import {
   recordManifestCodeMap,
-  recordManifestPriceTable,
   recordPromptVersions,
   type PromptVersion,
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { promptVersionsOf, type ReaderPrompts } from '../agent/reader-prompts.js';
-import { buildCostReport } from '../budget/cost-report.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { CardOutputs } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
@@ -30,6 +28,7 @@ import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
+import { writeCostReport } from '../runs/run-cost-report.js';
 import { RunBudgetEvents } from '../runs/run-budget-events.js';
 import { ownerLogger } from '../runs/owner-logger.js';
 import { ManifestCostRecorder } from '../runs/run-cost-record.js';
@@ -72,6 +71,8 @@ export interface RunUnderstandDependencies {
   readonly prompts: () => Promise<ReaderPrompts>;
   /** Reads the text tool protocol prompt, recorded when a role uses it (RF-205, RNF-004). */
   readonly textToolProtocol: () => Promise<PromptFile>;
+  /** Reads the summariser's merge prompt, recorded when a merge call is made (RF-250, RNF-004). */
+  readonly mergePrompt: () => Promise<PromptFile>;
   readonly clock: Clock;
   readonly logger: Logger;
   /** RF-145: the random tag of every data block the reader's tools write. */
@@ -84,6 +85,12 @@ interface Prepared {
   readonly scanned: ScannedSource;
   readonly tasks: readonly ReaderTask[];
   readonly prompts: ReaderPrompts;
+  readonly mergePrompt: PromptFile;
+}
+
+interface UnderstandRoles {
+  readonly reader: RoleProvider;
+  readonly summariser: RoleProvider;
 }
 
 const failed = (code: RosettaError['code']): RunOutcome => ({
@@ -107,7 +114,7 @@ export class RunUnderstand implements RunExecutor {
       if (error instanceof RosettaError) return failed(error.code);
       throw error;
     } finally {
-      await this.writeCostReport(execution.run);
+      await writeCostReport(this.deps, execution.run);
     }
   }
 
@@ -116,12 +123,12 @@ export class RunUnderstand implements RunExecutor {
     const prepared = await this.prepare(execution, updates);
     if (!prepared.ok) return prepared.outcome;
     const nextCallId = callIds(execution.run);
-    const role = await this.readerOf(execution, prepared.value.project, updates, nextCallId);
-    if (!role.ok) return role.outcome;
+    const roles = await this.rolesOf(execution, prepared.value.project, updates, nextCallId);
+    if (!roles.ok) return roles.outcome;
     if (execution.signal.aborted) return { endState: 'Interrupted' };
     const session = new UnderstandSession({
       ...prepared.value,
-      ...{ execution, updates, role: role.value },
+      ...{ execution, updates, role: roles.value.reader, summariser: roles.value.summariser },
       logger: ownerLogger(this.deps.logger, execution.run.userId),
       settings: prepared.value.project.settings,
       deps: this.deps,
@@ -161,7 +168,8 @@ export class RunUnderstand implements RunExecutor {
     const prompts = await this.deps.prompts();
     const versions = await this.promptVersions(project, prompts);
     await updates.update((stored) => ok(recordPromptVersions(stored, versions)));
-    return { ok: true, value: { project, scanned, tasks: tasks.value, prompts } };
+    const mergePrompt = await this.deps.mergePrompt();
+    return { ok: true, value: { project, scanned, tasks: tasks.value, prompts, mergePrompt } };
   }
 
   /** RNF-004: the reader's prompt files, and the text tool protocol when a role uses it. */
@@ -182,15 +190,16 @@ export class RunUnderstand implements RunExecutor {
   }
 
   /**
-   * ADR-003, RF-405, RF-427, RF-143: the reader's guarded provider, from the provider factory only.
+   * ADR-003, RF-405, RF-427, RF-143: the guarded providers of the reader and the summariser (RF-250),
+   * from the provider factory only.
    * A role that cannot be served (no key, unpriced model, no consent) stops the run before a call.
    */
-  private async readerOf(
+  private async rolesOf(
     execution: RunExecution,
     project: Project,
     updates: ManifestUpdates,
     nextCallId: () => string,
-  ): Promise<Step<RoleProvider>> {
+  ): Promise<Step<UnderstandRoles>> {
     const { run, manifest } = execution;
     const account = await this.deps.users.findById(run.userId);
     if (account === undefined) return stop(failed(ERROR_CODES.notFound));
@@ -213,7 +222,10 @@ export class RunUnderstand implements RunExecutor {
       return stop(failed(built.error[0]?.code ?? ERROR_CODES.providerUnavailable));
     }
     const reader = built.value.get('reader');
-    if (reader === undefined) return stop(failed(ERROR_CODES.providerUnavailable));
+    const summariser = built.value.get('summariser');
+    if (reader === undefined || summariser === undefined) {
+      return stop(failed(ERROR_CODES.providerUnavailable));
+    }
     const ready = await preflightOllama(built.value, {
       runId: run.runKey,
       traceId: traceIdOf(run),
@@ -221,7 +233,7 @@ export class RunUnderstand implements RunExecutor {
       signal: execution.signal,
     });
     if (!ready.ok) return stop(await this.notReady(execution, ready.error));
-    return { ok: true, value: reader };
+    return { ok: true, value: { reader, summariser } };
   }
 
   /** The run's sinks for its guards: call log, egress log, manifest records, stop and events. */
@@ -257,24 +269,6 @@ export class RunUnderstand implements RunExecutor {
       },
     );
     return failed(problem.code);
-  }
-
-  /** RF-426: `cost.json` and `cost.md` at every end; a write that fails is logged, never thrown. */
-  private async writeCostReport(run: Run): Promise<void> {
-    try {
-      const entries = await this.deps.ledger.runEntries(run.userId, run.id);
-      const report = buildCostReport(run.runKey, entries);
-      const [first] = entries;
-      if (first !== undefined) {
-        const priceTable = { version: report.priceTableVersion, currency: first.currency };
-        const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
-        await updates.update((stored) => recordManifestPriceTable(stored, priceTable));
-      }
-      await this.deps.costReports.write(scopeOf(run), report);
-    } catch (error) {
-      const code = error instanceof RosettaError ? error.code : ERROR_CODES.costRecordFailed;
-      await this.log(run, code, 'The cost report of the run could not be written.', {});
-    }
   }
 
   private log(
