@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { awaitsJudgement } from '../../../../src/application/verifier/awaits-judgement.js';
 import { CAP_UNVERIFIED_REASON } from '../../../../src/application/verifier/judge-claim.js';
-import { leaveUnverified } from '../../../../src/application/verifier/leave-unverified.js';
+import {
+  CAP_STOPPED_MODEL,
+  leaveUnverified,
+} from '../../../../src/application/verifier/leave-unverified.js';
 import {
   createCard,
   transitionClaim,
@@ -66,5 +69,12 @@ describe('awaitsJudgement', () => {
     const failed = claimWith('Unverified', 'judge-model', 'The verifier call failed (RST-1505).');
 
     expect(awaitsJudgement(failed)).toBe(false);
+  });
+
+  it('RF-301 a claim with a verdict is not judged again even if its reason or model names a cap', () => {
+    for (const status of ['Supported', 'Rejected'] as const) {
+      expect(awaitsJudgement(claimWith(status, 'judge-model', CAP_UNVERIFIED_REASON))).toBe(false);
+      expect(awaitsJudgement(claimWith(status, CAP_STOPPED_MODEL, 'Line 1 loads.'))).toBe(false);
+    }
   });
 });
