@@ -112,6 +112,60 @@ const SAVE_HELP =
 const REOPEN_HELP =
   ' This question is Answered: reopen it for the next re-run to use an edited answer.';
 
+function ReopenButton(props: { readonly save: AnswerSave }): JSX.Element {
+  const { save } = props;
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      busy={save.busy}
+      onClick={() => {
+        void save.reopen();
+      }}
+    >
+      Reopen question
+    </Button>
+  );
+}
+
+function AnswerForm(props: {
+  readonly question: OpenQuestionRow;
+  readonly save: AnswerSave;
+}): JSX.Element {
+  const { question, save } = props;
+  const answered = question.state === 'Answered';
+  return (
+    <form
+      class="rst-p139-question__form"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void save.submit();
+      }}
+    >
+      {save.failure === undefined ? null : <ErrorBanner error={save.failure} />}
+      <Field
+        kind="textarea"
+        id={`answer-${question.cardId}`}
+        label={`Answer to ${question.cardId}`}
+        rows={3}
+        value={save.text}
+        help={answered ? `${SAVE_HELP}${REOPEN_HELP}` : SAVE_HELP}
+        onInput={save.type}
+      />
+      <div class="rst-p139-question__actions">
+        <Button type="submit" variant="secondary" busy={save.busy}>
+          Save answer
+        </Button>
+        {answered ? <ReopenButton save={save} /> : null}
+        <p class="rst-settings__note" role="status">
+          {save.message}
+        </p>
+      </div>
+    </form>
+  );
+}
+
 function QuestionItem(props: {
   readonly runId: string;
   readonly question: OpenQuestionRow;
@@ -119,7 +173,6 @@ function QuestionItem(props: {
 }): JSX.Element {
   const { question } = props;
   const save = useAnswerSave(props.runId, question, props.apply);
-  const answered = question.state === 'Answered';
   return (
     <li class="rst-p139-question" data-testid="open-question">
       <div class="rst-p139-question__head">
@@ -132,45 +185,7 @@ function QuestionItem(props: {
       <p class="rst-p139-question__context">
         <RenderedText text={question.context} />
       </p>
-      <form
-        class="rst-p139-question__form"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          void save.submit();
-        }}
-      >
-        {save.failure === undefined ? null : <ErrorBanner error={save.failure} />}
-        <Field
-          kind="textarea"
-          id={`answer-${question.cardId}`}
-          label={`Answer to ${question.cardId}`}
-          rows={3}
-          value={save.text}
-          help={answered ? `${SAVE_HELP}${REOPEN_HELP}` : SAVE_HELP}
-          onInput={save.type}
-        />
-        <div class="rst-p139-question__actions">
-          <Button type="submit" variant="secondary" busy={save.busy}>
-            Save answer
-          </Button>
-          {answered ? (
-            <Button
-              type="button"
-              variant="secondary"
-              busy={save.busy}
-              onClick={() => {
-                void save.reopen();
-              }}
-            >
-              Reopen question
-            </Button>
-          ) : null}
-          <p class="rst-settings__note" role="status">
-            {save.message}
-          </p>
-        </div>
-      </form>
+      <AnswerForm question={question} save={save} />
     </li>
   );
 }
