@@ -1,4 +1,5 @@
 import type { Tile } from './code-map-tiles.js';
+import { JUDGEMENT_EXPLAINED, verifyDetail, waitsForJudgement } from './judgement-state.js';
 import type { RunPhase } from './run-phase.js';
 import type { AgentPanelState, RunState } from './run-state.js';
 
@@ -26,9 +27,6 @@ export interface JourneyInput {
 }
 
 type Core = Pick<JourneyStep, 'status' | 'detail'> & { readonly note?: string | undefined };
-
-const JUDGEMENT_NOTE =
-  'Judgement comes in a later version; citations checked does not mean supported.';
 
 const finished = (agent: AgentPanelState): boolean =>
   agent.state !== 'Planned' && agent.state !== 'Running';
@@ -70,16 +68,15 @@ function readStep(input: JourneyInput, mapDone: boolean): Core {
   };
 }
 
+/** RF-1014: the citations, then the judgement of the claims that passed while it is due. */
 function checkStep(state: RunState, readDone: boolean): Core {
   const { claims } = state;
   const checked = claims.filter((claim) => claim.status !== 'Proposed').length;
-  const detail =
-    claims.length === 0
-      ? 'as cards arrive'
-      : `${String(checked)} of ${String(claims.length)} citations checked`;
-  const note = claims.length === 0 ? undefined : JUDGEMENT_NOTE;
+  const detail = verifyDetail(state) ?? 'as cards arrive';
+  const waiting = waitsForJudgement(state);
+  const note = waiting ? JUDGEMENT_EXPLAINED : undefined;
   if (!readDone) return { status: 'later', detail, note };
-  return { status: checked === claims.length ? 'done' : 'current', detail, note };
+  return { status: checked === claims.length && !waiting ? 'done' : 'current', detail, note };
 }
 
 function explainStep(state: RunState): Core {

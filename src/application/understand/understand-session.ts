@@ -20,8 +20,8 @@ import { openQuestionOf } from './open-question.js';
 import { compareCards, type CardChanges } from './card-changes.js';
 import {
   isProposed,
-  judgeClaims,
   judgementPartsOf,
+  runJudgementStep,
   type JudgementContext,
 } from './claim-judgement.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
@@ -183,7 +183,7 @@ export class UnderstandSession {
   private async judge(): Promise<void> {
     if (!this.latest.cards.some((card) => card.claims.some(isProposed))) return;
     const parts = judgementPartsOf(this.parts, this.parts.deps.clock);
-    const cards = await judgeClaims(this.latest.cards, parts);
+    const cards = await runJudgementStep(this.latest.cards, parts);
     this.latest = { ...this.latest, cards };
     await this.writeSet(cards);
     // RF-006: a resume reads the verdicts back with the results of the tasks.

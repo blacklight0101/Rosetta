@@ -42,8 +42,11 @@ const writers: Readonly<Record<string, Writer>> = {
     `${area} ${field(data, 'state')} · ${field(data, 'turns')} turns, ${field(data, 'cards')} cards`,
   'verify.citation.checked': (data) =>
     `${field(data, 'claimId')} ${data['ok'] === true ? 'ok' : `citation invalid · ${field(data, 'reason')}`}`,
+  'verify.judgement.started': (data) => `${field(data, 'claims')} claims to judge`,
   'verify.claim.judged': (data) =>
     `${field(data, 'claimId')} ${field(data, 'status')} · ${field(data, 'reason')}`,
+  'verify.judgement.ended': (data) =>
+    `${field(data, 'supported')} supported, ${field(data, 'rejected')} rejected, ${field(data, 'unverified')} unverified, ${field(data, 'notJudged')} not judged`,
   'usage.recorded': (data) => `${field(data, 'role')} ${field(data, 'costMicros')} micro-dollars`,
   'budget.warning': (data) =>
     `${field(data, 'scope')} at ${field(data, 'sharePercent')}% of its cap`,

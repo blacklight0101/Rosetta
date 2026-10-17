@@ -101,8 +101,8 @@ stateDiagram-v2
 ```
 
 A rejected claim is never deleted: it stays in the report with the verifier's reason, and only supported claims
-feed the hand-off package. In the first milestone the verifier's second check is not built yet, so a claim whose
-citation holds is shown as "citations checked", with the note that judgement comes in a later version. Sources RF-300..RF-304, RF-006, RF-604.
+feed the hand-off package. A claim whose citation holds is shown as "waiting for judgement" only while the
+judgement step is queued or running, then with its verdict; a claim the run left unjudged says so (RF-1014). Sources RF-300..RF-304, RF-006, RF-604.
 
 ## 4. Cost control from estimate to cap
 

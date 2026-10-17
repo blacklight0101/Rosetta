@@ -39,6 +39,9 @@ const handlers: Readonly<Record<string, Handler>> = {
   'agent.card.proposed': (state, event) => onClaimsProposed(onCardProposed(state, event), event),
   'verify.citation.checked': onCitationChecked,
   'verify.claim.judged': onClaimJudged,
+  // RF-1014: the judgement step's start and end; the claims wait for it only in between (or before).
+  'verify.judgement.started': (state) => ({ ...state, judgement: 'running' }),
+  'verify.judgement.ended': (state) => ({ ...state, judgement: 'ended' }),
 };
 
 export function initialRunState(): RunState {
@@ -52,6 +55,7 @@ export function initialRunState(): RunState {
     agents: [],
     cards: [],
     claims: [],
+    judgement: 'idle',
     log: [],
     roleCostMicros: {},
     roleTokens: {},

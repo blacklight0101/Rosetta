@@ -71,7 +71,8 @@ it('RF-1015 has the map done, reading current and the rest later while the agent
   ]);
   expect(steps[0]?.detail).toBe('2 areas, 1 library folder left out');
   expect(steps[1]?.detail).toBe('1 of 2 areas');
-  expect(steps[2]?.detail).toBe('1 of 2 citations checked');
+  // RF-1014: the judgement step is queued while the agents read, so the passed claim waits for it.
+  expect(steps[2]?.detail).toBe('1 of 2 citations checked, 1 waiting for judgement');
 });
 
 it('RF-1015 moves to checking the citations when every agent has ended', () => {

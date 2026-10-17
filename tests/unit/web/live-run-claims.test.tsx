@@ -79,16 +79,19 @@ it('RF-1014 RF-301 shows the verdict once the judgement step ends, and a claim l
   connection.event(ev(6, 'verify.claim.judged', verdict));
   connection.event(runEnded(7, 'Interrupted'));
 
-  const [first = claims, second = claims] = within(claims).getAllByTestId('claim');
+  // The page may draw the ended run anew, so the claims are found again once it has.
   await waitFor(() => {
-    expect(first.textContent).toContain('Supported');
+    const shown = screen.getByRole('region', { name: 'Claims' });
+    expect(shown.textContent).toContain(NOT_JUDGED_NOTE);
   });
+  const shown = screen.getByRole('region', { name: 'Claims' });
+  const [first = shown, second = shown] = within(shown).getAllByTestId('claim');
+  expect(first.textContent).toContain('Supported');
   expect(first.textContent).toContain(reason);
   expect(second.textContent).toContain('Citations checked');
   expect(second.textContent).not.toContain('Waiting');
-  expect(claims.textContent).toContain(NOT_JUDGED_NOTE);
-  expect(claims.textContent).not.toContain(WAITING_NOTE);
-  expect(claims.textContent).not.toContain('later version');
+  expect(shown.textContent).not.toContain(WAITING_NOTE);
+  expect(shown.textContent).not.toContain('later version');
 });
 
 it('RF-1004 a claim changes its status and reason when the verdict arrives', async () => {

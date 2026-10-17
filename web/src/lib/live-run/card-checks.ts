@@ -1,8 +1,8 @@
 import type { ClaimRow, RunState } from './run-state.js';
 
 // RF-1004, RF-1014, RF-1015: each card of the run with where its citations stand: all checked, at
-// least one invalid, or still waiting for the check. The model step of the verifier is not built, so
-// a card is never called supported here.
+// least one invalid, or still waiting for the check. Only the citation check is summarised per card;
+// the verdicts of the judgement step are shown claim by claim (RF-301).
 
 export interface CardView {
   readonly cardId: string;

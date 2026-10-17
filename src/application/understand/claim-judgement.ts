@@ -117,6 +117,35 @@ export async function judgeClaims(
   return cards.map((card) => withVerdicts(card, decided, parts.model));
 }
 
+/** How the claims the step was given ended: by verdict, or not judged (a stop of the run). */
+function stepCounts(cards: readonly Card[], claimIds: ReadonlySet<string>) {
+  const counts = { supported: 0, rejected: 0, unverified: 0, notJudged: 0 };
+  const claims = cards.flatMap((card) => card.claims).filter((c) => claimIds.has(c.claimId));
+  for (const { status } of claims) {
+    if (status === 'Supported') counts.supported += 1;
+    else if (status === 'Rejected') counts.rejected += 1;
+    else if (status === 'Unverified') counts.unverified += 1;
+    else counts.notJudged += 1;
+  }
+  return counts;
+}
+
+/**
+ * RF-1014: the judgement step between its start and end events, so the live page shows a claim as
+ * waiting for judgement only while the step is queued or running, and its verdict afterwards.
+ */
+// RF-1014, RF-301
+export async function runJudgementStep(
+  cards: readonly Card[],
+  parts: ClaimJudgementParts,
+): Promise<readonly Card[]> {
+  const claimIds = new Set(pendingOf(cards).map(({ claim }) => claim.claimId));
+  await parts.events.emit('verify.judgement.started', { claims: claimIds.size });
+  const judged = await judgeClaims(cards, parts);
+  await parts.events.emit('verify.judgement.ended', stepCounts(judged, claimIds));
+  return judged;
+}
+
 /** What the judgement step needs of the run (RF-301). */
 export interface JudgementContext {
   readonly execution: Pick<RunExecution, 'run' | 'events' | 'signal'>;

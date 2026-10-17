@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { judgementNote, judgementPending } from '../lib/live-run/judgement-state.js';
 import { claimCounts, overviewOf } from '../lib/live-run/run-summary.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 
@@ -23,9 +24,10 @@ function claimLine(state: RunState): string {
   return parts.length === 0 ? 'none yet' : parts.join(' · ');
 }
 
-// RF-1002
+// RF-1002, RF-1014
 export function RunOverview({ state }: { readonly state: RunState }): JSX.Element {
   const overview = overviewOf(state);
+  const note = judgementNote(state.claims, judgementPending(state));
   return (
     <section class="rst-live-overview" aria-label="Overview">
       <div class="rst-live-tile">
@@ -57,7 +59,7 @@ export function RunOverview({ state }: { readonly state: RunState }): JSX.Elemen
         <h2 class="rst-live-tile__title">Claims</h2>
         <p class="rst-live-tile__figure">{state.claims.length}</p>
         <p class="rst-live-tile__note">{claimLine(state)}</p>
-        <p class="rst-live-tile__note">Judgement comes in a later version.</p>
+        {note === undefined ? null : <p class="rst-live-tile__note">{note}</p>}
       </div>
     </section>
   );
