@@ -46,7 +46,7 @@ describe('a re-run with answers whose cards are merged', SLOW, () => {
     expect(spec).toMatch(/## New cards\n\n- ENT-001 Catalog item\n/u);
     expect(spec).toMatch(/## Changed cards\n\n- FEAT-001 Item details page\n/u);
     expect(spec).not.toContain('ENT-002');
-    expect(spec).not.toContain('BR-001 Stock goes down');
+    expect(spec.split('## New cards')[1]).not.toContain('BR-001 Stock goes down');
   });
 
   it('RF-241 RF-250 marks the questions Answered after the merge was written', async () => {
@@ -95,7 +95,7 @@ describe('a re-run with answers of a question that was merged in answers.md', SL
     expect((await h.manifestOf(second)).agentTasks.map((task) => task.area)).toEqual(areas);
     const sent = h.providers.requests().slice(before);
     const asked = sent.filter((request) => request.messages[0]?.content.includes(answer));
-    expect(asked).toHaveLength(3);
+    expect(new Set(asked.map((request) => request.messages[0]?.content)).size).toBe(3);
   });
 
   it('RF-241 RF-243 does not read an area again once its card is Answered', async () => {

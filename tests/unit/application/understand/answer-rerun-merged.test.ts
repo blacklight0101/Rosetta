@@ -51,6 +51,34 @@ describe('the cards behind a question merged in answers.md', () => {
   });
 });
 
+describe('two sections of one run for the same question', () => {
+  it('RF-241 RF-243 uses each card once, with the first answer', async () => {
+    const plan = await planRerun(
+      {
+        answers: {
+          answeredQuestions: () =>
+            Promise.resolve([asked, { ...asked, cardId: 'OQ-002', answer: 'Everyone.' }]),
+        },
+        cards: {
+          markAnswered: () => Promise.resolve([]),
+          cardsOf: () =>
+            Promise.resolve([
+              card('OQ-001', 'Catalog', 'Who uses the catalog pages?'),
+              card('OQ-002', 'Services', 'who uses the catalog pages'),
+            ]),
+        },
+      },
+      project,
+      ['Catalog', 'Services'],
+    );
+
+    expect(plan.pending.map((each) => [each.cardId, each.answer])).toEqual([
+      ['OQ-001', 'Staff.'],
+      ['OQ-002', 'Staff.'],
+    ]);
+  });
+});
+
 describe('the other cards behind a question merged in answers.md', () => {
   it('RF-241 leaves out a card behind the question that is Answered or in an area gone from the map', async () => {
     const plan = await planRerun(

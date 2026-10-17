@@ -21,7 +21,7 @@ const answered = (cardId: string, runKey: string): AnsweredQuestion => ({
 
 const card = (id: string, area: string, state: 'Open' | 'Answered'): PriorCard => ({
   ...{ id, type: 'OQ', title: 'A question', area, claims: [] },
-  questionState: state,
+  ...{ question: `Why ${id}?`, questionState: state },
 });
 
 function deps(questions: readonly AnsweredQuestion[]) {
