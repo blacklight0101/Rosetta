@@ -1,6 +1,7 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { lineBreaksOf, maskOrphanKeyEnds } from './private-key-pieces.js';
+import { identifierValue, placeholderValue } from './secret-value-pieces.js';
 
 export type SecretKind =
   'api-key' | 'bearer-token' | 'connection-string' | 'password' | 'private-key';
@@ -90,6 +91,10 @@ const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'])+`;
 // prefix and attributes, and blanks before the value.
 const xmlPasswordOpen = String.raw`<[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>[ \t]{0,16}`;
 const cdataOpen = String.raw`<!\[CDATA\[`;
+// After `--token=` a blank and a short plain word (`the --token= flag`) is prose (P2-40). A scheme
+// word is no prose, and an attached value (`--token=abc`), a longer word, a word with a digit or a
+// symbol, or a continuation is still a value.
+const tokenProse = String.raw`(?!(?:${schemeNames})(?![\w-]))[A-Za-z]{1,12}(?![\w.+/=@#$%^*~!:-])`;
 
 // The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
 // whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
@@ -113,19 +118,29 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
   {
+    // A key setting whose value holds punctuation (`api_key=ab:cd-ef!gh12345`), with a name before
+    // it or not (`x-api-key:`). Values under 8 characters, placeholders and code are left alone.
+    kind: 'api-key',
+    pattern: new RegExp(
+      String.raw`(?<keep>${keyStart}api[_-]?key["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}["']?)${notMasked}(?![="'])(?!${placeholderValue}|${identifierValue})[^\s"',;&]{8,}`,
+      'gi',
+    ),
+  },
+  {
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>\bBearer[ \t]{1,16})${notMasked}[A-Za-z0-9._~+/=-]{20,}`,
+      String.raw`(?<keep>\bBearer[ \t\u00a0]{1,16})${notMasked}[A-Za-z0-9._~+/=-]{20,}`,
       'gi',
     ),
   },
   {
     // A short value in an Authorization header (`Authorization: Bearer abc.def-ghi!jkl`): the
-    // header names it, so it needs no minimum length and may hold any character up to a blank,
-    // quote, comma or semicolon.
+    // header names it, so it needs no minimum length and may hold any character up to a blank or
+    // quote. A comma or semicolon belongs to the value when a value character follows it; a
+    // placeholder or prose word is left alone (P2-40).
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?Bearer[ \t]{1,16})${notMasked}[^\s"',;]{4,}`,
+      String.raw`(?<keep>\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?Bearer[ \t\u00a0]{1,16})${notMasked}(?!${placeholderValue})(?:[^\s"',;]|[,;](?=[^\s"',;])){4,}`,
       'gi',
     ),
   },
@@ -192,10 +207,10 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
   {
-    // `--token <value>` and `--token=<value>` on a command line.
+    // `--token <value>` and `--token=<value>` on a command line, but not "the --token= flag" (P2-40).
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>${optionStart}token(?:${tokenBlank}{1,16}|=${tokenBlank}{0,16})${notContinuation}${tokenScheme})${notMasked}${tokenValue}`,
+      String.raw`(?<keep>${optionStart}token(?:${tokenBlank}{1,16}|=(?![ \t]{1,16}${tokenProse})${tokenBlank}{0,16})${notContinuation}${tokenScheme})${notMasked}${tokenValue}`,
       'gi',
     ),
   },
