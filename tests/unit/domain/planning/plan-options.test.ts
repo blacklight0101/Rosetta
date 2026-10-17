@@ -53,7 +53,7 @@ describe('the architecture options that are refused', () => {
     const options = [styleDraft('layered'), styleDraft('big-ball-of-mud')];
     const draft = withOptions(validDraft(), options, 'layered');
 
-    expect(problemsOf(draft)).toEqual(['big-ball-of-mud is not an architecture style.']);
+    expect(problemsOf(draft)).toEqual(['"big-ball-of-mud" is not an architecture style.']);
   });
 
   it.each([
@@ -80,7 +80,7 @@ describe('the architecture options that are refused', () => {
     );
 
     expect(problemsOf(draft)).toEqual([
-      'The recommended style microservices is not one of the two.',
+      'The recommended style "microservices" is not one of the two.',
     ]);
   });
 

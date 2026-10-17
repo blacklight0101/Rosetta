@@ -12,6 +12,7 @@ import type { Recording } from '../../src/infrastructure/providers/fake/recordin
 import { loadCatalogue } from '../../src/infrastructure/prompts/catalogue-files.js';
 import { loadPlanOptionsPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
 import { entry } from './code-map-builders.js';
+import { fakeResponse } from './fake-recordings.js';
 import { codeMapOf } from './plan-options-fixtures.js';
 import { factoryHarness, settingsFor, type FactoryHarness } from './provider-factory-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
@@ -106,4 +107,19 @@ export async function planHarness(recording: Recording): Promise<PlanHarness> {
   const catalogue = await loadCatalogue(promptsFolder);
   const input = { codeMap: shopCodeMap(), cards: shopCards(), catalogue };
   return { parts, input, factory, fake, answers, abort };
+}
+
+/** A recording with one planner answer holding this text. */
+export function answerRecording(text: string): Recording {
+  const response = fakeResponse({
+    text,
+    toolCalls: [],
+    usage: { inputTokens: 100, outputTokens: 50, cachedInputTokens: 0, usageSource: 'reported' },
+    finishReason: 'stop',
+  });
+  return {
+    schemaVersion: 1,
+    description: 'one planner answer built by a test',
+    calls: [{ attempts: [{ response }] }],
+  };
 }
