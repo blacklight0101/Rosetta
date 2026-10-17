@@ -12,7 +12,7 @@ import type { ReaderTask } from './reader-tasks.js';
 // when its manifest already lists tasks: they were planned by an earlier session of the same run.
 
 /** Whether the run was resumed: its manifest lists tasks an earlier session planned. */
-export function isResume(manifest: RunManifest): boolean {
+function isResume(manifest: RunManifest): boolean {
   return manifest.agentTasks.length > 0;
 }
 

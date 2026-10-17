@@ -135,7 +135,7 @@ function runRow0() {
   return {
     ...{ id: runUuid, projectId: 'p-1', runId: runKey, stage: 'understand' },
     ...{ queueState: 'Running' as const, endState: null, commitSha: null, startedAt: null },
-    ...{ position: null, reportBuilt: false },
+    ...{ position: null, reportBuilt: false, failedAreas: 0 },
     totals: { costMicros: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 },
   };
 }
