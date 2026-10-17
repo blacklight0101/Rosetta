@@ -15,12 +15,24 @@ const codeNouns =
   'area|areas|application|app|system|code|codebase|module|modules|file|files|class|classes|component|components|service|services|page|pages|project|repository|repo|program|software|function|method|folder|directory|package|library|screen|screens|controller|controllers';
 const subject = String.raw`(?:(?:the|this|these|that|those|our)\s+)?(?:[a-z0-9_.-]+\s+){0,2}(?:${codeNouns})`;
 
+// "the code in this area": a subject placed inside another one.
+const placed = String.raw`${subject}(?:\s+(?:in|within|inside)\s+${subject})?`;
+const aspect = 'purpose|goal|aim|role|function|responsibility|responsibilities|scope';
+
 const refusedShapes: readonly RegExp[] = [
   // "What does this area do?", "What does the orders module do?"
-  new RegExp(String.raw`^(?:what|which)\s+(?:does|do|did)\s+${subject}\s+do$`, 'u'),
+  new RegExp(
+    String.raw`^(?:what|which)\s+(?:does|do|did)\s+${placed}\s+do(?:\s+in\s+${subject})?$`,
+    'u',
+  ),
+  // "What functionality does this area provide?"
+  new RegExp(
+    String.raw`^what\s+(?:functionality|features?|services?)\s+(?:does|do)\s+${placed}\s+(?:provide|offer|expose|implement)$`,
+    'u',
+  ),
   // "What is the purpose of the application?", "What is the role of the Catalog area?"
   new RegExp(
-    String.raw`^what\s+(?:is|are)\s+the\s+(?:purpose|goal|aim|role|function|responsibility|responsibilities|scope)\s+of\s+${subject}$`,
+    String.raw`^what\s+(?:is|are)\s+the\s+(?:(?:main|overall|primary|core|key|general)\s+)?(?:${aspect})\s+of\s+${subject}$`,
     'u',
   ),
   // "What is the business logic of X?", "What is the logic of the Orders module?"
@@ -38,6 +50,11 @@ const refusedShapes: readonly RegExp[] = [
     String.raw`^(?:(?:can|could|would)\s+you\s+)?(?:please\s+)?(?:explain|describe|summari[sz]e|tell\s+me)\s+(?:what|how)\s+${subject}\s+(?:does|do|is|work|works)$`,
     'u',
   ),
+  // "Explain the purpose of the checkout module", "Summarise the responsibilities of this module"
+  new RegExp(
+    String.raw`^(?:(?:can|could|would)\s+you\s+)?(?:please\s+)?(?:explain|describe|summari[sz]e)\s+the\s+(?:${aspect}|logic|functionality)\s+of\s+${subject}$`,
+    'u',
+  ),
   // "Describe the orders area"
   new RegExp(String.raw`^(?:please\s+)?(?:explain|describe|summari[sz]e)\s+${subject}$`, 'u'),
 ];
@@ -45,7 +62,7 @@ const refusedShapes: readonly RegExp[] = [
 /** "What does OrderService do?": an identifier written in CamelCase or ending in a code word. */
 const identifier = String.raw`[A-Z]?[a-z0-9]*(?:[a-z0-9][A-Z]|Service|Controller|Manager|Handler|Repository|Helper|Page|Class)[A-Za-z0-9]*`;
 const refusedIdentifierShape = new RegExp(
-  String.raw`^(?:What|Which)\s+(?:does|do)\s+${identifier}\s+do$`,
+  String.raw`^(?:(?:What|Which)\s+(?:does|do)\s+${identifier}\s+do|What\s+(?:is|are)\s+${identifier}\s+(?:used\s+for|for|responsible\s+for))$`,
   'u',
 );
 
