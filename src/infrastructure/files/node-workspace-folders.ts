@@ -1,6 +1,10 @@
 import { lstat, readdir, realpath, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { FolderTarget, WorkspaceFolders } from '../../application/ports/workspace-folders.js';
+import type {
+  FolderTarget,
+  ListedFolder,
+  WorkspaceFolders,
+} from '../../application/ports/workspace-folders.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { isRealFolder } from './run-folder.js';
 import { projectPath, runPath, workspaceRoot } from './workspace-paths.js';
@@ -38,6 +42,11 @@ export class NodeWorkspaceFolders implements WorkspaceFolders {
 
   constructor(dataDir: string) {
     this.#dataDir = dataDir;
+  }
+
+  // P1-152
+  list(): Promise<readonly ListedFolder[]> {
+    return Promise.resolve([]);
   }
 
   // RF-1012
