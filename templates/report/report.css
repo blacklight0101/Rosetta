@@ -242,6 +242,8 @@ td {
 
 /* P1-151: the Cards table breaks its cells at word boundaries only (a word too long for the cell
    still breaks, rather than widening the table); stacked at 720 px and below, each cell has the full width. */
+table.stacked th,
+table.stacked td,
 table.cards th,
 table.cards td {
   overflow-wrap: break-word;
@@ -384,6 +386,11 @@ tbody tr:last-child td {
   background: var(--rst-surface);
   border: 1px solid var(--rst-rule);
   border-radius: 6px;
+}
+
+/* The coverage table has four columns: it gets the whole row, not a quarter of it. */
+#coverage {
+  grid-column: 1 / -1;
 }
 
 .panel h2 {
