@@ -71,3 +71,14 @@ describe('the run page and the claim moves that need care', () => {
     expect(rowsOf(state)).toEqual([['ENT-001.c1', 'ENT-001', 'Proposed']]);
   });
 });
+
+describe('the run page and the claim moves that name unknown ids', () => {
+  it('RF-250 a move from an id the page never saw changes no claim', () => {
+    const state = stateAfter(
+      cardProposed(1, 'reader-001', 'ENT-001'),
+      merge(2, [{ from: 'ENT-009.c4', to: 'ENT-001.c7' }]),
+    );
+
+    expect(rowsOf(state)).toEqual([['ENT-001.c1', 'ENT-001', 'Proposed']]);
+  });
+});
