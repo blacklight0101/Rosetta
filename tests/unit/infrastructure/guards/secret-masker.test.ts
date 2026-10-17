@@ -46,8 +46,8 @@ describe('SecretMasker on each fixture case', () => {
 describe('SecretMasker on the whole fixture', () => {
   it('RF-141 counts every masked secret per kind', () => {
     expect(masker.mask(wholeFixture).counts).toEqual({
-      'api-key': 9,
-      'bearer-token': 32,
+      'api-key': 12,
+      'bearer-token': 44,
       'connection-string': 7,
       password: 39,
       'private-key': 3,

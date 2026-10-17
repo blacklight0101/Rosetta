@@ -15,6 +15,11 @@ import {
   continuationSecretCases,
 } from './secret-continuation-shapes.js';
 import { gapAdversarialPieces, gapInnocentTexts, gapSecretCases } from './secret-gap-shapes.js';
+import {
+  precisionAdversarialPieces,
+  precisionInnocentTexts,
+  precisionSecretCases,
+} from './secret-precision-shapes.js';
 import { moreAdversarialPieces, moreInnocentTexts, moreSecretCases } from './secret-shapes.js';
 
 export interface SecretCase {
@@ -180,6 +185,7 @@ export const secretCases: readonly SecretCase[] = [
   ...gapSecretCases,
   ...commandSecretCases,
   ...continuationSecretCases,
+  ...precisionSecretCases,
   {
     name: 'a multi-line private key block',
     kind: 'private-key',
@@ -216,6 +222,7 @@ export const innocentTexts: readonly string[] = [
   ...gapInnocentTexts,
   ...commandInnocentTexts,
   ...continuationInnocentTexts,
+  ...precisionInnocentTexts,
 ];
 
 /**
@@ -252,6 +259,7 @@ export const adversarialPieces: readonly string[] = [
   ...gapAdversarialPieces,
   ...commandAdversarialPieces,
   ...continuationAdversarialPieces,
+  ...precisionAdversarialPieces,
 ];
 
 export interface KeyedSecretCase {
