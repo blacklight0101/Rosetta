@@ -28,6 +28,15 @@ const expected = `# Report for run 20261012-100000-understand
 - [Run replay](replay.html)
 - [This report as static HTML](report.html)
 
+## Verification summary
+
+Supported share: 1 of 1 claim (100.0%).
+
+| Area | Proposed | CitationInvalid | Supported | Rejected | Unverified | Total | Supported share |
+|---|---|---|---|---|---|---|---|
+| orders | 0 | 0 | 1 | 0 | 0 | 1 | 100.0% |
+| All areas | 0 | 0 | 1 | 0 | 0 | 1 | 100.0% |
+
 ## Cards
 
 1 card, 1 claim: 1 Supported.
