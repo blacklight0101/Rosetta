@@ -1,5 +1,6 @@
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openScannedStartPage } from './support/cost-run.js';
 import { openHistory, runRow } from './support/history-page.js';
 import { agentPanel, openRunTab, runStatus, startUnderstand } from './support/live-run-page.js';
 import { accountFor } from './support/seed.js';
@@ -20,6 +21,9 @@ test.beforeEach(async ({ context }, info) => {
 test('RF-006 resumes an interrupted run from the history page: the same run, its finished agent kept', async ({
   page,
 }) => {
+  // The project has no code map until a scan ran; the scan comes first and the run after it.
+  test.setTimeout(120_000);
+  await openScannedStartPage(page);
   const live = await startUnderstand(page, ['Catalog', 'Controllers']);
   await openRunTab(page, 'All agents');
   await expect(agentPanel(page, 'Controllers')).toContainText('Running', { timeout: 30_000 });
