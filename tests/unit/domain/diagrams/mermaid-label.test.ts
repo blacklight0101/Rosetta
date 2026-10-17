@@ -105,3 +105,23 @@ describe('mermaidLabel on look-alikes and edge cases', () => {
     expect(mermaidLabel('#;##;;')).toBe('#35;#59;#35;#35;#59;#59;');
   });
 });
+
+// The Mermaid 12.1 flowchart and erDiagram lexers match `direction <TB|BT|RL|LR|TD>` anywhere in
+// a line, even inside a quoted label (the erDiagram one ignores case), and swallow the rest of the
+// line. A label never holds the word as written: its first letter is an entity code.
+describe('mermaidLabel on the direction statement', () => {
+  it.each([
+    ['direction TB', '#100;irection TB'],
+    ['redirection BTN', 're#100;irection BTN'],
+    ['Sort DIRECTION lr', 'Sort #68;IRECTION lr'],
+    ['Text DiReCtIoN Rlx', 'Text #68;iReCtIoN Rlx'],
+    ['direction direction', '#100;irection #100;irection'],
+    ['directions', '#100;irections'],
+  ])('RF-508 breaks the word in %j', (text, escaped) => {
+    expect(mermaidLabel(text)).toBe(escaped);
+  });
+
+  it('RF-508 leaves a word that only starts like it alone', () => {
+    expect(mermaidLabel('direct ion directio')).toBe('direct ion directio');
+  });
+});

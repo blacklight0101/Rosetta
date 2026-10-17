@@ -28,15 +28,21 @@ describe('screenMapDiagram', () => {
     expect(lines).toContain('  s2 --> s1');
   });
 
-  it('RF-261 a link to a screen without a card gets its own node once', () => {
+  it('RF-261 a link to a screen without a card gets its own node once, each link drawn once', () => {
     const screens = [
       screenCard('SCRN-001', '/a', ['/missing', '/missing']),
       screenCard('SCRN-002', '/b', ['/missing']),
     ];
     const lines = linesOf(screenMapDiagram(screens));
 
-    expect(lines.filter((line) => line.includes('#47;missing'))).toEqual(['  s3["#47;missing"]']);
-    expect(lines.slice(-2)).toEqual(['  s1 --> s3', '  s2 --> s3']);
+    expect(lines).toEqual([
+      'flowchart LR',
+      '  s1["#47;a"]',
+      '  s2["#47;b"]',
+      '  s3["#47;missing"]',
+      '  s1 --> s3',
+      '  s2 --> s3',
+    ]);
   });
 });
 
