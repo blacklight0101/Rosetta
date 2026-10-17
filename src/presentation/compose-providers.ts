@@ -59,6 +59,15 @@ async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
   });
 }
 
+/**
+ * RNF-006, ADR-008: the adapters of this release for `npm run eval`, which hands them to the
+ * guarded provider factory of its own pipeline (eval/eval-pipeline.ts), never calls them directly.
+ */
+export async function releaseAdapters(logger: Logger): Promise<AdapterBuilder> {
+  const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
+  return realAdapters({ testMode: false, textProtocolPrompt, logger });
+}
+
 export interface ComposedProviders {
   /** The use case behind the Test button (RF-407). */
   readonly testProviders: TestProviders;

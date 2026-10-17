@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "version": "2026-10-17.test",
+  "description": "A golden set for the synthetic webforms-csharp fixture, so the evaluation runner can be tested with the fake provider and its recordings. Written by hand for this repository; it describes no real application.",
+  "source": {
+    "url": "https://github.com/octo/demo",
+    "commit": "cccccccccccccccccccccccccccccccccccccccc",
+    "subpath": ""
+  },
+  "cases": [
+    {
+      "id": "home-page",
+      "title": "The home page lists the catalog",
+      "paths": ["Default.aspx.cs"],
+      "findings": [
+        {
+          "id": "feature-home-list",
+          "kind": "feature",
+          "statement": "The home page binds the list of catalog items to a grid when it loads.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN"],
+          "evidence": ["Default.aspx.cs:8-12"],
+          "keywords": ["catalog", "grid"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-home-paging",
+          "statement": "The home page has no paging: every item is bound at once.",
+          "claimPatterns": [["page size"], ["paging"]],
+          "unless": ["no paging"]
+        }
+      ]
+    },
+    {
+      "id": "details-page",
+      "title": "The details page",
+      "paths": ["Catalog/Details.aspx.cs"],
+      "findings": [
+        {
+          "id": "rule-details-name",
+          "kind": "rule",
+          "statement": "The details page sets its name label to the fixed text Item.",
+          "cardTypes": [],
+          "evidence": ["Catalog/Details.aspx.cs:5-8"],
+          "keywords": ["name"]
+        }
+      ],
+      "absences": []
+    },
+    {
+      "id": "catalog-api",
+      "title": "The catalog API",
+      "paths": ["Controllers/CatalogController.cs"],
+      "findings": [
+        {
+          "id": "feature-api-get",
+          "kind": "feature",
+          "statement": "GET on the catalog API answers the text item followed by the id.",
+          "cardTypes": ["FEAT", "INT"],
+          "evidence": ["Controllers/CatalogController.cs:7-10"],
+          "keywords": ["item"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-api-auth",
+          "statement": "The catalog API checks no user: it has no authorisation attribute.",
+          "claimPatterns": [["authoriz"], ["authoris"]],
+          "unless": []
+        }
+      ]
+    },
+    {
+      "id": "catalog-schema",
+      "title": "The catalog item table",
+      "paths": ["Database/schema.sql"],
+      "findings": [
+        {
+          "id": "entity-catalog-item",
+          "kind": "entity",
+          "statement": "The CatalogItem table holds Id, Name and Price, all required.",
+          "cardTypes": ["ENT"],
+          "evidence": ["Database/schema.sql:2-6"],
+          "keywords": ["catalogitem", "catalog item"]
+        }
+      ],
+      "absences": []
+    },
+    {
+      "id": "stock-update",
+      "title": "The stock statement of the catalog service",
+      "paths": ["Services/CatalogService.cs"],
+      "findings": [
+        {
+          "id": "rule-stock-decrement",
+          "kind": "rule",
+          "statement": "The catalog service holds an UPDATE that lowers the stock of an item by one.",
+          "cardTypes": ["BR"],
+          "evidence": ["Services/CatalogService.cs:12-12"],
+          "keywords": ["stock"]
+        }
+      ],
+      "absences": []
+    }
+  ]
+}
