@@ -28,7 +28,8 @@ import { breakMarkers, holdsMarker } from './marker-skeleton.js';
  * `cards`, the cards the summariser compares (RF-250); and `owner_answers`, the owner's answers to
  * open questions, sent to a re-run reader (RF-241).
  * The verifier's judgement (RF-301) sends the claim a reader wrote (`claim`, model output) and
- * the lines it cites (`cited_lines`).
+ * the lines it cites (`cited_lines`). The planner (RF-608, RF-609) gets the verified cards (`cards`)
+ * and what the scan found of the legacy stack (`scan_summary`: file names, languages, area names).
  */
 export type DataBlockSource =
   | 'read_file'
@@ -39,7 +40,8 @@ export type DataBlockSource =
   | 'cards'
   | 'owner_answers'
   | 'claim'
-  | 'cited_lines';
+  | 'cited_lines'
+  | 'scan_summary';
 
 export const DATA_BLOCK_SOURCES: readonly DataBlockSource[] = [
   'read_file',
@@ -51,6 +53,7 @@ export const DATA_BLOCK_SOURCES: readonly DataBlockSource[] = [
   'owner_answers',
   'claim',
   'cited_lines',
+  'scan_summary',
 ];
 
 export interface DataBlock {
