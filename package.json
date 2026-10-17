@@ -26,6 +26,7 @@
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run arch && npm run deadcode && npm run test:ci",
     "live:openai": "npm run build && node scripts/openai-live-check.mjs",
     "live:ollama": "npm run build && node scripts/ollama-live-check.mjs",
+    "spike:reader": "node --import ./scripts/register-ts.mjs eval/spike/score-reader.ts",
     "live:anthropic": "npm run build && node --env-file=.env scripts/anthropic-live-check.mjs",
     "eval": "node --env-file-if-exists=.env --import ./scripts/register-ts.mjs scripts/eval.mjs",
     "site:build": "node --import ./scripts/register-ts.mjs scripts/build-sample-site.mjs",
