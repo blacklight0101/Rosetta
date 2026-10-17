@@ -4,7 +4,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Logger } from '../ports/logger.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { WorkspaceFolders } from '../ports/workspace-folders.js';
-import { removeFolder } from './remove-folder.js';
+import { markFolder, removeFolder } from './remove-folder.js';
 
 // RF-1012, DEC-55, RF-1105: Delete run removes the folder and the row of one of the signed-in
 // user's runs that has ended, and writes an `info` entry naming it and the space freed. A run that
@@ -12,7 +12,8 @@ import { removeFolder } from './remove-folder.js';
 // ledger is not touched: it has no link to the run row, so the project totals keep every call. The
 // folder goes first: if the row cannot be removed afterwards the run is still listed and can be
 // deleted again, where a row removed first would leave a folder nothing points to; a folder that
-// cannot be removed is logged and answered with RST-1115 (`removeFolder`, P1-121). Another user's
+// cannot be removed is logged and answered with RST-1115 (`removeFolder`, P1-121). The folder is
+// marked before it is removed (P2-41), so a folder left behind is one the sweep may remove. Another user's
 // run id and an unknown id give the same answer, `not found`.
 
 /** What a deletion freed on disk. */
@@ -47,6 +48,7 @@ export class DeleteRun {
     if (run.queueState !== 'Ended') return err(ERROR_CODES.deleteRefusedInUse);
     const target = { userId, projectId: run.projectId, runKey: run.runKey };
     const freedBytes = await folders.size(target);
+    await markFolder(folders, logger, target);
     await removeFolder(folders, logger, target);
     if (!(await runs.removeEnded(userId, run.id))) return err(ERROR_CODES.notFound);
     await logger.log({
