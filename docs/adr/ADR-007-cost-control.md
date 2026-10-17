@@ -37,10 +37,12 @@ explicitly allowed (RF-427). `estimate` gives a low, likely and high forecast pe
 ## Consequences
 
 **Positive**
+
 - A run can never spend more than its cap; the developer always sees cost before, during and after.
 - Cost data becomes evidence for the master's final report.
 
 **Negative**
+
 - Prices change; the default table must carry a date and be easy to override.
 - Worst-case checks stop runs slightly early; caps must be set with some margin.
 - Estimates depend on assumptions (turns per area, output size) that need calibration over real runs (RNF-012).

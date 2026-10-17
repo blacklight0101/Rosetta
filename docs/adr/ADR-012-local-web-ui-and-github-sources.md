@@ -51,10 +51,12 @@ We choose option 1.
 ## Consequences
 
 **Positive**
+
 - A strong live demo; the same components make the published report interactive.
 - Input is uniform and public, so every result can be checked by anyone.
 
 **Negative**
+
 - A front-end toolchain and a small HTTP server enter the project; the web UI needs its own tests and accessibility
   checks (RNF-010).
 - Network access to GitHub is required to fetch a project (cached afterwards); RNF-011 now means "after the snapshot is

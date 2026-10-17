@@ -51,10 +51,12 @@ We choose option 1.
 ## Consequences
 
 **Positive**
+
 - Known LLM and web risks are handled by design, and the threat model is reusable evidence for the master.
 - Damage from a successful injection stays bounded: tools are read-only, the citation check is code, caps apply.
 
 **Negative**
+
 - More tests and fixtures (injection, XSS, symlink, oversized archive, slow regex) in P1.
 - Cards cannot contain rich HTML; formatting is limited to plain Markdown.
 

@@ -40,10 +40,12 @@ distributed from source in R1, with no server process and no database; every res
 ## Consequences
 
 **Positive**
+
 - One small runtime on Windows, macOS and Linux; no infrastructure to run or pay for.
 - Strict typing lets builders and the verifier catch contract drift between ports and adapters.
 
 **Negative**
+
 - The owner learns a new ecosystem while reviewing agent-built code.
 - Native tree-sitter bindings need a build toolchain or prebuilt binaries on Windows; the language pack card must
   check this early (or use the WebAssembly build).

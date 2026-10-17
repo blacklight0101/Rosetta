@@ -39,10 +39,12 @@ others `coarse`. A failing pack falls back to `coarse` for that file. Release 1 
 ## Consequences
 
 **Positive**
+
 - A clean extension point that keeps stack-specific code out of the core (CLAUDE.md hard rule).
 - Deterministic output usable for repeatable tests and comparisons (RF-106).
 
 **Negative**
+
 - Coarse maps give agents less guidance, so runs on unsupported stacks read more files and cost more.
 - Artefact and entry-point rules for many stacks must be written and tested; they will never be complete.
 - Native tree-sitter bindings on Windows need checking early (ADR-002).

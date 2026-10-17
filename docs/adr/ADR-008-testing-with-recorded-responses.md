@@ -38,10 +38,12 @@ reports precision, recall and cost per provider and model. Test levels and their
 ## Consequences
 
 **Positive**
+
 - Fast, free, deterministic CI; agent builders get a clear done criterion.
 - Quality changes from prompt edits become measurable.
 
 **Negative**
+
 - Recordings go stale when prompts change and must be re-recorded deliberately.
 - The golden set takes hand work and is small; its scores describe the demo app, not every codebase.
 - Live-provider behaviour (rate limits, odd outputs) is only covered by the opt-in evaluation and manual runs.
