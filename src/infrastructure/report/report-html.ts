@@ -4,6 +4,7 @@ import {
   type ReportModel,
 } from '../../application/report/report-model.js';
 import { escapeHtml, renderModelText } from './html-text.js';
+import { overviewHtml } from './report-overview-html.js';
 import { renderPage } from './page-shell.js';
 import { cardsSummary, claimsText, COVERAGE_MISSING, dollars, plural } from './report-format.js';
 import { sourceLink } from './report-source.js';
@@ -124,10 +125,17 @@ ${model.cards.map(cardRow).join('\n')}
 </section>`;
 }
 
+/** RF-264: the overview opens the report; a run without one adds nothing. */
+function overviewParts(model: ReportModel): string[] {
+  const html = overviewHtml(model.overview);
+  return html === '' ? [] : [html];
+}
+
 // RF-504, RF-507, RF-1013, DEC-112
 export function renderReportHtml(model: ReportModel): string {
   const main = [
     '<h1>Run report</h1>',
+    ...overviewParts(model),
     facts(model),
     documents(model),
     areas(model),

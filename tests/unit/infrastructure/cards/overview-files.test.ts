@@ -169,12 +169,13 @@ describe('the report', () => {
 
     const page = auditHtml(renderReportHtml(hostile));
 
-    expect(page.document.querySelector('#overview')).not.toBeNull();
+    const section = page.document.querySelector('section[aria-labelledby="overview"]');
+    expect(section).not.toBeNull();
     expect(page.document.querySelector('section')?.getAttribute('aria-labelledby')).toBe(
       'overview',
     );
-    expect(page.document.querySelector('#overview script')).toBeNull();
-    expect(page.document.querySelector('#overview img')).toBeNull();
-    expect(page.document.querySelector('#overview')?.textContent).toContain('<script>');
+    expect(section?.querySelector('script')).toBeNull();
+    expect(section?.querySelector('img')).toBeNull();
+    expect(section?.textContent).toContain('<script>');
   });
 });

@@ -1,4 +1,5 @@
 import type { Card } from '../../domain/cards/card.js';
+import type { Overview } from '../../domain/overview/overview.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { PromptFile } from '../agent/prompt-file.js';
@@ -21,6 +22,7 @@ import { changesOf, markAnswered, type Rerun } from './answer-rerun.js';
 import { cardNoteOf, coverageNoteOf } from './area-notes.js';
 import { judgementPartsOf, runJudgementStep, type JudgementContext } from './claim-judgement.js';
 import { openQuestionsOf } from './open-questions.js';
+import { overviewStep } from './overview-step.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
@@ -33,14 +35,14 @@ import { taskResultOf } from './task-result-of.js';
 import { withoutThirdPartyQuestions } from './third-party-questions.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
-// RF-200, RF-202, RF-203, RF-230, RF-300, RF-301, RF-1002, DEC-98, RNF-002: the reader tasks of one
+// RF-200, RF-202, RF-203, RF-230, RF-264, RF-300, RF-301, RF-1002, DEC-98, RNF-002: the reader tasks of one
 // understand run and what they leave. Every task that ends adds its cards; the cards of the run so far are then
 // given their ids, pass the citation check and are written, so a run that stops keeps the cards of
 // the tasks that ended (partial cards). An area whose task answered no card is named in `spec.md`
 // and logged; the coverage of the ended tasks' areas is written with them (RF-230). When every task has
 // ended (or the run stopped) the open questions are added to the project's `answers.md`. Then the
 // judgement step judges the claims that passed the citation check and the cards are written again
-// with their verdicts, before duplicate cards are merged.
+// with their verdicts, before duplicate cards are merged and the overview is written (RF-264).
 
 interface UnderstandSessionDependencies {
   readonly cards: CardOutputs;
@@ -64,6 +66,8 @@ export interface UnderstandSessionParts extends ReaderTaskContext {
   /** RF-250: the role that merges the duplicate cards of several areas, and its prompt. */
   readonly summariser: RoleProvider;
   readonly mergePrompt: PromptFile;
+  /** RF-264: the summariser's prompt for the overview. */
+  readonly overviewPrompt: PromptFile;
 }
 
 export class UnderstandSession {
@@ -75,6 +79,7 @@ export class UnderstandSession {
   private readonly thirdParty: ReadonlySet<string>;
   private latest: CheckedCards;
   private outputFailure: ErrorCode | undefined;
+  private overview: Overview | undefined;
 
   constructor(parts: UnderstandSessionParts) {
     this.parts = parts;
@@ -142,7 +147,16 @@ export class UnderstandSession {
     await this.addQuestions();
     await this.judge();
     await this.consolidate();
+    await this.writeOverview();
     await this.markAnswered();
+  }
+
+  // RF-264: the overview of the cards that passed, written with the specification.
+  private async writeOverview(): Promise<void> {
+    const { cards } = this.latest;
+    const { coverage, thirdParty } = this;
+    this.overview = await overviewStep({ parts: this.parts, cards, coverage, thirdParty });
+    await this.writeSet(cards);
   }
 
   /** RF-241: the questions of the areas whose task ended `Done` are now `Answered`. */
@@ -214,7 +228,10 @@ export class UnderstandSession {
   private async ended(task: ReaderTask, outcome: TaskOutcome): Promise<void> {
     const { execution } = this.parts;
     const { agentTaskId } = task;
-    if (outcome.rawOutputs.length > 0) await this.keepInvalid(task, outcome.rawOutputs);
+    const { rawOutputs } = outcome;
+    if (rawOutputs.length > 0) {
+      await deps.cards.writeInvalidOutput(scopeOf(execution.run), agentTaskId, rawOutputs);
+    }
     if (outcome.state === 'Done' && outcome.problems.length > 0)
       await this.log.dropped(task, outcome.problems);
     const empty = outcome.state === 'Done' && outcome.drafts.length === 0;
@@ -276,7 +293,7 @@ export class UnderstandSession {
     const { deps, execution, source } = this.parts;
     const areasWithoutCards = this.cards.areasWithoutCards();
     await deps.cards.writeCards(scopeOf(execution.run), {
-      ...{ cards, source, areasWithoutCards },
+      ...{ cards, source, areasWithoutCards, overview: this.overview },
       ...changesOf(this.parts.rerun, cards),
     });
   }
@@ -286,10 +303,5 @@ export class UnderstandSession {
     const settled = this.cards.takeSettled(final);
     const cards = cardsOf(this.latest.cards, settled);
     await announceCards(this.parts.execution.events, this.latest, cards);
-  }
-
-  private async keepInvalid(task: ReaderTask, rawOutputs: readonly string[]): Promise<void> {
-    const { deps, execution } = this.parts;
-    await deps.cards.writeInvalidOutput(scopeOf(execution.run), task.agentTaskId, rawOutputs);
   }
 }

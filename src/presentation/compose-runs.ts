@@ -11,6 +11,7 @@ import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
 import { CountAnsweredQuestions } from '../application/use-cases/count-answered-questions.js';
 import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
+import { ReadOverview } from '../application/use-cases/read-overview.js';
 import { ListAnswers } from '../application/use-cases/list-answers.js';
 import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
@@ -206,6 +207,7 @@ function runServices(service: ServiceParts): RunServices {
     recordAnswers: new RecordAnswers({ runs, answers, cards }),
     reopenQuestion: new ReopenQuestion({ runs, answers, cards, logger: parts.logger }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
+    readOverview: new ReadOverview({ runs, files: new FileRunTextFiles(writer) }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
     streams: parts.streams,

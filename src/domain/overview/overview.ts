@@ -33,7 +33,7 @@ export const NOT_COVERED_TITLE = 'What was not covered';
  * failed, so only what the run could not cover is told.
  */
 export const OVERVIEW_STATES = ['full', 'thin', 'unavailable'] as const;
-export type OverviewState = (typeof OVERVIEW_STATES)[number];
+type OverviewState = (typeof OVERVIEW_STATES)[number];
 
 export interface OverviewCardRef {
   readonly id: string;

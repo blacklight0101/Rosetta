@@ -61,6 +61,7 @@ export class BuildReport {
       manifest: await manifests.read(scope),
       events: await history.read(scope, 0),
       cardIndex: await this.deps.files.read(scope, 'cards/index.json'),
+      overviewFile: await this.deps.files.read(scope, 'overview.json'),
       documents: await this.documentsOf(scope),
       areas: await this.areasOf(run),
     });

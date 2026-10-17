@@ -1,0 +1,39 @@
+/* The overview of the application on the page of an ended run (P1-168, RF-264). Every class here
+   starts with rst-p168 so the component owns its styles; colours, spacing and type come from the tokens. */
+
+.rst-p168-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-p168-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  min-inline-size: 0;
+}
+
+.rst-p168-section__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.rst-p168-statements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding-inline-start: var(--rst-sp-4);
+  overflow-wrap: anywhere;
+}
+
+.rst-p168-cards {
+  color: var(--rst-ink-soft);
+}
+
+.rst-p168-concerns {
+  margin: 0;
+  color: var(--rst-ink-soft);
+}

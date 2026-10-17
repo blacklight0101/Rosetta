@@ -204,6 +204,22 @@ describe('writeOverview on a stopped run', () => {
   });
 });
 
+describe('writeOverview when the run stops during the call', () => {
+  it('RF-264 says the run stopped, not that the summariser failed', async () => {
+    const stop = new AbortController();
+    const provider = new Answers(() => {
+      stop.abort();
+      throw new RosettaError(ERROR_CODES.providerCallCancelled);
+    });
+    const { parts } = partsOf(provider, stop.signal);
+
+    const overview = await writeOverview(parts, { cards: overviewCards(), areas });
+
+    expect(overview.state).toBe('unavailable');
+    expect(overview.notice).toContain('stopped before the overview was written');
+  });
+});
+
 describe('writeOverview when the answer cannot be used', () => {
   it('RF-264 a failed call leaves an overview that says so and the run goes on', async () => {
     const provider = new Answers(() => {

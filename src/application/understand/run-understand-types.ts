@@ -17,6 +17,8 @@ export interface Prepared {
   readonly allTasks: readonly ReaderTask[];
   readonly prompts: ReaderPrompts;
   readonly mergePrompt: PromptFile;
+  /** RF-264: the summariser's overview prompt. */
+  readonly overviewPrompt: PromptFile;
   /** RF-301: the prompts of the judgement step. */
   readonly verifierPrompts: VerifierPrompts;
   readonly rerun?: Rerun;

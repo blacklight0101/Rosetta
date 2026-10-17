@@ -173,7 +173,9 @@ describe('the overview and hostile text', () => {
     expect(region.querySelector('a[href^="javascript:"]')).toBeNull();
     expect(Reflect.get(window, '__pwned')).toBeUndefined();
   });
+});
 
+describe('the overview and long text', () => {
   it('RF-507 a very long statement does not widen the page', async () => {
     const long = 'x'.repeat(5000);
     const wide = {

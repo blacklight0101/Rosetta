@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
+import { sectionTitles } from '../api/overview.js';
 import { reopenQuestion, saveAnswer, type OpenQuestionRow } from '../api/answers.js';
 import type { ApiFailure, ApiResult } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
@@ -8,7 +9,9 @@ import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
+import { sectionAnchor } from './AppOverview.js';
 import { useRunAnswers } from './use-run-answers.js';
+import type { OverviewLoad } from './use-run-overview.js';
 
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
 // field for the answer. Saving writes the answer into the project's answers.md (the other answers
@@ -21,6 +24,8 @@ export interface RunAnswersProps {
   /** The run's id (the UUID). */
   readonly runId: string;
   readonly ended: boolean;
+  /** RF-264: the overview each question links to, when the run has one. */
+  readonly overview?: OverviewLoad;
 }
 
 type Questions = readonly OpenQuestionRow[];
@@ -166,10 +171,21 @@ function AnswerForm(props: {
   );
 }
 
+/** RF-264: the overview section a question concerns, as a link to it. */
+function Concerns(props: { readonly section: keyof typeof sectionTitles }): JSX.Element {
+  return (
+    <p class="rst-p168-concerns">
+      Concerns the overview section{' '}
+      <a href={`#${sectionAnchor(props.section)}`}>{sectionTitles[props.section]}</a>
+    </p>
+  );
+}
+
 function QuestionItem(props: {
   readonly runId: string;
   readonly question: OpenQuestionRow;
   readonly apply: (questions: Questions) => void;
+  readonly section?: keyof typeof sectionTitles | undefined;
 }): JSX.Element {
   const { question } = props;
   const save = useAnswerSave(props.runId, question, props.apply);
@@ -182,6 +198,7 @@ function QuestionItem(props: {
       <p class="rst-p139-question__text">
         <RenderedText text={question.question} />
       </p>
+      {props.section === undefined ? null : <Concerns section={props.section} />}
       <p class="rst-p139-question__context">
         <RenderedText text={question.context} />
       </p>
@@ -190,7 +207,8 @@ function QuestionItem(props: {
   );
 }
 
-function Body({ runId, ended }: RunAnswersProps): JSX.Element {
+function Body({ runId, ended, overview }: RunAnswersProps): JSX.Element {
+  const links = overview?.status === 'ready' ? (overview.overview?.questions ?? []) : [];
   const { load, apply } = useRunAnswers(runId, ended);
   if (load.status === 'waiting') {
     return <p class="rst-settings__note">The open questions appear here when the run ends.</p>;
@@ -209,7 +227,13 @@ function Body({ runId, ended }: RunAnswersProps): JSX.Element {
   return (
     <ol class="rst-p139-answers__list">
       {load.questions.map((question) => (
-        <QuestionItem key={question.cardId} runId={runId} question={question} apply={apply} />
+        <QuestionItem
+          key={question.cardId}
+          runId={runId}
+          question={question}
+          apply={apply}
+          section={links.find((link) => link.cardId === question.cardId)?.section}
+        />
       ))}
     </ol>
   );
