@@ -20,6 +20,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "tests", "*.config.ts"],
+  "include": ["src", "tests", "eval", "*.config.ts"],
   "exclude": ["tests/unit/web"]
 }
