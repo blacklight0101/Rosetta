@@ -11,5 +11,11 @@
     "tests/compose/serve.ts",
     "tests/support/frozen-database-harness.ts"
   ],
-  "project": ["src/**/*.ts", "tests/**/*.{ts,tsx}", "scripts/**/*.mjs", "web/**/*.{ts,tsx}"]
+  "project": [
+    "src/**/*.ts",
+    "eval/**/*.ts",
+    "tests/**/*.{ts,tsx}",
+    "scripts/**/*.mjs",
+    "web/**/*.{ts,tsx}"
+  ]
 }

@@ -713,16 +713,24 @@ in one):
   `error` and `withinTarget` (within 30%, compared before the error is rounded), or `not-measured` with the reason
   `unpriced`, `free` (estimate and cost both zero), `zero-estimate` (a priced estimate of zero for a run that cost
   money) or `no-cost-report`); `summary` with the spread `{ n, min, max, mean, stdDev }` of precision, strict
-  precision, rule recall, recall of all findings, citation validity, cost, cost per Supported claim, estimate error
-  and the unmatched share (unmatched / Supported);
-  `cases[]` with the spread of each case's precision and recalls; `targets` (precision 0.9, rule recall 0.7, citation
+  precision, rule recall, recall of all findings, step recall, screen field recall, relation precision, citation
+  validity, cost, cost per Supported claim, estimate error and the unmatched share (unmatched / Supported);
+  `cases[]` with the spread of each case's precision, recalls, step recall, screen field recall and relation precision; `targets` (precision 0.9, rule recall 0.7, citation
   validity 1, each `{ target, mean, met }`; precision also has `strictMean` and `unmatchedShare`, the means of strict
   precision and of the unmatched share, so a headline met with most claims unchecked shows it; and the estimate
   `{ target: 0.3, measured, within }`).
 - A score counts only `Supported` claims: `correct` (matches a finding), `incorrect` (states an absence; an absence
   wins over a finding), `unmatched` (neither, listed by claim id for a person to check), `precision` = correct /
   (correct + incorrect), `strictPrecision` = correct / Supported, `recall` = golden rules found / golden rules,
-  `recallAll` over every finding. A ratio with nothing to divide by is `null`; every measure is rounded to six
+  `recallAll` over the features, rules and entities. The flows, screens and data model (RF-260..RF-262, P2-23) have
+  three measures of their own, with counts and no target: `stepRecall` = golden steps found / golden steps (a step is
+  found by a correct `FLOW` claim), `screenFieldRecall` = golden screen fields found / golden fields (by a correct
+  `SCRN` claim; the golden actions are found or missed but not in this ratio), and `relationPrecision` =
+  `relationsCorrect` / `relationsStated`, where a relation is stated by a `Supported` `ENT` claim that holds a relation
+  word (`refer*`, `foreign key*`, `belong*`, `relat*`, `link*`, `join*`, `associat*`, `has many`, `has one`,
+  `one-to-many`, `many-to-one`, `one-to-one`, `many-to-many`; `ENT` cards hold claims, not structured relations) and is
+  correct when it matches a golden relation; `relationClaims` lists the claims that stated one. A ratio with nothing to
+  divide by is `null`; every measure is rounded to six
   decimals. A case is scored with the claims that cite one of its paths.
 
 The calibration set of RF-305 is not part of P2-11.
@@ -730,7 +738,8 @@ The calibration set of RF-305 is not part of P2-11.
 **Golden set** (`eval/golden/<name>.json`, schema in `src/application/eval/golden-set-schema.ts`, at most 1 MiB, read
 only from inside `eval/`): `{ schemaVersion: 1, version, description, source { url (https://github.com/<owner>/<repo>),
 commit (40 hex), subpath }, cases[] }`; each case `{ id, title, paths[], findings[], absences[] }`; a finding `{ id,
-kind (feature | rule | entity), statement, cardTypes[] (empty: any), evidence[] (path:start-end inside the case's
+kind (feature | rule | entity | step | field | action | relation), of (the flow, screen or entity; required for
+step, field, action and relation), statement, cardTypes[] (empty: any), evidence[] (path:start-end inside the case's
 paths), keywords[] }` is matched by a claim of an accepted card type that cites a line of its evidence and names one
 keyword (in the claim text or card title, any case); an absence `{ id, statement, claimPatterns[][], unless[] }` is
 hit by a claim that holds every word of one pattern and none of the `unless` words. Words are whole words: a word

@@ -7,6 +7,7 @@ a stop, the full understand run that the end-to-end tests drive, and the verifie
 (`verifier-*.json`: the verdicts, a retry, a verdict written before its reason, an answer invalid twice and a Supported answer to every claim; `verifier-flow-screen.json` judges a FLOW and a SCRN card with a bad step and made-up claims, `verifier-flow-step-rejected.json` rejects one step of the `webforms-shop` run, P2-20).
 `understand-flows-screens.json` is a run over the `webforms-shop` fixture whose readers answer FLOW, SCRN and OQ cards
 for the catalogue and order journeys and none for the service library (P2-19).
+`understand-shop-model.json` is the same run with the Services area answering two `ENT` cards (one relation the code shows, one it does not) and the shipping `BR` card, and `verifier-shop-model.json` judges it (the second and fourth claims rejected, the rest Supported); the evaluation runner test scores them against `tests/fixtures/eval/golden-shop.json` (P2-23).
 
 ## Provenance (RNF-009)
 

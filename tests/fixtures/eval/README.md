@@ -5,6 +5,11 @@
 `tests/recordings/fake/` (RNF-006, RNF-015, ADR-008). Its findings and "not in the code" cases describe that fixture
 only, at the made-up commit `cccc...` of the made-up repository `octo/demo`.
 
+`golden-shop.json` is the golden set of the `webforms-shop` fixture: the steps of its three journeys, the fields and
+actions of its four screens, its entities with one relation, one business rule and one "not in the code" case. The
+evaluation runner test replays `tests/recordings/fake/understand-shop-model.json` and
+`verifier-shop-model.json` over it (P2-23). Its version is `2026-10-17.shop`, at the made-up commit `cccc...`.
+
 ## Provenance (RNF-009)
 
 Written by hand for this repository by the Rosetta contributors and covered by the repository's MIT licence. It

@@ -1,7 +1,13 @@
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { citesAnyPath, hitsAbsence, matchesFinding, type EvaluatedClaim } from './claim-match.js';
-import type { GoldenAbsence, GoldenCase, GoldenFinding } from './golden-set.js';
+import {
+  STRUCTURE_KINDS,
+  type GoldenAbsence,
+  type GoldenCase,
+  type GoldenFinding,
+} from './golden-set.js';
 import { ratio } from './ratio.js';
+import { structureScore, type StructureScore } from './structure-score.js';
 
 // RNF-006, RNF-015, RFC-001 section 7: the precision of `Supported` claims and the recall of the
 // golden rules for one run. Only `Supported` claims count. A claim that states something the
@@ -10,7 +16,7 @@ import { ratio } from './ratio.js';
 // correct / (correct + wrong); `strictPrecision` is correct / every Supported claim, the lower
 // bound that counts every unmatched claim as wrong. Ids are listed in code-unit order.
 
-export interface ClaimScore {
+export interface ClaimScore extends StructureScore {
   readonly supported: number;
   readonly correct: number;
   readonly incorrect: number;
@@ -23,7 +29,7 @@ export interface ClaimScore {
   readonly recall: number | null;
   readonly findingsTotal: number;
   readonly findingsFound: number;
-  /** Recall of every finding: features, rules and entities. */
+  /** Recall of every finding: features, rules and entities (flows, screens and relations have their own). */
   readonly recallAll: number | null;
   readonly foundFindings: readonly string[];
   readonly missedFindings: readonly string[];
@@ -76,6 +82,8 @@ export function scoreClaims(
   );
   const rules = findings.filter((finding) => finding.kind === 'rule');
   const rulesFound = found.filter((finding) => finding.kind === 'rule').length;
+  const content = findings.filter((finding) => !STRUCTURE_KINDS.some((k) => k === finding.kind));
+  const contentFound = found.filter((finding) => content.includes(finding)).length;
   return {
     supported: supported.length,
     correct: correct.length,
@@ -86,13 +94,14 @@ export function scoreClaims(
     rulesTotal: rules.length,
     rulesFound,
     recall: ratio(rulesFound, rules.length),
-    findingsTotal: findings.length,
-    findingsFound: found.length,
-    recallAll: ratio(found.length, findings.length),
+    findingsTotal: content.length,
+    findingsFound: contentFound,
+    recallAll: ratio(contentFound, content.length),
     foundFindings: sorted(found.map((finding) => finding.id)),
     missedFindings: sorted(
       findings.filter((finding) => !found.includes(finding)).map((finding) => finding.id),
     ),
+    ...structureScore(supported, correct, findings),
     absencesHit: sorted(hit),
     incorrectClaims: sorted(incorrect.map((claim) => claim.claimId)),
     unmatchedClaims: sorted(unmatched.map((claim) => claim.claimId)),
