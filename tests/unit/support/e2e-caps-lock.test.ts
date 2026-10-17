@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Clock } from '../../../src/application/ports/clock.js';
 import { acquireCapsLock, capsLockFolder } from '../../e2e/support/caps-lock.js';
@@ -192,6 +192,16 @@ describe('e2e caps lock, one folder per run', () => {
       if (before === undefined) delete process.env['ROSETTA_E2E_RUN_KEY'];
       else process.env['ROSETTA_E2E_RUN_KEY'] = before;
     }
+  });
+});
+
+describe('the caps lock folder root', () => {
+  it('RNF-005 lives in the temp folder by default, where the global setup looks for old ones', () => {
+    expect(dirname(capsLockFolder())).toBe(tmpdir());
+  });
+
+  it('RNF-005 lives in the root it is given', () => {
+    expect(dirname(capsLockFolder(join(tmpdir(), 'elsewhere')))).toBe(join(tmpdir(), 'elsewhere'));
   });
 });
 

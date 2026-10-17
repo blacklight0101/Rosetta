@@ -66,6 +66,11 @@ describe('an understand run whose merge renumbers claims', UNDERSTAND_TIMEOUT, (
     for (const move of moves) {
       expect(move.from.startsWith('ENT-002.')).toBe(true);
       expect(merged).toContain(`claimId: "${move.to}"`);
+      const verdict = events.find(
+        (event) => event.type === 'verify.claim.judged' && event.data['claimId'] === move.from,
+      );
+      expect(verdict).toBeDefined();
+      expect(merged).toContain(`### ${move.to} (${String(verdict?.data['status'])})`);
     }
     const after = events.findIndex((event) => event.type === 'cards.merged');
     const judgedAfter = events.slice(after).some((event) => event.type === 'verify.claim.judged');
