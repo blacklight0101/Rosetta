@@ -82,7 +82,7 @@ describe('spec.md screens section', () => {
     const text = await specOf();
 
     const map = text.split('```mermaid\nflowchart LR\n')[1]?.split('```')[0] ?? '';
-    expect(map).toContain('  s1["/Checkout.aspx"]\n  s2["/Confirmation.aspx"]');
+    expect(map).toContain('  s1["#47;Checkout.aspx"]\n  s2["#47;Confirmation.aspx"]');
     expect(map).toContain('  s1 --> s2');
     expect(map.match(/\["/g)).toHaveLength(2);
   });

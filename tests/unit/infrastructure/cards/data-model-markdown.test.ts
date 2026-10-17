@@ -165,7 +165,7 @@ describe('renderDataModel part 3', () => {
 
     const text = render([entity('ENT-001', 'Customer'), entity('ENT-002', 'Order')], model);
 
-    expect(text).toContain('  e1 ||..o{ e2 : "places (cardinality unknown)"');
+    expect(text).toContain('  e1 ||..o{ e2 : "places #40;cardinality unknown#41;"');
     expect(text).toContain('  e2 }o--|| e1 : "belongs to"');
     const toConfirm = text.split('## To confirm')[1] ?? '';
     expect(toConfirm).toContain(String.raw`ENT\-001 Customer and ENT\-002 Order (places)`);

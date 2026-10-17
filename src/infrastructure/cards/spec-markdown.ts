@@ -4,6 +4,7 @@ import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
 import { citationLink, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
+import { renderSurfaceSections } from './spec-sections.js';
 
 // RF-204, RF-125, data-model 3.8: `spec.md`, the cards per area as one readable specification with
 // links to the card files and to the cited lines. Areas and cards keep the order of `cards`
@@ -75,6 +76,7 @@ export function renderSpec(
     lines.push(`## Area: ${esc.inline(area)}`, '');
     lines.push(...inArea.flatMap((card) => cardSection(card, source, esc)));
   }
+  lines.push(...renderSurfaceSections(cards, masker));
   lines.push(...changeLists(changes, esc));
   lines.push(...withoutCards(areasWithoutCards, esc));
   return `${masker.mask(lines.join('\n')).text.trimEnd()}\n`;

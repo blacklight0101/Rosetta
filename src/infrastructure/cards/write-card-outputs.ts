@@ -8,6 +8,7 @@ import { writeRefusal } from '../files/workspace-guard.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { serialiseCardIndex } from './card-index.js';
 import { renderCoverage, serialiseCoverage } from './coverage-files.js';
+import { renderDataModel } from './data-model-markdown.js';
 import { cardPath, renderCardFile } from './card-markdown.js';
 import type { PermalinkSource } from './citation-link.js';
 import { renderSpec } from './spec-markdown.js';
@@ -90,6 +91,9 @@ export async function writeCardOutputs(
     })),
     { path: 'cards/index.json', text: serialiseCardIndex(cards, masker) },
     { path: 'spec.md', text: renderSpec(cards, source, masker, { areasWithoutCards, changes }) },
+    ...(cards.some((card) => card.type === 'ENT')
+      ? [{ path: 'data-model.md', text: renderDataModel(cards, source, masker) }]
+      : []),
   ];
   const written = await writeAll(writer, target, files, logger);
   return written.ok ? removeMergedAway(writer, target, mergedAway) : written;
