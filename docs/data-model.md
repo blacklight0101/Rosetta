@@ -472,7 +472,10 @@ a `security` log entry and a `blockedCalls` count in the manifest.
 ### 3.12 `cost.json` and `cost.md`
 
 Written when the run ends (RF-426): `{ schemaVersion, runId, currency, priceTableVersion, totals, byRole[],
-byAgentTask[], byProvider[], byModel[] }`, each entry with the token fields, `calls` and `costMicros`. `cost.md` is
+byAgentTask[], byProvider[], byModel[] }`, each entry with the token fields (`inputTokens`, `outputTokens`,
+`cachedInputTokens`, `cacheWriteInputTokens`), `calls`, `costMicros` and `cacheWriteCostMicros` (the part of the
+cost the cache writes cost; the two cache-write fields were added by P2-16, an additive change, so the schema
+version stays 1). `cost.md` has a column for each, Cache-write tokens and Cache-write cost before Cost. `cost.md` is
 the readable table. `totals` also counts `unpricedCalls` (calls of an unpriced model on the user's own key, cost
 unknown, RF-427); `priceTableVersion` names every version the calls used, sorted and joined by `, `; each list is
 sorted by its key in code-unit order. Both files are built from the run's `cost_ledger` rows and masked. Every
@@ -597,8 +600,15 @@ in a `meta` element, only the response header can carry it, and the run file rou
 
 Shipped as `prices/default-prices.yaml` in the Rosetta repository: `{ schemaVersion, version (date),
 currency, models: [{ provider kind, model, inputPerMillionMicros, outputPerMillionMicros,
-cachedInputPerMillionMicros }] }`. Ollama models have price 0. Overrides in the configuration use the same entry
-shape (RF-420, RF-427). Every price is a whole number of micro-dollars up to 2^53 - 1 and a model is listed once per
+cachedInputPerMillionMicros, cacheWriteInputPerMillionMicros? }] }`. Ollama models have price 0. Overrides in the
+configuration use the same entry shape (RF-420, RF-427). `cacheWriteInputPerMillionMicros` (P2-16, an additive
+optional field, so the schema version stays 1) prices the tokens a call writes to the provider's prompt cache:
+Anthropic bills them at 1.25 times the input price, so an entry of provider kind `anthropic` without it prices
+nothing and the call is handled as for a model missing from the table (unpriced, RF-427), and a project override
+without it leaves the shipped entry to price the call. Other kinds bill no cache write of their own: an entry without
+the field prices any written token as input (the shipped OpenAI entries repeat the input price), and a local model
+missing from the table writes for free. The worst case of a call prices its whole prompt at the highest of the
+input, cached input and cache-write prices (RF-422). Every price is a whole number of micro-dollars up to 2^53 - 1 and a model is listed once per
 provider kind; a file that breaks this stops the server with `RST-1602`. A call priced with a project override
 (user's own key only, DEC-107) records the version `<version>+project`.
 
@@ -725,6 +735,8 @@ the `Clock` port.
 | `price_table_version` | `text` | |
 | `agent_task_id` | `text` null | the agent task of the call, for the cost report by task (RF-426); null for a provider test (RF-407); added by `0005` |
 | `cost_known` | `boolean` | default `true`; `false` for a model without a price run with the user's own key and `budget.allowUnpriced` (RF-427): `cost_micros` is 0 and the cost is shown as unknown; added by `0005` |
+| `cache_write_input_tokens` | `bigint` | default 0, `CHECK (cache_write_input_tokens >= 0)`; the part of `input_tokens` the call wrote to the provider's prompt cache (Anthropic's `cache_creation_input_tokens`); added by `0013` (P2-16) |
+| `cache_write_cost_micros` | `bigint` | default 0, `CHECK (cache_write_cost_micros >= 0)`; the part of `cost_micros` those tokens cost at the model's cache-write price, rounded up, fixed at call time; 0 when the cost is unknown; added by `0013` (P2-16) |
 
 **`cost_reservations`** (RF-422, RF-1106; added by the review of 2026-10-11, DEC-112)
 
@@ -843,7 +855,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`, `0013_cost_ledger_cache_writes`), `0100..` later
 releases.
 
 **File schema versions**:

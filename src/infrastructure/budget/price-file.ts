@@ -8,7 +8,9 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
 // RF-420, DEC-54, data-model.md section 3.18: the price table file (`prices/default-prices.yaml`):
 // `{ schemaVersion, version (date), currency, models: [{ provider, model, inputPerMillionMicros,
-// outputPerMillionMicros, cachedInputPerMillionMicros }] }`. Prices are whole micro-dollars per
+// outputPerMillionMicros, cachedInputPerMillionMicros, cacheWriteInputPerMillionMicros? }] }`. The
+// cache-write price is optional; the price lookup decides what its absence means (P2-16, RF-427).
+// Prices are whole micro-dollars per
 // million tokens; the currency is USD (DEC-54). Anything else, a model listed twice, or a file that
 // cannot be read is refused with RST-1602 rather than guessed, so no call is ever priced wrong.
 
@@ -26,6 +28,7 @@ const priceFileSchema = z.strictObject({
       inputPerMillionMicros: micros,
       outputPerMillionMicros: micros,
       cachedInputPerMillionMicros: micros,
+      cacheWriteInputPerMillionMicros: micros.exactOptional(),
     }),
   ),
 });
@@ -37,12 +40,15 @@ function invalid(message: string, cause?: unknown): RosettaError {
 }
 
 function priceOf(entry: PriceEntry): Price {
+  const cacheWrite = entry.cacheWriteInputPerMillionMicros;
   return {
     provider: entry.provider,
     model: entry.model,
     inputPerMillionMicros: BigInt(entry.inputPerMillionMicros),
     outputPerMillionMicros: BigInt(entry.outputPerMillionMicros),
     cachedInputPerMillionMicros: BigInt(entry.cachedInputPerMillionMicros),
+    // P2-16: never a zero for a missing cache-write price; the lookup handles its absence.
+    ...(cacheWrite === undefined ? {} : { cacheWriteInputPerMillionMicros: BigInt(cacheWrite) }),
     currency: 'USD',
   };
 }

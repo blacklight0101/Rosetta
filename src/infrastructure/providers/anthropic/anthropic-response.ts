@@ -9,7 +9,8 @@ import { parseMessage, type AnthropicMessage } from './anthropic-wire.js';
 
 // RF-404, RF-408, RF-421: Anthropic's message in the port's one shape. The port's `inputTokens`
 // includes the cached ones (docs/providers.md), so it is Anthropic's `input_tokens` plus the
-// tokens read from and written to the cache; `cachedInputTokens` is `cache_read_input_tokens`.
+// tokens read from and written to the cache; `cachedInputTokens` is `cache_read_input_tokens` and
+// `cacheWriteInputTokens` is `cache_creation_input_tokens` (P2-16), left out when it is zero.
 
 export interface ResponseContext {
   readonly request: LlmRequest;
@@ -33,6 +34,8 @@ function usageOf(message: AnthropicMessage, text: string, request: LlmRequest): 
     inputTokens: usage.input_tokens + read + written,
     outputTokens: usage.output_tokens,
     cachedInputTokens: read,
+    // P2-16: the tokens written to the cache, billed at the cache-write price; absent when none.
+    ...(written > 0 ? { cacheWriteInputTokens: written } : {}),
     usageSource: 'reported',
   };
 }

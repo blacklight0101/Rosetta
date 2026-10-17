@@ -39,7 +39,10 @@ describe('FileCostReportWriter', () => {
     const text = await written('cost.md', writer);
     expect(text).toContain('# Cost of run 20261012-100000-understand');
     expect(text).toContain('Price table: 2026-10-11 (USD)');
-    expect(text).toContain('| reader | 1 | 1,200 | 80 | 1,024 | $1.23 |');
+    expect(text).toContain(
+      '| Role | Calls | Input tokens | Output tokens | Cached input tokens | Cache-write tokens | Cache-write cost | Cost |',
+    );
+    expect(text).toContain('| reader | 1 | 1,200 | 80 | 1,024 | 0 | $0.0000 | $1.23 |');
     for (const heading of ['## By role', '## By agent task', '## By provider', '## By model']) {
       expect(text).toContain(heading);
     }

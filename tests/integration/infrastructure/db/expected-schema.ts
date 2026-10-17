@@ -94,6 +94,8 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'price_table_version text',
     'agent_task_id text null',
     'cost_known bool',
+    'cache_write_input_tokens int8',
+    'cache_write_cost_micros int8',
   ],
   cost_reservations: [
     'call_id text',

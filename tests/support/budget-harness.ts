@@ -11,6 +11,7 @@ import type { CapBreach, UsageCap } from '../../src/domain/budget/usage-cap.js';
 import type { RosettaError } from '../../src/domain/errors/rosetta-error.js';
 import { MemoryCostLedger } from '../../src/infrastructure/db/memory-cost-ledger.js';
 import { BudgetGuard } from '../../src/infrastructure/guards/budget-guard.js';
+import type { BudgetPricing } from '../../src/infrastructure/guards/budget-pricing.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { FakeProvider } from '../../src/infrastructure/providers/fake/fake-provider.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
@@ -51,6 +52,8 @@ export const budgetTable: PriceTable = {
 
 export interface BudgetHarnessOptions {
   readonly kind?: ProviderKind;
+  /** The shipped price table; `budgetTable` by default. */
+  readonly table?: PriceTable;
   readonly keySource?: KeySource;
   readonly caps?: readonly UsageCap[];
   readonly overrides?: readonly Price[];
@@ -73,6 +76,15 @@ function timesOf(options: BudgetHarnessOptions): {
   reportTimeoutMs: number;
 } {
   return { reservationTtlMs: 600_000, reportTimeoutMs: options.reportTimeoutMs ?? 5_000 };
+}
+
+/** The run's prices: the shipped table, the project's overrides and its unpriced rule. */
+function pricingOf(options: BudgetHarnessOptions): BudgetPricing {
+  return {
+    table: options.table ?? budgetTable,
+    overrides: options.overrides ?? [],
+    allowUnpriced: options.allowUnpriced ?? false,
+  };
 }
 
 /** What the guard reported to the run's budget events, in order (P1-96). */
@@ -134,11 +146,7 @@ export function budgetHarness(options: BudgetHarnessOptions = {}): BudgetHarness
     run: budgetRun,
     keySource: options.keySource ?? 'server',
     caps: options.caps ?? [{ kind: 'run-cost', limit: 1_000_000n }],
-    pricing: {
-      table: budgetTable,
-      overrides: options.overrides ?? [],
-      allowUnpriced: options.allowUnpriced ?? false,
-    },
+    pricing: pricingOf(options),
     ledger,
     recorder: calls,
     costs: {

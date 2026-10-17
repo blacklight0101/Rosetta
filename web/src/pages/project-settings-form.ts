@@ -26,6 +26,8 @@ export interface PriceDraft {
   readonly input: string;
   readonly output: string;
   readonly cached: string;
+  /** Empty when the override has no cache-write price (P2-16). */
+  readonly cacheWrite: string;
 }
 
 export interface SettingsDraft {
@@ -72,6 +74,10 @@ function priceDraft(price: PriceSettings): PriceDraft {
     input: dollarsOf(price.inputPerMillionMicros),
     output: dollarsOf(price.outputPerMillionMicros),
     cached: dollarsOf(price.cachedInputPerMillionMicros),
+    cacheWrite:
+      price.cacheWriteInputPerMillionMicros === undefined
+        ? ''
+        : dollarsOf(price.cacheWriteInputPerMillionMicros),
   };
 }
 
@@ -105,6 +111,7 @@ const priceFields = [
   'inputPerMillionMicros',
   'outputPerMillionMicros',
   'cachedInputPerMillionMicros',
+  'cacheWriteInputPerMillionMicros',
 ] as const;
 const singleFields = [
   'roles.reader.maxTurns',
@@ -183,6 +190,16 @@ function roleOf(
 function pricesOf(drafts: readonly PriceDraft[], reader: FieldReader): PriceSettings[] {
   return drafts.map((draft, index) => {
     const path = `budget.prices.${String(index)}`;
+    // P2-16: an empty cache-write field leaves the price out; it is never sent as a zero.
+    const cacheWrite =
+      draft.cacheWrite.trim() === ''
+        ? {}
+        : {
+            cacheWriteInputPerMillionMicros: reader.micros(
+              `${path}.cacheWriteInputPerMillionMicros`,
+              draft.cacheWrite,
+            ),
+          };
     return {
       provider: draft.provider,
       model: draft.model,
@@ -192,6 +209,7 @@ function pricesOf(drafts: readonly PriceDraft[], reader: FieldReader): PriceSett
         `${path}.cachedInputPerMillionMicros`,
         draft.cached,
       ),
+      ...cacheWrite,
     };
   });
 }

@@ -33,9 +33,13 @@ export interface LedgerEntry {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  /** The part of the input written to the provider's prompt cache (P2-16, migration 0013). */
+  readonly cacheWriteInputTokens: number;
   readonly usageSource: UsageSource;
   /** Fixed when the call is made, never recomputed. */
   readonly costMicros: bigint;
+  /** The part of `costMicros` that paid for the cache writes, rounded up; fixed with it (P2-16). */
+  readonly cacheWriteCostMicros: bigint;
   /** False for a model without a price run with the user's own key (RF-427): its cost is unknown. */
   readonly costKnown: boolean;
   readonly currency: string;

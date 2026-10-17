@@ -28,7 +28,14 @@ export interface DraftEditor {
   readonly removePrice: (index: number) => void;
 }
 
-const emptyPrice: PriceDraft = { provider: 'openai', model: '', input: '', output: '', cached: '' };
+const emptyPrice: PriceDraft = {
+  provider: 'openai',
+  model: '',
+  input: '',
+  output: '',
+  cached: '',
+  cacheWrite: '',
+};
 
 export function useSettingsDraft(settings: ProjectSettings): DraftEditor {
   const [draft, setDraft] = useState(() => draftOf(settings));

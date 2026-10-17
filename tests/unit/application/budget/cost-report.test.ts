@@ -38,8 +38,10 @@ describe('buildCostReport', () => {
       inputTokens: 2450,
       outputTokens: 165,
       cachedInputTokens: 2048,
+      cacheWriteInputTokens: 0,
       calls: 3,
       costMicros: 700,
+      cacheWriteCostMicros: 0,
       unpricedCalls: 0,
     });
     expect(report).toMatchObject({
@@ -113,5 +115,50 @@ describe('buildCostReport exact sums', () => {
     }
 
     expect(thrown).toMatchObject({ code: 'RST-1605' });
+  });
+});
+
+describe('buildCostReport cache writes (P2-16)', () => {
+  const writes = [
+    row({ role: 'reader', cacheWriteInputTokens: 1024, cacheWriteCostMicros: 3840n }),
+    row({ role: 'reader', cacheWriteInputTokens: 76, cacheWriteCostMicros: 285n }),
+    row({ role: 'verifier', provider: 'local', model: 'gemma4:e4b' }),
+  ];
+
+  it('RF-426 totals the tokens written to the cache and their cost', () => {
+    const report = buildCostReport(ids.runId, writes);
+
+    expect(report.totals).toMatchObject({
+      cacheWriteInputTokens: 1100,
+      cacheWriteCostMicros: 4125,
+    });
+  });
+
+  it('RF-426 breaks the cache writes down like every other figure', () => {
+    const report = buildCostReport(ids.runId, writes);
+
+    expect(
+      report.byRole.map((line) => [
+        line.role,
+        line.cacheWriteInputTokens,
+        line.cacheWriteCostMicros,
+      ]),
+    ).toEqual([
+      ['reader', 1100, 4125],
+      ['verifier', 0, 0],
+    ]);
+    expect(report.byModel.map((line) => [line.model, line.cacheWriteInputTokens])).toEqual([
+      ['gemma4:e4b', 0],
+      ['gpt-5-nano', 1100],
+    ]);
+  });
+
+  it.each([
+    ['tokens', { cacheWriteInputTokens: Number.MAX_SAFE_INTEGER }],
+    ['cost', { cacheWriteCostMicros: BigInt(Number.MAX_SAFE_INTEGER) }],
+  ])('RST-1605 refuses a report whose cache-write %s pass the largest safe integer', (_n, big) => {
+    expect(() => buildCostReport(ids.runId, [row(big), row(big)])).toThrow(
+      expect.objectContaining({ code: 'RST-1605' }),
+    );
   });
 });

@@ -82,6 +82,16 @@ function OverridePrices({ editor, errorFor, index, price }: RowProps): JSX.Eleme
           editor.changePrice(index, { cached });
         }}
       />
+      <NumberSetting
+        id={`${id}-cache-write`}
+        label={`${label} cache write ${perMillion}`}
+        path={`${path}.cacheWriteInputPerMillionMicros`}
+        errorFor={errorFor}
+        value={price.cacheWrite}
+        onInput={(cacheWrite) => {
+          editor.changePrice(index, { cacheWrite });
+        }}
+      />
     </>
   );
 }
@@ -119,7 +129,8 @@ export function PriceOverrides(props: SectionProps): JSX.Element {
       </h2>
       <p class="rst-settings__note">
         Prices in US dollars per million tokens. They replace the shipped price table, and only for
-        calls made with your own keys.
+        calls made with your own keys. An Anthropic model needs its cache-write price; leave it
+        empty for other providers.
       </p>
       {rows.length === 0 ? (
         <p class="rst-settings__note">No price overrides. The shipped price table is used.</p>

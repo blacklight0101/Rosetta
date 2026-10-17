@@ -40,6 +40,7 @@ export async function leaveOnlyThisInTheDay(
       ...{ role: 'reader', provider: 'openai', model: 'gpt-5-nano', callId: 'e2e-limits#1' },
       ...{ attempt: 1, keySource: 'server', inputTokens: 1000, outputTokens: 100 },
       ...{ cachedInputTokens: 0, usageSource: 'reported', costKnown: true, currency: 'USD' },
+      ...{ cacheWriteInputTokens: 0, cacheWriteCostMicros: 0n },
       costMicros: dayCapMicros - leftMicros,
       priceTableVersion: 'e2e-seed',
     });

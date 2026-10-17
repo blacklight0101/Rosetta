@@ -89,6 +89,7 @@ const priceSchema = z.strictObject(
     inputPerMillionMicros: cap,
     outputPerMillionMicros: cap,
     cachedInputPerMillionMicros: cap,
+    cacheWriteInputPerMillionMicros: cap.optional(),
   },
   invalid,
 );

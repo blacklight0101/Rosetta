@@ -54,6 +54,7 @@ async function seedServerSpend(pool: DatabasePool, userId: string, at: Date): Pr
     ...{ stage: 'understand', role: 'reader', provider: 'openai', model: 'gpt-5-nano' },
     ...{ callId: 'e2e-seed#1', attempt: 1, keySource: 'server', inputTokens: 1000 },
     ...{ outputTokens: 100, cachedInputTokens: 0, usageSource: 'reported' },
+    ...{ cacheWriteInputTokens: 0, cacheWriteCostMicros: 0n },
     ...{ costMicros: seededServerMicros, costKnown: true, currency: 'USD' },
     priceTableVersion: 'e2e-seed',
   });

@@ -39,7 +39,7 @@ describe('AnthropicProvider answers', () => {
     });
   });
 
-  it('RF-404 counts the tokens written to the cache as input but not as cached', async () => {
+  it('RF-404 counts the tokens written to the cache as input and as cache-write tokens (P2-16)', async () => {
     const { provider } = await start('cache-write');
 
     const response = await provider.complete(contractRequest());
@@ -48,8 +48,17 @@ describe('AnthropicProvider answers', () => {
       inputTokens: 1200,
       outputTokens: 80,
       cachedInputTokens: 0,
+      cacheWriteInputTokens: 1024,
       usageSource: 'reported',
     });
+  });
+
+  it('RF-404 reports no cache-write tokens when nothing was written to the cache', async () => {
+    const { provider } = await start('contract-text');
+
+    const response = await provider.complete(contractRequest());
+
+    expect('cacheWriteInputTokens' in response.usage).toBe(false);
   });
 });
 

@@ -7,6 +7,12 @@
 #
 # OpenAI prices checked on OpenAI's pricing and model pages on 2026-10-11 (docs/providers.md
 # section 3.5), standard tier.
+#
+# `cacheWriteInputPerMillionMicros` (P2-16) is the price of the tokens a call writes to the
+# provider's prompt cache. Anthropic bills it at 1.25 times the input price, so an Anthropic model
+# without it is handled like a model missing from this list (RF-427). OpenAI bills no cache write
+# of its own (cached prompts are written at the input price), so its entries repeat the input
+# price; Ollama models are free.
 schemaVersion: 1
 version: '2026-10-11'
 currency: USD
@@ -15,19 +21,23 @@ models:
     model: gpt-5-nano
     inputPerMillionMicros: 50000
     cachedInputPerMillionMicros: 5000
+    cacheWriteInputPerMillionMicros: 50000
     outputPerMillionMicros: 400000
   - provider: openai
     model: gpt-5-nano-2025-08-07
     inputPerMillionMicros: 50000
     cachedInputPerMillionMicros: 5000
+    cacheWriteInputPerMillionMicros: 50000
     outputPerMillionMicros: 400000
   - provider: openai
     model: gpt-5.6-luna
     inputPerMillionMicros: 200000
     cachedInputPerMillionMicros: 20000
+    cacheWriteInputPerMillionMicros: 200000
     outputPerMillionMicros: 1200000
   - provider: ollama
     model: gemma4:e4b
     inputPerMillionMicros: 0
     cachedInputPerMillionMicros: 0
+    cacheWriteInputPerMillionMicros: 0
     outputPerMillionMicros: 0
