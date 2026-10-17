@@ -45,9 +45,10 @@ async function indexOf(h: UnderstandHarness, run: Run) {
   return indexSchema.parse(await readJson(join(h.runFolder(run), 'cards', 'index.json')));
 }
 
-/** The task ids the fake reader was asked about, in call order. */
-function askedTasks(h: UnderstandHarness): (string | undefined)[] {
-  return h.providers.requests().map((request) => request.context.agentTaskId);
+/** The reader task ids the fake reader was asked about, in call order (not the summariser). */
+function askedTasks(h: UnderstandHarness): string[] {
+  const asked = h.providers.requests().map((request) => request.context.agentTaskId);
+  return asked.filter((id) => id.startsWith('reader-'));
 }
 
 async function cappedRun() {
