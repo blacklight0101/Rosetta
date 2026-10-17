@@ -106,7 +106,68 @@ function removalTests(name: string, fresh: FreshFolders): void {
   });
 }
 
+function markingTests(name: string, fresh: FreshFolders): void {
+  it(`P2-41 ${name} lists a folder as unmarked until a delete marks it`, async () => {
+    const { folders, seed } = await fresh();
+    await seed(runTarget(firstRun), { 'manifest.json': '1' });
+
+    const listed = await folders.list();
+
+    expect(listed.map((entry) => entry.marked)).toEqual([false, false]);
+  });
+
+  it(`P2-41 ${name} marks one folder only, project and run apart, and unmark clears it`, async () => {
+    const { folders, seed } = await fresh();
+    await seed(runTarget(firstRun), { 'manifest.json': '1' });
+    await seed(runTarget(secondRun), { 'events.jsonl': '1' });
+
+    await folders.mark(runTarget(secondRun));
+    const marked = (await folders.list()).filter((entry) => entry.marked);
+    await folders.mark(projectTarget);
+    await folders.mark(projectTarget);
+    const both = (await folders.list()).filter((entry) => entry.marked);
+    await folders.unmark(runTarget(secondRun));
+    await folders.unmark(projectTarget);
+    const none = (await folders.list()).filter((entry) => entry.marked);
+
+    expect(marked.map((entry) => entry.target)).toEqual([runTarget(secondRun)]);
+    expect(both.map((entry) => entry.target)).toEqual([projectTarget, runTarget(secondRun)]);
+    expect(none).toEqual([]);
+  });
+}
+
+function markedFolderTests(name: string, fresh: FreshFolders): void {
+  it(`P2-41 ${name} keeps the size of a folder when it is marked`, async () => {
+    const { folders, seed } = await fresh();
+    await seed(runTarget(firstRun), { 'manifest.json': '12345' });
+
+    await folders.mark(runTarget(firstRun));
+
+    expect(await folders.size(runTarget(firstRun))).toBe(5);
+  });
+
+  it(`P2-41 ${name} marks and unmarks a missing folder without an error, and lists nothing`, async () => {
+    const { folders } = await fresh();
+
+    await expect(folders.mark(projectTarget)).resolves.toBeUndefined();
+    await expect(folders.unmark(projectTarget)).resolves.toBeUndefined();
+    expect(await folders.list()).toEqual([]);
+  });
+
+  it(`P2-41 ${name} removes a marked folder`, async () => {
+    const { folders, seed } = await fresh();
+    await seed(projectTarget, { 'codemap.json': '12' });
+    await folders.mark(projectTarget);
+
+    await folders.remove(projectTarget);
+
+    expect(await folders.list()).toEqual([]);
+  });
+}
+
 export function workspaceFoldersContract(name: string, fresh: FreshFolders): void {
+  markingTests(name, fresh);
+  markedFolderTests(name, fresh);
   sizingTests(name, fresh);
   removalTests(name, fresh);
   listingTests(name, fresh);

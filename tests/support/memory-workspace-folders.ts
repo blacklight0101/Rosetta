@@ -24,6 +24,7 @@ export class MemoryWorkspaceFolders implements WorkspaceFolders {
   private readonly refused = new Set<string>();
   private readonly folders = new Map<string, Readonly<Record<string, string>>>();
   private readonly changed = new Map<string, number>();
+  private readonly marks = new Set<string>();
   /** While set, `list` fails the way an unreadable data folder does. */
   refuseListing = false;
 
@@ -44,16 +45,37 @@ export class MemoryWorkspaceFolders implements WorkspaceFolders {
       const [userId = '', projectId = '', runKey] = path.split('/');
       const modifiedAt = this.changed.get(path) ?? 0;
       const project = { userId, projectId };
-      if (runKey === undefined) listed.set(path, { target: project, modifiedAt });
+      const marked = this.marks.has(path);
+      if (runKey === undefined) listed.set(path, { target: project, modifiedAt, marked });
       else {
         if (!this.folders.has(pathOf(project)))
-          listed.set(pathOf(project), { target: project, modifiedAt });
-        listed.set(path, { target: { ...project, runKey }, modifiedAt });
+          listed.set(pathOf(project), {
+            target: project,
+            modifiedAt,
+            marked: this.marks.has(pathOf(project)),
+          });
+        listed.set(path, { target: { ...project, runKey }, modifiedAt, marked });
       }
     }
     return Promise.resolve(
       [...listed.values()].sort((a, b) => pathOf(a.target).localeCompare(pathOf(b.target))),
     );
+  }
+
+  /** Marks the folder when it exists (P2-41); a missing folder is not marked. */
+  mark(target: FolderTarget): Promise<void> {
+    if (this.has(target)) this.marks.add(pathOf(target));
+    return Promise.resolve();
+  }
+
+  unmark(target: FolderTarget): Promise<void> {
+    this.marks.delete(pathOf(target));
+    return Promise.resolve();
+  }
+
+  /** True while the folder carries the mark of a delete flow. */
+  isMarked(target: FolderTarget): boolean {
+    return this.marks.has(pathOf(target));
   }
 
   /** True while the folder, or one inside it, holds files. */
@@ -77,7 +99,10 @@ export class MemoryWorkspaceFolders implements WorkspaceFolders {
       return Promise.reject(refused);
     }
     this.removals.push(target);
-    for (const path of this.paths(target)) this.folders.delete(path);
+    for (const path of this.paths(target)) {
+      this.folders.delete(path);
+      this.marks.delete(path);
+    }
     return Promise.resolve();
   }
 

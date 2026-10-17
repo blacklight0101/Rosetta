@@ -6,6 +6,7 @@ import type {
   WorkspaceFolders,
 } from '../../application/ports/workspace-folders.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { clearDeletionMark, writeDeletionMark } from './deletion-mark.js';
 import { listWorkspaceFolders } from './list-workspace-folders.js';
 import { isRealFolder } from './run-folder.js';
 import { projectPath, runPath, workspaceRoot } from './workspace-paths.js';
@@ -48,6 +49,18 @@ export class NodeWorkspaceFolders implements WorkspaceFolders {
   // P1-152
   list(): Promise<readonly ListedFolder[]> {
     return listWorkspaceFolders(this.#dataDir);
+  }
+
+  // P2-41: the mark is the file `.deleting` inside the folder (`deletion-mark.ts`).
+  async mark(target: FolderTarget): Promise<void> {
+    const folder = await this.#locate(target);
+    if (folder !== undefined) await writeDeletionMark(folder);
+  }
+
+  // P2-41
+  async unmark(target: FolderTarget): Promise<void> {
+    const folder = await this.#locate(target);
+    if (folder !== undefined) await clearDeletionMark(folder);
   }
 
   // RF-1012
