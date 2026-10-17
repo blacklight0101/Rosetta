@@ -9,6 +9,8 @@ const questionSchema = z.looseObject({
   question: z.string(),
   context: z.string(),
   answer: z.string(),
+  /** RF-241: `Answered` once a re-run with answers used the answer. */
+  state: z.enum(['Open', 'Answered']),
 });
 
 const questionsSchema = z
@@ -16,6 +18,10 @@ const questionsSchema = z
   .transform((body) => body.questions);
 
 export type OpenQuestionRow = z.output<typeof questionSchema>;
+
+const countSchema = z
+  .looseObject({ count: z.number().int().min(0) })
+  .transform((body) => body.count);
 
 const pathOf = (runId: string): string => `/api/runs/${encodeURIComponent(runId)}/answers`;
 
@@ -26,6 +32,20 @@ export function getAnswers(
   signal: AbortSignal,
 ): Promise<ApiResult<readonly OpenQuestionRow[]>> {
   return client.request({ method: 'GET', path: pathOf(runId), schema: questionsSchema, signal });
+}
+
+/** RF-241: how many questions have an answer and are still Open; a re-run with answers uses them. */
+export function getAnsweredCount(
+  client: ApiClient,
+  projectId: string,
+  signal: AbortSignal,
+): Promise<ApiResult<number>> {
+  return client.request({
+    method: 'GET',
+    path: `/api/projects/${encodeURIComponent(projectId)}/answered-questions`,
+    schema: countSchema,
+    signal,
+  });
 }
 
 /** Records one answer; the answer lists the run's questions as they are now. */

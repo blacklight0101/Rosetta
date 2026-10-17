@@ -15,12 +15,14 @@ const questions = [
     question: 'Is a sold-out item still shown?',
     context: 'Catalog/Default.aspx.cs:41-58 The list filters on <b>stock</b>.',
     answer: '',
+    state: 'Open',
   },
   {
     cardId: 'OQ-002',
     question: 'Who may edit prices?',
     context: 'Catalog/Edit.aspx.cs:3-9 Only one role edits.',
     answer: 'Managers.',
+    state: 'Answered',
   },
 ];
 
@@ -62,6 +64,17 @@ describe('open questions on the live run page', () => {
     expect(first.querySelector('b')).toBeNull();
     expect(within(first).getByTestId('status-badge').textContent).toContain('Open');
     expect(valueOf(within(item('OQ-002')).getByLabelText('Answer to OQ-002'))).toBe('Managers.');
+  });
+
+  it('RF-1007 RF-241 shows a question the re-run answered as Answered', async () => {
+    renderAnswers({ [`GET ${route}`]: json(200, { questions }) });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('open-question')).toHaveLength(2);
+    });
+
+    expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain('Answered');
+    expect(within(item('OQ-002')).getByTestId('status-badge').textContent).not.toContain('Open');
   });
 });
 

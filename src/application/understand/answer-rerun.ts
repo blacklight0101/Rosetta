@@ -2,13 +2,16 @@ import type { AnsweredQuestion, AnswersFile, ProjectRef } from '../ports/answers
 import type { PriorCard, PriorCards } from '../ports/prior-cards.js';
 import type { Card } from '../../domain/cards/card.js';
 import { compareCards, type CardChanges } from './card-changes.js';
+import { questionWords } from './open-questions.js';
 import type { ReaderTask } from './reader-tasks.js';
 
 // RF-241, RF-1007, DEC-15: the re-run with answers. The answered questions of the project's
 // `answers.md` are matched with the `OQ` cards of the runs that raised them; a question whose card
 // is gone, is already `Answered`, or whose area is not in the code map is left out. The areas of the
 // questions left are the affected areas. The answers go to the reader of their area, and once that
-// reader's task has ended `Done` its questions are marked `Answered`.
+// reader's task has ended `Done` its questions are marked `Answered`. A question that several areas
+// asked is one question in `answers.md` (DEC-136) but has an `OQ` card in each area: every one of
+// those cards is matched, its area is read again with the answer, and its card is marked.
 
 export interface RerunDependencies {
   readonly answers: Pick<AnswersFile, 'answeredQuestions'>;
@@ -20,9 +23,21 @@ interface PendingQuestion extends AnsweredQuestion {
   readonly area: string;
 }
 
+/** Why an answered question is not used by the re-run. */
+export type SkipReason = 'run-gone' | 'card-gone' | 'already-answered' | 'area-not-in-code-map';
+
+/** An answered question the re-run leaves out. */
+export interface SkippedQuestion {
+  readonly cardId: string;
+  readonly runKey: string;
+  readonly reason: SkipReason;
+}
+
 export interface RerunPlan {
   readonly project: ProjectRef;
   readonly pending: readonly PendingQuestion[];
+  /** The answered questions left out, each with its reason; the run logs them. */
+  readonly skipped: readonly SkippedQuestion[];
   /** The earlier cards of the runs that raised the questions, to tell new from changed cards. */
   readonly baseline: readonly PriorCard[];
 }
@@ -44,6 +59,35 @@ async function cardsByRun(
   return new Map(keys.map((key, index) => [key, cards[index] ?? []]));
 }
 
+/** Every `OQ` card of the run that asks the same question as this one, this one included. */
+export function askingTheSame(
+  card: PriorCard,
+  earlier: readonly PriorCard[],
+): readonly PriorCard[] {
+  const words = questionWords(card.question ?? card.title);
+  return earlier.filter(
+    (each) =>
+      each.id === card.id ||
+      (each.type === 'OQ' && words !== '' && questionWords(each.question ?? each.title) === words),
+  );
+}
+
+/** The cards that use the answer, or why the question cannot be used. */
+function cardsOrReason(
+  question: AnsweredQuestion,
+  earlier: readonly PriorCard[],
+  codeMapAreas: readonly string[],
+): { readonly cards: readonly PriorCard[] } | { readonly reason: SkipReason } {
+  if (earlier.length === 0) return { reason: 'run-gone' };
+  const card = earlier.find((each) => each.id === question.cardId && each.type === 'OQ');
+  if (card === undefined) return { reason: 'card-gone' };
+  // A merged question is answered only when every card behind it is (one area may have failed).
+  const open = askingTheSame(card, earlier).filter((each) => each.questionState !== 'Answered');
+  if (open.length === 0) return { reason: 'already-answered' };
+  const usable = open.filter((each) => codeMapAreas.includes(each.area));
+  return usable.length === 0 ? { reason: 'area-not-in-code-map' } : { cards: usable };
+}
+
 // RF-241
 export async function planRerun(
   deps: RerunDependencies,
@@ -52,14 +96,19 @@ export async function planRerun(
 ): Promise<RerunPlan> {
   const answered = await deps.answers.answeredQuestions(project);
   const byRun = await cardsByRun(deps, project, answered);
-  const pending = answered.flatMap((question): PendingQuestion[] => {
-    const card = byRun
-      .get(question.runKey)
-      ?.find((each) => each.id === question.cardId && each.type === 'OQ');
-    if (card === undefined || card.questionState === 'Answered') return [];
-    return codeMapAreas.includes(card.area) ? [{ ...question, area: card.area }] : [];
-  });
-  return { project, pending, baseline: [...byRun.values()].flat() };
+  const pending: PendingQuestion[] = [];
+  const skipped: SkippedQuestion[] = [];
+  for (const question of answered) {
+    const found = cardsOrReason(question, byRun.get(question.runKey) ?? [], codeMapAreas);
+    if ('cards' in found) {
+      // Two sections of one run can stand for the same question; a card is used once.
+      const fresh = found.cards.filter(
+        (card) => !pending.some((p) => p.runKey === question.runKey && p.cardId === card.id),
+      );
+      pending.push(...fresh.map((card) => ({ ...question, cardId: card.id, area: card.area })));
+    } else skipped.push({ cardId: question.cardId, runKey: question.runKey, reason: found.reason });
+  }
+  return { project, pending, skipped, baseline: [...byRun.values()].flat() };
 }
 
 /** The affected areas, restricted to the named ones when the request named some. */
