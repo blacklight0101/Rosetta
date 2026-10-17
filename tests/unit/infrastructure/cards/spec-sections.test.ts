@@ -175,4 +175,21 @@ describe('secrets in the new sections', () => {
     expect(text).not.toContain(secret);
     expect(text).toContain('MASKED');
   });
+
+  it('RF-141 a secret with characters the diagram escapes is masked before it is escaped', async () => {
+    const tasks = [
+      {
+        agentTaskId: 't',
+        area: 'a',
+        drafts: [
+          flowDraft({ flow: { trigger: 'password: hunter2-secret!', outcome: 'done' } }),
+          screenDraft({ ...validScreen, route: '/p?password=hunter2-secret!', leadsTo: [] }),
+        ],
+      },
+    ];
+
+    const { writer } = await writeCards(cardsOf(tasks));
+
+    expect(fileOf(writer, 'spec.md')).not.toContain('hunter2');
+  });
 });

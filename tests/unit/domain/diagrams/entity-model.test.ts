@@ -28,10 +28,13 @@ describe('entityModelOf', () => {
     expect(model.relations).toEqual([]);
   });
 
-  it('RF-262 an id given twice makes one entity', () => {
-    const card = cardOf({ id: 'ENT-001', type: 'ENT', title: 'Customer' });
+  it('RF-262 an id given twice makes one entity, the first one', () => {
+    const first = cardOf({ id: 'ENT-001', type: 'ENT', title: 'Customer' });
+    const second = cardOf({ id: 'ENT-001', type: 'ENT', title: 'Other' });
 
-    expect(entityModelOf([card, card]).entities).toHaveLength(1);
+    expect(entityModelOf([first, second]).entities).toEqual([
+      { cardId: 'ENT-001', name: 'Customer', fields: [] },
+    ]);
   });
 
   it('RF-262 a run without ENT cards has an empty model', () => {

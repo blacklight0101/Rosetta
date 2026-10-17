@@ -138,8 +138,9 @@ describe('renderDataModel part 3', () => {
 
     const text = render([card]);
 
-    expect(text).toContain('- ENT-001.c1 [Rejected] Made up.');
-    expect(text).toContain('- ENT-001.c2 [CitationInvalid] Bad lines.');
+    const lines = text.split('\n');
+    expect(lines).toContain('- ENT-001.c1 [Rejected] Made up.');
+    expect(lines).toContain('- ENT-001.c2 [CitationInvalid] Bad lines.');
   });
 
   it('RF-262 a cardinality the cards do not state is drawn as unknown and listed to confirm', () => {
@@ -223,5 +224,11 @@ describe('renderDataModel part 5', () => {
 
     expect(text).not.toContain(secret);
     expect(text).toContain('MASKED');
+  });
+
+  it('RF-141 a secret with characters the diagram escapes is masked before it is escaped', () => {
+    const text = render([entity('ENT-001', 'password: hunter2-secret!')]);
+
+    expect(text).not.toContain('hunter2');
   });
 });
