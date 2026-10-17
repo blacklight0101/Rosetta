@@ -9,6 +9,8 @@ import { askingTheSame } from '../understand/answer-rerun.js';
 /** A question of a run with its state. */
 export interface StatedQuestion extends RecordedQuestion {
   readonly state: OpenQuestionState;
+  /** RF-1017: how many cards other than open questions depend on the question. */
+  readonly dependents: number;
 }
 
 // RF-1007
@@ -24,6 +26,6 @@ export async function withStates(
     // A merged question has a card per area: it is Answered when every one of them is.
     const behind = card === undefined ? [] : askingTheSame(card, earlier);
     const answered = behind.length > 0 && behind.every((each) => each.questionState === 'Answered');
-    return { ...question, state: answered ? 'Answered' : 'Open' };
+    return { ...question, state: answered ? 'Answered' : 'Open', dependents: 0 };
   });
 }

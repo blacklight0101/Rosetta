@@ -16,6 +16,7 @@ const questions = [
     context: 'Catalog/Default.aspx.cs:41-58 The list filters on <b>stock</b>.',
     answer: '',
     state: 'Open',
+    dependents: 3,
   },
   {
     cardId: 'OQ-002',
@@ -23,6 +24,7 @@ const questions = [
     context: 'Catalog/Edit.aspx.cs:3-9 Only one role edits.',
     answer: 'Managers.',
     state: 'Answered',
+    dependents: 0,
   },
 ];
 

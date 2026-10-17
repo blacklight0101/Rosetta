@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
 import { renderLive, runPath, runRow, runUuid } from './live-run-helpers.js';
@@ -40,6 +40,7 @@ const questions = [
     context: 'Orders/Order.cs:3-5 Cancel.',
     answer: '',
     state: 'Open',
+    dependents: 2,
   },
   {
     cardId: 'OQ-002',
@@ -47,6 +48,7 @@ const questions = [
     context: 'Billing/Tax.cs:1-4 Rate.',
     answer: '',
     state: 'Open',
+    dependents: 0,
   },
 ];
 
@@ -64,15 +66,18 @@ const overviewRegion = (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Overview of the application' });
 
 describe('the overview on the page of an ended run', () => {
-  it('RF-264 shows the overview before the open questions, which come after it', async () => {
+  it('RF-264 shows the overview first and the open questions after it, in their own tab', async () => {
     endedPage(json(200, { overview }));
 
-    const first = await overviewRegion();
-    const second = await screen.findByRole('region', { name: 'Open questions' });
+    await overviewRegion();
 
-    expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    const everyRegion = [...document.querySelectorAll('section')];
-    expect(everyRegion.indexOf(first)).toBeLessThan(everyRegion.indexOf(second));
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs[0]?.textContent).toBe('Overview');
+    expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+    expect(tabs[1]?.textContent).toMatch(/^Your questions/u);
+    expect(screen.queryByRole('region', { name: 'Open questions' })).toBeNull();
+    fireEvent.click(tabs[1] as HTMLElement);
+    expect(await screen.findByRole('region', { name: 'Open questions' })).toBeTruthy();
   });
 
   it('RF-264 comes before every other part of the page, the downloads and the report included', async () => {
@@ -102,16 +107,21 @@ describe('the overview and its cards', () => {
     expect(within(region).getByText(/Vendor: third-party code/u)).toBeTruthy();
   });
 
-  it('RF-264 links each question to the section of the overview it concerns', async () => {
+  it('RF-264 links each question to the section of the overview it concerns and the link opens it', async () => {
     endedPage(json(200, { overview }));
+    await overviewRegion();
+    fireEvent.click(screen.getByRole('tab', { name: /^Your questions/u }));
 
     const link = await screen.findByRole('link', { name: 'Main features' });
 
     expect(link.getAttribute('href')).toBe('#overview-features');
-    const target = document.getElementById('overview-features');
-    expect(target?.textContent).toBe('Main features');
     const second = screen.getAllByTestId('open-question')[1];
     expect(second?.querySelector('.rst-p168-concerns')).toBeNull();
+    fireEvent.click(link);
+    expect(screen.getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(document.getElementById('overview-features')?.textContent).toBe('Main features');
   });
 });
 
@@ -148,6 +158,7 @@ describe('the overview of a thin run or none', () => {
     await waitFor(() => {
       expect(within(region).getByTestId('error-banner')).toBeTruthy();
     });
+    fireEvent.click(screen.getByRole('tab', { name: /^Your questions/u }));
     expect(await screen.findByRole('region', { name: 'Open questions' })).toBeTruthy();
   });
 });
