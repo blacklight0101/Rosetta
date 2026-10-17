@@ -36,6 +36,12 @@ const stateOf: Readonly<Record<AgentTaskEndReason, EndState>> = {
   'provider-failed': 'Failed',
 };
 
+/**
+ * RF-206: whether the task read a file of its area. `nothing-readable`: the area has no readable
+ * file (only binary or ignored ones), so the rule does not apply.
+ */
+export type AreaRead = 'read' | 'not-read' | 'nothing-readable';
+
 interface AgentUsage {
   readonly inputTokens: number;
   readonly outputTokens: number;
@@ -61,6 +67,8 @@ export interface AgentTaskResult {
   readonly modelVersion: string | null;
   /** The conversation after the system prompt. */
   readonly messages: readonly LlmMessage[];
+  /** RF-206: whether the task read a file of its area before it ended. */
+  readonly areaRead: AreaRead;
 }
 
 export interface AgentTaskProgress {
@@ -81,6 +89,7 @@ export interface AgentTaskEnd {
 
 export function taskResult(end: AgentTaskEnd, progress: AgentTaskProgress): AgentTaskResult {
   return {
+    areaRead: 'read',
     state: stateOf[end.reason],
     reason: end.reason,
     ...(end.code === undefined ? {} : { code: end.code }),

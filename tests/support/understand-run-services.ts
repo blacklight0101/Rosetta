@@ -43,7 +43,7 @@ import type { UnderstandProviders } from './understand-providers.js';
 
 const commitSha = 'c'.repeat(40);
 
-function fixtureFetcher(clock: FixedClock, fixture: FixtureRepository): FakeSourceFetcher {
+function fixtureFetcher(clock: FixedClock, root: string): FakeSourceFetcher {
   return new FakeSourceFetcher(
     [
       {
@@ -51,7 +51,7 @@ function fixtureFetcher(clock: FixedClock, fixture: FixtureRepository): FakeSour
         repo: 'demo',
         defaultBranch: 'main',
         refs: { main: commitSha },
-        rootDir: fixtureRoot(fixture),
+        rootDir: root,
         snapshotHash: `sha256:${'cd'.repeat(32)}`,
         fileCount: 13,
         totalBytes: 4096,
@@ -64,6 +64,8 @@ function fixtureFetcher(clock: FixedClock, fixture: FixtureRepository): FakeSour
 export interface Stores {
   /** The fixture repository the scans read (the C# fixture unless a test chose another). */
   readonly fixture: FixtureRepository;
+  /** The folder of the repository the runs scan: a fixture, or a copy a test changed. */
+  readonly repoRoot: string;
   readonly clock: FixedClock;
   readonly masker: SecretMasker;
   readonly logger: MemoryLogger;
@@ -89,6 +91,7 @@ export function stores(
   dataDir: string,
   refuseRemoval = false,
   fixture: FixtureRepository = 'webforms-csharp',
+  repository?: string,
 ): Stores {
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
@@ -98,6 +101,7 @@ export function stores(
     : new NodeOutputWriter({ dataDir, logger });
   return {
     ...{ clock, masker, logger, writer, fixture },
+    repoRoot: repository ?? fixtureRoot(fixture),
     manifests: new FileRunManifestStore({ writer, masker }),
     log: new JsonlEventLog({ writer, masker }),
     runs: new MemoryRunIndex(),
@@ -112,7 +116,7 @@ export function scanResultsOf(s: Stores): FileScanResults {
   return new FileScanResults({
     writer,
     manifests,
-    snapshotRoot: () => fixtureRoot(s.fixture),
+    snapshotRoot: () => s.repoRoot,
     logger,
   });
 }
@@ -154,7 +158,7 @@ export async function queueOf(
     ...{ writer, masker, logger },
     packs: new LanguagePackRegistry([await CSharpPack.create()]),
   });
-  const fetcher = fixtureFetcher(clock, s.fixture);
+  const fetcher = fixtureFetcher(clock, s.repoRoot);
   const lifecycle = new RunLifecycle({
     ...{ runs, manifests, clock, logger },
     sink: new FanOutSink([log]),

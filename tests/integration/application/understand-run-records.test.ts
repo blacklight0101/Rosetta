@@ -53,19 +53,20 @@ describe('an understand run: cost and prompts', () => {
 
     const manifest = await h.manifestOf(run);
     expect(Object.keys(manifest.promptVersions)).toEqual([
-      'cards/card-format.v1.md',
+      'cards/card-format.v2.md',
       'cards/continue.v1.md',
       'cards/flows.v1.md',
       'cards/repair.v1.md',
       'cards/screens.v1.md',
-      'reader/area.v2.md',
+      'reader/area.v3.md',
+      'reader/read-first.v1.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
       'verifier/claim.v1.md',
       'verifier/retry.v1.md',
     ]);
-    expect(manifest.promptVersions['reader/area.v2.md']?.version).toBe('v2');
-    expect(manifest.promptVersions['reader/area.v2.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(manifest.promptVersions['reader/area.v3.md']?.version).toBe('v3');
+    expect(manifest.promptVersions['reader/area.v3.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.roles['reader']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.roles['verifier']?.modelVersion).toBe('fake-judge-2026-10-01');
   });

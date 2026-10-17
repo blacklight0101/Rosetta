@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-243: the Scripts area holds only a vendored library; its reader reads the file and still asks a question, which the run drops. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Scripts/jquery-3.4.1.min.js",
+                  "startLine": 1,
+                  "endLine": 1
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Library version\",\n      \"area\": \"Scripts\",\n      \"summary\": \"A minified library is included.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"A minified library is included.\",\n          \"citations\": [\n            \"Scripts/jquery-3.4.1.min.js:1-1\"\n          ]\n        }\n      ],\n      \"question\": \"Which version of the library is this?\",\n      \"whyItMatters\": \"Decides whether it can be upgraded.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -67,6 +67,8 @@ export interface UnderstandHarnessOptions {
   readonly cardWritesFail?: () => boolean;
   /** A file name under tests/recordings/fake/ the `verifier` role replays (RF-301). */
   readonly verifierRecording?: string;
+  /** The repository to scan, when a test changed a copy of the fixture (the C# fixture if absent). */
+  readonly repository?: string;
   readonly settings?: ProjectSettings;
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
@@ -236,7 +238,12 @@ function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<Understan
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
 ): Promise<UnderstandHarness> {
-  const s = stores(options.dataDir, options.refuseRemoval === true, options.fixture);
+  const s = stores(
+    options.dataDir,
+    options.refuseRemoval === true,
+    options.fixture,
+    options.repository,
+  );
   await s.users.insert(account);
   const project = sampleProject({
     userId: account.id,
