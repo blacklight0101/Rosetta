@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PromptFile } from '../../application/agent/prompt-file.js';
+import { STYLES_PLACEHOLDER } from '../../application/planning/plan-options-request.js';
 import { readerPlaceholders, type ReaderPrompts } from '../../application/agent/reader-prompts.js';
 import { holdsDataMarker } from '../../domain/egress/data-block.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -63,10 +64,11 @@ export function loadOverviewPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'summariser/overview.v1.md');
 }
 
-/** The planner's prompt for the architecture and stack options (RF-608, RF-609). Stub. */
+/** The planner's prompt for the architecture and stack options (RF-608, RF-609), checked and hashed. */
 // RNF-004
-export function loadPlanOptionsPrompt(promptsFolder: string): Promise<PromptFile> {
-  return Promise.resolve({ name: promptsFolder, version: 'v0', sha256: '', text: '' });
+export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<PromptFile> {
+  const file = await loadPromptFile(promptsFolder, 'planner/options.v1.md');
+  return requirePlaceholder(file, STYLES_PLACEHOLDER);
 }
 
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {

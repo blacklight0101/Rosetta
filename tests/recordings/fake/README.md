@@ -8,6 +8,7 @@ a stop, the full understand run that the end-to-end tests drive, and the verifie
 `understand-flows-screens.json` is a run over the `webforms-shop` fixture whose readers answer FLOW, SCRN and OQ cards
 for the catalogue and order journeys and none for the service library (P2-19).
 `understand-shop-model.json` is the same run with the Services area answering two `ENT` cards (one relation the code shows, one it does not) and the shipping `BR` card, and `verifier-shop-model.json` judges it (the second and fourth claims rejected, the rest Supported); the evaluation runner test scores them against `tests/fixtures/eval/golden-shop.json` (P2-23).
+`plan-options.json` is the `planner` role answering the Plan setup options (RF-608, RF-609, P3-07): two architecture styles with trade-offs and evidence, one recommended, and two options for each of the seven stack layers.
 
 ## Provenance (RNF-009)
 

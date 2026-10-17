@@ -19,8 +19,8 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 // RF-608, RF-609, ADR-007, ADR-008: the planner role the way a plan run builds it: the real guarded
 // provider factory over memory stores, whose one adapter replays a recording. Generated data only.
 
-export const promptsFolder = fileURLToPath(new URL('../../prompts', import.meta.url));
-export const runKey = '20261012-100000-plan';
+const promptsFolder = fileURLToPath(new URL('../../prompts', import.meta.url));
+const runKey = '20261012-100000-plan';
 const traceId = '0123456789abcdef0123456789abcdef';
 
 function claim(id: string, text: string, status: ClaimStatus): Claim {
@@ -59,7 +59,7 @@ export function shopCards(): readonly Card[] {
 }
 
 /** The code map of that shop: C# pages, a master page, a configuration, a project and a script. */
-export function shopCodeMap(): CodeMap {
+function shopCodeMap(): CodeMap {
   const files = [
     entry('Default.aspx.cs', 120, { language: 'csharp' }),
     entry('Models/Item.cs', 80, { language: 'csharp' }),
