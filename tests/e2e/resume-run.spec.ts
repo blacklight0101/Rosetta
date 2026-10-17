@@ -14,7 +14,7 @@ import { transitionsDone } from './support/transitions.js';
 test.describe.configure({ mode: 'serial' });
 
 test.beforeEach(async ({ context }, info) => {
-  await signInAs(context, accountFor('history', info.project.name));
+  await signInAs(context, accountFor('live-controls', info.project.name));
 });
 
 test('RF-006 resumes an interrupted run from the history page: the same run, its finished agent kept', async ({

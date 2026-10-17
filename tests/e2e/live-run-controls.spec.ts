@@ -149,8 +149,8 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   const pauseBox = await boxOf(page.getByRole('button', { name: 'Pause updates' }));
   await page.getByRole('button', { name: 'Pause updates' }).click();
 
-  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible();
-  expect(await boxOf(page.getByRole('button', { name: 'Resume' }))).toEqual(pauseBox);
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
+  expect(await boxOf(page.getByRole('button', { name: 'Resume', exact: true }))).toEqual(pauseBox);
   await expect(runStatus(page)).toContainText('Updates paused');
   const held = {
     catalog: (await agentPanel(page, 'Catalog').textContent()) ?? '',
@@ -167,7 +167,7 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 
-  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
 
   await expect(pauseCount(page)).toHaveCount(0);
   await expect(runStatus(page)).toContainText('Updates resumed');
@@ -203,9 +203,11 @@ test('RF-1002 pressing Pause updates and Resume moves neither the button nor the
   await page.getByRole('button', { name: 'Pause updates' }).click();
   await expect(runStatus(page)).toContainText('Updates paused');
 
-  expect(await boxOf(page.getByRole('button', { name: 'Resume' }))).toEqual(before.button);
+  expect(await boxOf(page.getByRole('button', { name: 'Resume', exact: true }))).toEqual(
+    before.button,
+  );
   expect(await boxOf(agentPanel(page, 'Controllers'))).toEqual(before.panel);
-  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await expect(runStatus(page)).toContainText('Updates resumed');
   expect(await boxOf(page.getByRole('button', { name: 'Pause updates' }))).toEqual(before.button);
   expect(await boxOf(agentPanel(page, 'Controllers'))).toEqual(before.panel);
@@ -227,7 +229,7 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
 
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   expect(await agentPanel(page, 'Controllers').textContent()).toBe(held);
-  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await expect(pauseCount(page)).toHaveCount(0);
   await expect(agentPanel(page, 'Controllers')).not.toHaveText(held);
   const log = page.getByRole('log', { name: 'Event log' });
