@@ -50,6 +50,16 @@ export class NodeWorkspaceFolders implements WorkspaceFolders {
     return listWorkspaceFolders(this.#dataDir);
   }
 
+  // P2-41
+  async mark(target: FolderTarget): Promise<void> {
+    await Promise.resolve(target);
+  }
+
+  // P2-41
+  async unmark(target: FolderTarget): Promise<void> {
+    await Promise.resolve(target);
+  }
+
   // RF-1012
   async size(target: FolderTarget): Promise<number> {
     const folder = await this.#locate(target);

@@ -16,7 +16,7 @@ import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
 
 // P1-152, RF-1012: the row is looked up again just before each removal, so a row written after the
-// plan was made keeps its folder; and the guard counts the run folders it looked at.
+// plan was made keeps its folder (P2-41: the folders are marked, as a delete flow leaves them).
 
 const files = { 'manifest.json': 'x' };
 const first = '00000000-0000-4000-a000-0000000000f1';
@@ -70,8 +70,10 @@ describe('folderSweepJob row re-check before each removal', () => {
   it('RF-1012 keeps a project folder whose row appears after the plan and still removes the other', async () => {
     const late = sampleProject({ id: first, userId: userAmy.userId });
     const env = setUp({ projects: new RowAppearsOnSecondFind(late) });
-    env.folders.seed(projectOf(first), files, env.old);
-    env.folders.seed(projectOf(second), files, env.old);
+    for (const target of [projectOf(first), projectOf(second)]) {
+      env.folders.seed(target, files, env.old);
+      await env.folders.mark(target);
+    }
 
     await env.job();
 
@@ -86,59 +88,13 @@ describe('folderSweepJob row re-check before each removal', () => {
     await env.projects.insertOrFind(project);
     env.folders.seed(projectOf(project.id), files, env.old);
     for (const runKey of keys) {
-      env.folders.seed({ ...projectOf(project.id), runKey }, files, env.old);
+      const target = { ...projectOf(project.id), runKey };
+      env.folders.seed(target, files, env.old);
+      await env.folders.mark(target);
     }
 
     await env.job();
 
     expect(env.folders.removals).toEqual([{ ...projectOf(project.id), runKey: keys[1] }]);
-  });
-});
-
-describe('folderSweepJob run folder guard counts', () => {
-  async function runsOf(live: number, orphans: number) {
-    const env = setUp();
-    const project = sampleProject({ userId: userAmy.userId });
-    await env.projects.insertOrFind(project);
-    env.folders.seed(projectOf(project.id), files, env.old);
-    const orphanTargets: FolderTarget[] = [];
-    for (let index = 0; index < live + orphans; index += 1) {
-      const target = {
-        ...projectOf(project.id),
-        runKey: `2025010${String(index + 1)}-000000-scan`,
-      };
-      env.folders.seed(target, files, env.old);
-      if (index < live) {
-        const row = sampleRun({ ...target, queueState: 'Ended', projectId: project.id });
-        await env.runs.insert({ ...row, runKey: target.runKey });
-      } else {
-        orphanTargets.push(target);
-      }
-    }
-    return { env, orphanTargets };
-  }
-
-  it('RF-1012 sweeps 3 orphan run folders among 7 run folders', async () => {
-    const { env, orphanTargets } = await runsOf(4, 3);
-
-    await env.job();
-
-    expect(env.folders.removals).toEqual(orphanTargets);
-  });
-
-  it('RF-1012 sweeps exactly half of the run folders', async () => {
-    const { env, orphanTargets } = await runsOf(3, 3);
-
-    await env.job();
-
-    expect(env.folders.removals).toEqual(orphanTargets);
-  });
-
-  it('RF-1012 refuses 4 orphan run folders among 7', async () => {
-    const { env } = await runsOf(3, 4);
-
-    await env.job();
-
-    expect(env.folders.removals).toEqual([]);
   });
 });

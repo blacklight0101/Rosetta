@@ -36,11 +36,12 @@ async function listProject(
 ): Promise<ListedFolder[]> {
   const own = await changedAt(folder);
   if (own === undefined) return [];
-  const listed: ListedFolder[] = [{ target, modifiedAt: own }];
+  const listed: ListedFolder[] = [{ target, modifiedAt: own, marked: false }];
   const runs = join(folder, 'runs');
   for (const runKey of await realFolders(runs, isRunKey)) {
     const modifiedAt = await changedAt(join(runs, runKey));
-    if (modifiedAt !== undefined) listed.push({ target: { ...target, runKey }, modifiedAt });
+    if (modifiedAt !== undefined)
+      listed.push({ target: { ...target, runKey }, modifiedAt, marked: false });
   }
   return listed;
 }
