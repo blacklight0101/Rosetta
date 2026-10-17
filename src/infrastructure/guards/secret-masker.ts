@@ -1,7 +1,7 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { lineBreaksOf, maskOrphanKeyEnds } from './private-key-pieces.js';
-import { identifierValue, placeholderValue } from './secret-value-pieces.js';
+import { caseless, identifierValue, placeholderValue } from './secret-value-pieces.js';
 
 export type SecretKind =
   'api-key' | 'bearer-token' | 'connection-string' | 'password' | 'private-key';
@@ -91,10 +91,9 @@ const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'])+`;
 // prefix and attributes, and blanks before the value.
 const xmlPasswordOpen = String.raw`<[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>[ \t]{0,16}`;
 const cdataOpen = String.raw`<!\[CDATA\[`;
-// After `--token=` a blank and a short plain word (`the --token= flag`) is prose (P2-40). A scheme
-// word is no prose, and an attached value (`--token=abc`), a longer word, a word with a digit or a
-// symbol, or a continuation is still a value.
-const tokenProse = String.raw`(?!(?:${schemeNames})(?![\w-]))[A-Za-z]{1,12}(?![\w.+/=@#$%^*~!:-])`;
+// After `--token=` and one blank, one of these words is prose (`the --token= flag`), not a value
+// (P2-40). Any other word, a longer word (`flags`), two blanks or a tab is still a value.
+const tokenProse = String.raw`(?:flag|option|parameter|argument|value|switch|is)(?![\w.+/=@#$%^*~!:-])`;
 
 // The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
 // whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
@@ -122,8 +121,8 @@ const defaultRules: readonly MaskRule[] = [
     // it or not (`x-api-key:`). Values under 8 characters, placeholders and code are left alone.
     kind: 'api-key',
     pattern: new RegExp(
-      String.raw`(?<keep>${keyStart}api[_-]?key["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}["']?)${notMasked}(?![="'])(?!${placeholderValue}|${identifierValue})[^\s"',;&]{8,}`,
-      'gi',
+      String.raw`(?<keep>${keyStart}${caseless('api')}[_-]?${caseless('key')}["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}["']?)${notMasked}(?![="'])(?!${placeholderValue}|${identifierValue})[^\s"',;&]{8,}`,
+      'g',
     ),
   },
   {
@@ -140,8 +139,8 @@ const defaultRules: readonly MaskRule[] = [
     // placeholder or prose word is left alone (P2-40).
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?Bearer[ \t\u00a0]{1,16})${notMasked}(?!${placeholderValue})(?:[^\s"',;]|[,;](?=[^\s"',;])){4,}`,
-      'gi',
+      String.raw`(?<keep>\b${caseless('Authorization')}["']?[ \t]{0,16}[:=][ \t]{0,16}["']?${caseless('Bearer')}[ \t\u00a0]{1,16})${notMasked}(?!${placeholderValue})(?:[^\s"',;]|[,;](?=[^\s"',;])){4,}`,
+      'g',
     ),
   },
   {
@@ -210,7 +209,7 @@ const defaultRules: readonly MaskRule[] = [
     // `--token <value>` and `--token=<value>` on a command line, but not "the --token= flag" (P2-40).
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>${optionStart}token(?:${tokenBlank}{1,16}|=(?![ \t]{1,16}${tokenProse})${tokenBlank}{0,16})${notContinuation}${tokenScheme})${notMasked}${tokenValue}`,
+      String.raw`(?<keep>${optionStart}token(?:${tokenBlank}{1,16}|=(?! ${tokenProse})${tokenBlank}{0,16})${notContinuation}${tokenScheme})${notMasked}${tokenValue}`,
       'gi',
     ),
   },
