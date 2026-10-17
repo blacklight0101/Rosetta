@@ -100,7 +100,7 @@ describe('applyMerges: what a merge keeps', () => {
   it('RF-250 no merge leaves every card as it was', () => {
     const before = cardsAcrossAreas();
 
-    expect(applyMerges(before, [])).toEqual({ cards: before, applied: [], skipped: [] });
+    expect(applyMerges(before, [])).toEqual({ cards: before, applied: [], moves: [], skipped: [] });
   });
 });
 

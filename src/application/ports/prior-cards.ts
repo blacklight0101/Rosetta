@@ -16,6 +16,8 @@ export interface PriorCard {
   readonly claims: readonly string[];
   /** `OQ` cards only. */
   readonly questionState?: OpenQuestionState;
+  /** `OQ` cards only: the question asked. */
+  readonly question?: string;
 }
 
 export interface PriorCards {

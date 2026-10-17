@@ -10,6 +10,7 @@ import { startGate, type StartGate } from './start-gate.js';
 import type { EstimateLoad } from './use-estimate.js';
 import { useEstimateChoice, type EstimateChoice } from './use-estimate-choice.js';
 import { useSpendLimits } from './use-spend-limits.js';
+import { useAnsweredCount } from './use-answered-count.js';
 import { useStartActions, type StartActions } from './use-start-actions.js';
 
 // RF-1001, RF-143, DEC-108, DEC-117: the state of the start page: the stage, the address, the run
@@ -41,6 +42,12 @@ export interface StartForm {
     readonly chosen: boolean;
     readonly confirmed: boolean;
     readonly set: (confirmed: boolean) => void;
+  };
+  /** RF-241: the questions with an answer, and whether the run re-uses them. */
+  readonly rerun: {
+    readonly answered: number;
+    readonly checked: boolean;
+    readonly set: (checked: boolean) => void;
   };
   readonly project: Project;
   readonly choice: EstimateChoice;
@@ -109,6 +116,8 @@ export function useStartForm(loaded: Project): StartForm {
   const [oldMapConfirmed, setOldMapConfirmed] = useState(false);
   const [libraryConfirmed, setLibraryConfirmed] = useState(false);
   const [refused, setRefused] = useState(false);
+  const [rerunChecked, setRerunChecked] = useState(false);
+  const answered = useAnsweredCount(loaded.id);
   const choice = useEstimateChoice(project.id);
   const limits = useSpendLimits();
   const { estimate } = choice;
@@ -121,6 +130,7 @@ export function useStartForm(loaded: Project): StartForm {
   const warnings = warningsOf({ stage, estimate, capMicros, limits });
   const actions = useStartActions({
     ...{ project, stage, url, capText, thresholdText, areas: choice.chosen, consent: checked },
+    withAnswers: answered > 0 && rerunChecked,
     likelyMicros: likelyOf(estimate),
     onSaved: setProject,
     onConsentRefused: () => {
@@ -138,6 +148,7 @@ export function useStartForm(loaded: Project): StartForm {
     ...{ project, choice, stage, setStage, url, setUrl, capText, setCapText, capMicros },
     ...{ thresholdText, thresholdMicros, setThresholdText },
     ...{ consent: { roles, names, checked, set: setChecked }, warnings, gate, actions },
+    rerun: { answered, checked: rerunChecked, set: setRerunChecked },
     library: { chosen: libraryChosen, confirmed: libraryConfirmed, set: setLibraryConfirmed },
     oldMap: { outdated: isOutdated(estimate), confirmed: oldMapConfirmed, set: setOldMapConfirmed },
   };
