@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`screenMapDiagram > RF-261 draws the demo screens (snapshot) 1`] = `
+"flowchart LR
+  s1["#47;Basket.aspx"]
+  s2["#47;Checkout.aspx"]
+  s3["#47;Confirmation.aspx"]
+  s4["#47;Default.aspx"]
+  s1 --> s2
+  s2 --> s3
+  s2 --> s1
+  s3 --> s4
+"
+`;
