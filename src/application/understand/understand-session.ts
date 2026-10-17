@@ -234,12 +234,14 @@ export class UnderstandSession {
   }
 
   /**
-   * RF-304: a cap stopped the run, so the claims not yet judged are left `Unverified` in the cards
+   * RF-304: a cap (the run's or a role's) stopped the reading, so the claims not yet judged are left `Unverified` in the cards
    * and in the results a resume reads; a stop by the user or a failure leaves them as they are.
    */
   private async leaveUnjudged(): Promise<void> {
     const { execution, deps } = this.parts;
-    if (!execution.signal.aborted || !isCapStop(execution.signal.reason)) return;
+    const runCap = execution.signal.aborted && isCapStop(execution.signal.reason);
+    const roleCap = [...this.ends.values()].some((end) => end.state === 'StoppedByCap');
+    if (!runCap && !roleCap) return;
     const cards = leaveUnverified(this.latest.cards, deps.clock.now().toISOString());
     this.latest = { ...this.latest, cards };
     await this.writeSet(cards);

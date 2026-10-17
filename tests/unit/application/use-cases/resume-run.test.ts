@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import type { RunManifestStore } from '../../../../src/application/ports/run-manifest-store.js';
 import { ResumeRun } from '../../../../src/application/use-cases/resume-run.js';
+import type { ResumeBlock } from '../../../../src/application/understand/resume-problem.js';
 import type { Actor } from '../../../../src/domain/accounts/actor.js';
-import { ERROR_CODES, type ErrorCode } from '../../../../src/domain/errors/codes.js';
+import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { RunEndState, RunStage } from '../../../../src/domain/runs/run-states.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
@@ -19,7 +20,7 @@ import { createRunHarness, userAmy, userBob } from '../../../support/run-harness
 
 const fakeReader = settingsFor({ reader: { provider: 'fake', model: 'fake-model' } });
 const cloudReader = settingsFor({ reader: { provider: 'openai', model: 'gpt-5-mini' } });
-const noProblem = (): ErrorCode | undefined => undefined;
+const noProblem = (): ResumeBlock | undefined => undefined;
 
 async function setup(settings: ProjectSettings = fakeReader, problemOf = noProblem) {
   const harness = createRunHarness();

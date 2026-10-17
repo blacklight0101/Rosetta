@@ -5,6 +5,7 @@ import { reopenManifest } from '../../domain/runs/reopen-manifest.js';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import { RESUMABLE_END_STATES, type Run } from '../../domain/runs/run.js';
 import type { Clock } from '../ports/clock.js';
+import type { Project } from '../projects/project.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
@@ -26,7 +27,7 @@ export interface ResumeRunDependencies {
   readonly projects: ProjectRepository;
   readonly runs: RunIndex;
   readonly manifests: RunManifestStore;
-  readonly queue: Pick<RunQueue, 'dispatch' | 'positionOf'>;
+  readonly queue: Pick<RunQueue, 'exclusive' | 'positionOf'>;
   readonly clock: Clock;
   /** What would make the resumed run fail again the same way; found before the run is reopened. */
   readonly problem: ResumeProblemCheck;
@@ -37,7 +38,9 @@ export interface ResumeRunDependencies {
 export type ResumeProblem =
   | typeof ERROR_CODES.notFound
   | typeof ERROR_CODES.runNotResumable
-  | typeof ERROR_CODES.cloudConsentMissing;
+  | typeof ERROR_CODES.cloudConsentMissing
+  | typeof ERROR_CODES.resumeSourceChanged
+  | typeof ERROR_CODES.taskResultsUnreadable;
 
 export class ResumeRun {
   private readonly deps: ResumeRunDependencies;
@@ -51,7 +54,7 @@ export class ResumeRun {
     readonly actor: Actor;
     readonly runId: string;
   }): Promise<Result<SubmittedRun, ResumeProblem>> {
-    const { runs, projects, manifests, clock } = this.deps;
+    const { runs, projects, manifests } = this.deps;
     const { userId } = request.actor;
     const run = await runs.find(userId, request.runId);
     if (run === undefined) return err(ERROR_CODES.notFound);
@@ -59,19 +62,46 @@ export class ResumeRun {
     const project = await projects.find(userId, run.projectId);
     const stored = await manifests.read(scopeOf(run));
     if (project === undefined || stored === undefined) return err(ERROR_CODES.runNotResumable);
+    const refused = await this.refusal(run, project, stored);
+    if (refused !== undefined) return err(refused);
+    // One queue step: no dispatch can start the run from the old manifest, and the run is not
+    // taken while this process is still writing its end. A second Resume finds the run queued.
+    const reopened = await this.deps.queue.exclusive(run.id, () =>
+      this.reopen(userId, run, project, stored),
+    );
+    if (!reopened.ok || reopened.value === undefined) return err(ERROR_CODES.runNotResumable);
+    const current = await runs.find(userId, run.id);
+    return ok({
+      run: current ?? reopened.value,
+      position: await this.deps.queue.positionOf(run.id),
+    });
+  }
+
+  /** RF-143: no consent for a cloud reader; RF-006: a resume that would fail again. */
+  private async refusal(
+    run: Run,
+    project: Project,
+    stored: RunManifest,
+  ): Promise<ResumeProblem | undefined> {
     const consent = readUnderstandOptions(stored.options).cloudConsent;
     if (!consent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost)) {
-      return err(ERROR_CODES.cloudConsentMissing);
+      return ERROR_CODES.cloudConsentMissing;
     }
-    // The row changes first and in one step, so a second Resume finds the run queued and is refused.
-    const reopened = await runs.reopen(userId, run.id, clock.now().getTime());
-    if (reopened === undefined) return err(ERROR_CODES.runNotResumable);
+    return this.deps.problem(run, stored);
+  }
+
+  private async reopen(
+    userId: string,
+    run: Run,
+    project: Project,
+    stored: RunManifest,
+  ): Promise<Run | undefined> {
+    const reopened = await this.deps.runs.reopen(userId, run.id, this.deps.clock.now().getTime());
+    if (reopened === undefined) return undefined;
     const caps = capsOf(project.settings);
-    const reopenedManifest = reopenManifest(stored, caps);
-    await this.write(reopened, reopenedManifest.ok ? reopenedManifest.value : { ...stored, caps });
-    await this.deps.queue.dispatch();
-    const current = await runs.find(userId, run.id);
-    return ok({ run: current ?? reopened, position: await this.deps.queue.positionOf(run.id) });
+    const next = reopenManifest(stored, caps);
+    await this.write(reopened, next.ok ? next.value : { ...stored, caps });
+    return reopened;
   }
 
   /** A manifest that cannot be rewritten leaves the run ended again, and the failure is rethrown. */
