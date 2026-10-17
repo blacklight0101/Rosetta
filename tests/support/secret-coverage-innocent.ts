@@ -134,4 +134,13 @@ export const coverageAdversarialPieces: readonly string[] = [
   'SK',
   ['whsec', ''].join('_'),
   'AccountKey=',
+  'token=aaaaaaaa(',
+  'secret=aaaaaaaa$',
+  'x-token=aaaaaaaa(',
+  'AccountKey=aaaaaaaa(',
+  'secretKey=aaaaaaaa$',
+  'token=aaaaaaaa',
+  'curl \\\n',
+  'curl -x \\\n',
+  'curl -u \\\n',
 ];
