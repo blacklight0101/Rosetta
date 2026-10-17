@@ -13,9 +13,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P1 Milestone slice (M1) | 172 | 64 | 90 | 18 | 0 | 99 | 65 | 8 | 111 | 0 |
-| P2 Full understand | 26 | 4 | 16 | 6 | 0 | 6 | 19 | 1 | 6 | 0 |
+| P2 Full understand | 30 | 6 | 18 | 6 | 0 | 9 | 20 | 1 | 10 | 0 |
 | P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
-| **Total** | **224** | **70** | **128** | **26** | **0** | **108** | **105** | **11** | **118** | **0** |
+| **Total** | **228** | **72** | **130** | **26** | **0** | **111** | **106** | **11** | **122** | **0** |
 
 ## Conventions for every card
 
@@ -2075,7 +2075,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: the agent loop; the reader prompt; the `OQ` schema; RF-206, RF-243; the `invalid-output` and transcripts of the owner's 2026-10-14 run as examples.
 - **Do**: refuse a final answer from a reader that has read none of its area's files and tell it which files to read (RF-206); the `OQ` schema needs what the code shows, a citation and a question about something outside the code, and a question asking what the code, an area or the application does is refused with a repair message (RF-243); duplicate questions across areas are merged and grouped by feature or area; an area of third-party or generated code writes no question. Prompts versioned; recordings.
 - **Review probes**: "What does this area do?", "What is the purpose of the application?", "What is the business logic of X?" (refused); "Who uses these pages?" with a citation (kept); the same question from three areas (merged once with three citations); an agent answering at turn 1 with no reads.
@@ -2089,7 +2089,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-167
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: RF-264; the summariser role configuration; the spec writer.
 - **Do**: after understand, the `summariser` role writes `overview.md` from the cards whose citations passed (what the application is, who uses it, features, screens, data, integrations, what was not covered), each statement linking its cards and no statement without a card; a thin run says so and suggests the next step; `spec.md` and the Markdown report open with it; the run page shows it first (with P1-170). Prompt versioned; the budget guard and the estimate include the call.
 - **Review probes**: a run whose cards are mostly third-party (the overview says the run cannot explain the application yet); a model answer holding a statement with no card link (dropped); hostile card text (rendered as text).
@@ -2164,7 +2164,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33, P1-35, P1-40
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/architecture.md` section 8; `docs/data-model.md` section 3.6.
 - **Do**: `ResumeRun`: after the cap is raised, process only unfinished tasks and `Unverified` claims into the same run folder and manifest; the Resume button on the run and history pages; claims left unjudged at a cap are `Unverified`.
 - **Delivers**: the use case, route and buttons; integration tests with the fake provider; an E2E spec.
@@ -2176,7 +2176,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33, P1-35
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md`; `docs/architecture.md` section 8 (verifier role).
 - **Do**: step 2 with the `verifier` role: the model sees the claim and only the cited lines with a small margin, answers with the reason before the verdict, one retry on an invalid answer, otherwise `Unverified`; a warning when reader and verifier share a model family; `prompts/verifier/claim.v1.md` with the data-block rule; verdict events for the live page.
 - **Delivers**: the step, the prompt, recordings; integration tests with recorded responses; a unit test on the family check.
@@ -2284,7 +2284,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: L
 - **Depends on**: P2-02
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/data-model.md` section 3.19; `docs/rfc/RFC-001-rosetta.md` section 7.
 - **Do**: the golden set for the demo app under `eval/golden/` (hand-checked features, rules, entities and "not in the code" cases); `npm run eval` running each case at least 3 times with the chosen models, saving results with date, models, model versions, prompt hashes and settings, reporting precision of `Supported` claims, recall of golden rules, citation validity, the spread, and estimate accuracy against `cost.json`.
 - **Delivers**: the golden set, runner, output schema; a schema test; the first recorded evaluation.
@@ -2344,7 +2344,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-09
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `prices/default-prices.yaml` and its schema; `src/infrastructure/budget/`; `src/infrastructure/providers/anthropic/`; `docs/data-model.md` (cost ledger, cost report) and section 7 (migrations); ADR-007; verdict comment 6132492790 on pull request #210.
 - **Do**: Anthropic bills prompt-cache writes at 1.25 times the input price, but the price table has no cache-write price, so the adapter counts cache-write tokens as plain input and the ledger understates the cost of those calls. Add a cache-write price per model to the price table (`prices/default-prices.yaml` and its schema); carry cache-write tokens through the usage record and the ledger (new columns through a new migration with the next free number of the release block, and `docs/data-model.md` in the same change); price them in the budget guard's worst case and in the settled cost; show them in the cost report.
 - **Delivers**: the price field, the migration, the usage and ledger changes, the guard pricing and the report column, with unit, integration and contract tests.
@@ -2368,7 +2368,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-06
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `src/domain/cards/card-vocabulary.ts`; `src/domain/cards/card.ts`; the card schema and parser; `docs/architecture.md` section 5 (state lists); `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md` (DEC-134 note).
 - **Do**: add `FLOW` and `SCRN` to the card vocabulary (Q-24) with their schemas: `FLOW` (trigger, ordered steps each with a target card id when one exists and at least one citation, numbered branches, outcome) and `SCRN` (route or page, roles, fields with input kind, required flag and cited validations, actions naming a handler or `FLOW` id, "leads to" links); parser, repair path (RF-202), stable ids (RF-203), card files under `cards/flow/` and `cards/scrn/`, `index.json`; architecture section 5 lists the new types.
 - **Delivers**: schemas, parser cases, card writers, tests.
@@ -2380,7 +2380,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-18
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `prompts/`; the area planner (RF-200); the code map; `tests/recordings/`; RF-427 estimate code.
 - **Do**: versioned prompt changes so the agent writes `FLOW` cards where the code map finds entry points (page actions, HTTP handlers, scheduled jobs, message handlers) and `SCRN` cards where it finds pages, forms, views or templates (Q-25); the code map marks those areas; suspected paths become `OQ` cards; record responses on the WebForms demo; the run estimate (RF-427) and coverage (RF-230) count the new types; an area with no pages reports "no screens found".
 - **Delivers**: prompts, planner and code-map changes, recordings, integration tests.
@@ -2392,7 +2392,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-18, P2-02
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: the verifier (RF-300..RF-305); `src/domain/cards/claim-transitions.ts`.
 - **Do**: every `FLOW` step and every `SCRN` field validation and action is a claim checked by both verifier steps; a step whose citation is invalid or rejected is marked on the card and the flow is reported as incomplete in the card file, the specification and the coverage; calibration (RF-303) includes the new claims.
 - **Delivers**: verifier changes and tests with recorded responses.
@@ -2404,7 +2404,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-18
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `docs/security/threat-model.md`; RF-507; RF-508; the Mermaid syntax reference for sequence, flowchart and entity-relationship diagrams.
 - **Do**: pure functions in the domain or application layer that build Mermaid text from cards: a sequence diagram from a `FLOW` card, a flowchart screen map from `SCRN` cards, an entity-relationship diagram from `ENT` cards (unknown cardinality drawn as unknown); every label goes through one escaping function so that text from the analysed code cannot end a diagram, open a new statement, add a `click` or `href`, or carry HTML; ids are generated, never taken from the code. The model never writes Mermaid (DEC-134).
 - **Delivers**: the generators, the escaping function, snapshot and property tests.
@@ -2441,7 +2441,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-16
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/estimate/estimate-run.ts`; `src/infrastructure/guards/budget-pricing.ts`; `web/src/pages/PriceOverrides.tsx`; verdict comment 6229742224 on #445.
 - **Do**: the run estimate (RF-425) prices Anthropic prompt input at the highest of the input and cache-write prices for its high figure, so the confirmation threshold is never low by the cache-write premium; an own-key Anthropic override without a cache-write price gets an error that names the override (not "no price in the price table"), and the settings page warns before saving such an override.
 - **Delivers**: estimate change, error text, page warning, tests.
@@ -2453,7 +2453,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-05, P2-06
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `src/application/understand/answer-rerun.ts`; `understand-session.ts`; `web/src/pages/RunAnswers.tsx`; verdict comments 6227862573 and 6228789543 on #443.
 - **Do**: tests for a re-run with answers whose cards are merged by consolidation (the New and Changed lists survive the merge; a failed merge write leaves the questions Open); a log line for each answered question that is skipped (deleted run, area no longer in the code map, already Answered); the answers page shows each question's state (Open or Answered); the start page offers "Re-run with answers" when the project has answered questions.
 - **Delivers**: tests, log line, page state, start option.
@@ -2465,12 +2465,59 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-08, P2-15
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/LimitSetting.tsx`; `src/infrastructure/guards/budget-guard.ts`; verdict comments 6227081401 on #435 and 6227966648 on #442.
 - **Do**: the limit slider gets an `aria-label` that keeps field labels unique; a typed value beyond the slider range shows an inline hint before Save; the default warning is rendered in an axe check; a concurrency test proves that simultaneous reservations for one role with room for one let exactly one through (PostgreSQL contract); the settings page warns when a role cap is above the run cap.
 - **Delivers**: page changes, tests.
 - **Done when**: each item above has a test that fails without it; `npm run verify` green.
 - **Refs**: RF-002, RF-423, DEC-117, P2-08, P2-15.
+### P2-27 - Follow-up: one lock folder per test run for the e2e caps lock
+- **Difficulty**: 3 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `tests/unit/support/e2e-caps-lock.test.ts`; the caps-lock helper it tests; builder reports on #454 and #461.
+- **Do**: the test takes its lock folders under a temporary root unique to the test process (for example `mkdtemp` or the pid in the run key) instead of fixed names in the shared `%TEMP%`, so a killed run in one worktree cannot make another worktree's run wait for the stale timeout; the behaviour of the lock itself is unchanged.
+- **Delivers**: test and helper changes.
+- **Done when**: two test processes started at once, with a stale folder from a killed run left in the shared temp folder, both pass; `npm run verify` green.
+- **Refs**: RNF-005, P1-94.
+
+### P2-28 - Follow-up: resume keeps the coverage failure and merged areas
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P2-01, P2-06
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/cards/task-results-schema.ts`; `src/infrastructure/cards/task-results-flow-screen.ts`; builder report on #461 (open question 5).
+- **Do**: `task-results.json` keeps the coverage `failure` field and the card `mergedAreas` when a run is stopped and resumed, as it now keeps the FLOW and SCRN fields; a round-trip test covers every field of the stored task result, so a dropped field fails it.
+- **Delivers**: schema change, tests.
+- **Done when**: a resumed run reports the same coverage failures and merged areas as an uninterrupted one; `npm run verify` green.
+- **Refs**: RF-006, RF-230, RF-250, P2-01.
+
+### P2-29 - Follow-up: small gaps from the P2-19 and P2-26 verdicts
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P2-19, P2-26
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/pages/setting-limits.ts`; `src/domain/code-map/area-surface.ts`; `src/infrastructure/scan/universal/artefact-rules.ts`; verdict comments on #458 and #461.
+- **Do**: the thousands-grouping regex in `setting-limits.ts` works again (its backslashes were lost) or is removed if unused; the confirm field shows no range hint while the run cap itself is invalid; the flow and screen marks also recognise WebForms `.ashx` and `.asmx` handlers, `.html`, `.jsx` and `.tsx` views, and handler class names in the plural (`OrderHandlers`).
+- **Delivers**: code changes, tests.
+- **Done when**: each item above has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-002, RF-260, RF-261, P2-19, P2-26.
+
+### P2-30 - Follow-up: verdicts follow claim ids through a card merge
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-02, P2-06
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/cards/card-merge.ts`; the judgement events of P2-02; verdict comments on #454.
+- **Do**: when the summariser merges cards and renumbers claim ids, the judgement events and the verdicts shown on the run page, in the replay and in the report refer to the new ids (a mapping recorded with the merge); no verdict is lost or attached to the wrong claim.
+- **Delivers**: code changes, tests.
+- **Done when**: a run whose merge renumbers claims shows every verdict on the right claim on the run page, in the replay and in the report; `npm run verify` green.
+- **Refs**: RF-250, RF-301, RF-1014, P2-02, P2-06.
 ---
 
 ## Phase 3 - Report and plan
