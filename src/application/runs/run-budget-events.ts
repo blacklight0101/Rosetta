@@ -17,7 +17,8 @@ import type { Logger } from '../ports/logger.js';
 //     tokens, whichever is higher) reaches 50, 80 or 95 percent.
 //   - `budget.capReached` once, when a cap first refuses a call (parallel refusals give one): the
 //     cap's kind as the scope, its limit and what was spent or reserved; the token cap
-//     reports tokens.
+//     reports tokens. The cap of a role (RF-423) names its role and is reported once per role and
+//     kind: it stops that role's calls only, so a later cap of the run is still reported.
 // The totals start from the run's ledger rows and the project's totals when the run opens it, and
 // add every call after; the ledger stays the source of truth (the page re-reads the run's total).
 
@@ -109,13 +110,14 @@ function runShare(totals: SpendTotals, caps: readonly UsageCap[]): number {
   return Math.max(0, ...shares);
 }
 
-/** `budget.capReached`: a cost cap in micro-dollars, the run token cap in tokens. */
+/** `budget.capReached`: a cost cap in micro-dollars, a token cap in tokens; a role cap names its role. */
 function capData(breach: CapBreach): Record<string, unknown> {
   const limit = Number(breach.limit);
   const spent = Number(breach.spent);
-  return breach.kind === 'run-tokens'
-    ? { scope: breach.kind, capTokens: limit, spentTokens: spent }
-    : { scope: breach.kind, capMicros: limit, spentMicros: spent };
+  const role = breach.role === undefined ? {} : { role: breach.role };
+  return breach.kind === 'run-tokens' || breach.kind === 'role-tokens'
+    ? { scope: breach.kind, ...role, capTokens: limit, spentTokens: spent }
+    : { scope: breach.kind, ...role, capMicros: limit, spentMicros: spent };
 }
 
 // RF-421, RF-1003, RF-1010
@@ -126,6 +128,8 @@ export class RunBudgetEvents implements BudgetEvents {
   private readonly warned = new Set<number>();
   /** Set by the first cap refusal: parallel calls refused by one cap stop the run once. */
   private capped = false;
+  /** The role caps already reported (RF-423): a role's cap refuses its calls without stopping the run. */
+  private readonly cappedRoles = new Set<string>();
 
   constructor(parts: RunBudgetEventsParts) {
     this.events = parts.events;
@@ -182,8 +186,14 @@ export class RunBudgetEvents implements BudgetEvents {
 
   // RF-422
   async capReached(breach: CapBreach): Promise<void> {
-    if (this.capped) return;
-    this.capped = true;
+    if (breach.role === undefined) {
+      if (this.capped) return;
+      this.capped = true;
+    } else {
+      const scope = `${breach.role}/${breach.kind}`;
+      if (this.cappedRoles.has(scope)) return;
+      this.cappedRoles.add(scope);
+    }
     await this.events.emit('budget.capReached', capData(breach));
   }
 }

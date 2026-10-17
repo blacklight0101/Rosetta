@@ -6,11 +6,13 @@ import { err, ok, type Result } from '../errors/result.js';
 // micro-dollars; the run token cap counts tokens.
 
 /**
- * `run-cost` and `run-tokens`: the run; `user-day`: one user's server-key spend in a UTC day;
+ * `run-cost` and `run-tokens`: the run; `role-cost` and `role-tokens`: one role's calls in the run
+ * (RF-423); `user-day`: one user's server-key spend in a UTC day;
  * `own-day`: one user's own-key spend in a UTC day; `server-month`: every user's server-key spend
  * in a UTC month (DEC-107).
  */
-type CapKind = 'run-cost' | 'run-tokens' | 'user-day' | 'own-day' | 'server-month';
+type CapKind =
+  'run-cost' | 'run-tokens' | 'role-cost' | 'role-tokens' | 'user-day' | 'own-day' | 'server-month';
 
 export interface UsageCap {
   readonly kind: CapKind;
@@ -23,6 +25,8 @@ export type CapSpent = Readonly<Record<CapKind, bigint>>;
 export const noSpend: CapSpent = {
   'run-cost': 0n,
   'run-tokens': 0n,
+  'role-cost': 0n,
+  'role-tokens': 0n,
   'user-day': 0n,
   'own-day': 0n,
   'server-month': 0n,
@@ -40,10 +44,12 @@ export interface CapBreach {
   readonly limit: bigint;
   readonly spent: bigint;
   readonly needed: bigint;
+  /** The role of a role cap's breach (RF-423); set by the budget guard. */
+  readonly role?: string;
 }
 
 function neededFor(kind: CapKind, worstCase: WorstCase): bigint {
-  return kind === 'run-tokens' ? worstCase.tokens : worstCase.micros;
+  return kind === 'run-tokens' || kind === 'role-tokens' ? worstCase.tokens : worstCase.micros;
 }
 
 /** The first cap the call's worst case would pass, or ok (RF-422, RF-1106). */

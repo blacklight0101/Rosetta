@@ -103,6 +103,7 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'worst_case_micros int8',
     'expires_at timestamptz',
     'worst_case_tokens int8',
+    'role text null',
   ],
   server_settings: ['key text', 'value jsonb', 'updated_at timestamptz', 'updated_by uuid null'],
   audit_events: [

@@ -137,13 +137,18 @@ export class UnderstandSession {
   /**
    * RF-1108, RF-208: stopped runs are `Interrupted`; a run whose every task failed is
    * `Failed`; one with areas that gave no card is `Completed` as before and says how many
-   * (`failedAreas`), so it is never shown as a plain success.
+   * (`failedAreas`), so it is never shown as a plain success. RF-423: a role that reached its cap
+   * stops without stopping the run, so a run with a task stopped by a cap and no run-wide stop
+   * still ends `CapReached`: it did not read everything it was asked to.
    */
   outcome(): RunOutcome {
     if (this.parts.execution.signal.aborted) return { endState: 'Interrupted' };
     if (this.outputFailure !== undefined)
       return { endState: 'Failed', errorCode: this.outputFailure };
     const ends = [...this.ends.values()];
+    if (ends.some((end) => end.state === 'StoppedByCap')) {
+      return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
+    }
     const failed = ends.filter((end) => areaFailureOf(end) !== undefined);
     if (failed.length === 0) return { endState: 'Completed' };
     if (!ends.every((end) => end.state === 'Failed')) {

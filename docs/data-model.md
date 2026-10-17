@@ -105,7 +105,7 @@ column of the `projects` table, edited on the project's settings page. The sourc
 | | `<name>.contextTokens` | `auto` or int | `auto` | `ollama` only, refused for other kinds: `auto` picks the largest context that fits the GPU memory Ollama reports; a number (at least 1 024) is sent as `num_ctx` unchanged (RF-401, DEC-114, Q-23) |
 | `roles` | `reader`, `verifier`, `planner`, `summariser` | object | - | each `{ provider, model, maxOutputTokens, temperature?, maxTurns? }`; `maxTurns` for `reader` only (RF-201, RF-405); `maxOutputTokens` 256 to 32 768, `maxTurns` 1 to 50 |
 | `budget` | `run.maxCostMicros`, `run.maxTokens` | int | template values | hard caps per run (RF-422); cost 0 to 100 000 000 micros (100 USD), tokens 0 to 50 000 000 |
-| | `roles.<role>.maxCostMicros`, `roles.<role>.maxTokens` | int | none | caps per role (RF-423) |
+| `budget` | `roles.<role>.maxCostMicros`, `roles.<role>.maxTokens` | int, optional | none | caps of one role's calls in a run (RF-423); added to the run caps, never replacing them, so role caps may add up to more than the run cap and the run cap still binds. A role at its cap has its calls refused with `RST-1600` while the run's other roles go on; the run then ends `CapReached` when it has finished. Not applied to a provider test (RF-407) |
 | | `confirmAboveCostMicros` | int | template value | estimate threshold that asks to continue (RF-425); 0 up to the run cost cap |
 | | `prices` | list | none | overrides of the shipped price table, same shape as 3.18; applied only to calls with the user's own keys (DEC-107) |
 | | `allowUnpriced` | bool | false | run a non-local model missing from the price table, only with the user's own key (RF-427, DEC-112) |
@@ -392,7 +392,7 @@ Event types (canonical list):
 | `verify.claim.judged` | `{ claimId, status, reason }` |
 | `usage.recorded` | `{ callId, role, provider, model, tokens, costMicros, runTotals, projectTotals }` (RF-1003, RF-1010), published by the run's budget guards (`RunBudgetEvents`) after each answered call's ledger row, with the call's agent task in the envelope; `tokens`, `runTotals` and `projectTotals` are `{ inputTokens, outputTokens, cachedInputTokens }` (the totals with `costMicros`), the totals starting from the run's ledger rows and the project's totals when the run opened its providers; `costMicros` is 0 for a local model and left out when the model has no price (RF-427); never a prompt, an answer or a key |
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
-| `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead |
+| `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead. A role cap (`role-cost`, `role-tokens`, RF-423) stops only that role, so it adds `role` and is reported once per role and kind, without ending the once-per-run event of the cap that stops the run |
 | `question.answered` | `{ cardId }` (RF-1007) |
 | `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run ends `Failed` only when every task failed (a provider failure), as before |
 
@@ -729,6 +729,7 @@ the `Clock` port.
 | `call_id` | `text` | the call (`<runKey>#<n>`, or `provider-test-<uuid>#1`); unique only together with `user_id` and `run_id`, because a run key is unique only within a project (`UNIQUE NULLS NOT DISTINCT (user_id, run_id, call_id)` by `0007`, which replaced the `call_id` primary key) |
 | `user_id`, `run_id` | `uuid` | the run's owner and run; `run_id` is null for a provider test, which belongs to no run (RF-407; nullable by `0006`); `user_id` is indexed (`cost_reservations_user_id_idx`, added by `0005`) for the user's sums (RF-422) |
 | `key_source` | `text` | as in `cost_ledger` |
+| `role` | `text` null | the role of the call, as in `cost_ledger`, for the role caps (RF-423); added by `0012`, null only for a row that predates it |
 | `worst_case_micros` | `bigint` | prompt tokens plus maximum output, priced |
 | `worst_case_tokens` | `bigint` | prompt tokens plus maximum output, for the run token cap; `CHECK (worst_case_tokens >= 0)`; added by `0005` |
 | `expires_at` | `timestamptz` | call timeout plus a margin; expired rows are ignored and purged |
@@ -838,7 +839,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`), `0100..` later
 releases.
 
 **File schema versions**:

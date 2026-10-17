@@ -48,6 +48,8 @@ export interface Reservation {
   readonly userId: string;
   /** Null for a provider test (RF-407): no run cap applies to it. */
   readonly runId: string | null;
+  /** The role of the call, for the role caps (RF-423). */
+  readonly role: string;
   readonly keySource: KeySource;
   readonly worstCase: WorstCase;
   /** After this instant the reservation no longer counts and may be purged. */

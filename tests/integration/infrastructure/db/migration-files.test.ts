@@ -56,6 +56,7 @@ describe('release migrations', () => {
       '0009_project_settings_version.sql',
       '0010_schema_version_read.sql',
       '0011_runs_failed_areas.sql',
+      '0012_cost_reservations_role.sql',
     ]);
   });
 

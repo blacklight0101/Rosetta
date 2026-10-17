@@ -9,12 +9,14 @@ import { navigate } from '../app/router.js';
 import { dollarsToMicros, RUN_COST_MAX_MICROS } from '../lib/usd.js';
 import type { RunNoticeState } from './RunNotice.js';
 import { useQueuePosition } from './use-queue-position.js';
+import { useStartConfirmation, type StartConfirmation } from './use-start-confirmation.js';
 
 // RF-1001, RF-143, RF-1108, DEC-117: what pressing Start does, in order. Another address than the
 // project's is resolved to its own project and its start page. Otherwise a changed run cap or
 // confirm threshold is saved with the project settings, and then the run is requested; a threshold
 // above the cap is refused here, before any request, since the server would refuse the pair
-// (RST-1005, RST-1006). Each refusal is kept for the field it names (the address, the cap, the
+// (RST-1005, RST-1006). An understand run whose likely cost is above the threshold is first asked
+// about (RF-425): the question opens and nothing is saved or requested until it is confirmed. Each refusal is kept for the field it names (the address, the cap, the
 // threshold, the areas, the consent) or, for anything else, for Start.
 
 const RUN_CAP_PATH = 'budget.run.maxCostMicros';
@@ -40,6 +42,8 @@ export interface ActionInputs {
   readonly url: string;
   readonly capText: string;
   readonly thresholdText: string;
+  /** The likely cost of the priced roles, the figure the threshold is compared with (RF-425). */
+  readonly likelyMicros: bigint | undefined;
   /** Told the project with the settings the page just saved. */
   readonly onSaved: (project: Project) => void;
   readonly onConsentRefused: () => void;
@@ -60,6 +64,12 @@ export interface StartActions {
   readonly attempts: number;
   readonly refusals: Refusals;
   readonly notice: RunNoticeState | undefined;
+  /** RF-425: the question before an expensive run, and its two answers. */
+  readonly confirmation: {
+    readonly asking: boolean;
+    readonly confirm: () => void;
+    readonly cancel: () => void;
+  };
   readonly submit: () => void;
   readonly resolve: () => void;
   readonly cancel: () => void;
@@ -121,6 +131,7 @@ interface Steps {
   /** Keeps a refusal for its field and counts it; true, so the caller can stop. */
   readonly refuse: (refusals: Refusals) => boolean;
   readonly show: (notice: RunNoticeState) => void;
+  readonly confirmation: StartConfirmation;
 }
 
 async function resolveUrl({ client, inputs, refuse }: Steps): Promise<boolean> {
@@ -131,10 +142,7 @@ async function resolveUrl({ client, inputs, refuse }: Steps): Promise<boolean> {
 }
 
 /** Saves a changed run cap or threshold with the settings; true when the run must not start. */
-async function saveLimits({ client, inputs, refuse }: Steps): Promise<boolean> {
-  const typed = limitsOf(inputs);
-  if ('refusal' in typed) return refuse(typed.refusal);
-  const { limits } = typed;
+async function saveLimits({ client, inputs, refuse }: Steps, limits: Limits): Promise<boolean> {
   if (unchanged(inputs.project, limits)) return false;
   // A save replaces the whole document, so it starts from the settings as they are now: what
   // another session changed since this page opened stays (only the limits are ours to change).
@@ -170,11 +178,28 @@ async function requestRun(steps: Steps): Promise<boolean> {
   return false;
 }
 
-/** Pressing Start: another address is resolved; else the limits are saved, then the run requested. */
+/**
+ * Pressing Start: another address is resolved; a scan is requested; an understand run first checks
+ * the limits, asks when its likely cost is above the threshold (RF-425), saves a changed cap or
+ * threshold, and then is requested.
+ */
 async function press(steps: Steps): Promise<void> {
   const { inputs } = steps;
-  if (inputs.url.trim() !== inputs.project.sourceUrl) await resolveUrl(steps);
-  else if (inputs.stage !== 'understand' || !(await saveLimits(steps))) await requestRun(steps);
+  if (inputs.url.trim() !== inputs.project.sourceUrl) {
+    await resolveUrl(steps);
+    return;
+  }
+  if (inputs.stage !== 'understand') {
+    await requestRun(steps);
+    return;
+  }
+  const typed = limitsOf(inputs);
+  if ('refusal' in typed) {
+    steps.refuse(typed.refusal);
+    return;
+  }
+  if (steps.confirmation.ask(typed.limits.threshold)) return;
+  if (!(await saveLimits(steps, typed.limits))) await requestRun(steps);
 }
 
 // RF-1001, RF-143, RF-1108
@@ -185,8 +210,9 @@ export function useStartActions(inputs: ActionInputs): StartActions {
   const [refusals, setRefusals] = useState<Refusals>({});
   const [notice, setNotice] = useState<RunNoticeState | undefined>();
   useQueuePosition(notice, setNotice);
+  const confirmation = useStartConfirmation(inputs.likelyMicros);
   const steps: Steps = {
-    ...{ client, inputs, show: setNotice },
+    ...{ client, inputs, confirmation, show: setNotice },
     refuse: (next) => {
       setRefusals(next);
       setAttempts((current) => current + 1);
@@ -209,6 +235,14 @@ export function useStartActions(inputs: ActionInputs): StartActions {
   };
   return {
     ...{ busy, attempts, refusals, notice },
+    confirmation: {
+      asking: confirmation.asking,
+      confirm: () => {
+        confirmation.accept();
+        void busyWith(() => press(steps));
+      },
+      cancel: confirmation.decline,
+    },
     submit: () => void busyWith(() => press(steps)),
     resolve: () => void busyWith(() => resolveUrl(steps)),
     cancel: () => void cancel(),

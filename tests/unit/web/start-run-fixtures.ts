@@ -127,6 +127,40 @@ export const cloudEstimate = estimateOf([
   }),
 ]);
 
+/** The reader on OpenAI with the server's key whose likely cost is `likely` micro-dollars. */
+export const cloudEstimateAt = (likely: string): Record<string, unknown> =>
+  estimateOf([
+    roleOf({
+      role: 'reader',
+      provider: 'openai',
+      kind: 'openai',
+      model: 'gpt-5-nano',
+      keySource: 'server',
+      costs: ['120000', likely, '2000000'],
+    }),
+  ]);
+
+/** The reader is priced ($0.39 likely); the verifier is on OpenAI too, with a model without a price. */
+export const cloudWithUnpricedVerifier = estimateOf([
+  roleOf({
+    role: 'reader',
+    provider: 'openai',
+    kind: 'openai',
+    model: 'gpt-5-nano',
+    keySource: 'server',
+    costs: ['120000', '390000', '800000'],
+  }),
+  roleOf({
+    role: 'verifier',
+    provider: 'openai',
+    kind: 'openai',
+    model: 'gpt-mystery',
+    keySource: 'server',
+    priced: false,
+    costs: ['0', '0', '0'],
+  }),
+]);
+
 /** The same with the reader's own key. */
 export const ownKeyEstimate = estimateOf([
   roleOf({

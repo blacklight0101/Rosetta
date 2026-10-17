@@ -210,6 +210,47 @@ describe('RunBudgetEvents cap', () => {
   });
 });
 
+describe('RunBudgetEvents role caps', () => {
+  it('RF-423 a role cap names the role and does not hide a later cap of the run', async () => {
+    const events = emitter();
+    const reporter = new RunBudgetEvents({ events, run: zero, project: zero });
+
+    await reporter.capReached({
+      ...{ kind: 'role-cost', limit: 500n, spent: 400n, needed: 200n },
+      role: 'reader',
+    });
+    await reporter.capReached({
+      ...{ kind: 'role-tokens', limit: 900n, spent: 800n, needed: 200n },
+      role: 'reader',
+    });
+    await reporter.capReached({ kind: 'run-cost', limit: 10_000n, spent: 9_800n, needed: 900n });
+    await reporter.capReached({ kind: 'run-cost', limit: 10_000n, spent: 9_800n, needed: 900n });
+
+    expect(events.emitted.map((each) => each.data)).toEqual([
+      { scope: 'role-cost', role: 'reader', capMicros: 500, spentMicros: 400 },
+      { scope: 'role-tokens', role: 'reader', capTokens: 900, spentTokens: 800 },
+      { scope: 'run-cost', capMicros: 10_000, spentMicros: 9_800 },
+    ]);
+  });
+
+  it('RF-423 a role reaching its cap is reported once, however many of its calls are refused', async () => {
+    const events = emitter();
+    const reporter = new RunBudgetEvents({ events, run: zero, project: zero });
+    const breach = {
+      kind: 'role-cost',
+      limit: 500n,
+      spent: 400n,
+      needed: 200n,
+      role: 'verifier',
+    } as const;
+
+    await reporter.capReached(breach);
+    await reporter.capReached(breach);
+
+    expect(events.emitted).toHaveLength(1);
+  });
+});
+
 describe('RunBudgetEvents.open', () => {
   it('RF-1010 starts from the run ledger rows and the project totals', async () => {
     const events = emitter();

@@ -73,6 +73,8 @@ export class MemoryCostLedger implements CostLedger {
     // A call of no run (a provider test) shares no run with any other call, as in SQL `run_id = NULL`.
     const ofRun = (entry: LedgerEntry | Reservation): boolean =>
       call.runId !== null && entry.runId === call.runId;
+    const ofRole = (entry: LedgerEntry | Reservation): boolean =>
+      ofRun(entry) && entry.role === call.role;
     const server = (entry: LedgerEntry | Reservation): boolean => entry.keySource === 'server';
     const day = (source: KeySource): bigint =>
       sum(
@@ -88,6 +90,14 @@ export class MemoryCostLedger implements CostLedger {
       'run-tokens': sum([
         ...this.entries.filter(ofRun).map(tokensOf),
         ...held.filter(ofRun).map((r) => r.worstCase.tokens),
+      ]),
+      'role-cost': sum([
+        ...this.entries.filter(ofRole).map((e) => e.costMicros),
+        ...held.filter(ofRole).map((r) => r.worstCase.micros),
+      ]),
+      'role-tokens': sum([
+        ...this.entries.filter(ofRole).map(tokensOf),
+        ...held.filter(ofRole).map((r) => r.worstCase.tokens),
       ]),
       'user-day': day('server'),
       'own-day': day('user'),

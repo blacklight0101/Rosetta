@@ -33,7 +33,7 @@ import { readerTokens, type TokenFigures } from './reader-estimate.js';
 // low, likely and high figure, with the assumptions stated. Costs are bigint micro-dollars like
 // the ledger. A local model costs zero and still shows its tokens; a cloud model without a price
 // shows its tokens and `priced: false` (RF-427). The confirmation threshold of the second RF-425
-// scenario is not here (P2-08, DEC-97).
+// scenario is applied by the start page, from this estimate (P2-08, DEC-97).
 
 export interface EstimateRunDependencies {
   readonly projects: ProjectRepository;
