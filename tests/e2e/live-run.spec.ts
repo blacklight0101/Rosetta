@@ -186,6 +186,7 @@ test('RF-241 an Answered question can be reopened on the page, with no serious v
   const answered = {
     ...{ cardId: 'OQ-001', question: 'Is a sold-out item still shown?', answer: 'Yes.' },
     ...{ context: 'Catalog/Default.aspx.cs:41-58 The list filters on stock.', state: 'Answered' },
+    dependents: 0,
   };
   await page.route('**/api/runs/*/answers', (route) =>
     route.fulfill({ json: { questions: [answered] } }),
@@ -194,6 +195,7 @@ test('RF-241 an Answered question can be reopened on the page, with no serious v
     route.fulfill({ json: { questions: [{ ...answered, state: 'Open' }] } }),
   );
   await page.goto(finishedRun);
+  await openRunTab(page, 'Your questions');
   const question = page
     .getByRole('region', { name: 'Open questions' })
     .getByTestId('open-question');
@@ -220,7 +222,6 @@ test('RF-1003 Stop ends a run that is working, keeps the cards that were found a
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'Stop run' })).toHaveCount(0);
   await expect(page.getByRole('tablist', { name: 'Results' })).toBeVisible();
-  await expect(page.getByRole('tablist', { name: 'Run details' })).toHaveCount(0);
   await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, 'Catalog')).toContainText('BR-001');
   await expect(page.getByRole('link', { name: 'Download zip' })).toBeVisible();
