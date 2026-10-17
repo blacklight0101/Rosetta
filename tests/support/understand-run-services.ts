@@ -4,6 +4,7 @@ import { RunScan } from '../../src/application/use-cases/run-scan.js';
 import { RunUnderstand } from '../../src/application/use-cases/run-understand.js';
 import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-report-files.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
@@ -20,6 +21,7 @@ import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-f
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import {
   loadMergePrompt,
+  loadAnswersPrompt,
   loadReaderPrompts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
@@ -27,6 +29,7 @@ import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pa
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
 import { SnapshotScanPipeline } from '../../src/infrastructure/scan/scan-pipeline.js';
 import { FileScanResults } from '../../src/infrastructure/scan/scan-results.js';
+import { FailingCardOutputs } from './failing-card-outputs.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { fixtureRoot } from './scan-harness.js';
@@ -95,7 +98,11 @@ export function stores(dataDir: string, refuseRemoval = false): Stores {
   };
 }
 
-function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnderstand {
+function understandExecutor(
+  s: Stores,
+  providers: UnderstandProviders,
+  cardWritesFail: () => boolean,
+): RunUnderstand {
   const { writer, masker, logger, manifests, clock } = s;
   return new RunUnderstand({
     ...{ projects: s.projects, runs: s.runs, users: s.users, manifests, clock, logger },
@@ -107,7 +114,7 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
     }),
     providers: providers.factory,
     runSinks: providers.runSinks,
-    cards: new FileCardOutputs({ writer, masker, logger }),
+    cards: new FailingCardOutputs(new FileCardOutputs({ writer, masker, logger }), cardWritesFail),
     answers: new FileAnswersFile({ writer, masker }),
     ledger: providers.ledger,
     costTotals: new MemoryCostTotals(),
@@ -115,11 +122,17 @@ function understandExecutor(s: Stores, providers: UnderstandProviders): RunUnder
     prompts: () => loadReaderPrompts('prompts'),
     mergePrompt: () => loadMergePrompt('prompts'),
     textToolProtocol: () => loadTextToolProtocol('prompts'),
+    answersPrompt: () => loadAnswersPrompt('prompts'),
+    priorCards: new FilePriorCards(writer),
     ids: new SequenceIdGenerator(),
   });
 }
 
-export async function queueOf(s: Stores, providers: UnderstandProviders): Promise<RunQueue> {
+export async function queueOf(
+  s: Stores,
+  providers: UnderstandProviders,
+  cardWritesFail: () => boolean = () => false,
+): Promise<RunQueue> {
   const { runs, manifests, log, clock, logger, projects, writer, masker } = s;
   const pipeline = new SnapshotScanPipeline({
     ...{ writer, masker, logger },
@@ -135,7 +148,7 @@ export async function queueOf(s: Stores, providers: UnderstandProviders): Promis
     ...{ runs, lifecycle, clock, logger },
     executors: {
       scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
-      understand: understandExecutor(s, providers),
+      understand: understandExecutor(s, providers, cardWritesFail),
     },
     maxRunning: 2,
   });

@@ -6,6 +6,8 @@ import type { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
+import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
+import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import type { Actor } from '../../src/domain/accounts/actor.js';
 import type { RunEvent } from '../../src/domain/runs/run-event.js';
 import type { RunManifest } from '../../src/domain/runs/run-manifest.js';
@@ -18,6 +20,7 @@ import {
   type Recording,
 } from '../../src/infrastructure/providers/fake/recording.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
+import { fakeResponse } from './fake-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
@@ -53,6 +56,10 @@ export interface UnderstandHarnessOptions {
   readonly dataDir: string;
   /** A file name under tests/recordings/fake/. */
   readonly recording: string;
+  /** A file replayed by the runs after the replays of `recording` (the re-run with answers). */
+  readonly afterwards?: string;
+  /** While it answers true the card writer of the understand runs refuses every card write. */
+  readonly cardWritesFail?: () => boolean;
   readonly settings?: ProjectSettings;
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
@@ -73,6 +80,7 @@ export interface UnderstandHarnessOptions {
 interface UnderstandStart {
   readonly areas?: readonly string[];
   readonly cloudConsent?: boolean;
+  readonly withAnswers?: boolean;
 }
 
 export interface UnderstandHarness {
@@ -84,6 +92,8 @@ export interface UnderstandHarness {
   scan(): Promise<Run>;
   /** Starts an understand run as the API does and waits for its end. */
   understand(start?: UnderstandStart): Promise<Run>;
+  /** Writes answers into the project's `answers.md`, as the answers page does. */
+  answer(run: Run, answers: readonly AnswerEntry[]): Promise<void>;
   /** Stops the running runs, as the Stop button does. */
   stopRunning(): Promise<void>;
   manifestOf(run: Run): Promise<RunManifest>;
@@ -149,6 +159,13 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
     ...{ project, logger: s.logger, providers, runs: s.runs },
     scan: () => start('scan', {}),
     understand: (extra = {}) => start('understand', extra),
+    async answer(run, answers) {
+      const recorded = await new FileAnswersFile({
+        writer: s.writer,
+        masker: s.masker,
+      }).recordAnswers({ userId: run.userId, projectId: run.projectId }, run.runKey, answers);
+      expect(recorded.ok).toBe(true);
+    },
     async stopRunning() {
       for (const run of await s.runs.listRunning()) await queue.stop(run.userId, run.id);
     },
@@ -175,6 +192,37 @@ function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<Understan
     : { ownOpenAiKey: { userId: account.id, key: given.key } };
 }
 
+/**
+ * The summariser's answer to the one group of duplicate candidates of the first run (RF-250): no
+ * merge. It stands between the first run's calls and the later runs' calls.
+ */
+const noMerge: Recording['calls'][number] = {
+  attempts: [
+    {
+      response: fakeResponse({
+        text: '```json\n{"merges": []}\n```',
+        toolCalls: [],
+        usage: {
+          inputTokens: 100,
+          outputTokens: 10,
+          cachedInputTokens: 0,
+          usageSource: 'reported',
+        },
+        finishReason: 'stop',
+      }),
+    },
+  ],
+};
+
+/** The recording of the options: the first file replayed, then the file for later runs. */
+async function recordingOf(options: UnderstandHarnessOptions): Promise<Recording> {
+  const load = (name: string) => loadRecording(join('tests', 'recordings', 'fake', name));
+  const first = repeated(await load(options.recording), options.replays ?? 1);
+  if (options.afterwards === undefined) return first;
+  const later = await load(options.afterwards);
+  return { ...first, calls: [...first.calls, noMerge, ...later.calls] };
+}
+
 // RF-200
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
@@ -193,16 +241,13 @@ export async function createUnderstandHarness(
   const providers = understandProviders({
     ...{ dataDir: options.dataDir, writer: s.writer, masker: s.masker, clock: s.clock },
     logger: s.logger,
-    recording: repeated(
-      await loadRecording(join('tests', 'recordings', 'fake', options.recording)),
-      options.replays ?? 1,
-    ),
+    recording: await recordingOf(options),
     beforeCall,
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
     ...keysOf(options.openAiKey),
   });
-  const queue = await queueOf(s, providers);
+  const queue = await queueOf(s, providers, options.cardWritesFail);
   const harness = harnessOf({ s, queue, project, providers, dataDir: options.dataDir });
   holder.harness = harness;
   return harness;

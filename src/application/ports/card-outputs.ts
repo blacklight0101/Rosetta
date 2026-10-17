@@ -1,4 +1,5 @@
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
+import type { CardChanges } from '../understand/card-changes.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { CommitSha } from '../../domain/sources/commit-sha.js';
 import type { RunScope } from './run-events.js';
@@ -29,6 +30,8 @@ export interface CardSet {
    * (RF-250): their files are removed once the set is written, so each card is in the folder once.
    */
   readonly mergedAway?: readonly Pick<Card, 'id' | 'type'>[];
+  /** RF-241: a re-run with answers lists its new and changed cards in `spec.md`. */
+  readonly changes?: CardChanges;
 }
 
 export interface CardOutputs {

@@ -54,6 +54,7 @@ const startBody = z.strictObject({
   stage: z.enum(RUN_STAGES),
   areas: z.array(areaName).max(MAX_AREAS).optional(),
   cloudConsent: z.boolean().optional(),
+  withAnswers: z.boolean().optional(),
 });
 
 /** Streams one part of a run as an attachment; the file name comes from the run key, cleaned. */
@@ -130,13 +131,14 @@ function registerStart(server: FastifyInstance, services: RunServices): void {
     async (request, reply) => {
       const body = startBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
-      const { stage, areas, cloudConsent } = body.data;
+      const { stage, areas, cloudConsent, withAnswers } = body.data;
       const outcome = await services.startRun.execute({
         actor: signedInOf(request).actor,
         projectId: request.params.id,
         stage,
         ...(areas === undefined ? {} : { areas }),
         ...(cloudConsent === undefined ? {} : { cloudConsent }),
+        ...(withAnswers === undefined ? {} : { withAnswers }),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);
       const { run, position } = outcome.value;

@@ -22,6 +22,8 @@ const readerPromptNames = {
   continue: 'cards/continue.v1.md',
 } as const;
 
+const answersPromptName = 'reader/answers.v1.md';
+
 const versionPattern = /\.(v\d+)\.md$/;
 
 function invalid(name: string, problem: string): RosettaError {
@@ -71,4 +73,10 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
     repair: requirePlaceholder(repair, readerPlaceholders.repair),
     continue: resume,
   };
+}
+
+/** The prompt that carries the owner's answers to a re-run reader (RF-241), checked and hashed. */
+export async function loadAnswersPrompt(promptsFolder: string): Promise<PromptFile> {
+  const file = await loadPromptFile(promptsFolder, answersPromptName);
+  return requirePlaceholder(file, readerPlaceholders.answers);
 }

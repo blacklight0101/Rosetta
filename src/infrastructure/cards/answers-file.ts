@@ -1,4 +1,5 @@
 import type {
+  AnsweredQuestion,
   AnswerEntry,
   AnswersFile,
   OpenQuestion,
@@ -11,7 +12,14 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { projectPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { lastLineEndOf, linesOf, markOf, questionsOfRun, withAnswers } from './answers-sections.js';
+import {
+  answeredQuestionsOf,
+  lastLineEndOf,
+  linesOf,
+  markOf,
+  questionsOfRun,
+  withAnswers,
+} from './answers-sections.js';
 
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
@@ -75,6 +83,11 @@ export class FileAnswersFile implements AnswersFile {
   // RF-1007
   async questionsOf(project: ProjectRef, runKey: string): Promise<readonly RecordedQuestion[]> {
     return questionsOfRun(await this.read(fileOf(project)), runKey);
+  }
+
+  // RF-241
+  async answeredQuestions(project: ProjectRef): Promise<readonly AnsweredQuestion[]> {
+    return answeredQuestionsOf(await this.read(fileOf(project)));
   }
 
   // RF-1007

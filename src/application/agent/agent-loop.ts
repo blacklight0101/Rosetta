@@ -74,6 +74,8 @@ export interface AgentTaskRequest {
   readonly nextCallId: () => string;
   /** Shared by every task of the run: Stop, shutdown and caps (architecture section 8). */
   readonly signal: AbortSignal;
+  /** RF-241: the owner's answers for the area, sent as one data block after the area's. */
+  readonly answers?: string;
 }
 
 /** A model that repeats one call this often, or names unknown tools this often, is stopped. */
@@ -107,8 +109,10 @@ class AgentTask {
   }
 
   async run(): Promise<AgentTaskResult> {
-    const { prompts, tools } = this.request;
-    this.add({ role: 'user', content: readerTaskMessage(prompts, tools.areaOverview()) });
+    const { prompts, tools, answers } = this.request;
+    const owner = answers === undefined ? undefined : tools.renderBlock('owner_answers', answers);
+    const content = readerTaskMessage(prompts, tools.areaOverview(), owner);
+    this.add({ role: 'user', content });
     return this.result(await this.explore());
   }
 

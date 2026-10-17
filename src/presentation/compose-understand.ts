@@ -10,6 +10,7 @@ import type { RunIndex } from '../application/ports/run-index.js';
 import type { RunManifestStore } from '../application/ports/run-manifest-store.js';
 import { RunUnderstand } from '../application/use-cases/run-understand.js';
 import { FileCostReportWriter } from '../infrastructure/budget/cost-report-files.js';
+import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { FileCardOutputs } from '../infrastructure/cards/file-card-outputs.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
@@ -20,7 +21,11 @@ import { runPath } from '../infrastructure/files/workspace-paths.js';
 import { SnapshotStore } from '../infrastructure/github/snapshot-store.js';
 import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
-import { loadMergePrompt, loadReaderPrompts } from '../infrastructure/prompts/prompt-files.js';
+import {
+  loadAnswersPrompt,
+  loadMergePrompt,
+  loadReaderPrompts,
+} from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { FileScanResults } from '../infrastructure/scan/scan-results.js';
@@ -95,6 +100,8 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     prompts: () => loadReaderPrompts(promptsFolder),
     mergePrompt: () => loadMergePrompt(promptsFolder),
     textToolProtocol: () => loadTextToolProtocol(promptsFolder),
+    answersPrompt: () => loadAnswersPrompt(promptsFolder),
+    priorCards: new FilePriorCards(writer),
     ids: parts.ids,
   });
 }

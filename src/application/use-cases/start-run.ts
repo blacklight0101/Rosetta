@@ -32,6 +32,8 @@ export interface StartRunRequest {
   readonly areas?: readonly string[];
   /** RF-143: the consent to send code to the cloud providers the run's roles use. */
   readonly cloudConsent?: boolean;
+  /** RF-241: `understand` runs again the areas of the answered questions, with the answers. */
+  readonly withAnswers?: boolean;
 }
 
 export type StartRunProblem =

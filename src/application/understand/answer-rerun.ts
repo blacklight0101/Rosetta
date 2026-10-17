@@ -1,0 +1,114 @@
+import type { AnsweredQuestion, AnswersFile, ProjectRef } from '../ports/answers-file.js';
+import type { PriorCard, PriorCards } from '../ports/prior-cards.js';
+import type { ReaderTask } from './reader-tasks.js';
+
+// RF-241, RF-1007, DEC-15: the re-run with answers. The answered questions of the project's
+// `answers.md` are matched with the `OQ` cards of the runs that raised them; a question whose card
+// is gone, is already `Answered`, or whose area is not in the code map is left out. The areas of the
+// questions left are the affected areas. The answers go to the reader of their area, and once that
+// reader's task has ended `Done` its questions are marked `Answered`.
+
+export interface RerunDependencies {
+  readonly answers: Pick<AnswersFile, 'answeredQuestions'>;
+  readonly cards: PriorCards;
+}
+
+/** An answered question with the area of its card. */
+interface PendingQuestion extends AnsweredQuestion {
+  readonly area: string;
+}
+
+export interface RerunPlan {
+  readonly project: ProjectRef;
+  readonly pending: readonly PendingQuestion[];
+  /** The earlier cards of the runs that raised the questions, to tell new from changed cards. */
+  readonly baseline: readonly PriorCard[];
+}
+
+/** A re-run with answers: what it compares with and marks. */
+export interface Rerun {
+  readonly deps: RerunDependencies;
+  readonly plan: RerunPlan;
+}
+
+/** The earlier cards of the run, by run key, for the runs the questions came from. */
+async function cardsByRun(
+  deps: RerunDependencies,
+  project: ProjectRef,
+  answered: readonly AnsweredQuestion[],
+): Promise<Map<string, readonly PriorCard[]>> {
+  const keys = [...new Set(answered.map((question) => question.runKey))];
+  const cards = await Promise.all(keys.map((key) => deps.cards.cardsOf(project, key)));
+  return new Map(keys.map((key, index) => [key, cards[index] ?? []]));
+}
+
+// RF-241
+export async function planRerun(
+  deps: RerunDependencies,
+  project: ProjectRef,
+  codeMapAreas: readonly string[],
+): Promise<RerunPlan> {
+  const answered = await deps.answers.answeredQuestions(project);
+  const byRun = await cardsByRun(deps, project, answered);
+  const pending = answered.flatMap((question): PendingQuestion[] => {
+    const card = byRun
+      .get(question.runKey)
+      ?.find((each) => each.id === question.cardId && each.type === 'OQ');
+    if (card === undefined || card.questionState === 'Answered') return [];
+    return codeMapAreas.includes(card.area) ? [{ ...question, area: card.area }] : [];
+  });
+  return { project, pending, baseline: [...byRun.values()].flat() };
+}
+
+/** The affected areas, restricted to the named ones when the request named some. */
+export function areasToRun(plan: RerunPlan, named: readonly string[] | undefined): string[] {
+  const areas = [...new Set(plan.pending.map((question) => question.area))];
+  return named === undefined || named.length === 0
+    ? areas
+    : areas.filter((area) => named.includes(area));
+}
+
+/** The plan with only the questions of these areas. */
+export function onlyAreas(plan: RerunPlan, areas: readonly string[]): RerunPlan {
+  return { ...plan, pending: plan.pending.filter((question) => areas.includes(question.area)) };
+}
+
+/** What the reader of the area is told: each question, where it came from and the answer. */
+function answersTextOf(plan: RerunPlan, area: string): string | undefined {
+  const questions = plan.pending.filter((question) => question.area === area);
+  if (questions.length === 0) return undefined;
+  return questions
+    .map(
+      (each) =>
+        `Question ${each.cardId}: ${each.question}\nRaised from: ${each.context}\nOwner's answer: ${each.answer}`,
+    )
+    .join('\n\n');
+}
+
+/** The tasks with the answers of their area. */
+export function withAnswersOf(
+  tasks: readonly ReaderTask[],
+  plan: RerunPlan,
+): readonly ReaderTask[] {
+  return tasks.map((task) => {
+    const answers = answersTextOf(plan, task.area.name);
+    return answers === undefined ? task : { ...task, answers };
+  });
+}
+
+/** Marks the questions of the areas whose task ended `Done` as `Answered`; their card ids. */
+// RF-241
+export async function markAnswered(
+  deps: RerunDependencies,
+  plan: RerunPlan,
+  doneAreas: ReadonlySet<string>,
+): Promise<readonly string[]> {
+  const done = plan.pending.filter((question) => doneAreas.has(question.area));
+  const runs = [...new Set(done.map((question) => question.runKey))];
+  const marked: string[] = [];
+  for (const runKey of runs) {
+    const ids = done.filter((question) => question.runKey === runKey).map((each) => each.cardId);
+    marked.push(...(await deps.cards.markAnswered(plan.project, runKey, ids)));
+  }
+  return marked;
+}

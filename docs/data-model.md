@@ -262,9 +262,9 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `resumedFrom` | string | the earlier `runId` when resumed (RF-006) |
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
-| `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143) |
+| `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent, withAnswers? }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143); `withAnswers: true` only when the request asked for the re-run with answers (RF-241, P2-05) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004); `contextTokens` and `contextSource` are the Ollama context size sent as `num_ctx` and how it was chosen (`fixed` from the start, or `auto-fit`, `auto-floor`, `auto-model-limit`, `auto-fallback` after the first call; RF-401, DEC-114), `null` until then |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when the reader uses Ollama with `toolMode: text` (RF-205), plus `summariser/merge.v1.md` once the summariser has answered a merge call (RF-250) |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when the reader uses Ollama with `toolMode: text` (RF-205), plus `summariser/merge.v1.md` once the summariser has answered a merge call (RF-250), plus `reader/answers.v1.md` when a re-run with answers has a task (RF-241) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `catalogue` | object | `{ version, sha256 }` of the principle catalogue (RF-606, RNF-004) that a plan run used, `null` for the other stages and for a manifest written before this field; the version is the one the catalogue README declares and the SHA-256 runs over every catalogue file by name |
@@ -303,7 +303,7 @@ Header fields:
 | `confidence` | `Confidence` | set by the agent (architecture section 5) |
 | `claims[]` | list | `{ claimId, text, citations[], status (ClaimStatus), verdict? }`; `claimId` is `<card id>.c<n>`; `verdict` is `{ step: citation \| judgement, reason, model, at }` |
 | `question`, `whyItMatters` | string | `OQ` only (RF-202) |
-| `questionState` | `OpenQuestionState` | `OQ` only (RF-241) |
+| `questionState` | `OpenQuestionState` | `OQ` only (RF-241); a re-run with answers changes `Open` to `Answered` in the card file of the run that raised the question, in this field and in the `State:` line of the body, once the area's task ended `Done` and the run's cards were written |
 | `mergedAreas[]` | list | the areas of the merged cards, in card order, left out for a card that was not merged; a later merge of the kept card reads them, so cards that all come from one area are never merged (RF-250) |
 | `mergedFrom[]` | list | card ids merged by consolidation (RF-250), the kept card's own id first, the union over a chain of merges; the card keeps the id, area and task of its first member and every claim of all members (claim ids renumbered `<id>.c<n>`, status and verdict kept) |
 
@@ -337,7 +337,7 @@ conversation (an area that met its context limit, in two halves); the retry's tr
 
 - `spec.md`: the cards per area as one readable specification with links to the card files and, for every citation, to the
   cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
-  is listed with its status, rejected ones included. A last section, `## Areas without cards`, names every area whose
+  is listed with its status, rejected ones included. The run summary of a re-run with answers (RF-241) adds `## New cards` and `## Changed cards` after the areas, each only when it has cards: a card is new when the earlier run that raised an answered question has no card of the same area, type and title, and changed when it has one whose claim texts differ. A last section, `## Areas without cards`, names every area whose
   reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
 - `coverage.json`: `{ schemaVersion: 1, areas }` where each area is
   `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare, failure? }`, where `failure`
@@ -552,6 +552,8 @@ existing answer is never overwritten. `RunUnderstand` adds the `OQ` cards of the
 included): a question whose heading text is already in the file is skipped, new sections are appended after the
 existing ones, the question and context are one line each and masked, and the context is the card's first citation
 followed by its first claim (P1-33, DEC-98).
+
+A run started with the answers option (RF-241, P2-05) reads the sections whose answer line has text and whose `- Card:` line is exactly `runs/<run folder>/cards/OQ/<card id>.md` for that section's own heading; any other card line (another card, a path out of a run folder) names no run and the section is ignored.
 
 The live run page records answers (`RecordAnswers`, P1-39, RF-1007): a question belongs to the run its `- Card:` line
 names, and an answer replaces the text after `- Answer:` on that section's first answer line (a section that lost the

@@ -1,3 +1,4 @@
+import type { CardChanges } from '../../application/understand/card-changes.js';
 import type { Logger } from '../../application/ports/logger.js';
 import type { OutputWriter, WriteRefusal } from '../../application/ports/output-writer.js';
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
@@ -35,6 +36,8 @@ export interface CardOutputInput {
   readonly areasWithoutCards?: readonly string[];
   /** Cards merged into another since the last write (RF-250): their files are removed. */
   readonly mergedAway?: readonly Pick<Card, 'id' | 'type'>[];
+  /** RF-241: the new and changed cards of a re-run with answers. */
+  readonly changes?: CardChanges;
 }
 
 interface PlannedFile {
@@ -78,14 +81,15 @@ export async function writeCardOutputs(
   target: CardOutputTarget,
   input: CardOutputInput,
 ): Promise<Result<void, WriteRefusal>> {
-  const { cards, source, masker, logger, areasWithoutCards = [], mergedAway = [] } = input;
+  const { cards, source, masker, logger, changes } = input;
+  const { areasWithoutCards = [], mergedAway = [] } = input;
   const files: PlannedFile[] = [
     ...cards.map((card) => ({
       path: cardPath(card),
       text: renderCardFile(card, source, masker),
     })),
     { path: 'cards/index.json', text: serialiseCardIndex(cards, masker) },
-    { path: 'spec.md', text: renderSpec(cards, source, masker, areasWithoutCards) },
+    { path: 'spec.md', text: renderSpec(cards, source, masker, { areasWithoutCards, changes }) },
   ];
   const written = await writeAll(writer, target, files, logger);
   return written.ok ? removeMergedAway(writer, target, mergedAway) : written;
