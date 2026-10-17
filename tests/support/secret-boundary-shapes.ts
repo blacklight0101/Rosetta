@@ -147,4 +147,25 @@ export const boundarySecretCases: readonly ShapeCase[] = [
     masked: `tool ${tokenOption}=	${masked}`,
     secrets: ['flag'],
   },
+  {
+    name: 'a one-dot api_key value that starts like a JWT head',
+    kind: 'api-key',
+    text: `${apiKeyName}=eyJabcdefghij.Sigabcdefg`,
+    masked: `${apiKeyName}=[MASKED:api-key]`,
+    secrets: ['eyJabcdefghij', 'Sigabcdefg'],
+  },
+  {
+    name: 'an api_key value with an environment root and two more segments',
+    kind: 'api-key',
+    text: `${apiKeyName}=process.env.${fakeValue(6)}.${fakeValue(6)}`,
+    masked: `${apiKeyName}=[MASKED:api-key]`,
+    secrets: [fakeValue(6)],
+  },
+  {
+    name: 'a Bearer value in angle brackets with a letters-only JWT head',
+    kind: 'bearer-token',
+    text: `${header} <eyJabcdefghij>`,
+    masked: `${header} ${masked}`,
+    secrets: ['eyJabcdefghij'],
+  },
 ];
