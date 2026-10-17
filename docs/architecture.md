@@ -850,7 +850,8 @@ RF-1014 (P2-02): the judgement step is built, so nothing says it comes in a late
 passed the citation check (the UI state `CitationsChecked`) is shown as "waiting for judgement" only while
 the judgement step is queued or running: the run has not ended and `verify.judgement.ended` has not
 arrived (`src/lib/live-run/judgement-state.ts`; the reducer keeps `judgement` as `idle`, `running` or
-`ended` from `verify.judgement.started` and `verify.judgement.ended`). Then it shows its verdict
+`ended` from `verify.judgement.started` and `verify.judgement.ended`, and back to `idle` at the
+`run.started` of a resume, RF-006, whose step runs again). Then it shows its verdict
 (`Supported`, `Rejected`, or `Unverified` with its reason); a claim the run left unjudged (a stop) stays
 "citations checked" with a note that it was not judged. The claims list, the Verify step of the stepper
 (`5 of 7 citations checked, 3 judged, 2 waiting for judgement`; done once nothing waits), the journey's
