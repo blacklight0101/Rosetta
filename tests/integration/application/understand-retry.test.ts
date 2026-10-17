@@ -65,8 +65,10 @@ describe('a task that ends without a card is retried once', UNDERSTAND_TIMEOUT, 
 
     const manifest = await h.manifestOf(run);
     expect(manifest.totals.calls).toBe(6);
-    expect(h.providers.ledger.reservations).toHaveLength(6);
-    expect(h.providers.ledger.entries).toHaveLength(6);
+    // RF-301: the verifier's judgement of the claims makes calls of its own role.
+    const { reservations, entries } = h.providers.ledger;
+    expect(reservations.filter((each) => each.reservation.role === 'reader')).toHaveLength(6);
+    expect(entries.filter((each) => each.role === 'reader')).toHaveLength(6);
   });
 
   it('RF-208 the retry keeps its own transcript, and the raw answers of the failed first run are saved', async () => {
@@ -75,7 +77,7 @@ describe('a task that ends without a card is retried once', UNDERSTAND_TIMEOUT, 
     const run = await h.understand({ areas: ['Catalog'] });
 
     const folder = h.runFolder(run);
-    expect((await readdir(join(folder, 'transcripts'))).sort()).toEqual([
+    expect(readerTranscripts(await readdir(join(folder, 'transcripts')))).toEqual([
       'reader-001-retry.jsonl',
       'reader-001.jsonl',
     ]);
@@ -148,6 +150,11 @@ describe('the turn limit holds for a task and its retry', UNDERSTAND_TIMEOUT, ()
   });
 });
 
+/** The transcripts of the reader tasks, sorted; the verifier's are `verifier-<claim>` (RF-301). */
+function readerTranscripts(names: readonly string[]): string[] {
+  return names.filter((name) => name.startsWith('reader-')).sort();
+}
+
 describe('an area too large for the context is split in two', UNDERSTAND_TIMEOUT, () => {
   it('RF-208 each half is read on its own, the cards of both are kept, and the retry has its own transcripts', async () => {
     const h = await started({ recording: 'understand-retry-split.json' });
@@ -164,7 +171,7 @@ describe('an area too large for the context is split in two', UNDERSTAND_TIMEOUT
     expect(area(1)).not.toContain('Catalog/Details.aspx.cs');
     expect(area(2)).toContain('Catalog/Details.aspx.cs');
     const transcripts = await readdir(join(h.runFolder(run), 'transcripts'));
-    expect(transcripts.sort()).toEqual([
+    expect(readerTranscripts(transcripts)).toEqual([
       'reader-001-retry-1.jsonl',
       'reader-001-retry-2.jsonl',
       'reader-001.jsonl',
