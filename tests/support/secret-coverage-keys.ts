@@ -209,6 +209,28 @@ const flagCases: readonly CoverageCase[] = [
     ],
     secret,
   ),
+  one(
+    'the api-key flag with a line continuation',
+    'api-key',
+    [
+      `deploy ${dashed('api-key')} \\
+  ${token} now`,
+      `deploy ${dashed('api-key')} \\
+  [MASKED:api-key] now`,
+    ],
+    token,
+  ),
+  one(
+    'the secret flag with a CRLF line continuation',
+    'password',
+    [
+      `sign ${dashed('secret')}=^
+  ${secret} now`,
+      `sign ${dashed('secret')}=^
+  [MASKED:password] now`,
+    ],
+    secret,
+  ),
 ];
 
 export const keyCoverageCases: readonly CoverageCase[] = [

@@ -115,7 +115,7 @@ export const extraRules: readonly ExtraRule[] = [
     // An Authorization header with no scheme: a single value that ends the line or the string.
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>${authorization})${notMasked}(?=${b64}{16,}["']?[ \t]*(?:[,}"';)]|\r?\n|$))(?=${b64}*[0-9])${b64}+`,
+      String.raw`(?<keep>${authorization})${notMasked}(?=${b64}{16,}["']?[ \t]*(?:[,}"';)]|${lineEnd}|$))(?=${b64}*[0-9])${b64}+`,
       'gi',
     ),
   },
