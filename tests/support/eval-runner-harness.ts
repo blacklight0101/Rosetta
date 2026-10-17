@@ -134,7 +134,7 @@ export const csharpScenario: EvalScenario = {
 export const shopScenario: EvalScenario = {
   fixture: 'webforms-shop',
   reader: 'understand-shop-model.json',
-  verifier: ['verifier-flow-step-rejected.json'],
+  verifier: ['verifier-shop-model.json'],
   fileCount: 10,
 };
 

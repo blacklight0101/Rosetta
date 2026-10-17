@@ -55,6 +55,12 @@ function holds(words: string, word: string): boolean {
   return patternOf(word).test(words);
 }
 
+/** RF-262: the claim names at least one of the words, in its text or its card's title. */
+export function mentionsAny(claim: EvaluatedClaim, words: readonly string[]): boolean {
+  const text = wordsOf(claim);
+  return words.some((word) => holds(text, word));
+}
+
 // RNF-006
 export function matchesFinding(claim: EvaluatedClaim, finding: GoldenFinding): boolean {
   if (finding.cardTypes.length > 0 && !finding.cardTypes.includes(claim.cardType)) return false;
