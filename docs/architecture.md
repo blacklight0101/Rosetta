@@ -475,7 +475,8 @@ sequenceDiagram
   answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`); any other
   answer, a tool call or a cut answer gets one retry that names the problem (`prompts/verifier/retry.v1.md`), and a
   second bad answer leaves the claim `Unverified`. A failed call leaves it `Unverified` with its code; a stop, a
-  cap (`RST-1600`) or a cancelled call gives no verdict, so the claim keeps `Proposed`. Each verdict is published as
+  cap (`RST-1600`, the run's or the verifier's own, RF-423) or a cancelled call gives no verdict and no
+  further claim is sent, so those claims keep `Proposed`. Each verdict is published as
   `verify.claim.judged` when it arrives and the cards are written again at the end (RF-302: nothing is removed);
   the verifier's prompt files and model version are recorded in the manifest (RNF-004). When the run starts with a
   verifier of the reader's model family (`src/domain/verifier/model-family.ts`: the model id's last path part, in
