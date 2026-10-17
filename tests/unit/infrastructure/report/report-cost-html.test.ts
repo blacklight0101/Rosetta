@@ -23,8 +23,9 @@ describe('the cost page', () => {
     expect(page.document.querySelector('.headline')?.textContent).toBe(
       '$0.0040 in 3 calls (prices of 2026-10-01).',
     );
-    const facts = [...page.document.querySelectorAll('.facts div')].map((fact) =>
-      fact.textContent.replace(/\s+/gu, ' ').trim(),
+    const facts = [...page.document.querySelectorAll('.facts div')].map(
+      (fact) =>
+        `${fact.querySelector('dt')?.textContent ?? ''} ${fact.querySelector('dd')?.textContent ?? ''}`,
     );
     expect(facts).toEqual([
       'Input tokens 3600',
@@ -60,7 +61,7 @@ describe('the cost page', () => {
     const page = pageOf();
 
     expect(page.document.querySelector('#project-totals .headline')?.textContent).toBe(
-      'Project totals at 2026-10-12T11:00:00.000Z: $3.9900 in 12 calls, 1000000 tokens in, 310000 out.',
+      'Project totals at 2026-10-12T11:00:00.000Z: $3.99 in 12 calls, 1000000 tokens in, 310000 out.',
     );
   });
 });

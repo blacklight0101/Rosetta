@@ -46,7 +46,7 @@ describe('the dashboard cards by type', () => {
   it('RF-500 says so when the run has no cards', () => {
     const page = pageOf({ cards: [] });
 
-    expect(textsOf(page, '#cards-by-type')).toEqual(['No cards.']);
+    expect(textsOf(page, '#cards-by-type p')).toEqual(['No cards.']);
   });
 });
 
@@ -121,7 +121,7 @@ describe('the dashboard cost and project totals', () => {
     const page = pageOf();
 
     expect(textsOf(page, '#project-totals .headline')).toEqual([
-      'Project totals at 2026-10-12T11:00:00.000Z: $3.9900 in 12 calls, 1000000 tokens in, 310000 out.',
+      'Project totals at 2026-10-12T11:00:00.000Z: $3.99 in 12 calls, 1000000 tokens in, 310000 out.',
     ]);
   });
 
@@ -141,7 +141,7 @@ describe('the dashboard cost and project totals', () => {
     });
 
     const totals = textsOf(page, '#project-totals')[0] ?? '';
-    expect(totals).toContain('EUR 0.5000 and $1.0000');
+    expect(totals).toContain('EUR 0.5000 and $1.00');
     expect(totals).toContain('2 calls have no known cost');
   });
 

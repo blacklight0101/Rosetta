@@ -13,6 +13,26 @@ export function dollars(micros: number): string {
   return formatUsd(microUsd(BigInt(Math.trunc(micros))));
 }
 
+/** A cost in a currency: dollars as in `dollars`, any other currency named before the amount. */
+export function moneyText(currency: string, micros: number): string {
+  const usd = dollars(micros);
+  return currency === 'USD' ? usd : `${currency} ${usd.slice(1)}`;
+}
+
+/** The known cost per currency in one phrase: `$1.00`, or `EUR 0.5000 and $1.00`; `$0.0000` for none. */
+export function costPhrase(
+  cost: readonly { readonly currency: string; readonly costMicros: number }[],
+): string {
+  if (cost.length === 0) return dollars(0);
+  return cost.map((each) => moneyText(each.currency, each.costMicros)).join(' and ');
+}
+
+/** `3 calls have no known cost (the model has no price).`; empty when every call has a price (RF-427). */
+export function unknownCostText(calls: number): string {
+  if (calls === 0) return '';
+  return `${calls === 1 ? '1 call has' : `${String(calls)} calls have`} no known cost (the model has no price).`;
+}
+
 /** `1 Supported, 2 Rejected`: the statuses with claims, in the order of the vocabulary; `0` for none. */
 export function claimsText(counts: Readonly<Record<string, number>>): string {
   const parts = CLAIM_STATUSES.flatMap((status) => {

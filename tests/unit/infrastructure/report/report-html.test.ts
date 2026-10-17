@@ -101,7 +101,7 @@ describe('renderReportHtml cards', () => {
   });
 
   it('RF-504 gives a run without cards a sentence instead of an empty table', () => {
-    const page = pageOf({ cards: [] });
+    const page = pageOf({ cards: [], coverage: null });
 
     expect(page.document.querySelectorAll('table')).toHaveLength(0);
     expect(page.document.body.textContent).toContain('No cards.');

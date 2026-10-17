@@ -155,7 +155,7 @@ export const plainCost: ReportCost = {
   byModel: [{ key: 'fake model-a', ...costLine, calls: 3, costMicros: 4000 }],
 };
 
-export const plainProjectTotals: ReportProjectTotals = {
+const plainProjectTotals: ReportProjectTotals = {
   calls: 12,
   inputTokens: 1_000_000,
   outputTokens: 310_000,
