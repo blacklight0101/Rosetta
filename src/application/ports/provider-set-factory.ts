@@ -69,6 +69,8 @@ export interface ProviderProblem {
   /** The provider's name in the project settings. */
   readonly provider: string;
   readonly code: ErrorCode;
+  /** What is wrong, when the code alone does not say it (P2-24); never the value of a key. */
+  readonly message?: string;
 }
 
 export interface ProviderSetFactory {

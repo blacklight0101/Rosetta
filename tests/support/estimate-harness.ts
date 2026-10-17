@@ -116,11 +116,12 @@ export async function projectWithScan(
 export function createEstimateHarness(
   areas: readonly Area[] = catalogAreas,
   files: readonly FileEntry[] = [],
+  priceTable: PriceTable = estimatePrices,
 ): EstimateHarness {
   const projects = new MemoryProjectRepository();
   const runs = new MemoryRunIndex();
   const keys = new MemoryProviderKeyRepository();
   const scans = new FixedScans(areas, files);
-  const estimate = new EstimateRun({ projects, runs, scans, keys, priceTable: estimatePrices });
+  const estimate = new EstimateRun({ projects, runs, scans, keys, priceTable });
   return { estimate, projects, runs, keys, scans };
 }

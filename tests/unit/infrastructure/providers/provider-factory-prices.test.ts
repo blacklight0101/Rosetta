@@ -67,3 +67,36 @@ describe('unpriced models at the start of a run', () => {
     expect(built.ok).toBe(true);
   });
 });
+
+describe('an Anthropic override without a cache-write price at the start of a run', () => {
+  const claude = settingsFor({ reader: { provider: 'anthropic', model: 'claude-test' } });
+  const withOverride: ProjectSettings = {
+    ...claude,
+    budget: {
+      ...claude.budget,
+      prices: [
+        {
+          provider: 'anthropic',
+          model: 'claude-test',
+          inputPerMillionMicros: 3_000_000,
+          outputPerMillionMicros: 15_000_000,
+          cachedInputPerMillionMicros: 300_000,
+        },
+      ],
+    },
+  };
+
+  it('RF-427 P2-24 the problem of the role names the override', async () => {
+    const harness = factoryHarness();
+    await harness.storeKey(factoryAccount.id, 'anthropic', userKeyText);
+
+    const built = await harness.factory.build(
+      harness.request({ settings: withOverride, cloudConsent: true }),
+    );
+
+    expect(!built.ok && built.error[0]?.code).toBe(ERROR_CODES.modelUnpriced);
+    expect(!built.ok && built.error[0]?.message).toMatch(
+      /price override.*claude-test.*cache-write/,
+    );
+  });
+});

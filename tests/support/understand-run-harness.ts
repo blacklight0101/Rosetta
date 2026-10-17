@@ -70,6 +70,8 @@ export interface UnderstandHarnessOptions {
   /** A workspace that refuses to remove a card file, for a merge whose files cannot go. */
   readonly refuseRemoval?: boolean;
   readonly openAiKey?: { readonly of: 'server' | 'user'; readonly key: string };
+  /** P2-24: an Anthropic key the run's user owns. */
+  readonly anthropicKey?: string;
   readonly beforeCall?: (
     call: number,
     harness: UnderstandHarness,
@@ -246,6 +248,9 @@ export async function createUnderstandHarness(
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
     ...keysOf(options.openAiKey),
+    ...(options.anthropicKey === undefined
+      ? {}
+      : { ownAnthropicKey: { userId: account.id, key: options.anthropicKey } }),
   });
   const queue = await queueOf(s, providers, options.cardWritesFail);
   const harness = harnessOf({ s, queue, project, providers, dataDir: options.dataDir });
