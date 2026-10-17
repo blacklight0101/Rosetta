@@ -1,5 +1,5 @@
 import type { RunEvent } from '../../api/run-events.js';
-import { cardData, citationCheckedData, claimJudgedData } from './event-data.js';
+import { cardData, cardsMergedData, citationCheckedData, claimJudgedData } from './event-data.js';
 import type { ClaimRow, ClaimShown, RunState } from './run-state.js';
 
 // RF-1004, RF-1014, DEC-136: what the events of a claim change in the claims list. A claim is `Proposed`
@@ -77,4 +77,17 @@ export function onClaimJudged(state: RunState, event: RunEvent): RunState {
   const verdict = VERDICTS.find((each) => each === status);
   if (verdict === undefined) return state;
   return withClaim(state, claimId, (claim) => ({ ...claim, status: verdict, reason }));
+}
+
+// RF-250, RF-1004: a card merge renumbered claims; each claim row follows its move, all at once, so
+// moves that exchange ids cannot overwrite each other.
+export function onCardsMerged(state: RunState, event: RunEvent): RunState {
+  const parsed = cardsMergedData.safeParse(event.data);
+  if (!parsed.success) return state;
+  const moves = new Map(parsed.data.claims.map((move) => [move.from, move.to]));
+  const claims = state.claims.map((claim) => {
+    const to = moves.get(claim.claimId);
+    return to === undefined ? claim : { ...claim, claimId: to, cardId: cardOf(to) };
+  });
+  return { ...state, claims };
 }

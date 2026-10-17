@@ -463,8 +463,9 @@ sequenceDiagram
   tag (unit test over `prompts/<role>/`).
 - **Flows and screens** (RF-260, RF-261, DEC-134, Q-25, P2-19): the code map marks an area for flows when one of its
   files is an entry point (a page, a controller or the application entry file by its artefact kind, or a class named
-  like a job, handler, consumer, listener, subscriber or worker) and for screens when one is a page, form, view or
-  template (`marksOf`, `src/domain/code-map/area-surface.ts`; derived from the scan, so the code map file does not
+  like a job, handler, consumer, listener, subscriber, worker, singular or plural, or a WebForms `.ashx`/`.asmx` handler)
+  and for screens when one is a page, form, view or template (a `.html` page is a screen only; `.jsx`/`.tsx` views count,
+  test and spec files never do) (`marksOf`, `src/domain/code-map/area-surface.ts`; derived from the scan, so the code map file does not
   change). `loadReaderPrompts` also reads `prompts/cards/flows.v1.md` and `prompts/cards/screens.v1.md`; a reader task
   (`readerPromptsFor`) gets them after the card format only for the kinds its area is marked for, so an area of plain
   libraries gets the very same prompts and costs nothing extra. The run manifest lists a fragment only when some task

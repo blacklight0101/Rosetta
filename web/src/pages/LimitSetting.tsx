@@ -23,6 +23,8 @@ interface LimitProps extends SettingBase {
   readonly max?: number;
   readonly defaultValue: number;
   readonly unit: LimitUnit;
+  /** No range hint while the value that sets this range is itself invalid (P2-29). */
+  readonly hideHint?: boolean;
 }
 
 function describing(ids: readonly (string | undefined)[]): string | undefined {
@@ -107,7 +109,7 @@ export function LimitSetting(props: LimitProps): JSX.Element {
   const hintId = `${rangeId}-hint`;
   const defaultText = formatValue(defaultValue, unit);
   const differs = current !== undefined && current !== defaultValue;
-  const hint = outsideHint(current, range, top, unit);
+  const hint = props.hideHint === true ? undefined : outsideHint(current, range, top, unit);
   const warning = `Differs from the default of ${defaultText}. Keep the default unless you have a reason to change it.`;
   const describedBy = describing([
     rangeTextId,

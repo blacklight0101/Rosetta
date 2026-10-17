@@ -50,6 +50,12 @@ export function confirmCeiling(runCost: string): number {
   return Math.min(Math.max(cap, ranges.confirmAbove.min), ranges.confirmAbove.max);
 }
 
+/** Whether the run cost cap, as typed, is a number outside its own range (P2-29: the confirm hint waits). */
+export function runCostOutOfRange(runCost: string): boolean {
+  const cap = numberOf(runCost);
+  return cap !== undefined && (cap < ranges.runCost.min || cap > ranges.runCost.max);
+}
+
 /** A number for a person to read: grouped thousands, and dollars with cents unless whole. */
 export function formatValue(value: number, unit: LimitUnit): string {
   if (unit === 'dollars') return `$${value.toFixed(Number.isInteger(value) ? 0 : 2)}`;
@@ -64,6 +70,6 @@ export function formatAmount(value: number, unit: LimitUnit): string {
   if (unit === 'count') return formatValue(value, 'count');
   const sign = value < 0 ? '-' : '';
   const [whole = '0', fraction = ''] = Math.abs(value).toFixed(6).replace(/0+$/u, '').split('.');
-  const grouped = whole.replace(/B(?=(d{3})+(?!d))/gu, ',');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/gu, ',');
   return `${sign}$${grouped}.${fraction.padEnd(2, '0')}`;
 }

@@ -5,7 +5,7 @@ import {
   parseProjectSettings,
   type ProjectSettings,
 } from '../../../src/application/projects/project-settings.js';
-import { ranges, templateDefaults } from '../../../web/src/pages/setting-limits.js';
+import { formatAmount, ranges, templateDefaults } from '../../../web/src/pages/setting-limits.js';
 
 // RF-002, DEC-116, DEC-117, P2-15: the sliders start at the values of the settings template and are
 // bounded by the ranges the server accepts, so a slider never offers a value the server refuses.
@@ -40,6 +40,12 @@ const base: ProjectSettings = parsedBase.value;
 
 const DOLLAR = 1_000_000;
 const micros = (dollars: number): number => Math.round(dollars * DOLLAR);
+
+// RF-002, P2-29: an amount of a sentence groups its thousands, as a count does.
+it('RF-002 an amount of a thousand dollars or more groups its thousands', () => {
+  expect(formatAmount(1234.5, 'dollars')).toBe('$1,234.50');
+  expect(formatAmount(-1_000_000, 'dollars')).toBe('-$1,000,000.00');
+});
 
 it('RF-002 the slider defaults equal the values of the settings template', () => {
   expect(at(raw, ['roles', 'reader', 'maxOutputTokens'])).toBe(
