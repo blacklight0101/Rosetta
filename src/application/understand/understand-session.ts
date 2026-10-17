@@ -35,14 +35,10 @@ import { taskResultOf } from './task-result-of.js';
 import { withoutThirdPartyQuestions } from './third-party-questions.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
-// RF-200, RF-202, RF-203, RF-230, RF-264, RF-300, RF-301, RF-1002, DEC-98, RNF-002: the reader tasks of one
-// understand run and what they leave. Every task that ends adds its cards; the cards of the run so far are then
-// given their ids, pass the citation check and are written, so a run that stops keeps the cards of
-// the tasks that ended (partial cards). An area whose task answered no card is named in `spec.md`
-// and logged; the coverage of the ended tasks' areas is written with them (RF-230). When every task has
-// ended (or the run stopped) the open questions are added to the project's `answers.md`. Then the
-// judgement step judges the claims that passed the citation check and the cards are written again
-// with their verdicts, before duplicate cards are merged and the overview is written (RF-264).
+// RF-200, RF-202, RF-203, RF-230, RF-264, RF-300, RF-301, RF-1002, DEC-98, RNF-002: the reader tasks
+// of one understand run and what they leave: each ended task adds cards that are checked and
+// written, so a stopped run keeps them (RF-230). Then the open questions go to `answers.md`, the
+// claims are judged, duplicates merged and the overview written (RF-264).
 
 interface UnderstandSessionDependencies {
   readonly cards: CardOutputs;

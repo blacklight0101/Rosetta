@@ -167,6 +167,7 @@ export function runServices(
   const { projects, keys, calls, logs, clock } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
+    readOverview: new ReadOverview({ runs: runs.runs, files: outputs.text }),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
     resumeRun: new ResumeRun({
@@ -188,7 +189,6 @@ export function runServices(
     readOverview: new ReadOverview({ runs: runs.runs, files: outputs.text }),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, submit: runs.submit }),
-    // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
     estimateRun: new EstimateRun({
       projects,
       runs: runs.runs,
