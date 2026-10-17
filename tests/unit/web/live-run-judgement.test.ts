@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import type { RunEvent } from '../../../web/src/api/run-events.js';
 import type { RunRow } from '../../../web/src/api/run-schemas.js';
 import { journeyOf } from '../../../web/src/lib/live-run/journey.js';
+import { judgementPending } from '../../../web/src/lib/live-run/judgement-state.js';
 import { phaseOf } from '../../../web/src/lib/live-run/run-phase.js';
 import { stepperOf } from '../../../web/src/lib/live-run/run-stepper.js';
 import {
@@ -111,4 +112,41 @@ it('RF-1014 the judgement step events become lines of the log', () => {
     '2 claims to judge',
     '1 supported, 1 rejected, 0 unverified, 0 not judged',
   ]);
+});
+
+/** A stop during the step: one verdict, the step ends with one claim not judged, the run not yet. */
+const stoppedInJudgement = [
+  ...read,
+  ev(8, 'verify.judgement.started', { claims: 2 }),
+  judged(9, 'BR-001.c1', 'Supported'),
+  ev(10, 'verify.judgement.ended', { supported: 1, rejected: 0, unverified: 0, notJudged: 1 }),
+];
+
+it('RF-1014 once the step has ended, a claim it left unjudged no longer waits, even before run.ended', () => {
+  const state = stateAfter(...stoppedInJudgement);
+
+  expect(state.ended).toBeUndefined();
+  expect(state.judgement).toBe('ended');
+  expect(judgementPending(state)).toBe(false);
+  expect(verifyStep(stoppedInJudgement)?.detail).toBe(
+    '3 of 3 citations checked, 1 judged, 1 not judged',
+  );
+});
+
+it('RF-1014 RF-006 a run resumed after a stop waits for judgement again', () => {
+  const stopped = [...stoppedInJudgement, runEnded(11, 'Interrupted')];
+  expect(verifyStep(stopped, row('Ended'))?.detail).toContain('1 not judged');
+
+  const resumed = [...stopped, ev(12, 'run.started', startedData)];
+
+  expect(stateAfter(...resumed).judgement).toBe('idle');
+  expect(verifyStep(resumed)?.detail).toBe(
+    '3 of 3 citations checked, 1 judged, 1 waiting for judgement',
+  );
+});
+
+it('RF-1014 the step is pending while it has not ended, whether or not it has started', () => {
+  expect(judgementPending({ ended: undefined, judgement: 'idle' })).toBe(true);
+  expect(judgementPending({ ended: undefined, judgement: 'running' })).toBe(true);
+  expect(judgementPending({ ended: undefined, judgement: 'ended' })).toBe(false);
 });

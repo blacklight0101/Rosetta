@@ -174,3 +174,29 @@ describe('buildReplay cost and odd input', () => {
     });
   });
 });
+
+describe('buildReplay judgement step', () => {
+  it('RF-506 RF-301 shows where the judgement step started and ended, with its counts', () => {
+    const judged = buildReplay(replayDemoRunKey, [
+      event(1, 'run.started', { stage: 'understand' }),
+      event(2, 'verify.judgement.started', { claims: 2 }),
+      event(3, 'verify.claim.judged', { claimId: 'BR-001.c1', status: 'Supported', reason: 'Ok.' }),
+      event(4, 'verify.judgement.ended', {
+        supported: 1,
+        rejected: 0,
+        unverified: 0,
+        notJudged: 1,
+      }),
+    ]);
+
+    const steps = judged.steps.filter((step) => step.seq !== 1 && step.seq !== 3);
+    expect(steps.map(({ kind, label, text }) => ({ kind, label, text }))).toEqual([
+      { kind: 'verdict', label: 'Judgement started', text: '2 claims to judge' },
+      {
+        kind: 'verdict',
+        label: 'Judgement ended',
+        text: '1 supported, 0 rejected, 0 unverified, 1 not judged',
+      },
+    ]);
+  });
+});
