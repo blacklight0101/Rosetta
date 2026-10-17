@@ -110,6 +110,10 @@ src/
     planning/           PlanningBrief, CatalogueEntry, ArchitectureStyle, StackChoice (ADR-018); the catalogue
                         rules (`catalogueProblems`, `defaultPrinciples`, RF-606)
     egress/             the labelled data block of repository content (`renderDataBlock`, `scanDataBlocks`, RF-145)
+    diagrams/           Mermaid text generated from verified cards (DEC-134, RF-508): the one label escaping
+                        function (`mermaidLabel`), the FLOW sequence diagram (`flowSequenceDiagram`, RF-260),
+                        the SCRN screen map (`screenMapDiagram`, RF-261) and the ER diagram of the data model
+                        (`entityDiagram`, RF-262); ids generated, never taken from the code
     errors/             domain error codes and Result type
   application/
     ports/              port interfaces (section 7)
