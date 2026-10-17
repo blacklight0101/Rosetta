@@ -45,6 +45,8 @@ export interface ApplicationOptions {
   readonly output: { write(text: string): unknown };
   /** The fake GitHub and fake provider of the end-to-end tests; refused without ROSETTA_TEST=1. */
   readonly doubles?: TestDoubles;
+  /** The folder with `catalogue/` (RF-606); `prompts/` of the image unless a test passes its own. */
+  readonly promptsFolder?: string;
   /** Where the periodic jobs are registered; an `IntervalScheduler` unless a test passes its own. */
   readonly scheduler?: Scheduler;
 }

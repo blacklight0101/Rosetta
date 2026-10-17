@@ -90,6 +90,7 @@ export function sampleManifest(overrides: Partial<RunManifest> = {}): RunManifes
       allowDenied: [],
     },
     priceTable: null,
+    catalogue: null,
     caps: { run: { maxCostMicros: 500_000, maxTokens: 2_000_000 }, roles: {} },
     masking: {},
     totals: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, costMicros: 0, calls: 0 },

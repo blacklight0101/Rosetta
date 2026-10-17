@@ -3,6 +3,7 @@ import {
   endManifest,
   markManifestStarted,
   recordManifestBlockedCall,
+  recordManifestCatalogue,
   recordManifestCodeMap,
   recordManifestContext,
   recordManifestMasking,
@@ -208,3 +209,29 @@ function recordManifestBlockedCallOnce(
   if (!once.ok) throw new Error('The blocked call was not recorded');
   return once.value;
 }
+
+describe('run manifest catalogue', () => {
+  it('RF-606 records the catalogue version and its SHA-256 on the manifest of a plan run', () => {
+    const manifest = sampleManifest({ stage: 'plan' });
+    const catalogue = { version: 1, sha256: 'c'.repeat(64) };
+
+    expect(recordManifestCatalogue(manifest, catalogue)).toEqual({
+      ok: true,
+      value: { ...manifest, catalogue },
+    });
+  });
+
+  it('RNF-004 does not change the catalogue of a run that has ended', () => {
+    const ended = endManifest(
+      sampleManifest({ stage: 'plan' }),
+      'Completed',
+      '2026-10-12T10:05:00.000Z',
+    );
+    if (!ended.ok) throw new Error('The manifest did not end');
+
+    expect(recordManifestCatalogue(ended.value, { version: 1, sha256: 'c'.repeat(64) })).toEqual({
+      ok: false,
+      error: 'already-ended',
+    });
+  });
+});
