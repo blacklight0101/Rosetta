@@ -30,6 +30,12 @@ const priceSettings = z.looseObject({
   cacheWriteInputPerMillionMicros: z.number().optional(),
 });
 
+// RF-423: the caps of one role; the page shows them only as a notice (P2-26).
+const roleCapSettings = z.looseObject({
+  maxCostMicros: z.number().optional(),
+  maxTokens: z.number().optional(),
+});
+
 const settingsSchema = z.looseObject({
   providers: z.record(z.string(), providerSettings),
   roles: z.looseObject({
@@ -43,6 +49,7 @@ const settingsSchema = z.looseObject({
     confirmAboveCostMicros: z.number(),
     allowUnpriced: z.boolean(),
     prices: z.array(priceSettings).optional(),
+    roles: z.record(z.string(), roleCapSettings).optional(),
   }),
   scan: z.looseObject({
     maxFileBytes: z.number(),
@@ -56,6 +63,7 @@ const settingsSchema = z.looseObject({
 export type ProjectSettings = z.output<typeof settingsSchema>;
 export type ProviderSettings = z.output<typeof providerSettings>;
 export type PriceSettings = z.output<typeof priceSettings>;
+export type RoleCapSettings = z.output<typeof roleCapSettings>;
 
 /** A project as `GET /api/projects` shows it; the owner's id never leaves the server. */
 export const projectSchema = z.object({

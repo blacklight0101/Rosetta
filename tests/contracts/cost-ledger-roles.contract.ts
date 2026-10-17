@@ -58,7 +58,9 @@ function spendContract(name: string, fresh: Fresh): void {
 
   it(`RF-423 ${name} lets exactly one of simultaneous calls of one role through when there is room for one`, async () => {
     const { ledger, ids } = await setUp(fresh);
-    const racers = Array.from({ length: 8 }, () => reservationOf(ids, worst(600n)));
+    const racers = Array.from({ length: 8 }, () =>
+      reservationOf(ids, { keySource: 'user', ...worst(600n) }),
+    );
 
     const results = await Promise.all(
       racers.map((reservation) => reserveAt(ledger, reservation, roleCost(1_000n))),

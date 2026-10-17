@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { Field } from '../components/Field.js';
 import { LimitSetting } from './LimitSetting.js';
+import { RoleCapNotice, type RoleCaps } from './RoleCapNotice.js';
 import type { SectionProps } from './settings-section.js';
 import { confirmCeiling, ranges, templateDefaults } from './setting-limits.js';
 
@@ -58,9 +59,9 @@ function CapNumbers({ editor, errorFor }: SectionProps): JSX.Element {
   );
 }
 
-// RF-422
-export function CapSettings(props: SectionProps): JSX.Element {
-  const { editor, errorFor } = props;
+// RF-422, RF-423 (the role caps as a notice, P2-26)
+export function CapSettings(props: SectionProps & { readonly roles: RoleCaps }): JSX.Element {
+  const { editor, errorFor, roles } = props;
   return (
     <section class="rst-card rst-settings__section" aria-labelledby="caps">
       <h2 id="caps" class="rst-settings__heading">
@@ -70,6 +71,11 @@ export function CapSettings(props: SectionProps): JSX.Element {
         A run stops cleanly when it reaches either cap. Amounts are in US dollars.
       </p>
       <CapNumbers {...props} />
+      <RoleCapNotice
+        roles={roles}
+        runCost={editor.draft.runCost}
+        runTokens={editor.draft.runTokens}
+      />
       <Field
         kind="checkbox"
         id="cap-allow-unpriced"

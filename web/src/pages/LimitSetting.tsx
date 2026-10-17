@@ -30,6 +30,21 @@ function WarningText({ id, text }: { readonly id: string; readonly text: string 
   );
 }
 
+/**
+ * RF-002, P2-26: the hint for a typed number outside the slider's range (its ends are the range's
+ * bottom and the slider's top), or undefined inside it and for text that is not a number.
+ */
+function outsideHint(
+  current: number | undefined,
+  range: Range,
+  top: number,
+  unit: LimitUnit,
+): string | undefined {
+  if (current === undefined || (current >= range.min && current <= top)) return undefined;
+  const allowed = `${formatValue(range.min, unit)} to ${formatValue(top, unit)}`;
+  return `${formatValue(current, unit)} is outside the allowed range of ${allowed}. Save will refuse it.`;
+}
+
 // RF-002
 export function LimitSetting(props: LimitProps): JSX.Element {
   const { id, value, range, unit, defaultValue } = props;
@@ -41,8 +56,10 @@ export function LimitSetting(props: LimitProps): JSX.Element {
   const rangeId = `${id}-range`;
   const rangeTextId = `${rangeId}-text`;
   const warningId = `${rangeId}-warning`;
+  const hintId = `${rangeId}-hint`;
   const defaultText = formatValue(defaultValue, unit);
   const differs = current !== undefined && current !== defaultValue;
+  const hint = outsideHint(current, range, top, unit);
   const warning = `Differs from the default of ${defaultText}. Keep the default unless you have a reason to change it.`;
   return (
     <div class="rst-limit">
@@ -59,8 +76,14 @@ export function LimitSetting(props: LimitProps): JSX.Element {
         id={rangeId}
         type="range"
         class="rst-limit__slider"
-        title={`${props.label} slider`}
-        aria-describedby={describing([rangeTextId, differs ? warningId : undefined])}
+        // P2-26: named by its range, not by the field label, so a lookup by a field label finds the
+        // number field only.
+        aria-label={`Slider, ${formatValue(range.min, unit)} to ${formatValue(top, unit)}`}
+        aria-describedby={describing([
+          rangeTextId,
+          hint === undefined ? undefined : hintId,
+          differs ? warningId : undefined,
+        ])}
         min={range.min}
         max={top}
         step={range.step}
@@ -72,6 +95,7 @@ export function LimitSetting(props: LimitProps): JSX.Element {
       <p id={rangeTextId} class="rst-field__help">
         {`Default ${defaultText}. Allowed ${formatValue(range.min, unit)} to ${formatValue(top, unit)}.`}
       </p>
+      {hint === undefined ? null : <WarningText id={hintId} text={hint} />}
       {differs ? <WarningText id={warningId} text={warning} /> : null}
     </div>
   );
