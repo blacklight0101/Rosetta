@@ -27,7 +27,6 @@ import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
-import type { FixtureRepository } from './scan-harness.js';
 import { queueOf, scanResultsOf, stores, type Stores } from './understand-run-services.js';
 import { resumeProblemCheck } from '../../src/application/understand/resume-problem.js';
 import { FileTaskResults } from '../../src/infrastructure/cards/file-task-results.js';
@@ -39,9 +38,9 @@ import {
   type UnderstandProviders,
 } from './understand-providers.js';
 
-// RF-200, RF-005, RNF-002, ADR-008: a scan run and then an understand run on the C# fixture, over
-// memory indexes and real files in a temporary data folder, with the real provider factory and
-// guards in front of a fake provider that replays a recording.
+// RF-200, RF-005, RNF-002, ADR-008: a scan run and then an understand run on the C# fixture (or the
+// `fixture` named), over memory indexes and real files in a temporary data folder, with the real
+// provider factory and guards in front of a fake provider that replays a recording.
 
 const account = sampleAccount({ userName: 'understand.user' });
 const understandActor: Actor = { userId: account.id, role: 'user' };
@@ -61,8 +60,7 @@ export interface UnderstandHarnessOptions {
   readonly dataDir: string;
   /** A file name under tests/recordings/fake/. */
   readonly recording: string;
-  /** The fixture repository the project's scan reads; the C# fixture when absent. */
-  readonly fixture?: FixtureRepository;
+  readonly fixture?: Stores['fixture'];
   /** A file replayed by the runs after the replays of `recording` (the re-run with answers). */
   readonly afterwards?: string;
   /** While it answers true the card writer of the understand runs refuses every card write. */
