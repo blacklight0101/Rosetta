@@ -222,7 +222,7 @@ and API contract types in `src/application/contracts/` (dependency-cruiser rule,
 | State list | Values | Transitions |
 |---|---|---|
 | `ClaimStatus` | `Proposed`, `CitationInvalid`, `Supported`, `Rejected`, `Unverified` | `Proposed` -> `CitationInvalid` (step 1) / `Supported` / `Rejected` (step 2) / `Unverified` (stopped); `Unverified` -> `Supported` / `Rejected` (resumed). Final: `CitationInvalid`, `Supported`, `Rejected`. Matches RFC-001 section 4.4. |
-| `CardType` | `FEAT`, `BR`, `ENT`, `INT`, `OQ` | - |
+| `CardType` | `FEAT`, `BR`, `ENT`, `INT`, `OQ`, `FLOW`, `SCRN` | - |
 | `OpenQuestionState` | `Open`, `Answered` | `Open` -> `Answered` when an answer is recorded and the area re-run (RF-241) |
 | `AgentTaskState` | `Planned`, `Running`, `Done`, `TurnLimitReached`, `InvalidOutput`, `Failed`, `StoppedByCap` | `Planned` -> `Running` -> one of the other five |
 | `RunEndState` | `Completed`, `CapReached`, `Failed`, `Interrupted` | set once when the run ends |

@@ -23,7 +23,7 @@ const headerSchema = z.object({
 });
 
 const HEADER_END = '\n---\n';
-const cardFile = /^cards\/(?:FEAT|BR|ENT|INT|OQ)\/[A-Z]+-\d+\.md$/u;
+const cardFile = new RegExp(`^cards/(?:${CARD_TYPES.join('|')})/[A-Z]+-[0-9]+\\.md$`, 'u');
 const cardId = /^OQ-\d+$/u;
 
 function parsedJson(text: string): unknown {

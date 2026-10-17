@@ -2,6 +2,16 @@ import { err, ok, type Result } from '../errors/result.js';
 import type { CardType, ClaimStatus, Confidence, OpenQuestionState } from './card-vocabulary.js';
 import type { Citation } from './citation.js';
 import { canTransitionClaim } from './claim-transitions.js';
+import {
+  flowFields,
+  screenFields,
+  stepFields,
+  type Branch,
+  type CitedText,
+  type DetailProblem,
+  type FlowDetail,
+  type ScreenDetail,
+} from './flow-screen.js';
 
 // Architecture section 5, ADR-005: a card holds claims; a claim holds citations and a status that
 // changes only through the transitions; nothing is ever removed (RF-302).
@@ -22,6 +32,10 @@ export interface Claim {
   readonly citations: readonly Citation[];
   readonly status: ClaimStatus;
   readonly verdict?: ClaimVerdict;
+  /** `FLOW` steps only: the `SCRN`, `BR`, `ENT` or `INT` card id the step touches (RF-260). */
+  readonly target?: string;
+  /** `FLOW` steps only: the error or alternative paths of the step (RF-260). */
+  readonly branches?: readonly Branch[];
 }
 
 export interface Card {
@@ -40,11 +54,17 @@ export interface Card {
   readonly mergedFrom?: readonly string[];
   /** The areas of the merged cards, in card order, when the card is a merge (RF-250). */
   readonly mergedAreas?: readonly string[];
+  /** `FLOW` cards only (RF-260). */
+  readonly flow?: FlowDetail;
+  /** `SCRN` cards only (RF-261). */
+  readonly screen?: ScreenDetail;
 }
 
 export interface ClaimInput {
   readonly text: string;
   readonly citations: readonly Citation[];
+  readonly target?: string | undefined;
+  readonly branches?: readonly CitedText[] | undefined;
 }
 
 export interface CardInput {
@@ -58,9 +78,12 @@ export interface CardInput {
   readonly claims: readonly ClaimInput[];
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
+  readonly flow?: FlowDetail | undefined;
+  readonly screen?: ScreenDetail | undefined;
 }
 
-export type CardProblem = 'no-claims' | 'claim-without-citation' | 'question-missing';
+export type CardProblem =
+  'no-claims' | 'claim-without-citation' | 'question-missing' | DetailProblem;
 export type ClaimTransitionProblem = 'claim-not-found' | 'transition-not-allowed';
 
 type QuestionFields = Pick<Card, 'question' | 'whyItMatters' | 'questionState'>;
@@ -75,7 +98,24 @@ function questionFields(input: CardInput): Result<QuestionFields, CardProblem> {
   });
 }
 
-// RF-202: at least one claim, each with at least one citation; an OQ also has its question.
+function claimsOf(input: CardInput): Result<readonly Claim[], CardProblem> {
+  const claims: Claim[] = [];
+  for (const [index, claim] of input.claims.entries()) {
+    const step = stepFields(input.type, claim);
+    if (!step.ok) return step;
+    claims.push({
+      claimId: `${input.id}.c${String(index + 1)}`,
+      text: claim.text,
+      citations: claim.citations,
+      status: 'Proposed',
+      ...step.value,
+    });
+  }
+  return ok(claims);
+}
+
+// RF-202: at least one claim, each with at least one citation; an OQ also has its question; a FLOW
+// its trigger and outcome and cited branches (RF-260); a SCRN its cited validations (RF-261).
 export function createCard(input: CardInput): Result<Card, CardProblem> {
   if (input.claims.length === 0) return err('no-claims');
   if (input.claims.some((claim) => claim.citations.length === 0)) {
@@ -83,12 +123,12 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
   }
   const question = questionFields(input);
   if (!question.ok) return question;
-  const claims = input.claims.map((claim, index): Claim => ({
-    claimId: `${input.id}.c${String(index + 1)}`,
-    text: claim.text,
-    citations: claim.citations,
-    status: 'Proposed',
-  }));
+  const flow = flowFields(input.type, input.flow);
+  if (!flow.ok) return flow;
+  const screen = screenFields(input.type, input.screen);
+  if (!screen.ok) return screen;
+  const claims = claimsOf(input);
+  if (!claims.ok) return claims;
   return ok({
     id: input.id,
     type: input.type,
@@ -97,8 +137,10 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
     area: input.area,
     agentTaskId: input.agentTaskId,
     confidence: input.confidence,
-    claims,
+    claims: claims.value,
     ...question.value,
+    ...flow.value,
+    ...screen.value,
   });
 }
 
