@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "description": "An understand run over every area of the webforms-shop fixture, as understand-flows-screens.json, except that Services answers two ENT cards and the shipping BR card: the catalog item, and the basket line with a relation to the catalog item that its code shows and a relation to a customer account that its code does not show (the golden set counts that one as a relation stated wrongly, P2-23). Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Default.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 30
+                }
+              }
+            ],
+            "text": "",
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FLOW\",\n      \"title\": \"Browse the catalogue\",\n      \"area\": \"(root)\",\n      \"summary\": \"A visitor looks through the catalogue, optionally searches it, and opens an item.\",\n      \"confidence\": \"High\",\n      \"flow\": {\n        \"trigger\": \"The visitor opens the home page.\",\n        \"outcome\": \"The visitor reaches the details page of one item.\"\n      },\n      \"claims\": [\n        {\n          \"text\": \"The home page binds the catalogue list to the grid when it first loads.\",\n          \"citations\": [\n            \"Default.aspx.cs:9-12\"\n          ]\n        },\n        {\n          \"text\": \"Pressing Search binds the grid again with the trimmed search text.\",\n          \"citations\": [\n            \"Default.aspx.cs:14-17\"\n          ],\n          \"branches\": [\n            {\n              \"text\": \"An empty search text lists the whole catalogue.\",\n              \"citations\": [\n                \"Default.aspx.cs:11-11\"\n              ]\n            }\n          ]\n        },\n        {\n          \"text\": \"Choosing Details on a row redirects to the details page of that item.\",\n          \"citations\": [\n            \"Default.aspx.cs:19-22\"\n          ],\n          \"branches\": [\n            {\n              \"text\": \"Any other row command does nothing.\",\n              \"citations\": [\n                \"Default.aspx.cs:21-21\"\n              ]\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"SCRN\",\n      \"title\": \"Catalogue list\",\n      \"area\": \"(root)\",\n      \"summary\": \"The home page: a search box and a grid with the catalogue.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The page holds the catalogue grid, a search box and a Search button.\",\n          \"citations\": [\n            \"Default.aspx:4-8\"\n          ]\n        }\n      ],\n      \"screen\": {\n        \"route\": \"/Default.aspx\",\n        \"roles\": [],\n        \"fields\": [\n          {\n            \"name\": \"SearchBox\",\n            \"inputKind\": \"text\",\n            \"required\": false,\n            \"validations\": []\n          }\n        ],\n        \"actions\": [\n          {\n            \"label\": \"Search\",\n            \"handler\": \"SearchButton_Click\"\n          },\n          {\n            \"label\": \"Details\",\n            \"handler\": \"CatalogGrid_RowCommand\"\n          }\n        ],\n        \"leadsTo\": [\n          \"/Catalog/Details.aspx\"\n        ]\n      }\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 400,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [
+              {
+                "id": "call-2",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 22
+                }
+              }
+            ],
+            "text": "",
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FLOW\",\n      \"title\": \"Add an item to the basket\",\n      \"area\": \"Catalog\",\n      \"summary\": \"A visitor reads an item and adds a quantity of it to the basket.\",\n      \"confidence\": \"High\",\n      \"flow\": {\n        \"trigger\": \"The visitor opens the details page of an item.\",\n        \"outcome\": \"The basket is held in the session and the visitor is at the checkout.\"\n      },\n      \"claims\": [\n        {\n          \"text\": \"The details page shows the name and the price of the item named in the address.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:8-13\"\n          ]\n        },\n        {\n          \"text\": \"Pressing Add to basket does nothing when the page is not valid.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:15-17\"\n          ],\n          \"branches\": [\n            {\n              \"text\": \"A quantity outside 1 to 10 makes the page invalid.\",\n              \"citations\": [\n                \"Catalog/Details.aspx:8-8\"\n              ]\n            }\n          ]\n        },\n        {\n          \"text\": \"The item and quantity are added to the basket in the session and the visitor is sent to the checkout.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:18-19\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"SCRN\",\n      \"title\": \"Item details\",\n      \"area\": \"Catalog\",\n      \"summary\": \"Shows one item and lets the visitor choose a quantity.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The page shows the name and price and has a quantity box and an Add button.\",\n          \"citations\": [\n            \"Catalog/Details.aspx:4-9\"\n          ]\n        }\n      ],\n      \"screen\": {\n        \"route\": \"/Catalog/Details.aspx\",\n        \"roles\": [],\n        \"fields\": [\n          {\n            \"name\": \"QuantityBox\",\n            \"inputKind\": \"text\",\n            \"required\": false,\n            \"validations\": [\n              {\n                \"text\": \"The quantity must be a whole number from 1 to 10.\",\n                \"citations\": [\n                  \"Catalog/Details.aspx:8-8\"\n                ]\n              }\n            ]\n          }\n        ],\n        \"actions\": [\n          {\n            \"label\": \"Add to basket\",\n            \"handler\": \"AddButton_Click\"\n          }\n        ],\n        \"leadsTo\": [\n          \"/Orders/Checkout.aspx\"\n        ]\n      }\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 1400,
+              "outputTokens": 400,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [
+              {
+                "id": "call-3",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Orders/Checkout.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 18
+                }
+              }
+            ],
+            "text": "",
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FLOW\",\n      \"title\": \"Place an order\",\n      \"area\": \"Orders\",\n      \"summary\": \"A visitor with a basket gives an e-mail address and a shipping choice and places the order.\",\n      \"confidence\": \"High\",\n      \"flow\": {\n        \"trigger\": \"The visitor presses Place order on the checkout page.\",\n        \"outcome\": \"The order is placed, the basket is emptied and the visitor sees the confirmation page.\"\n      },\n      \"claims\": [\n        {\n          \"text\": \"The checkout does nothing while the page is not valid.\",\n          \"citations\": [\n            \"Orders/Checkout.aspx.cs:8-10\"\n          ],\n          \"branches\": [\n            {\n              \"text\": \"A blank or malformed e-mail address makes the page invalid.\",\n              \"citations\": [\n                \"Orders/Checkout.aspx:6-7\"\n              ]\n            }\n          ]\n        },\n        {\n          \"text\": \"A visitor without a basket is redirected to the home page.\",\n          \"citations\": [\n            \"Orders/Checkout.aspx.cs:11-12\"\n          ]\n        },\n        {\n          \"text\": \"The order service places the order with the e-mail, the shipping choice and the basket.\",\n          \"citations\": [\n            \"Orders/Checkout.aspx.cs:13-13\"\n          ]\n        },\n        {\n          \"text\": \"The basket is cleared and the visitor is sent to the confirmation page with the order number.\",\n          \"citations\": [\n            \"Orders/Checkout.aspx.cs:14-15\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"SCRN\",\n      \"title\": \"Checkout\",\n      \"area\": \"Orders\",\n      \"summary\": \"Collects the e-mail address and the shipping choice and places the order.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The page has an e-mail box, a shipping list and a Place order button.\",\n          \"citations\": [\n            \"Orders/Checkout.aspx:4-9\"\n          ]\n        }\n      ],\n      \"screen\": {\n        \"route\": \"/Orders/Checkout.aspx\",\n        \"roles\": [],\n        \"fields\": [\n          {\n            \"name\": \"EmailBox\",\n            \"inputKind\": \"text\",\n            \"required\": true,\n            \"validations\": [\n              {\n                \"text\": \"The e-mail address is required.\",\n                \"citations\": [\n                  \"Orders/Checkout.aspx:6-6\"\n                ]\n              },\n              {\n                \"text\": \"The e-mail address must have one at sign with text on both sides.\",\n                \"citations\": [\n                  \"Orders/Checkout.aspx:7-7\"\n                ]\n              }\n            ]\n          },\n          {\n            \"name\": \"ShippingList\",\n            \"inputKind\": \"dropdown\",\n            \"required\": false,\n            \"validations\": []\n          }\n        ],\n        \"actions\": [\n          {\n            \"label\": \"Place order\",\n            \"handler\": \"PlaceButton_Click\"\n          }\n        ],\n        \"leadsTo\": [\n          \"/Orders/Confirm.aspx\",\n          \"/Default.aspx\"\n        ]\n      }\n    },\n    {\n      \"type\": \"SCRN\",\n      \"title\": \"Order confirmation\",\n      \"area\": \"Orders\",\n      \"summary\": \"Tells the visitor the order number.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The page writes the order number from the address into a label.\",\n          \"citations\": [\n            \"Orders/Confirm.aspx.cs:7-10\"\n          ]\n        }\n      ],\n      \"screen\": {\n        \"route\": \"/Orders/Confirm.aspx\",\n        \"roles\": [],\n        \"fields\": [],\n        \"actions\": [],\n        \"leadsTo\": []\n      }\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Order with an empty basket\",\n      \"area\": \"Orders\",\n      \"summary\": \"The redirect for a visitor without a basket is not followed by a return, so the order may still be placed.\",\n      \"confidence\": \"Low\",\n      \"claims\": [\n        {\n          \"text\": \"The redirect for a missing basket is the only statement of that branch.\",\n          \"citations\": [\n            \"Orders/Checkout.aspx.cs:12-13\"\n          ]\n        }\n      ],\n      \"question\": \"Should an order with an empty basket ever be placed, for example by staff?\",\n      \"whyItMatters\": \"The new system must either refuse such an order or allow it on purpose.\"\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 1800,
+              "outputTokens": 400,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [
+              {
+                "id": "call-4",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Services/OrderService.cs",
+                  "startLine": 1,
+                  "endLine": 20
+                }
+              }
+            ],
+            "text": "",
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Catalog item\",\n      \"area\": \"Services\",\n      \"summary\": \"What the shop sells: an id, a name and a price.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"A catalog item has an id, a name and a price.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:5-10\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Basket line\",\n      \"area\": \"Services\",\n      \"summary\": \"One item and a quantity in the basket of a visitor.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"A basket line holds an item id and a quantity.\",\n          \"citations\": [\n            \"Services/OrderService.cs:9-10\"\n          ]\n        },\n        {\n          \"text\": \"A basket line refers to a catalog item through its item id.\",\n          \"citations\": [\n            \"Services/OrderService.cs:7-10\"\n          ]\n        },\n        {\n          \"text\": \"A basket line belongs to a customer account.\",\n          \"citations\": [\n            \"Services/OrderService.cs:14-18\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"BR\",\n      \"title\": \"Express shipping costs 12\",\n      \"area\": \"Services\",\n      \"summary\": \"Express shipping costs 12 and any other choice costs 4.\",\n      \"confidence\": \"High\",\n      \"claims\": [\n        {\n          \"text\": \"The shipping fee is 12 for express and 4 otherwise.\",\n          \"citations\": [\n            \"Services/OrderService.cs:16-16\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 1200,
+              "outputTokens": 400,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

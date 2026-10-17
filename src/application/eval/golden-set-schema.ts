@@ -28,6 +28,7 @@ const findingSchema = z.strictObject({
   id,
   kind: z.enum(FINDING_KINDS),
   statement,
+  of: z.string().trim().min(1).max(200).optional(),
   cardTypes: z.array(z.enum(CARD_TYPES)).max(CARD_TYPES.length),
   evidence: z.array(z.string().max(420)).min(1).max(20),
   keywords: z.array(word).min(1).max(20),

@@ -2,6 +2,7 @@ import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { citesAnyPath, hitsAbsence, matchesFinding, type EvaluatedClaim } from './claim-match.js';
 import type { GoldenAbsence, GoldenCase, GoldenFinding } from './golden-set.js';
 import { ratio } from './ratio.js';
+import { structureScore, type StructureScore } from './structure-score.js';
 
 // RNF-006, RNF-015, RFC-001 section 7: the precision of `Supported` claims and the recall of the
 // golden rules for one run. Only `Supported` claims count. A claim that states something the
@@ -10,7 +11,7 @@ import { ratio } from './ratio.js';
 // correct / (correct + wrong); `strictPrecision` is correct / every Supported claim, the lower
 // bound that counts every unmatched claim as wrong. Ids are listed in code-unit order.
 
-export interface ClaimScore {
+export interface ClaimScore extends StructureScore {
   readonly supported: number;
   readonly correct: number;
   readonly incorrect: number;
@@ -93,6 +94,7 @@ export function scoreClaims(
     missedFindings: sorted(
       findings.filter((finding) => !found.includes(finding)).map((finding) => finding.id),
     ),
+    ...structureScore(supported, findings),
     absencesHit: sorted(hit),
     incorrectClaims: sorted(incorrect.map((claim) => claim.claimId)),
     unmatchedClaims: sorted(unmatched.map((claim) => claim.claimId)),
