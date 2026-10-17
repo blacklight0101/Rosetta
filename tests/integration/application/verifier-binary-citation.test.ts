@@ -2,6 +2,14 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ReadOnlyTools } from '../../../src/application/agent/read-only-tools.js';
+import {
+  judgementPartsOf,
+  runJudgementStep,
+} from '../../../src/application/understand/claim-judgement.js';
+import { ManifestUpdates } from '../../../src/application/runs/manifest-updates.js';
+import { createCard } from '../../../src/domain/cards/card.js';
+import { scopeFor } from '../../support/run-event-fixtures.js';
+import { settingsFor } from '../../support/provider-factory-harness.js';
 import { CodeMapIndex } from '../../../src/application/agent/code-map-index.js';
 import { judgeClaim } from '../../../src/application/verifier/judge-claim.js';
 import { scanDataBlocks } from '../../../src/domain/egress/data-block-scan.js';
@@ -123,6 +131,52 @@ describe('the reader role and a binary file of a crafted repository', () => {
 
       expect(outcome.error?.code).toBe(ERROR_CODES.toolFileSkipped);
       expect(outcome.content).not.toContain(PAYLOAD);
+    },
+  );
+});
+
+describe('the judgement step of a run over a crafted repository', () => {
+  it.each(['assets/blob.dat', 'Assets/BLOB.DAT'])(
+    'RF-100 the wiring of the step keeps the bytes of %s out of the verifier request',
+    async (cited) => {
+      const { codeMap, reader } = await craftedRepository();
+      const h = await verifierHarness({ recording: recordingOf(answer) });
+      const card = createCard({
+        ...{ id: 'BR-001', type: 'BR', title: 'Blob', summary: 'The blob.' },
+        ...{ area: 'assets', agentTaskId: 'reader-001', confidence: 'Medium' },
+        claims: [
+          {
+            text: 'The blob holds a secret.',
+            citations: [{ path: cited, startLine: 1, endLine: 3 }],
+          },
+        ],
+      });
+      if (!card.ok) throw new Error('The fixture card is invalid.');
+      const scope = scopeFor('20261012-100000-understand');
+      const context = {
+        execution: {
+          run: { runKey: scope.runKey },
+          events: h.step().events,
+          signal: new AbortController().signal,
+        },
+        scanned: { reader, codeMap },
+        settings: settingsFor({}),
+        updates: new ManifestUpdates(
+          { read: () => Promise.resolve(undefined), write: () => Promise.resolve() },
+          scope,
+        ),
+        nextCallId: () => 'run#1',
+        traceId: '0123456789abcdef0123456789abcdef',
+        ids: new SequenceIdGenerator(),
+        verifier: { role: h.parts.role, prompts: h.prompts },
+      };
+      const parts = judgementPartsOf(context, new FixedClock('2026-10-12T10:00:00.000Z'));
+
+      await runJudgementStep([card.value], parts);
+
+      const sent = sentText(h.requests()).join('\n');
+      expect(sent).toContain('binary, not sent');
+      expect(sent).not.toContain(PAYLOAD);
     },
   );
 });

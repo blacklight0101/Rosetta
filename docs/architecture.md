@@ -563,8 +563,7 @@ sequenceDiagram
   when a run of at least two brackets stands before it (`<` or non-ASCII) or after it (`>` or non-ASCII), or when its
   part of the line between line breaks spells nothing but the name and holds an angle or non-ASCII bracket. A rendered
   block breaks every match with a `|` after the seventh letter of the name; the guard refuses a block read back that
-  still holds one (`RST-1516`, security event). Known limits: a marker cut by a hard line break, or a name with four
-  or more letters no table knows, is not seen (the tag still keeps the block closed); on the safe side the name after
+  still holds one (`RST-1516`, security event). Known limit: a name with four or more letters no table knows is not seen (the tag still keeps the block closed); on the safe side the name after
   the letters `END` or next to two brackets is a marker even in ordinary text (`send Rosetta data`, `«Rosetta» data`,
   `List<RosettaData>>`), while prose such as "Rosetta data: …", `ROSETTA_DATA_DIR`, heredocs, shifts and generics
   pass. Over the fixture repositories, `src/`, `docs/`, `prompts/`, `web/`, `templates/`, `eval/` and `scripts/` the

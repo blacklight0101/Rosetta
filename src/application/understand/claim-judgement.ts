@@ -9,7 +9,6 @@ import type { LlmResponse } from '../ports/llm-provider.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
-import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
 import { defaultEvidenceLimits } from '../verifier/cited-lines.js';
@@ -149,14 +148,18 @@ export async function runJudgementStep(
 
 /** What the judgement step needs of the run (RF-301). */
 export interface JudgementContext {
-  readonly execution: Pick<RunExecution, 'run' | 'events' | 'signal'>;
+  readonly execution: {
+    readonly run: Pick<RunExecution['run'], 'runKey'>;
+    readonly events: Pick<RunEventPublisher, 'emit'>;
+    readonly signal: AbortSignal;
+  };
   readonly scanned: Pick<ScannedSource, 'reader' | 'codeMap'>;
   readonly settings: ProjectSettings;
   readonly updates: ManifestUpdates;
   readonly nextCallId: () => string;
   readonly traceId: string;
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
-  readonly verifier: { readonly role: RoleProvider; readonly prompts: VerifierPrompts };
+  readonly verifier: { readonly role: ClaimJudgeParts['role']; readonly prompts: VerifierPrompts };
 }
 
 /** RNF-004: the exact model version of each answer of the `verifier` role. */
