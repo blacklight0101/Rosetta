@@ -107,9 +107,7 @@ export async function writeCardOutputs(
       text: renderCardFile(card, source, masker, cards),
     })),
     { path: 'cards/index.json', text: serialiseCardIndex(cards, masker) },
-    ...(cards.some((card) => card.type === 'ENT')
-      ? [{ path: 'data-model.md', text: renderDataModel(cards, source, masker) }]
-      : []),
+    ...overviewFiles(overview, masker),
     {
       path: 'spec.md',
       text: renderSpec(cards, source, masker, { areasWithoutCards, changes, overview }),
@@ -117,7 +115,6 @@ export async function writeCardOutputs(
     ...(cards.some((card) => card.type === 'ENT')
       ? [{ path: 'data-model.md', text: renderDataModel(cards, source, masker) }]
       : []),
-    ...overviewFiles(overview, masker),
   ];
   const written = await writeAll(writer, target, files, logger);
   const stale = [
