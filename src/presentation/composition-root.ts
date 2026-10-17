@@ -22,7 +22,7 @@ import type { Auth } from './compose-accounts.js';
 import { composeHistory } from './compose-history.js';
 import { checkSchema } from './compose-migrations.js';
 import { composeProjects } from './compose-projects.js';
-import { scheduledTasks, startScheduledTasks } from './compose-schedule.js';
+import { scheduledTasks, startScheduledTasks, type ScheduledParts } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
 import { stopWithin, type StopOutcome } from './shutdown.js';
 import { startUp } from './start-up.js';
@@ -188,6 +188,10 @@ function createSecrets(environment: Environment) {
   };
 }
 
+function startTasks(scheduler: Scheduler, parts: ScheduledParts): (() => void)[] {
+  return startScheduledTasks(scheduler, scheduledTasks(parts));
+}
+
 // Architecture section 2
 export function composeApplication(options: ApplicationOptions): Application {
   const { environment, doubles, promptsFolder: catalogueFolder = promptsFolder } = options;
@@ -213,7 +217,7 @@ export function composeApplication(options: ApplicationOptions): Application {
         auth,
       });
       close = closer({ server, runs });
-      const tasks = scheduledTasks({ file, auth, pool, clock, runs: runs.queue, logger });
+      const parts = { file, auth, pool, clock, runs: runs.queue, logger, environment };
       let address = '';
       await startUp({
         checkSchema: () => checkSchema(pool, logger),
@@ -225,8 +229,7 @@ export function composeApplication(options: ApplicationOptions): Application {
           address = await server.listen(options.listen);
         },
         startScheduler: () => {
-          const scheduler = options.scheduler ?? createScheduler(logger);
-          cancels.push(...startScheduledTasks(scheduler, tasks));
+          cancels.push(...startTasks(options.scheduler ?? createScheduler(logger), parts));
         },
       });
       return address;

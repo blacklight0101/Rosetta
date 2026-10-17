@@ -1,5 +1,6 @@
 import type {
   FolderTarget,
+  ListedFolder,
   WorkspaceFolders,
 } from '../../src/application/ports/workspace-folders.js';
 
@@ -20,11 +21,39 @@ function byteLength(files: Readonly<Record<string, string>>): number {
 export class MemoryWorkspaceFolders implements WorkspaceFolders {
   readonly removals: FolderTarget[] = [];
   refuseRemoval = false;
+  private readonly refused = new Set<string>();
   private readonly folders = new Map<string, Readonly<Record<string, string>>>();
+  private readonly changed = new Map<string, number>();
+  /** While set, `list` fails the way an unreadable data folder does. */
+  refuseListing = false;
 
-  /** Gives the run folder (or, without a run key, the project folder) these files. */
-  seed(target: FolderTarget, files: Readonly<Record<string, string>>): void {
+  /**
+   * Gives the run folder (or, without a run key, the project folder) these files, last changed at
+   * `modifiedAt` (epoch ms; 0 by default, that is, long ago). A run folder implies its project
+   * folder, as on disk, changed at the same instant unless the project folder is seeded itself.
+   */
+  seed(target: FolderTarget, files: Readonly<Record<string, string>>, modifiedAt = 0): void {
     this.folders.set(pathOf(target), files);
+    this.changed.set(pathOf(target), modifiedAt);
+  }
+
+  list(): Promise<readonly ListedFolder[]> {
+    if (this.refuseListing) return Promise.reject(new Error('EIO: the data folder is unreadable'));
+    const listed = new Map<string, ListedFolder>();
+    for (const path of this.folders.keys()) {
+      const [userId = '', projectId = '', runKey] = path.split('/');
+      const modifiedAt = this.changed.get(path) ?? 0;
+      const project = { userId, projectId };
+      if (runKey === undefined) listed.set(path, { target: project, modifiedAt });
+      else {
+        if (!this.folders.has(pathOf(project)))
+          listed.set(pathOf(project), { target: project, modifiedAt });
+        listed.set(path, { target: { ...project, runKey }, modifiedAt });
+      }
+    }
+    return Promise.resolve(
+      [...listed.values()].sort((a, b) => pathOf(a.target).localeCompare(pathOf(b.target))),
+    );
   }
 
   /** True while the folder, or one inside it, holds files. */
@@ -37,8 +66,13 @@ export class MemoryWorkspaceFolders implements WorkspaceFolders {
     return Promise.resolve(sizes.reduce((sum, bytes) => sum + bytes, 0));
   }
 
+  /** Makes `remove` fail for this one folder, as for a folder held open. */
+  refuseRemovalOf(target: FolderTarget): void {
+    this.refused.add(pathOf(target));
+  }
+
   remove(target: FolderTarget): Promise<void> {
-    if (this.refuseRemoval) {
+    if (this.refuseRemoval || this.refused.has(pathOf(target))) {
       const refused = Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' });
       return Promise.reject(refused);
     }

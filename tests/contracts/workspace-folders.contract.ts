@@ -44,6 +44,32 @@ function sizingTests(name: string, fresh: FreshFolders): void {
   });
 }
 
+function listingTests(name: string, fresh: FreshFolders): void {
+  it(`P1-152 ${name} lists project and run folders, a project before its runs, with their change instant`, async () => {
+    const { folders, seed } = await fresh();
+    await seed(runTarget(secondRun), { 'events.jsonl': '1' });
+    await seed(runTarget(firstRun), { 'manifest.json': '12345' });
+    const other = { ...projectTarget, projectId: otherProject };
+    await seed(other, { 'codemap.json': '123' });
+
+    const listed = await folders.list();
+
+    expect(listed.map((entry) => entry.target)).toEqual([
+      projectTarget,
+      runTarget(firstRun),
+      runTarget(secondRun),
+      other,
+    ]);
+    expect(listed.every((entry) => Number.isFinite(entry.modifiedAt))).toBe(true);
+  });
+
+  it(`P1-152 ${name} lists nothing when there are no folders`, async () => {
+    const { folders } = await fresh();
+
+    expect(await folders.list()).toEqual([]);
+  });
+}
+
 function removalTests(name: string, fresh: FreshFolders): void {
   it(`RF-1012 ${name} removes a run folder and leaves its siblings and its project`, async () => {
     const { folders, seed } = await fresh();
@@ -83,4 +109,5 @@ function removalTests(name: string, fresh: FreshFolders): void {
 export function workspaceFoldersContract(name: string, fresh: FreshFolders): void {
   sizingTests(name, fresh);
   removalTests(name, fresh);
+  listingTests(name, fresh);
 }
