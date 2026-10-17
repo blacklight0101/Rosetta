@@ -1,21 +1,26 @@
 // FAKE SECRETS ONLY (RNF-003). P2-43 verifier findings (RF-141): curl with line continuations, the
 // other Slack token types and case-insensitive signature keys.
 
-import { f, hex, one, password, sig, dashed } from './secret-coverage-values.js';
+import { dashed, f, hex, one, password, sig } from './secret-coverage-values.js';
 import type { CoverageCase } from './secret-coverage-values.js';
 
 const slackOf = (type: string): string => `${['xox', type].join('')}-${f(12)}-${f(24)}`;
+const backslash = String.fromCharCode(92);
+const backtick = String.fromCharCode(96);
 const masked = '[MASKED:password]';
 const user = `admin:${password}`;
 const maskedUser = `admin:${masked}`;
+const lf = `${backslash}\n  `;
+const crlf = `${backslash}\r\n  `;
+const tick = `${backtick}\n  `;
 
 export const moreCoverageCases: readonly CoverageCase[] = [
   one(
     'curl -u after a backslash and LF continuation',
     'password',
     [
-      `curl -X POST https://x.example \\n  -u ${user} \\n  -d '{}'`,
-      `curl -X POST https://x.example \\n  -u ${maskedUser} \\n  -d '{}'`,
+      `curl -X POST https://x.example ${lf}-u ${user} ${lf}-d x`,
+      `curl -X POST https://x.example ${lf}-u ${maskedUser} ${lf}-d x`,
     ],
     password,
   ),
@@ -23,21 +28,21 @@ export const moreCoverageCases: readonly CoverageCase[] = [
     'curl --user after a backslash and CRLF continuation',
     'password',
     [
-      `curl https://x.example \\r\n  ${dashed('user')} ${user}`,
-      `curl https://x.example \\r\n  ${dashed('user')} ${maskedUser}`,
+      `curl https://x.example ${crlf}${dashed('user')} ${user}`,
+      `curl https://x.example ${crlf}${dashed('user')} ${maskedUser}`,
     ],
     password,
   ),
   one(
     'curl -u after a backtick continuation',
     'password',
-    [`curl https://x.example \`\n  -u ${user}`, `curl https://x.example \`\n  -u ${maskedUser}`],
+    [`curl https://x.example ${tick}-u ${user}`, `curl https://x.example ${tick}-u ${maskedUser}`],
     password,
   ),
   one(
     'curl -u with the user:password on the next line',
     'password',
-    [`curl -u \\n  ${user} https://x.example`, `curl -u \\n  ${maskedUser} https://x.example`],
+    [`curl -u ${lf}${user} https://x.example`, `curl -u ${lf}${maskedUser} https://x.example`],
     password,
   ),
   one(

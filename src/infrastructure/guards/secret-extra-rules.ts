@@ -23,7 +23,7 @@ interface ExtraRule {
 // at least one digit or symbol (a letters-only word such as `introduction` is prose). Placeholders and
 // the names of known configuration roots are left alone.
 const valueChars = String.raw`[^\s"',;&]`;
-const settingValue = String.raw`${notMasked}(?![="'])(?!${placeholderValue}|[/.~]|https?:|[A-Za-z]:\\)(?=${valueChars}{8,})(?!${valueChars}*[()\[\]{}<>$])(?=${valueChars}*[0-9+=!@#%^*~])${valueChars}+`;
+const settingValue = String.raw`${notMasked}(?![="'])(?!${placeholderValue}|[/.~]|https?:|[A-Za-z]:\\)(?=${valueChars}{8})(?!${valueChars}{0,256}?[()\[\]{}<>$])(?=${valueChars}{0,256}?[0-9+=!@#%^*~])${valueChars}+`;
 const settingAssign = String.raw`["']?[ \t]{0,16}(?::=|[:=])[ \t]{0,16}["']?`;
 // The word at the end of a key: in any case after a delimiter (`NPM_TOKEN`, `x-auth-token`), or with a
 // capital after a letter or digit (`accessToken`, `APIToken`). The key must end there, so `max_tokens`,
@@ -81,8 +81,8 @@ export const extraRules: readonly ExtraRule[] = [
     // The signature of a SAS or other signed URL.
     kind: 'api-key',
     pattern: new RegExp(
-      String.raw`(?<keep>[?&;](?:sig|signature)=)${notMasked}[A-Za-z0-9%+/=_-]{16,}`,
-      'g',
+      String.raw`(?<keep>[?&;-](?:sig|signature)=)${notMasked}[A-Za-z0-9%+/=_-]{16,}`,
+      'gi',
     ),
   },
   flagRule('api-key', String.raw`api[_-]?key`),
@@ -92,7 +92,7 @@ export const extraRules: readonly ExtraRule[] = [
     // `curl -u user:password` and `curl --user user:password`, anywhere on the command line.
     kind: 'password',
     pattern: new RegExp(
-      String.raw`(?<keep>\bcurl(?:\.exe)?(?:[ \t]+(?:--?[A-Za-z][\w-]*|"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s\-"'][^\s"']*)){0,16}?[ \t]+(?:-u|--user)(?:[ \t]+|=)["']?[^\s:"']{1,64}:)${notMasked}(?!["']?[$<{])[^\s"']+`,
+      String.raw`(?<keep>\bcurl(?:\.exe)?(?:${tokenBlank}+(?:--?[A-Za-z][\w-]*|"[^"\r\n]{0,256}"|'[^'\r\n]{0,256}'|[^\s\-"'\\^\x60][^\s"']*)){0,16}?${tokenBlank}+(?:--user|-[A-Za-z]*u)(?:${tokenBlank}+|=)["']?[^\s:"']{1,64}:)${notMasked}(?!["']?[$<{])[^\s"']+`,
       'gi',
     ),
   },
