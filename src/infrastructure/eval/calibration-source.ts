@@ -1,15 +1,40 @@
+import { realpath } from 'node:fs/promises';
+import { isAbsolute, join, relative, sep } from 'node:path';
 import type { Logger } from '../../application/ports/logger.js';
 import type { RepositoryReader } from '../../application/ports/repository-reader.js';
-import { err, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
+import { NodeRepositoryReader } from '../files/node-repository-reader.js';
 
-// RF-305, RF-005: stub, filled in by the next commit.
+// RF-305, RF-005, ADR-006: the files a calibration set cites are a folder of the Rosetta repository
+// (a fixture), opened read-only through the same reader the agents use, so an ignored or denied file
+// is refused as it is for them. The folder is resolved against the repository root after links are
+// followed, so a link out of the repository is refused.
 
-export function openCalibrationSource(
+function inside(root: string, path: string): boolean {
+  const below = relative(root, path);
+  return below !== '' && below !== '..' && !below.startsWith(`..${sep}`) && !isAbsolute(below);
+}
+
+// RF-305
+export async function openCalibrationSource(
   repositoryRoot: string,
   folder: string,
   logger: Logger,
 ): Promise<Result<RepositoryReader, string>> {
-  return Promise.resolve(
-    err(`not built: ${repositoryRoot} ${folder} ${logger.constructor.name.slice(0, 0)}`),
-  );
+  try {
+    const root = await realpath(repositoryRoot);
+    const source = await realpath(join(root, ...folder.split('/')));
+    if (!inside(root, source))
+      return err(`The calibration source ${folder} is outside the repository.`);
+    const reader = await NodeRepositoryReader.open({
+      root: source,
+      ignoreRules: '',
+      allowDenied: [],
+      logger,
+    });
+    return ok(reader);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return err(`The calibration source ${folder} cannot be opened: ${reason}`);
+  }
 }

@@ -18,5 +18,13 @@
   },
   "runCapMicros": 500000,
   "totalCapMicros": 1500000,
-  "parallelism": 2
+  "parallelism": 2,
+  "calibration": {
+    "set": "calibration/webforms-shop.json",
+    "models": [
+      { "provider": "openai", "model": "gpt-5.6-luna" },
+      { "provider": "openai", "model": "gpt-5-nano" }
+    ],
+    "capMicros": 200000
+  }
 }

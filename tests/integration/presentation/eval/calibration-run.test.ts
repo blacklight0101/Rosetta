@@ -155,7 +155,7 @@ describe('the calibration run and the verifier step', () => {
   });
 });
 
-describe('the calibration run and its limits', () => {
+describe('the calibration run and its cap', () => {
   it('RF-305 stops a model at its cap, leaves the rest of its claims Unverified and goes on', async () => {
     const loaded = await committed();
     const router = new ModelRouter(
@@ -172,7 +172,9 @@ describe('the calibration run and its limits', () => {
     expect(b?.disagreements).toHaveLength(20);
     expect(b?.disagreements[0]?.verdict).toBe('Unverified');
   });
+});
 
+describe('the calibration run and its refusals', () => {
   it('RF-305 refuses a citation the source does not hold before any model call', async () => {
     const loaded = await committed();
     const [first, ...rest] = loaded.set.claims;
@@ -187,6 +189,20 @@ describe('the calibration run and its limits', () => {
     expect(result.ok ? '' : result.error.message).toContain('cal-01');
     expect(router.requests).toHaveLength(0);
     await expect(readdir(join(temp.path, 'out'))).rejects.toThrow();
+  });
+
+  it('ADR-007 lets the budget guard refuse a call whose worst case passes the cap', async () => {
+    const loaded = await committed();
+    const router = new ModelRouter({ 'contract-model': answersFor(loaded.set) });
+    const parts = calibrationParts({
+      ...{ outputDir: join(temp.path, 'out'), router, capMicros: 1, serverKeys: { openai: 'k' } },
+    });
+    const priced = { provider: 'openai', model: 'contract-model' };
+    const result = await runCalibration(parts, loaded, [priced]);
+    if (!result.ok) throw new Error(result.error.message);
+
+    expect(result.value.results.models[0]).toMatchObject({ endState: 'CapReached', agreed: 0 });
+    expect(router.requests).toHaveLength(0);
   });
 
   it('RF-305 refuses a model whose provider the settings do not offer, before any call', async () => {

@@ -48,7 +48,7 @@ describe('npm run eval -- --calibration without --yes', () => {
     expect(text).not.toContain('gpt-5.6-luna');
   });
 
-  it('RF-305 stops with a message when the settings name no calibration set', async () => {
+  it('RF-305 stops with a message when the settings file cannot be read', async () => {
     const lines: string[] = [];
     const code = await runEvalCommand(['--calibration', '--config', 'no-such.json'], {}, (line) =>
       lines.push(line),

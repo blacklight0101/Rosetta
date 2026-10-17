@@ -4,8 +4,16 @@ import {
   type ReportModel,
 } from '../../application/report/report-model.js';
 import { markdownEscaper, type MarkdownEscaper } from '../cards/markdown-text.js';
+import { verificationSummaryLines } from '../cards/verification-summary-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { claimsText, cardsSummary, COVERAGE_MISSING, dollars, plural } from './report-format.js';
+import {
+  claimsByArea,
+  claimsText,
+  cardsSummary,
+  COVERAGE_MISSING,
+  dollars,
+  plural,
+} from './report-format.js';
 import { overviewBody } from '../cards/overview-markdown.js';
 import { sourceLink } from './report-source.js';
 
@@ -119,6 +127,7 @@ export function renderReportMarkdown(model: ReportModel, masker: TextMasker): st
     ...documentLines(model),
     '',
     ...areaLines(model, esc),
+    ...verificationSummaryLines(claimsByArea(model.cards), esc),
     '## Cards',
     '',
     ...cardLines(model, esc),

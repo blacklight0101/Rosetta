@@ -384,8 +384,8 @@ writes. It is absent for a run whose summariser step answered nothing.
 
 ### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 
-- `spec.md`: opens with `## Overview`, the overview of 3.8a (once the run has one), then the cards per area as one readable specification with links to the card files and, for every citation, to the
-  cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
+- `spec.md`: opens with `## Overview`, the overview of 3.8a (once the run has one), and, when the run has cards, `## Verification summary` (RF-303, P2-03): `Supported share: <n> of <m> claims (<p>%).` and a table with one row per area, in the order of the run, and a last row `All areas`, whose columns are the claims of each status (`Proposed`, `CitationInvalid`, `Supported`, `Rejected`, `Unverified`, in the order of the vocabulary), their total and the supported share. The share is the `Supported` claims over the claims of every status, so a rejected, invalid or unverified claim lowers it; it is `n/a` for an area or a run without claims. The same section is in `report/report.md` and `report/report.html` (computed from the claim counts of `cards/index.json`, by `src/domain/cards/verification-summary.ts`).
+  Then come the cards per area as one readable specification with links to the card files and, for every citation, to the cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
   is listed with its status, rejected ones included. The run summary of a re-run with answers (RF-241) adds `## New cards` and `## Changed cards` after the areas, each only when it has cards: a card is new when the earlier run that raised an answered question has no card of the same area, type and title, and changed when it has one whose claim texts differ. A last section, `## Areas without cards`, names every area whose
   reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33). After the areas, and only when the run has cards of the type, come `## Flows` (each `FLOW` card with its link, trigger, outcome, generated sequence diagram and its steps with their claim status), `## Screens` (the generated screen map first, which matches a leads-to route to the `SCRN` card with that route, then each `SCRN` card with its link, route, roles and links) and `## Data model` (a link to `data-model.md` with the number of entities) (RF-263, P2-22). Diagrams are made by `src/domain/diagrams/` from masked card text.
 - `data-model.md` (RF-262, P2-22): written with the cards when the run has at least one `ENT` card, never otherwise; a re-run into a folder that already holds it removes it when the cards no longer have an `ENT` card (P2-33). `# Legacy data model`, the generated entity-relationship diagram, `## Entities` (each `ENT` card once, in card id order, with a link to its card file, summary, area, confidence, `Merged from:` when consolidation merged cards into it, and its claims as the fields, keys and relations the card states, each with status and citations, rejected ones included) and `## To confirm`. `ENT` cards hold claims, not structured fields or relations, so the diagram shows the entities only and the list says that relations are not recorded; a relation with an unknown cardinality is drawn dotted and listed there, never guessed.
@@ -749,7 +749,7 @@ in one):
   divide by is `null`; every measure is rounded to six
   decimals. A case is scored with the claims that cite one of its paths.
 
-The calibration set of RF-305 is not part of P2-11.
+The calibration set of RF-305 is not part of P2-11; P2-03 adds it (below).
 
 **Golden set** (`eval/golden/<name>.json`, schema in `src/application/eval/golden-set-schema.ts`, at most 1 MiB, read
 only from inside `eval/`): `{ schemaVersion: 1, version, description, source { url (https://github.com/<owner>/<repo>),
@@ -765,6 +765,31 @@ word that holds one of its absence's `unless` words (it could never match), are 
 and the set must hold at least one absence (DEC-57). The provenance of each golden set is in `eval/README.md`. **Settings** (`eval/config.json`): `{ schemaVersion: 1, goldenSet,
 repetitions (3..20), roles { reader?, verifier?, summariser? : { provider, model } }, runCapMicros, totalCapMicros,
 parallelism? }`.
+
+**Calibration** (RF-305, DEC-57, P2-03): `npm run eval -- --calibration` judges the claims of a calibration set with the
+`verifier` role of each model and writes `eval-out/<id>/calibration.json` (`<id>` is `yyyyMMdd-HHmmss-calibration`; the
+folder must not exist yet, tried once more under a new id when it cannot be written, printed with RST-1701 when that
+fails too). The set is `eval/calibration/<name>.json`, schema in `src/application/eval/calibration-set-schema.ts`, at
+most 1 MiB, read only from inside `eval/`: `{ schemaVersion: 1, version, description, source { folder }, claims[] }`;
+`source.folder` is a relative folder of the Rosetta repository (a repository fixture, read-only through the same reader
+the agents use) and each claim is `{ id, text, citations[] (path:start-end inside the folder), supported (the hand label:
+whether the cited lines, with the verifier's margin of three lines, show what the claim says), note (why) }`. Ids are unique
+and the set holds at least one supported and one not supported claim. Every cited range is read before the first model
+call, so a set that cites lines the folder does not hold stops with RST-1000 at no cost. Each claim is judged exactly as the
+judgement step of a run judges it (RF-301: the claim and only the cited lines as data blocks, the reason before the verdict,
+one retry, the guarded provider factory), one model after the other, one claim after the other.
+`calibration.json`: `schemaVersion` 1, `id`, `at`, `rosettaVersion`, `calibrationSetVersion`, `calibrationSetSha256`, `claims`,
+`promptVersions` (the verifier's prompt files to `{ version, sha256 }`) and `models[]` in the order asked, each `{ provider,
+model, modelVersion, endState (Completed, CapReached or Stopped), claims, agreed, agreementRate, falseSupported, falseRejected,
+unjudged, disagreements[] { claimId, label, verdict, reason } }`. A verdict agrees when it equals the label (`Supported` for a
+supported claim, `Rejected` for the others); a claim left `Unverified` (an answer that could not be read after the retry, a
+failed call, the cap or a stop) never agrees and is counted in `unjudged`, so a model that could not finish does not score
+better than its answers. `falseSupported` counts claims called `Supported` against the label (the error that lets a false
+statement through) and `falseRejected` the supported claims it rejected. `agreementRate` is `agreed / claims` to six
+decimals. The settings file's optional `calibration` section is `{ set, models[] { provider, model }, capMicros }`: the models
+are those whose agreement is reported, and `capMicros` bounds the whole calibration (the calibration account's daily cap, so
+the budget guard stops the call that would pass it); `--verifier provider:model` replaces the models. As for the golden runs,
+nothing is sent without `--yes` (RF-143). The tests drive the same code with the fake provider and recorded answers.
 
 ### 3.20 `planning-brief.json` (added 2026-10-11)
 

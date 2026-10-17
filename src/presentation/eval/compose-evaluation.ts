@@ -8,12 +8,12 @@ import {
 } from '../../application/eval/run-evaluation.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import type { Actor } from '../../domain/accounts/actor.js';
-import type { UserAccount } from '../../domain/accounts/user.js';
 import type { Result } from '../../domain/errors/result.js';
 import type { GoldenSet } from '../../domain/eval/golden-set.js';
 import { FileEvaluationOutput } from '../../infrastructure/eval/evaluation-files.js';
 import type { LoadedGoldenSet } from '../../infrastructure/eval/golden-set-file.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
+import { evaluationAccount } from './eval-account.js';
 import { composePipeline, type Pipeline, type PipelineParts } from './eval-pipeline.js';
 import { evaluationCaps } from './eval-settings.js';
 import { PipelineTarget } from './pipeline-target.js';
@@ -33,17 +33,6 @@ export interface EvaluationParts extends PipelineParts {
   readonly totalCapMicros: number;
 }
 
-function accountOf(parts: EvaluationParts, dailyCapMicros: bigint): UserAccount {
-  const now = parts.clock.now().getTime();
-  return {
-    ...{ id: parts.ids.uuid(), userName: 'evaluation', displayName: 'Evaluation' },
-    ...{ role: 'user', state: 'Active', passwordHash: 'none', failedSignIns: 0 },
-    ...{ firstFailedAt: null, lockedUntil: null, serverKeysAllowed: true },
-    ...{ dailyCapMicros, ownDailyCapMicros: null },
-    ...{ createdAt: now, updatedAt: now, lastSignInAt: null },
-  };
-}
-
 interface Owner {
   readonly actor: Actor;
   readonly projectId: string;
@@ -54,7 +43,7 @@ async function projectOf(parts: EvaluationParts, s: Pipeline, golden: GoldenSet)
     totalCapMicros: parts.totalCapMicros,
     runCapMicros: parts.settings.budget.run.maxCostMicros,
   });
-  const account = accountOf(parts, dailyCapMicros);
+  const account = evaluationAccount(parts, dailyCapMicros);
   await s.users.insert(account);
   await s.serverSettings.saveCaps(caps);
   const { source } = golden;

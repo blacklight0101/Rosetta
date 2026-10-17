@@ -34,10 +34,10 @@ describe('report.md verification summary', () => {
   it('RF-303 shows claims per status per area and the overall supported share', () => {
     const text = markdown(cards);
 
-    expect(text).toContain('Supported share: 3 of 7 claims (42.9%).');
+    expect(text).toContain('Supported share: 3 of 6 claims (50.0%).');
     expect(text).toContain('| orders | 0 | 1 | 2 | 1 | 0 | 4 | 50.0% |');
     expect(text).toContain('| catalog | 0 | 0 | 1 | 0 | 1 | 2 | 50.0% |');
-    expect(text).toContain('| All areas | 0 | 1 | 3 | 1 | 1 | 7 | 42.9% |');
+    expect(text).toContain('| All areas | 0 | 1 | 3 | 1 | 1 | 6 | 50.0% |');
   });
 
   it('RF-303 puts the summary between the documents and the card list', () => {
@@ -75,9 +75,9 @@ describe('report.html verification summary', () => {
     expect(summaryRows(page)).toEqual([
       ['orders', '0', '1', '2', '1', '0', '4', '50.0%'],
       ['catalog', '0', '0', '1', '0', '1', '2', '50.0%'],
-      ['All areas', '0', '1', '3', '1', '1', '7', '42.9%'],
+      ['All areas', '0', '1', '3', '1', '1', '6', '50.0%'],
     ]);
-    expect(page.document.body.textContent).toContain('Supported share: 3 of 7 claims (42.9%).');
+    expect(page.document.body.textContent).toContain('Supported share: 3 of 6 claims (50.0%).');
   });
 
   it('RF-303 leaves the section out of a run without cards', () => {

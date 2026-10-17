@@ -105,6 +105,8 @@ export interface CalibrationHarnessOptions {
   readonly outputDir: string;
   readonly router: ModelRouter;
   readonly capMicros?: number;
+  /** The server keys of the environment; none by default (the fake models need no key). */
+  readonly serverKeys?: { readonly openai?: string };
 }
 
 /** The calibration's parts with the fake router behind the guarded provider factory. */
@@ -115,7 +117,7 @@ export function calibrationParts(options: CalibrationHarnessOptions): Calibratio
     ...{ outputDir: options.outputDir, repositoryRoot, promptsFolder: 'prompts' },
     providers: (guards) =>
       new GuardedProviderFactory({ ...guards, adapters: () => options.router }),
-    serverKeys: {},
+    serverKeys: options.serverKeys ?? {},
     ollamaUrl: undefined,
     priceTable: budgetTable,
     settings: understandSettings(),

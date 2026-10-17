@@ -74,7 +74,7 @@ export interface PipelineParts {
 }
 
 /** The evaluation has no user keys: it runs on the server keys of the environment only. */
-const noUserKeys: SecretBox = {
+export const noUserKeys: SecretBox = {
   keyVersion: 'none',
   knows: () => false,
   seal: () => {

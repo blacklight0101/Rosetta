@@ -1,4 +1,6 @@
+import type { ReportCard } from '../../application/report/report-model.js';
 import { CLAIM_STATUSES } from '../../domain/cards/card-vocabulary.js';
+import type { CardClaimCounts } from '../../domain/cards/verification-summary.js';
 import { formatUsd, microUsd } from '../../domain/budget/money.js';
 
 // RF-504, RF-506: the words and numbers the report writers share.
@@ -18,6 +20,11 @@ export function claimsText(counts: Readonly<Record<string, number>>): string {
     return n > 0 ? [`${String(n)} ${status}`] : [];
   });
   return parts.length === 0 ? '0' : parts.join(', ');
+}
+
+/** The claim counts of the cards with their areas, for the verification summary (RF-303). */
+export function claimsByArea(cards: readonly ReportCard[]): CardClaimCounts[] {
+  return cards.map((card) => ({ area: card.area, counts: card.claimCounts }));
 }
 
 /** The sum of the counts. */

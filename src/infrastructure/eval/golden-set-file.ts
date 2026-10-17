@@ -28,7 +28,10 @@ function inside(folder: string, file: string): boolean {
   return path !== '' && !path.startsWith(`..${sep}`) && path !== '..' && !isAbsolute(path);
 }
 
-async function readEvalFile(folder: string, reference: string): Promise<Result<Buffer, string>> {
+export async function readEvalFile(
+  folder: string,
+  reference: string,
+): Promise<Result<Buffer, string>> {
   if (!isRepositoryPath(reference) || !reference.endsWith('.json')) {
     return err(`The evaluation file ${reference} is not a relative .json path inside eval/.`);
   }
@@ -49,7 +52,7 @@ async function readEvalFile(folder: string, reference: string): Promise<Result<B
   }
 }
 
-function jsonOf(bytes: Buffer, reference: string): Result<unknown, string> {
+export function jsonOf(bytes: Buffer, reference: string): Result<unknown, string> {
   try {
     const data: unknown = JSON.parse(bytes.toString('utf8'));
     return ok(data);

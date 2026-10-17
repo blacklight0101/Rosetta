@@ -21,6 +21,7 @@ import { TimestampIdGenerator } from '../../infrastructure/system/timestamp-id-g
 import { composeLanguagePacks } from '../composition-root.js';
 import { evaluationProviderFactory } from '../compose-providers.js';
 import { runEvaluation, type EvaluationParts } from './compose-evaluation.js';
+import { runCalibrationCommand } from './calibration-command.js';
 import { EVAL_USAGE, parseEvalArgs, type EvalArgs } from './eval-args.js';
 import { reportLines } from './eval-report-lines.js';
 import { evaluationPlan, evaluationSettings } from './eval-settings.js';
@@ -105,6 +106,7 @@ export async function runEvalCommand(
     print(parsed.ok ? EVAL_USAGE : `${parsed.error}\n${EVAL_USAGE}`);
     return parsed.ok ? 0 : 2;
   }
+  if (parsed.value.calibration) return runCalibrationCommand(parsed.value, env, print);
   const inputs = await inputsOf(parsed.value);
   if (!inputs.ok) return (print(inputs.error), 1);
   const { config, golden, settings, repetitions } = inputs.value;
