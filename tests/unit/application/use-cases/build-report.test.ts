@@ -9,7 +9,11 @@ import { MemoryEventSink } from '../../../../src/infrastructure/events/memory-ev
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { FixedScans } from '../../../support/estimate-harness.js';
 import { RecordingLogger } from '../../../support/recording-logger.js';
-import { MapRunTextFiles, RecordingReportWriter } from '../../../support/report-doubles.js';
+import {
+  MapRunTextFiles,
+  RecordingReportWriter,
+  reportFigures,
+} from '../../../support/report-doubles.js';
 import {
   replayDemoEvents,
   replayDemoRunKey,
@@ -86,7 +90,7 @@ async function setup(run: Run, parts: Parts = {}) {
   );
   const build = new BuildReport({
     ...{ runs, manifests, history, files, writer },
-    ...{ scans: new FixedScans([]), logger: new RecordingLogger() },
+    ...{ scans: new FixedScans([]), logger: new RecordingLogger(), ...reportFigures() },
   });
   return { build, writer };
 }

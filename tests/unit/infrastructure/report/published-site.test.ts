@@ -21,7 +21,13 @@ const documents = {
   'cards/BR/BR-001.md': '# BR-001\n',
 } as const;
 const masker = new SecretMasker();
-const htmlPages = ['index.html', 'report.html', 'replay.html'] as const;
+const htmlPages = [
+  'index.html',
+  'report.html',
+  'replay.html',
+  'questions.html',
+  'cost.html',
+] as const;
 
 function siteOf(cards = reportModel().cards): Readonly<Record<string, string>> {
   return buildSiteFiles(reportModel({ cards }), assets, masker, documents);
@@ -35,8 +41,10 @@ describe('buildSiteFiles', () => {
       [
         '.nojekyll',
         'cards/BR/BR-001.md',
+        'cost.html',
         'cost.md',
         'index.html',
+        'questions.html',
         'replay.html',
         'replay.js',
         'report.css',
@@ -56,6 +64,8 @@ describe('buildSiteFiles pages', () => {
     expect(index).toContain(`<span class="mono">${runKey}</span>`);
     expect(index).toContain('href="report.html"');
     expect(index).toContain('href="replay.html"');
+    expect(index).toContain('href="questions.html"');
+    expect(index).toContain('href="cost.html"');
   });
 
   it('RF-800 the report links the run documents inside the site, not one folder up', () => {
@@ -75,10 +85,14 @@ describe('buildSiteFiles pages', () => {
 
   it('RF-507 a card that holds markup runs nothing: only the replay script loads', () => {
     const hostile = siteOf([plainCard, hostileCard]);
-    const [index, report, replay] = htmlPages.map((name) => auditHtml(hostile[name] ?? ''));
+    const [index, report, replay, questions, cost] = htmlPages.map((name) =>
+      auditHtml(hostile[name] ?? ''),
+    );
 
     expect(index?.scripts).toEqual([]);
     expect(report?.scripts).toEqual([]);
+    expect(questions?.scripts).toEqual([]);
+    expect(cost?.scripts).toEqual([]);
     expect(replay?.scripts).toEqual(['replay.js']);
     expect(report?.inlineStyles).toBe(0);
     expect(replay?.inlineStyles).toBe(0);

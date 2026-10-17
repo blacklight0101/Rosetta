@@ -8,7 +8,11 @@ import { MemoryEventSink } from '../../../../src/infrastructure/events/memory-ev
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
 import { areaOf, FixedScans } from '../../../support/estimate-harness.js';
 import { RecordingLogger } from '../../../support/recording-logger.js';
-import { MapRunTextFiles, RecordingReportWriter } from '../../../support/report-doubles.js';
+import {
+  MapRunTextFiles,
+  RecordingReportWriter,
+  reportFigures,
+} from '../../../support/report-doubles.js';
 import { replayDemoRunKey } from '../../../support/replay-fixture.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
@@ -36,7 +40,7 @@ async function setup(run: Run, scans: ScanResults, otherRuns: readonly Run[] = [
   const logger = new RecordingLogger();
   const build = new BuildReport({
     ...{ runs, manifests: new MemoryRunManifestStore(), history: new MemoryEventSink() },
-    ...{ files: new MapRunTextFiles({}), writer, logger, scans },
+    ...{ files: new MapRunTextFiles({}), writer, logger, scans, ...reportFigures() },
   });
   return { build, writer, logger };
 }

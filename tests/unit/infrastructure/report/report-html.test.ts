@@ -94,7 +94,9 @@ describe('renderReportHtml cards', () => {
     expect(hrefs(page)).toContain(
       'https://github.com/octo/demo/tree/3f786850e387550fdab836ed7e6dc881de23001b',
     );
-    expect(page.document.querySelector('nav a[aria-current="page"]')?.textContent).toBe('Report');
+    expect(page.document.querySelector('nav a[aria-current="page"]')?.textContent).toBe(
+      'Dashboard',
+    );
     expect(hrefs(page)).toContain('replay.html');
   });
 

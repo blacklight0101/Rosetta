@@ -1,5 +1,12 @@
 import type { ReplayModel, ReplayStep } from '../../src/application/report/replay-model.js';
-import type { ReportCard, ReportModel } from '../../src/application/report/report-model.js';
+import type {
+  ReportCard,
+  ReportCost,
+  ReportCoverage,
+  ReportModel,
+  ReportProjectTotals,
+  ReportQuestion,
+} from '../../src/application/report/report-model.js';
 
 // RF-504, RF-506, RF-507: report models of tests, made by hand so a test of a page writer does not
 // depend on the code that builds a replay from events. A test overrides what it needs.
@@ -82,6 +89,77 @@ export function reportModel(overrides: Partial<ReportModel> = {}): ReportModel {
     cards: [plainCard],
     areas: [],
     replay: plainReplay(),
+    generatedAt: '2026-10-12T11:00:00.000Z',
+    coverage: plainCoverage,
+    cost: plainCost,
+    projectTotals: plainProjectTotals,
+    questions: plainQuestions,
     ...overrides,
   };
 }
+
+// RF-500, RF-1010: the dashboard, question and cost parts of a report model.
+
+export const plainCoverage: ReportCoverage = {
+  filesListed: 5,
+  filesRead: 4,
+  readTokenShare: 0.81,
+  areas: [
+    { area: 'orders', filesListed: 3, filesRead: 3, readTokenShare: 1 },
+    { area: 'catalog', filesListed: 2, filesRead: 1, readTokenShare: 0.4, note: 'not read' },
+  ],
+};
+
+export const plainQuestions: readonly ReportQuestion[] = [
+  {
+    cardId: 'OQ-001',
+    question: 'Is a catalog item with zero stock still shown?',
+    context: 'Catalog/List.cs:10-12 filters on price only',
+    answer: '',
+  },
+  {
+    cardId: 'OQ-002',
+    question: 'Is the mock catalog service used in production?',
+    context: 'Services/MockCatalog.cs:1-30 registers the mock',
+    answer: 'No, demo only.',
+  },
+];
+
+const costLine = { inputTokens: 3000, outputTokens: 300, cachedInputTokens: 600, calls: 2 };
+
+export const plainCost: ReportCost = {
+  currency: 'USD',
+  priceTableVersion: '2026-10-01',
+  totals: {
+    inputTokens: 3600,
+    outputTokens: 330,
+    cachedInputTokens: 600,
+    cacheWriteInputTokens: 120,
+    calls: 3,
+    costMicros: 4000,
+    cacheWriteCostMicros: 300,
+    unpricedCalls: 0,
+  },
+  byRole: [
+    { key: 'reader', ...costLine, costMicros: 3000 },
+    {
+      key: 'verifier',
+      inputTokens: 600,
+      outputTokens: 30,
+      cachedInputTokens: 0,
+      calls: 1,
+      costMicros: 1000,
+    },
+  ],
+  byProvider: [{ key: 'fake', ...costLine, calls: 3, costMicros: 4000 }],
+  byModel: [{ key: 'fake model-a', ...costLine, calls: 3, costMicros: 4000 }],
+};
+
+export const plainProjectTotals: ReportProjectTotals = {
+  calls: 12,
+  inputTokens: 1_000_000,
+  outputTokens: 310_000,
+  cachedInputTokens: 0,
+  cost: [{ currency: 'USD', costMicros: 3_990_000 }],
+  unknownCostCalls: 0,
+};

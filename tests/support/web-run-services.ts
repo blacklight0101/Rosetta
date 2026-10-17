@@ -29,7 +29,7 @@ import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
-import type { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
+import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import type { TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
@@ -164,7 +164,7 @@ export function runServices(
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
-  const { projects, keys, calls, logs, clock } = stores;
+  const { projects, keys, calls, logs, clock, answers } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     readOverview: new ReadOverview({ runs: runs.runs, files: outputs.text }),
@@ -184,6 +184,7 @@ export function runServices(
       writer: outputs.reportWriter,
       scans: new FixedScans(catalogAreas),
       logger: new RecordingLogger(),
+      ...{ answers, costs: new MemoryCostTotals(), clock },
     }),
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),

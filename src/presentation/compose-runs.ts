@@ -1,12 +1,10 @@
 import { EstimateRun } from '../application/estimate/estimate-run.js';
-import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ProviderSetFactory } from '../application/ports/provider-set-factory.js';
 import type { ParseBudget } from '../infrastructure/scan/packs/parse-budget.js';
 import { RunLifecycle } from '../application/runs/run-lifecycle.js';
 import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queue.js';
-import { BuildReport } from '../application/use-cases/build-report.js';
 import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
 import { CountAnsweredQuestions } from '../application/use-cases/count-answered-questions.js';
@@ -46,10 +44,10 @@ import type { LanguagePackRegistry } from '../infrastructure/scan/packs/pack-reg
 import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
-import { FileReportWriter } from '../infrastructure/report/file-report-writer.js';
 import type { StreamRegistry } from './web/event-stream.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
+import { composeBuildReport } from './compose-report.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
@@ -59,9 +57,6 @@ import type { StartUpSteps } from './start-up.js';
 // log with the live broadcaster, the manifest store, the run queue and the use cases behind the run
 // routes. The stage executors are registered here (scan P1-23, understand P1-33, plan P3-09); SubmitRun
 // refuses a stage without one with RST-2305 (409); StartRun names the stages the API starts (RF-003).
-
-// This file is at the same depth in `src/` and in the built `dist/`, so `../../` is the repository root.
-const reportTemplates = fileURLToPath(new URL('../../templates/report/', import.meta.url));
 
 export interface RunParts {
   readonly pool: DatabasePool;
@@ -198,10 +193,9 @@ function runServices(service: ServiceParts): RunServices {
     }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),
-    buildReport: new BuildReport({
-      ...{ runs, manifests, history: log, scans, logger: parts.logger },
-      files: new FileRunTextFiles(writer),
-      writer: new FileReportWriter({ writer, masker: parts.masker, assetsFolder: reportTemplates }),
+    buildReport: composeBuildReport({
+      ...{ pool: parts.pool, logger: parts.logger, clock: parts.clock, masker: parts.masker },
+      ...{ writer, runs, manifests, history: log, scans, answers },
     }),
     listAnswers: new ListAnswers({ runs, answers, cards }),
     recordAnswers: new RecordAnswers({ runs, answers, cards }),

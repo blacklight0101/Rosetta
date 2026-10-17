@@ -3,6 +3,9 @@ import type { Run } from '../../domain/runs/run.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { AnswersFile } from '../ports/answers-file.js';
+import type { Clock } from '../ports/clock.js';
+import type { CostTotals } from '../ports/cost-totals.js';
 import type { ReportWriter } from '../ports/report-writer.js';
 import type { RunEventHistory, RunScope } from '../ports/run-events.js';
 import type { Logger } from '../ports/logger.js';
@@ -30,6 +33,11 @@ export interface BuildReportDependencies {
   /** Where the map level of the areas is read (RF-112). */
   readonly scans: ScanResults;
   readonly logger: Logger;
+  /** RF-500: the open questions of the run and their answers. */
+  readonly answers: AnswersFile;
+  /** RF-1010: the project totals at generation time. */
+  readonly costs: CostTotals;
+  readonly clock: Clock;
 }
 
 export interface BuiltReport {
@@ -64,6 +72,11 @@ export class BuildReport {
       overviewFile: await this.deps.files.read(scope, 'overview.json'),
       documents: await this.documentsOf(scope),
       areas: await this.areasOf(run),
+      generatedAt: this.deps.clock.now().toISOString(),
+      coverage: null,
+      cost: null,
+      projectTotals: null,
+      questions: [],
     });
     return ok({ files: await writer.write(scope, model) });
   }
