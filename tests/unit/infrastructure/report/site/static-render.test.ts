@@ -109,3 +109,74 @@ describe('renderStatic refusals', () => {
     expect(refusal(() => renderStatic(h('script', null, '1')))).toBeInstanceOf(RosettaError);
   });
 });
+
+describe('renderStatic address rules', () => {
+  it.each([
+    'java\tscript:1',
+    'java\nscript:1',
+    '\x5Cevil.com',
+    '/\x5Cevil.com',
+    'a\u0000b',
+    ' javascript:1',
+  ])('RF-507 refuses the address %j in a link', (address) => {
+    expect(refusal(() => renderStatic(h('a', { href: address }, 'x')))).toBeInstanceOf(
+      RosettaError,
+    );
+  });
+
+  it.each<[string, () => ComponentChild]>([
+    ['img src', () => h('img', { src: 'data:image/svg+xml,<svg/>' })],
+    ['img src to another host', () => h('img', { src: 'https://example.com/x.png' })],
+    ['action', () => h('div', { action: 'javascript:1' })],
+    ['svg use xlink:href', () => h('svg', null, h('use', { 'xlink:href': 'javascript:1' }))],
+    ['upper-case HREF', () => h('a', { HREF: 'javascript:1' })],
+  ])('RF-507 checks the address of %s', (_name, make) => {
+    expect(refusal(() => renderStatic(make()))).toBeInstanceOf(RosettaError);
+  });
+
+  it('RF-507 keeps a relative src', () => {
+    expect(renderStatic(h('img', { src: 'a.png' }))).toBe('<img src="a.png">');
+  });
+});
+
+describe('renderStatic element and attribute rules', () => {
+  it.each([
+    ...['iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'link', 'meta', 'base'],
+    ...['form', 'template', 'noscript', 'style', 'IFRAME', 'ScRiPt', 'animate', 'set', 'math'],
+    'foreignObject',
+  ])('RF-507 refuses the element %s', (tag) => {
+    expect(refusal(() => renderStatic(h(tag, null, 'x')))).toBeInstanceOf(RosettaError);
+  });
+
+  it.each(['a b', 'a>', 'a-b', '1a', ''])('RF-507 refuses the element name %j', (tag) => {
+    expect(refusal(() => renderStatic(h(tag, null, 'x')))).toBeInstanceOf(RosettaError);
+  });
+
+  it.each([
+    ...['ONCLICK', 'OnError', 'StYlE', 'srcset', 'poster', 'ping', 'background', 'data'],
+    'attributeName',
+  ])('RF-507 refuses the attribute %s', (name) => {
+    expect(refusal(() => renderStatic(h('p', { [name]: 'x' }, 'x')))).toBeInstanceOf(RosettaError);
+  });
+
+  it('RF-507 gives a node with props and no type the report write code, not a TypeError', () => {
+    const error = refusal(() => renderStatic({ props: 1 }));
+
+    expect(error).toBeInstanceOf(RosettaError);
+  });
+
+  it('RF-507 adds rel to a link that opens a new window', () => {
+    expect(renderStatic(h('a', { href: 'a.html', target: '_blank' }, 'x'))).toBe(
+      '<a href="a.html" target="_blank" rel="noopener noreferrer">x</a>',
+    );
+    expect(renderStatic(h('a', { href: 'a.html', target: '_blank', rel: 'me' }, 'x'))).toContain(
+      'rel="noopener noreferrer"',
+    );
+  });
+
+  it('RF-507 drops NUL and bidi controls from text and attributes', () => {
+    expect(renderStatic(h('p', { title: 'a\u202Eb' }, 'x\u0000y\u2066z'))).toBe(
+      '<p title="ab">xyz</p>',
+    );
+  });
+});

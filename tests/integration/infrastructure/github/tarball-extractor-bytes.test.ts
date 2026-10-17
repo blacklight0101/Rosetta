@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   extractTarball,
@@ -135,5 +136,37 @@ describe('extractTarball after a refusal', () => {
 
     await expect(extract(archive, {})).rejects.toMatchObject({ code: 'RST-1906' });
     expect(await listTree(root.path)).not.toContain('later-63.txt');
+  });
+});
+
+describe('extractTarball and the download it stops', () => {
+  it('RF-127 cancels the download when a limit stops the extraction', async () => {
+    const archive = await tarGz([top, tarFile('a.bin', randomBytes(3 * MIB))]);
+    const pieces: Buffer[] = [];
+    for (let at = 0; at < archive.length; at += 4 * KIB)
+      pieces.push(archive.subarray(at, at + 4 * KIB));
+    let cancelled = false;
+    let next = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const piece = pieces[next];
+        next += 1;
+        if (piece === undefined) controller.close();
+        else controller.enqueue(new Uint8Array(piece));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+
+    await expect(
+      extractTarball(
+        body,
+        root.path,
+        { maxEntries: 100, maxBytes: MIB },
+        new AbortController().signal,
+      ),
+    ).rejects.toMatchObject({ code: 'RST-1905' });
+    expect(cancelled).toBe(true);
   });
 });
