@@ -8,23 +8,22 @@ import type { ScheduledJob } from '../ports/scheduler.js';
 import type { FolderTarget, ListedFolder, WorkspaceFolders } from '../ports/workspace-folders.js';
 import { removeFolder } from '../use-cases/remove-folder.js';
 
-// P1-152, RF-1012, DEC-55, data-model.md section 9: since P1-138 the rows of a project go before
-// its folder, so a folder that could not be removed, or a crash after the commit, leaves a folder
-// no row owns. The sweep removes those project and run folders, at start-up and daily. It removes a
-// folder only when the row lookup, made just before the removal, finds nothing; it leaves alone a
-// folder changed less than `ORPHAN_FOLDER_MIN_AGE_MS` ago (a folder written just before its row);
-// it stops at the first row it cannot read, so an unreachable database removes nothing; and it
-// removes nothing when most folders look orphaned, which a database that is readable but empty or
-// wrong (a new one, another connection string, an older backup) would cause.
+// P1-152, P2-41, RF-1012, DEC-55, data-model.md section 9: a delete flow marks a folder before it
+// removes the rows, so a folder that could not be removed, or a crash after the commit, leaves a
+// marked folder no row owns. The sweep removes only those, at start-up and daily:
+// - an unmarked folder with no row is logged and kept, however many there are: a new, empty, wrong
+//   or restored database looks exactly like that, and must never cost a project its files;
+// - a marked folder whose row is still there is a deletion that did not finish, and its mark is
+//   cleared;
+// - the run folders of a removed project go with it; a marked run folder is removed on its own;
+// - nothing is removed when no project folder has a row while unmarked project folders exist (an
+//   empty or wrong database);
+// - the row lookup is made again just before each removal, a folder changed less than
+//   `ORPHAN_FOLDER_MIN_AGE_MS` ago is left alone (its deletion may be running), and the sweep stops
+//   at the first row it cannot read, so an unreachable database removes nothing.
 
-/** A folder changed less than this long ago may belong to a row about to be written. */
+/** A folder changed less than this long ago may belong to a deletion running now. */
 export const ORPHAN_FOLDER_MIN_AGE_MS = 3_600_000;
-
-/**
- * Up to this many orphan folders of one kind are always swept; above it, the sweep refuses when
- * they are more than half of the folders looked at (a new, restored or wrong database).
- */
-const MAX_ORPHANS_ALWAYS_SWEPT = 2;
 
 export interface FolderSweepDeps {
   readonly projects: ProjectRepository;
@@ -36,9 +35,9 @@ export interface FolderSweepDeps {
 
 interface ProjectGroup {
   /** The project folder when it is old enough to be swept. */
-  project?: FolderTarget;
+  project?: ListedFolder;
   /** The run folders old enough to be swept. */
-  runs: FolderTarget[];
+  runs: ListedFolder[];
 }
 
 function folderName(target: FolderTarget): string {
@@ -56,7 +55,7 @@ async function removeOrphan(deps: FolderSweepDeps, target: FolderTarget): Promis
   await deps.logger.log({
     level: 'info',
     logger: 'folder-sweep',
-    message: `Removed the folder ${folderName(target)}: no row owns it.`,
+    message: `Removed the folder ${folderName(target)}: a deletion marked it and no row owns it.`,
     userId: target.userId,
     data: { folder: folderName(target), projectId: target.projectId },
   });
@@ -72,32 +71,38 @@ async function isOrphan(deps: FolderSweepDeps, target: FolderTarget): Promise<bo
 }
 
 interface Plan {
-  projects: FolderTarget[];
-  runs: FolderTarget[];
-  /** The project folders and the run folders (of projects with a row) that were looked at. */
-  projectCount: number;
-  runCount: number;
+  /** Marked folders with no row. */
+  remove: FolderTarget[];
+  /** Marked folders whose row is there: a deletion that did not finish. */
+  unmark: FolderTarget[];
+  /** Unmarked folders with no row. */
+  kept: FolderTarget[];
+  /** The project folders with a row, and the unmarked ones, that were looked at. */
+  withRows: number;
+  unmarkedProjects: number;
+}
+
+/** Sorts one folder: marked or not, with a row or not. True when the folder has no row. */
+async function classify(deps: FolderSweepDeps, folder: ListedFolder, into: Plan): Promise<boolean> {
+  const orphan = await isOrphan(deps, folder.target);
+  if (folder.marked) (orphan ? into.remove : into.unmark).push(folder.target);
+  else if (orphan) into.kept.push(folder.target);
+  return orphan;
 }
 
 async function plan(deps: FolderSweepDeps, groups: readonly ProjectGroup[]): Promise<Plan> {
-  const result: Plan = { projects: [], runs: [], projectCount: 0, runCount: 0 };
+  const result: Plan = { remove: [], unmark: [], kept: [], withRows: 0, unmarkedProjects: 0 };
   for (const { project, runs } of groups) {
     // A young project folder keeps all its run folders for the next sweep.
     if (project === undefined) continue;
-    result.projectCount += 1;
-    if (await isOrphan(deps, project)) {
-      result.projects.push(project);
-      continue;
-    }
-    result.runCount += runs.length;
-    for (const run of runs) if (await isOrphan(deps, run)) result.runs.push(run);
+    if (!project.marked) result.unmarkedProjects += 1;
+    // The runs of a project without a row are not looked at: they go with a marked project and
+    // stay with an unmarked one.
+    if (await classify(deps, project, result)) continue;
+    result.withRows += 1;
+    for (const run of runs) await classify(deps, run, result);
   }
   return result;
-}
-
-/** More than half of what was looked at, once it is more than a few folders. */
-function tooMany(orphans: number, looked: number): boolean {
-  return orphans > MAX_ORPHANS_ALWAYS_SWEPT && orphans * 2 > looked;
 }
 
 async function refuse(deps: FolderSweepDeps, found: Plan): Promise<void> {
@@ -105,29 +110,32 @@ async function refuse(deps: FolderSweepDeps, found: Plan): Promise<void> {
     level: 'error',
     logger: 'folder-sweep',
     message:
-      'The sweep would remove most folders, which means the database may be empty or the wrong one; nothing was removed.',
+      'No project folder has a row, which means the database may be empty or the wrong one; nothing was removed.',
     code: ERROR_CODES.folderRemovalFailed,
-    data: {
-      projectFolders: found.projectCount,
-      orphanProjectFolders: found.projects.length,
-      runFolders: found.runCount,
-      orphanRunFolders: found.runs.length,
-    },
+    data: { unmarkedProjectFolders: found.unmarkedProjects, markedFolders: found.remove.length },
+  });
+}
+
+async function logKept(deps: FolderSweepDeps, target: FolderTarget): Promise<void> {
+  await deps.logger.log({
+    level: 'warn',
+    logger: 'folder-sweep',
+    message: `Kept the folder ${folderName(target)}: no row owns it, but no deletion marked it.`,
+    userId: target.userId,
+    data: { folder: folderName(target), projectId: target.projectId },
   });
 }
 
 function groupByProject(listed: readonly ListedFolder[], cutOff: number): ProjectGroup[] {
   const groups = new Map<string, ProjectGroup>();
-  for (const { target, modifiedAt } of listed) {
+  for (const folder of listed) {
+    const { target } = folder;
     const key = `${target.userId}/${target.projectId}`;
     const group = groups.get(key) ?? { runs: [] };
     groups.set(key, group);
-    const old = modifiedAt <= cutOff;
-    if (target.runKey === undefined) {
-      if (old) group.project = target;
-    } else if (old) {
-      group.runs.push(target);
-    }
+    if (folder.modifiedAt > cutOff) continue;
+    if (target.runKey === undefined) group.project = folder;
+    else group.runs.push(folder);
   }
   return [...groups.values()];
 }
@@ -135,16 +143,17 @@ function groupByProject(listed: readonly ListedFolder[], cutOff: number): Projec
 async function sweep(deps: FolderSweepDeps): Promise<void> {
   const cutOff = deps.clock.now().getTime() - ORPHAN_FOLDER_MIN_AGE_MS;
   const found = await plan(deps, groupByProject(await deps.folders.list(), cutOff));
-  if (
-    tooMany(found.projects.length, found.projectCount) ||
-    tooMany(found.runs.length, found.runCount)
-  ) {
+  if (found.withRows === 0 && found.unmarkedProjects > 0) {
     await refuse(deps, found);
     return;
   }
-  for (const target of [...found.projects, ...found.runs]) {
+  for (const target of found.kept) await logKept(deps, target);
+  for (const target of found.remove) {
     // The row is looked up again: it may have been written since the plan was made.
     if (await isOrphan(deps, target)) await removeOrphan(deps, target);
+  }
+  for (const target of found.unmark) {
+    if (!(await isOrphan(deps, target))) await deps.folders.unmark(target);
   }
 }
 

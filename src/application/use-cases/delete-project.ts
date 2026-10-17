@@ -6,7 +6,7 @@ import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { WorkspaceFolders } from '../ports/workspace-folders.js';
 import type { Deleted, DeleteRunProblem } from './delete-run.js';
-import { removeFolder } from './remove-folder.js';
+import { markFolder, removeFolder } from './remove-folder.js';
 
 // RF-1012, DEC-55, RF-1105: Delete project removes one of the signed-in user's projects with its
 // runs and its whole folder, and writes an `info` entry naming it and the space freed. A project
@@ -16,7 +16,8 @@ import { removeFolder } from './remove-folder.js';
 // commits, and only then is the folder removed, so a slow disk holds no connection and no lock
 // (P1-138). A folder that cannot be removed is logged with RST-1115 naming it and answered with
 // that code; the project is already gone, so the folder stays for the administrator to remove
-// (data-model.md section 9). Another user's project id and
+// (data-model.md section 9). Before any row goes the folder is marked (P2-41), and the mark is
+// taken off again when the repository refuses; the sweep removes only marked folders. Another user's project id and
 // an unknown id give the same answer, `not found`.
 
 export interface DeleteProjectDependencies {
@@ -46,11 +47,14 @@ export class DeleteProject {
     if (own.some((run) => run.queueState !== 'Ended')) return err(ERROR_CODES.deleteRefusedInUse);
     const target = { userId, projectId: project.id };
     const freedBytes = await folders.size(target);
+    await markFolder(folders, logger, target);
     const afterRowsGone = async (): Promise<void> => {
       await runs.removeEndedOfProject(userId, project.id);
       await removeFolder(folders, logger, target, 'gone');
     };
     if (!(await projects.remove(userId, project.id, afterRowsGone))) {
+      // A mark that stays is cleared by the sweep, because the row is still there.
+      await folders.unmark(target).catch(() => undefined);
       const stillThere = (await projects.find(userId, project.id)) !== undefined;
       return err(stillThere ? ERROR_CODES.deleteRefusedInUse : ERROR_CODES.notFound);
     }

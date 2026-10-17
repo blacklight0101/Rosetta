@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, stat, symlink, utimes, writeFile } from '
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ProjectRepository } from '../../../src/application/ports/project-repository.js';
+import type { FolderTarget } from '../../../src/application/ports/workspace-folders.js';
 import type { RunIndex } from '../../../src/application/ports/run-index.js';
 import { folderSweepJob } from '../../../src/application/projects/folder-sweep.js';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
@@ -19,8 +20,8 @@ import { RecordingLogger } from '../../support/recording-logger.js';
 import { sampleRun } from '../../support/run-fixtures.js';
 import { useTempRoot } from '../../support/temp-root.js';
 
-// P1-152, RF-1012, RF-005: the sweep over real folders and both repositories (memory and
-// PostgreSQL). It removes only folders of the data folder whose name is an id and that no row owns,
+// P1-152, P2-41, RF-1012, RF-005: the sweep over real folders and both repositories (memory and
+// PostgreSQL). It removes only folders of the data folder whose name is an id, that a delete marked and that no row owns,
 // follows no link out of it and removes nothing when the rows cannot be read.
 
 const user = '00000000-0000-4000-9000-0000000000a1';
@@ -54,6 +55,16 @@ function sweep(stores: Stores, logger = new RecordingLogger()) {
   return { logger, run: folderSweepJob({ ...stores, folders, clock, logger }) };
 }
 
+/** Marks the folder, then sets its change instant back: marking changes the folder. */
+async function markFolder(target: FolderTarget, ageHours = 5): Promise<void> {
+  await new NodeWorkspaceFolders(data.path).mark(target);
+  const path =
+    target.runKey === undefined
+      ? projectFolder(target.projectId)
+      : join(projectFolder(target.projectId), 'runs', target.runKey);
+  await utimes(path, hoursAgo(ageHours), hoursAgo(ageHours));
+}
+
 const exists = (path: string): Promise<boolean> =>
   stat(path).then(
     () => true,
@@ -61,7 +72,7 @@ const exists = (path: string): Promise<boolean> =>
   );
 
 function removalTests(name: string, make: MakeStores): void {
-  it(`RF-1012 ${name}: removes the folder of a deleted project and keeps the one with a row`, async () => {
+  it(`RF-1012 ${name}: removes the marked folder of a deleted project and keeps the one with a row`, async () => {
     const stores = await make();
     const kept = sampleProject({ userId: user });
     await stores.projects.insertOrFind(kept);
@@ -72,6 +83,8 @@ function removalTests(name: string, make: MakeStores): void {
     // The project folder last: adding its run folders changed it.
     await folder(projectFolder(kept.id));
     await folder(projectFolder(ghost));
+    await markFolder({ userId: user, projectId: ghost });
+    await markFolder({ userId: user, projectId: kept.id, runKey: strayRun });
     const { run: job, logger } = sweep(stores);
 
     await job();
@@ -85,9 +98,55 @@ function removalTests(name: string, make: MakeStores): void {
 }
 
 function safetyTests(name: string, make: MakeStores): void {
-  it(`RF-1012 ${name}: leaves a young folder, whose row may be about to be written`, async () => {
+  it(`P2-41 ${name}: keeps unmarked folders without rows, one or two of them, and logs them`, async () => {
+    const stores = await make();
+    const kept = sampleProject({ userId: user });
+    await stores.projects.insertOrFind(kept);
+    await folder(join(projectFolder(kept.id), 'runs', strayRun));
+    await folder(projectFolder(kept.id));
+    await folder(projectFolder(ghost));
+    const { run: job, logger } = sweep(stores);
+
+    await job();
+
+    expect(await exists(projectFolder(ghost))).toBe(true);
+    expect(await exists(join(projectFolder(kept.id), 'runs', strayRun))).toBe(true);
+    expect(logger.records.filter((record) => record.level === 'info')).toEqual([]);
+  });
+
+  it(`P2-41 ${name}: keeps every folder when the database has no project row at all`, async () => {
+    const stores = await make();
+    await folder(projectFolder(ghost));
+    await folder(projectFolder('00000000-0000-4000-a000-0000000000f2'));
+    const { run: job } = sweep(stores);
+
+    await job();
+
+    expect(await exists(projectFolder(ghost))).toBe(true);
+    expect(await exists(projectFolder('00000000-0000-4000-a000-0000000000f2'))).toBe(true);
+  });
+}
+
+function crashTests(name: string, make: MakeStores): void {
+  it(`P2-41 ${name}: clears the mark of a project whose row is still there (a crashed deletion)`, async () => {
+    const stores = await make();
+    const kept = sampleProject({ userId: user });
+    await stores.projects.insertOrFind(kept);
+    await folder(projectFolder(kept.id));
+    await markFolder({ userId: user, projectId: kept.id });
+    const { run: job } = sweep(stores);
+
+    await job();
+
+    expect(await exists(projectFolder(kept.id))).toBe(true);
+    const listed = await new NodeWorkspaceFolders(data.path).list();
+    expect(listed.map((entry) => entry.marked)).toEqual([false]);
+  });
+
+  it(`RF-1012 ${name}: leaves a young marked folder, whose deletion may be running`, async () => {
     const stores = await make();
     await folder(projectFolder(ghost), 0);
+    await markFolder({ userId: user, projectId: ghost }, 0);
     const { run: job } = sweep(stores);
 
     await job();
@@ -133,10 +192,12 @@ function linkTests(name: string, make: MakeStores): void {
 function sweepTests(name: string, make: MakeStores): void {
   removalTests(name, make);
   safetyTests(name, make);
+  crashTests(name, make);
   linkTests(name, make);
   it(`RF-1012 ${name}: removes nothing when the rows cannot be read`, async () => {
     const stores = await make();
     await folder(projectFolder(ghost));
+    await markFolder({ userId: user, projectId: ghost });
     await stores.breakReads();
     const { run: job, logger } = sweep(stores);
 

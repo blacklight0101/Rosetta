@@ -1,6 +1,7 @@
 import { lstat, readdir, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { ListedFolder } from '../../application/ports/workspace-folders.js';
+import { hasDeletionMark } from './deletion-mark.js';
 import { isRealFolder } from './run-folder.js';
 import { isProjectId, isRunKey, isUserId } from './workspace-paths.js';
 
@@ -36,11 +37,15 @@ async function listProject(
 ): Promise<ListedFolder[]> {
   const own = await changedAt(folder);
   if (own === undefined) return [];
-  const listed: ListedFolder[] = [{ target, modifiedAt: own }];
+  const listed: ListedFolder[] = [
+    { target, modifiedAt: own, marked: await hasDeletionMark(folder) },
+  ];
   const runs = join(folder, 'runs');
   for (const runKey of await realFolders(runs, isRunKey)) {
     const modifiedAt = await changedAt(join(runs, runKey));
-    if (modifiedAt !== undefined) listed.push({ target: { ...target, runKey }, modifiedAt });
+    if (modifiedAt === undefined) continue;
+    const marked = await hasDeletionMark(join(runs, runKey));
+    listed.push({ target: { ...target, runKey }, modifiedAt, marked });
   }
   return listed;
 }
