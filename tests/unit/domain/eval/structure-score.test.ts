@@ -71,6 +71,16 @@ describe('the recall of the steps of the golden flows', () => {
     expect(scoreClaims(claims, steps, [])).toMatchObject({ stepsFound: 0, stepRecall: 0 });
   });
 
+  it('RF-260 does not count a step found by a claim that states what the golden set says is absent', () => {
+    const claims = [
+      flowStep('FLOW-001.c1', 'The page binds the grid with paging.', 'Default.aspx.cs:9-12'),
+    ];
+    const paging = { id: 'absent-paging', statement: 'x', claimPatterns: [['paging']], unless: [] };
+    const score = scoreClaims(claims, steps, [paging]);
+
+    expect(score).toMatchObject({ incorrect: 1, stepsFound: 0, stepRecall: 0 });
+  });
+
   it('RF-260 has no recall when the golden set holds no step', () => {
     expect(scoreClaims([], [finding()], [])).toMatchObject({ stepsTotal: 0, stepRecall: null });
   });

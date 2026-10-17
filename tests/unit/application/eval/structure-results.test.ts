@@ -38,6 +38,14 @@ const golden: GoldenSet = {
       findings: [
         step('step-bind', 'Default.aspx.cs:9-12', 'binds'),
         step('step-search', 'Default.aspx.cs:14-17', 'search'),
+        finding({
+          id: 'field-grid',
+          kind: 'field',
+          of: 'Home',
+          cardTypes: ['SCRN'],
+          evidence: ['Default.aspx.cs:19-22'],
+          keywords: ['grid'],
+        }),
       ],
       absences: [],
     }),
@@ -70,6 +78,12 @@ const searched = claim({
   text: 'Search binds it again.',
   citations: ['Default.aspx.cs:14-17'],
 });
+const screen = claim({
+  claimId: 'SCRN-001.c1',
+  cardType: 'SCRN',
+  text: 'The page has a grid.',
+  citations: ['Default.aspx.cs:19-22'],
+});
 const brand = claim({
   claimId: 'ENT-001.c1',
   cardType: 'ENT',
@@ -93,9 +107,9 @@ const request: RunEvaluationRequest = {
 
 async function evaluate() {
   const runs = [
-    evalRun(1, [bound, searched, brand]),
+    evalRun(1, [bound, searched, screen, brand]),
     evalRun(2, [bound, brand, stray]),
-    evalRun(3, [bound, searched, brand]),
+    evalRun(3, [bound, searched, screen, brand]),
   ];
   const output = new MemoryEvaluationOutput();
   const use = new RunEvaluation({
@@ -118,11 +132,13 @@ describe('an evaluation: the measures of flows, screens and the data model', () 
 
     expect(repetitions.map((r) => r.overall.stepRecall)).toEqual([1, 0.5, 1]);
     expect(repetitions.map((r) => r.overall.relationPrecision)).toEqual([1, 0.5, 1]);
-    expect(repetitions.map((r) => r.overall.screenFieldRecall)).toEqual([null, null, null]);
-    const second = repetitions[1]?.cases.map((c) => [c.caseId, c.stepRecall, c.relationPrecision]);
+    expect(repetitions.map((r) => r.overall.screenFieldRecall)).toEqual([1, 0, 1]);
+    const second = repetitions[1]?.cases.map((c) => [
+      ...[c.caseId, c.stepRecall, c.screenFieldRecall, c.relationPrecision],
+    ]);
     expect(second).toEqual([
-      ['home-page', 0.5, null],
-      ['catalog-item', null, 0.5],
+      ['home-page', 0.5, 0, null],
+      ['catalog-item', null, null, 0.5],
     ]);
   });
 
@@ -131,10 +147,18 @@ describe('an evaluation: the measures of flows, screens and the data model', () 
 
     expect(results.summary.stepRecall).toMatchObject({ n: 3, min: 0.5, max: 1, mean: 0.833333 });
     expect(results.summary.relationPrecision).toMatchObject({ n: 3, min: 0.5, max: 1 });
-    expect(results.summary.screenFieldRecall).toBeNull();
-    expect(results.cases.map((c) => [c.caseId, c.stepRecall?.mean ?? null])).toEqual([
-      ['home-page', 0.833333],
-      ['catalog-item', null],
+    expect(results.summary.screenFieldRecall).toMatchObject({
+      n: 3,
+      min: 0,
+      max: 1,
+      mean: 0.666667,
+    });
+    const means = results.cases.map((c) => [
+      ...[c.caseId, c.stepRecall?.mean ?? null, c.screenFieldRecall?.mean ?? null],
+    ]);
+    expect(means).toEqual([
+      ['home-page', 0.833333, 0.666667],
+      ['catalog-item', null, null],
     ]);
   });
 

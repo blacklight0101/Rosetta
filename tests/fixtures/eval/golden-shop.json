@@ -59,6 +59,15 @@
           "keywords": ["search box"]
         },
         {
+          "id": "action-home-details",
+          "kind": "action",
+          "of": "Home page",
+          "statement": "The Details command of a grid row starts the row command handler of the page.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Default.aspx:5-5", "Default.aspx.cs:19-22"],
+          "keywords": ["details", "cataloggrid_rowcommand"]
+        },
+        {
           "id": "action-home-search",
           "kind": "action",
           "of": "Home page",
@@ -252,7 +261,7 @@
         {
           "id": "entity-basket-line",
           "kind": "entity",
-          "statement": "A basket line holds an item id and a quantity.",
+          "statement": "Inferred from the code, which has no basket line type: a basket line is an array of an item id and a quantity.",
           "cardTypes": ["ENT"],
           "evidence": ["Services/OrderService.cs:9-10"],
           "keywords": ["basket line"]
@@ -261,7 +270,7 @@
           "id": "relation-basket-line-item",
           "kind": "relation",
           "of": "Basket line",
-          "statement": "A basket line refers to one catalog item through its item id.",
+          "statement": "Inferred from the code, which has no relation type: a basket line refers to one catalog item through its item id.",
           "cardTypes": ["ENT"],
           "evidence": ["Services/OrderService.cs:7-10"],
           "keywords": ["catalog item"]
