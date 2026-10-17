@@ -122,6 +122,22 @@ describe('the calibration run and its files', () => {
   });
 });
 
+describe('the calibration run and its secrets', () => {
+  it('RNF-003 masks a secret in a verifier reason before calibration.json is written', async () => {
+    const loaded = await committed();
+    const answers = answersFor(loaded.set);
+    answers[0] = `Reason: The key ${fakeOpenAiKey} is shown.
+Verdict: Rejected`;
+    const router = new ModelRouter({ 'judge-a': answers });
+    const parts = calibrationParts({ outputDir: join(temp.path, 'out'), router });
+    const result = await runCalibration(parts, loaded, [judgeA]);
+
+    expect(result.ok).toBe(true);
+    expect(JSON.stringify(await written())).not.toContain(fakeOpenAiKey);
+    expect(JSON.stringify(await written())).toContain('cal-01');
+  });
+});
+
 describe('the calibration run and the verifier step', () => {
   it('RF-305 sends each claim with only the lines it cites, as data, to the verifier role', async () => {
     const { router } = await twoModels();

@@ -119,12 +119,7 @@ export async function runEvalCommand(
 ): Promise<number> {
   const parsed = parseEvalArgs(args);
   if (!parsed.ok || parsed.value.help) {
-    print(
-      parsed.ok
-        ? EVAL_USAGE
-        : `${parsed.error}
-${EVAL_USAGE}`,
-    );
+    print(parsed.ok ? EVAL_USAGE : `${parsed.error}\n${EVAL_USAGE}`);
     return parsed.ok ? 0 : 2;
   }
   const run = parsed.value.calibration ? runCalibrationCommand : runGoldenCommand;

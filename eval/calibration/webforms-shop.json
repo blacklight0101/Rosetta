@@ -6,7 +6,7 @@
   "claims": [
     {
       "id": "cal-01",
-      "text": "The details page reads the item id from the query string and loads the item through the catalogue service.",
+      "text": "The details page reads the item id from the request (query string, form fields or cookies) and loads the item through the catalogue service.",
       "citations": ["Catalog/Details.aspx.cs:10-10"],
       "supported": true,
       "note": "Line 10 parses Request[\"id\"] and calls CatalogService.Get."
@@ -97,7 +97,7 @@
     },
     {
       "id": "cal-14",
-      "text": "Express shipping adds a fee of 12 and every other shipping method adds a fee of 4.",
+      "text": "Express shipping adds a fee of 12 to the order number and every other shipping method adds a fee of 4.",
       "citations": ["Services/OrderService.cs:16-16"],
       "supported": true,
       "note": "A conditional expression on shipping == \"express\"."
