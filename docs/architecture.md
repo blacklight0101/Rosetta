@@ -127,7 +127,7 @@ src/
                         run as tasks end (`RunCards`: ids in area order, citation check), the pinned repository
                         of the citations (`pinnedSourceOf`, RF-125) and `UnderstandSession`
     cards/              the card schema, lenient parsing that keeps valid cards and claims (`parseCardsLenient`), the repair request (RF-202, RF-208)
-    verifier/           citation check (step 1, `checkCitations`, P1-33), judgement step (P2)
+    verifier/           citation check (step 1, `checkCitations`, P1-33), judgement of one claim (step 2, `judgeClaim`, P2-02)
     estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30)
     contracts/          event and API contract types shared with the front end in web/
   infrastructure/
@@ -462,6 +462,25 @@ sequenceDiagram
   cache (Anthropic, OpenAI) charge less for repeated turns. OpenAI caches long prefixes by itself; the Anthropic
   adapter marks the system prompt (which caches the tools before it) and the last message block as cache breakpoints,
   since an agent task's conversation is append-only ([providers.md](providers.md) section 4).
+- **Verifier judgement** (RF-301, ADR-005, DEC-57, P2-02): when every reader task has ended and the run was not
+  stopped, `UnderstandSession.judge` hands every claim still `Proposed` after the citation check to the `verifier`
+  role (`src/application/understand/claim-judgement.ts`, at most `agents.parallelism` claims at a time;
+  `src/application/verifier/judge-claim.ts` for one claim). The verifier's guarded provider comes from the same
+  provider factory call as the reader's (`UNDERSTAND_ROLES` is `reader` and `verifier`, so consent, keys, prices and
+  the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v1.md` and one user
+  message: the claim in a data block of source `claim` (model output is data too) and, per citation, its lines with
+  three lines of margin before and after (`cited-lines.ts`, read through the `RepositoryReader`, so ignored and
+  denied files are refused) in a block of source `cited_lines`; nothing else of the file. Evidence above
+  `scan.excerptMaxLines` lines or 40 000 characters is not cut: the claim is `Unverified` and no call is made. The
+  answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`); any other
+  answer, a tool call or a cut answer gets one retry that names the problem (`prompts/verifier/retry.v1.md`), and a
+  second bad answer leaves the claim `Unverified`. A failed call leaves it `Unverified` with its code; a stop, a
+  cap (`RST-1600`) or a cancelled call gives no verdict, so the claim keeps `Proposed`. Each verdict is published as
+  `verify.claim.judged` when it arrives and the cards are written again at the end (RF-302: nothing is removed);
+  the verifier's prompt files and model version are recorded in the manifest (RNF-004). When the run starts with a
+  verifier of the reader's model family (`src/domain/verifier/model-family.ts`: the model id's last path part, in
+  lower case, up to its first character that is not a letter; `o1`, `o3`, `o4-mini` are `gpt`), a `warn` entry
+  names the self-preference risk and the run continues.
 - **Multi-agent pattern** (DEC-57): a **code-driven orchestrator** (no model decides the routing) fans out one
   `reader` agent per area in parallel, the `verifier` is the evaluator of every claim, and the `summariser` is the
   reducer that merges cards across areas (RF-250). Agents never hand off to each other and never talk directly; they

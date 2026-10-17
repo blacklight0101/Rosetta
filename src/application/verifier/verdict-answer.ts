@@ -1,20 +1,69 @@
-import { err, type Result } from '../../domain/errors/result.js';
+import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { LlmResponse } from '../ports/llm-provider.js';
 
-// RF-301: reads the verifier's answer (P2-02, not built yet).
+// RF-301, DEC-57, ADR-013: reads the verifier's answer. The answer is model output, so it is
+// parsed strictly and never trusted: exactly two lines, the reason first and the verdict second
+// (`Reason: ...` then `Verdict: Supported` or `Verdict: Rejected`), nothing else. Anything else (a
+// verdict before its reason, a third line, a verdict that is not one of the two words, a tool call,
+// a cut answer) is invalid and says why, for the one retry; it is never read as `Supported`.
 
 export type JudgedStatus = 'Supported' | 'Rejected';
 
 export interface Verdict {
   readonly status: JudgedStatus;
+  /** One line, at most `MAX_REASON_CHARS` characters. */
   readonly reason: string;
 }
 
 export const MAX_REASON_CHARS = 300;
 
+const reasonLine = /^reason:[ \t]*(\S.*)$/iu;
+const verdictLine = /^verdict:[ \t]*(supported|rejected)$/iu;
+const verdictLike = /^verdict:/iu;
+const lineBreak = /\r\n|[\n\r\u0085\u2028\u2029]/u;
+// eslint-disable-next-line no-control-regex -- the reason is shown and stored as one plain line
+const controlCharacter = /[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/u;
+
+const problems = {
+  toolCall: 'the answer called a tool; there are no tools.',
+  cut: 'the answer was cut off before it ended.',
+  lines: 'the answer must be exactly two lines: the reason, then the verdict.',
+  order: 'the reason must come before the verdict.',
+  reason: 'the first line must start with "Reason:" followed by one sentence.',
+  long: `the reason must be at most ${String(MAX_REASON_CHARS)} characters.`,
+  verdict: 'the second line must be "Verdict: Supported" or "Verdict: Rejected".',
+} as const;
+
+function statusOf(word: string): JudgedStatus {
+  return word.toLowerCase() === 'supported' ? 'Supported' : 'Rejected';
+}
+
+/** The two lines as a verdict, or what is wrong with them. */
+function verdictOf(first: string, second: string): Result<Verdict, string> {
+  if (verdictLike.test(first)) return err(problems.order);
+  const reason = reasonLine.exec(first)?.[1]?.trim();
+  if (reason === undefined || controlCharacter.test(reason)) return err(problems.reason);
+  if (reason.length > MAX_REASON_CHARS) return err(problems.long);
+  const word = verdictLine.exec(second)?.[1];
+  if (word === undefined) return err(problems.verdict);
+  return ok({ status: statusOf(word), reason });
+}
+
+/** The verdict of an answer, or the problem the retry names (RF-301). */
 // RF-301
 export function parseVerdictAnswer(
   response: Pick<LlmResponse, 'text' | 'toolCalls' | 'finishReason'>,
 ): Result<Verdict, string> {
-  return err(`not built: ${response.text}`);
+  if (response.toolCalls.length > 0) return err(problems.toolCall);
+  if (response.finishReason === 'length') return err(problems.cut);
+  const lines = response.text
+    .split(lineBreak)
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+  const [first, second] = lines;
+  if (lines.length !== 2 || first === undefined || second === undefined) {
+    const verdictFirst = first !== undefined && verdictLike.test(first);
+    return err(verdictFirst ? problems.order : problems.lines);
+  }
+  return verdictOf(first, second);
 }

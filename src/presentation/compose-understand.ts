@@ -27,6 +27,7 @@ import {
   loadMergePrompt,
   loadReaderPrompts,
 } from '../infrastructure/prompts/prompt-files.js';
+import { loadVerifierPrompts } from '../infrastructure/prompts/verifier-prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { FileScanResults } from '../infrastructure/scan/scan-results.js';
@@ -101,6 +102,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(promptsFolder),
     mergePrompt: () => loadMergePrompt(promptsFolder),
+    verifierPrompts: () => loadVerifierPrompts(promptsFolder),
     textToolProtocol: () => loadTextToolProtocol(promptsFolder),
     answersPrompt: () => loadAnswersPrompt(promptsFolder),
     priorCards: new FilePriorCards(writer),

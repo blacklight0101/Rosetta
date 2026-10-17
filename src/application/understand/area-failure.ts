@@ -5,7 +5,7 @@ import type { AgentTaskState } from '../../domain/runs/run-states.js';
 // than a finished, empty reading. The coverage and the run end say so and why, so a run in which
 // areas are missing from the specification is never taken for a plain success.
 
-interface TaskEndFacts {
+export interface TaskEndFacts {
   readonly state: Exclude<AgentTaskState, 'Planned' | 'Running'>;
   readonly code?: ErrorCode;
   readonly drafts: readonly unknown[];
