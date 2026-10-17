@@ -1198,7 +1198,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `tests/`; `vitest.config.ts`.
 - **Do**: find why `jsonl-event-log.test.ts`, `architecture-rules.test.ts` and the run-scan tests time out under full-suite load on Windows (EBUSY temp-directory cleanup, depcruise runs); fix the slow path or give those files their own timeout with a comment saying why. Set a default `maxWorkers` for the local Vitest run that keeps a Windows machine below the load that causes the flakes, so agents need not pass `--maxWorkers`.
 - **Delivers**: the fix.
@@ -2075,7 +2075,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: the agent loop; the reader prompt; the `OQ` schema; RF-206, RF-243; the `invalid-output` and transcripts of the owner's 2026-10-14 run as examples.
 - **Do**: refuse a final answer from a reader that has read none of its area's files and tell it which files to read (RF-206); the `OQ` schema needs what the code shows, a citation and a question about something outside the code, and a question asking what the code, an area or the application does is refused with a repair message (RF-243); duplicate questions across areas are merged and grouped by feature or area; an area of third-party or generated code writes no question. Prompts versioned; recordings.
 - **Review probes**: "What does this area do?", "What is the purpose of the application?", "What is the business logic of X?" (refused); "Who uses these pages?" with a citation (kept); the same question from three areas (merged once with three citations); an agent answering at turn 1 with no reads.
@@ -2130,7 +2130,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-166
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: the card parser and repair path (RF-202); the agent loop; the run end state; the `invalid-output` folders of the owner's runs `20261014-145748-understand`, `20261014-153115-understand` and `20261014-154704-understand` (11 of 41, 11 of 42 and 6 of 16 tasks failed; in the third run, with library areas left out, all 6 were one-line citations and they included Models, Services, ViewModel and Setup).
 - **Do**: as RF-208: take the JSON out of prose or a fence; keep valid claims and cards, drop and list invalid ones; a second, targeted repair; ask a cut-off answer to continue; retry a task with no usable cards once with a fresh conversation (split an area too large for the context); report failed areas in the coverage and the run summary with "Retry failed areas"; a run with failed areas never shows as a plain success.
 - **Review probes**: the recorded failing answers of both runs (each must yield its valid cards); an answer that is all prose; JSON with a trailing comma; an answer cut mid-string; a card whose every claim is invalid; a model that fails the same way three times (the run still ends, with the area marked failed and no endless loop).
@@ -2164,7 +2164,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33, P1-35, P1-40
 - **Gate**: none
-- **Status**: In progress
+- **Status**: In review
 - **Reads**: `docs/architecture.md` section 8; `docs/data-model.md` section 3.6.
 - **Do**: `ResumeRun`: after the cap is raised, process only unfinished tasks and `Unverified` claims into the same run folder and manifest; the Resume button on the run and history pages; claims left unjudged at a cap are `Unverified`.
 - **Delivers**: the use case, route and buttons; integration tests with the fake provider; an E2E spec.
@@ -2176,7 +2176,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33, P1-35
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md`; `docs/architecture.md` section 8 (verifier role).
 - **Do**: step 2 with the `verifier` role: the model sees the claim and only the cited lines with a small margin, answers with the reason before the verdict, one retry on an invalid answer, otherwise `Unverified`; a warning when reader and verifier share a model family; `prompts/verifier/claim.v1.md` with the data-block rule; verdict events for the live page.
 - **Delivers**: the step, the prompt, recordings; integration tests with recorded responses; a unit test on the family check.
@@ -2212,7 +2212,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-39
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.16; `docs/architecture.md` section 6 (`RunUnderstand` options).
 - **Do**: the "with answers" option of `RunUnderstand`: affected areas run again with the answers as context, answered `OQ` cards marked `Answered`, new and changed cards listed in the run summary.
 - **Delivers**: the option, prompt changes as a new prompt version, recordings; integration tests.
@@ -2224,7 +2224,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-33
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/architecture.md` section 8 (summariser role).
 - **Do**: consolidation with the `summariser` role: duplicate entities and rules from several areas merged into one card keeping every citation; the merge recorded; `prompts/summariser/merge.v1.md`.
 - **Delivers**: the step, prompt, recordings; integration tests.
@@ -2248,7 +2248,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-30, P1-34
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-007-cost-control.md`.
 - **Do**: the confirmation threshold on the start page (RF-425 second scenario); caps per role in the budget guard; a non-local model missing from the price table stops the run unless allowed, then cost shows as unknown and only the token cap applies.
 - **Delivers**: the changes; integration and E2E tests.
@@ -2332,7 +2332,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P1-14, P1-80
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: DEC-117; `docs/design-system.md`; `src/web/` settings page; P1-80.
 - **Do**: show each numeric project setting as a slider limited to its DEC-117 range, with the template default marked; show a warning that suggests keeping the default when a value moves away from it; keyboard and screen-reader use as for the other controls.
 - **Delivers**: the sliders, their warnings and tests.
@@ -2344,7 +2344,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `prices/default-prices.yaml` and its schema; `src/infrastructure/budget/`; `src/infrastructure/providers/anthropic/`; `docs/data-model.md` (cost ledger, cost report) and section 7 (migrations); ADR-007; verdict comment 6132492790 on pull request #210.
 - **Do**: Anthropic bills prompt-cache writes at 1.25 times the input price, but the price table has no cache-write price, so the adapter counts cache-write tokens as plain input and the ledger understates the cost of those calls. Add a cache-write price per model to the price table (`prices/default-prices.yaml` and its schema); carry cache-write tokens through the usage record and the ledger (new columns through a new migration with the next free number of the release block, and `docs/data-model.md` in the same change); price them in the budget guard's worst case and in the settled cost; show them in the cost report.
 - **Delivers**: the price field, the migration, the usage and ledger changes, the guard pricing and the report column, with unit, integration and contract tests.
@@ -2368,7 +2368,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-06
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `src/domain/cards/card-vocabulary.ts`; `src/domain/cards/card.ts`; the card schema and parser; `docs/architecture.md` section 5 (state lists); `docs/adr/ADR-005-evidence-cards-and-two-step-verifier.md` (DEC-134 note).
 - **Do**: add `FLOW` and `SCRN` to the card vocabulary (Q-24) with their schemas: `FLOW` (trigger, ordered steps each with a target card id when one exists and at least one citation, numbered branches, outcome) and `SCRN` (route or page, roles, fields with input kind, required flag and cited validations, actions naming a handler or `FLOW` id, "leads to" links); parser, repair path (RF-202), stable ids (RF-203), card files under `cards/flow/` and `cards/scrn/`, `index.json`; architecture section 5 lists the new types.
 - **Delivers**: schemas, parser cases, card writers, tests.
@@ -2588,7 +2588,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-05
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `src/infrastructure/prompts/catalogue-files.ts`; `src/infrastructure/prompts/catalogue-entry-file.ts`; `src/domain/planning/catalogue.ts`; `src/domain/runs/run-manifest.ts`; RF-606; the verdict on #208.
 - **Do**: add the two schema tests P3-05 lacks (a rule longer than 200 characters is refused; the bullets list needs at least two items, `min(2)`). `loadCatalogue` is not called at start-up (RF-606): call it once in the composition root so a broken catalogue stops start-up with a code, and record the catalogue version and its sha256 in the run manifest of a run that uses it.
 - **Delivers**: the tests, the start-up call and the manifest fields (with their line in `docs/data-model.md`).
