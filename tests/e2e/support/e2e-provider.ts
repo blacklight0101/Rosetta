@@ -6,6 +6,7 @@ import type {
 } from '../../../src/application/ports/llm-provider.js';
 import type { Recording } from '../../../src/infrastructure/providers/fake/recording.js';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
+import { OVERVIEW_CALL_USAGE } from './overview-call.js';
 import { AnsweringProvider } from '../../support/answering-provider.js';
 import { ScriptedProvider } from '../../support/scripted-provider.js';
 
@@ -55,7 +56,7 @@ function overviewOf(recording: Recording, request: LlmRequest): LlmResponse | un
   if (attempt === undefined || !('response' in attempt)) return undefined;
   return {
     ...attempt.response,
-    usage: { inputTokens: 24, outputTokens: 2, cachedInputTokens: 0, usageSource: 'reported' },
+    usage: { ...OVERVIEW_CALL_USAGE, cachedInputTokens: 0, usageSource: 'reported' },
   };
 }
 

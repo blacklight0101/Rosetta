@@ -10,6 +10,7 @@ import {
   startUnderstand,
   valueOf,
 } from './support/live-run-page.js';
+import { OVERVIEW_CALL_TOKENS } from './support/overview-call.js';
 import { hostileTexts, expectNothingInjected, watchDialogs } from './support/hostile-card.js';
 import { recordedTokens, runTokens } from './support/run-tokens.js';
 import { replayRunId } from './support/seed-replay.js';
@@ -45,7 +46,9 @@ async function expectMeterFromUsage(page: Page, areas: readonly string[]): Promi
   expect(tokens).toBeGreaterThanOrEqual(reader + verifier);
   const meter = page.getByRole('region', { name: 'Run meter' });
   const row = (name: RegExp) => meter.getByRole('row', { name });
-  await expect(row(/reader/u)).toContainText((tokens - verifier).toLocaleString('en-US'));
+  // The summariser's merge fails in this server (RST-1506); its overview is answered (RF-264).
+  const readerTokens = tokens - verifier - OVERVIEW_CALL_TOKENS;
+  await expect(row(/reader/u)).toContainText(readerTokens.toLocaleString('en-US'));
   await expect(row(/verifier/u)).toContainText(verifier.toLocaleString('en-US'));
   await expect(row(/Total/u)).toContainText(tokens.toLocaleString('en-US'));
   const costCell = (name: RegExp) => row(name).getByRole('cell').last();
