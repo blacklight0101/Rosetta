@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "description": "Written by hand for this repository; no real provider was called. The verifier judges the claims of a FLOW card and a SCRN card on the webforms-csharp fixture that pass the citation check, in card and claim order: a supported and a rejected flow step, then a supported screen claim, a made-up validation and a made-up action, both rejected (P2-20).",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Page_Load binds the grid to CatalogService().List() on lines 8 to 12.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-1",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 12 only assigns the UPDATE text to a variable that List returns; nothing in the lines runs it.\nVerdict: Rejected",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-2",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The page holds one label, NameLabel, and nothing else.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-3",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Lines 5 to 8 only set the label text; no length is checked anywhere in them.\nVerdict: Rejected",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-4",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The page has no Delete button and no DeleteButton_Click handler in the cited lines.\nVerdict: Rejected",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-5",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

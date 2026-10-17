@@ -27,6 +27,7 @@ const traceId = '0123456789abcdef0123456789abcdef';
 /** The fixture files the verifier recordings judge. */
 const fixtureFiles = [
   'Default.aspx.cs',
+  'Catalog/Details.aspx',
   'Catalog/Details.aspx.cs',
   'Database/schema.sql',
   'Services/CatalogService.cs',
