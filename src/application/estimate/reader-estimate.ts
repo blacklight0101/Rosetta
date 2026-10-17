@@ -1,7 +1,7 @@
 import type { Area } from '../../domain/code-map/area.js';
 import type { AreaMarks } from '../../domain/code-map/area-surface.js';
 import { ceilPercent } from './estimate-assumptions.js';
-import type { ByScenario, EstimateAssumptions, Scenario } from './estimate-types.js';
+import type { ByScenario, ReaderAssumptions, Scenario } from './estimate-types.js';
 
 // RF-425, RF-263, ADR-007: the tokens of the reader tasks. Every turn of a task resends the whole
 // conversation, so the input of turn t is the prompt overhead, the part of the area read in the
@@ -29,7 +29,7 @@ function fragmentsOf(marks: AreaMarks): number {
 function areaTokens(
   area: Area,
   scenario: Scenario,
-  assumptions: EstimateAssumptions,
+  assumptions: ReaderAssumptions,
   marks: AreaMarks,
 ): TokenFigures {
   const turns = assumptions.turnsPerArea[scenario];
@@ -52,7 +52,7 @@ function areaTokens(
 // RF-425, RF-263
 export function readerTokens(
   areas: readonly Area[],
-  assumptions: EstimateAssumptions,
+  assumptions: ReaderAssumptions,
   marks: ReadonlyMap<string, AreaMarks> = new Map(),
 ): ByScenario<TokenFigures> {
   const sum = (scenario: Scenario): TokenFigures =>

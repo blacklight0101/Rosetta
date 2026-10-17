@@ -44,7 +44,7 @@ function partsOf(provider: LlmProvider, signal = new AbortController().signal) {
   const logger = new RecordingLogger();
   const answers: string[] = [];
   const parts: ConsolidationParts = {
-    ...{ provider, logger, signal, ids: new SequenceIdGenerator() },
+    ...{ provider, logger, signal, ids: new SequenceIdGenerator(), batchTokens: 100_000 },
     role: { model: 'm-1', maxOutputTokens: 900, temperature: 0.2 },
     prompt: { name: 'summariser/merge.v1.md', version: 'v1', sha256: 'ab', text: 'Merge cards.' },
     ...{ runId: '20260101-000001-understand', traceId: 'a'.repeat(32) },

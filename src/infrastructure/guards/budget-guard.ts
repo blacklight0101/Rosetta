@@ -11,6 +11,7 @@ import type {
 import type { Logger } from '../../application/ports/logger.js';
 import type { ProviderCallRecorder } from '../../application/ports/provider-call-recorder.js';
 import type { RunCostRecorder } from '../../application/runs/run-cost-record.js';
+import { capStopsRun } from '../../domain/budget/cap-stop.js';
 import { cacheWriteCostOf, costOf } from '../../domain/budget/price.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { CapBreach, UsageCap, WorstCase } from '../../domain/budget/usage-cap.js';
@@ -39,7 +40,8 @@ import { priceCall, worstCaseOf, type BudgetPricing, type CallPrice } from './bu
 //      a call that would pass a cap is not made: it is recorded as `refused-by-cap`, the run's
 //      signal is aborted with RST-1600 and the refusal is thrown; the cap of a role (RF-423) is
 //      the exception: it refuses that role's calls with the same error but leaves the run's
-//      signal alone, so the run's other roles go on;
+//      signal alone, so the run's other roles go on; so is the summariser's optional step
+//      (capStopsRun), whose refusal ends the merge and not the run (P2-35);
 //   3. after the call, one ledger row: the reported or estimated usage, priced, with the number of
 //      the last attempt; the reservation is deleted in the same step. A call that failed after it
 //      was sent is a row without usage; a call never sent (blocked by the egress guard) only frees
@@ -193,7 +195,8 @@ export class BudgetGuard implements LlmProvider {
     await this.report('The cap event could not be published.', request, () =>
       this.options.budgetEvents.capReached(reported),
     );
-    if (!roleStop) stopRun(refusal);
+    // RF-250: the summariser's step is optional; its refusal never stops the run (P2-35).
+    if (!roleStop && capStopsRun(request.context.role)) stopRun(refusal);
     throw refusal;
   }
 
