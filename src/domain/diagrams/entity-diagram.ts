@@ -1,3 +1,4 @@
+import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { mermaidLabel } from './mermaid-label.js';
 
 // RF-262, RF-508, DEC-134: the Mermaid entity-relationship diagram of the legacy data model,
@@ -75,11 +76,6 @@ function relationLine(relation: ModelRelation, from: string, to: string): string
   return `  ${from} ${ends} ${to} : "${mermaidLabel(label)}"`;
 }
 
-function byCardId(left: ModelEntity, right: ModelEntity): number {
-  if (left.cardId === right.cardId) return 0;
-  return left.cardId < right.cardId ? -1 : 1;
-}
-
 // RF-262
 export function entityDiagram(model: EntityModel): string {
   const idOf = new Map<string, string>();
@@ -92,7 +88,7 @@ export function entityDiagram(model: EntityModel): string {
     entities.push(...entityLines(id, entity));
     return id;
   };
-  model.entities.toSorted(byCardId).forEach(place);
+  model.entities.toSorted((left, right) => byCodeUnit(left.cardId, right.cardId)).forEach(place);
   const endOf = (cardId: string): string => place({ cardId, name: cardId, fields: [] });
   const relations = model.relations.map((relation) =>
     relationLine(relation, endOf(relation.from), endOf(relation.to)),

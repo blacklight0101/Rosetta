@@ -1,3 +1,4 @@
+import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { Card } from '../cards/card.js';
 import { mermaidLabel } from './mermaid-label.js';
 
@@ -23,11 +24,6 @@ function node(nodes: Nodes, key: string, label: string): string {
   return id;
 }
 
-function byId(left: Card, right: Card): number {
-  if (left.id === right.id) return 0;
-  return left.id < right.id ? -1 : 1;
-}
-
 /** Places every screen card, then names each route by the first card that has it. */
 function placeScreens(nodes: Nodes, screens: readonly Card[]): Map<string, string> {
   const routes = new Map<string, string>();
@@ -41,7 +37,9 @@ function placeScreens(nodes: Nodes, screens: readonly Card[]): Map<string, strin
 
 // RF-261
 export function screenMapDiagram(cards: readonly Card[]): string {
-  const screens = cards.filter((card) => card.type === 'SCRN').toSorted(byId);
+  const screens = cards
+    .filter((card) => card.type === 'SCRN')
+    .toSorted((left, right) => byCodeUnit(left.id, right.id));
   const nodes: Nodes = { lines: [], idOf: new Map() };
   const routes = placeScreens(nodes, screens);
   const links = new Set<string>();

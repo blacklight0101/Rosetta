@@ -6,9 +6,12 @@
 // arrow, `%%`, `;`, `#`, backtick, line break or look-alike that could end the label, the
 // statement or the diagram, open a link, a click or a directive, or carry HTML. Leading and
 // trailing spaces are coded too, so the parser cannot trim them; an empty label is a coded space,
-// since Mermaid refuses an empty one; a lone surrogate becomes U+FFFD.
+// since Mermaid refuses an empty one; a lone surrogate becomes U+FFFD. The Mermaid 12.1 flowchart
+// and erDiagram lexers match a `direction` statement anywhere in a line, inside quotes too (the
+// erDiagram one in any case), so the word never appears as written: its first letter is coded.
 
 const literal = /^[A-Za-z0-9 .,]$/u;
+const directionWord = /direction/giu;
 
 function entityCode(char: string): string {
   return `#${String(char.codePointAt(0))};`;
@@ -26,5 +29,6 @@ export function mermaidLabel(text: string): string {
       const inner = index >= first && index <= last;
       return inner && literal.test(char) ? char : entityCode(char);
     })
-    .join('');
+    .join('')
+    .replace(directionWord, (word) => `${entityCode(word.charAt(0))}${word.slice(1)}`);
 }
