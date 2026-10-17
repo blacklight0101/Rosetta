@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, stat, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import globalSetup, { prepareRun } from '../../e2e/support/global-setup.js';
 import globalTeardown from '../../e2e/support/global-teardown.js';
@@ -19,6 +19,25 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** Points the temp folder at `root` (os.tmpdir() reads these on each call); `restore` undoes it. */
+function withTempFolder(root: string): { restore(): void } {
+  const saved = [process.env['TMPDIR'], process.env['TMP'], process.env['TEMP']];
+  process.env['TMPDIR'] = root;
+  process.env['TMP'] = root;
+  process.env['TEMP'] = root;
+  const put = (name: string, value: string | undefined): void => {
+    if (value === undefined) Reflect.deleteProperty(process.env, name);
+    else process.env[name] = value;
+  };
+  return {
+    restore() {
+      put('TMPDIR', saved[0]);
+      put('TMP', saved[1]);
+      put('TEMP', saved[2]);
+    },
+  };
 }
 
 describe('e2e run wiring, the setup', () => {
@@ -84,15 +103,24 @@ describe('e2e run wiring, the teardown and the config', () => {
     else process.env['ROSETTA_TEST_DATABASE_URL'] = savedDatabase;
   });
 
-  it('RNF-005 the teardown removes the caps lock folder of its run', async () => {
-    process.env['ROSETTA_E2E_RUN_KEY'] = `teardown-${String(Date.now())}`;
-    process.env['ROSETTA_TEST_DATABASE_URL'] = '';
-    const folder = capsLockFolder();
-    await mkdir(folder, { recursive: true });
+  it('RNF-005 the teardown removes the caps lock folder of its run, in the temp folder', async () => {
+    // A private temp folder: nothing is created in the shared one, and a killed test leaves nothing.
+    const root = await mkdtemp(join(tmpdir(), 'rosetta-teardown-'));
+    const saved = withTempFolder(root);
+    try {
+      process.env['ROSETTA_E2E_RUN_KEY'] = 'teardown-run';
+      process.env['ROSETTA_TEST_DATABASE_URL'] = '';
+      const folder = capsLockFolder();
+      expect(dirname(folder)).toBe(root);
+      await mkdir(folder, { recursive: true });
 
-    await globalTeardown();
+      await globalTeardown();
 
-    expect(await exists(folder)).toBe(false);
+      expect(await exists(folder)).toBe(false);
+    } finally {
+      saved.restore();
+      await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    }
   });
 
   it('RNF-005 playwright.config.ts names the global setup and the global teardown', async () => {

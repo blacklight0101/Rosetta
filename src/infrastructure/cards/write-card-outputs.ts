@@ -59,14 +59,18 @@ function writeAll(
   return writeOrRestore(writer, logger, writes);
 }
 
-/** Removes the file of each card that was merged into another (RF-250); a refusal is returned. */
-async function removeMergedAway(
+/**
+ * Removes the file of each card that was merged into another (RF-250) and `data-model.md` when
+ * the cards hold no entity any more (RF-262), so a re-run leaves no stale file; a refusal is
+ * returned.
+ */
+async function removeStale(
   writer: OutputWriter,
   target: CardOutputTarget,
-  mergedAway: readonly Pick<Card, 'id' | 'type'>[],
+  paths: readonly string[],
 ): Promise<Result<void, WriteRefusal>> {
-  for (const card of mergedAway) {
-    const file = { userId: target.userId, path: `${target.folder}/${cardPath(card)}` };
+  for (const path of paths) {
+    const file = { userId: target.userId, path: `${target.folder}/${path}` };
     const removed = await writer.remove(file);
     if (!removed.ok) return removed;
   }
@@ -87,7 +91,7 @@ export async function writeCardOutputs(
   const files: PlannedFile[] = [
     ...cards.map((card) => ({
       path: cardPath(card),
-      text: renderCardFile(card, source, masker),
+      text: renderCardFile(card, source, masker, cards),
     })),
     { path: 'cards/index.json', text: serialiseCardIndex(cards, masker) },
     { path: 'spec.md', text: renderSpec(cards, source, masker, { areasWithoutCards, changes }) },
@@ -96,7 +100,11 @@ export async function writeCardOutputs(
       : []),
   ];
   const written = await writeAll(writer, target, files, logger);
-  return written.ok ? removeMergedAway(writer, target, mergedAway) : written;
+  const stale = [
+    ...mergedAway.map(cardPath),
+    ...(cards.some((card) => card.type === 'ENT') ? [] : ['data-model.md']),
+  ];
+  return written.ok ? removeStale(writer, target, stale) : written;
 }
 
 export interface CoverageOutputInput {

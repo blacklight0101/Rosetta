@@ -79,3 +79,29 @@ describe('the replay and the claim moves of a log', () => {
     expect(steps).toEqual(['ENT-002.c1: Rejected - no']);
   });
 });
+
+describe('the replay and the claim moves that need care', () => {
+  it('RF-250 moves that swap ids apply together', () => {
+    const swap = event(3, 'cards.merged', {
+      cardId: 'ENT-001',
+      from: ['ENT-001', 'ENT-002'],
+      claims: [
+        { from: 'ENT-001.c1', to: 'ENT-001.c2' },
+        { from: 'ENT-001.c2', to: 'ENT-001.c1' },
+      ],
+    });
+
+    const steps = texts([judged(1, 'ENT-001.c1'), checked(2, 'ENT-001.c2'), swap]);
+
+    expect(steps.slice(0, 2)).toEqual(['ENT-001.c2: Rejected - no', 'ENT-001.c1: citation ok']);
+  });
+
+  it('RF-250 a merge that names ids the log never used changes no other id', () => {
+    const steps = texts([
+      judged(1, 'ENT-002.c1'),
+      merged(2, 'ENT-001', 'ENT-009.c4', 'ENT-001.c7'),
+    ]);
+
+    expect(steps[0]).toBe('ENT-002.c1: Rejected - no');
+  });
+});

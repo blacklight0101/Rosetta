@@ -147,4 +147,14 @@ describe('the other cards behind a question merged in answers.md', () => {
 
     expect(plan.pending.map((each) => each.cardId)).toEqual(['OQ-001']);
   });
+
+  it('RF-241 keeps two cards with an empty question apart', async () => {
+    const plan = await planRerun(
+      deps([card('OQ-001', 'Catalog', ''), card('OQ-002', 'Services', '!?')]),
+      project,
+      ['Catalog', 'Services'],
+    );
+
+    expect(plan.pending.map((each) => each.cardId)).toEqual(['OQ-001']);
+  });
 });
