@@ -89,11 +89,19 @@ export interface RunManifest {
   >;
   readonly security: ManifestSecurity;
   readonly priceTable: { readonly version: string; readonly currency: string } | null;
+  /** The principle catalogue a plan run used (RF-606, RNF-004); null for the other stages. */
+  readonly catalogue: ManifestCatalogue | null;
   readonly caps: ManifestCaps;
   /** Secrets masked, per kind (RF-141). */
   readonly masking: Readonly<Record<string, number>>;
   readonly totals: ManifestTotals;
   readonly agentTasks: readonly ManifestAgentTask[];
+}
+
+/** The catalogue version and the SHA-256 of its files (RF-606). */
+export interface ManifestCatalogue {
+  readonly version: number;
+  readonly sha256: string;
 }
 
 export type ManifestProblem = 'already-ended';
@@ -259,6 +267,16 @@ export function recordManifestModelVersion(
   const current = manifest.roles[role];
   if (current === undefined || current.modelVersion === modelVersion) return ok(manifest);
   return ok({ ...manifest, roles: { ...manifest.roles, [role]: { ...current, modelVersion } } });
+}
+
+/** Records the catalogue a plan run used; refused once the run has ended (RF-606, RNF-004). */
+// RF-606, RNF-004
+export function recordManifestCatalogue(
+  manifest: RunManifest,
+  catalogue: ManifestCatalogue,
+): Result<RunManifest, ManifestProblem> {
+  if (manifest.endState !== null) return err('already-ended');
+  return ok({ ...manifest, catalogue });
 }
 
 /** Records the price table the run's calls were priced with (data-model.md section 3.6). */

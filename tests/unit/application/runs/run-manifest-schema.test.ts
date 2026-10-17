@@ -45,3 +45,18 @@ describe('parseRunManifest context fields', () => {
     });
   });
 });
+
+describe('parseRunManifest catalogue', () => {
+  it('RF-606 keeps the catalogue version and SHA-256 a plan run recorded', () => {
+    const stored = { ...sampleManifest(), catalogue: { version: 1, sha256: 'c'.repeat(64) } };
+
+    expect(parseRunManifest(stored)?.catalogue).toEqual({ version: 1, sha256: 'c'.repeat(64) });
+  });
+
+  it('RNF-004 reads a manifest stored before the catalogue field as a run without a catalogue', () => {
+    const older: Record<string, unknown> = { ...sampleManifest() };
+    delete older['catalogue'];
+
+    expect(parseRunManifest(older)?.catalogue).toBeNull();
+  });
+});

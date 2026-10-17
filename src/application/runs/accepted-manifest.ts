@@ -106,6 +106,7 @@ export function acceptedManifest(accepted: AcceptedRun): RunManifest {
       allowDenied: project.settings.scan.allowDenied,
     },
     priceTable: null,
+    catalogue: null,
     caps: capsOf(project.settings),
     masking: {},
     totals: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, costMicros: 0, calls: 0 },
