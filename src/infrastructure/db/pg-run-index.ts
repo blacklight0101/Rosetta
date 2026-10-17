@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import type { EpochMs } from '../../domain/accounts/user.js';
 import type {
   ProjectRunSummary,
@@ -130,6 +131,10 @@ export class PgRunIndex implements RunIndex {
     failedAreas = 0,
   ): Promise<Run | undefined> {
     return this.change(runId, END, [endState, new Date(at), failedAreas]);
+  }
+
+  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+    return Promise.resolve(undefined);
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

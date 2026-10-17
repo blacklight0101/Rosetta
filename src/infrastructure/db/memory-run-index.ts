@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import type { EpochMs } from '../../domain/accounts/user.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type {
@@ -105,6 +106,10 @@ export class MemoryRunIndex implements RunIndex {
     const run = this.runs.get(runId);
     const ended = run === undefined ? undefined : endRun(run, endState, at, failedAreas);
     return Promise.resolve(this.keep(ended));
+  }
+
+  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+    return Promise.resolve(undefined);
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

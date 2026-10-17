@@ -163,6 +163,11 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
       'This run, project or snapshot is in use by a run that has not ended, so it cannot be deleted.',
     nextStep: 'Stop the run or wait until it ends, then delete it again.',
   },
+  'RST-2307': {
+    message: 'This run cannot be resumed.',
+    nextStep:
+      'Only an understand run that stopped at a cap, failed or was interrupted can be resumed, and only once at a time; start a new run instead.',
+  },
   'RST-2400': {
     message: 'A database migration file has an invalid name or a duplicate number.',
     nextStep: 'Name each file NNNN_snake_name.sql with a number used once, then start again.',

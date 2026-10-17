@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import { err, ok, type Result } from '../errors/result.js';
 import { createCard, type Card, type CardProblem, type ClaimInput } from './card.js';
 import type { CardType, Confidence } from './card-vocabulary.js';
@@ -29,8 +30,14 @@ export function formatCardId(type: CardType, number: number): string {
   return `${type}-${String(number).padStart(3, '0')}`;
 }
 
-/** Gives every draft its id; `tasks` must already be in area order. */
-export function assignCardIds(tasks: readonly TaskCards[]): Result<readonly Card[], CardProblem> {
+/**
+ * Gives every draft its id; `tasks` must already be in area order. Ids continue after the cards
+ * in `after` (a resumed run keeps the ids it already gave, RF-006).
+ */
+export function assignCardIds(
+  tasks: readonly TaskCards[],
+  after: readonly Card[] = [],
+): Result<readonly Card[], CardProblem> {
   const counters = new Map<CardType, number>();
   const cards: Card[] = [];
   for (const task of tasks) {

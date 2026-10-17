@@ -5,9 +5,11 @@ import type { Project } from '../../src/application/projects/project.js';
 import type { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
+import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
+import type { Result } from '../../src/domain/errors/result.js';
 import type { Actor } from '../../src/domain/accounts/actor.js';
 import type { RunEvent } from '../../src/domain/runs/run-event.js';
 import type { RunManifest } from '../../src/domain/runs/run-manifest.js';
@@ -94,6 +96,13 @@ export interface UnderstandHarness {
   understand(start?: UnderstandStart): Promise<Run>;
   /** Writes answers into the project's `answers.md`, as the answers page does. */
   answer(run: Run, answers: readonly AnswerEntry[]): Promise<void>;
+  /**
+   * Resumes an ended run as the Resume button does and waits for its end; the refusal when the
+   * run cannot be resumed.
+   */
+  resume(run: Run): Promise<Result<Run, string>>;
+  /** Saves new project settings, as the settings page does (for example raised caps). */
+  changeSettings(change: (settings: ProjectSettings) => ProjectSettings): Promise<void>;
   /** Stops the running runs, as the Stop button does. */
   stopRunning(): Promise<void>;
   manifestOf(run: Run): Promise<RunManifest>;
@@ -121,6 +130,20 @@ function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
 }
 
 type Starter = (stage: 'scan' | 'understand', extra: UnderstandStart) => Promise<Run>;
+type Resumer = (run: Run) => Promise<Result<Run, string>>;
+
+/** Resumes ended runs as the API does and waits for their end. */
+function resumerOf(s: Stores, queue: RunQueue): Resumer {
+  const resumeRun = new ResumeRun({
+    ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
+  });
+  const ended = waitUntilEnded(s);
+  return async (run) => {
+    const resumed = await resumeRun.execute({ actor: understandActor, runId: run.id });
+    if (!resumed.ok) return resumed;
+    return { ok: true, value: await ended(resumed.value.run) };
+  };
+}
 
 /** Starts runs of the project as the API does and waits for their end. */
 function starterOf(s: Stores, queue: RunQueue, project: Project): Starter {
@@ -155,6 +178,7 @@ interface HarnessParts {
 function harnessOf(parts: HarnessParts): UnderstandHarness {
   const { s, queue, project, providers, dataDir } = parts;
   const start = starterOf(s, queue, project);
+  const resume = resumerOf(s, queue);
   return {
     ...{ project, logger: s.logger, providers, runs: s.runs },
     scan: () => start('scan', {}),
@@ -165,6 +189,16 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
         masker: s.masker,
       }).recordAnswers({ userId: run.userId, projectId: run.projectId }, run.runKey, answers);
       expect(recorded.ok).toBe(true);
+    },
+    resume,
+    async changeSettings(change) {
+      const current = await s.projects.find(account.id, project.id);
+      if (current === undefined) throw new Error('The project vanished');
+      await s.projects.updateSettings({
+        ...{ userId: account.id, projectId: project.id, updatedAt: s.clock.now().getTime() },
+        settings: change(current.settings),
+        expectedVersion: undefined,
+      });
     },
     async stopRunning() {
       for (const run of await s.runs.listRunning()) await queue.stop(run.userId, run.id);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { err, ok, type Result } from '../errors/result.js';
 import type { RunEndState, RunStage } from './run-states.js';
@@ -287,4 +288,16 @@ export function recordManifestPriceTable(
 ): Result<RunManifest, ManifestProblem> {
   if (manifest.endState !== null) return err('already-ended');
   return ok({ ...manifest, priceTable });
+}
+
+/**
+ * RF-006: the manifest of a resumed run: not started and not ended again, with the caps now in
+ * force; everything the run recorded so far stays.
+ */
+// RF-006
+export function reopenManifest(
+  manifest: RunManifest,
+  caps: ManifestCaps,
+): Result<RunManifest, 'not-ended'> {
+  return err('not-ended');
 }

@@ -6,6 +6,7 @@ import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-repor
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
+import { FileTaskResults } from '../../src/infrastructure/cards/file-task-results.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
@@ -115,6 +116,7 @@ function understandExecutor(
     providers: providers.factory,
     runSinks: providers.runSinks,
     cards: new FailingCardOutputs(new FileCardOutputs({ writer, masker, logger }), cardWritesFail),
+    taskResults: new FileTaskResults({ writer, masker }),
     answers: new FileAnswersFile({ writer, masker }),
     ledger: providers.ledger,
     costTotals: new MemoryCostTotals(),

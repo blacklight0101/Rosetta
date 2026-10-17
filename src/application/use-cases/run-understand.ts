@@ -17,6 +17,7 @@ import type { PriorCards } from '../ports/prior-cards.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderSetFactory, ProviderSinks } from '../ports/provider-set-factory.js';
 import type { RunScope } from '../ports/run-events.js';
+import type { TaskResults } from '../ports/task-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
@@ -58,6 +59,7 @@ export interface RunUnderstandDependencies {
   readonly runSinks: (scope: RunScope) => Pick<ProviderSinks, 'recorder' | 'egressLog'>;
   readonly manifests: RunManifestStore;
   readonly cards: CardOutputs;
+  readonly taskResults: TaskResults;
   readonly answers: AnswersFile;
   readonly ledger: Pick<CostLedger, 'runEntries'>;
   /** RF-1010: the project totals the run's usage events start from. */

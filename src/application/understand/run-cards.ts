@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import type { Card } from '../../domain/cards/card.js';
 import { assignCardIds, type CardDraft, type TaskCards } from '../../domain/cards/card-ids.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
@@ -19,12 +20,19 @@ export interface TaskEnd {
   readonly withoutCards: boolean;
 }
 
+/** What a resumed run keeps of the tasks that finished before (RF-006). */
+export interface KeptCards {
+  readonly cards: readonly Card[];
+  /** The areas of kept tasks that ended `Done` without a card. */
+  readonly areasWithoutCards: readonly string[];
+}
+
 export class RunCards {
   private readonly tasks: readonly ReaderTask[];
   private readonly ended = new Map<string, TaskEnd>();
   private settled = 0;
 
-  constructor(tasks: readonly ReaderTask[]) {
+  constructor(tasks: readonly ReaderTask[], kept?: KeptCards) {
     this.tasks = tasks;
   }
 

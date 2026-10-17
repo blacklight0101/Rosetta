@@ -7,6 +7,7 @@ import type { ArchivePart } from '../../application/ports/archive-writer.js';
 import type { ExportZip } from '../../application/use-cases/export-zip.js';
 import type { GetRun } from '../../application/use-cases/get-run.js';
 import type { StartRun } from '../../application/use-cases/start-run.js';
+import type { ResumeRun } from '../../application/use-cases/resume-run.js';
 import type { StopRun } from '../../application/use-cases/stop-run.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -44,6 +45,7 @@ export interface RunServices
   readonly estimateRun: EstimateRun;
   readonly getRun: GetRun;
   readonly stopRun: StopRun;
+  readonly resumeRun: ResumeRun;
   readonly exportZip: ExportZip;
 }
 

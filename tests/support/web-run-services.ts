@@ -22,6 +22,7 @@ import { DeleteSnapshot } from '../../src/application/use-cases/delete-snapshot.
 import { ListProjectOverview } from '../../src/application/use-cases/list-project-overview.js';
 import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
+import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
@@ -137,6 +138,9 @@ export function runServices(
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
+    resumeRun: new ResumeRun({
+      ...{ projects, runs: runs.runs, manifests: runs.manifests, queue: runs.queue, clock },
+    }),
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),
     buildReport: new BuildReport({
