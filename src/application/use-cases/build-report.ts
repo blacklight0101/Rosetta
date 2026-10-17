@@ -13,7 +13,8 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { RunTextFiles } from '../ports/run-text-files.js';
-import { buildReportModel } from '../report/build-report-model.js';
+import { buildReportModel, type ReportInputs } from '../report/build-report-model.js';
+import { parseCostReport, parseCoverage, projectTotalsOf } from '../report/report-extras.js';
 import type { ReportArea, ReportDocuments } from '../report/report-model.js';
 import { scopeOf } from '../runs/run-scope.js';
 
@@ -72,13 +73,30 @@ export class BuildReport {
       overviewFile: await this.deps.files.read(scope, 'overview.json'),
       documents: await this.documentsOf(scope),
       areas: await this.areasOf(run),
-      generatedAt: this.deps.clock.now().toISOString(),
-      coverage: null,
-      cost: null,
-      projectTotals: null,
-      questions: [],
+      ...(await this.figuresOf(run, scope)),
     });
     return ok({ files: await writer.write(scope, model) });
+  }
+
+  /** RF-500, RF-1010: the figures of the dashboard, the questions and the cost page. */
+  private async figuresOf(
+    run: Run,
+    scope: RunScope,
+  ): Promise<
+    Pick<ReportInputs, 'generatedAt' | 'coverage' | 'cost' | 'projectTotals' | 'questions'>
+  > {
+    const { files, answers, costs, clock } = this.deps;
+    const questions = await answers.questionsOf(
+      { userId: run.userId, projectId: run.projectId },
+      run.runKey,
+    );
+    return {
+      generatedAt: clock.now().toISOString(),
+      coverage: parseCoverage(await files.read(scope, 'coverage.json')),
+      cost: parseCostReport(await files.read(scope, 'cost.json')),
+      projectTotals: projectTotalsOf(await costs.projectGroups(run.userId, run.projectId)),
+      questions,
+    };
   }
 
   /** RF-112: the areas of the run's own scan, or of the newest completed scan of its project. */
