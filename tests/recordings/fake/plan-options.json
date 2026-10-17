@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-608, RF-609: the planner answers with two architecture styles (layered recommended, modular monolith) citing verified cards of the webforms shop, and two options for each of the seven stack layers, fenced as models usually do. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Here are the options.\n```json\n{\n  \"architecture\": {\n    \"recommended\": \"layered\",\n    \"options\": [\n      {\n        \"style\": \"layered\",\n        \"strengths\": [\n          \"The pages read the database directly, so the layers map one to one onto the code that exists.\",\n          \"A small team can follow it without new concepts.\"\n        ],\n        \"costs\": [\n          \"Business rules stay close to the pages unless the team keeps the rule layer clean.\"\n        ],\n        \"evidence\": [\n          \"FEAT-001\",\n          \"BR-001\",\n          \"INT-001\"\n        ]\n      },\n      {\n        \"style\": \"modular-monolith\",\n        \"strengths\": [\n          \"The catalog and its rules can become one module with a clear edge.\"\n        ],\n        \"costs\": [\n          \"Needs module boundaries the legacy code does not have yet.\",\n          \"More up-front design than a plain layered split.\"\n        ],\n        \"evidence\": [\n          \"ENT-001\",\n          \"BR-001\"\n        ]\n      }\n    ]\n  },\n  \"stack\": [\n    {\n      \"layer\": \"language-runtime\",\n      \"options\": [\n        \".NET 8 with C#\",\n        \"TypeScript on Node.js 22\"\n      ]\n    },\n    {\n      \"layer\": \"backend-framework\",\n      \"options\": [\n        \"ASP.NET Core Razor Pages\",\n        \"Fastify\"\n      ]\n    },\n    {\n      \"layer\": \"front-end\",\n      \"options\": [\n        \"Razor views with htmx\",\n        \"React with Vite\"\n      ]\n    },\n    {\n      \"layer\": \"database\",\n      \"options\": [\n        \"SQL Server 2022\",\n        \"PostgreSQL 17\"\n      ]\n    },\n    {\n      \"layer\": \"data-access\",\n      \"options\": [\n        \"Dapper with parameterised SQL\",\n        \"Entity Framework Core\"\n      ]\n    },\n    {\n      \"layer\": \"testing\",\n      \"options\": [\n        \"xUnit with Testcontainers\",\n        \"Vitest\"\n      ]\n    },\n    {\n      \"layer\": \"hosting\",\n      \"options\": [\n        \"Docker image on a container host\",\n        \"IIS on Windows Server\"\n      ]\n    }\n  ]\n}\n```\n",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 3200,
+              "outputTokens": 900,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-plan-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
