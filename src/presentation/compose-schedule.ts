@@ -2,6 +2,7 @@ import {
   auditRetentionJob,
   type AuditRetentionDeps,
 } from '../application/audit/audit-retention-job.js';
+import type { FolderSweepDeps } from '../application/projects/folder-sweep.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ScheduledJob, Scheduler } from '../application/ports/scheduler.js';
@@ -80,6 +81,15 @@ export function refusalCountTask(refusals: { flushEnded(): Promise<void> }): Sch
 /** RF-1109, DEC-132: audit rows older than 365 days are deleted at start-up and every 24 hours. */
 export function auditRetentionTask(deps: AuditRetentionDeps): ScheduledTask {
   return { intervalMs: dayMs, runAtStart: true, job: auditRetentionJob(deps) };
+}
+
+/** P1-152: the sweep of folders without rows (stub until the sweep is wired). */
+export function folderSweepTask(deps: FolderSweepDeps): ScheduledTask {
+  return {
+    intervalMs: dayMs,
+    runAtStart: true,
+    job: () => Promise.resolve(deps.clock.now().getTime()).then(() => undefined),
+  };
 }
 
 /**
