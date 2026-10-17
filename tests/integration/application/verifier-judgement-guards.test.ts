@@ -64,7 +64,9 @@ describe('verifier judgement guards', () => {
       reason: 'The verifier call failed (RST-1505).',
     });
   });
+});
 
+describe('verifier judgement guards: stops', () => {
   it('RF-301 a call the run stopped gives no verdict, and the claim keeps its status', async () => {
     const h = await verifierHarness({ recording: recordingOf(supportedAnswer) });
     h.abort();
@@ -87,6 +89,26 @@ describe('verifier judgement guards', () => {
     });
 
     expect(await judgeClaim(h.parts, detailsClaim, span)).toEqual({ kind: 'stopped' });
+  });
+
+  it('RF-301 a cancelled call gives no verdict, and so does any failure once the run is stopped', async () => {
+    const cancelled = new RosettaError(ERROR_CODES.providerCallCancelled);
+    const h = await verifierHarness({
+      recording: recordingOf(supportedAnswer),
+      provider: () => ({ complete: () => Promise.reject(cancelled) }),
+    });
+    const late = await verifierHarness({
+      recording: recordingOf(supportedAnswer),
+      provider: () => ({
+        complete: () => {
+          late.abort();
+          return Promise.reject(new RosettaError(ERROR_CODES.providerCallFailed));
+        },
+      }),
+    });
+
+    expect(await judgeClaim(h.parts, detailsClaim, span)).toEqual({ kind: 'stopped' });
+    expect(await judgeClaim(late.parts, detailsClaim, span)).toEqual({ kind: 'stopped' });
   });
 });
 
