@@ -142,6 +142,11 @@ const projectRows: Rows = {
     { method: 'GET', url: runUrl('/events', (c) => c.endedRunId), expected: ownerOnly(200) },
     { method: 'GET', url: () => '/api/runs/not-a-uuid/events', expected: active(401, 404) },
   ],
+  // RF-006: the seeded ended run completed, so its owner is told it cannot be resumed (409).
+  'POST /api/runs/:runId/resume': [
+    { method: 'POST', url: runUrl('/resume', (c) => c.endedRunId), expected: ownerOnly(409) },
+    { method: 'POST', url: () => '/api/runs/not-a-uuid/resume', expected: active(401, 404) },
+  ],
   'POST /api/runs/:runId/stop': [
     { method: 'POST', url: runUrl('/stop', (c) => c.runningRunId), expected: ownerOnly(202) },
     { method: 'POST', url: () => '/api/runs/not-a-uuid/stop', expected: active(401, 404) },

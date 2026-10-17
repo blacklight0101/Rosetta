@@ -108,6 +108,17 @@ const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
     nextStep:
       'Choose areas from the list the run log names, or start the run without areas to read every area.',
   },
+  'RST-1308': {
+    message:
+      'The code map of the latest scan is not the one this run read, so it cannot be resumed.',
+    nextStep:
+      'Start a new understand run on the latest scan; the cards of this run stay as they are.',
+  },
+  'RST-1309': {
+    message: 'The results of the finished agent tasks of this run could not be read.',
+    nextStep:
+      'Start a new understand run; the cards already written in the run folder stay as they are.',
+  },
   'RST-1500': {
     message: 'The fake provider runs only in automated tests.',
     nextStep:

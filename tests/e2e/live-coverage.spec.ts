@@ -129,7 +129,7 @@ test('RF-1005 RF-1002 Pause updates freezes the coverage map while read_file eve
   expect(await map.innerHTML()).toBe(frozen.map);
   expect(await readShare(page, '(root)').getAttribute('aria-valuenow')).toBe(frozen.share);
 
-  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
 
   await expect(services.getByText('CatalogService.cs', { exact: true })).toBeVisible({
     timeout: 30_000,

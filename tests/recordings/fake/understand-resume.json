@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "An understand run on the Catalog and Services areas whose first task reports a large usage, so the next call passes a run token cap of 205000; after the cap is raised the Services task answers a card. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Details page shows a fixed name\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page sets the name label.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The name label is set to the text Item when the page loads.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 200000,
+              "outputTokens": 300,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Stock goes down by one per update\",\n      \"area\": \"Services\",\n      \"summary\": \"The catalog service lowers the stock of an item by one.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"An update statement subtracts one from the stock of the item with the given id.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:12-12\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 200,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

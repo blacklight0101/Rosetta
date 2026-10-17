@@ -7,7 +7,7 @@ import type {
   SnapshotUsage,
 } from '../../application/ports/run-index.js';
 import { inQueueOrder } from '../../domain/runs/queue-rules.js';
-import { endRun, startRun, type Run, type RunTotals } from '../../domain/runs/run.js';
+import { endRun, reopenRun, startRun, type Run, type RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 
 // Architecture section 7, RF-1108, RF-1105: the run rows in memory, for unit tests. Passes the
@@ -105,6 +105,12 @@ export class MemoryRunIndex implements RunIndex {
     const run = this.runs.get(runId);
     const ended = run === undefined ? undefined : endRun(run, endState, at, failedAreas);
     return Promise.resolve(this.keep(ended));
+  }
+
+  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+    const run = this.runs.get(runId);
+    const owned = run?.userId === userId ? run : undefined;
+    return Promise.resolve(this.keep(owned === undefined ? undefined : reopenRun(owned, at)));
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

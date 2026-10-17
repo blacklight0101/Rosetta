@@ -11,10 +11,14 @@ import { consolidationParts } from '../consolidate/consolidation-parts.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
+import type { TaskResult, TaskResults } from '../ports/task-results.js';
+import { isCapStop } from '../../domain/budget/cap-stop.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
+import { leaveUnverified } from '../verifier/leave-unverified.js';
+import { announceCards } from './announce-cards.js';
 import { areaFailureOf } from './area-failure.js';
 import { markAnswered, type Rerun } from './answer-rerun.js';
 import { openQuestionOf } from './open-question.js';
@@ -24,27 +28,34 @@ import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
 import { cardsOf, RunCards } from './run-cards.js';
 import { RunCoverage, TaskReads } from './run-coverage.js';
+import { TaskLog } from './task-log.js';
 import { runPool } from './task-pool.js';
+import { taskResultOf } from './task-result-of.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
 // RF-200, RF-202, RF-203, RF-230, RF-300, RF-1002, DEC-98, RNF-002: the reader tasks of one understand run
 // and what they leave. Every task that ends adds its cards; the cards of the run so far are then
 // given their ids, pass the citation check and are written, so a run that stops keeps the cards of
 // the tasks that ended (partial cards). An area whose task answered no card is named in `spec.md`
-// and logged; the coverage of the ended tasks' areas is written with them (RF-230). When every task
-// has ended (or the run stopped) the open questions are added to the project's `answers.md`,
-// keeping the answers already there.
+// and logged; the coverage of the ended tasks' areas is written with them (RF-230). When every task has
+// ended (or the run stopped) the open questions are added to the project's `answers.md`.
 
 interface UnderstandSessionDependencies {
   readonly cards: CardOutputs;
   readonly answers: AnswersFile;
   readonly clock: Clock;
+  /** RF-006: what each ended task left, for a resume. */
+  readonly taskResults: TaskResults;
 }
 
 export interface UnderstandSessionParts extends ReaderTaskContext {
   readonly rerun?: Rerun;
   readonly deps: UnderstandSessionDependencies;
+  /** The tasks this session runs. */
   readonly tasks: readonly ReaderTask[];
+  /** RF-006: every task of the run in area order, and the results of those a resume keeps. */
+  readonly allTasks: readonly ReaderTask[];
+  readonly kept: readonly TaskResult[];
   readonly source: CardSource;
   /** RF-250: the role that merges the duplicate cards of several areas, and its prompt. */
   readonly summariser: RoleProvider;
@@ -72,13 +83,21 @@ export class UnderstandSession {
   private readonly cards: RunCards;
   private readonly coverage: RunCoverage;
   private readonly ends = new Map<string, TaskOutcome>();
-  private latest: CheckedCards = { cards: [], checks: [] };
+  private readonly log: TaskLog;
+  private latest: CheckedCards;
   private outputFailure: ErrorCode | undefined;
 
   constructor(parts: UnderstandSessionParts) {
     this.parts = parts;
-    this.cards = new RunCards(parts.tasks);
-    this.coverage = new RunCoverage(parts.tasks);
+    this.log = new TaskLog(parts.logger, parts.execution.run.runKey);
+    const kept = parts.kept;
+    this.cards = new RunCards(parts.tasks, {
+      cards: kept.flatMap((result) => result.cards),
+      areasWithoutCards: kept.filter((result) => result.withoutCards).map((result) => result.area),
+    });
+    this.coverage = new RunCoverage(parts.allTasks);
+    for (const result of kept) this.coverage.restore(result.agentTaskId, result.coverage);
+    this.latest = { cards: kept.flatMap((result) => result.cards), checks: [] };
   }
 
   /** Lists every task as `Planned` and publishes the plan (RF-200, RF-1002). */
@@ -104,7 +123,7 @@ export class UnderstandSession {
       const reads = new TaskReads();
       const outcome = await runReaderTaskWithRetry(this.parts, task, reads).catch(
         async (error: unknown) => {
-          await this.logFailure(task, error);
+          await this.log.failure(task, error);
           return failedOutcome(error);
         },
       );
@@ -112,7 +131,7 @@ export class UnderstandSession {
       this.coverage.record(task, this.parts.scanned.codeMap, { reads, failure });
       await this.ended(task, outcome).catch(async (error: unknown) => {
         // RNF-002: an output that cannot be written fails the run, never the other tasks.
-        await this.logFailure(task, error);
+        await this.log.failure(task, error);
         this.outputFailure ??= failedOutcome(error).code;
       });
     });
@@ -126,6 +145,7 @@ export class UnderstandSession {
   // RF-203, DEC-98, RF-250
   async finish(): Promise<void> {
     await this.announce(true);
+    await this.leaveUnjudged();
     await this.addQuestions();
     await this.consolidate();
     await this.markAnswered();
@@ -185,7 +205,8 @@ export class UnderstandSession {
     }
     const failed = ends.filter((end) => areaFailureOf(end) !== undefined);
     if (failed.length === 0) return { endState: 'Completed' };
-    if (!ends.every((end) => end.state === 'Failed')) {
+    // RF-006: a resume that kept finished tasks did not fail as a whole.
+    if (this.parts.kept.length > 0 || !ends.every((end) => end.state === 'Failed')) {
       return { endState: 'Completed', failedAreas: failed.length };
     }
     const code = ends.find((end) => end.code !== undefined)?.code;
@@ -198,28 +219,60 @@ export class UnderstandSession {
     const { agentTaskId } = task;
     if (outcome.rawOutputs.length > 0) await this.keepInvalid(task, outcome.rawOutputs);
     if (outcome.state === 'Done' && outcome.problems.length > 0)
-      await this.logDropped(task, outcome);
+      await this.log.dropped(task, outcome.problems);
     const withoutCards = outcome.state === 'Done' && outcome.drafts.length === 0;
-    if (withoutCards) await this.logWithoutCards(task);
+    if (withoutCards) await this.log.withoutCards(task);
     this.ends.set(agentTaskId, outcome);
     this.cards.record({ agentTaskId, drafts: outcome.drafts, withoutCards });
     await this.writeCards();
     await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas());
+    await this.persist();
     const progress = { state: outcome.state, turns: outcome.turns, cards: outcome.drafts.length };
     await recordTaskState(this.parts, task, progress);
     await execution.events.emit('agent.ended', progress, agentTaskId);
     await this.announce(false);
   }
 
+  /**
+   * RF-304: a cap (the run's or a role's) stopped the reading, so the claims not yet judged are left `Unverified` in the cards
+   * and in the results a resume reads; a stop by the user or a failure leaves them as they are.
+   */
+  private async leaveUnjudged(): Promise<void> {
+    const { execution, deps } = this.parts;
+    const runCap = execution.signal.aborted && isCapStop(execution.signal.reason);
+    const roleCap = [...this.ends.values()].some((end) => end.state === 'StoppedByCap');
+    if (!runCap && !roleCap) return;
+    const cards = leaveUnverified(this.latest.cards, deps.clock.now().toISOString());
+    this.latest = { ...this.latest, cards };
+    await this.writeSet(cards);
+    await this.persist();
+  }
+
+  /** RF-006: what the tasks that ended, here or earlier, left; a resume reads it back. */
+  private async persist(): Promise<void> {
+    const { allTasks, deps, execution, kept } = this.parts;
+    const results = allTasks.flatMap((task) => {
+      const earlier = kept.find((result) => result.agentTaskId === task.agentTaskId);
+      const known = { earlier, end: this.ends.get(task.agentTaskId), cards: this.latest.cards };
+      return taskResultOf(task, { ...known, coverage: this.coverage.of(task.agentTaskId) }) ?? [];
+    });
+    await deps.taskResults.write(scopeOf(execution.run), results);
+  }
+
   /** Writes the cards of every ended task (RF-203, P1-33: partial cards survive a stop). */
   private async writeCards(): Promise<void> {
-    const { deps, execution, scanned, source } = this.parts;
+    const { deps, scanned } = this.parts;
     const checked = this.cards.checked(scanned.codeMap, deps.clock.now().toISOString());
     this.latest = checked;
+    await this.writeSet(checked.cards);
+  }
+
+  private async writeSet(cards: readonly Card[]): Promise<void> {
+    const { deps, execution, source } = this.parts;
     const areasWithoutCards = this.cards.areasWithoutCards();
     await deps.cards.writeCards(scopeOf(execution.run), {
-      ...{ cards: checked.cards, source, areasWithoutCards },
-      ...this.changesOf(checked.cards),
+      ...{ cards, source, areasWithoutCards },
+      ...this.changesOf(cards),
     });
   }
 
@@ -231,70 +284,13 @@ export class UnderstandSession {
 
   /** Publishes the cards whose ids are final, with the citation check of each claim (RF-1002). */
   private async announce(final: boolean): Promise<void> {
-    const { events } = this.parts.execution;
     const settled = this.cards.takeSettled(final);
-    for (const card of cardsOf(this.latest.cards, settled)) {
-      const { id: cardId, type, title, agentTaskId } = card;
-      const claims = card.claims.length;
-      await events.emit('agent.card.proposed', { cardId, type, title, claims }, agentTaskId);
-      for (const claim of card.claims) {
-        const check = this.latest.checks.find((each) => each.claimId === claim.claimId);
-        if (check === undefined) continue;
-        const reason = check.reason === undefined ? {} : { reason: check.reason };
-        // RF-1004: the text and cited lines let the live page list the claim without a card read.
-        const shown = {
-          text: claim.text,
-          citations: claim.citations.map(({ path, startLine, endLine }) => ({
-            path,
-            startLine,
-            endLine,
-          })),
-        };
-        await events.emit(
-          'verify.citation.checked',
-          { claimId: claim.claimId, ok: check.ok, ...reason, ...shown },
-          agentTaskId,
-        );
-      }
-    }
+    const cards = cardsOf(this.latest.cards, settled);
+    await announceCards(this.parts.execution.events, this.latest, cards);
   }
 
   private async keepInvalid(task: ReaderTask, rawOutputs: readonly string[]): Promise<void> {
     const { deps, execution } = this.parts;
     await deps.cards.writeInvalidOutput(scopeOf(execution.run), task.agentTaskId, rawOutputs);
-  }
-
-  /** RF-208: what was dropped from the answers of a task that still gave cards. */
-  private logDropped(task: ReaderTask, outcome: TaskOutcome): Promise<void> {
-    const listed = outcome.problems.map(({ path, message }) => `${path || '(answer)'}: ${message}`);
-    return this.parts.logger.log({
-      level: 'warn',
-      logger: 'understand',
-      message: `The reader of area "${task.area.name}" gave cards, but some claims or cards were dropped: ${listed.join(' | ')}`,
-      runId: this.parts.execution.run.runKey,
-      agentTaskId: task.agentTaskId,
-    });
-  }
-
-  private logWithoutCards(task: ReaderTask): Promise<void> {
-    return this.parts.logger.log({
-      level: 'warn',
-      logger: 'understand',
-      message: `The reader of area "${task.area.name}" ended with no card; check its transcript.`,
-      runId: this.parts.execution.run.runKey,
-      agentTaskId: task.agentTaskId,
-    });
-  }
-
-  private logFailure(task: ReaderTask, error: unknown): Promise<void> {
-    const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
-    return this.parts.logger.log({
-      level: 'error',
-      logger: 'understand',
-      message: `The reader task of area "${task.area.name}" failed: ${String(error)}`,
-      code,
-      runId: this.parts.execution.run.runKey,
-      agentTaskId: task.agentTaskId,
-    });
   }
 }

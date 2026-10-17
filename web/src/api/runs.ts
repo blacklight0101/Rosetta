@@ -64,6 +64,17 @@ export async function cancelRun(client: ApiClient, runId: string): Promise<ApiRe
   return result.ok ? { ok: true, value: undefined } : result;
 }
 
+/** Queues a run that stopped at a cap, failed or was interrupted again, as the same run (RF-006). */
+// RF-006
+export async function resumeRun(client: ApiClient, runId: string): Promise<ApiResult<undefined>> {
+  const result = await client.request({
+    method: 'POST',
+    path: `/api/runs/${encodeURIComponent(runId)}/resume`,
+    schema: z.looseObject({ id: z.string() }),
+  });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
 /** One run of the signed-in user by its id (the UUID); another user's run answers 404 (RF-1105). */
 // RF-1002
 export function getRun(
