@@ -56,17 +56,17 @@ function spendContract(name: string, fresh: Fresh): void {
     });
   });
 
-  it(`RF-423 ${name} lets exactly one of simultaneous calls of one role through when there is room for one`, async () => {
+  it(`RF-423 ${name} lets exactly three of forty-eight simultaneous calls of one role through when there is room for three`, async () => {
     const { ledger, ids } = await setUp(fresh);
-    const racers = Array.from({ length: 8 }, () =>
+    const racers = Array.from({ length: 48 }, () =>
       reservationOf(ids, { keySource: 'user', ...worst(600n) }),
     );
 
     const results = await Promise.all(
-      racers.map((reservation) => reserveAt(ledger, reservation, roleCost(1_000n))),
+      racers.map((reservation) => reserveAt(ledger, reservation, roleCost(1_800n))),
     );
 
-    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(results.filter((result) => result.ok)).toHaveLength(3);
   });
 }
 

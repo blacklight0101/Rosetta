@@ -37,7 +37,7 @@ function type(label: string, value: string): void {
 }
 
 const costNotice =
-  'Reader cost cap of $1 is above the run cost cap of $0.50, so the run cap always stops first.';
+  'Reader cost cap of $1.00 is above the run cost cap of $0.50, so the run cap always stops first.';
 const tokenNotice =
   'Reader token cap of 3,000,000 is above the run token cap of 2,000,000, so the run cap always stops first.';
 
@@ -72,7 +72,39 @@ it('RF-423 the notice follows the run cap as it is typed', async () => {
   type('Run cost cap (USD)', '0.25');
   expect(
     screen.getByText(
-      'Reader cost cap of $1 is above the run cost cap of $0.25, so the run cap always stops first.',
+      'Reader cost cap of $1.00 is above the run cost cap of $0.25, so the run cap always stops first.',
+    ),
+  ).not.toBeNull();
+});
+
+// RF-423, P2-26: a token cap equal to the run cap is not above it, so no notice.
+it('RF-423 a role token cap equal to the run token cap shows no notice', async () => {
+  renderWith({ reader: { maxTokens: 2_000_000 } });
+  await loaded();
+
+  expect(screen.queryByText(/always stops first/u)).toBeNull();
+});
+
+// RF-423, P2-26: a negative run cap gives no role notices at all (never "$-1").
+it('RF-423 a negative run cost cap shows no role notice', async () => {
+  renderWith({ reader: { maxCostMicros: 1_000_000 } });
+  await loaded();
+
+  type('Run cost cap (USD)', '-1');
+
+  expect(screen.queryByText(/always stops first/u)).toBeNull();
+});
+
+// RF-423, P2-26: both sides of the notice are written at the same precision.
+it('RF-423 a cost cap a fraction of a cent above the run cap names both sides in the same form', async () => {
+  renderWith({ reader: { maxCostMicros: 1_004_000 } });
+  await loaded();
+
+  type('Run cost cap (USD)', '1');
+
+  expect(
+    screen.getByText(
+      'Reader cost cap of $1.004 is above the run cost cap of $1.00, so the run cap always stops first.',
     ),
   ).not.toBeNull();
 });
