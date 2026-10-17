@@ -73,7 +73,7 @@ describe('the evaluation runner with the fake provider', () => {
       expect(experiment.value.roles['verifier']).toMatchObject({ model: 'judge-model' });
       expect(Object.keys(experiment.value.promptVersions)).toEqual(
         expect.arrayContaining([
-          'reader/area.v2.md',
+          'reader/task.v2.md',
           'verifier/claim.v1.md',
           'verifier/retry.v1.md',
         ]),

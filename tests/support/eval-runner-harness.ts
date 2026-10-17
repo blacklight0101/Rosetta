@@ -18,6 +18,7 @@ import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pa
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
 import type { EvaluationParts } from '../../src/presentation/eval/compose-evaluation.js';
 import { budgetTable } from './budget-harness.js';
+import { fakeResponse } from './fake-recordings.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { fixtureRoot } from './scan-harness.js';
@@ -33,19 +34,44 @@ export const evalFixtures = fileURLToPath(new URL('../fixtures/eval/', import.me
 
 const recordings = join('tests', 'recordings', 'fake');
 
-/** The verifier's calls go to their own fake; every other role to the reader's. */
+/** The summariser's answer to a group of duplicate candidates (RF-250): no merge. */
+const noMerge: Recording['calls'][number] = {
+  attempts: [
+    {
+      response: fakeResponse({
+        text: ['```json', '{"merges": []}', '```'].join('\n'),
+        toolCalls: [],
+        usage: {
+          inputTokens: 100,
+          outputTokens: 10,
+          cachedInputTokens: 0,
+          usageSource: 'reported',
+        },
+        finishReason: 'stop',
+      }),
+    },
+  ],
+};
+
+/** The verifier's and the summariser's calls go to fakes of their own, so the reader keeps its order. */
 class RoleRecordings implements LlmProvider {
   private readonly reader: FakeProvider;
   private readonly verifier: FakeProvider;
+  private readonly summariser: FakeProvider;
 
   constructor(reader: Recording, verifier: Recording) {
     this.reader = new FakeProvider({ testMode: true, recording: reader });
     this.verifier = new FakeProvider({ testMode: true, recording: verifier });
+    const calls = Array.from({ length: 30 }, () => noMerge);
+    const merges: Recording = { schemaVersion: 1, description: 'no merge', calls };
+    this.summariser = new FakeProvider({ testMode: true, recording: merges });
   }
 
   complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
-    const fake = request.context.role === 'verifier' ? this.verifier : this.reader;
-    return fake.complete(request, observer);
+    const { role } = request.context;
+    if (role === 'verifier') return this.verifier.complete(request, observer);
+    if (role === 'summariser') return this.summariser.complete(request, observer);
+    return this.reader.complete(request, observer);
   }
 }
 
