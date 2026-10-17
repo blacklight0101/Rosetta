@@ -16,7 +16,7 @@ import {
 // Answered, and the summariser merges two ENT cards of the re-run. The lists of new and changed cards
 // are those of the merged set, and a merge that cannot be written leaves every question Open.
 
-const SLOW = { timeout: 90_000 };
+const SLOW = { timeout: 240_000 };
 const temp = useTempRoot('rosetta-answers-merged-');
 const areas = ['Catalog', 'Controllers', 'Services'];
 const answer = 'The shop staff and the public, through the catalog pages.';

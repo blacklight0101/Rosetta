@@ -68,6 +68,20 @@ describe('GET /api/projects/:id/answered-questions', () => {
     expect(response.json()).toEqual({ count: 1 });
   });
 
+  it('RF-241 counts a merged question while any card behind it is Open', async () => {
+    const { test, ref, amy, project } = await setup();
+    seedQuestionCards(test.answerFiles, ref, runKey, [
+      { id: 'OQ-001', area: 'Catalog', state: 'Answered', question: 'Is stock shown?' },
+      { id: 'OQ-002', area: 'Orders', state: 'Open', question: 'is stock shown' },
+      { id: 'OQ-003', area: 'Orders', state: 'Answered' },
+    ]);
+    await test.answers.recordAnswers(ref, runKey, [{ cardId: 'OQ-001', answer: 'Yes.' }]);
+
+    const response = await amy.request({ method: 'GET', url: urlOf(project.id) });
+
+    expect(response.json()).toEqual({ count: 1 });
+  });
+
   it("RF-1105 answers 404 for another user's project, like an unknown one", async () => {
     const { bob, project } = await setup();
 

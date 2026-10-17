@@ -51,6 +51,38 @@ describe('the cards behind a question merged in answers.md', () => {
   });
 });
 
+describe('a merged question whose first card is Answered', () => {
+  it('RF-241 RF-243 still reads the area of a card behind it that is Open', async () => {
+    const plan = await planRerun(
+      deps([
+        card('OQ-001', 'Catalog', 'Who uses the catalog pages?', 'Answered'),
+        card('OQ-002', 'Controllers', 'who uses the catalog pages'),
+      ]),
+      project,
+      ['Catalog', 'Controllers'],
+    );
+
+    expect(plan.pending.map((each) => [each.cardId, each.area])).toEqual([
+      ['OQ-002', 'Controllers'],
+    ]);
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it('RF-241 skips it as already Answered only when every card behind it is', async () => {
+    const plan = await planRerun(
+      deps([
+        card('OQ-001', 'Catalog', 'Who uses the catalog pages?', 'Answered'),
+        card('OQ-002', 'Controllers', 'who uses the catalog pages', 'Answered'),
+      ]),
+      project,
+      ['Catalog', 'Controllers'],
+    );
+
+    expect(plan.pending).toEqual([]);
+    expect(plan.skipped).toEqual([{ cardId: 'OQ-001', runKey, reason: 'already-answered' }]);
+  });
+});
+
 describe('two sections of one run for the same question', () => {
   it('RF-241 RF-243 uses each card once, with the first answer', async () => {
     const plan = await planRerun(

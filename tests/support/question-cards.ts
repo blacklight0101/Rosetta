@@ -9,6 +9,8 @@ export interface SeededQuestionCard {
   readonly area: string;
   readonly state: 'Open' | 'Answered';
   readonly title?: string;
+  /** The question asked; cards with the same question are one section of answers.md. */
+  readonly question?: string;
 }
 
 function cardText(card: SeededQuestionCard): string {
@@ -22,6 +24,7 @@ function cardText(card: SeededQuestionCard): string {
     'claims:',
     `  - claimId: "${card.id}.c1"`,
     '    text: "The page shows what the list returns."',
+    ...(card.question === undefined ? [] : [`question: "${card.question}"`]),
     `questionState: "${card.state}"`,
     '---',
     '',

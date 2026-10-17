@@ -52,6 +52,20 @@ describe('the state of the questions of a run', () => {
       ],
     });
   });
+});
+
+describe('the state of a merged question and of the answers saved', () => {
+  it('RF-1007 RF-241 shows a merged question as Open while a card behind it is Open', async () => {
+    const { test, ref, run, amy, url } = await setup();
+    seedQuestionCards(test.answerFiles, ref, run.runKey, [
+      { id: 'OQ-001', area: 'Catalog', state: 'Answered', question: 'Is stock shown?' },
+      { id: 'OQ-002', area: 'Orders', state: 'Open', question: 'is stock shown' },
+    ]);
+
+    const response = await amy.request({ method: 'GET', url });
+
+    expect(response.json()).toMatchObject({ questions: [{ cardId: 'OQ-001', state: 'Open' }, {}] });
+  });
 
   it('RF-1007 shows a question whose card file is gone as Open', async () => {
     const { amy, url } = await setup();
