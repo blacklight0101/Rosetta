@@ -31,20 +31,20 @@ test('RF-002 a settings save made from an older version is refused with RST-1007
   await expect(page.getByRole('heading', { name: 'Project settings', level: 1 })).toBeVisible();
   const second = await context.newPage();
   await second.goto(page.url());
-  await expect(second.getByLabel('Parallel readers')).toHaveValue('1');
+  await expect(second.getByLabel('Parallel readers', { exact: true })).toHaveValue('1');
 
-  await page.getByLabel('Parallel readers').fill('2');
+  await page.getByLabel('Parallel readers', { exact: true }).fill('2');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
-  await second.getByLabel('Parallel readers').fill('3');
+  await second.getByLabel('Parallel readers', { exact: true }).fill('3');
   await second.getByRole('button', { name: 'Save settings' }).click();
 
   await expect(second.getByRole('alert')).toContainText('RST-1007');
   await expect(second.getByText('Settings saved.')).toHaveCount(0);
   await expectNoSeriousViolations(second);
   await second.reload();
-  await expect(second.getByLabel('Parallel readers')).toHaveValue('2');
-  await second.getByLabel('Parallel readers').fill('1');
+  await expect(second.getByLabel('Parallel readers', { exact: true })).toHaveValue('2');
+  await second.getByLabel('Parallel readers', { exact: true }).fill('1');
   await second.getByRole('button', { name: 'Save settings' }).click();
   await expect(second.getByText('Settings saved.')).toBeVisible();
   await second.close();

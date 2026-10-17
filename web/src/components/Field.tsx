@@ -22,7 +22,7 @@ interface FieldBase {
   readonly help?: string | undefined;
   readonly error?: FieldError | undefined;
   /** The id of other text that describes the control, for example a rule checklist. */
-  readonly describedBy?: string;
+  readonly describedBy?: string | undefined;
   readonly disabled?: boolean;
   /**
    * False when the page moves focus to the invalid control after a refusal: the control already

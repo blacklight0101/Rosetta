@@ -80,7 +80,7 @@ async function userPicksTheReader(page: Page, user: Credentials): Promise<void> 
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
   await page.getByLabel('Summariser model', { exact: true }).fill('gpt-5-nano');
   // One reader at a time, so the first calls are answered and metered before one is refused.
-  await page.getByLabel('Parallel readers').fill('1');
+  await page.getByLabel('Parallel readers', { exact: true }).fill('1');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await signOut(page);
