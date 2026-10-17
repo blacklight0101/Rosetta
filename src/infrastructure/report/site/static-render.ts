@@ -23,13 +23,16 @@ const REFUSED_TAGS: ReadonlySet<string> = new Set([
 ]);
 
 const REFUSED_ATTRIBUTES: ReadonlySet<string> = new Set([
-  ...['style', 'dangerouslysetinnerhtml', 'srcdoc', 'formaction', 'attributename'],
+  ...['style', 'dangerouslysetinnerhtml', 'srcdoc', 'formaction', 'attributename', 'is'],
   // Addresses and fetches that `href`, `src` and `action` do not cover.
   ...['srcset', 'poster', 'ping', 'background', 'data'],
 ]);
 
 /** Attributes that hold an address. */
-const ADDRESS_ATTRIBUTES: ReadonlySet<string> = new Set(['href', 'src', 'action', 'xlink:href']);
+const ADDRESS_ATTRIBUTES: ReadonlySet<string> = new Set([
+  ...['href', 'src', 'action', 'xlink:href', 'lowsrc', 'dynsrc', 'longdesc', 'cite'],
+  ...['manifest', 'to'],
+]);
 
 /** Preact's names for the two attributes HTML spells differently. */
 const ATTRIBUTE_NAMES: Readonly<Record<string, string>> = { className: 'class', htmlFor: 'for' };
@@ -41,7 +44,7 @@ const TAG_NAME = /^[A-Za-z][A-Za-z0-9]*$/u;
 const ATTRIBUTE_NAME = /^[A-Za-z][A-Za-z0-9:-]*$/u;
 const SCHEME = /^[a-z][a-z0-9+.-]*:/iu;
 // eslint-disable-next-line no-control-regex -- the point is to find control characters in an address
-const CONTROL_OR_BACKSLASH = /[\u0000-\u001f\u007f\\]/u;
+const CONTROL_OR_BACKSLASH = /[\u0000-\u001f\u007f\\\u202a-\u202e\u2066-\u2069]/u;
 
 function refuse(message: string): never {
   throw new RosettaError(ERROR_CODES.reportWriteFailed, message);
