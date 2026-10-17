@@ -226,7 +226,11 @@ describe('the provider set of a run: stored keys', () => {
 
     const everything = JSON.stringify([
       harness.logger.entries,
-      harness.ledger.entries.map((e) => ({ ...e, costMicros: e.costMicros.toString() })),
+      harness.ledger.entries.map((e) => ({
+        ...e,
+        costMicros: e.costMicros.toString(),
+        cacheWriteCostMicros: e.cacheWriteCostMicros.toString(),
+      })),
       harness.calls.records(),
       [...set.values()].map(({ name, kind, model, keySource }) => ({
         name,
