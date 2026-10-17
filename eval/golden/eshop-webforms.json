@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "2026-10-17.1",
+  "version": "2026-10-17.2",
   "description": "Hand-checked findings of the eShopLegacyWebForms application of dotnet-architecture/eShopModernizing (MIT licence, copyright .NET Foundation and Contributors) at commit 63bc9ec, written for this repository by reading the code at that commit. Each finding cites the lines that show it; each absence is a statement whose correct answer is \"not in the code\" (DEC-57). No text of the application is copied.",
   "source": {
     "url": "https://github.com/dotnet-architecture/eShopModernizing",
@@ -109,7 +109,7 @@
           "evidence": [
             "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:63-65"
           ],
-          "keywords": ["generat", "assign", "hilo"]
+          "keywords": ["generat*", "assign", "hilo"]
         },
         {
           "id": "rule-brand-type-name-length",
@@ -128,10 +128,10 @@
           "id": "absent-auto-reorder",
           "statement": "Nothing reorders an item or sets the on-reorder flag by itself when the stock falls below the restock threshold.",
           "claimPatterns": [
-            ["reorder", "automatic"],
-            ["reorder", "triggers"],
+            ["reorder", "automatic*"],
+            ["reorder", "trigger"],
             ["reorder", "below"],
-            ["reorder", "falls"]
+            ["reorder", "fall"]
           ],
           "unless": [
             "no code",
@@ -187,7 +187,7 @@
           "evidence": [
             "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs:22-36"
           ],
-          "keywords": ["order", "page", "pagina"]
+          "keywords": ["order", "page", "pagina*"]
         },
         {
           "id": "rule-total-pages",
@@ -204,7 +204,7 @@
         {
           "id": "absent-soft-delete",
           "statement": "Removing an item deletes it; there is no soft delete, archive or deactivation.",
-          "claimPatterns": [["soft", "delete"], ["archiv"], ["deactivat"]],
+          "claimPatterns": [["soft", "delete"], ["archiv*"], ["deactivat*"]],
           "unless": [
             "no code",
             "nothing",
@@ -300,8 +300,8 @@
             ["login"],
             ["log in"],
             ["password"],
-            ["authenticat"],
-            ["authoriz"]
+            ["authenticat*"],
+            ["authoriz*"]
           ],
           "unless": [
             "no code",
@@ -322,7 +322,7 @@
         {
           "id": "absent-basket",
           "statement": "There is no shopping basket, checkout or order.",
-          "claimPatterns": [["basket"], ["shopping cart"], ["checkout"], ["order", "placed"]],
+          "claimPatterns": [["basket"], ["shopping cart"], ["checkout"], ["order", "place"]],
           "unless": [
             "no code",
             "nothing",
@@ -438,7 +438,7 @@
           "claimPatterns": [
             ["delete", "stock"],
             ["cannot", "delete"],
-            ["prevent", "delet"]
+            ["prevent", "delet*"]
           ],
           "unless": [
             "no code",
@@ -451,7 +451,6 @@
             "has no",
             "there is no",
             "without",
-            "cannot",
             "regardless"
           ]
         },
@@ -516,7 +515,7 @@
         {
           "id": "absent-notifications",
           "statement": "The application sends no e-mail and no notifications.",
-          "claimPatterns": [["email"], ["e-mail"], ["notif"]],
+          "claimPatterns": [["email"], ["e-mail"], ["notif*"]],
           "unless": [
             "no code",
             "nothing",

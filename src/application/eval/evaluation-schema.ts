@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { NOT_MEASURED } from '../../domain/eval/estimate-accuracy.js';
 import { RUN_END_STATES } from '../../domain/runs/run-states.js';
 
 // RNF-015, RNF-006, RNF-012, data-model.md section 3.19: the two files of an evaluation in
@@ -82,7 +83,7 @@ const estimateSchema = z.discriminatedUnion('status', [
   }),
   z.strictObject({
     status: z.literal('not-measured'),
-    reason: z.enum(['unpriced', 'free', 'no-cost-report']),
+    reason: z.enum(NOT_MEASURED),
     likelyMicros: count,
     actualMicros: count.nullable(),
   }),
@@ -114,6 +115,12 @@ const targetSchema = z.strictObject({
   met: z.boolean().nullable(),
 });
 
+/** RNF-006: the headline precision with the strict one and the share of claims nobody checked. */
+const precisionTargetSchema = targetSchema.extend({
+  strictMean: z.number().nullable(),
+  unmatchedShare: share.nullable(),
+});
+
 const resultsSchema = z.strictObject({
   schemaVersion: z.literal(1),
   experimentId: text.min(1),
@@ -128,6 +135,7 @@ const resultsSchema = z.strictObject({
     costMicros: spreadSchema,
     costPerSupportedClaimMicros: spreadSchema,
     estimateError: spreadSchema,
+    unmatchedShare: spreadSchema,
   }),
   cases: z.array(
     z.strictObject({
@@ -138,7 +146,7 @@ const resultsSchema = z.strictObject({
     }),
   ),
   targets: z.strictObject({
-    precision: targetSchema,
+    precision: precisionTargetSchema,
     recall: targetSchema,
     citationValidity: targetSchema,
     estimate: z.strictObject({ target: z.number(), measured: count, within: count }),

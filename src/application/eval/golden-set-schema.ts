@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { CARD_TYPES } from '../../domain/cards/card-vocabulary.js';
 import { parseCitation, type Citation } from '../../domain/cards/citation.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { STEM_MARK } from '../../domain/eval/claim-match.js';
 import {
   FINDING_KINDS,
   type GoldenCase,
@@ -14,7 +15,9 @@ import { isRepositoryPath } from '../../domain/sources/permalink.js';
 // has read it. Every object is strict (an unknown key is refused), every list and text has a
 // limit, every path is a repository path (no `..`, no absolute or Windows path), every evidence
 // citation parses and names a path of its own case, every id is unique in the set, and the set
-// holds at least one "not in the code" case. Anything else is refused with every problem named.
+// holds at least one "not in the code" case. A word may end in `*` (a stem) and holds no other
+// `*`; no pattern word of an absence holds one of its `unless` words (the pattern could never
+// match). Anything else is refused with every problem named.
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/u, 'must be lower-case words joined by -');
 const word = z.string().trim().min(1).max(80);
@@ -62,6 +65,7 @@ const setSchema = z.strictObject({
 type RawSet = z.infer<typeof setSchema>;
 type RawCase = RawSet['cases'][number];
 type RawFinding = RawCase['findings'][number];
+type RawAbsence = RawCase['absences'][number];
 
 function issuesOf(error: z.ZodError): string[] {
   return error.issues.map((issue) => {
@@ -86,7 +90,32 @@ function evidenceOf(raw: RawFinding, entry: RawCase, problems: string[]): Citati
   });
 }
 
+/** The words that hold a `*` before their last character. */
+function misplacedStars(entry: RawCase): string[] {
+  const words = [
+    ...entry.findings.flatMap((raw) => raw.keywords),
+    ...entry.absences.flatMap((raw) => [...raw.claimPatterns.flat(), ...raw.unless]),
+  ];
+  return words
+    .filter((value) => value.slice(0, -1).includes(STEM_MARK))
+    .map((value) => `${entry.id}: the word ${value} may end in ${STEM_MARK} but hold no other`);
+}
+
+/** RNF-015, DEC-57: a pattern word that holds an `unless` word excuses every claim it matches. */
+function deadPatterns(entry: RawCase, raw: RawAbsence): string[] {
+  const unless = raw.unless.map((value) => value.toLowerCase());
+  return raw.claimPatterns.flat().flatMap((value) => {
+    const excused = unless.find((word) => value.toLowerCase().includes(word));
+    if (excused === undefined) return [];
+    return [
+      `${entry.id}.${raw.id}: the pattern word "${value}" holds the unless word "${excused}", so the pattern never matches`,
+    ];
+  });
+}
+
 function caseOf(entry: RawCase, problems: string[]): GoldenCase {
+  problems.push(...misplacedStars(entry));
+  problems.push(...entry.absences.flatMap((raw) => deadPatterns(entry, raw)));
   const findings: GoldenFinding[] = entry.findings.map((raw) => ({
     ...raw,
     evidence: evidenceOf(raw, entry, problems),

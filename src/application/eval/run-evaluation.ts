@@ -21,7 +21,9 @@ import type { Experiment } from './evaluation-schema.js';
 // call passes the egress and budget guards). Before any model call it refuses fewer than three
 // repetitions, a golden path the code map does not hold, and an evaluation whose high estimate over
 // all repetitions passes the total cap. Each run is scored against the golden set; the experiment
-// and its results are written together.
+// and its results are written together. The runs were paid for, so a folder that cannot be written
+// is tried once more under a new id, and when that fails too the results are handed back with the
+// problem (RST-1701) for the command to print.
 
 export const MIN_REPETITIONS = 3;
 
@@ -48,7 +50,7 @@ export interface RunEvaluationRequest {
 export interface EvaluationProblem {
   readonly code: ErrorCode;
   readonly message: string;
-  /** P2-11 red step: the results of runs that could not be written. */
+  /** The results of runs that were paid for but could not be written. */
   readonly files?: EvaluationFiles;
 }
 
@@ -56,6 +58,13 @@ export interface EvaluationSummary {
   /** Where the files were written. */
   readonly folder: string;
   readonly files: EvaluationFiles;
+}
+
+interface Scored {
+  readonly request: RunEvaluationRequest;
+  readonly areas: readonly string[];
+  readonly runs: readonly EvaluationRun[];
+  readonly repetitions: Parameters<typeof resultsOf>[2];
 }
 
 function problem(code: ErrorCode, message: string): Result<never, EvaluationProblem> {
@@ -116,27 +125,32 @@ export class RunEvaluation {
     const lines = new Map(codeMap.files.map((file) => [file.path, file.lines]));
     const input = { golden: request.goldenSet, lines, estimate };
     const repetitions = runs.map((run, index) => repetitionResult(input, run, index + 1));
-    return ok(await this.write(request, areas.value, runs, repetitions));
+    const scored = { request, areas: areas.value, runs, repetitions };
+    let files = this.filesOf(scored);
+    try {
+      return ok({ folder: await this.deps.output.write(files), files });
+    } catch {
+      files = this.filesOf(scored);
+    }
+    try {
+      return ok({ folder: await this.deps.output.write(files), files });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      const message = `The results could not be written: ${reason}`;
+      return err({ code: ERROR_CODES.reportWriteFailed, message, files });
+    }
   }
 
-  private async write(
-    request: RunEvaluationRequest,
-    areas: readonly string[],
-    runs: readonly EvaluationRun[],
-    repetitions: Parameters<typeof resultsOf>[2],
-  ): Promise<EvaluationSummary> {
-    const { ids, clock, rosettaVersion, extraPrompts, output } = this.deps;
+  /** The two files under a new id. */
+  private filesOf(scored: Scored): EvaluationFiles {
+    const { request, areas, runs, repetitions } = scored;
+    const { ids, clock, rosettaVersion, extraPrompts } = this.deps;
     const id = ids.runId('eval');
     const experiment = experimentOf({
       ...{ id, at: clock.now().toISOString(), rosettaVersion, golden: request.goldenSet },
       ...{ goldenSetSha256: request.goldenSetSha256, areas, runs, extraPrompts },
       settings: { ...request.settings, totalCapMicros: request.totalCapMicros },
     });
-    const files = {
-      folder: id,
-      experiment,
-      results: resultsOf(id, request.goldenSet, repetitions),
-    };
-    return { folder: await output.write(files), files };
+    return { folder: id, experiment, results: resultsOf(id, request.goldenSet, repetitions) };
   }
 }

@@ -76,6 +76,9 @@ function report(summary: EvaluationSummary, print: Print): void {
   print(
     `Precision of Supported claims: ${mean(precision.mean)} (target ${String(precision.target)})`,
   );
+  print(
+    `Strict precision (unchecked claims count as wrong): ${mean(precision.strictMean)}; unchecked share of Supported claims: ${mean(precision.unmatchedShare)}`,
+  );
   print(`Recall of golden rules: ${mean(recall.mean)} (target ${String(recall.target)})`);
   print(`Citation validity: ${mean(citationValidity.mean)} (target 1)`);
   print(
@@ -103,6 +106,8 @@ async function inputsOf(args: EvalArgs): Promise<Result<Inputs, string>> {
   return ok({ config: config.value, golden: golden.value, settings, repetitions });
 }
 
+const NOT_STARTED = 'Nothing was sent. Run again with --yes to start the runs.';
+
 /** The problem, and the results of paid runs that could not be written, so they are not lost. */
 function failed(problem: EvaluationProblem, print: Print): void {
   print(`${problem.code}: ${problem.message}`);
@@ -120,13 +125,13 @@ export async function runEvalCommand(
     print(parsed.ok ? EVAL_USAGE : `${parsed.error}\n${EVAL_USAGE}`);
     return parsed.ok ? 0 : 2;
   }
-  if (!args.includes('--yes')) return 0; // P2-11 red step
   const inputs = await inputsOf(parsed.value);
   if (!inputs.ok) return (print(inputs.error), 1);
   const { config, golden, settings, repetitions } = inputs.value;
   const { totalCapMicros } = config;
   for (const line of evaluationPlan({ settings, totalCapMicros, repetitions }, golden.set))
     print(line);
+  if (!parsed.value.yes) return (print(NOT_STARTED), 1);
   const parts = await partsOf(config, settings, env);
   const result = await runEvaluation(parts, golden, repetitions);
   if (!result.ok) return (failed(result.error, print), 1);

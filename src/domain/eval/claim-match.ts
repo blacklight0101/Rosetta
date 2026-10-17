@@ -3,7 +3,7 @@ import type { Citation } from '../cards/citation.js';
 import type { GoldenAbsence, GoldenFinding } from './golden-set.js';
 
 // RNF-006, RNF-015, DEC-57: how one claim of a run is compared with the golden set. The comparison
-// is mechanical and the same every time: lines, card types and words, never a model. It shows
+// is mechanical and the same every time: lines, card types and whole words, never a model. It shows
 // that a claim found the right thing in the right place; it does not re-judge the claim (the
 // verifier did that), so a claim it cannot place is listed as unmatched for a person to check.
 
@@ -29,8 +29,30 @@ function wordsOf(claim: EvaluatedClaim): string {
   return `${claim.cardTitle}\n${claim.text}`.toLowerCase();
 }
 
+/** Marks a stem: `generat*` is any word that starts with `generat`. */
+export const STEM_MARK = '*';
+
+const wordChar = String.raw`[\p{L}\p{N}]`;
+
+function escaped(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+/**
+ * A word or phrase of the golden set as a whole word: `add` is in "adds", "added" and "adding" but
+ * not in "address", `10` is not in "100". A stem ending in `*` is any word that starts with it.
+ */
+function patternOf(word: string): RegExp {
+  const lower = word.toLowerCase();
+  const before = `(?<!${wordChar})`;
+  if (lower.endsWith(STEM_MARK)) return new RegExp(before + escaped(lower.slice(0, -1)), 'u');
+  const forms = [`${escaped(lower)}(?:s|es|d|ed|ing)?`];
+  if (lower.endsWith('e')) forms.push(`${escaped(lower.slice(0, -1))}ing`);
+  return new RegExp(`${before}(?:${forms.join('|')})(?!${wordChar})`, 'u');
+}
+
 function holds(words: string, word: string): boolean {
-  return words.includes(word.toLowerCase());
+  return patternOf(word).test(words);
 }
 
 // RNF-006

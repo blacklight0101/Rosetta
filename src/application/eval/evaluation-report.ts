@@ -2,7 +2,7 @@ import { citationValidity } from '../../domain/eval/citation-validity.js';
 import { scoreCase, scoreClaims } from '../../domain/eval/claim-score.js';
 import { ESTIMATE_TOLERANCE, estimateAccuracy } from '../../domain/eval/estimate-accuracy.js';
 import type { GoldenSet } from '../../domain/eval/golden-set.js';
-import { rounded } from '../../domain/eval/ratio.js';
+import { ratio, rounded } from '../../domain/eval/ratio.js';
 import { spreadOf, type Spread } from '../../domain/eval/spread.js';
 import type { EvaluationEstimate, EvaluationRun } from './evaluation-ports.js';
 import type { RepetitionResult, Results } from './evaluation-schema.js';
@@ -71,6 +71,7 @@ function summaryOf(repetitions: readonly RepetitionResult[]): Results['summary']
     costMicros: of((r) => r.costMicros),
     costPerSupportedClaimMicros: of((r) => r.costPerSupportedClaimMicros),
     estimateError: of(errorOf),
+    unmatchedShare: of((r) => ratio(r.overall.unmatched, r.overall.supported)),
   };
 }
 
@@ -86,9 +87,18 @@ function casesOf(golden: GoldenSet, repetitions: readonly RepetitionResult[]): R
   });
 }
 
-function target(value: number, spread: Spread | null): Results['targets']['precision'] {
+function target(value: number, spread: Spread | null): Results['targets']['recall'] {
   const mean = spread?.mean ?? null;
   return { target: value, mean, met: mean === null ? null : mean >= value };
+}
+
+/** RNF-006: the headline precision leaves out unmatched claims, so both are shown beside it. */
+function precisionTarget(summary: Results['summary']): Results['targets']['precision'] {
+  return {
+    ...target(TARGETS.precision, summary.precision),
+    strictMean: summary.strictPrecision?.mean ?? null,
+    unmatchedShare: summary.unmatchedShare?.mean ?? null,
+  };
 }
 
 function targetsOf(
@@ -100,7 +110,7 @@ function targetsOf(
     (r) => r.estimate.status === 'measured' && r.estimate.withinTarget,
   );
   return {
-    precision: target(TARGETS.precision, summary.precision),
+    precision: precisionTarget(summary),
     recall: target(TARGETS.recall, summary.recall),
     citationValidity: target(TARGETS.citationValidity, summary.citationValidity),
     estimate: { target: ESTIMATE_TOLERANCE, measured: measured.length, within: within.length },

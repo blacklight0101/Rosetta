@@ -62,12 +62,6 @@ async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
   });
 }
 
-/** P2-11 red step: the raw adapters, still exported. */
-export async function releaseAdapters(logger: Logger): Promise<AdapterBuilder> {
-  const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
-  return realAdapters({ testMode: false, textProtocolPrompt, logger });
-}
-
 /** What the guarded provider factory needs besides the adapters, which never leave this file. */
 export type GuardedFactoryParts = Omit<GuardedProviderFactoryOptions, 'adapters'>;
 

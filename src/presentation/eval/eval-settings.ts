@@ -63,8 +63,23 @@ export interface EvaluationPlanParts {
   readonly repetitions: number;
 }
 
+function dollars(micros: number): string {
+  return `$${(micros / 1_000_000).toFixed(2)}`;
+}
+
 // RF-143, RNF-006
 export function evaluationPlan(parts: EvaluationPlanParts, golden: GoldenSet): string[] {
-  // P2-11 red step: nothing is shown yet.
-  return [`${String(parts.repetitions)} ${golden.version}`];
+  const { settings, totalCapMicros, repetitions } = parts;
+  const { source } = golden;
+  const where = source.subpath === '' ? '' : ` (${source.subpath})`;
+  const roles = EVAL_ROLES.map((role) => {
+    const choice = settings.roles[role];
+    return `  ${role}: ${choice.provider} ${choice.model}`;
+  });
+  return [
+    `npm run eval runs ${String(repetitions)} runs of the golden set ${golden.version}.`,
+    `It sends the source of ${source.url} at ${source.commit}${where} to these models:`,
+    ...roles,
+    `Each run may cost up to ${dollars(settings.budget.run.maxCostMicros)}; all runs together up to ${dollars(totalCapMicros)}.`,
+  ];
 }

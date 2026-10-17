@@ -103,6 +103,7 @@ export class PipelineTarget implements EvaluationTarget {
   }
 
   async understand(areas: readonly string[]): Promise<EvaluationRun> {
+    // RF-143: the owner consented with `--yes` after the command showed the models and the source.
     const { run, errorCode } = await this.start({ stage: 'understand', areas, cloudConsent: true });
     const scope = scopeOf(run);
     const { writer, manifests } = this.parts;
