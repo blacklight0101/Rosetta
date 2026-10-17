@@ -20,7 +20,8 @@ import { runPool } from './task-pool.js';
 // `Proposed` after the citation check (step 1) is judged by the `verifier` role, at most
 // `agents.parallelism` at a time; each verdict is published as `verify.claim.judged` the moment it
 // arrives, so the live page moves the claim, and the cards are returned with every verdict in card
-// and claim order. A claim is never removed; one the run stopped before judging keeps its status.
+// and claim order. A claim is never removed; one the run stopped before judging keeps its status, and
+// so does every claim after a call that a cap refused.
 
 /** Whether a claim still waits for the judgement step. */
 export function isProposed(claim: Claim): boolean {
@@ -86,9 +87,16 @@ export async function judgeClaims(
   const { judge, events, clock } = parts;
   const decided = new Map<string, Decided>();
   const options = { parallelism: parts.parallelism, signal: judge.call.signal };
+  // RF-423: the verifier's own cap refuses its calls without stopping the run; once a call is
+  // refused or cancelled, no further claim is sent.
+  let halted = false;
   await runPool(pendingOf(cards), options, async ({ card, claim, index }) => {
+    if (halted) return;
     const judgement = await judgeClaim(judge, claim, spanIdOf(judge.call.traceId, index));
-    if (judgement.kind === 'stopped') return;
+    if (judgement.kind === 'stopped') {
+      halted = true;
+      return;
+    }
     const { status, reason } = judgement;
     decided.set(claim.claimId, { status, reason, at: clock.now().toISOString() });
     await events.emit(
