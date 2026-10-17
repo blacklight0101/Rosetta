@@ -18,6 +18,7 @@ interface ShapeCase {
 const tokenOption = ['-', '-', 'token'].join('');
 const header = 'Authorization: Bearer';
 const masked = '[MASKED:bearer-token]';
+const letters = ['abcd', '1234', 'efgh'].join('');
 const apiKeyName = ['api', 'key'].join('_');
 // A JWT-like value built from pieces: three base64url segments, the last one starting with a letter
 // and holding no dash (so a words-and-dots test would take it for code).
@@ -167,5 +168,47 @@ export const boundarySecretCases: readonly ShapeCase[] = [
     text: `${header} <eyJabcdefghij>`,
     masked: `${header} ${masked}`,
     secrets: ['eyJabcdefghij'],
+  },
+  {
+    name: 'a short value after "AUTHORIZATION: BEARER" in that case',
+    kind: 'bearer-token',
+    text: 'AUTHORIZATION: BEARER abcdefgh',
+    masked: 'AUTHORIZATION: BEARER [MASKED:bearer-token]',
+    secrets: ['abcdefgh'],
+  },
+  {
+    name: 'a short value after "authorization: bearer" in that case',
+    kind: 'bearer-token',
+    text: 'authorization: bearer abcdefgh',
+    masked: 'authorization: bearer [MASKED:bearer-token]',
+    secrets: ['abcdefgh'],
+  },
+  {
+    name: 'a short value after "Authorization: BEARER" in that case',
+    kind: 'bearer-token',
+    text: 'Authorization: BEARER abcdefgh',
+    masked: 'Authorization: BEARER [MASKED:bearer-token]',
+    secrets: ['abcdefgh'],
+  },
+  {
+    name: 'an api key setting written as "API_KEY="',
+    kind: 'api-key',
+    text: `${['API', 'KEY'].join('_')}=${letters}`,
+    masked: `${['API', 'KEY'].join('_')}=[MASKED:api-key]`,
+    secrets: [letters],
+  },
+  {
+    name: 'an api key setting written as "Api_Key="',
+    kind: 'api-key',
+    text: `${['Api', 'Key'].join('_')}=${letters}`,
+    masked: `${['Api', 'Key'].join('_')}=[MASKED:api-key]`,
+    secrets: [letters],
+  },
+  {
+    name: 'an api key setting written as "X-API-KEY:"',
+    kind: 'api-key',
+    text: `${['X', 'API', 'KEY'].join('-')}: ${letters}`,
+    masked: `${['X', 'API', 'KEY'].join('-')}: [MASKED:api-key]`,
+    secrets: [letters],
   },
 ];
