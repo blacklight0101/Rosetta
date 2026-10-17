@@ -22,7 +22,7 @@ const headerSchema = z.object({
   type: z.enum(CARD_TYPES),
   title: z.string(),
   area: z.string(),
-  claims: z.array(z.object({ text: z.string() })),
+  claims: z.array(z.object({ text: z.string(), citations: z.array(z.string()).optional() })),
   questionState: z.enum(['Open', 'Answered']).optional(),
   question: z.string().optional(),
 });
@@ -37,6 +37,17 @@ function parsedJson(text: string): unknown {
   } catch {
     return undefined;
   }
+}
+
+/** RF-1017: the file of each citation `path:a-b` (the path ends at the last colon), each once. */
+function citedFiles(citations: readonly string[]): readonly string[] {
+  const files = citations.flatMap((citation) => {
+    const colon = citation.lastIndexOf(':');
+    return colon > 0 && /^\d+(?:-\d+)?$/u.test(citation.slice(colon + 1))
+      ? [citation.slice(0, colon)]
+      : [];
+  });
+  return [...new Set(files)];
 }
 
 function headerOf(text: string): PriorCard | undefined {
@@ -54,7 +65,8 @@ function headerOf(text: string): PriorCard | undefined {
   const { claims, questionState, question, ...rest } = header.data;
   const state = questionState === undefined ? {} : { questionState };
   const asked = question === undefined ? {} : { question };
-  return { ...rest, ...state, ...asked, claims: claims.map((claim) => claim.text) };
+  const cited = citedFiles(claims.flatMap((claim) => claim.citations ?? []));
+  return { ...rest, ...state, ...asked, claims: claims.map((claim) => claim.text), cited };
 }
 
 /** The text with the state of the question card changed, or undefined when it is not in `from`. */

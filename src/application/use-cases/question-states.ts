@@ -1,6 +1,6 @@
 import type { OpenQuestionState } from '../../domain/cards/card-vocabulary.js';
 import type { ProjectRef, RecordedQuestion } from '../ports/answers-file.js';
-import type { PriorCards } from '../ports/prior-cards.js';
+import type { PriorCard, PriorCards } from '../ports/prior-cards.js';
 import { askingTheSame } from '../understand/answer-rerun.js';
 
 // RF-1007, RF-241, data-model.md section 3.7: the state of a question is the state of its `OQ` card
@@ -11,6 +11,15 @@ export interface StatedQuestion extends RecordedQuestion {
   readonly state: OpenQuestionState;
   /** RF-1017: how many cards other than open questions depend on the question. */
   readonly dependents: number;
+}
+
+/** RF-1017, RF-243: the cards that are not open questions and cite a file the question's cards cite. */
+function dependentsOf(behind: readonly PriorCard[], earlier: readonly PriorCard[]): number {
+  const files = new Set(behind.flatMap((card) => card.cited ?? []));
+  if (files.size === 0) return 0;
+  return earlier.filter(
+    (card) => card.type !== 'OQ' && (card.cited ?? []).some((file) => files.has(file)),
+  ).length;
 }
 
 // RF-1007
@@ -26,6 +35,10 @@ export async function withStates(
     // A merged question has a card per area: it is Answered when every one of them is.
     const behind = card === undefined ? [] : askingTheSame(card, earlier);
     const answered = behind.length > 0 && behind.every((each) => each.questionState === 'Answered');
-    return { ...question, state: answered ? 'Answered' : 'Open', dependents: 0 };
+    return {
+      ...question,
+      state: answered ? 'Answered' : 'Open',
+      dependents: dependentsOf(behind, earlier),
+    };
   });
 }
