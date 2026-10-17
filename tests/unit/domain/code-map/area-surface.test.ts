@@ -113,14 +113,16 @@ describe('the HTTP handlers of an area', () => {
 
 // RF-261, P2-29 review: a test file is no view, so it gets no marks; an HTML page is a screen, not a flow.
 describe('the test files and the HTML pages of an area', () => {
-  it.each(['tests/a.test.tsx', 'src/ui/Cart.spec.tsx', 'src/__tests__/Cart.tsx'])(
-    'RF-261 %s is a test file: no flow and no screen',
-    (path) => {
-      const files = [entry(path)];
+  it.each([
+    'tests/a.test.tsx',
+    'tests/helpers/Cart.tsx',
+    'src/ui/Cart.spec.tsx',
+    'src/__tests__/Cart.tsx',
+  ])('RF-261 %s is a test file: no flow and no screen', (path) => {
+    const files = [entry(path)];
 
-      expect(surfaceOf(areaOf(files), mapOf(files))).toEqual({ entryPoints: [], pages: [] });
-    },
-  );
+    expect(surfaceOf(areaOf(files), mapOf(files))).toEqual({ entryPoints: [], pages: [] });
+  });
 
   it('RF-261 docs/index.html is a screen and not an entry point', () => {
     const files = [entry('docs/index.html')];

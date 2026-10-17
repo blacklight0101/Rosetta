@@ -13,9 +13,10 @@ export const BUDGET_ERROR_DESCRIPTIONS: Readonly<Record<BudgetErrorCode, ErrorDe
       'The results so far are saved. Raise the run cap in the project settings, wait for the next UTC day, or ask the administrator about the server caps.',
   },
   'RST-1601': {
-    message: 'The model has no price in the price table, so it cannot run with these keys.',
+    message:
+      'The model has no usable price, so it cannot run with these keys: it is missing from the price table, or its price override has no cache-write price.',
     nextStep:
-      'Add a price for the model to the project settings and use your own key, or turn on allowUnpriced for your own key; server keys run only priced models.',
+      'Add a price for the model to the project settings and use your own key (an Anthropic model needs its cache-write price too), or turn on allowUnpriced for your own key; server keys run only priced models.',
   },
   'RST-1602': {
     message: 'The price table file is missing or invalid.',

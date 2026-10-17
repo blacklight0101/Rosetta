@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { Button } from '../components/Button.js';
+import { cacheWriteProviders, providerNames } from './provider-choices.js';
 import type { PriceDraft } from './project-settings-form.js';
 import { NumberSetting, ProviderSetting, TextSetting } from './SettingFields.js';
 import type { SectionProps } from './settings-section.js';
@@ -13,6 +14,15 @@ const perMillion = '(USD per million tokens)';
 interface RowProps extends SectionProps {
   readonly index: number;
   readonly price: PriceDraft;
+}
+
+/** P2-24: whether the override needs a cache-write price it does not have yet. */
+function lacksCacheWrite(price: PriceDraft): boolean {
+  return cacheWriteProviders.includes(price.provider) && price.cacheWrite.trim() === '';
+}
+
+function warningIdOf(index: number): string {
+  return `price-${String(index + 1)}-cache-write-warning`;
 }
 
 function OverrideIdentity({ editor, errorFor, providers, index, price }: RowProps): JSX.Element {
@@ -88,6 +98,7 @@ function OverridePrices({ editor, errorFor, index, price }: RowProps): JSX.Eleme
         path={`${path}.cacheWriteInputPerMillionMicros`}
         errorFor={errorFor}
         value={price.cacheWrite}
+        describedBy={lacksCacheWrite(price) ? warningIdOf(index) : undefined}
         onInput={(cacheWrite) => {
           editor.changePrice(index, { cacheWrite });
         }}
@@ -96,14 +107,11 @@ function OverridePrices({ editor, errorFor, index, price }: RowProps): JSX.Eleme
   );
 }
 
-/** P2-24: the providers that bill cache writes; their override needs a cache-write price. */
-const cacheWriteProviders: readonly string[] = ['anthropic'];
-
 function CacheWriteWarning({ index, price }: Pick<RowProps, 'index' | 'price'>): JSX.Element {
-  if (!cacheWriteProviders.includes(price.provider) || price.cacheWrite.trim() !== '') return <></>;
+  if (!lacksCacheWrite(price)) return <></>;
   return (
-    <p class="rst-field__help rst-limit__warning" role="status">
-      {`Override ${String(index + 1)} has no cache-write price. Anthropic bills cache writes, so a run ignores this override and treats the model as unpriced until you add one.`}
+    <p id={warningIdOf(index)} class="rst-field__help rst-limit__warning" role="status">
+      {`Override ${String(index + 1)} has no cache-write price. Cache writes are billed for ${providerNames(cacheWriteProviders)}, so a run ignores this override and treats the model as unpriced until you add one.`}
     </p>
   );
 }
@@ -142,8 +150,8 @@ export function PriceOverrides(props: SectionProps): JSX.Element {
       </h2>
       <p class="rst-settings__note">
         Prices in US dollars per million tokens. They replace the shipped price table, and only for
-        calls made with your own keys. An Anthropic model needs its cache-write price; leave it
-        empty for other providers.
+        calls made with your own keys. {providerNames(cacheWriteProviders)} models need a
+        cache-write price; leave it empty for other providers.
       </p>
       {rows.length === 0 ? (
         <p class="rst-settings__note">No price overrides. The shipped price table is used.</p>

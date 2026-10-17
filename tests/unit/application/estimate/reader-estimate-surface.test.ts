@@ -34,7 +34,11 @@ describe('the reader estimate with flows and screens', () => {
     const tokens = readerTokens([area], assumptions, marks(false, false));
 
     expect(tokens).toEqual(readerTokens([area], assumptions));
-    expect(tokens.likely).toEqual({ inputTokens: 2000, outputTokens: 300 });
+    expect(tokens.likely).toEqual({
+      inputTokens: 2000,
+      outputTokens: 300,
+      cacheWriteTokens: 2000,
+    });
   });
 
   it('RF-260 a flows area resends the fragment each turn and answers the extra cards once', () => {
@@ -42,9 +46,10 @@ describe('the reader estimate with flows and screens', () => {
 
     const tokens = readerTokens([area], assumptions, marks(true, false));
 
-    expect(tokens.low).toEqual({ inputTokens: 2900, outputTokens: 150 + 300 });
-    expect(tokens.likely).toEqual({ inputTokens: 2900, outputTokens: 300 + 800 });
-    expect(tokens.high).toEqual({ inputTokens: 2900, outputTokens: 600 + 2000 });
+    const written = { cacheWriteTokens: 2900 };
+    expect(tokens.low).toEqual({ inputTokens: 2900, outputTokens: 150 + 300, ...written });
+    expect(tokens.likely).toEqual({ inputTokens: 2900, outputTokens: 300 + 800, ...written });
+    expect(tokens.high).toEqual({ inputTokens: 2900, outputTokens: 600 + 2000, ...written });
   });
 
   it('RF-261 an area marked for both adds both fragments', () => {
@@ -52,7 +57,11 @@ describe('the reader estimate with flows and screens', () => {
 
     const tokens = readerTokens([area], assumptions, marks(true, true));
 
-    expect(tokens.likely).toEqual({ inputTokens: 3800, outputTokens: 300 + 1600 });
+    expect(tokens.likely).toEqual({
+      inputTokens: 3800,
+      outputTokens: 300 + 1600,
+      cacheWriteTokens: 3800,
+    });
   });
 });
 

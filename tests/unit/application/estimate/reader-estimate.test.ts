@@ -72,7 +72,13 @@ describe('reader tokens of the estimate', () => {
 
     // Catalog: 6 turns of 2,000 overhead + 80% of 10,000 read, spread over the turns, + 300 out.
     // Orders: the same with 80% of 4,000.
-    expect(tokens.likely).toEqual({ inputTokens: 60_996, outputTokens: 3600 });
+    // The tokens written to the cache are the conversation at the last turn: Catalog 2,000 + 6,666 +
+    // 5 x 300 = 10,166 and Orders 2,000 + 2,666 + 1,500 = 6,166 (P2-37).
+    expect(tokens.likely).toEqual({
+      inputTokens: 60_996,
+      outputTokens: 3600,
+      cacheWriteTokens: 16_332,
+    });
   });
 
   it('RF-425 one turn per area sends only the prompt overhead and answers the output share', () => {
@@ -80,9 +86,9 @@ describe('reader tokens of the estimate', () => {
 
     const tokens = readerTokens([areaOf('Catalog', 10_000)], assumptions);
 
-    expect(tokens.low).toEqual({ inputTokens: 2000, outputTokens: 150 });
-    expect(tokens.likely).toEqual({ inputTokens: 2000, outputTokens: 300 });
-    expect(tokens.high).toEqual({ inputTokens: 2000, outputTokens: 600 });
+    expect(tokens.low).toEqual({ inputTokens: 2000, outputTokens: 150, cacheWriteTokens: 2000 });
+    expect(tokens.likely).toEqual({ inputTokens: 2000, outputTokens: 300, cacheWriteTokens: 2000 });
+    expect(tokens.high).toEqual({ inputTokens: 2000, outputTokens: 600, cacheWriteTokens: 2000 });
   });
 
   it('RF-425 low is below likely is below high', () => {
@@ -95,7 +101,9 @@ describe('reader tokens of the estimate', () => {
     expect(tokens.low.outputTokens).toBeLessThan(tokens.likely.outputTokens);
     expect(tokens.likely.outputTokens).toBeLessThan(tokens.high.outputTokens);
   });
+});
 
+describe('reader tokens of the estimate at the limits', () => {
   it('RF-425 a turn never sends more than the context share of the model (high, huge area)', () => {
     const settings = readerSettings({ maxTurns: 10, maxOutputTokens: 1000, provider: 'ollama' });
     const assumptions = assumptionsOf(settings);
@@ -109,6 +117,10 @@ describe('reader tokens of the estimate', () => {
   it('RF-425 no areas give no tokens', () => {
     const assumptions = assumptionsOf(readerSettings({ maxTurns: 10, maxOutputTokens: 1000 }));
 
-    expect(readerTokens([], assumptions).high).toEqual({ inputTokens: 0, outputTokens: 0 });
+    expect(readerTokens([], assumptions).high).toEqual({
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheWriteTokens: 0,
+    });
   });
 });

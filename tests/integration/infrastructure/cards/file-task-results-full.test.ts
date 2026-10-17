@@ -4,11 +4,12 @@ import type { AreaCoverage, SurfaceCoverage } from '../../../../src/domain/cards
 import type { Card, Claim, ClaimVerdict } from '../../../../src/domain/cards/card.js';
 import { FileTaskResults } from '../../../../src/infrastructure/cards/file-task-results.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import type { DeepRequired } from '../../../support/deep-required.js';
 import { openWriter } from '../../../support/open-writer.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 // RF-006, RF-208, RF-206, RF-250: a resumed run reports what an uninterrupted one does, so every
-// field of the stored task result survives the file. The fixtures are typed `Required<...>`: a
+// field of the stored task result survives the file. The fixtures are typed `DeepRequired<...>` (every nested type too): a
 // field added to a domain type fails the typecheck until it is filled here, and then this test
 // fails until the stored schema keeps it.
 
@@ -18,14 +19,14 @@ const scope = { id: 'run-1', userId, projectId, runKey: '20261012-100000-underst
 
 const cite = (startLine: number, endLine: number) => ({ path: 'src/a.cs', startLine, endLine });
 
-const verdict: Required<ClaimVerdict> = {
+const verdict: DeepRequired<ClaimVerdict> = {
   step: 'judgement',
   reason: 'The cited lines do not say it.',
   model: 'judge-model',
   at: '2026-10-12T10:00:00.000Z',
 };
 
-const claim: Required<Claim> = {
+const claim: DeepRequired<Claim> = {
   claimId: 'FLOW-001.c1',
   text: 'The page validates the e-mail.',
   citations: [cite(1, 4)],
@@ -35,7 +36,7 @@ const claim: Required<Claim> = {
   branches: [{ number: 1, text: 'A blank e-mail stops the post.', citations: [cite(2, 3)] }],
 };
 
-const card: Required<Card> = {
+const card: DeepRequired<Card> = {
   id: 'FLOW-001',
   type: 'FLOW',
   title: 'Place an order',
@@ -67,7 +68,7 @@ const card: Required<Card> = {
   note: 'Written without reading the code.',
 };
 
-const surface: Required<SurfaceCoverage> = {
+const surface: DeepRequired<SurfaceCoverage> = {
   flowsMarked: true,
   screensMarked: false,
   flowCards: 1,
@@ -75,7 +76,7 @@ const surface: Required<SurfaceCoverage> = {
   incompleteFlows: 1,
 };
 
-const coverage: Required<AreaCoverage> = {
+const coverage: DeepRequired<AreaCoverage> = {
   area: 'orders',
   files: [{ path: 'src/a.cs', read: [{ startLine: 1, endLine: 9 }] }],
   tokens: 100,
@@ -86,7 +87,7 @@ const coverage: Required<AreaCoverage> = {
   note: 'not read',
 };
 
-const result: Required<TaskResult> = {
+const result: DeepRequired<TaskResult> = {
   agentTaskId: 'reader-001',
   area: 'orders',
   state: 'InvalidOutput',
