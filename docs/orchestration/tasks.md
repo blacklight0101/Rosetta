@@ -13,9 +13,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P1 Milestone slice (M1) | 172 | 64 | 90 | 18 | 0 | 99 | 65 | 8 | 111 | 0 |
-| P2 Full understand | 23 | 3 | 14 | 6 | 0 | 4 | 18 | 1 | 3 | 0 |
+| P2 Full understand | 26 | 4 | 16 | 6 | 0 | 6 | 19 | 1 | 6 | 0 |
 | P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
-| **Total** | **221** | **69** | **126** | **26** | **0** | **106** | **104** | **11** | **115** | **0** |
+| **Total** | **224** | **70** | **128** | **26** | **0** | **108** | **105** | **11** | **118** | **0** |
 
 ## Conventions for every card
 
@@ -2435,6 +2435,42 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Done when**: the runner prints the three new measures for a recorded run; the baseline is recorded in the PR; `npm run verify` green.
 - **Refs**: RF-260..RF-263, RNF-006, RNF-012, P2-11, P2-14, DEC-134.
 
+
+### P2-24 - Follow-up: cache-write prices in the estimate and own-key overrides
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P2-16
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/estimate/estimate-run.ts`; `src/infrastructure/guards/budget-pricing.ts`; `web/src/pages/PriceOverrides.tsx`; verdict comment 6229742224 on #445.
+- **Do**: the run estimate (RF-425) prices Anthropic prompt input at the highest of the input and cache-write prices for its high figure, so the confirmation threshold is never low by the cache-write premium; an own-key Anthropic override without a cache-write price gets an error that names the override (not "no price in the price table"), and the settings page warns before saving such an override.
+- **Delivers**: estimate change, error text, page warning, tests.
+- **Done when**: an Anthropic estimate's high figure covers cache writes (unit test with a recorded price table); the override error names the override (unit and route test); the page shows the warning (web test); `npm run verify` green.
+- **Refs**: RF-425, RF-428, P2-16 (verdict comment 6229742224 on #445).
+
+### P2-25 - Follow-up: re-run answers with consolidation, question state on the page
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-05, P2-06
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/understand/answer-rerun.ts`; `understand-session.ts`; `web/src/pages/RunAnswers.tsx`; verdict comments 6227862573 and 6228789543 on #443.
+- **Do**: tests for a re-run with answers whose cards are merged by consolidation (the New and Changed lists survive the merge; a failed merge write leaves the questions Open); a log line for each answered question that is skipped (deleted run, area no longer in the code map, already Answered); the answers page shows each question's state (Open or Answered); the start page offers "Re-run with answers" when the project has answered questions.
+- **Delivers**: tests, log line, page state, start option.
+- **Done when**: each item above has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-241, RF-1007, RF-250, P2-05, P2-06.
+
+### P2-26 - Follow-up: settings and role-cap gaps from P2-08 and P2-15
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P2-08, P2-15
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/pages/LimitSetting.tsx`; `src/infrastructure/guards/budget-guard.ts`; verdict comments 6227081401 on #435 and 6227966648 on #442.
+- **Do**: the limit slider gets an `aria-label` that keeps field labels unique; a typed value beyond the slider range shows an inline hint before Save; the default warning is rendered in an axe check; a concurrency test proves that simultaneous reservations for one role with room for one let exactly one through (PostgreSQL contract); the settings page warns when a role cap is above the run cap.
+- **Delivers**: page changes, tests.
+- **Done when**: each item above has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-002, RF-423, DEC-117, P2-08, P2-15.
 ---
 
 ## Phase 3 - Report and plan
