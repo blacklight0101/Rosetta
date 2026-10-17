@@ -112,12 +112,13 @@ interface ServerParts {
   readonly clock: Clock;
   readonly masker: TextMasker;
   readonly doubles: TestDoubles | undefined;
+  readonly promptsFolder: string;
 }
 
 // ADR-017, RF-1303, RF-1009: the HTTP server with the database probe, the session use cases and
 // the shipped version.
 async function createServer(parts: ServerParts): Promise<CreatedServer> {
-  const { environment, logger, pool, auth, clock, masker, doubles } = parts;
+  const { environment, logger, pool, auth, clock, masker, doubles, promptsFolder } = parts;
   const version = await readAppVersion();
   const runs = composeRuns({
     ...{ pool, logger, clock, masker, version },
@@ -189,7 +190,7 @@ function createSecrets(environment: Environment) {
 
 // Architecture section 2
 export function composeApplication(options: ApplicationOptions): Application {
-  const { environment, doubles } = options;
+  const { environment, doubles, promptsFolder: catalogueFolder = promptsFolder } = options;
   if (doubles !== undefined) TestDoubles.requireTestMode(environment);
   const clock = new SystemClock();
   const { file, logger, masker } = createLoggers(options, clock);
@@ -208,7 +209,7 @@ export function composeApplication(options: ApplicationOptions): Application {
       await file.applyRetention();
       const auth = await composeAuth(options, { pool, logger, clock, masker, hasher, secretBox });
       const { server, runs } = await createServer({
-        ...{ environment, logger, pool, clock, masker, doubles },
+        ...{ environment, logger, pool, clock, masker, doubles, promptsFolder: catalogueFolder },
         auth,
       });
       close = closer({ server, runs });

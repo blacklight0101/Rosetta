@@ -269,13 +269,14 @@ export function recordManifestModelVersion(
   return ok({ ...manifest, roles: { ...manifest.roles, [role]: { ...current, modelVersion } } });
 }
 
-// Test-commit stub (RF-606): records a wrong version so the catalogue tests fail on assertions
-// until the feat commit implements the recording.
+/** Records the catalogue a plan run used; refused once the run has ended (RF-606, RNF-004). */
+// RF-606, RNF-004
 export function recordManifestCatalogue(
   manifest: RunManifest,
   catalogue: ManifestCatalogue,
 ): Result<RunManifest, ManifestProblem> {
-  return ok({ ...manifest, catalogue: { ...catalogue, version: 0 } });
+  if (manifest.endState !== null) return err('already-ended');
+  return ok({ ...manifest, catalogue });
 }
 
 /** Records the price table the run's calls were priced with (data-model.md section 3.6). */

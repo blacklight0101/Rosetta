@@ -56,8 +56,8 @@ const manifestSchema = z.object({
     allowDenied: z.array(text),
   }),
   priceTable: z.object({ version: text, currency: text }).nullable(),
-  // Test-commit stub (RF-606): the feat commit reads the catalogue version and SHA-256.
-  catalogue: z.null(),
+  // Written from RF-606 on; a manifest stored before that reads as no catalogue.
+  catalogue: z.object({ version: count, sha256: text }).nullable().default(null),
   caps: z.object({
     run: z.object({ maxCostMicros: count, maxTokens: count }),
     roles: z.record(z.string(), roleCapsSchema),

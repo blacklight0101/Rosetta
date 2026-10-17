@@ -267,6 +267,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when a role uses Ollama with `toolMode: text` (RF-205) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
+| `catalogue` | object | `{ version, sha256 }` of the principle catalogue (RF-606, RNF-004) that a plan run used, `null` for the other stages and for a manifest written before this field; the version is the one the catalogue README declares and the SHA-256 runs over every catalogue file by name |
 | `caps` | object | run and role caps in force |
 | `masking` | object | count per secret kind (RF-141): `api-key`, `bearer-token`, `connection-string`, `password`, `private-key` (the kinds of `SecretMasker`, `src/infrastructure/guards/secret-masker.ts`), kinds in name order; the egress guard adds the secrets of content an agent task sends for the first time, so a message repeated by later calls counts once. The counts are numbers and are stored unmasked |
 | `totals` | object | `{ inputTokens, outputTokens, cachedInputTokens, costMicros, calls }` |
