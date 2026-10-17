@@ -168,6 +168,26 @@ describe('the precision of the relations the entity cards state', () => {
     });
     expect(score.relationClaims).toEqual(['ENT-001.c1', 'ENT-001.c2']);
   });
+
+  it('RF-262 does not count a relation claim that matches an entity of the golden set only', () => {
+    const entities = [
+      finding({
+        id: 'entity-basket-line',
+        kind: 'entity',
+        cardTypes: ['ENT'],
+        evidence: ['Services/OrderService.cs:9-10'],
+        keywords: ['basket line'],
+      }),
+    ];
+    const text = 'A basket line refers to a catalog item.';
+    const claims = [entity('ENT-001.c1', text, 'Services/OrderService.cs:9-10')];
+
+    expect(scoreClaims(claims, entities, [])).toMatchObject({
+      relationsStated: 1,
+      relationsCorrect: 0,
+      relationPrecision: 0,
+    });
+  });
 });
 
 describe('the relation words', () => {
