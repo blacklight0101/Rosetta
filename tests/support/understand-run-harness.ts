@@ -17,12 +17,8 @@ import type { Run } from '../../src/domain/runs/run.js';
 import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
-import {
-  loadRecording,
-  type Recording,
-} from '../../src/infrastructure/providers/fake/recording.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
-import { fakeResponse } from './fake-recordings.js';
+import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
@@ -228,51 +224,11 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
   };
 }
 
-function fakeRecording(name: string): string {
-  return join('tests', 'recordings', 'fake', name);
-}
-
-/** The recording's calls `times` over, so several runs can replay it in turn. */
-function repeated(recording: Recording, times: number): Recording {
-  return { ...recording, calls: Array.from({ length: times }, () => recording.calls).flat() };
-}
-
 function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<UnderstandProviderParts> {
   if (given === undefined) return {};
   return given.of === 'server'
     ? { serverOpenAiKey: given.key }
     : { ownOpenAiKey: { userId: account.id, key: given.key } };
-}
-
-/**
- * The summariser's answer to the one group of duplicate candidates of the first run (RF-250): no
- * merge. It stands between the first run's calls and the later runs' calls.
- */
-const noMerge: Recording['calls'][number] = {
-  attempts: [
-    {
-      response: fakeResponse({
-        text: '```json\n{"merges": []}\n```',
-        toolCalls: [],
-        usage: {
-          inputTokens: 100,
-          outputTokens: 10,
-          cachedInputTokens: 0,
-          usageSource: 'reported',
-        },
-        finishReason: 'stop',
-      }),
-    },
-  ],
-};
-
-/** The recording of the options: the first file replayed, then the file for later runs. */
-async function recordingOf(options: UnderstandHarnessOptions): Promise<Recording> {
-  const load = (name: string) => loadRecording(join('tests', 'recordings', 'fake', name));
-  const first = repeated(await load(options.recording), options.replays ?? 1);
-  if (options.afterwards === undefined) return first;
-  const later = await load(options.afterwards);
-  return { ...first, calls: [...first.calls, noMerge, ...later.calls] };
 }
 
 // RF-200
@@ -293,11 +249,9 @@ export async function createUnderstandHarness(
   const providers = understandProviders({
     ...{ dataDir: options.dataDir, writer: s.writer, masker: s.masker, clock: s.clock },
     logger: s.logger,
-    recording: await recordingOf(options),
+    recording: await readerRecordingOf(options),
     beforeCall,
-    ...(options.verifierRecording === undefined
-      ? {}
-      : { verifierRecording: await loadRecording(fakeRecording(options.verifierRecording)) }),
+    ...(await verifierRecordingOf(options.verifierRecording)),
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
     ...keysOf(options.openAiKey),
