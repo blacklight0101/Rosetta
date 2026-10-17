@@ -3,7 +3,9 @@
 Scripts for the fake provider (`src/infrastructure/providers/fake/`), which replays them instead of calling a model
 (ADR-008). Each file lists calls in order, with the attempts of each call and the answer or failure of each attempt:
 the reader tasks of the `webforms-csharp` fixture, an injection attempt, a bad tool call, a turn limit, a cost cap,
-a stop, and the full understand run that the end-to-end tests drive.
+a stop, and the full understand run that the end-to-end tests drive. `understand-flows-screens.json` is a run over the
+`webforms-shop` fixture whose readers answer FLOW, SCRN and OQ cards for the catalogue and order journeys and none for
+the service library (P2-19).
 
 ## Provenance (RNF-009)
 

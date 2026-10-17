@@ -23,6 +23,8 @@ const readerPromptNames = [
   'reader/turns-left.v2.md',
 ];
 
+const surfacePromptNames = ['cards/flows.v1.md', 'cards/screens.v1.md'];
+
 async function sha256Of(path: string): Promise<string> {
   return createHash('sha256')
     .update(await readFile(path))
@@ -60,7 +62,7 @@ describe('loadReaderPrompts refusals', () => {
   const temp = useTempRoot('rosetta-prompts-');
 
   async function copyPrompts(): Promise<void> {
-    for (const name of readerPromptNames) {
+    for (const name of [...readerPromptNames, ...surfacePromptNames]) {
       await mkdir(join(temp.path, name.split('/')[0] ?? ''), { recursive: true });
       await writeFile(join(temp.path, name), await readFile(join('prompts', name)));
     }

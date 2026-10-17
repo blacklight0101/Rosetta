@@ -3,6 +3,15 @@ import type { TaskResult } from '../../application/ports/task-results.js';
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card, Claim } from '../../domain/cards/card.js';
 import { CARD_TYPES, CLAIM_STATUSES, CONFIDENCES } from '../../domain/cards/card-vocabulary.js';
+import {
+  detailOf,
+  flowShape,
+  screenShape,
+  stepOf,
+  stepShape,
+  surfaceOfStored,
+  surfaceShape,
+} from './task-results-flow-screen.js';
 
 // RF-006, data-model.md section 3.7a, DEC-43: `task-results.json` parsed at the boundary. Anything
 // that is not a version 1 file of well-formed results is refused, never guessed.
@@ -25,6 +34,7 @@ const claimSchema = z.object({
       at: text,
     })
     .optional(),
+  ...stepShape,
 });
 
 const cardSchema = z.object({
@@ -40,6 +50,8 @@ const cardSchema = z.object({
   whyItMatters: text.optional(),
   questionState: z.enum(['Open', 'Answered']).optional(),
   mergedFrom: z.array(text).optional(),
+  flow: flowShape.optional(),
+  screen: screenShape.optional(),
 });
 
 const coverageSchema = z.object({
@@ -53,6 +65,7 @@ const coverageSchema = z.object({
   tokens: count,
   readTokens: count,
   readTokenShare: z.number().min(0).max(1),
+  surface: surfaceShape.optional(),
 });
 
 const resultSchema = z.object({
@@ -69,12 +82,13 @@ const fileSchema = z.object({ schemaVersion: z.literal(1), tasks: z.array(result
 
 /** A claim without the keys that are absent, as the domain type has it (exact optionals). */
 function claimOf(claim: z.output<typeof claimSchema>): Claim {
-  const { verdict, ...rest } = claim;
-  return verdict === undefined ? rest : { ...rest, verdict };
+  const { verdict, target, branches, ...rest } = claim;
+  const step = stepOf({ target, branches });
+  return verdict === undefined ? { ...rest, ...step } : { ...rest, ...step, verdict };
 }
 
 function cardOf(card: z.output<typeof cardSchema>): Card {
-  const { claims, question, whyItMatters, questionState, mergedFrom, ...rest } = card;
+  const { claims, question, whyItMatters, questionState, mergedFrom, flow, screen, ...rest } = card;
   return {
     ...rest,
     claims: claims.map(claimOf),
@@ -82,6 +96,7 @@ function cardOf(card: z.output<typeof cardSchema>): Card {
     ...(whyItMatters === undefined ? {} : { whyItMatters }),
     ...(questionState === undefined ? {} : { questionState }),
     ...(mergedFrom === undefined ? {} : { mergedFrom }),
+    ...detailOf({ flow, screen }),
   };
 }
 
@@ -91,7 +106,8 @@ export function parseTaskResults(value: unknown): readonly TaskResult[] | undefi
   const parsed = fileSchema.safeParse(value);
   if (!parsed.success) return undefined;
   return parsed.data.tasks.map((task): TaskResult => {
-    const coverage: AreaCoverage = task.coverage;
+    const { surface, ...stored } = task.coverage;
+    const coverage: AreaCoverage = { ...stored, ...surfaceOfStored(surface) };
     return { ...task, cards: task.cards.map(cardOf), coverage };
   });
 }

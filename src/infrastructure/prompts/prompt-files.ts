@@ -24,6 +24,9 @@ const readerPromptNames = {
 
 const answersPromptName = 'reader/answers.v1.md';
 
+/** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */
+const surfacePromptNames = { flows: 'cards/flows.v1.md', screens: 'cards/screens.v1.md' } as const;
+
 const versionPattern = /\.(v\d+)\.md$/;
 
 function invalid(name: string, problem: string): RosettaError {
@@ -57,13 +60,15 @@ export function loadMergePrompt(promptsFolder: string): Promise<PromptFile> {
 // RNF-004
 export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPrompts> {
   const load = (name: string) => loadPromptFile(promptsFolder, name);
-  const [system, cardFormat, task, turnsLeft, repair, resume] = await Promise.all([
+  const [system, cardFormat, task, turnsLeft, repair, resume, flows, screens] = await Promise.all([
     load(readerPromptNames.system),
     load(readerPromptNames.cardFormat),
     load(readerPromptNames.task),
     load(readerPromptNames.turnsLeft),
     load(readerPromptNames.repair),
     load(readerPromptNames.continue),
+    load(surfacePromptNames.flows),
+    load(surfacePromptNames.screens),
   ]);
   return {
     system,
@@ -72,6 +77,7 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
     turnsLeft: requirePlaceholder(turnsLeft, readerPlaceholders.turnsLeft),
     repair: requirePlaceholder(repair, readerPlaceholders.repair),
     continue: resume,
+    surface: { flows, screens },
   };
 }
 
