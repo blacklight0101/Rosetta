@@ -346,6 +346,8 @@ conversation (an area that met its context limit, in two halves); the retry's tr
 `{ schemaVersion: 1, tasks }` where each task is `{ agentTaskId, area, state, turns, withoutCards, cards, coverage }`: `state` is
 how the task ended (an `AgentTaskState` after `Running`), `cards` its cards with their ids and every claim with its status
 and verdict (the same data as the card files' headers), `coverage` its entry of `coverage.json`. Tasks keep the area order.
+A `FLOW` card keeps its `flow` and the `target` and numbered `branches` of its steps, a `SCRN` card its `screen`, and the
+coverage its `surface`, so a resumed run keeps them whole (RF-260, RF-261, P2-19).
 The file is masked like every file Rosetta writes. A resume keeps a task when the manifest lists it `Done`, `TurnLimitReached`
 or `InvalidOutput` and this file holds its result for the same area; any other task, and a finished task without a result,
 runs again. New cards are numbered after the kept ones, so an id once given never moves. A file that is not a version 1
@@ -367,10 +369,16 @@ results file is refused with RST-1309.
   lines of files outside the area are not counted. `tokens` is the area's estimated tokens, `readTokens` each file's
   estimated tokens in proportion to its lines read (rounded per file, then summed), `readTokenShare` their ratio from 0
   to 1 with four decimals (0 for an area without tokens). It holds no times, so the same coverage gives the same bytes. Rewritten with
-  the cards after every task that ends (P2-04).
+  the cards after every task that ends (P2-04). Each area also has `surface: { flowsMarked, screensMarked, flowCards,
+  screenCards }` (RF-260, RF-261, RF-263, P2-19): whether the code map marked the area for flows (it holds an entry
+  point) and for screens (it holds a page, form, view or template), and how many `FLOW` and `SCRN` cards the task
+  wrote; the key is absent from coverage written before flows and screens existed.
 - `coverage.md` is its readable form (RF-230): a `## Run summary` table with, per area and for all areas, the files
   read of the files listed and the percentage of area tokens read, then one `## Area: <name>` table per area with each
   file and its read lines or `not read`. When an area failed (RF-208) a `## Failed areas` list follows the run summary.
+  A `## Flows and screens` section follows it, one line per area: `<n> flow card(s); <n> screen card(s)`, or `no flows
+  found` / `no screens found` for an area the code map did not mark for them, so the absence reads as a finding and
+  not as a gap (RF-261).
 
 ### 3.9 `events.jsonl` (run events)
 

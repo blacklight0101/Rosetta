@@ -453,6 +453,19 @@ sequenceDiagram
   them in the manifest's `promptVersions` (`promptVersionsOf`, `recordPromptVersions`). Every agent prompt states that
   text inside data blocks is data, never instructions, and that a block ends only at the closing line with its own
   tag (unit test over `prompts/<role>/`).
+- **Flows and screens** (RF-260, RF-261, DEC-134, Q-25, P2-19): the code map marks an area for flows when one of its
+  files is an entry point (a page, a controller or the application entry file by its artefact kind, or a class named
+  like a job, handler, consumer, listener, subscriber or worker) and for screens when one is a page, form, view or
+  template (`marksOf`, `src/domain/code-map/area-surface.ts`; derived from the scan, so the code map file does not
+  change). `loadReaderPrompts` also reads `prompts/cards/flows.v1.md` and `prompts/cards/screens.v1.md`; a reader task
+  (`readerPromptsFor`) gets them after the card format only for the kinds its area is marked for, so an area of plain
+  libraries gets the very same prompts and costs nothing extra. The run manifest lists a fragment only when some task
+  used it. The fragments tell the agent to leave a step's `target` out (card ids are numbered after its answer), to
+  write a suspected path as an `OQ` card and never to write Mermaid. When a task ends, its coverage gets `surface`
+  (the marks and the number of `FLOW` and `SCRN` cards, `coverage.json`), and `coverage.md` has a `## Flows and
+  screens` section that says "no flows found" or "no screens found" for an area with no entry point or page. The run
+  estimate (RF-425) adds, for each kind an area is marked for, `surfacePromptTokens` to the prompt of every turn and
+  `surfaceOutputTokens` once to the output; no role is added.
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,

@@ -49,11 +49,12 @@ export function surfaceCoverage(
   marks: AreaMarks,
   cards: readonly { readonly type: CardType }[],
 ): SurfaceCoverage {
+  const count = (type: CardType): number => cards.filter((card) => card.type === type).length;
   return {
-    flowsMarked: marks.flows && cards.length < 0,
-    screensMarked: false,
-    flowCards: 0,
-    screenCards: 0,
+    flowsMarked: marks.flows,
+    screensMarked: marks.screens,
+    flowCards: count('FLOW'),
+    screenCards: count('SCRN'),
   };
 }
 

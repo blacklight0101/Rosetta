@@ -10,8 +10,12 @@ import { parseCardOutput } from '../../../../src/application/cards/parse-cards.j
 const read = (name: string): Promise<string> =>
   readFile(`prompts/cards/${name}`, 'utf8').catch(() => '');
 
-const flowsPrompt = await read('flows.v1.md');
-const screensPrompt = await read('screens.v1.md');
+// Markdown wraps lines anywhere, so the wording is checked with line ends as spaces.
+const flat = (text: string): string => text.replace(/\s+/gu, ' ');
+const flowsFile = await read('flows.v1.md');
+const screensFile = await read('screens.v1.md');
+const flowsPrompt = flat(flowsFile);
+const screensPrompt = flat(screensFile);
 
 function exampleOf(prompt: string) {
   const example = /```json\n([\s\S]*?)```/.exec(prompt)?.[1] ?? '';
@@ -21,14 +25,14 @@ function exampleOf(prompt: string) {
 
 describe('the flows fragment', () => {
   it('RF-260 its example answer is one FLOW card that passes the card schema', () => {
-    const [card] = exampleOf(flowsPrompt);
+    const [card] = exampleOf(flowsFile);
 
     expect(card?.type).toBe('FLOW');
     expect(card?.flow?.trigger.length).toBeGreaterThan(0);
   });
 
   it('RF-260 every step of the example is cited and one step has a cited branch', () => {
-    const [card] = exampleOf(flowsPrompt);
+    const [card] = exampleOf(flowsFile);
 
     expect(card?.claims.length).toBeGreaterThan(1);
     expect(card?.claims.every((claim) => claim.citations.length > 0)).toBe(true);
@@ -36,7 +40,7 @@ describe('the flows fragment', () => {
   });
 
   it('RF-260 explains that ids are numbered after the answer, so no step names one', () => {
-    const [card] = exampleOf(flowsPrompt);
+    const [card] = exampleOf(flowsFile);
 
     expect(card?.claims.every((claim) => claim.target === undefined)).toBe(true);
     expect(flowsPrompt).toContain('numbered after');
@@ -60,14 +64,14 @@ describe('the flows fragment', () => {
 
 describe('the screens fragment', () => {
   it('RF-261 its example answer is one SCRN card that passes the card schema', () => {
-    const [card] = exampleOf(screensPrompt);
+    const [card] = exampleOf(screensFile);
 
     expect(card?.type).toBe('SCRN');
     expect(card?.screen?.route.length).toBeGreaterThan(0);
   });
 
   it('RF-261 the example has a field with a cited validation, an action with a handler and a target', () => {
-    const [card] = exampleOf(screensPrompt);
+    const [card] = exampleOf(screensFile);
     const screen = card?.screen;
 
     expect(screen?.fields.some((field) => field.validations.length > 0)).toBe(true);

@@ -82,6 +82,18 @@ describe('coverage of flows and screens', () => {
     expect(markdown).toContain('- Reports: 0 flow cards; 0 screen cards');
     expect(markdown).not.toContain('no screens found');
   });
+
+  it('RF-263 an area the code map did not mark that still wrote a flow card counts it', async () => {
+    const surprising: AreaCoverage = {
+      ...services,
+      area: 'Batch',
+      surface: { flowsMarked: false, screensMarked: false, flowCards: 1, screenCards: 0 },
+    };
+
+    const markdown = fileOf(await written([surprising]), 'coverage.md');
+
+    expect(markdown).toContain('- Batch: 1 flow card; no screens found');
+  });
 });
 
 describe('coverage of flows and screens: layout', () => {

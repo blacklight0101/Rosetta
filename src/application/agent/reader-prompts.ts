@@ -26,7 +26,7 @@ export interface ReaderPrompts {
 }
 
 /** RF-260, RF-261: the two card types a marked area may also write, one prompt fragment each. */
-export interface SurfacePrompts {
+interface SurfacePrompts {
   readonly flows: PromptFile;
   readonly screens: PromptFile;
 }
@@ -67,25 +67,44 @@ export function turnsLeftMessage(prompts: ReaderPrompts, turns: number): string 
   return prompts.turnsLeft.text.replace(readerPlaceholders.turnsLeft, String(turns)).trimEnd();
 }
 
-/** Q-25: the prompts of a task over an area with these marks (the same prompts when it has none). */
-export function readerPromptsFor(prompts: ReaderPrompts, marks: AreaMarks): ReaderPrompts {
-  return marks.flows && marks.screens ? { ...prompts } : prompts;
+/** The fragments an area with these marks gets, flows first. */
+function surfaceFilesFor(prompts: ReaderPrompts, marks: AreaMarks): readonly PromptFile[] {
+  const { surface } = prompts;
+  if (surface === undefined) return [];
+  return [...(marks.flows ? [surface.flows] : []), ...(marks.screens ? [surface.screens] : [])];
 }
 
-/** RNF-004: what the run manifest records about the reader's prompts, by file name. */
+/**
+ * Q-25: the prompts of a task over an area with these marks. A marked area gets the flows and
+ * screens fragments after the card format; any other area gets the very same prompts, so a
+ * library costs nothing extra.
+ */
+export function readerPromptsFor(prompts: ReaderPrompts, marks: AreaMarks): ReaderPrompts {
+  const fragments = surfaceFilesFor(prompts, marks);
+  if (fragments.length === 0) return prompts;
+  const text = [prompts.cardFormat.text.trimEnd(), ...fragments.map((file) => file.text.trim())];
+  const joined = `${text.join('\n\n')}\n`;
+  return { ...prompts, cardFormat: { ...prompts.cardFormat, text: joined } };
+}
+
+/**
+ * RNF-004: what the run manifest records about the reader's prompts, by file name. `marks` says
+ * whether any area of the run is marked for flows or screens: only the fragments some task used
+ * are recorded.
+ */
 export function promptVersionsOf(
   prompts: ReaderPrompts,
-  marks?: AreaMarks,
+  marks: AreaMarks = { flows: false, screens: false },
 ): Record<string, PromptVersion> {
-  const given = marks === undefined ? prompts : readerPromptsFor(prompts, marks);
   const files = [
-    given.system,
+    prompts.system,
     prompts.cardFormat,
     prompts.task,
     prompts.turnsLeft,
     prompts.repair,
     prompts.continue,
     ...(prompts.answers === undefined ? [] : [prompts.answers]),
+    ...surfaceFilesFor(prompts, marks),
   ];
   return Object.fromEntries(
     files.map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),

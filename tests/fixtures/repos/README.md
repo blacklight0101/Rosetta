@@ -8,6 +8,7 @@ temporary folder first.
 |---|---|---|
 | `webforms-csharp/` | C# WebForms with a code-behind, a controller, SQL in strings and SQL scripts | RF-100 walk, RF-101 languages, RF-102 pages, configuration, manifests, RF-103 embedded SQL |
 | `webforms-ef/` | C# WebForms with an Entity Framework `DbContext`, a master page, a user control and pages with and without a code-behind | RF-111 symbols, code-behind links and candidate entities (P1-21) |
+| `webforms-shop/` | C# WebForms with a catalogue journey (list, search, details) and an order journey (basket, checkout, confirmation) over four pages with code-behinds, validators and redirects, plus a service library with no page | RF-260, RF-261, Q-25: FLOW and SCRN cards for the areas with pages, none for the library (P2-19) |
 | `php-shop/` | PHP with a front controller, an `.ini` file, `composer.json` and a SQL script | RF-102 and RF-103 in a second stack |
 | `cobol-ledger/` | COBOL and JCL, a language with no language pack | RF-102: unfamiliar files are still listed, language `cobol` or `unknown` |
 | `injection/` | C# with comments and a README that give orders to AI agents, a marker look-alike and a request to read `../../.env` | RF-145: planted instructions stay data; the refused read is logged (P1-31) |
