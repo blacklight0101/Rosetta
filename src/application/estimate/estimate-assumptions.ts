@@ -1,8 +1,9 @@
+import { MERGE_BATCH_TOKENS } from '../consolidate/merge-request.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import { readerParallelism, readerTaskSettings } from '../understand/reader-settings.js';
-import type { ByScenario, EstimateAssumptions, Scenario } from './estimate-types.js';
+import type { ByScenario, ReaderAssumptions, Scenario } from './estimate-types.js';
 
 // RF-425, ADR-007, DEC-117: the assumptions of the estimate. The reader limits (turns, output,
 // context, parallelism) are the ones the understand run uses, so the estimate and the run cannot
@@ -39,7 +40,7 @@ function eachScenario(figure: (scenario: Scenario) => number): ByScenario<number
 }
 
 // RF-425, DEC-117
-export function assumptionsOf(settings: ProjectSettings): EstimateAssumptions {
+export function assumptionsOf(settings: ProjectSettings): ReaderAssumptions {
   const { reader } = settings.roles;
   const provider = Object.hasOwn(settings.providers, reader.provider)
     ? settings.providers[reader.provider]
@@ -60,6 +61,7 @@ export function assumptionsOf(settings: ProjectSettings): EstimateAssumptions {
     verifierSharePercent: VERIFIER_PERCENT,
     summariserSharePercent: SUMMARISER_PERCENT,
     overviewOutputTokens: OVERVIEW_OUTPUT_TOKENS,
+    summariserBatchTokens: MERGE_BATCH_TOKENS,
     promptOverheadTokens: PROMPT_OVERHEAD_TOKENS,
     surfacePromptTokens: SURFACE_PROMPT_TOKENS,
     surfaceOutputTokens: SURFACE_OUTPUT_TOKENS,

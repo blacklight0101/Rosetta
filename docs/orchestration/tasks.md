@@ -13,9 +13,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P1 Milestone slice (M1) | 172 | 64 | 90 | 18 | 0 | 99 | 65 | 8 | 111 | 0 |
-| P2 Full understand | 39 | 7 | 26 | 6 | 0 | 12 | 26 | 1 | 19 | 0 |
+| P2 Full understand | 40 | 7 | 27 | 6 | 0 | 13 | 26 | 1 | 20 | 0 |
 | P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
-| **Total** | **237** | **73** | **138** | **26** | **0** | **114** | **112** | **11** | **131** | **0** |
+| **Total** | **238** | **73** | **139** | **26** | **0** | **115** | **112** | **11** | **132** | **0** |
 
 ## Conventions for every card
 
@@ -634,7 +634,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-25, P1-33
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `docs/spec/requirements.md` Q-04 and Q-10; `docs/providers.md`.
 - **Do**: a scoring script `eval/spike/score-reader.ts` (`npm run spike:reader`) that runs one demo area with each candidate 7-9B tool-calling model through Ollama under the local deployment and scores valid cards, valid citations, tool-call errors and time; a candidate list of at most four models that fit 8 GB of VRAM; the owner runs it on their machine; the result table and the recommended model in `docs/providers.md`.
 - **Delivers**: the script, the documented results, the recommended model as the default `reader` model for Ollama in `templates/project-settings.json`.
@@ -1894,7 +1894,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-138
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `src/application/projects/delete-project.ts`; the project repositories; `docs/data-model.md` section 9; the verdict 6153137792 on #348; RF-1012, DEC-55, Q-16.
 - **Do**: since P1-138 the rows of a project are deleted before its folder, so a folder that cannot be removed, or a crash after the commit, leaves a folder with no row and no way to retry from the app. Add a sweep that removes project and run folders with no row, at start-up and daily, logs each removal, never touches a folder that still has a row, and is tested on both repositories. Built after the milestone unless the owner says otherwise (agenda).
 - **Delivers**: the sweep and its tests.
@@ -2014,7 +2014,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-154
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-continuation-shapes.ts`; `tests/unit/infrastructure/guards/secret-masker.test.ts`; `secret-masker-performance.test.ts`; verdict 6165263754 on #389.
 - **Do**: `--token=` followed by a line continuation (`\`, `^` or a backtick at the end of the line, LF or CRLF) and then the value leaves the value visible (on main too). Add the shapes to the continuation fixture, failing first, then mask them; keep `mask(mask(x)) == mask(x)` and the P1-148 1 MB speed cases.
 - **Delivers**: the masker change and the tests.
@@ -2089,7 +2089,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-167
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: RF-264; the summariser role configuration; the spec writer.
 - **Do**: after understand, the `summariser` role writes `overview.md` from the cards whose citations passed (what the application is, who uses it, features, screens, data, integrations, what was not covered), each statement linking its cards and no statement without a card; a thin run says so and suggests the next step; `spec.md` and the Markdown report open with it; the run page shows it first (with P1-170). Prompt versioned; the budget guard and the estimate include the call.
 - **Review probes**: a run whose cards are mostly third-party (the overview says the run cannot explain the application yet); a model answer holding a statement with no card link (dropped); hostile card text (rendered as text).
@@ -2116,7 +2116,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-168, P1-169
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/design/proposals/run-page-v2.html`; RF-1007, RF-1014, RF-1015, RF-1017.
 - **Do**: the ended state of the run page as the proposal shows: the Overview tab first, the "Your turn" panel with the run facts, the Your questions tab (question, why the code cannot answer it with its citation, what depends on it, answer field, default), the Evidence tab (cards, claims, coverage, code map) and the Activity tab (replay, events, calls, logs); the page switches modes when the run ends.
 - **Review probes**: a run with no questions; 40 questions; an overview that says the run could not explain the application; a failed run (no overview; the page says what failed and what to do); the switch while the page is open.
@@ -2188,7 +2188,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-02, P2-11
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `docs/data-model.md` section 3.19; `docs/adr/ADR-008-testing-with-recorded-responses.md`.
 - **Do**: the summary of claims per status per area and the supported share in the run summary and report; a calibration set of about 30 hand-labelled claims under `eval/calibration/`; `npm run eval -- --calibration` reporting agreement per model and the disagreements.
 - **Delivers**: the summary writer, the calibration set, the eval mode; snapshot and integration tests.
@@ -2284,7 +2284,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: L
 - **Depends on**: P2-02
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.19; `docs/rfc/RFC-001-rosetta.md` section 7.
 - **Do**: the golden set for the demo app under `eval/golden/` (hand-checked features, rules, entities and "not in the code" cases); `npm run eval` running each case at least 3 times with the chosen models, saving results with date, models, model versions, prompt hashes and settings, reporting precision of `Supported` claims, recall of golden rules, citation validity, the spread, and estimate accuracy against `cost.json`.
 - **Delivers**: the golden set, runner, output schema; a schema test; the first recorded evaluation.
@@ -2428,7 +2428,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-11, P2-22
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the golden set and the evaluation runner (P2-11); RFC-001 section 7.
 - **Do**: add to the golden set the expected flows (journeys and their steps), screens (fields and actions) and entities with relations of the demo application, written by hand from the code; the evaluation runner reports step recall, screen field recall and relation precision next to the existing measures; P2-14's verification matrix includes RF-260..RF-263.
 - **Delivers**: golden-set files, runner measures, a measured baseline.
@@ -2524,7 +2524,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-25, P2-27, P2-28, P2-29, P2-30
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: the verdict comments on #459, #470, #471, #472 and #475; `file-task-results-full.test.ts`; `tests/helpers/Cart.tsx`; `RunCoverage.restore`; the replay (`claim-id-moves`) and its reducer; `capsLockFolder()`.
 - **Do**: Close the test gaps the verifiers left open. Each item needs a test that fails without the behaviour; no production change unless a test exposes a bug: (1) P2-28 (#470): a resume-level test (an area ends InvalidOutput and a merge exists; resume; coverage.json keeps the failure and note, and the card keeps mergedAreas; the RunCoverage.restore mutation must fail it), and a DeepRequired helper that makes the Required<> fixture in file-task-results-full.test.ts deep, so the nested types (FlowDetail, Citation, ScreenField, ScreenAction, Branch, FileCoverage, LineRange) are guarded; (2) P2-30 (#475): unknown-id cases in the replay (claim-id-moves) and the reducer, a swap case in the replay, and the integration test asserts the verdict status at move.to; (3) P2-25 (#459): the askingTheSame words !== '' guard (two empty-question OQ cards stay separate); (4) P2-29 (#471): a tests/helpers/Cart.tsx case pinning the tests/ directory rule alone; (5) P2-27 (#472): pin the capsLockFolder() default root to tmpdir(), and the e2e-run-wiring teardown test uses a mkdtemp root.
 - **Delivers**: tests; a production fix only where a test exposes a bug.
@@ -2536,7 +2536,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-94, P2-02, P2-20
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: the eight `understand-*` integration tests named in Do; the fake provider delays and polling intervals they use; the local verify and pre-push timings.
 - **Do**: The understand-* integration tests (understand-consolidate, understand-with-answers, understand-flows-screens, understand-judgement-flow, understand-run-context, understand-rerun, understand-answers-merged, understand-overview) take 60-90 s each on a loaded Windows host and time out ('The run has not ended') in local verify and pre-push runs, since P1-167, P2-02 and P2-20 added steps to each run. CI passes. Measure where the time goes (fake provider delays, polling intervals, repeated fixture scans, per-test full runs where one shared run per describe would do); make the runs lighter (share one run per file where tests only read it, cut fixed waits, poll on events instead of sleeps); and set one documented timeout constant sized from the measurements.
 - **Delivers**: lighter understand test runs and one documented timeout constant; no assertion weakened.
@@ -2572,7 +2572,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-01, P2-06
 - **Gate**: none
-- **Status**: In progress
+- **Status**: In review
 - **Reads**: `src/application/cards/card-merge.ts`; the consolidation step of the understand run (P2-06); the resume path (P2-01); verdicts on #437 and #446.
 - **Do**: (1) A cap refusal in the optional consolidation step no longer turns a run whose areas all finished into Interrupted/CapReached: the run ends as it would without consolidation, the cards stay unmerged and the refusal is recorded (event and log); the spend already made is kept on the ledger. (2) The cards message to the summariser has a size bound: card types larger than the bound are sent in batches (one call per batch), and the estimate (RF-425) counts the batches. (3) On resume, card types already merged in the stopped run are not sent to the summariser again (not paid twice), and a re-merge keeps the survivor ids it chose before, so answers.md keys stay valid. (4) An integration test resumes a run that had consolidated.
 - **Delivers**: code changes, tests.
@@ -2584,7 +2584,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-05, P2-25
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: the re-run-with-answers path (P2-05) and consolidation with answers (P2-25); the answers page in `web/src/pages/`; verdicts on #443 and #459.
 - **Do**: (1) The answers page shows each question's state (Open, Answered) and refreshes after a re-run. (2) An Answered question can be reopened (an edited answer after Answered is otherwise never re-sent), with an event. (3) The start page offers "re-run with answers" (withAnswers) when answered questions exist. (4) A skipped question (no answer) is logged and gets an event. (5) The `owner_answers` block in the prompt gets its label. (6) Tests for the P2-06 interplay: a re-run that merges two cards keeps the New/Changed lists, and a merge write failure leaves the questions Open.
 - **Delivers**: code and page changes, tests (unit, integration, e2e for the page).
@@ -2596,7 +2596,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-16, P2-24
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `src/application/estimate/estimate-run.ts` (around line 161); the price override code and the settings page; verdicts on #445 and #455.
 - **Do**: (1) The run estimate prices Anthropic prompt input that will be written to the cache at the cache-write price, not the plain input price. (2) `provider-calls.jsonl` records cache-write tokens. (3) An own-key Anthropic price override without a cache-write price gets a clear message instead of the misleading RST-1601 text, and the settings page warns before saving it. (4) `PriceOverrides` derives the providers that need cache-write prices from one list (no hard-coded `['anthropic']` duplicate). (5) The settings warning is linked to its field with `aria-describedby`. (6) Correct the estimate comment that says the confirmation threshold covers cache writes.
 - **Delivers**: code and page changes, tests.
@@ -2608,7 +2608,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-01, P2-02
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: the verifier judgement step (P2-02); the resume path (P2-01); RF-304; verdicts on #454.
 - **Do**: Claims that a reader or verifier cap left Unverified (run stopped) are judged when the run is resumed, as RF-304 says ("so verification can resume"). Claims already judged are not sent again. A user Stop that left claims Proposed behaves the same. The run page, the replay and the report show the new verdicts.
 - **Delivers**: code changes, tests (unit and an integration resume test).
@@ -2620,12 +2620,23 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-02
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: the egress guard and the code-map citation path; the P1-28 footer matcher; verdicts on #454.
 - **Do**: (1) A cited binary file in the code map is never sent to a model (only its path and a "binary, not sent" note), on every role's request. (2) The P1-28 matcher defangs a footer forgery split across lines (the random tag still protects, but the text must not reach the model as a footer). (3) Self-probe both with crafted repositories.
 - **Delivers**: code changes, tests.
 - **Done when**: each item has a test that fails without it; `npm run verify` green.
 - **Refs**: RF-140, RF-141, RNF-030, P1-28, P2-02.
+### P2-40 - Follow-up: secret masker precision (Bearer, api_key, --token)
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P2-33, P1-162
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-continuation-shapes.ts`; the shared masker fixture; verdicts on #483 and #493.
+- **Do**: (1) `Authorization: Bearer` keeps obvious placeholders (`<token>`, `{token}`, `${TOKEN}`, `$token`, `YOUR_TOKEN`, `[token]`, `xxxx`) and prose like "the Authorization: Bearer header", with a "placeholder kept" test; (2) Bearer values containing `,` or `;` are masked whole, and a no-break space (U+00A0) between `Bearer` and the value is matched; (3) `api_key=ab:cd-ef!gh12345` is masked by the api-key rule; (4) prose "the --token= flag" no longer masks the next word, while `--token= <value>` on a command line still does (pick a rule and document it); (5) the continuation fixture gets shapes with blanks after the mark (`\`, `^`, backtick); (6) idempotence and the 1 MB speed cases still hold.
+- **Delivers**: masker changes, fixture cases, tests.
+- **Done when**: each item has a test that fails without it; no existing masked shape becomes unmasked; `npm run verify` green.
+- **Refs**: RF-141, RNF-003, P2-33, P1-162.
 ---
 
 ## Phase 3 - Report and plan

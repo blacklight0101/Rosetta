@@ -366,6 +366,22 @@ or `InvalidOutput` and this file holds its result for the same area; any other t
 runs again. New cards are numbered after the kept ones, so an id once given never moves. A file that is not a version 1
 results file is refused with RST-1309.
 
+### 3.7b `consolidation.json`
+
+| | |
+|---|---|
+| Purpose | what the summariser step of an understand run did, so a resume neither pays for it again nor merges differently (RF-250, RF-006, P2-35) |
+| Writer | `RunUnderstand` through `TaskResults`, rewritten when the step answers about a type or a merge no longer stands |
+| Readers | `RunUnderstand` when the run is resumed; a resume is refused with RST-1309 when the file cannot be read |
+
+`{ schemaVersion: 1, types, merges }`. `types` lists, in the order `BR`, `ENT`, each card type the summariser answered
+about as `{ type, cardIds }`, where `cardIds` are the ids (before any merge) of the cards it was shown, every batch of the
+type answered with a usable list (an empty list counts). `merges` are the merges applied, in order, each `{ ids, title,
+summary }` as the summariser asked, with the ids of the cards before the merge. A resume makes the merges again over the
+kept cards (a merge that no longer applies is dropped), so the card that survived keeps its id, and asks only about a type
+that is absent from `types` or that has a card whose id is not in its `cardIds`. The file is masked like every file Rosetta
+writes. It is absent for a run whose summariser step answered nothing.
+
 ### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 
 - `spec.md`: opens with `## Overview`, the overview of 3.8a (once the run has one), then the cards per area as one readable specification with links to the card files and, for every citation, to the
