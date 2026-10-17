@@ -16,15 +16,14 @@ import type { CheckedCards } from '../verifier/citation-check.js';
 import { leaveUnverified } from '../verifier/leave-unverified.js';
 import { announceCards } from './announce-cards.js';
 import { areaFailureOf } from './area-failure.js';
-import { markAnswered, type Rerun } from './answer-rerun.js';
-import { compareCards, type CardChanges } from './card-changes.js';
+import { changesOf, markAnswered, type Rerun } from './answer-rerun.js';
+import { cardNoteOf, coverageNoteOf } from './area-notes.js';
 import {
   isProposed,
   judgementPartsOf,
   runJudgementStep,
   type JudgementContext,
 } from './claim-judgement.js';
-import { cardNoteOf, coverageNoteOf, withoutQuestions } from './area-notes.js';
 import { openQuestionsOf } from './open-questions.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
@@ -35,6 +34,7 @@ import { failedOutcome, sessionOutcome, type TaskOutcome } from './session-outco
 import { TaskLog } from './task-log.js';
 import { runPool } from './task-pool.js';
 import { taskResultOf } from './task-result-of.js';
+import { withoutThirdPartyQuestions } from './third-party-questions.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
 // RF-200, RF-202, RF-203, RF-230, RF-300, RF-301, RF-1002, DEC-98, RNF-002: the reader tasks of one
@@ -121,7 +121,7 @@ export class UnderstandSession {
           return failedOutcome(error);
         },
       );
-      const outcome = await this.withoutThirdPartyQuestions(task, result);
+      const outcome = await withoutThirdPartyQuestions(this.log, this.thirdParty, task, result);
       const failure = areaFailureOf(outcome);
       const cards = outcome.drafts;
       const note = coverageNoteOf(outcome.areaRead, this.thirdParty.has(task.area.name));
@@ -179,7 +179,7 @@ export class UnderstandSession {
     const mergedAway = this.latest.cards.filter((card) => !kept.has(card.id));
     this.latest = { ...this.latest, cards: merged.cards };
     const areasWithoutCards = this.cards.areasWithoutCards();
-    const changes = this.changesOf(merged.cards);
+    const changes = changesOf(this.parts.rerun, merged.cards);
     const set = { cards: merged.cards, source, areasWithoutCards, mergedAway, ...changes };
     await deps.cards.writeCards(scopeOf(execution.run), set);
   }
@@ -215,18 +215,12 @@ export class UnderstandSession {
     if (outcome.rawOutputs.length > 0) await this.keepInvalid(task, outcome.rawOutputs);
     if (outcome.state === 'Done' && outcome.problems.length > 0)
       await this.log.dropped(task, outcome.problems);
-    const expectsCards = !this.thirdParty.has(task.area.name);
-    const withoutCards = outcome.state === 'Done' && outcome.drafts.length === 0 && expectsCards;
+    const empty = outcome.state === 'Done' && outcome.drafts.length === 0;
+    const withoutCards = empty && !this.thirdParty.has(task.area.name);
     if (withoutCards) await this.log.withoutCards(task);
     this.ends.set(agentTaskId, outcome);
     const note = cardNoteOf(outcome.areaRead);
-    const { drafts } = outcome;
-    this.cards.record({
-      agentTaskId,
-      drafts,
-      withoutCards,
-      ...(note === undefined ? {} : { note }),
-    });
+    this.cards.record({ agentTaskId, drafts: outcome.drafts, withoutCards, note });
     await this.writeCards();
     await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas());
     await this.persist();
@@ -275,14 +269,8 @@ export class UnderstandSession {
     const areasWithoutCards = this.cards.areasWithoutCards();
     await deps.cards.writeCards(scopeOf(execution.run), {
       ...{ cards, source, areasWithoutCards },
-      ...this.changesOf(cards),
+      ...changesOf(this.parts.rerun, cards),
     });
-  }
-
-  /** RF-241: the new and changed cards of a re-run with answers; nothing for any other run. */
-  private changesOf(cards: readonly Card[]): { readonly changes?: CardChanges } {
-    const { rerun } = this.parts;
-    return rerun === undefined ? {} : { changes: compareCards(cards, rerun.plan.baseline) };
   }
 
   /** Publishes the cards whose ids are final, with the citation check of each claim (RF-1002). */
@@ -295,17 +283,5 @@ export class UnderstandSession {
   private async keepInvalid(task: ReaderTask, rawOutputs: readonly string[]): Promise<void> {
     const { deps, execution } = this.parts;
     await deps.cards.writeInvalidOutput(scopeOf(execution.run), task.agentTaskId, rawOutputs);
-  }
-
-  /** RF-243: an area of third-party code writes no open question, whatever its agent answered. */
-  private async withoutThirdPartyQuestions(
-    task: ReaderTask,
-    outcome: TaskOutcome,
-  ): Promise<TaskOutcome> {
-    if (!this.thirdParty.has(task.area.name)) return outcome;
-    const drafts = withoutQuestions(outcome.drafts);
-    if (drafts.length === outcome.drafts.length) return outcome;
-    await this.log.thirdPartyQuestions(task);
-    return { ...outcome, drafts };
   }
 }

@@ -1,5 +1,7 @@
 import type { AnsweredQuestion, AnswersFile, ProjectRef } from '../ports/answers-file.js';
 import type { PriorCard, PriorCards } from '../ports/prior-cards.js';
+import type { Card } from '../../domain/cards/card.js';
+import { compareCards, type CardChanges } from './card-changes.js';
 import type { ReaderTask } from './reader-tasks.js';
 
 // RF-241, RF-1007, DEC-15: the re-run with answers. The answered questions of the project's
@@ -111,4 +113,12 @@ export async function markAnswered(
     marked.push(...(await deps.cards.markAnswered(plan.project, runKey, ids)));
   }
   return marked;
+}
+
+/** RF-241: the new and changed cards of a re-run with answers; nothing for any other run. */
+export function changesOf(
+  rerun: Rerun | undefined,
+  cards: readonly Card[],
+): { readonly changes?: CardChanges } {
+  return rerun === undefined ? {} : { changes: compareCards(cards, rerun.plan.baseline) };
 }

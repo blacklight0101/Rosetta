@@ -18,7 +18,7 @@ export interface TaskEnd {
   /** The task ended `Done` without a card: suspicious, so the area is named (P1-33). */
   readonly withoutCards: boolean;
   /** RF-206: a note for every card of the task. */
-  readonly note?: string;
+  readonly note?: string | undefined;
 }
 
 function taskCardsOf(task: ReaderTask, end: TaskEnd): TaskCards {
