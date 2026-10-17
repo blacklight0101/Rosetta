@@ -144,3 +144,19 @@ describe('ObservedProvider records failed calls', () => {
     ]);
   });
 });
+
+describe('ObservedProvider records cache writes', () => {
+  it('RF-408 records the tokens the call wrote to the prompt cache, and none when it wrote none', async () => {
+    const written = { ...textAnswer.usage, cacheWriteInputTokens: 300 };
+    const { provider, log } = observedHarness({
+      inner: (clock) => slowProvider(clock, 1500, { ...textAnswer, usage: written }),
+    });
+    const plain = observedHarness();
+
+    await provider.complete(contractRequest());
+    await plain.provider.complete(contractRequest());
+
+    expect(log.records()).toEqual([expect.objectContaining({ cacheWriteInputTokens: 300 })]);
+    expect(JSON.stringify(plain.log.records())).not.toContain('cacheWriteInputTokens');
+  });
+});

@@ -40,6 +40,7 @@ const callSchema = z.object({
   inputTokens: count,
   outputTokens: count,
   cachedInputTokens: count,
+  cacheWriteInputTokens: count.optional(),
   usageSource: z.enum(['reported', 'estimated']),
   costMicros: count,
   currency: z.string(),
@@ -67,10 +68,12 @@ function ollamaOf(parsed: ParsedOllama): NonNullable<StoredCall['ollama']> {
 export function parseCallLine(value: unknown): StoredCall | undefined {
   const parsed = callSchema.safeParse(value);
   if (!parsed.success) return undefined;
-  const { modelVersion, requestId, errorCode, httpStatus, ollama, transcriptRef, ...required } =
+  const { modelVersion, requestId, errorCode, httpStatus, ollama, transcriptRef, ...rest } =
     parsed.data;
+  const { cacheWriteInputTokens, ...required } = rest;
   return {
     ...required,
+    ...(cacheWriteInputTokens === undefined ? {} : { cacheWriteInputTokens }),
     ...(modelVersion === undefined ? {} : { modelVersion }),
     ...(requestId === undefined ? {} : { requestId }),
     ...(errorCode === undefined ? {} : { errorCode }),

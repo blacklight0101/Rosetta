@@ -76,6 +76,19 @@ describe('the warning for an Anthropic override without a cache-write price', ()
     expect(screen.queryByText(warning)).toBeNull();
   });
 
+  it('RF-427 the cache-write field is described by the warning while the warning shows', async () => {
+    await withOverride('anthropic');
+    const field = screen.getByLabelText('Override 1 cache write (USD per million tokens)');
+    const warningId = screen.getByText(warning).id;
+
+    expect(warningId).not.toBe('');
+    expect(field.getAttribute('aria-describedby')?.split(' ')).toContain(warningId);
+
+    type('Override 1 cache write (USD per million tokens)', '3.75');
+
+    expect(field.getAttribute('aria-describedby') ?? '').not.toContain(warningId);
+  });
+
   it('RF-427 a provider that bills no cache write gets no warning', async () => {
     await withOverride('openai');
 
