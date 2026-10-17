@@ -8,10 +8,20 @@ const entities: Readonly<Record<string, string>> = {
   "'": '&#39;',
 };
 
-/** The text with `& < > " '` replaced by entities, safe in element text and in quoted attributes. */
+// NUL and the other C0 controls (tab, line feed and carriage return stay), DEL, and the bidi
+// controls that reorder the text around them.
+// eslint-disable-next-line no-control-regex -- the point is to find control characters in text
+const INVISIBLE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u202a-\u202e\u2066-\u2069]/gu;
+
+/**
+ * The text with `& < > " '` replaced by entities, safe in element text and in quoted attributes,
+ * and without NUL and bidi controls.
+ */
 // RF-507
 export function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (character) => entities[character] ?? character);
+  return text
+    .replace(INVISIBLE, '')
+    .replace(/[&<>"']/g, (character) => entities[character] ?? character);
 }
 
 const GITHUB_PREFIX = 'https://github.com/';

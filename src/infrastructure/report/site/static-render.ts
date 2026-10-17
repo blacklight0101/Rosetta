@@ -18,10 +18,14 @@ const VOID_TAGS: ReadonlySet<string> = new Set([
 const REFUSED_TAGS: ReadonlySet<string> = new Set([
   ...['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet'],
   ...['link', 'meta', 'base', 'form', 'template', 'noscript'],
+  // SVG and MathML elements that can set an address or embed markup.
+  ...['animate', 'animatetransform', 'animatemotion', 'set', 'math', 'foreignobject'],
 ]);
 
 const REFUSED_ATTRIBUTES: ReadonlySet<string> = new Set([
-  ...['style', 'dangerouslysetinnerhtml', 'srcdoc', 'formaction'],
+  ...['style', 'dangerouslysetinnerhtml', 'srcdoc', 'formaction', 'attributename'],
+  // Addresses and fetches that `href`, `src` and `action` do not cover.
+  ...['srcset', 'poster', 'ping', 'background', 'data'],
 ]);
 
 /** Attributes that hold an address. */
@@ -78,14 +82,20 @@ function attributeText(name: string, value: unknown): string {
 function attributesOf(props: object): string {
   return Object.entries(props)
     .filter(([name]) => !PROPS_NOT_WRITTEN.has(name))
+    .filter(([name]) => !('target' in props && name.toLowerCase() === 'rel'))
     .map(([name, value]) => attributeText(name, value))
     .join('');
+}
+
+/** A link that opens a new window never hands it the page (`rel` is ours, whatever the props say). */
+function relFor(props: object): string {
+  return 'target' in props ? ' rel="noopener noreferrer"' : '';
 }
 
 function elementText(tag: string, props: object, children: ComponentChildren): string {
   if (!TAG_NAME.test(tag) || REFUSED_TAGS.has(tag.toLowerCase()))
     refuse(`The element ${tag} is refused.`);
-  const open = `<${tag}${attributesOf(props)}>`;
+  const open = `<${tag}${attributesOf(props)}${relFor(props)}>`;
   return VOID_TAGS.has(tag) ? open : `${open}${renderStatic(children)}</${tag}>`;
 }
 
@@ -116,6 +126,6 @@ export function renderStatic(node: ComponentChildren): string {
   if (node === null || node === undefined || typeof node === 'boolean') return '';
   if (typeof node === 'string' || typeof node === 'number') return escapeHtml(String(node));
   if (Array.isArray(node)) return node.map((child: ComponentChild) => renderStatic(child)).join('');
-  if (typeof node === 'object' && 'props' in node) return vnodeText(node);
+  if (typeof node === 'object' && 'props' in node && 'type' in node) return vnodeText(node);
   return refuse('A value that is not a component tree was given to the renderer.');
 }

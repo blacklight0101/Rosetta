@@ -38,7 +38,7 @@ plain HTML.
 
 ## Rationale
 
-- The serialiser is about eighty lines and escapes by construction, which makes RF-507 a property of the renderer
+- The serialiser is about a hundred and twenty lines and escapes by construction, which makes RF-507 a property of the renderer
   instead of a habit of each writer; the string templates (option 3) rely on every author remembering to escape.
 - Components give the pages the reuse the later cards need (P3-02, P3-03) and share the vocabulary of `web/` (DEC-52).
 - Option 1 gives the same result with a package the project does not yet use; it needs the owner's decision under
@@ -54,7 +54,7 @@ plain HTML.
 - No dependency is added; the report build stays a plain function over a model, testable without a browser.
 
 **Negative**
-- Rosetta owns eighty lines of serialiser (void elements, attribute names, boolean attributes) and must test them.
+- Rosetta owns a hundred and twenty lines of serialiser (void elements, attribute names, boolean attributes) and must test them.
 - Components use `h` calls instead of JSX; they read less like the components of `web/`.
 
 ## References
