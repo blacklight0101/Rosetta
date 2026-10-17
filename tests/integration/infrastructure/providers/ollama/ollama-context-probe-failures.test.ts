@@ -72,7 +72,7 @@ describe('OllamaProvider context probe timeouts', () => {
     expect(performance.now() - startedAt).toBeLessThan(1_500);
     expect(numCtx(server.chatBodies())).toEqual([32_768]);
     expect(response.metrics?.ollama).toMatchObject({ contextSource: 'auto-fallback' });
-  }, 10_000);
+  }, 30_000);
 
   it('RF-401 stopping one of two callers sharing a measurement leaves the other to finish', async () => {
     const { provider, server, another } = await start('context-show-hangs', {
@@ -92,7 +92,7 @@ describe('OllamaProvider context probe timeouts', () => {
     expect((await kept).text).toBe('The Catalog area lists products from the database.');
     expect(server.bodiesOf('/api/show')).toHaveLength(1);
     expect(numCtx(server.chatBodies())).toEqual([32_768]);
-  }, 10_000);
+  }, 30_000);
 });
 
 describe('OllamaProvider fixed-size spill check', () => {
@@ -109,5 +109,5 @@ describe('OllamaProvider fixed-size spill check', () => {
 
     expect(await call).toMatchObject({ code: ERROR_CODES.providerCallCancelled });
     expect(performance.now() - stoppedAt).toBeLessThan(1_000);
-  }, 10_000);
+  }, 30_000);
 });

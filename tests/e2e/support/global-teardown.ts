@@ -9,7 +9,7 @@ import { clearSessions } from './sign-in.js';
 
 export default async function globalTeardown(): Promise<void> {
   await clearSessions();
-  await rm(capsLockFolder(), { recursive: true, force: true });
+  await rm(capsLockFolder(), { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   const databaseUrl = process.env['ROSETTA_TEST_DATABASE_URL'];
   if (databaseUrl === undefined || databaseUrl === '') return;
   await dropDisposableSchema(databaseUrl, e2ePort());

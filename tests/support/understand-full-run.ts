@@ -27,7 +27,7 @@ export async function readJson(path: string): Promise<unknown> {
 }
 
 /** A scan and an understand run take a few seconds; more when the whole suite runs at once. */
-export const UNDERSTAND_TIMEOUT = { timeout: 30_000 } as const;
+export const UNDERSTAND_TIMEOUT = { timeout: 90_000 } as const;
 
 /**
  * One full run for the whole file, made in `beforeAll`, for tests that only read its result. A test
@@ -43,7 +43,8 @@ export function useSharedFullRun(prefix: string): { current(): FullRun } {
   }, UNDERSTAND_TIMEOUT.timeout);
 
   afterAll(async () => {
-    if (state.dir !== undefined) await rm(state.dir, { recursive: true, force: true });
+    if (state.dir !== undefined)
+      await rm(state.dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   return {

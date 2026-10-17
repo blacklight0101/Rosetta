@@ -71,7 +71,7 @@ function tracked(connection: SseConnection): () => boolean {
 /** The stream has ended (asserted, so a stream that stays open fails rather than hangs). */
 async function expectEnded(...connections: SseConnection[]): Promise<void> {
   const ended = connections.map(tracked);
-  await expect.poll(() => ended.every((check) => check()), { timeout: 2000 }).toBe(true);
+  await expect.poll(() => ended.every((check) => check()), { timeout: 15_000 }).toBe(true);
 }
 
 /** The stream is still open: it receives the next keep-alive. */

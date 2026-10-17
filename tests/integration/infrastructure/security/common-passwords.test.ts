@@ -16,7 +16,11 @@ import { failureOf } from '../../../support/failure-of.js';
 const folders: string[] = [];
 
 afterAll(async () => {
-  await Promise.all(folders.map((folder) => rm(folder, { recursive: true, force: true })));
+  await Promise.all(
+    folders.map((folder) =>
+      rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }),
+    ),
+  );
 });
 
 describe('common passwords', () => {

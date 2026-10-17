@@ -25,7 +25,7 @@ async function canMakeFileLinks(): Promise<boolean> {
   } catch {
     return false;
   } finally {
-    await rm(probe, { recursive: true, force: true });
+    await rm(probe, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }
 
@@ -166,7 +166,7 @@ describe('NodeRunFileReader and a data folder', () => {
     if (!opened.ok) throw new Error('The file was refused');
     await collectBytes(opened.value.body);
 
-    await rm(runFolder(), { recursive: true, force: true });
+    await rm(runFolder(), { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 
     expect(await reader().open(scope, 'manifest.json')).toEqual(notFound);
   });

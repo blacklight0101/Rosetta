@@ -59,9 +59,12 @@ export async function createHistoryHarness(): Promise<HistoryHarness> {
   const done = await test.runs.ended(first);
   test.clock.advance(60_000);
   const live = await submit();
-  await vi.waitFor(() => {
-    if (test.runs.executor.started.length < 2) throw new Error('The second run has not started');
-  });
+  await vi.waitFor(
+    () => {
+      if (test.runs.executor.started.length < 2) throw new Error('The second run has not started');
+    },
+    { timeout: 30_000 },
+  );
   const folder = { userId, projectId };
   test.folders.seed({ ...folder, runKey: done.runKey }, { 'manifest.json': '12345' });
   test.folders.seed(folder, { 'codemap.json': '12' });

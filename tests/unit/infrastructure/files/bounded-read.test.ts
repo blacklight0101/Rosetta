@@ -16,7 +16,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await rm(folder, { recursive: true, force: true });
+  await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 describe('bounded read', () => {

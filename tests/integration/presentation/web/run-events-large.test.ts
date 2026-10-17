@@ -61,7 +61,8 @@ afterAll(async () => {
   try {
     await owned.test?.server.close();
   } finally {
-    if (owned.dataDir !== undefined) await rm(owned.dataDir, { recursive: true, force: true });
+    if (owned.dataDir !== undefined)
+      await rm(owned.dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 

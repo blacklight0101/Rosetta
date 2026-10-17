@@ -47,6 +47,9 @@ function connectionOf(controller: ReadableStreamDefaultController<Uint8Array>): 
   };
 }
 
+// Captured at load, before any test installs fake timers.
+const realSetTimeout = setTimeout;
+
 export class StreamServer {
   readonly requests: StreamRequest[] = [];
   private readonly connections: Connection[] = [];
@@ -76,12 +79,16 @@ export class StreamServer {
     );
   };
 
-  /** The connection with that index (0 is the first), once the page has made it. */
+  /**
+   * The connection with that index (0 is the first), once the page has made it. It polls with the real
+   * timer, so a test with fake timers still gets its connection, and for up to 20 s: the page may take
+   * seconds to open it when the machine is shared.
+   */
   async connection(index = 0): Promise<Connection> {
-    for (let attempt = 0; attempt < 400; attempt += 1) {
+    for (let attempt = 0; attempt < 4000; attempt += 1) {
       const found = this.connections[index];
       if (found !== undefined) return found;
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await new Promise((resolve) => realSetTimeout(resolve, 5));
     }
     throw new Error(`The page never opened connection ${String(index)}.`);
   }

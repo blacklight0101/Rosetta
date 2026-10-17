@@ -29,7 +29,7 @@ async function canMakeFileLinks(): Promise<boolean> {
   } catch {
     return false;
   } finally {
-    await rm(probe, { recursive: true, force: true });
+    await rm(probe, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }
 

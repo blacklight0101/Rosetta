@@ -1,8 +1,16 @@
 import preact from '@preact/preset-vite';
+import { availableParallelism } from 'node:os';
 import { defineConfig } from 'vitest/config';
 
+// Local runs use half the cores (at least two). The suite is mostly file system and in-process
+// server work; on Windows, with several agents sharing the machine, a worker per core pushed single
+// tests past their timeouts and crashed workers (0xC0000005, 0xC0000409). CI runners are dedicated,
+// so they keep Vitest's default. `--maxWorkers` on the command line still overrides this.
+const localWorkers = Math.max(2, Math.floor(availableParallelism() / 2));
+const workers = process.env['CI'] === undefined ? { maxWorkers: localWorkers } : {};
+
 // Vitest's 5 s test timeout is a limit for a quiet machine. A test that takes 1 s alone takes
-// several times that when the CPU and disk are shared, so the default is 60 s; a hung test still fails.
+// several times that when the CPU is shared, so the default is 60 s; a test that hangs still fails.
 const shared = {
   environment: 'node',
   env: { ROSETTA_TEST: '1' },
@@ -13,6 +21,7 @@ const offline = { ...shared, setupFiles: 'tests/support/block-network.ts' } as c
 
 export default defineConfig({
   test: {
+    ...workers,
     projects: [
       {
         test: {

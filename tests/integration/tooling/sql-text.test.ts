@@ -26,7 +26,7 @@ describe('the folder scan', () => {
   });
 
   afterEach(async () => {
-    await rm(folder, { recursive: true, force: true });
+    await rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   it.each(['a.ts', 'a.tsx', 'a.mts', 'a.cts', 'a.js', 'a.mjs', 'a.cjs', 'nested/deeper/a.ts'])(

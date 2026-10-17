@@ -10,13 +10,7 @@ import {
   turn,
 } from './live-run-fixtures.js';
 import { renderLive, runPath, runRow } from './live-run-helpers.js';
-import {
-  codeMapAnswer,
-  codeMapPath,
-  openTabWhenReady,
-  ownAreas,
-  tab,
-} from './live-run-running-helpers.js';
+import { codeMapAnswer, codeMapPath, ownAreas, tab } from './live-run-running-helpers.js';
 
 // RF-1015, RF-1016, RF-1003, RF-507 (P1-169): the states of the page of a run while it runs that the
 // first scenarios leave out: no caps, no code map, a scan, many cards, hostile text, a burst of
@@ -207,13 +201,23 @@ it('RF-1015 working now says the agents start when the run has planned its work'
 });
 
 it('RF-1004 P1-166 500 events in ten seconds read the run at most once a second on the new page', async () => {
+  // The fake timers come before the page: the refresh throttle starts a one second timer at mount, and a
+  // real timer started earlier fires in real time (a slow machine reaches it mid-test) and runs a second
+  // chain of reads next to the fake one. With every timer fake the count depends on the events only.
+  // Testing Library's own waits never time out on a fake setTimeout, so the page gets a short advance of
+  // the fake clock to mount, then the tab is opened with vi.waitFor; the count starts after that.
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   const { stream, calls } = renderLive(withMap);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(50);
+  });
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
   connection.event(planned(2, 'r1', 'Catalog'));
   connection.event(agentStarted(3, 'r1', 'Catalog'));
-  await openTabWhenReady('Activity');
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  await vi.waitFor(() => {
+    fireEvent.click(tab('Activity'));
+  });
   const reads = (): number =>
     calls.filter((call) => call.method === 'GET' && call.path === runPath).length;
   const before = reads();

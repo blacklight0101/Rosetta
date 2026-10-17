@@ -23,7 +23,11 @@ const adminName = ['stream', 'admin'].join('.');
 const folders: string[] = [];
 
 afterAll(async () => {
-  await Promise.all(folders.map((folder) => rm(folder, { recursive: true, force: true })));
+  await Promise.all(
+    folders.map((folder) =>
+      rm(folder, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }),
+    ),
+  );
 });
 
 /** The cookies a browser keeps, updated from each answer. */
@@ -136,7 +140,7 @@ describe.skipIf(!hasTestDatabase)('event streams in the composed application', (
 
       expect(stream.status).toBe(200);
       expect(signOut.status).toBe(204);
-      await expect.poll(() => ended, { timeout: 5000 }).toBe(true);
+      await expect.poll(() => ended, { timeout: 15_000 }).toBe(true);
     } finally {
       await application.stop();
     }

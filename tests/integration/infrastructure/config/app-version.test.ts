@@ -18,7 +18,11 @@ async function manifest(content: string): Promise<string> {
 }
 
 afterEach(async () => {
-  await Promise.all(folders.splice(0).map((folder) => rm(folder, { recursive: true })));
+  await Promise.all(
+    folders
+      .splice(0)
+      .map((folder) => rm(folder, { recursive: true, maxRetries: 10, retryDelay: 100 })),
+  );
 });
 
 describe('readAppVersion', () => {

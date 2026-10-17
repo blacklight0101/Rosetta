@@ -21,7 +21,11 @@ const cleanups: string[] = [];
 
 afterEach(async () => {
   vi.restoreAllMocks();
-  await Promise.all(cleanups.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+  await Promise.all(
+    cleanups
+      .splice(0)
+      .map((path) => rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })),
+  );
 });
 
 async function exists(path: string): Promise<boolean> {

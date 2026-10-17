@@ -47,7 +47,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await current?.server.close();
-  await rm(outDir, { recursive: true, force: true });
+  await rm(outDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 it('RF-1013 puts every built file except index.html under assets/', () => {

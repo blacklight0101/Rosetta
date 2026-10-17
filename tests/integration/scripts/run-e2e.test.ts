@@ -73,7 +73,7 @@ describe('scripts/run-e2e.mjs --shard selection (RNF-005)', () => {
       await expect(attempt).rejects.toMatchObject({ code: 1 });
       await expect(attempt).rejects.toThrow(/has no spec files for shard 1/u);
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });
 });

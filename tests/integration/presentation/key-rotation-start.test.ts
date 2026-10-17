@@ -27,7 +27,11 @@ const current = fixtureSecret(32);
 const cleanups: string[] = [];
 
 afterAll(async () => {
-  await Promise.all(cleanups.map((path) => rm(path, { recursive: true, force: true })));
+  await Promise.all(
+    cleanups.map((path) =>
+      rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }),
+    ),
+  );
 });
 
 async function startAndStop(url: string, output: string[]): Promise<void> {

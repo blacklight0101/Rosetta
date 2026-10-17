@@ -29,7 +29,11 @@ beforeEach(() => {
 
 afterEach(async () => {
   vi.useRealTimers();
-  await Promise.all(folders.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+  await Promise.all(
+    folders
+      .splice(0)
+      .map((path) => rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })),
+  );
 });
 
 async function composed(lines: string[]) {
