@@ -9,7 +9,7 @@
 const lineEnd = String.raw`(?:\r\n|[\n\r\u2028\u2029])`;
 const mark = String.raw`[\\^\x60]`;
 const tailPattern = new RegExp(
-  String.raw`(?<![A-Za-z0-9-])--(?:password|passwd|pwd|token)(?:[^\r\n\u2028\u2029\\^\x60]|${mark}[ \t]*${lineEnd}){0,80}${mark}[ \t]*(?:${lineEnd}[ \t]*)?$`,
+  String.raw`(?:(?<![A-Za-z0-9-])--(?:password|passwd|pwd|token)|(?<![A-Za-z0-9])(?:password|passwd|pwd)["']?[ \t]{0,16}(?::=|[:=]))(?:[^\r\n\u2028\u2029\\^\x60]|${mark}[ \t]*${lineEnd}){0,80}${mark}[ \t]*(?:${lineEnd}[ \t]*)?$`,
   'i',
 );
 const endsWithLineEnd = new RegExp(`${lineEnd}[ \\t]*$`);

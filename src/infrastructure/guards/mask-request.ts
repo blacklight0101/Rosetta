@@ -47,6 +47,11 @@ class CountingMasker implements TextMasker {
     return result;
   }
 
+  /** The text masked without adding to the counts (it was counted when it was first masked). */
+  maskQuietly(text: string): string {
+    return this.inner.mask(text).text;
+  }
+
   /** Counts key pieces masked outside the wrapped masker. */
   addKeyPieces(count: number): void {
     this.counts['private-key'] += count;
@@ -105,7 +110,12 @@ class KeyCarry {
 
 /** The text masked, a lead in front of it taking part in the rules but not in the result. */
 function maskLed(taken: Taken, masker: CountingMasker): string {
-  return masker.mask(taken.lead + taken.text).text.slice(taken.lead.length);
+  const { lead, text } = taken;
+  const joint = masker.mask(lead + text).text;
+  if (joint.startsWith(lead)) return joint.slice(lead.length);
+  // The lead itself held a value (or a scheme word with no value after it), which the rules replaced.
+  const head = masker.maskQuietly(lead);
+  return joint.startsWith(head) ? joint.slice(head.length) : masker.mask(text).text;
 }
 
 /** The content masked between the frames of its data blocks; repository text passes the carry. */
