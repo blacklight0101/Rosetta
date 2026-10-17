@@ -1,4 +1,9 @@
-import type { AnswerEntry, RecordedQuestion } from '../../application/ports/answers-file.js';
+import type {
+  AnsweredQuestion,
+  AnswerEntry,
+  RecordedQuestion,
+} from '../../application/ports/answers-file.js';
+import { isRunKey } from '../files/workspace-paths.js';
 
 // RF-1007, data-model.md section 3.16: the sections of `answers.md` as lines. A section starts at
 // a `## <card id> - <question>` heading and holds the `- Card:`, `- Context:` and `- Answer:` lines;
@@ -82,6 +87,29 @@ function ofRun(sections: readonly Section[], runKey: string): Section[] {
   return sections.filter(
     (section) => section.card === `runs/${runKey}/cards/OQ/${section.cardId}.md`,
   );
+}
+
+const CARD_LINE = /^runs\/([^/]+)\/cards\/OQ\/(OQ-\d+)\.md$/u;
+
+/**
+ * RF-241: the run a section's card line names, when the line is exactly the line the run wrote for
+ * this section. A person can edit the file, so anything else (another card, a folder that is not a
+ * run's, a path out of it) names no run.
+ */
+function runOf(section: Section): string | undefined {
+  const found = CARD_LINE.exec(section.card ?? '');
+  const runKey = found?.[1];
+  if (runKey === undefined || found?.[2] !== section.cardId) return undefined;
+  return isRunKey(runKey) ? runKey : undefined;
+}
+
+/** RF-241: the questions with an answer, of every run, in file order. */
+export function answeredQuestionsOf(text: string): AnsweredQuestion[] {
+  return sectionsOf(linesOf(text)).flatMap((section) => {
+    const runKey = runOf(section);
+    if (runKey === undefined || (section.answer ?? '') === '') return [];
+    return [{ ...recorded(section), runKey }];
+  });
 }
 
 function recorded(section: Section): RecordedQuestion {

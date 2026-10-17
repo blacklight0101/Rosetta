@@ -19,6 +19,11 @@ function requireId(value: string, shape: RegExp): string {
   return value;
 }
 
+/** Whether the text is the folder name of a run (`20261012-100000-understand`). */
+export function isRunKey(value: string): boolean {
+  return runId.test(value);
+}
+
 export function isUserId(value: string): boolean {
   return uuid.test(value);
 }

@@ -24,11 +24,18 @@ import { breakMarkers, holdsMarker } from './marker-skeleton.js';
 
 /**
  * The read-only tools whose results are repository content (RF-145), and `unknown_tool` for the
- * error result of a call that names no tool: every tool message is one data block (P1-31); and
- * `cards`, the cards the summariser compares (RF-250).
+ * error result of a call that names no tool: every tool message is one data block (P1-31);
+ * `cards`, the cards the summariser compares (RF-250); and `owner_answers`, the owner's answers to
+ * open questions, sent to a re-run reader (RF-241).
  */
 export type DataBlockSource =
-  'read_file' | 'grep' | 'codemap_query' | 'list_area_files' | 'unknown_tool' | 'cards';
+  | 'read_file'
+  | 'grep'
+  | 'codemap_query'
+  | 'list_area_files'
+  | 'unknown_tool'
+  | 'cards'
+  | 'owner_answers';
 
 export const DATA_BLOCK_SOURCES: readonly DataBlockSource[] = [
   'read_file',
@@ -37,6 +44,7 @@ export const DATA_BLOCK_SOURCES: readonly DataBlockSource[] = [
   'list_area_files',
   'unknown_tool',
   'cards',
+  'owner_answers',
 ];
 
 export interface DataBlock {

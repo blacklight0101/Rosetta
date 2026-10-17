@@ -1,14 +1,10 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import {
-  recordManifestCodeMap,
-  recordPromptVersions,
-  type PromptVersion,
-} from '../../domain/runs/run-manifest.js';
+import { recordManifestCodeMap, recordPromptVersions } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { PromptFile } from '../agent/prompt-file.js';
-import { promptVersionsOf, type ReaderPrompts } from '../agent/reader-prompts.js';
+import type { ReaderPrompts } from '../agent/reader-prompts.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { CardOutputs } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
@@ -17,6 +13,7 @@ import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { CostTotals } from '../ports/cost-totals.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { Logger } from '../ports/logger.js';
+import type { PriorCards } from '../ports/prior-cards.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderSetFactory, ProviderSinks } from '../ports/provider-set-factory.js';
 import type { RunScope } from '../ports/run-events.js';
@@ -36,13 +33,12 @@ import { scopeOf } from '../runs/run-scope.js';
 import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { ManifestSecurityRecorder } from '../runs/run-security-record.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
-import { planReaderTasks, type ReaderTask } from '../understand/reader-tasks.js';
-import {
-  readUnderstandOptions,
-  rolesUseTextToolProtocol,
-  UNDERSTAND_ROLES,
-} from '../understand/understand-options.js';
+import type { ReaderTask, UnknownAreas } from '../understand/reader-tasks.js';
+import { runPrompts } from '../understand/run-prompts.js';
+import { planTasks } from '../understand/task-plan.js';
+import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understand-options.js';
 import { pinnedSourceOf } from '../understand/pinned-source.js';
+import type { Rerun } from '../understand/answer-rerun.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
@@ -73,6 +69,10 @@ export interface RunUnderstandDependencies {
   readonly textToolProtocol: () => Promise<PromptFile>;
   /** Reads the summariser's merge prompt, recorded when a merge call is made (RF-250, RNF-004). */
   readonly mergePrompt: () => Promise<PromptFile>;
+  /** Reads the answers prompt, used by a re-run with answers (RF-241, RNF-004). */
+  readonly answersPrompt: () => Promise<PromptFile>;
+  /** RF-241: the cards of earlier runs, read for a re-run and marked `Answered` by it. */
+  readonly priorCards: PriorCards;
   readonly clock: Clock;
   readonly logger: Logger;
   /** RF-145: the random tag of every data block the reader's tools write. */
@@ -86,6 +86,7 @@ interface Prepared {
   readonly tasks: readonly ReaderTask[];
   readonly prompts: ReaderPrompts;
   readonly mergePrompt: PromptFile;
+  readonly rerun?: Rerun;
 }
 
 interface UnderstandRoles {
@@ -157,30 +158,27 @@ export class RunUnderstand implements RunExecutor {
     await execution.recordSource(scanned.source);
     await updates.update((stored) => recordManifestCodeMap(stored, scanned.codeMapHash));
     const options = readUnderstandOptions(manifest.options);
-    const tasks = planReaderTasks(scanned.codeMap.areas, options.areas);
-    if (!tasks.ok) {
-      const message = 'An area named in the request is not in the code map.';
-      const { unknown, valid } = tasks.error;
-      const data = { unknown: [...unknown], valid: [...valid] };
-      await this.log(run, ERROR_CODES.areaUnknown, message, data);
-      return stop(failed(ERROR_CODES.areaUnknown));
-    }
-    const prompts = await this.deps.prompts();
-    const versions = await this.promptVersions(project, prompts);
+    const deps = { answers: this.deps.answers, cards: this.deps.priorCards };
+    const ref = { userId: run.userId, projectId: run.projectId };
+    const planned = await planTasks({
+      ...{ areas: scanned.codeMap.areas, options, project: ref, rerun: deps },
+    });
+    if (!planned.ok) return this.unknownAreas(run, planned.error);
+    const { tasks, rerun } = planned.value;
+    const withAnswers = rerun !== undefined && tasks.length > 0;
+    const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers);
     await updates.update((stored) => ok(recordPromptVersions(stored, versions)));
     const mergePrompt = await this.deps.mergePrompt();
-    return { ok: true, value: { project, scanned, tasks: tasks.value, prompts, mergePrompt } };
+    const withRerun = rerun === undefined ? {} : { rerun };
+    return { ok: true, value: { project, scanned, tasks, prompts, mergePrompt, ...withRerun } };
   }
 
-  /** RNF-004: the reader's prompt files, and the text tool protocol when a role uses it. */
-  private async promptVersions(
-    project: Project,
-    prompts: ReaderPrompts,
-  ): Promise<Record<string, PromptVersion>> {
-    const versions = promptVersionsOf(prompts);
-    if (!rolesUseTextToolProtocol(project.settings)) return versions;
-    const { name, version, sha256 } = await this.deps.textToolProtocol();
-    return { ...versions, [name]: { version, sha256 } };
+  /** RF-200: an area named in the request is not in the code map; the valid names are logged. */
+  private async unknownAreas(run: Run, problem: UnknownAreas): Promise<Step<never>> {
+    const message = 'An area named in the request is not in the code map.';
+    const data = { unknown: [...problem.unknown], valid: [...problem.valid] };
+    await this.log(run, ERROR_CODES.areaUnknown, message, data);
+    return stop(failed(ERROR_CODES.areaUnknown));
   }
 
   /** RF-200: the newest scan of the project that ended `Completed`. */

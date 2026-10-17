@@ -10,6 +10,8 @@ export interface ReaderTask {
   /** `reader-001`: a plain file name, used for the transcript and the invalid output (3.7, 3.15). */
   readonly agentTaskId: string;
   readonly area: Area;
+  /** RF-241: the owner's answers to the questions of this area, in a re-run with answers. */
+  readonly answers?: string;
 }
 
 export interface UnknownAreas {

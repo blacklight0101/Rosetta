@@ -1,3 +1,4 @@
+import type { CardChanges, CardRef } from '../../application/understand/card-changes.js';
 import type { Card } from '../../domain/cards/card.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
@@ -43,18 +44,37 @@ function withoutCards(areas: readonly string[], esc: MarkdownEscaper): string[] 
   ];
 }
 
+/** RF-241: the cards a re-run with answers added or changed, each list only when it has cards. */
+function changeLists(changes: CardChanges | undefined, esc: MarkdownEscaper): string[] {
+  if (changes === undefined) return [];
+  const list = (title: string, refs: readonly CardRef[]): string[] =>
+    refs.length === 0
+      ? []
+      : [`## ${title}`, '', ...refs.map((ref) => `- ${ref.id} ${esc.inline(ref.title)}`), ''];
+  return [...list('New cards', changes.added), ...list('Changed cards', changes.changed)];
+}
+
+export interface SpecExtras {
+  /** Areas whose task ended without a card (P1-33). */
+  readonly areasWithoutCards?: readonly string[];
+  /** RF-241: the new and changed cards of a re-run with answers. */
+  readonly changes?: CardChanges | undefined;
+}
+
 export function renderSpec(
   cards: readonly Card[],
   source: PermalinkSource,
   masker: TextMasker,
-  areasWithoutCards: readonly string[] = [],
+  extras: SpecExtras = {},
 ): string {
+  const { areasWithoutCards = [], changes } = extras;
   const esc = markdownEscaper(masker);
   const lines = ['# Specification', ''];
   for (const [area, inArea] of areasInOrder(cards)) {
     lines.push(`## Area: ${esc.inline(area)}`, '');
     lines.push(...inArea.flatMap((card) => cardSection(card, source, esc)));
   }
+  lines.push(...changeLists(changes, esc));
   lines.push(...withoutCards(areasWithoutCards, esc));
   return `${masker.mask(lines.join('\n')).text.trimEnd()}\n`;
 }

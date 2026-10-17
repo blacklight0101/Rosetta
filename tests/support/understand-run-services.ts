@@ -4,6 +4,7 @@ import { RunScan } from '../../src/application/use-cases/run-scan.js';
 import { RunUnderstand } from '../../src/application/use-cases/run-understand.js';
 import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-report-files.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
@@ -20,6 +21,7 @@ import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-f
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import {
   loadMergePrompt,
+  loadAnswersPrompt,
   loadReaderPrompts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
@@ -120,6 +122,8 @@ function understandExecutor(
     prompts: () => loadReaderPrompts('prompts'),
     mergePrompt: () => loadMergePrompt('prompts'),
     textToolProtocol: () => loadTextToolProtocol('prompts'),
+    answersPrompt: () => loadAnswersPrompt('prompts'),
+    priorCards: new FilePriorCards(writer),
     ids: new SequenceIdGenerator(),
   });
 }

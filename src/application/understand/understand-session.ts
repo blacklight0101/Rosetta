@@ -1,5 +1,4 @@
 import type { Card } from '../../domain/cards/card.js';
-import { formatCitation } from '../../domain/cards/citation.js';
 import type { CardDraft } from '../../domain/cards/card-ids.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -9,7 +8,7 @@ import type { OutputProblem } from '../cards/output-problem.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { consolidateCards } from '../consolidate/consolidate-cards.js';
 import { consolidationParts } from '../consolidate/consolidation-parts.js';
-import type { AnswersFile, OpenQuestion } from '../ports/answers-file.js';
+import type { AnswersFile } from '../ports/answers-file.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
 import type { RunOutcome } from '../ports/run-executor.js';
@@ -17,6 +16,9 @@ import type { RoleProvider } from '../providers/provider-set.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
 import { areaFailureOf } from './area-failure.js';
+import { markAnswered, type Rerun } from './answer-rerun.js';
+import { openQuestionOf } from './open-question.js';
+import { compareCards, type CardChanges } from './card-changes.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
@@ -40,6 +42,7 @@ interface UnderstandSessionDependencies {
 }
 
 export interface UnderstandSessionParts extends ReaderTaskContext {
+  readonly rerun?: Rerun;
   readonly deps: UnderstandSessionDependencies;
   readonly tasks: readonly ReaderTask[];
   readonly source: CardSource;
@@ -62,19 +65,6 @@ interface TaskOutcome {
 function failedOutcome(error: unknown): TaskOutcome {
   const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
   return { state: 'Failed', code, turns: 0, drafts: [], rawOutputs: [], problems: [] };
-}
-
-/** One line for `answers.md`: the first citation and claim of the card. */
-function questionOf(card: Card, runKey: string): OpenQuestion {
-  const [claim] = card.claims;
-  const citation = claim?.citations[0];
-  const where = citation === undefined ? '' : `${formatCitation(citation)} `;
-  return {
-    cardId: card.id,
-    runKey,
-    question: card.question ?? card.title,
-    context: `${where}${claim?.text ?? ''}`.trim(),
-  };
 }
 
 export class UnderstandSession {
@@ -138,6 +128,18 @@ export class UnderstandSession {
     await this.announce(true);
     await this.addQuestions();
     await this.consolidate();
+    await this.markAnswered();
+  }
+
+  /** RF-241: the questions of the areas whose task ended `Done` are now `Answered`. */
+  private async markAnswered(): Promise<void> {
+    const { rerun, tasks } = this.parts;
+    // RNF-002: a run whose card output failed has not used the answers; they stay for the next run.
+    if (rerun === undefined || this.outputFailure !== undefined) return;
+    const done = tasks
+      .filter((task) => this.ends.get(task.agentTaskId)?.state === 'Done')
+      .map((task) => task.area.name);
+    await markAnswered(rerun.deps, rerun.plan, new Set(done));
   }
 
   private async addQuestions(): Promise<void> {
@@ -145,7 +147,7 @@ export class UnderstandSession {
     const { run } = execution;
     const questions = this.latest.cards
       .filter((card) => card.type === 'OQ')
-      .map((card) => questionOf(card, run.runKey));
+      .map((card) => openQuestionOf(card, run.runKey));
     if (questions.length === 0) return;
     await deps.answers.addQuestions({ userId: run.userId, projectId: run.projectId }, questions);
   }
@@ -161,7 +163,8 @@ export class UnderstandSession {
     const mergedAway = this.latest.cards.filter((card) => !kept.has(card.id));
     this.latest = { ...this.latest, cards: merged.cards };
     const areasWithoutCards = this.cards.areasWithoutCards();
-    const set = { cards: merged.cards, source, areasWithoutCards, mergedAway };
+    const changes = this.changesOf(merged.cards);
+    const set = { cards: merged.cards, source, areasWithoutCards, mergedAway, ...changes };
     await deps.cards.writeCards(scopeOf(execution.run), set);
   }
 
@@ -215,10 +218,15 @@ export class UnderstandSession {
     this.latest = checked;
     const areasWithoutCards = this.cards.areasWithoutCards();
     await deps.cards.writeCards(scopeOf(execution.run), {
-      cards: checked.cards,
-      source,
-      areasWithoutCards,
+      ...{ cards: checked.cards, source, areasWithoutCards },
+      ...this.changesOf(checked.cards),
     });
+  }
+
+  /** RF-241: the new and changed cards of a re-run with answers; nothing for any other run. */
+  private changesOf(cards: readonly Card[]): { readonly changes?: CardChanges } {
+    const { rerun } = this.parts;
+    return rerun === undefined ? {} : { changes: compareCards(cards, rerun.plan.baseline) };
   }
 
   /** Publishes the cards whose ids are final, with the citation check of each claim (RF-1002). */

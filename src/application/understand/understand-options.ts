@@ -4,7 +4,7 @@ import type { ProjectSettings } from '../projects/project-settings.js';
 import { needsCloudConsent } from '../providers/cloud-consent.js';
 
 // RF-200, RF-143, data-model.md section 3.6 (`options`): what the start request of an understand
-// run fixes: the areas to read (every area when absent or empty) and the consent to send code to a cloud
+// run fixes: the areas to read (every area when absent or empty), the answers option (RF-241) and the consent to send code to a cloud
 // provider. Both are recorded in the manifest when the run is accepted and read back from it when
 // it starts, so nothing in a later request can change them.
 
@@ -18,20 +18,26 @@ export const UNDERSTAND_ROLES: readonly AgentRole[] = ['reader', 'summariser'];
 export interface UnderstandOptions {
   readonly areas?: readonly string[];
   readonly cloudConsent: boolean;
+  /** RF-241: run again the areas of the answered questions, with the answers as context. */
+  readonly withAnswers?: boolean;
 }
 
 const optionsSchema = z.object({
   areas: z.array(z.string()).optional(),
   cloudConsent: z.boolean().optional(),
+  withAnswers: z.boolean().optional(),
 });
 
 /** The options as the manifest records them; `areas` only when the request sent it, as sent (empty kept). */
 export function understandOptionsOf(request: {
   readonly areas?: readonly string[] | undefined;
   readonly cloudConsent?: boolean | undefined;
+  readonly withAnswers?: boolean | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
-  return request.areas === undefined ? consent : { areas: [...request.areas], ...consent };
+  const answers = request.withAnswers === true ? { withAnswers: true } : {};
+  const base = { ...consent, ...answers };
+  return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 
 /** The options recorded in a run's manifest; anything unreadable counts as no areas, no consent. */
