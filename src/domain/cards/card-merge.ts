@@ -91,6 +91,16 @@ function mergedCard(members: readonly Card[], merge: CardMerge): Card {
   };
 }
 
+/** The claims whose id the merge changed: the merged card's claims, in order, against the old ones. */
+function movesOf(members: readonly Card[], merged: Card): MergeMoves {
+  const before = members.flatMap((card) => card.claims.map((claim) => claim.claimId));
+  const claims = merged.claims.flatMap((claim, index) => {
+    const from = before[index];
+    return from === undefined || from === claim.claimId ? [] : [{ from, to: claim.claimId }];
+  });
+  return { cardId: merged.id, from: members.map((card) => card.id), claims };
+}
+
 function replaced(cards: readonly Card[], members: readonly Card[], merged: Card): Card[] {
   const gone = new Set(members.map((card) => card.id));
   return cards.flatMap((card) => {
@@ -106,6 +116,7 @@ function replaced(cards: readonly Card[], members: readonly Card[], merged: Card
 export function applyMerges(cards: readonly Card[], merges: readonly CardMerge[]): MergeResult {
   let current = cards;
   const applied: CardMerge[] = [];
+  const moves: MergeMoves[] = [];
   const skipped: { merge: CardMerge; problem: MergeProblem }[] = [];
   for (const merge of merges) {
     const members = membersOf(current, merge);
@@ -113,8 +124,10 @@ export function applyMerges(cards: readonly Card[], merges: readonly CardMerge[]
       skipped.push({ merge, problem: members.error });
       continue;
     }
-    current = replaced(current, members.value, mergedCard(members.value, merge));
+    const merged = mergedCard(members.value, merge);
+    current = replaced(current, members.value, merged);
     applied.push(merge);
+    moves.push(movesOf(members.value, merged));
   }
-  return { cards: current, applied, moves: [], skipped };
+  return { cards: current, applied, moves, skipped };
 }
