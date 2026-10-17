@@ -896,7 +896,7 @@ missing key use it.
 | Which local model runs the reader role? | Q-04 | chosen by the P1 spike card |
 | Target stack input for `plan` | Q-06 (answered: DEC-77, DEC-78) | the planning brief on the Plan setup page (ADR-018) |
 | Hosting provider | Q-18 | chosen when the hosted deploy card starts |
-| Report rendering approach | ADR index, deferred decisions | decided in the first P3 report card |
+| Report rendering approach | ADR-021 (Proposed) | Preact components rendered to static HTML when the report is built |
 | Move to TypeScript 7 | ADR index, deferred decisions | when typescript-eslint supports it |
 
 ### P1-166 local-run corrections
