@@ -114,6 +114,8 @@ function summariserTokens(
   const total = (scenario: Scenario): TokenFigures => ({
     inputTokens: merge[scenario].inputTokens * 2,
     outputTokens: merge[scenario].outputTokens + assumptions.overviewOutputTokens[scenario],
+    // The overview call is a plain call (no cached prefix of its own): only the merge writes cache.
+    cacheWriteTokens: merge[scenario].cacheWriteTokens,
   });
   return { low: total('low'), likely: total('likely'), high: total('high') };
 }
