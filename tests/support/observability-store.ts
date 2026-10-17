@@ -1,4 +1,5 @@
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import type { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { FileRunCallReader } from '../../src/infrastructure/providers/file-run-call-reader.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
@@ -24,6 +25,7 @@ export function observabilityStore(masker: SecretMasker, logger: MemoryLogger): 
 export function answerStore(masker: SecretMasker): {
   readonly answerFiles: MemoryOutputWriter;
   readonly answers: FileAnswersFile;
+  readonly priorCards: FilePriorCards;
   readonly briefFiles: MemoryOutputWriter;
   readonly briefs: PlanningBriefStore;
 } {
@@ -31,6 +33,7 @@ export function answerStore(masker: SecretMasker): {
   const briefFiles = new MemoryOutputWriter();
   return {
     ...{ answerFiles, answers: new FileAnswersFile({ writer: answerFiles, masker }) },
+    priorCards: new FilePriorCards(answerFiles),
     ...{ briefFiles, briefs: new FilePlanningBriefStore({ writer: briefFiles, masker }) },
   };
 }

@@ -9,6 +9,8 @@ import { DEFAULT_MAX_RUNNING_RUNS, RunQueue } from '../application/runs/run-queu
 import { BuildReport } from '../application/use-cases/build-report.js';
 import { ExportZip } from '../application/use-cases/export-zip.js';
 import { GetRun } from '../application/use-cases/get-run.js';
+import { CountAnsweredQuestions } from '../application/use-cases/count-answered-questions.js';
+import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { ListAnswers } from '../application/use-cases/list-answers.js';
 import { RecordAnswers } from '../application/use-cases/record-answers.js';
 import { ReadRunFile } from '../application/use-cases/read-run-file.js';
@@ -167,6 +169,7 @@ interface ServiceParts {
 function runServices(service: ServiceParts): RunServices {
   const { parts, runs, log, broadcaster, projects, submitRun, queue, scans, answers } = service;
   const { writer, manifests, observability } = service;
+  const cards = new FilePriorCards(writer);
   const ollamaHost = ollamaHostOf(parts.ollamaUrl);
   return {
     startRun: new StartRun({
@@ -198,8 +201,9 @@ function runServices(service: ServiceParts): RunServices {
       files: new FileRunTextFiles(writer),
       writer: new FileReportWriter({ writer, masker: parts.masker, assetsFolder: reportTemplates }),
     }),
-    listAnswers: new ListAnswers({ runs, answers }),
-    recordAnswers: new RecordAnswers({ runs, answers }),
+    listAnswers: new ListAnswers({ runs, answers, cards }),
+    recordAnswers: new RecordAnswers({ runs, answers, cards }),
+    countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
     streams: parts.streams,

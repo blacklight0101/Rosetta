@@ -64,6 +64,8 @@ async function setup(): Promise<Setup> {
   };
 }
 
+const stockQuestion = { cardId: 'OQ-001', question: 'Is stock shown?', context: 'b:3-4 y' };
+const priceQuestion = { cardId: 'OQ-002', question: 'Who edits prices?', context: 'c:5-6 z' };
 const answersUrl = (run: Run): string => `/api/runs/${run.id}/answers`;
 const fileOf = (test: TestServer, run: Run): string =>
   test.answerFiles.files.get(`projects/${run.projectId}/answers.md`) ?? '';
@@ -78,8 +80,8 @@ describe('GET /api/runs/:runId/answers', () => {
     expect(response.headers['cache-control']).toBe('no-store');
     expect(response.json()).toEqual({
       questions: [
-        { cardId: 'OQ-001', question: 'Is stock shown?', context: 'b:3-4 y', answer: '' },
-        { cardId: 'OQ-002', question: 'Who edits prices?', context: 'c:5-6 z', answer: '' },
+        { ...stockQuestion, answer: '', state: 'Open' },
+        { ...priceQuestion, answer: '', state: 'Open' },
       ],
     });
   });
@@ -108,8 +110,8 @@ describe('PUT /api/runs/:runId/answers', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       questions: [
-        { cardId: 'OQ-001', answer: 'Yes, greyed out.' },
-        { cardId: 'OQ-002', answer: 'Only managers.' },
+        { cardId: 'OQ-001', answer: 'Yes, greyed out.', state: 'Open' },
+        { cardId: 'OQ-002', answer: 'Only managers.', state: 'Open' },
       ],
     });
     const text = fileOf(test, run);

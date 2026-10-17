@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { RecordedQuestion } from '../../application/ports/answers-file.js';
+import type { CountAnsweredQuestions } from '../../application/use-cases/count-answered-questions.js';
 import type { ListAnswers } from '../../application/use-cases/list-answers.js';
 import type { RecordAnswers } from '../../application/use-cases/record-answers.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -20,6 +21,7 @@ import { signedInOf } from './request-actor.js';
 
 export interface AnswerServices {
   readonly listAnswers: ListAnswers;
+  readonly countAnswered: CountAnsweredQuestions;
   readonly recordAnswers: RecordAnswers;
 }
 

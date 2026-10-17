@@ -1,6 +1,7 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { err, type Result } from '../../domain/errors/result.js';
 import type { AnswerEntry, AnswersFile, RecordedQuestion } from '../ports/answers-file.js';
+import type { PriorCards } from '../ports/prior-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
 
 // RF-1007, RF-240, RF-1105, DEC-15: Record answers writes the user's answers to open questions of
@@ -11,6 +12,7 @@ import type { RunIndex } from '../ports/run-index.js';
 export interface RecordAnswersDependencies {
   readonly runs: RunIndex;
   readonly answers: AnswersFile;
+  readonly cards: PriorCards;
 }
 
 export type RecordAnswersProblem = 'not-found' | 'unknown-question';

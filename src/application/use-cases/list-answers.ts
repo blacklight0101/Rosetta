@@ -1,6 +1,7 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { AnswersFile, RecordedQuestion } from '../ports/answers-file.js';
+import type { PriorCards } from '../ports/prior-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
 
 // RF-1007, RF-240, RF-1105: List answers gives the live run page the open questions the run added
@@ -10,6 +11,7 @@ import type { RunIndex } from '../ports/run-index.js';
 export interface ListAnswersDependencies {
   readonly runs: RunIndex;
   readonly answers: AnswersFile;
+  readonly cards: PriorCards;
 }
 
 export class ListAnswers {
