@@ -86,6 +86,12 @@ export interface UnderstandHarnessOptions {
     harness: UnderstandHarness,
     signal: AbortSignal,
   ) => Promise<void>;
+  /** Like `beforeCall`, for the calls of the `verifier` role (the judgement step). */
+  readonly beforeVerifierCall?: (
+    call: number,
+    harness: UnderstandHarness,
+    signal: AbortSignal,
+  ) => Promise<void>;
 }
 
 interface UnderstandStart {
@@ -254,11 +260,16 @@ export async function createUnderstandHarness(
   const holder: { harness?: UnderstandHarness } = {};
   const beforeCall: BeforeCall = async (call, signal) =>
     holder.harness === undefined ? undefined : options.beforeCall?.(call, holder.harness, signal);
+  const beforeVerifierCall: BeforeCall = async (call, signal) =>
+    holder.harness === undefined
+      ? undefined
+      : options.beforeVerifierCall?.(call, holder.harness, signal);
   const providers = understandProviders({
     ...{ dataDir: options.dataDir, writer: s.writer, masker: s.masker, clock: s.clock },
     logger: s.logger,
     recording: await readerRecordingOf(options),
     beforeCall,
+    beforeVerifierCall,
     ...(await verifierRecordingOf(options.verifierRecording)),
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),

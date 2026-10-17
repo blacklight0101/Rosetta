@@ -111,3 +111,43 @@ describe('an understand run whose verifier is stopped by its cap', UNDERSTAND_TI
     }
   });
 });
+
+describe('an understand run the user stops during the judgement step', UNDERSTAND_TIMEOUT, () => {
+  it('RF-304 RF-230 RF-260 the coverage and the judged claims are still written, the rest stay Proposed', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'rosetta-flows-stopped-')));
+    try {
+      const h = await createUnderstandHarness({
+        ...{ dataDir: dir, recording: 'understand-flows-screens.json', fixture: 'webforms-shop' },
+        verifierRecording: 'verifier-flow-step-rejected.json',
+        beforeVerifierCall: async (call, harness) => {
+          if (call === 2) await harness.stopRunning();
+        },
+      });
+      await h.scan();
+      const run = await h.understand();
+
+      const folder = h.runFolder(run);
+      expect(run.endState).toBe('Interrupted');
+      const coverage = await readJson(join(folder, 'coverage.json'));
+      expect(coverage).toMatchObject({
+        areas: [
+          { area: '(root)', surface: { flowCards: 1, incompleteFlows: 0 } },
+          { area: 'Catalog', surface: { flowCards: 1 } },
+          { area: 'Orders', surface: { flowCards: 1 } },
+          { area: 'Services', surface: { flowCards: 0 } },
+        ],
+      });
+      const flow = await readFile(join(folder, 'cards', 'FLOW', 'FLOW-001.md'), 'utf8');
+      expect(flow.match(/status: .*/g)).toEqual([
+        'status: "Supported"',
+        'status: "Proposed"',
+        'status: "Proposed"',
+      ]);
+      expect(flow).toContain('incomplete: false');
+      await expect(readFile(join(folder, 'coverage.md'), 'utf8')).resolves.toContain('flow card');
+      await expect(readFile(join(folder, 'spec.md'), 'utf8')).resolves.toContain('## Flows');
+    } finally {
+      await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    }
+  });
+});

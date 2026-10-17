@@ -120,6 +120,16 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
   {
+    // A short value in an Authorization header (`Authorization: Bearer abc.def-ghi!jkl`): the
+    // header names it, so it needs no minimum length and may hold any character up to a blank,
+    // quote, comma or semicolon.
+    kind: 'bearer-token',
+    pattern: new RegExp(
+      String.raw`(?<keep>\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?Bearer[ \t]{1,16})${notMasked}[^\s"',;]{4,}`,
+      'gi',
+    ),
+  },
+  {
     // The Basic and token schemes of an Authorization header (`Authorization: Basic <base64>`).
     kind: 'bearer-token',
     pattern: new RegExp(

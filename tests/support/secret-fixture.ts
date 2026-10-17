@@ -91,6 +91,13 @@ export const secretCases: readonly SecretCase[] = [
     secrets: [bearerToken],
   },
   {
+    name: 'a short bearer token with punctuation in a header',
+    kind: 'bearer-token',
+    text: 'Authorization: Bearer abc.def-ghi!jkl',
+    masked: 'Authorization: Bearer [MASKED:bearer-token]',
+    secrets: ['abc.def-ghi!jkl', 'ghi!jkl'],
+  },
+  {
     name: 'a password in a connection URL',
     kind: 'connection-string',
     text: `DATABASE_URL=postgres://rosetta:${fakePassword}@localhost:5432/rosetta`,
