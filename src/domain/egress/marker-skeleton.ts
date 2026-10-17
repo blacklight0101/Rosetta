@@ -12,8 +12,8 @@ import { foldMarkers, isAscii } from './marker-fold.js';
 // - a letter: an ASCII letter in upper case, a digit or symbol written for one (0 O, 3 E, 4 A,
 //   5 S, 7 T, @ A, $ S), or "any letter" for another digit or a non-ASCII letter or number;
 // - a bracket: `< > [ ] { } ( )` or a non-ASCII symbol, opening, closing or quotation mark;
-// - a line break: a lone CR or a folded next-line control or line or paragraph separator (text is
-//   cut into lines at `\n` only, as the block format cuts it, so a CR cannot hide a marker);
+// - a line break: a line feed, a lone CR or a folded next-line control or line or paragraph
+//   separator (the text is read as a whole, so no line break can hide a marker);
 // - a stop: the `|` with which a rendered block breaks a name;
 // - a gap: anything else (spaces, other ASCII punctuation, non-ASCII dashes and punctuation).
 // The name is eleven letters spelling ROSETTADATA with only gaps, brackets and line breaks between
@@ -28,8 +28,9 @@ import { foldMarkers, isAscii } from './marker-fold.js';
 // Finding a marker and breaking it (a `|` after the seventh letter of the name) are this one
 // matcher, so what the guard refuses and what a rendered block defangs cannot drift.
 //
-// Known limits: a marker cut by a hard line break (`<<<END` / `ROSETTA-DATA`) or a name with four or
-// more letters no table knows is not seen; the tag still keeps such a block closed. On the safe
+// Known limit: a name with four or more letters no table knows is not seen; the tag still keeps
+// such a block closed. A marker cut by line breaks (`<<<END` / `ROSETTA-DATA`) is seen, as the text
+// is read as a whole (P2-39). On the safe
 // side, the name after the letters END or next to two brackets is a marker even in ordinary text
 // (`send Rosetta data`, `«Rosetta» data`, `List<RosettaData>>`): the worst case is a defanged or
 // refused excerpt, never a forged frame.
@@ -199,9 +200,13 @@ function framed(tokens: readonly Token[], name: readonly number[]): boolean {
   return standsAlone(tokens, first, last);
 }
 
-/** Where, in the line, each marker has the break of its name. */
-function breaksIn(line: string): number[] {
-  const tokens = tokensOf(line);
+/**
+ * Where, in the text, each marker has the break of its name. The whole text is read as one run
+ * with its line feeds as line breaks, so a marker cut across lines (`<<<END` then
+ * `ROSETTA-DATA tag>>>`) is seen as the one marker it reads as to a model.
+ */
+function breaksIn(text: string): number[] {
+  const tokens = tokensOf(text);
   const letters = tokens.flatMap((token, index) => (token.kind === 'letter' ? [index] : []));
   const breaks: number[] = [];
   for (let start = 0; start + NAME.length <= letters.length; start += 1) {
@@ -212,27 +217,19 @@ function breaksIn(line: string): number[] {
   return breaks;
 }
 
-/** A line: the block format cuts at `\n` only, so a lone CR stays inside its line. */
-const lineText = /[^\n]+/g;
-
 // RF-145
 export function holdsMarker(text: string): boolean {
-  for (const [line] of text.matchAll(lineText)) {
-    if (breaksIn(line).length > 0) return true;
-  }
-  return false;
+  return breaksIn(text).length > 0;
 }
 
 /** The text with a `|` after the seventh letter of the name of every marker; lines stay. */
 export function breakMarkers(text: string): string {
+  const cuts = [...new Set(breaksIn(text))].sort((left, right) => left - right);
   let result = '';
   let position = 0;
-  for (const match of text.matchAll(lineText)) {
-    const cuts = [...new Set(breaksIn(match[0]))].sort((left, right) => left - right);
-    for (const cut of cuts) {
-      result += `${text.slice(position, match.index + cut)}${BREAK}`;
-      position = match.index + cut;
-    }
+  for (const cut of cuts) {
+    result += `${text.slice(position, cut)}${BREAK}`;
+    position = cut;
   }
   return result + text.slice(position);
 }

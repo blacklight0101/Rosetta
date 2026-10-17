@@ -56,6 +56,15 @@ function withMargin(citation: Citation): Citation {
   };
 }
 
+/**
+ * RF-100, P2-39: a file the scan did not read (binary, too large) is never read or sent, whatever
+ * the reader could do with it: the verifier gets its path and a note, as the reader's tools say it
+ * cannot be read.
+ */
+function skippedExcerpt({ path, startLine, endLine }: Citation, reason: SkipReason): CitedExcerpt {
+  return { path, startLine, endLine, lines: [`${reason}, not sent`] };
+}
+
 function lineCount(citations: readonly Citation[]): number {
   return citations.reduce((total, each) => total + each.endLine - each.startLine + 1, 0);
 }
@@ -76,7 +85,6 @@ export async function readCitedLines(
   limits: EvidenceLimits,
   skipReason: SkipLookup,
 ): Promise<Result<readonly CitedExcerpt[], string>> {
-  if (typeof skipReason !== 'function') throw new TypeError('A skip lookup is required.');
   const bad = citations.find((each) => !isLineRange(each));
   if (bad !== undefined) {
     const { path, startLine, endLine } = bad;
@@ -85,10 +93,16 @@ export async function readCitedLines(
     );
   }
   const ranges = citations.map(withMargin);
-  const lines = lineCount(ranges);
+  const lines = lineCount(ranges.filter((range) => skipReason(range.path) === undefined));
   if (lines > limits.maxLines) return err(tooLarge('lines', lines, limits.maxLines));
   const excerpts: CitedExcerpt[] = [];
-  for (const range of ranges) {
+  for (const [index, range] of ranges.entries()) {
+    const skipped = skipReason(range.path);
+    const cited = citations[index];
+    if (skipped !== undefined && cited !== undefined) {
+      excerpts.push(skippedExcerpt(cited, skipped));
+      continue;
+    }
     const read = await reader.readLines(range);
     if (!read.ok) return err(`The cited lines could not be read: ${read.error.message}`);
     const { path, startLine, endLine } = read.value;

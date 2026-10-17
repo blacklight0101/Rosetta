@@ -64,9 +64,15 @@ export class CodeMapIndex {
     return err({ kind: 'not-found' });
   }
 
-  /** Why the scan skipped a file (RF-100), or undefined when it read it or does not list it. */
+  /**
+   * Why the scan skipped a file (RF-100), or undefined when it read it or does not list it. A path
+   * written in another letter case is the file it differs from; if several files differ only in
+   * case, the path counts as skipped when any of them was (the file system may pick any).
+   */
   skipReasonOf(path: string): SkipReason | undefined {
-    return this.files.get(path)?.skipped;
+    const exact = this.files.get(path);
+    if (exact !== undefined) return exact.skipped;
+    return (this.folded.get(path.toLowerCase()) ?? []).find((file) => file.skipped)?.skipped;
   }
 
   /** The files the scan read: listed and not skipped (RF-100), sorted by path. */
