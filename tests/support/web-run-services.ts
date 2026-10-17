@@ -186,7 +186,6 @@ export function runServices(
       logger: new RecordingLogger(),
     }),
     ...answerServices(runs, stores),
-    readOverview: new ReadOverview({ runs: runs.runs, files: outputs.text }),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, submit: runs.submit }),
     estimateRun: new EstimateRun({
