@@ -120,7 +120,10 @@ it('RF-427 an empty cache-write field leaves the price out, never a zero', () =>
   const result = settingsOf(settings, draft);
 
   expect(draft.prices[0]?.cacheWrite).toBe('');
-  expect(result.ok && JSON.stringify(result.settings)).not.toContain('cacheWrite');
+  expect(result).toEqual({ ok: true, settings });
+  expect(result.ok ? Object.keys(result.settings.budget.prices?.[0] ?? {}) : []).not.toContain(
+    'cacheWriteInputPerMillionMicros',
+  );
 });
 
 it('RF-002 names a cache-write price that is not an amount', () => {
