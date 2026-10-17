@@ -1,7 +1,36 @@
 {
   "schemaVersion": 1,
-  "description": "An understand run on the Catalog and Services areas whose first task reports a large usage, so the next call passes a run token cap of 205000; after the cap is raised the Services task answers a card. Written by hand for the fake provider; no real provider was called.",
+  "description": "An understand run on the Catalog and Services areas whose first task reads a file and then reports a large usage, so the next call passes a run token cap of 205000; after the cap is raised the Services task answers a card. Written by hand for the fake provider; no real provider was called.",
   "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
     {
       "attempts": [
         {
@@ -16,6 +45,35 @@
             },
             "finishReason": "stop",
             "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Services/CatalogService.cs",
+                  "startLine": 1,
+                  "endLine": 18
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-3",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
