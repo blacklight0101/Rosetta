@@ -56,6 +56,21 @@ async function cardsByRun(
   return new Map(keys.map((key, index) => [key, cards[index] ?? []]));
 }
 
+/** The area the question's card is in, or why the question cannot be used. */
+function areaOrReason(
+  question: AnsweredQuestion,
+  earlier: readonly PriorCard[],
+  codeMapAreas: readonly string[],
+): { readonly area: string } | { readonly reason: SkipReason } {
+  if (earlier.length === 0) return { reason: 'run-gone' };
+  const card = earlier.find((each) => each.id === question.cardId && each.type === 'OQ');
+  if (card === undefined) return { reason: 'card-gone' };
+  if (card.questionState === 'Answered') return { reason: 'already-answered' };
+  return codeMapAreas.includes(card.area)
+    ? { area: card.area }
+    : { reason: 'area-not-in-code-map' };
+}
+
 // RF-241
 export async function planRerun(
   deps: RerunDependencies,
@@ -64,14 +79,14 @@ export async function planRerun(
 ): Promise<RerunPlan> {
   const answered = await deps.answers.answeredQuestions(project);
   const byRun = await cardsByRun(deps, project, answered);
-  const pending = answered.flatMap((question): PendingQuestion[] => {
-    const card = byRun
-      .get(question.runKey)
-      ?.find((each) => each.id === question.cardId && each.type === 'OQ');
-    if (card === undefined || card.questionState === 'Answered') return [];
-    return codeMapAreas.includes(card.area) ? [{ ...question, area: card.area }] : [];
-  });
-  return { project, pending, skipped: [], baseline: [...byRun.values()].flat() };
+  const pending: PendingQuestion[] = [];
+  const skipped: SkippedQuestion[] = [];
+  for (const question of answered) {
+    const found = areaOrReason(question, byRun.get(question.runKey) ?? [], codeMapAreas);
+    if ('area' in found) pending.push({ ...question, area: found.area });
+    else skipped.push({ cardId: question.cardId, runKey: question.runKey, reason: found.reason });
+  }
+  return { project, pending, skipped, baseline: [...byRun.values()].flat() };
 }
 
 /** The affected areas, restricted to the named ones when the request named some. */
