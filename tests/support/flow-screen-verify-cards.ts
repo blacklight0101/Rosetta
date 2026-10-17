@@ -66,7 +66,7 @@ export const screenDraftWithMadeUpClaims: CardDraft = draftOf({
 });
 
 /** The files of the fixture the cards cite, with their line counts. */
-export const verifyCodeMap = {
+const verifyCodeMap = {
   files: [
     entry(home, 10, { lines: 15 }),
     entry(service, 10, { lines: 20 }),
