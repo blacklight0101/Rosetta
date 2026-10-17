@@ -105,6 +105,8 @@ export interface CalibrationHarnessOptions {
   readonly outputDir: string;
   readonly router: ModelRouter;
   readonly capMicros?: number;
+  /** The folder the set's source folder is relative to; this repository by default. */
+  readonly repositoryRoot?: string;
   /** The server keys of the environment; none by default (the fake models need no key). */
   readonly serverKeys?: { readonly openai?: string };
 }
@@ -114,7 +116,8 @@ export function calibrationParts(options: CalibrationHarnessOptions): Calibratio
   const clock = new FixedClock('2026-10-17T09:30:00.000Z');
   const masker = new SecretMasker();
   return {
-    ...{ outputDir: options.outputDir, repositoryRoot, promptsFolder: 'prompts' },
+    ...{ outputDir: options.outputDir, promptsFolder: 'prompts' },
+    repositoryRoot: options.repositoryRoot ?? repositoryRoot,
     providers: (guards) =>
       new GuardedProviderFactory({ ...guards, adapters: () => options.router }),
     serverKeys: options.serverKeys ?? {},

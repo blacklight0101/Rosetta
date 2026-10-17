@@ -6,7 +6,10 @@ import {
   defaultEvidenceLimits,
 } from '../../../../src/application/verifier/cited-lines.js';
 import { loadCalibrationSet } from '../../../../src/infrastructure/eval/calibration-set-file.js';
-import { openCalibrationSource } from '../../../../src/infrastructure/eval/calibration-source.js';
+import {
+  openCalibrationSource,
+  skipLookupOf,
+} from '../../../../src/infrastructure/eval/calibration-source.js';
 import { MemoryLogger } from '../../../support/memory-logger.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -42,9 +45,14 @@ describe('the committed calibration set', () => {
     const { set } = await committed();
     const source = await openCalibrationSource(repositoryRoot, set.source.folder, logger());
     if (!source.ok) throw new Error(source.error);
+    const skip = await skipLookupOf(
+      source.value,
+      set.claims.flatMap((c) => c.citations.map((x) => x.path)),
+      1_000_000,
+    );
 
     for (const claim of set.claims) {
-      const read = await readCitedLines(source.value, claim.citations, defaultEvidenceLimits);
+      const read = await readCitedLines(source.value, claim.citations, defaultEvidenceLimits, skip);
       expect(read.ok ? '' : `${claim.id}: ${read.error}`).toBe('');
     }
   });
