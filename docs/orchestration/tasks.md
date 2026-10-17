@@ -13,9 +13,9 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | Phase | Cards | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S | M | L | Follow-ups | Withdrawn |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P1 Milestone slice (M1) | 172 | 64 | 90 | 18 | 0 | 99 | 65 | 8 | 111 | 0 |
-| P2 Full understand | 30 | 6 | 18 | 6 | 0 | 9 | 20 | 1 | 10 | 0 |
+| P2 Full understand | 39 | 7 | 26 | 6 | 0 | 12 | 26 | 1 | 19 | 0 |
 | P3 Report and plan | 26 | 2 | 22 | 2 | 0 | 3 | 21 | 2 | 1 | 0 |
-| **Total** | **228** | **72** | **130** | **26** | **0** | **111** | **106** | **11** | **122** | **0** |
+| **Total** | **237** | **73** | **138** | **26** | **0** | **114** | **112** | **11** | **131** | **0** |
 
 ## Conventions for every card
 
@@ -634,7 +634,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-25, P1-33
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/spec/requirements.md` Q-04 and Q-10; `docs/providers.md`.
 - **Do**: a scoring script `eval/spike/score-reader.ts` (`npm run spike:reader`) that runs one demo area with each candidate 7-9B tool-calling model through Ollama under the local deployment and scores valid cards, valid citations, tool-call errors and time; a candidate list of at most four models that fit 8 GB of VRAM; the owner runs it on their machine; the result table and the recommended model in `docs/providers.md`.
 - **Delivers**: the script, the documented results, the recommended model as the default `reader` model for Ollama in `templates/project-settings.json`.
@@ -754,7 +754,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `.prettierignore`; `docs/conventions.md` section 8.
 - **Do**: run Prettier on every Markdown, `.github/` and `.claude/` file and narrow `.prettierignore` to nothing but generated files, so the format gate covers documentation (conventions section 8); the pull request is `needs-owner` because it reformats protected documents.
 - **Delivers**: the formatted files and the narrowed `.prettierignore`.
@@ -1894,7 +1894,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-138
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `src/application/projects/delete-project.ts`; the project repositories; `docs/data-model.md` section 9; the verdict 6153137792 on #348; RF-1012, DEC-55, Q-16.
 - **Do**: since P1-138 the rows of a project are deleted before its folder, so a folder that cannot be removed, or a crash after the commit, leaves a folder with no row and no way to retry from the app. Add a sweep that removes project and run folders with no row, at start-up and daily, logs each removal, never touches a folder that still has a row, and is tested on both repositories. Built after the milestone unless the owner says otherwise (agenda).
 - **Delivers**: the sweep and its tests.
@@ -2014,7 +2014,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-154
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `src/infrastructure/guards/secret-masker.ts`; `tests/support/secret-continuation-shapes.ts`; `tests/unit/infrastructure/guards/secret-masker.test.ts`; `secret-masker-performance.test.ts`; verdict 6165263754 on #389.
 - **Do**: `--token=` followed by a line continuation (`\`, `^` or a backtick at the end of the line, LF or CRLF) and then the value leaves the value visible (on main too). Add the shapes to the continuation fixture, failing first, then mask them; keep `mask(mask(x)) == mask(x)` and the P1-148 1 MB speed cases.
 - **Delivers**: the masker change and the tests.
@@ -2089,7 +2089,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-167
 - **Gate**: none
-- **Status**: In progress
+- **Status**: In review
 - **Reads**: RF-264; the summariser role configuration; the spec writer.
 - **Do**: after understand, the `summariser` role writes `overview.md` from the cards whose citations passed (what the application is, who uses it, features, screens, data, integrations, what was not covered), each statement linking its cards and no statement without a card; a thin run says so and suggests the next step; `spec.md` and the Markdown report open with it; the run page shows it first (with P1-170). Prompt versioned; the budget guard and the estimate include the call.
 - **Review probes**: a run whose cards are mostly third-party (the overview says the run cannot explain the application yet); a model answer holding a statement with no card link (dropped); hostile card text (rendered as text).
@@ -2284,7 +2284,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: L
 - **Depends on**: P2-02
 - **Gate**: none
-- **Status**: In progress
+- **Status**: In review
 - **Reads**: `docs/data-model.md` section 3.19; `docs/rfc/RFC-001-rosetta.md` section 7.
 - **Do**: the golden set for the demo app under `eval/golden/` (hand-checked features, rules, entities and "not in the code" cases); `npm run eval` running each case at least 3 times with the chosen models, saving results with date, models, model versions, prompt hashes and settings, reporting precision of `Supported` claims, recall of golden rules, citation validity, the spread, and estimate accuracy against `cost.json`.
 - **Delivers**: the golden set, runner, output schema; a schema test; the first recorded evaluation.
@@ -2356,7 +2356,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `package.json`; `package-lock.json`; `src/infrastructure/providers/anthropic/`; DEC-125; the verdict on #210.
 - **Do**: not before 2026-10-23 (the 0.133 line must be two weeks old, DEC-125): move `@anthropic-ai/sdk` from the exact pin 0.128.0 (the owner's choice for P2-09) to the 0.133 line, keep the exact pin style, regenerate the lockfile so that `npm ci --ignore-scripts` passes, and run the Anthropic contract suite and `npm run live:anthropic` if G-04 is open.
 - **Delivers**: the version change and the lockfile.
@@ -2392,7 +2392,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-18, P2-02
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: the verifier (RF-300..RF-305); `src/domain/cards/claim-transitions.ts`.
 - **Do**: every `FLOW` step and every `SCRN` field validation and action is a claim checked by both verifier steps; a step whose citation is invalid or rejected is marked on the card and the flow is reported as incomplete in the card file, the specification and the coverage; calibration (RF-303) includes the new claims.
 - **Delivers**: verifier changes and tests with recorded responses.
@@ -2404,7 +2404,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-18
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/security/threat-model.md`; RF-507; RF-508; the Mermaid syntax reference for sequence, flowchart and entity-relationship diagrams.
 - **Do**: pure functions in the domain or application layer that build Mermaid text from cards: a sequence diagram from a `FLOW` card, a flowchart screen map from `SCRN` cards, an entity-relationship diagram from `ENT` cards (unknown cardinality drawn as unknown); every label goes through one escaping function so that text from the analysed code cannot end a diagram, open a new statement, add a `click` or `href`, or carry HTML; ids are generated, never taken from the code. The model never writes Mermaid (DEC-134).
 - **Delivers**: the generators, the escaping function, snapshot and property tests.
@@ -2416,7 +2416,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-19, P2-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the `spec.md` writer (RF-204); consolidation (RF-250).
 - **Do**: write `data-model.md` from verified `ENT` cards (entities, fields, keys, relations, citations, the generated ER diagram, a "to confirm" list for unknown relations; merged entities once); add the flows section, the screens section with the screen map, and the data-model link to `spec.md`, each item linking its card.
 - **Delivers**: the writers and snapshot tests.
@@ -2453,7 +2453,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-05, P2-06
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `src/application/understand/answer-rerun.ts`; `understand-session.ts`; `web/src/pages/RunAnswers.tsx`; verdict comments 6227862573 and 6228789543 on #443.
 - **Do**: tests for a re-run with answers whose cards are merged by consolidation (the New and Changed lists survive the merge; a failed merge write leaves the questions Open); a log line for each answered question that is skipped (deleted run, area no longer in the code map, already Answered); the answers page shows each question's state (Open or Answered); the start page offers "Re-run with answers" when the project has answered questions.
 - **Delivers**: tests, log line, page state, start option.
@@ -2476,7 +2476,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `tests/unit/support/e2e-caps-lock.test.ts`; the caps-lock helper it tests; builder reports on #454 and #461.
 - **Do**: the test takes its lock folders under a temporary root unique to the test process (for example `mkdtemp` or the pid in the run key) instead of fixed names in the shared `%TEMP%`, so a killed run in one worktree cannot make another worktree's run wait for the stale timeout; the behaviour of the lock itself is unchanged.
 - **Delivers**: test and helper changes.
@@ -2488,7 +2488,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-01, P2-06
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/cards/task-results-schema.ts`; `src/infrastructure/cards/task-results-flow-screen.ts`; builder report on #461 (open question 5).
 - **Do**: `task-results.json` keeps the coverage `failure` field and the card `mergedAreas` when a run is stopped and resumed, as it now keeps the FLOW and SCRN fields; a round-trip test covers every field of the stored task result, so a dropped field fails it.
 - **Delivers**: schema change, tests.
@@ -2500,7 +2500,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P2-19, P2-26
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/pages/setting-limits.ts`; `src/domain/code-map/area-surface.ts`; `src/infrastructure/scan/universal/artefact-rules.ts`; verdict comments on #458 and #461.
 - **Do**: the thousands-grouping regex in `setting-limits.ts` works again (its backslashes were lost) or is removed if unused; the confirm field shows no range hint while the run cap itself is invalid; the flow and screen marks also recognise WebForms `.ashx` and `.asmx` handlers, `.html`, `.jsx` and `.tsx` views, and handler class names in the plural (`OrderHandlers`).
 - **Delivers**: code changes, tests.
@@ -2512,12 +2512,120 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-02, P2-06
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/cards/card-merge.ts`; the judgement events of P2-02; verdict comments on #454.
 - **Do**: when the summariser merges cards and renumbers claim ids, the judgement events and the verdicts shown on the run page, in the replay and in the report refer to the new ids (a mapping recorded with the merge); no verdict is lost or attached to the wrong claim.
 - **Delivers**: code changes, tests.
 - **Done when**: a run whose merge renumbers claims shows every verdict on the right claim on the run page, in the replay and in the report; `npm run verify` green.
 - **Refs**: RF-250, RF-301, RF-1014, P2-02, P2-06.
+
+### P2-31 - Follow-up: test hardening from the P2-25..P2-30 verdicts
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-25, P2-27, P2-28, P2-29, P2-30
+- **Gate**: none
+- **Status**: In review
+- **Reads**: the verdict comments on #459, #470, #471, #472 and #475; `file-task-results-full.test.ts`; `tests/helpers/Cart.tsx`; `RunCoverage.restore`; the replay (`claim-id-moves`) and its reducer; `capsLockFolder()`.
+- **Do**: Close the test gaps the verifiers left open. Each item needs a test that fails without the behaviour; no production change unless a test exposes a bug: (1) P2-28 (#470): a resume-level test (an area ends InvalidOutput and a merge exists; resume; coverage.json keeps the failure and note, and the card keeps mergedAreas; the RunCoverage.restore mutation must fail it), and a DeepRequired helper that makes the Required<> fixture in file-task-results-full.test.ts deep, so the nested types (FlowDetail, Citation, ScreenField, ScreenAction, Branch, FileCoverage, LineRange) are guarded; (2) P2-30 (#475): unknown-id cases in the replay (claim-id-moves) and the reducer, a swap case in the replay, and the integration test asserts the verdict status at move.to; (3) P2-25 (#459): the askingTheSame words !== '' guard (two empty-question OQ cards stay separate); (4) P2-29 (#471): a tests/helpers/Cart.tsx case pinning the tests/ directory rule alone; (5) P2-27 (#472): pin the capsLockFolder() default root to tmpdir(), and the e2e-run-wiring teardown test uses a mkdtemp root.
+- **Delivers**: tests; a production fix only where a test exposes a bug.
+- **Done when**: each item above has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-006, RF-250, RF-1004, RNF-005.
+
+### P2-32 - Follow-up: understand integration tests stable under load
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P1-94, P2-02, P2-20
+- **Gate**: none
+- **Status**: In progress
+- **Reads**: the eight `understand-*` integration tests named in Do; the fake provider delays and polling intervals they use; the local verify and pre-push timings.
+- **Do**: The understand-* integration tests (understand-consolidate, understand-with-answers, understand-flows-screens, understand-judgement-flow, understand-run-context, understand-rerun, understand-answers-merged, understand-overview) take 60-90 s each on a loaded Windows host and time out ('The run has not ended') in local verify and pre-push runs, since P1-167, P2-02 and P2-20 added steps to each run. CI passes. Measure where the time goes (fake provider delays, polling intervals, repeated fixture scans, per-test full runs where one shared run per describe would do); make the runs lighter (share one run per file where tests only read it, cut fixed waits, poll on events instead of sleeps); and set one documented timeout constant sized from the measurements.
+- **Delivers**: lighter understand test runs and one documented timeout constant; no assertion weakened.
+- **Done when**: each of these files passes three times in a row locally with `--maxWorkers=2` while another full vitest run is going; `npm run verify` green; no assertion weakened.
+- **Refs**: P1-94, RNF-005.
+
+### P2-33 - Follow-up: gaps from the P2-20 and P2-22 verdicts
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-20, P2-22
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `card-markdown.ts` and `card-detail-markdown.ts`; `mask-card-text.ts`; `write-card-outputs.ts`; the secret masker and its tests; the flowSequenceDiagram generator of P2-21; the verdicts on the P2-20 and P2-22 work.
+- **Do**: Each item needs a test that fails without it: (1) RF-260: the FLOW card file (card-markdown.ts / card-detail-markdown.ts) carries the flow's sequence diagram, generated by the P2-21 flowSequenceDiagram (P2-22 put it only in spec.md because P2-20 owned those files; P2-20 is now merged), with masking before generation as in mask-card-text.ts; (2) write-card-outputs.ts: a re-run into a folder that already holds data-model.md but now has no ENT card removes the stale data-model.md, or the run folder is proven fresh per run (then document it and add a test); (3) the masker: a short 'Authorization: Bearer abc.def-ghi!jkl' header value is masked (check the secret patterns and add the case to the masker tests); (4) P2-20 open limit: no change to action citations (owner question), but add a test of a stop (not cap) mid-judgement that still writes coverage.
+- **Delivers**: code changes and tests.
+- **Done when**: each item above has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-260, RF-262, RF-141, P2-20, P2-22.
+
+### P2-34 - Follow-up: first live recorded evaluation (owner-gated)
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P2-11
+- **Gate**: owner
+- **Status**: Todo
+- **Reads**: `eval/config.json` (the spend caps); RFC-001 section 7; the golden set of P2-11 (#476).
+- **Do**: Run the first live evaluation with the owner's provider keys and approval. Steps: the owner approves the download of dotnet-architecture/eShopModernizing at 63bc9ec4414d7e281dc9f9d7bdcf70030950457d (MIT) and the spend (eval/config.json caps: run 0.5 USD, total 1.5 USD); run `npm run eval -- --yes` (or with `--reader ollama:...` for a local model); keep eval-out/<id>/ and summarise precision, strict precision, recall, citation validity, estimate accuracy and the spread in the PR or handoff.
+- **Delivers**: the eval-out/<id>/ folder kept, and the results summary in the PR or handoff.
+- **Done when**: the owner has approved the download and the spend; the run stays within the caps in eval/config.json; the summary is recorded in the PR or handoff.
+- **Refs**: RNF-006, RNF-012, RNF-015, RFC-001 section 7; needed by P2-14.
+
+### P2-35 - Follow-up: the summariser on resume and under a cap
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-01, P2-06
+- **Gate**: none
+- **Status**: In progress
+- **Reads**: `src/application/cards/card-merge.ts`; the consolidation step of the understand run (P2-06); the resume path (P2-01); verdicts on #437 and #446.
+- **Do**: (1) A cap refusal in the optional consolidation step no longer turns a run whose areas all finished into Interrupted/CapReached: the run ends as it would without consolidation, the cards stay unmerged and the refusal is recorded (event and log); the spend already made is kept on the ledger. (2) The cards message to the summariser has a size bound: card types larger than the bound are sent in batches (one call per batch), and the estimate (RF-425) counts the batches. (3) On resume, card types already merged in the stopped run are not sent to the summariser again (not paid twice), and a re-merge keeps the survivor ids it chose before, so answers.md keys stay valid. (4) An integration test resumes a run that had consolidated.
+- **Delivers**: code changes, tests.
+- **Done when**: each item has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-230, RF-250, RF-423, RF-425, P2-01, P2-06.
+
+### P2-36 - Follow-up: answers page state, reopen and re-run from the start page
+- **Difficulty**: 6 (sonnet)
+- **Size**: M
+- **Depends on**: P2-05, P2-25
+- **Gate**: none
+- **Status**: In progress
+- **Reads**: the re-run-with-answers path (P2-05) and consolidation with answers (P2-25); the answers page in `web/src/pages/`; verdicts on #443 and #459.
+- **Do**: (1) The answers page shows each question's state (Open, Answered) and refreshes after a re-run. (2) An Answered question can be reopened (an edited answer after Answered is otherwise never re-sent), with an event. (3) The start page offers "re-run with answers" (withAnswers) when answered questions exist. (4) A skipped question (no answer) is logged and gets an event. (5) The `owner_answers` block in the prompt gets its label. (6) Tests for the P2-06 interplay: a re-run that merges two cards keeps the New/Changed lists, and a merge write failure leaves the questions Open.
+- **Delivers**: code and page changes, tests (unit, integration, e2e for the page).
+- **Done when**: each item has a test that fails without it; axe passes on the changed pages; `npm run verify` green.
+- **Refs**: RF-240, RF-241, RF-242, RF-250, P2-05, P2-25.
+
+### P2-37 - Follow-up: Anthropic cache-write prices in the estimate, ledger and settings
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P2-16, P2-24
+- **Gate**: none
+- **Status**: In progress
+- **Reads**: `src/application/estimate/estimate-run.ts` (around line 161); the price override code and the settings page; verdicts on #445 and #455.
+- **Do**: (1) The run estimate prices Anthropic prompt input that will be written to the cache at the cache-write price, not the plain input price. (2) `provider-calls.jsonl` records cache-write tokens. (3) An own-key Anthropic price override without a cache-write price gets a clear message instead of the misleading RST-1601 text, and the settings page warns before saving it. (4) `PriceOverrides` derives the providers that need cache-write prices from one list (no hard-coded `['anthropic']` duplicate). (5) The settings warning is linked to its field with `aria-describedby`. (6) Correct the estimate comment that says the confirmation threshold covers cache writes.
+- **Delivers**: code and page changes, tests.
+- **Done when**: each item has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-420, RF-423, RF-425, P2-16, P2-24.
+
+### P2-38 - Follow-up: judge on resume the claims a cap left Unverified
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P2-01, P2-02
+- **Gate**: none
+- **Status**: In progress
+- **Reads**: the verifier judgement step (P2-02); the resume path (P2-01); RF-304; verdicts on #454.
+- **Do**: Claims that a reader or verifier cap left Unverified (run stopped) are judged when the run is resumed, as RF-304 says ("so verification can resume"). Claims already judged are not sent again. A user Stop that left claims Proposed behaves the same. The run page, the replay and the report show the new verdicts.
+- **Delivers**: code changes, tests (unit and an integration resume test).
+- **Done when**: a run stopped by a cap with Unverified claims, then resumed with a higher cap, ends with every claim judged exactly once; `npm run verify` green.
+- **Refs**: RF-301, RF-304, RF-1014, P2-01, P2-02.
+
+### P2-39 - Follow-up: egress gaps found by the verifier verdicts
+- **Difficulty**: 7 (sonnet)
+- **Size**: S
+- **Depends on**: P2-02
+- **Gate**: none
+- **Status**: In progress
+- **Reads**: the egress guard and the code-map citation path; the P1-28 footer matcher; verdicts on #454.
+- **Do**: (1) A cited binary file in the code map is never sent to a model (only its path and a "binary, not sent" note), on every role's request. (2) The P1-28 matcher defangs a footer forgery split across lines (the random tag still protects, but the text must not reach the model as a footer). (3) Self-probe both with crafted repositories.
+- **Delivers**: code changes, tests.
+- **Done when**: each item has a test that fails without it; `npm run verify` green.
+- **Refs**: RF-140, RF-141, RNF-030, P1-28, P2-02.
 ---
 
 ## Phase 3 - Report and plan
