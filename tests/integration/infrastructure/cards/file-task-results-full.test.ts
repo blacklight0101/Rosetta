@@ -72,6 +72,7 @@ const surface: Required<SurfaceCoverage> = {
   screensMarked: false,
   flowCards: 1,
   screenCards: 0,
+  incompleteFlows: 1,
 };
 
 const coverage: Required<AreaCoverage> = {

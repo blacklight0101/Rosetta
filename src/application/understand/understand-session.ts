@@ -196,6 +196,7 @@ export class UnderstandSession {
     const cards = await runJudgementStep(this.latest.cards, parts);
     this.latest = { ...this.latest, cards };
     await this.writeSet(cards);
+    await this.writeCoverage();
     // RF-006: a resume reads the verdicts back with the results of the tasks.
     await this.persist();
   }
@@ -215,7 +216,7 @@ export class UnderstandSession {
 
   // RF-202, RF-300
   private async ended(task: ReaderTask, outcome: TaskOutcome): Promise<void> {
-    const { deps, execution } = this.parts;
+    const { execution } = this.parts;
     const { agentTaskId } = task;
     if (outcome.rawOutputs.length > 0) await this.keepInvalid(task, outcome.rawOutputs);
     if (outcome.state === 'Done' && outcome.problems.length > 0)
@@ -227,7 +228,7 @@ export class UnderstandSession {
     const note = cardNoteOf(outcome.areaRead);
     this.cards.record({ agentTaskId, drafts: outcome.drafts, withoutCards, note });
     await this.writeCards();
-    await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas());
+    await this.writeCoverage();
     await this.persist();
     const progress = { state: outcome.state, turns: outcome.turns, cards: outcome.drafts.length };
     await recordTaskState(this.parts, task, progress);
@@ -248,6 +249,12 @@ export class UnderstandSession {
     this.latest = { ...this.latest, cards };
     await this.writeSet(cards);
     await this.persist();
+  }
+
+  /** RF-230, RF-260: the coverage of the tasks that ended, with the incomplete flows of the cards. */
+  private async writeCoverage(): Promise<void> {
+    const { deps, execution } = this.parts;
+    await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas(this.latest.cards));
   }
 
   /** RF-006: what the tasks that ended, here or earlier, left; a resume reads it back. */

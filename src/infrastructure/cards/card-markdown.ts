@@ -2,7 +2,13 @@ import type { Card, Claim } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { maskDeep } from '../guards/mask-deep.js';
-import { detailBody, detailHeader, stepBody, stepHeader } from './card-detail-markdown.js';
+import {
+  detailBody,
+  detailHeader,
+  stepBody,
+  stepHeader,
+  stepMark,
+} from './card-detail-markdown.js';
 import { citationLink, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 import { renderYamlHeader } from './yaml-header.js';
@@ -50,7 +56,12 @@ function headerOf(card: Card): Record<string, unknown> {
   };
 }
 
-function claimBody(claim: Claim, source: PermalinkSource, esc: MarkdownEscaper): string[] {
+function claimBody(
+  card: Card,
+  claim: Claim,
+  source: PermalinkSource,
+  esc: MarkdownEscaper,
+): string[] {
   const lines = [
     `### ${claim.claimId} (${claim.status})`,
     '',
@@ -68,7 +79,7 @@ function claimBody(claim: Claim, source: PermalinkSource, esc: MarkdownEscaper):
       esc.block(reason),
     );
   }
-  return [...lines, '', ...stepBody(claim, source, esc)];
+  return [...lines, '', ...stepBody(claim, source, esc), ...stepMark(card, claim)];
 }
 
 function questionBody(card: Card, esc: MarkdownEscaper): string[] {
@@ -100,7 +111,7 @@ function bodyOf(card: Card, source: PermalinkSource, esc: MarkdownEscaper): stri
     ...detailBody(card, source, esc),
     '## Claims',
     '',
-    ...card.claims.flatMap((claim) => claimBody(claim, source, esc)),
+    ...card.claims.flatMap((claim) => claimBody(card, claim, source, esc)),
   ].join('\n');
 }
 

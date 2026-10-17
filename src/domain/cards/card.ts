@@ -12,6 +12,7 @@ import {
   type FlowDetail,
   type ScreenDetail,
 } from './flow-screen.js';
+import { screenClaims } from './screen-claims.js';
 
 // Architecture section 5, ADR-005: a card holds claims; a claim holds citations and a status that
 // changes only through the transitions; nothing is ever removed (RF-302).
@@ -103,7 +104,10 @@ function questionFields(input: CardInput): Result<QuestionFields, CardProblem> {
 
 function claimsOf(input: CardInput): Result<readonly Claim[], CardProblem> {
   const claims: Claim[] = [];
-  for (const [index, claim] of input.claims.entries()) {
+  // RF-261: the validations and actions of a screen are claims after the ones the agent wrote.
+  const derived: readonly ClaimInput[] =
+    input.type === 'SCRN' && input.screen ? screenClaims(input.screen, input.claims) : [];
+  for (const [index, claim] of [...input.claims, ...derived].entries()) {
     const step = stepFields(input.type, claim);
     if (!step.ok) return step;
     claims.push({

@@ -475,7 +475,10 @@ sequenceDiagram
   (the marks and the number of `FLOW` and `SCRN` cards, `coverage.json`), and `coverage.md` has a `## Flows and
   screens` section that says "no flows found" or "no screens found" for an area with no entry point or page. The run
   estimate (RF-425) adds, for each kind an area is marked for, `surfacePromptTokens` to the prompt of every turn and
-  `surfaceOutputTokens` once to the output; no role is added.
+  `surfaceOutputTokens` once to the output; no role is added. Verifier (P2-20): a `SCRN` card gets one claim per
+  field validation and per action after the claims the agent wrote (`screen-claims.ts`), so both steps check them; a
+  `FLOW` step is already a claim. A flow with a `CitationInvalid` or `Rejected` step is incomplete
+  (`flow-completeness.ts`): its card file, `spec.md` and the `coverage` of its area say so.
 - **Tool protocol**: native tool calling when the model supports it; a JSON-in-text protocol otherwise (RF-205),
   selected per model in configuration.
 - **Concurrency**: the orchestrator runs agent tasks with a configurable parallelism (default 1 for Ollama on 8 GB,

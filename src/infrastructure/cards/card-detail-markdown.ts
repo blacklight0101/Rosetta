@@ -1,5 +1,6 @@
 import type { Card, Claim } from '../../domain/cards/card.js';
 import { formatCitation } from '../../domain/cards/citation.js';
+import { incompleteSteps, isUnsupported } from '../../domain/cards/flow-completeness.js';
 import type { CitedText, ScreenAction, ScreenField } from '../../domain/cards/flow-screen.js';
 import { citationLink, type PermalinkSource } from './citation-link.js';
 import type { MarkdownEscaper } from './markdown-text.js';
@@ -35,8 +36,12 @@ function actionHeader(action: ScreenAction): Record<string, unknown> {
 /** The `flow` and `screen` keys of the header; absent for the other types. */
 export function detailHeader(card: Card): Record<string, unknown> {
   const { flow, screen } = card;
+  const steps = incompleteSteps(card).map((step) => step.claimId);
   return {
     flow,
+    // RF-260: a flow with a step whose citation is invalid or rejected is incomplete.
+    incomplete: card.type === 'FLOW' ? steps.length > 0 : undefined,
+    incompleteSteps: steps.length === 0 ? undefined : steps,
     screen: screen && {
       route: screen.route,
       roles: screen.roles,
@@ -50,6 +55,8 @@ export function detailHeader(card: Card): Record<string, unknown> {
 function flowBody(card: Card, esc: MarkdownEscaper): string[] {
   if (card.flow === undefined) return [];
   const { trigger, outcome } = card.flow;
+  const marked = incompleteSteps(card).map((step) => `${step.claimId} (${step.status})`);
+  const incomplete = marked.length === 0 ? [] : [`Incomplete: ${marked.join(', ')}`, ''];
   return [
     '## Flow',
     '',
@@ -61,6 +68,7 @@ function flowBody(card: Card, esc: MarkdownEscaper): string[] {
     '',
     esc.block(outcome),
     '',
+    ...incomplete,
   ];
 }
 
@@ -124,4 +132,10 @@ export function stepBody(claim: Claim, source: PermalinkSource, esc: MarkdownEsc
       `Branch ${String(branch.number)}: ${esc.inline(branch.text)} (${evidence(branch, source)})`,
   );
   return [...touches, ...branches, ...(branches.length === 0 ? [] : [''])];
+}
+
+/** RF-260: the line under a step of a flow that is invalid or rejected; none for other claims. */
+export function stepMark(card: Pick<Card, 'type'>, claim: Claim): string[] {
+  const marked = card.type === 'FLOW' && isUnsupported(claim);
+  return marked ? ['Marked: this step is not supported by its citation.', ''] : [];
 }

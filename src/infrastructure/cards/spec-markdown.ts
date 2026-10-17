@@ -1,5 +1,6 @@
 import type { CardChanges, CardRef } from '../../application/understand/card-changes.js';
 import type { Card } from '../../domain/cards/card.js';
+import { incompleteSteps } from '../../domain/cards/flow-completeness.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
 import { citationLink, type PermalinkSource } from './citation-link.js';
@@ -20,6 +21,8 @@ function cardSection(card: Card, source: PermalinkSource, esc: MarkdownEscaper):
     '',
     ...(card.note === undefined ? [] : [`Note: ${esc.inline(card.note)}`, '']),
   ];
+  const incomplete = incompleteSteps(card).map((step) => `${step.claimId} (${step.status})`);
+  if (incomplete.length > 0) lines.push(`Incomplete flow: ${incomplete.join(', ')}`, '');
   for (const claim of card.claims) {
     const evidence = claim.citations.map((citation) => citationLink(citation, source)).join(', ');
     lines.push(`- ${claim.claimId} [${claim.status}] ${esc.inline(claim.text)} (${evidence})`);

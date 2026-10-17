@@ -118,3 +118,36 @@ describe('FileTaskResults with flows and screens', () => {
     expect(read?.coverage.surface).toEqual(result.coverage.surface);
   });
 });
+
+describe('FileTaskResults: incomplete flows and cards from before screen claims', () => {
+  const data = useTempRoot('rosetta-task-results-incomplete-');
+  const store = () =>
+    new FileTaskResults({ writer: openWriter(data.path), masker: new SecretMasker() });
+
+  it('RF-260 reads back the incomplete flow count of the area', async () => {
+    const surface = { flowsMarked: true, screensMarked: true, flowCards: 3, screenCards: 1 };
+    const counted = {
+      ...result,
+      coverage: { ...result.coverage, surface: { ...surface, incompleteFlows: 2 } },
+    };
+    const results = store();
+
+    await results.write(scope, [counted]);
+
+    const [read] = await results.read(scope);
+    expect(read?.coverage.surface?.incompleteFlows).toBe(2);
+  });
+
+  it('RF-261 a stored SCRN card without validation and action claims is read back as stored', async () => {
+    const created = cardOf(screenInput);
+    const older: Card = { ...created, claims: created.claims.slice(0, 1) };
+    expect(created.claims.length).toBeGreaterThan(1);
+    const results = store();
+
+    await results.write(scope, [{ ...result, cards: [older] }]);
+
+    const [read] = await results.read(scope);
+    expect(read?.cards[0]?.claims.map((claim) => claim.claimId)).toEqual(['SCRN-001.c1']);
+    expect(read?.cards[0]).toEqual(older);
+  });
+});
