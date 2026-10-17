@@ -180,3 +180,31 @@ describe('renderStatic element and attribute rules', () => {
     );
   });
 });
+
+describe('renderStatic addresses with invisible characters', () => {
+  it.each(['\u202E', '\u2066', '\u2069', '\u0000', '\u007F', '\u202A'])(
+    'RF-507 refuses href and src containing %j',
+    (mark) => {
+      for (const name of ['href', 'src']) {
+        const address = `java${mark}script:1`;
+        expect(refusal(() => renderStatic(h('a', { [name]: address }, 'x')))).toBeInstanceOf(
+          RosettaError,
+        );
+      }
+    },
+  );
+
+  it.each(['lowsrc', 'dynsrc', 'longdesc', 'cite', 'manifest', 'to'])(
+    'RF-507 checks the address in %s',
+    (name) => {
+      expect(refusal(() => renderStatic(h('p', { [name]: 'javascript:1' }, 'x')))).toBeInstanceOf(
+        RosettaError,
+      );
+      expect(renderStatic(h('p', { [name]: 'a.html' }, 'x'))).toContain('a.html');
+    },
+  );
+
+  it('RF-507 refuses the is attribute', () => {
+    expect(refusal(() => renderStatic(h('p', { is: 'x-evil' }, 'x')))).toBeInstanceOf(RosettaError);
+  });
+});
