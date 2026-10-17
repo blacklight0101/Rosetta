@@ -28,12 +28,21 @@ describe('the claims of a SCRN card', () => {
     });
   });
 
-  it('RF-261 an action is a claim that cites the lines of the claims the agent wrote for the screen', () => {
-    const claims = claimsOf();
+  it('RF-261 an action is a claim that cites every range of the claims the agent wrote for the screen', () => {
+    const first = { path: page, startLine: 1, endLine: 3 };
+    const second = { path: page, startLine: 20, endLine: 24 };
+    const claims = [{ text: 'The page is served.', citations: [first, second] }];
 
-    expect(claims[2]?.text).toBe('Action Pay starts the handler PayButton_Click.');
-    expect(claims[2]?.citations).toEqual(claims[0]?.citations);
-    expect(claims[3]?.text).toBe('Action Back starts the flow FLOW-001.');
+    const actions = claimsOf({ ...screenDraft(), claims }).slice(2);
+
+    expect(actions.map((claim) => claim.text)).toEqual([
+      'Action Pay starts the handler PayButton_Click.',
+      'Action Back starts the flow FLOW-001.',
+    ]);
+    expect(actions.map((claim) => claim.citations)).toEqual([
+      [first, second],
+      [first, second],
+    ]);
   });
 
   it('RF-261 claim ids run on without a gap: agent claims, then validations, then actions', () => {

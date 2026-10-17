@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Written by hand for this repository; no real provider was called. The verifier answers Supported to every claim of the webforms-shop run (understand-flows-screens.json) except the second claim it judges, the second step of the first flow, which it rejects (P2-20).",
+  "description": "Written by hand for this repository; no real provider was called. The verifier answers Supported to every claim of the webforms-shop run (understand-flows-screens.json) except the second and the fourth claim it judges: the second step of the first flow and the first claim of the first screen, which it rejects (P2-20).",
   "calls": [
     {
       "attempts": [
@@ -63,7 +63,7 @@
       "attempts": [
         {
           "response": {
-            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "text": "Reason: The cited lines do not do what the step says.\nVerdict: Rejected",
             "toolCalls": [],
             "usage": {
               "inputTokens": 420,

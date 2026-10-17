@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { UNDERSTAND_TIMEOUT, readJson } from '../../support/understand-full-run.js';
-import { createUnderstandHarness } from '../../support/understand-run-harness.js';
+import {
+  createUnderstandHarness,
+  understandSettings,
+} from '../../support/understand-run-harness.js';
 
 // RF-260, RF-263, RF-230, ADR-005, DEC-134: a recorded understand run in which the verifier rejects
 // one step of a flow. The card file, the specification and the coverage, all written after the
@@ -39,6 +42,7 @@ describe('an understand run with a rejected flow step', UNDERSTAND_TIMEOUT, () =
     expect(flow).toContain('incomplete: true');
     expect(flow).toContain('Incomplete: FLOW-001.c2 (Rejected)');
     expect(flow).toContain('### FLOW-001.c2 (Rejected)');
+    expect(await text('cards/SCRN/SCRN-001.md')).not.toMatch(/incomplete/iu);
   });
 
   it('RF-260 the other flows are not marked', async () => {
@@ -51,6 +55,9 @@ describe('an understand run with a rejected flow step', UNDERSTAND_TIMEOUT, () =
 
     expect(spec).toContain('Incomplete flow: FLOW-001.c2 (Rejected)');
     expect(spec.match(/Incomplete flow:/gu)).toHaveLength(1);
+    // The first screen has a rejected claim too, but a screen is not a flow.
+    expect(spec).toContain('- SCRN-001.c1 [Rejected]');
+    expect(spec).not.toContain('Incomplete flow: SCRN');
   });
 
   it('RF-260 the coverage counts the incomplete flow in its area', async () => {
@@ -67,5 +74,40 @@ describe('an understand run with a rejected flow step', UNDERSTAND_TIMEOUT, () =
     expect(await text('coverage.md')).toContain(
       String.raw`- \(root\): 1 flow card (1 incomplete); 1 screen card`,
     );
+  });
+});
+
+describe('an understand run whose verifier is stopped by its cap', UNDERSTAND_TIMEOUT, () => {
+  it('RF-304 RF-260 the coverage is still written after the judgement step and no flow is incomplete', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'rosetta-flows-capped-')));
+    try {
+      const settings = understandSettings((s) => ({
+        ...s,
+        budget: { ...s.budget, roles: { verifier: { maxTokens: 1 } } },
+      }));
+      const h = await createUnderstandHarness({
+        ...{ dataDir: dir, settings, recording: 'understand-flows-screens.json' },
+        ...{ fixture: 'webforms-shop', verifierRecording: 'verifier-flow-step-rejected.json' },
+      });
+      await h.scan();
+      const run = await h.understand();
+
+      expect(run.endState).toBe('Completed');
+      const folder = h.runFolder(run);
+      const coverage = await readJson(join(folder, 'coverage.json'));
+      expect(coverage).toMatchObject({
+        areas: [
+          { area: '(root)', surface: { flowCards: 1, incompleteFlows: 0 } },
+          { area: 'Catalog', surface: { incompleteFlows: 0 } },
+          { area: 'Orders', surface: { incompleteFlows: 0 } },
+          { area: 'Services', surface: { incompleteFlows: 0 } },
+        ],
+      });
+      const flow = await readFile(join(folder, 'cards', 'FLOW', 'FLOW-001.md'), 'utf8');
+      expect(flow).toContain('status: "Unverified"');
+      expect(flow).toContain('incomplete: false');
+    } finally {
+      await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    }
   });
 });
