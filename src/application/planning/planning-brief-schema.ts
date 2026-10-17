@@ -42,7 +42,7 @@ const context = z.strictObject({
   dataMigration: text.nullable(),
 });
 
-const planningBriefSchema = z.strictObject({
+export const planningBriefSchema = z.strictObject({
   schemaVersion: z.literal(1),
   savedAt: z.iso.datetime({ precision: 3 }),
   catalogueVersion: z.number().int().positive(),

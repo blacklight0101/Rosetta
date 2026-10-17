@@ -9,6 +9,7 @@ a stop, the full understand run that the end-to-end tests drive, and the verifie
 for the catalogue and order journeys and none for the service library (P2-19).
 `understand-shop-model.json` is the same run with the Services area answering two `ENT` cards (one relation the code shows, one it does not) and the shipping `BR` card, and `verifier-shop-model.json` judges it (the second and fourth claims rejected, the rest Supported); the evaluation runner test scores them against `tests/fixtures/eval/golden-shop.json` (P2-23).
 `plan-options.json` is the `planner` role answering the Plan setup options (RF-608, RF-609, P3-07): two architecture styles with trade-offs and evidence, one recommended, and two options for each of the seven stack layers.
+`planner-package.json` is the planner's answer for the hand-off package of a seeded order-shop run: requirements that cite supported cards, one that cites only a card without a supported claim, one holding hostile Markdown and HTML, an entity mapping without a supported card and a task in a phase that does not exist (P3-09).
 
 ## Provenance (RNF-009)
 

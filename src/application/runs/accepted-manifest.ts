@@ -107,6 +107,7 @@ export function acceptedManifest(accepted: AcceptedRun): RunManifest {
     },
     priceTable: null,
     catalogue: null,
+    brief: null,
     caps: capsOf(project.settings),
     masking: {},
     totals: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, costMicros: 0, calls: 0 },

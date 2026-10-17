@@ -1,5 +1,6 @@
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { err, ok, type Result } from '../errors/result.js';
+import type { PlanningBrief } from '../planning/planning-brief.js';
 import type { RunEndState, RunStage } from './run-states.js';
 
 // Data-model.md section 3.6, RF-003, RF-126, RNF-004: the manifest of a run, what it was and what it
@@ -91,6 +92,8 @@ export interface RunManifest {
   readonly priceTable: { readonly version: string; readonly currency: string } | null;
   /** The principle catalogue a plan run used (RF-606, RNF-004); null for the other stages. */
   readonly catalogue: ManifestCatalogue | null;
+  /** The planning brief a plan run was written from (RF-604, RNF-004); null for the other stages. */
+  readonly brief: PlanningBrief | null;
   readonly caps: ManifestCaps;
   /** Secrets masked, per kind (RF-141). */
   readonly masking: Readonly<Record<string, number>>;

@@ -49,6 +49,7 @@ import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-gene
 import { FileReportWriter } from '../infrastructure/report/file-report-writer.js';
 import type { StreamRegistry } from './web/event-stream.js';
 import { composeObservability } from './compose-observability.js';
+import { composePlan } from './compose-plan.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
@@ -56,9 +57,8 @@ import type { StartUpSteps } from './start-up.js';
 
 // Architecture section 2 (composition root), RF-1006, RF-1108, RF-003: the run index, the event
 // log with the live broadcaster, the manifest store, the run queue and the use cases behind the run
-// routes. The executors of the stages are registered here as their cards land (the scan run of
-// P1-23, the understand run of P1-33); SubmitRun refuses a stage without one with RST-2305 (409), and `POST
-// /api/projects/:id/runs` starts the stages that have one (RF-003, RF-121, RF-126).
+// routes. The stage executors are registered here (scan P1-23, understand P1-33, plan P3-09); SubmitRun
+// refuses a stage without one with RST-2305 (409); StartRun names the stages the API starts (RF-003).
 
 // This file is at the same depth in `src/` and in the built `dist/`, so `../../` is the repository root.
 const reportTemplates = fileURLToPath(new URL('../../templates/report/', import.meta.url));
@@ -266,25 +266,20 @@ export function composeRuns(parts: RunParts): RunComposition {
   const projects = new PgProjectRepository(pool);
   const scan = composeScan(parts, { writer, manifests }, projects);
   const answers = new FileAnswersFile({ writer, masker });
+  const stage = { ...parts, writer, manifests, projects, runs, ids, answers };
   const queue = new RunQueue({
     runs,
     lifecycle,
     executors: {
       scan: scan.executor,
-      understand: composeUnderstand({ ...parts, writer, manifests, projects, runs, ids, answers }),
+      understand: composeUnderstand(stage),
+      plan: composePlan(stage),
     },
     clock,
     logger,
     maxRunning: DEFAULT_MAX_RUNNING_RUNS,
   });
-  const submitRun = new SubmitRun({
-    runs,
-    manifests,
-    queue,
-    ids,
-    clock,
-    rosettaVersion: version,
-  });
+  const submitRun = new SubmitRun({ runs, manifests, queue, ids, clock, rosettaVersion: version });
   return {
     queue,
     services: runServices({

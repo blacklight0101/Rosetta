@@ -12,8 +12,8 @@ import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descri
 // the same change, and describeError is the only way to read the table. The codes from RST-2000
 // on live in server-descriptions.ts, the file-system codes in file-descriptions.ts, the scan codes
 // in scan-descriptions.ts, the budget codes in budget-descriptions.ts, the Anthropic codes in
-// anthropic-descriptions.ts and the report and export codes in report-descriptions.ts, so no file
-// passes the size limit.
+// anthropic-descriptions.ts, the report and export codes in report-descriptions.ts and the plan
+// codes in plan-descriptions.ts, so no file passes the size limit.
 
 type SplitOff =
   | ServerErrorCode

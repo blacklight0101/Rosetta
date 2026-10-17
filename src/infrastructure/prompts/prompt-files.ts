@@ -71,6 +71,12 @@ export async function loadPlanOptionsPrompt(promptsFolder: string): Promise<Prom
   return requirePlaceholder(file, STYLES_PLACEHOLDER);
 }
 
+/** The planner's prompt for the hand-off package (RF-604), checked and hashed. */
+// RNF-004
+export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/package.v1.md');
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }

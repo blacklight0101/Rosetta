@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseRunManifest } from '../../../../src/application/runs/run-manifest-schema.js';
+import { buildBrief } from '../../../../src/domain/planning/planning-brief.js';
+import { shippedCatalogue } from '../../../support/planning-brief-harness.js';
 import { sampleManifest } from '../../../support/run-fixtures.js';
 
 // RF-003, RF-401 (DEC-114): a manifest stored before the context fields existed still parses, and
@@ -58,5 +60,23 @@ describe('parseRunManifest catalogue', () => {
     delete older['catalogue'];
 
     expect(parseRunManifest(older)?.catalogue).toBeNull();
+  });
+});
+
+describe('parseRunManifest planning brief', () => {
+  it('RF-604 keeps the planning brief a plan run recorded', () => {
+    const brief = {
+      ...buildBrief({ migration: 'rewrite' }, shippedCatalogue),
+      savedAt: '2026-10-12T09:30:00.000Z',
+    };
+
+    expect(parseRunManifest({ ...sampleManifest(), brief })?.brief).toEqual(brief);
+  });
+
+  it('RNF-004 reads a manifest stored before the brief field as a run without a brief', () => {
+    const older: Record<string, unknown> = { ...sampleManifest() };
+    delete older['brief'];
+
+    expect(parseRunManifest(older)?.brief).toBeNull();
   });
 });
