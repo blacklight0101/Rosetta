@@ -52,20 +52,28 @@ class HookedProvider implements LlmProvider {
   private readonly before: BeforeCall | undefined;
   private readonly decorate: DecorateAnswer | undefined;
   private calls = 0;
+  private verifierCalls = 0;
+  private readonly beforeVerifier: BeforeCall | undefined;
 
   constructor(
     recordings: { readonly reader: Recording; readonly verifier: Recording | undefined },
     before: BeforeCall | undefined,
     decorate: DecorateAnswer | undefined,
+    beforeVerifier?: BeforeCall,
   ) {
     this.fake = new FakeProvider({ testMode: true, recording: recordings.reader });
     this.verifier = new FakeProvider({ testMode: true, recording: recordings.verifier ?? noCalls });
     this.before = before;
     this.decorate = decorate;
+    this.beforeVerifier = beforeVerifier;
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
-    if (request.context.role === 'verifier') return this.verifier.complete(request, observer);
+    if (request.context.role === 'verifier') {
+      this.verifierCalls += 1;
+      await this.beforeVerifier?.(this.verifierCalls, request.signal);
+      return this.verifier.complete(request, observer);
+    }
     this.calls += 1;
     await this.before?.(this.calls, request.signal);
     const response = await this.fake.complete(request, observer);
@@ -93,6 +101,8 @@ export interface UnderstandProviderParts {
   /** What the `verifier` role answers (RF-301); without it every verifier call fails. */
   readonly verifierRecording?: Recording;
   readonly beforeCall?: BeforeCall;
+  /** Runs before each `verifier` call, counted from 1 (the judgement step). */
+  readonly beforeVerifierCall?: BeforeCall;
   readonly decorateAnswer?: DecorateAnswer;
   /** The shipped price table the provider factory uses; the budget harness table by default. */
   readonly priceTable?: PriceTable;
@@ -107,7 +117,8 @@ export interface UnderstandProviderParts {
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
   const { dataDir, writer, masker, clock, logger } = parts;
   const recordings = { reader: parts.recording, verifier: parts.verifierRecording };
-  const adapter = new HookedProvider(recordings, parts.beforeCall, parts.decorateAnswer);
+  const hooks = [parts.beforeCall, parts.decorateAnswer, parts.beforeVerifierCall] as const;
+  const adapter = new HookedProvider(recordings, ...hooks);
   const ledger = new SpyLedger(new MemoryCostLedger());
   const keys = new MemoryProviderKeyRepository();
   const box = new AesGcmSecretBox({ current: fixtureSecret(3) });

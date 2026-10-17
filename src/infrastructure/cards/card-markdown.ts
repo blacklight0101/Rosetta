@@ -9,6 +9,7 @@ import {
   stepHeader,
   stepMark,
 } from './card-detail-markdown.js';
+import { flowDiagramSection } from './flow-diagram-section.js';
 import { citationLink, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 import { renderYamlHeader } from './yaml-header.js';
@@ -98,7 +99,12 @@ function questionBody(card: Card, esc: MarkdownEscaper): string[] {
   ];
 }
 
-function bodyOf(card: Card, source: PermalinkSource, esc: MarkdownEscaper): string {
+function bodyOf(
+  card: Card,
+  source: PermalinkSource,
+  esc: MarkdownEscaper,
+  diagram: string[],
+): string {
   return [
     `# ${card.id} ${esc.inline(card.title)}`,
     '',
@@ -109,6 +115,7 @@ function bodyOf(card: Card, source: PermalinkSource, esc: MarkdownEscaper): stri
     ...(card.note === undefined ? [] : [`Note: ${esc.inline(card.note)}`, '']),
     ...questionBody(card, esc),
     ...detailBody(card, source, esc),
+    ...diagram,
     '## Claims',
     '',
     ...card.claims.flatMap((claim) => claimBody(card, claim, source, esc)),
@@ -117,10 +124,16 @@ function bodyOf(card: Card, source: PermalinkSource, esc: MarkdownEscaper): stri
 
 /**
  * The whole file. The header goes through `maskDeep` (keys and values), the finished text through
- * the masker once more as a last guard (RF-141); a masker failure is thrown, nothing is written.
+ * the masker once more as a last guard (RF-141); a FLOW card also gets its sequence diagram, made
+ * from the masked text of `cards` (RF-260); a masker failure is thrown, nothing is written.
  */
-export function renderCardFile(card: Card, source: PermalinkSource, masker: TextMasker): string {
+export function renderCardFile(
+  card: Card,
+  source: PermalinkSource,
+  masker: TextMasker,
+  cards: readonly Card[],
+): string {
   const header = renderYamlHeader(maskDeep(headerOf(card), masker));
-  const text = `---\n${header}\n---\n\n${bodyOf(card, source, markdownEscaper(masker))}`;
+  const text = `---\n${header}\n---\n\n${bodyOf(card, source, markdownEscaper(masker), flowDiagramSection(card, cards, masker))}`;
   return `${masker.mask(text).text.trimEnd()}\n`;
 }

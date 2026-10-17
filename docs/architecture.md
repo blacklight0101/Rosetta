@@ -161,7 +161,7 @@ src/
                         public-host-check (node:dns lookup with a time limit), public-address-agent (the HTTPS
                         agent that checks every connect again), token generator
     scan/               universal/, packs/csharp/, codemap/ (build the code map, `codemap.json` writer and schema, `scan-summary.md`)
-    cards/              the card writers: `cards/<TYPE>/<ID>.md` (YAML header, generated body), `cards/index.json`, `spec.md` (with the flows, screens and data-model sections, P2-22), `data-model.md` when the run has `ENT` cards, the raw output of an `InvalidOutput` task; every citation a GitHub permalink, everything masked
+    cards/              the card writers: `cards/<TYPE>/<ID>.md` (YAML header, generated body; a `FLOW` card also carries its sequence diagram, P2-33), `cards/index.json`, `spec.md` (with the flows, screens and data-model sections, P2-22), `data-model.md` when the run has `ENT` cards, the raw output of an `InvalidOutput` task; every citation a GitHub permalink, everything masked
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
     prompts/            prompt files read with their version and SHA-256 (`loadReaderPrompts`, RNF-004)
