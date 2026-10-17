@@ -5,7 +5,7 @@ import { ledgerRow, newId, outcomeOf, user, type Insert } from '../../../support
 import { entryOf, ledgerNow, reservationOf } from '../../../support/ledger-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
 
-// RF-428, ADR-016, data-model.md section 4 (`cost_ledger`), P2-16: migration 0017 gives each ledger
+// RF-428, ADR-016, data-model.md section 4 (`cost_ledger`), P2-16: migration 0013 gives each ledger
 // row the tokens the call wrote to the provider's prompt cache and their cost, fixed at call time.
 // Rows written before it read zero; negative values are refused.
 

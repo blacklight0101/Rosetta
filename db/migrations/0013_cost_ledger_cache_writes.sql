@@ -1,4 +1,4 @@
--- 0017_cost_ledger_cache_writes: each ledger row keeps the tokens its call wrote to the provider's
+-- 0013_cost_ledger_cache_writes: each ledger row keeps the tokens its call wrote to the provider's
 -- prompt cache and what they cost (data-model.md section 4; RF-420, RF-426, RF-428, P2-16).
 -- Anthropic bills a cache write at its own price (1.25 times the input price); the row's
 -- `cost_micros` already includes that part, `cache_write_cost_micros` names it, fixed at call time

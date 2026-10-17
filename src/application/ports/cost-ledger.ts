@@ -33,7 +33,7 @@ export interface LedgerEntry {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
-  /** The part of the input written to the provider's prompt cache (P2-16, migration 0017). */
+  /** The part of the input written to the provider's prompt cache (P2-16, migration 0013). */
   readonly cacheWriteInputTokens: number;
   readonly usageSource: UsageSource;
   /** Fixed when the call is made, never recomputed. */

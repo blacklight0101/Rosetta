@@ -735,8 +735,8 @@ the `Clock` port.
 | `price_table_version` | `text` | |
 | `agent_task_id` | `text` null | the agent task of the call, for the cost report by task (RF-426); null for a provider test (RF-407); added by `0005` |
 | `cost_known` | `boolean` | default `true`; `false` for a model without a price run with the user's own key and `budget.allowUnpriced` (RF-427): `cost_micros` is 0 and the cost is shown as unknown; added by `0005` |
-| `cache_write_input_tokens` | `bigint` | default 0, `CHECK (cache_write_input_tokens >= 0)`; the part of `input_tokens` the call wrote to the provider's prompt cache (Anthropic's `cache_creation_input_tokens`); added by `0017` (P2-16) |
-| `cache_write_cost_micros` | `bigint` | default 0, `CHECK (cache_write_cost_micros >= 0)`; the part of `cost_micros` those tokens cost at the model's cache-write price, rounded up, fixed at call time; 0 when the cost is unknown; added by `0017` (P2-16) |
+| `cache_write_input_tokens` | `bigint` | default 0, `CHECK (cache_write_input_tokens >= 0)`; the part of `input_tokens` the call wrote to the provider's prompt cache (Anthropic's `cache_creation_input_tokens`); added by `0013` (P2-16) |
+| `cache_write_cost_micros` | `bigint` | default 0, `CHECK (cache_write_cost_micros >= 0)`; the part of `cost_micros` those tokens cost at the model's cache-write price, rounded up, fixed at call time; 0 when the cost is unknown; added by `0013` (P2-16) |
 
 **`cost_reservations`** (RF-422, RF-1106; added by the review of 2026-10-11, DEC-112)
 
@@ -855,7 +855,7 @@ runner; `rosetta_app` may only read it, so the server can refuse a schema with a
 a transaction, recorded in `schema_version` with its checksum, by the one-off migrate step
 (`node dist/presentation/migrate.js`, DEC-140) before the server starts; the server only checks them. An applied file is never edited; a fix is a new
 migration. Number blocks: `0001..0099` release 1 (`0001_accounts`, `0002_projects_runs`, `0003_cost_ledger_audit`
-with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`, `0017_cost_ledger_cache_writes`), `0100..` later
+with `cost_reservations`, `0004_server_settings_defaults`, `0005_cost_ledger_tasks_and_tokens`, `0006_cost_reservations_without_run`, `0007_cost_reservations_per_run_call`, `0008_audit_retention_purge`, `0009_project_settings_version`, `0010_schema_version_read`, `0011_runs_failed_areas`, `0012_cost_reservations_role`, `0013_cost_ledger_cache_writes`), `0100..` later
 releases.
 
 **File schema versions**:
