@@ -93,6 +93,7 @@ export const ERROR_CODES = {
   costTotalOutOfRange: 'RST-1605',
   runInProgress: 'RST-1700',
   reportWriteFailed: 'RST-1701',
+  planOptionsInvalid: 'RST-1800',
   githubUrlInvalid: 'RST-1900',
   githubRefNotFound: 'RST-1901',
   githubRateLimited: 'RST-1902',

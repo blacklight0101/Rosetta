@@ -63,6 +63,12 @@ export function loadOverviewPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'summariser/overview.v1.md');
 }
 
+/** The planner's prompt for the architecture and stack options (RF-608, RF-609). Stub. */
+// RNF-004
+export function loadPlanOptionsPrompt(promptsFolder: string): Promise<PromptFile> {
+  return Promise.resolve({ name: promptsFolder, version: 'v0', sha256: '', text: '' });
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }

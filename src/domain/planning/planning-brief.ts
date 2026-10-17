@@ -18,7 +18,7 @@ export const stackLayers = [
   'testing',
   'hosting',
 ] as const;
-type StackLayer = (typeof stackLayers)[number];
+export type StackLayer = (typeof stackLayers)[number];
 
 /** RF-610; the first is the default. */
 export const migrationStrategies = ['strangler-fig', 'parallel-change', 'rewrite'] as const;
