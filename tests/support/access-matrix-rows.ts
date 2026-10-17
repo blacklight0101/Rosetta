@@ -116,9 +116,6 @@ const projectRows: Rows = {
       expected: active(401, 404),
     },
   ],
-  'HEAD /api/projects/:id/answered-questions': [
-    { method: 'HEAD', url: projectUrl('/answered-questions'), expected: ownerOnly(200) },
-  ],
   'GET /api/projects/:id/planning-brief': [
     { method: 'GET', url: projectUrl('/planning-brief'), expected: ownerOnly(200) },
     {

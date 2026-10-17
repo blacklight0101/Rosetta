@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { RecordedQuestion } from '../../application/ports/answers-file.js';
 import type { CountAnsweredQuestions } from '../../application/use-cases/count-answered-questions.js';
+import type { StatedQuestion } from '../../application/use-cases/question-states.js';
 import type { ListAnswers } from '../../application/use-cases/list-answers.js';
 import type { RecordAnswers } from '../../application/use-cases/record-answers.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -11,13 +11,15 @@ import { signedInOf } from './request-actor.js';
 // RF-1007, RF-240, RF-1105: the open questions of a run on its live page.
 // - GET /api/runs/:runId/answers answers `{ questions }`: the questions the run added to the
 //   project's answers.md, each with its card id, question, context and the answer recorded so far
-//   (empty while it has none).
+//   (empty while it has none) and its state, `Open` or `Answered` (RF-241).
 // - PUT /api/runs/:runId/answers with `{ answers: [{ cardId, answer }] }` writes those answers into
 //   answers.md, keeps every other answer, and answers the run's questions as they are now. An
 //   answer is one line in the file (line breaks become spaces) and an empty one clears it. A card
 //   id the run has no question for answers 404 and writes nothing; a body that breaks the limits
 //   below answers 400 (RST-2000).
-// Another user's run id answers 404 like an unknown one, and nothing is written.
+// - GET /api/projects/:id/answered-questions answers `{ count }`: the questions with an answer
+//   whose card is still Open, which a re-run with answers would use (RF-241).
+// Another user's run or project id answers 404 like an unknown one, and nothing is written.
 
 export interface AnswerServices {
   readonly listAnswers: ListAnswers;
@@ -43,21 +45,39 @@ const answersBody = z.strictObject({
     .refine((list) => new Set(list.map((entry) => entry.cardId)).size === list.length),
 });
 
-function questionsView(questions: readonly RecordedQuestion[]): {
-  readonly questions: readonly RecordedQuestion[];
+function questionsView(questions: readonly StatedQuestion[]): {
+  readonly questions: readonly StatedQuestion[];
 } {
   return {
-    questions: questions.map(({ cardId, question, context, answer }) => ({
+    questions: questions.map(({ cardId, question, context, answer, state }) => ({
       cardId,
       question,
       context,
       answer,
+      state,
     })),
   };
 }
 
+// RF-241, RF-1105
+function registerCountRoute(server: FastifyInstance, services: AnswerServices): void {
+  server.get<{ Params: { id: string } }>(
+    '/api/projects/:id/answered-questions',
+    { exposeHeadRoute: false, config: { access: 'user' } },
+    async (request, reply) => {
+      const outcome = await services.countAnswered.execute({
+        actor: signedInOf(request).actor,
+        projectId: request.params.id,
+      });
+      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
+      return reply.header('cache-control', 'no-store').send({ count: outcome.value });
+    },
+  );
+}
+
 // RF-1007, RF-1105
 export function registerAnswerRoutes(server: FastifyInstance, services: AnswerServices): void {
+  registerCountRoute(server, services);
   server.get<{ Params: { runId: string } }>(
     '/api/runs/:runId/answers',
     { exposeHeadRoute: false, config: { access: 'user' } },

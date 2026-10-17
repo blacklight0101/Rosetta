@@ -20,6 +20,8 @@ export interface StartRequest {
   readonly areas?: readonly string[];
   /** `understand` only: the consent to send code to the cloud providers the roles use. */
   readonly cloudConsent?: boolean;
+  /** `understand` only: re-run the areas of the answered questions with the answers (RF-241). */
+  readonly withAnswers?: boolean;
 }
 
 /**

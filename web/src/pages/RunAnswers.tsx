@@ -13,7 +13,7 @@ import { useRunAnswers } from './use-run-answers.js';
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
 // field for the answer. Saving writes the answer into the project's answers.md (the other answers
 // stay); a question is marked answered only when its area is analysed again with the answers
-// (RF-241), so every question here reads Open. Question and context come from a model and are
+// (RF-241), so a question reads Open until a re-run used its answer, then Answered. Question and context come from a model and are
 // shown as text. All the styles are under `.rst-p139-`.
 
 export interface RunAnswersProps {
@@ -68,7 +68,7 @@ function QuestionItem(props: {
     <li class="rst-p139-question" data-testid="open-question">
       <div class="rst-p139-question__head">
         <span class="rst-mono rst-p139-question__id">{question.cardId}</span>
-        <StatusBadge list="OpenQuestionState" value="Open" />
+        <StatusBadge list="OpenQuestionState" value={question.state} />
       </div>
       <p class="rst-p139-question__text">
         <RenderedText text={question.question} />
