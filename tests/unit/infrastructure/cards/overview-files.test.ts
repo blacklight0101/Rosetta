@@ -70,7 +70,7 @@ describe('overview.md and hostile text', () => {
 
     const text = renderOverview(hostile, masker);
 
-    expect(text).not.toMatch(/<(script|img|b)b/iu);
+    expect(text).not.toMatch(/<(?:script|img|b)[s>]/iu);
     expect(text).not.toContain('](javascript:');
     expect(text).toContain('&lt;script&gt;');
   });
