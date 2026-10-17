@@ -6,7 +6,7 @@ import type { Run } from '../../src/domain/runs/run.js';
 import { UNDERSTAND_TIMEOUT } from './understand-timeout.js';
 import { createUnderstandHarness, type UnderstandHarness } from './understand-run-harness.js';
 
-export { UNDERSTAND_RUN_WAIT, UNDERSTAND_TIMEOUT } from './understand-timeout.js';
+export { UNDERSTAND_TIMEOUT } from './understand-timeout.js';
 
 // RF-200, RF-301: the full understand run of the C# fixture (a scan, a reader per area, then the
 // verifier's judgement of the claims that pass the citation check) that several integration tests
