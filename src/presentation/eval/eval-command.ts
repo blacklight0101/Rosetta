@@ -95,7 +95,23 @@ function failed(problem: EvaluationProblem, print: Print): void {
   if (problem.files !== undefined) print(JSON.stringify(problem.files, null, 2));
 }
 
-// RNF-006, RNF-015, RF-143
+/** The golden-set evaluation: show the plan, then run it with the owner's consent. */
+async function runGoldenCommand(args: EvalArgs, env: Environment, print: Print): Promise<number> {
+  const inputs = await inputsOf(args);
+  if (!inputs.ok) return (print(inputs.error), 1);
+  const { config, golden, settings, repetitions } = inputs.value;
+  const { totalCapMicros } = config;
+  for (const line of evaluationPlan({ settings, totalCapMicros, repetitions }, golden.set))
+    print(line);
+  if (!args.yes) return (print(NOT_STARTED), 1);
+  const parts = await partsOf(config, settings, env);
+  const result = await runEvaluation(parts, golden, repetitions);
+  if (!result.ok) return (failed(result.error, print), 1);
+  for (const line of reportLines(result.value)) print(line);
+  return 0;
+}
+
+// RNF-006, RNF-015, RF-143, RF-305
 export async function runEvalCommand(
   args: readonly string[],
   env: Environment,
@@ -103,20 +119,14 @@ export async function runEvalCommand(
 ): Promise<number> {
   const parsed = parseEvalArgs(args);
   if (!parsed.ok || parsed.value.help) {
-    print(parsed.ok ? EVAL_USAGE : `${parsed.error}\n${EVAL_USAGE}`);
+    print(
+      parsed.ok
+        ? EVAL_USAGE
+        : `${parsed.error}
+${EVAL_USAGE}`,
+    );
     return parsed.ok ? 0 : 2;
   }
-  if (parsed.value.calibration) return runCalibrationCommand(parsed.value, env, print);
-  const inputs = await inputsOf(parsed.value);
-  if (!inputs.ok) return (print(inputs.error), 1);
-  const { config, golden, settings, repetitions } = inputs.value;
-  const { totalCapMicros } = config;
-  for (const line of evaluationPlan({ settings, totalCapMicros, repetitions }, golden.set))
-    print(line);
-  if (!parsed.value.yes) return (print(NOT_STARTED), 1);
-  const parts = await partsOf(config, settings, env);
-  const result = await runEvaluation(parts, golden, repetitions);
-  if (!result.ok) return (failed(result.error, print), 1);
-  for (const line of reportLines(result.value)) print(line);
-  return 0;
+  const run = parsed.value.calibration ? runCalibrationCommand : runGoldenCommand;
+  return run(parsed.value, env, print);
 }
