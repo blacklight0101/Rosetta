@@ -1,8 +1,10 @@
 import type { Experiment } from '../../application/eval/evaluation-schema.js';
+import type { EvaluationTarget } from '../../application/eval/evaluation-ports.js';
 import {
   RunEvaluation,
   type EvaluationProblem,
   type EvaluationSummary,
+  type RunEvaluationDependencies,
 } from '../../application/eval/run-evaluation.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import type { Actor } from '../../domain/accounts/actor.js';
@@ -13,13 +15,14 @@ import { FileEvaluationOutput } from '../../infrastructure/eval/evaluation-files
 import type { LoadedGoldenSet } from '../../infrastructure/eval/golden-set-file.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
 import { composePipeline, type Pipeline, type PipelineParts } from './eval-pipeline.js';
+import { evaluationCaps } from './eval-settings.js';
 import { PipelineTarget } from './pipeline-target.js';
 
 // Architecture section 2 (composition root), RNF-006, RNF-012, RNF-015, ADR-007, ADR-008: one
 // evaluation. An account and a project of the evaluation's own (in memory) point at the golden
 // set's pinned commit with the chosen settings; the account's daily cap and the server caps are the
 // total cap, so the budget guard stops the runs that would pass it, and the run cap of the settings
-// bounds each repetition. The results go to `eval-out/<id>/`.
+// bounds each repetition (eval-settings.ts). The results go to `eval-out/<id>/`.
 
 export interface EvaluationParts extends PipelineParts {
   /** The `eval-out/` folder. */
@@ -30,13 +33,13 @@ export interface EvaluationParts extends PipelineParts {
   readonly totalCapMicros: number;
 }
 
-function accountOf(parts: EvaluationParts): UserAccount {
+function accountOf(parts: EvaluationParts, dailyCapMicros: bigint): UserAccount {
   const now = parts.clock.now().getTime();
   return {
     ...{ id: parts.ids.uuid(), userName: 'evaluation', displayName: 'Evaluation' },
     ...{ role: 'user', state: 'Active', passwordHash: 'none', failedSignIns: 0 },
     ...{ firstFailedAt: null, lockedUntil: null, serverKeysAllowed: true },
-    ...{ dailyCapMicros: BigInt(parts.totalCapMicros), ownDailyCapMicros: null },
+    ...{ dailyCapMicros, ownDailyCapMicros: null },
     ...{ createdAt: now, updatedAt: now, lastSignInAt: null },
   };
 }
@@ -47,11 +50,13 @@ interface Owner {
 }
 
 async function projectOf(parts: EvaluationParts, s: Pipeline, golden: GoldenSet): Promise<Owner> {
-  const account = accountOf(parts);
+  const { dailyCapMicros, ...caps } = evaluationCaps({
+    totalCapMicros: parts.totalCapMicros,
+    runCapMicros: parts.settings.budget.run.maxCostMicros,
+  });
+  const account = accountOf(parts, dailyCapMicros);
   await s.users.insert(account);
-  const total = BigInt(parts.totalCapMicros);
-  const runMicros = BigInt(parts.settings.budget.run.maxCostMicros);
-  await s.serverSettings.saveCaps({ runMicros, userDayMicros: total, serverMonthMicros: total });
+  await s.serverSettings.saveCaps(caps);
   const { source } = golden;
   const now = parts.clock.now().getTime();
   const stored = await s.projects.insertOrFind({
@@ -75,27 +80,51 @@ function recordedSettings(parts: EvaluationParts): Experiment['settings'] {
   };
 }
 
+export interface ComposedEvaluation {
+  /** The real pipeline of the runs, behind the evaluation's account and project. */
+  readonly target: EvaluationTarget;
+  /** Everything else the evaluation use case needs. */
+  readonly dependencies: Omit<RunEvaluationDependencies, 'target'>;
+  /** Stops the run queue; call it when the evaluation is over. */
+  readonly shutDown: () => Promise<void>;
+}
+
+// RNF-006, ADR-007
+export async function composeEvaluation(
+  parts: EvaluationParts,
+  golden: GoldenSet,
+): Promise<ComposedEvaluation> {
+  const pipeline = composePipeline(parts);
+  const shutDown = () => pipeline.queue.shutDown();
+  try {
+    const owner = await projectOf(parts, pipeline, golden);
+    const verifier = await loadVerifierPrompts(parts.promptsFolder);
+    const dependencies = {
+      output: new FileEvaluationOutput({ outputDir: parts.outputDir, masker: parts.masker }),
+      ...{ clock: parts.clock, ids: parts.ids, rosettaVersion: parts.rosettaVersion },
+      extraPrompts: [verifier.system, verifier.retry],
+    };
+    return { target: new PipelineTarget({ ...pipeline, ...owner }), dependencies, shutDown };
+  } catch (error) {
+    await shutDown();
+    throw error;
+  }
+}
+
 // RNF-006, RNF-012, RNF-015
 export async function runEvaluation(
   parts: EvaluationParts,
   golden: LoadedGoldenSet,
   repetitions: number,
 ): Promise<Result<EvaluationSummary, EvaluationProblem>> {
-  const pipeline = composePipeline(parts);
+  const composed = await composeEvaluation(parts, golden.set);
   try {
-    const owner = await projectOf(parts, pipeline, golden.set);
-    const verifier = await loadVerifierPrompts(parts.promptsFolder);
-    const evaluation = new RunEvaluation({
-      target: new PipelineTarget({ ...pipeline, ...owner }),
-      output: new FileEvaluationOutput({ outputDir: parts.outputDir, masker: parts.masker }),
-      ...{ clock: parts.clock, ids: parts.ids, rosettaVersion: parts.rosettaVersion },
-      extraPrompts: [verifier.system, verifier.retry],
-    });
+    const evaluation = new RunEvaluation({ ...composed.dependencies, target: composed.target });
     return await evaluation.execute({
       ...{ goldenSet: golden.set, goldenSetSha256: golden.sha256, repetitions },
       ...{ totalCapMicros: parts.totalCapMicros, settings: recordedSettings(parts) },
     });
   } finally {
-    await pipeline.queue.shutDown();
+    await composed.shutDown();
   }
 }

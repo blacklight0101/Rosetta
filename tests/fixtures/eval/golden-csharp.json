@@ -65,7 +65,7 @@
         {
           "id": "absent-api-auth",
           "statement": "The catalog API checks no user: it has no authorisation attribute.",
-          "claimPatterns": [["authoriz"], ["authoris"]],
+          "claimPatterns": [["authoriz*"], ["authoris*"]],
           "unless": []
         }
       ]

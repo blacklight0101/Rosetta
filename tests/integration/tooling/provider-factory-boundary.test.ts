@@ -1,6 +1,18 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { SecretBox } from '../../../src/application/ports/secret-box.js';
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
+import { err } from '../../../src/domain/errors/result.js';
+import { MemoryCostLedger } from '../../../src/infrastructure/db/memory-cost-ledger.js';
+import { MemoryProviderKeyRepository } from '../../../src/infrastructure/db/memory-provider-key-repository.js';
+import { MemoryServerSettings } from '../../../src/infrastructure/db/memory-server-settings.js';
+import { SecretMasker } from '../../../src/infrastructure/guards/secret-masker.js';
+import { GuardedProviderFactory } from '../../../src/infrastructure/providers/provider-factory.js';
+import { budgetTable } from '../../support/budget-harness.js';
+import { FixedClock } from '../../support/fixed-clock.js';
+import { MemoryLogger } from '../../support/memory-logger.js';
+import { SequenceIdGenerator } from '../../support/sequence-id-generator.js';
 
 // ADR-003, ADR-006, ADR-007, P1-29: the provider factory is the only way to get a provider. An
 // adapter is constructed only in the adapter builder, and the three decorators that guard a call
@@ -92,5 +104,43 @@ describe('provider factory boundary: the guards', () => {
     expect(observed).toBeGreaterThan(-1);
     expect(egress).toBeGreaterThan(observed);
     expect(budget).toBeGreaterThan(egress);
+  });
+});
+
+/** A box that opens no key, as the evaluation's (it runs on the server keys only). */
+const noKeys: SecretBox = {
+  keyVersion: 'none',
+  knows: () => false,
+  seal: () => {
+    throw new Error('No keys are stored.');
+  },
+  open: () => err(ERROR_CODES.providerKeyUnreadable),
+};
+
+describe('provider factory boundary: what the provider composition hands out', () => {
+  it('ADR-003 ADR-007 exports no adapter builder, only the guarded provider factories', async () => {
+    const composition = await import('../../../src/presentation/compose-providers.js');
+
+    expect(Object.keys(composition).sort()).toEqual([
+      'composeProviders',
+      'evaluationProviderFactory',
+    ]);
+  });
+
+  it('ADR-003 RNF-006 gives npm run eval the guarded provider factory over the real adapters', async () => {
+    const { evaluationProviderFactory } =
+      await import('../../../src/presentation/compose-providers.js');
+    const clock = new FixedClock('2026-10-17T09:30:00.000Z');
+    const masker = new SecretMasker();
+    const logger = new MemoryLogger(clock, masker);
+    const make = await evaluationProviderFactory(logger);
+    const factory = make({
+      ...{ keys: new MemoryProviderKeyRepository(), box: noKeys, serverKeys: {} },
+      ...{ ollamaUrl: undefined, serverSettings: new MemoryServerSettings({}) },
+      ...{ ledger: new MemoryCostLedger(), priceTable: budgetTable, masker, clock, logger },
+      ids: new SequenceIdGenerator(),
+    });
+
+    expect(factory).toBeInstanceOf(GuardedProviderFactory);
   });
 });

@@ -6,6 +6,7 @@ import type {
   LlmRequest,
   LlmResponse,
 } from '../../src/application/ports/llm-provider.js';
+import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-fetcher.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
@@ -14,6 +15,8 @@ import {
   loadRecording,
   type Recording,
 } from '../../src/infrastructure/providers/fake/recording.js';
+import { estimateInputTokens } from '../../src/infrastructure/providers/usage-estimate.js';
+import { GuardedProviderFactory } from '../../src/infrastructure/providers/provider-factory.js';
 import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
 import type { EvaluationParts } from '../../src/presentation/eval/compose-evaluation.js';
@@ -75,6 +78,23 @@ class RoleRecordings implements LlmProvider {
   }
 }
 
+/** A provider whose answers use the worst case the budget guard reserves: whole prompt, whole output. */
+class WorstCaseUsage implements LlmProvider {
+  private readonly inner: LlmProvider;
+
+  constructor(inner: LlmProvider) {
+    this.inner = inner;
+  }
+
+  async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
+    const response = await this.inner.complete(request, observer);
+    const outputTokens = request.maxOutputTokens ?? response.usage.outputTokens;
+    const inputTokens = estimateInputTokens(request);
+    const usage = { ...response.usage, inputTokens, outputTokens, cachedInputTokens: 0 };
+    return { ...response, usage };
+  }
+}
+
 function joined(description: string, parts: readonly Recording[]): Recording {
   return { schemaVersion: 1, description, calls: parts.flatMap((part) => part.calls) };
 }
@@ -94,13 +114,20 @@ export interface EvalHarnessOptions {
   readonly outputDir: string;
   readonly settings?: ProjectSettings;
   readonly totalCapMicros?: number;
+  /** The shipped price table; the budget harness table (the fake models free) by default. */
+  readonly priceTable?: PriceTable;
+  /** The server keys of the environment; none by default (the fake models need no key). */
+  readonly serverKeys?: { readonly openai?: string };
+  /** Every call uses the worst case its reservation covers, so it costs the most it may. */
+  readonly worstCase?: boolean;
 }
 
 /** The runner's parts with the fake GitHub and the fake provider in front of the fixture. */
 export async function evalParts(options: EvalHarnessOptions): Promise<EvaluationParts> {
   const clock = new FixedClock('2026-10-17T09:30:00.000Z');
   const masker = new SecretMasker();
-  const fake = await provider();
+  const recorded = await provider();
+  const fake = options.worstCase === true ? new WorstCaseUsage(recorded) : recorded;
   const fetcher = new FakeSourceFetcher(
     [
       {
@@ -121,10 +148,10 @@ export async function evalParts(options: EvalHarnessOptions): Promise<Evaluation
     settings: options.settings ?? understandSettings(),
     fetcher,
     snapshotRoot: () => fixtureRoot('webforms-csharp'),
-    adapters: () => fake,
-    serverKeys: {},
+    providers: (guards) => new GuardedProviderFactory({ ...guards, adapters: () => fake }),
+    serverKeys: options.serverKeys ?? {},
     ollamaUrl: undefined,
-    priceTable: budgetTable,
+    priceTable: options.priceTable ?? budgetTable,
     totalCapMicros: options.totalCapMicros ?? 1_000_000,
     rosettaVersion: '1.2.3-test',
     promptsFolder: 'prompts',

@@ -154,3 +154,24 @@ export class MemoryEvaluationOutput implements EvaluationOutput {
     return Promise.resolve(`eval-out/${files.folder}`);
   }
 }
+
+/** An output whose first writes fail, as a folder that already exists makes them fail. */
+export class FailingEvaluationOutput extends MemoryEvaluationOutput {
+  /** The folders of the writes that failed. */
+  readonly refused: string[] = [];
+  private failures: number;
+
+  constructor(failures: number) {
+    super();
+    this.failures = failures;
+  }
+
+  override write(files: EvaluationFiles): Promise<string> {
+    if (this.failures === 0) return super.write(files);
+    this.failures -= 1;
+    this.refused.push(files.folder);
+    return Promise.reject(
+      new Error(`EEXIST: file already exists, mkdir 'eval-out/${files.folder}'`),
+    );
+  }
+}

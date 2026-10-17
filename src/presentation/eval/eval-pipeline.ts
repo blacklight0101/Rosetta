@@ -2,6 +2,7 @@ import { EstimateRun } from '../../application/estimate/estimate-run.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
 import type { Logger } from '../../application/ports/logger.js';
+import type { ProviderSetFactory } from '../../application/ports/provider-set-factory.js';
 import type { SecretBox } from '../../application/ports/secret-box.js';
 import type { SourceFetcher } from '../../application/ports/source-fetcher.js';
 import { RunLifecycle } from '../../application/runs/run-lifecycle.js';
@@ -36,13 +37,12 @@ import {
   loadReaderPrompts,
 } from '../../infrastructure/prompts/prompt-files.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
-import type { AdapterBuilder } from '../../infrastructure/providers/adapter-spec.js';
 import { loadTextToolProtocol } from '../../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import type { ServerKeys } from '../../infrastructure/providers/provider-access.js';
-import { GuardedProviderFactory } from '../../infrastructure/providers/provider-factory.js';
 import type { LanguagePackRegistry } from '../../infrastructure/scan/packs/pack-registry.js';
 import { SnapshotScanPipeline } from '../../infrastructure/scan/scan-pipeline.js';
 import { FileScanResults } from '../../infrastructure/scan/scan-results.js';
+import type { GuardedFactoryMaker } from '../compose-providers.js';
 import { composeUnderstandSinks } from './eval-sinks.js';
 import { RunEndWatcher } from './pipeline-target.js';
 
@@ -58,7 +58,8 @@ export interface PipelineParts {
   readonly fetcher: SourceFetcher;
   /** The folder of a snapshot by its key (the snapshot cache, or a fixture in tests). */
   readonly snapshotRoot: (key: string) => string;
-  readonly adapters: AdapterBuilder;
+  /** The guarded provider factory over the evaluation's stores (the release adapters, or a fake). */
+  readonly providers: GuardedFactoryMaker;
   readonly serverKeys: ServerKeys;
   readonly ollamaUrl: string | undefined;
   readonly priceTable: PriceTable;
@@ -122,12 +123,12 @@ function storesOf(parts: PipelineParts): Stores {
   };
 }
 
-function providersOf(parts: PipelineParts, s: Stores): GuardedProviderFactory {
+function providersOf(parts: PipelineParts, s: Stores): ProviderSetFactory {
   const { masker, clock, ids, logger } = parts;
-  return new GuardedProviderFactory({
+  return parts.providers({
     ...{ keys: s.keys, box: noUserKeys, serverKeys: parts.serverKeys, ollamaUrl: parts.ollamaUrl },
     ...{ serverSettings: s.serverSettings, ledger: s.ledger },
-    ...{ priceTable: parts.priceTable, masker, adapters: parts.adapters, clock, ids, logger },
+    ...{ priceTable: parts.priceTable, masker, clock, ids, logger },
   });
 }
 

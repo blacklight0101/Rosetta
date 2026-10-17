@@ -48,6 +48,8 @@ export interface RunEvaluationRequest {
 export interface EvaluationProblem {
   readonly code: ErrorCode;
   readonly message: string;
+  /** P2-11 red step: the results of runs that could not be written. */
+  readonly files?: EvaluationFiles;
 }
 
 export interface EvaluationSummary {

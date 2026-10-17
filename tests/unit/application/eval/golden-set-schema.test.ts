@@ -175,6 +175,32 @@ describe('the golden set file: ids and limits', () => {
   });
 });
 
+describe('the golden set file: words that can match', () => {
+  it('RNF-015 DEC-57 refuses an absence whose pattern word holds one of its unless words', () => {
+    const dead = withCase((entry) => {
+      entry['absences'] = [
+        {
+          id: 'absent-delete-guard',
+          statement: 'Nothing stops a delete.',
+          claimPatterns: [['cannot', 'delete']],
+          unless: ['no code', 'cannot'],
+        },
+      ];
+    });
+
+    expect(problemsOf(dead).join(' ')).toContain('absent-delete-guard');
+    expect(problemsOf(dead).join(' ')).toContain('"cannot"');
+  });
+
+  it('RNF-006 refuses a * that is not the last character of a word', () => {
+    const star = withCase((entry) => {
+      entry['findings'] = [{ ...firstFinding(), keywords: ['gen*rat'] }];
+    });
+
+    expect(problemsOf(star).join(' ')).toContain('gen*rat');
+  });
+});
+
 function firstCase(): Record<string, unknown> {
   const cases = validSet()['cases'];
   if (!Array.isArray(cases)) throw new Error('no cases');

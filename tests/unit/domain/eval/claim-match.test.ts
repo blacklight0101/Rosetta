@@ -72,3 +72,36 @@ describe('a claim against a "not in the code" case', () => {
     expect(hitsAbsence(claim({ text: 'Items reorder by themselves.' }), reorder)).toBe(true);
   });
 });
+
+describe('a claim against a golden finding: whole words', () => {
+  it('RNF-006 matches a keyword as a whole word, never inside another word', () => {
+    const size = finding({ keywords: ['10'] });
+    const add = finding({ keywords: ['add'] });
+
+    expect(matchesFinding(claim({ text: 'A page shows 100 items.' }), size)).toBe(false);
+    expect(matchesFinding(claim({ text: 'A page shows 10 items.' }), size)).toBe(true);
+    expect(matchesFinding(claim({ text: 'The address is kept.' }), add)).toBe(false);
+    expect(matchesFinding(claim({ text: 'A clerk adds an item.' }), add)).toBe(true);
+  });
+
+  it('RNF-006 reads the -s, -ed and -ing forms of a keyword, and a stem ending in * as a word start', () => {
+    const page = finding({ keywords: ['page'] });
+    const stem = finding({ keywords: ['generat*'] });
+
+    expect(matchesFinding(claim({ text: 'The items are paged.' }), page)).toBe(true);
+    expect(matchesFinding(claim({ text: 'The paging is done in SQL.' }), page)).toBe(true);
+    expect(matchesFinding(claim({ text: 'The pager is hidden.' }), page)).toBe(false);
+    expect(matchesFinding(claim({ text: 'The id is generated.' }), stem)).toBe(true);
+    expect(matchesFinding(claim({ text: 'It regenerates the list.' }), stem)).toBe(false);
+  });
+});
+
+describe('a claim against a "not in the code" case: whole words', () => {
+  it('RNF-015 DEC-57 reads the pattern and the unless words as whole words', () => {
+    const remove = absence({ claimPatterns: [['delet*']], unless: ['no'] });
+
+    expect(hitsAbsence(claim({ text: 'Nothing deletes an item.' }), remove)).toBe(true);
+    expect(hitsAbsence(claim({ text: 'No page deletes an item.' }), remove)).toBe(false);
+    expect(hitsAbsence(claim({ text: 'The item is undeleted.' }), remove)).toBe(false);
+  });
+});

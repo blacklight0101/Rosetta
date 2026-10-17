@@ -17,7 +17,10 @@ import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { realAdapters } from '../infrastructure/providers/adapter-builder.js';
 import type { AdapterBuilder } from '../infrastructure/providers/adapter-spec.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
-import { GuardedProviderFactory } from '../infrastructure/providers/provider-factory.js';
+import {
+  GuardedProviderFactory,
+  type GuardedProviderFactoryOptions,
+} from '../infrastructure/providers/provider-factory.js';
 import { SystemTimeoutSignals } from '../infrastructure/system/system-timeout-signals.js';
 import { unrecordedSinks } from '../infrastructure/providers/unrecorded-sinks.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
@@ -59,13 +62,27 @@ async function adaptersFor(parts: ProviderParts): Promise<AdapterBuilder> {
   });
 }
 
-/**
- * RNF-006, ADR-008: the adapters of this release for `npm run eval`, which hands them to the
- * guarded provider factory of its own pipeline (eval/eval-pipeline.ts), never calls them directly.
- */
+/** P2-11 red step: the raw adapters, still exported. */
 export async function releaseAdapters(logger: Logger): Promise<AdapterBuilder> {
   const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
   return realAdapters({ testMode: false, textProtocolPrompt, logger });
+}
+
+/** What the guarded provider factory needs besides the adapters, which never leave this file. */
+export type GuardedFactoryParts = Omit<GuardedProviderFactoryOptions, 'adapters'>;
+
+/** Builds the guarded provider factory of `npm run eval` over its own stores and caps. */
+export type GuardedFactoryMaker = (parts: GuardedFactoryParts) => ProviderSetFactory;
+
+/**
+ * RNF-006, ADR-003, ADR-007, ADR-008: the provider factory of `npm run eval` over the adapters of
+ * this release. The adapters stay inside: what leaves is the guarded factory only, so every model
+ * call of the evaluation passes the egress and budget guards with the caps its parts carry.
+ */
+export async function evaluationProviderFactory(logger: Logger): Promise<GuardedFactoryMaker> {
+  const textProtocolPrompt = (await loadTextToolProtocol(promptsFolder)).text;
+  const adapters = realAdapters({ testMode: false, textProtocolPrompt, logger });
+  return (parts) => new GuardedProviderFactory({ ...parts, adapters });
 }
 
 export interface ComposedProviders {

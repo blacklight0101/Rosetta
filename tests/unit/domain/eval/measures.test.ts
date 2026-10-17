@@ -77,6 +77,27 @@ describe('the estimate against the cost report', () => {
   });
 });
 
+describe('the estimate against the cost report: edges', () => {
+  it('RNF-012 compares the error before it is rounded, so just over 30 percent is not within', () => {
+    const over = estimateAccuracy({
+      likelyMicros: 10_000_000,
+      priced: true,
+      actualMicros: 13_000_001,
+    });
+
+    expect(over).toMatchObject({ error: 0.3, withinTarget: false });
+  });
+
+  it('RNF-012 calls a run free only when its estimate and its cost are both zero', () => {
+    expect(estimateAccuracy({ likelyMicros: 0, priced: true, actualMicros: 500 })).toEqual({
+      status: 'not-measured',
+      reason: 'zero-estimate',
+      likelyMicros: 0,
+      actualMicros: 500,
+    });
+  });
+});
+
 describe('the citations of Supported claims', () => {
   const lines = new Map([
     ['Models/Item.cs', 62],
