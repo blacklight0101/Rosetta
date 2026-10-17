@@ -26,6 +26,8 @@ export interface CallOutcome {
   readonly attempt: number;
   readonly usage: TokenUsage & { readonly usageSource: 'reported' | 'estimated' };
   readonly costMicros: bigint;
+  /** The part of `costMicros` the cache writes cost (P2-16). */
+  readonly cacheWriteCostMicros: bigint;
 }
 
 /** The ledger row of a call (RF-428); a call without an answer has no usage and costs 0. */
@@ -55,10 +57,10 @@ export function ledgerEntryOf(
     inputTokens: outcome.usage.inputTokens,
     outputTokens: outcome.usage.outputTokens,
     cachedInputTokens: outcome.usage.cachedInputTokens,
-    cacheWriteInputTokens: 0,
+    cacheWriteInputTokens: outcome.usage.cacheWriteInputTokens ?? 0,
     usageSource: outcome.usage.usageSource,
     costMicros: outcome.costMicros,
-    cacheWriteCostMicros: 0n,
+    cacheWriteCostMicros: outcome.cacheWriteCostMicros,
     costKnown: price.price !== undefined,
     currency: price.price?.currency ?? 'USD',
     priceTableVersion: price.version,

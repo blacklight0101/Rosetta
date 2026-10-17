@@ -1,6 +1,7 @@
 // RF-421, RF-422: the token counts of one model call. `inputTokens` includes the cached input
 // tokens, as the providers report them (docs/providers.md); `cachedInputTokens` is the part of
-// the input the provider read from its cache.
+// the input the provider read from its cache and `cacheWriteInputTokens` the part it wrote to its
+// cache (P2-16; absent when the provider reported none).
 
 export interface TokenUsage {
   readonly inputTokens: number;

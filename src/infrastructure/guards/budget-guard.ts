@@ -11,7 +11,7 @@ import type {
 import type { Logger } from '../../application/ports/logger.js';
 import type { ProviderCallRecorder } from '../../application/ports/provider-call-recorder.js';
 import type { RunCostRecorder } from '../../application/runs/run-cost-record.js';
-import { costOf } from '../../domain/budget/price.js';
+import { cacheWriteCostOf, costOf } from '../../domain/budget/price.js';
 import type { KeySource } from '../../domain/budget/price-table.js';
 import type { CapBreach, UsageCap, WorstCase } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -205,8 +205,12 @@ export class BudgetGuard implements LlmProvider {
     response: LlmResponse,
   ): Promise<void> {
     const { usage } = response;
-    const costMicros = plan.price.price === undefined ? 0n : costOf(plan.price.price, usage).micros;
-    const outcome: CallOutcome = { attempt: Math.max(attempts, 1), usage, costMicros };
+    const { price } = plan.price;
+    const costMicros = price === undefined ? 0n : costOf(price, usage).micros;
+    // P2-16: the cache writes' share of the cost, fixed with it; unknown (0) when the cost is.
+    const cacheWriteCostMicros = price === undefined ? 0n : cacheWriteCostOf(price, usage).micros;
+    const attempt = Math.max(attempts, 1);
+    const outcome: CallOutcome = { attempt, usage, costMicros, cacheWriteCostMicros };
     const entry = this.entryOf(request, plan, outcome);
     try {
       await this.options.ledger.settle(entry);
@@ -227,7 +231,12 @@ export class BudgetGuard implements LlmProvider {
   /** A call that failed: a row without usage if it was sent, else its reservation is freed. */
   private async closeFailed(request: LlmRequest, plan: CallPlan, attempts: number): Promise<void> {
     const { ledger } = this.options;
-    const outcome: CallOutcome = { attempt: attempts, usage: noUsage, costMicros: 0n };
+    const outcome: CallOutcome = {
+      attempt: attempts,
+      usage: noUsage,
+      costMicros: 0n,
+      cacheWriteCostMicros: 0n,
+    };
     await this.quietly('The cost of a failed call could not be recorded.', request, () =>
       attempts === 0
         ? ledger.release({

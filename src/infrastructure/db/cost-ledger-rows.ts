@@ -55,7 +55,7 @@ export const INSERT_RESERVATION =
   'INSERT INTO cost_reservations (call_id, user_id, run_id, key_source, worst_case_micros, worst_case_tokens, expires_at, role) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)';
 
 export const INSERT_ENTRY =
-  'INSERT INTO cost_ledger (at, user_id, project_id, run_id, agent_task_id, stage, role, provider, model, call_id, attempt, key_source, input_tokens, output_tokens, cached_input_tokens, usage_source, cost_micros, cost_known, currency, price_table_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)';
+  'INSERT INTO cost_ledger (at, user_id, project_id, run_id, agent_task_id, stage, role, provider, model, call_id, attempt, key_source, input_tokens, output_tokens, cached_input_tokens, usage_source, cost_micros, cost_known, currency, price_table_version, cache_write_input_tokens, cache_write_cost_micros) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)';
 
 /** The reservation of one call of one user's run: $1 call, $2 user, $3 run (null for a provider test). */
 export const DELETE_RESERVATION =
@@ -69,7 +69,7 @@ export function reservationKeyValues(key: ReservationKey): unknown[] {
 export const DELETE_EXPIRED = 'DELETE FROM cost_reservations WHERE expires_at <= $1';
 
 export const RUN_ENTRIES =
-  'SELECT at, user_id::text AS user_id, project_id::text AS project_id, run_id::text AS run_id, agent_task_id, stage, role, provider, model, call_id, attempt, key_source, input_tokens::text AS input_tokens, output_tokens::text AS output_tokens, cached_input_tokens::text AS cached_input_tokens, usage_source, cost_micros::text AS cost_micros, cost_known, currency, price_table_version FROM cost_ledger WHERE user_id = $1 AND run_id = $2 ORDER BY id';
+  'SELECT at, user_id::text AS user_id, project_id::text AS project_id, run_id::text AS run_id, agent_task_id, stage, role, provider, model, call_id, attempt, key_source, input_tokens::text AS input_tokens, output_tokens::text AS output_tokens, cached_input_tokens::text AS cached_input_tokens, usage_source, cost_micros::text AS cost_micros, cost_known, currency, price_table_version, cache_write_input_tokens::text AS cache_write_input_tokens, cache_write_cost_micros::text AS cache_write_cost_micros FROM cost_ledger WHERE user_id = $1 AND run_id = $2 ORDER BY id';
 
 const integerText = z.string().regex(/^-?\d+$/u);
 const count = integerText.transform(Number);
@@ -105,6 +105,8 @@ const entryRow = z.object({
   cost_known: z.boolean(),
   currency: z.string(),
   price_table_version: z.string(),
+  cache_write_input_tokens: count,
+  cache_write_cost_micros: integerText,
 });
 
 /** The parameters of SPENT for a call of `reservation` at `at`. */
@@ -144,6 +146,7 @@ export function entryValues(entry: LedgerEntry): unknown[] {
     ...[entry.role, entry.provider, entry.model, entry.callId, entry.attempt, entry.keySource],
     ...[entry.inputTokens, entry.outputTokens, entry.cachedInputTokens, entry.usageSource],
     ...[entry.costMicros.toString(), entry.costKnown, entry.currency, entry.priceTableVersion],
+    ...[entry.cacheWriteInputTokens, entry.cacheWriteCostMicros.toString()],
   ];
 }
 
@@ -165,10 +168,10 @@ export function toLedgerEntry(row: unknown): LedgerEntry {
     inputTokens: parsed.input_tokens,
     outputTokens: parsed.output_tokens,
     cachedInputTokens: parsed.cached_input_tokens,
-    cacheWriteInputTokens: 0,
+    cacheWriteInputTokens: parsed.cache_write_input_tokens,
     usageSource: parsed.usage_source,
     costMicros: BigInt(parsed.cost_micros),
-    cacheWriteCostMicros: 0n,
+    cacheWriteCostMicros: BigInt(parsed.cache_write_cost_micros),
     costKnown: parsed.cost_known,
     currency: parsed.currency,
     priceTableVersion: parsed.price_table_version,

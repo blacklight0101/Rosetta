@@ -285,9 +285,13 @@ so every call passes `BudgetGuard(EgressGuard(ObservedProvider(adapter)))` and n
   by model) is not cached and costs nothing extra.
 - Usage (`usageSource: reported`): Anthropic's `input_tokens` counts only the tokens after the last breakpoint, so
   the port's `inputTokens` is `input_tokens + cache_read_input_tokens + cache_creation_input_tokens` and **includes**
-  the cached tokens, as for OpenAI; `cachedInputTokens` is `cache_read_input_tokens`; `outputTokens` is
-  `output_tokens`. Tokens written to the cache count as ordinary input, although Anthropic bills a cache write at
-  1.25 times the input price (see the open question in the P2-09 report). An answer without usage is estimated and
+  the cached tokens, as for OpenAI; `cachedInputTokens` is `cache_read_input_tokens`; `cacheWriteInputTokens` is
+  `cache_creation_input_tokens` (left out when zero); `outputTokens` is `output_tokens`. Anthropic bills a cache
+  write at 1.25 times the input price, so the budget guard prices the written tokens at the model's
+  `cacheWriteInputPerMillionMicros` and reserves every prompt token at the highest of the input, cached input and
+  cache-write prices; an Anthropic model without a cache-write price is handled as a model missing from the price
+  table (RST-1601, or an unknown cost with `allowUnpriced` on the user's own key; RF-427); the ledger keeps the
+  written tokens and their cost (data-model.md sections 3.18 and 4, P2-16). An answer without usage is estimated and
   marked `estimated` (RF-421).
 - Tool calls keep the `tool_use` ids Anthropic gave them. A call whose input is not a JSON object stays visible as
   text (`tool-call-shape.ts`). The text blocks are joined with a newline; thinking blocks are not read. A refusal
@@ -338,8 +342,8 @@ The back-off is the same as Ollama's (section 2.4).
 ### 4.5 Tested models
 
 None yet: the owner's live check fills this section. The price table `prices/default-prices.yaml` holds no Anthropic
-model yet, so a role on Anthropic is refused with `RST-1601` unless the project settings add a price for its model
-or turn on `allowUnpriced` for the user's own key (RF-427).
+model yet, so a role on Anthropic is refused with `RST-1601` unless the project settings add a price for its model,
+cache-write price included, or turn on `allowUnpriced` for the user's own key (RF-427).
 
 ## 5. OpenAI-compatible services
 

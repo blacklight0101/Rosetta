@@ -74,6 +74,7 @@ export interface TokenUsage {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  /** The part of the input written to the provider's prompt cache (P2-16); absent when none. */
   readonly cacheWriteInputTokens?: number;
   readonly usageSource: UsageSource;
 }

@@ -22,7 +22,9 @@ interface Line {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheWriteInputTokens: number;
   readonly costMicros: number;
+  readonly cacheWriteCostMicros: number;
 }
 
 const tokens = (count: number): string => count.toLocaleString('en-US');
@@ -35,14 +37,16 @@ function table(heading: string, keyName: string, lines: readonly Line[]): string
       tokens(line.inputTokens),
       tokens(line.outputTokens),
       tokens(line.cachedInputTokens),
+      tokens(line.cacheWriteInputTokens),
+      formatUsd(microUsd(BigInt(line.cacheWriteCostMicros))),
       formatUsd(microUsd(BigInt(line.costMicros))),
     ].join(' | '),
   );
   return [
     `## ${heading}`,
     '',
-    `| ${keyName} | Calls | Input tokens | Output tokens | Cached input tokens | Cost |`,
-    '|---|---|---|---|---|---|',
+    `| ${keyName} | Calls | Input tokens | Output tokens | Cached input tokens | Cache-write tokens | Cache-write cost | Cost |`,
+    '|---|---|---|---|---|---|---|---|',
     ...rows.map((row) => `| ${row} |`),
     '',
   ].join('\n');

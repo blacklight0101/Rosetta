@@ -27,6 +27,7 @@ const priceSettings = z.looseObject({
   inputPerMillionMicros: z.number(),
   outputPerMillionMicros: z.number(),
   cachedInputPerMillionMicros: z.number(),
+  cacheWriteInputPerMillionMicros: z.number().optional(),
 });
 
 const settingsSchema = z.looseObject({

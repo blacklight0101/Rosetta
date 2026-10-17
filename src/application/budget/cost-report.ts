@@ -4,7 +4,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { LedgerEntry } from '../ports/cost-ledger.js';
 
 // RF-426, RF-428, data-model.md section 3.12: the cost report of a run, built from its ledger rows
-// when it ends: tokens, calls and cost by role, agent task, provider and model, the totals, and the
+// when it ends: tokens (with the cache writes and their cost, P2-16), calls and cost by role, agent task, provider and model, the totals, and the
 // price table version (every version the calls used, in order, when a project override priced some
 // of them). Lines are sorted by their key in code-unit order so the file is stable.
 
@@ -12,10 +12,12 @@ interface CostFigures {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
-  readonly cacheWriteInputTokens?: number;
+  /** Tokens written to the provider's prompt cache, inside the input tokens (P2-16). */
+  readonly cacheWriteInputTokens: number;
   readonly calls: number;
   readonly costMicros: number;
-  readonly cacheWriteCostMicros?: number;
+  /** The part of the cost the cache writes cost (P2-16). */
+  readonly cacheWriteCostMicros: number;
 }
 
 interface CostTotals extends CostFigures {
@@ -42,8 +44,10 @@ const none: CostFigures = {
   inputTokens: 0,
   outputTokens: 0,
   cachedInputTokens: 0,
+  cacheWriteInputTokens: 0,
   calls: 0,
   costMicros: 0,
+  cacheWriteCostMicros: 0,
 };
 
 function add(figures: CostFigures, entry: LedgerEntry): CostFigures {
@@ -51,8 +55,10 @@ function add(figures: CostFigures, entry: LedgerEntry): CostFigures {
     inputTokens: figures.inputTokens + entry.inputTokens,
     outputTokens: figures.outputTokens + entry.outputTokens,
     cachedInputTokens: figures.cachedInputTokens + entry.cachedInputTokens,
+    cacheWriteInputTokens: figures.cacheWriteInputTokens + entry.cacheWriteInputTokens,
     calls: figures.calls + 1,
     costMicros: figures.costMicros + Number(entry.costMicros),
+    cacheWriteCostMicros: figures.cacheWriteCostMicros + Number(entry.cacheWriteCostMicros),
   };
 }
 
@@ -87,7 +93,9 @@ function exactOrRefused(figures: CostFigures): void {
     figures.inputTokens,
     figures.outputTokens,
     figures.cachedInputTokens,
+    figures.cacheWriteInputTokens,
     figures.costMicros,
+    figures.cacheWriteCostMicros,
   ];
   if (!values.every((value) => Number.isSafeInteger(value))) {
     throw new RosettaError(ERROR_CODES.costTotalOutOfRange);
