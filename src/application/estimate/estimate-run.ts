@@ -18,7 +18,6 @@ import { planReaderTasks } from '../understand/reader-tasks.js';
 import { assumptionsOf, ceilPercent } from './estimate-assumptions.js';
 import type {
   ByScenario,
-  EstimateAssumptions,
   EstimatePoint,
   EstimateRole,
   RoleEstimate,
@@ -60,13 +59,13 @@ interface RoleTokens {
   readonly tokens: ByScenario<TokenFigures>;
 }
 
-/** The verifier's tokens: a share of the readers' (ADR-005). */
-function verifierTokens(
+/** The tokens of a role that is a share of the readers' (the verifier, ADR-005; the summariser, RF-250). */
+function shareTokens(
   reader: ByScenario<TokenFigures>,
-  assumptions: EstimateAssumptions,
+  percentOf: ByScenario<number>,
 ): ByScenario<TokenFigures> {
   const share = (scenario: Scenario): TokenFigures => {
-    const percent = assumptions.verifierSharePercent[scenario];
+    const percent = percentOf[scenario];
     return {
       inputTokens: ceilPercent(reader[scenario].inputTokens, percent),
       outputTokens: ceilPercent(reader[scenario].outputTokens, percent),
@@ -106,7 +105,14 @@ export class EstimateRun {
     const reader = readerTokens(areas, assumptions);
     const roles = await Promise.all([
       this.roleOf(project, { role: 'reader', tokens: reader }),
-      this.roleOf(project, { role: 'verifier', tokens: verifierTokens(reader, assumptions) }),
+      this.roleOf(project, {
+        role: 'verifier',
+        tokens: shareTokens(reader, assumptions.verifierSharePercent),
+      }),
+      this.roleOf(project, {
+        role: 'summariser',
+        tokens: shareTokens(reader, assumptions.summariserSharePercent),
+      }),
     ]);
     return ok({
       codeMap: {

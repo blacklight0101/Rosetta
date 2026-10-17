@@ -32,6 +32,15 @@ export interface MergeResult {
   readonly skipped: readonly { readonly merge: CardMerge; readonly problem: MergeProblem }[];
 }
 
+/** The areas a card stands for: those of the cards it absorbed, or its own. */
+function areasOf(card: Card): readonly string[] {
+  return card.mergedAreas ?? [card.area];
+}
+
+function unique<T>(items: readonly T[]): T[] {
+  return [...new Set(items)];
+}
+
 function membersOf(
   cards: readonly Card[],
   merge: CardMerge,
@@ -44,7 +53,7 @@ function membersOf(
   if (first === undefined) return err('too-few-cards');
   if (members.some((card) => card.type !== first.type)) return err('type-differs');
   if (!MERGEABLE_TYPES.includes(first.type)) return err('type-not-mergeable');
-  if (new Set(members.map((card) => card.area)).size < 2) return err('one-area');
+  if (new Set(members.flatMap(areasOf)).size < 2) return err('one-area');
   return ok(members);
 }
 
@@ -69,7 +78,8 @@ function mergedCard(members: readonly Card[], merge: CardMerge): Card {
     summary: merge.summary,
     confidence: lowestConfidence(members),
     claims,
-    mergedFrom: members.map((card) => card.id),
+    mergedFrom: unique(members.flatMap((card) => card.mergedFrom ?? [card.id])),
+    mergedAreas: unique(members.flatMap(areasOf)),
   };
 }
 

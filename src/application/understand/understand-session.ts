@@ -4,18 +4,14 @@ import type { CardDraft } from '../../domain/cards/card-ids.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import {
-  recordManifestModelVersion,
-  recordPromptVersions,
-} from '../../domain/runs/run-manifest.js';
 import type { AgentTaskState } from '../../domain/runs/run-states.js';
 import type { OutputProblem } from '../cards/output-problem.js';
 import type { PromptFile } from '../agent/prompt-file.js';
-import { consolidateCards, type ConsolidationParts } from '../consolidate/consolidate-cards.js';
+import { consolidateCards } from '../consolidate/consolidate-cards.js';
+import { consolidationParts } from '../consolidate/consolidation-parts.js';
 import type { AnswersFile, OpenQuestion } from '../ports/answers-file.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
-import type { LlmResponse } from '../ports/llm-provider.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -48,7 +44,7 @@ export interface UnderstandSessionParts extends ReaderTaskContext {
   readonly tasks: readonly ReaderTask[];
   readonly source: CardSource;
   /** RF-250: the role that merges the duplicate cards of several areas, and its prompt. */
-  readonly summariser: RoleProvider | undefined;
+  readonly summariser: RoleProvider;
   readonly mergePrompt: PromptFile;
 }
 
@@ -132,11 +128,19 @@ export class UnderstandSession {
     });
   }
 
-  /** Publishes the cards not announced yet and adds the open questions to `answers.md`. */
-  // RF-203, DEC-98
+  /**
+   * Publishes the cards not announced yet, adds the open questions to `answers.md` and merges the
+   * duplicates of several areas. The questions come first: OQ cards are never merged, and a merge
+   * whose files cannot be written must not take them with it.
+   */
+  // RF-203, DEC-98, RF-250
   async finish(): Promise<void> {
     await this.announce(true);
+    await this.addQuestions();
     await this.consolidate();
+  }
+
+  private async addQuestions(): Promise<void> {
     const { deps, execution } = this.parts;
     const { run } = execution;
     const questions = this.latest.cards
@@ -149,9 +153,9 @@ export class UnderstandSession {
   /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */
   private async consolidate(): Promise<void> {
     const { deps, execution, source } = this.parts;
-    const consolidation = this.consolidation();
-    if (consolidation === undefined) return;
-    const merged = await consolidateCards(consolidation, this.latest.cards);
+    const runId = execution.run.runKey;
+    const parts = { ...this.parts, runId, signal: execution.signal };
+    const merged = await consolidateCards(consolidationParts(parts), this.latest.cards);
     if (merged.merges.length === 0) return;
     const kept = new Set(merged.cards.map((card) => card.id));
     const mergedAway = this.latest.cards.filter((card) => !kept.has(card.id));
@@ -159,22 +163,6 @@ export class UnderstandSession {
     const areasWithoutCards = this.cards.areasWithoutCards();
     const set = { cards: merged.cards, source, areasWithoutCards, mergedAway };
     await deps.cards.writeCards(scopeOf(execution.run), set);
-  }
-
-  private consolidation(): ConsolidationParts | undefined {
-    const { summariser, mergePrompt, logger, ids, execution, nextCallId, traceId } = this.parts;
-    if (summariser === undefined) return undefined;
-    const { name, version, sha256 } = mergePrompt;
-    const record = (response: LlmResponse): Promise<void> =>
-      this.parts.updates.update((manifest) => {
-        const recorded = recordPromptVersions(manifest, { [name]: { version, sha256 } });
-        return recordManifestModelVersion(recorded, 'summariser', response.modelVersion);
-      });
-    return {
-      ...{ provider: summariser.provider, role: summariser, prompt: mergePrompt, logger, ids },
-      ...{ runId: execution.run.runKey, traceId, nextCallId, signal: execution.signal },
-      onAnswer: record,
-    };
   }
 
   /**

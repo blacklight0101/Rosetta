@@ -42,6 +42,7 @@ function headerOf(card: Card): Record<string, unknown> {
     whyItMatters: card.whyItMatters,
     questionState: card.questionState,
     mergedFrom: card.mergedFrom,
+    mergedAreas: card.mergedAreas,
   };
 }
 

@@ -10,8 +10,11 @@ export type Scenario = 'low' | 'likely' | 'high';
 /** One value per scenario. */
 export type ByScenario<T> = Readonly<Record<Scenario, T>>;
 
-/** The roles an understand run is estimated for: the readers and the verifier share (ADR-005). */
-export type EstimateRole = 'reader' | 'verifier';
+/**
+ * The roles an understand run is estimated for: the readers, the verifier share (ADR-005) and the
+ * summariser that merges duplicate cards (RF-250).
+ */
+export type EstimateRole = 'reader' | 'verifier' | 'summariser';
 
 export interface EstimatePoint {
   readonly inputTokens: number;
@@ -43,6 +46,8 @@ export interface EstimateAssumptions {
   readonly readSharePercent: ByScenario<number>;
   /** The verifier's tokens as a share of the readers' tokens, in percent. */
   readonly verifierSharePercent: ByScenario<number>;
+  /** The summariser's tokens as a share of the readers' tokens, in percent (RF-250). */
+  readonly summariserSharePercent: ByScenario<number>;
   /** The system prompt and tool definitions sent with every turn. */
   readonly promptOverheadTokens: number;
   /** The most one turn sends: the context share of the reader's context window. */

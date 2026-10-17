@@ -35,12 +35,12 @@ import { ManifestCostRecorder } from '../runs/run-cost-record.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { ManifestSecurityRecorder } from '../runs/run-security-record.js';
-import { buildUnderstandRoles } from '../understand/build-understand-roles.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
 import { planReaderTasks, type ReaderTask } from '../understand/reader-tasks.js';
 import {
   readUnderstandOptions,
   rolesUseTextToolProtocol,
+  UNDERSTAND_ROLES,
 } from '../understand/understand-options.js';
 import { pinnedSourceOf } from '../understand/pinned-source.js';
 import { UnderstandSession } from '../understand/understand-session.js';
@@ -90,8 +90,7 @@ interface Prepared {
 
 interface UnderstandRoles {
   readonly reader: RoleProvider;
-  /** Absent when only the summariser cannot be served: the cards are then not merged. */
-  readonly summariser: RoleProvider | undefined;
+  readonly summariser: RoleProvider;
 }
 
 const failed = (code: RosettaError['code']): RunOutcome => ({
@@ -204,10 +203,11 @@ export class RunUnderstand implements RunExecutor {
     const { run, manifest } = execution;
     const account = await this.deps.users.findById(run.userId);
     if (account === undefined) return stop(failed(ERROR_CODES.notFound));
-    const built = await buildUnderstandRoles(this.deps.providers, {
+    const built = await this.deps.providers.build({
       account,
       run: { id: run.id, userId: run.userId, projectId: run.projectId, stage: 'understand' },
       settings: project.settings,
+      roles: UNDERSTAND_ROLES,
       cloudConsent: readUnderstandOptions(manifest.options).cloudConsent,
       sinks: await this.sinksOf(execution, updates),
     });
@@ -223,9 +223,10 @@ export class RunUnderstand implements RunExecutor {
     }
     const reader = built.value.get('reader');
     const summariser = built.value.get('summariser');
-    if (reader === undefined) return stop(failed(ERROR_CODES.providerUnavailable));
-    // Only the reader is checked: a summariser that is not ready fails its own call, which is skipped.
-    const ready = await preflightOllama(new Map([['reader', reader]]), {
+    if (reader === undefined || summariser === undefined) {
+      return stop(failed(ERROR_CODES.providerUnavailable));
+    }
+    const ready = await preflightOllama(built.value, {
       runId: run.runKey,
       traceId: traceIdOf(run),
       nextCallId,

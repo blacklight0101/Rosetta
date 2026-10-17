@@ -9,11 +9,11 @@ import { needsCloudConsent } from '../providers/cloud-consent.js';
 // it starts, so nothing in a later request can change them.
 
 /**
- * The roles an understand run needs in this release: the readers (the judgement step is P2). The
- * summariser that merges duplicate cards (RF-250) is used when it can be served; see
- * `buildUnderstandRoles`.
+ * The roles an understand run calls in this release: the readers and, once they have ended, the
+ * summariser that merges duplicate cards (RF-250). Both take part in the consent, the estimate, the
+ * Ollama check and the unpriced rule (RF-143, RF-425, RF-401, RF-427). The judgement step is P2.
  */
-export const UNDERSTAND_ROLES: readonly AgentRole[] = ['reader'];
+export const UNDERSTAND_ROLES: readonly AgentRole[] = ['reader', 'summariser'];
 
 export interface UnderstandOptions {
   readonly areas?: readonly string[];

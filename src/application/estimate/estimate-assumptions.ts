@@ -18,6 +18,8 @@ const OUTPUT_PERCENT: ByScenario<number> = { low: 15, likely: 30, high: 60 };
 const READ_PERCENT: ByScenario<number> = { low: 50, likely: 80, high: 100 };
 /** The verifier's tokens as a share of the readers', in percent (ADR-005). */
 const VERIFIER_PERCENT: ByScenario<number> = { low: 15, likely: 30, high: 50 };
+/** The summariser's tokens as a share of the readers': it reads cards, not code (RF-250). */
+const SUMMARISER_PERCENT: ByScenario<number> = { low: 5, likely: 10, high: 20 };
 /** The system prompt and the tool definitions every turn resends. */
 const PROMPT_OVERHEAD_TOKENS = 2000;
 
@@ -50,6 +52,7 @@ export function assumptionsOf(settings: ProjectSettings): EstimateAssumptions {
     ),
     readSharePercent: READ_PERCENT,
     verifierSharePercent: VERIFIER_PERCENT,
+    summariserSharePercent: SUMMARISER_PERCENT,
     promptOverheadTokens: PROMPT_OVERHEAD_TOKENS,
     contextLimitTokens: Math.floor(task.contextTokens * task.contextShare),
     parallelism: readerParallelism(settings),

@@ -518,11 +518,12 @@ sequenceDiagram
   `cards`; it has no tools. The answer `{ "merges": [{ ids, title, summary }] }` is parsed like the readers' answers and
   `applyMerges` (domain) does the merge: the first card in card order keeps its id, area and task, takes the new title
   and summary and the lowest confidence, and holds every claim of every merged card (claim ids renumbered under the kept
-  id; status and verdict kept, so a rejected claim stays rejected), and `mergedFrom` lists the merged ids. Cards with
+  id; status and verdict kept, so a rejected claim stays rejected), `mergedFrom` lists every merged id (the union of the members' own lists, so a chain of merges keeps all) and `mergedAreas` the areas they came from, which the one-area check reads. Cards with
   other ids stay as they are, so ids have gaps and do not change between reruns of the same answers. A call that fails,
-  an answer that is not a list, an id the summariser was not shown, ids of two types, cards of one area or an `OQ`
+  an answer that is not a list, an id the summariser was not shown, ids of two types, cards that all come from one area or an `OQ`
   card leave the cards as they were (a warning in the log); a stopped run asks nothing. The set is written again when
-  any merge was made. The merge prompt and the summariser's model version go to the manifest after the first answer. The summariser is wanted, not required: when only its provider cannot be served (no key, unpriced model, no consent) the run goes on with the reader alone and merges nothing (`buildUnderstandRoles`).- **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
+  any merge was made. The merge prompt and the summariser's model version go to the manifest after the first answer. The summariser is a role of the understand run like the reader (`UNDERSTAND_ROLES`): it is part of the cloud consent (the start page names its provider), of the estimate (a share of the readers' tokens), of the Ollama check before the run and of the unpriced rule, and a role cap of its own refuses its calls without stopping the run.
+- **Context limit**: each task tracks its prompt size; when a configured share of the model's context is reached, the
   task ends with its cards so far (`TurnLimitReached`) rather than failing.
 
 ## 9. Provider integration

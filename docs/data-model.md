@@ -304,7 +304,8 @@ Header fields:
 | `claims[]` | list | `{ claimId, text, citations[], status (ClaimStatus), verdict? }`; `claimId` is `<card id>.c<n>`; `verdict` is `{ step: citation \| judgement, reason, model, at }` |
 | `question`, `whyItMatters` | string | `OQ` only (RF-202) |
 | `questionState` | `OpenQuestionState` | `OQ` only (RF-241) |
-| `mergedFrom[]` | list | card ids merged by consolidation (RF-250), the kept card's own id first; the card keeps the id, area and task of its first member and every claim of all members (claim ids renumbered `<id>.c<n>`, status and verdict kept) |
+| `mergedAreas[]` | list | the areas of the merged cards, in card order, left out for a card that was not merged; a later merge of the kept card reads them, so cards that all come from one area are never merged (RF-250) |
+| `mergedFrom[]` | list | card ids merged by consolidation (RF-250), the kept card's own id first, the union over a chain of merges; the card keeps the id, area and task of its first member and every claim of all members (claim ids renumbered `<id>.c<n>`, status and verdict kept) |
 
 A rejected or invalid claim is never removed; only its status and verdict change (RF-302). The card files, the index
 and `spec.md` are written together: each file's previous content is read first, and when a write is refused or fails
