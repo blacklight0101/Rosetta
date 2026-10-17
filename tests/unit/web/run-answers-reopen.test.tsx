@@ -107,7 +107,9 @@ describe('the states of the questions after a re-run', () => {
     });
     expect(reads).toBe(2);
   });
+});
 
+describe('the states of the questions, further cases', () => {
   it('RF-241 RF-1007 reads the questions again when the page becomes visible', async () => {
     let reads = 0;
     const questionsNow: Answer = () => {
@@ -125,7 +127,9 @@ describe('the states of the questions after a re-run', () => {
       expect(reads).toBe(2);
     });
   });
+});
 
+describe('a read that is overtaken', () => {
   it('RF-241 ignores a read that started before the reopening and ends after it', async () => {
     const gate: { finish: () => void } = { finish: () => undefined };
     let reads = 0;
