@@ -27,6 +27,9 @@ describe('componentDiagram', () => {
     ]);
 
     expect(diagram.split('\n')).toHaveLength(2);
-    expect(diagram).not.toMatch(/"\]\s|-->|click A "/u);
+    const [, node] = diagram.split('\n');
+    expect(node?.startsWith('  c1["')).toBe(true);
+    expect(node?.endsWith('"]')).toBe(true);
+    expect(node?.slice(6, -2)).not.toMatch(/["[\]>]/u);
   });
 });
