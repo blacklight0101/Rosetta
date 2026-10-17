@@ -61,6 +61,8 @@ describe('the entry points of an area by name', () => {
     'StockConsumer',
     'PaymentListener',
     'NightlyWorker',
+    'OrderHandlers',
+    'PaymentListeners',
   ])('RF-260 a class named %s is a scheduled job or a message handler: an entry point', (name) => {
     const files = [entry('Jobs/Work.cs')];
 
@@ -78,12 +80,33 @@ describe('the entry points of an area by name', () => {
 });
 
 describe('the screens of an area', () => {
-  it.each(['Controls/Banner.ascx', 'Site.master', 'Views/Cart.razor', 'ui/Cart.vue', 'a/b.xaml'])(
-    'RF-261 %s is a view or a template: a screen',
+  it.each([
+    'Controls/Banner.ascx',
+    'Site.master',
+    'Views/Cart.razor',
+    'ui/Cart.vue',
+    'a/b.xaml',
+    'Views/Cart.html',
+    'ui/Cart.jsx',
+    'ui/Cart.tsx',
+  ])('RF-261 %s is a view or a template: a screen', (path) => {
+    const files = [entry(path)];
+
+    expect(marksOf(areaOf(files), mapOf(files)).screens).toBe(true);
+  });
+});
+
+// RF-260, P2-29: a WebForms HTTP handler starts behaviour, so it is an entry point and not a screen.
+describe('the HTTP handlers of an area', () => {
+  it.each(['Api/Orders.ashx', 'Api/Stock.asmx'])(
+    'RF-260 %s is an HTTP handler: an entry point, not a page',
     (path) => {
       const files = [entry(path)];
 
-      expect(marksOf(areaOf(files), mapOf(files)).screens).toBe(true);
+      expect(surfaceOf(areaOf(files), mapOf(files))).toEqual({
+        entryPoints: [path],
+        pages: [],
+      });
     },
   );
 });

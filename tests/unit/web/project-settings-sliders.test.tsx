@@ -259,6 +259,22 @@ it('RF-002 every slider on the settings page has a different name, also with the
   expect(new Set(names).size).toBe(names.length);
 });
 
+// RF-002, P2-29: while the run cost cap is out of its range, the confirm field shows no range hint.
+it('RF-002 the confirm field shows no range hint while the run cost cap is invalid', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Run cost cap (USD)', '-1');
+
+  expect(
+    screen.queryByText(
+      '$0.25 is outside the allowed range of $0.00 to $0.00. Save will refuse it.',
+    ),
+  ).toBeNull();
+  expect(described(inputOf('Ask before a run estimated above (USD)'))).not.toContain('is outside');
+  expect(described(sliderOf('Ask before a run estimated above (USD)'))).not.toContain('is outside');
+});
+
 // RF-002, P2-26: the bottom of the range is inside it, so exactly the minimum shows no hint.
 it('RF-002 a value exactly at the minimum of its range shows no hint', async () => {
   renderSettings();
