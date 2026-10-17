@@ -20,9 +20,21 @@ interface PendingQuestion extends AnsweredQuestion {
   readonly area: string;
 }
 
+/** Why an answered question is not used by the re-run. */
+export type SkipReason = 'run-gone' | 'card-gone' | 'already-answered' | 'area-not-in-code-map';
+
+/** An answered question the re-run leaves out. */
+export interface SkippedQuestion {
+  readonly cardId: string;
+  readonly runKey: string;
+  readonly reason: SkipReason;
+}
+
 export interface RerunPlan {
   readonly project: ProjectRef;
   readonly pending: readonly PendingQuestion[];
+  /** The answered questions left out, each with its reason; the run logs them. */
+  readonly skipped: readonly SkippedQuestion[];
   /** The earlier cards of the runs that raised the questions, to tell new from changed cards. */
   readonly baseline: readonly PriorCard[];
 }
@@ -59,7 +71,7 @@ export async function planRerun(
     if (card === undefined || card.questionState === 'Answered') return [];
     return codeMapAreas.includes(card.area) ? [{ ...question, area: card.area }] : [];
   });
-  return { project, pending, baseline: [...byRun.values()].flat() };
+  return { project, pending, skipped: [], baseline: [...byRun.values()].flat() };
 }
 
 /** The affected areas, restricted to the named ones when the request named some. */
