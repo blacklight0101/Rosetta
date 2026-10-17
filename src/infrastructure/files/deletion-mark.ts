@@ -5,7 +5,7 @@ import { join } from 'node:path';
 // this empty file inside it before any row goes. The sweep of folders without rows removes only
 // marked folders. The file holds nothing, so it adds no byte to the size a deletion reports.
 
-export const DELETION_MARK = '.deleting';
+const DELETION_MARK = '.deleting';
 
 function isMissing(error: unknown): boolean {
   return (
