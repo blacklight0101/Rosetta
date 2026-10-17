@@ -97,9 +97,12 @@ describe(
       ]);
       expect(
         h.providers.ledger.entries.map((entry) => [entry.costKnown, entry.costMicros]),
-      ).toEqual([[false, 0n]]);
+      ).toEqual([
+        [false, 0n],
+        [false, 0n],
+      ]);
       expect(await costReport(h.runFolder(run))).toMatchObject({
-        totals: { calls: 1, unpricedCalls: 1 },
+        totals: { calls: 2, unpricedCalls: 2 },
       });
     });
   },

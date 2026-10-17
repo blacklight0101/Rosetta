@@ -19,10 +19,10 @@ import { ScriptedProvider } from '../../support/scripted-provider.js';
 /** The recorded calls that answer each area of `understand-csharp-full.json`, in turn order. */
 const WEBFORMS_SCRIPT = {
   '(root)': [0, 1],
-  Catalog: [2],
-  Controllers: [3],
-  Database: [4],
-  Services: [5, 6, 7],
+  Catalog: [2, 3],
+  Controllers: [4, 5],
+  Database: [6, 7],
+  Services: [8, 9, 10],
 } as const;
 
 /** The recorded verdict of each claim of the webforms run, in `verifier-csharp-full.json`. */
