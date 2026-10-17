@@ -67,3 +67,17 @@ describe('answers.md masks before it reshapes', () => {
     },
   );
 });
+
+describe('answers.md masks what the collapse of whitespace joins', () => {
+  it.each([
+    ['--password', `why ${passwordOption}\n${fakePassword} here`, fakePassword],
+    ['password:', `password:\n  ${fakePassword}`, fakePassword],
+    ['--token', `run ${tokenOption}\n${fakeToken}`, fakeToken],
+  ])('RF-240 masks %s and its value on the next line', async (_name, text, secret) => {
+    const { writer, answers } = setup();
+
+    await answers.addQuestions(project, [question(text, 'A.sh:1-2 flags')]);
+
+    expect(writer.files.get(path) ?? '').not.toContain(secret);
+  });
+});

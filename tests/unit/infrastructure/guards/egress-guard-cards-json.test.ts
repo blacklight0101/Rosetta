@@ -60,3 +60,22 @@ describe('EgressGuard and the cards as JSON', () => {
     expect(sent.split('\n').length).toBe(message.split('\n').length);
   });
 });
+
+describe('EgressGuard and the cards in another JSON layout', () => {
+  it.each([
+    ['compact', (text: string): string => JSON.stringify(JSON.parse(text))],
+    ['four spaces', (text: string): string => JSON.stringify(JSON.parse(text), null, 4)],
+    [
+      'CRLF',
+      (text: string): string => JSON.stringify(JSON.parse(text), null, 2).replaceAll('\n', '\r\n'),
+    ],
+  ])('RF-141 masks a quoted secret with an escaped quote in %s JSON', async (_name, reshape) => {
+    const message = overviewMessage(cardsWith(quoted), freshTag());
+    const lines = message.split('\n');
+    const body = lines.slice(1, -1).join('\n');
+
+    const sent = await sentFor([lines[0], reshape(body), lines.at(-1)].join('\n'));
+
+    expect(sent).not.toContain(fakePassword.slice(4));
+  });
+});
