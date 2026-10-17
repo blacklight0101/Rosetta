@@ -6,6 +6,8 @@ import { formatValue, numberOf, type LimitUnit, type Range } from './setting-lim
 // value. The slider is bounded by the range (its `max` may be lower, for the confirm threshold),
 // marks the template default under it and, when the value is away from that default, warns that
 // keeping the default is the usual choice. The number field stays the place for an exact value.
+// P2-26: the slider is named by its range, not by the field label, and a typed value outside the
+// range gets an inline hint before Save.
 
 interface LimitProps extends SettingBase {
   readonly value: string;
@@ -45,6 +47,37 @@ function outsideHint(
   return `${formatValue(current, unit)} is outside the allowed range of ${allowed}. Save will refuse it.`;
 }
 
+interface RangeInputProps {
+  readonly id: string;
+  readonly range: Range;
+  readonly top: number;
+  readonly unit: LimitUnit;
+  readonly shown: number;
+  readonly describedBy: string | undefined;
+  readonly onInput: (value: string) => void;
+}
+
+/** The slider of a limit: named by its range, so a lookup by a field label finds the field only. */
+function RangeInput(props: RangeInputProps): JSX.Element {
+  const { range, top, unit } = props;
+  return (
+    <input
+      id={props.id}
+      type="range"
+      class="rst-limit__slider"
+      aria-label={`Slider, ${formatValue(range.min, unit)} to ${formatValue(top, unit)}`}
+      aria-describedby={props.describedBy}
+      min={range.min}
+      max={top}
+      step={range.step}
+      value={props.shown}
+      onInput={(event) => {
+        props.onInput(event.currentTarget.value);
+      }}
+    />
+  );
+}
+
 // RF-002
 export function LimitSetting(props: LimitProps): JSX.Element {
   const { id, value, range, unit, defaultValue } = props;
@@ -61,6 +94,11 @@ export function LimitSetting(props: LimitProps): JSX.Element {
   const differs = current !== undefined && current !== defaultValue;
   const hint = outsideHint(current, range, top, unit);
   const warning = `Differs from the default of ${defaultText}. Keep the default unless you have a reason to change it.`;
+  const describedBy = describing([
+    rangeTextId,
+    hint === undefined ? undefined : hintId,
+    differs ? warningId : undefined,
+  ]);
   return (
     <div class="rst-limit">
       <NumberSetting
@@ -72,25 +110,14 @@ export function LimitSetting(props: LimitProps): JSX.Element {
         value={value}
         onInput={props.onInput}
       />
-      <input
+      <RangeInput
         id={rangeId}
-        type="range"
-        class="rst-limit__slider"
-        // P2-26: named by its range, not by the field label, so a lookup by a field label finds the
-        // number field only.
-        aria-label={`Slider, ${formatValue(range.min, unit)} to ${formatValue(top, unit)}`}
-        aria-describedby={describing([
-          rangeTextId,
-          hint === undefined ? undefined : hintId,
-          differs ? warningId : undefined,
-        ])}
-        min={range.min}
-        max={top}
-        step={range.step}
-        value={shown}
-        onInput={(event) => {
-          props.onInput(event.currentTarget.value);
-        }}
+        range={range}
+        top={top}
+        unit={unit}
+        shown={shown}
+        describedBy={describedBy}
+        onInput={props.onInput}
       />
       <p id={rangeTextId} class="rst-field__help">
         {`Default ${defaultText}. Allowed ${formatValue(range.min, unit)} to ${formatValue(top, unit)}.`}
