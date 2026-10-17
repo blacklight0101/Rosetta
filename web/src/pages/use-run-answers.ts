@@ -8,7 +8,7 @@ import { useApp } from '../app/app-context.js';
 // Answered, so the page reads them again when it comes back to the front; a later read that fails
 // keeps what the page has.
 
-export type AnswersLoad =
+type AnswersLoad =
   | { readonly status: 'waiting' }
   | { readonly status: 'loading' }
   | { readonly status: 'failed'; readonly error: ApiFailure }
