@@ -39,7 +39,12 @@ describe('the summariser batches in the estimate', () => {
     expect(estimate.assumptions.summariserBatchTokens).toBe(MERGE_BATCH_TOKENS);
     expect(estimate.assumptions.summariserBatches).toEqual({ low: 1, likely: 1, high: 1 });
     const summariser = estimate.roles.find((role) => role.role === 'summariser');
-    expect(summariser?.points.likely).toMatchObject({ inputTokens: 6100, outputTokens: 360 });
+    // The merge (6,100 in, 360 out) and the overview call: the cards read again, and its output.
+    const overview = estimate.assumptions.overviewOutputTokens.likely;
+    expect(summariser?.points.likely).toMatchObject({
+      inputTokens: 12_200,
+      outputTokens: 360 + overview,
+    });
   });
 
   it('RF-425 P2-35 counts the batches of a run whose cards are larger than the bound', async () => {
@@ -56,8 +61,11 @@ describe('the summariser batches in the estimate', () => {
     expect(batches).toBeGreaterThan(1);
     expect(estimate.assumptions.summariserBatches.likely).toBe(batches);
     expect(summariser.points.likely).toMatchObject({
-      inputTokens: share.inputTokens + (batches - 1) * MERGE_PROMPT_TOKENS,
-      outputTokens: share.outputTokens + (batches - 1) * MERGE_ANSWER_TOKENS,
+      inputTokens: share.inputTokens * 2 + (batches - 1) * MERGE_PROMPT_TOKENS,
+      outputTokens:
+        share.outputTokens +
+        (batches - 1) * MERGE_ANSWER_TOKENS +
+        estimate.assumptions.overviewOutputTokens.likely,
     });
   });
 
