@@ -1,8 +1,8 @@
 import type { Logger } from '../ports/logger.js';
 import type { SkipReason, SkippedQuestion } from './answer-rerun.js';
 
-// RF-241: a log line for each answered question a re-run with answers leaves out, so the owner can
-// tell why an answer was not used.
+// RF-241: a log line and an event for each answered question a re-run with answers leaves out, so
+// the owner can tell why an answer was not used.
 
 const reasons: Readonly<Record<SkipReason, string>> = {
   'run-gone': 'its run or its cards are gone',
@@ -33,9 +33,12 @@ export interface QuestionEvents {
 }
 
 /** RF-241: an event for each answered question the re-run leaves out, with its reason. */
+// RF-241
 export async function publishSkippedQuestions(
   events: QuestionEvents,
   skipped: readonly SkippedQuestion[],
 ): Promise<void> {
-  if (skipped.length < 0) await events.emit('question.skipped', {});
+  for (const { cardId, runKey, reason } of skipped) {
+    await events.emit('question.skipped', { cardId, runKey, reason });
+  }
 }

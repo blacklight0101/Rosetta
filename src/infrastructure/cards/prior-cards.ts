@@ -7,7 +7,7 @@ import type {
   PriorCards,
   QuestionReopener,
 } from '../../application/ports/prior-cards.js';
-import { CARD_TYPES } from '../../domain/cards/card-vocabulary.js';
+import { CARD_TYPES, type OpenQuestionState } from '../../domain/cards/card-vocabulary.js';
 import { isRunKey, runPath } from '../files/workspace-paths.js';
 
 // RF-241, data-model.md sections 3.7 and 3.16: the cards of an earlier run read back from their files
@@ -57,19 +57,21 @@ function headerOf(text: string): PriorCard | undefined {
   return { ...rest, ...state, ...asked, claims: claims.map((claim) => claim.text) };
 }
 
-/** The text with the state of the card changed, or undefined when it is not an open question. */
-function answered(text: string): string | undefined {
+/** The text with the state of the question card changed, or undefined when it is not in `from`. */
+function withState(
+  text: string,
+  from: OpenQuestionState,
+  to: OpenQuestionState,
+): string | undefined {
   const end = text.indexOf(HEADER_END, 4);
   if (!text.startsWith('---\n') || end < 0) return undefined;
   const header = text.slice(0, end);
   const body = text.slice(end);
-  if (!header.includes('\nquestionState: "Open"') || !body.includes('\nState: Open\n')) {
+  if (!header.includes(`\nquestionState: "${from}"`) || !body.includes(`\nState: ${from}\n`)) {
     return undefined;
   }
-  return `${header.replace('\nquestionState: "Open"', '\nquestionState: "Answered"')}${body.replace(
-    '\nState: Open\n',
-    '\nState: Answered\n',
-  )}`;
+  const moved = header.replace(`\nquestionState: "${from}"`, `\nquestionState: "${to}"`);
+  return `${moved}${body.replace(`\nState: ${from}\n`, `\nState: ${to}\n`)}`;
 }
 
 export class FilePriorCards implements PriorCards, QuestionReopener {
@@ -95,27 +97,41 @@ export class FilePriorCards implements PriorCards, QuestionReopener {
   }
 
   // RF-241
-  async markAnswered(
+  markAnswered(
     project: ProjectRef,
     runKey: string,
     cardIds: readonly string[],
   ): Promise<readonly string[]> {
-    if (!isRunKey(runKey)) return [];
-    const marked: string[] = [];
-    for (const id of cardIds.filter((each) => cardId.test(each))) {
-      const path = `cards/OQ/${id}.md`;
-      const text = await this.read(project, runKey, path);
-      const changed = text === undefined ? undefined : answered(text);
-      if (changed === undefined) continue;
-      const written = await this.writer.writeText(this.fileOf(project, runKey, path), changed);
-      if (written.ok) marked.push(id);
-    }
-    return marked;
+    return this.change(project, runKey, cardIds, ['Open', 'Answered']);
   }
 
   // RF-241
-  reopen(): Promise<readonly string[]> {
-    return Promise.resolve([]);
+  reopen(
+    project: ProjectRef,
+    runKey: string,
+    cardIds: readonly string[],
+  ): Promise<readonly string[]> {
+    return this.change(project, runKey, cardIds, ['Answered', 'Open']);
+  }
+
+  /** Moves these `OQ` cards of the run from the first state to the second; the ids it moved. */
+  private async change(
+    project: ProjectRef,
+    runKey: string,
+    cardIds: readonly string[],
+    [from, to]: readonly [OpenQuestionState, OpenQuestionState],
+  ): Promise<readonly string[]> {
+    if (!isRunKey(runKey)) return [];
+    const moved: string[] = [];
+    for (const id of cardIds.filter((each) => cardId.test(each))) {
+      const path = `cards/OQ/${id}.md`;
+      const text = await this.read(project, runKey, path);
+      const changed = text === undefined ? undefined : withState(text, from, to);
+      if (changed === undefined) continue;
+      const written = await this.writer.writeText(this.fileOf(project, runKey, path), changed);
+      if (written.ok) moved.push(id);
+    }
+    return moved;
   }
 
   private fileOf(project: ProjectRef, runKey: string, path: string): WorkspaceFile {

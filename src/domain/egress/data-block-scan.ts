@@ -2,10 +2,10 @@ import { createCitation, type Citation } from '../cards/citation.js';
 import { err, ok, type Result } from '../errors/result.js';
 import {
   DATA_BLOCK_CLOSE,
-  DATA_BLOCK_LABEL,
   DATA_BLOCK_OPEN,
   DATA_BLOCK_SOURCES,
   dataBlockFooter,
+  dataBlockLabel,
   holdsDataMarker,
   holdsTag,
   isDataBlockTag,
@@ -96,9 +96,10 @@ function headerOf(line: string): Header | undefined {
   if (!isDataBlockTag(tag) || holdsTag(json, tag)) return undefined;
   if (/[<>]|[^\x20-\x7E]/.test(json)) return undefined;
   const header = parseJson(json);
-  if (!isRecord(header) || header['label'] !== DATA_BLOCK_LABEL) return undefined;
-  const known = DATA_BLOCK_SOURCES.some((source) => source === header['source']);
-  const excerpts = known ? citationsOf(header['excerpts']) : undefined;
+  if (!isRecord(header)) return undefined;
+  const source = DATA_BLOCK_SOURCES.find((each) => each === header['source']);
+  if (source === undefined || header['label'] !== dataBlockLabel(source)) return undefined;
+  const excerpts = citationsOf(header['excerpts']);
   return excerpts === undefined ? undefined : { tag, excerpts };
 }
 
