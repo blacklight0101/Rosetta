@@ -3,6 +3,7 @@ import { flowSequenceDiagram } from '../../domain/diagrams/flow-sequence.js';
 import { screenMapDiagram } from '../../domain/diagrams/screen-map.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
+import { fenced } from './flow-diagram-section.js';
 import { maskCardText } from './mask-card-text.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 
@@ -11,10 +12,6 @@ import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 // the generated screen map) and the link to `data-model.md`. Each item links its card. A step
 // keeps its claim status, so a rejected step stays and is marked (ADR-005). Diagrams are made by
 // the P2-21 generators from masked card text; this file never writes Mermaid itself.
-
-function fenced(diagram: string): string[] {
-  return ['```mermaid', diagram.trimEnd(), '```', ''];
-}
 
 function itemHeading(card: Card, esc: MarkdownEscaper): string[] {
   return [`### ${card.id} ${esc.inline(card.title)} ([card file](${cardPath(card)}))`, ''];

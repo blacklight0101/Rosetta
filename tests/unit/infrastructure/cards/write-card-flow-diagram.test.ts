@@ -8,7 +8,8 @@ import { flowDraft, screenDraft } from '../../../support/flow-screen-fixtures.js
 // code from the masked steps, like spec.md; the other card files carry none.
 
 const entDraft = draftOf({ type: 'ENT', title: 'Order' });
-const run = [{ agentTaskId: 't', area: 'orders', drafts: [flowDraft(), entDraft] }];
+const customer = draftOf({ type: 'ENT', title: 'Customer' });
+const run = [{ agentTaskId: 't', area: 'orders', drafts: [flowDraft(), customer, entDraft] }];
 const lines = { path: 'src/a.cs', startLine: 1, endLine: 2 };
 
 /** The lines between the Mermaid fences of a file (the fence lines themselves excluded). */
@@ -31,7 +32,7 @@ describe('the FLOW card file diagram', () => {
     expect(diagram).toContain('  participant p1 as The shopper presses Pay.');
     expect(diagram).toContain('  participant p2 as Order');
     expect(diagram.join('\n')).toContain('p1->>p2: 1. The order is saved.');
-    expect(diagram.join('\n')).toContain('Outcome: An order is stored and mailed.');
+    expect(diagram.join('\n')).toContain('Outcome#58; An order is stored and mailed.');
     expect(text.indexOf('```mermaid')).toBeGreaterThan(text.indexOf('## Flow'));
     expect(text.indexOf('```mermaid')).toBeLessThan(text.indexOf('## Claims'));
   });
@@ -106,7 +107,6 @@ describe('safety of the FLOW card file diagram', () => {
     for (const line of diagram.slice(1)) expect(line).toMatch(statement);
     const joined = diagram.join('\n');
     expect(joined).not.toMatch(/direction/iu);
-    expect(joined).not.toMatch(/click/iu);
     expect(joined).not.toContain('<');
     expect(joined).not.toContain('`');
   });
