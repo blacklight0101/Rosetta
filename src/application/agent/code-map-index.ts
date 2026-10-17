@@ -5,7 +5,7 @@ import type {
   CodeSqlStatement,
   CodeSymbol,
 } from '../../domain/code-map/code-map.js';
-import type { FileEntry } from '../../domain/code-map/file-entry.js';
+import type { FileEntry, SkipReason } from '../../domain/code-map/file-entry.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 
 // RF-145, RF-201: the agent tools read only files the code map lists. A path the model writes in
@@ -62,6 +62,11 @@ export class CodeMapIndex {
       return err({ kind: 'ambiguous', candidates: matches.map((file) => file.path) });
     }
     return err({ kind: 'not-found' });
+  }
+
+  /** Why the scan skipped a file (RF-100), or undefined when it read it or does not list it. */
+  skipReasonOf(path: string): SkipReason | undefined {
+    return this.files.get(path)?.skipped;
   }
 
   /** The files the scan read: listed and not skipped (RF-100), sorted by path. */

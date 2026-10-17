@@ -2,6 +2,7 @@ import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { transitionClaim, type Card, type Claim } from '../../domain/cards/card.js';
 import type { ClaimStatus } from '../../domain/cards/card-vocabulary.js';
 import { recordManifestModelVersion } from '../../domain/runs/run-manifest.js';
+import { CodeMapIndex } from '../agent/code-map-index.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { LlmResponse } from '../ports/llm-provider.js';
@@ -149,7 +150,7 @@ export async function runJudgementStep(
 /** What the judgement step needs of the run (RF-301). */
 export interface JudgementContext {
   readonly execution: Pick<RunExecution, 'run' | 'events' | 'signal'>;
-  readonly scanned: Pick<ScannedSource, 'reader'>;
+  readonly scanned: Pick<ScannedSource, 'reader' | 'codeMap'>;
   readonly settings: ProjectSettings;
   readonly updates: ManifestUpdates;
   readonly nextCallId: () => string;
@@ -168,10 +169,12 @@ function recordVerifierAnswer(updates: ManifestUpdates, response: LlmResponse): 
 /** The parts of the step for one run: its verifier, its snapshot, its limits and its events. */
 export function judgementPartsOf(context: JudgementContext, clock: Clock): ClaimJudgementParts {
   const { execution, settings, verifier, updates } = context;
+  const index = new CodeMapIndex(context.scanned.codeMap);
   return {
     judge: {
       ...{ role: verifier.role, prompts: verifier.prompts, reader: context.scanned.reader },
       ids: context.ids,
+      skipReason: (path) => index.skipReasonOf(path),
       limits: { ...defaultEvidenceLimits, maxLines: settings.scan.excerptMaxLines },
       call: {
         ...{ runId: execution.run.runKey, traceId: context.traceId },

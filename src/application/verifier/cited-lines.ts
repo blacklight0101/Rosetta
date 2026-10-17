@@ -1,4 +1,5 @@
 import type { Citation } from '../../domain/cards/citation.js';
+import type { SkipReason } from '../../domain/code-map/file-entry.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { RepositoryReader } from '../ports/repository-reader.js';
 import { defaultToolLimits } from '../agent/tool-limits.js';
@@ -25,6 +26,9 @@ export const defaultEvidenceLimits: EvidenceLimits = {
   maxLines: defaultToolLimits.maxReadLines,
   maxChars: defaultToolLimits.maxResultChars,
 };
+
+/** Why the scan did not read a file of the code map, or undefined for a file it read (RF-100). */
+export type SkipLookup = (path: string) => SkipReason | undefined;
 
 /** The lines of one citation as read, with their real range. */
 export interface CitedExcerpt {
@@ -70,7 +74,9 @@ export async function readCitedLines(
   reader: Pick<RepositoryReader, 'readLines'>,
   citations: readonly Citation[],
   limits: EvidenceLimits,
+  skipReason: SkipLookup,
 ): Promise<Result<readonly CitedExcerpt[], string>> {
+  if (typeof skipReason !== 'function') throw new TypeError('A skip lookup is required.');
   const bad = citations.find((each) => !isLineRange(each));
   if (bad !== undefined) {
     const { path, startLine, endLine } = bad;
