@@ -19,6 +19,7 @@ import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
+import { UNDERSTAND_RUN_WAIT } from './understand-timeout.js';
 import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
@@ -140,7 +141,7 @@ function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
         const events = await s.log.read(scopeOf(latest), 0);
         if (events.at(-1)?.type !== 'run.ended') throw new Error('No run.ended yet');
       },
-      { timeout: 60_000, interval: 2 },
+      { timeout: UNDERSTAND_RUN_WAIT, interval: 2 },
     );
     if (latest === undefined) throw new Error('The run vanished');
     return latest;

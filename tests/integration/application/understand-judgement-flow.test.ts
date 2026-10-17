@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { RunEvent } from '../../../src/domain/runs/run-event.js';
 import { cardText, made } from '../../support/consolidate-run.js';
 import { useTempRoot } from '../../support/temp-root.js';
-import { UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
+import { UNDERSTAND_TIMEOUT, useSharedValue } from '../../support/understand-full-run.js';
 import {
   createUnderstandHarness,
   understandSettings,
@@ -33,9 +33,14 @@ function claimIdsOf(events: readonly RunEvent[]) {
   };
 }
 
-describe('an understand run: judgement and the merge of cards', UNDERSTAND_TIMEOUT, () => {
+// One judged and merged run for the two describe blocks below: both only read it.
+const judged = useSharedValue('rosetta-judgement-flow-shared-', (dir) =>
+  made(dir, { verifierRecording: allSupported }),
+);
+
+describe('an understand run: judgement and the merge of cards', () => {
   it('RF-301 RF-250 every claim is judged before the merge, and the merged card keeps each verdict', async () => {
-    const { h, run, folder } = await made(temp.path, { verifierRecording: allSupported });
+    const { h, run, folder } = judged.current();
 
     expect(run.endState).toBe('Completed');
     const ids = claimIdsOf(await h.eventsOf(run));
@@ -49,9 +54,9 @@ describe('an understand run: judgement and the merge of cards', UNDERSTAND_TIMEO
   });
 });
 
-describe('an understand run whose merge renumbers claims', UNDERSTAND_TIMEOUT, () => {
+describe('an understand run whose merge renumbers claims', () => {
   it('RF-250 RF-1004 the merge event maps every judged claim to a claim of the merged card', async () => {
-    const { h, run, folder } = await made(temp.path, { verifierRecording: allSupported });
+    const { h, run, folder } = judged.current();
 
     const events = await h.eventsOf(run);
     const merges = events.filter((event) => event.type === 'cards.merged');

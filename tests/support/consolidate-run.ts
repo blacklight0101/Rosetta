@@ -1,9 +1,7 @@
-import { mkdtemp, readdir, readFile, realpath, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterAll, beforeAll } from 'vitest';
 import type { Run } from '../../src/domain/runs/run.js';
-import { UNDERSTAND_TIMEOUT } from './understand-full-run.js';
+import { useSharedValue } from './understand-full-run.js';
 import {
   createUnderstandHarness,
   type UnderstandHarness,
@@ -37,20 +35,7 @@ export async function made(
 
 /** One run for a describe block, made in `beforeAll`, for tests that only read its result. */
 export function useSharedRun(): { current(): Made } {
-  const shared: { dir?: string; made?: Made } = {};
-  beforeAll(async () => {
-    shared.dir = await realpath(await mkdtemp(join(tmpdir(), 'rosetta-consolidate-')));
-    shared.made = await made(shared.dir);
-  }, UNDERSTAND_TIMEOUT.timeout);
-  afterAll(async () => {
-    if (shared.dir !== undefined) await rm(shared.dir, { recursive: true, force: true });
-  });
-  return {
-    current: () => {
-      if (shared.made === undefined) throw new Error('The shared run did not start.');
-      return shared.made;
-    },
-  };
+  return useSharedValue('rosetta-consolidate-', (dir) => made(dir));
 }
 
 export async function cardFiles(folder: string, type: string): Promise<string[]> {
