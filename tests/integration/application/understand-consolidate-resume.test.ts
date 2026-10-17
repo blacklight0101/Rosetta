@@ -1,6 +1,8 @@
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import {
   cardFiles,
   cardText,
@@ -115,3 +117,20 @@ describe('a finished run that consolidated', UNDERSTAND_TIMEOUT, () => {
     expect(stored.types.map((entry) => entry.type)).toEqual(['BR', 'ENT']);
   });
 });
+
+describe(
+  'RF-006 resuming a run whose consolidation record is unreadable',
+  UNDERSTAND_TIMEOUT,
+  () => {
+    it('RF-006 P2-35 is refused with RST-1309 before the run is reopened', async () => {
+      const { h, run } = await stoppedAtEntities();
+      await writeFile(join(h.runFolder(run), 'consolidation.json'), '{"schemaVersion": 7}');
+
+      const resumed = await h.resume(run);
+
+      expect(resumed).toEqual({ ok: false, error: ERROR_CODES.taskResultsUnreadable });
+      expect(await h.runs.find(run.userId, run.id)).toMatchObject({ endState: 'Interrupted' });
+      expect(summariserTasks(h.providers.requests())).toEqual(['summariser-br']);
+    });
+  },
+);
