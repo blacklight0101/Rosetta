@@ -21,16 +21,17 @@ const renderSettings = (answers: Readonly<Record<string, Answer>> = {}) =>
     { projectId: 'p-1' },
   );
 
-function sliderOf(label: string): HTMLInputElement {
-  const slider = screen.getByRole('slider', { name: `${label} slider` });
-  if (!(slider instanceof HTMLInputElement)) throw new Error(`${label} slider is not an input.`);
-  return slider;
-}
-
 function inputOf(label: string): HTMLInputElement {
   const field = screen.getByLabelText(label);
   if (!(field instanceof HTMLInputElement)) throw new Error(`${label} is not an input.`);
   return field;
+}
+
+/** The slider of a limit: the range input in the same row as its number field. */
+function sliderOf(label: string): HTMLInputElement {
+  const slider = inputOf(label).closest('.rst-limit')?.querySelector('input[type="range"]');
+  if (!(slider instanceof HTMLInputElement)) throw new Error(`${label} has no slider.`);
+  return slider;
 }
 
 function type(label: string, value: string): void {
@@ -98,8 +99,8 @@ it('RF-002 a label of a number field finds that field only, not the slider besid
   await loaded();
 
   // The e2e tests find fields by a part of their label; a slider named after it would match too.
-  expect(screen.getAllByLabelText('Parallel readers', { exact: false })).toHaveLength(1);
-  expect(screen.getAllByLabelText('Run cost cap (USD)', { exact: false })).toHaveLength(1);
+  expect(screen.getAllByLabelText('Parallel readers', { exact: true })).toHaveLength(1);
+  expect(screen.getAllByLabelText('Run cost cap (USD)', { exact: true })).toHaveLength(1);
 });
 
 it('RF-002 the confirm slider never goes above its own 100 USD range', async () => {
@@ -173,4 +174,97 @@ it('RF-002 a value away from the default shows a warning that suggests the defau
   await waitFor(() => {
     expect(sliderOf('Parallel readers').value).toBe('6');
   });
+});
+
+// RF-002, P2-26: each slider is named by an aria-label built from its field label, so a lookup by
+// the field label (exact) still finds the number field only, and no tooltip (title) stands in.
+it('RF-002 each slider is named by its field label, with no title, and a label lookup finds one control', async () => {
+  renderSettings();
+  await loaded();
+
+  for (const [label] of bounds) {
+    const slider = sliderOf(label);
+    expect({ label, title: slider.getAttribute('title') }).toEqual({ label, title: null });
+    expect({ label, name: slider.getAttribute('aria-label') }).toEqual({
+      label,
+      name: `${label} slider`,
+    });
+    expect(screen.getAllByLabelText(label, { exact: true })).toHaveLength(1);
+  }
+});
+
+// RF-002, P2-26: a typed value outside the range is named inline, before Save, with its range.
+it('RF-002 a typed value below or above the range shows an inline hint before Save', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Parallel readers', '99');
+  expect(
+    screen.getByText('99 is outside the allowed range of 1 to 8. Save will refuse it.'),
+  ).not.toBeNull();
+  expect(described(sliderOf('Parallel readers'))).toContain(
+    '99 is outside the allowed range of 1 to 8.',
+  );
+
+  type('Parallel readers', '0');
+  expect(
+    screen.getByText('0 is outside the allowed range of 1 to 8. Save will refuse it.'),
+  ).not.toBeNull();
+});
+
+it('RF-002 a value inside the range shows no range hint', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Parallel readers', '8');
+
+  expect(screen.queryByText(/is outside the allowed range/u)).toBeNull();
+});
+
+it('RF-002 a confirm threshold above its slider top shows the hint in dollars', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Run cost cap (USD)', '0.30');
+  type('Ask before a run estimated above (USD)', '0.4');
+
+  expect(
+    screen.getByText('$0.40 is outside the allowed range of $0.00 to $0.30. Save will refuse it.'),
+  ).not.toBeNull();
+});
+
+// RF-002, P2-26: the out-of-range hint is linked from the number field too, and is a polite live region.
+it('RF-002 the out-of-range hint is linked from the number field and announced politely', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Parallel readers', '99');
+
+  const hint = screen.getByText('99 is outside the allowed range of 1 to 8. Save will refuse it.');
+  expect(hint.getAttribute('role')).toBe('status');
+  expect(described(inputOf('Parallel readers'))).toContain(
+    '99 is outside the allowed range of 1 to 8.',
+  );
+});
+
+// RF-002, P2-26: every slider on the page has its own name, also with the run cap at 100.
+it('RF-002 every slider on the settings page has a different name, also with the run cap at 100', async () => {
+  renderSettings();
+  await loaded();
+  type('Run cost cap (USD)', '100');
+
+  const names = screen.getAllByRole('slider').map((slider) => slider.getAttribute('aria-label'));
+
+  expect(names).toHaveLength(12);
+  expect(new Set(names).size).toBe(names.length);
+});
+
+// RF-002, P2-26: the bottom of the range is inside it, so exactly the minimum shows no hint.
+it('RF-002 a value exactly at the minimum of its range shows no hint', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Parallel readers', '1');
+
+  expect(screen.queryByText(/is outside the allowed range/u)).toBeNull();
 });

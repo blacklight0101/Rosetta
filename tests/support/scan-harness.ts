@@ -10,7 +10,8 @@ import type {
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 
-export type FixtureRepository = 'webforms-csharp' | 'webforms-ef' | 'php-shop' | 'cobol-ledger';
+export type FixtureRepository =
+  'webforms-csharp' | 'webforms-ef' | 'webforms-shop' | 'php-shop' | 'cobol-ledger';
 
 const defaultMaxFileBytes = 1_000_000;
 

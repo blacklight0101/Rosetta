@@ -33,6 +33,7 @@ import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
 import type { UnknownAreas } from '../understand/reader-tasks.js';
 import { runPrompts } from '../understand/run-prompts.js';
+import { runMarks } from '../understand/run-marks.js';
 import { planTasks } from '../understand/task-plan.js';
 import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understand-options.js';
 import { pinnedSourceOf } from '../understand/pinned-source.js';
@@ -166,7 +167,8 @@ export class RunUnderstand implements RunExecutor {
     const { tasks, rerun } = planned.value;
     const plan = await planRunTasks(this.deps.taskResults, execution, tasks);
     const withAnswers = rerun !== undefined && tasks.length > 0;
-    const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers);
+    const marks = runMarks(tasks, scanned.codeMap);
+    const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers, marks);
     const [mergePrompt, verifierPrompts] = await Promise.all([
       this.deps.mergePrompt(),
       this.deps.verifierPrompts(),

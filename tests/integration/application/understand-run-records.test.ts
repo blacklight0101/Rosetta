@@ -47,6 +47,7 @@ describe('an understand run: cost and prompts', () => {
     expect(await readFile(join(folder, 'cost.md'), 'utf8')).toContain('reader');
   });
 
+  // The root and Catalog areas of the fixture hold pages, so the run used both fragments (Q-25).
   it('RNF-004 RF-301 records the reader and verifier prompt files with their versions and hashes', async () => {
     const { h, run } = full.current();
 
@@ -54,7 +55,9 @@ describe('an understand run: cost and prompts', () => {
     expect(Object.keys(manifest.promptVersions)).toEqual([
       'cards/card-format.v1.md',
       'cards/continue.v1.md',
+      'cards/flows.v1.md',
       'cards/repair.v1.md',
+      'cards/screens.v1.md',
       'reader/area.v2.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',

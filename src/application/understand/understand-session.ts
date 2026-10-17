@@ -118,7 +118,8 @@ export class UnderstandSession {
         },
       );
       const failure = areaFailureOf(outcome);
-      this.coverage.record(task, this.parts.scanned.codeMap, { reads, failure });
+      const cards = outcome.drafts;
+      this.coverage.record(task, this.parts.scanned.codeMap, { reads, failure, cards });
       await this.ended(task, outcome).catch(async (error: unknown) => {
         // RNF-002: an output that cannot be written fails the run, never the other tasks.
         await this.log.failure(task, error);

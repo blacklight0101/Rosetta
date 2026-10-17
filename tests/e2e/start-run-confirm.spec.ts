@@ -59,7 +59,9 @@ test(
     await openWithCloudReader(page);
     // A tiny threshold puts the likely cost above it whatever the demo project costs.
     await page.getByLabel('Run cap (USD)').fill('2.00');
-    await page.getByLabel('Ask before a run estimated above (USD)').fill('0.000001');
+    await page
+      .getByLabel('Ask before a run estimated above (USD)', { exact: true })
+      .fill('0.000001');
     const start = page.getByRole('button', startButton);
     await start.focus();
     await page.keyboard.press('Enter');

@@ -55,10 +55,10 @@ async function userStoresKeyAndPricedReader(page: Page): Promise<void> {
   await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
   await page.getByLabel('Summariser model', { exact: true }).fill('gpt-5-nano');
   // DEC-117: the threshold to confirm a run is at most the run cap, so both are set together.
-  await page.getByLabel('Run cost cap (USD)').fill('0.002');
-  await page.getByLabel('Ask before a run estimated above (USD)').fill('0.001');
+  await page.getByLabel('Run cost cap (USD)', { exact: true }).fill('0.002');
+  await page.getByLabel('Ask before a run estimated above (USD)', { exact: true }).fill('0.001');
   // One reader at a time, so the first calls are answered and metered before one is refused.
-  await page.getByLabel('Parallel readers').fill('1');
+  await page.getByLabel('Parallel readers', { exact: true }).fill('1');
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Start a run' }).click();

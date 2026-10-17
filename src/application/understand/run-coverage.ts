@@ -1,5 +1,11 @@
-import { areaCoverage, type AreaCoverage } from '../../domain/cards/area-coverage.js';
+import {
+  areaCoverage,
+  surfaceCoverage,
+  type AreaCoverage,
+} from '../../domain/cards/area-coverage.js';
+import type { CardType } from '../../domain/cards/card-vocabulary.js';
 import type { Citation } from '../../domain/cards/citation.js';
+import { marksOf } from '../../domain/code-map/area-surface.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { AgentTaskRequest } from '../agent/agent-loop.js';
 import type { ReaderTask } from './reader-tasks.js';
@@ -41,6 +47,8 @@ export function toolsWithReads(inner: AgentTools, reads: TaskReads): AgentTools 
 export interface TaskCoverageEnd {
   readonly reads: TaskReads;
   readonly failure: string | undefined;
+  /** RF-263: the cards the task gave, so the coverage counts its flows and screens. */
+  readonly cards?: readonly { readonly type: CardType }[];
 }
 
 /** The coverage of the ended tasks of a run, in area order (never in the order they ended). */
@@ -54,12 +62,16 @@ export class RunCoverage {
 
   /** RF-230, RF-208: `failure` says why an area gave no usable card; undefined when it did. */
   // RF-230
-  record(task: ReaderTask, codeMap: Pick<CodeMap, 'files'>, end: TaskCoverageEnd): void {
+  record(
+    task: ReaderTask,
+    codeMap: Pick<CodeMap, 'files' | 'symbols'>,
+    end: TaskCoverageEnd,
+  ): void {
     const coverage = areaCoverage(task.area, codeMap.files, end.reads.all());
-    this.ended.set(
-      task.agentTaskId,
-      end.failure === undefined ? coverage : { ...coverage, failure: end.failure },
-    );
+    const failure = end.failure === undefined ? {} : { failure: end.failure };
+    const marks = marksOf(task.area, codeMap);
+    const surface = end.cards === undefined ? {} : { surface: surfaceCoverage(marks, end.cards) };
+    this.ended.set(task.agentTaskId, { ...coverage, ...failure, ...surface });
   }
 
   /** RF-006: the coverage a task of the run's earlier session left, kept as it was. */

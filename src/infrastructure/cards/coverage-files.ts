@@ -1,6 +1,7 @@
 import type { AreaCoverage, LineRange } from '../../domain/cards/area-coverage.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { maskDeep } from '../guards/mask-deep.js';
+import { surfaceSection } from './coverage-surface.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 
 // RF-230, data-model 3.8: `coverage.json` (per area every file with the line ranges its task read,
@@ -11,17 +12,20 @@ import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 const schemaVersion = 1;
 
 export function serialiseCoverage(coverage: readonly AreaCoverage[], masker: TextMasker): string {
-  const areas = coverage.map(({ area, files, tokens, readTokens, readTokenShare, failure }) => ({
-    area,
-    files: files.map(({ path, read }) => ({
-      path,
-      read: read.map(({ startLine, endLine }) => ({ startLine, endLine })),
-    })),
-    tokens,
-    readTokens,
-    readTokenShare,
-    failure,
-  }));
+  const areas = coverage.map(
+    ({ area, files, tokens, readTokens, readTokenShare, failure, surface }) => ({
+      area,
+      files: files.map(({ path, read }) => ({
+        path,
+        read: read.map(({ startLine, endLine }) => ({ startLine, endLine })),
+      })),
+      tokens,
+      readTokens,
+      readTokenShare,
+      failure,
+      surface,
+    }),
+  );
   return `${JSON.stringify(maskDeep({ schemaVersion, areas }, masker), null, 2)}\n`;
 }
 
@@ -108,6 +112,7 @@ export function renderCoverage(coverage: readonly AreaCoverage[], masker: TextMa
     '# Coverage',
     '',
     ...runSummary(coverage, esc),
+    ...surfaceSection(coverage, esc),
     ...coverage.flatMap((area) => areaSection(area, esc)),
   ];
   return `${masker.mask(lines.join('\n')).text.trimEnd()}\n`;
