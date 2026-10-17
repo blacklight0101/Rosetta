@@ -29,7 +29,7 @@ describe('an understand run: files of a merge that cannot be removed', UNDERSTAN
 
   it('RF-250 RF-240 the open questions are still written, and the run fails with the refusal code', async () => {
     const decorateAnswer = (call: number, response: LlmResponse) =>
-      call === 1 ? { ...response, text: question } : response;
+      call === 2 ? { ...response, text: question } : response;
 
     const { h, run } = await made(temp.path, { decorateAnswer, refuseRemoval: true });
 

@@ -103,7 +103,7 @@ describe('an understand run whose summariser has a cap of its own', UNDERSTAND_T
     const { h, run } = await runOf({ settings });
 
     const roles = h.providers.requests().map((request) => request.context.role);
-    expect(roles).toEqual(['reader', 'reader', 'reader', 'reader', 'reader']);
+    expect(roles).toEqual(Array.from({ length: 10 }, () => 'reader'));
     expect(run.endState).toBe('Completed');
     const warned = h.logger.entries.filter((entry) => entry.level === 'warn');
     expect(warned.map((entry) => entry.code)).toContain(ERROR_CODES.budgetCapReached);

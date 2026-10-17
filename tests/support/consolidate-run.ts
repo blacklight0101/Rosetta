@@ -14,7 +14,7 @@ import {
 // two ENT cards and two BR cards of different areas, one merge answered for each type).
 
 export const recording = 'understand-consolidate.json';
-export const READER_CALLS = 5;
+export const READER_CALLS = 10;
 export const BR_CALL = READER_CALLS + 1;
 export const ENT_CALL = READER_CALLS + 2;
 
