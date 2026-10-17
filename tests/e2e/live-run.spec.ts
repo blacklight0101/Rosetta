@@ -219,6 +219,8 @@ test('RF-1003 Stop ends a run that is working, keeps the cards that were found a
 
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'Stop run' })).toHaveCount(0);
+  await expect(page.getByRole('tablist', { name: 'Results' })).toBeVisible();
+  await expect(page.getByRole('tablist', { name: 'Run details' })).toHaveCount(0);
   await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, 'Catalog')).toContainText('BR-001');
   await expect(page.getByRole('link', { name: 'Download zip' })).toBeVisible();
