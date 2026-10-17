@@ -8,7 +8,13 @@ import {
   repositories,
   runScan,
 } from '../support/journey-pages.js';
-import { agentPanel, runStatus, startAndOpenLiveRun, valueOf } from '../support/live-run-page.js';
+import {
+  agentPanel,
+  openRunTab,
+  runStatus,
+  startAndOpenLiveRun,
+  valueOf,
+} from '../support/live-run-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
@@ -34,7 +40,11 @@ async function watchCatalogRun(page: Page): Promise<void> {
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
-  const overview = page.getByRole('region', { name: 'Overview' });
+  // The page of an ended run opens on the overview of the application; the agents and the claims
+  // are in the Evidence tab.
+  await expect(page.getByRole('region', { name: 'Overview of the application' })).toBeVisible();
+  await openRunTab(page, 'Evidence');
+  const overview = page.getByRole('region', { name: 'Overview', exact: true });
   await expect(valueOf(overview, 'Done')).toHaveText('1');
   await expect(valueOf(overview, 'Failed')).toHaveText('0');
   await expect(agentPanel(page, 'Catalog')).toContainText('BR-001');

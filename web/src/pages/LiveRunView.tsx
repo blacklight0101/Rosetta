@@ -7,36 +7,21 @@ import { cancelRun } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
 import { usePublishRunMeter, type RunMeterReading } from '../app/run-meter-signal.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
-import { Link } from '../components/Link.js';
 import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
-import { stepperOf } from '../lib/live-run/run-stepper.js';
-import { AgentsGrid } from './AgentsGrid.js';
-import { AppOverview } from './AppOverview.js';
-import { ClaimsList } from './ClaimsList.js';
-import { CoverageMap } from './CoverageMap.js';
-import { EventLog } from './EventLog.js';
-import { FailedAreas } from './FailedAreas.js';
-import { RunAnswers } from './RunAnswers.js';
-import { RunDownloads } from './RunDownloads.js';
-import { RunFailure } from './RunFailure.js';
-import { RunMeter } from './RunMeter.js';
-import { RunOverview } from './RunOverview.js';
-import { RunReport } from './RunReport.js';
+import { EndedBody } from './EndedBody.js';
 import { PauseUpdates } from './PauseUpdates.js';
 import { ResumeControl } from './ResumeControl.js';
 import { RunStatusBar } from './RunStatusBar.js';
 import { RunningBody } from './RunningBody.js';
-import { RunStepper } from './RunStepper.js';
 import { usePauseUpdates } from './use-pause-updates.js';
-import { useRunOverview } from './use-run-overview.js';
 import { useRunEstimate } from './use-run-estimate.js';
 import type { RunStream } from './use-run-stream.js';
 
 // RF-1002, RF-1003, RF-424, RF-1004, RF-1005, design-system.md section 14 (live run): the page of a
-// run that exists: head with Stop, downloads, the overview, the run meter, one panel per agent, the
-// coverage map, the claims and the verbose event log. Everything shown comes from the run row and
-// the run's events.
+// run that exists: the head with Stop, then the page of the run while it runs (`RunningBody`) or
+// after it (`EndedBody`); it switches by itself when the run ends. Everything shown comes from the
+// run row and the run's events.
 
 export interface LiveRunViewProps {
   readonly run: RunRow;
@@ -89,20 +74,6 @@ function useStop(runId: string): {
   return { busy, stopping, error, stop };
 }
 
-/**
- * RF-504, P1-130: whether the run has a report. One built earlier comes with the run row; one built
- * from this page turns the Report step done at once, without reading the run again.
- */
-function useReportBuilt(run: RunRow): { readonly built: boolean; readonly onBuilt: () => void } {
-  const [builtHere, setBuiltHere] = useState(false);
-  return {
-    built: run.reportBuilt || builtHere,
-    onBuilt: () => {
-      setBuiltHere(true);
-    },
-  };
-}
-
 function Connection({ stream }: { readonly stream: RunStream }): JSX.Element | null {
   if (stream.failure !== undefined) return <ErrorBanner error={stream.failure} />;
   if (stream.connection !== 'reconnecting') return null;
@@ -110,50 +81,6 @@ function Connection({ stream }: { readonly stream: RunStream }): JSX.Element | n
     <p class="rst-callout rst-callout--warn" role="status" data-testid="connection">
       Reconnecting to the live stream. The page catches up with what it missed.
     </p>
-  );
-}
-
-interface BodyProps {
-  readonly run: RunRow;
-  readonly state: RunState;
-  readonly shown: RunState;
-  readonly phase: RunPhase;
-  readonly stage: string;
-  readonly estimate: RunEstimate | undefined;
-}
-
-/** The run has ended: the page as it was before the running mode, until P1-170 builds the after-run one. */
-function EndedBody(props: BodyProps): JSX.Element {
-  const { run, state, shown, phase, stage, estimate } = props;
-  const report = useReportBuilt(run);
-  const overview = useRunOverview(run.id);
-  return (
-    <>
-      <RunStepper
-        steps={stepperOf(
-          { stage, commitSha: run.commitSha, reportBuilt: report.built },
-          shown,
-          phase,
-        )}
-      />
-      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
-      {/* RF-264: the overview of the application comes before everything else, the questions included. */}
-      {stage === 'understand' ? <AppOverview runId={run.id} load={overview} /> : null}
-      <FailedAreas state={shown} projectId={run.projectId} />
-      <p class="rst-p137-live-link">
-        <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
-      </p>
-      <RunDownloads runId={run.id} stage={stage} ended />
-      <RunReport runId={run.id} ended onBuilt={report.onBuilt} />
-      <RunOverview state={shown} />
-      <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
-      <AgentsGrid state={shown} />
-      {stage === 'understand' ? <CoverageMap state={shown} /> : null}
-      {/* RF-1014: the run has ended, so no claim waits for judgement any more. */}
-      <ClaimsList claims={shown.claims} source={sourceOf(state, run)} pending={false} />
-      {stage === 'understand' ? <RunAnswers runId={run.id} ended overview={overview} /> : null}
-      <EventLog lines={shown.log} startedAt={shown.startedAt} />
-    </>
   );
 }
 
@@ -186,7 +113,12 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
       />
       <Connection stream={stream} />
       {phase.kind === 'ended' ? (
-        <EndedBody {...{ run, state, phase, stage, estimate }} shown={view.shown} />
+        <EndedBody
+          {...{ run, state, phase, stage, estimate }}
+          shown={view.shown}
+          costMicros={costOf(state, run)}
+          source={sourceOf(state, run)}
+        />
       ) : (
         <RunningBody
           {...{ run, phase, stage, estimate }}

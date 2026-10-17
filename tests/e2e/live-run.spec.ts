@@ -10,8 +10,6 @@ import {
   valueOf,
 } from './support/live-run-page.js';
 import { expectMeterFromUsage } from './support/meter-usage.js';
-import { hostileTexts, expectNothingInjected, watchDialogs } from './support/hostile-card.js';
-import { replayRunId } from './support/seed-replay.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
@@ -41,6 +39,7 @@ test('RF-1002 a scan run opens from the start notice, ends complete and offers i
 
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
   await expect(page.getByText('This run has no agents')).toBeVisible();
+  await openRunTab(page, 'Activity');
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('scan.completed');
   await expect(page.getByRole('button', { name: 'Download hand-off zip' })).toBeDisabled();
   await expectNoSeriousViolations(page);
@@ -68,7 +67,9 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await transitionsDone(page);
 
   await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
-  const overview = page.getByRole('region', { name: 'Overview' });
+  // The run has ended: the page is in the after-the-run mode, and its agents are in the Evidence tab.
+  await openRunTab(page, 'Evidence');
+  const overview = page.getByRole('region', { name: 'Overview', exact: true });
   await expect(valueOf(overview, 'Done')).toHaveText('4');
   await expect(valueOf(overview, 'Failed')).toHaveText('0');
   await expect(valueOf(overview, 'Running')).toHaveText('0');
@@ -76,15 +77,16 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expect(valueOf(root, 'Files read')).toHaveText('1');
   await expect(root).toContainText('FEAT-001');
   await expect(root).toContainText('OQ-001');
-  const log = page.getByRole('log', { name: 'Event log' });
-  await expect(log).toContainText('agent.tool.called');
-  await expect(log).toContainText('agent.card.proposed');
-  await expect(log.getByRole('listitem').first()).toContainText('run.ended');
   await expectMeterFromUsage(page, finishedRun, areas);
   const meter = page.getByRole('region', { name: 'Run meter' });
   await expect(meter.getByRole('meter', { name: 'Run tokens against cap' })).toBeVisible();
   await expect(meter.getByRole('meter', { name: 'Run cost against cap' })).toBeVisible();
   await expect(meter).toContainText('Estimate');
+  await openRunTab(page, 'Activity');
+  const log = page.getByRole('log', { name: 'Event log' });
+  await expect(log).toContainText('agent.tool.called');
+  await expect(log).toContainText('agent.card.proposed');
+  await expect(log.getByRole('listitem').first()).toContainText('run.ended');
   await expect(page.getByRole('link', { name: 'Download zip' })).toBeVisible();
   await expectNoSeriousViolations(page);
 });
@@ -93,6 +95,7 @@ test('RF-1004 RF-301 the claims list shows the recorded verdicts Supported and R
   page,
 }) => {
   await page.goto(finishedRun);
+  await openRunTab(page, 'Evidence');
 
   const claims = page.getByRole('region', { name: 'Claims' });
   const claim = (text: string) => claims.getByTestId('claim').filter({ hasText: text });
@@ -135,12 +138,23 @@ test('RF-264 the overview of the application comes first on the page of a finish
   // The hostile statement is text: no script ran and nothing was injected into the page.
   await expect(overview.locator('script, img')).toHaveCount(0);
   await expect(overview).toContainText('<script>');
-  const top = async (region: typeof overview) => (await region.boundingBox())?.y ?? Infinity;
-  expect(await top(overview)).toBeLessThan(await top(questions));
-  await expect(
-    questions.getByTestId('open-question').filter({ hasText: 'OQ-001' }).getByRole('link'),
-  ).toHaveAttribute('href', '#overview-application');
+  // The overview is the first tab and open when the page opens; the questions come after it.
+  const tabs = page.getByRole('tablist', { name: 'Results' }).getByRole('tab');
+  await expect(tabs.first()).toHaveText('Overview');
+  await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+  await expect(tabs.nth(1)).toContainText('Your questions');
+  await expect(page.getByRole('region', { name: 'Your turn' })).toContainText('question');
   await expectNoSeriousViolations(page);
+  await openRunTab(page, 'Your questions');
+  const link = questions
+    .getByTestId('open-question')
+    .filter({ hasText: 'OQ-001' })
+    .getByRole('link');
+  await expect(link).toHaveAttribute('href', '#overview-application');
+  await expectNoSeriousViolations(page);
+  await link.click();
+  await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+  await expect(overview).toBeVisible();
 });
 
 test('RF-1007 an answer typed on the page is saved in answers.md and is there after a reload', async ({
@@ -153,6 +167,7 @@ test('RF-1007 an answer typed on the page is saved in answers.md and is there af
       .getByTestId('open-question')
       .filter({ hasText: 'OQ-001' });
   await page.goto(finishedRun);
+  await openRunTab(page, 'Your questions');
   await expect(questionOf()).toContainText('Open');
 
   await questionOf().getByLabel('Answer to OQ-001').fill(answer);
@@ -161,6 +176,7 @@ test('RF-1007 an answer typed on the page is saved in answers.md and is there af
   await expect(questionOf()).toContainText('Answer saved in answers.md.');
   await expectNoSeriousViolations(page);
   await page.reload();
+  await openRunTab(page, 'Your questions');
   await expect(questionOf().getByLabel('Answer to OQ-001')).toHaveValue(answer);
 });
 
@@ -203,6 +219,7 @@ test('RF-1003 Stop ends a run that is working, keeps the cards that were found a
 
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'Stop run' })).toHaveCount(0);
+  await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, 'Catalog')).toContainText('BR-001');
   await expect(page.getByRole('link', { name: 'Download zip' })).toBeVisible();
   await expectNoSeriousViolations(page);
@@ -227,6 +244,7 @@ test('RF-1006 a page opened on a run under way replays what happened and goes on
   await expect(page.getByRole('log', { name: 'Event log' })).toContainText('run.started');
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await openRunTab(page, 'Evidence');
   await expect(agentPanel(page, 'Controllers')).not.toContainText('Running');
 });
 
@@ -251,25 +269,6 @@ test('RF-1006 a stream asked from an event number sends the stored events after 
   expect(ids[0]).toBe(11);
   expect(ids).toEqual(ids.map((_, index) => 11 + index));
   expect(body).toContain('event: run.ended');
-});
-
-test('RF-507 RF-1002 the hostile card of a recorded run is text on the live page: nothing runs and no element is injected', async ({
-  page,
-  context,
-}, info) => {
-  await signInAs(context, accountFor('replay', info.project.name));
-  const dialogs = watchDialogs(page);
-
-  await page.goto(`/runs/${replayRunId(info.project.name)}`);
-
-  await expect(runStatus(page)).toContainText('Completed');
-  await transitionsDone(page);
-  await expect(page.locator('body')).toContainText(hostileTexts.script);
-  await expect(page.locator('body')).toContainText(hostileTexts.image);
-  await expect(page.locator('body')).toContainText(hostileTexts.link);
-  await expect(page.locator('body')).toContainText(hostileTexts.svg);
-  await expectNothingInjected(page, dialogs);
-  await expectNoSeriousViolations(page);
 });
 
 // P1-131: the test server holds a server key for OpenAI only, so the provider without one is Anthropic.

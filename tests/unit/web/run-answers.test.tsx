@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { RunAnswers } from '../../../web/src/pages/RunAnswers.js';
 import { failure, json, renderPage, type Answer } from './fake-api.js';
+import { AnswersHarness } from './run-answers-harness.js';
 
 // RF-1007, RF-507: the open questions of a run on its live page. Each one has an answer field;
 // saving sends the answer to PUT /api/runs/:runId/answers and shows what the server recorded.
@@ -29,7 +29,7 @@ const questions = [
 ];
 
 function renderAnswers(answers: Readonly<Record<string, Answer>>, ended = true) {
-  return renderPage(<RunAnswers runId={runId} ended={ended} />, answers);
+  return renderPage(<AnswersHarness runId={runId} ended={ended} />, answers);
 }
 
 const item = (cardId: string): HTMLElement => {

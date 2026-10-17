@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
   cardProposed,
@@ -79,7 +79,8 @@ it('RF-1014 RF-301 shows the verdict once the judgement step ends, and a claim l
   connection.event(ev(6, 'verify.claim.judged', verdict));
   connection.event(runEnded(7, 'Interrupted'));
 
-  // The page may draw the ended run anew, so the claims are found again once it has.
+  // The ended run has its claims in the Evidence tab.
+  fireEvent.click(await screen.findByRole('tab', { name: /^Evidence/u }));
   await waitFor(() => {
     const shown = screen.getByRole('region', { name: 'Claims' });
     expect(shown.textContent).toContain(NOT_JUDGED_NOTE);

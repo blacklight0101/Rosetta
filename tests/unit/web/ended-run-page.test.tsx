@@ -51,10 +51,12 @@ it('RF-1015 the Your turn panel shows the run facts', async () => {
   const facts = within(turnPanel()).getByRole('list', { name: 'Run facts' });
   const text = (label: string): string =>
     within(facts).getByText(label).closest('li')?.textContent ?? '';
+  await waitFor(() => {
+    expect(text('Cost')).toContain('$0.0041');
+  });
   expect(text('Cards')).toContain('1');
   expect(text('Citations passed')).toContain('1 / 2');
   expect(text('Areas read')).toContain('1 / 1');
-  expect(text('Cost')).toContain('$0.0041');
 });
 
 it('RF-008 RF-504 the report and the downloads stay one click away on the ended page', async () => {

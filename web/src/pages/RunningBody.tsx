@@ -21,8 +21,8 @@ import { WorkingNow } from './WorkingNow.js';
 // RF-1015, DEC-137, design-system.md section 14 (live run): the page of a run while it runs (queued
 // or working): the run journey, the living code map, the spend against the cap and the agents at
 // work, and below them one list at a time in tabs: cards so far, all agents, activity. The proposal
-// `docs/design/proposals/run-page-v2.html` is the reference. The ended run keeps the earlier page
-// until P1-170 builds the after-run mode.
+// `docs/design/proposals/run-page-v2.html` is the reference. The ended run has its own page
+// (`EndedBody`).
 
 export interface RunningBodyProps {
   readonly run: RunRow;

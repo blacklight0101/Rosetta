@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/preact';
+import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, expect, it, vi } from 'vitest';
 import { failure } from './fake-api.js';
 import {
@@ -61,6 +61,8 @@ it('RF-1006 a page opened on a run that is under way replays the stored events',
   connection.event(agentEnded(4, 'reader-001', 'Done'));
   connection.event(runEnded(5, 'Completed'));
 
+  // The ended run has its agents in the Evidence tab.
+  fireEvent.click(await screen.findByRole('tab', { name: /^Evidence/u }));
   expect((await findAgentPanel('Catalog')).textContent).toContain('Done');
   await waitFor(() => {
     expect(screen.getByTestId('run-status').textContent).toContain('Completed');
