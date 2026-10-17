@@ -26,9 +26,17 @@ type MergeProblem =
   | 'type-not-mergeable'
   | 'one-area';
 
+/** Where the claims of one applied merge went: `from` is the id before, `to` the id in the merged card. */
+export interface MergeMoves {
+  readonly cardId: string;
+  readonly from: readonly string[];
+  readonly claims: readonly { readonly from: string; readonly to: string }[];
+}
+
 export interface MergeResult {
   readonly cards: readonly Card[];
   readonly applied: readonly CardMerge[];
+  readonly moves: readonly MergeMoves[];
   readonly skipped: readonly { readonly merge: CardMerge; readonly problem: MergeProblem }[];
 }
 
@@ -108,5 +116,5 @@ export function applyMerges(cards: readonly Card[], merges: readonly CardMerge[]
     current = replaced(current, members.value, mergedCard(members.value, merge));
     applied.push(merge);
   }
-  return { cards: current, applied, skipped };
+  return { cards: current, applied, moves: [], skipped };
 }
