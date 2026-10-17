@@ -86,6 +86,8 @@ export interface UnderstandProviderParts {
   readonly serverOpenAiKey?: string;
   /** RF-427: an OpenAI key of this user's own (a cloud reader on the user's key). */
   readonly ownOpenAiKey?: { readonly userId: string; readonly key: string };
+  /** P2-24: an Anthropic key of this user's own. */
+  readonly ownAnthropicKey?: { readonly userId: string; readonly key: string };
 }
 
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
@@ -98,6 +100,13 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
   if (own !== undefined) {
     const sealed = box.seal(own.key, keyAdditionalData(own.userId, 'openai'));
     void keys.upsert(sampleKeyRecord(own.userId, 'openai', { sealed, last4: own.key.slice(-4) }));
+  }
+  const anthropic = parts.ownAnthropicKey;
+  if (anthropic !== undefined) {
+    const sealed = box.seal(anthropic.key, keyAdditionalData(anthropic.userId, 'anthropic'));
+    void keys.upsert(
+      sampleKeyRecord(anthropic.userId, 'anthropic', { sealed, last4: anthropic.key.slice(-4) }),
+    );
   }
   const factory = new GuardedProviderFactory({
     keys,

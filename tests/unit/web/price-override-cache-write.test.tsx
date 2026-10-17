@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/preact';
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ProjectSettingsPage } from '../../../web/src/pages/ProjectSettingsPage.js';
 import { json, renderPage } from './fake-api.js';
 import { projectOf } from './project-fixtures.js';
@@ -47,5 +47,38 @@ it('RF-420 saves an override with its cache-write price in micro-dollars', async
         },
       ],
     },
+  });
+});
+
+describe('the warning for an Anthropic override without a cache-write price', () => {
+  const warning = /Override 1 has no cache-write price/;
+
+  async function withOverride(provider: string): Promise<void> {
+    renderPage(<ProjectSettingsPage />, { [`GET ${route}`]: json(200, demo) }, undefined, {
+      projectId: 'p-1',
+    });
+    await screen.findByRole('heading', { name: 'Project settings' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add price override' }));
+    fireEvent.change(screen.getByLabelText('Override 1 provider'), { target: { value: provider } });
+  }
+
+  it('RF-427 warns before saving when an Anthropic override has no cache-write price', async () => {
+    await withOverride('anthropic');
+
+    expect(screen.getByText(warning)).toBeTruthy();
+  });
+
+  it('RF-427 the warning goes once the cache-write price is typed', async () => {
+    await withOverride('anthropic');
+
+    type('Override 1 cache write (USD per million tokens)', '3.75');
+
+    expect(screen.queryByText(warning)).toBeNull();
+  });
+
+  it('RF-427 a provider that bills no cache write gets no warning', async () => {
+    await withOverride('openai');
+
+    expect(screen.queryByText(warning)).toBeNull();
   });
 });
