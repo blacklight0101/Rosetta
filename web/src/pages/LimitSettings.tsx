@@ -3,7 +3,7 @@ import { Field } from '../components/Field.js';
 import { LimitSetting } from './LimitSetting.js';
 import { RoleCapNotice, type RoleCaps } from './RoleCapNotice.js';
 import type { SectionProps } from './settings-section.js';
-import { confirmCeiling, ranges, templateDefaults } from './setting-limits.js';
+import { confirmCeiling, ranges, runCostOutOfRange, templateDefaults } from './setting-limits.js';
 
 // RF-002, RF-422, RF-425, DEC-116, DEC-117: the run caps, the scan limits and the ignore rules.
 // Each number is a number field with a slider bounded by its DEC-117 range (card P2-15). Dollars
@@ -48,6 +48,7 @@ function CapNumbers({ editor, errorFor }: SectionProps): JSX.Element {
         errorFor={errorFor}
         range={ranges.confirmAbove}
         max={confirmCeiling(draft.runCost)}
+        hideHint={runCostOutOfRange(draft.runCost)}
         unit="dollars"
         defaultValue={templateDefaults.confirmAbove}
         value={draft.confirmAbove}
