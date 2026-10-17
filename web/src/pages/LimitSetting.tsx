@@ -59,7 +59,7 @@ export function LimitSetting(props: LimitProps): JSX.Element {
         id={rangeId}
         type="range"
         class="rst-limit__slider"
-        aria-label={`${props.label} slider`}
+        title={`${props.label} slider`}
         aria-describedby={describing([rangeTextId, differs ? warningId : undefined])}
         min={range.min}
         max={top}
