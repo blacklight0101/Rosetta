@@ -17,8 +17,8 @@ import { RunDownloads } from './RunDownloads.js';
 import { RunFailure } from './RunFailure.js';
 import { RunReport } from './RunReport.js';
 import { RunStepper } from './RunStepper.js';
-import { useRunAnswers } from './use-run-answers.js';
-import { useRunOverview } from './use-run-overview.js';
+import { useRunAnswers, type AnswersLoad, type RunAnswersState } from './use-run-answers.js';
+import { useRunOverview, type OverviewLoad } from './use-run-overview.js';
 import { VerificationNote } from './VerificationNote.js';
 import { YourTurn } from './YourTurn.js';
 
@@ -92,6 +92,105 @@ function Replay({
   );
 }
 
+interface ResultsTab {
+  readonly tab: TabId;
+  readonly select: (id: string) => void;
+  /** Opens the overview on the section with this anchor (a question links to the section it concerns). */
+  readonly showSection: (anchor: string) => void;
+  readonly show: (id: TabId) => void;
+}
+
+/** The tab that is open: the overview first for a run that asks, the evidence otherwise. */
+function useResultsTab(asks: boolean): ResultsTab {
+  const [chosen, setChosen] = useState<TabId>(asks ? 'overview' : 'evidence');
+  const [anchor, setAnchor] = useState<string | undefined>();
+  // The run may turn out to have failed after the page opened on the overview (its events replay).
+  const tab = asks || (chosen !== 'overview' && chosen !== 'questions') ? chosen : 'evidence';
+  useEffect(() => {
+    if (tab !== 'overview' || anchor === undefined) return;
+    const target = document.getElementById(anchor);
+    if (typeof target?.scrollIntoView === 'function') target.scrollIntoView();
+  }, [tab, anchor]);
+  return {
+    tab,
+    select: (id) => {
+      setChosen(tabOf(id));
+    },
+    show: setChosen,
+    showSection: (id) => {
+      setAnchor(id);
+      setChosen('overview');
+    },
+  };
+}
+
+interface PanelsProps extends EndedBodyProps {
+  readonly results: ResultsTab;
+  readonly overview: OverviewLoad;
+  readonly answers: RunAnswersState;
+  readonly built: boolean;
+}
+
+function Panels(props: PanelsProps): JSX.Element | null {
+  const { run, shown, results, overview, answers } = props;
+  if (results.tab === 'overview') {
+    return (
+      <>
+        <AppOverview runId={run.id} load={overview} />
+        <VerificationNote state={shown} />
+      </>
+    );
+  }
+  if (results.tab === 'questions') {
+    return (
+      <RunAnswers
+        runId={run.id}
+        answers={answers}
+        overview={overview}
+        onConcern={(section) => {
+          results.showSection(sectionAnchor(section));
+        }}
+      />
+    );
+  }
+  if (results.tab === 'evidence') return <EvidenceTab {...props} state={shown} />;
+  return (
+    <>
+      <ActivityTab state={shown} runId={run.id} />
+      <Replay runId={run.id} built={props.built} />
+    </>
+  );
+}
+
+interface RailProps {
+  readonly run: RunRow;
+  readonly stage: string;
+  readonly state: RunState;
+  readonly costMicros: number;
+  readonly failed: boolean;
+  readonly asks: boolean;
+  readonly answers: AnswersLoad;
+  readonly report: { readonly onBuilt: () => void };
+  readonly onAnswer: () => void;
+}
+
+/** The Your turn panel, and the report, the downloads and the calls link, one click away. */
+function Rail(props: RailProps): JSX.Element {
+  const { run, stage } = props;
+  return (
+    <aside class="rst-p170-rail">
+      <YourTurn {...props} />
+      <section class="rst-card rst-p170-downloads" aria-label="Report and downloads">
+        <RunReport runId={run.id} ended onBuilt={props.report.onBuilt} />
+        <RunDownloads runId={run.id} stage={stage} ended />
+        <p class="rst-p137-live-link">
+          <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
+        </p>
+      </section>
+    </aside>
+  );
+}
+
 // RF-1015
 export function EndedBody(props: EndedBodyProps): JSX.Element {
   const { run, state, shown, phase, stage } = props;
@@ -100,15 +199,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   const report = useReportBuilt(run);
   const overview = useRunOverview(run.id, asks);
   const answers = useRunAnswers(run.id, asks);
-  const [chosen, setTab] = useState<TabId>(asks ? 'overview' : 'evidence');
-  // The run may turn out to have failed after the page opened on the overview (its events replay).
-  const tab = asks || (chosen !== 'overview' && chosen !== 'questions') ? chosen : 'evidence';
-  const [anchor, setAnchor] = useState<string | undefined>();
-  useEffect(() => {
-    if (tab !== 'overview' || anchor === undefined) return;
-    const target = document.getElementById(anchor);
-    if (typeof target?.scrollIntoView === 'function') target.scrollIntoView();
-  }, [tab, anchor]);
+  const results = useResultsTab(asks);
   const open =
     answers.load.status === 'ready'
       ? answers.load.questions.filter((each) => each.state === 'Open').length
@@ -129,55 +220,22 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
           <Tabs
             label="Results"
             tabs={tabsOf({ asks, open, state: shown })}
-            selected={tab}
-            onSelect={(id) => {
-              setTab(tabOf(id));
-            }}
+            selected={results.tab}
+            onSelect={results.select}
           >
-            {tab === 'overview' ? (
-              <>
-                <AppOverview runId={run.id} load={overview} />
-                <VerificationNote state={shown} />
-              </>
-            ) : null}
-            {tab === 'questions' ? (
-              <RunAnswers
-                runId={run.id}
-                answers={answers}
-                overview={overview}
-                onConcern={(section) => {
-                  setAnchor(sectionAnchor(section));
-                  setTab('overview');
-                }}
-              />
-            ) : null}
-            {tab === 'evidence' ? <EvidenceTab {...props} state={shown} /> : null}
-            {tab === 'activity' ? (
-              <>
-                <ActivityTab state={shown} runId={run.id} />
-                <Replay runId={run.id} built={report.built} />
-              </>
-            ) : null}
+            <Panels {...props} {...{ results, overview, answers }} built={report.built} />
           </Tabs>
         </section>
-        <aside class="rst-p170-rail">
-          <YourTurn
-            {...{ failed, asks }}
-            answers={answers.load}
-            state={shown}
-            costMicros={props.costMicros}
-            onAnswer={() => {
-              setTab('questions');
-            }}
-          />
-          <section class="rst-card rst-p170-downloads" aria-label="Report and downloads">
-            <RunReport runId={run.id} ended onBuilt={report.onBuilt} />
-            <RunDownloads runId={run.id} stage={stage} ended />
-            <p class="rst-p137-live-link">
-              <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
-            </p>
-          </section>
-        </aside>
+        <Rail
+          {...{ run, stage, failed, asks }}
+          answers={answers.load}
+          state={shown}
+          costMicros={props.costMicros}
+          report={report}
+          onAnswer={() => {
+            results.show('questions');
+          }}
+        />
       </div>
     </>
   );

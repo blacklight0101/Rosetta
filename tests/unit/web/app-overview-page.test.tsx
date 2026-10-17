@@ -76,7 +76,7 @@ describe('the overview on the page of an ended run', () => {
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
     expect(tabs[1]?.textContent).toMatch(/^Your questions/u);
     expect(screen.queryByRole('region', { name: 'Open questions' })).toBeNull();
-    fireEvent.click(tabs[1] as HTMLElement);
+    fireEvent.click(screen.getByRole('tab', { name: /^Your questions/u }));
     expect(await screen.findByRole('region', { name: 'Open questions' })).toBeTruthy();
   });
 

@@ -16,7 +16,7 @@ import { codeMapAnswer, codeMapPath, ownAreas } from './live-run-running-helpers
 // The page of an ended run (P1-170): one understand run that read one area, wrote two cards and
 // asked questions, with the answers of the overview and the open questions.
 
-export const overview = {
+const overview = {
   state: 'full',
   sections: [
     {
@@ -56,10 +56,10 @@ export function question(n: number, extra: Partial<QuestionRow> = {}): QuestionR
   };
 }
 
-export const threeQuestions = [question(1), question(2), question(3)];
+const threeQuestions = [question(1), question(2), question(3)];
 
 /** The events of a run that read one area and gave two cards, one of whose claims failed its check. */
-export const finishedEvents = [
+const finishedEvents = [
   ev(1, 'run.started', startedData),
   planned(2, 'r1', 'Catalog'),
   agentStarted(3, 'r1', 'Catalog'),

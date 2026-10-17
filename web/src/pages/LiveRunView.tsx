@@ -1,7 +1,6 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
 import type { ApiFailure } from '../api/client.js';
-import type { RunEstimate } from '../api/estimate-schemas.js';
 import type { RunRow } from '../api/run-schemas.js';
 import { cancelRun } from '../api/runs.js';
 import { useApp } from '../app/app-context.js';
