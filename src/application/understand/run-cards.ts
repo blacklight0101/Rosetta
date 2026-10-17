@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import type { Card } from '../../domain/cards/card.js';
 import { assignCardIds, type CardDraft, type TaskCards } from '../../domain/cards/card-ids.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
@@ -30,10 +29,15 @@ export interface KeptCards {
 export class RunCards {
   private readonly tasks: readonly ReaderTask[];
   private readonly ended = new Map<string, TaskEnd>();
+  private readonly kept: KeptCards;
   private settled = 0;
 
-  constructor(tasks: readonly ReaderTask[], kept?: KeptCards) {
+  constructor(
+    tasks: readonly ReaderTask[],
+    kept: KeptCards = { cards: [], areasWithoutCards: [] },
+  ) {
     this.tasks = tasks;
+    this.kept = kept;
   }
 
   record(end: TaskEnd): void {
@@ -49,16 +53,19 @@ export class RunCards {
         ? []
         : [{ agentTaskId: task.agentTaskId, area: task.area.name, drafts: end.drafts }];
     });
-    const cards = assignCardIds(done);
+    const cards = assignCardIds(done, this.kept.cards);
     if (!cards.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, cards.error);
-    return checkCitations(cards.value, codeMap, at);
+    const checked = checkCitations(cards.value, codeMap, at);
+    // RF-006: the cards of the tasks that finished before keep their ids and statuses.
+    return { cards: [...this.kept.cards, ...checked.cards], checks: checked.checks };
   }
 
   /** The areas whose task ended without a card, in area order. */
   areasWithoutCards(): readonly string[] {
-    return this.tasks
+    const ran = this.tasks
       .filter((task) => this.ended.get(task.agentTaskId)?.withoutCards === true)
       .map((task) => task.area.name);
+    return [...this.kept.areasWithoutCards, ...ran];
   }
 
   /**

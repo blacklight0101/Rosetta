@@ -14,8 +14,9 @@ import { useTempRoot } from '../../../support/temp-root.js';
 // cannot read is an error with a code, never guessed.
 
 const userId = '0b7c3f8e-5d1a-4c2b-9e6f-1a2b3c4d5e6f';
-const scope = { id: 'run-1', userId, projectId: 'p1', runKey: '20261012-100000-understand' };
-const file = `projects/p1/runs/${scope.runKey}/task-results.json`;
+const projectId = '0b7c3f8e-5d1a-4c2b-9e6f-1a2b3c4d5e70';
+const scope = { id: 'run-1', userId, projectId, runKey: '20261012-100000-understand' };
+const file = `projects/${projectId}/runs/${scope.runKey}/task-results.json`;
 
 function resultOf(): TaskResult {
   const [card] = cardsOf();

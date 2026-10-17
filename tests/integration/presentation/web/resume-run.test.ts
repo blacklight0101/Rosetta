@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { RunEndState } from '../../../../src/domain/runs/run-states.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
+import { settledRun } from '../../../support/run-settled.js';
 import { addUser, signedInBrowser, TestBrowser } from '../../../support/test-browser.js';
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
@@ -33,13 +34,9 @@ async function setup() {
     });
     const { id } = started.json<{ id: string }>();
     test.runs.executor.settle(id, { endState });
-    await vi.waitFor(
-      async () => {
-        const run = await test.runs.runs.find(amyUser.account.id, id);
-        if (run?.queueState !== 'Ended') throw new Error('The run has not ended');
-      },
-      { interval: 2 },
-    );
+    const run = await test.runs.runs.find(amyUser.account.id, id);
+    if (run === undefined) throw new Error('The run vanished');
+    await settledRun(test.runs, run);
     return id;
   }
   return { test, amy, bob, ended };

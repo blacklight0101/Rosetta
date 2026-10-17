@@ -21,10 +21,9 @@ import type { TaskResults } from '../ports/task-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
-import type { ScannedSource, ScanResults } from '../ports/scan-results.js';
+import type { ScanResults } from '../ports/scan-results.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
-import type { RoleProvider } from '../providers/provider-set.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
 import { RunBudgetEvents } from '../runs/run-budget-events.js';
@@ -34,12 +33,13 @@ import { scopeOf } from '../runs/run-scope.js';
 import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { ManifestSecurityRecorder } from '../runs/run-security-record.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
-import type { ReaderTask, UnknownAreas } from '../understand/reader-tasks.js';
+import type { UnknownAreas } from '../understand/reader-tasks.js';
 import { runPrompts } from '../understand/run-prompts.js';
 import { planTasks } from '../understand/task-plan.js';
 import { readUnderstandOptions, UNDERSTAND_ROLES } from '../understand/understand-options.js';
 import { pinnedSourceOf } from '../understand/pinned-source.js';
-import type { Rerun } from '../understand/answer-rerun.js';
+import { planRunTasks, resumeSourceProblem } from '../understand/resume-state.js';
+import type { Prepared, UnderstandRoles } from '../understand/run-understand-types.js';
 import { UnderstandSession } from '../understand/understand-session.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
@@ -81,21 +81,6 @@ export interface RunUnderstandDependencies {
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
-/** What a run needs before its tasks can start. */
-interface Prepared {
-  readonly project: Project;
-  readonly scanned: ScannedSource;
-  readonly tasks: readonly ReaderTask[];
-  readonly prompts: ReaderPrompts;
-  readonly mergePrompt: PromptFile;
-  readonly rerun?: Rerun;
-}
-
-interface UnderstandRoles {
-  readonly reader: RoleProvider;
-  readonly summariser: RoleProvider;
-}
-
 const failed = (code: RosettaError['code']): RunOutcome => ({
   endState: 'Failed',
   errorCode: code,
@@ -131,6 +116,8 @@ export class RunUnderstand implements RunExecutor {
     if (execution.signal.aborted) return { endState: 'Interrupted' };
     const session = new UnderstandSession({
       ...prepared.value,
+      tasks: prepared.value.plan.tasks,
+      kept: prepared.value.plan.kept,
       ...{ execution, updates, role: roles.value.reader, summariser: roles.value.summariser },
       logger: ownerLogger(this.deps.logger, execution.run.userId),
       settings: prepared.value.project.settings,
@@ -157,6 +144,12 @@ export class RunUnderstand implements RunExecutor {
     const scan = await this.latestScan(run);
     if (scan === undefined) return stop(failed(ERROR_CODES.codeMapMissing));
     const scanned = await this.deps.scans.open(scan);
+    const changed = resumeSourceProblem(manifest, scanned);
+    if (changed !== undefined) {
+      const message = 'The code map of the latest scan is not the one this run read.';
+      await this.log(run, changed, message, {});
+      return stop(failed(changed));
+    }
     await execution.recordSource(scanned.source);
     await updates.update((stored) => recordManifestCodeMap(stored, scanned.codeMapHash));
     const options = readUnderstandOptions(manifest.options);
@@ -167,12 +160,14 @@ export class RunUnderstand implements RunExecutor {
     });
     if (!planned.ok) return this.unknownAreas(run, planned.error);
     const { tasks, rerun } = planned.value;
+    const plan = await planRunTasks(this.deps.taskResults, execution, tasks);
     const withAnswers = rerun !== undefined && tasks.length > 0;
     const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers);
     await updates.update((stored) => ok(recordPromptVersions(stored, versions)));
     const mergePrompt = await this.deps.mergePrompt();
     const withRerun = rerun === undefined ? {} : { rerun };
-    return { ok: true, value: { project, scanned, tasks, prompts, mergePrompt, ...withRerun } };
+    const base = { project, scanned, plan, allTasks: tasks, prompts, mergePrompt };
+    return { ok: true, value: { ...base, ...withRerun } };
   }
 
   /** RF-200: an area named in the request is not in the code map; the valid names are logged. */

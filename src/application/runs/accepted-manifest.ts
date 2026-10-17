@@ -50,7 +50,7 @@ function rolesOf(settings: ProjectSettings): Record<string, ManifestRole> {
   );
 }
 
-function capsOf(settings: ProjectSettings): ManifestCaps {
+export function capsOf(settings: ProjectSettings): ManifestCaps {
   const { run, roles = {} } = settings.budget;
   return {
     run: { maxCostMicros: run.maxCostMicros, maxTokens: run.maxTokens },

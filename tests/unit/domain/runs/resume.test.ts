@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { reopenManifest, endManifest } from '../../../../src/domain/runs/run-manifest.js';
+import { reopenManifest } from '../../../../src/domain/runs/reopen-manifest.js';
+import { endManifest } from '../../../../src/domain/runs/run-manifest.js';
 import { RESUMABLE_END_STATES, reopenRun } from '../../../../src/domain/runs/run.js';
 import { isUnfinishedTask } from '../../../../src/domain/runs/run-states.js';
 import { runningRun, sampleManifest, sampleRun } from '../../../support/run-fixtures.js';

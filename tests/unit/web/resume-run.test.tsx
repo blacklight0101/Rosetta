@@ -76,9 +76,14 @@ describe('the run page, no Resume', () => {
 
 describe('the run page, pressing Resume', () => {
   it('RF-006 asks the server to resume the run with its id and follows it from its start', async () => {
+    // The server answers the run as ended until the Resume was asked, and as running after it.
+    let asked = false;
     const { stream, calls } = renderLive({
-      [`GET ${runPath}`]: endedRow('CapReached'),
-      [`POST ${runPath}/resume`]: resumed,
+      [`GET ${runPath}`]: () => (asked ? runRow() : endedRow('CapReached')),
+      [`POST ${runPath}/resume`]: () => {
+        asked = true;
+        return resumed;
+      },
     });
     await stream.connection();
 

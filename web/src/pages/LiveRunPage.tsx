@@ -14,8 +14,21 @@ import { useRunStream } from './use-run-stream.js';
 // and no stream is opened), then follows the event stream, and reads the run again at every model
 // turn so the cost so far follows it.
 
+// RF-006: once a run is resumed the page starts again, so it reads the run and its events anew.
 // RF-1002
 export function LiveRunPage(): JSX.Element {
+  const [generation, setGeneration] = useState(0);
+  return (
+    <LiveRun
+      key={generation}
+      onResumed={() => {
+        setGeneration((current) => current + 1);
+      }}
+    />
+  );
+}
+
+function LiveRun({ onResumed }: { readonly onResumed: () => void }): JSX.Element {
   const runId = useRouteParams()['runId'] ?? '';
   const [known, setKnown] = useState(false);
   const stream = useRunStream(runId, known);
@@ -43,5 +56,5 @@ export function LiveRunPage(): JSX.Element {
     );
   }
   const phase = phaseOf(load.run, stream.state);
-  return <LiveRunView key={load.run.id} run={load.run} stream={stream} phase={phase} />;
+  return <LiveRunView key={load.run.id} {...{ run: load.run, stream, phase, onResumed }} />;
 }

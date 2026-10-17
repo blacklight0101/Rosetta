@@ -9,6 +9,7 @@ import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { settingsFor } from '../../../support/provider-factory-harness.js';
+import { settledRun } from '../../../support/run-settled.js';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
 
 // RF-006, RF-1105, RF-143, ADR-007: Resume run queues the user's ended understand run again, in
@@ -48,7 +49,7 @@ async function setup(settings: ProjectSettings = fakeReader) {
     const { run } = submitted.value;
     await Promise.resolve();
     harness.executor.settle(run.id, { endState });
-    return harness.ended(run);
+    return settledRun(harness, run);
   }
 
   return { harness, projects, project, resume, ended };

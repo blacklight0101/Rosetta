@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 // Architecture section 5 (state lists), data-model.md section 4 (`runs`): the stages a run can
 // have, how a run ends and where it is in the queue. These lists are canonical; the table checks
 // and the file schemas repeat them.
@@ -19,6 +18,8 @@ export type AgentTaskState =
   'Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput' | 'Failed' | 'StoppedByCap';
 
 /** RF-006: whether a resume runs a task of this state again (its state, as the manifest stores it). */
+const UNFINISHED_TASK_STATES: readonly string[] = ['Planned', 'Running', 'StoppedByCap', 'Failed'];
+
 export function isUnfinishedTask(state: string): boolean {
-  return false;
+  return UNFINISHED_TASK_STATES.includes(state);
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import { err, ok, type Result } from '../errors/result.js';
 import { createCard, type Card, type CardProblem, type ClaimInput } from './card.js';
 import type { CardType, Confidence } from './card-vocabulary.js';
@@ -25,6 +24,11 @@ export interface TaskCards {
   readonly drafts: readonly CardDraft[];
 }
 
+/** The number in an id such as `BR-007`. */
+function numberOf(id: string): number {
+  return Number(id.slice(id.lastIndexOf('-') + 1));
+}
+
 /** `BR-007`: three digits at least, more when a run has more than 999 cards of a type. */
 export function formatCardId(type: CardType, number: number): string {
   return `${type}-${String(number).padStart(3, '0')}`;
@@ -39,6 +43,9 @@ export function assignCardIds(
   after: readonly Card[] = [],
 ): Result<readonly Card[], CardProblem> {
   const counters = new Map<CardType, number>();
+  for (const card of after) {
+    counters.set(card.type, Math.max(counters.get(card.type) ?? 0, numberOf(card.id)));
+  }
   const cards: Card[] = [];
   for (const task of tasks) {
     for (const draft of task.drafts) {

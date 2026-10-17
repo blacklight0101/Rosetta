@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- stub until the feat commit */
 import type { EpochMs } from '../accounts/user.js';
 import { err, ok, type Result } from '../errors/result.js';
 import type { RunEndState, RunQueueState, RunStage } from './run-states.js';
@@ -73,5 +72,14 @@ export const RESUMABLE_END_STATES: readonly RunEndState[] = ['CapReached', 'Fail
  */
 // RF-006
 export function reopenRun(run: Run, at: EpochMs): Result<Run, ReopenProblem> {
-  return err('not-resumable');
+  if (run.queueState !== 'Ended' || run.endState === null) return err('not-resumable');
+  if (!RESUMABLE_END_STATES.includes(run.endState)) return err('not-resumable');
+  return ok({
+    ...run,
+    queueState: 'Queued',
+    endState: null,
+    queuedAt: at,
+    startedAt: null,
+    endedAt: null,
+  });
 }
