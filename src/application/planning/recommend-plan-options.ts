@@ -72,8 +72,9 @@ async function ask(
 ): Promise<Result<string, PlanOptionsProblem>> {
   const { role, signal, ids } = parts;
   const tags = { cards: ids.dataBlockTag(), scan: ids.dataBlockTag() };
+  let answered: LlmResponse;
   try {
-    const response = await parts.provider.complete({
+    answered = await parts.provider.complete({
       context: {
         ...{ runId: parts.runId, agentTaskId: `${PLANNER}-options`, role: PLANNER },
         ...{ callId: parts.nextCallId(), traceId: parts.traceId },
@@ -87,13 +88,14 @@ async function ask(
       ...(role.temperature === undefined ? {} : { temperature: role.temperature }),
       signal,
     });
-    await parts.onAnswer(response);
-    return ok(response.text);
   } catch (error) {
     const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
     if (!signal.aborted) await warn(parts, 'The planner could not give the options.', code);
     return problem(code, NO_ANSWER);
   }
+  // A failure to record a billed answer is a fault of the run, not an unanswered call.
+  await parts.onAnswer(answered);
+  return ok(answered.text);
 }
 
 /** The options for Plan setup, or why there are none. */

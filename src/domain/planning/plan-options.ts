@@ -50,6 +50,11 @@ export interface OptionsDraft {
   readonly stack: readonly { readonly layer: string; readonly options: readonly string[] }[];
 }
 
+/** Model-written text in a message: quoted and cut short. */
+function shown(text: string): string {
+  return JSON.stringify(text.slice(0, 40));
+}
+
 type DraftStyle = OptionsDraft['architecture']['options'][number];
 
 function tidy(texts: readonly string[], limit: number, count: number): string[] {
@@ -90,11 +95,11 @@ function shapeProblems(options: readonly DraftStyle[], recommended: string): str
   return [
     ...names
       .filter((name) => !isArchitectureStyleId(name))
-      .map((name) => `${name} is not an architecture style.`),
+      .map((name) => `${shown(name)} is not an architecture style.`),
     ...(names[0] === names[1] ? [`The style ${names[0] ?? ''} is offered twice.`] : []),
     ...(names.includes(recommended)
       ? []
-      : [`The recommended style ${recommended} is not one of the two.`]),
+      : [`The recommended style ${shown(recommended)} is not one of the two.`]),
   ];
 }
 
