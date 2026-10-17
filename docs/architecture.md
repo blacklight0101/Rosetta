@@ -462,11 +462,13 @@ sequenceDiagram
   cache (Anthropic, OpenAI) charge less for repeated turns. OpenAI caches long prefixes by itself; the Anthropic
   adapter marks the system prompt (which caches the tools before it) and the last message block as cache breakpoints,
   since an agent task's conversation is append-only ([providers.md](providers.md) section 4).
-- **Verifier judgement** (RF-301, ADR-005, DEC-57, P2-02): when every reader task has ended and the run was not
-  stopped, `UnderstandSession.judge` hands every claim still `Proposed` after the citation check to the `verifier`
+- **Verifier judgement** (RF-301, ADR-005, DEC-57, P2-02): when every reader task has ended, after the open
+  questions are added and before the summariser merges duplicate cards (RF-250, so a merged card keeps each claim's
+  verdict), `UnderstandSession.judge` hands every claim still `Proposed` after the citation check to the `verifier`
   role (`src/application/understand/claim-judgement.ts`, at most `agents.parallelism` claims at a time;
-  `src/application/verifier/judge-claim.ts` for one claim). The verifier's guarded provider comes from the same
-  provider factory call as the reader's (`UNDERSTAND_ROLES` is `reader` and `verifier`, so consent, keys, prices and
+  `src/application/verifier/judge-claim.ts` for one claim); a re-run with answers (RF-241) judges the claims of its
+  new cards the same way. The verifier's guarded provider comes from the same provider factory call as the reader's
+  and the summariser's (`UNDERSTAND_ROLES` is `reader`, `verifier` and `summariser`, so consent, keys, prices and
   the Ollama check cover both). The model sees no tools, the system prompt `prompts/verifier/claim.v1.md` and one user
   message: the claim in a data block of source `claim` (model output is data too) and, per citation, its lines with
   three lines of margin before and after (`cited-lines.ts`, read through the `RepositoryReader`, so ignored and
@@ -474,9 +476,11 @@ sequenceDiagram
   `scan.excerptMaxLines` lines or 40 000 characters is not cut: the claim is `Unverified` and no call is made. The
   answer is exactly `Reason: <one line>` then `Verdict: Supported|Rejected` (`verdict-answer.ts`); any other
   answer, a tool call or a cut answer gets one retry that names the problem (`prompts/verifier/retry.v1.md`), and a
-  second bad answer leaves the claim `Unverified`. A failed call leaves it `Unverified` with its code; a stop, a
-  cap (`RST-1600`, the run's or the verifier's own, RF-423) or a cancelled call gives no verdict and no
-  further claim is sent, so those claims keep `Proposed`. Each verdict is published as
+  second bad answer leaves the claim `Unverified`. A failed call leaves it `Unverified` with its code. A cap
+  (`RST-1600`) that refuses a verifier call, whether the verifier's own role cap (RF-423, the run goes on) or the
+  run's cap, or a run stopped by a cap, sends no further claim and leaves every claim not yet judged `Unverified`
+  with the reason that a cap was reached (RF-304); a stop by the user, shutdown or a cancelled call gives no
+  verdict and no further claim is sent, so those claims keep `Proposed`. Each verdict is published as
   `verify.claim.judged` when it arrives and the cards are written again at the end (RF-302: nothing is removed);
   the verifier's prompt files and model version are recorded in the manifest (RNF-004). When the run starts with a
   verifier of the reader's model family (`src/domain/verifier/model-family.ts`: the model id's last path part, in

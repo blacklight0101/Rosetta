@@ -320,12 +320,14 @@ time per run folder, so a run that stops keeps the cards of the tasks that ended
 (verifier step 1) before it is written: a citation of a path that is not a file of the code map, a range whose start or end
 is not a whole number or that breaks `1 <= start <= end`, or a range that ends after the file's last line, makes the claim `CitationInvalid` with the reason in its verdict
 (`{ step: citation, model: citation-check }`); a claim that passes stays `Proposed` until the judgement step (DEC-103).
-When every reader task has ended (and the run was not stopped), the judgement step (verifier step 2, RF-301, P2-02)
+When every reader task has ended (and the run was not stopped), and before duplicate cards are merged (RF-250, a
+merged card keeps each claim with its verdict), the judgement step (verifier step 2, RF-301, P2-02)
 judges each claim still `Proposed` with the `verifier` role and the set is written once more: the claim becomes
 `Supported` or `Rejected` with the model's one-line reason, or `Unverified` with the reason it could not be judged
-(an answer unreadable after one retry, cited lines that cannot be read or are too long, a failed call), in a verdict
-`{ step: judgement, reason, model: <the verifier's model>, at }`. A claim the run stopped before judging keeps
-`Proposed`. Each verdict is also the run event `verify.claim.judged`.
+(an answer unreadable after one retry, cited lines that cannot be read or are too long, a failed call, or a cap
+reached before it was judged, RF-304), in a verdict `{ step: judgement, reason, model: <the verifier's model>, at }`.
+A claim the run stopped (Stop, shutdown) before judging keeps `Proposed`. Each verdict is also the run event
+`verify.claim.judged`.
 
 In the header a citation is the string `path:startLine-endLine`; absent optional fields are left out. Every string is a
 double-quoted scalar, so model text cannot add a key. `cards/index.json` has `schemaVersion` and `cards`, and its
