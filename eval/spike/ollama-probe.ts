@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isThisMachine } from '../../src/application/providers/cloud-consent.js';
 import { endpointOf } from '../../src/infrastructure/providers/provider-endpoint.js';
 
 // Q-04, Q-10, RF-401: before the spike calls any model it asks the Ollama server which models are
@@ -15,12 +16,6 @@ export type OllamaProbe =
   | { readonly ok: true; readonly baseUrl: string; readonly pulled: readonly string[] }
   | { readonly ok: false; readonly message: string };
 
-const loopback = new Set(['localhost', '127.0.0.1', '[::1]', 'host.docker.internal']);
-
-function isLocal(host: string): boolean {
-  return loopback.has(host) || host.startsWith('127.');
-}
-
 function failure(message: string): OllamaProbe {
   return { ok: false, message };
 }
@@ -30,7 +25,7 @@ export async function probeOllama(url: string, fetchTags: Fetch): Promise<Ollama
   const endpoint = endpointOf(url);
   if (!endpoint.ok) return failure(`ROSETTA_OLLAMA_URL is not an http(s) URL: ${url}`);
   const { baseUrl, host } = endpoint.value;
-  if (!isLocal(host)) {
+  if (!isThisMachine(host)) {
     return failure(`The spike calls only an Ollama on this machine, not ${host}.`);
   }
   const unreachable = failure(
