@@ -53,7 +53,8 @@ export interface VerifierHarness {
   /** The events the step published, in order. */
   readonly events: RunEvent[];
   readonly step: (parallelism?: number) => ClaimJudgementParts;
-  readonly abort: () => void;
+  /** Stops the run: with no reason as the Stop button does, or with the refusal of a cap. */
+  readonly abort: (reason?: unknown) => void;
 }
 
 interface HarnessOptions {
@@ -94,8 +95,8 @@ export async function verifierHarness(options: HarnessOptions): Promise<Verifier
     ...{ judge: parts, parallelism, events: { emit }, model: 'judge-model' },
     clock: new FixedClock('2026-10-12T10:00:00.000Z'),
   });
-  const abort = () => {
-    controller.abort();
+  const abort = (reason?: unknown) => {
+    controller.abort(reason);
   };
   return { parts, prompts, reader, requests: () => fake.requests, events, step, abort };
 }

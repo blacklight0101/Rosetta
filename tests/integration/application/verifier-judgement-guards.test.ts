@@ -16,6 +16,7 @@ import { verifierHarness, verifierRecording } from '../../support/verifier-harne
 // the model never sees more than the claim and its cited lines.
 
 const span = '0123456789abf001';
+const CAP_REASON = 'A cap was reached before the claim was judged (RST-1600).';
 
 const detailsClaim = {
   claimId: 'BR-001.c1',
@@ -80,7 +81,7 @@ describe('verifier judgement guards: stops', () => {
     expect(h.events).toEqual([]);
   });
 
-  it('RF-301 a cap that refuses the call gives no verdict', async () => {
+  it('RF-304 a cap that refuses the call gives no verdict but says a cap was reached', async () => {
     const capped: LlmProvider = {
       complete: () => Promise.reject(new RosettaError(ERROR_CODES.budgetCapReached)),
     };
@@ -89,7 +90,7 @@ describe('verifier judgement guards: stops', () => {
       provider: () => capped,
     });
 
-    expect(await judgeClaim(h.parts, detailsClaim, span)).toEqual({ kind: 'stopped' });
+    expect(await judgeClaim(h.parts, detailsClaim, span)).toEqual({ kind: 'capped' });
   });
 
   it('RF-301 a cancelled call gives no verdict, and so does any failure once the run is stopped', async () => {
@@ -175,25 +176,45 @@ describe('verifier judgement guards: hostile text', () => {
 });
 
 describe('verifier judgement guards: caps', () => {
-  it('RF-301 RF-423 once a cap refuses a call no further claim is sent, and every claim keeps its status', async () => {
+  it('RF-304 RF-423 once a cap refuses a call no further claim is sent, and every claim not judged is Unverified', async () => {
     let calls = 0;
-    const capped: LlmProvider = {
-      complete: () => {
+    const capped = (fake: LlmProvider): LlmProvider => ({
+      complete: (request) => {
         calls += 1;
+        if (calls === 1) return fake.complete(request);
         return Promise.reject(new RosettaError(ERROR_CODES.budgetCapReached));
       },
-    };
-    const h = await verifierHarness({
-      recording: recordingOf(supportedAnswer),
-      provider: () => capped,
     });
+    const h = await verifierHarness({ recording: recordingOf(supportedAnswer), provider: capped });
 
     const cards = await judgeClaims(fixtureCards(), h.step());
 
-    expect(calls).toBe(1);
-    expect(cards.flatMap((card) => card.claims.map((claim) => claim.status))).toEqual(
-      Array.from({ length: 5 }, () => 'Proposed'),
+    expect(calls).toBe(2);
+    expect(cards.flatMap((card) => card.claims.map((claim) => claim.status))).toEqual([
+      'Supported',
+      ...Array.from({ length: 4 }, () => 'Unverified'),
+    ]);
+    const unverified = cards.flatMap((card) => card.claims).slice(1);
+    expect(unverified.map((claim) => claim.verdict?.reason)).toEqual(
+      Array.from({ length: 4 }, () => CAP_REASON),
     );
-    expect(h.events).toEqual([]);
+    expect(h.events.map((event) => event.data['status'])).toEqual([
+      'Supported',
+      ...Array.from({ length: 4 }, () => 'Unverified'),
+    ]);
+  });
+
+  it('RF-304 a run stopped by a cap leaves every claim not judged Unverified and sends nothing', async () => {
+    const h = await verifierHarness({ recording: recordingOf(supportedAnswer) });
+    h.abort(new RosettaError(ERROR_CODES.budgetCapReached));
+
+    const judgement = await judgeClaim(h.parts, detailsClaim, span);
+    const cards = await judgeClaims([cardWith('Proposed')], h.step());
+
+    expect(judgement).toEqual({ kind: 'capped' });
+    expect(cards[0]?.claims[0]).toMatchObject({ status: 'Unverified' });
+    expect(cards[0]?.claims[0]?.verdict?.reason).toBe(CAP_REASON);
+    expect(h.events.map((event) => event.type)).toEqual(['verify.claim.judged']);
+    expect(h.requests()).toEqual([]);
   });
 });
