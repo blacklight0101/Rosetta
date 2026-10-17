@@ -117,8 +117,8 @@ describe('RF-006 resuming a run', UNDERSTAND_TIMEOUT, () => {
     expect(manifest.runId).toBe(run.runKey);
     expect(manifest.endState).toBe('Completed');
     expect(manifest.caps.run).toEqual({ maxCostMicros: 50_000_000, maxTokens: 5_000_000 });
-    // Four reader calls (a read and an answer for each area) and the verifier's judgement (RF-301).
-    expect(manifest.totals.calls).toBe(5);
+    // Four reader calls (a read and an answer for each area) and two judgements, one per claim (RF-301).
+    expect(manifest.totals.calls).toBe(6);
     expect(manifest.agentTasks.map((task) => [task.area, task.state, task.cards])).toEqual([
       ['Catalog', 'Done', 1],
       ['Services', 'Done', 1],

@@ -13,17 +13,13 @@ import type { RunOutcome } from '../ports/run-executor.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
+import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { leaveUnverified } from '../verifier/leave-unverified.js';
 import { announceCards } from './announce-cards.js';
 import { areaFailureOf } from './area-failure.js';
 import { changesOf, markAnswered, type Rerun } from './answer-rerun.js';
 import { cardNoteOf, coverageNoteOf } from './area-notes.js';
-import {
-  isProposed,
-  judgementPartsOf,
-  runJudgementStep,
-  type JudgementContext,
-} from './claim-judgement.js';
+import { judgementPartsOf, runJudgementStep, type JudgementContext } from './claim-judgement.js';
 import { openQuestionsOf } from './open-questions.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
@@ -191,7 +187,7 @@ export class UnderstandSession {
 
   /** RF-301, RF-302: the claims the citation check passed are judged, before any merge (RF-250). */
   private async judge(): Promise<void> {
-    if (!this.latest.cards.some((card) => card.claims.some(isProposed))) return;
+    if (!this.latest.cards.some((card) => card.claims.some(awaitsJudgement))) return;
     const parts = judgementPartsOf(this.parts, this.parts.deps.clock);
     const cards = await runJudgementStep(this.latest.cards, parts);
     this.latest = { ...this.latest, cards };
