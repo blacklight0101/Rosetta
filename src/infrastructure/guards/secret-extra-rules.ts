@@ -51,7 +51,8 @@ const flagRule = (kind: ExtraRule['kind'], names: string): ExtraRule => ({
 });
 
 const authorization = String.raw`\bAuthorization["']?[ \t]{0,16}[:=][ \t]{0,16}["']?`;
-const urlScheme = String.raw`\b[A-Za-z][A-Za-z0-9+.-]{0,31}://`;
+// The literal `://` comes first, so the scan jumps from one to the next; the scheme is checked behind it.
+const urlScheme = String.raw`://(?<=\b[A-Za-z][A-Za-z0-9+.-]{0,31}://)`;
 const b64 = '[A-Za-z0-9._~+/=-]';
 // The words in front of a name that make an XML setting a secret (`Password`, `Vendor.ApiKey`).
 const xmlSecretName = String.raw`(?:${caseless('password')}|${caseless('passwd')}|${caseless('pwd')}|${caseless('secret')}|${caseless('token')}|${caseless('api')}[_-]?${caseless('key')})`;
