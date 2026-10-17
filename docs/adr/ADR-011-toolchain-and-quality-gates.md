@@ -44,10 +44,12 @@ We choose option 1. One command, `npm run verify`, runs every gate in this order
 ## Consequences
 
 **Positive**
+
 - Most hard rules of CLAUDE.md are enforced by tools, so the verifier spends its effort on design and requirements.
 - Consistent formatting removes style noise from pull request reviews.
 
 **Negative**
+
 - Typed linting is slower than untyped linting; acceptable at this project's size.
 - The strict flags (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`) make some code more verbose.
 - TypeScript stays on 6.0 until typescript-eslint supports 7.x; the move is a separate change with its own ADR.

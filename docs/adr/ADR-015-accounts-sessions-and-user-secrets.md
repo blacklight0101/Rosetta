@@ -53,9 +53,11 @@ We choose option 1.
 ## Consequences
 
 **Positive**
+
 - Standard, testable controls for OWASP A07 (authentication failures) and A04 (cryptographic failures).
 
 **Negative**
+
 - Rosetta now stores secrets; losing `ROSETTA_SECRET_KEY` makes stored provider keys unreadable (users re-enter
   them), and leaking it exposes them. It lives only in the host's secret store and the git-ignored `.env`.
 - Password reset is manual by the admin in release 1 (no e-mail).

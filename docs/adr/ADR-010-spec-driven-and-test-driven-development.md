@@ -53,10 +53,12 @@ We choose option 1.
 ## Consequences
 
 **Positive**
+
 - Every merged behaviour has a requirement, a test that names it and evidence that the test can fail.
 - Agents get an unambiguous definition of done.
 
 **Negative**
+
 - More commits and more test code per card; cards take longer.
 - Model-driven behaviour is tested through recorded responses (ADR-008), which must be recorded before the red
   commit.

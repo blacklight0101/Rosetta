@@ -47,10 +47,12 @@ We choose option 1.
 ## Consequences
 
 **Positive**
+
 - Reproducible deployments and a clean rollback: redeploy the previous image tag.
 - The provider choice stays open until the deploy card (Q-18).
 
 **Negative**
+
 - Docker becomes a development dependency; CI builds and scans the image.
 - The hosted mode costs money (host, database) and needs budget limits on model calls (RF-1106).
 

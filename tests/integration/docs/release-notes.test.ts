@@ -54,8 +54,12 @@ const AREAS: readonly Area[] = [
   ['Non-functional', /^RNF-\d+$/u],
 ];
 
+// Prettier pads table cells to the column width; collapse the padding so a row is matched by its cell text.
 const rowFor = (name: string): string =>
-  delivered.split('\n').find((line) => line.startsWith(`| ${name} |`)) ?? '';
+  delivered
+    .split('\n')
+    .map((line) => line.replace(/ {2,}/gu, ' '))
+    .find((line) => line.startsWith(`| ${name} |`)) ?? '';
 
 describe('version bump', () => {
   it('DEC-29 package.json, both package-lock.json root entries and the newest release agree', async () => {
@@ -186,7 +190,7 @@ describe('README status and links', () => {
     const index = await read('docs/README.md');
     const planned = section(index, '## Planned documents (not written yet)');
 
-    expect(index).toMatch(/^\| \[releases\.md\]\(releases\.md\) \|/mu);
+    expect(index).toMatch(/^\| \[releases\.md\]\(releases\.md\) +\|/mu);
     expect(planned).not.toContain('docs/releases.md');
   });
 });
