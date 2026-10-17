@@ -24,7 +24,7 @@ import {
 // RF-240, DEC-98, data-model.md section 3.16: the project's `answers.md`. A run adds one section per
 // open question it found that the file does not hold yet (matched by the question text), after the
 // sections already there, which are kept byte for byte with their answers. Model text is masked
-// and written on one line, so it cannot start a heading, an answer line or a new section. Writes
+// (as written, before its whitespace is collapsed) and written on one line, so it cannot start a heading, an answer line or a new section. Writes
 // to one project's file run one after another. The page records the answers to one run's questions
 // (RF-1007): each answer is masked and written on its question's answer line, and nothing else in
 // the file changes. The file is kept byte for byte, its byte-order mark too (also in a file that
@@ -118,9 +118,9 @@ export class FileAnswersFile implements AnswersFile {
     ].join(end);
   }
 
-  /** Masked text on one line. */
+  /** Masked text on one line: masked as written, then its whitespace collapsed (P2-42). */
   private line(text: string): string {
-    return this.options.masker.mask(text.replace(/\s+/gu, ' ').trim()).text;
+    return this.options.masker.mask(text).text.replace(/\s+/gu, ' ').trim();
   }
 
   private async read(file: WorkspaceFile): Promise<string> {

@@ -18,6 +18,7 @@ import { egressHarness, requestWith, toolResult } from '../../../support/egress-
 const cases = [
   { name: '--password', head: `run ${passwordOption} ${backslash}`, tail: fakePassword },
   { name: '--token', head: `run ${tokenOption} Bearer ${backslash}`, tail: fakeToken },
+  { name: '--password=', head: `run ${passwordOption}=${backslash}`, tail: fakePassword },
 ] as const;
 
 function reads(pieces: readonly string[]): LlmMessage[] {

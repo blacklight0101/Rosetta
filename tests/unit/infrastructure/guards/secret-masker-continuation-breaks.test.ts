@@ -44,6 +44,12 @@ describe('SecretMasker and a line continuation', () => {
     expect(result.text).toContain(`${passwordOption} ${backslash}\n  [MASKED:password]`);
   });
 
+  it('RF-141 masks a --password= value after a continuation', () => {
+    const text = `run ${passwordOption}=${backslash}\n  ${fakePassword}`;
+
+    expect(new SecretMasker().mask(text).text).not.toContain(fakePassword);
+  });
+
   it('RF-141 masks a --password value on the same line as before', () => {
     const result = new SecretMasker().mask(`run ${passwordOption} ${fakePassword} --verbose`);
 
