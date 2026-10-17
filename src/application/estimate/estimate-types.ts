@@ -12,9 +12,9 @@ export type ByScenario<T> = Readonly<Record<Scenario, T>>;
 
 /**
  * The roles an understand run is estimated for: the readers, the verifier share (ADR-005) and the
- * summariser that merges duplicate cards (RF-250).
+ * summariser that merges duplicate cards (RF-250); and the planner, the one role of a plan run (RF-613).
  */
-export type EstimateRole = 'reader' | 'verifier' | 'summariser';
+export type EstimateRole = 'reader' | 'verifier' | 'summariser' | 'planner';
 
 export interface EstimatePoint {
   readonly inputTokens: number;

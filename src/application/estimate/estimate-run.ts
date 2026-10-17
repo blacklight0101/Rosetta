@@ -1,6 +1,5 @@
 import type { Actor } from '../../domain/accounts/actor.js';
-import { costOf, type Price } from '../../domain/budget/price.js';
-import { lookupPrice, type KeySource, type PriceTable } from '../../domain/budget/price-table.js';
+import type { PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -13,8 +12,6 @@ import type { ProviderKeyRepository } from '../ports/provider-key-repository.js'
 import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { Project } from '../projects/project.js';
-import { priceOverridesOf } from '../projects/price-overrides.js';
-import { keyProviderOf } from '../providers/key-choice.js';
 import { planReaderTasks } from '../understand/reader-tasks.js';
 import {
   MERGE_ANSWER_TOKENS,
@@ -26,12 +23,11 @@ import type {
   ByScenario,
   ReaderAssumptions,
   EstimatePoint,
-  EstimateRole,
-  RoleEstimate,
   RunEstimate,
   Scenario,
 } from './estimate-types.js';
 import { readerTokens, type TokenFigures } from './reader-estimate.js';
+import { estimateRole } from './role-estimate.js';
 
 // RF-425, ADR-007, DEC-13, DEC-54, DEC-107: the estimate before a run (`GET
 // /api/projects/:id/estimate`). From the code map of the project's latest completed scan, the areas
@@ -61,35 +57,6 @@ export interface EstimateRunRequest {
 
 export type EstimateRunProblem =
   typeof ERROR_CODES.notFound | typeof ERROR_CODES.codeMapMissing | typeof ERROR_CODES.areaUnknown;
-
-interface RoleTokens {
-  readonly role: EstimateRole;
-  readonly tokens: ByScenario<TokenFigures>;
-}
-
-/**
- * RF-425, P2-24, P2-37: the cost of one point. The high point prices the whole prompt at the highest
- * of the input and cache-write prices, as the budget guard's worst case does (RF-422), so the high
- * figure is never under the premium of cache writes. The low and likely points price the tokens the
- * tasks write to the prompt cache at the cache-write price and the rest of the prompt as input; a
- * price without a cache-write price, or one below the input price, leaves them at the input price.
- * The confirmation threshold of RF-425 is compared with the likely point (start-confirmation.ts),
- * not with the high one.
- */
-function costOfPoint(
-  price: Price,
-  tokens: Pick<TokenFigures, 'inputTokens' | 'outputTokens' | 'cacheWriteTokens'>,
-  scenario: Scenario,
-): bigint {
-  const { inputTokens, outputTokens } = tokens;
-  const plain = costOf(price, { inputTokens, outputTokens, cachedInputTokens: 0 }).micros;
-  const written = scenario === 'high' ? inputTokens : tokens.cacheWriteTokens;
-  const withWrites = costOf(price, {
-    ...{ inputTokens, outputTokens, cachedInputTokens: 0 },
-    cacheWriteInputTokens: written,
-  }).micros;
-  return withWrites > plain ? withWrites : plain;
-}
 
 /** The tokens of a role that is a share of the readers' (the verifier, ADR-005; the summariser, RF-250). */
 function shareTokens(
@@ -168,12 +135,12 @@ export class EstimateRun {
     const reader = readerTokens(areas, assumptions, marks);
     const summariser = summariserFigures(reader, assumptions);
     const roles = await Promise.all([
-      this.roleOf(project, { role: 'reader', tokens: reader }),
-      this.roleOf(project, {
+      estimateRole(this.deps, project, { role: 'reader', tokens: reader }),
+      estimateRole(this.deps, project, {
         role: 'verifier',
         tokens: shareTokens(reader, assumptions.verifierSharePercent),
       }),
-      this.roleOf(project, {
+      estimateRole(this.deps, project, {
         role: 'summariser',
         tokens: summariser.tokens,
       }),
@@ -210,37 +177,5 @@ export class EstimateRun {
       }
       throw error;
     }
-  }
-
-  // RF-425, RF-420, RF-427, DEC-107
-  private async roleOf(project: Project, { role, tokens }: RoleTokens): Promise<RoleEstimate> {
-    const { settings } = project;
-    const { provider: name, model } = settings.roles[role];
-    const config = Object.hasOwn(settings.providers, name) ? settings.providers[name] : undefined;
-    if (config === undefined) throw new RosettaError(ERROR_CODES.settingsProviderUnknown);
-    const keySource = await this.keySourceOf(project.userId, config.kind);
-    const lookup = lookupPrice(this.deps.priceTable, priceOverridesOf(settings), {
-      provider: config.kind,
-      model,
-      keySource,
-    });
-    const pointOf = (scenario: Scenario): EstimatePoint => {
-      const { inputTokens, outputTokens } = tokens[scenario];
-      const costMicros =
-        lookup.kind === 'priced' ? costOfPoint(lookup.price, tokens[scenario], scenario) : 0n;
-      return { inputTokens, outputTokens, costMicros };
-    };
-    return {
-      ...{ role, provider: name, kind: config.kind, model, keySource },
-      priced: lookup.kind === 'priced',
-      points: { low: pointOf('low'), likely: pointOf('likely'), high: pointOf('high') },
-    };
-  }
-
-  /** The user's own key when they hold one, else the server's; a local provider takes none. */
-  private async keySourceOf(userId: string, kind: RoleEstimate['kind']): Promise<KeySource> {
-    const keyProvider = keyProviderOf(kind);
-    if (keyProvider === undefined) return 'none';
-    return (await this.deps.keys.find(userId, keyProvider)) === undefined ? 'server' : 'user';
   }
 }
