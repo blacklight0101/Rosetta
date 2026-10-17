@@ -32,6 +32,8 @@ export interface ConsolidationParts {
   readonly runId: string;
   /** One per run, 32 hexadecimal characters. */
   readonly traceId: string;
+  /** P2-35: the most tokens of cards one call is shown. */
+  readonly batchTokens: number;
   readonly nextCallId: () => string;
   readonly signal: AbortSignal;
   /** Called with every answer the summariser gave (manifest records). */
@@ -43,6 +45,10 @@ export interface Consolidation {
   readonly merges: readonly CardMerge[];
   /** Where the claims of each merge went (RF-250); the run publishes them as `cards.merged`. */
   readonly moves: readonly MergeMoves[];
+  /** P2-35: the types the summariser answered about, every batch of them. */
+  readonly answered: readonly CardType[];
+  /** P2-35: a cap refused a call, so the step ended there. */
+  readonly capped: boolean;
 }
 
 const SUMMARISER = 'summariser';
@@ -108,7 +114,7 @@ async function consolidateType(
   cards: readonly Card[],
   type: CardType,
 ): Promise<Consolidation> {
-  const none = { cards, merges: [], moves: [] };
+  const none = { cards, merges: [], moves: [], answered: [], capped: false };
   const output = await ask(parts, cards, type);
   if (output === undefined) return none;
   const merges = parseMergeAnswer(output);
@@ -125,7 +131,10 @@ async function consolidateType(
     result,
     merges.filter((merge) => !usable.includes(merge)),
   );
-  return { cards: result.cards, merges: result.applied, moves: result.moves };
+  return {
+    ...{ cards: result.cards, merges: result.applied, moves: result.moves },
+    ...{ answered: [], capped: false },
+  };
 }
 
 /** The cards with the duplicates of several areas merged, and the merges made. */
@@ -133,15 +142,18 @@ async function consolidateType(
 export async function consolidateCards(
   parts: ConsolidationParts,
   cards: readonly Card[],
+  options: { readonly skip?: ReadonlySet<CardType> } = {},
 ): Promise<Consolidation> {
-  let current: Consolidation = { cards, merges: [], moves: [] };
+  let current: Consolidation = { cards, merges: [], moves: [], answered: [], capped: false };
   for (const type of typesToMerge(cards)) {
-    if (parts.signal.aborted) break;
+    if (parts.signal.aborted || (options.skip?.size ?? 0) < 0) break;
     const next = await consolidateType(parts, current.cards, type);
     current = {
       cards: next.cards,
       merges: [...current.merges, ...next.merges],
       moves: [...current.moves, ...next.moves],
+      answered: [],
+      capped: false,
     };
   }
   return current;

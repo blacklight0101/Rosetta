@@ -50,6 +50,10 @@ export interface EstimateAssumptions {
   readonly summariserSharePercent: ByScenario<number>;
   /** The overview call of the summariser: the cards read once more, and this many tokens written (RF-264). */
   readonly overviewOutputTokens: ByScenario<number>;
+  /** The most tokens of cards one summariser call is shown; a larger card type goes in batches (P2-35). */
+  readonly summariserBatchTokens: number;
+  /** How many calls the summariser's cards need for each type at most, from the readers' answers (P2-35). */
+  readonly summariserBatches: ByScenario<number>;
   /** The system prompt and tool definitions sent with every turn. */
   readonly promptOverheadTokens: number;
   /** Added to the prompt of every turn of an area for each of flows and screens it is marked for (Q-25). */

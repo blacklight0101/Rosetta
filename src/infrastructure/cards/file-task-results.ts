@@ -1,6 +1,10 @@
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
 import type { RunScope } from '../../application/ports/run-events.js';
-import type { TaskResult, TaskResults } from '../../application/ports/task-results.js';
+import type {
+  ConsolidationRecord,
+  TaskResult,
+  TaskResults,
+} from '../../application/ports/task-results.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { runPath } from '../files/workspace-paths.js';
@@ -66,5 +70,14 @@ export class FileTaskResults implements TaskResults {
     const text = `${JSON.stringify(masked, null, 2)}\n`;
     const written = await this.options.writer.writeText(fileOf(scope), text);
     if (!written.ok) throw new RosettaError(written.error.code, written.error.message);
+  }
+
+  // STUB (red commit): replaced in the next commit.
+  readConsolidation(): Promise<ConsolidationRecord> {
+    return Promise.resolve({ types: [], merges: [] });
+  }
+
+  writeConsolidation(): Promise<void> {
+    return Promise.resolve();
   }
 }

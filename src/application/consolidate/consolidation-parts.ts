@@ -9,6 +9,7 @@ import type { Logger } from '../ports/logger.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { ConsolidationParts } from './consolidate-cards.js';
+import { MERGE_BATCH_TOKENS } from './merge-request.js';
 
 // RF-250, RNF-004: what the summariser step takes from an understand run, and what it records in
 // the manifest after its first answer: the merge prompt with its version and hash, and the model
@@ -38,5 +39,6 @@ export function consolidationParts(source: ConsolidationSource): ConsolidationPa
   return {
     ...{ provider: summariser.provider, role: summariser, prompt: mergePrompt, logger, ids },
     ...{ runId, traceId, nextCallId, signal, onAnswer: record },
+    batchTokens: MERGE_BATCH_TOKENS,
   };
 }

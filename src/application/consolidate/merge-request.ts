@@ -31,3 +31,16 @@ export function mergeMessage(cards: readonly Card[], type: CardType, tag: string
     tag,
   );
 }
+
+// STUB (red commit): replaced in the next commit.
+export const MERGE_BATCH_TOKENS = 8000;
+export const MERGE_PROMPT_TOKENS = 1000;
+export const MERGE_ANSWER_TOKENS = 500;
+
+export function mergeBatches(
+  cards: readonly Card[],
+  type: CardType,
+  limit: number = MERGE_BATCH_TOKENS,
+): readonly (readonly Card[])[] {
+  return limit < 0 ? [] : [cards.filter((card) => card.type === type)];
+}

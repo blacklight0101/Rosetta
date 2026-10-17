@@ -1,3 +1,4 @@
+import { MERGE_BATCH_TOKENS } from '../consolidate/merge-request.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
@@ -60,6 +61,8 @@ export function assumptionsOf(settings: ProjectSettings): EstimateAssumptions {
     verifierSharePercent: VERIFIER_PERCENT,
     summariserSharePercent: SUMMARISER_PERCENT,
     overviewOutputTokens: OVERVIEW_OUTPUT_TOKENS,
+    summariserBatchTokens: MERGE_BATCH_TOKENS,
+    summariserBatches: { low: 1, likely: 1, high: 1 },
     promptOverheadTokens: PROMPT_OVERHEAD_TOKENS,
     surfacePromptTokens: SURFACE_PROMPT_TOKENS,
     surfaceOutputTokens: SURFACE_OUTPUT_TOKENS,
