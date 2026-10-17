@@ -2,12 +2,24 @@ import type { CardType } from '../cards/card-vocabulary.js';
 import type { Citation } from '../cards/citation.js';
 
 // RNF-006, RNF-015, DEC-57, ADR-008: the golden set, the hand-checked findings of the demo app that
-// score an evaluation. A finding is a feature, a business rule or an entity, with the lines that
+// score an evaluation. A finding is a feature, a business rule or an entity, or (RF-260..RF-262) a
+// step of a flow, a field or an action of a screen, or a relation of an entity, with the lines that
 // show it and the words a claim about it uses; an absence is a statement whose correct answer is
 // "not in the code", with the words of a claim that would wrongly state it.
 
-export const FINDING_KINDS = ['feature', 'rule', 'entity'] as const;
+export const FINDING_KINDS = [
+  'feature',
+  'rule',
+  'entity',
+  'step',
+  'field',
+  'action',
+  'relation',
+] as const;
 export type FindingKind = (typeof FINDING_KINDS)[number];
+
+/** The kinds that describe flows, screens and the data model; they have their own measures. */
+export const STRUCTURE_KINDS = ['step', 'field', 'action', 'relation'] as const;
 
 export interface GoldenFinding {
   /** Unique in the set. */
@@ -15,6 +27,8 @@ export interface GoldenFinding {
   readonly kind: FindingKind;
   /** The finding in one plain sentence, as a person checked it. */
   readonly statement: string;
+  /** The flow, screen or entity a step, field, action or relation belongs to; required for those kinds. */
+  readonly of?: string | undefined;
   /** The card types a matching claim may sit on; every type when empty. */
   readonly cardTypes: readonly CardType[];
   /** The lines that show the finding; a matching claim cites lines that overlap one of them. */

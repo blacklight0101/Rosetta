@@ -5,6 +5,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { STEM_MARK } from '../../domain/eval/claim-match.js';
 import {
   FINDING_KINDS,
+  STRUCTURE_KINDS,
   type GoldenCase,
   type GoldenFinding,
   type GoldenSet,
@@ -28,6 +29,7 @@ const findingSchema = z.strictObject({
   id,
   kind: z.enum(FINDING_KINDS),
   statement,
+  of: z.string().trim().min(1).max(200).optional(),
   cardTypes: z.array(z.enum(CARD_TYPES)).max(CARD_TYPES.length),
   evidence: z.array(z.string().max(420)).min(1).max(20),
   keywords: z.array(word).min(1).max(20),
@@ -113,8 +115,15 @@ function deadPatterns(entry: RawCase, raw: RawAbsence): string[] {
   });
 }
 
+/** RF-260..RF-262: a step, field, action or relation says which flow, screen or entity it is of. */
+function unplaced(entry: RawCase): string[] {
+  return entry.findings
+    .filter((raw) => raw.of === undefined && STRUCTURE_KINDS.some((kind) => kind === raw.kind))
+    .map((raw) => `${entry.id}.${raw.id}: a ${raw.kind} must say what it belongs to (of)`);
+}
+
 function caseOf(entry: RawCase, problems: string[]): GoldenCase {
-  problems.push(...misplacedStars(entry));
+  problems.push(...misplacedStars(entry), ...unplaced(entry));
   problems.push(...entry.absences.flatMap((raw) => deadPatterns(entry, raw)));
   const findings: GoldenFinding[] = entry.findings.map((raw) => ({
     ...raw,

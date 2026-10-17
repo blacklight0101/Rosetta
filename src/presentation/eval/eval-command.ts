@@ -1,10 +1,7 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { EvaluationConfig } from '../../application/eval/evaluation-config.js';
-import type {
-  EvaluationProblem,
-  EvaluationSummary,
-} from '../../application/eval/run-evaluation.js';
+import type { EvaluationProblem } from '../../application/eval/run-evaluation.js';
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { ok, type Result } from '../../domain/errors/result.js';
 import { loadPriceTable } from '../../infrastructure/budget/price-file.js';
@@ -25,6 +22,7 @@ import { composeLanguagePacks } from '../composition-root.js';
 import { evaluationProviderFactory } from '../compose-providers.js';
 import { runEvaluation, type EvaluationParts } from './compose-evaluation.js';
 import { EVAL_USAGE, parseEvalArgs, type EvalArgs } from './eval-args.js';
+import { reportLines } from './eval-report-lines.js';
 import { evaluationPlan, evaluationSettings } from './eval-settings.js';
 
 // RNF-006, RNF-012, RNF-015, ADR-008: `npm run eval`, the opt-in evaluation against real models.
@@ -66,24 +64,6 @@ async function partsOf(
     rosettaVersion: await readAppVersion(),
     packs: await composeLanguagePacks(),
   };
-}
-
-function report(summary: EvaluationSummary, print: Print): void {
-  const { results } = summary.files;
-  const { precision, recall, citationValidity, estimate } = results.targets;
-  const mean = (value: number | null) => (value === null ? 'n/a' : value.toFixed(3));
-  print(`Evaluation written to ${summary.folder}`);
-  print(
-    `Precision of Supported claims: ${mean(precision.mean)} (target ${String(precision.target)})`,
-  );
-  print(
-    `Strict precision (unchecked claims count as wrong): ${mean(precision.strictMean)}; unchecked share of Supported claims: ${mean(precision.unmatchedShare)}`,
-  );
-  print(`Recall of golden rules: ${mean(recall.mean)} (target ${String(recall.target)})`);
-  print(`Citation validity: ${mean(citationValidity.mean)} (target 1)`);
-  print(
-    `Estimate within 30%: ${String(estimate.within)} of ${String(estimate.measured)} measured runs`,
-  );
 }
 
 interface Inputs {
@@ -135,6 +115,6 @@ export async function runEvalCommand(
   const parts = await partsOf(config, settings, env);
   const result = await runEvaluation(parts, golden, repetitions);
   if (!result.ok) return (failed(result.error, print), 1);
-  report(result.value, print);
+  for (const line of reportLines(result.value)) print(line);
   return 0;
 }

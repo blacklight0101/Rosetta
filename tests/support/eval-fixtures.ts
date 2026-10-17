@@ -46,6 +46,7 @@ interface FindingParts {
   readonly cardTypes?: readonly CardType[];
   readonly evidence?: readonly string[];
   readonly keywords?: readonly string[];
+  readonly of?: string;
 }
 
 /** A rule about the price, with evidence at `Models/Item.cs:20-24`. */
@@ -57,6 +58,7 @@ export function finding(parts: FindingParts = {}): GoldenFinding {
     cardTypes: parts.cardTypes ?? [],
     evidence: citationsOf(parts.evidence ?? ['Models/Item.cs:20-24']),
     keywords: parts.keywords ?? ['price'],
+    ...(parts.of === undefined ? {} : { of: parts.of }),
   };
 }
 

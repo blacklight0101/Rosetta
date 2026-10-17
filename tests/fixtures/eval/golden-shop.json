@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 1,
+  "version": "2026-10-17.shop",
+  "description": "A golden set for the synthetic webforms-shop fixture: the steps of its journeys, the fields and actions of its screens, its entities with their relations, one business rule and two statements that are not in the code. Written by hand from the code of the fixture for the evaluation runner tests (P2-23); it describes no real application.",
+  "source": {
+    "url": "https://github.com/octo/demo",
+    "commit": "cccccccccccccccccccccccccccccccccccccccc",
+    "subpath": ""
+  },
+  "cases": [
+    {
+      "id": "home-page",
+      "title": "The home page: browse the catalogue",
+      "paths": ["Default.aspx", "Default.aspx.cs"],
+      "findings": [
+        {
+          "id": "step-browse-bind",
+          "kind": "step",
+          "of": "Browse the catalogue",
+          "statement": "On its first load the home page binds the catalogue list to the grid.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Default.aspx.cs:9-12"],
+          "keywords": ["bind"]
+        },
+        {
+          "id": "step-browse-search",
+          "kind": "step",
+          "of": "Browse the catalogue",
+          "statement": "Pressing Search binds the grid again with the trimmed text of the search box.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Default.aspx.cs:14-17"],
+          "keywords": ["search"]
+        },
+        {
+          "id": "step-browse-details",
+          "kind": "step",
+          "of": "Browse the catalogue",
+          "statement": "Choosing Details on a grid row redirects to the details page with the id of the item.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Default.aspx.cs:19-22"],
+          "keywords": ["details"]
+        },
+        {
+          "id": "field-home-grid",
+          "kind": "field",
+          "of": "Home page",
+          "statement": "The home page has a grid that lists the catalogue.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Default.aspx:5-5"],
+          "keywords": ["grid"]
+        },
+        {
+          "id": "field-home-search-box",
+          "kind": "field",
+          "of": "Home page",
+          "statement": "The home page has a text box for the search text.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Default.aspx:6-6"],
+          "keywords": ["search box"]
+        },
+        {
+          "id": "action-home-details",
+          "kind": "action",
+          "of": "Home page",
+          "statement": "The Details command of a grid row starts the row command handler of the page.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Default.aspx:5-5", "Default.aspx.cs:19-22"],
+          "keywords": ["details", "cataloggrid_rowcommand"]
+        },
+        {
+          "id": "action-home-search",
+          "kind": "action",
+          "of": "Home page",
+          "statement": "The Search button starts the search handler of the page.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Default.aspx:7-7"],
+          "keywords": ["search button", "searchbutton_click"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-home-paging",
+          "statement": "The home page has no paging: every item found is bound at once.",
+          "claimPatterns": [["paging"], ["page size"]],
+          "unless": ["no paging"]
+        }
+      ]
+    },
+    {
+      "id": "details-page",
+      "title": "The details page: add an item to the basket",
+      "paths": ["Catalog/Details.aspx", "Catalog/Details.aspx.cs"],
+      "findings": [
+        {
+          "id": "step-add-show",
+          "kind": "step",
+          "of": "Add an item to the basket",
+          "statement": "The details page shows the name and the price of the item named in the address.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Catalog/Details.aspx.cs:8-13"],
+          "keywords": ["price"]
+        },
+        {
+          "id": "step-add-invalid",
+          "kind": "step",
+          "of": "Add an item to the basket",
+          "statement": "Pressing Add to basket does nothing when the page is not valid.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Catalog/Details.aspx.cs:15-17"],
+          "keywords": ["valid"]
+        },
+        {
+          "id": "step-add-basket",
+          "kind": "step",
+          "of": "Add an item to the basket",
+          "statement": "The item and the quantity are added to the basket in the session and the visitor is sent to the checkout.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Catalog/Details.aspx.cs:18-19"],
+          "keywords": ["session"]
+        },
+        {
+          "id": "field-details-name",
+          "kind": "field",
+          "of": "Item details",
+          "statement": "The details page shows the name of the item.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Catalog/Details.aspx:5-5"],
+          "keywords": ["name"]
+        },
+        {
+          "id": "field-details-price",
+          "kind": "field",
+          "of": "Item details",
+          "statement": "The details page shows the price of the item.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Catalog/Details.aspx:6-6"],
+          "keywords": ["price"]
+        },
+        {
+          "id": "field-details-quantity",
+          "kind": "field",
+          "of": "Item details",
+          "statement": "The details page has a quantity box, checked to be a whole number from 1 to 10.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Catalog/Details.aspx:7-8"],
+          "keywords": ["quantity"]
+        },
+        {
+          "id": "action-details-add",
+          "kind": "action",
+          "of": "Item details",
+          "statement": "The Add to basket button starts the add handler of the page.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Catalog/Details.aspx:9-9"],
+          "keywords": ["add button", "addbutton_click"]
+        }
+      ],
+      "absences": []
+    },
+    {
+      "id": "checkout-page",
+      "title": "The checkout page: place an order",
+      "paths": ["Orders/Checkout.aspx", "Orders/Checkout.aspx.cs"],
+      "findings": [
+        {
+          "id": "step-order-invalid",
+          "kind": "step",
+          "of": "Place an order",
+          "statement": "The checkout does nothing while the page is not valid.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Orders/Checkout.aspx.cs:8-10"],
+          "keywords": ["valid"]
+        },
+        {
+          "id": "step-order-no-basket",
+          "kind": "step",
+          "of": "Place an order",
+          "statement": "A visitor without a basket in the session is redirected to the home page.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Orders/Checkout.aspx.cs:11-12"],
+          "keywords": ["redirect*"]
+        },
+        {
+          "id": "step-order-place",
+          "kind": "step",
+          "of": "Place an order",
+          "statement": "The order service places the order with the e-mail, the shipping choice and the basket.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Orders/Checkout.aspx.cs:13-13"],
+          "keywords": ["order service"]
+        },
+        {
+          "id": "step-order-confirm",
+          "kind": "step",
+          "of": "Place an order",
+          "statement": "The basket is cleared and the visitor is sent to the confirmation page with the order number.",
+          "cardTypes": ["FLOW"],
+          "evidence": ["Orders/Checkout.aspx.cs:14-15"],
+          "keywords": ["confirmation"]
+        },
+        {
+          "id": "field-checkout-email",
+          "kind": "field",
+          "of": "Checkout",
+          "statement": "The checkout has an e-mail box that is required and must look like an address.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Orders/Checkout.aspx:5-7"],
+          "keywords": ["e-mail"]
+        },
+        {
+          "id": "field-checkout-shipping",
+          "kind": "field",
+          "of": "Checkout",
+          "statement": "The checkout has a drop-down list for the shipping choice.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Orders/Checkout.aspx:8-8"],
+          "keywords": ["shipping"]
+        },
+        {
+          "id": "action-checkout-place",
+          "kind": "action",
+          "of": "Checkout",
+          "statement": "The Place order button starts the place handler of the page.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Orders/Checkout.aspx:9-9"],
+          "keywords": ["place order", "placebutton_click"]
+        }
+      ],
+      "absences": []
+    },
+    {
+      "id": "confirm-page",
+      "title": "The confirmation page",
+      "paths": ["Orders/Confirm.aspx", "Orders/Confirm.aspx.cs"],
+      "findings": [
+        {
+          "id": "field-confirm-number",
+          "kind": "field",
+          "of": "Order confirmation",
+          "statement": "The confirmation page writes the order number from the address into a label.",
+          "cardTypes": ["SCRN"],
+          "evidence": ["Orders/Confirm.aspx:5-5", "Orders/Confirm.aspx.cs:7-10"],
+          "keywords": ["order number"]
+        }
+      ],
+      "absences": []
+    },
+    {
+      "id": "services",
+      "title": "The services: catalog item, basket line and shipping fee",
+      "paths": ["Services/CatalogService.cs", "Services/OrderService.cs"],
+      "findings": [
+        {
+          "id": "entity-catalog-item",
+          "kind": "entity",
+          "statement": "A catalog item has an id, a name and a price.",
+          "cardTypes": ["ENT"],
+          "evidence": ["Services/CatalogService.cs:5-10"],
+          "keywords": ["catalog item"]
+        },
+        {
+          "id": "entity-basket-line",
+          "kind": "entity",
+          "statement": "Inferred from the code, which has no basket line type: a basket line is an array of an item id and a quantity.",
+          "cardTypes": ["ENT"],
+          "evidence": ["Services/OrderService.cs:9-10"],
+          "keywords": ["basket line"]
+        },
+        {
+          "id": "relation-basket-line-item",
+          "kind": "relation",
+          "of": "Basket line",
+          "statement": "Inferred from the code, which has no relation type: a basket line refers to one catalog item through its item id.",
+          "cardTypes": ["ENT"],
+          "evidence": ["Services/OrderService.cs:7-10"],
+          "keywords": ["catalog item"]
+        },
+        {
+          "id": "rule-shipping-fee",
+          "kind": "rule",
+          "statement": "The shipping fee is 12 for express and 4 for any other choice.",
+          "cardTypes": ["BR"],
+          "evidence": ["Services/OrderService.cs:16-16"],
+          "keywords": ["shipping fee", "express"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-order-storage",
+          "statement": "The order service stores nothing: it only works out a number from the shipping fee.",
+          "claimPatterns": [["order", "database"], ["order", "stored"]],
+          "unless": ["not stored", "nothing is stored"]
+        }
+      ]
+    }
+  ]
+}

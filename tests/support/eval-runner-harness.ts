@@ -24,7 +24,7 @@ import { budgetTable } from './budget-harness.js';
 import { fakeResponse } from './fake-recordings.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
-import { fixtureRoot } from './scan-harness.js';
+import { fixtureRoot, type FixtureRepository } from './scan-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { understandSettings } from './understand-run-harness.js';
 
@@ -99,15 +99,44 @@ function joined(description: string, parts: readonly Recording[]): Recording {
   return { schemaVersion: 1, description, calls: parts.flatMap((part) => part.calls) };
 }
 
-async function provider(): Promise<LlmProvider> {
-  const reader = await loadRecording(join(recordings, 'understand-csharp-full.json'));
-  const judged = await loadRecording(join(recordings, 'verifier-csharp-full.json'));
-  const allSupported = await loadRecording(join(recordings, 'verifier-all-supported.json'));
+async function provider(scenario: EvalScenario): Promise<LlmProvider> {
+  const reader = await loadRecording(join(recordings, scenario.reader));
+  const judged = await Promise.all(
+    scenario.verifier.map((n) => loadRecording(join(recordings, n))),
+  );
   return new RoleRecordings(
     joined('three understand runs', [reader, reader, reader]),
-    joined('two runs judged, then one all Supported', [judged, judged, allSupported]),
+    joined('the judgements of the three runs', judged),
   );
 }
+
+/** What the evaluation replays: a fixture, the reader's answers per run, the verifier's answers in all. */
+export interface EvalScenario {
+  readonly fixture: FixtureRepository;
+  readonly reader: string;
+  readonly verifier: readonly string[];
+  readonly fileCount: number;
+}
+
+/** The webforms-csharp fixture: two runs judged by the recording, then one all Supported. */
+const csharpScenario: EvalScenario = {
+  fixture: 'webforms-csharp',
+  reader: 'understand-csharp-full.json',
+  verifier: [
+    'verifier-csharp-full.json',
+    'verifier-csharp-full.json',
+    'verifier-all-supported.json',
+  ],
+  fileCount: 13,
+};
+
+/** RF-260..RF-262: the webforms-shop fixture, with flows, screens and entities, one recording of judgements. */
+export const shopScenario: EvalScenario = {
+  fixture: 'webforms-shop',
+  reader: 'understand-shop-model.json',
+  verifier: ['verifier-shop-model.json'],
+  fileCount: 10,
+};
 
 export interface EvalHarnessOptions {
   readonly dataDir: string;
@@ -120,22 +149,25 @@ export interface EvalHarnessOptions {
   readonly serverKeys?: { readonly openai?: string };
   /** Every call uses the worst case its reservation covers, so it costs the most it may. */
   readonly worstCase?: boolean;
+  /** The fixture and recordings to replay; the webforms-csharp ones by default. */
+  readonly scenario?: EvalScenario;
 }
 
 /** The runner's parts with the fake GitHub and the fake provider in front of the fixture. */
 export async function evalParts(options: EvalHarnessOptions): Promise<EvaluationParts> {
   const clock = new FixedClock('2026-10-17T09:30:00.000Z');
   const masker = new SecretMasker();
-  const recorded = await provider();
+  const scenario = options.scenario ?? csharpScenario;
+  const recorded = await provider(scenario);
   const fake = options.worstCase === true ? new WorstCaseUsage(recorded) : recorded;
   const fetcher = new FakeSourceFetcher(
     [
       {
         ...{ owner: 'octo', repo: 'demo', defaultBranch: 'main' },
         refs: { main: 'c'.repeat(40), ['c'.repeat(40)]: 'c'.repeat(40) },
-        rootDir: fixtureRoot('webforms-csharp'),
+        rootDir: fixtureRoot(scenario.fixture),
         snapshotHash: `sha256:${'cd'.repeat(32)}`,
-        fileCount: 13,
+        fileCount: scenario.fileCount,
         totalBytes: 4096,
       },
     ],
@@ -147,7 +179,7 @@ export async function evalParts(options: EvalHarnessOptions): Promise<Evaluation
     logger: new MemoryLogger(clock, masker),
     settings: options.settings ?? understandSettings(),
     fetcher,
-    snapshotRoot: () => fixtureRoot('webforms-csharp'),
+    snapshotRoot: () => fixtureRoot(scenario.fixture),
     providers: (guards) => new GuardedProviderFactory({ ...guards, adapters: () => fake }),
     serverKeys: options.serverKeys ?? {},
     ollamaUrl: undefined,
