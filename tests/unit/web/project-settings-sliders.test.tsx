@@ -93,6 +93,15 @@ it('RF-002 the confirm slider stops at the run cost cap', async () => {
   expect(sliderOf('Ask before a run estimated above (USD)').value).toBe('0.3');
 });
 
+it('RF-002 a label of a number field finds that field only, not the slider beside it', async () => {
+  renderSettings();
+  await loaded();
+
+  // The e2e tests find fields by a part of their label; a slider named after it would match too.
+  expect(screen.getAllByLabelText('Parallel readers', { exact: false })).toHaveLength(1);
+  expect(screen.getAllByLabelText('Run cost cap (USD)', { exact: false })).toHaveLength(1);
+});
+
 it('RF-002 the confirm slider never goes above its own 100 USD range', async () => {
   renderSettings();
   await loaded();
