@@ -76,6 +76,9 @@ async function userPicksTheReader(page: Page, user: Credentials): Promise<void> 
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  // RF-250: the summariser is a role of the run like the reader; it is priced the same way.
+  await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
+  await page.getByLabel('Summariser model', { exact: true }).fill('gpt-5-nano');
   // One reader at a time, so the first calls are answered and metered before one is refused.
   await page.getByLabel('Parallel readers').fill('1');
   await page.getByRole('button', { name: 'Save settings' }).click();

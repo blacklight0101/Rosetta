@@ -51,6 +51,9 @@ async function userStoresKeyAndPricedReader(page: Page): Promise<void> {
   await page.getByRole('link', { name: 'Project settings' }).click();
   await page.getByLabel('Reader provider', { exact: true }).selectOption('openai');
   await page.getByLabel('Reader model', { exact: true }).fill('gpt-5-nano');
+  // RF-250: the summariser is a role of the run like the reader; it is priced the same way.
+  await page.getByLabel('Summariser provider', { exact: true }).selectOption('openai');
+  await page.getByLabel('Summariser model', { exact: true }).fill('gpt-5-nano');
   // DEC-117: the threshold to confirm a run is at most the run cap, so both are set together.
   await page.getByLabel('Run cost cap (USD)').fill('0.002');
   await page.getByLabel('Ask before a run estimated above (USD)').fill('0.001');

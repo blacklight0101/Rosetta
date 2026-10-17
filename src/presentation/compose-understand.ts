@@ -20,7 +20,7 @@ import { runPath } from '../infrastructure/files/workspace-paths.js';
 import { SnapshotStore } from '../infrastructure/github/snapshot-store.js';
 import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
-import { loadReaderPrompts } from '../infrastructure/prompts/prompt-files.js';
+import { loadMergePrompt, loadReaderPrompts } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 import { loadTextToolProtocol } from '../infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { FileScanResults } from '../infrastructure/scan/scan-results.js';
@@ -93,6 +93,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     costTotals: new PgCostTotals(pool),
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(promptsFolder),
+    mergePrompt: () => loadMergePrompt(promptsFolder),
     textToolProtocol: () => loadTextToolProtocol(promptsFolder),
     ids: parts.ids,
   });

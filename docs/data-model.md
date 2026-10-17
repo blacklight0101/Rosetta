@@ -264,7 +264,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004); `contextTokens` and `contextSource` are the Ollama context size sent as `num_ctx` and how it was chosen (`fixed` from the start, or `auto-fit`, `auto-floor`, `auto-model-limit`, `auto-fallback` after the first call; RF-401, DEC-114), `null` until then |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when a role uses Ollama with `toolMode: text` (RF-205) |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when the reader uses Ollama with `toolMode: text` (RF-205), plus `summariser/merge.v1.md` once the summariser has answered a merge call (RF-250) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `catalogue` | object | `{ version, sha256 }` of the principle catalogue (RF-606, RNF-004) that a plan run used, `null` for the other stages and for a manifest written before this field; the version is the one the catalogue README declares and the SHA-256 runs over every catalogue file by name |
@@ -304,7 +304,8 @@ Header fields:
 | `claims[]` | list | `{ claimId, text, citations[], status (ClaimStatus), verdict? }`; `claimId` is `<card id>.c<n>`; `verdict` is `{ step: citation \| judgement, reason, model, at }` |
 | `question`, `whyItMatters` | string | `OQ` only (RF-202) |
 | `questionState` | `OpenQuestionState` | `OQ` only (RF-241) |
-| `mergedFrom[]` | list | card ids merged by consolidation (RF-250) |
+| `mergedAreas[]` | list | the areas of the merged cards, in card order, left out for a card that was not merged; a later merge of the kept card reads them, so cards that all come from one area are never merged (RF-250) |
+| `mergedFrom[]` | list | card ids merged by consolidation (RF-250), the kept card's own id first, the union over a chain of merges; the card keeps the id, area and task of its first member and every claim of all members (claim ids renumbered `<id>.c<n>`, status and verdict kept) |
 
 A rejected or invalid claim is never removed; only its status and verdict change (RF-302). The card files, the index
 and `spec.md` are written together: each file's previous content is read first, and when a write is refused or fails

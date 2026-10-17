@@ -77,7 +77,7 @@ describe('GET /api/projects/:id/estimate answers', () => {
       assumptions: { turnsPerArea: { high: 12 }, promptOverheadTokens: 2000 },
     });
     const body = bodyOf(response);
-    expect(body.roles.map((role) => role.role)).toEqual(['reader', 'verifier']);
+    expect(body.roles.map((role) => role.role)).toEqual(['reader', 'verifier', 'summariser']);
     expect(body.roles[0]).toMatchObject({
       provider: 'ollama',
       model: 'gemma4:e4b',

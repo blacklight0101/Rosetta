@@ -38,6 +38,8 @@ export interface Card {
   readonly whyItMatters?: string;
   readonly questionState?: OpenQuestionState;
   readonly mergedFrom?: readonly string[];
+  /** The areas of the merged cards, in card order, when the card is a merge (RF-250). */
+  readonly mergedAreas?: readonly string[];
 }
 
 export interface ClaimInput {
