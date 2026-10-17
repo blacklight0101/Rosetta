@@ -36,7 +36,11 @@ const indexSchema = z.object({
     z.object({
       id: z.string(),
       area: z.string(),
-      claimCounts: z.object({ Proposed: z.number(), Unverified: z.number() }),
+      claimCounts: z.object({
+        Proposed: z.number(),
+        Supported: z.number(),
+        Unverified: z.number(),
+      }),
     }),
   ),
 });
@@ -56,6 +60,8 @@ async function cappedRun() {
     dataDir: temp.path,
     recording: 'understand-resume.json',
     settings: capped,
+    // RF-301: the judgement step of the resume answers Supported to each claim it is given.
+    verifierRecording: 'verifier-all-supported.json',
   });
   await h.scan();
   const run = await h.understand({ areas });
@@ -111,7 +117,8 @@ describe('RF-006 resuming a run', UNDERSTAND_TIMEOUT, () => {
     expect(manifest.runId).toBe(run.runKey);
     expect(manifest.endState).toBe('Completed');
     expect(manifest.caps.run).toEqual({ maxCostMicros: 50_000_000, maxTokens: 5_000_000 });
-    expect(manifest.totals.calls).toBe(2);
+    // Two reader calls and the verifier's judgement of the new card's claim (RF-301).
+    expect(manifest.totals.calls).toBe(3);
     expect(manifest.agentTasks.map((task) => [task.area, task.state, task.cards])).toEqual([
       ['Catalog', 'Done', 1],
       ['Services', 'Done', 1],
@@ -143,10 +150,12 @@ describe('RF-006 resuming a run, what stays', UNDERSTAND_TIMEOUT, () => {
     await h.resume(run);
 
     const index = await indexOf(h, run);
+    // RF-301: the resume judges the claim of the task it ran, never the one the cap left Unverified.
     expect(index.cards.map((card) => card.claimCounts)).toEqual([
-      expect.objectContaining({ Proposed: 0, Unverified: 1 }),
-      expect.objectContaining({ Proposed: 1, Unverified: 0 }),
+      expect.objectContaining({ Proposed: 0, Supported: 0, Unverified: 1 }),
+      expect.objectContaining({ Proposed: 0, Supported: 1, Unverified: 0 }),
     ]);
+    expect(h.providers.verifierRequests()).toHaveLength(1);
     const coverage = z
       .object({ areas: z.array(z.object({ area: z.string() })) })
       .parse(await readJson(join(h.runFolder(run), 'coverage.json')));
