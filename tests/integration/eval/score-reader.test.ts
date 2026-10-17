@@ -7,6 +7,14 @@ import {
   runScoreReader,
   type SpikeIo,
 } from '../../../eval/spike/score-reader-cli.js';
+import { loadDemoArea } from '../../../eval/spike/demo-area.js';
+import { runReaderSpike } from '../../../eval/spike/reader-spike.js';
+import { spikeFactory } from '../../../eval/spike/spike-providers.js';
+import { loadPriceTable } from '../../../src/infrastructure/budget/price-file.js';
+import { loadProjectTemplate } from '../../../src/infrastructure/files/project-template.js';
+import { loadReaderPrompts } from '../../../src/infrastructure/prompts/prompt-files.js';
+import { SystemClock } from '../../../src/infrastructure/system/system-clock.js';
+import { TimestampIdGenerator } from '../../../src/infrastructure/system/timestamp-id-generator.js';
 import { FakeProvider } from '../../../src/infrastructure/providers/fake/fake-provider.js';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
 
@@ -14,6 +22,7 @@ import { loadRecording } from '../../../src/infrastructure/providers/fake/record
 // fixture, with the fake provider replaying recorded answers behind the guarded provider factory.
 // The first model finishes with a card, the second never answers and runs out of turns.
 
+const demoRepo = join('tests', 'fixtures', 'repos', 'webforms-csharp');
 const recordings = join('tests', 'recordings', 'fake');
 
 function tags(models: readonly string[]): Fetch {
@@ -89,6 +98,58 @@ describe('score-reader script refusals', () => {
 
     expect(code).toBe(exitCodes.unavailable);
     expect(lines).toContain('ollama pull missing:7b');
+    expect(fake.requests).toEqual([]);
+  });
+});
+
+describe('score-reader script locality', () => {
+  it('DEC-118 a non-local ROSETTA_OLLAMA_URL is refused: no tags request, no model call', async () => {
+    const urls: string[] = [];
+    const fetch: Fetch = (url) => {
+      urls.push(url);
+      return tags(['good:8b'])(url, {});
+    };
+    const { io, lines, fake } = await spikeIo(['--models', 'good:8b'], fetch);
+
+    const code = await runScoreReader({
+      ...io,
+      env: { ROSETTA_OLLAMA_URL: 'http://ollama.example.com:11434' },
+    });
+
+    expect(code).toBe(exitCodes.unavailable);
+    expect(lines.join(' ')).toContain('only an Ollama on this machine');
+    expect(urls).toEqual([]);
+    expect(fake.requests).toEqual([]);
+  });
+});
+
+describe('score-reader guarded provider', () => {
+  it('RF-143 the guarded provider refuses a non-local Ollama with RST-1515 and no request', async () => {
+    const { fake } = await spikeIo([], tags([]));
+    const settings = await loadProjectTemplate('templates');
+    const logger = { log: () => Promise.resolve(), securityEvent: () => Promise.resolve() };
+    const clock = new SystemClock();
+    const ids = new TimestampIdGenerator(clock);
+    const demo = await loadDemoArea(demoRepo, 'Services', settings, logger);
+    if (typeof demo === 'string') throw new Error(demo);
+    const factory = spikeFactory({
+      ...{ clock, ids, logger },
+      adapters: () => fake,
+      ollamaUrl: 'http://ollama.example.com:11434',
+      priceTable: await loadPriceTable('prices/default-prices.yaml'),
+    });
+
+    const [score] = await runReaderSpike(
+      {
+        ...{ factory, settings, demo, ids, logger },
+        prompts: await loadReaderPrompts('prompts'),
+        now: () => 0,
+        signal: new AbortController().signal,
+      },
+      ['good:8b'],
+    );
+
+    expect(score?.code).toBe('RST-1515');
     expect(fake.requests).toEqual([]);
   });
 

@@ -44,6 +44,32 @@ describe('Ollama probe', () => {
     expect(probe.ok).toBe(false);
     expect(urls).toEqual([]);
   });
+});
+
+describe('Ollama probe host and request', () => {
+  it.each(['http://127.evil.com:11434', 'http://127.0.0.1.evil.com:11434'])(
+    'DEC-118 the look-alike host %s is refused without a request',
+    async (url) => {
+      const { fetch, urls } = answering({ models: [] });
+
+      const probe = await probeOllama(url, fetch);
+
+      expect(probe.ok).toBe(false);
+      expect(urls).toEqual([]);
+    },
+  );
+
+  it('Q-04 the tags request does not follow redirects', async () => {
+    const inits: RequestInit[] = [];
+    const fetch: Fetch = (_url, init) => {
+      inits.push(init);
+      return Promise.resolve(Response.json({ models: [] }));
+    };
+
+    await probeOllama('http://127.0.0.1:11434', fetch);
+
+    expect(inits[0]?.redirect).toBe('error');
+  });
 
   it('Q-04 an answer of an unknown form is refused', async () => {
     const probe = await probeOllama('http://127.0.0.1:11434', answering({ nope: 1 }).fetch);
