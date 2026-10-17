@@ -41,6 +41,7 @@ export const surfaceShape = z.object({
   screensMarked: z.boolean(),
   flowCards: count,
   screenCards: count,
+  incompleteFlows: count.exactOptional(),
 });
 
 type StepFields = Pick<Claim, 'target' | 'branches'>;
