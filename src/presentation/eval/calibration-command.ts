@@ -60,7 +60,7 @@ async function inputsOf(args: EvalArgs): Promise<Result<Inputs, string>> {
 }
 
 // RF-143
-export function calibrationPlan(inputs: Inputs): string[] {
+function calibrationPlan(inputs: Inputs): string[] {
   const { set } = inputs.loaded;
   return [
     `npm run eval -- --calibration judges ${String(set.claims.length)} hand-labelled claims (calibration set ${set.version}).`,

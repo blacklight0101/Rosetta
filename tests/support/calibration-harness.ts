@@ -39,7 +39,7 @@ function answerOf(text: string): LlmResponse {
 }
 
 /** `Reason: ...` then the verdict, the form the verifier prompt asks for. */
-export function verdictText(index: number, verdict: 'Supported' | 'Rejected'): string {
+function verdictText(index: number, verdict: 'Supported' | 'Rejected'): string {
   return `Reason: Judgement ${String(index + 1)} says so.\nVerdict: ${verdict}`;
 }
 

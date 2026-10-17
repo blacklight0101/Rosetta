@@ -7,8 +7,8 @@ import { ratio } from './ratio.js';
 // counted apart: calling a claim `Supported` against its label is the error that lets a false
 // statement through; rejecting a supported claim only costs a second look.
 
-export type CalibrationLabel = 'Supported' | 'Rejected';
-export type CalibrationVerdict = 'Supported' | 'Rejected' | 'Unverified';
+type CalibrationLabel = 'Supported' | 'Rejected';
+type CalibrationVerdict = 'Supported' | 'Rejected' | 'Unverified';
 
 export interface CalibrationOutcome {
   readonly claimId: string;

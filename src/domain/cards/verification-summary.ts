@@ -20,7 +20,7 @@ export interface StatusTotals {
   readonly supportedShare: number | null;
 }
 
-export interface AreaVerification extends StatusTotals {
+interface AreaVerification extends StatusTotals {
   readonly area: string;
 }
 
