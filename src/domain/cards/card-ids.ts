@@ -1,6 +1,7 @@
 import { err, ok, type Result } from '../errors/result.js';
 import { createCard, type Card, type CardProblem, type ClaimInput } from './card.js';
 import type { CardType, Confidence } from './card-vocabulary.js';
+import type { FlowDetail, ScreenDetail } from './flow-screen.js';
 
 // RF-203, DEC-43: ids are numbered per run, per type, in order of area and appearance.
 
@@ -15,6 +16,8 @@ export interface CardDraft {
   readonly claims: readonly ClaimInput[];
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
+  readonly flow?: FlowDetail | undefined;
+  readonly screen?: ScreenDetail | undefined;
 }
 
 /** The drafts of one finished agent task, in the order the agent wrote them. */

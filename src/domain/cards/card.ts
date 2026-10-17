@@ -2,6 +2,7 @@ import { err, ok, type Result } from '../errors/result.js';
 import type { CardType, ClaimStatus, Confidence, OpenQuestionState } from './card-vocabulary.js';
 import type { Citation } from './citation.js';
 import { canTransitionClaim } from './claim-transitions.js';
+import type { Branch, CitedText, DetailProblem, FlowDetail, ScreenDetail } from './flow-screen.js';
 
 // Architecture section 5, ADR-005: a card holds claims; a claim holds citations and a status that
 // changes only through the transitions; nothing is ever removed (RF-302).
@@ -22,6 +23,10 @@ export interface Claim {
   readonly citations: readonly Citation[];
   readonly status: ClaimStatus;
   readonly verdict?: ClaimVerdict;
+  /** `FLOW` steps only: the `SCRN`, `BR`, `ENT` or `INT` card id the step touches (RF-260). */
+  readonly target?: string;
+  /** `FLOW` steps only: the error or alternative paths of the step (RF-260). */
+  readonly branches?: readonly Branch[];
 }
 
 export interface Card {
@@ -40,11 +45,17 @@ export interface Card {
   readonly mergedFrom?: readonly string[];
   /** The areas of the merged cards, in card order, when the card is a merge (RF-250). */
   readonly mergedAreas?: readonly string[];
+  /** `FLOW` cards only (RF-260). */
+  readonly flow?: FlowDetail;
+  /** `SCRN` cards only (RF-261). */
+  readonly screen?: ScreenDetail;
 }
 
 export interface ClaimInput {
   readonly text: string;
   readonly citations: readonly Citation[];
+  readonly target?: string | undefined;
+  readonly branches?: readonly CitedText[] | undefined;
 }
 
 export interface CardInput {
@@ -58,9 +69,12 @@ export interface CardInput {
   readonly claims: readonly ClaimInput[];
   readonly question?: string | undefined;
   readonly whyItMatters?: string | undefined;
+  readonly flow?: FlowDetail | undefined;
+  readonly screen?: ScreenDetail | undefined;
 }
 
-export type CardProblem = 'no-claims' | 'claim-without-citation' | 'question-missing';
+export type CardProblem =
+  'no-claims' | 'claim-without-citation' | 'question-missing' | DetailProblem;
 export type ClaimTransitionProblem = 'claim-not-found' | 'transition-not-allowed';
 
 type QuestionFields = Pick<Card, 'question' | 'whyItMatters' | 'questionState'>;
