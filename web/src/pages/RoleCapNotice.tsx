@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import type { RoleCapSettings } from '../api/project-schemas.js';
 import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
-import { formatAmount, formatValue, numberOf } from './setting-limits.js';
+import { formatAmount, numberOf } from './setting-limits.js';
 
 // RF-423, P2-26: a role cap is stored in `budget.roles` and has no field on this page. A stored cap
 // above the run cap never applies (the run cap stops the run first), so the page names it next to
@@ -28,29 +28,40 @@ function lineOf(
   return `${titles[role]} ${kind} of ${roleText} is above the run ${kind} of ${runText}, so the run cap always stops first.`;
 }
 
+function costLineOf(role: RoleName, cap: RoleCapSettings | undefined, runCost: number | undefined) {
+  const roleMicros = cap?.maxCostMicros;
+  if (roleMicros === undefined || runCost === undefined) return undefined;
+  if (roleMicros <= Math.round(runCost * MICROS_PER_DOLLAR)) return undefined;
+  const roleText = formatAmount(roleMicros / MICROS_PER_DOLLAR, 'dollars');
+  return lineOf(role, 'cost cap', roleText, formatAmount(runCost, 'dollars'));
+}
+
+function tokenLineOf(
+  role: RoleName,
+  cap: RoleCapSettings | undefined,
+  runTokens: number | undefined,
+) {
+  const roleTokens = cap?.maxTokens;
+  if (roleTokens === undefined || runTokens === undefined || roleTokens <= runTokens)
+    return undefined;
+  return lineOf(
+    role,
+    'token cap',
+    formatAmount(roleTokens, 'count'),
+    formatAmount(runTokens, 'count'),
+  );
+}
+
 /** One line for each role cap, cost then tokens, that is above the run cap as typed. */
 function roleCapNotices(roles: RoleCaps, runCost: string, runTokens: string): readonly string[] {
   const costRun = numberOf(runCost);
   const tokenRun = numberOf(runTokens);
-  const lines: string[] = [];
   // A negative run cap is refused on save; it gives no notice rather than "$-1".
-  if (costRun !== undefined && costRun < 0) return lines;
-  if (tokenRun !== undefined && tokenRun < 0) return lines;
-  for (const role of ROLE_NAMES) {
-    const cap = roles[role];
-    if (cap?.maxCostMicros !== undefined && costRun !== undefined) {
-      const roleMicros = cap.maxCostMicros;
-      if (roleMicros > Math.round(costRun * MICROS_PER_DOLLAR)) {
-        const roleText = formatAmount(roleMicros / MICROS_PER_DOLLAR, 'dollars');
-        lines.push(lineOf(role, 'cost cap', roleText, formatAmount(costRun, 'dollars')));
-      }
-    }
-    if (cap?.maxTokens !== undefined && tokenRun !== undefined && cap.maxTokens > tokenRun) {
-      const roleText = formatValue(cap.maxTokens, 'count');
-      lines.push(lineOf(role, 'token cap', roleText, formatValue(tokenRun, 'count')));
-    }
-  }
-  return lines;
+  if ((costRun ?? 0) < 0 || (tokenRun ?? 0) < 0) return [];
+  return ROLE_NAMES.flatMap((role) => [
+    costLineOf(role, roles[role], costRun),
+    tokenLineOf(role, roles[role], tokenRun),
+  ]).filter((line): line is string => line !== undefined);
 }
 
 export function RoleCapNotice(props: {

@@ -67,7 +67,6 @@ interface RangeInputProps {
   readonly label: string;
   readonly range: Range;
   readonly top: number;
-  readonly unit: LimitUnit;
   readonly shown: number;
   readonly describedBy: string | undefined;
   readonly onInput: (value: string) => void;
@@ -75,7 +74,7 @@ interface RangeInputProps {
 
 /** The slider of a limit, named after its field so that the four sliders of one page differ. */
 function RangeInput(props: RangeInputProps): JSX.Element {
-  const { range, top, unit } = props;
+  const { range, top } = props;
   return (
     <input
       id={props.id}
@@ -132,7 +131,6 @@ export function LimitSetting(props: LimitProps): JSX.Element {
         label={props.label}
         range={range}
         top={top}
-        unit={unit}
         shown={shown}
         describedBy={describedBy}
         onInput={props.onInput}
