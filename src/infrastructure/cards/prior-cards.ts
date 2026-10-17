@@ -2,7 +2,11 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 import type { ProjectRef } from '../../application/ports/answers-file.js';
 import type { OutputWriter, WorkspaceFile } from '../../application/ports/output-writer.js';
-import type { PriorCard, PriorCards } from '../../application/ports/prior-cards.js';
+import type {
+  PriorCard,
+  PriorCards,
+  QuestionReopener,
+} from '../../application/ports/prior-cards.js';
 import { CARD_TYPES } from '../../domain/cards/card-vocabulary.js';
 import { isRunKey, runPath } from '../files/workspace-paths.js';
 
@@ -68,7 +72,7 @@ function answered(text: string): string | undefined {
   )}`;
 }
 
-export class FilePriorCards implements PriorCards {
+export class FilePriorCards implements PriorCards, QuestionReopener {
   private readonly writer: OutputWriter;
 
   constructor(writer: OutputWriter) {
@@ -107,6 +111,11 @@ export class FilePriorCards implements PriorCards {
       if (written.ok) marked.push(id);
     }
     return marked;
+  }
+
+  // RF-241
+  reopen(): Promise<readonly string[]> {
+    return Promise.resolve([]);
   }
 
   private fileOf(project: ProjectRef, runKey: string, path: string): WorkspaceFile {

@@ -157,6 +157,19 @@ const answerRoutes: Readonly<Record<string, readonly Probe[]>> = {
       expected: active(401, 404),
     },
   ],
+  // The ended run of the matrix asked no question, so even its owner is told 404.
+  'POST /api/runs/:runId/answers/:cardId/reopen': [
+    {
+      method: 'POST',
+      url: runUrl('/answers/OQ-001/reopen', (c) => c.endedRunId),
+      expected: ownerOnly(404),
+    },
+    {
+      method: 'POST',
+      url: () => '/api/runs/not-a-uuid/answers/OQ-001/reopen',
+      expected: active(401, 404),
+    },
+  ],
 };
 
 /** RF-1011, RF-1105: the calls, transcripts and logs of a run answer only its owner. */

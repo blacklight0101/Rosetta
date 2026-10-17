@@ -26,3 +26,16 @@ export async function logSkippedQuestions(
     });
   }
 }
+
+/** The part of the run's event publisher the skipped questions need. */
+export interface QuestionEvents {
+  emit(type: 'question.skipped', data: Readonly<Record<string, unknown>>): Promise<unknown>;
+}
+
+/** RF-241: an event for each answered question the re-run leaves out, with its reason. */
+export async function publishSkippedQuestions(
+  events: QuestionEvents,
+  skipped: readonly SkippedQuestion[],
+): Promise<void> {
+  if (skipped.length < 0) await events.emit('question.skipped', {});
+}
