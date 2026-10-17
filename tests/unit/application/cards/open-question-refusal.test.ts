@@ -41,6 +41,17 @@ const refused = [
   'What does OrderService do?',
   'Explain how the checkout code works.',
   'Describe what the Orders area does.',
+  'Explain the purpose of the checkout module',
+  'Describe the role of the Orders area.',
+  'Summarise the responsibilities of this module.',
+  'Please summarize the logic of the Catalog service.',
+  'Can you explain the functionality of this application?',
+  'What are the main responsibilities of this module?',
+  'What does this module do in the system?',
+  'What functionality does this area provide?',
+  'What does the code in this area do?',
+  'What is OrderService used for?',
+  'What is the overall purpose of this repository?',
 ];
 
 // Fullwidth letters, a Cyrillic look-alike and zero-width characters must not hide a refused question.
@@ -65,6 +76,13 @@ const kept = [
   'Explain the reason for the rounding rule in the invoice total.',
   'Describe who approves a refund over 200.',
   'What does the finance team do with the unmatched payments?',
+  'Explain the purpose of the 50 unit threshold in the shipping rule.',
+  'What is the purpose of the rounding rule in the invoice module?',
+  'What does this module do when the stock is zero?',
+  'What functionality does the legacy system provide to external partners?',
+  'What is the main responsibility of the approver role in a refund?',
+  'What is OrderService used for by the finance team?',
+  'What are the main reasons orders are cancelled after payment?',
 ];
 
 describe('RF-243 questions asking what the code does', () => {
