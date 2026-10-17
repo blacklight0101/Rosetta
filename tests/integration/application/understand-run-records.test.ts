@@ -26,9 +26,9 @@ describe('an understand run: cost and prompts', () => {
     const { folder } = full.current();
 
     expect(await readJson(join(folder, 'cost.json'))).toMatchObject({
-      totals: { calls: 13, inputTokens: 10_900, outputTokens: 1290 },
+      totals: { calls: 16, inputTokens: 13_600, outputTokens: 1410 },
       byRole: [
-        { role: 'reader', calls: 8 },
+        { role: 'reader', calls: 11 },
         { role: 'verifier', calls: 5 },
       ],
       byAgentTask: [
