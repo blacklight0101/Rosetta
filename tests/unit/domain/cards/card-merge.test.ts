@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyMerges, type CardMerge } from '../../../../src/domain/cards/card-merge.js';
 import { transitionClaim, type Card } from '../../../../src/domain/cards/card.js';
 import { formatCitation } from '../../../../src/domain/cards/citation.js';
-import { cardsAcrossAreas } from '../../../support/merge-fixtures.js';
+import { cardsAcrossAreas, threeEntities } from '../../../support/merge-fixtures.js';
 
 // RF-250, ADR-005: duplicate cards of several areas become one card that keeps every claim and
 // every citation, and the merge is recorded in `mergedFrom`.
@@ -147,5 +147,35 @@ describe('applyMerges: merges that are refused', () => {
 
     expect(result.applied).toEqual([customer]);
     expect(result.skipped.map((each) => each.problem)).toEqual(['unknown-card']);
+  });
+});
+
+describe('applyMerges: a card named by a second merge', () => {
+  const first: CardMerge = { ids: ['ENT-001', 'ENT-002'], title: 'Customer', summary: 'One.' };
+  const second: CardMerge = { ids: ['ENT-001', 'ENT-003'], title: 'Customer', summary: 'Two.' };
+
+  it('RF-250 a chain of merges records every merged card, none overwritten', () => {
+    const result = applyMerges(threeEntities('Shipping'), [first, second]);
+
+    expect(result.cards).toHaveLength(1);
+    expect(result.cards[0]?.mergedFrom).toEqual(['ENT-001', 'ENT-002', 'ENT-003']);
+    expect(result.cards[0]?.claims.map((claim) => claim.claimId)).toEqual([
+      'ENT-001.c1',
+      'ENT-001.c2',
+      'ENT-001.c3',
+    ]);
+  });
+
+  it('RF-250 the merged card records the areas it stands for', () => {
+    const result = applyMerges(threeEntities('Shipping'), [first, second]);
+
+    expect(result.cards[0]?.mergedAreas).toEqual(['Orders', 'Billing', 'Shipping']);
+  });
+
+  it('RF-250 a card that already absorbed another area may take a card of its own area', () => {
+    const result = applyMerges(threeEntities('Orders'), [first, second]);
+
+    expect(result.skipped).toEqual([]);
+    expect(result.cards[0]?.mergedFrom).toEqual(['ENT-001', 'ENT-002', 'ENT-003']);
   });
 });

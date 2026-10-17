@@ -12,6 +12,9 @@ import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-re
 import { FanOutSink } from '../../src/infrastructure/events/fan-out-sink.js';
 import { JsonlEventLog } from '../../src/infrastructure/events/jsonl-event-log.js';
 import { FileRunManifestStore } from '../../src/infrastructure/files/file-run-manifest-store.js';
+import type { WorkspaceFile, WriteRefusal } from '../../src/application/ports/output-writer.js';
+import { ERROR_CODES } from '../../src/domain/errors/codes.js';
+import { err, type Result } from '../../src/domain/errors/result.js';
 import { NodeOutputWriter } from '../../src/infrastructure/files/node-output-writer.js';
 import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-fetcher.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
@@ -65,11 +68,23 @@ export interface Stores {
   readonly users: MemoryUserRepository;
 }
 
-export function stores(dataDir: string): Stores {
+/** A writer that refuses to remove a card file, as a workspace that has lost the right to would. */
+class RefusingRemovalWriter extends NodeOutputWriter {
+  override remove(file: WorkspaceFile): Promise<Result<void, WriteRefusal>> {
+    const message = `The file ${file.path} cannot be removed.`;
+    return Promise.resolve(
+      err({ code: ERROR_CODES.pathOutsideRoot, reason: 'outside-workspace', message }),
+    );
+  }
+}
+
+export function stores(dataDir: string, refuseRemoval = false): Stores {
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
-  const writer = new NodeOutputWriter({ dataDir, logger });
+  const writer = refuseRemoval
+    ? new RefusingRemovalWriter({ dataDir, logger })
+    : new NodeOutputWriter({ dataDir, logger });
   return {
     ...{ clock, masker, logger, writer },
     manifests: new FileRunManifestStore({ writer, masker }),

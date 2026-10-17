@@ -26,6 +26,10 @@ async function setup(settings: ProjectSettings, ollamaHost?: string) {
 
 const fakeReader = settingsFor({ reader: { provider: 'fake', model: 'fake-model' } });
 const cloudReader = settingsFor({ reader: { provider: 'openai', model: 'gpt-5-mini' } });
+const localReaderCloudSummariser = settingsFor({
+  reader: { provider: 'fake', model: 'fake-model' },
+  summariser: { provider: 'anthropic', model: 'claude-sonnet-4-5' },
+});
 const ollamaReader = settingsFor({ reader: { provider: 'ollama', model: 'gemma4:e4b' } });
 
 describe('StartRun for understand', () => {
@@ -76,6 +80,20 @@ describe('StartRun and the cloud consent (RF-143)', () => {
     if (!started.ok) return;
     const manifest = await harness.manifests.read(harness.scopeOf(started.value.run));
     expect(manifest?.options).toEqual({ cloudConsent: true });
+  });
+});
+
+describe('StartRun and the cloud consent of the summariser (RF-143, RF-250)', () => {
+  it('RF-143 RF-250 a local reader with a cloud summariser needs the consent', async () => {
+    const { harness, project, startRun } = await setup(localReaderCloudSummariser);
+    const request = { actor: userAmy, projectId: project.id, stage: 'understand' } as const;
+
+    const refused = await startRun.execute(request);
+    const accepted = await startRun.execute({ ...request, cloudConsent: true });
+
+    expect(refused).toEqual({ ok: false, error: ERROR_CODES.cloudConsentMissing });
+    expect(accepted.ok).toBe(true);
+    expect(await harness.runs.list(userAmy.userId, project.id)).toHaveLength(1);
   });
 });
 

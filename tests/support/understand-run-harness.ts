@@ -60,6 +60,8 @@ export interface UnderstandHarnessOptions {
   /** The shipped price table the provider factory uses; the budget harness table by default. */
   readonly priceTable?: PriceTable;
   /** RF-427: the server's OpenAI key, or one the run's user owns; a cloud reader needs one. */
+  /** A workspace that refuses to remove a card file, for a merge whose files cannot go. */
+  readonly refuseRemoval?: boolean;
   readonly openAiKey?: { readonly of: 'server' | 'user'; readonly key: string };
   readonly beforeCall?: (
     call: number,
@@ -177,7 +179,7 @@ function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<Understan
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
 ): Promise<UnderstandHarness> {
-  const s = stores(options.dataDir);
+  const s = stores(options.dataDir, options.refuseRemoval === true);
   await s.users.insert(account);
   const project = sampleProject({
     userId: account.id,

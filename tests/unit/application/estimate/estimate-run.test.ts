@@ -58,12 +58,13 @@ describe('RF-425 estimate before running', () => {
   it('RF-425 shows tokens and cost per role as low, likely and high with the assumptions used', async () => {
     const estimate = await estimateOf(createEstimateHarness(), cloud);
 
-    expect(estimate.roles.map((role) => role.role)).toEqual(['reader', 'verifier']);
+    expect(estimate.roles.map((role) => role.role)).toEqual(['reader', 'verifier', 'summariser']);
     for (const role of estimate.roles) {
       expect(Object.keys(role.points)).toEqual(['low', 'likely', 'high']);
     }
     expect(estimate.assumptions.turnsPerArea).toEqual({ low: 3, likely: 6, high: 10 });
     expect(estimate.assumptions.verifierSharePercent).toEqual({ low: 15, likely: 30, high: 50 });
+    expect(estimate.assumptions.summariserSharePercent).toEqual({ low: 5, likely: 10, high: 20 });
     expect(estimate.areas).toEqual([
       { name: 'Catalog', estimatedTokens: 10_000, files: 1, thirdParty: false },
       { name: 'Orders', estimatedTokens: 4000, files: 1, thirdParty: false },
@@ -89,8 +90,8 @@ describe('RF-425 estimate before running', () => {
       costMicros: 6735n,
     });
     expect(estimate.total.likely).toEqual({
-      inputTokens: 79_295,
-      outputTokens: 4680,
+      inputTokens: 85_395,
+      outputTokens: 5040,
       costMicros: 29_184n,
     });
   });
@@ -131,7 +132,7 @@ describe('RF-425 the range and the roles', () => {
     expect(orders.areas).toEqual([
       { name: 'Orders', estimatedTokens: 4000, files: 1, thirdParty: false },
     ]);
-    expect(orders.total.likely.inputTokens).toBe(24_498 + 7350);
+    expect(orders.total.likely.inputTokens).toBe(24_498 + 7350 + 2450);
     expect(orders.total.likely.inputTokens).toBeLessThan(all.total.likely.inputTokens);
   });
 

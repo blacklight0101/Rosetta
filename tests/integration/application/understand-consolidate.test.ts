@@ -1,71 +1,26 @@
-import { mkdtemp, readdir, readFile, realpath, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ERROR_CODES } from '../../../src/domain/errors/codes.js';
 import { RosettaError } from '../../../src/domain/errors/rosetta-error.js';
 import type { LlmResponse } from '../../../src/application/ports/llm-provider.js';
-import type { Run } from '../../../src/domain/runs/run.js';
+import {
+  BR_CALL,
+  cardFiles,
+  cardText,
+  ENT_CALL,
+  made,
+  READER_CALLS,
+  recording,
+  useSharedRun,
+} from '../../support/consolidate-run.js';
 import { useTempRoot } from '../../support/temp-root.js';
 import { readJson, UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
-import {
-  createUnderstandHarness,
-  understandSettings,
-  type UnderstandHarness,
-  type UnderstandHarnessOptions,
-} from '../../support/understand-run-harness.js';
+import { createUnderstandHarness } from '../../support/understand-run-harness.js';
 
 // RF-250, ADR-005: after the readers of all areas have ended, the summariser merges the cards of
 // several areas that describe the same entity or rule into one card that keeps every claim and
 // citation, and the merge is recorded. The recording understand-consolidate.json has two ENT
 // cards and two BR cards of different areas; the summariser answers one merge for each type.
-
-const recording = 'understand-consolidate.json';
-const READER_CALLS = 5;
-const BR_CALL = READER_CALLS + 1;
-const ENT_CALL = READER_CALLS + 2;
-
-interface Made {
-  readonly h: UnderstandHarness;
-  readonly run: Run;
-  readonly folder: string;
-}
-
-async function made(
-  dataDir: string,
-  options: Partial<UnderstandHarnessOptions> = {},
-  areas?: readonly string[],
-): Promise<Made> {
-  const h = await createUnderstandHarness({ dataDir, recording, ...options });
-  await h.scan();
-  const run = await h.understand(areas === undefined ? {} : { areas });
-  return { h, run, folder: h.runFolder(run) };
-}
-
-/** One run for a describe block, made in `beforeAll`, for tests that only read its result. */
-function useSharedRun(): { current(): Made } {
-  const shared: { dir?: string; made?: Made } = {};
-  beforeAll(async () => {
-    shared.dir = await realpath(await mkdtemp(join(tmpdir(), 'rosetta-consolidate-')));
-    shared.made = await made(shared.dir);
-  }, UNDERSTAND_TIMEOUT.timeout);
-  afterAll(async () => {
-    if (shared.dir !== undefined) await rm(shared.dir, { recursive: true, force: true });
-  });
-  return {
-    current: () => {
-      if (shared.made === undefined) throw new Error('The shared run did not start.');
-      return shared.made;
-    },
-  };
-}
-
-async function cardFiles(folder: string, type: string): Promise<string[]> {
-  return (await readdir(join(folder, 'cards', type))).sort();
-}
-
-const cardText = (folder: string, type: string, id: string): Promise<string> =>
-  readFile(join(folder, 'cards', type, `${id}.md`), 'utf8');
 
 describe('an understand run: the cards it merges', () => {
   const full = useSharedRun();
@@ -87,12 +42,17 @@ describe('an understand run: the cards it merges', () => {
 
     const text = await cardText(folder, 'ENT', 'ENT-001');
     expect(text).toMatch(/mergedFrom:\n\s+- "ENT-001"\n\s+- "ENT-002"/u);
+    expect(text).toMatch(/mergedAreas:\n\s+- "Database"\n\s+- "Services"/u);
     const merged = h.logger.entries.filter((entry) => entry.message.includes('merged'));
     expect(merged.map((entry) => entry.message)).toEqual([
       expect.stringContaining('BR-001, BR-002'),
       expect.stringContaining('ENT-001, ENT-002'),
     ]);
   });
+});
+
+describe('an understand run: the rules it merges', () => {
+  const full = useSharedRun();
 
   it('RF-250 two rules about one item stay two claims of one card, none judged', async () => {
     const { folder } = full.current();
@@ -243,41 +203,5 @@ describe('an understand run: when the summariser is not asked', UNDERSTAND_TIMEO
     expect(run.endState).toBe('Interrupted');
     const roles = h.providers.requests().map((request) => request.context.role);
     expect(roles).not.toContain('summariser');
-  });
-});
-
-describe('an understand run: a summariser on Ollama', UNDERSTAND_TIMEOUT, () => {
-  const temp = useTempRoot('rosetta-consolidate-');
-
-  it('RF-401 RF-250 only the reader is checked before the run, the summariser is not', async () => {
-    const settings = understandSettings((base) => ({
-      ...base,
-      roles: { ...base.roles, summariser: { ...base.roles.summariser, provider: 'ollama' } },
-    }));
-
-    const { h, run } = await made(temp.path, { settings });
-
-    expect(run.endState).toBe('Completed');
-    const roles = h.providers.requests().map((request) => request.context.role);
-    expect(roles.filter((role) => role === 'summariser')).toHaveLength(2);
-    expect(roles).toHaveLength(7);
-  });
-});
-
-describe('an understand run: a summariser that cannot be served', UNDERSTAND_TIMEOUT, () => {
-  const temp = useTempRoot('rosetta-consolidate-');
-
-  it('RF-250 a summariser with no key does not stop the run, the cards are not merged', async () => {
-    const settings = understandSettings((base) => ({
-      ...base,
-      roles: { ...base.roles, summariser: { ...base.roles.summariser, provider: 'openai' } },
-    }));
-
-    const { h, run, folder } = await made(temp.path, { settings });
-
-    expect(run.endState).toBe('Completed');
-    expect(await cardFiles(folder, 'BR')).toEqual(['BR-001.md', 'BR-002.md']);
-    const roles = h.providers.requests().map((request) => request.context.role);
-    expect(roles).toEqual(['reader', 'reader', 'reader', 'reader', 'reader']);
   });
 });

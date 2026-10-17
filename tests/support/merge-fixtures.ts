@@ -50,3 +50,25 @@ export function cardsAcrossAreas(): readonly Card[] {
   if (!cards.ok) throw new Error('The merge fixture cards are invalid.');
   return cards.value;
 }
+
+/** ENT-001 (Orders), ENT-002 (Billing) and ENT-003 (Orders again, or Shipping), one claim each. */
+export function threeEntities(thirdArea: string): readonly Card[] {
+  const entity = (title: string) =>
+    draftOf({
+      type: 'ENT',
+      title,
+      claims: [
+        {
+          text: `${title} is a table.`,
+          citations: [{ path: `db/${title}.sql`, startLine: 1, endLine: 4 }],
+        },
+      ],
+    });
+  const cards = assignCardIds([
+    { agentTaskId: 'reader-001', area: 'Orders', drafts: [entity('Customer')] },
+    { agentTaskId: 'reader-002', area: 'Billing', drafts: [entity('Client')] },
+    { agentTaskId: 'reader-003', area: thirdArea, drafts: [entity('Buyer')] },
+  ]);
+  if (!cards.ok) throw new Error('The merge fixture cards are invalid.');
+  return cards.value;
+}
