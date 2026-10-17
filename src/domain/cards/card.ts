@@ -2,7 +2,16 @@ import { err, ok, type Result } from '../errors/result.js';
 import type { CardType, ClaimStatus, Confidence, OpenQuestionState } from './card-vocabulary.js';
 import type { Citation } from './citation.js';
 import { canTransitionClaim } from './claim-transitions.js';
-import type { Branch, CitedText, DetailProblem, FlowDetail, ScreenDetail } from './flow-screen.js';
+import {
+  flowFields,
+  screenFields,
+  stepFields,
+  type Branch,
+  type CitedText,
+  type DetailProblem,
+  type FlowDetail,
+  type ScreenDetail,
+} from './flow-screen.js';
 
 // Architecture section 5, ADR-005: a card holds claims; a claim holds citations and a status that
 // changes only through the transitions; nothing is ever removed (RF-302).
@@ -89,7 +98,24 @@ function questionFields(input: CardInput): Result<QuestionFields, CardProblem> {
   });
 }
 
-// RF-202: at least one claim, each with at least one citation; an OQ also has its question.
+function claimsOf(input: CardInput): Result<readonly Claim[], CardProblem> {
+  const claims: Claim[] = [];
+  for (const [index, claim] of input.claims.entries()) {
+    const step = stepFields(input.type, claim);
+    if (!step.ok) return step;
+    claims.push({
+      claimId: `${input.id}.c${String(index + 1)}`,
+      text: claim.text,
+      citations: claim.citations,
+      status: 'Proposed',
+      ...step.value,
+    });
+  }
+  return ok(claims);
+}
+
+// RF-202: at least one claim, each with at least one citation; an OQ also has its question; a FLOW
+// its trigger and outcome and cited branches (RF-260); a SCRN its cited validations (RF-261).
 export function createCard(input: CardInput): Result<Card, CardProblem> {
   if (input.claims.length === 0) return err('no-claims');
   if (input.claims.some((claim) => claim.citations.length === 0)) {
@@ -97,12 +123,12 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
   }
   const question = questionFields(input);
   if (!question.ok) return question;
-  const claims = input.claims.map((claim, index): Claim => ({
-    claimId: `${input.id}.c${String(index + 1)}`,
-    text: claim.text,
-    citations: claim.citations,
-    status: 'Proposed',
-  }));
+  const flow = flowFields(input.type, input.flow);
+  if (!flow.ok) return flow;
+  const screen = screenFields(input.type, input.screen);
+  if (!screen.ok) return screen;
+  const claims = claimsOf(input);
+  if (!claims.ok) return claims;
   return ok({
     id: input.id,
     type: input.type,
@@ -111,8 +137,10 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
     area: input.area,
     agentTaskId: input.agentTaskId,
     confidence: input.confidence,
-    claims,
+    claims: claims.value,
     ...question.value,
+    ...flow.value,
+    ...screen.value,
   });
 }
 

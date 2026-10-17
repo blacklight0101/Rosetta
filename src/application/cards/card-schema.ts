@@ -1,58 +1,14 @@
 import { z } from 'zod';
 import type { CardDraft } from '../../domain/cards/card-ids.js';
-import { CARD_TYPES, CONFIDENCES } from '../../domain/cards/card-vocabulary.js';
-import {
-  createCitation,
-  parseCitation,
-  type Citation,
-  type CitationProblem,
-} from '../../domain/cards/citation.js';
+import { CARD_TYPES, CONFIDENCES, type CardType } from '../../domain/cards/card-vocabulary.js';
+import { citation, ignoringCase, text } from './card-fields.js';
 import { cardLimits } from './card-limits.js';
+import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema.js';
 
 // RF-202, ADR-005: the strict shape of an agent's final answer. A card needs type, title, area,
 // summary, confidence and claims; each claim needs at least one citation; an OQ also needs its
 // question and why it matters. Small models write numbers as text and vary letter case, so line
 // numbers may be numeric strings and type and confidence ignore case. Unknown fields are dropped.
-
-const citationMessages: Readonly<Record<CitationProblem, string>> = {
-  'invalid-format': 'A citation must look like path/to/file.ext:startLine-endLine.',
-  'invalid-path': 'A citation path must be relative to the repository root, with forward slashes.',
-  'invalid-lines': 'A citation needs whole line numbers with 1 <= startLine <= endLine.',
-};
-
-const lineNumber = z.union([
-  z.number().int().max(cardLimits.maxLineNumber),
-  z
-    .string()
-    .trim()
-    .regex(/^\d{1,9}$/)
-    .transform(Number),
-]);
-const path = z.string().min(1).max(cardLimits.maxPathChars);
-
-const citationShape = z.union([
-  z.string().max(cardLimits.maxPathChars + 24),
-  z.object({ path, startLine: lineNumber, endLine: lineNumber }),
-]);
-
-const citation = citationShape.transform((value, context): Citation => {
-  const made =
-    typeof value === 'string'
-      ? parseCitation(value.trim())
-      : createCitation(value.path, value.startLine, value.endLine);
-  if (made.ok) return made.value;
-  context.addIssue({ code: 'custom', message: citationMessages[made.error] });
-  return z.NEVER;
-});
-
-function ignoringCase<T extends string>(values: readonly [T, ...T[]]) {
-  return z
-    .string()
-    .transform((text) => values.find((v) => v.toLowerCase() === text.trim().toLowerCase()) ?? text)
-    .pipe(z.enum(values));
-}
-
-const text = (max: number) => z.string().trim().min(1).max(max);
 
 export const agentClaimSchema = z.object({
   text: text(cardLimits.maxClaimChars),
@@ -60,36 +16,73 @@ export const agentClaimSchema = z.object({
     .array(citation)
     .min(1, 'A claim needs at least one citation (path:startLine-endLine).')
     .max(cardLimits.maxCitations),
+  ...stepSchemaFields,
 });
 
-export const agentCardSchema = z
-  .object({
-    type: ignoringCase(CARD_TYPES),
-    title: text(cardLimits.maxTitleChars),
-    // Required by RF-202 but only checked, never used: a card gets the area of the task that
-    // produced it (assignCardIds), so a different area written here is ignored.
-    area: text(cardLimits.maxAreaChars),
-    summary: text(cardLimits.maxSummaryChars),
-    confidence: ignoringCase(CONFIDENCES),
-    claims: z
-      .array(agentClaimSchema)
-      .min(1, 'A card needs at least one claim.')
-      .max(cardLimits.maxClaims),
-    question: text(cardLimits.maxQuestionChars).optional(),
-    whyItMatters: text(cardLimits.maxQuestionChars).optional(),
-  })
+type DetailField = 'question' | 'whyItMatters' | 'flow' | 'screen';
+
+/** The extra fields a type must have: an OQ its question, a FLOW its flow, a SCRN its screen. */
+const neededBy: Partial<Record<CardType, readonly DetailField[]>> = {
+  OQ: ['question', 'whyItMatters'],
+  FLOW: ['flow'],
+  SCRN: ['screen'],
+};
+
+const cardShape = z.object({
+  type: ignoringCase(CARD_TYPES),
+  title: text(cardLimits.maxTitleChars),
+  // Required by RF-202 but only checked, never used: a card gets the area of the task that
+  // produced it (assignCardIds), so a different area written here is ignored.
+  area: text(cardLimits.maxAreaChars),
+  summary: text(cardLimits.maxSummaryChars),
+  confidence: ignoringCase(CONFIDENCES),
+  claims: z
+    .array(agentClaimSchema)
+    .min(1, 'A card needs at least one claim.')
+    .max(cardLimits.maxClaims),
+  question: text(cardLimits.maxQuestionChars).optional(),
+  whyItMatters: text(cardLimits.maxQuestionChars).optional(),
+  flow: flowSchema.optional(),
+  screen: screenSchema.optional(),
+});
+
+type ParsedCard = z.output<typeof cardShape>;
+
+/** A step's target and branches are for FLOW cards only; any other card keeps the plain claim. */
+function plainClaims(claims: ParsedCard['claims']): CardDraft['claims'] {
+  return claims.map(({ text: claimText, citations }) => ({ text: claimText, citations }));
+}
+
+function draftOf(value: ParsedCard): CardDraft {
+  const { question, whyItMatters, flow, screen, claims, ...rest } = value;
+  switch (value.type) {
+    case 'OQ':
+      return { ...rest, claims: plainClaims(claims), question, whyItMatters };
+    case 'FLOW':
+      return { ...rest, claims, flow };
+    case 'SCRN':
+      return { ...rest, claims: plainClaims(claims), screen };
+    case 'FEAT':
+    case 'BR':
+    case 'ENT':
+    case 'INT':
+      return { ...rest, claims: plainClaims(claims) };
+  }
+}
+
+export const agentCardSchema = cardShape
   .superRefine((value, context) => {
-    if (value.type !== 'OQ') return;
-    for (const field of ['question', 'whyItMatters'] as const) {
+    for (const field of neededBy[value.type] ?? []) {
       if (value[field] === undefined) {
-        context.addIssue({ code: 'custom', path: [field], message: `An OQ card needs ${field}.` });
+        context.addIssue({
+          code: 'custom',
+          path: [field],
+          message: `A ${value.type} card needs ${field}.`,
+        });
       }
     }
   })
-  .transform((value): CardDraft => {
-    const { question, whyItMatters, ...rest } = value;
-    return value.type === 'OQ' ? { ...rest, question, whyItMatters } : rest;
-  });
+  .transform(draftOf);
 
 /** `{ "cards": [...] }`, at most `maxCards` cards. */
 export const agentCardsSchema = z.object({

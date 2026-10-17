@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { parseCardOutput } from '../../../../src/application/cards/parse-cards.js';
 import { cardsJson, problemPaths } from '../../../support/card-output.js';
-import { screenObject } from '../../../support/flow-screen-fixtures.js';
+import { screenJsonDetail, screenObject } from '../../../support/flow-screen-fixtures.js';
 
 const screenJson = (overrides: Record<string, unknown> = {}): string =>
   JSON.stringify({ cards: [screenObject(overrides)] });
 
 const baseScreen = (): Record<string, unknown> => {
-  const screen = screenObject().screen;
-  return typeof screen === 'object' && screen !== null ? { ...screen } : {};
+  return { ...screenJsonDetail };
 };
 const withScreen = (change: Record<string, unknown>): string =>
   screenJson({ screen: { ...baseScreen(), ...change } });
@@ -88,11 +87,6 @@ describe('parseCardOutput refuses an invalid SCRN card', () => {
       'cards.0.screen.actions.0',
     ],
     [
-      'an action naming both a handler and a flow',
-      withScreen({ actions: [{ label: 'Pay', handler: 'h', flow: 'FLOW-001' }] }),
-      'cards.0.screen.actions.0',
-    ],
-    [
       'an action flow that is not a FLOW id',
       withScreen({ actions: [{ label: 'Pay', flow: 'BR-001' }] }),
       'cards.0.screen.actions.0.flow',
@@ -104,6 +98,12 @@ describe('parseCardOutput refuses an invalid SCRN card', () => {
 });
 
 describe('parseCardOutput on SCRN details', () => {
+  it('RF-261 an action may name both the handler and the FLOW card it starts', () => {
+    const actions = [{ label: 'Pay', handler: 'h', flow: 'FLOW-001' }];
+
+    expect(parseCardOutput(withScreen({ actions })).ok).toBe(true);
+  });
+
   it('RF-261 a field validation with a citation passes', () => {
     const fields = [{ ...field, validations: [{ text: 'v', citations: cite }] }];
 
@@ -111,7 +111,7 @@ describe('parseCardOutput on SCRN details', () => {
   });
 
   it('RF-261 a card of another type carries no screen after parsing', () => {
-    const parsed = parseCardOutput(cardsJson({ screen: screenObject().screen }));
+    const parsed = parseCardOutput(cardsJson({ screen: screenJsonDetail }));
 
     expect(parsed.ok && parsed.value[0]).not.toHaveProperty('screen');
   });

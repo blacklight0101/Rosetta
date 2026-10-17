@@ -13,6 +13,14 @@ export const cardLimits = {
   maxClaimChars: 2000,
   maxQuestionChars: 1000,
   maxPathChars: 1024,
+  /** FLOW and SCRN (RF-260, RF-261). */
+  maxBranches: 20,
+  maxNameChars: 200,
+  maxValidations: 20,
+  maxRoles: 20,
+  maxFields: 100,
+  maxActions: 50,
+  maxLeadsTo: 50,
   /** Largest line number, as a number or as nine digits of text. */
   maxLineNumber: 999_999_999,
   /** Validation problems reported back to the model and the user. */

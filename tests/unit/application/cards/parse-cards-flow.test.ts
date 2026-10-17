@@ -5,7 +5,7 @@ import {
 } from '../../../../src/application/cards/parse-cards.js';
 import { renderRepairRequest } from '../../../../src/application/cards/repair-request.js';
 import { cardsJson, problemPaths } from '../../../support/card-output.js';
-import { flowObject } from '../../../support/flow-screen-fixtures.js';
+import { flowJsonDetail, flowObject } from '../../../support/flow-screen-fixtures.js';
 
 const flowJson = (overrides: Record<string, unknown> = {}): string =>
   JSON.stringify({ cards: [flowObject(overrides)] });
@@ -94,7 +94,7 @@ describe('parseCardOutput on FLOW details', () => {
       { ...step, target: 'BR-001', branches: [{ text: 'b', citations: ['a.cs:1-2'] }] },
     ];
 
-    const parsed = parseCardOutput(cardsJson({ flow: flowObject().flow, claims }));
+    const parsed = parseCardOutput(cardsJson({ flow: flowJsonDetail, claims }));
 
     expect(parsed.ok && parsed.value[0]).not.toHaveProperty('flow');
     expect(parsed.ok && parsed.value[0]?.claims[0]).not.toHaveProperty('target');

@@ -23,7 +23,7 @@ const tag = (label: string, tone: Tone = 'neutral'): BadgeSpec => badge(label, t
 /** Every state list with its values, in the order of architecture.md section 5. */
 export const stateLists = {
   ClaimStatus: ['Proposed', 'CitationInvalid', 'Supported', 'Rejected', 'Unverified'],
-  CardType: ['FEAT', 'BR', 'ENT', 'INT', 'OQ'],
+  CardType: ['FEAT', 'BR', 'ENT', 'INT', 'OQ', 'FLOW', 'SCRN'],
   OpenQuestionState: ['Open', 'Answered'],
   AgentTaskState: [
     'Planned',
@@ -63,6 +63,8 @@ export const badgeSpecs: SpecTable = {
     ENT: tag('ENT'),
     INT: tag('INT'),
     OQ: tag('OQ', 'warn'),
+    FLOW: tag('FLOW'),
+    SCRN: tag('SCRN'),
   },
   OpenQuestionState: {
     Open: badge('Open', 'warn', 'tint', 'question'),

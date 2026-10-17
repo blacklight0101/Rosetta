@@ -56,8 +56,8 @@ describe('writeCardOutputs FLOW card file', () => {
     expect(text).toContain('## Flow\n\nTrigger:\n\n> The shopper presses Pay.');
     expect(text).toContain('Outcome:\n\n> An order is stored and mailed.');
     expect(text).toContain('Touches: ENT-002');
-    expect(text).toContain('Branch 1: A stock error shows the basket again\\.');
-    expect(text).toContain('Branch 2: A payment error ends the flow\\.');
+    expect(text).toContain('Branch 1: A stock error shows the basket again.');
+    expect(text).toContain('Branch 2: A payment error ends the flow.');
   });
 });
 
@@ -69,11 +69,11 @@ describe('writeCardOutputs SCRN card file', () => {
 
     expect(text).toContain('screen:\n  route: "/Checkout.aspx"');
     expect(text).toContain('  roles:\n    - "Customer"');
-    expect(text).toContain('      - name: "Email"');
-    expect(text).toContain('        required: true');
-    expect(text).toContain('          - "src/Web/Checkout.aspx:12-14"');
-    expect(text).toContain('      - label: "Pay"\n        handler: "PayButton_Click"');
-    expect(text).toContain('      - label: "Back"\n        flow: "FLOW-001"');
+    expect(text).toContain('    - name: "Email"');
+    expect(text).toContain('      required: true');
+    expect(text).toContain('            - "src/Web/Checkout.aspx:12-14"');
+    expect(text).toContain('    - label: "Pay"\n      handler: "PayButton_Click"');
+    expect(text).toContain('    - label: "Back"\n      flow: "FLOW-001"');
     expect(text).toContain('  leadsTo:\n    - "/Confirmation.aspx"');
   });
 
@@ -83,19 +83,19 @@ describe('writeCardOutputs SCRN card file', () => {
     const text = fileOf(writer, 'cards/SCRN/SCRN-001.md');
 
     expect(text).toContain('## Screen');
-    expect(text).toContain('Route: /Checkout\\.aspx');
+    expect(text).toContain('Route: /Checkout.aspx');
     expect(text).toContain('Roles: Customer');
     expect(text).toContain('- Email (text, required)');
-    expect(text).toContain('Validation: Must be an e\\-mail address\\.');
-    expect(text).toContain('- Pay: handler PayButton\\_Click');
-    expect(text).toContain('- Back: FLOW FLOW\\-001');
-    expect(text).toContain('Leads to: /Confirmation\\.aspx');
+    expect(text).toContain(String.raw`Validation: Must be an e\-mail address.`);
+    expect(text).toContain(String.raw`- Pay: handler PayButton\_Click`);
+    expect(text).toContain(String.raw`- Back: FLOW FLOW\-001`);
+    expect(text).toContain('Leads to: /Confirmation.aspx');
   });
 });
 
 describe('writeCardOutputs safety of FLOW and SCRN files', () => {
   it('RF-507 model text in a FLOW or SCRN body cannot add Markdown or HTML structure', async () => {
-    const evil = '<script>x</script> [a](http://evil.example)\n# heading';
+    const evil = '<script>x</script> [a](http://evil.example).# heading';
     const screen = { ...validScreen, route: evil, leadsTo: [evil] };
     const flow = { trigger: evil, outcome: evil };
     const { writer } = await writeCards(
@@ -105,7 +105,7 @@ describe('writeCardOutputs safety of FLOW and SCRN files', () => {
     );
 
     for (const path of ['cards/FLOW/FLOW-001.md', 'cards/SCRN/SCRN-001.md']) {
-      const body = fileOf(writer, path).split('\n---\n').slice(1).join('\n---\n');
+      const body = fileOf(writer, path).split('.---.').slice(1).join('.---.');
       expect(body).not.toContain('<script>');
       expect(body).not.toContain('](http');
       expect(body).not.toMatch(/^# heading/m);

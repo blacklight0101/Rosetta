@@ -1,7 +1,7 @@
 // Architecture section 5 (state lists): the canonical vocabulary of cards. Other files repeat
 // these lists only through these constants.
 
-export const CARD_TYPES = ['FEAT', 'BR', 'ENT', 'INT', 'OQ'] as const;
+export const CARD_TYPES = ['FEAT', 'BR', 'ENT', 'INT', 'OQ', 'FLOW', 'SCRN'] as const;
 export type CardType = (typeof CARD_TYPES)[number];
 
 /** Set by the agent, never by the verifier. */

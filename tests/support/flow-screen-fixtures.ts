@@ -8,6 +8,11 @@ import { draftOf } from './card-fixtures.js';
 const checkout = 'src/Orders/Checkout.cs';
 const page = 'src/Web/Checkout.aspx';
 
+export const flowJsonDetail = {
+  trigger: 'The shopper presses Pay.',
+  outcome: 'An order is stored and mailed.',
+};
+
 export function flowObject(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     type: 'FLOW',
@@ -15,7 +20,7 @@ export function flowObject(overrides: Record<string, unknown> = {}): Record<stri
     area: 'orders',
     summary: 'From the basket page to a stored order.',
     confidence: 'High',
-    flow: { trigger: 'The shopper presses Pay.', outcome: 'An order is stored and mailed.' },
+    flow: flowJsonDetail,
     claims: [
       { text: 'The basket is validated.', target: 'BR-001', citations: [`${checkout}:10-24`] },
       {
@@ -31,6 +36,24 @@ export function flowObject(overrides: Record<string, unknown> = {}): Record<stri
   };
 }
 
+export const screenJsonDetail = {
+  route: '/Checkout.aspx',
+  roles: ['Customer'],
+  fields: [
+    {
+      name: 'Email',
+      inputKind: 'text',
+      required: true,
+      validations: [{ text: 'Must be an e-mail address.', citations: [`${page}:12-14`] }],
+    },
+  ],
+  actions: [
+    { label: 'Pay', handler: 'PayButton_Click' },
+    { label: 'Back', flow: 'FLOW-001' },
+  ],
+  leadsTo: ['/Confirmation.aspx'],
+};
+
 export function screenObject(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     type: 'SCRN',
@@ -38,23 +61,7 @@ export function screenObject(overrides: Record<string, unknown> = {}): Record<st
     area: 'orders',
     summary: 'The page where the shopper pays.',
     confidence: 'High',
-    screen: {
-      route: '/Checkout.aspx',
-      roles: ['Customer'],
-      fields: [
-        {
-          name: 'Email',
-          inputKind: 'text',
-          required: true,
-          validations: [{ text: 'Must be an e-mail address.', citations: [`${page}:12-14`] }],
-        },
-      ],
-      actions: [
-        { label: 'Pay', handler: 'PayButton_Click' },
-        { label: 'Back', flow: 'FLOW-001' },
-      ],
-      leadsTo: ['/Confirmation.aspx'],
-    },
+    screen: screenJsonDetail,
     claims: [{ text: 'The page is served at /Checkout.aspx.', citations: [`${page}:1-3`] }],
     ...overrides,
   };
