@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import type { RoleCapSettings } from '../api/project-schemas.js';
 import { ROLE_NAMES, type RoleName } from './project-settings-form.js';
-import { formatValue, numberOf } from './setting-limits.js';
+import { formatAmount, formatValue, numberOf } from './setting-limits.js';
 
 // RF-423, P2-26: a role cap is stored in `budget.roles` and has no field on this page. A stored cap
 // above the run cap never applies (the run cap stops the run first), so the page names it next to
@@ -33,13 +33,16 @@ function roleCapNotices(roles: RoleCaps, runCost: string, runTokens: string): re
   const costRun = numberOf(runCost);
   const tokenRun = numberOf(runTokens);
   const lines: string[] = [];
+  // A negative run cap is refused on save; it gives no notice rather than "$-1".
+  if (costRun !== undefined && costRun < 0) return lines;
+  if (tokenRun !== undefined && tokenRun < 0) return lines;
   for (const role of ROLE_NAMES) {
     const cap = roles[role];
     if (cap?.maxCostMicros !== undefined && costRun !== undefined) {
       const roleMicros = cap.maxCostMicros;
       if (roleMicros > Math.round(costRun * MICROS_PER_DOLLAR)) {
-        const roleText = formatValue(roleMicros / MICROS_PER_DOLLAR, 'dollars');
-        lines.push(lineOf(role, 'cost cap', roleText, formatValue(costRun, 'dollars')));
+        const roleText = formatAmount(roleMicros / MICROS_PER_DOLLAR, 'dollars');
+        lines.push(lineOf(role, 'cost cap', roleText, formatAmount(costRun, 'dollars')));
       }
     }
     if (cap?.maxTokens !== undefined && tokenRun !== undefined && cap.maxTokens > tokenRun) {

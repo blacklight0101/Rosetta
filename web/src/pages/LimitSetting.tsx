@@ -1,6 +1,12 @@
 import type { JSX } from 'preact';
 import { NumberSetting, type SettingBase } from './SettingFields.js';
-import { formatValue, numberOf, type LimitUnit, type Range } from './setting-limits.js';
+import {
+  formatAmount,
+  formatValue,
+  numberOf,
+  type LimitUnit,
+  type Range,
+} from './setting-limits.js';
 
 // RF-002, DEC-116, DEC-117, P2-15: a numeric setting as a number field and a slider on the same
 // value. The slider is bounded by the range (its `max` may be lower, for the confirm threshold),
@@ -24,10 +30,19 @@ function describing(ids: readonly (string | undefined)[]): string | undefined {
   return present.length === 0 ? undefined : present.join(' ');
 }
 
-function WarningText({ id, text }: { readonly id: string; readonly text: string }): JSX.Element {
+function WarningText(props: {
+  readonly id: string;
+  readonly text: string;
+  /** A polite live region: the text is announced when it appears (P2-26). */
+  readonly live?: boolean;
+}): JSX.Element {
   return (
-    <p id={id} class="rst-field__help rst-limit__warning">
-      {text}
+    <p
+      id={props.id}
+      role={props.live === true ? 'status' : undefined}
+      class="rst-field__help rst-limit__warning"
+    >
+      {props.text}
     </p>
   );
 }
@@ -43,12 +58,13 @@ function outsideHint(
   unit: LimitUnit,
 ): string | undefined {
   if (current === undefined || (current >= range.min && current <= top)) return undefined;
-  const allowed = `${formatValue(range.min, unit)} to ${formatValue(top, unit)}`;
-  return `${formatValue(current, unit)} is outside the allowed range of ${allowed}. Save will refuse it.`;
+  const allowed = `${formatAmount(range.min, unit)} to ${formatAmount(top, unit)}`;
+  return `${formatAmount(current, unit)} is outside the allowed range of ${allowed}. Save will refuse it.`;
 }
 
 interface RangeInputProps {
   readonly id: string;
+  readonly label: string;
   readonly range: Range;
   readonly top: number;
   readonly unit: LimitUnit;
@@ -57,7 +73,7 @@ interface RangeInputProps {
   readonly onInput: (value: string) => void;
 }
 
-/** The slider of a limit: named by its range, so a lookup by a field label finds the field only. */
+/** The slider of a limit, named after its field so that the four sliders of one page differ. */
 function RangeInput(props: RangeInputProps): JSX.Element {
   const { range, top, unit } = props;
   return (
@@ -65,7 +81,7 @@ function RangeInput(props: RangeInputProps): JSX.Element {
       id={props.id}
       type="range"
       class="rst-limit__slider"
-      aria-label={`Slider, ${formatValue(range.min, unit)} to ${formatValue(top, unit)}`}
+      aria-label={`${props.label} slider`}
       aria-describedby={props.describedBy}
       min={range.min}
       max={top}
@@ -109,9 +125,11 @@ export function LimitSetting(props: LimitProps): JSX.Element {
         errorFor={props.errorFor}
         value={value}
         onInput={props.onInput}
+        describedBy={hint === undefined ? undefined : hintId}
       />
       <RangeInput
         id={rangeId}
+        label={props.label}
         range={range}
         top={top}
         unit={unit}
@@ -122,7 +140,7 @@ export function LimitSetting(props: LimitProps): JSX.Element {
       <p id={rangeTextId} class="rst-field__help">
         {`Default ${defaultText}. Allowed ${formatValue(range.min, unit)} to ${formatValue(top, unit)}.`}
       </p>
-      {hint === undefined ? null : <WarningText id={hintId} text={hint} />}
+      {hint === undefined ? null : <WarningText id={hintId} text={hint} live />}
       {differs ? <WarningText id={warningId} text={warning} /> : null}
     </div>
   );
