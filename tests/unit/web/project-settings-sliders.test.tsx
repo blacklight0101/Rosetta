@@ -110,6 +110,23 @@ it('RF-002 the confirm slider never goes above its own 100 USD range', async () 
   expect(sliderOf('Ask before a run estimated above (USD)').max).toBe('100');
 });
 
+// RF-002, DEC-117: the confirm threshold is at most the run cost cap, kept inside its own range.
+// A cap of zero is a cap (the threshold then stops at zero); text that is not a number has no cap,
+// so the range's own top is the limit; a negative cap is refused by the server, and its slider
+// stops at zero.
+it.each([
+  ['0', '0'],
+  ['', '100'],
+  ['abc', '100'],
+  ['-1', '0'],
+])('RF-002 a run cost cap of %j gives the confirm slider a top of %j', async (cap, top) => {
+  renderSettings();
+  await loaded();
+
+  type('Run cost cap (USD)', cap);
+  expect(sliderOf('Ask before a run estimated above (USD)').max).toBe(top);
+});
+
 it('RF-002 moving a slider sets its number field and the saved value', async () => {
   const { calls } = renderSettings({ [`PUT ${settingsRoute}`]: json(200, demo) });
   await loaded();
