@@ -78,6 +78,7 @@ export function reopenRun(run: Run, at: EpochMs): Result<Run, ReopenProblem> {
     ...run,
     queueState: 'Queued',
     endState: null,
+    failedAreas: 0,
     queuedAt: at,
     startedAt: null,
     endedAt: null,

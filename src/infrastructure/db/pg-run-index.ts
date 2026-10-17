@@ -41,7 +41,7 @@ const END =
   RETURNING;
 // RF-006: one conditional UPDATE, so two parallel resumes queue the run once.
 const REOPEN =
-  "UPDATE runs SET queue_state = 'Queued', end_state = NULL, queued_at = $3, started_at = NULL, ended_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended' AND end_state = ANY($4::text[])" +
+  "UPDATE runs SET queue_state = 'Queued', end_state = NULL, failed_areas = 0, queued_at = $3, started_at = NULL, ended_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended' AND end_state = ANY($4::text[])" +
   RETURNING;
 const RECORD_SOURCE =
   "UPDATE runs SET commit_sha = $2, snapshot_key = $3 WHERE id = $1 AND queue_state <> 'Ended'" +
