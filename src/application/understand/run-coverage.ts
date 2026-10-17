@@ -3,8 +3,10 @@ import {
   surfaceCoverage,
   type AreaCoverage,
 } from '../../domain/cards/area-coverage.js';
+import type { Card } from '../../domain/cards/card.js';
 import type { CardType } from '../../domain/cards/card-vocabulary.js';
 import type { Citation } from '../../domain/cards/citation.js';
+import { isIncompleteFlow } from '../../domain/cards/flow-completeness.js';
 import { marksOf } from '../../domain/code-map/area-surface.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { AgentTaskRequest } from '../agent/agent-loop.js';
@@ -88,10 +90,18 @@ export class RunCoverage {
     return this.ended.get(agentTaskId);
   }
 
-  areas(): readonly AreaCoverage[] {
+  /**
+   * The coverage of the ended tasks. With the cards, each area also counts its incomplete flows
+   * (RF-260), which only the verifier's steps decide, so it is worked out whenever it is written.
+   */
+  areas(cards?: readonly Card[]): readonly AreaCoverage[] {
     return this.tasks.flatMap((task) => {
       const coverage = this.ended.get(task.agentTaskId);
-      return coverage === undefined ? [] : [coverage];
+      if (coverage === undefined) return [];
+      if (cards === undefined || coverage.surface === undefined) return [coverage];
+      const own = cards.filter((card) => card.agentTaskId === task.agentTaskId);
+      const incompleteFlows = own.filter(isIncompleteFlow).length;
+      return [{ ...coverage, surface: { ...coverage.surface, incompleteFlows } }];
     });
   }
 }

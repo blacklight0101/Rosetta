@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import type { RunEvent } from '../../../src/domain/runs/run-event.js';
 import { cardText, made } from '../../support/consolidate-run.js';
 import { useTempRoot } from '../../support/temp-root.js';
@@ -45,6 +46,30 @@ describe('an understand run: judgement and the merge of cards', UNDERSTAND_TIMEO
     expect(merged).toContain('status: "Supported"');
     expect(merged).toContain('step: "judgement"');
     expect(merged).not.toContain('status: "Proposed"');
+  });
+});
+
+describe('an understand run whose merge renumbers claims', UNDERSTAND_TIMEOUT, () => {
+  it('RF-250 RF-1004 the merge event maps every judged claim to a claim of the merged card', async () => {
+    const { h, run, folder } = await made(temp.path, { verifierRecording: allSupported });
+
+    const events = await h.eventsOf(run);
+    const merges = events.filter((event) => event.type === 'cards.merged');
+    expect(merges).toHaveLength(2);
+    const ents = merges.find((event) => event.data['cardId'] === 'ENT-001');
+    expect(ents?.data['from']).toEqual(['ENT-001', 'ENT-002']);
+    const moves = z
+      .array(z.object({ from: z.string(), to: z.string() }))
+      .parse(ents?.data['claims']);
+    const merged = await cardText(folder, 'ENT', 'ENT-001');
+    expect(moves.length).toBeGreaterThan(0);
+    for (const move of moves) {
+      expect(move.from.startsWith('ENT-002.')).toBe(true);
+      expect(merged).toContain(`claimId: "${move.to}"`);
+    }
+    const after = events.findIndex((event) => event.type === 'cards.merged');
+    const judgedAfter = events.slice(after).some((event) => event.type === 'verify.claim.judged');
+    expect(judgedAfter).toBe(false);
   });
 });
 

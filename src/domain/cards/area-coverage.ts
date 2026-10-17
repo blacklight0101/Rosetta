@@ -26,6 +26,8 @@ export interface SurfaceCoverage {
   readonly screensMarked: boolean;
   readonly flowCards: number;
   readonly screenCards: number;
+  /** RF-260: the flow cards with a step whose citation is invalid or rejected; once verified. */
+  readonly incompleteFlows?: number;
 }
 
 export interface AreaCoverage {

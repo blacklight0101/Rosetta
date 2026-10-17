@@ -33,6 +33,11 @@ function Columns({ form }: { readonly form: StartForm }): JSX.Element {
         onChoose={choice.choose}
         libraryConfirmed={form.library.confirmed}
         onLibraryConfirm={form.library.set}
+        rerun={{
+          answered: form.rerun.answered,
+          checked: form.rerun.checked,
+          onChange: form.rerun.set,
+        }}
       />
       <EstimateSection
         scanOnly={stage === 'scan'}

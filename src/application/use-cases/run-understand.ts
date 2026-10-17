@@ -32,6 +32,7 @@ import { scopeOf } from '../runs/run-scope.js';
 import { callIds, traceIdOf } from '../runs/run-ids.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
 import type { UnknownAreas } from '../understand/reader-tasks.js';
+import { logSkippedQuestions } from '../understand/skipped-questions.js';
 import { runPrompts } from '../understand/run-prompts.js';
 import { runMarks } from '../understand/run-marks.js';
 import { planTasks } from '../understand/task-plan.js';
@@ -166,6 +167,7 @@ export class RunUnderstand implements RunExecutor {
     if (!planned.ok) return this.unknownAreas(run, planned.error);
     const { tasks, rerun } = planned.value;
     const plan = await planRunTasks(this.deps.taskResults, execution, tasks);
+    await logSkippedQuestions(this.deps.logger, run, rerun?.plan.skipped ?? []);
     const withAnswers = rerun !== undefined && tasks.length > 0;
     const marks = runMarks(tasks, scanned.codeMap);
     const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers, marks);

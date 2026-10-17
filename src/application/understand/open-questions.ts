@@ -15,12 +15,16 @@ interface Group {
   readonly dependents: number;
 }
 
-/** "Who uses these pages?" and "who uses these pages" are the same question. */
-function keyOf(card: Card): string {
-  const words = (card.question ?? card.title)
+/** "Who uses these pages?" and "who uses these pages" are the same question; '' when no words. */
+export function questionWords(question: string): string {
+  return question
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
+}
+
+function keyOf(card: Card): string {
+  const words = questionWords(card.question ?? card.title);
   return words === '' ? `card:${card.id}` : words;
 }
 

@@ -67,6 +67,7 @@ Folder names come from ids, never from request text.
           cards/<TYPE>/<CARD-ID>.md, cards/index.json
           invalid-output/<agentTaskId>.txt  raw answers of a task that ended InvalidOutput (3.7)
           spec.md
+          data-model.md               legacy data model of the ENT cards, only when the run has one (3.8)
           coverage.json, coverage.md
           transcripts/<agentTaskId>.jsonl
           report/                     static report (RF-500..RF-506)
@@ -303,9 +304,9 @@ Header fields:
 | `confidence` | `Confidence` | set by the agent (architecture section 5) |
 | `claims[]` | list | `{ claimId, text, citations[], status (ClaimStatus), verdict? }`; `claimId` is `<card id>.c<n>`; `verdict` is `{ step: citation \| judgement, reason, model, at }` |
 | `question`, `whyItMatters` | string | `OQ` only (RF-202) |
-| `questionState` | `OpenQuestionState` | `OQ` only (RF-241); a re-run with answers changes `Open` to `Answered` in the card file of the run that raised the question, in this field and in the `State:` line of the body, once the area's task ended `Done` and the run's cards were written |
-| `flow` | `{ trigger, outcome }` | `FLOW` only (RF-260). The steps are the card's `claims`, in order, so each is cited and checked like any claim; a step claim also holds `target` (the `SCRN`, `BR`, `ENT` or `INT` card id it touches, when one exists) and `branches[]`, each `{ number, text, citations[] }` numbered from 1 and cited. A branch without a citation is refused |
-| `screen` | `{ route, roles[], fields[], actions[], leadsTo[] }` | `SCRN` only (RF-261). `fields[]` are `{ name, inputKind, required, validations[] }` with each validation `{ text, citations[] }` and cited; `actions[]` are `{ label, handler?, flow? }` naming the handler, the `FLOW` card id, or both; `leadsTo[]` are `SCRN` ids or routes. `FLOW` and `SCRN` cards are not merged by consolidation (RF-250) |
+| `questionState` | `OpenQuestionState` | `OQ` only (RF-241); a re-run with answers changes `Open` to `Answered` in the card file of the run that raised the question, in this field and in the `State:` line of the body, once the area's task ended `Done` and the run's cards were written. A question asked by several areas has one section in `answers.md` and an `OQ` card per area; all of those cards change together, each when its own area's task ended `Done` |
+| `flow` | `{ trigger, outcome }` | `FLOW` only (RF-260). The steps are the card's `claims`, in order, so each is cited and checked like any claim; a step claim also holds `target` (the `SCRN`, `BR`, `ENT` or `INT` card id it touches, when one exists) and `branches[]`, each `{ number, text, citations[] }` numbered from 1 and cited. A branch without a citation is refused. The card header also has `incomplete` (true when a step is `CitationInvalid` or `Rejected`) and, then, `incompleteSteps[]` with those claim ids; the body has an `Incomplete:` line and a `Marked:` line under each such step (RF-260, P2-20) |
+| `screen` | `{ route, roles[], fields[], actions[], leadsTo[] }` | `SCRN` only (RF-261). `fields[]` are `{ name, inputKind, required, validations[] }` with each validation `{ text, citations[] }` and cited; `actions[]` are `{ label, handler?, flow? }` naming the handler, the `FLOW` card id, or both; `leadsTo[]` are `SCRN` ids or routes. Each validation and each action is also a claim of the card, after the claims the agent wrote (validations first, then actions), so both verifier steps check it: a validation cites its own lines, an action cites the lines of the agent's screen claims (RF-261, P2-20). Known limit: an action cites every range of the screen's own claims, so step 1 proves nothing for it and step 2 sees the whole bundle; a real action whose handler is in a file the agent did not cite can be wrongly `Rejected`. A per-action citation (a later prompt version) would fix it (P2-20). `FLOW` and `SCRN` cards are not merged by consolidation (RF-250) |
 | `mergedAreas[]` | list | the areas of the merged cards, in card order, left out for a card that was not merged; a later merge of the kept card reads them, so cards that all come from one area are never merged (RF-250) |
 | `mergedFrom[]` | list | card ids merged by consolidation (RF-250), the kept card's own id first, the union over a chain of merges; the card keeps the id, area and task of its first member and every claim of all members (claim ids renumbered `<id>.c<n>`, status and verdict kept) |
 | `note` | string | left out unless set; `written without reading the area` on every card of a task whose agent gave its answer without reading any file of its area (RF-206) |
@@ -356,18 +357,21 @@ conversation (an area that met its context limit, in two halves); the retry's tr
 how the task ended (an `AgentTaskState` after `Running`), `cards` its cards with their ids and every claim with its status
 and verdict (the same data as the card files' headers), `coverage` its entry of `coverage.json`. Tasks keep the area order.
 A `FLOW` card keeps its `flow` and the `target` and numbered `branches` of its steps, a `SCRN` card its `screen`, and the
-coverage its `surface`, so a resumed run keeps them whole (RF-260, RF-261, P2-19).
+coverage its `surface` (with `incompleteFlows` when set), so a resumed run keeps them whole (RF-260, RF-261, P2-19).
+A card keeps its `mergedFrom`, `mergedAreas` and `note`, and the coverage its `failure` and `note`, so a resumed run reports the
+same coverage failures and merged areas as an uninterrupted one (RF-206, RF-208, RF-250, P2-28).
 The file is masked like every file Rosetta writes. A resume keeps a task when the manifest lists it `Done`, `TurnLimitReached`
 or `InvalidOutput` and this file holds its result for the same area; any other task, and a finished task without a result,
 runs again. New cards are numbered after the kept ones, so an id once given never moves. A file that is not a version 1
 results file is refused with RST-1309.
 
-### 3.8 `spec.md`, `coverage.json`, `coverage.md`
+### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 
 - `spec.md`: the cards per area as one readable specification with links to the card files and, for every citation, to the
   cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
   is listed with its status, rejected ones included. The run summary of a re-run with answers (RF-241) adds `## New cards` and `## Changed cards` after the areas, each only when it has cards: a card is new when the earlier run that raised an answered question has no card of the same area, type and title, and changed when it has one whose claim texts differ. A last section, `## Areas without cards`, names every area whose
-  reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
+  reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33). After the areas, and only when the run has cards of the type, come `## Flows` (each `FLOW` card with its link, trigger, outcome, generated sequence diagram and its steps with their claim status), `## Screens` (the generated screen map first, which matches a leads-to route to the `SCRN` card with that route, then each `SCRN` card with its link, route, roles and links) and `## Data model` (a link to `data-model.md` with the number of entities) (RF-263, P2-22). Diagrams are made by `src/domain/diagrams/` from masked card text.
+- `data-model.md` (RF-262, P2-22): written with the cards when the run has at least one `ENT` card, never otherwise. `# Legacy data model`, the generated entity-relationship diagram, `## Entities` (each `ENT` card once, in card id order, with a link to its card file, summary, area, confidence, `Merged from:` when consolidation merged cards into it, and its claims as the fields, keys and relations the card states, each with status and citations, rejected ones included) and `## To confirm`. `ENT` cards hold claims, not structured fields or relations, so the diagram shows the entities only and the list says that relations are not recorded; a relation with an unknown cardinality is drawn dotted and listed there, never guessed.
 - `coverage.json`: `{ schemaVersion: 1, areas }` where each area is
   `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare, failure?, note? }`, where `note` (RF-206, RF-243) is present only for an area worth a remark: `not read` (its agent answered without reading any file of the area), `no readable file in the area (only binary or ignored files)`, `no application logic` (every file of the area is third-party code, so it writes no open question), the reasons joined by `; `, and `failure`
   (RF-208) is present only for an area whose task gave no usable card, in a few words with the code (`invalid output
@@ -379,13 +383,13 @@ results file is refused with RST-1309.
   estimated tokens in proportion to its lines read (rounded per file, then summed), `readTokenShare` their ratio from 0
   to 1 with four decimals (0 for an area without tokens). It holds no times, so the same coverage gives the same bytes. Rewritten with
   the cards after every task that ends (P2-04). Each area also has `surface: { flowsMarked, screensMarked, flowCards,
-  screenCards }` (RF-260, RF-261, RF-263, P2-19): whether the code map marked the area for flows (it holds an entry
+  screenCards, incompleteFlows? }` (RF-260, RF-261, RF-263, P2-19, P2-20): whether the code map marked the area for flows (it holds an entry
   point) and for screens (it holds a page, form, view or template), and how many `FLOW` and `SCRN` cards the task
-  wrote; the key is absent from coverage written before flows and screens existed.
+  wrote, and `incompleteFlows` how many of those flows have a step that is `CitationInvalid` or `Rejected` (worked out again whenever the file is written, so after the judgement step too); the keys are absent from coverage written before they existed.
 - `coverage.md` is its readable form (RF-230): a `## Run summary` table with, per area and for all areas, the files
   read of the files listed and the percentage of area tokens read, then one `## Area: <name>` table per area with each
   file and its read lines or `not read`. When an area failed (RF-208) a `## Failed areas` list follows the run summary, and when an area has a `note` a `## Notes` list follows that.
-  A `## Flows and screens` section follows it, one line per area: `<n> flow card(s); <n> screen card(s)`, or `no flows
+  A `## Flows and screens` section follows it, one line per area: `<n> flow card(s) (<n> incomplete); <n> screen card(s)` (the incomplete count only when above 0), or `no flows
   found` / `no screens found` for an area the code map did not mark for them, so the absence reads as a finding and
   not as a gap (RF-261).
 
@@ -432,6 +436,7 @@ Event types (canonical list):
 | `usage.recorded` | `{ callId, role, provider, model, tokens, costMicros, runTotals, projectTotals }` (RF-1003, RF-1010), published by the run's budget guards (`RunBudgetEvents`) after each answered call's ledger row, with the call's agent task in the envelope; `tokens`, `runTotals` and `projectTotals` are `{ inputTokens, outputTokens, cachedInputTokens }` (the totals with `costMicros`), the totals starting from the run's ledger rows and the project's totals when the run opened its providers; `costMicros` is 0 for a local model and left out when the model has no price (RF-427); never a prompt, an answer or a key |
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead. A role cap (`role-cost`, `role-tokens`, RF-423) stops only that role, so it adds `role` and is reported once per role and kind, without ending the once-per-run event of the cap that stops the run |
+| `cards.merged` | `{ cardId, from, claims }` (RF-250), one per card merge, published after the merged cards are written: `cardId` is the id the merged card keeps, `from` the ids of the cards merged and `claims` the `[{ from, to }]` claim ids the merge renumbered. Events before it name a claim by its old id; the run page and the replay follow `from` to `to` (a log without the event keeps the ids it recorded) |
 | `question.answered` | `{ cardId }` (RF-1007) |
 | `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run ends `Failed` only when every task failed (a provider failure), as before. It is the last event of a run until the run is resumed (RF-006), when the log goes on with another `run.started` and the numbers continue |
 

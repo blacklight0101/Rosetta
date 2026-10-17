@@ -39,6 +39,8 @@ export interface ActionInputs {
   readonly stage: RunStageChoice;
   readonly areas: readonly string[];
   readonly consent: boolean;
+  /** RF-241: re-run with the answers of the open questions. */
+  readonly withAnswers: boolean;
   readonly url: string;
   readonly capText: string;
   readonly thresholdText: string;
@@ -77,7 +79,12 @@ export interface StartActions {
 
 function requestOf(inputs: ActionInputs): StartRequest {
   if (inputs.stage === 'scan') return { stage: 'scan' };
-  return { stage: 'understand', areas: inputs.areas, cloudConsent: inputs.consent };
+  const request: StartRequest = {
+    stage: 'understand',
+    areas: inputs.areas,
+    cloudConsent: inputs.consent,
+  };
+  return inputs.withAnswers ? { ...request, withAnswers: true } : request;
 }
 
 /** The run cap and the confirm threshold the page asks for, in micro-dollars. */

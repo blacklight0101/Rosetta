@@ -50,6 +50,8 @@ const cardSchema = z.object({
   whyItMatters: text.optional(),
   questionState: z.enum(['Open', 'Answered']).optional(),
   mergedFrom: z.array(text).optional(),
+  mergedAreas: z.array(text).optional(),
+  note: text.optional(),
   flow: flowShape.optional(),
   screen: screenShape.optional(),
 });
@@ -65,7 +67,9 @@ const coverageSchema = z.object({
   tokens: count,
   readTokens: count,
   readTokenShare: z.number().min(0).max(1),
+  failure: text.optional(),
   surface: surfaceShape.optional(),
+  note: text.optional(),
 });
 
 const resultSchema = z.object({
@@ -88,14 +92,18 @@ function claimOf(claim: z.output<typeof claimSchema>): Claim {
 }
 
 function cardOf(card: z.output<typeof cardSchema>): Card {
-  const { claims, question, whyItMatters, questionState, mergedFrom, flow, screen, ...rest } = card;
+  const { claims, question, whyItMatters, questionState, mergedFrom, mergedAreas, note, ...rest } =
+    card;
+  const { flow, screen, ...base } = rest;
   return {
-    ...rest,
+    ...base,
     claims: claims.map(claimOf),
     ...(question === undefined ? {} : { question }),
     ...(whyItMatters === undefined ? {} : { whyItMatters }),
     ...(questionState === undefined ? {} : { questionState }),
     ...(mergedFrom === undefined ? {} : { mergedFrom }),
+    ...(mergedAreas === undefined ? {} : { mergedAreas }),
+    ...(note === undefined ? {} : { note }),
     ...detailOf({ flow, screen }),
   };
 }
@@ -106,8 +114,13 @@ export function parseTaskResults(value: unknown): readonly TaskResult[] | undefi
   const parsed = fileSchema.safeParse(value);
   if (!parsed.success) return undefined;
   return parsed.data.tasks.map((task): TaskResult => {
-    const { surface, ...stored } = task.coverage;
-    const coverage: AreaCoverage = { ...stored, ...surfaceOfStored(surface) };
+    const { surface, failure, note, ...stored } = task.coverage;
+    const coverage: AreaCoverage = {
+      ...stored,
+      ...(failure === undefined ? {} : { failure }),
+      ...surfaceOfStored(surface),
+      ...(note === undefined ? {} : { note }),
+    };
     return { ...task, cards: task.cards.map(cardOf), coverage };
   });
 }

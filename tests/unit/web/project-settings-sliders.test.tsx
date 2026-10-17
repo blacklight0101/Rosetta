@@ -259,6 +259,35 @@ it('RF-002 every slider on the settings page has a different name, also with the
   expect(new Set(names).size).toBe(names.length);
 });
 
+// RF-002, P2-29: while the run cost cap is out of its range, the confirm field shows no range hint.
+it('RF-002 the confirm field shows no range hint while the run cost cap is invalid', async () => {
+  renderSettings();
+  await loaded();
+
+  type('Run cost cap (USD)', '-1');
+
+  expect(screen.queryByText(/\$0\.25 is outside/u)).toBeNull();
+  expect(described(inputOf('Ask before a run estimated above (USD)'))).not.toContain('is outside');
+  expect(described(sliderOf('Ask before a run estimated above (USD)'))).not.toContain('is outside');
+});
+
+// RF-002, P2-29: a run cap above its maximum hides the confirm hint; a cap at zero (the minimum) keeps it.
+it('RF-002 a run cost cap above its maximum hides the confirm hint', async () => {
+  renderSettings();
+  await loaded();
+  type('Run cost cap (USD)', '150');
+  type('Ask before a run estimated above (USD)', '150');
+  expect(described(inputOf('Ask before a run estimated above (USD)'))).not.toContain('is outside');
+});
+
+it('RF-002 a run cost cap exactly at its minimum keeps the confirm hint', async () => {
+  renderSettings();
+  await loaded();
+  type('Run cost cap (USD)', '0');
+  type('Ask before a run estimated above (USD)', '0.4');
+  expect(described(inputOf('Ask before a run estimated above (USD)'))).toContain('is outside');
+});
+
 // RF-002, P2-26: the bottom of the range is inside it, so exactly the minimum shows no hint.
 it('RF-002 a value exactly at the minimum of its range shows no hint', async () => {
   renderSettings();
