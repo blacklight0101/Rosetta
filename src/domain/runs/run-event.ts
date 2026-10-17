@@ -23,6 +23,7 @@ export type RunEventType =
   | 'usage.recorded'
   | 'budget.warning'
   | 'budget.capReached'
+  | 'cards.merged'
   | 'question.answered'
   | 'run.ended';
 

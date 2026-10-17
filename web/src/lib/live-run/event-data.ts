@@ -107,3 +107,8 @@ export const endedData = z.looseObject({
 });
 
 export const scanData = z.looseObject({ files: count, areas: count });
+
+/** `cards.merged` (RF-250): the claims a merge renumbered, `from` the old id and `to` the new one. */
+export const cardsMergedData = z.looseObject({
+  claims: z.array(z.object({ from: text, to: text })),
+});

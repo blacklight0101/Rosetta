@@ -1,5 +1,10 @@
 import type { Card } from '../../domain/cards/card.js';
-import { applyMerges, type CardMerge, type MergeResult } from '../../domain/cards/card-merge.js';
+import {
+  applyMerges,
+  type CardMerge,
+  type MergeMoves,
+  type MergeResult,
+} from '../../domain/cards/card-merge.js';
 import type { CardType } from '../../domain/cards/card-vocabulary.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -36,6 +41,8 @@ export interface ConsolidationParts {
 export interface Consolidation {
   readonly cards: readonly Card[];
   readonly merges: readonly CardMerge[];
+  /** Where the claims of each merge went (RF-250); the run publishes them as `cards.merged`. */
+  readonly moves: readonly MergeMoves[];
 }
 
 const SUMMARISER = 'summariser';
@@ -101,7 +108,7 @@ async function consolidateType(
   cards: readonly Card[],
   type: CardType,
 ): Promise<Consolidation> {
-  const none = { cards, merges: [] };
+  const none = { cards, merges: [], moves: [] };
   const output = await ask(parts, cards, type);
   if (output === undefined) return none;
   const merges = parseMergeAnswer(output);
@@ -118,7 +125,7 @@ async function consolidateType(
     result,
     merges.filter((merge) => !usable.includes(merge)),
   );
-  return { cards: result.cards, merges: result.applied };
+  return { cards: result.cards, merges: result.applied, moves: result.moves };
 }
 
 /** The cards with the duplicates of several areas merged, and the merges made. */
@@ -127,11 +134,15 @@ export async function consolidateCards(
   parts: ConsolidationParts,
   cards: readonly Card[],
 ): Promise<Consolidation> {
-  let current: Consolidation = { cards, merges: [] };
+  let current: Consolidation = { cards, merges: [], moves: [] };
   for (const type of typesToMerge(cards)) {
     if (parts.signal.aborted) break;
     const next = await consolidateType(parts, current.cards, type);
-    current = { cards: next.cards, merges: [...current.merges, ...next.merges] };
+    current = {
+      cards: next.cards,
+      merges: [...current.merges, ...next.merges],
+      moves: [...current.moves, ...next.moves],
+    };
   }
   return current;
 }

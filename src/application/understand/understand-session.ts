@@ -182,6 +182,11 @@ export class UnderstandSession {
     const changes = changesOf(this.parts.rerun, merged.cards);
     const set = { cards: merged.cards, source, areasWithoutCards, mergedAway, ...changes };
     await deps.cards.writeCards(scopeOf(execution.run), set);
+    // RF-250, RF-1004: the merge renumbered claims; the pages move their verdicts by these events.
+    for (const move of merged.moves) {
+      const task = merged.cards.find((card) => card.id === move.cardId)?.agentTaskId;
+      await execution.events.emit('cards.merged', { ...move }, task);
+    }
   }
 
   /** RF-301, RF-302: the claims the citation check passed are judged, before any merge (RF-250). */
