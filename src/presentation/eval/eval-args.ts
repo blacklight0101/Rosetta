@@ -5,7 +5,9 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 // `eval/config.json`) holds the models and the caps; the command line may choose other models and
 // more repetitions, never fewer than three (the use case refuses them) and never other caps. RF-143:
 // the runs send the source to the chosen providers and spend money, so they start only with
-// `--yes`; without it the command shows what it would use and stops.
+// `--yes`; without it the command shows what it would use and stops. `--calibration` (RF-305) does
+// not run the golden set: it judges the hand-labelled claims of the calibration set with the
+// `verifier` role of each model of the settings (or of `--verifier`), so it takes no other role.
 
 export interface EvalArgs {
   readonly config: string;
@@ -14,6 +16,8 @@ export interface EvalArgs {
   readonly help: boolean;
   /** The owner's consent to send the source to the providers and spend up to the caps. */
   readonly yes: boolean;
+  /** RF-305: judge the calibration set instead of running the golden set. */
+  readonly calibration: boolean;
 }
 
 export const EVAL_USAGE = [
@@ -22,6 +26,8 @@ export const EVAL_USAGE = [
   '  --repetitions <n>        runs per case, at least 3 (default from the settings)',
   '  --reader <provider:model>, --verifier <provider:model>, --summariser <provider:model>',
   '                           models instead of those of the settings',
+  '  --calibration            judge the hand-labelled claims of the calibration set with the verifier',
+  '                           model(s) of the settings or of --verifier, and report the agreement per model',
   '  --yes                    start the runs; without it the models, caps and source are only shown',
   'Calls the providers of the chosen models with the server keys of .env; the caps of the',
   'settings bound each run and the whole evaluation. Results go to eval-out/<id>/.',
@@ -30,9 +36,10 @@ export const EVAL_USAGE = [
 const ROLE_FLAGS = ['--reader', '--verifier', '--summariser'] as const;
 
 /** The options that take no value. */
-const SWITCHES: ReadonlyMap<string, 'help' | 'yes'> = new Map([
+const SWITCHES: ReadonlyMap<string, 'help' | 'yes' | 'calibration'> = new Map([
   ['--help', 'help'],
   ['--yes', 'yes'],
+  ['--calibration', 'calibration'],
 ]);
 
 function roleOf(value: string): Result<{ provider: string; model: string }, string> {
@@ -47,6 +54,7 @@ interface Draft {
   roles: Record<string, { provider: string; model: string }>;
   help: boolean;
   yes: boolean;
+  calibration: boolean;
 }
 
 function apply(draft: Draft, flag: string, value: string): string | undefined {
@@ -63,9 +71,20 @@ function apply(draft: Draft, flag: string, value: string): string | undefined {
   return undefined;
 }
 
+/** RF-305: the options that mean nothing when the claims of the calibration set are judged. */
+function calibrationRefusal(draft: Draft): string | undefined {
+  const { reader, summariser } = draft.roles;
+  if (draft.repetitions === undefined && reader === undefined && summariser === undefined) {
+    return undefined;
+  }
+  return '--calibration judges claims once with the verifier: it takes no --repetitions, --reader or --summariser';
+}
+
 // RNF-015
 export function parseEvalArgs(args: readonly string[]): Result<EvalArgs, string> {
-  const draft: Draft = { config: 'config.json', roles: {}, help: false, yes: false };
+  const draft: Draft = {
+    ...{ config: 'config.json', roles: {}, help: false, yes: false, calibration: false },
+  };
   for (let index = 0; index < args.length; index += 1) {
     const flag = args[index] ?? '';
     const toggle = SWITCHES.get(flag);
@@ -79,6 +98,13 @@ export function parseEvalArgs(args: readonly string[]): Result<EvalArgs, string>
     if (problem !== undefined) return err(problem);
     index += 1;
   }
+  return finished(draft);
+}
+
+/** The options read, or why the combination of them is refused. */
+function finished(draft: Draft): Result<EvalArgs, string> {
+  const refused = draft.calibration ? calibrationRefusal(draft) : undefined;
+  if (refused !== undefined) return err(refused);
   const { reader, verifier, summariser } = draft.roles;
   const roles = {
     ...(reader === undefined ? {} : { reader }),

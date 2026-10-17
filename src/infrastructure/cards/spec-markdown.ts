@@ -1,5 +1,5 @@
 import type { CardChanges, CardRef } from '../../application/understand/card-changes.js';
-import type { Card } from '../../domain/cards/card.js';
+import { countClaims, type Card } from '../../domain/cards/card.js';
 import { incompleteSteps } from '../../domain/cards/flow-completeness.js';
 import type { Overview } from '../../domain/overview/overview.js';
 import type { TextMasker } from '../guards/secret-masker.js';
@@ -8,6 +8,7 @@ import { citationLink, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 import { renderSurfaceSections } from './spec-sections.js';
 import { overviewBody } from './overview-markdown.js';
+import { verificationSummaryLines } from './verification-summary-text.js';
 
 // RF-204, RF-125, data-model 3.8: `spec.md`, the cards per area as one readable specification with
 // links to the card files and to the cited lines. Areas and cards keep the order of `cards`
@@ -82,6 +83,8 @@ export function renderSpec(
   if (overview !== undefined) {
     lines.push('## Overview', '', ...overviewBody(overview, masker, { base: '', heading: '###' }));
   }
+  const counts = cards.map((card) => ({ area: card.area, counts: countClaims(card) }));
+  lines.push(...verificationSummaryLines(counts, esc));
   for (const [area, inArea] of areasInOrder(cards)) {
     lines.push(`## Area: ${esc.inline(area)}`, '');
     lines.push(...inArea.flatMap((card) => cardSection(card, source, esc)));

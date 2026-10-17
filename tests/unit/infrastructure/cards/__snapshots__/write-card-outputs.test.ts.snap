@@ -193,6 +193,16 @@ exports[`writeCardOutputs snapshots > RF-204 cards/index.json lists every card s
 exports[`writeCardOutputs snapshots > RF-204 spec.md presents the cards per area with links to the card files (snapshot) 1`] = `
 "# Specification
 
+## Verification summary
+
+Supported share: 0 of 7 claims (0.0%).
+
+| Area | Proposed | CitationInvalid | Supported | Rejected | Unverified | Total | Supported share |
+|---|---|---|---|---|---|---|---|
+| orders | 4 | 0 | 0 | 0 | 0 | 4 | 0.0% |
+| catalog | 3 | 0 | 0 | 0 | 0 | 3 | 0.0% |
+| All areas | 7 | 0 | 0 | 0 | 0 | 7 | 0.0% |
+
 ## Area: orders
 
 ### FEAT-001 Order checkout ([card file](cards/FEAT/FEAT-001.md))

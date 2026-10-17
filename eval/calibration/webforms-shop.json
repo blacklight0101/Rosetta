@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "version": "2026-10-17.webforms-shop",
+  "description": "Thirty claims about the synthetic webforms-shop fixture, labelled by hand: supported when the cited lines (with the three lines of margin the verifier sees) show what the claim says, not supported when they contradict it or do not show it.",
+  "source": { "folder": "tests/fixtures/repos/webforms-shop" },
+  "claims": [
+    {
+      "id": "cal-01",
+      "text": "The details page reads the item id from the request (query string, form fields or cookies) and loads the item through the catalogue service.",
+      "citations": ["Catalog/Details.aspx.cs:10-10"],
+      "supported": true,
+      "note": "Line 10 parses Request[\"id\"] and calls CatalogService.Get."
+    },
+    {
+      "id": "cal-02",
+      "text": "The details page shows the item's name and its price formatted as currency.",
+      "citations": ["Catalog/Details.aspx.cs:11-12"],
+      "supported": true,
+      "note": "Lines 11-12 set NameLabel and PriceLabel, the price with the C format."
+    },
+    {
+      "id": "cal-03",
+      "text": "The quantity on the details page must be a whole number from 1 to 10; otherwise the page shows 'Quantity must be between 1 and 10.'",
+      "citations": ["Catalog/Details.aspx:8-8"],
+      "supported": true,
+      "note": "A RangeValidator with minimum 1, maximum 10, type Integer and that message."
+    },
+    {
+      "id": "cal-04",
+      "text": "Clicking 'Add to basket' does nothing when the page is not valid.",
+      "citations": ["Catalog/Details.aspx.cs:17-17"],
+      "supported": true,
+      "note": "The handler returns when Page.IsValid is false."
+    },
+    {
+      "id": "cal-05",
+      "text": "After a line is added to the basket, the user is sent to the checkout page.",
+      "citations": ["Catalog/Details.aspx.cs:18-19"],
+      "supported": true,
+      "note": "Line 19 redirects to ~/Orders/Checkout.aspx."
+    },
+    {
+      "id": "cal-06",
+      "text": "The basket is kept in the session under the key 'Basket'.",
+      "citations": ["Catalog/Details.aspx.cs:18-18"],
+      "supported": true,
+      "note": "Session[\"Basket\"] is assigned."
+    },
+    {
+      "id": "cal-07",
+      "text": "The home page fills the catalogue grid only on the first load, not on a postback.",
+      "citations": ["Default.aspx.cs:11-11"],
+      "supported": true,
+      "note": "BindGrid is called only when IsPostBack is false."
+    },
+    {
+      "id": "cal-08",
+      "text": "A search removes the spaces around the typed text before it filters the catalogue.",
+      "citations": ["Default.aspx.cs:14-17"],
+      "supported": true,
+      "note": "SearchBox.Text.Trim() is passed to BindGrid."
+    },
+    {
+      "id": "cal-09",
+      "text": "Choosing the 'Details' command on a grid row opens the details page of that row's item.",
+      "citations": ["Default.aspx.cs:19-22"],
+      "supported": true,
+      "note": "The redirect carries the command argument as the id."
+    },
+    {
+      "id": "cal-10",
+      "text": "The checkout page requires an e-mail address.",
+      "citations": ["Orders/Checkout.aspx:5-6"],
+      "supported": true,
+      "note": "A RequiredFieldValidator on EmailBox with the message 'E-mail is required.'"
+    },
+    {
+      "id": "cal-11",
+      "text": "An e-mail address is accepted only when it has one or more characters other than '@', then an '@', then one or more characters other than '@'.",
+      "citations": ["Orders/Checkout.aspx:7-7"],
+      "supported": true,
+      "note": "The validation expression is ^[^@]+@[^@]+$."
+    },
+    {
+      "id": "cal-12",
+      "text": "When the basket is empty at checkout, the user is sent back to the home page.",
+      "citations": ["Orders/Checkout.aspx.cs:11-12"],
+      "supported": true,
+      "note": "A null basket redirects to ~/Default.aspx."
+    },
+    {
+      "id": "cal-13",
+      "text": "Placing an order empties the basket in the session.",
+      "citations": ["Orders/Checkout.aspx.cs:13-15"],
+      "supported": true,
+      "note": "Session[\"Basket\"] is set to null after Place."
+    },
+    {
+      "id": "cal-14",
+      "text": "Express shipping adds a fee of 12 to the order number and every other shipping method adds a fee of 4.",
+      "citations": ["Services/OrderService.cs:16-16"],
+      "supported": true,
+      "note": "A conditional expression on shipping == \"express\"."
+    },
+    {
+      "id": "cal-15",
+      "text": "The basket is a list in which each line holds an item id and a quantity.",
+      "citations": ["Services/OrderService.cs:9-11"],
+      "supported": true,
+      "note": "A List<int[]> to which new[] { itemId, quantity } is added."
+    },
+    {
+      "id": "cal-16",
+      "text": "The quantity is not limited from 1 to 10 but from 1 to 100.",
+      "citations": ["Catalog/Details.aspx:8-8"],
+      "supported": false,
+      "note": "The maximum is 10; the claim contradicts the line."
+    },
+    {
+      "id": "cal-17",
+      "text": "The search on the home page ignores upper and lower case.",
+      "citations": ["Default.aspx.cs:14-17"],
+      "supported": false,
+      "note": "The lines pass the trimmed text on; they say nothing about case."
+    },
+    {
+      "id": "cal-18",
+      "text": "The checkout page asks for the customer's postal address.",
+      "citations": ["Orders/Checkout.aspx:4-10"],
+      "supported": false,
+      "note": "The form has an e-mail box and a shipping list, no address."
+    },
+    {
+      "id": "cal-19",
+      "text": "Placing an order sends a confirmation e-mail to the customer.",
+      "citations": ["Orders/Checkout.aspx.cs:8-16"],
+      "supported": false,
+      "note": "The e-mail is passed to Place; nothing sends a message."
+    },
+    {
+      "id": "cal-20",
+      "text": "Orders are saved in a database table when they are placed.",
+      "citations": ["Services/OrderService.cs:14-18"],
+      "supported": false,
+      "note": "Place only computes a number."
+    },
+    {
+      "id": "cal-21",
+      "text": "Standard shipping costs 12 and express shipping costs 4.",
+      "citations": ["Services/OrderService.cs:16-16"],
+      "supported": false,
+      "note": "The fees are the other way round."
+    },
+    {
+      "id": "cal-22",
+      "text": "The details page sends users who are not signed in to the login page.",
+      "citations": ["Catalog/Details.aspx.cs:8-13"],
+      "supported": false,
+      "note": "Nothing checks who the user is."
+    },
+    {
+      "id": "cal-23",
+      "text": "The home page fills the catalogue grid on every request, including postbacks.",
+      "citations": ["Default.aspx.cs:9-12"],
+      "supported": false,
+      "note": "The condition skips the binding on a postback."
+    },
+    {
+      "id": "cal-24",
+      "text": "The basket is stored in a browser cookie.",
+      "citations": ["Catalog/Details.aspx.cs:18-18"],
+      "supported": false,
+      "note": "It is stored in the session."
+    },
+    {
+      "id": "cal-25",
+      "text": "The confirmation page loads the order from the database by its number.",
+      "citations": ["Orders/Confirm.aspx.cs:7-10"],
+      "supported": false,
+      "note": "It only prints the number from the query string."
+    },
+    {
+      "id": "cal-26",
+      "text": "Checkout checks the chosen shipping method against a list of allowed values and refuses any other.",
+      "citations": ["Orders/Checkout.aspx.cs:10-13"],
+      "supported": false,
+      "note": "The selected value is passed on unchecked."
+    },
+    {
+      "id": "cal-27",
+      "text": "A discount is applied to baskets of more than five items.",
+      "citations": ["Services/OrderService.cs:7-12"],
+      "supported": false,
+      "note": "AddToBasket applies no discount."
+    },
+    {
+      "id": "cal-28",
+      "text": "The catalogue service returns the items whose name contains the search term.",
+      "citations": ["Services/CatalogService.cs:14-14"],
+      "supported": false,
+      "note": "Find returns an empty list whatever the term."
+    },
+    {
+      "id": "cal-29",
+      "text": "An invalid e-mail address empties the basket.",
+      "citations": ["Orders/Checkout.aspx.cs:8-14"],
+      "supported": false,
+      "note": "When the page is not valid the handler returns before the basket is touched."
+    },
+    {
+      "id": "cal-30",
+      "text": "The details page shows a 'not found' message for an unknown item id.",
+      "citations": ["Catalog/Details.aspx.cs:8-13"],
+      "supported": false,
+      "note": "The item is used without any check."
+    }
+  ]
+}

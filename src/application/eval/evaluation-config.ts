@@ -13,6 +13,15 @@ const roleSchema = z.strictObject({
   model: z.string().min(1).max(200),
 });
 
+// RF-305: the calibration of the verifier: the set of hand-labelled claims under eval/, the models
+// that judge it (the `verifier` role of each, one agreement rate per model) and the cap of the whole
+// calibration. Without this section `--calibration` stops with a message.
+const calibrationSchema = z.strictObject({
+  set: z.string().min(1).max(200),
+  models: z.array(roleSchema).min(1).max(8),
+  capMicros: z.number().int().min(1),
+});
+
 const configSchema = z.strictObject({
   schemaVersion: z.literal(1),
   goldenSet: z.string().min(1).max(200),
@@ -25,6 +34,7 @@ const configSchema = z.strictObject({
   runCapMicros: z.number().int().min(1),
   totalCapMicros: z.number().int().min(1),
   parallelism: z.number().int().min(1).max(8).optional(),
+  calibration: calibrationSchema.optional(),
 });
 
 export type EvaluationConfig = z.infer<typeof configSchema>;

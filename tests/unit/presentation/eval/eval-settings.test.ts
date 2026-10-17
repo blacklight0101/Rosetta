@@ -26,7 +26,7 @@ const config: EvaluationConfig = {
   parallelism: 2,
 };
 
-const cli = { config: 'config.json', help: false, yes: false };
+const cli = { config: 'config.json', help: false, yes: false, calibration: false };
 
 describe('the settings of the evaluation runs', () => {
   it('ADR-007 takes the run cap from the settings file, never the total cap', () => {

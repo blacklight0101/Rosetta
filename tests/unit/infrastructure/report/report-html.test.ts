@@ -81,7 +81,7 @@ describe('renderReportHtml contents', () => {
 
 describe('renderReportHtml cards', () => {
   it('RF-504 lists the cards in a table with their area and claims', () => {
-    const cells = [...pageOf().document.querySelectorAll('tbody tr td')].map((cell) =>
+    const cells = [...pageOf().document.querySelectorAll('table.cards tbody tr td')].map((cell) =>
       cell.textContent.trim(),
     );
 

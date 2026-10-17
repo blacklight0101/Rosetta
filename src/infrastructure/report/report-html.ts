@@ -3,10 +3,24 @@ import {
   type ReportCard,
   type ReportModel,
 } from '../../application/report/report-model.js';
+import { summariseVerification } from '../../domain/cards/verification-summary.js';
+import {
+  OVERALL_LABEL,
+  SUMMARY_COLUMNS,
+  summaryCells,
+  summaryHeadline,
+} from '../cards/verification-summary-text.js';
 import { escapeHtml, renderModelText } from './html-text.js';
 import { overviewHtml } from './report-overview-html.js';
 import { renderPage } from './page-shell.js';
-import { cardsSummary, claimsText, COVERAGE_MISSING, dollars, plural } from './report-format.js';
+import {
+  cardsSummary,
+  claimsByArea,
+  claimsText,
+  COVERAGE_MISSING,
+  dollars,
+  plural,
+} from './report-format.js';
 import { sourceLink } from './report-source.js';
 
 // RF-504, RF-507, RF-1013, DEC-112: `report.html`, the report as static HTML in `report/` of the run
@@ -91,6 +105,37 @@ ${rows.join('\n')}
 </section>`;
 }
 
+/** The cells of a table row, each with the title of its column for the stacked layout of a phone. */
+function rowOf(cells: readonly string[], labels: readonly string[]): string {
+  const tds = cells.map((cell, index) => `<td data-label="${labels[index] ?? ''}">${cell}</td>`);
+  return `<tr>${tds.join('')}</tr>`;
+}
+
+/** RF-303: claims per status per area and the overall supported share; none for a run without cards. */
+function verification(model: ReportModel): string {
+  if (model.cards.length === 0) return '';
+  const summary = summariseVerification(claimsByArea(model.cards));
+  const rows = [
+    ...summary.areas.map((area) =>
+      rowOf([renderModelText(area.area), ...summaryCells(area)], SUMMARY_COLUMNS),
+    ),
+    rowOf([OVERALL_LABEL, ...summaryCells(summary.overall)], SUMMARY_COLUMNS),
+  ];
+  const head = SUMMARY_COLUMNS.map((name) => `<th scope="col">${name}</th>`).join('');
+  return `<section aria-labelledby="verification">
+<h2 id="verification">Verification summary</h2>
+<p>${summaryHeadline(summary)}</p>
+<div class="table-wrap" role="region" aria-label="Claims per status and area" tabindex="0">
+<table class="stacked">
+<thead><tr>${head}</tr></thead>
+<tbody>
+${rows.join('\n')}
+</tbody>
+</table>
+</div>
+</section>`;
+}
+
 function cardRow(card: ReportCard): string {
   const id = escapeHtml(card.id);
   const link = card.path === '' ? id : `<a href="../${escapeHtml(card.path)}">${id}</a>`;
@@ -139,6 +184,7 @@ export function renderReportHtml(model: ReportModel): string {
     facts(model),
     documents(model),
     areas(model),
+    verification(model),
     cards(model),
   ].join('\n');
   return renderPage({ page: 'report', runKey: model.runKey, title: 'Run report', main });
