@@ -22,7 +22,7 @@ const renderSettings = (answers: Readonly<Record<string, Answer>> = {}) =>
   );
 
 function sliderOf(label: string): HTMLInputElement {
-  const slider = screen.getByLabelText(`${label} slider`);
+  const slider = screen.getByRole('slider', { name: `${label} slider` });
   if (!(slider instanceof HTMLInputElement)) throw new Error(`${label} slider is not an input.`);
   return slider;
 }
