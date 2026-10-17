@@ -1,3 +1,4 @@
+import { isCapStop } from '../../domain/budget/cap-stop.js';
 import type { Claim } from '../../domain/cards/card.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -17,7 +18,8 @@ import { verifierRetryMessage, type VerifierPrompts } from './verifier-prompts.j
 // answers with a one-line reason before its verdict. An answer that cannot be read gets one retry
 // that names its problem; a second one leaves the claim `Unverified`, and so does evidence that
 // cannot be read or is too long, and a call that fails. Nothing but a well-formed verdict is ever
-// `Supported`. A stop of the run (the Stop button, shutdown or a cap) gives no verdict at all.
+// `Supported`. A stop of the run (the Stop button, shutdown) gives no verdict at all; a cap that
+// refuses the call or stops the run gives `capped`, so the step leaves the claim `Unverified` (RF-304).
 
 export type Judgement =
   | {
@@ -25,7 +27,9 @@ export type Judgement =
       readonly status: JudgedStatus | 'Unverified';
       readonly reason: string;
     }
-  | { readonly kind: 'stopped' };
+  | { readonly kind: 'stopped' }
+  /** RF-304: a cap refused the call or stopped the run; the claim is left `Unverified`. */
+  | { readonly kind: 'capped' };
 
 /** Who the calls belong to: the run, its trace and its one numbering of call ids. */
 interface JudgementCall {
@@ -96,14 +100,24 @@ function requestOf(
   };
 }
 
-/** A failed call: a stop of the run gives no verdict; any other failure leaves the claim unverified. */
+/** RF-304: the reason of a claim a cap left unjudged. */
+export const CAP_UNVERIFIED_REASON = `A cap was reached before the claim was judged (${ERROR_CODES.budgetCapReached}).`;
+
+/** A run stopped by a cap (RF-304) or by anything else (the Stop button, shutdown). */
+function stopOf(signal: AbortSignal): Judgement {
+  return isCapStop(signal.reason) ? { kind: 'capped' } : { kind: 'stopped' };
+}
+
+/**
+ * A failed call: a cap that refuses it (the verifier's own or the run's) gives `capped`, any other
+ * stop of the run gives no verdict, and any other failure leaves the claim unverified.
+ */
 function failureOf(error: unknown, signal: AbortSignal): Judgement {
   const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
-  const stopped =
-    signal.aborted ||
-    code === ERROR_CODES.providerCallCancelled ||
-    code === ERROR_CODES.budgetCapReached;
-  return stopped ? { kind: 'stopped' } : unverified(`The verifier call failed (${code}).`);
+  if (code === ERROR_CODES.budgetCapReached) return { kind: 'capped' };
+  if (signal.aborted) return stopOf(signal);
+  if (code === ERROR_CODES.providerCallCancelled) return { kind: 'stopped' };
+  return unverified(`The verifier call failed (${code}).`);
 }
 
 async function ask(
@@ -126,6 +140,7 @@ export async function judgeClaim(
   claim: JudgedClaim,
   parentSpanId: string,
 ): Promise<Judgement> {
+  if (parts.call.signal.aborted) return stopOf(parts.call.signal);
   const evidence = await readCitedLines(parts.reader, claim.citations, parts.limits);
   if (!evidence.ok) return unverified(evidence.error);
   const asked: LlmMessage[] = [

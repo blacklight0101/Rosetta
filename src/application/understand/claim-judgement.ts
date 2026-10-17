@@ -1,3 +1,4 @@
+import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { transitionClaim, type Card, type Claim } from '../../domain/cards/card.js';
 import type { ClaimStatus } from '../../domain/cards/card-vocabulary.js';
 import { recordManifestModelVersion } from '../../domain/runs/run-manifest.js';
@@ -11,7 +12,11 @@ import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
 import { defaultEvidenceLimits } from '../verifier/cited-lines.js';
-import { judgeClaim, type ClaimJudgeParts } from '../verifier/judge-claim.js';
+import {
+  CAP_UNVERIFIED_REASON,
+  judgeClaim,
+  type ClaimJudgeParts,
+} from '../verifier/judge-claim.js';
 import type { VerifierPrompts } from '../verifier/verifier-prompts.js';
 import { readerParallelism } from './reader-settings.js';
 import { runPool } from './task-pool.js';
@@ -20,8 +25,8 @@ import { runPool } from './task-pool.js';
 // `Proposed` after the citation check (step 1) is judged by the `verifier` role, at most
 // `agents.parallelism` at a time; each verdict is published as `verify.claim.judged` the moment it
 // arrives, so the live page moves the claim, and the cards are returned with every verdict in card
-// and claim order. A claim is never removed; one the run stopped before judging keeps its status, and
-// so does every claim after a call that a cap refused.
+// and claim order. A claim is never removed; one the run stopped before judging keeps its status,
+// unless a cap stopped the judgement: then it is `Unverified`, so a later run can judge it (RF-304).
 
 /** Whether a claim still waits for the judgement step. */
 export function isProposed(claim: Claim): boolean {
@@ -86,25 +91,29 @@ export async function judgeClaims(
 ): Promise<readonly Card[]> {
   const { judge, events, clock } = parts;
   const decided = new Map<string, Decided>();
+  const decide = async ({ card, claim }: Pending, status: Decided['status'], reason: string) => {
+    decided.set(claim.claimId, { status, reason, at: clock.now().toISOString() });
+    const data = { claimId: claim.claimId, status, reason };
+    await events.emit('verify.claim.judged', data, card.agentTaskId);
+  };
+  const pending = pendingOf(cards);
   const options = { parallelism: parts.parallelism, signal: judge.call.signal };
   // RF-423: the verifier's own cap refuses its calls without stopping the run; once a call is
   // refused or cancelled, no further claim is sent.
-  let halted = false;
-  await runPool(pendingOf(cards), options, async ({ card, claim, index }) => {
-    if (halted) return;
-    const judgement = await judgeClaim(judge, claim, spanIdOf(judge.call.traceId, index));
-    if (judgement.kind === 'stopped') {
-      halted = true;
-      return;
-    }
-    const { status, reason } = judgement;
-    decided.set(claim.claimId, { status, reason, at: clock.now().toISOString() });
-    await events.emit(
-      'verify.claim.judged',
-      { claimId: claim.claimId, status, reason },
-      card.agentTaskId,
-    );
+  const halt = { stopped: false, capped: false };
+  await runPool(pending, options, async (each) => {
+    if (halt.stopped || halt.capped) return;
+    const judgement = await judgeClaim(judge, each.claim, spanIdOf(judge.call.traceId, each.index));
+    if (judgement.kind === 'judged') await decide(each, judgement.status, judgement.reason);
+    else halt[judgement.kind] = true;
   });
+  // RF-304: a cap (the verifier's or the run's) leaves every claim not judged `Unverified`; any
+  // other stop leaves them `Proposed`.
+  if (halt.capped || isCapStop(judge.call.signal.reason)) {
+    for (const each of pending.filter(({ claim }) => !decided.has(claim.claimId))) {
+      await decide(each, 'Unverified', CAP_UNVERIFIED_REASON);
+    }
+  }
   return cards.map((card) => withVerdicts(card, decided, parts.model));
 }
 
