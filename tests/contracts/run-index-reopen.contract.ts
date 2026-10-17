@@ -19,7 +19,7 @@ async function stored(index: RunIndex): Promise<Run> {
 async function ended(index: RunIndex, endState: RunEndState): Promise<Run> {
   const run = await stored(index);
   await index.start(run.id, 5_000);
-  const done = await index.end(run.id, endState, 9_000);
+  const done = await index.end(run.id, endState, 9_000, 2);
   if (done === undefined) throw new Error('The run did not end');
   return done;
 }
@@ -35,6 +35,7 @@ function reopensTests(name: string, fresh: FreshRuns): void {
 
       expect(reopened).toEqual({
         ...run,
+        failedAreas: 0,
         queueState: 'Queued',
         endState: null,
         queuedAt: 20_000,

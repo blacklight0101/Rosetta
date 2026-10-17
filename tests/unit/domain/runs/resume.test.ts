@@ -17,6 +17,7 @@ function endedRun(endState: 'Completed' | 'CapReached' | 'Failed' | 'Interrupted
     endState,
     startedAt: 5_000,
     endedAt,
+    failedAreas: 2,
     totals: { costMicros: 120, inputTokens: 1000, outputTokens: 50, cachedInputTokens: 0 },
   });
 }
@@ -33,6 +34,7 @@ describe('reopenRun', () => {
         ok: true,
         value: {
           ...ended,
+          failedAreas: 0,
           queueState: 'Queued',
           endState: null,
           queuedAt: 20_000,
