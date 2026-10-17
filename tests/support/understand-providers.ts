@@ -38,24 +38,34 @@ export type BeforeCall = (call: number, signal: AbortSignal) => Promise<void>;
 /** Changes an answer of the recording before the run sees it, by call number (from 1). */
 export type DecorateAnswer = (call: number, response: LlmResponse) => LlmResponse;
 
-/** The fake behind every role, with a hook before each call. */
+/** No call: a `verifier` call the test gave no recording for fails with RST-1503. */
+const noCalls: Recording = { schemaVersion: 1, description: 'no verifier calls', calls: [] };
+
+/**
+ * The fake behind every role, with a hook before each reader call. The `verifier` role (RF-301)
+ * replays a recording of its own, so the reader's recording keeps its order whatever the
+ * judgement step asks; the hook and the call numbers count the reader's calls only.
+ */
 class HookedProvider implements LlmProvider {
   readonly fake: FakeProvider;
+  readonly verifier: FakeProvider;
   private readonly before: BeforeCall | undefined;
   private readonly decorate: DecorateAnswer | undefined;
   private calls = 0;
 
   constructor(
-    recording: Recording,
+    recordings: { readonly reader: Recording; readonly verifier: Recording | undefined },
     before: BeforeCall | undefined,
     decorate: DecorateAnswer | undefined,
   ) {
-    this.fake = new FakeProvider({ testMode: true, recording });
+    this.fake = new FakeProvider({ testMode: true, recording: recordings.reader });
+    this.verifier = new FakeProvider({ testMode: true, recording: recordings.verifier ?? noCalls });
     this.before = before;
     this.decorate = decorate;
   }
 
   async complete(request: LlmRequest, observer?: LlmAttemptObserver): Promise<LlmResponse> {
+    if (request.context.role === 'verifier') return this.verifier.complete(request, observer);
     this.calls += 1;
     await this.before?.(this.calls, request.signal);
     const response = await this.fake.complete(request, observer);
@@ -68,6 +78,8 @@ export interface UnderstandProviders {
   readonly ledger: SpyLedger;
   /** The requests the fake received, in order. */
   readonly requests: () => readonly LlmRequest[];
+  /** The requests of the `verifier` role, in order (RF-301). */
+  readonly verifierRequests: () => readonly LlmRequest[];
   readonly runSinks: (scope: RunScope) => Pick<ProviderSinks, 'recorder' | 'egressLog'>;
 }
 
@@ -78,6 +90,8 @@ export interface UnderstandProviderParts {
   readonly clock: FixedClock;
   readonly logger: Logger;
   readonly recording: Recording;
+  /** What the `verifier` role answers (RF-301); without it every verifier call fails. */
+  readonly verifierRecording?: Recording;
   readonly beforeCall?: BeforeCall;
   readonly decorateAnswer?: DecorateAnswer;
   /** The shipped price table the provider factory uses; the budget harness table by default. */
@@ -92,7 +106,8 @@ export interface UnderstandProviderParts {
 
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
   const { dataDir, writer, masker, clock, logger } = parts;
-  const adapter = new HookedProvider(parts.recording, parts.beforeCall, parts.decorateAnswer);
+  const recordings = { reader: parts.recording, verifier: parts.verifierRecording };
+  const adapter = new HookedProvider(recordings, parts.beforeCall, parts.decorateAnswer);
   const ledger = new SpyLedger(new MemoryCostLedger());
   const keys = new MemoryProviderKeyRepository();
   const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
@@ -127,6 +142,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     factory,
     ledger,
     requests: () => adapter.fake.requests,
+    verifierRequests: () => adapter.verifier.requests,
     runSinks: (scope) => ({
       recorder: new JsonlProviderCallLog({
         runDir: join(dataDir, 'users', scope.userId, runPath(scope.projectId, scope.runKey)),

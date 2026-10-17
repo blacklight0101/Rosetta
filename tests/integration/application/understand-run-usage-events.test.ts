@@ -42,13 +42,18 @@ describe('an understand run: usage events', () => {
 
     const events = await h.eventsOf(run);
     const usage = usageOf(events);
-    expect(usage).toHaveLength(8);
-    expect(new Set(usage.map((event) => event.data['role']))).toEqual(new Set(['reader']));
+    expect(usage).toHaveLength(13);
+    expect(new Set(usage.map((event) => event.data['role']))).toEqual(
+      new Set(['reader', 'verifier']),
+    );
     expect(usage.map((event) => event.agentTaskId)).toEqual([
       ...['reader-001', 'reader-001', 'reader-002', 'reader-003', 'reader-004'],
       ...['reader-005', 'reader-005', 'reader-005'],
+      // RF-301: the judgement of each claim that passed the citation check, in card order.
+      ...['verifier-FEAT-001.c1', 'verifier-OQ-001.c1', 'verifier-BR-001.c1'],
+      ...['verifier-ENT-001.c1', 'verifier-BR-002.c1'],
     ]);
-    for (const event of usage) {
+    for (const event of usage.filter((each) => each.data['role'] === 'reader')) {
       const started = events.find(
         (each) => each.type === 'agent.started' && each.agentTaskId === event.agentTaskId,
       );
@@ -63,10 +68,10 @@ describe('an understand run: usage costs', () => {
 
     const usage = usageOf(await h.eventsOf(run));
 
-    expect(costsOf(usage)).toEqual(Array.from({ length: 8 }, () => 0));
+    expect(costsOf(usage)).toEqual(Array.from({ length: 13 }, () => 0));
     expect(usage.at(-1)?.data).toMatchObject({
-      runTotals: { inputTokens: 8_800, outputTokens: 1_090, costMicros: 0 },
-      projectTotals: { inputTokens: 8_800, outputTokens: 1_090, costMicros: 0 },
+      runTotals: { inputTokens: 10_900, outputTokens: 1_290, costMicros: 0 },
+      projectTotals: { inputTokens: 10_900, outputTokens: 1_290, costMicros: 0 },
     });
   });
 

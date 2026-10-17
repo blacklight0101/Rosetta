@@ -144,7 +144,8 @@ function EndedBody(props: BodyProps): JSX.Element {
       <RunMeter state={state} costMicros={costOf(state, run)} estimate={estimate} />
       <AgentsGrid state={shown} />
       {stage === 'understand' ? <CoverageMap state={shown} /> : null}
-      <ClaimsList claims={shown.claims} source={sourceOf(state, run)} />
+      {/* RF-1014: the run has ended, so no claim waits for judgement any more. */}
+      <ClaimsList claims={shown.claims} source={sourceOf(state, run)} pending={false} />
       {stage === 'understand' ? <RunAnswers runId={run.id} ended /> : null}
       <EventLog lines={shown.log} startedAt={shown.startedAt} />
     </>

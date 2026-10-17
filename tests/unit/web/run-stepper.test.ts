@@ -157,7 +157,7 @@ it('RF-1002 RF-1004 Understand counts the agents done of the agents planned and 
     'Report:waiting',
   ]);
   expect(steps[2]?.detail).toBe('1 of 3 agents done');
-  expect(steps[3]?.detail).toBe('2 of 3 citations checked. Judgement comes in a later version.');
+  expect(steps[3]?.detail).toBe('2 of 3 citations checked, 1 waiting for judgement');
 });
 
 it('RF-1002 Verify becomes the current step once every agent has ended', () => {
@@ -181,7 +181,7 @@ it('RF-1002 Verify becomes the current step once every agent has ended', () => {
     'Report:waiting',
   ]);
   expect(steps[2]?.detail).toBe('1 of 1 agents done');
-  expect(steps[3]?.detail).toBe('1 of 2 citations checked. Judgement comes in a later version.');
+  expect(steps[3]?.detail).toBe('1 of 2 citations checked, 1 waiting for judgement');
 });
 
 it('RF-1002 a completed understand run has every step done but the report, which the run does not build', () => {

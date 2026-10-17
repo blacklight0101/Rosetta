@@ -1,3 +1,4 @@
+import { verifyDetail, waitsForJudgement } from './judgement-state.js';
 import type { RunPhase } from './run-phase.js';
 import type { RunState } from './run-state.js';
 import { overviewOf } from './run-summary.js';
@@ -45,12 +46,6 @@ function agentsDone(state: RunState): string | undefined {
   const { done, failed } = overviewOf(state);
   const lost = failed === 0 ? '' : `, ${String(failed)} failed`;
   return `${String(done)} of ${String(state.agents.length)} agents done${lost}`;
-}
-
-function claimsChecked(state: RunState): string | undefined {
-  if (state.claims.length === 0) return undefined;
-  const checked = state.claims.filter((claim) => claim.status !== 'Proposed').length;
-  return `${String(checked)} of ${String(state.claims.length)} citations checked. Judgement comes in a later version.`;
 }
 
 function everyAgentEnded(state: RunState): boolean {
@@ -104,12 +99,14 @@ function scanSteps(run: StepperRun, state: RunState, phase: RunPhase): readonly 
 function readerSteps(state: RunState, phase: RunPhase): readonly Step[] {
   const completed = completedOf(phase);
   const understood = completed || (everyAgentEnded(state) && overviewOf(state).failed === 0);
-  const verified = understood && (completed || everyClaimChecked(state));
+  // RF-1014: Verify is done once every claim was checked and none still waits for judgement.
+  const checked = everyClaimChecked(state) && !waitsForJudgement(state);
+  const verified = understood && (completed || checked);
   const started = understood || claimsStarted(state);
   const verify: Progress = verified ? 'done' : afterwards(started);
   return [
     step('Understand', statusOf(understood ? 'done' : 'working', phase), agentsDone(state)),
-    step('Verify', statusOf(verify, phase), claimsChecked(state)),
+    step('Verify', statusOf(verify, phase), verifyDetail(state)),
   ];
 }
 

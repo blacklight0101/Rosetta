@@ -43,7 +43,7 @@ export async function loadPromptFile(promptsFolder: string, name: string): Promi
   return { name, version, sha256: createHash('sha256').update(bytes).digest('hex'), text };
 }
 
-function requirePlaceholder(file: PromptFile, placeholder: string): PromptFile {
+export function requirePlaceholder(file: PromptFile, placeholder: string): PromptFile {
   if (file.text.split(placeholder).length !== 2) {
     throw invalid(file.name, `must hold the placeholder ${placeholder} exactly once`);
   }

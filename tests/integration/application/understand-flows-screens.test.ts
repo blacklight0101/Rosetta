@@ -33,6 +33,7 @@ beforeAll(async () => {
     dataDir: dir,
     recording: 'understand-flows-screens.json',
     fixture: 'webforms-shop',
+    verifierRecording: 'verifier-all-supported.json',
   });
   await h.scan();
   const run = await h.understand();
@@ -70,7 +71,7 @@ describe('an understand run over the WebForms shop: cards', () => {
     for (const flow of flows) {
       expect(flow.claims.length).toBeGreaterThan(1);
       expect(flow.claims.every((step) => step.citations.length > 0)).toBe(true);
-      expect(flow.claims.every((step) => step.status === 'Proposed')).toBe(true);
+      expect(flow.claims.every((step) => step.status === 'Supported')).toBe(true);
       expect(flow.flow?.trigger).not.toBe('');
     }
   });

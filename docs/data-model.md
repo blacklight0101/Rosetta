@@ -320,6 +320,14 @@ time per run folder, so a run that stops keeps the cards of the tasks that ended
 (verifier step 1) before it is written: a citation of a path that is not a file of the code map, a range whose start or end
 is not a whole number or that breaks `1 <= start <= end`, or a range that ends after the file's last line, makes the claim `CitationInvalid` with the reason in its verdict
 (`{ step: citation, model: citation-check }`); a claim that passes stays `Proposed` until the judgement step (DEC-103).
+When every reader task has ended (and the run was not stopped), and before duplicate cards are merged (RF-250, a
+merged card keeps each claim with its verdict), the judgement step (verifier step 2, RF-301, P2-02)
+judges each claim still `Proposed` with the `verifier` role and the set is written once more: the claim becomes
+`Supported` or `Rejected` with the model's one-line reason, or `Unverified` with the reason it could not be judged
+(an answer unreadable after one retry, cited lines that cannot be read or are too long, a failed call, or a cap
+reached before it was judged, RF-304), in a verdict `{ step: judgement, reason, model: <the verifier's model>, at }`.
+A claim the run stopped (Stop, shutdown) before judging keeps `Proposed`. Each verdict is also the run event
+`verify.claim.judged`.
 
 In the header a citation is the string `path:startLine-endLine`; absent optional fields are left out. Every string is a
 double-quoted scalar, so model text cannot add a key. `cards/index.json` has `schemaVersion` and `cards`, and its
@@ -417,7 +425,9 @@ Event types (canonical list):
 | `agent.card.proposed` | `{ cardId, type, title, claims }` |
 | `agent.ended` | `{ state (AgentTaskState), turns, cards }` |
 | `verify.citation.checked` | `{ claimId, ok, reason?, text?, citations? }` where `text` is the claim text and `citations` its cited lines `[{ path, startLine, endLine }]`, so the live run page can list the claim and link its lines (RF-1004); readers that predate the two fields ignore them |
+| `verify.judgement.started` | `{ claims }`: the judgement step (RF-301) starts with that many claims to judge; published only when a claim passed the citation check |
 | `verify.claim.judged` | `{ claimId, status, reason }` |
+| `verify.judgement.ended` | `{ supported, rejected, unverified, notJudged }`: the judgement step ended; `notJudged` counts the claims a stop left `Proposed`. The live run page shows a claim as waiting for judgement only before this event and while the run works (RF-1014) |
 | `usage.recorded` | `{ callId, role, provider, model, tokens, costMicros, runTotals, projectTotals }` (RF-1003, RF-1010), published by the run's budget guards (`RunBudgetEvents`) after each answered call's ledger row, with the call's agent task in the envelope; `tokens`, `runTotals` and `projectTotals` are `{ inputTokens, outputTokens, cachedInputTokens }` (the totals with `costMicros`), the totals starting from the run's ledger rows and the project's totals when the run opened its providers; `costMicros` is 0 for a local model and left out when the model has no price (RF-427); never a prompt, an answer or a key |
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead. A role cap (`role-cost`, `role-tokens`, RF-423) stops only that role, so it adds `role` and is reported once per role and kind, without ending the once-per-run event of the cap that stops the run |
@@ -550,6 +560,9 @@ nothing of the original entry; it is filtered by its own level, so it reaches st
 The Logs panel (RF-1011, `GET /api/runs/:runId/logs`) reads these files through `FileApplicationLogReader` (at most 31 days, masked again on read) and shows an entry to the owner of a run only when its `runId` is the run's id and any `userId` it carries is the owner's, or its `runId` is the run's key and its `userId` is the owner's. An entry with the key and no user is never shown: the key is unique per project only and a deleted run's entries stay in the files, so it may belong to another user's run that is gone (P1-122). The run's own writers therefore name the owner beside the key: `ownerLogger` for the understand session and for the egress and budget guards that the provider factory builds for the run (their security events and cap refusals), and the queue and the lifecycle directly.
 
 ### 3.15 `transcripts/<agentTaskId>.jsonl`
+
+The judgement step (RF-301) uses one agent task id per claim, `verifier-<claimId>` (for example
+`verifier-BR-001.c1`), so the claim's call and its one retry form one conversation and one transcript.
 
 The masked messages exchanged with the model for one agent task, one message per line `{ schemaVersion, seq, at,
 callId, role (system, user, assistant, tool), content, toolCalls? }`. Written unless the project setting `output.transcripts` is false (DEC-43).

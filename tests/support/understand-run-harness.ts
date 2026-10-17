@@ -17,12 +17,8 @@ import type { Run } from '../../src/domain/runs/run.js';
 import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
-import {
-  loadRecording,
-  type Recording,
-} from '../../src/infrastructure/providers/fake/recording.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
-import { fakeResponse } from './fake-recordings.js';
+import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
@@ -45,13 +41,17 @@ import {
 const account = sampleAccount({ userName: 'understand.user' });
 const understandActor: Actor = { userId: account.id, role: 'user' };
 
-/** The fake reader, one task at a time (the fake replays its calls in order). */
+/**
+ * The fake reader, one task at a time (the fake replays its calls in order), and a fake verifier
+ * of another model family (RF-301), so a run logs no self-preference warning unless a test asks.
+ */
 export function understandSettings(
   change: (settings: ProjectSettings) => ProjectSettings = (s) => s,
 ): ProjectSettings {
   const base = settingsFor({
     reader: { provider: 'fake', model: 'fake-model' },
     summariser: { provider: 'fake', model: 'fake-model' },
+    verifier: { provider: 'fake', model: 'judge-model' },
   });
   return change({ ...base, agents: { parallelism: 1 } });
 }
@@ -65,6 +65,8 @@ export interface UnderstandHarnessOptions {
   readonly afterwards?: string;
   /** While it answers true the card writer of the understand runs refuses every card write. */
   readonly cardWritesFail?: () => boolean;
+  /** A file name under tests/recordings/fake/ the `verifier` role replays (RF-301). */
+  readonly verifierRecording?: string;
   readonly settings?: ProjectSettings;
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
@@ -223,47 +225,11 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
   };
 }
 
-/** The recording's calls `times` over, so several runs can replay it in turn. */
-function repeated(recording: Recording, times: number): Recording {
-  return { ...recording, calls: Array.from({ length: times }, () => recording.calls).flat() };
-}
-
 function keysOf(given: UnderstandHarnessOptions['openAiKey']): Partial<UnderstandProviderParts> {
   if (given === undefined) return {};
   return given.of === 'server'
     ? { serverOpenAiKey: given.key }
     : { ownOpenAiKey: { userId: account.id, key: given.key } };
-}
-
-/**
- * The summariser's answer to the one group of duplicate candidates of the first run (RF-250): no
- * merge. It stands between the first run's calls and the later runs' calls.
- */
-const noMerge: Recording['calls'][number] = {
-  attempts: [
-    {
-      response: fakeResponse({
-        text: '```json\n{"merges": []}\n```',
-        toolCalls: [],
-        usage: {
-          inputTokens: 100,
-          outputTokens: 10,
-          cachedInputTokens: 0,
-          usageSource: 'reported',
-        },
-        finishReason: 'stop',
-      }),
-    },
-  ],
-};
-
-/** The recording of the options: the first file replayed, then the file for later runs. */
-async function recordingOf(options: UnderstandHarnessOptions): Promise<Recording> {
-  const load = (name: string) => loadRecording(join('tests', 'recordings', 'fake', name));
-  const first = repeated(await load(options.recording), options.replays ?? 1);
-  if (options.afterwards === undefined) return first;
-  const later = await load(options.afterwards);
-  return { ...first, calls: [...first.calls, noMerge, ...later.calls] };
 }
 
 // RF-200
@@ -284,8 +250,9 @@ export async function createUnderstandHarness(
   const providers = understandProviders({
     ...{ dataDir: options.dataDir, writer: s.writer, masker: s.masker, clock: s.clock },
     logger: s.logger,
-    recording: await recordingOf(options),
+    recording: await readerRecordingOf(options),
     beforeCall,
+    ...(await verifierRecordingOf(options.verifierRecording)),
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
     ...keysOf(options.openAiKey),

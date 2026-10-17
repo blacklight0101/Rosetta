@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "Written by hand for this repository; no real provider was called. One claim of the webforms-csharp fixture: the verifier writes its verdict before its reason, then, after the retry, the reason first.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Verdict: Rejected\nReason: Line 7 sets the label, but nothing shows when.",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-1",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 7 sets the label in Page_Load, which runs when the page loads.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-2",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

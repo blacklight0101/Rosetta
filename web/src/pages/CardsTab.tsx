@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { Glyph, type GlyphName } from '../components/Glyph.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { cardViewsOf, type CardView } from '../lib/live-run/card-checks.js';
+import { judgementPending } from '../lib/live-run/judgement-state.js';
 import type { ClaimRow, RunState, SourceState } from '../lib/live-run/run-state.js';
 import { ClaimsList } from './ClaimsList.js';
 
@@ -55,7 +56,11 @@ export function CardsTab(props: {
           ))}
         </ul>
       )}
-      <ClaimsList claims={props.claims} source={props.source} />
+      <ClaimsList
+        claims={props.claims}
+        source={props.source}
+        pending={judgementPending(props.state)}
+      />
     </>
   );
 }

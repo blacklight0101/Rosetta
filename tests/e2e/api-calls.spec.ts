@@ -12,7 +12,7 @@ import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 
-// RF-1011, RF-408, RF-1105, P1-37: the "API calls" and "Logs" panels of a real understand run of the
+// RF-1011, RF-408, RF-1105, RF-301, P1-37: the "API calls" and "Logs" panels of a real understand run of the
 // test server, which replays the recorded run of the C# fixture (e2e-provider.ts). Nothing of the
 // API or the event stream is replaced. A retried call, a failed call and the log entries the
 // recorded run does not make are appended to the run's own files, which the server reads back
@@ -25,13 +25,16 @@ test.beforeEach(async ({ context }, info) => {
 });
 
 /**
- * The rows the recorded understand run shows (e2e-provider.ts): its reader calls, and the start check
+ * The rows the recorded understand run shows (e2e-provider.ts): its reader calls, the start check
  * of an Ollama reader, one call per Ollama provider and model before the first task (RF-401,
- * reader-preflight.ts). The problem calls appendProblemCalls adds (run-folder.ts) are three rows.
+ * reader-preflight.ts), and the verifier's judgement of the three claims of the two areas that pass
+ * the citation check (RF-301). The problem calls appendProblemCalls adds (run-folder.ts) are three rows.
  */
 const readerCalls = 3;
 const ollamaStartChecks = 1;
 const readerRows = readerCalls + ollamaStartChecks;
+const verifierRows = 3;
+const runRows = readerRows + verifierRows;
 const appendedProblemRows = 3;
 
 /** The path of the live page of the run (`/runs/<uuid>`). */
@@ -59,12 +62,12 @@ test('RF-1011 the calls of a run appear in the panel as it works, and the summar
 
   await expect(page.getByRole('heading', { name: 'API calls and logs', level: 1 })).toBeVisible();
   await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
-  await expect(rows(page)).toHaveCount(readerRows, { timeout: 60_000 });
+  await expect(rows(page)).toHaveCount(runRows, { timeout: 60_000 });
   const summary = page.getByRole('region', { name: 'Summary per provider and role' });
-  const row = summary.getByTestId('summary-row');
-  await expect(row).toHaveCount(1);
-  await expect(row).toContainText('reader');
-  await expect(row.getByRole('cell').nth(1)).toHaveText(String(readerRows));
+  const row = (role: string) => summary.getByTestId('summary-row').filter({ hasText: role });
+  await expect(summary.getByTestId('summary-row')).toHaveCount(2);
+  await expect(row('reader').getByRole('cell').nth(1)).toHaveText(String(readerRows));
+  await expect(row('verifier').getByRole('cell').nth(1)).toHaveText(String(verifierRows));
   await expect(calls(page).getByRole('button', { name: 'Next error' })).toBeDisabled();
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
@@ -78,11 +81,11 @@ test('RF-1011 errors and retries are highlighted, filtered and reached with Next
 
   await page.goto(`${livePath}/calls`);
 
-  await expect(rows(page)).toHaveCount(readerRows + appendedProblemRows);
+  await expect(rows(page)).toHaveCount(runRows + appendedProblemRows);
   await expect(rows(page).filter({ hasText: 'RST-1504' })).toHaveAttribute('data-problem', 'true');
   await expect(rows(page).filter({ hasText: 'RST-1505' })).toHaveAttribute('data-problem', 'true');
   const summary = page.getByRole('region', { name: 'Summary per provider and role' });
-  await expect(summary.getByTestId('summary-row')).toHaveCount(2);
+  await expect(summary.getByTestId('summary-row')).toHaveCount(3);
   await expect(summary.getByTestId('summary-row').filter({ hasText: 'cloud' })).toContainText(
     '1 retried, 1 failed',
   );

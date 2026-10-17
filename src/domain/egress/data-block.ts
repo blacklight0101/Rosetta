@@ -27,6 +27,8 @@ import { breakMarkers, holdsMarker } from './marker-skeleton.js';
  * error result of a call that names no tool: every tool message is one data block (P1-31);
  * `cards`, the cards the summariser compares (RF-250); and `owner_answers`, the owner's answers to
  * open questions, sent to a re-run reader (RF-241).
+ * The verifier's judgement (RF-301) sends the claim a reader wrote (`claim`, model output) and
+ * the lines it cites (`cited_lines`).
  */
 export type DataBlockSource =
   | 'read_file'
@@ -35,7 +37,9 @@ export type DataBlockSource =
   | 'list_area_files'
   | 'unknown_tool'
   | 'cards'
-  | 'owner_answers';
+  | 'owner_answers'
+  | 'claim'
+  | 'cited_lines';
 
 export const DATA_BLOCK_SOURCES: readonly DataBlockSource[] = [
   'read_file',
@@ -45,6 +49,8 @@ export const DATA_BLOCK_SOURCES: readonly DataBlockSource[] = [
   'unknown_tool',
   'cards',
   'owner_answers',
+  'claim',
+  'cited_lines',
 ];
 
 export interface DataBlock {

@@ -101,6 +101,11 @@ export interface RunState {
   readonly agents: readonly AgentPanelState[];
   readonly cards: readonly CardRef[];
   readonly claims: readonly ClaimRow[];
+  /**
+   * RF-1014: the judgement step from `verify.judgement.started` and `verify.judgement.ended`;
+   * `idle` before it starts and for runs that never judge.
+   */
+  readonly judgement: 'idle' | 'running' | 'ended';
   readonly log: readonly LogLine[];
   readonly roleCostMicros: Readonly<Record<string, number>>;
   /** The tokens of each role from its `usage.recorded` events (P1-96); empty for older runs. */

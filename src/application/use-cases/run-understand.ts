@@ -24,14 +24,12 @@ import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
+import type { ProviderSet } from '../providers/provider-set.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
-import { RunBudgetEvents } from '../runs/run-budget-events.js';
 import { ownerLogger } from '../runs/owner-logger.js';
-import { ManifestCostRecorder } from '../runs/run-cost-record.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { callIds, traceIdOf } from '../runs/run-ids.js';
-import { ManifestSecurityRecorder } from '../runs/run-security-record.js';
 import { preflightOllama, type PreflightProblem } from '../understand/reader-preflight.js';
 import type { UnknownAreas } from '../understand/reader-tasks.js';
 import { runPrompts } from '../understand/run-prompts.js';
@@ -42,6 +40,9 @@ import { pinnedSourceOf } from '../understand/pinned-source.js';
 import { planRunTasks, resumeSourceProblem } from '../understand/resume-state.js';
 import type { Prepared, UnderstandRoles } from '../understand/run-understand-types.js';
 import { UnderstandSession } from '../understand/understand-session.js';
+import { runProviderSinks } from '../understand/run-sinks.js';
+import { verifierPromptVersions, type VerifierPrompts } from '../verifier/verifier-prompts.js';
+import { sameFamilyWarning } from '../verifier/family-warning.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
 // `understand` stage. It opens the code map and snapshot of the project's latest completed scan,
@@ -68,6 +69,8 @@ export interface RunUnderstandDependencies {
   readonly costReports: CostReportWriter;
   /** Reads the reader's prompt files with their versions and hashes (RNF-004). */
   readonly prompts: () => Promise<ReaderPrompts>;
+  /** Reads the verifier's prompt files with their versions and hashes (RF-301, RNF-004). */
+  readonly verifierPrompts: () => Promise<VerifierPrompts>;
   /** Reads the text tool protocol prompt, recorded when a role uses it (RF-205, RNF-004). */
   readonly textToolProtocol: () => Promise<PromptFile>;
   /** Reads the summariser's merge prompt, recorded when a merge call is made (RF-250, RNF-004). */
@@ -120,6 +123,7 @@ export class RunUnderstand implements RunExecutor {
       tasks: prepared.value.plan.tasks,
       kept: prepared.value.plan.kept,
       ...{ execution, updates, role: roles.value.reader, summariser: roles.value.summariser },
+      verifier: { role: roles.value.verifier, prompts: prepared.value.verifierPrompts },
       logger: ownerLogger(this.deps.logger, execution.run.userId),
       settings: prepared.value.project.settings,
       deps: this.deps,
@@ -165,10 +169,14 @@ export class RunUnderstand implements RunExecutor {
     const withAnswers = rerun !== undefined && tasks.length > 0;
     const marks = runMarks(tasks, scanned.codeMap);
     const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers, marks);
-    await updates.update((stored) => ok(recordPromptVersions(stored, versions)));
-    const mergePrompt = await this.deps.mergePrompt();
+    const [mergePrompt, verifierPrompts] = await Promise.all([
+      this.deps.mergePrompt(),
+      this.deps.verifierPrompts(),
+    ]);
+    const all = { ...versions, ...verifierPromptVersions(verifierPrompts) };
+    await updates.update((stored) => ok(recordPromptVersions(stored, all)));
     const withRerun = rerun === undefined ? {} : { rerun };
-    const base = { project, scanned, plan, allTasks: tasks, prompts, mergePrompt };
+    const base = { project, scanned, plan, allTasks: tasks, prompts, mergePrompt, verifierPrompts };
     return { ok: true, value: { ...base, ...withRerun } };
   }
 
@@ -187,9 +195,10 @@ export class RunUnderstand implements RunExecutor {
   }
 
   /**
-   * ADR-003, RF-405, RF-427, RF-143: the guarded providers of the reader and the summariser (RF-250),
-   * from the provider factory only.
-   * A role that cannot be served (no key, unpriced model, no consent) stops the run before a call.
+   * ADR-003, RF-405, RF-427, RF-143, RF-301: the guarded providers of the reader, the verifier and
+   * the summariser (RF-250), from the provider factory only. A role that cannot be served (no key,
+   * unpriced model, no consent) stops the run before a call; a verifier of the reader's model family
+   * is a warning.
    */
   private async rolesOf(
     execution: RunExecution,
@@ -206,7 +215,7 @@ export class RunUnderstand implements RunExecutor {
       settings: project.settings,
       roles: UNDERSTAND_ROLES,
       cloudConsent: readUnderstandOptions(manifest.options).cloudConsent,
-      sinks: await this.sinksOf(execution, updates),
+      sinks: await runProviderSinks(this.deps, execution, updates),
     });
     if (!built.ok) {
       for (const problem of built.error) {
@@ -219,11 +228,12 @@ export class RunUnderstand implements RunExecutor {
       }
       return stop(failed(built.error[0]?.code ?? ERROR_CODES.providerUnavailable));
     }
-    const reader = built.value.get('reader');
-    const summariser = built.value.get('summariser');
-    if (reader === undefined || summariser === undefined) {
-      return stop(failed(ERROR_CODES.providerUnavailable));
-    }
+    const roles = understandRolesOf(built.value);
+    if (roles === undefined) return stop(failed(ERROR_CODES.providerUnavailable));
+    const { reader, verifier } = roles;
+    const warning = sameFamilyWarning(reader.model, verifier.model);
+    if (warning !== undefined)
+      await this.deps.logger.log({ ...warning, runId: run.runKey, userId: run.userId });
     const ready = await preflightOllama(built.value, {
       runId: run.runKey,
       traceId: traceIdOf(run),
@@ -231,25 +241,7 @@ export class RunUnderstand implements RunExecutor {
       signal: execution.signal,
     });
     if (!ready.ok) return stop(await this.notReady(execution, ready.error));
-    return { ok: true, value: { reader, summariser } };
-  }
-
-  /** The run's sinks for its guards: call log, egress log, manifest records, stop and events. */
-  private async sinksOf(execution: RunExecution, updates: ManifestUpdates): Promise<ProviderSinks> {
-    const { run, events } = execution;
-    const scope = scopeOf(run);
-    const { manifests, runs, ledger, costTotals } = this.deps;
-    const logger = ownerLogger(this.deps.logger, run.userId);
-    return {
-      ...this.deps.runSinks(scope),
-      security: new ManifestSecurityRecorder({ manifests, scope, queue: updates.queue }),
-      costs: new ManifestCostRecorder({ manifests, runs, scope, queue: updates.queue }),
-      stopRun: (reason) => {
-        execution.stop(reason);
-      },
-      // RF-1003, RF-1010: usage and budget events start from what the run and project spent.
-      budgetEvents: await RunBudgetEvents.open({ events, run, ledger, costTotals, logger }),
-    };
+    return { ok: true, value: roles };
   }
 
   /** RF-401: an Ollama that cannot answer ends the run before its first task (a stop interrupts). */
@@ -280,6 +272,14 @@ export class RunUnderstand implements RunExecutor {
       ...{ runId: run.runKey, userId: run.userId, data },
     });
   }
+}
+
+function understandRolesOf(set: ProviderSet): UnderstandRoles | undefined {
+  const reader = set.get('reader');
+  const verifier = set.get('verifier');
+  const summariser = set.get('summariser');
+  if (reader === undefined || verifier === undefined || summariser === undefined) return undefined;
+  return { reader, verifier, summariser };
 }
 
 type Step<T> =

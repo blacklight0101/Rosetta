@@ -5,8 +5,9 @@ import { afterAll, beforeAll } from 'vitest';
 import type { Run } from '../../src/domain/runs/run.js';
 import { createUnderstandHarness, type UnderstandHarness } from './understand-run-harness.js';
 
-// RF-200: the full understand run of the C# fixture (a scan, then a reader per area) that several
-// integration tests read.
+// RF-200, RF-301: the full understand run of the C# fixture (a scan, a reader per area, then the
+// verifier's judgement of the claims that pass the citation check) that several integration tests
+// read.
 
 export interface FullRun {
   readonly h: UnderstandHarness;
@@ -16,7 +17,11 @@ export interface FullRun {
 }
 
 export async function fullUnderstandRun(dataDir: string): Promise<FullRun> {
-  const h = await createUnderstandHarness({ dataDir, recording: 'understand-csharp-full.json' });
+  const h = await createUnderstandHarness({
+    dataDir,
+    recording: 'understand-csharp-full.json',
+    verifierRecording: 'verifier-csharp-full.json',
+  });
   await h.scan();
   const run = await h.understand();
   return { h, run, folder: h.runFolder(run) };

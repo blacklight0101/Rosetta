@@ -7,10 +7,12 @@ import type { RunState, SourceState } from './run-state.js';
 
 const GITHUB_REPOSITORY = /^https:\/\/github\.com\/([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/u;
 
-// RF-1003, RF-1004, RF-006: a run that starts after it ended was resumed, so it is not ended any more.
+// RF-1003, RF-1004, RF-006: a run that starts after it ended was resumed, so it is not ended any more,
+// and its judgement step will run again (RF-1014: the claims a stop left unjudged wait for it).
 export function onRunStarted(state: RunState, event: RunEvent): RunState {
+  const restarted = { startedAt: event.at, ended: undefined, judgement: 'idle' } as const;
   const parsed = startedData.safeParse(event.data);
-  if (!parsed.success) return { ...state, startedAt: event.at, ended: undefined };
+  if (!parsed.success) return { ...state, ...restarted };
   const { stage, source, caps } = parsed.data;
   const given: SourceState | undefined =
     source === undefined
@@ -23,8 +25,7 @@ export function onRunStarted(state: RunState, event: RunEvent): RunState {
         };
   return {
     ...state,
-    startedAt: event.at,
-    ended: undefined,
+    ...restarted,
     stage: stage ?? state.stage,
     source: given ?? state.source,
     caps: caps === undefined ? state.caps : caps.run,

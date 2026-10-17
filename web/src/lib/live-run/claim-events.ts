@@ -3,10 +3,9 @@ import { cardData, citationCheckedData, claimJudgedData } from './event-data.js'
 import type { ClaimRow, ClaimShown, RunState } from './run-state.js';
 
 // RF-1004, RF-1014, DEC-136: what the events of a claim change in the claims list. A claim is `Proposed`
-// when its card appears, `CitationsChecked` when it passed the citation check (the model step of the
-// verifier is not built yet, so nothing moves it further in this release), `CitationInvalid` when
-// the check failed, and `Supported`, `Rejected` or `Unverified` when a verdict arrives. Nothing is
-// ever removed from the list.
+// when its card appears, `CitationsChecked` when it passed the citation check (it then waits for the
+// judgement step, RF-301), `CitationInvalid` when the check failed, and `Supported`, `Rejected` or
+// `Unverified` when a verdict arrives. Nothing is ever removed from the list.
 
 const VERDICTS: readonly ClaimShown[] = ['Supported', 'Rejected', 'Unverified'];
 

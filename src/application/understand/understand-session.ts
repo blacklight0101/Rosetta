@@ -1,10 +1,5 @@
 import type { Card } from '../../domain/cards/card.js';
-import type { CardDraft } from '../../domain/cards/card-ids.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
-import { ERROR_CODES } from '../../domain/errors/codes.js';
-import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import type { AgentTaskState } from '../../domain/runs/run-states.js';
-import type { OutputProblem } from '../cards/output-problem.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { consolidateCards } from '../consolidate/consolidate-cards.js';
 import { consolidationParts } from '../consolidate/consolidation-parts.js';
@@ -23,22 +18,31 @@ import { areaFailureOf } from './area-failure.js';
 import { markAnswered, type Rerun } from './answer-rerun.js';
 import { openQuestionOf } from './open-question.js';
 import { compareCards, type CardChanges } from './card-changes.js';
+import {
+  isProposed,
+  judgementPartsOf,
+  runJudgementStep,
+  type JudgementContext,
+} from './claim-judgement.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
 import { cardsOf, RunCards } from './run-cards.js';
 import { RunCoverage, TaskReads } from './run-coverage.js';
+import { failedOutcome, sessionOutcome, type TaskOutcome } from './session-outcome.js';
 import { TaskLog } from './task-log.js';
 import { runPool } from './task-pool.js';
 import { taskResultOf } from './task-result-of.js';
 import { runReaderTaskWithRetry } from './task-retry.js';
 
-// RF-200, RF-202, RF-203, RF-230, RF-300, RF-1002, DEC-98, RNF-002: the reader tasks of one understand run
-// and what they leave. Every task that ends adds its cards; the cards of the run so far are then
+// RF-200, RF-202, RF-203, RF-230, RF-300, RF-301, RF-1002, DEC-98, RNF-002: the reader tasks of one
+// understand run and what they leave. Every task that ends adds its cards; the cards of the run so far are then
 // given their ids, pass the citation check and are written, so a run that stops keeps the cards of
 // the tasks that ended (partial cards). An area whose task answered no card is named in `spec.md`
 // and logged; the coverage of the ended tasks' areas is written with them (RF-230). When every task has
-// ended (or the run stopped) the open questions are added to the project's `answers.md`.
+// ended (or the run stopped) the open questions are added to the project's `answers.md`. Then the
+// judgement step judges the claims that passed the citation check and the cards are written again
+// with their verdicts, before duplicate cards are merged.
 
 interface UnderstandSessionDependencies {
   readonly cards: CardOutputs;
@@ -51,6 +55,8 @@ interface UnderstandSessionDependencies {
 export interface UnderstandSessionParts extends ReaderTaskContext {
   readonly rerun?: Rerun;
   readonly deps: UnderstandSessionDependencies;
+  /** RF-301: the `verifier` role and its prompts, for the judgement step. */
+  readonly verifier: JudgementContext['verifier'];
   /** The tasks this session runs. */
   readonly tasks: readonly ReaderTask[];
   /** RF-006: every task of the run in area order, and the results of those a resume keeps. */
@@ -60,22 +66,6 @@ export interface UnderstandSessionParts extends ReaderTaskContext {
   /** RF-250: the role that merges the duplicate cards of several areas, and its prompt. */
   readonly summariser: RoleProvider;
   readonly mergePrompt: PromptFile;
-}
-
-/** How a task ended, as far as the run's outputs are concerned. */
-interface TaskOutcome {
-  readonly state: Exclude<AgentTaskState, 'Planned' | 'Running'>;
-  readonly code?: ErrorCode;
-  readonly turns: number;
-  readonly drafts: readonly CardDraft[];
-  readonly rawOutputs: readonly string[];
-  /** What was dropped from the answer (RF-208), or why the answer was not usable. */
-  readonly problems: readonly OutputProblem[];
-}
-
-function failedOutcome(error: unknown): TaskOutcome {
-  const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
-  return { state: 'Failed', code, turns: 0, drafts: [], rawOutputs: [], problems: [] };
 }
 
 export class UnderstandSession {
@@ -148,6 +138,7 @@ export class UnderstandSession {
     await this.announce(true);
     await this.leaveUnjudged();
     await this.addQuestions();
+    await this.judge();
     await this.consolidate();
     await this.markAnswered();
   }
@@ -189,29 +180,28 @@ export class UnderstandSession {
     await deps.cards.writeCards(scopeOf(execution.run), set);
   }
 
-  /**
-   * RF-1108, RF-208: stopped runs are `Interrupted`; a run whose every task failed is
-   * `Failed`; one with areas that gave no card is `Completed` as before and says how many
-   * (`failedAreas`), so it is never shown as a plain success. RF-423: a role that reached its cap
-   * stops without stopping the run, so a run with a task stopped by a cap and no run-wide stop
-   * still ends `CapReached`: it did not read everything it was asked to.
-   */
+  /** RF-301, RF-302: the claims the citation check passed are judged, before any merge (RF-250). */
+  private async judge(): Promise<void> {
+    if (!this.latest.cards.some((card) => card.claims.some(isProposed))) return;
+    const parts = judgementPartsOf(this.parts, this.parts.deps.clock);
+    const cards = await runJudgementStep(this.latest.cards, parts);
+    this.latest = { ...this.latest, cards };
+    await this.writeSet(cards);
+    // RF-006: a resume reads the verdicts back with the results of the tasks.
+    await this.persist();
+  }
+
+  /** How the run ends, from how its tasks ended (`session-outcome.ts`). */
   outcome(): RunOutcome {
-    if (this.parts.execution.signal.aborted) return { endState: 'Interrupted' };
-    if (this.outputFailure !== undefined)
-      return { endState: 'Failed', errorCode: this.outputFailure };
+    const { execution, kept } = this.parts;
     const ends = [...this.ends.values()];
-    if (ends.some((end) => end.state === 'StoppedByCap')) {
-      return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
-    }
-    const failed = ends.filter((end) => areaFailureOf(end) !== undefined);
-    if (failed.length === 0) return { endState: 'Completed' };
-    // RF-006: a resume that kept finished tasks did not fail as a whole.
-    if (this.parts.kept.length > 0 || !ends.every((end) => end.state === 'Failed')) {
-      return { endState: 'Completed', failedAreas: failed.length };
-    }
-    const code = ends.find((end) => end.code !== undefined)?.code;
-    return code === undefined ? { endState: 'Failed' } : { endState: 'Failed', errorCode: code };
+    const { outputFailure } = this;
+    return sessionOutcome({
+      aborted: execution.signal.aborted,
+      outputFailure,
+      ends,
+      resumed: kept.length > 0,
+    });
   }
 
   // RF-202, RF-300
