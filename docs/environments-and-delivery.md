@@ -233,7 +233,7 @@ committed and installs use `npm ci`. Any runtime dependency not listed here need
 | Front-end build | `vite`, `@preact/preset-vite` | 8.3 / 2.10 | builds `web/` into `dist/web/` (DEC-52); pinned 8.3.1 / 2.10.6 by P1-12, which also ran the preset with Preact 10.29 |
 | Browser tests | `@playwright/test`, `@axe-core/playwright` | 1.64 / 4.13 (pinned 1.63.0 / 4.13.0 by P1-13: 1.64.0 was under two weeks old) | the e2e project for the web UI and report; accessibility checks (RNF-010) |
 | Component tests | `happy-dom`, `@testing-library/preact` | 20.14 / 3.2 | the `web` Vitest project (conventions section 7, DEC-112) |
-| Diagram parser in tests | `mermaid` | 12.1 (12.1.0, pinned exact) | P2-21: the property and parse tests of the generated diagrams read them with this parser (RF-508); published 2026-10-02, 12.2.0 (2026-10-13) waits for the two-week rule (DEC-125); development only, the report's vendored copy is P3-14 (Q-26); `npm audit` reports a low-severity KaTeX advisory through it, outside the runtime audit |
+| Diagram parser in tests | `mermaid` | 12.2 (12.2.0, pinned exact) | P2-21: the property and parse tests of the generated diagrams read them with this parser (RF-508); published 2026-10-13 and adopted before the two-week rule (DEC-125) at the owner's request on 2026-10-17, which also clears the KaTeX advisory (katex 0.18.10); development only, the report's vendored copy is P3-14 (Q-26) |
 | Containers | Docker Engine, Docker Compose | 29.7 / v5.4 | on the owner's machine; base images `node:24-slim` and `postgres:17` pinned by digest |
 
 **Forbidden without an ADR**: any agent framework that owns the loop (ADR-003); provider SDKs outside
