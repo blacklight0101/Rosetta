@@ -1,3 +1,4 @@
+import type { AreaMarks } from '../../domain/code-map/area-surface.js';
 import type { PromptVersion } from '../../domain/runs/run-manifest.js';
 import type { PromptFile } from './prompt-file.js';
 
@@ -20,6 +21,14 @@ export interface ReaderPrompts {
   readonly continue: PromptFile;
   /** `reader/answers.v<n>.md`: the owner's answers; present for a re-run with answers (RF-241). */
   readonly answers?: PromptFile;
+  /** `cards/flows.v<n>.md` and `cards/screens.v<n>.md`: added only to areas the code map marks (Q-25). */
+  readonly surface?: SurfacePrompts;
+}
+
+/** RF-260, RF-261: the two card types a marked area may also write, one prompt fragment each. */
+export interface SurfacePrompts {
+  readonly flows: PromptFile;
+  readonly screens: PromptFile;
 }
 
 /** The one placeholder each template prompt must hold. */
@@ -58,10 +67,19 @@ export function turnsLeftMessage(prompts: ReaderPrompts, turns: number): string 
   return prompts.turnsLeft.text.replace(readerPlaceholders.turnsLeft, String(turns)).trimEnd();
 }
 
+/** Q-25: the prompts of a task over an area with these marks (the same prompts when it has none). */
+export function readerPromptsFor(prompts: ReaderPrompts, marks: AreaMarks): ReaderPrompts {
+  return marks.flows && marks.screens ? { ...prompts } : prompts;
+}
+
 /** RNF-004: what the run manifest records about the reader's prompts, by file name. */
-export function promptVersionsOf(prompts: ReaderPrompts): Record<string, PromptVersion> {
+export function promptVersionsOf(
+  prompts: ReaderPrompts,
+  marks?: AreaMarks,
+): Record<string, PromptVersion> {
+  const given = marks === undefined ? prompts : readerPromptsFor(prompts, marks);
   const files = [
-    prompts.system,
+    given.system,
     prompts.cardFormat,
     prompts.task,
     prompts.turnsLeft,

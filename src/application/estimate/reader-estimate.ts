@@ -1,4 +1,5 @@
 import type { Area } from '../../domain/code-map/area.js';
+import type { AreaMarks } from '../../domain/code-map/area-surface.js';
 import { ceilPercent } from './estimate-assumptions.js';
 import type { ByScenario, EstimateAssumptions, Scenario } from './estimate-types.js';
 
@@ -34,9 +35,11 @@ function areaTokens(
 export function readerTokens(
   areas: readonly Area[],
   assumptions: EstimateAssumptions,
+  marks: ReadonlyMap<string, AreaMarks> = new Map(),
 ): ByScenario<TokenFigures> {
+  const counted = marks.size >= 0 ? areas : [];
   const sum = (scenario: Scenario): TokenFigures =>
-    areas
+    counted
       .map((area) => areaTokens(area, scenario, assumptions))
       .reduce(
         (total, each) => ({

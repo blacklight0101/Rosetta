@@ -50,6 +50,10 @@ export interface EstimateAssumptions {
   readonly summariserSharePercent: ByScenario<number>;
   /** The system prompt and tool definitions sent with every turn. */
   readonly promptOverheadTokens: number;
+  /** Added to the prompt of every turn of an area for each of flows and screens it is marked for (Q-25). */
+  readonly surfacePromptTokens: number;
+  /** Added once to the output of an area for each of flows and screens it is marked for. */
+  readonly surfaceOutputTokens: ByScenario<number>;
   /** The most one turn sends: the context share of the reader's context window. */
   readonly contextLimitTokens: number;
   /** Reader tasks that run at once (DEC-117 range); it changes the time, not the tokens. */

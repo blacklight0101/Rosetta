@@ -27,6 +27,7 @@ import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
+import type { FixtureRepository } from './scan-harness.js';
 import { queueOf, scanResultsOf, stores, type Stores } from './understand-run-services.js';
 import { resumeProblemCheck } from '../../src/application/understand/resume-problem.js';
 import { FileTaskResults } from '../../src/infrastructure/cards/file-task-results.js';
@@ -60,6 +61,8 @@ export interface UnderstandHarnessOptions {
   readonly dataDir: string;
   /** A file name under tests/recordings/fake/. */
   readonly recording: string;
+  /** The fixture repository the project's scan reads; the C# fixture when absent. */
+  readonly fixture?: FixtureRepository;
   /** A file replayed by the runs after the replays of `recording` (the re-run with answers). */
   readonly afterwards?: string;
   /** While it answers true the card writer of the understand runs refuses every card write. */
@@ -269,7 +272,7 @@ async function recordingOf(options: UnderstandHarnessOptions): Promise<Recording
 export async function createUnderstandHarness(
   options: UnderstandHarnessOptions,
 ): Promise<UnderstandHarness> {
-  const s = stores(options.dataDir, options.refuseRemoval === true);
+  const s = stores(options.dataDir, options.refuseRemoval === true, options.fixture);
   await s.users.insert(account);
   const project = sampleProject({
     userId: account.id,

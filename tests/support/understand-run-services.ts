@@ -33,7 +33,7 @@ import { FileScanResults } from '../../src/infrastructure/scan/scan-results.js';
 import { FailingCardOutputs } from './failing-card-outputs.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
-import { fixtureRoot } from './scan-harness.js';
+import { fixtureRoot, type FixtureRepository } from './scan-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import type { UnderstandProviders } from './understand-providers.js';
 
@@ -42,7 +42,7 @@ import type { UnderstandProviders } from './understand-providers.js';
 
 const commitSha = 'c'.repeat(40);
 
-function fixtureFetcher(clock: FixedClock): FakeSourceFetcher {
+function fixtureFetcher(clock: FixedClock, fixture: FixtureRepository): FakeSourceFetcher {
   return new FakeSourceFetcher(
     [
       {
@@ -50,7 +50,7 @@ function fixtureFetcher(clock: FixedClock): FakeSourceFetcher {
         repo: 'demo',
         defaultBranch: 'main',
         refs: { main: commitSha },
-        rootDir: fixtureRoot('webforms-csharp'),
+        rootDir: fixtureRoot(fixture),
         snapshotHash: `sha256:${'cd'.repeat(32)}`,
         fileCount: 13,
         totalBytes: 4096,
@@ -61,6 +61,8 @@ function fixtureFetcher(clock: FixedClock): FakeSourceFetcher {
 }
 
 export interface Stores {
+  /** The fixture repository the scans read (the C# fixture unless a test chose another). */
+  readonly fixture: FixtureRepository;
   readonly clock: FixedClock;
   readonly masker: SecretMasker;
   readonly logger: MemoryLogger;
@@ -82,7 +84,11 @@ class RefusingRemovalWriter extends NodeOutputWriter {
   }
 }
 
-export function stores(dataDir: string, refuseRemoval = false): Stores {
+export function stores(
+  dataDir: string,
+  refuseRemoval = false,
+  fixture: FixtureRepository = 'webforms-csharp',
+): Stores {
   const clock = new FixedClock('2026-10-12T10:00:00.000Z');
   const masker = new SecretMasker();
   const logger = new MemoryLogger(clock, masker);
@@ -90,7 +96,7 @@ export function stores(dataDir: string, refuseRemoval = false): Stores {
     ? new RefusingRemovalWriter({ dataDir, logger })
     : new NodeOutputWriter({ dataDir, logger });
   return {
-    ...{ clock, masker, logger, writer },
+    ...{ clock, masker, logger, writer, fixture },
     manifests: new FileRunManifestStore({ writer, masker }),
     log: new JsonlEventLog({ writer, masker }),
     runs: new MemoryRunIndex(),
@@ -105,7 +111,7 @@ export function scanResultsOf(s: Stores): FileScanResults {
   return new FileScanResults({
     writer,
     manifests,
-    snapshotRoot: () => fixtureRoot('webforms-csharp'),
+    snapshotRoot: () => fixtureRoot(s.fixture),
     logger,
   });
 }
@@ -146,7 +152,7 @@ export async function queueOf(
     ...{ writer, masker, logger },
     packs: new LanguagePackRegistry([await CSharpPack.create()]),
   });
-  const fetcher = fixtureFetcher(clock);
+  const fetcher = fixtureFetcher(clock, s.fixture);
   const lifecycle = new RunLifecycle({
     ...{ runs, manifests, clock, logger },
     sink: new FanOutSink([log]),

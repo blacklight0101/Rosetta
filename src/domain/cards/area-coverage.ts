@@ -1,5 +1,7 @@
 import type { Area } from '../code-map/area.js';
+import type { AreaMarks } from '../code-map/area-surface.js';
 import type { FileEntry } from '../code-map/file-entry.js';
+import type { CardType } from './card-vocabulary.js';
 import type { Citation } from './citation.js';
 
 // RF-230, ADR-005, data-model 3.8: which files of an area its agent task actually read. Every
@@ -18,6 +20,14 @@ interface FileCoverage {
   readonly read: readonly LineRange[];
 }
 
+/** RF-260, RF-261, RF-263: what the area gave in flows and screens, next to what the code map marked. */
+export interface SurfaceCoverage {
+  readonly flowsMarked: boolean;
+  readonly screensMarked: boolean;
+  readonly flowCards: number;
+  readonly screenCards: number;
+}
+
 export interface AreaCoverage {
   readonly area: string;
   /** Every file of the area, in the area's order. */
@@ -30,6 +40,21 @@ export interface AreaCoverage {
   readonly readTokenShare: number;
   /** RF-208: why the area's task gave no usable card; left out for an area that gave cards. */
   readonly failure?: string;
+  /** RF-260, RF-261: flows and screens; absent from coverage written before they existed. */
+  readonly surface?: SurfaceCoverage;
+}
+
+// RF-263
+export function surfaceCoverage(
+  marks: AreaMarks,
+  cards: readonly { readonly type: CardType }[],
+): SurfaceCoverage {
+  return {
+    flowsMarked: marks.flows && cards.length < 0,
+    screensMarked: false,
+    flowCards: 0,
+    screenCards: 0,
+  };
 }
 
 export type CoverageArea = Pick<Area, 'name' | 'files' | 'estimatedTokens'>;
