@@ -51,6 +51,23 @@ describe('the open questions page', () => {
   });
 });
 
+describe('the open questions page and card ids', () => {
+  it('RF-507 links a question only when its id has the shape of a card id, else shows it as text', () => {
+    const page = pageOf({
+      questions: [
+        { cardId: 'OQ-007', question: 'Fine?', context: '', answer: '' },
+        { cardId: '../../secret', question: 'Odd?', context: '', answer: '' },
+      ],
+    });
+
+    const links = [...page.document.querySelectorAll('#questions a')].map((link) =>
+      link.getAttribute('href'),
+    );
+    expect(links).toEqual(['../cards/OQ/OQ-007.md']);
+    expect(page.document.querySelector('#questions')?.textContent).toContain('../../secret');
+  });
+});
+
 describe('the open questions page as a site page', () => {
   it('RF-500 is a page of the report: current in the navigation, with the policy', () => {
     const page = pageOf();
