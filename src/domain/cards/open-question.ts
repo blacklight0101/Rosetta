@@ -1,3 +1,5 @@
+import { foldMarkers } from '../egress/marker-fold.js';
+
 // RF-243, DEC-136: an open question asks about something the code cannot tell (business intent, the
 // reason for a rule, an external system, data volumes, who uses a feature). A question that asks
 // what the code, an area or the application does is the agent's own reading left undone, so it is
@@ -23,25 +25,45 @@ const refusedShapes: readonly RegExp[] = [
   ),
   // "What is the business logic of X?", "What is the logic of the Orders module?"
   /^what\s+(?:is|are)\s+the\s+(?:business\s+)?(?:logic|functionality|behaviou?r)\s+of\s+/u,
-  // "What is this application for?", "What is the orders area about?"
-  new RegExp(String.raw`^what\s+(?:is|are)\s+${subject}\s+(?:for|about|used\s+for)$`, 'u'),
+  // "What is this application for?", "What is this area responsible for?"
+  new RegExp(
+    String.raw`^what\s+(?:is|are)\s+${subject}\s+(?:for|about|used\s+for|responsible\s+for|supposed\s+to\s+do)$`,
+    'u',
+  ),
   // "How does the checkout code work?"
   /^how\s+(?:does|do)\s+.{1,80}?\s+work$/u,
-  // "Explain what this application does", "Describe the orders area"
-  /^(?:please\s+)?(?:explain|describe|summari[sz]e)\b/u,
-  /^(?:can|could|would)\s+you\s+(?:please\s+)?(?:explain|describe|summari[sz]e|tell\s+me\s+what)\b/u,
+  // "Explain what this application does", "Explain how the checkout code works": only when the
+  // subject is the code itself; "Explain why ..." and "Describe how many ..." ask about intent.
+  new RegExp(
+    String.raw`^(?:(?:can|could|would)\s+you\s+)?(?:please\s+)?(?:explain|describe|summari[sz]e|tell\s+me)\s+(?:what|how)\s+${subject}\s+(?:does|do|is|work|works)$`,
+    'u',
+  ),
+  // "Describe the orders area"
+  new RegExp(String.raw`^(?:please\s+)?(?:explain|describe|summari[sz]e)\s+${subject}$`, 'u'),
 ];
 
-/** Lower case, letters and digits only, single spaces: "What does THIS area do?" -> "what does this area do". */
-function wordsOf(question: string): string {
-  return question
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+/** "What does OrderService do?": an identifier written in CamelCase or ending in a code word. */
+const identifier = String.raw`[A-Z]?[a-z0-9]*(?:[a-z0-9][A-Z]|Service|Controller|Manager|Handler|Repository|Helper|Page|Class)[A-Za-z0-9]*`;
+const refusedIdentifierShape = new RegExp(
+  String.raw`^(?:What|Which)\s+(?:does|do)\s+${identifier}\s+do$`,
+  'u',
+);
+
+/**
+ * The question as the rules read it: look-alikes, fullwidth forms and invisible characters folded to
+ * the plain text they imitate (the fold of the data-block marker check), then letters and digits
+ * only with single spaces, and the fillers "actually" and "exactly" dropped.
+ */
+function plainWords(question: string): string {
+  return foldMarkers(question)
+    .text.replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\b(?:actually|exactly|really|even|just)\s+/giu, '')
     .trim();
 }
 
 // RF-243
 export function asksWhatCodeDoes(question: string): boolean {
-  const words = wordsOf(question);
-  return refusedShapes.some((shape) => shape.test(words));
+  const plain = plainWords(question);
+  const lower = plain.toLowerCase();
+  return refusedIdentifierShape.test(plain) || refusedShapes.some((shape) => shape.test(lower));
 }

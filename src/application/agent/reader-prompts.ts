@@ -78,9 +78,10 @@ export function readFirstMessage(
   filesBlock: string,
   turns: number,
 ): string {
+  // The turns first: the files block holds repository text, which must not be read as a placeholder.
   return prompts.readFirst.text
-    .replace(readerPlaceholders.readFirstFiles, () => filesBlock)
     .replace(readerPlaceholders.readFirstTurns, String(turns))
+    .replace(readerPlaceholders.readFirstFiles, () => filesBlock)
     .trimEnd();
 }
 

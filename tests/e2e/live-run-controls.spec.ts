@@ -224,6 +224,9 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
   await page.getByRole('button', { name: 'Pause updates' }).click();
   const held = (await agentPanel(page, 'Controllers').textContent()) ?? '';
 
+  // No event is waiting yet: Catalog has ended and Controllers is held, so nothing happens until
+  // Stop. Polling for waiting events here would only wait for something that cannot come (it was
+  // the poll that stopped the run before Controllers started, once Catalog took two calls).
   await page.getByRole('button', { name: 'Stop run' }).click();
 
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
