@@ -28,7 +28,7 @@ export interface ParsedDiagram {
 }
 
 /** Mermaid swaps `#59;` for a private marker before parsing and back to `&#59;` when drawing. */
-export function decodeLabel(text: string): string {
+function decodeLabel(text: string): string {
   return text.replace(/ﬂ°°(\d+)¶ß/gu, (_match, digits: string) =>
     String.fromCodePoint(Number(digits)),
   );

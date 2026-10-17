@@ -26,7 +26,7 @@ export interface StepInput {
   readonly status?: ClaimStatus;
 }
 
-export function stepsOf(cardId: string, steps: readonly StepInput[]): readonly Claim[] {
+function stepsOf(cardId: string, steps: readonly StepInput[]): readonly Claim[] {
   return steps.map((step, index) => ({
     claimId: `${cardId}.c${String(index + 1)}`,
     text: step.text,

@@ -105,13 +105,15 @@ describe('flowSequenceDiagram ids and edge cases', () => {
     const flow = flowCard('t', 'o', [
       { text: 'a', target: 'end' },
       { text: 'b', target: 'p1' },
+      { text: 'c', target: 'trigger' },
     ]);
     const lines = linesOf(flowSequenceDiagram(flow, []));
 
-    expect(lines.slice(1, 4)).toEqual([
+    expect(lines.slice(1, 5)).toEqual([
       '  participant p1 as t',
       '  participant p2 as end',
       '  participant p3 as p1',
+      '  participant p4 as trigger',
     ]);
   });
 

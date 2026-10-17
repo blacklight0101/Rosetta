@@ -1,0 +1,18 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`entityDiagram > RF-262 draws the demo data model (snapshot) 1`] = `
+"erDiagram
+  e1["Customer"] {
+    field f1 PK "Id#58; int"
+    field f2 UK "Email#58; nvarchar#40;200#41;"
+  }
+  e2["Order"] {
+    field f1 PK "Id#58; int"
+    field f2 FK "CustomerId#58; int"
+    field f3 "Notes"
+  }
+  e3["OrderLine"]
+  e1 ||--o{ e2 : "places"
+  e2 ||..o{ e3 : "holds #40;cardinality unknown#41;"
+"
+`;
