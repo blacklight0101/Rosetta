@@ -42,8 +42,13 @@ export const providerDefaults: Readonly<Record<string, ProviderSettings>> = {
   },
 };
 
-/** P2-37: stub, filled by the next commit. */
-export const cacheWriteProviders: readonly string[] = [];
+/**
+ * RF-427, P2-24: the provider kinds that bill the tokens written to a prompt cache at a price of
+ * their own, so a price override for one needs a cache-write price. The price lookup keeps the same
+ * list in `cacheWriteKinds` (src/domain/budget/price-table.ts), which web/ cannot import; a unit
+ * test fails when the two differ.
+ */
+export const cacheWriteProviders: readonly string[] = ['anthropic'];
 
 const providerLabels: Readonly<Record<string, string>> = {
   ollama: 'Ollama',

@@ -54,20 +54,6 @@ describe('ObservedProvider records a call that answers', () => {
     expect(log.records()).toEqual([expectedRecord]);
   });
 
-  it('RF-408 records the tokens the call wrote to the prompt cache, and none when it wrote none', async () => {
-    const written = { ...textAnswer.usage, cacheWriteInputTokens: 300 };
-    const { provider, log } = observedHarness({
-      inner: (clock) => slowProvider(clock, 1500, { ...textAnswer, usage: written }),
-    });
-    const plain = observedHarness();
-
-    await provider.complete(contractRequest());
-    await plain.provider.complete(contractRequest());
-
-    expect(log.records()[0]?.cacheWriteInputTokens).toBe(300);
-    expect(plain.log.records()[0]).not.toHaveProperty('cacheWriteInputTokens');
-  });
-
   it('RF-408 keeps the time to first token, HTTP status and Ollama timings of the adapter', async () => {
     const ollama = {
       loadDurationMs: 12,
@@ -156,5 +142,21 @@ describe('ObservedProvider records failed calls', () => {
     expect(log.records()).toEqual([
       expect.objectContaining({ status: 'failed', errorCode: 'RST-1506' }),
     ]);
+  });
+});
+
+describe('ObservedProvider records cache writes', () => {
+  it('RF-408 records the tokens the call wrote to the prompt cache, and none when it wrote none', async () => {
+    const written = { ...textAnswer.usage, cacheWriteInputTokens: 300 };
+    const { provider, log } = observedHarness({
+      inner: (clock) => slowProvider(clock, 1500, { ...textAnswer, usage: written }),
+    });
+    const plain = observedHarness();
+
+    await provider.complete(contractRequest());
+    await plain.provider.complete(contractRequest());
+
+    expect(log.records()).toEqual([expect.objectContaining({ cacheWriteInputTokens: 300 })]);
+    expect(JSON.stringify(plain.log.records())).not.toContain('cacheWriteInputTokens');
   });
 });

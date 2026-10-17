@@ -471,6 +471,7 @@ entries are not run events: the web UI logs panel receives them on its own strea
 | `startedAt` | instant | |
 | `timeToFirstTokenMs`, `latencyMs` | int | per attempt; without streaming the first token arrives with the answer, so both are equal |
 | `inputTokens`, `outputTokens`, `cachedInputTokens`, `usageSource` | int, enum | |
+| `cacheWriteInputTokens` | int | the part of `inputTokens` the call wrote to the provider's prompt cache (Anthropic's `cache_creation_input_tokens`); left out when the provider reported none; an additive field, so the schema version stays 1 (P2-37) |
 | `costMicros`, `currency` | int, string | |
 | `finishReason` | string | normalised: `stop`, `length`, `tool_use`, `error` |
 | `status` | enum | `ok`, `retried`, `failed`, `refused-by-cap` |
