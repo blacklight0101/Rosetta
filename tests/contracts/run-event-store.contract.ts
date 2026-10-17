@@ -147,6 +147,25 @@ function refusalTests(name: string, fresh: FreshEventStore): void {
   });
 }
 
+function resumeTests(name: string, fresh: FreshEventStore): void {
+  it(`RF-006 ${name} accepts run.started after run.ended, for a run that is resumed, and nothing else`, async () => {
+    const { sink, history } = await fresh();
+    await sink.publish(scope, eventFor(scope, 1, 'run.started'));
+    await sink.publish(scope, eventFor(scope, 2, 'run.ended', { endState: 'CapReached' }));
+
+    await sink.publish(scope, eventFor(scope, 3, 'run.started'));
+    await sink.publish(scope, eventFor(scope, 4));
+    await sink.publish(scope, eventFor(scope, 5, 'run.ended', { endState: 'Completed' }));
+
+    const types = (await history.read(scope, 0)).map((event) => event.type);
+    expect(types.slice(0, 3)).toEqual(['run.started', 'run.ended', 'run.started']);
+    expect(types.at(-1)).toBe('run.ended');
+    await expect(sink.publish(scope, eventFor(scope, 6))).rejects.toMatchObject({
+      code: ERROR_CODES.runEventRefused,
+    });
+  });
+}
+
 function isolationTests(name: string, fresh: FreshEventStore): void {
   it(`RF-1006 ${name} keeps the events of two runs apart`, async () => {
     const { sink, history } = await fresh();
@@ -177,4 +196,5 @@ export function runEventStoreContract(name: string, fresh: FreshEventStore): voi
   replayFailureTests(name, fresh);
   refusalTests(name, fresh);
   isolationTests(name, fresh);
+  resumeTests(name, fresh);
 }

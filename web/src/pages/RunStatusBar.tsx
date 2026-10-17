@@ -27,6 +27,8 @@ export interface RunStatusBarProps {
   readonly updatesNote?: string | undefined;
   /** Controls beside Stop run, for example Pause updates. */
   readonly controls?: ComponentChildren;
+  /** RF-006: the Resume button of an ended run that can be resumed, and why it may need a raised cap. */
+  readonly resume?: ComponentChildren;
 }
 
 function Badge({ phase }: { readonly phase: RunPhase }): JSX.Element {
@@ -62,7 +64,9 @@ export function RunStatusBar(props: RunStatusBarProps): JSX.Element {
         <span class="rst-live-pause-actions">
           <Link href={`/projects/${encodeURIComponent(props.projectId)}/start`}>Start page</Link>
           {props.controls}
-          {phase.kind === 'ended' ? null : (
+          {phase.kind === 'ended' ? (
+            props.resume
+          ) : (
             <Button
               variant="danger"
               busy={props.busy}

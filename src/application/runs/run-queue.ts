@@ -85,6 +85,20 @@ export class RunQueue {
     return this.steps.run(STEP, () => this.startWaiting());
   }
 
+  /**
+   * RF-006: runs `work` as one queue step, so no dispatch, stop or recovery sees the run half-way
+   * through it, then starts what can start. It is refused while this process is still ending the
+   * run (its row, manifest and `run.ended` are written one after the other).
+   */
+  exclusive<T>(runId: string, work: () => Promise<T>): Promise<Result<T, 'ending'>> {
+    return this.steps.run(STEP, async () => {
+      if (this.controllers.has(runId)) return err('ending');
+      const value = await work();
+      await this.startWaiting();
+      return ok(value);
+    });
+  }
+
   /** Whether an executor is registered for the stage, so a run of it can start. */
   canRun(stage: RunStage): boolean {
     return this.deps.executors[stage] !== undefined;

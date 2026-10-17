@@ -23,6 +23,7 @@ import { RunMeter } from './RunMeter.js';
 import { RunOverview } from './RunOverview.js';
 import { RunReport } from './RunReport.js';
 import { PauseUpdates } from './PauseUpdates.js';
+import { ResumeControl } from './ResumeControl.js';
 import { RunStatusBar } from './RunStatusBar.js';
 import { RunningBody } from './RunningBody.js';
 import { RunStepper } from './RunStepper.js';
@@ -39,6 +40,8 @@ export interface LiveRunViewProps {
   readonly run: RunRow;
   readonly stream: RunStream;
   readonly phase: RunPhase;
+  /** RF-006: called once the server has queued the run again, so the page can follow it anew. */
+  readonly onResumed: () => void;
 }
 
 /** The commit the source was pinned to is known from the events or, late, from the run row. */
@@ -149,7 +152,7 @@ function EndedBody(props: BodyProps): JSX.Element {
 }
 
 // RF-1002, RF-1015
-export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Element {
+export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps): JSX.Element {
   const { state } = stream;
   const view = usePauseUpdates(state);
   const stop = useStop(run.id);
@@ -168,6 +171,7 @@ export function LiveRunView({ run, stream, phase }: LiveRunViewProps): JSX.Eleme
         failedAreas={state.ended?.failedAreas ?? run.failedAreas}
         {...{ stopping: stop.stopping, busy: stop.busy, stopError: stop.error, onStop: stop.stop }}
         updatesNote={view.note}
+        resume={<ResumeControl {...{ phase, onResumed, runId: run.id, stage }} />}
         controls={
           view.paused || phase.kind === 'running' ? (
             <PauseUpdates paused={view.paused} waiting={view.waiting} onToggle={view.toggle} />

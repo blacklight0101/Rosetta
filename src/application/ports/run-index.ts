@@ -64,6 +64,12 @@ export interface RunIndex {
     at: EpochMs,
     failedAreas?: number,
   ): Promise<Run | undefined>;
+  /**
+   * RF-006: `Ended` -> `Queued` for the user's run that ended `CapReached`, `Failed` or `Interrupted`, at
+   * the end of the queue; undefined for an unknown id, another user's run and any other run, so two
+   * parallel resumes queue it once.
+   */
+  reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined>;
   /** Records the pinned commit and the snapshot folder; undefined for an unknown or ended run. */
   recordSource(runId: string, source: RunSource): Promise<Run | undefined>;
   /** Replaces the running totals; undefined for an unknown or ended run. */

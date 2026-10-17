@@ -259,7 +259,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `rosettaVersion` | string | |
 | `startedAt`, `endedAt` | instant | `startedAt` is `null` while the run waits in the queue, `endedAt` while it is not over |
 | `endState` | `RunEndState` | `null` while the run is not over; set exactly once |
-| `resumedFrom` | string | the earlier `runId` when resumed (RF-006) |
+| `resumedFrom` | string | reserved: a resume reopens the same run (same folder and manifest), so it is `null` today (RF-006); the manifest of a resumed run has `startedAt`, `endedAt` and `endState` cleared and `caps` replaced by the caps in force at the resume |
 | `source` | object | `{ url, owner, repo, ref, commitSha, subpath, snapshotHash }` (RF-126) |
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent, withAnswers? }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143); `withAnswers: true` only when the request asked for the re-run with answers (RF-241, P2-05) |
@@ -304,6 +304,8 @@ Header fields:
 | `claims[]` | list | `{ claimId, text, citations[], status (ClaimStatus), verdict? }`; `claimId` is `<card id>.c<n>`; `verdict` is `{ step: citation \| judgement, reason, model, at }` |
 | `question`, `whyItMatters` | string | `OQ` only (RF-202) |
 | `questionState` | `OpenQuestionState` | `OQ` only (RF-241); a re-run with answers changes `Open` to `Answered` in the card file of the run that raised the question, in this field and in the `State:` line of the body, once the area's task ended `Done` and the run's cards were written |
+| `flow` | `{ trigger, outcome }` | `FLOW` only (RF-260). The steps are the card's `claims`, in order, so each is cited and checked like any claim; a step claim also holds `target` (the `SCRN`, `BR`, `ENT` or `INT` card id it touches, when one exists) and `branches[]`, each `{ number, text, citations[] }` numbered from 1 and cited. A branch without a citation is refused |
+| `screen` | `{ route, roles[], fields[], actions[], leadsTo[] }` | `SCRN` only (RF-261). `fields[]` are `{ name, inputKind, required, validations[] }` with each validation `{ text, citations[] }` and cited; `actions[]` are `{ label, handler?, flow? }` naming the handler, the `FLOW` card id, or both; `leadsTo[]` are `SCRN` ids or routes. `FLOW` and `SCRN` cards are not merged by consolidation (RF-250) |
 | `mergedAreas[]` | list | the areas of the merged cards, in card order, left out for a card that was not merged; a later merge of the kept card reads them, so cards that all come from one area are never merged (RF-250) |
 | `mergedFrom[]` | list | card ids merged by consolidation (RF-250), the kept card's own id first, the union over a chain of merges; the card keeps the id, area and task of its first member and every claim of all members (claim ids renumbered `<id>.c<n>`, status and verdict kept) |
 
@@ -332,6 +334,22 @@ conversation (an area that met its context limit, in two halves); the retry's tr
 `<agentTaskId>-retry`, or `<agentTaskId>-retry-1` and `-retry-2` for the halves (3.15).
 
 `cards/index.json` lists every card `{ id, type, title, area, path, claimCounts per status }`, sorted by `id`.
+
+### 3.7a `task-results.json`
+
+| | |
+|---|---|
+| Purpose | what each ended reader task of an understand run left, so a resume keeps the finished tasks (RF-006) |
+| Writer | `RunUnderstand` through `TaskResults`, rewritten after every task that ends and when a cap leaves claims `Unverified` (RF-304) |
+| Readers | `RunUnderstand` when the run is resumed |
+
+`{ schemaVersion: 1, tasks }` where each task is `{ agentTaskId, area, state, turns, withoutCards, cards, coverage }`: `state` is
+how the task ended (an `AgentTaskState` after `Running`), `cards` its cards with their ids and every claim with its status
+and verdict (the same data as the card files' headers), `coverage` its entry of `coverage.json`. Tasks keep the area order.
+The file is masked like every file Rosetta writes. A resume keeps a task when the manifest lists it `Done`, `TurnLimitReached`
+or `InvalidOutput` and this file holds its result for the same area; any other task, and a finished task without a result,
+runs again. New cards are numbered after the kept ones, so an id once given never moves. A file that is not a version 1
+results file is refused with RST-1309.
 
 ### 3.8 `spec.md`, `coverage.json`, `coverage.md`
 
@@ -396,7 +414,7 @@ Event types (canonical list):
 | `budget.warning` | `{ scope (run or role), sharePercent }` at 50, 80 and 95 percent, once per level; for `run` the share is the higher of the run cost and run token shares |
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead. A role cap (`role-cost`, `role-tokens`, RF-423) stops only that role, so it adds `role` and is reported once per role and kind, without ending the once-per-run event of the cap that stops the run |
 | `question.answered` | `{ cardId }` (RF-1007) |
-| `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run ends `Failed` only when every task failed (a provider failure), as before |
+| `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run ends `Failed` only when every task failed (a provider failure), as before. It is the last event of a run until the run is resumed (RF-006), when the log goes on with another `run.started` and the numbers continue |
 
 New event types may be added without a version bump; a reader ignores types it does not know. Each line is masked before
 it is stored (RNF-003). A crash can leave a last line without its line break: readers ignore it and the writer removes it
@@ -815,7 +833,7 @@ migration.
 | No secret in any file | masking on every writer; output scan test (RNF-003) |
 | Snapshot entries never escape their folder | extractor path check (RF-122) |
 | A snapshot is written once and never modified | `SourceFetcher` is the only writer (RF-005) |
-| Event `seq` has no gaps; `run.ended` is the last event | `JsonlEventLog` (RF-1006) |
+| Event `seq` has no gaps; `run.ended` is the last event, only `run.started` may follow it (a resume, RF-006) | `JsonlEventLog` (RF-1006) |
 | Cost never stored as floating point | `costMicros` fields |
 | A run's `endState` is set exactly once | `Run` aggregate (RF-003) |
 | Every user-data query filters on the actor's `user_id` | repositories; access matrix test (RF-1105) |

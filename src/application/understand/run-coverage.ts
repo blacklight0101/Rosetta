@@ -62,6 +62,16 @@ export class RunCoverage {
     );
   }
 
+  /** RF-006: the coverage a task of the run's earlier session left, kept as it was. */
+  restore(agentTaskId: string, coverage: AreaCoverage): void {
+    this.ended.set(agentTaskId, coverage);
+  }
+
+  /** The coverage of one ended task. */
+  of(agentTaskId: string): AreaCoverage | undefined {
+    return this.ended.get(agentTaskId);
+  }
+
   areas(): readonly AreaCoverage[] {
     return this.tasks.flatMap((task) => {
       const coverage = this.ended.get(task.agentTaskId);

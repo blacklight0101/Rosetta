@@ -12,6 +12,7 @@ import { RunUnderstand } from '../application/use-cases/run-understand.js';
 import { FileCostReportWriter } from '../infrastructure/budget/cost-report-files.js';
 import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { FileCardOutputs } from '../infrastructure/cards/file-card-outputs.js';
+import { FileTaskResults } from '../infrastructure/cards/file-task-results.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
@@ -93,6 +94,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
       egressLog: new JsonlEgressLog({ writer, masker, scope }),
     }),
     cards: new FileCardOutputs({ writer, masker, logger }),
+    taskResults: new FileTaskResults({ writer, masker }),
     answers: parts.answers,
     ledger: new PgCostLedger(pool),
     costTotals: new PgCostTotals(pool),

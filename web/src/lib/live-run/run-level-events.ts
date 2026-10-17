@@ -7,10 +7,10 @@ import type { RunState, SourceState } from './run-state.js';
 
 const GITHUB_REPOSITORY = /^https:\/\/github\.com\/([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/u;
 
-// RF-1003, RF-1004
+// RF-1003, RF-1004, RF-006: a run that starts after it ended was resumed, so it is not ended any more.
 export function onRunStarted(state: RunState, event: RunEvent): RunState {
   const parsed = startedData.safeParse(event.data);
-  if (!parsed.success) return { ...state, startedAt: event.at };
+  if (!parsed.success) return { ...state, startedAt: event.at, ended: undefined };
   const { stage, source, caps } = parsed.data;
   const given: SourceState | undefined =
     source === undefined
@@ -24,6 +24,7 @@ export function onRunStarted(state: RunState, event: RunEvent): RunState {
   return {
     ...state,
     startedAt: event.at,
+    ended: undefined,
     stage: stage ?? state.stage,
     source: given ?? state.source,
     caps: caps === undefined ? state.caps : caps.run,

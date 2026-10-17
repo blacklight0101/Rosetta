@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RunEvent } from '../../../../src/domain/runs/run-event.js';
+import type { Run } from '../../../../src/domain/runs/run.js';
 import { eventFor } from '../../../support/run-event-fixtures.js';
 import { createRunHarness, userAmy, userBob } from '../../../support/run-harness.js';
 
@@ -103,6 +104,61 @@ describe('SubscribeRunEvents the end of the stream', () => {
     expect(page.events.map((event) => event.type)).toEqual(['run.started', 'run.ended']);
     expect(page.ends.count).toBe(1);
     expect(h.broadcaster.subscriberCount).toBe(0);
+  });
+});
+
+/** Waits until the last stored event of the run is its run.ended. */
+async function logClosed(h: Harness, run: Run): Promise<void> {
+  await vi.waitFor(async () => {
+    const stored = await h.events.read(h.scopeOf(run), 0);
+    if (stored.at(-1)?.type !== 'run.ended') throw new Error('The log is not closed');
+  });
+}
+
+describe('SubscribeRunEvents for a resumed run', () => {
+  async function resumed(h: Harness) {
+    const run = await h.start(userAmy);
+    h.executor.settle(run.id, { endState: 'CapReached' });
+    await h.ended(run);
+    await logClosed(h, run);
+    await h.runs.reopen(run.userId, run.id, h.clock.now().getTime());
+    await h.queue.dispatch();
+    return run;
+  }
+
+  it('RF-006 gives a page of a run that is running again its events after the first end, and keeps the stream open', async () => {
+    const h = createRunHarness();
+    const run = await resumed(h);
+    const page = pageOf();
+
+    await open(h, { actor: userAmy, runId: run.id, afterSeq: 0, page });
+
+    expect(page.events.map((event) => event.type)).toEqual(['run.started', 'run.started']);
+    expect(page.ends.count).toBe(0);
+    h.executor.settle(run.id, { endState: 'Completed' });
+    await h.ended(run);
+    await vi.waitFor(() => {
+      expect(page.ends.count).toBe(1);
+    });
+    expect(page.events.at(-1)?.type).toBe('run.ended');
+  });
+
+  it('RF-006 ends the stream of a resumed run that has ended again at its last run.ended', async () => {
+    const h = createRunHarness();
+    const run = await resumed(h);
+    h.executor.settle(run.id, { endState: 'Completed' });
+    await h.ended(run);
+    await logClosed(h, run);
+    const page = pageOf();
+
+    await open(h, { actor: userAmy, runId: run.id, afterSeq: 0, page });
+
+    expect(page.events.map((event) => event.type)).toEqual([
+      'run.started',
+      'run.started',
+      'run.ended',
+    ]);
+    expect(page.ends.count).toBe(1);
   });
 });
 

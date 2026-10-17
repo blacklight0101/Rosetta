@@ -146,6 +146,7 @@ jobs:
           tests/integration/tooling/workflow-docs-only.test.ts
           tests/integration/infrastructure/db/release-schema.test.ts
           tests/unit/web/status-badge.test.tsx
+          tests/unit/domain/cards/card-vocabulary.test.ts
           tests/unit/web/tokens.test.ts
         env:
           ROSETTA_TEST_DATABASE_URL: ${{ matrix.database-url }}
