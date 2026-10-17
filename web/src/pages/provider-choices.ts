@@ -42,6 +42,9 @@ export const providerDefaults: Readonly<Record<string, ProviderSettings>> = {
   },
 };
 
+/** P2-37: stub, filled by the next commit. */
+export const cacheWriteProviders: readonly string[] = [];
+
 const providerLabels: Readonly<Record<string, string>> = {
   ollama: 'Ollama',
   openai: 'OpenAI',

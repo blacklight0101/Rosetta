@@ -68,6 +68,17 @@ describe('FileRunCallReader calls', () => {
     });
   });
 
+  it('RF-408 reads back the tokens a call wrote to the prompt cache, and none when it wrote none', async () => {
+    const recorder = recorderOf(amy);
+    await recorder.record({ ...sampleRecord, cacheWriteInputTokens: 300 });
+    await recorder.record({ ...sampleRecord, callId: `${runKey}#2` });
+
+    const calls = await readerOf().calls(scopeOf(amy));
+
+    expect(calls[0]?.cacheWriteInputTokens).toBe(300);
+    expect(calls[1]).not.toHaveProperty('cacheWriteInputTokens');
+  });
+
   it('RF-1011 gives no attempts for a run without a call log', async () => {
     expect(await readerOf().calls(scopeOf(amy))).toEqual([]);
   });

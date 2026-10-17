@@ -38,7 +38,7 @@ export type PriceLookup =
 const localKinds: ReadonlySet<string> = new Set(['ollama', 'fake']);
 
 /** The provider kinds that bill cache writes at their own price (docs/providers.md section 4.2). */
-const cacheWriteKinds: ReadonlySet<string> = new Set(['anthropic']);
+export const cacheWriteKinds: ReadonlySet<string> = new Set(['anthropic']);
 
 /** The version recorded for a call priced by a project override. */
 const overrideSuffix = '+project';

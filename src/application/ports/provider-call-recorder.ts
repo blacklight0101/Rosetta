@@ -35,6 +35,8 @@ export interface ProviderCallRecord {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  /** The part of `inputTokens` written to the provider's prompt cache (P2-37); absent when none. */
+  readonly cacheWriteInputTokens?: number;
   readonly usageSource: UsageSource;
   readonly costMicros: number;
   readonly currency: string;
