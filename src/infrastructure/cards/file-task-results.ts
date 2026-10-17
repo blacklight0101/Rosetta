@@ -89,8 +89,7 @@ export class FileTaskResults implements TaskResults {
   // RF-006, RF-141, RF-250
   async writeConsolidation(scope: RunScope, record: ConsolidationRecord): Promise<void> {
     const masked = maskDeep(consolidationFile(record), this.options.masker);
-    const text = `${JSON.stringify(masked, null, 2)}
-`;
+    const text = `${JSON.stringify(masked, null, 2)}\n`;
     const written = await this.options.writer.writeText(fileOf(scope, CONSOLIDATION_FILE), text);
     if (!written.ok) throw new RosettaError(written.error.code, written.error.message);
   }

@@ -37,7 +37,7 @@ export interface RoleEstimate {
 }
 
 /** The numbers every figure of the estimate rests on, stated with it (RF-425). */
-export interface EstimateAssumptions extends ReaderAssumptions {
+interface EstimateAssumptions extends ReaderAssumptions {
   /**
    * How many calls the summariser needs for the cards of the readers' answers, at most one per
    * `summariserBatchTokens` of cards (P2-35); the figures of the summariser count each.

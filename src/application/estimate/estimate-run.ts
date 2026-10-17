@@ -24,7 +24,7 @@ import {
 import { assumptionsOf, ceilPercent } from './estimate-assumptions.js';
 import type {
   ByScenario,
-  EstimateAssumptions,
+  ReaderAssumptions,
   EstimatePoint,
   EstimateRole,
   RoleEstimate,
@@ -116,7 +116,7 @@ function shareTokens(
  */
 function summariserFigures(
   reader: ByScenario<TokenFigures>,
-  assumptions: EstimateAssumptions,
+  assumptions: ReaderAssumptions,
 ): { tokens: ByScenario<TokenFigures>; batches: ByScenario<number> } {
   const share = shareTokens(reader, assumptions.summariserSharePercent);
   const batch = (scenario: Scenario): number =>

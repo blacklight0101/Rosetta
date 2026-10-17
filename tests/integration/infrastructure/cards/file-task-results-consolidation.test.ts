@@ -22,6 +22,12 @@ const record: ConsolidationRecord = {
   merges: [{ ids: ['BR-001', 'BR-002'], title: 'One rule', summary: 'Both say the same.' }],
 };
 
+const LIMITS = { merges: 10_000, mergeIds: 100, cardIds: 100_000 };
+const merge = { ids: ['BR-001', 'BR-002'], title: 'T', summary: 'S' };
+const ids = (count: number): string[] => Array.from({ length: count }, (_, i) => `BR-${String(i)}`);
+const bounded = (parts: object): string =>
+  JSON.stringify({ schemaVersion: 1, types: [], merges: [], ...parts });
+
 describe('FileTaskResults, the consolidation record', () => {
   const data = useTempRoot('rosetta-consolidation-record-');
 
@@ -58,11 +64,37 @@ describe('FileTaskResults, the consolidation record', () => {
     expect(saved.ok && saved.value).not.toContain(fakeOpenAiKey);
     expect(saved.ok && saved.value).toContain('[MASKED:api-key]');
   });
+});
+
+describe('FileTaskResults, a consolidation file it cannot read', () => {
+  const data = useTempRoot('rosetta-consolidation-bad-');
+
+  function open() {
+    const writer = openWriter(data.path);
+    return { writer, results: new FileTaskResults({ writer, masker: new SecretMasker() }) };
+  }
 
   it.each([
     ['text that is not JSON', 'not json'],
     ['a newer schema version', JSON.stringify({ schemaVersion: 2, types: [], merges: [] })],
     ['a merge without its title', JSON.stringify({ schemaVersion: 1, types: [], merges: [{}] })],
+    [
+      'too many merges',
+      bounded({ merges: Array.from({ length: LIMITS.merges + 1 }, () => merge) }),
+    ],
+    ['a merge of too many ids', bounded({ merges: [{ ...merge, ids: ids(LIMITS.mergeIds + 1) }] })],
+    [
+      'a merge with a title that is too long',
+      bounded({ merges: [{ ...merge, title: 'x'.repeat(201) }] }),
+    ],
+    [
+      'a type with too many card ids',
+      bounded({ types: [{ type: 'BR', cardIds: ids(LIMITS.cardIds + 1) }] }),
+    ],
+    [
+      'too many types',
+      bounded({ types: Array.from({ length: 21 }, () => ({ type: 'BR', cardIds: [] })) }),
+    ],
   ])('RF-006 P2-35 refuses a file with %s, with RST-1309', async (_name, text) => {
     const { writer, results } = open();
     await writer.writeText({ userId, path: file }, text);
