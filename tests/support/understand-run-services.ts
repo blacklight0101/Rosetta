@@ -25,6 +25,7 @@ import {
   loadAnswersPrompt,
   loadReaderPrompts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
+import { loadVerifierPrompts } from '../../src/infrastructure/prompts/verifier-prompt-files.js';
 import { loadTextToolProtocol } from '../../src/infrastructure/providers/ollama/text-tool-protocol-file.js';
 import { CSharpPack } from '../../src/infrastructure/scan/packs/csharp/csharp-pack.js';
 import { LanguagePackRegistry } from '../../src/infrastructure/scan/packs/pack-registry.js';
@@ -129,6 +130,7 @@ function understandExecutor(
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts('prompts'),
     mergePrompt: () => loadMergePrompt('prompts'),
+    verifierPrompts: () => loadVerifierPrompts('prompts'),
     textToolProtocol: () => loadTextToolProtocol('prompts'),
     answersPrompt: () => loadAnswersPrompt('prompts'),
     priorCards: new FilePriorCards(writer),

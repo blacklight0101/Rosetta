@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
 import type { Page } from '@playwright/test';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
@@ -13,12 +11,13 @@ import {
   valueOf,
 } from './support/live-run-page.js';
 import { hostileTexts, expectNothingInjected, watchDialogs } from './support/hostile-card.js';
+import { recordedTokens, runTokens } from './support/run-tokens.js';
 import { replayRunId } from './support/seed-replay.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 
-// RF-1002, RF-1003, RF-424, RF-1004, DEC-103, RF-1006, RF-008, RF-1108, RF-1105, P1-35: the live run
+// RF-1002, RF-1003, RF-424, RF-1004, RF-301, DEC-103, RF-1006, RF-008, RF-1108, RF-1105, P1-35: the live run
 // page, driven by real runs of the test server. The model double replays the recorded understand run
 // of the C# fixture (e2e-provider.ts) and nothing of the API or the event stream is replaced, so what
 // the page shows is what the server sent. The steps run in order: they share one project and one run
@@ -33,53 +32,25 @@ test.beforeEach(async ({ context }, info) => {
 /** The path of the live page of the understand run that finished (`/runs/<uuid>`). */
 let finishedRun = '';
 
-const recordingFile = join('tests', 'recordings', 'fake', 'understand-csharp-full.json');
-
-/** Input and output tokens of the recorded calls with those indexes. */
-async function recordedTokens(indexes: readonly number[]): Promise<number> {
-  const recording = await loadRecording(recordingFile);
-  return indexes.reduce((total, index) => {
-    const attempt = recording.calls[index]?.attempts[0];
-    if (attempt === undefined || !('response' in attempt))
-      throw new Error(`No call ${String(index)}.`);
-    const { inputTokens, outputTokens } = attempt.response.usage;
-    return total + inputTokens + outputTokens;
-  }, 0);
-}
-
-/** Input and output tokens of the run as the server totals them (GET /api/runs/:runId). */
-async function runTokens(page: Page, runPage: string): Promise<number> {
-  const uuid = runPage.split('/').at(-1) ?? '';
-  const body: unknown = await page.evaluate(async (id) => {
-    const response = await fetch(`/api/runs/${id}`);
-    const json: unknown = await response.json();
-    return json;
-  }, uuid);
-  const totals: unknown =
-    typeof body === 'object' && body !== null ? Reflect.get(body, 'totals') : undefined;
-  const field = (name: string): number => {
-    const value: unknown =
-      typeof totals === 'object' && totals !== null ? Reflect.get(totals, name) : undefined;
-    return typeof value === 'number' ? value : Number.NaN;
-  };
-  return field('inputTokens') + field('outputTokens');
-}
-
 /**
- * P1-96: the meter of a finished understand run. The reader's tokens and cost come from its usage
+ * P1-96, RF-301: the meter of a finished understand run. Each role's tokens come from its usage
  * events, so they cover every call the run made (the recorded reader calls and, for an Ollama
- * reader, its check before the first task) and equal the totals the server keeps for the run.
+ * reader, its check before the first task; the verifier's recorded verdicts) and add up to the
+ * totals the server keeps for the run.
  */
 async function expectMeterFromUsage(page: Page, areas: readonly string[]): Promise<void> {
   const tokens = await runTokens(page, finishedRun);
-  expect(tokens).toBeGreaterThanOrEqual(await recordedTokens([0, 1, 2, 4, 5, 6, 7]));
+  const verifier = await recordedTokens('verifier-csharp-full.json', [0, 1, 2, 3, 4]);
+  const reader = await recordedTokens('understand-csharp-full.json', [0, 1, 2, 4, 5, 6, 7]);
+  expect(tokens).toBeGreaterThanOrEqual(reader + verifier);
   const meter = page.getByRole('region', { name: 'Run meter' });
-  const shown = tokens.toLocaleString('en-US');
-  await expect(meter.getByRole('row', { name: /reader/u })).toContainText(shown);
-  await expect(meter.getByRole('row', { name: /Total/u })).toContainText(shown);
-  const costCell = (name: RegExp) => meter.getByRole('row', { name }).getByRole('cell').last();
+  const row = (name: RegExp) => meter.getByRole('row', { name });
+  await expect(row(/reader/u)).toContainText((tokens - verifier).toLocaleString('en-US'));
+  await expect(row(/verifier/u)).toContainText(verifier.toLocaleString('en-US'));
+  await expect(row(/Total/u)).toContainText(tokens.toLocaleString('en-US'));
+  const costCell = (name: RegExp) => row(name).getByRole('cell').last();
   await expect(costCell(/reader/u)).toHaveText(/^\$\d+\.\d+$/u);
-  await expect(costCell(/reader/u)).toHaveText((await costCell(/Total/u).textContent()) ?? '');
+  await expect(costCell(/Total/u)).toHaveText(/^\$\d+\.\d+$/u);
   for (const area of areas)
     await expect(valueOf(agentPanel(page, area), 'Cost')).toHaveText(/^\$/u);
   await expect(meter).not.toContainText('shows a dash');
@@ -143,22 +114,26 @@ test('RF-1002 RF-1003 RF-424 an understand run fills one panel per agent, the ov
   await expectNoSeriousViolations(page);
 });
 
-test('RF-1014 the claims list marks a claim citations checked or citation invalid, with its reason and a link to the lines', async ({
+test('RF-1004 RF-301 the claims list shows the recorded verdicts Supported and Rejected with their reasons, the citation invalid claims and a link to the lines', async ({
   page,
 }) => {
   await page.goto(finishedRun);
 
   const claims = page.getByRole('region', { name: 'Claims' });
+  const claim = (text: string) => claims.getByTestId('claim').filter({ hasText: text });
   await expect(claims.getByTestId('claim')).toHaveCount(7);
-  await expect(claims.getByTestId('claim').filter({ hasText: 'Citation invalid' })).toHaveCount(2);
-  await expect(claims.getByTestId('claim').filter({ hasText: 'Citations checked' })).toHaveCount(5);
-  const missing = claims.getByTestId('claim').filter({ hasText: 'BR-001.c3' });
-  await expect(missing).toContainText('Citation invalid');
-  await expect(missing.getByTestId('claim-reason')).not.toBeEmpty();
-  const lines = claims
-    .getByTestId('claim')
-    .filter({ hasText: 'BR-001.c1' })
-    .getByRole('link', { name: 'Catalog/Details.aspx.cs:5-8' });
+  const counts = { 'Citation invalid': 2, Supported: 4, Rejected: 1 };
+  for (const [text, count] of Object.entries(counts)) await expect(claim(text)).toHaveCount(count);
+  await expect(claim('BR-001.c1')).toContainText('Supported');
+  const reason = (id: string) => claim(id).getByTestId('claim-reason');
+  await expect(reason('BR-001.c1')).toHaveText(
+    'Line 7 sets NameLabel.Text to "Item" inside Page_Load.',
+  );
+  await expect(claim('BR-002.c1')).toContainText('Rejected');
+  await expect(reason('BR-002.c1')).toContainText('nothing in the lines runs it.');
+  await expect(claim('BR-001.c3')).toContainText('Citation invalid');
+  await expect(reason('BR-001.c3')).not.toBeEmpty();
+  const lines = claim('BR-001.c1').getByRole('link', { name: 'Catalog/Details.aspx.cs:5-8' });
   await expect(lines).toHaveAttribute(
     'href',
     /^https:\/\/github\.com\/octo\/webforms\/blob\/[0-9a-f]{40}\/Catalog\/Details\.aspx\.cs#L5-L8$/u,

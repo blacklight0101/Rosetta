@@ -45,13 +45,17 @@ import {
 const account = sampleAccount({ userName: 'understand.user' });
 const understandActor: Actor = { userId: account.id, role: 'user' };
 
-/** The fake reader, one task at a time (the fake replays its calls in order). */
+/**
+ * The fake reader, one task at a time (the fake replays its calls in order), and a fake verifier
+ * of another model family (RF-301), so a run logs no self-preference warning unless a test asks.
+ */
 export function understandSettings(
   change: (settings: ProjectSettings) => ProjectSettings = (s) => s,
 ): ProjectSettings {
   const base = settingsFor({
     reader: { provider: 'fake', model: 'fake-model' },
     summariser: { provider: 'fake', model: 'fake-model' },
+    verifier: { provider: 'fake', model: 'judge-model' },
   });
   return change({ ...base, agents: { parallelism: 1 } });
 }
@@ -64,6 +68,8 @@ export interface UnderstandHarnessOptions {
   readonly afterwards?: string;
   /** While it answers true the card writer of the understand runs refuses every card write. */
   readonly cardWritesFail?: () => boolean;
+  /** A file name under tests/recordings/fake/ the `verifier` role replays (RF-301). */
+  readonly verifierRecording?: string;
   readonly settings?: ProjectSettings;
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
@@ -222,6 +228,10 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
   };
 }
 
+function fakeRecording(name: string): string {
+  return join('tests', 'recordings', 'fake', name);
+}
+
 /** The recording's calls `times` over, so several runs can replay it in turn. */
 function repeated(recording: Recording, times: number): Recording {
   return { ...recording, calls: Array.from({ length: times }, () => recording.calls).flat() };
@@ -285,6 +295,9 @@ export async function createUnderstandHarness(
     logger: s.logger,
     recording: await recordingOf(options),
     beforeCall,
+    ...(options.verifierRecording === undefined
+      ? {}
+      : { verifierRecording: await loadRecording(fakeRecording(options.verifierRecording)) }),
     ...(options.decorateAnswer === undefined ? {} : { decorateAnswer: options.decorateAnswer }),
     ...(options.priceTable === undefined ? {} : { priceTable: options.priceTable }),
     ...keysOf(options.openAiKey),

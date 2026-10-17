@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "Written by hand for this repository; no real provider was called. One claim of the webforms-csharp fixture: the verifier first answers with the bare verdict, then, after the retry, with its reason and verdict.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-1",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 7 sets NameLabel.Text to \"Item\" inside Page_Load.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-2",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

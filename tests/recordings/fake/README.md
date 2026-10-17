@@ -3,7 +3,8 @@
 Scripts for the fake provider (`src/infrastructure/providers/fake/`), which replays them instead of calling a model
 (ADR-008). Each file lists calls in order, with the attempts of each call and the answer or failure of each attempt:
 the reader tasks of the `webforms-csharp` fixture, an injection attempt, a bad tool call, a turn limit, a cost cap,
-a stop, and the full understand run that the end-to-end tests drive.
+a stop, the full understand run that the end-to-end tests drive, and the verifier's judgement of its claims
+(`verifier-*.json`: the verdicts, a retry, a verdict written before its reason and an answer invalid twice).
 
 ## Provenance (RNF-009)
 

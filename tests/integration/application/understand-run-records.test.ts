@@ -26,20 +26,28 @@ describe('an understand run: cost and prompts', () => {
     const { folder } = full.current();
 
     expect(await readJson(join(folder, 'cost.json'))).toMatchObject({
-      totals: { calls: 8, inputTokens: 8800, outputTokens: 1090 },
-      byRole: [{ role: 'reader', calls: 8 }],
+      totals: { calls: 13, inputTokens: 10_900, outputTokens: 1290 },
+      byRole: [
+        { role: 'reader', calls: 8 },
+        { role: 'verifier', calls: 5 },
+      ],
       byAgentTask: [
         { agentTaskId: 'reader-001', calls: 2 },
         { agentTaskId: 'reader-002', calls: 1 },
         { agentTaskId: 'reader-003', calls: 1 },
         { agentTaskId: 'reader-004', calls: 1 },
         { agentTaskId: 'reader-005', calls: 3 },
+        { agentTaskId: 'verifier-BR-001.c1', calls: 1 },
+        { agentTaskId: 'verifier-BR-002.c1', calls: 1 },
+        { agentTaskId: 'verifier-ENT-001.c1', calls: 1 },
+        { agentTaskId: 'verifier-FEAT-001.c1', calls: 1 },
+        { agentTaskId: 'verifier-OQ-001.c1', calls: 1 },
       ],
     });
     expect(await readFile(join(folder, 'cost.md'), 'utf8')).toContain('reader');
   });
 
-  it('RNF-004 records the reader prompt files with their versions and hashes', async () => {
+  it('RNF-004 RF-301 records the reader and verifier prompt files with their versions and hashes', async () => {
     const { h, run } = full.current();
 
     const manifest = await h.manifestOf(run);
@@ -50,10 +58,13 @@ describe('an understand run: cost and prompts', () => {
       'reader/area.v2.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
+      'verifier/claim.v1.md',
+      'verifier/retry.v1.md',
     ]);
     expect(manifest.promptVersions['reader/area.v2.md']?.version).toBe('v2');
     expect(manifest.promptVersions['reader/area.v2.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.roles['reader']?.modelVersion).toBe('fake-model-2026-10-01');
+    expect(manifest.roles['verifier']?.modelVersion).toBe('fake-judge-2026-10-01');
   });
 });
 

@@ -51,8 +51,8 @@ describe('an understand run on the C# fixture: cards', () => {
       })
       .parse(await readJson(join(folder, 'cards', 'index.json')));
     const counts = (id: string) => index.cards.find((entry) => entry.id === id)?.claimCounts;
-    expect(counts('BR-001')).toMatchObject({ Proposed: 1, CitationInvalid: 2 });
-    expect(counts('BR-002')).toMatchObject({ Proposed: 1, CitationInvalid: 0 });
+    expect(counts('BR-001')).toMatchObject({ Proposed: 0, Supported: 1, CitationInvalid: 2 });
+    expect(counts('BR-002')).toMatchObject({ Proposed: 0, Rejected: 1, CitationInvalid: 0 });
     const spec = await readFile(join(folder, 'spec.md'), 'utf8');
     expect(spec.indexOf('Area: \\(root\\)')).toBeLessThan(spec.indexOf('Area: Catalog'));
   });
