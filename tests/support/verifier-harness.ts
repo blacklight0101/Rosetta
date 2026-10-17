@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { LlmProvider, LlmRequest } from '../../src/application/ports/llm-provider.js';
+import type { SkipLookup } from '../../src/application/verifier/cited-lines.js';
 import type { ClaimJudgementParts } from '../../src/application/understand/claim-judgement.js';
 import { defaultEvidenceLimits } from '../../src/application/verifier/cited-lines.js';
 import type { ClaimJudgeParts } from '../../src/application/verifier/judge-claim.js';
@@ -62,6 +63,8 @@ interface HarnessOptions {
   readonly recording: Recording;
   /** Wraps the fake, for a test that fails or watches calls; the fake by default. */
   readonly provider?: (fake: FakeProvider) => LlmProvider;
+  /** The files the scan skipped (RF-100); none by default. */
+  readonly skipReason?: SkipLookup;
 }
 
 export async function verifierHarness(options: HarnessOptions): Promise<VerifierHarness> {
@@ -77,6 +80,7 @@ export async function verifierHarness(options: HarnessOptions): Promise<Verifier
       maxOutputTokens: 512,
     },
     ...{ prompts, reader, ids: new SequenceIdGenerator(), limits: defaultEvidenceLimits },
+    skipReason: options.skipReason ?? (() => undefined),
     call: {
       ...{ runId, traceId, signal: controller.signal },
       nextCallId: () => {

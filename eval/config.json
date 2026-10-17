@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "goldenSet": "golden/eshop-webforms.json",
+  "repetitions": 3,
+  "roles": {
+    "reader": {
+      "provider": "openai",
+      "model": "gpt-5-nano"
+    },
+    "verifier": {
+      "provider": "openai",
+      "model": "gpt-5.6-luna"
+    },
+    "summariser": {
+      "provider": "openai",
+      "model": "gpt-5-nano"
+    }
+  },
+  "runCapMicros": 500000,
+  "totalCapMicros": 1500000,
+  "parallelism": 2
+}

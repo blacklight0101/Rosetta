@@ -8,7 +8,12 @@ import type { IdGenerator } from '../ports/id-generator.js';
 import type { LlmMessage, LlmRequest, LlmResponse } from '../ports/llm-provider.js';
 import type { RepositoryReader } from '../ports/repository-reader.js';
 import type { RoleProvider } from '../providers/provider-set.js';
-import { readCitedLines, type CitedExcerpt, type EvidenceLimits } from './cited-lines.js';
+import {
+  readCitedLines,
+  type CitedExcerpt,
+  type EvidenceLimits,
+  type SkipLookup,
+} from './cited-lines.js';
 import { parseVerdictAnswer, type JudgedStatus } from './verdict-answer.js';
 import { verifierRetryMessage, type VerifierPrompts } from './verifier-prompts.js';
 
@@ -48,6 +53,8 @@ export interface ClaimJudgeParts {
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
   readonly limits: EvidenceLimits;
+  /** RF-100: the files the scan skipped (binary, too large) are never read or sent. */
+  readonly skipReason: SkipLookup;
   readonly call: JudgementCall;
   /** Records the model version of each answer (RNF-004). */
   readonly onAnswer?: (response: LlmResponse) => Promise<void>;
@@ -141,7 +148,12 @@ export async function judgeClaim(
   parentSpanId: string,
 ): Promise<Judgement> {
   if (parts.call.signal.aborted) return stopOf(parts.call.signal);
-  const evidence = await readCitedLines(parts.reader, claim.citations, parts.limits);
+  const evidence = await readCitedLines(
+    parts.reader,
+    claim.citations,
+    parts.limits,
+    parts.skipReason,
+  );
   if (!evidence.ok) return unverified(evidence.error);
   const asked: LlmMessage[] = [
     { role: 'user', content: evidenceMessage(parts, claim, evidence.value) },

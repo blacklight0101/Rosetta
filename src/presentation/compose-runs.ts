@@ -13,6 +13,7 @@ import { CountAnsweredQuestions } from '../application/use-cases/count-answered-
 import { FilePriorCards } from '../infrastructure/cards/prior-cards.js';
 import { ListAnswers } from '../application/use-cases/list-answers.js';
 import { RecordAnswers } from '../application/use-cases/record-answers.js';
+import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
 import { ReadRunFile } from '../application/use-cases/read-run-file.js';
 import { RunScan } from '../application/use-cases/run-scan.js';
 import { StartRun } from '../application/use-cases/start-run.js';
@@ -203,6 +204,7 @@ function runServices(service: ServiceParts): RunServices {
     }),
     listAnswers: new ListAnswers({ runs, answers, cards }),
     recordAnswers: new RecordAnswers({ runs, answers, cards }),
+    reopenQuestion: new ReopenQuestion({ runs, answers, cards, logger: parts.logger }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),

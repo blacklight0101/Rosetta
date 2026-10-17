@@ -2,15 +2,16 @@ import { isCapStop } from '../../domain/budget/cap-stop.js';
 import { transitionClaim, type Card, type Claim } from '../../domain/cards/card.js';
 import type { ClaimStatus } from '../../domain/cards/card-vocabulary.js';
 import { recordManifestModelVersion } from '../../domain/runs/run-manifest.js';
+import { CodeMapIndex } from '../agent/code-map-index.js';
 import type { Clock } from '../ports/clock.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { LlmResponse } from '../ports/llm-provider.js';
 import type { RunExecution } from '../ports/run-executor.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
-import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
+import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { defaultEvidenceLimits } from '../verifier/cited-lines.js';
 import {
   CAP_UNVERIFIED_REASON,
@@ -27,11 +28,6 @@ import { runPool } from './task-pool.js';
 // arrives, so the live page moves the claim, and the cards are returned with every verdict in card
 // and claim order. A claim is never removed; one the run stopped before judging keeps its status,
 // unless a cap stopped the judgement: then it is `Unverified`, so a later run can judge it (RF-304).
-
-/** Whether a claim still waits for the judgement step. */
-export function isProposed(claim: Claim): boolean {
-  return claim.status === 'Proposed';
-}
 
 export interface ClaimJudgementParts {
   readonly judge: ClaimJudgeParts;
@@ -61,7 +57,7 @@ function spanIdOf(traceId: string, index: number): string {
 
 function pendingOf(cards: readonly Card[]): Pending[] {
   const claims = cards.flatMap((card) =>
-    card.claims.filter(isProposed).map((claim) => ({ card, claim })),
+    card.claims.filter(awaitsJudgement).map((claim) => ({ card, claim })),
   );
   return claims.map((each, index) => ({ ...each, index }));
 }
@@ -110,7 +106,9 @@ export async function judgeClaims(
   // RF-304: a cap (the verifier's or the run's) leaves every claim not judged `Unverified`; any
   // other stop leaves them `Proposed`.
   if (halt.capped || isCapStop(judge.call.signal.reason)) {
-    for (const each of pending.filter(({ claim }) => !decided.has(claim.claimId))) {
+    // A claim a cap already left `Unverified` keeps that verdict: it has nothing new to say.
+    const left = pending.filter(({ claim }) => claim.status === 'Proposed');
+    for (const each of left.filter(({ claim }) => !decided.has(claim.claimId))) {
       await decide(each, 'Unverified', CAP_UNVERIFIED_REASON);
     }
   }
@@ -148,14 +146,18 @@ export async function runJudgementStep(
 
 /** What the judgement step needs of the run (RF-301). */
 export interface JudgementContext {
-  readonly execution: Pick<RunExecution, 'run' | 'events' | 'signal'>;
-  readonly scanned: Pick<ScannedSource, 'reader'>;
+  readonly execution: {
+    readonly run: Pick<RunExecution['run'], 'runKey'>;
+    readonly events: Pick<RunEventPublisher, 'emit'>;
+    readonly signal: AbortSignal;
+  };
+  readonly scanned: Pick<ScannedSource, 'reader' | 'codeMap'>;
   readonly settings: ProjectSettings;
   readonly updates: ManifestUpdates;
   readonly nextCallId: () => string;
   readonly traceId: string;
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
-  readonly verifier: { readonly role: RoleProvider; readonly prompts: VerifierPrompts };
+  readonly verifier: { readonly role: ClaimJudgeParts['role']; readonly prompts: VerifierPrompts };
 }
 
 /** RNF-004: the exact model version of each answer of the `verifier` role. */
@@ -168,10 +170,12 @@ function recordVerifierAnswer(updates: ManifestUpdates, response: LlmResponse): 
 /** The parts of the step for one run: its verifier, its snapshot, its limits and its events. */
 export function judgementPartsOf(context: JudgementContext, clock: Clock): ClaimJudgementParts {
   const { execution, settings, verifier, updates } = context;
+  const index = new CodeMapIndex(context.scanned.codeMap);
   return {
     judge: {
       ...{ role: verifier.role, prompts: verifier.prompts, reader: context.scanned.reader },
       ids: context.ids,
+      skipReason: (path) => index.skipReasonOf(path),
       limits: { ...defaultEvidenceLimits, maxLines: settings.scan.excerptMaxLines },
       call: {
         ...{ runId: execution.run.runKey, traceId: context.traceId },

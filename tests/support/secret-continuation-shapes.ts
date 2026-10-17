@@ -96,15 +96,58 @@ export const continuationSecretCases: readonly ShapeCase[] = [
     masked: `tool ${tokenOption} [MASKED:bearer-token]\n`,
     secrets: ['Bearer-x', token],
   },
+  {
+    name: 'a --token= value on the line after a backslash continuation',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption}=${continued(backslash, '\n')}${token} --verbose`,
+    masked: `tool ${tokenOption}=${continued(backslash, '\n')}[MASKED:bearer-token] --verbose`,
+    secrets: [token],
+  },
+  {
+    name: 'a --token= value on the line after a caret continuation with CRLF',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption}=${continued(caret, '\r\n')}${token}`,
+    masked: `tool ${tokenOption}=${continued(caret, '\r\n')}[MASKED:bearer-token]`,
+    secrets: [token],
+  },
+  {
+    name: 'a --token= value on the line after a backtick continuation',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption}=${continued(backtick, '\n')}${shortToken}`,
+    masked: `tool ${tokenOption}=${continued(backtick, '\n')}[MASKED:bearer-token]`,
+    secrets: [shortToken],
+  },
+  {
+    name: 'a --token= value on the line after a continuation with a blank before the mark',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption}= ${continued(backslash, '\n')}${token}`,
+    masked: `tool ${tokenOption}= ${continued(backslash, '\n')}[MASKED:bearer-token]`,
+    secrets: [token],
+  },
+  {
+    name: 'a --token= value after a scheme word and a continuation',
+    kind: 'bearer-token',
+    text: `tool ${tokenOption}=Bearer ${continued(backslash, '\n')}${token}`,
+    masked: `tool ${tokenOption}=Bearer ${continued(backslash, '\n')}[MASKED:bearer-token]`,
+    secrets: [token],
+  },
 ];
 
 /** Text close to the new shapes that is not a secret. */
 export const continuationInnocentTexts: readonly string[] = [
   `tool ${tokenOption}-file ${continued(backslash, '\n')}token.txt`,
+  `tool ${tokenOption}=\n    next line without a mark`,
+  `tool ${tokenOption}=${backslash}`,
+  `tool ${tokenOption}=${caret}`,
+  `tool ${tokenOption}=${backtick}`,
+  `path ends in ${backslash}\nnext ${caret}\nthen ${backtick}\nplain words`,
 ];
 
 /** Hostile pieces for the new patterns (RF-141 linear time), built from pieces like the cases. */
 export const continuationAdversarialPieces: readonly string[] = [
+  `${tokenOption}=${backslash}\n`,
+  `${tokenOption}=${caret}\r\n${caret}\r\n`,
+  `${tokenOption}= ${backtick}  \n  `,
   `${tokenOption} Bearer ${backslash}\n`,
   `${tokenOption} Bearer ${caret}\r\n`,
   `${tokenOption} Bearer ${backtick}  \n  `,

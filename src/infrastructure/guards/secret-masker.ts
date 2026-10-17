@@ -195,7 +195,7 @@ const defaultRules: readonly MaskRule[] = [
     // `--token <value>` and `--token=<value>` on a command line.
     kind: 'bearer-token',
     pattern: new RegExp(
-      String.raw`(?<keep>${optionStart}token(?:${tokenBlank}{1,16}|=)${notContinuation}${tokenScheme})${notMasked}${tokenValue}`,
+      String.raw`(?<keep>${optionStart}token(?:${tokenBlank}{1,16}|=${tokenBlank}{0,16})${notContinuation}${tokenScheme})${notMasked}${tokenValue}`,
       'gi',
     ),
   },
