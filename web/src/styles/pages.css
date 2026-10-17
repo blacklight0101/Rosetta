@@ -268,6 +268,21 @@
   align-items: start;
 }
 
+/* P2-15: a numeric setting's slider sits under its number field and takes the field's width. */
+.rst-limit {
+  display: grid;
+  gap: var(--rst-sp-1);
+}
+
+.rst-limit__slider {
+  width: 100%;
+  accent-color: var(--rst-brand);
+}
+
+.rst-limit__warning {
+  color: var(--rst-warn-ink);
+}
+
 .rst-field__control--multiline {
   padding: var(--rst-sp-2) var(--rst-sp-3);
   font-size: var(--rst-fs-sm);

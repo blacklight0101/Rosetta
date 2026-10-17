@@ -7,13 +7,13 @@ import type { FieldIssue } from './use-settings-editor.js';
 // invalid control, which reads its error through aria-describedby (a live region as well would say
 // it twice).
 
-interface SettingBase {
+export interface SettingBase {
   readonly id: string;
   readonly label: string;
   /** The path the server uses for this setting, for example `roles.reader.model`. */
   readonly path: string;
   readonly errorFor: (path: string) => FieldIssue | undefined;
-  readonly help?: string;
+  readonly help?: string | undefined;
 }
 
 export function NumberSetting(
