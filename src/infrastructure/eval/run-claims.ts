@@ -84,8 +84,6 @@ export async function readRunClaims(
   writer: OutputWriter,
   scope: RunScope,
 ): Promise<EvaluatedClaim[]> {
-  // P2-11 red step: removed by the feat commit.
-  if (scope.id !== '') return [];
   const index = await readRunFile(writer, scope, 'cards/index.json');
   if (index === undefined) return [];
   const parsed = indexSchema.safeParse(jsonOf(index, 'cards/index.json'));
@@ -102,8 +100,6 @@ export async function readRunClaims(
 
 // RNF-012
 export async function readRunCost(writer: OutputWriter, scope: RunScope): Promise<number | null> {
-  // P2-11 red step: removed by the feat commit.
-  if (scope.id !== '') return null;
   const text = await readRunFile(writer, scope, 'cost.json');
   if (text === undefined) return null;
   const parsed = costSchema.safeParse(jsonOf(text, 'cost.json'));

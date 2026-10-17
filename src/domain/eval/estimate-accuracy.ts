@@ -39,8 +39,6 @@ export function estimateAccuracy(figures: EstimateFigures): EstimateAccuracy {
     likelyMicros,
     actualMicros,
   });
-  // P2-11 red step: removed by the feat commit.
-  if (likelyMicros >= 0) return notMeasured('unpriced');
   if (!priced) return notMeasured('unpriced');
   if (actualMicros === null) return notMeasured('no-cost-report');
   if (likelyMicros === 0) return notMeasured('free');

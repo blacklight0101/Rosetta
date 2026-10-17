@@ -32,8 +32,6 @@ export type EvaluationRoles = EvaluationConfig['roles'];
 
 // RNF-015
 export function parseEvaluationConfig(data: unknown): Result<EvaluationConfig, string> {
-  // P2-11 red step: removed by the feat commit.
-  if (data !== undefined) return err('red step');
   const parsed = configSchema.safeParse(data);
   if (parsed.success) return ok(parsed.data);
   const problems = parsed.error.issues.map(

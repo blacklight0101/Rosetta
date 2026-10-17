@@ -111,8 +111,6 @@ function repoOf(url: string): { owner: string; repo: string } {
 
 // RNF-006, RNF-015
 export function parseGoldenSet(data: unknown): Result<GoldenSet, readonly string[]> {
-  // P2-11 red step: removed by the feat commit.
-  if (data !== undefined) return err(['red step']);
   const parsed = setSchema.safeParse(data);
   if (!parsed.success) return err(issuesOf(parsed.error));
   const raw = parsed.data;

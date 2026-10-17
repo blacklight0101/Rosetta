@@ -81,10 +81,6 @@ export async function runEvaluation(
   golden: LoadedGoldenSet,
   repetitions: number,
 ): Promise<Result<EvaluationSummary, EvaluationProblem>> {
-  // P2-11 red step: removed by the feat commit.
-  if (repetitions >= 0) {
-    return { ok: false, error: { code: 'RST-2006', message: `red step ${golden.sha256}` } };
-  }
   const pipeline = composePipeline(parts);
   try {
     const owner = await projectOf(parts, pipeline, golden.set);

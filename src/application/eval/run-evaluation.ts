@@ -80,8 +80,6 @@ export class RunEvaluation {
   async execute(
     request: RunEvaluationRequest,
   ): Promise<Result<EvaluationSummary, EvaluationProblem>> {
-    // P2-11 red step: removed by the feat commit.
-    if (request.repetitions >= 0) return problem(ERROR_CODES.unexpected, 'red step');
     if (!Number.isInteger(request.repetitions) || request.repetitions < MIN_REPETITIONS) {
       const message = `An evaluation runs each case at least ${String(MIN_REPETITIONS)} times.`;
       return problem(ERROR_CODES.configurationInvalid, message);

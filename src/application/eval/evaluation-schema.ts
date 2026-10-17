@@ -156,16 +156,12 @@ function problemsOf(error: z.ZodError): string[] {
 
 // RNF-015
 export function parseExperiment(data: unknown): Result<Experiment, readonly string[]> {
-  // P2-11 red step: removed by the feat commit.
-  if (data !== undefined) return err(['red step']);
   const parsed = experimentSchema.safeParse(data);
   return parsed.success ? ok(parsed.data) : err(problemsOf(parsed.error));
 }
 
 // RNF-006, RNF-012, RNF-015
 export function parseResults(data: unknown): Result<Results, readonly string[]> {
-  // P2-11 red step: removed by the feat commit.
-  if (data !== undefined) return err(['red step']);
   const parsed = resultsSchema.safeParse(data);
   return parsed.success ? ok(parsed.data) : err(problemsOf(parsed.error));
 }

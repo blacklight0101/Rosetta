@@ -69,8 +69,7 @@ export function scoreClaims(
   findings: readonly GoldenFinding[],
   absences: readonly GoldenAbsence[],
 ): ClaimScore {
-  // P2-11 red step: removed by the feat commit.
-  const supported = claims.filter((claim) => claim.status === 'Proposed');
+  const supported = claims.filter((claim) => claim.status === 'Supported');
   const { correct, incorrect, unmatched, hit } = sortClaims(supported, findings, absences);
   const found = findings.filter((finding) =>
     correct.some((claim) => matchesFinding(claim, finding)),

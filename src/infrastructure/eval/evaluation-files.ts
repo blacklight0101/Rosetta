@@ -33,8 +33,6 @@ export class FileEvaluationOutput implements EvaluationOutput {
   }
 
   async write(files: EvaluationFiles): Promise<string> {
-    // P2-11 red step: removed by the feat commit.
-    if (files.folder !== '') return '';
     if (!folderName.test(files.folder)) throw refused(`${files.folder} is not an evaluation id.`);
     const experiment = parseExperiment(files.experiment);
     const results = parseResults(files.results);

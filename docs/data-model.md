@@ -659,11 +659,49 @@ provider kind; a file that breaks this stops the server with `RST-1602`. A call 
 
 ### 3.19 Evaluation results: `eval-out/<date>-<id>/`
 
-Written by `npm run eval` (RNF-006, RNF-015, RF-305), inside the Rosetta repository's git-ignored `eval-out/`, never
+Written by `npm run eval` (RNF-006, RNF-012, RNF-015, RF-305), inside the Rosetta repository's git-ignored `eval-out/`, never
 in a user's project: `experiment.json` `{ schemaVersion, id, at, rosettaVersion, roles (with modelVersion and
 modelDigest), promptVersions (with sha256), goldenSetVersion, repetitions }` and `results.json` with per-case scores
 per repetition, precision, recall, the spread across repetitions, cost per supported claim, and, with the calibration
 set, the verifier's agreement rate.
+
+As built by P2-11 (schemas in `src/application/eval/evaluation-schema.ts`; the runner writes only what parses, masked,
+into a folder that must not exist yet; the folder name and `id` are `yyyyMMdd-HHmmss-eval`, the date and the id in one):
+
+- `experiment.json`: `schemaVersion` 1, `id`, `at` (ISO instant), `rosettaVersion`, `goldenSetVersion`,
+  `goldenSetSha256` (of the golden set file's bytes), `repetitions` (at least 3), `source { url, commit, subpath }`,
+  `areas` (the code-map areas that hold a golden path, the only areas run), `roles` (per role `{ provider, kind, model,
+  modelVersion, modelDigest, toolMode, maxOutputTokens, temperature, maxTurns }`, taken from the runs' manifests),
+  `promptVersions` (prompt file name to `{ version, sha256 }`: the manifests' prompts plus the verifier's) and
+  `settings` (`parallelism`, `runCapMicros`, `runMaxTokens`, `areaTokenBudget`, `maxFileBytes`,
+  `priceTableVersion`, `totalCapMicros`).
+- `results.json`: `schemaVersion` 1, `experimentId`, `goldenSetVersion`; `repetitions[]` with `repetition`, `runId`,
+  `endState`, `errorCode`, `modelVersions` (role to version), `costMicros` (`totals.costMicros` of the run's
+  `cost.json`), `supportedClaims`, `costPerSupportedClaimMicros`, `overall` and `cases[]` scores, `citationValidity
+  { checked, valid, rate, invalid[] }` and `estimate` (`measured` with `likelyMicros`, `actualMicros`, signed
+  `error` and `withinTarget` (within 30%), or `not-measured` with the reason `unpriced`, `free` or
+  `no-cost-report`); `summary` with the spread `{ n, min, max, mean, stdDev }` of precision, strict precision,
+  rule recall, recall of all findings, citation validity, cost, cost per Supported claim and estimate error;
+  `cases[]` with the spread of each case's precision and recalls; `targets` (precision 0.9, rule recall 0.7, citation
+  validity 1, each `{ target, mean, met }`, and the estimate `{ target: 0.3, measured, within }`).
+- A score counts only `Supported` claims: `correct` (matches a finding), `incorrect` (states an absence; an absence
+  wins over a finding), `unmatched` (neither, listed by claim id for a person to check), `precision` = correct /
+  (correct + incorrect), `strictPrecision` = correct / Supported, `recall` = golden rules found / golden rules,
+  `recallAll` over every finding. A ratio with nothing to divide by is `null`; every measure is rounded to six
+  decimals. A case is scored with the claims that cite one of its paths.
+
+The calibration set of RF-305 is not part of P2-11.
+
+**Golden set** (`eval/golden/<name>.json`, schema in `src/application/eval/golden-set-schema.ts`, at most 1 MiB, read
+only from inside `eval/`): `{ schemaVersion: 1, version, description, source { url (https://github.com/<owner>/<repo>),
+commit (40 hex), subpath }, cases[] }`; each case `{ id, title, paths[], findings[], absences[] }`; a finding `{ id,
+kind (feature | rule | entity), statement, cardTypes[] (empty: any), evidence[] (path:start-end inside the case's
+paths), keywords[] }` is matched by a claim of an accepted card type that cites a line of its evidence and names one
+keyword (in the claim text or card title, any case); an absence `{ id, statement, claimPatterns[][], unless[] }` is
+hit by a claim that holds every word of one pattern and none of the `unless` words. Ids are unique in the set and the
+set must hold at least one absence (DEC-57). **Settings** (`eval/config.json`): `{ schemaVersion: 1, goldenSet,
+repetitions (3..20), roles { reader?, verifier?, summariser? : { provider, model } }, runCapMicros, totalCapMicros,
+parallelism? }`.
 
 ### 3.20 `planning-brief.json` (added 2026-10-11)
 

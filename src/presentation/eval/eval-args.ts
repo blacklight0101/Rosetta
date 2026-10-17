@@ -53,8 +53,6 @@ function apply(draft: Draft, flag: string, value: string): string | undefined {
 
 // RNF-015
 export function parseEvalArgs(args: readonly string[]): Result<EvalArgs, string> {
-  // P2-11 red step: removed by the feat commit.
-  if (args.length >= 0) return err('red step');
   const draft: Draft = { config: 'config.json', roles: {}, help: false };
   for (let index = 0; index < args.length; index += 1) {
     const flag = args[index] ?? '';

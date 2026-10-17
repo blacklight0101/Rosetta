@@ -31,7 +31,7 @@ export function citationValidity(
   lines: ReadonlyMap<string, number>,
 ): CitationValidity {
   const cited = claims
-    .filter((claim) => claim.status === 'Proposed') // P2-11 red step: removed by the feat commit.
+    .filter((claim) => claim.status === 'Supported')
     .flatMap((claim) => claim.citations);
   const invalid = cited.filter((citation) => !exists(citation, lines));
   return {

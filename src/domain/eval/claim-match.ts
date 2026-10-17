@@ -35,8 +35,6 @@ function holds(words: string, word: string): boolean {
 
 // RNF-006
 export function matchesFinding(claim: EvaluatedClaim, finding: GoldenFinding): boolean {
-  // P2-11 red step: removed by the feat commit.
-  if (claim.claimId !== '') return false;
   if (finding.cardTypes.length > 0 && !finding.cardTypes.includes(claim.cardType)) return false;
   const cited = claim.citations.some((citation) =>
     finding.evidence.some((evidence) => overlaps(citation, evidence)),
@@ -48,8 +46,6 @@ export function matchesFinding(claim: EvaluatedClaim, finding: GoldenFinding): b
 
 // RNF-015, DEC-57
 export function hitsAbsence(claim: EvaluatedClaim, absence: GoldenAbsence): boolean {
-  // P2-11 red step: removed by the feat commit.
-  if (claim.claimId !== '') return false;
   const words = wordsOf(claim);
   if (absence.unless.some((word) => holds(words, word))) return false;
   return absence.claimPatterns.some((pattern) => pattern.every((word) => holds(words, word)));
@@ -57,7 +53,5 @@ export function hitsAbsence(claim: EvaluatedClaim, absence: GoldenAbsence): bool
 
 /** True when the claim cites at least one of the paths. */
 export function citesAnyPath(claim: EvaluatedClaim, paths: ReadonlySet<string>): boolean {
-  // P2-11 red step: removed by the feat commit.
-  if (claim.claimId !== '') return false;
   return claim.citations.some((citation) => paths.has(citation.path));
 }

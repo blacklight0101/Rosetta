@@ -29,8 +29,6 @@ function inside(folder: string, file: string): boolean {
 }
 
 async function readEvalFile(folder: string, reference: string): Promise<Result<Buffer, string>> {
-  // P2-11 red step: removed by the feat commit.
-  if (reference !== '') return err('red step');
   if (!isRepositoryPath(reference) || !reference.endsWith('.json')) {
     return err(`The evaluation file ${reference} is not a relative .json path inside eval/.`);
   }

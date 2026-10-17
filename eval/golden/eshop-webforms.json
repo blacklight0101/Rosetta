@@ -1,0 +1,557 @@
+{
+  "schemaVersion": 1,
+  "version": "2026-10-17.1",
+  "description": "Hand-checked findings of the eShopLegacyWebForms application of dotnet-architecture/eShopModernizing (MIT licence, copyright .NET Foundation and Contributors) at commit 63bc9ec, written for this repository by reading the code at that commit. Each finding cites the lines that show it; each absence is a statement whose correct answer is \"not in the code\" (DEC-57). No text of the application is copied.",
+  "source": {
+    "url": "https://github.com/dotnet-architecture/eShopModernizing",
+    "commit": "63bc9ec4414d7e281dc9f9d7bdcf70030950457d",
+    "subpath": "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms"
+  },
+  "cases": [
+    {
+      "id": "catalog-model",
+      "title": "The catalog item, brand and type",
+      "paths": [
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogBrand.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogType.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs"
+      ],
+      "findings": [
+        {
+          "id": "entity-catalog-item",
+          "kind": "entity",
+          "statement": "A catalog item has an id, a name, a description, a price, a picture file name, a type, a brand, the available stock, a restock threshold, a maximum stock threshold and an on-reorder flag; it is stored in the table Catalog.",
+          "cardTypes": ["ENT"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:6-62",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:57-86"
+          ],
+          "keywords": ["catalog item", "catalogitem"]
+        },
+        {
+          "id": "entity-catalog-brand",
+          "kind": "entity",
+          "statement": "A catalog brand has an id and a brand name; it is stored in the table CatalogBrand.",
+          "cardTypes": ["ENT"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogBrand.cs:8-12",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:43-55"
+          ],
+          "keywords": ["brand"]
+        },
+        {
+          "id": "entity-catalog-type",
+          "kind": "entity",
+          "statement": "A catalog type has an id and a type name; it is stored in the table CatalogType.",
+          "cardTypes": ["ENT"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogType.cs:8-12",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:29-41"
+          ],
+          "keywords": ["type"]
+        },
+        {
+          "id": "rule-price-two-decimals",
+          "kind": "rule",
+          "statement": "The price of an item must be a positive number with at most two decimals.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:20-24"
+          ],
+          "keywords": ["price"]
+        },
+        {
+          "id": "rule-stock-range",
+          "kind": "rule",
+          "statement": "The available stock, the restock threshold and the maximum stock threshold must each be between 0 and 10 million.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:43-56"
+          ],
+          "keywords": ["stock", "restock"]
+        },
+        {
+          "id": "rule-default-picture",
+          "kind": "rule",
+          "statement": "A new catalog item gets the picture file name dummy.png.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItem.cs:8-13"
+          ],
+          "keywords": ["dummy", "picture"]
+        },
+        {
+          "id": "rule-item-name-required",
+          "kind": "rule",
+          "statement": "The name of an item is required and holds at most 50 characters; the price and the picture file name are required too.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:67-75"
+          ],
+          "keywords": ["name", "required"]
+        },
+        {
+          "id": "rule-item-brand-type-required",
+          "kind": "rule",
+          "statement": "Every catalog item must have a brand and a type.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:79-85"
+          ],
+          "keywords": ["brand", "type"]
+        },
+        {
+          "id": "rule-item-id-assigned",
+          "kind": "rule",
+          "statement": "The database does not generate item ids: the application assigns them.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:63-65"
+          ],
+          "keywords": ["generat", "assign", "hilo"]
+        },
+        {
+          "id": "rule-brand-type-name-length",
+          "kind": "rule",
+          "statement": "Brand and type names are required and hold at most 100 characters.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:38-40",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogDBContext.cs:52-54"
+          ],
+          "keywords": ["100"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-auto-reorder",
+          "statement": "Nothing reorders an item or sets the on-reorder flag by itself when the stock falls below the restock threshold.",
+          "claimPatterns": [
+            ["reorder", "automatic"],
+            ["reorder", "triggers"],
+            ["reorder", "below"],
+            ["reorder", "falls"]
+          ],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "catalog-service",
+      "title": "The catalog service, ids and paging",
+      "paths": [
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItemHiLoGenerator.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs"
+      ],
+      "findings": [
+        {
+          "id": "feature-catalog-maintenance",
+          "kind": "feature",
+          "statement": "The catalog service lists, finds, creates, updates and removes catalog items and lists brands and types.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN", "INT"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs:22-69"
+          ],
+          "keywords": ["create", "update", "remove", "delete"]
+        },
+        {
+          "id": "rule-hilo-ids",
+          "kind": "rule",
+          "statement": "New item ids come from the database sequence catalog_hilo, taken in blocks of 10 (HiLo).",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/CatalogItemHiLoGenerator.cs:11-31",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs:52-57"
+          ],
+          "keywords": ["hilo", "sequence"]
+        },
+        {
+          "id": "rule-list-order-paging",
+          "kind": "rule",
+          "statement": "The catalog list is ordered by item id and cut into pages by page size and page index.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Services/CatalogService.cs:22-36"
+          ],
+          "keywords": ["order", "page", "pagina"]
+        },
+        {
+          "id": "rule-total-pages",
+          "kind": "rule",
+          "statement": "The number of pages is the total number of items divided by the page size, rounded up.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/ViewModel/PaginatedItemsViewModel.cs:18-25"
+          ],
+          "keywords": ["ceil", "total pages", "round"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-soft-delete",
+          "statement": "Removing an item deletes it; there is no soft delete, archive or deactivation.",
+          "claimPatterns": [["soft", "delete"], ["archiv"], ["deactivat"]],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot"
+          ]
+        },
+        {
+          "id": "absent-search",
+          "statement": "The catalog cannot be searched or filtered by name, brand or type.",
+          "claimPatterns": [
+            ["search"],
+            ["filter", "brand"],
+            ["filter", "type"],
+            ["filter", "name"]
+          ],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home-page",
+      "title": "The home page and the routes",
+      "paths": [
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start/RouteConfig.cs"
+      ],
+      "findings": [
+        {
+          "id": "feature-paged-list",
+          "kind": "feature",
+          "statement": "The home page lists the catalog items one page at a time with previous and next links.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN"],
+          "evidence": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:22-57"],
+          "keywords": ["list", "page", "next", "previous"]
+        },
+        {
+          "id": "feature-routes",
+          "kind": "feature",
+          "statement": "Routes map Default, Default/index/{index}/size/{size}, Catalog/Create, Catalog/Edit/{id}, Catalog/Details/{id} and Catalog/Delete/{id} to their pages.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN", "INT"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/App_Start/RouteConfig.cs:7-39"
+          ],
+          "keywords": ["route"]
+        },
+        {
+          "id": "rule-default-page-size",
+          "kind": "rule",
+          "statement": "Without size and index in the route the home page shows page 0 with 10 items.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:15-16",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:24-35"
+          ],
+          "keywords": ["10", "ten", "default"]
+        },
+        {
+          "id": "rule-pager-hidden",
+          "kind": "rule",
+          "statement": "The next link is hidden on the last page and the previous link on the first page.",
+          "cardTypes": [],
+          "evidence": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Default.aspx.cs:48-57"],
+          "keywords": ["hidden", "hide"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-sign-in",
+          "statement": "The application has no sign-in, user accounts, passwords or roles: every page is open.",
+          "claimPatterns": [
+            ["sign in"],
+            ["sign-in"],
+            ["login"],
+            ["log in"],
+            ["password"],
+            ["authenticat"],
+            ["authoriz"]
+          ],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot",
+            "anonymous",
+            "open to"
+          ]
+        },
+        {
+          "id": "absent-basket",
+          "statement": "There is no shopping basket, checkout or order.",
+          "claimPatterns": [["basket"], ["shopping cart"], ["checkout"], ["order", "placed"]],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "item-pages",
+      "title": "Creating, editing, viewing and deleting an item",
+      "paths": [
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx.cs"
+      ],
+      "findings": [
+        {
+          "id": "feature-create-item",
+          "kind": "feature",
+          "statement": "A user creates a catalog item with a name, description, brand, type, price and stock levels; when the form is valid the item is saved and the home page opens.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx.cs:30-50"
+          ],
+          "keywords": ["create", "new item", "add"]
+        },
+        {
+          "id": "feature-edit-item",
+          "kind": "feature",
+          "statement": "A user edits every field of an item, including the picture name; when the form is valid the item is saved and the home page opens.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Edit.aspx.cs:18-68"
+          ],
+          "keywords": ["edit", "update", "save"]
+        },
+        {
+          "id": "feature-delete-item",
+          "kind": "feature",
+          "statement": "A user sees an item and deletes it; the home page opens afterwards.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Delete.aspx.cs:17-32"
+          ],
+          "keywords": ["delete", "remove"]
+        },
+        {
+          "id": "feature-item-details",
+          "kind": "feature",
+          "statement": "A user opens the details of one item by its id.",
+          "cardTypes": ["FEAT", "FLOW", "SCRN"],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Details.aspx.cs:17-24"
+          ],
+          "keywords": ["detail"]
+        },
+        {
+          "id": "rule-create-name-required",
+          "kind": "rule",
+          "statement": "The name is required on the create form.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:12-14"
+          ],
+          "keywords": ["name", "required"]
+        },
+        {
+          "id": "rule-create-price-range",
+          "kind": "rule",
+          "statement": "On the create form the price must be between 0 and 1 million.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:54-56"
+          ],
+          "keywords": ["price"]
+        },
+        {
+          "id": "rule-create-stock-range",
+          "kind": "rule",
+          "statement": "On the create form stock, restock and max stock must each be between 0 and 10 million.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:70-90"
+          ],
+          "keywords": ["stock", "restock"]
+        },
+        {
+          "id": "rule-no-picture-upload",
+          "kind": "rule",
+          "statement": "Pictures cannot be uploaded when an item is created.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Catalog/Create.aspx:60-65"
+          ],
+          "keywords": ["upload", "image", "picture"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-delete-guard",
+          "statement": "Nothing blocks deleting an item: not its stock and not anything else.",
+          "claimPatterns": [
+            ["delete", "stock"],
+            ["cannot", "delete"],
+            ["prevent", "delet"]
+          ],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot",
+            "regardless"
+          ]
+        },
+        {
+          "id": "absent-audit",
+          "statement": "Changes to items are not audited: no history of who changed what.",
+          "claimPatterns": [["audit"], ["history"], ["changed by"]],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "start-up",
+      "title": "Start-up, mock data and sessions",
+      "paths": [
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs",
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.config"
+      ],
+      "findings": [
+        {
+          "id": "rule-mock-data-switch",
+          "kind": "rule",
+          "statement": "With UseMockData on, the in-memory mock catalog service is used and the database is not initialised; with it off, the Entity Framework catalog service and the database initialiser are used.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs:50-67",
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Modules/ApplicationModule.cs:16-30"
+          ],
+          "keywords": ["mock"]
+        },
+        {
+          "id": "rule-mock-data-default",
+          "kind": "rule",
+          "statement": "The shipped configuration turns UseMockData on.",
+          "cardTypes": [],
+          "evidence": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Web.config:15-15"],
+          "keywords": ["mock"]
+        },
+        {
+          "id": "rule-session-tracking",
+          "kind": "rule",
+          "statement": "Each session stores the machine name and the time it started.",
+          "cardTypes": [],
+          "evidence": ["eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Global.asax.cs:41-45"],
+          "keywords": ["session"]
+        }
+      ],
+      "absences": [
+        {
+          "id": "absent-notifications",
+          "statement": "The application sends no e-mail and no notifications.",
+          "claimPatterns": [["email"], ["e-mail"], ["notif"]],
+          "unless": [
+            "no code",
+            "nothing",
+            "never",
+            "does not",
+            "do not",
+            "is not",
+            "are not",
+            "has no",
+            "there is no",
+            "without",
+            "cannot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "catalog-seed",
+      "title": "Creating and seeding the database",
+      "paths": [
+        "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/CatalogDBInitializer.cs"
+      ],
+      "findings": [
+        {
+          "id": "rule-seed-on-create",
+          "kind": "rule",
+          "statement": "When the database is created, the HiLo sequences are created and the types, brands and items are added, from CSV files when UseCustomizationData is on.",
+          "cardTypes": [],
+          "evidence": [
+            "eShopLegacyWebFormsSolution/src/eShopLegacyWebForms/Models/Infrastructure/CatalogDBInitializer.cs:26-59"
+          ],
+          "keywords": ["seed", "csv", "customization", "initial"]
+        }
+      ],
+      "absences": []
+    }
+  ]
+}

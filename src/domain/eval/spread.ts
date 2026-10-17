@@ -16,8 +16,6 @@ export interface Spread {
 export function spreadOf(values: readonly (number | null)[]): Spread | null {
   const present = values.filter((value): value is number => value !== null);
   if (present.length === 0) return null;
-  // P2-11 red step: removed by the feat commit.
-  if (present.length > 0) return null;
   const mean = present.reduce((sum, value) => sum + value, 0) / present.length;
   const variance = present.reduce((sum, value) => sum + (value - mean) ** 2, 0) / present.length;
   return {
