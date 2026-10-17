@@ -1,6 +1,78 @@
+import { z } from 'zod';
 import type { PlanDraft } from '../../domain/planning/plan-draft.js';
+import { cardLimits } from '../cards/card-limits.js';
+import { searchJson } from '../cards/extract-json.js';
 
-// RF-601, ADR-013: the planner's answer read as a draft (not built yet).
+// RF-601, ADR-013: the planner's answer is untrusted text. It is read as one JSON object (fenced or
+// inside prose, like the other roles' answers) with every list and text bounded; which card ids and
+// positions it may use is decided by the domain (plan-content.ts), not here. A list the answer
+// leaves out is empty; an answer without requirements is no answer.
 
+const MAX_ITEMS = 200;
+const MAX_LIST = 50;
+const TITLE = 200;
+const TEXT = 2000;
+
+const title = z.string().trim().min(1).max(TITLE);
+const text = z.string().trim().min(1).max(TEXT);
+const optionalText = z.string().trim().max(TEXT).default('');
+const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
+const texts = z.array(text).max(MAX_LIST);
+const position = z.number().int().min(1).max(MAX_ITEMS);
+
+const answer = z.object({
+  summary: optionalText,
+  requirements: z
+    .array(z.object({ title, statement: text, sources: ids }))
+    .min(1)
+    .max(MAX_ITEMS),
+  components: z
+    .array(
+      z.object({
+        name: title,
+        responsibility: optionalText,
+        dependsOn: z.array(z.string().max(TITLE)).max(MAX_LIST).default([]),
+      }),
+    )
+    .max(MAX_LIST)
+    .default([]),
+  decisions: z
+    .array(
+      z.object({ title, context: text, decision: text, consequences: optionalText, sources: ids }),
+    )
+    .max(MAX_LIST)
+    .default([]),
+  entities: z
+    .array(z.object({ legacy: title, target: title, notes: optionalText, sources: ids }))
+    .max(MAX_ITEMS)
+    .default([]),
+  phases: z
+    .array(z.object({ name: title, goal: text, exitCriteria: texts.min(1) }))
+    .max(MAX_LIST)
+    .default([]),
+  tasks: z
+    .array(
+      z.object({
+        title,
+        phase: position,
+        requirements: z.array(position).max(MAX_LIST).default([]),
+        acceptanceCriteria: texts.min(1),
+      }),
+    )
+    .max(MAX_ITEMS)
+    .default([]),
+  risks: z
+    .array(z.object({ text, sources: ids }))
+    .max(MAX_LIST)
+    .default([]),
+});
+
+/** The draft of the answer, or undefined when no JSON object of the answer reads as a plan. */
 // RF-601
-export const parsePlanAnswer: (output: string) => PlanDraft | undefined = () => undefined;
+export function parsePlanAnswer(output: string): PlanDraft | undefined {
+  for (const value of searchJson(output.slice(0, cardLimits.maxOutputChars)).values) {
+    const parsed = answer.safeParse(value);
+    if (parsed.success) return parsed.data;
+  }
+  return undefined;
+}
