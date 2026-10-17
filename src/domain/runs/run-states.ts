@@ -16,3 +16,10 @@ export type RunQueueState = (typeof RUN_QUEUE_STATES)[number];
 /** RF-201: the states of an agent task; `Planned` -> `Running` -> one of the other five. */
 export type AgentTaskState =
   'Planned' | 'Running' | 'Done' | 'TurnLimitReached' | 'InvalidOutput' | 'Failed' | 'StoppedByCap';
+
+/** RF-006: whether a resume runs a task of this state again (its state, as the manifest stores it). */
+const UNFINISHED_TASK_STATES: readonly string[] = ['Planned', 'Running', 'StoppedByCap', 'Failed'];
+
+export function isUnfinishedTask(state: string): boolean {
+  return UNFINISHED_TASK_STATES.includes(state);
+}

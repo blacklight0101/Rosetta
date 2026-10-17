@@ -8,7 +8,7 @@ import type {
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import type { Run, RunTotals } from '../../domain/runs/run.js';
+import { RESUMABLE_END_STATES, type Run, type RunTotals } from '../../domain/runs/run.js';
 import type { RunEndState } from '../../domain/runs/run-states.js';
 import type { DatabasePool } from './pool.js';
 import { RUN_COLUMNS, toProjectRunSummary, toRun, toSnapshotUsage } from './run-rows.js';
@@ -38,6 +38,10 @@ const START =
   RETURNING;
 const END =
   "UPDATE runs SET queue_state = 'Ended', end_state = $2::text, ended_at = $3, failed_areas = $4 WHERE id = $1 AND (queue_state = 'Running' OR (queue_state = 'Queued' AND $2::text = 'Interrupted'))" +
+  RETURNING;
+// RF-006: one conditional UPDATE, so two parallel resumes queue the run once.
+const REOPEN =
+  "UPDATE runs SET queue_state = 'Queued', end_state = NULL, failed_areas = 0, queued_at = $3, started_at = NULL, ended_at = NULL WHERE user_id = $1 AND id = $2 AND queue_state = 'Ended' AND end_state = ANY($4::text[])" +
   RETURNING;
 const RECORD_SOURCE =
   "UPDATE runs SET commit_sha = $2, snapshot_key = $3 WHERE id = $1 AND queue_state <> 'Ended'" +
@@ -130,6 +134,11 @@ export class PgRunIndex implements RunIndex {
     failedAreas = 0,
   ): Promise<Run | undefined> {
     return this.change(runId, END, [endState, new Date(at), failedAreas]);
+  }
+
+  async reopen(userId: string, runId: string, at: EpochMs): Promise<Run | undefined> {
+    if (!UUID.test(userId) || !UUID.test(runId)) return undefined;
+    return this.one(REOPEN, [userId, runId, new Date(at), RESUMABLE_END_STATES]);
   }
 
   recordSource(runId: string, source: RunSource): Promise<Run | undefined> {

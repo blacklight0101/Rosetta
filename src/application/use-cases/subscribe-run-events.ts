@@ -64,8 +64,9 @@ export class SubscribeRunEvents {
     const run = await runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const scope = scopeOf(run);
-    const afterSeq = Math.min(request.afterSeq, await history.lastSeq(scope));
-    const delivery = new Delivery(request, afterSeq);
+    const lastSeq = await history.lastSeq(scope);
+    const afterSeq = Math.min(request.afterSeq, lastSeq);
+    const delivery = new Delivery(request, afterSeq, lastSeq);
     delivery.unsubscribe = feed.subscribe(run.userId, run.id, (event) => {
       delivery.live(event);
     });
@@ -101,12 +102,14 @@ class Delivery {
   private readonly held: RunEvent[] = [];
   private heldBytes = 0;
   private last: number;
+  private readonly storedEnd: number;
   private holding = true;
   private closed = false;
 
-  constructor(request: SubscribeRunEventsRequest, afterSeq: number) {
+  constructor(request: SubscribeRunEventsRequest, afterSeq: number, storedEnd: number) {
     this.request = request;
     this.last = afterSeq;
+    this.storedEnd = storedEnd;
   }
 
   live(event: RunEvent): void {
@@ -125,6 +128,8 @@ class Delivery {
   send(event: RunEvent, stored = false): void {
     if (this.closed || event.seq <= this.last) return;
     this.last = event.seq;
+    // RF-006: a stored run.ended that a resume followed is not the end of the stream.
+    if (stored && isRunEnded(event) && event.seq < this.storedEnd) return;
     this.request.onEvent(event, stored);
     if (isRunEnded(event)) this.end();
   }

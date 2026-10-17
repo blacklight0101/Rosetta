@@ -11,6 +11,7 @@ import {
   runBob,
   runIndexContract,
 } from '../../../contracts/run-index.contract.js';
+import { runIndexReopenContract } from '../../../contracts/run-index-reopen.contract.js';
 import { sampleAccount } from '../../../support/account-fixtures.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
@@ -38,6 +39,7 @@ describe.skipIf(!hasTestDatabase)('PgRunIndex', () => {
   }
 
   runIndexContract('PgRunIndex', freshIndex);
+  runIndexReopenContract('PgRunIndex', freshIndex);
   runIndexOverviewContract('PgRunIndex', freshIndex);
 
   it('RF-003 the totals of a run come back as numbers, also past 32 bits', async () => {

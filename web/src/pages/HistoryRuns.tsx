@@ -1,13 +1,16 @@
 import type { JSX } from 'preact';
 import { runDownloadPath } from '../api/runs.js';
+import { navigate } from '../app/router.js';
 import type { HistoryRun } from '../api/history-schemas.js';
 import { Button } from '../components/Button.js';
 import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { stateLists } from '../components/badge-specs.js';
+import { isResumable } from '../lib/live-run/resumable.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { secondsText } from './admin-format.js';
+import { ResumeButton } from './ResumeButton.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1008, RF-1012, History artboard: the runs of a project, newest first, each with its start, stage,
@@ -72,6 +75,24 @@ function Open({ run }: { readonly run: HistoryRun }): JSX.Element {
   );
 }
 
+/** RF-006: Resume, for an understand run that stopped at its cap, failed or was interrupted. */
+function Resume({ run }: { readonly run: HistoryRun }): JSX.Element | null {
+  if (run.queueState !== 'Ended' || run.endState === null) return null;
+  if (!isResumable(run.stage, run.endState)) return null;
+  return (
+    <>
+      {' · '}
+      <ResumeButton
+        runId={run.id}
+        ariaLabel={`Resume run ${run.runId}`}
+        onResumed={() => {
+          navigate(`/runs/${encodeURIComponent(run.id)}`);
+        }}
+      />
+    </>
+  );
+}
+
 function DeleteButton(props: {
   readonly run: HistoryRun;
   readonly onDelete: (run: HistoryRun) => void;
@@ -128,6 +149,7 @@ function Row(props: {
       </td>
       <td data-label="Open">
         <Open run={run} />
+        <Resume run={run} />
       </td>
       <td>
         <DeleteButton run={run} onDelete={props.onDelete} />

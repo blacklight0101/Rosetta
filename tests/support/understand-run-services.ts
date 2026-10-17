@@ -6,6 +6,7 @@ import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-repor
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
+import { FileTaskResults } from '../../src/infrastructure/cards/file-task-results.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
@@ -98,6 +99,17 @@ export function stores(dataDir: string, refuseRemoval = false): Stores {
   };
 }
 
+/** The scans of the test runs: the real file adapter over the C# fixture. */
+export function scanResultsOf(s: Stores): FileScanResults {
+  const { writer, manifests, logger } = s;
+  return new FileScanResults({
+    writer,
+    manifests,
+    snapshotRoot: () => fixtureRoot('webforms-csharp'),
+    logger,
+  });
+}
+
 function understandExecutor(
   s: Stores,
   providers: UnderstandProviders,
@@ -106,15 +118,11 @@ function understandExecutor(
   const { writer, masker, logger, manifests, clock } = s;
   return new RunUnderstand({
     ...{ projects: s.projects, runs: s.runs, users: s.users, manifests, clock, logger },
-    scans: new FileScanResults({
-      writer,
-      manifests,
-      snapshotRoot: () => fixtureRoot('webforms-csharp'),
-      logger,
-    }),
+    scans: scanResultsOf(s),
     providers: providers.factory,
     runSinks: providers.runSinks,
     cards: new FailingCardOutputs(new FileCardOutputs({ writer, masker, logger }), cardWritesFail),
+    taskResults: new FileTaskResults({ writer, masker }),
     answers: new FileAnswersFile({ writer, masker }),
     ledger: providers.ledger,
     costTotals: new MemoryCostTotals(),

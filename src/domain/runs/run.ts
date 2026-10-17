@@ -39,6 +39,7 @@ export interface Run {
 }
 
 export type StartProblem = 'not-queued';
+export type ReopenProblem = 'not-resumable';
 export type EndProblem = 'already-ended' | 'queued-run-can-only-be-interrupted';
 
 // RF-1108
@@ -59,4 +60,27 @@ export function endRun(
     return err('queued-run-can-only-be-interrupted');
   }
   return ok({ ...run, queueState: 'Ended', endState, endedAt: at, failedAreas });
+}
+
+/** RF-006: the end states a resume can start from; a `Completed` run has nothing left to do. */
+export const RESUMABLE_END_STATES: readonly RunEndState[] = ['CapReached', 'Failed', 'Interrupted'];
+
+/**
+ * RF-006: an ended run that stopped at a cap, failed or was interrupted queues again as the same
+ * run (same folder, same manifest), its totals kept; the end state is cleared and set again when
+ * it ends.
+ */
+// RF-006
+export function reopenRun(run: Run, at: EpochMs): Result<Run, ReopenProblem> {
+  if (run.queueState !== 'Ended' || run.endState === null) return err('not-resumable');
+  if (!RESUMABLE_END_STATES.includes(run.endState)) return err('not-resumable');
+  return ok({
+    ...run,
+    queueState: 'Queued',
+    endState: null,
+    failedAreas: 0,
+    queuedAt: at,
+    startedAt: null,
+    endedAt: null,
+  });
 }
