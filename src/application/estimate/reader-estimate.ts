@@ -8,11 +8,15 @@ import type { ByScenario, EstimateAssumptions, Scenario } from './estimate-types
 // turns before it and everything answered before it. A turn never sends more than the context
 // share of the model, because the task ends there (architecture section 8). An area the code map
 // marks for flows or screens resends one more prompt fragment on every turn for each of them and
-// answers the extra cards once (Q-25); any other area costs what it always did.
+// answers the extra cards once (Q-25); any other area costs what it always did. A provider with a
+// prompt cache bills only what a turn adds to the conversation at its cache-write price (P2-37), so
+// the tokens a task writes are the conversation as it stands at its last turn.
 
 export interface TokenFigures {
   readonly inputTokens: number;
   readonly outputTokens: number;
+  /** The part of `inputTokens` written to a prompt cache: the conversation at the last turn (P2-37). */
+  readonly cacheWriteTokens: number;
 }
 
 const noMarks: AreaMarks = { flows: false, screens: false };
@@ -34,13 +38,15 @@ function areaTokens(
   const fragments = fragmentsOf(marks);
   const overhead = assumptions.promptOverheadTokens + fragments * assumptions.surfacePromptTokens;
   let inputTokens = 0;
+  let cacheWriteTokens = 0;
   for (let turn = 1; turn <= turns; turn += 1) {
     const before = turn - 1;
     const context = overhead + Math.floor((read * before) / turns) + answered * before;
-    inputTokens += Math.min(context, assumptions.contextLimitTokens);
+    cacheWriteTokens = Math.min(context, assumptions.contextLimitTokens);
+    inputTokens += cacheWriteTokens;
   }
   const extra = fragments * assumptions.surfaceOutputTokens[scenario];
-  return { inputTokens, outputTokens: turns * answered + extra };
+  return { inputTokens, outputTokens: turns * answered + extra, cacheWriteTokens };
 }
 
 // RF-425, RF-263
@@ -56,8 +62,9 @@ export function readerTokens(
         (total, each) => ({
           inputTokens: total.inputTokens + each.inputTokens,
           outputTokens: total.outputTokens + each.outputTokens,
+          cacheWriteTokens: total.cacheWriteTokens + each.cacheWriteTokens,
         }),
-        { inputTokens: 0, outputTokens: 0 },
+        { inputTokens: 0, outputTokens: 0, cacheWriteTokens: 0 },
       );
   return { low: sum('low'), likely: sum('likely'), high: sum('high') };
 }

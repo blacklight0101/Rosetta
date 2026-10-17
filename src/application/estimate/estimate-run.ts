@@ -33,7 +33,8 @@ import { readerTokens, type TokenFigures } from './reader-estimate.js';
 // low, likely and high figure, with the assumptions stated. Costs are bigint micro-dollars like
 // the ledger. A local model costs zero and still shows its tokens; a cloud model without a price
 // shows its tokens and `priced: false` (RF-427). The confirmation threshold of the second RF-425
-// scenario is applied by the start page, from this estimate (P2-08, DEC-97).
+// scenario is applied by the start page to the likely figure of this estimate (P2-08, DEC-97); the
+// high figure is the only one that covers the worst case of cache writes (P2-37).
 
 export interface EstimateRunDependencies {
   readonly projects: ProjectRepository;
@@ -61,24 +62,27 @@ interface RoleTokens {
 }
 
 /**
- * RF-425, P2-24: the cost of one point. The high point prices the whole prompt at the highest of
- * the input and cache-write prices, as the budget guard's worst case does (RF-422), so the high
- * figure and the confirmation threshold are never under the premium of cache writes; the low and
- * likely points price the prompt as input.
+ * RF-425, P2-24, P2-37: the cost of one point. The high point prices the whole prompt at the highest
+ * of the input and cache-write prices, as the budget guard's worst case does (RF-422), so the high
+ * figure is never under the premium of cache writes. The low and likely points price the tokens the
+ * tasks write to the prompt cache at the cache-write price and the rest of the prompt as input; a
+ * price without a cache-write price, or one below the input price, leaves them at the input price.
+ * The confirmation threshold of RF-425 is compared with the likely point (start-confirmation.ts),
+ * not with the high one.
  */
 function costOfPoint(
   price: Price,
-  tokens: Pick<TokenFigures, 'inputTokens' | 'outputTokens'>,
+  tokens: Pick<TokenFigures, 'inputTokens' | 'outputTokens' | 'cacheWriteTokens'>,
   scenario: Scenario,
 ): bigint {
-  const plain = costOf(price, { ...tokens, cachedInputTokens: 0 }).micros;
-  if (scenario !== 'high') return plain;
-  const written = costOf(price, {
-    ...tokens,
-    cachedInputTokens: 0,
-    cacheWriteInputTokens: tokens.inputTokens,
+  const { inputTokens, outputTokens } = tokens;
+  const plain = costOf(price, { inputTokens, outputTokens, cachedInputTokens: 0 }).micros;
+  const written = scenario === 'high' ? inputTokens : tokens.cacheWriteTokens;
+  const withWrites = costOf(price, {
+    ...{ inputTokens, outputTokens, cachedInputTokens: 0 },
+    cacheWriteInputTokens: written,
   }).micros;
-  return written > plain ? written : plain;
+  return withWrites > plain ? withWrites : plain;
 }
 
 /** The tokens of a role that is a share of the readers' (the verifier, ADR-005; the summariser, RF-250). */
@@ -91,6 +95,7 @@ function shareTokens(
     return {
       inputTokens: ceilPercent(reader[scenario].inputTokens, percent),
       outputTokens: ceilPercent(reader[scenario].outputTokens, percent),
+      cacheWriteTokens: ceilPercent(reader[scenario].cacheWriteTokens, percent),
     };
   };
   return { low: share('low'), likely: share('likely'), high: share('high') };
@@ -186,9 +191,7 @@ export class EstimateRun {
     const pointOf = (scenario: Scenario): EstimatePoint => {
       const { inputTokens, outputTokens } = tokens[scenario];
       const costMicros =
-        lookup.kind === 'priced'
-          ? costOfPoint(lookup.price, { inputTokens, outputTokens }, scenario)
-          : 0n;
+        lookup.kind === 'priced' ? costOfPoint(lookup.price, tokens[scenario], scenario) : 0n;
       return { inputTokens, outputTokens, costMicros };
     };
     return {
