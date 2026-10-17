@@ -10,7 +10,7 @@ import { Field } from '../components/Field.js';
 import { RenderedText } from '../components/RenderedText.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { sectionAnchor } from './AppOverview.js';
-import { useRunAnswers } from './use-run-answers.js';
+import type { RunAnswersState } from './use-run-answers.js';
 import type { OverviewLoad } from './use-run-overview.js';
 
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
@@ -18,14 +18,19 @@ import type { OverviewLoad } from './use-run-overview.js';
 // stay); a question is marked answered only when its area is analysed again with the answers
 // (RF-241), so a question reads Open until a re-run used its answer, then Answered. A re-run skips
 // an Answered question, so one whose answer was edited is reopened first (RF-241). Question and
-// context come from a model and are shown as text. All the styles are under `.rst-p139-`.
+// context come from a model and are shown as text. Each question also says how many items depend on
+// it and what happens if it is skipped (RF-1017). The page of the ended run reads the questions (it
+// counts them in "Your turn") and hands them over. The styles are under `.rst-p139-` and `.rst-p170-`.
 
 export interface RunAnswersProps {
   /** The run's id (the UUID). */
   readonly runId: string;
-  readonly ended: boolean;
+  /** The questions of the run and the way to show the ones a save returned. */
+  readonly answers: RunAnswersState;
   /** RF-264: the overview each question links to, when the run has one. */
   readonly overview?: OverviewLoad;
+  /** Called when the link to the overview section a question concerns is followed. */
+  readonly onConcern?: (section: keyof typeof sectionTitles) => void;
 }
 
 type Questions = readonly OpenQuestionRow[];
@@ -172,12 +177,48 @@ function AnswerForm(props: {
 }
 
 /** RF-264: the overview section a question concerns, as a link to it. */
-function Concerns(props: { readonly section: keyof typeof sectionTitles }): JSX.Element {
+function Concerns(props: {
+  readonly section: keyof typeof sectionTitles;
+  readonly onConcern: ((section: keyof typeof sectionTitles) => void) | undefined;
+}): JSX.Element {
   return (
     <p class="rst-p168-concerns">
       Concerns the overview section{' '}
-      <a href={`#${sectionAnchor(props.section)}`}>{sectionTitles[props.section]}</a>
+      <a
+        href={`#${sectionAnchor(props.section)}`}
+        onClick={(event) => {
+          if (props.onConcern === undefined) return;
+          event.preventDefault();
+          props.onConcern(props.section);
+        }}
+      >
+        {sectionTitles[props.section]}
+      </a>
     </p>
+  );
+}
+
+// RF-1017
+function dependsText(dependents: number): string {
+  if (dependents === 0) return 'No other item depends on it.';
+  return `Affects ${String(dependents)} ${dependents === 1 ? 'item' : 'items'} of the specification.`;
+}
+
+/** RF-1017: where the question comes from, what hangs on it and what a skipped question does. */
+function Reasons({ question }: { readonly question: OpenQuestionRow }): JSX.Element {
+  return (
+    <>
+      <p class="rst-p139-question__context" data-testid="question-why">
+        <span class="rst-p170-label">Why the code cannot say:</span>{' '}
+        <RenderedText text={question.context} />
+      </p>
+      <p class="rst-p139-question__context" data-testid="question-depends">
+        {dependsText(question.dependents)}
+      </p>
+      <p class="rst-p139-question__context" data-testid="question-default">
+        If you skip it: the question stays open in answers.md and the next run does not use it.
+      </p>
+    </>
   );
 }
 
@@ -186,6 +227,7 @@ function QuestionItem(props: {
   readonly question: OpenQuestionRow;
   readonly apply: (questions: Questions) => void;
   readonly section?: keyof typeof sectionTitles | undefined;
+  readonly onConcern: RunAnswersProps['onConcern'];
 }): JSX.Element {
   const { question } = props;
   const save = useAnswerSave(props.runId, question, props.apply);
@@ -198,18 +240,18 @@ function QuestionItem(props: {
       <p class="rst-p139-question__text">
         <RenderedText text={question.question} />
       </p>
-      {props.section === undefined ? null : <Concerns section={props.section} />}
-      <p class="rst-p139-question__context">
-        <RenderedText text={question.context} />
-      </p>
+      {props.section === undefined ? null : (
+        <Concerns section={props.section} onConcern={props.onConcern} />
+      )}
+      <Reasons question={question} />
       <AnswerForm question={question} save={save} />
     </li>
   );
 }
 
-function Body({ runId, ended, overview }: RunAnswersProps): JSX.Element {
+function Body({ runId, answers, overview, onConcern }: RunAnswersProps): JSX.Element {
   const links = overview?.status === 'ready' ? (overview.overview?.questions ?? []) : [];
-  const { load, apply } = useRunAnswers(runId, ended);
+  const { load, apply } = answers;
   if (load.status === 'waiting') {
     return <p class="rst-settings__note">The open questions appear here when the run ends.</p>;
   }
@@ -233,6 +275,7 @@ function Body({ runId, ended, overview }: RunAnswersProps): JSX.Element {
           question={question}
           apply={apply}
           section={links.find((link) => link.cardId === question.cardId)?.section}
+          onConcern={onConcern}
         />
       ))}
     </ol>

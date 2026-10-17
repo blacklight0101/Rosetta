@@ -5,6 +5,7 @@ import { confirmation, openHistory, runRow } from '../support/history-page.js';
 import { buildReport } from '../support/journey-pages.js';
 import {
   agentPanel,
+  openRunTab,
   openStartPage,
   runStatus,
   startAndOpenLiveRun,
@@ -72,10 +73,17 @@ test(
 
     understandRun = await startUnderstand(page, ['Catalog']);
     await expect(runStatus(page)).toContainText('Completed', { timeout: 60_000 });
+    await expect(page.getByRole('region', { name: 'Overview of the application' })).toBeVisible();
+    await expectPageInView(page);
+    await openRunTab(page, 'Your questions');
+    await expectPageInView(page);
+    await openRunTab(page, 'Evidence');
     await expect(agentPanel(page, 'Catalog')).toContainText('BR-001');
     await expect(page.getByRole('region', { name: 'Claims' }).getByTestId('claim')).not.toHaveCount(
       0,
     );
+    await expectPageInView(page);
+    await openRunTab(page, 'Activity');
     await expectPageInView(page);
   },
 );

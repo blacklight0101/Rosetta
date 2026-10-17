@@ -53,6 +53,7 @@ describe('the earlier cards of a run', () => {
         ...{ id: 'OQ-001', type: 'OQ', title: 'Hidden items', area: '(root)' },
         claims: ['The page shows what the list returns.'],
         questionState: 'Open',
+        cited: [],
       },
     ]);
   });

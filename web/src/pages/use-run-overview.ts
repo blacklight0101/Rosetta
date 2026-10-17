@@ -4,6 +4,7 @@ import { getOverview, type RunOverviewData } from '../api/overview.js';
 import { useApp } from '../app/app-context.js';
 
 // RF-264: the overview of a run, read once the run has ended (the run writes it as its last step).
+// Only an understand run that did not fail has one, so any other page does not ask (`enabled`).
 
 export type OverviewLoad =
   | { readonly status: 'loading' }
@@ -11,10 +12,11 @@ export type OverviewLoad =
   | { readonly status: 'ready'; readonly overview: RunOverviewData | null };
 
 // RF-264
-export function useRunOverview(runId: string): OverviewLoad {
+export function useRunOverview(runId: string, enabled: boolean): OverviewLoad {
   const { client } = useApp();
   const [load, setLoad] = useState<OverviewLoad>({ status: 'loading' });
   useEffect(() => {
+    if (!enabled) return undefined;
     const abort = new AbortController();
     setLoad({ status: 'loading' });
     void getOverview(client, runId, abort.signal).then((result) => {
@@ -28,6 +30,6 @@ export function useRunOverview(runId: string): OverviewLoad {
     return () => {
       abort.abort();
     };
-  }, [client, runId]);
+  }, [client, runId, enabled]);
   return load;
 }

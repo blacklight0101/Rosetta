@@ -275,7 +275,7 @@ it('RF-1015 a run that fails at its first step leaves the running page for the e
   expect(screen.getByRole('list', { name: 'Pipeline' })).toBeTruthy();
 });
 
-it('RF-1015 an ended run keeps the page it has today with the pipeline, the agents and the event log', async () => {
+it('RF-1015 an ended run leaves the running page: the pipeline stays and the results tabs replace the run details', async () => {
   const { stream } = renderLive(withMap);
   const connection = await stream.connection();
   connection.event(ev(1, 'run.started', startedData));
@@ -286,7 +286,7 @@ it('RF-1015 an ended run keeps the page it has today with the pipeline, the agen
 
   await screen.findByRole('list', { name: 'Pipeline' });
 
-  expect(screen.getByLabelText('Agent Catalog')).toBeTruthy();
-  expect(screen.getByRole('log', { name: 'Event log' })).toBeTruthy();
-  expect(screen.queryByRole('tablist')).toBeNull();
+  expect(screen.getByRole('tablist', { name: 'Results' })).toBeTruthy();
+  expect(screen.queryByRole('tablist', { name: 'Run details' })).toBeNull();
+  expect(screen.queryByRole('list', { name: 'Run progress' })).toBeNull();
 });

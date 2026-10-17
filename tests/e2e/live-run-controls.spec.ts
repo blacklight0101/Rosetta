@@ -179,6 +179,7 @@ test('RF-1002 Pause updates holds the panels, the overview and the log while the
   await expect(agentPanel(page, 'Catalog')).toContainText('Done', { timeout: 30_000 });
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await openRunTab(page, 'Activity');
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
   await expectNoSeriousViolations(page);
 });
@@ -231,10 +232,12 @@ test('RF-1003 Stop run ends a run whose updates are paused, and Resume then show
 
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
   await expect.poll(() => waitingEvents(page), { timeout: 30_000 }).toBeGreaterThan(0);
+  await openRunTab(page, 'Evidence');
   expect(await agentPanel(page, 'Controllers').textContent()).toBe(held);
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await expect(pauseCount(page)).toHaveCount(0);
   await expect(agentPanel(page, 'Controllers')).not.toHaveText(held);
+  await openRunTab(page, 'Activity');
   const log = page.getByRole('log', { name: 'Event log' });
   await expect(log.getByRole('listitem').first()).toContainText('run.ended');
 });

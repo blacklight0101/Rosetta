@@ -117,12 +117,12 @@ export function runStatus(page: Page): Locator {
 }
 
 /**
- * Opens a tab of the run details of the page while the run works (P1-169): the cards so far, all
- * agents or the activity. The page of an ended run has no tabs.
+ * Opens a tab of the page of a run: the cards so far, all agents or the activity while the run works
+ * (P1-169), and the overview, your questions, the evidence or the activity once it has ended (P1-170).
  */
 export async function openRunTab(
   page: Page,
-  name: 'Cards so far' | 'All agents' | 'Activity',
+  name: 'Cards so far' | 'All agents' | 'Activity' | 'Overview' | 'Your questions' | 'Evidence',
 ): Promise<void> {
   const tab = page.getByRole('tab', { name: new RegExp(`^${name}`, 'u') });
   await tab.click();

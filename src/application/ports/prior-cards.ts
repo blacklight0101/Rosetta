@@ -14,6 +14,8 @@ export interface PriorCard {
   readonly area: string;
   /** The text of every claim. */
   readonly claims: readonly string[];
+  /** RF-1017: the repository files the claims cite, each once; none when the adapter did not read them. */
+  readonly cited?: readonly string[];
   /** `OQ` cards only. */
   readonly questionState?: OpenQuestionState;
   /** `OQ` cards only: the question asked. */

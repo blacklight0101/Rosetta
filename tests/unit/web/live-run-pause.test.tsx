@@ -148,6 +148,7 @@ it('RF-1002 when the run ends while paused, the status shows how it ended and th
   await waitFor(() => {
     expect(screen.getByTestId('run-status').textContent).toContain('Completed');
   });
+  fireEvent.click(await screen.findByRole('tab', { name: /^Evidence/u }));
   expect((await findAgentPanel('Catalog')).textContent).toContain('Running');
   expect(screen.queryByRole('button', { name: 'Pause updates' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Resume' }));

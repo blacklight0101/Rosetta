@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { RunAnswers } from '../../../web/src/pages/RunAnswers.js';
 import { failure, json, renderPage, type Answer } from './fake-api.js';
+import { AnswersHarness } from './run-answers-harness.js';
 
 // RF-241, RF-1007: an Answered question can be reopened, so an answer edited after that is used by the
 // next re-run; the page reads the states again when it comes back to the front, because a re-run
@@ -17,6 +17,7 @@ const open = {
   context: 'Catalog/Default.aspx.cs:41-58 The list filters on stock.',
   answer: '',
   state: 'Open',
+  dependents: 0,
 };
 const answered = {
   cardId: 'OQ-002',
@@ -24,10 +25,11 @@ const answered = {
   context: 'Catalog/Edit.aspx.cs:3-9 Only one role edits.',
   answer: 'Managers.',
   state: 'Answered',
+  dependents: 0,
 };
 
 function renderAnswers(answers: Readonly<Record<string, Answer>>) {
-  return renderPage(<RunAnswers runId={runId} ended />, answers);
+  return renderPage(<AnswersHarness runId={runId} ended />, answers);
 }
 
 const item = (cardId: string): HTMLElement => {

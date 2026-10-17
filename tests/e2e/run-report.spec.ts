@@ -1,9 +1,11 @@
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
+import { openRunTab, runStatus } from './support/live-run-page.js';
 import { replayRunId } from './support/seed-replay.js';
 import { expectNothingInjected, hostileTexts, watchDialogs } from './support/hostile-card.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
+import { transitionsDone } from './support/transitions.js';
 
 // RF-504, RF-506, DEC-131, RNF-010, P1-97: the report is built from the page of a finished recorded
 // run (seed-replay.ts), the way the owner does it: open the run, press Build report, follow the
@@ -55,6 +57,24 @@ test('RF-507 the hostile card is text in the report page: nothing runs and no el
   await expect(page.getByRole('heading', { name: 'Run report', level: 1 })).toBeVisible();
   await expect(page.locator('body')).toContainText(hostileTexts.script);
   await expect(page.locator('script')).toHaveCount(0);
+  await expectNothingInjected(page, dialogs);
+  await expectNoSeriousViolations(page);
+});
+
+test('RF-507 RF-1002 the hostile card of a recorded run is text on the page of the run: nothing runs and no element is injected', async ({
+  page,
+}, info) => {
+  const dialogs = watchDialogs(page);
+
+  await page.goto(runPage(info.project.name));
+
+  await expect(runStatus(page)).toContainText('Completed');
+  await openRunTab(page, 'Evidence');
+  await transitionsDone(page);
+  await expect(page.locator('body')).toContainText(hostileTexts.script);
+  await expect(page.locator('body')).toContainText(hostileTexts.image);
+  await expect(page.locator('body')).toContainText(hostileTexts.link);
+  await expect(page.locator('body')).toContainText(hostileTexts.svg);
   await expectNothingInjected(page, dialogs);
   await expectNoSeriousViolations(page);
 });

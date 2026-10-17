@@ -11,6 +11,8 @@ const questionSchema = z.looseObject({
   answer: z.string(),
   /** RF-241: `Answered` once a re-run with answers used the answer. */
   state: z.enum(['Open', 'Answered']),
+  /** RF-1017: how many cards other than open questions cite a file the question's cards cite. */
+  dependents: z.number().int().min(0),
 });
 
 const questionsSchema = z

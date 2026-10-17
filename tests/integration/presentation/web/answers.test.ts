@@ -80,8 +80,8 @@ describe('GET /api/runs/:runId/answers', () => {
     expect(response.headers['cache-control']).toBe('no-store');
     expect(response.json()).toEqual({
       questions: [
-        { ...stockQuestion, answer: '', state: 'Open' },
-        { ...priceQuestion, answer: '', state: 'Open' },
+        { ...stockQuestion, answer: '', state: 'Open', dependents: 0 },
+        { ...priceQuestion, answer: '', state: 'Open', dependents: 0 },
       ],
     });
   });

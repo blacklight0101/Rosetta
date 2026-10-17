@@ -12,7 +12,8 @@ import { signedInOf } from './request-actor.js';
 // RF-1007, RF-240, RF-1105: the open questions of a run on its live page.
 // - GET /api/runs/:runId/answers answers `{ questions }`: the questions the run added to the
 //   project's answers.md, each with its card id, question, context and the answer recorded so far
-//   (empty while it has none) and its state, `Open` or `Answered` (RF-241).
+//   (empty while it has none), its state, `Open` or `Answered` (RF-241), and `dependents`, how many
+//   cards other than open questions cite a file the question's cards cite (RF-1017).
 // - PUT /api/runs/:runId/answers with `{ answers: [{ cardId, answer }] }` writes those answers into
 //   answers.md, keeps every other answer, and answers the run's questions as they are now. An
 //   answer is one line in the file (line breaks become spaces) and an empty one clears it. A card
@@ -55,12 +56,13 @@ function questionsView(questions: readonly StatedQuestion[]): {
   readonly questions: readonly StatedQuestion[];
 } {
   return {
-    questions: questions.map(({ cardId, question, context, answer, state }) => ({
+    questions: questions.map(({ cardId, question, context, answer, state, dependents }) => ({
       cardId,
       question,
       context,
       answer,
       state,
+      dependents,
     })),
   };
 }

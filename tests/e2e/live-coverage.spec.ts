@@ -97,6 +97,7 @@ test('RF-1005 the coverage map of a running run fills in by area and by read sha
 
   await page.getByRole('button', { name: 'Stop run' }).click();
   await expect(runStatus(page)).toContainText('Interrupted', { timeout: 30_000 });
+  await openRunTab(page, 'Evidence');
   await expect(coverageOf(page, 'Services')).toContainText('CatalogService.cs');
 });
 

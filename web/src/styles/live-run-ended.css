@@ -1,0 +1,108 @@
+/* The page of a run that has ended (P1-170, RF-1015, RF-1017, DEC-137, design-system.md section 14,
+   proposal docs/design/proposals/run-page-v2.html): the results tabs beside the "Your turn" panel,
+   the verification note and the facts of the run. Every class here starts with rst-p170 so the
+   components own their styles; colours, spacing and type come from the tokens. */
+
+.rst-p170-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--rst-sp-5);
+  align-items: start;
+}
+
+.rst-p170-grid > * {
+  min-inline-size: 0;
+}
+
+.rst-p170-main {
+  padding: 0;
+}
+
+.rst-p170-main .rst-tabs__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-4);
+}
+
+.rst-p170-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-5);
+}
+
+.rst-p170-turn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p170-turn p {
+  margin: 0;
+  color: var(--rst-ink-soft);
+}
+
+.rst-p170-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-lg);
+  background: var(--rst-rule);
+  list-style: none;
+}
+
+.rst-p170-fact {
+  display: flex;
+  flex-direction: column;
+  padding: var(--rst-sp-3) var(--rst-sp-4);
+  background: var(--rst-surface);
+}
+
+.rst-p170-fact b {
+  font-size: 1.125rem;
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-p170-fact span {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-p170-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+}
+
+.rst-p170-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-info-bg);
+  color: var(--rst-info-ink);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-p170-label {
+  color: var(--rst-ink);
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-p170-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-5);
+  min-inline-size: 0;
+}
+
+@media (max-width: 980px) {
+  .rst-p170-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
