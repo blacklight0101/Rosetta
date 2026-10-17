@@ -17,7 +17,12 @@ export interface SettingBase {
 }
 
 export function NumberSetting(
-  props: SettingBase & { readonly value: string; readonly onInput: (value: string) => void },
+  props: SettingBase & {
+    readonly value: string;
+    readonly onInput: (value: string) => void;
+    /** Other text that describes this field, for example a hint about its range (P2-26). */
+    readonly describedBy?: string | undefined;
+  },
 ): JSX.Element {
   return (
     <Field
@@ -29,6 +34,7 @@ export function NumberSetting(
       error={props.errorFor(props.path)}
       announce={false}
       onInput={props.onInput}
+      describedBy={props.describedBy}
     />
   );
 }

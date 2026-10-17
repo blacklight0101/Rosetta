@@ -55,3 +55,15 @@ export function formatValue(value: number, unit: LimitUnit): string {
   if (unit === 'dollars') return `$${value.toFixed(Number.isInteger(value) ? 0 : 2)}`;
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/gu, ',');
 }
+
+/**
+ * An amount for a sentence that compares two of them: dollars to at least cents (more when the
+ * amount has them, so 1.004 stays 1.004), a minus sign before the dollar sign, counts as formatValue.
+ */
+export function formatAmount(value: number, unit: LimitUnit): string {
+  if (unit === 'count') return formatValue(value, 'count');
+  const sign = value < 0 ? '-' : '';
+  const [whole = '0', fraction = ''] = Math.abs(value).toFixed(6).replace(/0+$/u, '').split('.');
+  const grouped = whole.replace(/B(?=(d{3})+(?!d))/gu, ',');
+  return `${sign}$${grouped}.${fraction.padEnd(2, '0')}`;
+}

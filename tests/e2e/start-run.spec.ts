@@ -227,7 +227,7 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
     "OpenAI runs on the server's key",
   );
   await page.getByLabel(consent).check();
-  const threshold = page.getByLabel('Ask before a run estimated above (USD)');
+  const threshold = page.getByLabel('Ask before a run estimated above (USD)', { exact: true });
   await expect(threshold).toHaveValue('0.25');
 
   await page.getByLabel('Run cap (USD)').fill('0.10');
@@ -252,5 +252,7 @@ test('RF-1001 a run cap below the confirm threshold is refused before the reques
   await expect(endOfRun).toHaveCount(0, { timeout: 60_000 });
   await page.getByRole('link', { name: 'Start page' }).click();
   await expect(page.getByLabel('Run cap (USD)')).toHaveValue('0.10');
-  await expect(page.getByLabel('Ask before a run estimated above (USD)')).toHaveValue('0.05');
+  await expect(
+    page.getByLabel('Ask before a run estimated above (USD)', { exact: true }),
+  ).toHaveValue('0.05');
 });

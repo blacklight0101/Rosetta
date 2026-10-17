@@ -50,7 +50,7 @@ export function ProjectSettingsForm({ project }: { readonly project: Project }):
     >
       {saving.banner === undefined ? null : <ErrorBanner error={saving.banner} />}
       <ModelSettings {...section} />
-      <CapSettings {...section} />
+      <CapSettings {...section} roles={project.settings.budget.roles ?? {}} />
       <ScanSettings {...section} />
       <IgnoreRules {...section} />
       <PriceOverrides {...section} />
