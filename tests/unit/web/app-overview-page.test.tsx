@@ -39,12 +39,14 @@ const questions = [
     question: 'Who may cancel?',
     context: 'Orders/Order.cs:3-5 Cancel.',
     answer: '',
+    state: 'Open',
   },
   {
     cardId: 'OQ-002',
     question: 'Which tax rate?',
     context: 'Billing/Tax.cs:1-4 Rate.',
     answer: '',
+    state: 'Open',
   },
 ];
 
