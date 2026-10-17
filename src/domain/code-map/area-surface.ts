@@ -36,10 +36,16 @@ const templateExtensions: ReadonlySet<string> = new Set([
   'twig',
   'vue',
   'svelte',
+  'html',
+  'jsx',
+  'tsx',
 ]);
 
-/** A class that runs on a schedule or on a message: a job, a handler, a consumer. */
-const handlerClass = /(?:Handler|Job|Consumer|Listener|Subscriber|Worker)$/u;
+/** WebForms HTTP handlers: a file that starts behaviour when a request reaches it (P2-29). */
+const httpHandlerExtensions: ReadonlySet<string> = new Set(['ashx', 'asmx']);
+
+/** A class that runs on a schedule or on a message: a job, a handler, a consumer, singular or plural. */
+const handlerClass = /(?:Handlers?|Jobs?|Consumers?|Listeners?|Subscribers?|Workers?)$/u;
 
 function extensionOf(path: string): string {
   const name = path.slice(path.lastIndexOf('/') + 1);
@@ -64,7 +70,12 @@ export function surfaceOf(area: Pick<Area, 'files'>, map: Mapped): AreaSurface {
     const kinds = known.get(path)?.artefactKinds ?? [];
     const isPage = kinds.includes('page') || templateExtensions.has(extensionOf(path));
     if (isPage) pages.push(path);
-    if (isPage || handlers.has(path) || kinds.some((kind) => entryKinds.has(kind))) {
+    const isEntry =
+      isPage ||
+      httpHandlerExtensions.has(extensionOf(path)) ||
+      handlers.has(path) ||
+      kinds.some((kind) => entryKinds.has(kind));
+    if (isEntry) {
       entryPoints.push(path);
     }
   }
