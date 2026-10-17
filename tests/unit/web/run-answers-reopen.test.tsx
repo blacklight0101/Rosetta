@@ -107,4 +107,59 @@ describe('the states of the questions after a re-run', () => {
     });
     expect(reads).toBe(2);
   });
+
+  it('RF-241 RF-1007 reads the questions again when the page becomes visible', async () => {
+    let reads = 0;
+    const questionsNow: Answer = () => {
+      reads += 1;
+      return json(200, { questions: [open] });
+    };
+    renderAnswers({ [`GET ${route}`]: questionsNow });
+    await waitFor(() => {
+      expect(reads).toBe(1);
+    });
+
+    fireEvent(document, new Event('visibilitychange'));
+
+    await waitFor(() => {
+      expect(reads).toBe(2);
+    });
+  });
+
+  it('RF-241 ignores a read that started before the reopening and ends after it', async () => {
+    const gate: { finish: () => void } = { finish: () => undefined };
+    let reads = 0;
+    const questionsNow: Answer = () => {
+      reads += 1;
+      if (reads === 1) return json(200, { questions: [answered] });
+      const body = JSON.stringify({ questions: [answered] });
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          gate.finish = () => {
+            controller.enqueue(new TextEncoder().encode(body));
+            controller.close();
+          };
+        },
+      });
+      return new Response(stream, { headers: { 'content-type': 'application/json' } });
+    };
+    renderAnswers({
+      [`GET ${route}`]: questionsNow,
+      [`POST ${reopenRoute}`]: json(200, { questions: [{ ...answered, state: 'Open' }] }),
+    });
+    await screen.findByLabelText('Answer to OQ-002');
+    fireEvent(window, new Event('focus'));
+    await waitFor(() => {
+      expect(reads).toBe(2);
+    });
+    fireEvent.click(within(item('OQ-002')).getByRole('button', { name: 'Reopen question' }));
+    await waitFor(() => {
+      expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain('Open');
+    });
+
+    gate.finish();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect(within(item('OQ-002')).getByTestId('status-badge').textContent).toContain('Open');
+  });
 });

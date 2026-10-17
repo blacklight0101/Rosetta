@@ -114,3 +114,27 @@ describe('POST /api/runs/:runId/answers/:cardId/reopen, merged and refused', () 
     expect(cardFile('OQ-001')).toContain('State: Answered');
   });
 });
+
+describe('POST /api/runs/:runId/answers/:cardId/reopen, forged requests', () => {
+  const refusals: [string, { origin?: string | null; csrf?: string | false }][] = [
+    ['no Origin', { origin: null }],
+    ['a foreign Origin', { origin: 'https://evil.example' }],
+    ['no CSRF token', { csrf: false }],
+    ['a wrong CSRF token', { csrf: 'not-the-token' }],
+  ];
+
+  it.each(refusals)(
+    'RF-1105 refuses a reopen with %s and changes nothing',
+    async (_name, extra) => {
+      const { test, ref, run, amy, url, cardFile } = await setup();
+      seedQuestionCards(test.answerFiles, ref, run.runKey, [
+        { id: 'OQ-001', area: 'Catalog', state: 'Answered' },
+      ]);
+
+      const response = await amy.request({ method: 'POST', url: `${url}/OQ-001/reopen`, ...extra });
+
+      expect(response.statusCode).toBe(403);
+      expect(cardFile('OQ-001')).toContain('State: Answered');
+    },
+  );
+});

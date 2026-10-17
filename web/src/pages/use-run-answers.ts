@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { getAnswers, type OpenQuestionRow } from '../api/answers.js';
 import type { ApiFailure } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
@@ -24,13 +24,17 @@ export interface RunAnswersState {
 export function useRunAnswers(runId: string, ended: boolean): RunAnswersState {
   const { client } = useApp();
   const [load, setLoad] = useState<AnswersLoad>({ status: 'waiting' });
+  // A read that started before the latest read, save or reopening is stale and is ignored.
+  const latest = useRef(0);
   useEffect(() => {
     if (!ended) return undefined;
     const abort = new AbortController();
     const read = (first: boolean): void => {
       if (first) setLoad({ status: 'loading' });
+      latest.current += 1;
+      const mine = latest.current;
       void getAnswers(client, runId, abort.signal).then((result) => {
-        if (abort.signal.aborted) return;
+        if (abort.signal.aborted || mine !== latest.current) return;
         if (result.ok) setLoad({ status: 'ready', questions: result.value });
         else if (first) setLoad({ status: 'failed', error: result.error });
       });
@@ -48,6 +52,7 @@ export function useRunAnswers(runId: string, ended: boolean): RunAnswersState {
     };
   }, [client, runId, ended]);
   const apply = (questions: readonly OpenQuestionRow[]): void => {
+    latest.current += 1;
     setLoad({ status: 'ready', questions });
   };
   return { load, apply };
