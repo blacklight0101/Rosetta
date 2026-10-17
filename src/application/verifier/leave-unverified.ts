@@ -6,13 +6,13 @@ import { transitionClaim, type Card, type ClaimVerdict } from '../../domain/card
 // is already `Unverified` keeps the verdict it was left with.
 
 /** The name the verdict of this step carries where the judgement step names its model. */
-const STOPPED = 'run-stopped';
+export const CAP_STOPPED_MODEL = 'run-stopped';
 
 function verdictAt(at: string): ClaimVerdict {
   return {
     step: 'judgement',
     reason: 'The run stopped at its cap before this claim was judged.',
-    model: STOPPED,
+    model: CAP_STOPPED_MODEL,
     at,
   };
 }

@@ -60,3 +60,8 @@ export function checkWorkspacePath(path: string): Result<string, WorkspacePathPr
     ? ok(path)
     : err('invalid-path');
 }
+
+/** Whether the text is the id of a project (the name of its folder). */
+export function isProjectId(value: string): boolean {
+  return uuid.test(value);
+}

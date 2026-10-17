@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { formatUsd, microUsd } from '../../domain/budget/money.js';
 import type { RunEvent } from '../../domain/runs/run-event.js';
 import { mergedStep, withMergedClaimIds } from './claim-id-moves.js';
+import { answeredStep, skippedStep } from './question-steps.js';
 import type { ReplayAgent, ReplayKind, ReplayModel, ReplayStep } from './replay-model.js';
 
 // RF-506, data-model.md section 3.9: the steps, agents and running cost of a run, built from its
@@ -174,11 +175,8 @@ const closingHandlers: Readonly<Record<string, Handler>> = {
     }),
   ),
   'cards.merged': mergedStep,
-  'question.answered': reading(z.object({ cardId: text }), (v) => ({
-    kind: 'question',
-    label: 'Question answered',
-    text: v.cardId,
-  })),
+  'question.answered': answeredStep,
+  'question.skipped': skippedStep,
   'run.ended': reading(z.object({ endState: text }), (v) => ({
     kind: 'run',
     label: 'Run ended',

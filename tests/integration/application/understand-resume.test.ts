@@ -117,8 +117,8 @@ describe('RF-006 resuming a run', UNDERSTAND_TIMEOUT, () => {
     expect(manifest.runId).toBe(run.runKey);
     expect(manifest.endState).toBe('Completed');
     expect(manifest.caps.run).toEqual({ maxCostMicros: 50_000_000, maxTokens: 5_000_000 });
-    // Four reader calls (a read and an answer for each area) and the verifier's judgement (RF-301).
-    expect(manifest.totals.calls).toBe(5);
+    // Four reader calls (a read and an answer for each area) and two judgements, one per claim (RF-301).
+    expect(manifest.totals.calls).toBe(6);
     expect(manifest.agentTasks.map((task) => [task.area, task.state, task.cards])).toEqual([
       ['Catalog', 'Done', 1],
       ['Services', 'Done', 1],
@@ -143,19 +143,21 @@ describe('RF-006 resuming a run', UNDERSTAND_TIMEOUT, () => {
 });
 
 describe('RF-006 resuming a run, what stays', UNDERSTAND_TIMEOUT, () => {
-  it('RF-006 does not judge the Unverified claim again and processes nothing it already finished', async () => {
+  it('RF-304 RF-006 judges the claim the cap left Unverified on resume, so every claim is judged once', async () => {
     const { h, run } = await cappedRun();
     await h.changeSettings(raised);
 
     await h.resume(run);
 
     const index = await indexOf(h, run);
-    // RF-301: the resume judges the claim of the task it ran, never the one the cap left Unverified.
+    // RF-301: the resume judges the claim the cap left Unverified and the one of the task it ran.
     expect(index.cards.map((card) => card.claimCounts)).toEqual([
-      expect.objectContaining({ Proposed: 0, Supported: 0, Unverified: 1 }),
+      expect.objectContaining({ Proposed: 0, Supported: 1, Unverified: 0 }),
       expect.objectContaining({ Proposed: 0, Supported: 1, Unverified: 0 }),
     ]);
-    expect(h.providers.verifierRequests()).toHaveLength(1);
+    expect(h.providers.verifierRequests()).toHaveLength(2);
+    const judged = (await h.eventsOf(run)).filter((event) => event.data['status'] === 'Supported');
+    expect(judged.map((event) => event.data['claimId']).sort()).toEqual(['BR-001.c1', 'BR-002.c1']);
     const coverage = z
       .object({ areas: z.array(z.object({ area: z.string() })) })
       .parse(await readJson(join(h.runFolder(run), 'coverage.json')));
@@ -182,6 +184,7 @@ describe('RF-006 resuming a run, the log and a stop', UNDERSTAND_TIMEOUT, () => 
     const h = await createUnderstandHarness({
       dataDir: temp.path,
       recording: 'understand-stopped.json',
+      verifierRecording: 'verifier-all-supported.json',
       beforeCall: async (call, harness) => {
         if (call === 3) await harness.stopRunning();
       },
@@ -198,7 +201,12 @@ describe('RF-006 resuming a run, the log and a stop', UNDERSTAND_TIMEOUT, () => 
       ['Catalog', 'Done'],
       ['Services', 'Done'],
     ]);
-    expect((await indexOf(h, run)).cards.map((card) => card.id)).toEqual(['BR-001']);
+    const index = await indexOf(h, run);
+    expect(index.cards.map((card) => card.id)).toEqual(['BR-001']);
+    // RF-304: the claim the Stop left Proposed is judged by the resume.
+    expect(index.cards.map((card) => card.claimCounts)).toEqual([
+      expect.objectContaining({ Proposed: 0, Supported: 1 }),
+    ]);
   });
 });
 

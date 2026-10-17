@@ -11,6 +11,7 @@ import type { ScannedSource } from '../ports/scan-results.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import type { RunEventPublisher } from '../runs/run-event-publisher.js';
+import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { defaultEvidenceLimits } from '../verifier/cited-lines.js';
 import {
   CAP_UNVERIFIED_REASON,
@@ -27,11 +28,6 @@ import { runPool } from './task-pool.js';
 // arrives, so the live page moves the claim, and the cards are returned with every verdict in card
 // and claim order. A claim is never removed; one the run stopped before judging keeps its status,
 // unless a cap stopped the judgement: then it is `Unverified`, so a later run can judge it (RF-304).
-
-/** Whether a claim still waits for the judgement step. */
-export function isProposed(claim: Claim): boolean {
-  return claim.status === 'Proposed';
-}
 
 export interface ClaimJudgementParts {
   readonly judge: ClaimJudgeParts;
@@ -61,7 +57,7 @@ function spanIdOf(traceId: string, index: number): string {
 
 function pendingOf(cards: readonly Card[]): Pending[] {
   const claims = cards.flatMap((card) =>
-    card.claims.filter(isProposed).map((claim) => ({ card, claim })),
+    card.claims.filter(awaitsJudgement).map((claim) => ({ card, claim })),
   );
   return claims.map((each, index) => ({ ...each, index }));
 }
@@ -110,7 +106,9 @@ export async function judgeClaims(
   // RF-304: a cap (the verifier's or the run's) leaves every claim not judged `Unverified`; any
   // other stop leaves them `Proposed`.
   if (halt.capped || isCapStop(judge.call.signal.reason)) {
-    for (const each of pending.filter(({ claim }) => !decided.has(claim.claimId))) {
+    // A claim a cap already left `Unverified` keeps that verdict: it has nothing new to say.
+    const left = pending.filter(({ claim }) => claim.status === 'Proposed');
+    for (const each of left.filter(({ claim }) => !decided.has(claim.claimId))) {
       await decide(each, 'Unverified', CAP_UNVERIFIED_REASON);
     }
   }

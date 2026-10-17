@@ -165,6 +165,32 @@ test('RF-1007 an answer typed on the page is saved in answers.md and is there af
   await expect(questionOf().getByLabel('Answer to OQ-001')).toHaveValue(answer);
 });
 
+test('RF-241 an Answered question can be reopened on the page, with no serious violation', async ({
+  page,
+}) => {
+  const answered = {
+    ...{ cardId: 'OQ-001', question: 'Is a sold-out item still shown?', answer: 'Yes.' },
+    ...{ context: 'Catalog/Default.aspx.cs:41-58 The list filters on stock.', state: 'Answered' },
+  };
+  await page.route('**/api/runs/*/answers', (route) =>
+    route.fulfill({ json: { questions: [answered] } }),
+  );
+  await page.route('**/api/runs/*/answers/OQ-001/reopen', (route) =>
+    route.fulfill({ json: { questions: [{ ...answered, state: 'Open' }] } }),
+  );
+  await page.goto(finishedRun);
+  const question = page
+    .getByRole('region', { name: 'Open questions' })
+    .getByTestId('open-question');
+  await expect(question).toContainText('Answered');
+
+  await question.getByRole('button', { name: 'Reopen question' }).click();
+
+  await expect(question).toContainText('Question reopened.');
+  await expect(question.getByRole('button', { name: 'Reopen question' })).toHaveCount(0);
+  await expectNoSeriousViolations(page);
+});
+
 test('RF-1003 Stop ends a run that is working, keeps the cards that were found and enables the zip', async ({
   page,
 }) => {
