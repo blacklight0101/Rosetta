@@ -181,6 +181,27 @@ describe('consolidateCards when a cap refuses the call', () => {
       { level: 'warn', code: ERROR_CODES.budgetCapReached, agentTaskId: 'summariser-ent-2' },
     ]);
   });
+});
+
+describe('consolidateCards when a cap refuses the call for the first type', () => {
+  const refused = () => Promise.reject(new RosettaError(ERROR_CODES.budgetCapReached));
+
+  it('RF-422 P2-35 a refusal for one type ends the step: the other type is not asked about', async () => {
+    const rules = entities(2).map((card) => ({
+      ...card,
+      type: 'BR' as const,
+      id: card.id.replace('ENT', 'BR'),
+    }));
+    const provider = new Answers(refused);
+    const { parts } = partsOf(provider, 100_000);
+
+    const result = await consolidateCards(parts, [...rules, ...entities(2)]);
+
+    expect(provider.requests.map((request) => request.context.agentTaskId)).toEqual([
+      'summariser-br',
+    ]);
+    expect(result.capped).toBe(true);
+  });
 
   it('RF-422 P2-35 keeps the merges the earlier calls made', async () => {
     const first = { merges: [{ ids: ['ENT-001', 'ENT-002'], title: 'First', summary: 'One.' }] };
