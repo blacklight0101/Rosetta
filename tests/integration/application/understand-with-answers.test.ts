@@ -47,7 +47,7 @@ describe('an understand run with the answers option', SLOW, () => {
     expect(second.endState).toBe('Completed');
     expect(await tasksOf(h, second)).toEqual(['(root)']);
     const sent = h.providers.requests().slice(before);
-    expect(sent).toHaveLength(1);
+    expect(sent).toHaveLength(2);
     const message = sent[0]?.messages[0]?.content ?? '';
     expect(message).toContain(answer);
     expect(message).toContain('Is a catalog item with zero stock still shown');
