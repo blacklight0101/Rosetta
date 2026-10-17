@@ -68,7 +68,9 @@ it('RF-1002 a scan run shows the files and areas scanned and leaves Understand w
 
 /** The page of an understand run that has ended, its run row as `row` answers it. */
 async function endedRun(row: Response, answers: Parameters<typeof renderLive>[0] = {}) {
-  const page = renderLive({ [`GET ${runPath}`]: row, ...answers });
+  // RF-264: the page of an ended understand run also reads its overview.
+  const overview = { [`GET ${runPath}/overview`]: json(200, { overview: null }) };
+  const page = renderLive({ [`GET ${runPath}`]: row, ...overview, ...answers });
   const connection = await page.stream.connection();
   connection.event(ev(1, 'run.started', startedData));
   connection.event(runEnded(2, 'Completed'));

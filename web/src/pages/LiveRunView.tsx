@@ -12,6 +12,7 @@ import type { RunPhase } from '../lib/live-run/run-phase.js';
 import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { AgentsGrid } from './AgentsGrid.js';
+import { AppOverview } from './AppOverview.js';
 import { ClaimsList } from './ClaimsList.js';
 import { CoverageMap } from './CoverageMap.js';
 import { EventLog } from './EventLog.js';
@@ -28,6 +29,7 @@ import { RunStatusBar } from './RunStatusBar.js';
 import { RunningBody } from './RunningBody.js';
 import { RunStepper } from './RunStepper.js';
 import { usePauseUpdates } from './use-pause-updates.js';
+import { useRunOverview } from './use-run-overview.js';
 import { useRunEstimate } from './use-run-estimate.js';
 import type { RunStream } from './use-run-stream.js';
 
@@ -124,6 +126,7 @@ interface BodyProps {
 function EndedBody(props: BodyProps): JSX.Element {
   const { run, state, shown, phase, stage, estimate } = props;
   const report = useReportBuilt(run);
+  const overview = useRunOverview(run.id);
   return (
     <>
       <RunStepper
@@ -134,6 +137,8 @@ function EndedBody(props: BodyProps): JSX.Element {
         )}
       />
       {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
+      {/* RF-264: the overview of the application comes before everything else, the questions included. */}
+      {stage === 'understand' ? <AppOverview runId={run.id} load={overview} /> : null}
       <FailedAreas state={shown} projectId={run.projectId} />
       <p class="rst-p137-live-link">
         <Link href={`/runs/${encodeURIComponent(run.id)}/calls`}>API calls and logs</Link>
@@ -146,7 +151,7 @@ function EndedBody(props: BodyProps): JSX.Element {
       {stage === 'understand' ? <CoverageMap state={shown} /> : null}
       {/* RF-1014: the run has ended, so no claim waits for judgement any more. */}
       <ClaimsList claims={shown.claims} source={sourceOf(state, run)} pending={false} />
-      {stage === 'understand' ? <RunAnswers runId={run.id} ended /> : null}
+      {stage === 'understand' ? <RunAnswers runId={run.id} ended overview={overview} /> : null}
       <EventLog lines={shown.log} startedAt={shown.startedAt} />
     </>
   );

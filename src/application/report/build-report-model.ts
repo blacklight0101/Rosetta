@@ -7,6 +7,7 @@ import {
   type ReportDocuments,
   type ReportModel,
 } from './report-model.js';
+import { parseOverview } from '../overview/overview-file.js';
 import { buildReplay } from './replay-timeline.js';
 
 // RF-504, RF-506: what the report of a finished run says, from the run row, the manifest (when the
@@ -19,6 +20,8 @@ export interface ReportInputs {
   readonly manifest: RunManifest | undefined;
   readonly events: readonly RunEvent[];
   readonly cardIndex: string | undefined;
+  /** RF-264: the text of `overview.json`, when the run has one. */
+  readonly overviewFile?: string | undefined;
   readonly documents: ReportDocuments;
   readonly areas: readonly ReportArea[];
 }
@@ -48,6 +51,7 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
     documents: inputs.documents,
     cards: parseCardIndex(inputs.cardIndex),
     areas: inputs.areas,
+    overview: parseOverview(inputs.overviewFile),
     replay: buildReplay(run.runKey, inputs.events),
   };
 }

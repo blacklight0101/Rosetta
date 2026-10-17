@@ -26,12 +26,23 @@ describe('the summariser in the estimate', () => {
     const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
 
     const summariser = outcome.ok ? outcome.value.roles.find((r) => r.role === 'summariser') : null;
-    // 10% of the reader's 60,996 in and 3,600 out; 6,100 in at 250,000 and 360 out at 2,000,000.
+    // 10% of the reader's 60,996 in and 3,600 out for the merge, the same input again and 1,500
+    // output tokens for the overview (RF-264): 12,200 in at 250,000 and 1,860 out at 2,000,000.
     expect(summariser).toMatchObject({ provider: 'openai', model: 'priced-model', priced: true });
     expect(summariser?.points.likely).toEqual({
-      inputTokens: 6100,
-      outputTokens: 360,
-      costMicros: 2245n,
+      inputTokens: 12_200,
+      outputTokens: 1860,
+      costMicros: 6770n,
     });
+  });
+
+  it('RF-264 RF-425 the estimate states the overview output it assumes', async () => {
+    const harness = createEstimateHarness();
+    const project = await projectWithScan(harness, userAmy.userId, settings);
+
+    const outcome = await harness.estimate.execute({ actor: userAmy, projectId: project.id });
+
+    const assumed = outcome.ok ? outcome.value.assumptions.overviewOutputTokens : null;
+    expect(assumed).toEqual({ low: 800, likely: 1500, high: 3000 });
   });
 });

@@ -68,6 +68,7 @@ Folder names come from ids, never from request text.
           invalid-output/<agentTaskId>.txt  raw answers of a task that ended InvalidOutput (3.7)
           spec.md
           data-model.md               legacy data model of the ENT cards, only when the run has one (3.8)
+          overview.md, overview.json  the overview of the application (3.8a)
           coverage.json, coverage.md
           transcripts/<agentTaskId>.jsonl
           report/                     static report (RF-500..RF-506)
@@ -265,7 +266,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent, withAnswers? }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143); `withAnswers: true` only when the request asked for the re-run with answers (RF-241, P2-05) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004); `contextTokens` and `contextSource` are the Ollama context size sent as `num_ctx` and how it was chosen (`fixed` from the start, or `auto-fit`, `auto-floor`, `auto-model-limit`, `auto-fallback` after the first call; RF-401, DEC-114), `null` until then |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v3.md`), its version (`v3`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when the reader uses Ollama with `toolMode: text` (RF-205), plus `summariser/merge.v1.md` once the summariser has answered a merge call (RF-250), plus `reader/answers.v1.md` when a re-run with answers has a task (RF-241) |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v3.md`), its version (`v3`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when the reader uses Ollama with `toolMode: text` (RF-205), plus `summariser/merge.v1.md` once the summariser has answered a merge call (RF-250), plus `summariser/overview.v1.md` once it has answered the overview call (RF-264), plus `reader/answers.v1.md` when a re-run with answers has a task (RF-241) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `catalogue` | object | `{ version, sha256 }` of the principle catalogue (RF-606, RNF-004) that a plan run used, `null` for the other stages and for a manifest written before this field; the version is the one the catalogue README declares and the SHA-256 runs over every catalogue file by name |
@@ -367,7 +368,7 @@ results file is refused with RST-1309.
 
 ### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 
-- `spec.md`: the cards per area as one readable specification with links to the card files and, for every citation, to the
+- `spec.md`: opens with `## Overview`, the overview of 3.8a (once the run has one), then the cards per area as one readable specification with links to the card files and, for every citation, to the
   cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
   is listed with its status, rejected ones included. The run summary of a re-run with answers (RF-241) adds `## New cards` and `## Changed cards` after the areas, each only when it has cards: a card is new when the earlier run that raised an answered question has no card of the same area, type and title, and changed when it has one whose claim texts differ. A last section, `## Areas without cards`, names every area whose
   reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33). After the areas, and only when the run has cards of the type, come `## Flows` (each `FLOW` card with its link, trigger, outcome, generated sequence diagram and its steps with their claim status), `## Screens` (the generated screen map first, which matches a leads-to route to the `SCRN` card with that route, then each `SCRN` card with its link, route, roles and links) and `## Data model` (a link to `data-model.md` with the number of entities) (RF-263, P2-22). Diagrams are made by `src/domain/diagrams/` from masked card text.
@@ -392,6 +393,32 @@ results file is refused with RST-1309.
   A `## Flows and screens` section follows it, one line per area: `<n> flow card(s) (<n> incomplete); <n> screen card(s)` (the incomplete count only when above 0), or `no flows
   found` / `no screens found` for an area the code map did not mark for them, so the absence reads as a finding and
   not as a gap (RF-261).
+
+### 3.8a `overview.md` and `overview.json` (RF-264)
+
+When an understand run has ended its readers, the judgement and the merge of duplicates, the `summariser` role writes the
+overview of the application from the cards whose citations passed (a claim passed unless its citation check failed or the
+judgement rejected it; open questions are not used). The two files are written with the cards, in the same atomic write
+as `spec.md`, which opens with the same text under `## Overview`.
+
+- `overview.json`: `{ schemaVersion: 1, state, notice?, sections, notCovered, questions }`. `state` is `full` (written from
+  the cards), `thin` (too few cards to explain the application: fewer than 3 cards that passed, or cards from fewer than
+  half of the areas the run was asked to read or that are third-party; the summariser is not asked when there are fewer
+  than 3 cards) or `unavailable` (the run was stopped, or the call failed or was refused by a cap). `notice` is present
+  for `thin` and `unavailable` and says why and what to do next. `sections` holds only the sections that have a statement,
+  in the order `application`, `users`, `features`, `screens`, `data`, `integrations`; each is
+  `{ id, statements: [{ text, cards: [{ id, type }] }] }` with at least one card per statement: the summariser's
+  statements that name no card, or only cards it was not shown, are dropped (and counted in the log). `notCovered` lists,
+  in the code map's area order and in plain sentences made by Rosetta (not by the model), every area that gave no
+  card that passed: third-party code, not selected for the run, reader not finished, reader failed, or no card passed.
+  `questions` links each open question card (`cardId`) to the first section that links a card citing a file the question
+  cites; a question that shares no file with the overview has no entry.
+- `overview.md` is its readable form: `# Overview`, the notice as a quotation, one `##` heading per section with one list
+  item per statement and its card links, a line `Open questions about this section` where the section has questions, and a
+  last `## What was not covered`. All model text is escaped (RF-507). The report (`report.md`, `report.html`) opens with
+  the same overview, its card links one folder up.
+- The run page reads it through `GET /api/runs/:runId/overview` (`{ overview }`, `null` when the run wrote none) and shows
+  it first, before the open questions.
 
 ### 3.9 `events.jsonl` (run events)
 

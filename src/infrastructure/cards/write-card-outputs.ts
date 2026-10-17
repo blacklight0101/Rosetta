@@ -3,6 +3,7 @@ import type { Logger } from '../../application/ports/logger.js';
 import type { OutputWriter, WriteRefusal } from '../../application/ports/output-writer.js';
 import type { AreaCoverage } from '../../domain/cards/area-coverage.js';
 import type { Card } from '../../domain/cards/card.js';
+import type { Overview } from '../../domain/overview/overview.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { writeRefusal } from '../files/workspace-guard.js';
 import type { TextMasker } from '../guards/secret-masker.js';
@@ -11,6 +12,7 @@ import { renderCoverage, serialiseCoverage } from './coverage-files.js';
 import { renderDataModel } from './data-model-markdown.js';
 import { cardPath, renderCardFile } from './card-markdown.js';
 import type { PermalinkSource } from './citation-link.js';
+import { renderOverview, renderOverviewJson } from './overview-markdown.js';
 import { renderSpec } from './spec-markdown.js';
 import { writeOrRestore } from './write-or-restore.js';
 
@@ -39,6 +41,8 @@ export interface CardOutputInput {
   readonly mergedAway?: readonly Pick<Card, 'id' | 'type'>[];
   /** RF-241: the new and changed cards of a re-run with answers. */
   readonly changes?: CardChanges;
+  /** RF-264: the overview of the run; written once the run has one. */
+  readonly overview?: Overview | undefined;
 }
 
 interface PlannedFile {
@@ -77,6 +81,15 @@ async function removeStale(
   return ok(undefined);
 }
 
+// RF-264: `overview.md` and `overview.json`, once the run has an overview.
+function overviewFiles(overview: Overview | undefined, masker: TextMasker): PlannedFile[] {
+  if (overview === undefined) return [];
+  return [
+    { path: 'overview.md', text: renderOverview(overview, masker) },
+    { path: 'overview.json', text: renderOverviewJson(overview, masker) },
+  ];
+}
+
 /**
  * Writes `cards/<TYPE>/<ID>.md` for each card, then `cards/index.json` and `spec.md`, and removes
  * the files of the cards that were merged into another (RF-250).
@@ -87,14 +100,18 @@ export async function writeCardOutputs(
   input: CardOutputInput,
 ): Promise<Result<void, WriteRefusal>> {
   const { cards, source, masker, logger, changes } = input;
-  const { areasWithoutCards = [], mergedAway = [] } = input;
+  const { areasWithoutCards = [], mergedAway = [], overview } = input;
   const files: PlannedFile[] = [
     ...cards.map((card) => ({
       path: cardPath(card),
       text: renderCardFile(card, source, masker, cards),
     })),
     { path: 'cards/index.json', text: serialiseCardIndex(cards, masker) },
-    { path: 'spec.md', text: renderSpec(cards, source, masker, { areasWithoutCards, changes }) },
+    ...overviewFiles(overview, masker),
+    {
+      path: 'spec.md',
+      text: renderSpec(cards, source, masker, { areasWithoutCards, changes, overview }),
+    },
     ...(cards.some((card) => card.type === 'ENT')
       ? [{ path: 'data-model.md', text: renderDataModel(cards, source, masker) }]
       : []),

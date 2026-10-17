@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CLAIM_STATUSES } from '../../domain/cards/card-vocabulary.js';
+import type { Overview } from '../../domain/overview/overview.js';
 import type { MapLevel } from '../../domain/code-map/map-level.js';
 import type { ReplayModel } from './replay-model.js';
 
@@ -53,6 +54,8 @@ export interface ReportModel {
   /** The areas of the project's newest completed scan; none when it has none or its output is gone. */
   readonly areas: readonly ReportArea[];
   readonly replay: ReplayModel;
+  /** RF-264: the overview of the application; the report opens with it. */
+  readonly overview?: Overview | undefined;
 }
 
 const CARD_FILE = /^cards\/[A-Z]+\/[A-Z]+-\d+\.md$/u;

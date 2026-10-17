@@ -90,8 +90,9 @@ describe('RF-425 estimate before running', () => {
       costMicros: 6735n,
     });
     expect(estimate.total.likely).toEqual({
-      inputTokens: 85_395,
-      outputTokens: 5040,
+      // The summariser reads the cards twice (merge, overview) and writes the overview (RF-264).
+      inputTokens: 91_495,
+      outputTokens: 6540,
       costMicros: 29_184n,
     });
   });
@@ -132,7 +133,7 @@ describe('RF-425 the range and the roles', () => {
     expect(orders.areas).toEqual([
       { name: 'Orders', estimatedTokens: 4000, files: 1, thirdParty: false },
     ]);
-    expect(orders.total.likely.inputTokens).toBe(24_498 + 7350 + 2450);
+    expect(orders.total.likely.inputTokens).toBe(24_498 + 7350 + 2450 * 2);
     expect(orders.total.likely.inputTokens).toBeLessThan(all.total.likely.inputTokens);
   });
 

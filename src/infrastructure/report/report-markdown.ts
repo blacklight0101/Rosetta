@@ -6,6 +6,7 @@ import {
 import { markdownEscaper, type MarkdownEscaper } from '../cards/markdown-text.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { claimsText, cardsSummary, COVERAGE_MISSING, dollars, plural } from './report-format.js';
+import { overviewBody } from '../cards/overview-markdown.js';
 import { sourceLink } from './report-source.js';
 
 // RF-504, RF-507: `report.md`, in `report/` of the run folder. It links the specification, every
@@ -93,6 +94,16 @@ function cardLines(model: ReportModel, esc: MarkdownEscaper): string[] {
   ];
 }
 
+/** RF-264: the report opens with the overview; its card links go up one folder. */
+function overviewLines(model: ReportModel, masker: TextMasker): string[] {
+  if (model.overview === undefined) return [];
+  return [
+    '## Overview',
+    '',
+    ...overviewBody(model.overview, masker, { base: '../', heading: '###' }),
+  ];
+}
+
 /** The text of `report.md`; masked like every file Rosetta writes (RNF-003). */
 // RF-504, RF-507
 export function renderReportMarkdown(model: ReportModel, masker: TextMasker): string {
@@ -100,6 +111,7 @@ export function renderReportMarkdown(model: ReportModel, masker: TextMasker): st
   const lines = [
     `# Report for run ${model.runKey}`,
     '',
+    ...overviewLines(model, masker),
     ...factRows(model, esc),
     '',
     '## Documents',

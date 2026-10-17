@@ -25,6 +25,7 @@ import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import {
   loadAnswersPrompt,
   loadMergePrompt,
+  loadOverviewPrompt,
   loadReaderPrompts,
 } from '../infrastructure/prompts/prompt-files.js';
 import { loadVerifierPrompts } from '../infrastructure/prompts/verifier-prompt-files.js';
@@ -102,6 +103,7 @@ export function composeUnderstand(parts: UnderstandParts): RunUnderstand {
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(promptsFolder),
     mergePrompt: () => loadMergePrompt(promptsFolder),
+    overviewPrompt: () => loadOverviewPrompt(promptsFolder),
     verifierPrompts: () => loadVerifierPrompts(promptsFolder),
     textToolProtocol: () => loadTextToolProtocol(promptsFolder),
     answersPrompt: () => loadAnswersPrompt(promptsFolder),

@@ -38,6 +38,28 @@ const noMerge: Recording['calls'][number] = {
   ],
 };
 
+/**
+ * The summariser's answer to the overview of the first run (RF-264): a draft with no statement. It
+ * stands after the merge answer, so the later runs' calls keep their place in the recording.
+ */
+const noOverview: Recording['calls'][number] = {
+  attempts: [
+    {
+      response: fakeResponse({
+        text: '```json\n{"application": []}\n```',
+        toolCalls: [],
+        usage: {
+          inputTokens: 100,
+          outputTokens: 10,
+          cachedInputTokens: 0,
+          usageSource: 'reported',
+        },
+        finishReason: 'stop',
+      }),
+    },
+  ],
+};
+
 interface RecordingNames {
   /** A file name under tests/recordings/fake/. */
   readonly recording: string;
@@ -52,7 +74,7 @@ export async function readerRecordingOf(options: RecordingNames): Promise<Record
   const first = repeated(await load(options.recording), options.replays ?? 1);
   if (options.afterwards === undefined) return first;
   const later = await load(options.afterwards);
-  return { ...first, calls: [...first.calls, noMerge, ...later.calls] };
+  return { ...first, calls: [...first.calls, noMerge, noOverview, ...later.calls] };
 }
 
 /** RF-301: what the `verifier` role replays, when the test names a recording for it. */

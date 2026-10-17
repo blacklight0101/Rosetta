@@ -34,6 +34,7 @@ import type { SecretMasker } from '../../infrastructure/guards/secret-masker.js'
 import {
   loadAnswersPrompt,
   loadMergePrompt,
+  loadOverviewPrompt,
   loadReaderPrompts,
 } from '../../infrastructure/prompts/prompt-files.js';
 import { loadVerifierPrompts } from '../../infrastructure/prompts/verifier-prompt-files.js';
@@ -148,6 +149,7 @@ function understandOf(parts: PipelineParts, s: Stores): RunUnderstand {
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts(folder),
     mergePrompt: () => loadMergePrompt(folder),
+    overviewPrompt: () => loadOverviewPrompt(folder),
     verifierPrompts: () => loadVerifierPrompts(folder),
     textToolProtocol: () => loadTextToolProtocol(folder),
     answersPrompt: () => loadAnswersPrompt(folder),

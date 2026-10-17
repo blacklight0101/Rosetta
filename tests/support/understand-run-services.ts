@@ -22,6 +22,7 @@ import { FakeSourceFetcher } from '../../src/infrastructure/github/fake-source-f
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import {
   loadMergePrompt,
+  loadOverviewPrompt,
   loadAnswersPrompt,
   loadReaderPrompts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -140,6 +141,7 @@ function understandExecutor(
     costReports: new FileCostReportWriter({ writer, masker }),
     prompts: () => loadReaderPrompts('prompts'),
     mergePrompt: () => loadMergePrompt('prompts'),
+    overviewPrompt: () => loadOverviewPrompt('prompts'),
     verifierPrompts: () => loadVerifierPrompts('prompts'),
     textToolProtocol: () => loadTextToolProtocol('prompts'),
     answersPrompt: () => loadAnswersPrompt('prompts'),

@@ -76,6 +76,8 @@ export interface RunUnderstandDependencies {
   readonly textToolProtocol: () => Promise<PromptFile>;
   /** Reads the summariser's merge prompt, recorded when a merge call is made (RF-250, RNF-004). */
   readonly mergePrompt: () => Promise<PromptFile>;
+  /** Reads the summariser's overview prompt, recorded when the overview call is made (RF-264, RNF-004). */
+  readonly overviewPrompt: () => Promise<PromptFile>;
   /** Reads the answers prompt, used by a re-run with answers (RF-241, RNF-004). */
   readonly answersPrompt: () => Promise<PromptFile>;
   /** RF-241: the cards of earlier runs, read for a re-run and marked `Answered` by it. */
@@ -173,15 +175,17 @@ export class RunUnderstand implements RunExecutor {
     const withAnswers = rerun !== undefined && tasks.length > 0;
     const marks = runMarks(tasks, scanned.codeMap);
     const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers, marks);
-    const [mergePrompt, verifierPrompts] = await Promise.all([
+    const [mergePrompt, overviewPrompt, verifierPrompts] = await Promise.all([
       this.deps.mergePrompt(),
+      this.deps.overviewPrompt(),
       this.deps.verifierPrompts(),
     ]);
     const all = { ...versions, ...verifierPromptVersions(verifierPrompts) };
     await updates.update((stored) => ok(recordPromptVersions(stored, all)));
     const withRerun = rerun === undefined ? {} : { rerun };
     const base = { project, scanned, plan, allTasks: tasks, prompts, mergePrompt, verifierPrompts };
-    return { ok: true, value: { ...base, ...withRerun } };
+    const withOverview = { ...base, overviewPrompt };
+    return { ok: true, value: { ...withOverview, ...withRerun } };
   }
 
   /** RF-200: an area named in the request is not in the code map; the valid names are logged. */

@@ -57,6 +57,12 @@ export function loadMergePrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'summariser/merge.v1.md');
 }
 
+/** The summariser's overview prompt (RF-264), checked and hashed. */
+// RNF-004
+export function loadOverviewPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'summariser/overview.v1.md');
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }

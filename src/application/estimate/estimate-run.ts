@@ -19,6 +19,7 @@ import { planReaderTasks } from '../understand/reader-tasks.js';
 import { assumptionsOf, ceilPercent } from './estimate-assumptions.js';
 import type {
   ByScenario,
+  EstimateAssumptions,
   EstimatePoint,
   EstimateRole,
   RoleEstimate,
@@ -101,6 +102,24 @@ function shareTokens(
   return { low: share('low'), likely: share('likely'), high: share('high') };
 }
 
+/**
+ * The summariser merges duplicates (a share of the readers' tokens, RF-250) and then reads the cards
+ * once more to write the overview (RF-264): the same input again, and the overview as output.
+ */
+function summariserTokens(
+  reader: ByScenario<TokenFigures>,
+  assumptions: EstimateAssumptions,
+): ByScenario<TokenFigures> {
+  const merge = shareTokens(reader, assumptions.summariserSharePercent);
+  const total = (scenario: Scenario): TokenFigures => ({
+    inputTokens: merge[scenario].inputTokens * 2,
+    outputTokens: merge[scenario].outputTokens + assumptions.overviewOutputTokens[scenario],
+    // The overview call is a plain call (no cached prefix of its own): only the merge writes cache.
+    cacheWriteTokens: merge[scenario].cacheWriteTokens,
+  });
+  return { low: total('low'), likely: total('likely'), high: total('high') };
+}
+
 function sumPoints(points: readonly ByScenario<EstimatePoint>[]): ByScenario<EstimatePoint> {
   const total = (scenario: Scenario): EstimatePoint => ({
     inputTokens: points.reduce((sum, each) => sum + each[scenario].inputTokens, 0),
@@ -139,7 +158,7 @@ export class EstimateRun {
       }),
       this.roleOf(project, {
         role: 'summariser',
-        tokens: shareTokens(reader, assumptions.summariserSharePercent),
+        tokens: summariserTokens(reader, assumptions),
       }),
     ]);
     return ok({

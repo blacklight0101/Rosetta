@@ -9,6 +9,7 @@ import type { RunTextFiles } from '../../src/application/ports/run-text-files.js
 import { EstimateRun } from '../../src/application/estimate/estimate-run.js';
 import { BuildReport } from '../../src/application/use-cases/build-report.js';
 import { ReadRunFile } from '../../src/application/use-cases/read-run-file.js';
+import { ReadOverview } from '../../src/application/use-cases/read-overview.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetCallTranscript } from '../../src/application/use-cases/get-call-transcript.js';
 import { GetRun } from '../../src/application/use-cases/get-run.js';
@@ -166,6 +167,7 @@ export function runServices(
   const { projects, keys, calls, logs, clock } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
+    readOverview: new ReadOverview({ runs: runs.runs, files: outputs.text }),
     subscribeRunEvents: runs.subscribe,
     stopRun: runs.stop,
     resumeRun: new ResumeRun({
@@ -186,7 +188,6 @@ export function runServices(
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, submit: runs.submit }),
-    // RF-425: every project's scan has the same fixed code map (Catalog and Orders).
     estimateRun: new EstimateRun({
       projects,
       runs: runs.runs,

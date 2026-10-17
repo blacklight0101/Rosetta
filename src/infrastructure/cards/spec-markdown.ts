@@ -1,11 +1,13 @@
 import type { CardChanges, CardRef } from '../../application/understand/card-changes.js';
 import type { Card } from '../../domain/cards/card.js';
 import { incompleteSteps } from '../../domain/cards/flow-completeness.js';
+import type { Overview } from '../../domain/overview/overview.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
 import { citationLink, type PermalinkSource } from './citation-link.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 import { renderSurfaceSections } from './spec-sections.js';
+import { overviewBody } from './overview-markdown.js';
 
 // RF-204, RF-125, data-model 3.8: `spec.md`, the cards per area as one readable specification with
 // links to the card files and to the cited lines. Areas and cards keep the order of `cards`
@@ -64,6 +66,8 @@ export interface SpecExtras {
   readonly areasWithoutCards?: readonly string[];
   /** RF-241: the new and changed cards of a re-run with answers. */
   readonly changes?: CardChanges | undefined;
+  /** RF-264: the overview opens the specification. */
+  readonly overview?: Overview | undefined;
 }
 
 export function renderSpec(
@@ -72,9 +76,12 @@ export function renderSpec(
   masker: TextMasker,
   extras: SpecExtras = {},
 ): string {
-  const { areasWithoutCards = [], changes } = extras;
+  const { areasWithoutCards = [], changes, overview } = extras;
   const esc = markdownEscaper(masker);
   const lines = ['# Specification', ''];
+  if (overview !== undefined) {
+    lines.push('## Overview', '', ...overviewBody(overview, masker, { base: '', heading: '###' }));
+  }
   for (const [area, inArea] of areasInOrder(cards)) {
     lines.push(`## Area: ${esc.inline(area)}`, '');
     lines.push(...inArea.flatMap((card) => cardSection(card, source, esc)));
