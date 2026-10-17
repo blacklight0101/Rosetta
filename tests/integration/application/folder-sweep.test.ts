@@ -67,9 +67,10 @@ function removalTests(name: string, make: MakeStores): void {
     await stores.projects.insertOrFind(kept);
     const run = sampleRun({ userId: user, projectId: kept.id, queueState: 'Ended' });
     await stores.runs.insert({ ...run, endState: 'Completed', startedAt: 1, endedAt: 2 });
-    await folder(projectFolder(kept.id));
     await folder(join(projectFolder(kept.id), 'runs', run.runKey));
     await folder(join(projectFolder(kept.id), 'runs', strayRun));
+    // The project folder last: adding its run folders changed it.
+    await folder(projectFolder(kept.id));
     await folder(projectFolder(ghost));
     const { run: job, logger } = sweep(stores);
 

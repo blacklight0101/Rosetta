@@ -6,6 +6,7 @@ import type {
   WorkspaceFolders,
 } from '../../application/ports/workspace-folders.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { listWorkspaceFolders } from './list-workspace-folders.js';
 import { isRealFolder } from './run-folder.js';
 import { projectPath, runPath, workspaceRoot } from './workspace-paths.js';
 
@@ -46,7 +47,7 @@ export class NodeWorkspaceFolders implements WorkspaceFolders {
 
   // P1-152
   list(): Promise<readonly ListedFolder[]> {
-    return Promise.resolve([]);
+    return listWorkspaceFolders(this.#dataDir);
   }
 
   // RF-1012
