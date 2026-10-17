@@ -133,7 +133,7 @@ const relations = [
   }),
 ];
 
-function entity(id: string, text: string, citation: string, status = 'Supported' as const) {
+function entity(id: string, text: string, citation: string, status: ClaimStatus = 'Supported') {
   return claim({
     claimId: id,
     cardType: 'ENT',

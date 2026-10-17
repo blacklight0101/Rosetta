@@ -24,7 +24,7 @@ import { budgetTable } from './budget-harness.js';
 import { fakeResponse } from './fake-recordings.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
-import { fixtureRoot } from './scan-harness.js';
+import { fixtureRoot, type FixtureRepository } from './scan-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { understandSettings } from './understand-run-harness.js';
 
@@ -112,14 +112,14 @@ async function provider(scenario: EvalScenario): Promise<LlmProvider> {
 
 /** What the evaluation replays: a fixture, the reader's answers per run, the verifier's answers in all. */
 export interface EvalScenario {
-  readonly fixture: string;
+  readonly fixture: FixtureRepository;
   readonly reader: string;
   readonly verifier: readonly string[];
   readonly fileCount: number;
 }
 
 /** The webforms-csharp fixture: two runs judged by the recording, then one all Supported. */
-export const csharpScenario: EvalScenario = {
+const csharpScenario: EvalScenario = {
   fixture: 'webforms-csharp',
   reader: 'understand-csharp-full.json',
   verifier: [
