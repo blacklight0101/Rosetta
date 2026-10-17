@@ -16,7 +16,7 @@ import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { leaveUnverified } from '../verifier/leave-unverified.js';
-import { announceCards } from './announce-cards.js';
+import { announceCards, announceMerges } from './announce-cards.js';
 import { areaFailureOf } from './area-failure.js';
 import { changesOf, markAnswered, type Rerun } from './answer-rerun.js';
 import { cardNoteOf, coverageNoteOf } from './area-notes.js';
@@ -37,8 +37,8 @@ import { runReaderTaskWithRetry } from './task-retry.js';
 
 // RF-200, RF-202, RF-203, RF-230, RF-264, RF-300, RF-301, RF-1002, DEC-98, RNF-002: the reader tasks
 // of one understand run and what they leave: each ended task adds cards that are checked and
-// written, so a stopped run keeps them (RF-230). Then the open questions go to `answers.md`, the
-// claims are judged, duplicates merged and the overview written (RF-264).
+// written, so a stopped run keeps them (RF-230). Then open questions go to `answers.md`, claims are
+// judged, duplicates merged and the overview written (RF-264).
 
 interface UnderstandSessionDependencies {
   readonly cards: CardOutputs;
@@ -147,12 +147,10 @@ export class UnderstandSession {
     await this.markAnswered();
   }
 
-  // RF-264: the overview of the cards that passed, written with the specification.
   private async writeOverview(): Promise<void> {
-    const { cards } = this.latest;
-    const { coverage, thirdParty } = this;
-    this.overview = await overviewStep({ parts: this.parts, cards, coverage, thirdParty });
-    await this.writeSet(cards);
+    const { latest, coverage, thirdParty } = this;
+    this.overview = await overviewStep(this.parts, latest.cards, { coverage, thirdParty });
+    await this.writeSet(latest.cards);
   }
 
   /** RF-241: the questions of the areas whose task ended `Done` are now `Answered`. */
@@ -188,11 +186,7 @@ export class UnderstandSession {
     const changes = changesOf(this.parts.rerun, merged.cards);
     const set = { cards: merged.cards, source, areasWithoutCards, mergedAway, ...changes };
     await deps.cards.writeCards(scopeOf(execution.run), set);
-    // RF-250, RF-1004: the merge renumbered claims; the pages move their verdicts by these events.
-    for (const move of merged.moves) {
-      const task = merged.cards.find((card) => card.id === move.cardId)?.agentTaskId;
-      await execution.events.emit('cards.merged', { ...move }, task);
-    }
+    await announceMerges(execution.events, merged);
   }
 
   /** RF-301, RF-302: the claims the citation check passed are judged, before any merge (RF-250). */
@@ -222,11 +216,10 @@ export class UnderstandSession {
 
   // RF-202, RF-300
   private async ended(task: ReaderTask, outcome: TaskOutcome): Promise<void> {
-    const { execution } = this.parts;
+    const { deps, execution } = this.parts;
     const { agentTaskId } = task;
-    const { rawOutputs } = outcome;
-    if (rawOutputs.length > 0) {
-      await deps.cards.writeInvalidOutput(scopeOf(execution.run), agentTaskId, rawOutputs);
+    if (outcome.rawOutputs.length > 0) {
+      await deps.cards.writeInvalidOutput(scopeOf(execution.run), agentTaskId, outcome.rawOutputs);
     }
     if (outcome.state === 'Done' && outcome.problems.length > 0)
       await this.log.dropped(task, outcome.problems);

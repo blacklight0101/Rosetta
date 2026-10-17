@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { parseOverview } from '../../../src/application/overview/overview-file.js';
 import type { Run } from '../../../src/domain/runs/run.js';
 import { copyFixture } from '../../support/scan-harness.js';
@@ -20,6 +21,7 @@ import {
 
 const temp = useTempRoot('rosetta-understand-overview-');
 const allSupported = 'verifier-all-supported.json';
+const costFile = z.looseObject({ roles: z.array(z.looseObject({ role: z.string() })).optional() });
 
 interface FullRun {
   readonly h: UnderstandHarness;
@@ -156,7 +158,7 @@ describe('the overview and hostile text', UNDERSTAND_TIMEOUT, () => {
     expect(asked[0]?.tools).toEqual([]);
     const manifest = await h.manifestOf(run);
     expect(manifest.promptVersions['summariser/overview.v1.md']).toMatchObject({ version: 'v1' });
-    const cost = JSON.parse(await read(folder, 'cost.json')) as { roles?: { role: string }[] };
+    const cost = costFile.parse(JSON.parse(await read(folder, 'cost.json')));
     expect(JSON.stringify(cost)).toContain('summariser');
   });
 

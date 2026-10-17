@@ -47,8 +47,12 @@ function standingOf(input: OverviewStepInput): readonly AreaStanding[] {
 }
 
 // RF-264
-export function overviewStep(input: OverviewStepInput): Promise<Overview> {
-  const { parts, cards } = input;
+export function overviewStep(
+  parts: OverviewStepParts,
+  cards: readonly Card[],
+  state: Pick<OverviewStepInput, 'coverage' | 'thirdParty'>,
+): Promise<Overview> {
+  const input = { parts, cards, ...state };
   const { execution, overviewPrompt } = parts;
   const source = {
     ...parts,
