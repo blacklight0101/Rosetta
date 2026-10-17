@@ -92,13 +92,12 @@ describe('folderSweepJob removals of folders without rows', () => {
 
     expect(env.folders.has(target)).toBe(false);
     expect(env.folders.removals).toEqual([target]);
-    expect(env.logger.records).toEqual([
-      expect.objectContaining({
-        level: 'info',
-        userId: userAmy.userId,
-        data: expect.objectContaining({ projectId: orphanProject }) as unknown,
-      }),
-    ]);
+    expect(env.logger.records).toHaveLength(1);
+    expect(env.logger.records[0]).toMatchObject({
+      level: 'info',
+      userId: userAmy.userId,
+      data: { projectId: orphanProject },
+    });
   });
 });
 
@@ -220,5 +219,80 @@ describe('folderSweepJob unreadable data', () => {
 
     expect(env.folders.removals).toEqual([]);
     expect(env.logger.records).toEqual([expect.objectContaining({ level: 'error' })]);
+  });
+});
+
+describe('folderSweepJob age boundary', () => {
+  it('RF-1012 removes a folder exactly one hour old and keeps one a millisecond younger', async () => {
+    const env = setUp();
+    const exact = projectOf(orphanProject);
+    env.folders.seed(exact, files, env.clock.now().getTime() - ORPHAN_FOLDER_MIN_AGE_MS);
+    env.folders.seed(
+      projectOf(otherOrphan),
+      files,
+      env.clock.now().getTime() - ORPHAN_FOLDER_MIN_AGE_MS + 1,
+    );
+
+    await env.job();
+
+    expect(env.folders.removals).toEqual([exact]);
+  });
+});
+
+function seedOrphans(env: ReturnType<typeof setUp>, count: number): FolderTarget[] {
+  const targets = Array.from({ length: count }, (_, index) =>
+    projectOf(`00000000-0000-4000-a000-00000000e${String(index).padStart(3, '0')}`),
+  );
+  for (const target of targets) env.folders.seed(target, files, env.old);
+  return targets;
+}
+
+describe('folderSweepJob guard against a database that is readable but wrong', () => {
+  it('RF-1012 removes nothing when no project has a row but several project folders exist', async () => {
+    const env = setUp();
+    seedOrphans(env, 4);
+
+    await env.job();
+
+    expect(env.folders.removals).toEqual([]);
+    expect(env.logger.records).toHaveLength(1);
+    expect(env.logger.records[0]).toMatchObject({
+      level: 'error',
+      code: ERROR_CODES.folderRemovalFailed,
+    });
+  });
+
+  it('RF-1012 removes nothing when the pass would remove more than half of the project folders', async () => {
+    const env = setUp();
+    for (let index = 0; index < 3; index += 1) await keptProject(env);
+    seedOrphans(env, 4);
+
+    await env.job();
+
+    expect(env.folders.removals).toEqual([]);
+    expect(env.logger.records[0]).toMatchObject({ level: 'error' });
+  });
+
+  it('RF-1012 removes up to half of the project folders, and any few under the floor', async () => {
+    const env = setUp();
+    for (let index = 0; index < 3; index += 1) await keptProject(env);
+    const orphans = seedOrphans(env, 3);
+
+    await env.job();
+
+    expect(env.folders.removals).toEqual(orphans);
+  });
+
+  it('RF-1012 removes nothing when the pass would remove most run folders of the projects with rows', async () => {
+    const env = setUp();
+    const project = await keptProject(env);
+    for (const key of ['20250101-000000-scan', '20250102-000000-scan', '20250103-000000-scan']) {
+      env.folders.seed({ ...projectOf(project.id), runKey: key }, files, env.old);
+    }
+
+    await env.job();
+
+    expect(env.folders.removals).toEqual([]);
+    expect(env.logger.records[0]).toMatchObject({ level: 'error' });
   });
 });

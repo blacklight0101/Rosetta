@@ -1,5 +1,5 @@
-import { mkdir, readFile, stat, symlink, utimes, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, mkdtemp, readFile, rm, stat, symlink, utimes, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ProjectRepository } from '../../../src/application/ports/project-repository.js';
 import type { RunIndex } from '../../../src/application/ports/run-index.js';
@@ -99,7 +99,8 @@ function safetyTests(name: string, make: MakeStores): void {
 function linkTests(name: string, make: MakeStores): void {
   it(`RF-005 ${name}: follows no link out of the data folder and removes no folder outside it`, async () => {
     const stores = await make();
-    const outside = join(data.path, 'outside');
+    // A sibling of the data folder: truly outside it.
+    const outside = await mkdtemp(join(dirname(data.path), 'rosetta-outside-'));
     await folder(outside);
     await mkdir(join(data.path, 'users', user, 'projects'), { recursive: true });
     await symlink(outside, projectFolder(ghost), 'junction');
@@ -107,8 +108,11 @@ function linkTests(name: string, make: MakeStores): void {
 
     await job();
 
-    expect(await readFile(join(outside, 'file.txt'), 'utf8')).toBe('content');
-    expect(await exists(projectFolder(ghost))).toBe(true);
+    const content = await readFile(join(outside, 'file.txt'), 'utf8');
+    const linkKept = await exists(projectFolder(ghost));
+    await rm(outside, { recursive: true, force: true });
+    expect(content).toBe('content');
+    expect(linkKept).toBe(true);
   });
 
   it(`RF-1012 ${name}: removes only folders named by ids`, async () => {
