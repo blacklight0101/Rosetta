@@ -8,7 +8,7 @@ import { signInAs } from './support/sign-in.js';
 // waiting. The count answer is replaced; the page, its CSS and the real server are the ones under test.
 
 test.beforeEach(async ({ context }, info) => {
-  await signInAs(context, accountFor('start-run-answers', info.project.name));
+  await signInAs(context, accountFor('start-run', info.project.name));
 });
 
 test('RF-241 the Re-run with answers option is reachable by keyboard and has no serious violation', async ({

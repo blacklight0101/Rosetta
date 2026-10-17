@@ -24,7 +24,7 @@ function cardText(card: SeededQuestionCard): string {
     'claims:',
     `  - claimId: "${card.id}.c1"`,
     '    text: "The page shows what the list returns."',
-    ...(card.question === undefined ? [] : [`question: "${card.question}"`]),
+    `question: "${card.question ?? `Question ${card.id}?`}"`,
     `questionState: "${card.state}"`,
     '---',
     '',

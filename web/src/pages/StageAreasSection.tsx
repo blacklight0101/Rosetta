@@ -124,7 +124,8 @@ function Rerun({ rerun }: Pick<StageAreasProps, 'rerun'>): JSX.Element | null {
           rerun.onChange(event.currentTarget.checked);
         }}
       />
-      Re-run with answers ({rerun.answered} {noun} not used yet)
+      Re-run with answers ({rerun.answered} {noun} waiting; areas no longer in the code map are
+      skipped)
     </label>
   );
 }

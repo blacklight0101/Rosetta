@@ -60,7 +60,10 @@ async function cardsByRun(
 }
 
 /** Every `OQ` card of the run that asks the same question as this one, this one included. */
-function askingTheSame(card: PriorCard, earlier: readonly PriorCard[]): readonly PriorCard[] {
+export function askingTheSame(
+  card: PriorCard,
+  earlier: readonly PriorCard[],
+): readonly PriorCard[] {
   const words = questionWords(card.question ?? card.title);
   return earlier.filter(
     (each) =>
@@ -78,10 +81,10 @@ function cardsOrReason(
   if (earlier.length === 0) return { reason: 'run-gone' };
   const card = earlier.find((each) => each.id === question.cardId && each.type === 'OQ');
   if (card === undefined) return { reason: 'card-gone' };
-  if (card.questionState === 'Answered') return { reason: 'already-answered' };
-  const usable = askingTheSame(card, earlier).filter(
-    (each) => each.questionState !== 'Answered' && codeMapAreas.includes(each.area),
-  );
+  // A merged question is answered only when every card behind it is (one area may have failed).
+  const open = askingTheSame(card, earlier).filter((each) => each.questionState !== 'Answered');
+  if (open.length === 0) return { reason: 'already-answered' };
+  const usable = open.filter((each) => codeMapAreas.includes(each.area));
   return usable.length === 0 ? { reason: 'area-not-in-code-map' } : { cards: usable };
 }
 

@@ -13,8 +13,8 @@ import { useRunAnswers } from './use-run-answers.js';
 // RF-1007, RF-240, RF-507: the open questions of an understand run on its live page, each with a
 // field for the answer. Saving writes the answer into the project's answers.md (the other answers
 // stay); a question is marked answered only when its area is analysed again with the answers
-// (RF-241), so a question reads Open until a re-run used its answer, then Answered. Question and context come from a model and are
-// shown as text. All the styles are under `.rst-p139-`.
+// (RF-241), so a question reads Open until a re-run used its answer, then Answered. Question and
+// context come from a model and are shown as text. All the styles are under `.rst-p139-`.
 
 export interface RunAnswersProps {
   /** The run's id (the UUID). */
