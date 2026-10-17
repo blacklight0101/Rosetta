@@ -32,6 +32,26 @@ export interface CallPrice {
   readonly version: string;
 }
 
+/**
+ * RF-427, P2-24: the message for an own-key override the lookup skipped because it has no
+ * cache-write price, so the error names the override; undefined when no such override exists.
+ */
+export function incompleteOverrideMessage(
+  pricing: BudgetPricing,
+  query: PricingQuery,
+  model: string,
+): string | undefined {
+  if (query.keySource !== 'user') return undefined;
+  const found = pricing.overrides.some(
+    (price) =>
+      price.provider === query.kind &&
+      price.model === model &&
+      price.cacheWriteInputPerMillionMicros === undefined,
+  );
+  if (!found) return undefined;
+  return `The price override for model ${model} of provider kind ${query.kind} has no cache-write price, so it is ignored.`;
+}
+
 // RF-420, RF-427
 export function priceCall(pricing: BudgetPricing, query: PricingQuery, model: string): CallPrice {
   const lookup = lookupPrice(pricing.table, pricing.overrides, {
@@ -45,7 +65,8 @@ export function priceCall(pricing: BudgetPricing, query: PricingQuery, model: st
   }
   throw new RosettaError(
     ERROR_CODES.modelUnpriced,
-    `The model ${model} of provider kind ${query.kind} has no price in the price table.`,
+    incompleteOverrideMessage(pricing, query, model) ??
+      `The model ${model} of provider kind ${query.kind} has no price in the price table.`,
   );
 }
 

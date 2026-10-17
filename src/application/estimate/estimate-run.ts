@@ -1,5 +1,5 @@
 import type { Actor } from '../../domain/accounts/actor.js';
-import { costOf } from '../../domain/budget/price.js';
+import { costOf, type Price } from '../../domain/budget/price.js';
 import { lookupPrice, type KeySource, type PriceTable } from '../../domain/budget/price-table.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
@@ -57,6 +57,27 @@ export type EstimateRunProblem =
 interface RoleTokens {
   readonly role: EstimateRole;
   readonly tokens: ByScenario<TokenFigures>;
+}
+
+/**
+ * RF-425, P2-24: the cost of one point. The high point prices the whole prompt at the highest of
+ * the input and cache-write prices, as the budget guard's worst case does (RF-422), so the high
+ * figure and the confirmation threshold are never under the premium of cache writes; the low and
+ * likely points price the prompt as input.
+ */
+function costOfPoint(
+  price: Price,
+  tokens: Pick<TokenFigures, 'inputTokens' | 'outputTokens'>,
+  scenario: Scenario,
+): bigint {
+  const plain = costOf(price, { ...tokens, cachedInputTokens: 0 }).micros;
+  if (scenario !== 'high') return plain;
+  const written = costOf(price, {
+    ...tokens,
+    cachedInputTokens: 0,
+    cacheWriteInputTokens: tokens.inputTokens,
+  }).micros;
+  return written > plain ? written : plain;
 }
 
 /** The tokens of a role that is a share of the readers' (the verifier, ADR-005; the summariser, RF-250). */
@@ -164,7 +185,7 @@ export class EstimateRun {
       const { inputTokens, outputTokens } = tokens[scenario];
       const costMicros =
         lookup.kind === 'priced'
-          ? costOf(lookup.price, { inputTokens, outputTokens, cachedInputTokens: 0 }).micros
+          ? costOfPoint(lookup.price, { inputTokens, outputTokens }, scenario)
           : 0n;
       return { inputTokens, outputTokens, costMicros };
     };

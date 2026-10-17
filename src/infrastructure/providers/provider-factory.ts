@@ -21,7 +21,11 @@ import type { UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import { priceCall, type BudgetPricing } from '../guards/budget-pricing.js';
+import {
+  incompleteOverrideMessage,
+  priceCall,
+  type BudgetPricing,
+} from '../guards/budget-pricing.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import type { AdapterBuilder } from './adapter-spec.js';
 import { guardedProvider } from './guarded-provider.js';
@@ -112,8 +116,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
   ): Promise<Result<RoleProvider, ProviderProblem>> {
     const setting = request.settings.roles[role];
     const { provider: name } = setting;
-    const fail = (code: ErrorCode): Result<never, ProviderProblem> =>
-      err({ role, provider: name, code });
+    const fail = (code: ErrorCode, message?: string): Result<never, ProviderProblem> =>
+      err({ role, provider: name, code, ...(message === undefined ? {} : { message }) });
     const config = Object.hasOwn(request.settings.providers, name)
       ? request.settings.providers[name]
       : undefined;
@@ -128,9 +132,8 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const adapter = this.adapterFor(name, config, access.value);
     if (!adapter.ok) return fail(adapter.error);
     // RF-427: an unpriced model is refused when the run starts, before its first call.
-    if (!this.isPriced(request, config.kind, setting.model, access.value)) {
-      return fail(ERROR_CODES.modelUnpriced);
-    }
+    const unpriced = this.unpricedOf(request, config.kind, setting.model, access.value);
+    if (unpriced !== undefined) return fail(ERROR_CODES.modelUnpriced, unpriced.message);
     const caps = this.capsOf({ request, role }, access.value, serverCaps);
     const provider = this.wrap({
       request,
@@ -152,20 +155,25 @@ export class GuardedProviderFactory implements ProviderSetFactory {
   }
 
   /**
-   * RF-427: whether the role's model can be priced on its key, so a run with an unpriced cloud model
+   * RF-427: undefined when the role's model can be priced on its key; otherwise why not (the message
+   * names an override without a cache-write price, P2-24), so a run with an unpriced cloud model
    * stops before any call; the budget guard checks every call again.
    */
-  private isPriced(
+  private unpricedOf(
     request: ProviderSetRequest,
     kind: ProviderConfig['kind'],
     model: string,
     access: ProviderAccess,
-  ): boolean {
+  ): { readonly message: string | undefined } | undefined {
+    const pricing = this.pricingOf(request);
+    const query = { kind, keySource: access.keySource };
     try {
-      priceCall(this.pricingOf(request), { kind, keySource: access.keySource }, model);
-      return true;
+      priceCall(pricing, query, model);
+      return undefined;
     } catch (error) {
-      if (error instanceof RosettaError && error.code === ERROR_CODES.modelUnpriced) return false;
+      if (error instanceof RosettaError && error.code === ERROR_CODES.modelUnpriced) {
+        return { message: incompleteOverrideMessage(pricing, query, model) };
+      }
       throw error;
     }
   }

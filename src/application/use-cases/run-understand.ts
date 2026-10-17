@@ -211,7 +211,8 @@ export class RunUnderstand implements RunExecutor {
     });
     if (!built.ok) {
       for (const problem of built.error) {
-        const message = `The ${problem.role} role cannot use provider "${problem.provider}".`;
+        const message =
+          problem.message ?? `The ${problem.role} role cannot use provider "${problem.provider}".`;
         await this.log(run, problem.code, message, {
           role: problem.role,
           provider: problem.provider,

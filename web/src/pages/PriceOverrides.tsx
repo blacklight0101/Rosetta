@@ -96,6 +96,18 @@ function OverridePrices({ editor, errorFor, index, price }: RowProps): JSX.Eleme
   );
 }
 
+/** P2-24: the providers that bill cache writes; their override needs a cache-write price. */
+const cacheWriteProviders: readonly string[] = ['anthropic'];
+
+function CacheWriteWarning({ index, price }: Pick<RowProps, 'index' | 'price'>): JSX.Element {
+  if (!cacheWriteProviders.includes(price.provider) || price.cacheWrite.trim() !== '') return <></>;
+  return (
+    <p class="rst-field__help rst-limit__warning" role="status">
+      {`Override ${String(index + 1)} has no cache-write price. Anthropic bills cache writes, so a run ignores this override and treats the model as unpriced until you add one.`}
+    </p>
+  );
+}
+
 function OverrideRow(props: SectionProps & { readonly index: number }): JSX.Element {
   const { editor, index } = props;
   const price = editor.draft.prices[index];
@@ -105,6 +117,7 @@ function OverrideRow(props: SectionProps & { readonly index: number }): JSX.Elem
       <div class="rst-price__fields">
         <OverrideIdentity {...props} price={price} />
         <OverridePrices {...props} price={price} />
+        <CacheWriteWarning index={index} price={price} />
       </div>
       <Button
         variant="danger-outline"
