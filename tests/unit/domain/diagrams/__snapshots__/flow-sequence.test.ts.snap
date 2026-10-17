@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`flowSequenceDiagram > RF-260 draws the checkout flow (snapshot) 1`] = `
+"sequenceDiagram
+  participant p1 as The shopper presses Pay.
+  participant p2 as Basket rules
+  participant p3 as Order
+  participant p4 as INT#45;001
+  p1->>p2: 1. The basket is validated.
+  p2->>p3: 2. The order is saved.
+  Note right of p3: 2.1 A stock error shows the basket again.
+  p3->>p3: 3. A receipt is written.
+  p3->>p4: 4. The mail is sent. #40;rejected#41;
+  Note over p4: Outcome#58; An order is stored and mailed.
+"
+`;
