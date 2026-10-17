@@ -55,6 +55,17 @@ function spendContract(name: string, fresh: Fresh): void {
       needed: 351n,
     });
   });
+
+  it(`RF-423 ${name} lets exactly one of simultaneous calls of one role through when there is room for one`, async () => {
+    const { ledger, ids } = await setUp(fresh);
+    const racers = Array.from({ length: 8 }, () => reservationOf(ids, worst(600n)));
+
+    const results = await Promise.all(
+      racers.map((reservation) => reserveAt(ledger, reservation, roleCost(1_000n))),
+    );
+
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+  });
 }
 
 function scopeContract(name: string, fresh: Fresh): void {
