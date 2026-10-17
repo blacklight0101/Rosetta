@@ -26,6 +26,12 @@ export class TaskLog {
     return this.warn(task, text);
   }
 
+  /** RF-243: an area of third-party code writes no open question. */
+  thirdPartyQuestions(task: ReaderTask): Promise<void> {
+    const text = `The area "${task.area.name}" is third-party code; its open questions were dropped.`;
+    return this.warn(task, text);
+  }
+
   failure(task: ReaderTask, error: unknown): Promise<void> {
     const code = error instanceof RosettaError ? error.code : ERROR_CODES.providerCallFailed;
     return this.logger.log({

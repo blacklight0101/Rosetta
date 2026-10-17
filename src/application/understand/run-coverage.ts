@@ -35,6 +35,7 @@ export function toolsWithReads(inner: AgentTools, reads: TaskReads): AgentTools 
   return {
     definitions: inner.definitions,
     areaOverview: () => inner.areaOverview(),
+    readableAreaFiles: () => inner.readableAreaFiles(),
     renderBlock: (source, text) => inner.renderBlock(source, text),
     async run(call, ids) {
       const outcome = await inner.run(call, ids);
@@ -49,6 +50,8 @@ export interface TaskCoverageEnd {
   readonly failure: string | undefined;
   /** RF-263: the cards the task gave, so the coverage counts its flows and screens. */
   readonly cards?: readonly { readonly type: CardType }[];
+  /** RF-206, RF-243: what the area's coverage says besides the lines read. */
+  readonly note?: string | undefined;
 }
 
 /** The coverage of the ended tasks of a run, in area order (never in the order they ended). */
@@ -71,7 +74,8 @@ export class RunCoverage {
     const failure = end.failure === undefined ? {} : { failure: end.failure };
     const marks = marksOf(task.area, codeMap);
     const surface = end.cards === undefined ? {} : { surface: surfaceCoverage(marks, end.cards) };
-    this.ended.set(task.agentTaskId, { ...coverage, ...failure, ...surface });
+    const note = end.note === undefined ? {} : { note: end.note };
+    this.ended.set(task.agentTaskId, { ...coverage, ...failure, ...surface, ...note });
   }
 
   /** RF-006: the coverage a task of the run's earlier session left, kept as it was. */

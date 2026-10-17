@@ -1,6 +1,7 @@
 import type { CardDraft } from '../../domain/cards/card-ids.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import type { AreaRead } from '../agent/agent-task-result.js';
 import type { OutputProblem } from '../cards/output-problem.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import { areaFailureOf, type TaskEndFacts } from './area-failure.js';
@@ -15,6 +16,8 @@ export interface TaskOutcome extends TaskEndFacts {
   readonly rawOutputs: readonly string[];
   /** What was dropped from the answer (RF-208), or why the answer was not usable. */
   readonly problems: readonly OutputProblem[];
+  /** RF-206: whether the task read a file of its area; absent when the task failed. */
+  readonly areaRead?: AreaRead;
 }
 
 export function failedOutcome(error: unknown): TaskOutcome {

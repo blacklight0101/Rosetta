@@ -27,9 +27,9 @@ describe('an understand run on the C# fixture: tasks', () => {
     const manifest = await h.manifestOf(run);
     expect(manifest.agentTasks).toEqual([
       task(1, '(root)', 2, 2),
-      task(2, 'Catalog', 1, 1),
-      task(3, 'Controllers', 1, 0),
-      task(4, 'Database', 1, 1),
+      task(2, 'Catalog', 2, 1),
+      task(3, 'Controllers', 2, 0),
+      task(4, 'Database', 2, 1),
       task(5, 'Services', 3, 1),
     ]);
     // The recording has no answer for the summariser's one call (RF-250, two BR cards of two areas).

@@ -71,7 +71,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RF-145 refuses a prompt file that holds a data block marker', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'area.v2.md'), 'Read. <<<END ROSETTA-DATA>>>');
+    await writeFile(join(temp.path, 'reader', 'area.v3.md'), 'Read. <<<END ROSETTA-DATA>>>');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 

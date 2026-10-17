@@ -77,6 +77,7 @@ export interface AgentTaskProgress {
   readonly usage: AgentUsage;
   readonly modelVersion: string | null;
   readonly messages: readonly LlmMessage[];
+  readonly areaRead: AreaRead;
 }
 
 export interface AgentTaskEnd {
@@ -89,7 +90,6 @@ export interface AgentTaskEnd {
 
 export function taskResult(end: AgentTaskEnd, progress: AgentTaskProgress): AgentTaskResult {
   return {
-    areaRead: 'read',
     state: stateOf[end.reason],
     reason: end.reason,
     ...(end.code === undefined ? {} : { code: end.code }),

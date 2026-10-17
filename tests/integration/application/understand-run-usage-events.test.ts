@@ -47,7 +47,8 @@ describe('an understand run: usage events', () => {
       new Set(['reader', 'verifier']),
     );
     expect(usage.map((event) => event.agentTaskId)).toEqual([
-      ...['reader-001', 'reader-001', 'reader-002', 'reader-003', 'reader-004'],
+      ...['reader-001', 'reader-001', 'reader-002', 'reader-002', 'reader-003', 'reader-003'],
+      ...['reader-004', 'reader-004'],
       ...['reader-005', 'reader-005', 'reader-005'],
       // RF-301: the judgement of each claim that passed the citation check, in card order.
       ...['verifier-FEAT-001.c1', 'verifier-OQ-001.c1', 'verifier-BR-001.c1'],

@@ -1,5 +1,6 @@
 import type { Card } from '../../domain/cards/card.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
+import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { consolidateCards } from '../consolidate/consolidate-cards.js';
 import { consolidationParts } from '../consolidate/consolidation-parts.js';
@@ -16,7 +17,6 @@ import { leaveUnverified } from '../verifier/leave-unverified.js';
 import { announceCards } from './announce-cards.js';
 import { areaFailureOf } from './area-failure.js';
 import { markAnswered, type Rerun } from './answer-rerun.js';
-import { openQuestionOf } from './open-question.js';
 import { compareCards, type CardChanges } from './card-changes.js';
 import {
   isProposed,
@@ -24,6 +24,8 @@ import {
   runJudgementStep,
   type JudgementContext,
 } from './claim-judgement.js';
+import { cardNoteOf, coverageNoteOf, withoutQuestions } from './area-notes.js';
+import { openQuestionsOf } from './open-questions.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
@@ -74,6 +76,7 @@ export class UnderstandSession {
   private readonly coverage: RunCoverage;
   private readonly ends = new Map<string, TaskOutcome>();
   private readonly log: TaskLog;
+  private readonly thirdParty: ReadonlySet<string>;
   private latest: CheckedCards;
   private outputFailure: ErrorCode | undefined;
 
@@ -88,6 +91,7 @@ export class UnderstandSession {
     this.coverage = new RunCoverage(parts.allTasks);
     for (const result of kept) this.coverage.restore(result.agentTaskId, result.coverage);
     this.latest = { cards: kept.flatMap((result) => result.cards), checks: [] };
+    this.thirdParty = thirdPartyAreaNames(parts.scanned.codeMap);
   }
 
   /** Lists every task as `Planned` and publishes the plan (RF-200, RF-1002). */
@@ -111,15 +115,17 @@ export class UnderstandSession {
     const options = { parallelism: readerParallelism(settings), signal: execution.signal };
     await runPool(tasks, options, async (task) => {
       const reads = new TaskReads();
-      const outcome = await runReaderTaskWithRetry(this.parts, task, reads).catch(
+      const result = await runReaderTaskWithRetry(this.parts, task, reads).catch(
         async (error: unknown) => {
           await this.log.failure(task, error);
           return failedOutcome(error);
         },
       );
+      const outcome = await this.withoutThirdPartyQuestions(task, result);
       const failure = areaFailureOf(outcome);
       const cards = outcome.drafts;
-      this.coverage.record(task, this.parts.scanned.codeMap, { reads, failure, cards });
+      const note = coverageNoteOf(outcome.areaRead, this.thirdParty.has(task.area.name));
+      this.coverage.record(task, this.parts.scanned.codeMap, { reads, failure, cards, note });
       await this.ended(task, outcome).catch(async (error: unknown) => {
         // RNF-002: an output that cannot be written fails the run, never the other tasks.
         await this.log.failure(task, error);
@@ -157,9 +163,7 @@ export class UnderstandSession {
   private async addQuestions(): Promise<void> {
     const { deps, execution } = this.parts;
     const { run } = execution;
-    const questions = this.latest.cards
-      .filter((card) => card.type === 'OQ')
-      .map((card) => openQuestionOf(card, run.runKey));
+    const questions = openQuestionsOf(this.latest.cards, run.runKey);
     if (questions.length === 0) return;
     await deps.answers.addQuestions({ userId: run.userId, projectId: run.projectId }, questions);
   }
@@ -211,10 +215,18 @@ export class UnderstandSession {
     if (outcome.rawOutputs.length > 0) await this.keepInvalid(task, outcome.rawOutputs);
     if (outcome.state === 'Done' && outcome.problems.length > 0)
       await this.log.dropped(task, outcome.problems);
-    const withoutCards = outcome.state === 'Done' && outcome.drafts.length === 0;
+    const expectsCards = !this.thirdParty.has(task.area.name);
+    const withoutCards = outcome.state === 'Done' && outcome.drafts.length === 0 && expectsCards;
     if (withoutCards) await this.log.withoutCards(task);
     this.ends.set(agentTaskId, outcome);
-    this.cards.record({ agentTaskId, drafts: outcome.drafts, withoutCards });
+    const note = cardNoteOf(outcome.areaRead);
+    const { drafts } = outcome;
+    this.cards.record({
+      agentTaskId,
+      drafts,
+      withoutCards,
+      ...(note === undefined ? {} : { note }),
+    });
     await this.writeCards();
     await deps.cards.writeCoverage(scopeOf(execution.run), this.coverage.areas());
     await this.persist();
@@ -283,5 +295,17 @@ export class UnderstandSession {
   private async keepInvalid(task: ReaderTask, rawOutputs: readonly string[]): Promise<void> {
     const { deps, execution } = this.parts;
     await deps.cards.writeInvalidOutput(scopeOf(execution.run), task.agentTaskId, rawOutputs);
+  }
+
+  /** RF-243: an area of third-party code writes no open question, whatever its agent answered. */
+  private async withoutThirdPartyQuestions(
+    task: ReaderTask,
+    outcome: TaskOutcome,
+  ): Promise<TaskOutcome> {
+    if (!this.thirdParty.has(task.area.name)) return outcome;
+    const drafts = withoutQuestions(outcome.drafts);
+    if (drafts.length === outcome.drafts.length) return outcome;
+    await this.log.thirdPartyQuestions(task);
+    return { ...outcome, drafts };
   }
 }

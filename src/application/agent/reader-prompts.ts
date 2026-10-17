@@ -72,6 +72,18 @@ export function turnsLeftMessage(prompts: ReaderPrompts, turns: number): string 
   return prompts.turnsLeft.text.replace(readerPlaceholders.turnsLeft, String(turns)).trimEnd();
 }
 
+/** RF-206: the refusal of an answer given before any read, with the unread files as a data block. */
+export function readFirstMessage(
+  prompts: ReaderPrompts,
+  filesBlock: string,
+  turns: number,
+): string {
+  return prompts.readFirst.text
+    .replace(readerPlaceholders.readFirstFiles, () => filesBlock)
+    .replace(readerPlaceholders.readFirstTurns, String(turns))
+    .trimEnd();
+}
+
 /** The fragments an area with these marks gets, flows first. */
 function surfaceFilesFor(prompts: ReaderPrompts, marks: AreaMarks): readonly PromptFile[] {
   const { surface } = prompts;

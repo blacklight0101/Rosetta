@@ -63,7 +63,7 @@ describe('RF-206 the read-first prompts', () => {
   it('RF-206 the reader prompt tells the reader to read its area before it answers', async () => {
     const text = await readFile('prompts/reader/area.v3.md', 'utf8');
 
-    expect(text).toMatch(/read .* before you answer/iu);
+    expect(text).toMatch(/read before you answer/iu);
     expect(text).toMatch(/not accepted/iu);
   });
 

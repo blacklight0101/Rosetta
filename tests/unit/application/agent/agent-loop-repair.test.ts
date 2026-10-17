@@ -10,7 +10,7 @@ import type {
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { shippingCards } from '../../../support/agent-fixtures.js';
 import {
-  loopSetup,
+  ungatedLoopSetup,
   readOrder,
   textTurn,
   toolTurn,
@@ -22,7 +22,7 @@ import {
 
 describe('runAgentTask repair turn limits', () => {
   it('RF-201 no repair turn starts when the maximum turns are used', async () => {
-    const { fake, request } = loopSetup([textTurn('not cards'), textTurn(shippingCards)], {
+    const { fake, request } = ungatedLoopSetup([textTurn('not cards'), textTurn(shippingCards)], {
       maxTurns: 1,
     });
 
@@ -36,10 +36,13 @@ describe('runAgentTask repair turn limits', () => {
 
   it('RF-201 no repair turn starts when the conversation reaches its share of the context', async () => {
     const big: TokenUsage = { ...usage, inputTokens: 600 };
-    const { fake, request } = loopSetup([textTurn('not cards', big), textTurn(shippingCards)], {
-      contextTokens: 1000,
-      contextShare: 0.5,
-    });
+    const { fake, request } = ungatedLoopSetup(
+      [textTurn('not cards', big), textTurn(shippingCards)],
+      {
+        contextTokens: 1000,
+        contextShare: 0.5,
+      },
+    );
 
     const result = await runAgentTask(request(fake));
 
@@ -52,7 +55,7 @@ describe('runAgentTask repair turn limits', () => {
 
 describe('runAgentTask repair turn and a stop', () => {
   it('RF-201 no repair turn starts after a stop', async () => {
-    const { fake, request } = loopSetup([textTurn('not cards'), textTurn(shippingCards)]);
+    const { fake, request } = ungatedLoopSetup([textTurn('not cards'), textTurn(shippingCards)]);
     const controller = new AbortController();
     let calls = 0;
     const aborting: LlmProvider = {
@@ -77,7 +80,7 @@ describe('runAgentTask repair turn and a stop', () => {
 describe('runAgentTask stop between tool calls', () => {
   it('RF-201 a stop during one tool call runs none of the calls after it', async () => {
     const listFiles = { name: 'list_area_files', args: {} };
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       toolTurn([readOrder, listFiles]),
       textTurn(shippingCards),
     ]);
@@ -87,6 +90,7 @@ describe('runAgentTask stop between tool calls', () => {
     const tools: typeof base.tools = {
       definitions: base.tools.definitions,
       areaOverview: () => base.tools.areaOverview(),
+      readableAreaFiles: () => base.tools.readableAreaFiles(),
       renderBlock: (source, text) => base.tools.renderBlock(source, text),
       run: async (call, ids) => {
         ran.push(call.name);

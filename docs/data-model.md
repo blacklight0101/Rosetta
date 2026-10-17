@@ -264,7 +264,7 @@ skipped files and the files a language pack claims that stayed `coarse` because 
 | `codemapHash` | string | |
 | `options` | object | the start request's options (areas, answers option, consent) and the scan settings the run used (`ignoreRules`, `maxFileBytes`, `areas`, `areaTokenBudget`; DEC-121). An understand run records `{ areas?, cloudConsent, withAnswers? }`: `areas` only when the request sent the field, as sent; an absent or empty `areas` list means every area (RF-200, P1-98); `cloudConsent` always (P1-33, RF-143); `withAnswers: true` only when the request asked for the re-run with answers (RF-241, P2-05) |
 | `roles` | object | per role `{ provider, kind, model, modelVersion, modelDigest?, toolMode, maxOutputTokens, temperature, maxTurns }`; `modelVersion` is the exact id the provider reports, `modelDigest` the Ollama digest (RNF-004); `contextTokens` and `contextSource` are the Ollama context size sent as `num_ctx` and how it was chosen (`fixed` from the start, or `auto-fit`, `auto-floor`, `auto-model-limit`, `auto-fallback` after the first call; RF-401, DEC-114), `null` until then |
-| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v2.md`), its version (`v2`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when the reader uses Ollama with `toolMode: text` (RF-205), plus `summariser/merge.v1.md` once the summariser has answered a merge call (RF-250), plus `reader/answers.v1.md` when a re-run with answers has a task (RF-241) |
+| `promptVersions` | object | prompt file name to `{ version, sha256 }` (RNF-004): the path under `prompts/` (`reader/area.v3.md`), its version (`v3`) and the SHA-256 of its bytes, names in code-unit order; an understand run lists the reader's prompt files, plus `shared/text-tool-protocol.v1.md` when the reader uses Ollama with `toolMode: text` (RF-205), plus `summariser/merge.v1.md` once the summariser has answered a merge call (RF-250), plus `reader/answers.v1.md` when a re-run with answers has a task (RF-241) |
 | `security` | object | `{ deniedReads, refusedRequests, skippedLinks, blockedCalls, allowDenied[] }` counts and lifted deny patterns (RF-009, RF-127, RF-147) |
 | `priceTable` | object | `{ version, currency }` |
 | `catalogue` | object | `{ version, sha256 }` of the principle catalogue (RF-606, RNF-004) that a plan run used, `null` for the other stages and for a manifest written before this field; the version is the one the catalogue README declares and the SHA-256 runs over every catalogue file by name |
@@ -308,6 +308,7 @@ Header fields:
 | `screen` | `{ route, roles[], fields[], actions[], leadsTo[] }` | `SCRN` only (RF-261). `fields[]` are `{ name, inputKind, required, validations[] }` with each validation `{ text, citations[] }` and cited; `actions[]` are `{ label, handler?, flow? }` naming the handler, the `FLOW` card id, or both; `leadsTo[]` are `SCRN` ids or routes. `FLOW` and `SCRN` cards are not merged by consolidation (RF-250) |
 | `mergedAreas[]` | list | the areas of the merged cards, in card order, left out for a card that was not merged; a later merge of the kept card reads them, so cards that all come from one area are never merged (RF-250) |
 | `mergedFrom[]` | list | card ids merged by consolidation (RF-250), the kept card's own id first, the union over a chain of merges; the card keeps the id, area and task of its first member and every claim of all members (claim ids renumbered `<id>.c<n>`, status and verdict kept) |
+| `note` | string | left out unless set; `written without reading the area` on every card of a task whose agent gave its answer without reading any file of its area (RF-206) |
 
 A rejected or invalid claim is never removed; only its status and verdict change (RF-302). The card files, the index
 and `spec.md` are written together: each file's previous content is read first, and when a write is refused or fails
@@ -368,7 +369,7 @@ results file is refused with RST-1309.
   is listed with its status, rejected ones included. The run summary of a re-run with answers (RF-241) adds `## New cards` and `## Changed cards` after the areas, each only when it has cards: a card is new when the earlier run that raised an answered question has no card of the same area, type and title, and changed when it has one whose claim texts differ. A last section, `## Areas without cards`, names every area whose
   reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
 - `coverage.json`: `{ schemaVersion: 1, areas }` where each area is
-  `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare, failure? }`, where `failure`
+  `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare, failure?, note? }`, where `note` (RF-206, RF-243) is present only for an area worth a remark: `not read` (its agent answered without reading any file of the area), `no readable file in the area (only binary or ignored files)`, `no application logic` (every file of the area is third-party code, so it writes no open question), the reasons joined by `; `, and `failure`
   (RF-208) is present only for an area whose task gave no usable card, in a few words with the code (`invalid output
   (RST-1300)`); feeds the web UI
   coverage map (RF-1005) and the report. Areas keep the order of the run and list only tasks that ended; `files` is
@@ -383,7 +384,7 @@ results file is refused with RST-1309.
   wrote; the key is absent from coverage written before flows and screens existed.
 - `coverage.md` is its readable form (RF-230): a `## Run summary` table with, per area and for all areas, the files
   read of the files listed and the percentage of area tokens read, then one `## Area: <name>` table per area with each
-  file and its read lines or `not read`. When an area failed (RF-208) a `## Failed areas` list follows the run summary.
+  file and its read lines or `not read`. When an area failed (RF-208) a `## Failed areas` list follows the run summary, and when an area has a `note` a `## Notes` list follows that.
   A `## Flows and screens` section follows it, one line per area: `<n> flow card(s); <n> screen card(s)`, or `no flows
   found` / `no screens found` for an area the code map did not mark for them, so the absence reads as a finding and
   not as a gap (RF-261).
@@ -593,7 +594,7 @@ The heading carries the card id and the run, so a later run matches answers by c
 existing answer is never overwritten. `RunUnderstand` adds the `OQ` cards of the run when it ends (stopped runs
 included): a question whose heading text is already in the file is skipped, new sections are appended after the
 existing ones, the question and context are one line each and masked, and the context is the card's first citation
-followed by its first claim (P1-33, DEC-98).
+followed by its first claim (P1-33, DEC-98). The same question asked by several areas (equal ignoring case and punctuation) is added once, under the first card's id and wording, and its context ends with `(also cited: ...)` listing the citations of the other cards (RF-243); the new sections are ordered by area, the area whose questions have most dependants first, and inside an area the question with most dependants first, where a question's dependants are the cards that are not open questions and cite a file one of its cards cites. A question asking what the code, an area or the application does never reaches a card (it is refused at parsing, RF-243), and an area of third-party code writes none.
 
 A run started with the answers option (RF-241, P2-05) reads the sections whose answer line has text and whose `- Card:` line is exactly `runs/<run folder>/cards/OQ/<card id>.md` for that section's own heading; any other card line (another card, a path out of a run folder) names no run and the section is ignored.
 

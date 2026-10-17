@@ -133,6 +133,11 @@ describe('an area of third-party code', UNDERSTAND_TIMEOUT, () => {
     ]);
     const warning = h.logger.entries.find((entry) => entry.message.includes('third-party'));
     expect(warning).toMatchObject({ level: 'warn' });
+    const spec = await readFile(join(folder, 'spec.md'), 'utf8');
+    expect(spec).not.toContain('Areas without cards');
+    expect(h.logger.entries.some((entry) => entry.message.includes('ended with no card'))).toBe(
+      false,
+    );
   });
 
   it('RF-243 an area of own code keeps its questions', async () => {

@@ -17,6 +17,7 @@ function cardSection(card: Card, source: PermalinkSource, esc: MarkdownEscaper):
     '',
     `Confidence: ${card.confidence}`,
     '',
+    ...(card.note === undefined ? [] : [`Note: ${esc.inline(card.note)}`, '']),
   ];
   for (const claim of card.claims) {
     const evidence = claim.citations.map((citation) => citationLink(citation, source)).join(', ');

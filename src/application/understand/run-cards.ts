@@ -17,6 +17,13 @@ export interface TaskEnd {
   readonly drafts: readonly CardDraft[];
   /** The task ended `Done` without a card: suspicious, so the area is named (P1-33). */
   readonly withoutCards: boolean;
+  /** RF-206: a note for every card of the task. */
+  readonly note?: string;
+}
+
+function taskCardsOf(task: ReaderTask, end: TaskEnd): TaskCards {
+  const base = { agentTaskId: task.agentTaskId, area: task.area.name, drafts: end.drafts };
+  return end.note === undefined ? base : { ...base, note: end.note };
 }
 
 /** What a resumed run keeps of the tasks that finished before (RF-006). */
@@ -49,9 +56,7 @@ export class RunCards {
   checked(codeMap: Pick<CodeMap, 'files'>, at: string): CheckedCards {
     const done: TaskCards[] = this.tasks.flatMap((task) => {
       const end = this.ended.get(task.agentTaskId);
-      return end === undefined
-        ? []
-        : [{ agentTaskId: task.agentTaskId, area: task.area.name, drafts: end.drafts }];
+      return end === undefined ? [] : [taskCardsOf(task, end)];
     });
     const cards = assignCardIds(done, this.kept.cards);
     if (!cards.ok) throw new RosettaError(ERROR_CODES.cardOutputInvalid, cards.error);

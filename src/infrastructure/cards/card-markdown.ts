@@ -46,6 +46,7 @@ function headerOf(card: Card): Record<string, unknown> {
     mergedFrom: card.mergedFrom,
     mergedAreas: card.mergedAreas,
     ...detailHeader(card),
+    note: card.note,
   };
 }
 
@@ -94,6 +95,7 @@ function bodyOf(card: Card, source: PermalinkSource, esc: MarkdownEscaper): stri
     '',
     `Type: ${card.type} | Area: ${esc.inline(card.area)} | Confidence: ${card.confidence}`,
     '',
+    ...(card.note === undefined ? [] : [`Note: ${esc.inline(card.note)}`, '']),
     ...questionBody(card, esc),
     ...detailBody(card, source, esc),
     '## Claims',

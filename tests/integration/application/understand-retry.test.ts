@@ -165,11 +165,11 @@ describe('an area too large for the context is split in two', UNDERSTAND_TIMEOUT
     const index = indexSchema.parse(await readJson(join(h.runFolder(run), 'cards', 'index.json')));
     expect(index.cards.map((card) => card.title).sort()).toEqual(['Code behind', 'Page layout']);
     const requests = h.providers.requests();
-    expect(requests).toHaveLength(3);
+    expect(requests).toHaveLength(5);
     const area = (index: number): string => requests[index]?.messages[0]?.content ?? '';
     expect(area(1)).toContain('Catalog/Details.aspx');
     expect(area(1)).not.toContain('Catalog/Details.aspx.cs');
-    expect(area(2)).toContain('Catalog/Details.aspx.cs');
+    expect(area(3)).toContain('Catalog/Details.aspx.cs');
     const transcripts = await readdir(join(h.runFolder(run), 'transcripts'));
     expect(readerTranscripts(transcripts)).toEqual([
       'reader-001-retry-1.jsonl',

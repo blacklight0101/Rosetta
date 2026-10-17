@@ -33,9 +33,9 @@ describe('an understand run: cost and prompts', () => {
       ],
       byAgentTask: [
         { agentTaskId: 'reader-001', calls: 2 },
-        { agentTaskId: 'reader-002', calls: 1 },
-        { agentTaskId: 'reader-003', calls: 1 },
-        { agentTaskId: 'reader-004', calls: 1 },
+        { agentTaskId: 'reader-002', calls: 2 },
+        { agentTaskId: 'reader-003', calls: 2 },
+        { agentTaskId: 'reader-004', calls: 2 },
         { agentTaskId: 'reader-005', calls: 3 },
         { agentTaskId: 'verifier-BR-001.c1', calls: 1 },
         { agentTaskId: 'verifier-BR-002.c1', calls: 1 },
@@ -80,12 +80,12 @@ describe('an understand run: events', () => {
     const count = (type: string): number => events.filter((event) => event.type === type).length;
     expect(
       ['agent.planned', 'agent.started', 'agent.turn', 'agent.tool.called'].map(count),
-    ).toEqual([5, 5, 8, 3]);
+    ).toEqual([5, 5, 11, 6]);
     expect(
       ['agent.tool.result', 'agent.card.proposed', 'verify.citation.checked', 'agent.ended'].map(
         count,
       ),
-    ).toEqual([3, 5, 7, 5]);
+    ).toEqual([6, 5, 7, 5]);
     expect(events.find((event) => event.type === 'agent.tool.called')?.data).toEqual({
       turn: 1,
       tool: 'read_file',
