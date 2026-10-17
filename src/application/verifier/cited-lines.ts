@@ -34,6 +34,15 @@ export interface CitedExcerpt {
   readonly lines: readonly string[];
 }
 
+/**
+ * ADR-013 (defence in depth): `1 <= start <= end`, whole numbers. The citation check refuses any
+ * other range first; the margin must never turn a reversed or negative range into lines read.
+ */
+function isLineRange({ startLine, endLine }: Citation): boolean {
+  const whole = Number.isInteger(startLine) && Number.isInteger(endLine);
+  return whole && startLine >= 1 && startLine <= endLine;
+}
+
 /** The range read for a citation: the cited lines and the margin, never before line 1. */
 function withMargin(citation: Citation): Citation {
   return {
@@ -62,6 +71,13 @@ export async function readCitedLines(
   citations: readonly Citation[],
   limits: EvidenceLimits,
 ): Promise<Result<readonly CitedExcerpt[], string>> {
+  const bad = citations.find((each) => !isLineRange(each));
+  if (bad !== undefined) {
+    const { path, startLine, endLine } = bad;
+    return err(
+      `The cited range ${path}:${String(startLine)}-${String(endLine)} is not a range of lines.`,
+    );
+  }
   const ranges = citations.map(withMargin);
   const lines = lineCount(ranges);
   if (lines > limits.maxLines) return err(tooLarge('lines', lines, limits.maxLines));

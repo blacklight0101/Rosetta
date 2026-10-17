@@ -34,8 +34,14 @@ const problems = {
   verdict: 'the second line must be "Verdict: Supported" or "Verdict: Rejected".',
 } as const;
 
-function statusOf(word: string): JudgedStatus {
-  return word.toLowerCase() === 'supported' ? 'Supported' : 'Rejected';
+/**
+ * The status a verdict word names, compared in plain ASCII: the regular expression folds Unicode
+ * case (`ſupported` matches), so a word that is not exactly one of the two is no verdict.
+ */
+function statusOf(word: string): JudgedStatus | undefined {
+  const lower = word.toLowerCase();
+  if (lower === 'supported') return 'Supported';
+  return lower === 'rejected' ? 'Rejected' : undefined;
 }
 
 /** The two lines as a verdict, or what is wrong with them. */
@@ -45,8 +51,9 @@ function verdictOf(first: string, second: string): Result<Verdict, string> {
   if (reason === undefined || controlCharacter.test(reason)) return err(problems.reason);
   if (reason.length > MAX_REASON_CHARS) return err(problems.long);
   const word = verdictLine.exec(second)?.[1];
-  if (word === undefined) return err(problems.verdict);
-  return ok({ status: statusOf(word), reason });
+  const status = word === undefined ? undefined : statusOf(word);
+  if (status === undefined) return err(problems.verdict);
+  return ok({ status, reason });
 }
 
 /** The verdict of an answer, or the problem the retry names (RF-301). */
