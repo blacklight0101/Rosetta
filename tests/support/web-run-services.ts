@@ -12,6 +12,8 @@ import { ReadRunFile } from '../../src/application/use-cases/read-run-file.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetCallTranscript } from '../../src/application/use-cases/get-call-transcript.js';
 import { GetRun } from '../../src/application/use-cases/get-run.js';
+import { CountAnsweredQuestions } from '../../src/application/use-cases/count-answered-questions.js';
+import type { PriorCards } from '../../src/application/ports/prior-cards.js';
 import { ListAnswers } from '../../src/application/use-cases/list-answers.js';
 import { ListRunCalls } from '../../src/application/use-cases/list-run-calls.js';
 import { ListRunLogs } from '../../src/application/use-cases/list-run-logs.js';
@@ -126,6 +128,7 @@ export function runServices(
     readonly projects: MemoryProjectRepository;
     readonly keys: MemoryProviderKeyRepository;
     readonly answers: AnswersFile;
+    readonly priorCards: PriorCards;
     readonly calls: RunCallReader;
     readonly logs: ApplicationLogReader;
     readonly clock: Clock;
@@ -133,7 +136,7 @@ export function runServices(
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
-  const { projects, keys, answers, calls, logs, clock } = stores;
+  const { projects, keys, answers, priorCards, calls, logs, clock } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     subscribeRunEvents: runs.subscribe,
@@ -153,8 +156,9 @@ export function runServices(
       scans: new FixedScans(catalogAreas),
       logger: new RecordingLogger(),
     }),
-    listAnswers: new ListAnswers({ runs: runs.runs, answers }),
-    recordAnswers: new RecordAnswers({ runs: runs.runs, answers }),
+    listAnswers: new ListAnswers({ runs: runs.runs, answers, cards: priorCards }),
+    recordAnswers: new RecordAnswers({ runs: runs.runs, answers, cards: priorCards }),
+    countAnswered: new CountAnsweredQuestions({ projects, answers, cards: priorCards }),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, submit: runs.submit }),
     // RF-425: every project's scan has the same fixed code map (Catalog and Orders).

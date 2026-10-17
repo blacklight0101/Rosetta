@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-241, RF-250, RF-243: the three areas of understand-questions.json ask one question, then (calls 7 to 13) a re-run with the answer: Catalog changes its FEAT and answers an ENT, Controllers answers the same ENT title, Services repeats its BR, and the summariser merges the two ENT cards. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 5,
+                  "endLine": 8
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FEAT\",\n      \"title\": \"Item details page\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page shows an item name.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The page sets the name label.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Catalog users\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page is a public page.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The details page is a public page.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:3-3\"\n          ]\n        }\n      ],\n      \"question\": \"Who uses the catalog pages?\",\n      \"whyItMatters\": \"Decides who the pages are written for.\"\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"What the area does\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The area has pages.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The area has pages.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:1-4\"\n          ]\n        }\n      ],\n      \"question\": \"What does this area do?\",\n      \"whyItMatters\": \"Without it the area is unclear.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FEAT\",\n      \"title\": \"Item details page\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page shows an item name.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The page sets the name label.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Catalog users\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page is a public page.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The details page is a public page.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:3-3\"\n          ]\n        }\n      ],\n      \"question\": \"Who uses the catalog pages?\",\n      \"whyItMatters\": \"Decides who the pages are written for.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Controllers/CatalogController.cs",
+                  "startLine": 1,
+                  "endLine": 12
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Controller users\",\n      \"area\": \"Controllers\",\n      \"summary\": \"The controller returns catalog items.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The controller returns catalog items.\",\n          \"citations\": [\n            \"Controllers/CatalogController.cs:1-12\"\n          ]\n        }\n      ],\n      \"question\": \"who uses the catalog pages\",\n      \"whyItMatters\": \"Decides who the pages are written for.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Services/CatalogService.cs",
+                  "startLine": 1,
+                  "endLine": 18
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Stock goes down\",\n      \"area\": \"Services\",\n      \"summary\": \"The service lowers the stock.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"Stock is lowered by one.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:5-12\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Service users\",\n      \"area\": \"Services\",\n      \"summary\": \"The service is called by pages.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The service is called by pages.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:1-4\"\n          ]\n        }\n      ],\n      \"question\": \"Who uses the catalog pages?\",\n      \"whyItMatters\": \"Decides who the pages are written for.\"\n    },\n    {\n      \"type\": \"OQ\",\n      \"title\": \"Catalog size\",\n      \"area\": \"Services\",\n      \"summary\": \"Items are listed without paging.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"Items are listed without paging.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:13-18\"\n          ]\n        }\n      ],\n      \"question\": \"How many catalog items are there in production?\",\n      \"whyItMatters\": \"Decides whether paging is needed.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 5,
+                  "endLine": 8
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"FEAT\",\n      \"title\": \"Item details page\",\n      \"area\": \"Catalog\",\n      \"summary\": \"The details page shows an item name.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The page sets the name label to the text Item, as the owner described for the public catalog pages.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Catalog item\",\n      \"area\": \"Catalog\",\n      \"summary\": \"A catalog item is what the details page shows.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The details page shows one catalog item.\",\n          \"citations\": [\n            \"Catalog/Details.aspx.cs:5-8\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-9",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Controllers/CatalogController.cs",
+                  "startLine": 1,
+                  "endLine": 12
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-10",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"ENT\",\n      \"title\": \"Catalog item\",\n      \"area\": \"Controllers\",\n      \"summary\": \"The controller returns catalog items.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The controller returns catalog items.\",\n          \"citations\": [\n            \"Controllers/CatalogController.cs:1-12\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-11",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Services/CatalogService.cs",
+                  "startLine": 1,
+                  "endLine": 18
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-12",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Stock goes down\",\n      \"area\": \"Services\",\n      \"summary\": \"The service lowers the stock.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"Stock is lowered by one.\",\n          \"citations\": [\n            \"Services/CatalogService.cs:5-12\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-13",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"merges\": [\n    {\n      \"ids\": [\n        \"ENT-001\",\n        \"ENT-002\"\n      ],\n      \"title\": \"Catalog item\",\n      \"summary\": \"A catalog item is what the details page shows and the controller returns.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 30,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-14",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

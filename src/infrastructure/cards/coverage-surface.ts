@@ -5,14 +5,15 @@ import type { MarkdownEscaper } from './markdown-text.js';
 // the code map found no entry point (or no page) in says "no flows found" (or "no screens found"),
 // so the absence is a finding and not a gap; an area marked for them that wrote none says 0.
 
-function cards(count: number, noun: string): string {
-  return `${String(count)} ${noun} card${count === 1 ? '' : 's'}`;
+function cards(count: number, noun: string, incomplete = 0): string {
+  const plural = `${String(count)} ${noun} card${count === 1 ? '' : 's'}`;
+  return incomplete === 0 ? plural : `${plural} (${String(incomplete)} incomplete)`;
 }
 
 function surfaceText(surface: SurfaceCoverage): string {
   const flows =
     surface.flowsMarked || surface.flowCards > 0
-      ? cards(surface.flowCards, 'flow')
+      ? cards(surface.flowCards, 'flow', surface.incompleteFlows)
       : 'no flows found';
   const screens =
     surface.screensMarked || surface.screenCards > 0

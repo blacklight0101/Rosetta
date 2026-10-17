@@ -20,6 +20,7 @@ const headerSchema = z.object({
   area: z.string(),
   claims: z.array(z.object({ text: z.string() })),
   questionState: z.enum(['Open', 'Answered']).optional(),
+  question: z.string().optional(),
 });
 
 const HEADER_END = '\n---\n';
@@ -46,9 +47,10 @@ function headerOf(text: string): PriorCard | undefined {
   }
   const header = headerSchema.safeParse(data);
   if (!header.success) return undefined;
-  const { claims, questionState, ...rest } = header.data;
+  const { claims, questionState, question, ...rest } = header.data;
   const state = questionState === undefined ? {} : { questionState };
-  return { ...rest, ...state, claims: claims.map((claim) => claim.text) };
+  const asked = question === undefined ? {} : { question };
+  return { ...rest, ...state, ...asked, claims: claims.map((claim) => claim.text) };
 }
 
 /** The text with the state of the card changed, or undefined when it is not an open question. */

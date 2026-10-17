@@ -44,6 +44,7 @@
     "tests/e2e/run-replay.spec.ts",
     "tests/e2e/settings-keys.spec.ts",
     "tests/e2e/start-run-areas.spec.ts",
+    "tests/e2e/start-run-answers.spec.ts",
     "tests/e2e/start-run-confirm.spec.ts",
     "tests/e2e/start-run-limits.spec.ts",
     "tests/e2e/start-run.spec.ts",

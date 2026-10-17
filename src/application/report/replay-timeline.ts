@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { formatUsd, microUsd } from '../../domain/budget/money.js';
 import type { RunEvent } from '../../domain/runs/run-event.js';
+import { mergedStep, withMergedClaimIds } from './claim-id-moves.js';
 import type { ReplayAgent, ReplayKind, ReplayModel, ReplayStep } from './replay-model.js';
 
 // RF-506, data-model.md section 3.9: the steps, agents and running cost of a run, built from its
@@ -172,6 +173,7 @@ const closingHandlers: Readonly<Record<string, Handler>> = {
       text: `${v.scope}: spent ${dollars(v.spentMicros)} of ${dollars(v.capMicros)}`,
     }),
   ),
+  'cards.merged': mergedStep,
   'question.answered': reading(z.object({ cardId: text }), (v) => ({
     kind: 'question',
     label: 'Question answered',
@@ -265,7 +267,8 @@ function agentsOf(events: readonly RunEvent[]): readonly ReplayAgent[] {
 }
 
 // RF-506
-export function buildReplay(runKey: string, events: readonly RunEvent[]): ReplayModel {
+export function buildReplay(runKey: string, recorded: readonly RunEvent[]): ReplayModel {
+  const events = withMergedClaimIds(recorded);
   const first = events[0]?.at ?? '';
   const steps: ReplayStep[] = [];
   let tokens = 0;

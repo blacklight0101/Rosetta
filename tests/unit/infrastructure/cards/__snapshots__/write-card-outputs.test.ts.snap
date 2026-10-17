@@ -252,5 +252,9 @@ Confidence: High
 Confidence: High
 
 - BR-002.c1 [Proposed] Checkout creates an order from the basket. ([src/Orders/Checkout.cs:10-24](https://github.com/octo/demo/blob/3f786850e387550fdab836ed7e6dc881de23001b/src/Orders/Checkout.cs#L10-L24))
+
+## Data model
+
+The legacy data model is in [data-model.md](data-model.md) (1 entity).
 "
 `;

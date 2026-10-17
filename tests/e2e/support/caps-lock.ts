@@ -41,11 +41,12 @@ export async function removeStaleCapsLocks(
 
 /**
  * The lock of this run: keyed by the run key that global-setup.ts sets, so a run killed while it
- * held the lock leaves a folder that no later run looks at (P1-150).
+ * held the lock leaves a folder that no later run looks at (P1-150). `root` is the folder the lock
+ * lives in: the shared temp folder by default, a private one for a test that must not share it.
  */
-export function capsLockFolder(): string {
+export function capsLockFolder(root: string = tmpdir()): string {
   const run = process.env['ROSETTA_E2E_RUN_KEY'] ?? 'unkeyed';
-  return join(tmpdir(), `${CAPS_LOCK_PREFIX}${String(e2ePort())}-${run}`);
+  return join(root, `${CAPS_LOCK_PREFIX}${String(e2ePort())}-${run}`);
 }
 
 const POLL_MS = 100;

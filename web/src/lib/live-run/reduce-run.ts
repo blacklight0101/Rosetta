@@ -9,7 +9,12 @@ import {
   onTurn,
   onUsage,
 } from './agent-events.js';
-import { onCitationChecked, onClaimJudged, onClaimsProposed } from './claim-events.js';
+import {
+  onCardsMerged,
+  onCitationChecked,
+  onClaimJudged,
+  onClaimsProposed,
+} from './claim-events.js';
 import { logText } from './log-text.js';
 import type { RunState } from './run-state.js';
 import { onRunEnded, onRunStarted, onScanCompleted, onSourceResolved } from './run-level-events.js';
@@ -39,6 +44,8 @@ const handlers: Readonly<Record<string, Handler>> = {
   'agent.card.proposed': (state, event) => onClaimsProposed(onCardProposed(state, event), event),
   'verify.citation.checked': onCitationChecked,
   'verify.claim.judged': onClaimJudged,
+  // RF-250: the merge renumbered claims; their rows follow.
+  'cards.merged': onCardsMerged,
   // RF-1014: the judgement step's start and end; the claims wait for it only in between (or before).
   'verify.judgement.started': (state) => ({ ...state, judgement: 'running' }),
   'verify.judgement.ended': (state) => ({ ...state, judgement: 'ended' }),
