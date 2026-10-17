@@ -113,7 +113,8 @@ src/
     diagrams/           Mermaid text generated from verified cards (DEC-134, RF-508): the one label escaping
                         function (`mermaidLabel`), the FLOW sequence diagram (`flowSequenceDiagram`, RF-260),
                         the SCRN screen map (`screenMapDiagram`, RF-261) and the ER diagram of the data model
-                        (`entityDiagram`, RF-262); ids generated, never taken from the code
+                        (`entityDiagram`, RF-262) with its model built from the ENT cards (`entityModelOf`: entities only, no
+                        relation or cardinality is invented, P2-22); ids generated, never taken from the code
     errors/             domain error codes and Result type
   application/
     ports/              port interfaces (section 7)
@@ -160,7 +161,7 @@ src/
                         public-host-check (node:dns lookup with a time limit), public-address-agent (the HTTPS
                         agent that checks every connect again), token generator
     scan/               universal/, packs/csharp/, codemap/ (build the code map, `codemap.json` writer and schema, `scan-summary.md`)
-    cards/              the card writers: `cards/<TYPE>/<ID>.md` (YAML header, generated body), `cards/index.json`, `spec.md`, the raw output of an `InvalidOutput` task; every citation a GitHub permalink, everything masked
+    cards/              the card writers: `cards/<TYPE>/<ID>.md` (YAML header, generated body), `cards/index.json`, `spec.md` (with the flows, screens and data-model sections, P2-22), `data-model.md` when the run has `ENT` cards, the raw output of an `InvalidOutput` task; every citation a GitHub permalink, everything masked
     writers/            markdown/, json/, html-report/, handoff/, zip/
     config/             environment schema (RF-1305), project settings schema
     prompts/            prompt files read with their version and SHA-256 (`loadReaderPrompts`, RNF-004)
@@ -337,7 +338,7 @@ Use cases never print; they publish run events through the `RunEventSink` port.
 | `CostLedger` | `reserve` a call's worst case against the caps that apply to it (the sums of settled rows and live reservations per run, user day on server keys, user day on own keys, server month, read and checked in the same transaction that inserts the reservation, under the advisory locks of the user and, for server keys, the server; a refusal names the cap), `settle` (insert the call's one ledger row and delete its reservation in one transaction), `release` (a call that was never sent), `runEntries` (a run's rows for its owner, in call order) and `purgeExpired` for the hourly job (RF-428, RF-1106, DEC-112) | `PgCostLedger`, `MemoryCostLedger` |
 | `ScanResults` | the output of a completed scan run for a later stage: its code map (hash checked against the scan manifest, `RST-1202`), the hash, a read-only `RepositoryReader` over its snapshot with the scan's ignore rules and lifted deny patterns, and the resolved source; a missing code map or snapshot is `RST-1203` (P1-33) | `FileScanResults` |
 | `TaskResults` | `task-results.json` of an understand run: per ended reader task its cards (with ids, claim statuses and verdicts) and coverage, read back by a resume (RF-006, data-model.md section 3.7a) | `FileTaskResults` |
-| `CardOutputs` | the cards of a run so far: `cards/<TYPE>/<ID>.md`, `cards/index.json` and `spec.md` (which names the areas whose task ended without a card), `coverage.json` and `coverage.md` (RF-230), and the raw answers of an `InvalidOutput` task; writes are serialised per run folder (P1-33, RF-203) | `FileCardOutputs` |
+| `CardOutputs` | the cards of a run so far: `cards/<TYPE>/<ID>.md`, `cards/index.json`, `spec.md` and `data-model.md` (RF-262, RF-263; `spec.md` also names the areas whose task ended without a card), `coverage.json` and `coverage.md` (RF-230), and the raw answers of an `InvalidOutput` task; writes are serialised per run folder (P1-33, RF-203) | `FileCardOutputs` |
 | `PriorCards` | the cards of an earlier run of the project read back from their files (area, claims, question state), and the one edit a re-run with answers makes to them: an open `OQ` card becomes `Answered` (RF-241) | `FilePriorCards` |
 | `AnswersFile` | adds open questions to the project's `answers.md`, one section each with an empty answer, keeping every section already there (DEC-98, RF-240); lists the questions one run added and records answers to them, changing only their answer lines (RF-1007); lists the questions that have an answer, of every run whose card line is a plain run folder and its own card (RF-241); one adapter instance serves the understand run and the answer routes, so writes to one file queue | `FileAnswersFile` |
 | `CostReportWriter` | write a run's cost report as `cost.json` and `cost.md`, masked, in the run folder (RF-426, data-model.md section 3.12) | `FileCostReportWriter` |

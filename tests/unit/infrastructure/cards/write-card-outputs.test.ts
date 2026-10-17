@@ -16,6 +16,7 @@ describe('writeCardOutputs files', () => {
       'cards/FEAT/FEAT-003.md',
       'cards/OQ/OQ-001.md',
       'cards/index.json',
+      'data-model.md',
       'spec.md',
     ]);
   });

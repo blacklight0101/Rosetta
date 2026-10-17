@@ -67,6 +67,7 @@ Folder names come from ids, never from request text.
           cards/<TYPE>/<CARD-ID>.md, cards/index.json
           invalid-output/<agentTaskId>.txt  raw answers of a task that ended InvalidOutput (3.7)
           spec.md
+          data-model.md               legacy data model of the ENT cards, only when the run has one (3.8)
           coverage.json, coverage.md
           transcripts/<agentTaskId>.jsonl
           report/                     static report (RF-500..RF-506)
@@ -364,12 +365,13 @@ or `InvalidOutput` and this file holds its result for the same area; any other t
 runs again. New cards are numbered after the kept ones, so an id once given never moves. A file that is not a version 1
 results file is refused with RST-1309.
 
-### 3.8 `spec.md`, `coverage.json`, `coverage.md`
+### 3.8 `spec.md`, `data-model.md`, `coverage.json`, `coverage.md`
 
 - `spec.md`: the cards per area as one readable specification with links to the card files and, for every citation, to the
   cited lines on GitHub (RF-204, RF-125). Areas and cards keep the order of the run (area and appearance order); every claim
   is listed with its status, rejected ones included. The run summary of a re-run with answers (RF-241) adds `## New cards` and `## Changed cards` after the areas, each only when it has cards: a card is new when the earlier run that raised an answered question has no card of the same area, type and title, and changed when it has one whose claim texts differ. A last section, `## Areas without cards`, names every area whose
-  reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33).
+  reader ended `Done` without a card (suspicious: the answer must say `{"cards": []}` explicitly), so it is seen (P1-33). After the areas, and only when the run has cards of the type, come `## Flows` (each `FLOW` card with its link, trigger, outcome, generated sequence diagram and its steps with their claim status), `## Screens` (the generated screen map first, which matches a leads-to route to the `SCRN` card with that route, then each `SCRN` card with its link, route, roles and links) and `## Data model` (a link to `data-model.md` with the number of entities) (RF-263, P2-22). Diagrams are made by `src/domain/diagrams/` from masked card text.
+- `data-model.md` (RF-262, P2-22): written with the cards when the run has at least one `ENT` card, never otherwise. `# Legacy data model`, the generated entity-relationship diagram, `## Entities` (each `ENT` card once, in card id order, with a link to its card file, summary, area, confidence, `Merged from:` when consolidation merged cards into it, and its claims as the fields, keys and relations the card states, each with status and citations, rejected ones included) and `## To confirm`. `ENT` cards hold claims, not structured fields or relations, so the diagram shows the entities only and the list says that relations are not recorded; a relation with an unknown cardinality is drawn dotted and listed there, never guessed.
 - `coverage.json`: `{ schemaVersion: 1, areas }` where each area is
   `{ area, files: [{ path, read: [{ startLine, endLine }] }], tokens, readTokens, readTokenShare, failure?, note? }`, where `note` (RF-206, RF-243) is present only for an area worth a remark: `not read` (its agent answered without reading any file of the area), `no readable file in the area (only binary or ignored files)`, `no application logic` (every file of the area is third-party code, so it writes no open question), the reasons joined by `; `, and `failure`
   (RF-208) is present only for an area whose task gave no usable card, in a few words with the code (`invalid output
