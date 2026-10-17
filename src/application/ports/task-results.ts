@@ -24,7 +24,7 @@ export interface TaskResult {
 }
 
 /** RF-250, P2-35: a card type the summariser answered about, with the ids of the cards it was shown. */
-export interface ConsolidatedType {
+interface ConsolidatedType {
   readonly type: CardType;
   readonly cardIds: readonly string[];
 }

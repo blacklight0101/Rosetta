@@ -16,6 +16,11 @@ import type { Project } from '../projects/project.js';
 import { priceOverridesOf } from '../projects/price-overrides.js';
 import { keyProviderOf } from '../providers/key-choice.js';
 import { planReaderTasks } from '../understand/reader-tasks.js';
+import {
+  MERGE_ANSWER_TOKENS,
+  MERGE_BATCH_TOKENS,
+  MERGE_PROMPT_TOKENS,
+} from '../consolidate/merge-request.js';
 import { assumptionsOf, ceilPercent } from './estimate-assumptions.js';
 import type {
   ByScenario,
@@ -103,21 +108,32 @@ function shareTokens(
 }
 
 /**
- * The summariser merges duplicates (a share of the readers' tokens, RF-250) and then reads the cards
- * once more to write the overview (RF-264): the same input again, and the overview as output.
+ * RF-250, RF-264, P2-35: the summariser's tokens. The merge is its share of the readers' tokens, and
+ * each batch of cards after the first resends the merge prompt and gives an answer; the overview
+ * then reads the cards once more (the same input again) and writes the overview. The cards the merge
+ * is shown are taken to be its share of the readers' answers, one call for each `MERGE_BATCH_TOKENS`.
+ * Only the merge writes to the cache: the extra batches and the overview add no cache-write tokens.
  */
-function summariserTokens(
+function summariserFigures(
   reader: ByScenario<TokenFigures>,
   assumptions: EstimateAssumptions,
-): ByScenario<TokenFigures> {
-  const merge = shareTokens(reader, assumptions.summariserSharePercent);
-  const total = (scenario: Scenario): TokenFigures => ({
-    inputTokens: merge[scenario].inputTokens * 2,
-    outputTokens: merge[scenario].outputTokens + assumptions.overviewOutputTokens[scenario],
-    // The overview call is a plain call (no cached prefix of its own): only the merge writes cache.
-    cacheWriteTokens: merge[scenario].cacheWriteTokens,
-  });
-  return { low: total('low'), likely: total('likely'), high: total('high') };
+): { tokens: ByScenario<TokenFigures>; batches: ByScenario<number> } {
+  const share = shareTokens(reader, assumptions.summariserSharePercent);
+  const batch = (scenario: Scenario): number =>
+    Math.max(1, Math.ceil(share[scenario].outputTokens / MERGE_BATCH_TOKENS));
+  const batches = { low: batch('low'), likely: batch('likely'), high: batch('high') };
+  const total = (scenario: Scenario): TokenFigures => {
+    const extra = batches[scenario] - 1;
+    return {
+      inputTokens: share[scenario].inputTokens * 2 + extra * MERGE_PROMPT_TOKENS,
+      outputTokens:
+        share[scenario].outputTokens +
+        extra * MERGE_ANSWER_TOKENS +
+        assumptions.overviewOutputTokens[scenario],
+      cacheWriteTokens: share[scenario].cacheWriteTokens,
+    };
+  };
+  return { tokens: { low: total('low'), likely: total('likely'), high: total('high') }, batches };
 }
 
 function sumPoints(points: readonly ByScenario<EstimatePoint>[]): ByScenario<EstimatePoint> {
@@ -150,6 +166,7 @@ export class EstimateRun {
     const assumptions = assumptionsOf(project.settings);
     const marks = new Map(areas.map((area) => [area.name, marksOf(area, codeMap)]));
     const reader = readerTokens(areas, assumptions, marks);
+    const summariser = summariserFigures(reader, assumptions);
     const roles = await Promise.all([
       this.roleOf(project, { role: 'reader', tokens: reader }),
       this.roleOf(project, {
@@ -158,7 +175,7 @@ export class EstimateRun {
       }),
       this.roleOf(project, {
         role: 'summariser',
-        tokens: summariserTokens(reader, assumptions),
+        tokens: summariser.tokens,
       }),
     ]);
     return ok({
@@ -173,7 +190,7 @@ export class EstimateRun {
         ...{ name, estimatedTokens, files: files.length },
         thirdParty: thirdParty.has(name),
       })),
-      assumptions,
+      assumptions: { ...assumptions, summariserBatches: summariser.batches },
       roles,
       total: sumPoints(roles.map((role) => role.points)),
     });

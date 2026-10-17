@@ -10,23 +10,25 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { runPath } from '../files/workspace-paths.js';
 import { maskDeep } from '../guards/mask-deep.js';
 import type { TextMasker } from '../guards/secret-masker.js';
+import { consolidationFile, parseConsolidation } from './consolidation-schema.js';
 import { parseTaskResults, taskResultsFile } from './task-results-schema.js';
 
-// RF-006, RF-141, RNF-002, data-model.md section 3.7a: `task-results.json` in the run folder, what
-// each ended reader task left, through the OutputWriter (inside the owner's workspace, replaced
-// atomically) and masked like every file Rosetta writes. A file that cannot be read as results is
-// an error (RST-1309), never guessed: a resume would otherwise trust cards it cannot see.
+// RF-006, RF-141, RNF-002, data-model.md sections 3.7a and 3.7b: `task-results.json` in the run
+// folder, what each ended reader task left, and `consolidation.json`, what the summariser step did
+// (P2-35), through the OutputWriter (inside the owner's workspace, replaced atomically) and masked
+// like every file Rosetta writes. A file that cannot be read is an error (RST-1309), never
+// guessed: a resume would otherwise trust cards it cannot see or pay for a merge twice.
 
 export interface FileTaskResultsOptions {
   readonly writer: OutputWriter;
   readonly masker: TextMasker;
 }
 
-function fileOf(scope: RunScope): WorkspaceFile {
-  return {
-    userId: scope.userId,
-    path: `${runPath(scope.projectId, scope.runKey)}/task-results.json`,
-  };
+const RESULTS_FILE = 'task-results.json';
+const CONSOLIDATION_FILE = 'consolidation.json';
+
+function fileOf(scope: RunScope, name: string): WorkspaceFile {
+  return { userId: scope.userId, path: `${runPath(scope.projectId, scope.runKey)}/${name}` };
 }
 
 function unreadable(detail: string, cause?: unknown): RosettaError {
@@ -54,7 +56,7 @@ export class FileTaskResults implements TaskResults {
 
   // RF-006
   async read(scope: RunScope): Promise<readonly TaskResult[]> {
-    const read = await this.options.writer.readText(fileOf(scope));
+    const read = await this.options.writer.readText(fileOf(scope, RESULTS_FILE));
     if (!read.ok) {
       if (read.error.reason === 'not-found') return [];
       throw unreadable(read.error.message);
@@ -68,16 +70,28 @@ export class FileTaskResults implements TaskResults {
   async write(scope: RunScope, results: readonly TaskResult[]): Promise<void> {
     const masked = maskDeep(taskResultsFile(results), this.options.masker);
     const text = `${JSON.stringify(masked, null, 2)}\n`;
-    const written = await this.options.writer.writeText(fileOf(scope), text);
+    const written = await this.options.writer.writeText(fileOf(scope, RESULTS_FILE), text);
     if (!written.ok) throw new RosettaError(written.error.code, written.error.message);
   }
 
-  // STUB (red commit): replaced in the next commit.
-  readConsolidation(): Promise<ConsolidationRecord> {
-    return Promise.resolve({ types: [], merges: [] });
+  // RF-006, RF-250
+  async readConsolidation(scope: RunScope): Promise<ConsolidationRecord> {
+    const read = await this.options.writer.readText(fileOf(scope, CONSOLIDATION_FILE));
+    if (!read.ok) {
+      if (read.error.reason === 'not-found') return { types: [], merges: [] };
+      throw unreadable(read.error.message);
+    }
+    const record = parseConsolidation(parseJson(read.value));
+    if (record === undefined) throw unreadable('the file is not a version 1 consolidation file');
+    return record;
   }
 
-  writeConsolidation(): Promise<void> {
-    return Promise.resolve();
+  // RF-006, RF-141, RF-250
+  async writeConsolidation(scope: RunScope, record: ConsolidationRecord): Promise<void> {
+    const masked = maskDeep(consolidationFile(record), this.options.masker);
+    const text = `${JSON.stringify(masked, null, 2)}
+`;
+    const written = await this.options.writer.writeText(fileOf(scope, CONSOLIDATION_FILE), text);
+    if (!written.ok) throw new RosettaError(written.error.code, written.error.message);
   }
 }

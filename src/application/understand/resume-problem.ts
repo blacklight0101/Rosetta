@@ -17,7 +17,7 @@ export interface ResumeProblemDependencies {
   readonly taskResults: TaskResults;
 }
 
-/** RST-1308: the code map is not the one the run read. RST-1309: its task results cannot be read. */
+/** RST-1308: the code map is not the one the run read. RST-1309: its task results or consolidation record cannot be read. */
 export type ResumeBlock =
   typeof ERROR_CODES.resumeSourceChanged | typeof ERROR_CODES.taskResultsUnreadable;
 
@@ -38,6 +38,8 @@ export function resumeProblemCheck(deps: ResumeProblemDependencies): ResumeProbl
     }
     try {
       await deps.taskResults.read(scopeOf(run));
+      // P2-35: the summariser step's record is read on resume too; one that cannot be is refused.
+      await deps.taskResults.readConsolidation(scopeOf(run));
     } catch (error) {
       if (error instanceof RosettaError && error.code === ERROR_CODES.taskResultsUnreadable) {
         return error.code;

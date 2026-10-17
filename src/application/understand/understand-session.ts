@@ -3,8 +3,6 @@ import type { Overview } from '../../domain/overview/overview.js';
 import type { ErrorCode } from '../../domain/errors/codes.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { PromptFile } from '../agent/prompt-file.js';
-import { consolidateCards } from '../consolidate/consolidate-cards.js';
-import { consolidationParts } from '../consolidate/consolidation-parts.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { CardOutputs, CardSource } from '../ports/card-outputs.js';
 import type { Clock } from '../ports/clock.js';
@@ -16,13 +14,14 @@ import { scopeOf } from '../runs/run-scope.js';
 import type { CheckedCards } from '../verifier/citation-check.js';
 import { awaitsJudgement } from '../verifier/awaits-judgement.js';
 import { leaveUnverified } from '../verifier/leave-unverified.js';
-import { announceCards, announceMerges } from './announce-cards.js';
+import { announceCards } from './announce-cards.js';
 import { areaFailureOf } from './area-failure.js';
 import { changesOf, markAnswered, type Rerun } from './answer-rerun.js';
 import { cardNoteOf, coverageNoteOf } from './area-notes.js';
 import { judgementPartsOf, runJudgementStep, type JudgementContext } from './claim-judgement.js';
 import { openQuestionsOf } from './open-questions.js';
 import { overviewStep } from './overview-step.js';
+import { consolidateStep } from './session-consolidation.js';
 import { recordTaskState, type ReaderTaskContext } from './reader-task.js';
 import type { ReaderTask } from './reader-tasks.js';
 import { readerParallelism } from './reader-settings.js';
@@ -174,19 +173,9 @@ export class UnderstandSession {
 
   /** RF-250: the duplicates of several areas become one card; the set is written again if any did. */
   private async consolidate(): Promise<void> {
-    const { deps, execution, source } = this.parts;
-    const runId = execution.run.runKey;
-    const parts = { ...this.parts, runId, signal: execution.signal };
-    const merged = await consolidateCards(consolidationParts(parts), this.latest.cards);
-    if (merged.merges.length === 0) return;
-    const kept = new Set(merged.cards.map((card) => card.id));
-    const mergedAway = this.latest.cards.filter((card) => !kept.has(card.id));
-    this.latest = { ...this.latest, cards: merged.cards };
-    const areasWithoutCards = this.cards.areasWithoutCards();
-    const changes = changesOf(this.parts.rerun, merged.cards);
-    const set = { cards: merged.cards, source, areasWithoutCards, mergedAway, ...changes };
-    await deps.cards.writeCards(scopeOf(execution.run), set);
-    await announceMerges(execution.events, merged);
+    const state = { cards: this.latest.cards, areasWithoutCards: this.cards.areasWithoutCards() };
+    const merged = await consolidateStep(this.parts, state);
+    if (merged !== undefined) this.latest = { ...this.latest, cards: merged };
   }
 
   /** RF-301, RF-302: the claims the citation check passed are judged, before any merge (RF-250). */

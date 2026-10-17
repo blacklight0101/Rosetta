@@ -37,7 +37,16 @@ export interface RoleEstimate {
 }
 
 /** The numbers every figure of the estimate rests on, stated with it (RF-425). */
-export interface EstimateAssumptions {
+export interface EstimateAssumptions extends ReaderAssumptions {
+  /**
+   * How many calls the summariser needs for the cards of the readers' answers, at most one per
+   * `summariserBatchTokens` of cards (P2-35); the figures of the summariser count each.
+   */
+  readonly summariserBatches: ByScenario<number>;
+}
+
+/** The assumptions the reader tasks and the summariser's share rest on (known from the settings). */
+export interface ReaderAssumptions {
   /** Reader turns per area, from the reader's `maxTurns` (DEC-117 range). */
   readonly turnsPerArea: ByScenario<number>;
   /** Output of each turn, as a share of the reader's `maxOutputTokens`. */
@@ -52,8 +61,6 @@ export interface EstimateAssumptions {
   readonly overviewOutputTokens: ByScenario<number>;
   /** The most tokens of cards one summariser call is shown; a larger card type goes in batches (P2-35). */
   readonly summariserBatchTokens: number;
-  /** How many calls the summariser's cards need for each type at most, from the readers' answers (P2-35). */
-  readonly summariserBatches: ByScenario<number>;
   /** The system prompt and tool definitions sent with every turn. */
   readonly promptOverheadTokens: number;
   /** Added to the prompt of every turn of an area for each of flows and screens it is marked for (Q-25). */
