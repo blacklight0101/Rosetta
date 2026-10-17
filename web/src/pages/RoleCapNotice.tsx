@@ -29,7 +29,7 @@ function lineOf(
 }
 
 /** One line for each role cap, cost then tokens, that is above the run cap as typed. */
-export function roleCapNotices(
+function roleCapNotices(
   roles: RoleCaps,
   runCost: string,
   runTokens: string,
