@@ -2,6 +2,7 @@ import type { ErrorCode, ErrorDescription } from './codes.js';
 import { ANTHROPIC_ERROR_DESCRIPTIONS, type AnthropicErrorCode } from './anthropic-descriptions.js';
 import { BUDGET_ERROR_DESCRIPTIONS, type BudgetErrorCode } from './budget-descriptions.js';
 import { FILE_ERROR_DESCRIPTIONS, type FileErrorCode } from './file-descriptions.js';
+import { PLAN_ERROR_DESCRIPTIONS, type PlanErrorCode } from './plan-descriptions.js';
 import { REPORT_ERROR_DESCRIPTIONS, type ReportErrorCode } from './report-descriptions.js';
 import { SCAN_ERROR_DESCRIPTIONS, type ScanErrorCode } from './scan-descriptions.js';
 import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descriptions.js';
@@ -20,7 +21,8 @@ type SplitOff =
   | BudgetErrorCode
   | ScanErrorCode
   | AnthropicErrorCode
-  | ReportErrorCode;
+  | ReportErrorCode
+  | PlanErrorCode;
 
 const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
   Record<Exclude<ErrorCode, SplitOff>, ErrorDescription>
@@ -250,6 +252,7 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   ...SCAN_ERROR_DESCRIPTIONS,
   ...BUDGET_ERROR_DESCRIPTIONS,
   ...REPORT_ERROR_DESCRIPTIONS,
+  ...PLAN_ERROR_DESCRIPTIONS,
   ...SERVER_ERROR_DESCRIPTIONS,
 };
 
