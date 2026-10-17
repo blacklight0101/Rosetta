@@ -65,3 +65,41 @@ describe('price table file', () => {
     expect(refusalOf(twice)).toBe(ERROR_CODES.priceTableInvalid);
   });
 });
+
+describe('price table file: cache-write prices (P2-16)', () => {
+  const anthropic = [
+    '  - provider: anthropic',
+    '    model: claude-test',
+    '    inputPerMillionMicros: 3000000',
+    '    outputPerMillionMicros: 15000000',
+    '    cachedInputPerMillionMicros: 300000',
+    '    cacheWriteInputPerMillionMicros: 3750000',
+  ].join('\n');
+
+  it('RF-420 reads a cache-write price as an integer', () => {
+    const [, price] = parsePriceTable(`${valid}\n${anthropic}`).prices;
+
+    expect(price).toEqual({
+      provider: 'anthropic',
+      model: 'claude-test',
+      inputPerMillionMicros: 3_000_000n,
+      outputPerMillionMicros: 15_000_000n,
+      cachedInputPerMillionMicros: 300_000n,
+      cacheWriteInputPerMillionMicros: 3_750_000n,
+      currency: 'USD',
+    });
+  });
+
+  it('RF-427 keeps an entry without a cache-write price without one, so the lookup can see it', () => {
+    const [price] = parsePriceTable(valid).prices;
+
+    expect(price !== undefined && 'cacheWriteInputPerMillionMicros' in price).toBe(false);
+  });
+
+  it.each([
+    ['a negative cache-write price', anthropic.replace('3750000', '-1')],
+    ['a fractional cache-write price', anthropic.replace('3750000', '3750000.5')],
+  ])('RF-420 refuses %s with RST-1602', (_name, entry) => {
+    expect(refusalOf(`${valid}\n${entry}`)).toBe(ERROR_CODES.priceTableInvalid);
+  });
+});

@@ -87,3 +87,51 @@ it('RF-002 refuses an amount too large to travel as a whole number of micro-doll
     'budget.run.maxCostMicros',
   ]);
 });
+
+const claudeOverride = {
+  provider: 'anthropic',
+  model: 'claude-test',
+  inputPerMillionMicros: 3_000_000,
+  outputPerMillionMicros: 15_000_000,
+  cachedInputPerMillionMicros: 300_000,
+};
+
+it('RF-420 shows a stored cache-write price in dollars and sends it back as micro-dollars', () => {
+  const base = stored();
+  const settings = {
+    ...base,
+    budget: {
+      ...base.budget,
+      prices: [{ ...claudeOverride, cacheWriteInputPerMillionMicros: 3_750_000 }],
+    },
+  };
+
+  const draft = draftOf(settings);
+
+  expect(draft.prices[0]?.cacheWrite).toBe('3.75');
+  expect(settingsOf(settings, draft)).toEqual({ ok: true, settings });
+});
+
+it('RF-427 an empty cache-write field leaves the price out, never a zero', () => {
+  const base = stored();
+  const settings = { ...base, budget: { ...base.budget, prices: [claudeOverride] } };
+
+  const draft = draftOf(settings);
+  const result = settingsOf(settings, draft);
+
+  expect(draft.prices[0]?.cacheWrite).toBe('');
+  expect(result.ok && JSON.stringify(result.settings)).not.toContain('cacheWrite');
+});
+
+it('RF-002 names a cache-write price that is not an amount', () => {
+  const base = stored();
+  const settings = { ...base, budget: { ...base.budget, prices: [claudeOverride] } };
+  const draft = draftOf(settings);
+  const prices = draft.prices.map((price) => ({ ...price, cacheWrite: 'lots' }));
+
+  const result = settingsOf(settings, { ...draft, prices });
+
+  expect(result.ok ? [] : result.problems.map((problem) => problem.field)).toEqual([
+    'budget.prices.0.cacheWriteInputPerMillionMicros',
+  ]);
+});

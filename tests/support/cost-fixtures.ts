@@ -52,6 +52,8 @@ export function costEntry(userId: string, overrides: Partial<LedgerEntry> = {}):
     outputTokens: 100,
     cachedInputTokens: 50,
     usageSource: 'reported',
+    cacheWriteInputTokens: 0,
+    cacheWriteCostMicros: 0n,
     costMicros: 700n,
     costKnown: true,
     currency: 'USD',

@@ -26,6 +26,7 @@ export interface PriceDraft {
   readonly input: string;
   readonly output: string;
   readonly cached: string;
+  readonly cacheWrite: string;
 }
 
 export interface SettingsDraft {
@@ -72,6 +73,7 @@ function priceDraft(price: PriceSettings): PriceDraft {
     input: dollarsOf(price.inputPerMillionMicros),
     output: dollarsOf(price.outputPerMillionMicros),
     cached: dollarsOf(price.cachedInputPerMillionMicros),
+    cacheWrite: '',
   };
 }
 

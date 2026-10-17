@@ -43,6 +43,8 @@ export function ledgerEntryFixture(change: Partial<LedgerEntry> = {}): LedgerEnt
     outputTokens: 20,
     cachedInputTokens: 10,
     usageSource: 'reported',
+    cacheWriteInputTokens: 0,
+    cacheWriteCostMicros: 0n,
     costMicros: 1_500n,
     costKnown: true,
     currency: 'USD',

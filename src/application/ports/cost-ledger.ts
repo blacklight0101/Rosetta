@@ -33,9 +33,11 @@ export interface LedgerEntry {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheWriteInputTokens: number;
   readonly usageSource: UsageSource;
   /** Fixed when the call is made, never recomputed. */
   readonly costMicros: bigint;
+  readonly cacheWriteCostMicros: bigint;
   /** False for a model without a price run with the user's own key (RF-427): its cost is unknown. */
   readonly costKnown: boolean;
   readonly currency: string;

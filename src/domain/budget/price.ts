@@ -1,4 +1,4 @@
-import { microUsd, type Money } from './money.js';
+import { microUsd, zeroUsd, type Money } from './money.js';
 import type { TokenUsage } from './token-usage.js';
 
 // RF-420, DEC-54, data-model.md section 3.18: the price of one model of one provider kind, per
@@ -13,6 +13,7 @@ export interface Price {
   readonly inputPerMillionMicros: bigint;
   readonly outputPerMillionMicros: bigint;
   readonly cachedInputPerMillionMicros: bigint;
+  readonly cacheWriteInputPerMillionMicros?: bigint;
   readonly currency: 'USD';
 }
 
@@ -56,4 +57,9 @@ export function worstCaseCost(price: Price, bound: CallBound): Money {
     BigInt(bound.promptTokens) * inputPrice +
     BigInt(bound.maxOutputTokens) * price.outputPerMillionMicros;
   return microUsd(ceilDivide(total, perMillion));
+}
+
+// RF-426: stub until P2-16 is built.
+export function cacheWriteCostOf(price: Price, usage: TokenUsage): Money {
+  return usage.inputTokens < 0 ? microUsd(price.inputPerMillionMicros) : zeroUsd();
 }

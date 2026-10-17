@@ -38,6 +38,15 @@ describe('shipped price table', () => {
     expect(lookup.kind === 'priced' && costOf(lookup.price, usage).micros).toBe(0n);
   });
 
+  it('RF-420 lists a cache-write price for every model (P2-16)', async () => {
+    const table = await loadPriceTable(shipped);
+
+    for (const price of table.prices) {
+      const expected = price.provider === 'ollama' ? 0n : price.inputPerMillionMicros;
+      expect([price.model, price.cacheWriteInputPerMillionMicros]).toEqual([price.model, expected]);
+    }
+  });
+
   it('RF-420 refuses a missing file with RST-1602', async () => {
     await expect(loadPriceTable(`${shipped}.missing`)).rejects.toMatchObject({ code: 'RST-1602' });
   });

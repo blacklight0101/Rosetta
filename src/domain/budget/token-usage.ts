@@ -6,6 +6,7 @@ export interface TokenUsage {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheWriteInputTokens?: number;
 }
 
 /** The tokens a call counts against a token cap: input (cached included) plus output (RF-422). */

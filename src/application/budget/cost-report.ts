@@ -12,8 +12,10 @@ interface CostFigures {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheWriteInputTokens?: number;
   readonly calls: number;
   readonly costMicros: number;
+  readonly cacheWriteCostMicros?: number;
 }
 
 interface CostTotals extends CostFigures {
