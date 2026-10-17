@@ -4,6 +4,7 @@ import type { CountAnsweredQuestions } from '../../application/use-cases/count-a
 import type { StatedQuestion } from '../../application/use-cases/question-states.js';
 import type { ListAnswers } from '../../application/use-cases/list-answers.js';
 import type { RecordAnswers } from '../../application/use-cases/record-answers.js';
+import type { ReopenQuestion } from '../../application/use-cases/reopen-question.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { signedInOf } from './request-actor.js';
@@ -17,6 +18,10 @@ import { signedInOf } from './request-actor.js';
 //   answer is one line in the file (line breaks become spaces) and an empty one clears it. A card
 //   id the run has no question for answers 404 and writes nothing; a body that breaks the limits
 //   below answers 400 (RST-2000).
+// - POST /api/runs/:runId/answers/:cardId/reopen opens an Answered question again, so an answer edited
+//   after that is used by the next re-run with answers (RF-241), and answers the run's questions as
+//   they are now. A question that is still Open changes nothing; a card id the run has no question
+//   for answers 404.
 // - GET /api/projects/:id/answered-questions answers `{ count }`: the questions with an answer
 //   whose card is still Open, which a re-run with answers would use (RF-241).
 // Another user's run or project id answers 404 like an unknown one, and nothing is written.
@@ -25,6 +30,7 @@ export interface AnswerServices {
   readonly listAnswers: ListAnswers;
   readonly countAnswered: CountAnsweredQuestions;
   readonly recordAnswers: RecordAnswers;
+  readonly reopenQuestion: ReopenQuestion;
 }
 
 /** The longest answer, in characters. */
@@ -75,9 +81,27 @@ function registerCountRoute(server: FastifyInstance, services: AnswerServices): 
   );
 }
 
+// RF-241, RF-1105
+function registerReopenRoute(server: FastifyInstance, services: AnswerServices): void {
+  server.post<{ Params: { runId: string; cardId: string } }>(
+    '/api/runs/:runId/answers/:cardId/reopen',
+    { config: { access: 'user' } },
+    async (request, reply) => {
+      const outcome = await services.reopenQuestion.execute({
+        actor: signedInOf(request).actor,
+        runId: request.params.runId,
+        cardId: request.params.cardId,
+      });
+      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
+      return reply.header('cache-control', 'no-store').send(questionsView(outcome.value));
+    },
+  );
+}
+
 // RF-1007, RF-1105
 export function registerAnswerRoutes(server: FastifyInstance, services: AnswerServices): void {
   registerCountRoute(server, services);
+  registerReopenRoute(server, services);
   server.get<{ Params: { runId: string } }>(
     '/api/runs/:runId/answers',
     { exposeHeadRoute: false, config: { access: 'user' } },

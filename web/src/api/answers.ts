@@ -62,3 +62,16 @@ export function saveAnswer(
     schema: questionsSchema,
   });
 }
+
+/** RF-241: opens an Answered question again, so an edited answer is used by the next re-run. */
+export function reopenQuestion(
+  client: ApiClient,
+  runId: string,
+  cardId: string,
+): Promise<ApiResult<readonly OpenQuestionRow[]>> {
+  return client.request({
+    method: 'POST',
+    path: `${pathOf(runId)}/${encodeURIComponent(cardId)}/reopen`,
+    schema: questionsSchema,
+  });
+}

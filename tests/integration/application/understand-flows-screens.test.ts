@@ -1,11 +1,10 @@
-import { mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Card } from '../../../src/domain/cards/card.js';
 import { parseTaskResults } from '../../../src/infrastructure/cards/task-results-schema.js';
 import { loadReaderPrompts } from '../../../src/infrastructure/prompts/prompt-files.js';
-import { UNDERSTAND_TIMEOUT, readJson } from '../../support/understand-full-run.js';
+import { readJson, useSharedValue } from '../../support/understand-full-run.js';
 import { createUnderstandHarness } from '../../support/understand-run-harness.js';
 
 // RF-260, RF-261, RF-263, Q-25, DEC-134, ADR-008: a recorded understand run over the WebForms shop
@@ -24,11 +23,7 @@ interface ShopRun {
 }
 
 // One run for the whole file: every test reads it and none changes it.
-const state: { dir?: string; shop?: ShopRun } = {};
-
-beforeAll(async () => {
-  const dir = await realpath(await mkdtemp(join(tmpdir(), 'rosetta-flows-screens-')));
-  state.dir = dir;
+const shop = useSharedValue('rosetta-flows-screens-', async (dir): Promise<ShopRun> => {
   const h = await createUnderstandHarness({
     dataDir: dir,
     recording: 'understand-flows-screens.json',
@@ -39,19 +34,10 @@ beforeAll(async () => {
   const run = await h.understand();
   const folder = h.runFolder(run);
   const stored = parseTaskResults(await readJson(join(folder, 'task-results.json')));
-  state.shop = { h, run, folder, cards: (stored ?? []).flatMap((task) => task.cards) };
-}, UNDERSTAND_TIMEOUT.timeout);
-
-afterAll(async () => {
-  if (state.dir !== undefined) {
-    await rm(state.dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-  }
+  return { h, run, folder, cards: (stored ?? []).flatMap((task) => task.cards) };
 });
 
-function shopRun(): ShopRun {
-  if (state.shop === undefined) throw new Error('The shop run is not ready');
-  return state.shop;
-}
+const shopRun = (): ShopRun => shop.current();
 
 const byTitle = (cards: readonly Card[], title: string): Card | undefined =>
   cards.find((card) => card.title === title);

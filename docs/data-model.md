@@ -438,6 +438,7 @@ Event types (canonical list):
 | `budget.capReached` | `{ scope, capMicros, spentMicros }` once per run, when a cap first refuses a call and stops the run (parallel calls refused by the same stop give one event); `scope` is the cap's kind (`run-cost`, `user-day`, `own-day`, `server-month`, `run-tokens`) and `spentMicros` what was spent or reserved against it; the run token cap gives `{ scope, capTokens, spentTokens }` instead. A role cap (`role-cost`, `role-tokens`, RF-423) stops only that role, so it adds `role` and is reported once per role and kind, without ending the once-per-run event of the cap that stops the run |
 | `cards.merged` | `{ cardId, from, claims }` (RF-250), one per card merge, published after the merged cards are written: `cardId` is the id the merged card keeps, `from` the ids of the cards merged and `claims` the `[{ from, to }]` claim ids the merge renumbered. Events before it name a claim by its old id; the run page and the replay follow `from` to `to` (a log without the event keeps the ids it recorded) |
 | `question.answered` | `{ cardId }` (RF-1007) |
+| `question.skipped` | `{ cardId, runKey, reason }` (RF-241), one per answered question a re-run with answers leaves out, published when the run plans its tasks: `cardId` and `runKey` name the question's card and the run that raised it, `reason` is `run-gone`, `card-gone`, `already-answered` or `area-not-in-code-map`; the run's log has a `warn` line for each as well |
 | `run.ended` | `{ endState, totals, errorCode?, failedAreas? }`; `errorCode` is the `RST` code of a `Failed` run; `failedAreas` (RF-208) is the number of areas of a `Completed` understand run whose task gave no usable card, left out when there are none. A run ends `Failed` only when every task failed (a provider failure), as before. It is the last event of a run until the run is resumed (RF-006), when the log goes on with another `run.started` and the numbers continue |
 
 New event types may be added without a version bump; a reader ignores types it does not know. Each line is masked before
@@ -658,13 +659,60 @@ input, cached input and cache-write prices (RF-422). Every price is a whole numb
 provider kind; a file that breaks this stops the server with `RST-1602`. A call priced with a project override
 (user's own key only, DEC-107) records the version `<version>+project`.
 
-### 3.19 Evaluation results: `eval-out/<date>-<id>/`
+### 3.19 Evaluation results: `eval-out/<id>/`
 
-Written by `npm run eval` (RNF-006, RNF-015, RF-305), inside the Rosetta repository's git-ignored `eval-out/`, never
+Written by `npm run eval` (RNF-006, RNF-012, RNF-015, RF-305), inside the Rosetta repository's git-ignored `eval-out/`, never
 in a user's project: `experiment.json` `{ schemaVersion, id, at, rosettaVersion, roles (with modelVersion and
 modelDigest), promptVersions (with sha256), goldenSetVersion, repetitions }` and `results.json` with per-case scores
 per repetition, precision, recall, the spread across repetitions, cost per supported claim, and, with the calibration
 set, the verifier's agreement rate.
+
+As built by P2-11 (schemas in `src/application/eval/evaluation-schema.ts`; the runner writes only what parses, masked,
+into a folder that must not exist yet, tried once more under a new id when it cannot be written, and printed by the
+command with `RST-1701` when that fails too; the folder name and `id` are `yyyyMMdd-HHmmss-eval`, the date and the id
+in one):
+
+- `experiment.json`: `schemaVersion` 1, `id`, `at` (ISO instant), `rosettaVersion`, `goldenSetVersion`,
+  `goldenSetSha256` (of the golden set file's bytes), `repetitions` (at least 3), `source { url, commit, subpath }`,
+  `areas` (the code-map areas that hold a golden path, the only areas run), `roles` (per role `{ provider, kind, model,
+  modelVersion, modelDigest, toolMode, maxOutputTokens, temperature, maxTurns }`, taken from the runs' manifests),
+  `promptVersions` (prompt file name to `{ version, sha256 }`: the manifests' prompts plus the verifier's) and
+  `settings` (`parallelism`, `runCapMicros`, `runMaxTokens`, `areaTokenBudget`, `maxFileBytes`,
+  `priceTableVersion`, `totalCapMicros`).
+- `results.json`: `schemaVersion` 1, `experimentId`, `goldenSetVersion`; `repetitions[]` with `repetition`, `runId`,
+  `endState`, `errorCode`, `modelVersions` (role to version), `costMicros` (`totals.costMicros` of the run's
+  `cost.json`), `supportedClaims`, `costPerSupportedClaimMicros`, `overall` and `cases[]` scores, `citationValidity
+  { checked, valid, rate, invalid[] }` and `estimate` (`measured` with `likelyMicros`, `actualMicros`, signed
+  `error` and `withinTarget` (within 30%, compared before the error is rounded), or `not-measured` with the reason
+  `unpriced`, `free` (estimate and cost both zero), `zero-estimate` (a priced estimate of zero for a run that cost
+  money) or `no-cost-report`); `summary` with the spread `{ n, min, max, mean, stdDev }` of precision, strict
+  precision, rule recall, recall of all findings, citation validity, cost, cost per Supported claim, estimate error
+  and the unmatched share (unmatched / Supported);
+  `cases[]` with the spread of each case's precision and recalls; `targets` (precision 0.9, rule recall 0.7, citation
+  validity 1, each `{ target, mean, met }`; precision also has `strictMean` and `unmatchedShare`, the means of strict
+  precision and of the unmatched share, so a headline met with most claims unchecked shows it; and the estimate
+  `{ target: 0.3, measured, within }`).
+- A score counts only `Supported` claims: `correct` (matches a finding), `incorrect` (states an absence; an absence
+  wins over a finding), `unmatched` (neither, listed by claim id for a person to check), `precision` = correct /
+  (correct + incorrect), `strictPrecision` = correct / Supported, `recall` = golden rules found / golden rules,
+  `recallAll` over every finding. A ratio with nothing to divide by is `null`; every measure is rounded to six
+  decimals. A case is scored with the claims that cite one of its paths.
+
+The calibration set of RF-305 is not part of P2-11.
+
+**Golden set** (`eval/golden/<name>.json`, schema in `src/application/eval/golden-set-schema.ts`, at most 1 MiB, read
+only from inside `eval/`): `{ schemaVersion: 1, version, description, source { url (https://github.com/<owner>/<repo>),
+commit (40 hex), subpath }, cases[] }`; each case `{ id, title, paths[], findings[], absences[] }`; a finding `{ id,
+kind (feature | rule | entity), statement, cardTypes[] (empty: any), evidence[] (path:start-end inside the case's
+paths), keywords[] }` is matched by a claim of an accepted card type that cites a line of its evidence and names one
+keyword (in the claim text or card title, any case); an absence `{ id, statement, claimPatterns[][], unless[] }` is
+hit by a claim that holds every word of one pattern and none of the `unless` words. Words are whole words: a word
+also matches its `-s`, `-es`, `-d`, `-ed` and `-ing` forms (`add` is in "adds" but not in "address", `10` is not in
+"100"), and a stem ending in `*` matches any word that starts with it (`generat*`). A `*` anywhere else, and a pattern
+word that holds one of its absence's `unless` words (it could never match), are refused. Ids are unique in the set
+and the set must hold at least one absence (DEC-57). The provenance of each golden set is in `eval/README.md`. **Settings** (`eval/config.json`): `{ schemaVersion: 1, goldenSet,
+repetitions (3..20), roles { reader?, verifier?, summariser? : { provider, model } }, runCapMicros, totalCapMicros,
+parallelism? }`.
 
 ### 3.20 `planning-brief.json` (added 2026-10-11)
 

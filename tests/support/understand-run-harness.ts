@@ -9,6 +9,7 @@ import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
+import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import type { Result } from '../../src/domain/errors/result.js';
 import type { Actor } from '../../src/domain/accounts/actor.js';
 import type { RunEvent } from '../../src/domain/runs/run-event.js';
@@ -18,6 +19,7 @@ import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
+import { UNDERSTAND_RUN_WAIT } from './understand-timeout.js';
 import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
@@ -111,6 +113,8 @@ export interface UnderstandHarness {
   understand(start?: UnderstandStart): Promise<Run>;
   /** Writes answers into the project's `answers.md`, as the answers page does. */
   answer(run: Run, answers: readonly AnswerEntry[]): Promise<void>;
+  /** Opens answered questions of the run again, as the Reopen button does; the cards it opened. */
+  reopen(run: Run, cardIds: readonly string[]): Promise<readonly string[]>;
   /**
    * Resumes an ended run as the Resume button does and waits for its end; the refusal when the
    * run cannot be resumed.
@@ -137,7 +141,7 @@ function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
         const events = await s.log.read(scopeOf(latest), 0);
         if (events.at(-1)?.type !== 'run.ended') throw new Error('No run.ended yet');
       },
-      { timeout: 60_000, interval: 2 },
+      { timeout: UNDERSTAND_RUN_WAIT, interval: 2 },
     );
     if (latest === undefined) throw new Error('The run vanished');
     return latest;
@@ -209,6 +213,12 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
       }).recordAnswers({ userId: run.userId, projectId: run.projectId }, run.runKey, answers);
       expect(recorded.ok).toBe(true);
     },
+    reopen: (run, cardIds) =>
+      new FilePriorCards(s.writer).reopen(
+        { userId: run.userId, projectId: run.projectId },
+        run.runKey,
+        cardIds,
+      ),
     resume,
     async changeSettings(change) {
       const current = await s.projects.find(account.id, project.id);

@@ -271,7 +271,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const runs = runHarnessOf(clock, logger, eventStore);
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
   const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
-  const [keys, stores] = [keyParts(), { projects, ...files, clock, masker, logDir }];
+  const [keys, stores] = [keyParts(), { projects, ...files, clock, masker, logDir, logger }];
   const { providers, providerLedger, testProviders } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
