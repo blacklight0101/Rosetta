@@ -29,11 +29,7 @@ function lineOf(
 }
 
 /** One line for each role cap, cost then tokens, that is above the run cap as typed. */
-function roleCapNotices(
-  roles: RoleCaps,
-  runCost: string,
-  runTokens: string,
-): readonly string[] {
+function roleCapNotices(roles: RoleCaps, runCost: string, runTokens: string): readonly string[] {
   const costRun = numberOf(runCost);
   const tokenRun = numberOf(runTokens);
   const lines: string[] = [];
