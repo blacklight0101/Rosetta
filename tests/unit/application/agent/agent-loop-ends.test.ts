@@ -13,6 +13,7 @@ import { shippingCards } from '../../../support/agent-fixtures.js';
 import { tagOf } from '../../../support/data-block-tags.js';
 import {
   loopSetup,
+  ungatedLoopSetup,
   readOrder,
   textTurn,
   toolTurn,
@@ -158,7 +159,10 @@ describe('runAgentTask stop', () => {
 
 describe('runAgentTask final answer repair', () => {
   it('RF-202 an invalid final answer gets one repair turn with the problems', async () => {
-    const { fake, request } = loopSetup([textTurn('Here is my summary.'), textTurn(shippingCards)]);
+    const { fake, request } = ungatedLoopSetup([
+      textTurn('Here is my summary.'),
+      textTurn(shippingCards),
+    ]);
 
     const result = await runAgentTask(request(fake));
     const repair = fake.requests[1]?.messages.at(-1);
@@ -170,7 +174,11 @@ describe('runAgentTask final answer repair', () => {
   });
 
   it('RF-202 RF-208 an answer still invalid after two repairs ends as InvalidOutput with all raw outputs', async () => {
-    const { fake, request } = loopSetup([textTurn('first'), textTurn('second'), textTurn('third')]);
+    const { fake, request } = ungatedLoopSetup([
+      textTurn('first'),
+      textTurn('second'),
+      textTurn('third'),
+    ]);
 
     const result = await runAgentTask(request(fake));
 

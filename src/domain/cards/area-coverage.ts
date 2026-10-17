@@ -42,6 +42,8 @@ export interface AreaCoverage {
   readonly failure?: string;
   /** RF-260, RF-261: flows and screens; absent from coverage written before they existed. */
   readonly surface?: SurfaceCoverage;
+  /** RF-206, RF-243: what to know about the area, for example `not read` or `no application logic`. */
+  readonly note?: string;
 }
 
 // RF-263

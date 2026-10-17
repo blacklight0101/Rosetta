@@ -41,7 +41,7 @@ let finishedRun = '';
 async function expectMeterFromUsage(page: Page, areas: readonly string[]): Promise<void> {
   const tokens = await runTokens(page, finishedRun);
   const verifier = await recordedTokens('verifier-csharp-full.json', [0, 1, 2, 3, 4]);
-  const reader = await recordedTokens('understand-csharp-full.json', [0, 1, 2, 4, 5, 6, 7]);
+  const reader = await recordedTokens('understand-csharp-full.json', [0, 1, 2, 3, 6, 7, 8, 9, 10]);
   expect(tokens).toBeGreaterThanOrEqual(reader + verifier);
   const meter = page.getByRole('region', { name: 'Run meter' });
   const row = (name: RegExp) => meter.getByRole('row', { name });

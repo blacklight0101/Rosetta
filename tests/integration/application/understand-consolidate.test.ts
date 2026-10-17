@@ -188,9 +188,12 @@ describe('an understand run: when the summariser is not asked', UNDERSTAND_TIMEO
   });
 
   it('RF-250 a run of one area asks the summariser nothing', async () => {
-    const { h } = await made(temp.path, {}, ['Database']);
+    const { h } = await made(temp.path, {}, ['(root)']);
 
-    expect(h.providers.requests().map((request) => request.context.role)).toEqual(['reader']);
+    expect(h.providers.requests().map((request) => request.context.role)).toEqual([
+      'reader',
+      'reader',
+    ]);
   });
 
   it('RF-250 a stopped run asks the summariser nothing', async () => {

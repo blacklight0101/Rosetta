@@ -1,14 +1,6 @@
-import type { DataBlockSource } from '../../domain/egress/data-block.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import type {
-  AgentRole,
-  LlmMessage,
-  LlmProvider,
-  LlmResponse,
-  ToolCall,
-  ToolDefinition,
-} from '../ports/llm-provider.js';
+import type { AgentRole, LlmMessage, LlmProvider, LlmResponse } from '../ports/llm-provider.js';
 import type { Logger } from '../ports/logger.js';
 import { collectCards } from './answer-collector.js';
 import {
@@ -18,14 +10,16 @@ import {
   type AgentTaskEnd,
   type AgentTaskResult,
 } from './agent-task-result.js';
-import type { ToolCallIds, ToolOutcome } from './read-only-tools.js';
+import type { AgentToolSet } from './agent-tool-set.js';
+import { ReadGate } from './read-gate.js';
 import {
   readerSystemPrompt,
   readerTaskMessage,
+  readFirstMessage,
   turnsLeftMessage,
   type ReaderPrompts,
 } from './reader-prompts.js';
-import { isReaderToolName, type ReaderToolName } from './tool-definitions.js';
+import { ToolRunner } from './tool-runner.js';
 
 // RF-201, RF-202, RF-145, ADR-003, architecture section 8: the reader's tool-calling loop. It
 // sends the system prompt, the conversation and the tool definitions through the LlmProvider port
@@ -33,15 +27,6 @@ import { isReaderToolName, type ReaderToolName } from './tool-definitions.js';
 // answer, the turn limit, the context share, a stop or a model that loops. The system prompt and
 // the tools stay the same on every turn (a stable prefix for providers that cache it); repository
 // content enters only as data blocks in user and tool messages.
-
-/** The tools of one task: the read-only tool set of its area (ReadOnlyTools). */
-interface AgentToolSet {
-  readonly definitions: readonly ToolDefinition[];
-  areaOverview(): string;
-  /** RF-145: text as one data block with a fresh tag of its own. */
-  renderBlock(source: DataBlockSource, text: string): string;
-  run(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome>;
-}
 
 interface AgentTaskSettings {
   readonly model: string;
@@ -78,24 +63,16 @@ export interface AgentTaskRequest {
   readonly answers?: string;
 }
 
-/** A model that repeats one call this often, or names unknown tools this often, is stopped. */
-const maxRepeatedCalls = 3;
-const maxUnknownToolCalls = 3;
 /** About four characters per token, the estimate the providers use too (RF-421). */
 const charsPerToken = 4;
-
-const repeatedMessage =
-  'You already made this exact call; its result is above. Use it, or make a different call.';
 
 class AgentTask {
   private readonly request: AgentTaskRequest;
   private readonly system: string;
   private readonly messages: LlmMessage[] = [];
-  private readonly seen = new Set<string>();
+  private readonly gate: ReadGate;
+  private readonly runner: ToolRunner;
   private turns = 0;
-  private toolErrors = 0;
-  private repeated = 0;
-  private unknownCalls = 0;
   private usage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
   private modelVersion: string | null = null;
   /** Tokens of the conversation at the last answer, and characters added since. */
@@ -105,6 +82,8 @@ class AgentTask {
   constructor(request: AgentTaskRequest) {
     this.request = request;
     this.system = readerSystemPrompt(request.prompts);
+    this.gate = new ReadGate(request.tools.readableAreaFiles());
+    this.runner = new ToolRunner(request.tools, this.gate);
     this.charsSince = this.system.length + JSON.stringify(request.tools.definitions).length;
   }
 
@@ -121,7 +100,10 @@ class AgentTask {
     for (;;) {
       const answer = await this.turn();
       if (!answer.ok) return answer.error;
-      if (answer.value.toolCalls.length === 0) return this.finish(answer.value.text);
+      if (answer.value.toolCalls.length === 0) {
+        if (this.refuseUnread(answer.value.text)) continue;
+        return this.finish(answer.value.text);
+      }
       const stopped = await this.runTools(answer.value);
       if (stopped !== undefined) return stopped;
       const left = settings.maxTurns - this.turns;
@@ -186,48 +168,32 @@ class AgentTask {
 
   /** Runs the calls of one answer in order; the end of the task when the model loops. */
   private async runTools(answer: LlmResponse): Promise<AgentTaskEnd | undefined> {
-    const { signal, tools, context } = this.request;
+    const { signal, context } = this.request;
     this.messages.push({ role: 'assistant', content: answer.text, toolCalls: answer.toolCalls });
     for (const call of answer.toolCalls) {
       if (signal.aborted) return stoppedEnd(signal);
       const ids = { runId: context.runId, agentTaskId: context.agentTaskId, callId: call.id };
-      const { name } = call;
-      const outcome =
-        isReaderToolName(name) && this.isRepeat(name, call.arguments)
-          ? this.repeatedOutcome(name)
-          : await tools.run(call, ids);
-      if (outcome.error !== undefined) this.toolErrors += 1;
-      if (outcome.error?.code === ERROR_CODES.toolUnknown) this.unknownCalls += 1;
+      const outcome = await this.runner.run(call, ids);
       this.add({ role: 'tool', toolCallId: call.id, content: outcome.content });
-      if (this.repeated >= maxRepeatedCalls) {
-        return { reason: 'repeated-calls', code: ERROR_CODES.agentRepeatedCalls };
-      }
-      if (this.unknownCalls >= maxUnknownToolCalls) {
-        return { reason: 'unknown-tools', code: ERROR_CODES.toolUnknown };
-      }
+      const looping = this.runner.loopEnd();
+      if (looping !== undefined) return looping;
     }
     return undefined;
   }
 
-  /** A known tool called again with the same arguments; unknown tools are counted on their own. */
-  private isRepeat(name: ReaderToolName, args: unknown): boolean {
-    // Wrapped in a list, so arguments that are undefined still give a string.
-    const signature = `${name}\n${JSON.stringify([args])}`;
-    if (!this.seen.has(signature)) {
-      this.seen.add(signature);
-      return false;
-    }
-    this.repeated += 1;
+  /**
+   * RF-206: a final answer before any file of the area was read is not accepted. The agent is told
+   * which files it has not read and keeps its turns to read them.
+   */
+  private refuseUnread(text: string): boolean {
+    const { prompts, tools, settings } = this.request;
+    const turnsLeft = settings.maxTurns - this.turns;
+    const files = this.gate.refuse(turnsLeft);
+    if (files === undefined) return false;
+    this.messages.push({ role: 'assistant', content: text });
+    const block = tools.renderBlock('list_area_files', files);
+    this.add({ role: 'user', content: readFirstMessage(prompts, block, turnsLeft) });
     return true;
-  }
-
-  private repeatedOutcome(source: ReaderToolName): ToolOutcome {
-    const code = ERROR_CODES.agentRepeatedCalls;
-    const text = `error ${code}: ${repeatedMessage}`;
-    return {
-      content: this.request.tools.renderBlock(source, text),
-      error: { code, message: repeatedMessage },
-    };
   }
 
   /**
@@ -265,7 +231,8 @@ class AgentTask {
     const { logger, context } = this.request;
     const result = taskResult(end, {
       turns: this.turns,
-      toolErrors: this.toolErrors,
+      toolErrors: this.runner.toolErrors,
+      areaRead: this.gate.state(),
       usage: this.usage,
       modelVersion: this.modelVersion,
       messages: [...this.messages],

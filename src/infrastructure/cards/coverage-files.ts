@@ -13,7 +13,7 @@ const schemaVersion = 1;
 
 export function serialiseCoverage(coverage: readonly AreaCoverage[], masker: TextMasker): string {
   const areas = coverage.map(
-    ({ area, files, tokens, readTokens, readTokenShare, failure, surface }) => ({
+    ({ area, files, tokens, readTokens, readTokenShare, failure, surface, note }) => ({
       area,
       files: files.map(({ path, read }) => ({
         path,
@@ -24,6 +24,7 @@ export function serialiseCoverage(coverage: readonly AreaCoverage[], masker: Tex
       readTokenShare,
       failure,
       surface,
+      note,
     }),
   );
   return `${JSON.stringify(maskDeep({ schemaVersion, areas }, masker), null, 2)}\n`;
@@ -71,6 +72,19 @@ function runSummary(coverage: readonly AreaCoverage[], esc: MarkdownEscaper): st
     total,
     '',
     ...failedAreas(coverage, esc),
+    ...areaNotes(coverage, esc),
+  ];
+}
+
+/** RF-206, RF-243: the areas with a note (not read, no application logic); nothing when none has one. */
+function areaNotes(coverage: readonly AreaCoverage[], esc: MarkdownEscaper): string[] {
+  const noted = coverage.filter((area) => area.note !== undefined);
+  if (noted.length === 0) return [];
+  return [
+    '## Notes',
+    '',
+    ...noted.map((area) => `- ${esc.inline(area.area)}: ${esc.inline(area.note ?? '')}`),
+    '',
   ];
 }
 

@@ -23,6 +23,9 @@ export interface ReaderPrompts {
   readonly answers?: PromptFile;
   /** `cards/flows.v<n>.md` and `cards/screens.v<n>.md`: added only to areas the code map marks (Q-25). */
   readonly surface?: SurfacePrompts;
+
+  /** `reader/read-first.v<n>.md`: refuses an answer given before any file of the area was read (RF-206). */
+  readonly readFirst: PromptFile;
 }
 
 /** RF-260, RF-261: the two card types a marked area may also write, one prompt fragment each. */
@@ -37,6 +40,8 @@ export const readerPlaceholders = {
   turnsLeft: '{{turns}}',
   repair: '{{problems}}',
   answers: '{{answers}}',
+  readFirstFiles: '{{files}}',
+  readFirstTurns: '{{turns}}',
 } as const;
 
 /** The same on every turn, so providers that cache a stable prefix charge less for it. */
@@ -65,6 +70,19 @@ ${answers}`;
 
 export function turnsLeftMessage(prompts: ReaderPrompts, turns: number): string {
   return prompts.turnsLeft.text.replace(readerPlaceholders.turnsLeft, String(turns)).trimEnd();
+}
+
+/** RF-206: the refusal of an answer given before any read, with the unread files as a data block. */
+export function readFirstMessage(
+  prompts: ReaderPrompts,
+  filesBlock: string,
+  turns: number,
+): string {
+  // The turns first: the files block holds repository text, which must not be read as a placeholder.
+  return prompts.readFirst.text
+    .replace(readerPlaceholders.readFirstTurns, String(turns))
+    .replace(readerPlaceholders.readFirstFiles, () => filesBlock)
+    .trimEnd();
 }
 
 /** The fragments an area with these marks gets, flows first. */
@@ -105,6 +123,7 @@ export function promptVersionsOf(
     prompts.continue,
     ...(prompts.answers === undefined ? [] : [prompts.answers]),
     ...surfaceFilesFor(prompts, marks),
+    prompts.readFirst,
   ];
   return Object.fromEntries(
     files.map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),

@@ -32,3 +32,33 @@ describe('card prompt files', () => {
     expect(text).not.toContain('{{problems}}');
   });
 });
+
+const formatV2 = await readFile('prompts/cards/card-format.v2.md', 'utf8');
+
+describe('card format prompt v2 (RF-243)', () => {
+  it('RF-243 the example answer passes the card schema', () => {
+    const example = /```json\n([\s\S]*?)```/.exec(formatV2)?.[1] ?? '';
+
+    const parsed = parseCardOutput(example);
+
+    expect(parsed.ok && parsed.value).toHaveLength(1);
+  });
+
+  it('RF-243 names every card type and confidence, as the first version does', () => {
+    for (const word of ['FEAT', 'BR', 'ENT', 'INT', 'OQ', 'High', 'Medium', 'Low']) {
+      expect(formatV2).toContain(`\`${word}\``);
+    }
+  });
+
+  it('RF-243 tells the agent what an open question must hold and what it must not ask', () => {
+    expect(formatV2).toMatch(/what the code shows/iu);
+    expect(formatV2).toMatch(/business intent/iu);
+    expect(formatV2).toMatch(/who uses/iu);
+    expect(formatV2).toMatch(/never ask what the code, an area or the application does/iu);
+  });
+
+  it('RF-243 tells the agent that third-party or generated code gets no open question', () => {
+    expect(formatV2).toMatch(/third-party or generated code/iu);
+    expect(formatV2).toMatch(/no OQ card/iu);
+  });
+});

@@ -26,16 +26,16 @@ describe('an understand run: cost and prompts', () => {
     const { folder } = full.current();
 
     expect(await readJson(join(folder, 'cost.json'))).toMatchObject({
-      totals: { calls: 13, inputTokens: 10_900, outputTokens: 1290 },
+      totals: { calls: 16, inputTokens: 13_600, outputTokens: 1410 },
       byRole: [
-        { role: 'reader', calls: 8 },
+        { role: 'reader', calls: 11 },
         { role: 'verifier', calls: 5 },
       ],
       byAgentTask: [
         { agentTaskId: 'reader-001', calls: 2 },
-        { agentTaskId: 'reader-002', calls: 1 },
-        { agentTaskId: 'reader-003', calls: 1 },
-        { agentTaskId: 'reader-004', calls: 1 },
+        { agentTaskId: 'reader-002', calls: 2 },
+        { agentTaskId: 'reader-003', calls: 2 },
+        { agentTaskId: 'reader-004', calls: 2 },
         { agentTaskId: 'reader-005', calls: 3 },
         { agentTaskId: 'verifier-BR-001.c1', calls: 1 },
         { agentTaskId: 'verifier-BR-002.c1', calls: 1 },
@@ -53,19 +53,20 @@ describe('an understand run: cost and prompts', () => {
 
     const manifest = await h.manifestOf(run);
     expect(Object.keys(manifest.promptVersions)).toEqual([
-      'cards/card-format.v1.md',
+      'cards/card-format.v2.md',
       'cards/continue.v1.md',
       'cards/flows.v1.md',
       'cards/repair.v1.md',
       'cards/screens.v1.md',
-      'reader/area.v2.md',
+      'reader/area.v3.md',
+      'reader/read-first.v1.md',
       'reader/task.v2.md',
       'reader/turns-left.v2.md',
       'verifier/claim.v1.md',
       'verifier/retry.v1.md',
     ]);
-    expect(manifest.promptVersions['reader/area.v2.md']?.version).toBe('v2');
-    expect(manifest.promptVersions['reader/area.v2.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(manifest.promptVersions['reader/area.v3.md']?.version).toBe('v3');
+    expect(manifest.promptVersions['reader/area.v3.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(manifest.roles['reader']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.roles['verifier']?.modelVersion).toBe('fake-judge-2026-10-01');
   });
@@ -79,12 +80,12 @@ describe('an understand run: events', () => {
     const count = (type: string): number => events.filter((event) => event.type === type).length;
     expect(
       ['agent.planned', 'agent.started', 'agent.turn', 'agent.tool.called'].map(count),
-    ).toEqual([5, 5, 8, 3]);
+    ).toEqual([5, 5, 11, 6]);
     expect(
       ['agent.tool.result', 'agent.card.proposed', 'verify.citation.checked', 'agent.ended'].map(
         count,
       ),
-    ).toEqual([3, 5, 7, 5]);
+    ).toEqual([6, 5, 7, 5]);
     expect(events.find((event) => event.type === 'agent.tool.called')?.data).toEqual({
       turn: 1,
       tool: 'read_file',

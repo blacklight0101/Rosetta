@@ -2,12 +2,13 @@ import { z } from 'zod';
 import type { CardDraft } from '../../domain/cards/card-ids.js';
 import { CARD_TYPES, CONFIDENCES, type CardType } from '../../domain/cards/card-vocabulary.js';
 import { citation, ignoringCase, text } from './card-fields.js';
+import { asksWhatCodeDoes, codeQuestionRefusal } from '../../domain/cards/open-question.js';
 import { cardLimits } from './card-limits.js';
 import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema.js';
 
 // RF-202, ADR-005: the strict shape of an agent's final answer. A card needs type, title, area,
 // summary, confidence and claims; each claim needs at least one citation; an OQ also needs its
-// question and why it matters. Small models write numbers as text and vary letter case, so line
+// question and why it matters, and the question must not ask what the code does (RF-243). Small models write numbers as text and vary letter case, so line
 // numbers may be numeric strings and type and confidence ignore case. Unknown fields are dropped.
 
 export const agentClaimSchema = z.object({
@@ -80,6 +81,9 @@ export const agentCardSchema = cardShape
           message: `A ${value.type} card needs ${field}.`,
         });
       }
+    }
+    if (value.question !== undefined && asksWhatCodeDoes(value.question)) {
+      context.addIssue({ code: 'custom', path: ['question'], message: codeQuestionRefusal });
     }
   })
   .transform(draftOf);

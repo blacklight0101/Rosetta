@@ -26,6 +26,7 @@ function resultOf(overrides: Partial<AgentTaskResult> = {}): AgentTaskResult {
     usage: { inputTokens: 100, outputTokens: 10, cachedInputTokens: 5 },
     modelVersion: 'model-1',
     messages: [],
+    areaRead: 'read',
     ...overrides,
   };
 }

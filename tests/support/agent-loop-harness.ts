@@ -62,9 +62,24 @@ export interface LoopSetup {
   readonly request: (provider: LlmProvider, signal?: AbortSignal) => AgentTaskRequest;
 }
 
+/**
+ * The same tools for an area the reader has nothing to read in, so the read-first rule (RF-206) does
+ * not apply: for the tests of what happens to an answer, which are not about reading.
+ */
+function ungated(tools: ReadOnlyTools): AgentTaskRequest['tools'] {
+  return {
+    definitions: tools.definitions,
+    areaOverview: () => tools.areaOverview(),
+    readableAreaFiles: () => [],
+    renderBlock: (source, text) => tools.renderBlock(source, text),
+    run: (call, ids) => tools.run(call, ids),
+  };
+}
+
 export function loopSetup(
   outcomes: readonly ScenarioOutcome[],
   settings: Partial<Settings> = {},
+  gated = true,
 ): LoopSetup {
   const fake = new FakeProvider({ testMode: true, recording: recordingOf(...outcomes) });
   const logger = new MemoryLogger(new FixedClock('2026-10-12T09:00:00.000Z'), new SecretMasker());
@@ -79,7 +94,7 @@ export function loopSetup(
     signal = new AbortController().signal,
   ): AgentTaskRequest => ({
     provider,
-    tools,
+    tools: gated ? tools : ungated(tools),
     prompts: testReaderPrompts,
     logger,
     settings: {
@@ -103,4 +118,12 @@ export function loopSetup(
     signal,
   });
   return { fake, logger, request };
+}
+
+/** `loopSetup` for tests of the answer's follow-ups, where the read-first rule does not apply. */
+export function ungatedLoopSetup(
+  outcomes: readonly ScenarioOutcome[],
+  settings: Partial<Settings> = {},
+): LoopSetup {
+  return loopSetup(outcomes, settings, false);
 }

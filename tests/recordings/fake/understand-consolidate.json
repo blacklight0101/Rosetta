@@ -1,7 +1,36 @@
 {
   "schemaVersion": 1,
-  "description": "An understand run over every area of the webforms-csharp fixture in which two areas describe the same entity and two areas state different rules about one item, followed by the summariser merging both pairs (RF-250). (root) answers no card, Catalog and Controllers each answer a BR, Database and Services each answer an ENT for the catalog item. The summariser then answers one merge for the BR cards and one for the ENT cards. Written by hand for the fake provider; no real provider was called.",
+  "description": "An understand run over every area of the webforms-csharp fixture in which two areas describe the same entity and two areas state different rules about one item, followed by the summariser merging both pairs (RF-250). Each reader reads one file of its area first. (root) answers no card, Catalog and Controllers each answer a BR, Database and Services each answer an ENT for the catalog item. The summariser then answers one merge for the BR cards and one for the ENT cards. Written by hand for the fake provider; no real provider was called.",
   "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Default.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 14
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 700,
+              "outputTokens": 20,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
     {
       "attempts": [
         {
@@ -15,7 +44,36 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-1",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Catalog/Details.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 700,
+              "outputTokens": 20,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-3",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
@@ -34,7 +92,36 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-2",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Controllers/CatalogController.cs",
+                  "startLine": 1,
+                  "endLine": 12
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 700,
+              "outputTokens": 20,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-5",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
@@ -53,7 +140,36 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-3",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Database/schema.sql",
+                  "startLine": 1,
+                  "endLine": 10
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 700,
+              "outputTokens": 20,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-7",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
@@ -72,7 +188,36 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-4",
+            "requestId": "fake-request-8",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Services/CatalogService.cs",
+                  "startLine": 1,
+                  "endLine": 18
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 700,
+              "outputTokens": 20,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-9",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
@@ -91,7 +236,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-5",
+            "requestId": "fake-request-10",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
@@ -110,7 +255,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-6",
+            "requestId": "fake-request-11",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
@@ -129,7 +274,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-7",
+            "requestId": "fake-request-12",
             "modelVersion": "fake-model-2026-10-01"
           }
         }

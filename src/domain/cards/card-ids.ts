@@ -25,6 +25,8 @@ export interface TaskCards {
   readonly agentTaskId: string;
   readonly area: string;
   readonly drafts: readonly CardDraft[];
+  /** RF-206: a note every card of the task carries, for example it was written without reading. */
+  readonly note?: string;
 }
 
 /** The number in an id such as `BR-007`. */
@@ -59,6 +61,7 @@ export function assignCardIds(
         id: formatCardId(draft.type, number),
         area: task.area,
         agentTaskId: task.agentTaskId,
+        note: task.note,
       });
       if (!card.ok) return err(card.error);
       cards.push(card.value);

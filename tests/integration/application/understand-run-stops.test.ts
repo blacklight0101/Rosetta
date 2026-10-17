@@ -43,7 +43,7 @@ describe('an understand run stopped by its cap', UNDERSTAND_TIMEOUT, () => {
         area: 'Catalog',
         role: 'reader',
         state: 'Done',
-        turns: 1,
+        turns: 2,
         cards: 1,
       },
       {
@@ -75,7 +75,7 @@ describe('the cost report of an understand run stopped by its cap', UNDERSTAND_T
     const run = await h.understand({ areas: ['Catalog', 'Services'] });
 
     expect(await json(join(h.runFolder(run), 'cost.json'))).toMatchObject({
-      totals: { calls: 1, inputTokens: 200_000, outputTokens: 300 },
+      totals: { calls: 2, inputTokens: 200_900, outputTokens: 330 },
     });
     await expect(access(join(h.runFolder(run), 'cost.md'))).resolves.toBeUndefined();
   });
@@ -87,7 +87,7 @@ describe('an understand run the user stops', UNDERSTAND_TIMEOUT, () => {
       dataDir: temp.path,
       recording: 'understand-stopped.json',
       beforeCall: async (call, harness) => {
-        if (call === 2) await harness.stopRunning();
+        if (call === 3) await harness.stopRunning();
       },
     });
     await h.scan();
@@ -96,7 +96,7 @@ describe('an understand run the user stops', UNDERSTAND_TIMEOUT, () => {
 
     expect(run.endState).toBe('Interrupted');
     const manifest = await h.manifestOf(run);
-    expect(manifest).toMatchObject({ endState: 'Interrupted', totals: { calls: 1 } });
+    expect(manifest).toMatchObject({ endState: 'Interrupted', totals: { calls: 2 } });
     expect(manifest.endedAt).not.toBeNull();
     expect(manifest.agentTasks.map((task) => [task.area, task.state, task.cards])).toEqual([
       ['Catalog', 'Done', 1],
@@ -106,6 +106,6 @@ describe('an understand run the user stops', UNDERSTAND_TIMEOUT, () => {
     expect(await readFile(join(folder, 'cards', 'BR', 'BR-001.md'), 'utf8')).toContain(
       'Details page shows a fixed name',
     );
-    expect(await json(join(folder, 'cost.json'))).toMatchObject({ totals: { calls: 1 } });
+    expect(await json(join(folder, 'cost.json'))).toMatchObject({ totals: { calls: 2 } });
   });
 });

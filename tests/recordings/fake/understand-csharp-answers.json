@@ -1,7 +1,36 @@
 {
   "schemaVersion": 1,
-  "description": "The re-run with answers of the (root) area of the webforms-csharp fixture: one call answers a changed FEAT card and a new BR card once the owner said that sold-out items stay listed. Written by hand for the fake provider; no real provider was called.",
+  "description": "The re-run with answers of the (root) area of the webforms-csharp fixture: one call answers a changed FEAT card and a new BR card once the owner said that sold-out items stay listed. Written by hand for the fake provider; no real provider was called. The (root) reader reads Default.aspx.cs first (RF-206).",
   "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Default.aspx.cs",
+                  "startLine": 1,
+                  "endLine": 14
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 1700,
+              "outputTokens": 300,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
     {
       "attempts": [
         {
@@ -15,7 +44,7 @@
               "usageSource": "reported"
             },
             "finishReason": "stop",
-            "requestId": "fake-request-1",
+            "requestId": "fake-request-2",
             "modelVersion": "fake-model-2026-10-01"
           }
         }

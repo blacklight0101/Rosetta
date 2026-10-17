@@ -6,6 +6,7 @@ import { useTempRoot } from '../../support/temp-root.js';
 import { readJson, UNDERSTAND_TIMEOUT } from '../../support/understand-full-run.js';
 import {
   createUnderstandHarness,
+  understandSettings,
   type UnderstandHarness,
 } from '../../support/understand-run-harness.js';
 
@@ -34,6 +35,12 @@ describe('a second understand run on the same snapshot', UNDERSTAND_TIMEOUT, () 
       dataDir: temp.path,
       recording: 'understand-csharp-full.json',
       replays: 2,
+      // The summariser is capped out, so a run uses only the 11 recorded reader calls and the
+      // second run starts where the recording does.
+      settings: understandSettings((base) => ({
+        ...base,
+        budget: { ...base.budget, roles: { summariser: { maxTokens: 1 } } },
+      })),
     });
     await h.scan();
 

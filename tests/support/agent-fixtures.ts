@@ -116,6 +116,10 @@ export const testReaderPrompts: ReaderPrompts = {
   turnsLeft: prompt('reader/turns-left.v1.md', 'Turns left: {{turns}}.'),
   repair: prompt('cards/repair.v1.md', 'Fix these problems:\n{{problems}}'),
   continue: prompt('cards/continue.v1.md', 'Continue where you stopped.'),
+  readFirst: prompt(
+    'reader/read-first.v1.md',
+    'You have read no file of your area. Read before you answer.\n{{files}}\nTurns left: {{turns}}.',
+  ),
 };
 
 /** A valid final answer with one card citing the shipping rule. */

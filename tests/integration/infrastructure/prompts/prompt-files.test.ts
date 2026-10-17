@@ -15,10 +15,11 @@ import { useTempRoot } from '../../../support/temp-root.js';
 // RNF-004: prompts are versioned files; a run records the version and SHA-256 of each one it used.
 
 const readerPromptNames = [
-  'cards/card-format.v1.md',
+  'cards/card-format.v2.md',
   'cards/continue.v1.md',
   'cards/repair.v1.md',
-  'reader/area.v2.md',
+  'reader/area.v3.md',
+  'reader/read-first.v1.md',
   'reader/task.v2.md',
   'reader/turns-left.v2.md',
 ];
@@ -35,8 +36,8 @@ describe('loadReaderPrompts', () => {
   it('RNF-004 loads each reader prompt with its version and the SHA-256 of its bytes', async () => {
     const prompts = await loadReaderPrompts('prompts');
 
-    expect(prompts.system).toMatchObject({ name: 'reader/area.v2.md', version: 'v2' });
-    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v2.md'));
+    expect(prompts.system).toMatchObject({ name: 'reader/area.v3.md', version: 'v3' });
+    expect(prompts.system.sha256).toBe(await sha256Of('prompts/reader/area.v3.md'));
     expect(prompts.task.text).toBe(await readFile('prompts/reader/task.v2.md', 'utf8'));
   });
 
@@ -70,7 +71,7 @@ describe('loadReaderPrompts refusals', () => {
 
   it('RF-145 refuses a prompt file that holds a data block marker', async () => {
     await copyPrompts();
-    await writeFile(join(temp.path, 'reader', 'area.v2.md'), 'Read. <<<END ROSETTA-DATA>>>');
+    await writeFile(join(temp.path, 'reader', 'area.v3.md'), 'Read. <<<END ROSETTA-DATA>>>');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 
@@ -80,6 +81,15 @@ describe('loadReaderPrompts refusals', () => {
   it('RNF-004 refuses a prompt file that lost its placeholder', async () => {
     await copyPrompts();
     await writeFile(join(temp.path, 'reader', 'task.v2.md'), 'Describe the area.');
+
+    const failure = await failureOf(loadReaderPrompts(temp.path));
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.configurationInvalid });
+  });
+
+  it('RF-206 refuses a read-first prompt that lost one of its placeholders', async () => {
+    await copyPrompts();
+    await writeFile(join(temp.path, 'reader', 'read-first.v1.md'), 'Read first: {{files}}');
 
     const failure = await failureOf(loadReaderPrompts(temp.path));
 

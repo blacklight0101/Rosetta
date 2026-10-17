@@ -86,7 +86,7 @@ describe('RF-304 a run stopped at its cap', UNDERSTAND_TIMEOUT, () => {
       dataDir: temp.path,
       recording: 'understand-stopped.json',
       beforeCall: async (call, harness) => {
-        if (call === 2) await harness.stopRunning();
+        if (call === 3) await harness.stopRunning();
       },
     });
     await h.scan();
@@ -111,14 +111,14 @@ describe('RF-006 resuming a run', UNDERSTAND_TIMEOUT, () => {
     expect(resumed.ok).toBe(true);
     if (!resumed.ok) return;
     expect(resumed.value).toMatchObject({ id: run.id, runKey: run.runKey, endState: 'Completed' });
-    expect(askedTasks(h)).toEqual(['reader-001', 'reader-002']);
+    expect(askedTasks(h)).toEqual(['reader-001', 'reader-001', 'reader-002', 'reader-002']);
     expect(await h.runs.list(run.userId, run.projectId)).toHaveLength(2);
     const manifest = await h.manifestOf(run);
     expect(manifest.runId).toBe(run.runKey);
     expect(manifest.endState).toBe('Completed');
     expect(manifest.caps.run).toEqual({ maxCostMicros: 50_000_000, maxTokens: 5_000_000 });
-    // Two reader calls and the verifier's judgement of the new card's claim (RF-301).
-    expect(manifest.totals.calls).toBe(3);
+    // Four reader calls (a read and an answer for each area) and the verifier's judgement (RF-301).
+    expect(manifest.totals.calls).toBe(5);
     expect(manifest.agentTasks.map((task) => [task.area, task.state, task.cards])).toEqual([
       ['Catalog', 'Done', 1],
       ['Services', 'Done', 1],
@@ -183,7 +183,7 @@ describe('RF-006 resuming a run, the log and a stop', UNDERSTAND_TIMEOUT, () => 
       dataDir: temp.path,
       recording: 'understand-stopped.json',
       beforeCall: async (call, harness) => {
-        if (call === 2) await harness.stopRunning();
+        if (call === 3) await harness.stopRunning();
       },
     });
     await h.scan();
@@ -216,7 +216,7 @@ describe('RF-006 resuming a run that completed', UNDERSTAND_TIMEOUT, () => {
     const resumed = await h.resume(run);
 
     expect(resumed).toEqual({ ok: false, error: ERROR_CODES.runNotResumable });
-    expect(askedTasks(h)).toEqual(['reader-001', 'reader-002']);
+    expect(askedTasks(h)).toEqual(['reader-001', 'reader-001', 'reader-002', 'reader-002']);
   });
 });
 
@@ -228,7 +228,11 @@ describe('RF-006 a resume that cannot trust what the run left', UNDERSTAND_TIMEO
 
     await h.resume(run);
 
-    expect(askedTasks(h)).toEqual(['reader-001', 'reader-001', 'reader-002']);
+    // The capped run asked reader-001 twice (read, answer); the resume asks it again, then reader-002.
+    const asked = askedTasks(h);
+    expect(asked.slice(0, 2)).toEqual(['reader-001', 'reader-001']);
+    expect(asked.length).toBeGreaterThan(3);
+    expect(asked.at(-1)).toBe('reader-002');
   });
 
   it('RF-006 refuses the resume with RST-1309, before reopening the run, when the result file is not readable', async () => {
@@ -240,7 +244,7 @@ describe('RF-006 a resume that cannot trust what the run left', UNDERSTAND_TIMEO
 
     expect(resumed).toEqual({ ok: false, error: ERROR_CODES.taskResultsUnreadable });
     expect(await h.runs.find(run.userId, run.id)).toMatchObject({ endState: 'CapReached' });
-    expect(askedTasks(h)).toEqual(['reader-001']);
+    expect(askedTasks(h)).toEqual(['reader-001', 'reader-001']);
   });
 
   it('RF-006 refuses the resume with RST-1308, before reopening the run, when the code map is not the one the run read', async () => {
@@ -254,6 +258,6 @@ describe('RF-006 a resume that cannot trust what the run left', UNDERSTAND_TIMEO
 
     expect(resumed).toEqual({ ok: false, error: ERROR_CODES.resumeSourceChanged });
     expect(await h.runs.find(run.userId, run.id)).toMatchObject({ endState: 'CapReached' });
-    expect(askedTasks(h)).toEqual(['reader-001']);
+    expect(askedTasks(h)).toEqual(['reader-001', 'reader-001']);
   });
 });

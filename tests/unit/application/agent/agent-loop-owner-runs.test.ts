@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
-import { loopSetup, textTurn } from '../../../support/agent-loop-harness.js';
+import { ungatedLoopSetup, textTurn } from '../../../support/agent-loop-harness.js';
 
 // RF-208, DEC-138: the tasks that ended InvalidOutput in the owner's runs of 2026-10-14, replayed
 // through the agent loop with the answers they gave (the answer, then the repair, then the repair
@@ -33,7 +33,7 @@ describe('the tasks that lost their area in the owner runs', () => {
   it.each(replays)('RF-208 %s ends %s with %i cards', async (file, state, cards) => {
     const answers = await answersOf(file);
     const last = answers.at(-1) ?? '';
-    const { fake, request } = loopSetup([...answers, last].map((text) => textTurn(text)));
+    const { fake, request } = ungatedLoopSetup([...answers, last].map((text) => textTurn(text)));
 
     const result = await runAgentTask(request(fake));
 
@@ -44,7 +44,7 @@ describe('the tasks that lost their area in the owner runs', () => {
 
   it('RF-208 the cards of a partly valid first answer are kept when the repair does not fix them', async () => {
     const [first, second] = await answersOf('153115-reader-005.txt');
-    const { fake, request } = loopSetup(
+    const { fake, request } = ungatedLoopSetup(
       [first, second, second].map((text) => textTurn(text ?? '')),
     );
 

@@ -37,7 +37,7 @@ document is the canonical home of the error-code catalogue (section 6) and the t
 | Adapters | technology plus port, in `src/infrastructure/<area>/` | `OpenAiProvider`, `NodeRepositoryReader` |
 | Use cases | verb phrase, one per file in `src/application/use-cases/` | `RunUnderstand` |
 | Tests | next to nothing in `src`; under `tests/<level>/` mirroring `src` | `tests/unit/domain/citation.test.ts` |
-| Prompts | `prompts/<role>/<name>.v<n>.md`; a change creates a new version file | `prompts/reader/area.v2.md` |
+| Prompts | `prompts/<role>/<name>.v<n>.md`; a change creates a new version file | `prompts/reader/area.v3.md` |
 | SQL tables and columns | `snake_case`; tables plural; `id` primary key; `<singular>_id` foreign keys; `*_at` `timestamptz`; `*_micros` `bigint`; enumerations as `text` with `CHECK` ([data-model](data-model.md) section 1) | `cost_ledger.cost_micros` |
 | Migrations | `db/migrations/NNNN_snake_name.sql`, never edited after merge | `0001_accounts.sql` |
 | HTTP routes | pages at kebab-case paths; JSON API under `/api/`, plural nouns, ids as path segments | `GET /api/projects/:projectId/runs` |

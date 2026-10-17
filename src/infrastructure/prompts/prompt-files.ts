@@ -14,12 +14,13 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // before any run uses it.
 
 const readerPromptNames = {
-  system: 'reader/area.v2.md',
-  cardFormat: 'cards/card-format.v1.md',
+  system: 'reader/area.v3.md',
+  cardFormat: 'cards/card-format.v2.md',
   task: 'reader/task.v2.md',
   turnsLeft: 'reader/turns-left.v2.md',
   repair: 'cards/repair.v1.md',
   continue: 'cards/continue.v1.md',
+  readFirst: 'reader/read-first.v1.md',
 } as const;
 
 const answersPromptName = 'reader/answers.v1.md';
@@ -56,20 +57,26 @@ export function loadMergePrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'summariser/merge.v1.md');
 }
 
+function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
+  return placeholders.reduce(requirePlaceholder, file);
+}
+
 /** The reader's prompt files (RF-201), checked and hashed. */
 // RNF-004
 export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPrompts> {
   const load = (name: string) => loadPromptFile(promptsFolder, name);
-  const [system, cardFormat, task, turnsLeft, repair, resume, flows, screens] = await Promise.all([
-    load(readerPromptNames.system),
-    load(readerPromptNames.cardFormat),
-    load(readerPromptNames.task),
-    load(readerPromptNames.turnsLeft),
-    load(readerPromptNames.repair),
-    load(readerPromptNames.continue),
-    load(surfacePromptNames.flows),
-    load(surfacePromptNames.screens),
-  ]);
+  const [system, cardFormat, task, turnsLeft, repair, resume, flows, screens, readFirst] =
+    await Promise.all([
+      load(readerPromptNames.system),
+      load(readerPromptNames.cardFormat),
+      load(readerPromptNames.task),
+      load(readerPromptNames.turnsLeft),
+      load(readerPromptNames.repair),
+      load(readerPromptNames.continue),
+      load(surfacePromptNames.flows),
+      load(surfacePromptNames.screens),
+      load(readerPromptNames.readFirst),
+    ]);
   return {
     system,
     cardFormat,
@@ -78,6 +85,10 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
     repair: requirePlaceholder(repair, readerPlaceholders.repair),
     continue: resume,
     surface: { flows, screens },
+    readFirst: requirePlaceholders(readFirst, [
+      readerPlaceholders.readFirstFiles,
+      readerPlaceholders.readFirstTurns,
+    ]),
   };
 }
 

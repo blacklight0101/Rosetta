@@ -30,7 +30,7 @@ test.beforeEach(async ({ context }, info) => {
  * reader-preflight.ts), and the verifier's judgement of the three claims of the two areas that pass
  * the citation check (RF-301). The problem calls appendProblemCalls adds (run-folder.ts) are three rows.
  */
-const readerCalls = 3;
+const readerCalls = 4;
 const ollamaStartChecks = 1;
 const readerRows = readerCalls + ollamaStartChecks;
 const verifierRows = 3;

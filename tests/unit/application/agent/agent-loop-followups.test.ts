@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { runAgentTask } from '../../../../src/application/agent/agent-loop.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { cardObject } from '../../../support/card-output.js';
-import { loopSetup, textTurn } from '../../../support/agent-loop-harness.js';
+import { ungatedLoopSetup, textTurn } from '../../../support/agent-loop-harness.js';
 
 // RF-208, RF-202: the follow-ups an agent's final answer earns. Valid cards are kept whatever else
 // is wrong; problems earn up to two targeted repairs (the second with only what remains); an answer
@@ -30,7 +30,7 @@ const cardCFixed = cardObject({
 
 describe('runAgentTask keeps valid cards and repairs the rest', () => {
   it('RF-208 an answer with one invalid card keeps the valid card and asks one repair about the invalid one only', async () => {
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       textTurn(answer(cardA, cardB)),
       textTurn(answer(cardBFixed)),
     ]);
@@ -50,7 +50,7 @@ describe('runAgentTask keeps valid cards and repairs the rest', () => {
 
 describe('runAgentTask merges what the repairs give', () => {
   it('RF-208 a card the repair sends again replaces the earlier one instead of doubling it', async () => {
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       textTurn(answer(cardA, cardB)),
       textTurn(answer(cardA, cardBFixed)),
     ]);
@@ -61,7 +61,7 @@ describe('runAgentTask merges what the repairs give', () => {
   });
 
   it('RF-208 the second repair names only the problems that remain', async () => {
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       textTurn(answer(cardA, cardB, cardC)),
       textTurn(answer(cardBFixed, cardC)),
       textTurn(answer(cardCFixed)),
@@ -82,7 +82,7 @@ describe('runAgentTask merges what the repairs give', () => {
 
 describe('runAgentTask ends when the repairs are used up', () => {
   it('RF-208 an answer that is still invalid after two repairs gets no third one; the valid cards are kept', async () => {
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       textTurn(answer(cardA, cardB)),
       textTurn(answer(cardB)),
       textTurn(answer(cardB)),
@@ -99,7 +99,7 @@ describe('runAgentTask ends when the repairs are used up', () => {
   });
 
   it('RF-208 a card whose every claim is invalid gives no draft and, when nothing else is valid, InvalidOutput', async () => {
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       textTurn(answer(cardB)),
       textTurn(answer(cardB)),
       textTurn(answer(cardB)),
@@ -118,7 +118,7 @@ describe('runAgentTask ends when the repairs are used up', () => {
 
 describe('runAgentTask ends InvalidOutput when nothing is valid', () => {
   it('RF-208 an answer that is all prose gets two repairs and then ends InvalidOutput with all three answers', async () => {
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       textTurn('I will keep looking.'),
       textTurn('Still thinking.'),
       textTurn('No cards today.'),
@@ -137,7 +137,7 @@ describe('runAgentTask ends InvalidOutput when nothing is valid', () => {
   });
 
   it('RF-208 valid answers need no follow-up and read as before', async () => {
-    const { fake, request } = loopSetup([textTurn(answer(cardA)), textTurn(answer(cardB))]);
+    const { fake, request } = ungatedLoopSetup([textTurn(answer(cardA)), textTurn(answer(cardB))]);
 
     const result = await runAgentTask(request(fake));
 
@@ -153,7 +153,7 @@ describe('runAgentTask asks a cut-off answer to continue', () => {
   const cutAt = whole.indexOf('creates') + 4;
 
   it('RF-208 an answer cut off by the output limit is asked to continue, not to start again', async () => {
-    const { fake, request } = loopSetup([
+    const { fake, request } = ungatedLoopSetup([
       textTurn(whole.slice(0, cutAt)),
       textTurn(whole.slice(cutAt)),
     ]);
@@ -167,7 +167,7 @@ describe('runAgentTask asks a cut-off answer to continue', () => {
   });
 
   it('RF-208 a continuation that sends the whole answer again instead is still read', async () => {
-    const { fake, request } = loopSetup([textTurn(whole.slice(0, cutAt)), textTurn(whole)]);
+    const { fake, request } = ungatedLoopSetup([textTurn(whole.slice(0, cutAt)), textTurn(whole)]);
 
     const result = await runAgentTask(request(fake));
 
@@ -177,7 +177,7 @@ describe('runAgentTask asks a cut-off answer to continue', () => {
   });
 
   it('RF-208 an answer cut off twice is continued twice and then repaired at most twice: five turns, no loop', async () => {
-    const { fake, request } = loopSetup(
+    const { fake, request } = ungatedLoopSetup(
       Array.from({ length: 8 }, () => textTurn('{"cards": [{"type": "FEAT", "title"')),
       { maxTurns: 12 },
     );
@@ -194,7 +194,7 @@ describe('runAgentTask asks a cut-off answer to continue', () => {
 
 describe('runAgentTask follow-ups are turns like any other', () => {
   it('RF-208 RF-201 no repair starts at the turn limit; the valid cards of the answer are kept', async () => {
-    const { fake, request } = loopSetup(
+    const { fake, request } = ungatedLoopSetup(
       [textTurn(answer(cardA, cardB)), textTurn(answer(cardBFixed))],
       {
         maxTurns: 1,
@@ -210,7 +210,7 @@ describe('runAgentTask follow-ups are turns like any other', () => {
   });
 
   it('RF-208 RF-201 the second repair stops at the turn limit and keeps what the first one gave', async () => {
-    const { fake, request } = loopSetup(
+    const { fake, request } = ungatedLoopSetup(
       [textTurn(answer(cardA, cardB, cardC)), textTurn(answer(cardBFixed, cardC)), textTurn('x')],
       { maxTurns: 2 },
     );

@@ -71,6 +71,7 @@ export function toolsWithEvents(
   return {
     definitions: inner.definitions,
     areaOverview: () => inner.areaOverview(),
+    readableAreaFiles: () => inner.readableAreaFiles(),
     renderBlock: (source, text) => inner.renderBlock(source, text),
     async run(call, ids) {
       const turn = turns.value;

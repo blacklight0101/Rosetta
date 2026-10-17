@@ -102,6 +102,14 @@ export class ReadOnlyTools {
     return this.render('list_area_files', this.listAreaFiles());
   }
 
+  /** RF-206: the files of the area that can be read, in the code map's spelling; skipped files are left out. */
+  readableAreaFiles(): readonly string[] {
+    return this.area.files.flatMap((path) => {
+      const found = this.index.resolve(path);
+      return found.ok && found.value.skipped === undefined ? [found.value.path] : [];
+    });
+  }
+
   // RF-201
   async run(call: ToolCall, ids: ToolCallIds): Promise<ToolOutcome> {
     if (!isReaderToolName(call.name)) {

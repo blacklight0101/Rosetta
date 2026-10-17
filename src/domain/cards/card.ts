@@ -58,6 +58,8 @@ export interface Card {
   readonly flow?: FlowDetail;
   /** `SCRN` cards only (RF-261). */
   readonly screen?: ScreenDetail;
+  /** RF-206: why the card should be read with care, for example it was written without reading. */
+  readonly note?: string;
 }
 
 export interface ClaimInput {
@@ -80,6 +82,7 @@ export interface CardInput {
   readonly whyItMatters?: string | undefined;
   readonly flow?: FlowDetail | undefined;
   readonly screen?: ScreenDetail | undefined;
+  readonly note?: string | undefined;
 }
 
 export type CardProblem =
@@ -141,6 +144,7 @@ export function createCard(input: CardInput): Result<Card, CardProblem> {
     ...question.value,
     ...flow.value,
     ...screen.value,
+    ...(input.note === undefined ? {} : { note: input.note }),
   });
 }
 
