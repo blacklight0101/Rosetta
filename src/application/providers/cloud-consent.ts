@@ -18,7 +18,8 @@ const thisMachineNames: readonly string[] = ['localhost', 'host.docker.internal'
 const loopbackIpv4 =
   /^127\.(?:25[0-5]|2[0-4]\d|1?\d?\d)\.(?:25[0-5]|2[0-4]\d|1?\d?\d)\.(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
 
-function isThisMachine(host: string): boolean {
+// RF-143
+export function isThisMachine(host: string): boolean {
   const name = host.toLowerCase();
   return thisMachineNames.includes(name) || loopbackIpv4.test(name);
 }

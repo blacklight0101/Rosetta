@@ -157,6 +157,34 @@ a cancelled call (`RST-1501`) are not retried.
 To be filled by the reader model spike (P1-47, Q-04). Measured so far on the owner's machine (8 GB GPU):
 `gemma4:e4b` was the best reader with `think: false`.
 
+**The spike (P1-47, Q-04).** `eval/spike/score-reader.ts` runs one reader task over one demo area (the `Services` area
+of the `webforms-csharp` fixture by default) with each candidate model through Ollama and the guarded provider factory,
+with the shipped prompts, tools and limits of an understand run. It scores, per model, the valid cards (cards the final
+answer parsed into), the valid citations (claims whose citations all name a file of the code map and a line range inside
+it, the verifier's own check), the tool-call errors and the time. The candidates, at most four 7-9B tool-calling models
+that fit 8 GB of VRAM, are `gemma4:e4b`, `qwen3:8b`, `llama3.1:8b` and `qwen2.5-coder:7b`; `--models a,b` replaces them.
+The script never downloads a model: when Ollama is not running, or a candidate is not pulled, it stops and prints the
+command to run (`ollama serve`, `ollama pull <model>`).
+
+Owner's run (gate G-04), on the machine that runs Ollama, with `ROSETTA_TEST` unset:
+
+```text
+ollama pull gemma4:e4b
+ollama pull qwen3:8b
+ollama pull llama3.1:8b
+ollama pull qwen2.5-coder:7b
+npm run spike:reader
+```
+
+It prints the results table below with the date and the recommended model. Paste it here, record the answer to Q-04 as
+a DEC row, and set `roles.reader.model` of `templates/project-settings.json` to the chosen model (it is
+`gemma4:e4b` until then). The same run checks RNF-011: with the snapshot cached and the network to GitHub and the
+cloud providers off, a scan and an understand run must complete with Ollama only.
+
+| Model | Ended | Valid cards | Valid citations | Tool-call errors | Turns | Seconds |
+| ----- | ----- | ----------- | --------------- | ---------------- | ----- | ------- |
+| Not run yet: waiting for the owner's run | | | | | | |
+
 ## 3. OpenAI
 
 `OpenAiProvider` (`src/infrastructure/providers/openai/openai-provider.ts`, RF-402) calls the Chat Completions API
