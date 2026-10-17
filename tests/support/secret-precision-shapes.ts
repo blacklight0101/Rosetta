@@ -91,9 +91,9 @@ export const precisionSecretCases: readonly ShapeCase[] = [
   {
     name: 'a --token= value after a scheme word on a command line',
     kind: 'bearer-token',
-    text: `tool ${tokenOption}= Bearer ${token}`,
+    text: `tool ${tokenOption}= Bearer ${shortToken}`,
     masked: `tool ${tokenOption}= Bearer ${masked}`,
-    secrets: [token],
+    secrets: [shortToken],
   },
   {
     name: 'a --token= value on the line after a backslash and blanks',
