@@ -27,7 +27,9 @@ import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
-import { queueOf, stores, type Stores } from './understand-run-services.js';
+import { queueOf, scanResultsOf, stores, type Stores } from './understand-run-services.js';
+import { resumeProblemCheck } from '../../src/application/understand/resume-problem.js';
+import { FileTaskResults } from '../../src/infrastructure/cards/file-task-results.js';
 import {
   understandProviders,
   type BeforeCall,
@@ -136,6 +138,10 @@ type Resumer = (run: Run) => Promise<Result<Run, string>>;
 function resumerOf(s: Stores, queue: RunQueue): Resumer {
   const resumeRun = new ResumeRun({
     ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
+    problem: resumeProblemCheck({
+      ...{ runs: s.runs, scans: scanResultsOf(s) },
+      taskResults: new FileTaskResults({ writer: s.writer, masker: s.masker }),
+    }),
   });
   const ended = waitUntilEnded(s);
   return async (run) => {

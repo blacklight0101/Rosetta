@@ -12,6 +12,7 @@ import { capsOf } from '../runs/accepted-manifest.js';
 import type { RunQueue } from '../runs/run-queue.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { readUnderstandOptions, rolesNeedCloudConsent } from '../understand/understand-options.js';
+import type { ResumeProblemCheck } from '../understand/resume-problem.js';
 import type { SubmittedRun } from './submit-run.js';
 
 // RF-006, RF-1105, RF-143, ADR-007, DEC-13, RNF-002: Resume run queues the user's ended understand
@@ -27,6 +28,8 @@ export interface ResumeRunDependencies {
   readonly manifests: RunManifestStore;
   readonly queue: Pick<RunQueue, 'dispatch' | 'positionOf'>;
   readonly clock: Clock;
+  /** What would make the resumed run fail again the same way; found before the run is reopened. */
+  readonly problem: ResumeProblemCheck;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;
 }

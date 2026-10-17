@@ -222,20 +222,19 @@ describe('RF-006 a resume that cannot trust what the run left', UNDERSTAND_TIMEO
     expect(askedTasks(h)).toEqual(['reader-001', 'reader-001', 'reader-002']);
   });
 
-  it('RF-006 fails the resume with RST-1309 when the result file is not readable', async () => {
+  it('RF-006 refuses the resume with RST-1309, before reopening the run, when the result file is not readable', async () => {
     const { h, run } = await cappedRun();
     await h.changeSettings(raised);
     await writeFile(join(h.runFolder(run), 'task-results.json'), '{"schemaVersion": 7}');
 
     const resumed = await h.resume(run);
 
-    expect(resumed.ok && resumed.value.endState).toBe('Failed');
-    const events = await h.eventsOf(run);
-    expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.taskResultsUnreadable });
+    expect(resumed).toEqual({ ok: false, error: ERROR_CODES.taskResultsUnreadable });
+    expect(await h.runs.find(run.userId, run.id)).toMatchObject({ endState: 'CapReached' });
     expect(askedTasks(h)).toEqual(['reader-001']);
   });
 
-  it('RF-006 fails the resume with RST-1308 when the code map is not the one the run read', async () => {
+  it('RF-006 refuses the resume with RST-1308, before reopening the run, when the code map is not the one the run read', async () => {
     const { h, run } = await cappedRun();
     await h.changeSettings(raised);
     const file = join(h.runFolder(run), 'manifest.json');
@@ -244,9 +243,8 @@ describe('RF-006 a resume that cannot trust what the run left', UNDERSTAND_TIMEO
 
     const resumed = await h.resume(run);
 
-    expect(resumed.ok && resumed.value.endState).toBe('Failed');
-    const events = await h.eventsOf(run);
-    expect(events.at(-1)?.data).toMatchObject({ errorCode: ERROR_CODES.resumeSourceChanged });
+    expect(resumed).toEqual({ ok: false, error: ERROR_CODES.resumeSourceChanged });
+    expect(await h.runs.find(run.userId, run.id)).toMatchObject({ endState: 'CapReached' });
     expect(askedTasks(h)).toEqual(['reader-001']);
   });
 });

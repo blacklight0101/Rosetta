@@ -99,6 +99,17 @@ export function stores(dataDir: string, refuseRemoval = false): Stores {
   };
 }
 
+/** The scans of the test runs: the real file adapter over the C# fixture. */
+export function scanResultsOf(s: Stores): FileScanResults {
+  const { writer, manifests, logger } = s;
+  return new FileScanResults({
+    writer,
+    manifests,
+    snapshotRoot: () => fixtureRoot('webforms-csharp'),
+    logger,
+  });
+}
+
 function understandExecutor(
   s: Stores,
   providers: UnderstandProviders,
@@ -107,12 +118,7 @@ function understandExecutor(
   const { writer, masker, logger, manifests, clock } = s;
   return new RunUnderstand({
     ...{ projects: s.projects, runs: s.runs, users: s.users, manifests, clock, logger },
-    scans: new FileScanResults({
-      writer,
-      manifests,
-      snapshotRoot: () => fixtureRoot('webforms-csharp'),
-      logger,
-    }),
+    scans: scanResultsOf(s),
     providers: providers.factory,
     runSinks: providers.runSinks,
     cards: new FailingCardOutputs(new FileCardOutputs({ writer, masker, logger }), cardWritesFail),

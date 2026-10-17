@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import type { RunManifestStore } from '../../../../src/application/ports/run-manifest-store.js';
 import { ResumeRun } from '../../../../src/application/use-cases/resume-run.js';
 import type { Actor } from '../../../../src/domain/accounts/actor.js';
-import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
+import { ERROR_CODES, type ErrorCode } from '../../../../src/domain/errors/codes.js';
 import type { RunEndState, RunStage } from '../../../../src/domain/runs/run-states.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
@@ -19,8 +19,9 @@ import { createRunHarness, userAmy, userBob } from '../../../support/run-harness
 
 const fakeReader = settingsFor({ reader: { provider: 'fake', model: 'fake-model' } });
 const cloudReader = settingsFor({ reader: { provider: 'openai', model: 'gpt-5-mini' } });
+const noProblem = (): ErrorCode | undefined => undefined;
 
-async function setup(settings: ProjectSettings = fakeReader) {
+async function setup(settings: ProjectSettings = fakeReader, problemOf = noProblem) {
   const harness = createRunHarness();
   const projects = new MemoryProjectRepository();
   const project = sampleProject({ userId: userAmy.userId, settings });
@@ -32,6 +33,7 @@ async function setup(settings: ProjectSettings = fakeReader) {
       manifests,
       queue: harness.queue,
       clock: harness.clock,
+      problem: () => Promise.resolve(problemOf()),
     });
 
   async function ended(
@@ -177,4 +179,106 @@ describe('ResumeRun, consent and a failing manifest', () => {
     const stored = await harness.runs.find(userAmy.userId, run.id);
     expect(stored).toMatchObject({ queueState: 'Ended', endState: 'Interrupted' });
   });
+});
+
+interface HeldWrites {
+  readonly store: RunManifestStore;
+  /** Settles when the first write has arrived and is being held. */
+  readonly reached: Promise<void>;
+  readonly release: () => void;
+}
+
+/** A manifest store whose first write waits until the test lets them through. */
+function heldWrites(inner: RunManifestStore): HeldWrites {
+  let release: () => void = () => undefined;
+  let arrived: () => void = () => undefined;
+  const open = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const reached = new Promise<void>((resolve) => {
+    arrived = resolve;
+  });
+  let held = false;
+  const store: RunManifestStore = {
+    read: (scope) => inner.read(scope),
+    write: async (scope, manifest) => {
+      if (!held) {
+        held = true;
+        arrived();
+        await open;
+      }
+      await inner.write(scope, manifest);
+    },
+  };
+  return { store, reached, release };
+}
+
+const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 20));
+
+describe('ResumeRun and the run queue', () => {
+  it('RF-006 no dispatch starts the run from its old manifest while the new one is written', async () => {
+    const { harness, resume, ended } = await setup();
+    const run = await ended('CapReached');
+    const held = heldWrites(harness.manifests);
+    const resuming = resume(held.store).execute(as(userAmy, run.id));
+    await held.reached;
+
+    const dispatching = harness.queue.dispatch();
+    await flush();
+
+    expect(harness.executor.startedKeys).toEqual([run.runKey]);
+    held.release();
+    await Promise.all([resuming, dispatching]);
+    expect(harness.executor.startedKeys).toEqual([run.runKey, run.runKey]);
+    const manifest = await harness.manifests.read(harness.scopeOf(run));
+    expect(manifest).toMatchObject({ endState: null, endedAt: null });
+    expect(manifest?.startedAt).not.toBeNull();
+  });
+
+  it('RF-006 refuses a resume until the first session has written its end', async () => {
+    const { harness, project, resume } = await setup();
+    const submitted = await harness.submit.execute({
+      ...{ actor: userAmy, project, stage: 'understand' },
+      options: {},
+    });
+    if (!submitted.ok) throw new Error('The run was not accepted');
+    const { run } = submitted.value;
+    await vi.waitFor(() => {
+      expect(harness.executor.startedKeys).toHaveLength(1);
+    });
+    const original = harness.manifests.write.bind(harness.manifests);
+    const held = heldWrites({
+      read: (scope) => harness.manifests.read(scope),
+      write: (scope, manifest) => original(scope, manifest),
+    });
+    Object.assign(harness.manifests, {
+      write: (...args: Parameters<RunManifestStore['write']>) => held.store.write(...args),
+    });
+
+    harness.executor.settle(run.id, { endState: 'CapReached' });
+    await held.reached;
+    const early = await resume().execute(as(userAmy, run.id));
+
+    expect(early).toEqual({ ok: false, error: ERROR_CODES.runNotResumable });
+    held.release();
+    await settledRun(harness, run);
+    expect((await resume().execute(as(userAmy, run.id))).ok).toBe(true);
+  });
+});
+
+describe('ResumeRun and a run that would fail again', () => {
+  it.each([ERROR_CODES.resumeSourceChanged, ERROR_CODES.taskResultsUnreadable])(
+    'RF-006 refuses with %s before reopening, so the run is not left Failed to be resumed again',
+    async (code) => {
+      const { harness, resume, ended } = await setup(fakeReader, () => code);
+      const run = await ended('CapReached');
+
+      const resumed = await resume().execute(as(userAmy, run.id));
+
+      expect(resumed).toEqual({ ok: false, error: code });
+      const stored = await harness.runs.find(userAmy.userId, run.id);
+      expect(stored).toMatchObject({ queueState: 'Ended', endState: 'CapReached' });
+      expect(harness.executor.startedKeys).toEqual([run.runKey]);
+    },
+  );
 });
