@@ -57,6 +57,11 @@ export function loadMergePrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'summariser/merge.v1.md');
 }
 
+/** RF-264: red stub, replaced by the implementation in the next commit. */
+export function loadOverviewPrompt(promptsFolder: string): Promise<PromptFile> {
+  return Promise.reject(new RosettaError(ERROR_CODES.configurationInvalid, promptsFolder));
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }

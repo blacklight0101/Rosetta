@@ -144,6 +144,28 @@ test('RF-1004 RF-301 the claims list shows the recorded verdicts Supported and R
   await expectNoSeriousViolations(page);
 });
 
+test('RF-264 the overview of the application comes first on the page of a finished run, before the open questions', async ({
+  page,
+}) => {
+  await page.goto(finishedRun);
+
+  const overview = page.getByRole('region', { name: 'Overview of the application' });
+  const questions = page.getByRole('region', { name: 'Open questions' });
+  await expect(overview).toContainText('A catalog web site that lists items and shows one item.');
+  await expect(overview.getByRole('link', { name: 'FEAT-001' }).first()).toBeVisible();
+  await expect(overview).not.toContainText('send an email');
+  await expect(overview).toContainText('Controllers: no card passed the citation check.');
+  // The hostile statement is text: no script ran and nothing was injected into the page.
+  await expect(overview.locator('script, img')).toHaveCount(0);
+  await expect(overview).toContainText('<script>');
+  const top = async (region: typeof overview) => (await region.boundingBox())?.y ?? Infinity;
+  expect(await top(overview)).toBeLessThan(await top(questions));
+  await expect(
+    questions.getByTestId('open-question').filter({ hasText: 'OQ-001' }).getByRole('link'),
+  ).toHaveAttribute('href', '#overview-application');
+  await expectNoSeriousViolations(page);
+});
+
 test('RF-1007 an answer typed on the page is saved in answers.md and is there after a reload', async ({
   page,
 }) => {

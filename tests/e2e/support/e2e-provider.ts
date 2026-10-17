@@ -45,6 +45,20 @@ function verdictOf(recording: Recording, request: LlmRequest): LlmResponse | und
   return attempt !== undefined && 'response' in attempt ? attempt.response : undefined;
 }
 
+/**
+ * RF-264: the overview the summariser writes for the webforms run, from the 13th call of
+ * `understand-overview.json`, with the small usage of every other answer of the test server.
+ */
+function overviewOf(recording: Recording, request: LlmRequest): LlmResponse | undefined {
+  if (request.context.agentTaskId !== 'summariser-overview') return undefined;
+  const attempt = recording.calls[12]?.attempts[0];
+  if (attempt === undefined || !('response' in attempt)) return undefined;
+  return {
+    ...attempt.response,
+    usage: { inputTokens: 24, outputTokens: 2, cachedInputTokens: 0, usageSource: 'reported' },
+  };
+}
+
 /** Each recorded call waits this long, so a page can be seen between the steps of an agent. */
 const STEP_DELAY_MS = 700;
 
@@ -64,10 +78,15 @@ export async function createE2eProvider(): Promise<LlmProvider> {
   const verdicts = await loadRecording(
     join('tests', 'recordings', 'fake', 'verifier-csharp-full.json'),
   );
+  const overviews = await loadRecording(
+    join('tests', 'recordings', 'fake', 'understand-overview.json'),
+  );
   return {
     complete: (request) => {
       const verdict = verdictOf(verdicts, request);
       if (verdict !== undefined) return Promise.resolve(verdict);
+      const overview = overviewOf(overviews, request);
+      if (overview !== undefined) return Promise.resolve(overview);
       return scripted.handles(request) ? scripted.complete(request) : answering.complete(request);
     },
   };
