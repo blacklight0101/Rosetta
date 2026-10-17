@@ -57,6 +57,18 @@ describe('the earlier cards of a run', () => {
     ]);
   });
 
+  it('RF-241 RF-243 reads the question of an OQ card from its header', async () => {
+    const { writer, cards } = setup();
+    writer.files.set(
+      `${folder}/cards/OQ/OQ-001.md`,
+      card('Open').replace('questionState:', 'question: "Who uses the pages?"\nquestionState:'),
+    );
+
+    expect(await cards.cardsOf(project, runKey)).toMatchObject([
+      { id: 'OQ-001', question: 'Who uses the pages?' },
+    ]);
+  });
+
   it('RF-241 reads nothing for a run key that is not a run folder name', async () => {
     const { cards } = setup();
 
