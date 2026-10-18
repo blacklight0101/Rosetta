@@ -67,8 +67,9 @@ it.each(['CapReached', 'Failed', 'Interrupted'] as const)(
     await openEnded({ judged: 'Supported', endState, questions: [] });
 
     await waitFor(() => {
-      expect(within(turn()).getByRole('button', { name: 'Resume run' })).toBeTruthy();
+      expect(turn().textContent).toContain('Resume it');
     });
+    expect(screen.getAllByRole('button', { name: 'Resume run' })).toHaveLength(1);
     expect(within(turn()).queryByRole('button', { name: 'Set up the plan' })).toBeNull();
     expect(turn().textContent).toContain('plan');
   },

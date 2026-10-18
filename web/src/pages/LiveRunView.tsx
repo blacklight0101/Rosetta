@@ -113,7 +113,7 @@ export function LiveRunView({ run, stream, phase, onResumed }: LiveRunViewProps)
       <Connection stream={stream} />
       {phase.kind === 'ended' ? (
         <EndedBody
-          {...{ run, state, phase, stage, estimate, onResumed }}
+          {...{ run, state, phase, stage, estimate }}
           shown={view.shown}
           costMicros={costOf(state, run)}
           source={sourceOf(state, run)}

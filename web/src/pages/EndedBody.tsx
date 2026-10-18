@@ -41,8 +41,6 @@ export interface EndedBodyProps {
   readonly costMicros: number;
   readonly estimate: RunEstimate | undefined;
   readonly source: SourceState | undefined;
-  /** RF-006: called once the server has queued the run again. */
-  readonly onResumed: () => void;
 }
 
 const tabIds = ['overview', 'questions', 'evidence', 'activity'] as const;
@@ -174,7 +172,6 @@ interface RailProps {
   readonly answers: AnswersLoad;
   readonly report: { readonly onBuilt: () => void };
   readonly onAnswer: () => void;
-  readonly onResumed: () => void;
 }
 
 /** The Your turn panel, and the report, the downloads and the calls link, one click away. */
@@ -231,7 +228,6 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
         </section>
         <Rail
           {...{ run, stage, failed, asks }}
-          onResumed={props.onResumed}
           answers={answers.load}
           state={shown}
           costMicros={props.costMicros}

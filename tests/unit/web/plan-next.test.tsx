@@ -9,7 +9,6 @@ it('RF-614 offers nothing while the end of the run is not known', () => {
     <PlanNext
       {...{ runId: 'r-1', projectId: 'p-1', endState: '', supportedClaims: 3 }}
       questionsOpen={false}
-      onResumed={() => undefined}
     />,
   );
 

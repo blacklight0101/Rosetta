@@ -22,8 +22,6 @@ export interface YourTurnProps {
   readonly onAnswer: () => void;
   /** RF-614: the run and its project, to open Plan setup for this run. */
   readonly run: { readonly id: string; readonly projectId: string };
-  /** RF-006: called once the server has queued the run again. */
-  readonly onResumed: () => void;
 }
 
 function plural(count: number, word: string): string {
@@ -85,7 +83,7 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
       <Next {...props} />
       {props.asks || props.failed ? (
         <PlanNext
-          {...{ runId: run.id, projectId: run.projectId, onResumed: props.onResumed }}
+          {...{ runId: run.id, projectId: run.projectId }}
           {...{ endState: state.ended?.endState ?? '', supportedClaims: facts.supportedClaims }}
           questionsOpen={questionsOpen(props.answers)}
         />
