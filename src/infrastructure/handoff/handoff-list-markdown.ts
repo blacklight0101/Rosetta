@@ -1,7 +1,7 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
-import { decisionFile, handoffFiles, sourceLinks } from './handoff-links.js';
+import { decisionFile, documentSet, handoffFiles, sourceLinks } from './handoff-links.js';
 
 // RF-601..RF-604, RF-603: the README with the reading order, the risks, the open questions (the
 // brief's questions that took their default, the analysis questions without an answer and the
@@ -40,6 +40,20 @@ function briefQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): stri
   ];
 }
 
+/** RF-621, DEC-80: the PRD sections the cards could not fill, each with the default used. */
+function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  if (handoff.prdQuestions.length === 0)
+    return ['Every section of the PRD was filled from the cards.'];
+  return [
+    '| Id | Question | Default the package used |',
+    '|---|---|---|',
+    ...handoff.prdQuestions.map(
+      (question) =>
+        `| ${question.id} | ${esc.inline(question.question)} | ${esc.inline(question.answer)} |`,
+    ),
+  ];
+}
+
 function excludedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.excluded.length === 0) return ['No claim was left out.'];
   return [
@@ -64,6 +78,12 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     'Nobody answered these questions when the brief was saved; the package was written with the default shown. Confirm or change each one.',
     '',
     ...briefQuestionLines(handoff, esc),
+    '',
+    '## Product requirements document questions',
+    '',
+    'The cards cannot answer these questions, so the product requirements document holds a marked placeholder where each answer belongs. Answer or confirm the default of each one.',
+    '',
+    ...prdQuestionLines(handoff, esc),
     '',
     '## Questions from the analysis without an answer',
     '',
@@ -110,7 +130,28 @@ function decisionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   );
 }
 
-// RF-601, RF-603
+/** RF-620, RF-601: the documentation set first, then the parts of RF-601, each linking its file. */
+function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const entries = [
+    ...documentSet.map(({ title, file }) => [`[${title}](${file})`]),
+    [`[Requirements specification](${handoffFiles.requirements})`],
+    [`[Target architecture](${handoffFiles.architecture})`],
+    ['Architecture decision records', ...decisionLines(handoff, esc)],
+    [`[Entity mapping](${handoffFiles.entities})`],
+    [`[Roadmap](${handoffFiles.roadmap})`],
+    [`[Task cards](${handoffFiles.tasks})`],
+    [`[Risks](${handoffFiles.risks})`],
+    [`[Open questions](${handoffFiles.openQuestions})`],
+    [`[Source cards](${handoffFiles.sources})`],
+    [`[Conventions](${handoffFiles.conventions})`],
+    ...(handoff.brief.buildMethod.aiAssisted ? [[`[AGENTS.md](${handoffFiles.agents})`]] : []),
+  ];
+  return entries.flatMap((lines, index) =>
+    lines.map((line, at) => (at === 0 ? `${String(index + 1)}. ${line}` : line)),
+  );
+}
+
+// RF-601, RF-603, RF-620
 export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { repository, brief } = handoff;
   const commit = repository.commitSha ?? 'not recorded';
@@ -123,18 +164,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '',
     '## Reading order',
     '',
-    `1. [Requirements specification](${handoffFiles.requirements})`,
-    `2. [Target architecture](${handoffFiles.architecture})`,
-    '3. Architecture decision records',
-    ...decisionLines(handoff, esc),
-    `4. [Entity mapping](${handoffFiles.entities})`,
-    `5. [Roadmap](${handoffFiles.roadmap})`,
-    `6. [Task cards](${handoffFiles.tasks})`,
-    `7. [Risks](${handoffFiles.risks})`,
-    `8. [Open questions](${handoffFiles.openQuestions})`,
-    `9. [Source cards](${handoffFiles.sources})`,
-    `10. [Conventions](${handoffFiles.conventions})`,
-    ...(brief.buildMethod.aiAssisted ? [`11. [AGENTS.md](${handoffFiles.agents})`] : []),
+    ...readingOrder(handoff, esc),
     '',
     '## Principles and practices',
     '',
