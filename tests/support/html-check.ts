@@ -12,9 +12,11 @@ const URL_ATTRIBUTES = new Set([
   ...['src', 'srcset', 'href', 'action', 'formaction', 'data', 'poster', 'ping', 'xlink:href'],
 ]);
 const SIBLING = /^[A-Z]+-\d+\.html$/u;
-const TAG =
-  /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^\s=>/]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*\/?>/gu;
-const ATTRIBUTE = /([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/gu;
+// A tag ends at the first `>` and holds no `<`, which is linear to match. Generated text is escaped,
+// so a raw `<` or `>` left outside a tag (or inside a quoted value, which ends the tag early here
+// and leaves its tail outside) is a problem in itself.
+const TAG = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)([^<>]*)>/gu;
+const ATTRIBUTE = /([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/gu;
 const STYLE_BAD = /url\s*\(|@import|expression\s*\(|javascript:|behavior\s*:/iu;
 const SCHEME = /^\s*[a-z][a-z0-9+.-]*:/iu;
 const JAVASCRIPT = /^\s*javascript:/iu;
@@ -85,5 +87,6 @@ export function htmlProblems(html: string): string[] {
       return '';
     });
   if (rest.includes('<')) problems.push('a < that starts no tag');
+  if (rest.includes('>')) problems.push('a > that closes no tag');
   return [...new Set(problems)];
 }
