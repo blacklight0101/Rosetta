@@ -9,8 +9,8 @@ import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 import { shippedCatalogue } from '../../support/planning-brief-harness.js';
 
-// RF-601..RF-604, RNF-004, ADR-005, ADR-008, DEC-80: a plan run over a seeded understand run with
-// the real provider factory, the planner replaying tests/recordings/fake/planner-package.json.
+// RF-601..RF-604, RNF-004, ADR-005, ADR-008, DEC-80: a plan run over a seeded understand run, the
+// planner replaying tests/recordings/fake/planner-package.json.
 
 const briefAnswers = {
   architecture: { style: 'hexagonal' },
@@ -18,14 +18,12 @@ const briefAnswers = {
   stack: [{ layer: 'database', choice: 'PostgreSQL', custom: false }],
 } as const;
 
-/** The files whose text matches the pattern. */
 function holding(files: Readonly<Record<string, string>>, pattern: RegExp): string[] {
   return Object.entries(files)
     .filter(([, text]) => pattern.test(text))
     .map(([path]) => path);
 }
 
-/** The text as a reader sees it: the escaper's backslashes removed. */
 function plain(text: string): string {
   return text.replaceAll('\\', '');
 }
@@ -154,6 +152,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/flows.v1.md': { version: 'v1', sha256: await sha('flows.v1.md') },
       'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
       'planner/ux.v1.md': { version: 'v1', sha256: await sha('ux.v1.md') },
+      'planner/coverage.v1.md': { version: 'v1', sha256: await sha('coverage.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');
@@ -170,6 +169,7 @@ describe('BuildPlan: the parts of the package', () => {
     expect(Object.keys(files).sort()).toEqual([
       'README.md',
       'architecture.md',
+      'checks.md',
       'conventions.md',
       'data-model.md',
       ...[1, 2, 3, 4].map((n) => `decisions/ADR-00${String(n)}.md`),
@@ -201,7 +201,7 @@ describe('BuildPlan: the parts of the package', () => {
     expect(roadmap.match(/^Exit criteria:$/gmu)).toHaveLength(2);
     const tasks = plain(files['tasks.md'] ?? '');
     const cards = tasks.split(/^## /mu).slice(1);
-    expect(cards.map((card) => card.split('\n')[0])).toEqual(['T-001', 'T-002']);
+    expect(cards.map((card) => card.split('\n')[0])).toEqual(['T-001', 'T-002', 'T-003']);
     for (const card of cards) expect(card).toMatch(/Acceptance criteria:\n\n- Given /u);
     expect(tasks).toContain('Requirements: [REQ-001](requirements.md#req-001), [REQ-002]');
     expect(tasks).toContain('Requirements: [REQ-003](requirements.md#req-003)');

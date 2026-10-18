@@ -99,6 +99,7 @@ export const ERROR_CODES = {
   plannerAnswerInvalid: 'RST-1803',
   handoffWriteFailed: 'RST-1804',
   plannerAnswerCutOff: 'RST-1805',
+  planCoverageGap: 'RST-1806',
   githubUrlInvalid: 'RST-1900',
   githubRefNotFound: 'RST-1901',
   githubRateLimited: 'RST-1902',

@@ -37,4 +37,10 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
     nextStep:
       'Raise Planner max output tokens in Project settings (up to 32,768), or choose a planner model that writes longer answers, then write the package again.',
   },
+  'RST-1806': {
+    message:
+      'The hand-off package was written, but some feature, table, operation, journey or screen in it is built by no task card, so the plan is not complete.',
+    nextStep:
+      'Open checks.md in the package to see the items no task card builds, then write the package again.',
+  },
 };
