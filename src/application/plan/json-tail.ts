@@ -60,3 +60,7 @@ export function isProseRest(rest: string, inKey: boolean): boolean {
   const end = rest.indexOf('"');
   return /[\s:,]/u.test(end < 0 ? rest : rest.slice(0, end));
 }
+
+export function resumePoint(text: string): string {
+  return text;
+}

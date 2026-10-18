@@ -102,11 +102,11 @@ describe('askPlannerWith: a cut-off answer is continued', () => {
 
   it('RF-604 a provider with no stop reason is detected by the token count and unclosed JSON', async () => {
     const { call, requests } = setup([
-      { text: '{"a": [1, 2', finishReason: 'stop', outputTokens: limit },
-      { text: ']}' },
+      { text: '{"a": [1, 2,', finishReason: 'stop', outputTokens: limit },
+      { text: ' 3]}' },
     ]);
 
-    expect(await askPlannerWith(call, 'm')).toBe('{"a": [1, 2]}');
+    expect(await askPlannerWith(call, 'm')).toBe('{"a": [1, 2, 3]}');
     expect(requests).toHaveLength(2);
   });
 });
@@ -156,8 +156,8 @@ describe('askPlannerWith: the limit of continuations', () => {
     ]);
 
     expect(await askPlannerWith(call, 'm')).toBe('{"a": [1, 2, 3]}');
-    expect(requests[2]?.messages).toHaveLength(5);
-    expect(requests[2]?.messages[3]).toEqual({ role: 'assistant', content: ' 2,' });
+    expect(requests[2]?.messages).toHaveLength(3);
+    expect(requests[2]?.messages[1]).toEqual({ role: 'assistant', content: '{"a": [1, 2,' });
     expect(requests[1]?.messages).toHaveLength(3);
   });
 
@@ -253,4 +253,36 @@ describe('askPlannerWith: a continuation that ends without finishing the JSON (P
 
     expect(error.code).toBe('RST-1805');
   });
+});
+
+describe('askPlannerWith: a cut inside a string is resumed at the boundary before it (P3-31)', () => {
+  const cut = { finishReason: 'length', outputTokens: limit } as const;
+
+  it.each([
+    ['{"statement": "Make', '"Make sure that the total is: 5."}'],
+    ['{"statement": "Pay the bo', '"Pay the book: due today."}'],
+    ['{"statement": "dis', '"discontinuing: legacy"}'],
+  ])(
+    'RF-604 %j is shown to the model without the cut string and joined whole',
+    async (head, rest) => {
+      const { call, requests } = setup([{ text: head, ...cut }, { text: rest }]);
+
+      const text = await askPlannerWith(call, 'm');
+
+      expect(requests[1]?.messages[1]).toEqual({ role: 'assistant', content: '{"statement": ' });
+      expect(text).toBe(`{"statement": ${rest}`);
+    },
+  );
+
+  it.each(['Sure! der"}', 'Understood. der"}', 'Sure, here is the rest der"}'])(
+    'RF-604 a continuation that opens with prose (%j) is RST-1805, never glued in',
+    async (prose) => {
+      const { call } = setup([{ text: '{"statement": "Pay the or', ...cut }, { text: prose }]);
+
+      const error = await failureOf(askPlannerWith(call, 'm'));
+
+      expect(error.code).toBe('RST-1805');
+      expect(error.message).not.toContain('Pay the');
+    },
+  );
 });
