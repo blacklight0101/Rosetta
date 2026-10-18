@@ -72,11 +72,31 @@ export function allocateIdentifiers(
   });
 }
 
-/** The folders of a path, lower case, with `.`, `..`, repeated and trailing slashes resolved. */
+const wildcard = /[*?[\]{}]/u;
+const outsideTheRepository = /^(?:[a-z]:|~)$/u;
+
+/** One name of a path: no `::$DATA` stream, no trailing dots or spaces (Windows ignores them). */
+function nameOf(part: string): string {
+  const stream = part.indexOf('::$');
+  const name = (stream < 0 ? part : part.slice(0, stream)).trim();
+  return name === '..' ? name : name.replace(/[. ]+$/u, '');
+}
+
+/**
+ * The folders of a path, lower case, with `.`, `..`, repeated and trailing slashes resolved, in
+ * compatibility form (NFKC, so full-width and composed letters match). The path stops at the first
+ * name that holds a wildcard (`*?[]{}`), because what follows can be anything below the folder
+ * before it; a leading wildcard, a drive (`C:`) and `~` are the root of the repository, which
+ * overlaps every card. Other look-alike spellings (`ss` for the German sharp s, 8.3 short names)
+ * are not merged: a miss costs a missed ordering, never a repeated identifier.
+ */
 function segmentsOf(path: string): string[] {
   const folders: string[] = [];
-  for (const part of path.normalize('NFC').toLowerCase().replaceAll('\\', '/').split('/')) {
-    const name = part.trim();
+  const parts = path.normalize('NFKC').toLowerCase().replaceAll('\\', '/').split('/');
+  for (const [at, part] of parts.entries()) {
+    const name = nameOf(part);
+    if (at === 0 && outsideTheRepository.test(name)) return [];
+    if (wildcard.test(name)) break;
     if (name === '..') folders.pop();
     else if (name !== '' && name !== '.') folders.push(name);
   }

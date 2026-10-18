@@ -191,5 +191,7 @@ describe('RF-634 the planner prompt asks for it', () => {
     expect(prompt).toContain('`dependsOn`');
     for (const kind of kinds) expect(prompt).toContain(kind);
     expect(prompt).toContain('never write the value');
+    expect(prompt).toContain('Paths are literal');
+    expect(prompt).toContain('write no patterns');
   });
 });
