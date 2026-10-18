@@ -85,6 +85,13 @@ describe('the screens fragment', () => {
     expect(screensPrompt).toMatch(/never invent a validation/iu);
   });
 
+  it('RF-626 says the route, roles, fields and links are checked claims and never listed on suspicion', () => {
+    expect(screensPrompt).toMatch(
+      /route, each role, each field and each `leadsTo` entry into a claim/u,
+    );
+    expect(screensPrompt).toMatch(/Never list a field you only suspect/u);
+  });
+
   it('DEC-134 forbids writing diagrams: Rosetta draws the screen map', () => {
     expect(screensPrompt).toMatch(/never write (a )?(Mermaid|diagram)/iu);
   });
