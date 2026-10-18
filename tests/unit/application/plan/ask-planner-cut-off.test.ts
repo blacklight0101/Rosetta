@@ -214,3 +214,43 @@ describe('askPlannerWith: what the continuation holds', () => {
     expect(messages[0]).toContain('Planner max output tokens');
   });
 });
+
+describe('askPlannerWith: a continuation that ends without finishing the JSON (P3-31)', () => {
+  it('RF-007 a last continuation that stops normally with JSON still open is RST-1805', async () => {
+    const { call, requests } = setup([
+      { text: '{"a": [1,', finishReason: 'length', outputTokens: limit },
+      { text: ' I am sorry, I cannot go on.' },
+    ]);
+
+    const error = await failureOf(askPlannerWith(call, 'm'));
+
+    expect(requests).toHaveLength(2);
+    expect(error.code).toBe('RST-1805');
+    expect(error.message).not.toContain('sorry');
+  });
+
+  it('RF-007 with a hook, that answer is returned after the hook names the cause', async () => {
+    const messages: string[] = [];
+    const { call } = setup(
+      [{ text: '{"a": [1,', finishReason: 'length', outputTokens: limit }, { text: ' 2,' }],
+      (message) => {
+        messages.push(message);
+        return Promise.resolve();
+      },
+    );
+
+    expect(await askPlannerWith(call, 'm')).toBe('{"a": [1, 2,');
+    expect(messages).toHaveLength(1);
+  });
+
+  it('RF-604 a continuation that opens with prose inside a key is not joined and the call is RST-1805', async () => {
+    const { call } = setup([
+      { text: '{"items": [{"ti', finishReason: 'length', outputTokens: limit },
+      { text: 'Sure, here is the rest: tle":"two"}]}' },
+    ]);
+
+    const error = await failureOf(askPlannerWith(call, 'm'));
+
+    expect(error.code).toBe('RST-1805');
+  });
+});

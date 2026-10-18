@@ -131,6 +131,20 @@ describe('BuildPlan: what a cut-off answer is not', () => {
   });
 });
 
+describe('BuildPlan: a last continuation that does not finish the JSON (P3-31)', () => {
+  it('RF-007 a last continuation that stops normally with JSON open is RST-1805, not RST-1803', async () => {
+    const recording = await base();
+    const head = textOf(recording, 0).slice(0, 80);
+    const h = await planned(cutAt(recording, 0, [head, ' Sorry, I cannot go on.']));
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Failed');
+    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1805' }));
+    expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1803' }));
+  });
+});
+
 describe('BuildPlan: a cut-off document or a metered continuation', () => {
   it('RF-604 RF-621 a PRD that stays cut off leaves placeholders and a warning that names the setting', async () => {
     const recording = await base();

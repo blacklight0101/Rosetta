@@ -33,6 +33,17 @@ export function isCutOff(text: string, end: AnswerEnd, limit: number): boolean {
   return end.outputTokens >= limit && json.unclosed;
 }
 
+/** Whether the answer is cut off after `continued` continuations. */
+// RF-604, RF-007
+export function endsCutOff(
+  text: string,
+  end: AnswerEnd,
+  limit: number,
+  continued: number,
+): boolean {
+  return continued < 0 || isCutOff(text, end, limit);
+}
+
 /** The answer so far with the fragment the model sent after being asked to continue. */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
