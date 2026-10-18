@@ -55,3 +55,31 @@ describe('writeOverview on a run of chosen areas', () => {
     expect(overview.notice).toBeUndefined();
   });
 });
+
+describe('writeOverview and the areas that count as chosen', () => {
+  it('RF-264 a selected third-party area does not count as a chosen one', async () => {
+    const { parts } = partsOf(new Answers(() => answer(goodOverviewAnswer)));
+    const mixed = [
+      standing('Orders'),
+      standing('Vendor', { thirdParty: true }),
+      standing('Docs', { selected: false }),
+    ];
+
+    const overview = await writeOverview(parts, { cards: overviewCards(), areas: mixed });
+
+    expect(overview.notice).toContain('1 of 3 areas');
+  });
+
+  it('RF-264 asking for third-party areas only is not a run of chosen areas', async () => {
+    const { parts } = partsOf(new Answers(() => answer(goodOverviewAnswer)));
+    const vendor = [
+      standing('Vendor', { thirdParty: true }),
+      standing('Orders', { selected: false }),
+      standing('Billing', { selected: false }),
+    ];
+
+    const overview = await writeOverview(parts, { cards: overviewCards(), areas: vendor });
+
+    expect(overview.notice ?? '').not.toContain('fuller picture');
+  });
+});

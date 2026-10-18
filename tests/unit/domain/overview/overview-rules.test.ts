@@ -3,7 +3,7 @@ import { sectionsOf, type OverviewDraft } from '../../../../src/domain/overview/
 import { eligibleCards } from '../../../../src/domain/overview/eligible-cards.js';
 import { questionLinks } from '../../../../src/domain/overview/question-links.js';
 import { notCoveredOf } from '../../../../src/domain/overview/standing.js';
-import { isThin, thinNotice } from '../../../../src/domain/overview/thin-run.js';
+import { isChosenRun, isThin, thinNotice } from '../../../../src/domain/overview/thin-run.js';
 import { fullOverview, overviewCards, withStatus } from '../../../support/app-overview-fixtures.js';
 
 // RF-264: the rules of the overview that need no model: which cards it may use, which statements
@@ -109,6 +109,11 @@ describe('isThin and thinNotice', () => {
     expect(isThin(reach)).toBe(false);
   });
 
+  it('RF-264 a run with exactly three cards is not thin and one with two is', () => {
+    expect(isThin({ ...reach, cards: 3 })).toBe(false);
+    expect(isThin({ ...reach, cards: 2 })).toBe(true);
+  });
+
   it('RF-264 a run with fewer than three cards is thin', () => {
     expect(isThin({ ...reach, cards: 2 })).toBe(true);
   });
@@ -144,6 +149,22 @@ describe('isThin and thinNotice', () => {
     });
 
     expect(notice).toContain('Most areas of this repository hold third-party code');
+  });
+});
+
+describe('isChosenRun', () => {
+  const run = { cards: 6, areas: 3, areasWithCards: 3, thirdPartyAreas: 1, found: 6, chosen: 2 };
+
+  it('RF-264 is a chosen run when own-code areas were left out', () => {
+    expect(isChosenRun(run)).toBe(true);
+  });
+
+  it('RF-264 is not a chosen run when only third-party areas were asked for', () => {
+    expect(isChosenRun({ ...run, chosen: 0, thirdPartyAreas: 2, found: 6 })).toBe(false);
+  });
+
+  it('RF-264 is not a chosen run when the chosen and third-party areas are all there is', () => {
+    expect(isChosenRun({ ...run, found: 3 })).toBe(false);
   });
 });
 

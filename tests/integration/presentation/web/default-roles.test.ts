@@ -1,4 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
+import { z } from 'zod';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { templateSettings } from '../../../support/project-fixtures.js';
 import { addUser, signedInBrowser, type TestBrowser } from '../../../support/test-browser.js';
@@ -8,10 +9,7 @@ import { createTestServer, type TestServer } from '../../../support/web-server.j
 // for new projects under /api/admin/default-roles. A role left out keeps the template's model; a
 // change writes an audit row and is used by the next project that is created.
 
-interface Answer {
-  readonly roles: unknown;
-  readonly builtIn: unknown;
-}
+const answerSchema = z.object({ roles: z.unknown(), builtIn: z.unknown() });
 
 let test: TestServer;
 
@@ -35,7 +33,7 @@ it('DEC-106 the administrator reads no default models until they are set', async
   const response = await root.request({ method: 'GET', url: '/api/admin/default-roles' });
 
   expect(response.statusCode).toBe(200);
-  expect(response.json<Answer>().roles).toEqual({});
+  expect(answerSchema.parse(response.json()).roles).toEqual({});
 });
 
 it('DEC-106 the administrator sets the default models; the change is kept and audited', async () => {
@@ -51,7 +49,7 @@ it('DEC-106 the administrator sets the default models; the change is kept and au
 
   expect(saved.statusCode).toBe(200);
   expect(saved.json()).toEqual({ roles });
-  expect(read.json<Answer>().roles).toEqual(roles);
+  expect(answerSchema.parse(read.json()).roles).toEqual(roles);
   const [event] = await test.audit.list({ since: 0, action: 'admin.default_roles_changed' });
   expect(event).toMatchObject({ outcome: 'ok', targetId: 'defaultRoles' });
   expect(event?.detail).toMatchObject({ reader: 'ollama/gemma4:e4b', planner: 'template' });
@@ -104,7 +102,7 @@ it.each([
     expect(refused.statusCode).toBe(400);
     expect(refused.json()).toMatchObject({ code: ERROR_CODES.settingsInvalid, problems });
     const read = await root.request({ method: 'GET', url: '/api/admin/default-roles' });
-    expect(read.json<Answer>().roles).toEqual({});
+    expect(answerSchema.parse(read.json()).roles).toEqual({});
   },
 );
 
@@ -143,8 +141,8 @@ it('DEC-106 the answer names the built-in defaults that apply to a role nobody h
 
   const response = await root.request({ method: 'GET', url: '/api/admin/default-roles' });
 
-  expect(response.json<Answer>().roles).toEqual({});
-  expect(response.json<Answer>().builtIn).toEqual({
+  expect(answerSchema.parse(response.json()).roles).toEqual({});
+  expect(answerSchema.parse(response.json()).builtIn).toEqual({
     reader: { provider: template.reader.provider, model: template.reader.model },
     verifier: { provider: template.verifier.provider, model: template.verifier.model },
     planner: { provider: template.planner.provider, model: template.planner.model },

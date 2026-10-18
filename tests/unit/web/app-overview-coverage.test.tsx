@@ -93,3 +93,25 @@ describe('the notice of a run of chosen areas', () => {
     expect(warned.className).toContain('rst-callout--warn');
   });
 });
+
+describe('the fold of a group', () => {
+  const sized = (open: number, folded: number): readonly string[] =>
+    notCoveredOf([
+      ...names('Pick', open).map((name) => ({ ...base, name, selected: false })),
+      ...names('Lib', folded).map((name) => ({ ...base, name, thirdParty: true })),
+    ]);
+
+  it('RF-264 keeps a group of exactly 5 lines open and folds one of exactly 6', async () => {
+    renderLive({
+      [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: 'Completed' }),
+      [`GET ${runPath}/overview`]: json(200, {
+        overview: { ...full, notCovered: sized(5, 6) },
+      }),
+      [`GET ${runPath}/answers`]: json(200, { questions: [] }),
+    });
+    const region = await screen.findByRole('region', { name: 'What was not covered' });
+
+    expect(within(region).getByText('Not selected for this run (5)').closest('details')).toBeNull();
+    expect(within(region).getByText('Third-party code (6)').closest('details')).not.toBeNull();
+  });
+});
