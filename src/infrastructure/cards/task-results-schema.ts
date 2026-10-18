@@ -35,6 +35,8 @@ const claimSchema = z.object({
     })
     .optional(),
   ...stepShape,
+  // RF-209, RF-302: the rejected claim this one replaces.
+  replaces: text.optional(),
 });
 
 const cardSchema = z.object({
@@ -86,9 +88,12 @@ const fileSchema = z.object({ schemaVersion: z.literal(1), tasks: z.array(result
 
 /** A claim without the keys that are absent, as the domain type has it (exact optionals). */
 function claimOf(claim: z.output<typeof claimSchema>): Claim {
-  const { verdict, target, branches, ...rest } = claim;
+  const { verdict, target, branches, replaces, ...rest } = claim;
   const step = stepOf({ target, branches });
-  return verdict === undefined ? { ...rest, ...step } : { ...rest, ...step, verdict };
+  const replacing = replaces === undefined ? {} : { replaces };
+  return verdict === undefined
+    ? { ...rest, ...step, ...replacing }
+    : { ...rest, ...step, ...replacing, verdict };
 }
 
 function cardOf(card: z.output<typeof cardSchema>): Card {

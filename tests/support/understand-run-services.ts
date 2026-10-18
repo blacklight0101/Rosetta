@@ -24,6 +24,7 @@ import {
   loadMergePrompt,
   loadOverviewPrompt,
   loadAnswersPrompt,
+  loadRereadPrompt,
   loadReaderPrompts,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { loadVerifierPrompts } from '../../src/infrastructure/prompts/verifier-prompt-files.js';
@@ -145,6 +146,7 @@ function understandExecutor(
     verifierPrompts: () => loadVerifierPrompts('prompts'),
     textToolProtocol: () => loadTextToolProtocol('prompts'),
     answersPrompt: () => loadAnswersPrompt('prompts'),
+    rereadPrompt: () => loadRereadPrompt('prompts'),
     priorCards: new FilePriorCards(writer),
     ids: new SequenceIdGenerator(),
   });

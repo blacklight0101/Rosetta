@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-209: a completed run on the Scripts area, which holds only a vendored library; its claim cites the library alone. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "",
+            "toolCalls": [
+              {
+                "id": "call-1",
+                "name": "read_file",
+                "arguments": {
+                  "path": "Scripts/jquery-3.4.1.min.js",
+                  "startLine": 1,
+                  "endLine": 1
+                }
+              }
+            ],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "tool_use",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"cards\": [\n    {\n      \"type\": \"BR\",\n      \"title\": \"Library sets up a plugin namespace\",\n      \"area\": \"Scripts\",\n      \"summary\": \"Library sets up a plugin namespace.\",\n      \"confidence\": \"Medium\",\n      \"claims\": [\n        {\n          \"text\": \"The script defines an empty plugin namespace.\",\n          \"citations\": [\n            \"Scripts/jquery-3.4.1.min.js:1-1\"\n          ]\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 900,
+              "outputTokens": 60,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\"application\": []}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 100,
+              "outputTokens": 10,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

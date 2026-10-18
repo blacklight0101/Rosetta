@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-209: the completed run's Catalog claim gets no readable verdict twice and stays Unverified; the Deepen judges it Supported. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Unclear.\nVerdict: Maybe",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-1",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Still unclear.\nVerdict: Maybe",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-2",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 12 lowers the stock by one.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-3",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: Line 7 sets the label to a fixed text when the page loads.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-4",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}

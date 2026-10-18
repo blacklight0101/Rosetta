@@ -21,6 +21,8 @@ export interface ReaderPrompts {
   readonly continue: PromptFile;
   /** `reader/answers.v<n>.md`: the owner's answers; present for a re-run with answers (RF-241). */
   readonly answers?: PromptFile;
+  /** `reader/reread.v<n>.md`: the rejected claims a Deepen re-reads, with the reasons (RF-209). */
+  readonly reread?: PromptFile;
   /** `cards/flows.v<n>.md` and `cards/screens.v<n>.md`: added only to areas the code map marks (Q-25). */
   readonly surface?: SurfacePrompts;
 
@@ -40,6 +42,7 @@ export const readerPlaceholders = {
   turnsLeft: '{{turns}}',
   repair: '{{problems}}',
   answers: '{{answers}}',
+  reread: '{{rejected}}',
   readFirstFiles: '{{files}}',
   readFirstTurns: '{{turns}}',
 } as const;
@@ -49,23 +52,33 @@ export function readerSystemPrompt(prompts: ReaderPrompts): string {
   return `${prompts.system.text}\n\n${prompts.cardFormat.text}`;
 }
 
+/** The template with its one placeholder replaced by the block, or nothing without both. */
+function filled(
+  template: PromptFile | undefined,
+  placeholder: string,
+  block: string | undefined,
+): readonly string[] {
+  if (template === undefined || block === undefined) return [];
+  return [template.text.replace(placeholder, () => block).trimEnd()];
+}
+
 /**
  * The first user message: the task text with the area's data block in place of its placeholder,
- * and for a re-run with answers the answers prompt with their data block (RF-241).
+ * for a re-run with answers the answers prompt with their data block (RF-241), and for a Deepen
+ * re-read the rejected claims with the verifier's reasons in theirs (RF-209).
  */
 export function readerTaskMessage(
   prompts: ReaderPrompts,
   areaBlock: string,
   answersBlock?: string,
+  rejectedBlock?: string,
 ): string {
   const task = prompts.task.text.replace(readerPlaceholders.task, () => areaBlock).trimEnd();
-  if (answersBlock === undefined || prompts.answers === undefined) return task;
-  const answers = prompts.answers.text
-    .replace(readerPlaceholders.answers, () => answersBlock)
-    .trimEnd();
-  return `${task}
-
-${answers}`;
+  return [
+    task,
+    ...filled(prompts.answers, readerPlaceholders.answers, answersBlock),
+    ...filled(prompts.reread, readerPlaceholders.reread, rejectedBlock),
+  ].join('\n\n');
 }
 
 export function turnsLeftMessage(prompts: ReaderPrompts, turns: number): string {
@@ -122,6 +135,7 @@ export function promptVersionsOf(
     prompts.repair,
     prompts.continue,
     ...(prompts.answers === undefined ? [] : [prompts.answers]),
+    ...(prompts.reread === undefined ? [] : [prompts.reread]),
     ...surfaceFilesFor(prompts, marks),
     prompts.readFirst,
   ];

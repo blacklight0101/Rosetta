@@ -34,6 +34,7 @@ const claim: DeepRequired<Claim> = {
   verdict,
   target: 'SCRN-001',
   branches: [{ number: 1, text: 'A blank e-mail stops the post.', citations: [cite(2, 3)] }],
+  replaces: 'FLOW-000.c2',
 };
 
 const card: DeepRequired<Card> = {

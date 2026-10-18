@@ -61,6 +61,8 @@ export interface AgentTaskRequest {
   readonly signal: AbortSignal;
   /** RF-241: the owner's answers for the area, sent as one data block after the area's. */
   readonly answers?: string;
+  /** RF-209: the rejected claims a Deepen re-reads, as JSON, sent as one data block after the area's. */
+  readonly rejected?: string;
 }
 
 /** About four characters per token, the estimate the providers use too (RF-421). */
@@ -88,9 +90,10 @@ class AgentTask {
   }
 
   async run(): Promise<AgentTaskResult> {
-    const { prompts, tools, answers } = this.request;
+    const { prompts, tools, answers, rejected } = this.request;
     const owner = answers === undefined ? undefined : tools.renderBlock('owner_answers', answers);
-    const content = readerTaskMessage(prompts, tools.areaOverview(), owner);
+    const claims = rejected === undefined ? undefined : tools.renderBlock('cards', rejected);
+    const content = readerTaskMessage(prompts, tools.areaOverview(), owner, claims);
     this.add({ role: 'user', content });
     return this.result(await this.explore());
   }
