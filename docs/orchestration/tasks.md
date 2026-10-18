@@ -670,7 +670,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-02, P1-43
 - **Gate**: G-08 (DEC-133)
-- **Status**: In review (owner check: enable GitHub Pages and open the published sample, #361 merged)
+- **Status**: Done
 - **Reads**: `docs/environments-and-delivery.md` sections 2 and 8.
 - **Do**: a Pages workflow publishing `site/` from `main` with the smoke step that fetches the index and fails when the run id is missing; `site/` holding the escaped HTML report and the replay of the owner's demo run on the hosted URL (DEC-105), with a `.nojekyll` file, copied by the orchestrator after an output scan for secrets into a `needs-owner` pull request; the README link.
 - **Delivers**: `.github/workflows/pages.yml`, `site/`, the README link.
@@ -706,7 +706,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-46
 - **Gate**: none
-- **Status**: In review (owner check: record the video, publish slides and video, fill the URLs, #362 merged)
+- **Status**: Done
 - **Reads**: `docs/rfc/RFC-001-rosetta.md` sections 1-4; `docs/process-flows.md`; Q-02 and Q-03.
 - **Do**: slides in Spanish (Q-03) presenting the problem, the pipeline, the live agents, evidence and the verifier, cost control, security, the build method and the results; a video script of about 5 minutes (Q-02) with the explainer and a clip of a real run; the owner records the video; both URLs added to the README.
 - **Delivers**: `docs/hand-in/slides/` source, `docs/hand-in/video-script.md`, README links.
@@ -2116,7 +2116,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-168, P1-169
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `docs/design/proposals/run-page-v2.html`; RF-1007, RF-1014, RF-1015, RF-1017.
 - **Do**: the ended state of the run page as the proposal shows: the Overview tab first, the "Your turn" panel with the run facts, the Your questions tab (question, why the code cannot answer it with its citation, what depends on it, answer field, default), the Evidence tab (cards, claims, coverage, code map) and the Activity tab (replay, events, calls, logs); the page switches modes when the run ends.
 - **Review probes**: a run with no questions; 40 questions; an overview that says the run could not explain the application; a failed run (no overview; the page says what failed and what to do); the switch while the page is open.
@@ -2188,7 +2188,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-02, P2-11
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/data-model.md` section 3.19; `docs/adr/ADR-008-testing-with-recorded-responses.md`.
 - **Do**: the summary of claims per status per area and the supported share in the run summary and report; a calibration set of about 30 hand-labelled claims under `eval/calibration/`; `npm run eval -- --calibration` reporting agreement per model and the disagreements.
 - **Delivers**: the summary writer, the calibration set, the eval mode; snapshot and integration tests.
@@ -2572,7 +2572,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-01, P2-06
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `src/application/cards/card-merge.ts`; the consolidation step of the understand run (P2-06); the resume path (P2-01); verdicts on #437 and #446.
 - **Do**: (1) A cap refusal in the optional consolidation step no longer turns a run whose areas all finished into Interrupted/CapReached: the run ends as it would without consolidation, the cards stay unmerged and the refusal is recorded (event and log); the spend already made is kept on the ledger. (2) The cards message to the summariser has a size bound: card types larger than the bound are sent in batches (one call per batch), and the estimate (RF-425) counts the batches. (3) On resume, card types already merged in the stopped run are not sent to the summariser again (not paid twice), and a re-merge keeps the survivor ids it chose before, so answers.md keys stay valid. (4) An integration test resumes a run that had consolidated.
 - **Delivers**: code changes, tests.
@@ -2718,7 +2718,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-06, P2-03
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`.
 - **Do**: from the code map and the verified cards, propose the two best-fitting styles with trade-offs, the evidence card ids and one marked recommended (planner role through the guards, prompt versioned); two pre-filled stack options per layer from the legacy stack found by the scan.
 - **Delivers**: the use case, prompt, recordings; integration tests.
@@ -2742,7 +2742,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: L
 - **Depends on**: P3-06, P2-03
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`; `docs/data-model.md` section 3.17 (`handoff/`).
 - **Do**: `BuildPlan` writing `handoff/` from `Supported` claims, answered questions and the brief: README with reading order, requirements specification with source card ids, target architecture, ADRs, entity mapping, roadmap, task cards with acceptance criteria, risks and open questions (unanswered brief questions with their defaults, excluded claims with their ids); plain Markdown and Mermaid only; the manifest records the brief, catalogue version and prompt versions.
 - **Delivers**: the use case, writers, prompts, recordings; structure tests of the package.
