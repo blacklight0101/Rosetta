@@ -62,14 +62,14 @@ export async function backupMain(
   });
 }
 
-interface RestoreFlags {
+export interface RestoreFlags {
   readonly dump: string | undefined;
   readonly dataCopy: string | undefined;
   readonly dataTarget: string | undefined;
   readonly force: boolean;
 }
 
-function parseFlags(argv: readonly string[]): RestoreFlags {
+export function parseFlags(argv: readonly string[]): RestoreFlags {
   const values = new Map<string, string>();
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index] ?? '';
@@ -89,7 +89,10 @@ function parseFlags(argv: readonly string[]): RestoreFlags {
   };
 }
 
-async function chooseBackups(backupDir: string, flags: RestoreFlags) {
+export async function chooseBackups(
+  backupDir: string,
+  flags: RestoreFlags,
+): Promise<{ dumpFile: string; dataSource?: string }> {
   const names = await readdir(backupDir);
   const dump = flags.dump ?? newestName(names, 'db');
   if (dump === null) throw new Error('No database dump found in the backup folder.');
@@ -100,7 +103,7 @@ async function chooseBackups(backupDir: string, flags: RestoreFlags) {
   }
   return {
     dumpFile: join(backupDir, dump),
-    dataSource: copy === null ? undefined : join(backupDir, copy),
+    ...(copy === null ? {} : { dataSource: join(backupDir, copy) }),
   };
 }
 
@@ -119,7 +122,7 @@ export async function restoreMain(
     log,
     countTables: async () => {
       const call = tool(settings, 'psql', ['-X', '-A', '-t', '-c', COUNT_TABLES]);
-      return Number.parseInt(await runTool(call), 10);
+      return parseTableCount(await runTool(call));
     },
     restoreDatabase: async (dumpFile, replace) => {
       const extra = replace ? ['--clean', '--if-exists'] : [];
@@ -127,4 +130,8 @@ export async function restoreMain(
       await runTool({ ...call, stdin: dumpFile });
     },
   });
+}
+
+export function parseTableCount(text: string): number {
+  return Number.parseInt(text, 10);
 }
