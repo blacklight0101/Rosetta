@@ -184,13 +184,14 @@ describe('BuildPlan: the documentation set', () => {
     expect(new Set(ids).size).toBe(2);
   });
 
-  it('RF-620 the README reading order starts with the PRD, then the parts of RF-601', async () => {
+  it('RF-620 the README reading order starts with the PRD and the TRD, then the parts of RF-601', async () => {
     const files = await planned();
 
     const order = (files['README.md'] ?? '').split('## Reading order')[1]?.split('\n## ')[0] ?? '';
     const links = [...order.matchAll(/\]\(([^)#]+)\)/gu)].map((match) => match[1]);
-    expect(links.slice(0, 4)).toEqual([
+    expect(links.slice(0, 5)).toEqual([
       'prd.md',
+      'trd.md',
       'requirements.md',
       'architecture.md',
       'decisions/ADR-001.md',

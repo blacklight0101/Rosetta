@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
 import { recordingOf } from '../../support/fake-recordings.js';
 import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.js';
 import { planCards, planQuestions } from '../../support/plan-cards.js';
@@ -34,18 +35,17 @@ beforeEach(async () => {
     cachedInputTokens: 0,
     usageSource: 'reported',
   } as const;
-  h = await createPlanHarness(
-    dataDir,
-    recordingOf({
-      retried: [],
-      response: {
-        text: JSON.stringify(answer),
-        toolCalls: [],
-        usage,
-        finishReason: 'stop',
-      },
-    }),
-  );
+  const prd = await loadRecording(join('tests', 'recordings', 'fake', 'planner-package.json'));
+  const plan = recordingOf({
+    retried: [],
+    response: {
+      text: JSON.stringify(answer),
+      toolCalls: [],
+      usage,
+      finishReason: 'stop',
+    },
+  });
+  h = await createPlanHarness(dataDir, { ...plan, calls: [...plan.calls, ...prd.calls.slice(1)] });
   await h.understandRun({ cards: planCards(), questions: planQuestions });
   await h.saveBrief({ architecture: { style: 'hexagonal' } });
 });
