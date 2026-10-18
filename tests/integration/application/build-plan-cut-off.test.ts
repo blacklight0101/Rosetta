@@ -58,6 +58,15 @@ function split(text: string, parts: number): string[] {
   return Array.from({ length: parts }, (_, index) => text.slice(index * size, (index + 1) * size));
 }
 
+/**
+ * The answer cut in two the way the model is shown it (P3-31): the head is cut at the middle, and
+ * the continuation writes the rest from the head's resume point, not from the cut itself.
+ */
+function cutAtResumePoint(text: string): [string, string] {
+  const head = text.slice(0, Math.floor(text.length / 2));
+  return [head, text.slice(resumePoint(head).length)];
+}
+
 async function planned(recording: Recording, cloud = false): Promise<PlanHarness> {
   const h = await createPlanHarness(join(temp.path, cloud ? 'cloud' : 'local'), recording, {
     cloudPlanner: cloud,
@@ -216,7 +225,7 @@ describe('BuildPlan: a document that stays cut off is kept, marked and named', (
 
   it('RF-604 RF-621 a PRD cut off once and then finished is not marked', async () => {
     const recording = await base();
-    const [head = '', tail = ''] = split(textOf(recording, 1), 2);
+    const [head, tail] = cutAtResumePoint(textOf(recording, 1));
     const h = await planned(cutAt(recording, 1, [head, tail]));
 
     const run = await h.plan();
