@@ -206,11 +206,11 @@ export class BuildPlan implements RunExecutor {
     if (draft === undefined) return undefined;
     const { specificationDriven } = checks;
     const assembly = assemblePlan(draft, new Set(checks.supported), { specificationDriven });
-    const { requirements, entities, tasks } = assembly.dropped;
-    if (requirements + entities + tasks > 0) {
+    const { requirements, entities, tasks, technical } = assembly.dropped;
+    if (requirements + entities + tasks + technical > 0) {
       await this.deps.logger.log({
         ...{ level: 'warn', logger: 'plan', runId: run.runKey, userId: run.userId },
-        message: `The planner answer had items without a supported card, a phase or (given SDD) a requirement; ${String(requirements)} requirement(s), ${String(entities)} entity mapping(s) and ${String(tasks)} task card(s) were left out.`,
+        message: `The planner answer had items without a supported card, a phase or (given SDD) a requirement; ${String(requirements)} requirement(s), ${String(entities)} entity mapping(s), ${String(tasks)} task card(s) and ${String(technical)} technical item(s) were left out.`,
       });
     }
     return assembly.content.requirements.length === 0 ? undefined : assembly;

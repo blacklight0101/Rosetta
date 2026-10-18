@@ -1,4 +1,5 @@
 import type { GuardKind, RiskClass } from './task-card-quality.js';
+import type { TechnicalDraft } from './technical-content.js';
 
 // RF-601, RF-602, RF-630, RF-635, ADR-018: what the planner answers, once its JSON has been read. It is untrusted
 // model output: every card id it names is checked against the supported cards, and every
@@ -70,4 +71,6 @@ export interface PlanDraft {
   readonly phases: readonly DraftPhase[];
   readonly tasks: readonly DraftTask[];
   readonly risks: readonly DraftRisk[];
+  /** The technical requirements document (RF-622). */
+  readonly technical: TechnicalDraft;
 }

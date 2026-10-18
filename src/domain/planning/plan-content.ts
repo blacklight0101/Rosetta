@@ -8,6 +8,7 @@ import type {
   PlanDraft,
 } from './plan-draft.js';
 import { cardProblem, type GuardKind, type RiskClass } from './task-card-quality.js';
+import { assembleTechnical, type TechnicalContent } from './technical-content.js';
 
 // RF-601, RF-602, ADR-005, ADR-013: the planner's draft made into the content of the package.
 // Every card id the model names is kept only when it is one of the supported cards, so a
@@ -65,6 +66,8 @@ export interface PlanContent {
   readonly phases: readonly PlanPhase[];
   readonly tasks: readonly PlanTask[];
   readonly risks: readonly PlanRisk[];
+  /** The content of the technical requirements document (RF-622). */
+  readonly technical: TechnicalContent;
 }
 
 export interface PlanAssembly {
@@ -74,6 +77,7 @@ export interface PlanAssembly {
     readonly requirements: number;
     readonly entities: number;
     readonly tasks: number;
+    readonly technical: number;
   };
 }
 
@@ -162,6 +166,11 @@ export function assemblePlan(
     ...item,
     sources: knownSources(item.sources, supported),
   });
+  const technical = assembleTechnical(
+    draft.technical,
+    supported,
+    draft.decisions.map((_, index) => planId('ADR', index + 1)),
+  );
   return {
     content: {
       summary: draft.summary,
@@ -178,11 +187,13 @@ export function assemblePlan(
         ...withSources(risk),
         id: planId('RISK', index + 1),
       })),
+      technical: technical.content,
     },
     dropped: {
       requirements: draft.requirements.length - requirements.kept.length,
       entities: draft.entities.length - entities.length,
       tasks: draft.tasks.length - tasks.length,
+      technical: technical.dropped,
     },
   };
 }

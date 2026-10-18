@@ -23,6 +23,7 @@ describe('parsePlanAnswer', () => {
       phases: [],
       tasks: [],
       risks: [],
+      technical: { integrations: [], security: [], targets: [], environments: [] },
     });
   });
 
@@ -85,6 +86,62 @@ describe('parsePlanAnswer: task-card quality', () => {
 
   it('RF-630 a blank probe makes the answer unusable', () => {
     expect(tasksOf({ probes: [' '] })).toBeUndefined();
+  });
+});
+
+const technical = {
+  integrations: [{ card: 'INT-001', action: 'replace', note: 'Wrap it.', decision: 2 }],
+  security: [
+    {
+      ...{ name: 'Upload filter', approach: 'denylist', description: 'Forbids extensions.' },
+      ...{ invariant: 'Nothing runs.', alternative: 'Allow a list.', sources: ['BR-001'] },
+    },
+  ],
+  targets: [{ name: 'Time', target: 'Two seconds.', sources: ['FEAT-001'] }],
+  environments: [{ name: 'Staging', purpose: 'Before a release.' }],
+};
+
+describe('parsePlanAnswer: the technical part', () => {
+  it('RF-622 reads integrations, security controls, targets and environments with their defaults', () => {
+    const draft = parsePlanAnswer(JSON.stringify({ requirements: [requirement], technical }));
+
+    expect(draft?.technical).toEqual({
+      integrations: [{ card: 'INT-001', action: 'replace', note: 'Wrap it.', decision: 2 }],
+      security: [{ ...technical.security[0], decision: null }],
+      targets: [{ name: 'Time', target: 'Two seconds.', sources: ['FEAT-001'], decision: null }],
+      environments: [{ name: 'Staging', purpose: 'Before a release.', decision: null }],
+    });
+  });
+
+  it('RF-622 DEC-135 a control whose approach is none of the known ones makes the answer unusable', () => {
+    const control = { ...technical.security[0], approach: 'blocklist-ish' };
+
+    expect(
+      parsePlanAnswer(
+        JSON.stringify({ requirements: [requirement], technical: { security: [control] } }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it('RF-622 an integration action other than keep or replace makes the answer unusable', () => {
+    const integration = { card: 'INT-001', action: 'ignore', note: '' };
+
+    expect(
+      parsePlanAnswer(
+        JSON.stringify({ requirements: [requirement], technical: { integrations: [integration] } }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it('RF-622 refuses a decision position below 1 and a text longer than its bound', () => {
+    const environment = { name: 'Staging', purpose: 'x'.repeat(2001) };
+    const position = { card: 'INT-001', action: 'keep', note: '', decision: 0 };
+
+    for (const bad of [{ environments: [environment] }, { integrations: [position] }]) {
+      expect(
+        parsePlanAnswer(JSON.stringify({ requirements: [requirement], technical: bad })),
+      ).toBeUndefined();
+    }
   });
 });
 

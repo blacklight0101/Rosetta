@@ -33,6 +33,17 @@ function draft(text: string): PlanDraft {
       }),
     ],
     risks: [{ text, sources: ['FEAT-001'] }],
+    technical: {
+      integrations: [{ card: 'INT-001', action: 'replace', note: text, decision: 1 }],
+      security: [
+        {
+          ...{ name: text, approach: 'denylist', description: text, invariant: text },
+          ...{ alternative: text, sources: ['FEAT-001'], decision: 1 },
+        },
+      ],
+      targets: [{ name: text, target: text, sources: ['FEAT-001'], decision: null }],
+      environments: [{ name: text, purpose: text, decision: null }],
+    },
   };
 }
 
@@ -51,25 +62,31 @@ function briefOf(text: string): HandoffPackage['brief'] {
   return { ...buildBrief(answers, shippedCatalogue), savedAt: '2026-10-12T09:30:00.000Z' };
 }
 
+function sourceOf(
+  id: string,
+  type: 'FEAT' | 'INT',
+  text: string,
+): HandoffPackage['sources'][number] {
+  return {
+    ...{ id, type, title: text, summary: text, area: text },
+    claims: [
+      {
+        claimId: `${id}.c1`,
+        text,
+        citations: [{ path: 'src/a`b.cs', startLine: 1, endLine: 2 }],
+        status: 'Supported',
+      },
+    ],
+  };
+}
+
 function sourcesOf(text: string): HandoffPackage['sources'] {
-  return [
-    {
-      ...{ id: 'FEAT-001', type: 'FEAT', title: text, summary: text, area: text },
-      claims: [
-        {
-          claimId: 'FEAT-001.c1',
-          text,
-          citations: [{ path: 'src/a`b.cs', startLine: 1, endLine: 2 }],
-          status: 'Supported',
-        },
-      ],
-    },
-  ];
+  return [sourceOf('FEAT-001', 'FEAT', text), sourceOf('INT-001', 'INT', text)];
 }
 
 /** The package with this text in every model and repository field. */
 export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPackage {
-  const content = assemblePlan(draft(text), new Set(['FEAT-001'])).content;
+  const content = assemblePlan(draft(text), new Set(['FEAT-001', 'INT-001'])).content;
   return {
     repository: { url: 'https://github.com/octo/demo', commitSha: 'c'.repeat(40) },
     sourceRun: '20261012-090000-understand',
