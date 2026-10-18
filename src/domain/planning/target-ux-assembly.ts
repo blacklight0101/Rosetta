@@ -165,6 +165,8 @@ function screenOf(group: Group, context: Context): TargetScreen {
     ...{ id, name: context.names.get(id) ?? id, purpose: group.purpose.trim() },
     ...{ reason: group.reason, cards: group.cards, roles: roles.toSorted(byCodeUnit) },
     fields: fieldsOf(cards),
+    uncheckedFields: [],
+    fieldsNotConfirmed: false,
     actions: actionsOf(cards),
     navigation: navigationOf(cards, id, context),
   };

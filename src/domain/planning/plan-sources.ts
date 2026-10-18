@@ -18,16 +18,25 @@ interface SourceClaim {
   readonly target?: string | undefined;
 }
 
+interface SourceField {
+  readonly name: string;
+  readonly inputKind: string;
+  readonly required: boolean;
+}
+
 /** What a `SCRN` card says about its screen, as the plan needs it (RF-626); the validations stay in the card. */
 interface SourceScreen {
   /** The route or page name. */
   readonly route: string;
   readonly roles: readonly string[];
-  readonly fields: readonly {
-    readonly name: string;
-    readonly inputKind: string;
-    readonly required: boolean;
-  }[];
+  readonly fields: readonly SourceField[];
+  /**
+   * `supportedCards` only: the fields no claim of the card states (an old card whose header holds
+   * them unchecked). They are drawn marked "not checked" and never sent to the planner.
+   */
+  readonly uncheckedFields?: readonly SourceField[] | undefined;
+  /** `supportedCards` only: how many fields the verifier did not support. */
+  readonly unsupportedFields?: number | undefined;
   readonly actions: readonly {
     readonly label: string;
     readonly handler?: string | undefined;
