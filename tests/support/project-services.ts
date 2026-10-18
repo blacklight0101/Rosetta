@@ -23,6 +23,7 @@ import {
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
+  loadUxPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
@@ -88,6 +89,7 @@ export function projectServices(
       dataModelPrompt: () => loadDataModelPrompt('prompts'),
       flowsPrompt: () => loadFlowsPrompt('prompts'),
       apiContractPrompt: () => loadApiContractPrompt('prompts'),
+      uxPrompt: () => loadUxPrompt('prompts'),
     }),
   };
 }
