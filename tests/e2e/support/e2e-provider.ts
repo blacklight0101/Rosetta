@@ -60,6 +60,21 @@ function overviewOf(recording: Recording, request: LlmRequest): LlmResponse | un
   };
 }
 
+/**
+ * RF-608, RF-604: the planner. The options of Plan setup (`planner-options`) and the package of the
+ * plan run (`planner-package`) are answered from their recordings; the options name the cards of the
+ * webforms run, and a card the run did not verify is dropped by the page's server.
+ */
+function plannerOf(
+  recordings: Readonly<Record<string, Recording>>,
+  request: LlmRequest,
+): LlmResponse | undefined {
+  if (request.context.role !== 'planner') return undefined;
+  const name = request.context.agentTaskId === 'planner-options' ? 'options' : 'package';
+  const attempt = recordings[name]?.calls[0]?.attempts[0];
+  return attempt !== undefined && 'response' in attempt ? attempt.response : undefined;
+}
+
 /** Each recorded call waits this long, so a page can be seen between the steps of an agent. */
 const STEP_DELAY_MS = 700;
 
@@ -82,8 +97,14 @@ export async function createE2eProvider(): Promise<LlmProvider> {
   const overviews = await loadRecording(
     join('tests', 'recordings', 'fake', 'understand-overview.json'),
   );
+  const planner = {
+    options: await loadRecording(join('tests', 'recordings', 'fake', 'plan-options.json')),
+    package: await loadRecording(join('tests', 'recordings', 'fake', 'planner-package.json')),
+  };
   return {
     complete: (request) => {
+      const planned = plannerOf(planner, request);
+      if (planned !== undefined) return Promise.resolve(planned);
       const verdict = verdictOf(verdicts, request);
       if (verdict !== undefined) return Promise.resolve(verdict);
       const overview = overviewOf(overviews, request);

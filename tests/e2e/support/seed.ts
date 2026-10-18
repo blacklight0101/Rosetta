@@ -50,21 +50,18 @@ const e2eProjectNames = ['desktop-light', 'desktop-dark', 'phone-light', 'phone-
  * `lock` is locked out, `force` and `force-admin` must change their password at first sign-in
  * (`force-admin` as an administrator, like the bootstrap account, which other specs need unchanged),
  * `cap` sets the daily cap on its own keys (DEC-107), `providers` presses the Test button (RF-407),
- * `projects` creates projects (RF-010), `admin` is an administrator who has already chosen a
- * password and runs the administration pages (RF-1102, P1-42), `project-settings` edits one
- * project's settings (RF-002) and `start-run` starts runs of its own project (RF-1001), `live-run` watches
- * the runs of its own project on the live page (RF-1002), `live-controls` pauses and meters its own runs (P1-95), `live-coverage` watches the coverage map of its own runs (RF-1005), `live-coverage-pause` is the second test of that spec, with a project and runs of its own (P1-141), `live-running` watches the page of a run while it runs (P1-169), `api-calls` reads the calls and logs of
- * its own run (RF-1011), `replay` owns a recorded run (seed-replay.ts) whose report and replay
- * page it opens (RF-506), `history` browses and deletes the runs of its own project (RF-1008,
- * RF-1012), `history-admin` is the administrator who deletes snapshots and `project-runs` reads the
- * run columns and cancels a queued run on the Projects page (RF-1008, RF-1108). The journey specs
- * (P1-46) have accounts of their own: `journey` signs in through the pages, `journey-owner` owns
- * a project and a run, `journey-other` is the second user who must not see them, `journey-force`
- * must change its password at first sign-in, `journey-run` runs the pipeline on the C# fixture,
- * `journey-language` on the COBOL one, `journey-admin` is the administrator who creates a user
- * and saves the caps and `journey-server` is the user who runs on the server key (P1-131). The visual sweep (tests/e2e/visual/, RNF-010) has its own too: `sweep` makes a
- * project and its runs and opens every page of a user, `sweep-admin` the administration pages and
- * `sweep-force` keeps its temporary password, so the first sign-in page stays open to it.
+ * `projects` creates projects (RF-010), `admin` is an administrator who has chosen a password
+ * (RF-1102, P1-42), `project-settings` edits settings (RF-002), `start-run` starts runs (RF-1001),
+ * `live-run` watches the live page (RF-1002), `live-controls` pauses and meters runs (P1-95),
+ * `live-coverage` and `live-coverage-pause` watch the coverage map (RF-1005, P1-141), `live-running`
+ * watches a run while it runs (P1-169), `api-calls` reads its calls and logs (RF-1011), `replay`
+ * owns a recorded run (seed-replay.ts, RF-506), `history` browses and deletes runs (RF-1008,
+ * RF-1012), `history-admin` deletes snapshots, `project-runs` reads the run columns (RF-1108) and
+ * `plan` answers Plan setup after an understand run (RF-605). The `journey-*` accounts (P1-46)
+ * sign in, own a project and a run, play the other user, change a forced password, run the C# and
+ * COBOL fixtures, create users and run on the server key. The visual sweep (RNF-010) has `sweep`,
+ * which makes a project and its runs and opens every page, `sweep-admin` for the administration
+ * pages and `sweep-force`, which keeps its temporary password so the first sign-in page stays open.
  */
 export type E2eAccountKind =
   | 'keys'
@@ -97,7 +94,8 @@ export type E2eAccountKind =
   | 'journey-server'
   | 'sweep'
   | 'sweep-admin'
-  | 'sweep-force';
+  | 'sweep-force'
+  | 'plan';
 
 const accountKinds: readonly E2eAccountKind[] = [
   'keys',
@@ -131,6 +129,7 @@ const accountKinds: readonly E2eAccountKind[] = [
   'sweep',
   'sweep-admin',
   'sweep-force',
+  'plan',
 ];
 
 const adminKinds: ReadonlySet<E2eAccountKind> = new Set([

@@ -6,6 +6,7 @@
     "tests/e2e/journeys/server-key-cap.spec.ts",
     "tests/e2e/journeys/two-users.spec.ts",
     "tests/e2e/live-run.spec.ts",
+    "tests/e2e/plan-setup.spec.ts",
     "tests/e2e/project-settings.spec.ts",
     "tests/e2e/projects.spec.ts",
     "tests/e2e/settings-daily-cap.spec.ts",
