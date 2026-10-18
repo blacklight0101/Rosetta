@@ -66,7 +66,7 @@ export type CoverageArea = Pick<Area, 'name' | 'files' | 'estimatedTokens'>;
 export type CoverageFile = Pick<FileEntry, 'path' | 'lines' | 'estimatedTokens'>;
 
 /** The ranges cut to lines 1..`lines`, sorted, with overlapping and adjacent ones merged. */
-function mergedRanges(ranges: readonly LineRange[], lines: number): LineRange[] {
+export function mergedRanges(ranges: readonly LineRange[], lines: number): LineRange[] {
   const cut = ranges
     .map((range) => ({
       startLine: Math.max(1, range.startLine),
@@ -84,7 +84,7 @@ function mergedRanges(ranges: readonly LineRange[], lines: number): LineRange[] 
   return merged;
 }
 
-function linesIn(ranges: readonly LineRange[]): number {
+export function linesIn(ranges: readonly LineRange[]): number {
   return ranges.reduce((sum, range) => sum + range.endLine - range.startLine + 1, 0);
 }
 

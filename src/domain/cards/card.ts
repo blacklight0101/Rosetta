@@ -37,6 +37,8 @@ export interface Claim {
   readonly target?: string;
   /** `FLOW` steps only: the error or alternative paths of the step (RF-260). */
   readonly branches?: readonly Branch[];
+  /** RF-209, RF-302: the id of the rejected claim a Deepen re-read answers; that claim is kept. */
+  readonly replaces?: string;
 }
 
 export interface Card {
@@ -68,6 +70,8 @@ export interface ClaimInput {
   readonly citations: readonly Citation[];
   readonly target?: string | undefined;
   readonly branches?: readonly CitedText[] | undefined;
+  /** RF-209: the rejected claim this one answers; kept only when the task was given that claim. */
+  readonly replaces?: string | undefined;
 }
 
 export interface CardInput {

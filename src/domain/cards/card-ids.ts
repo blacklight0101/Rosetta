@@ -27,6 +27,8 @@ export interface TaskCards {
   readonly drafts: readonly CardDraft[];
   /** RF-206: a note every card of the task carries, for example it was written without reading. */
   readonly note?: string;
+  /** RF-209: the rejected claims a Deepen re-read was given; only these may be named by `replaces`. */
+  readonly replaceable?: readonly string[];
 }
 
 /** The number in an id such as `BR-007`. */
