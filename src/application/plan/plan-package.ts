@@ -2,6 +2,7 @@ import { briefDecisions } from '../../domain/planning/brief-decisions.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
+import { emptyPrd } from '../../domain/planning/prd-content.js';
 import { excludedClaims, supportedCards } from '../../domain/planning/plan-sources.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
 import type { PlanInputs } from './plan-inputs.js';
@@ -44,5 +45,7 @@ export function handoffPackageOf(
     openQuestions: questions
       .filter((question) => question.answer.trim() === '')
       .map(({ cardId, question }) => ({ cardId, question })),
+    prd: emptyPrd,
+    prdQuestions: [],
   };
 }

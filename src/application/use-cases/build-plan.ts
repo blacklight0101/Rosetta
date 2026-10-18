@@ -46,6 +46,8 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly catalogue: () => Promise<Catalogue>;
   /** The planner's versioned prompt file (RNF-004). */
   readonly prompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the product requirements document (RF-621). */
+  readonly prdPrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }

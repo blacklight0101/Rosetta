@@ -2,6 +2,7 @@ import type {
   HandoffPackage,
   PackagePrinciple,
 } from '../../src/application/plan/handoff-package.js';
+import { emptyPrd, prdQuestions, type PrdContent } from '../../src/domain/planning/prd-content.js';
 import { assemblePlan } from '../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../src/domain/planning/plan-draft.js';
 import { buildBrief } from '../../src/domain/planning/planning-brief.js';
@@ -61,7 +62,7 @@ function sourcesOf(text: string): HandoffPackage['sources'] {
 }
 
 /** The package with this text in every model and repository field. */
-export function handoffOf(text: string): HandoffPackage {
+export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPackage {
   const content = assemblePlan(draft(text), new Set(['FEAT-001'])).content;
   return {
     repository: { url: 'https://github.com/octo/demo', commitSha: 'c'.repeat(40) },
@@ -87,5 +88,7 @@ export function handoffOf(text: string): HandoffPackage {
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],
     openQuestions: [{ cardId: 'OQ-001', question: text }],
+    prd,
+    prdQuestions: prdQuestions(prd),
   };
 }

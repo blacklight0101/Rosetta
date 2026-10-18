@@ -21,7 +21,7 @@ import { JsonlEgressLog } from '../infrastructure/guards/jsonl-egress-log.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { FileHandoffWriter } from '../infrastructure/handoff/file-handoff-writer.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
-import { loadPlannerPrompt } from '../infrastructure/prompts/prompt-files.js';
+import { loadPlannerPrompt, loadPrdPrompt } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
 
 // Architecture section 2 (composition root), RF-604, ADR-003, ADR-018: the executor of the `plan`
@@ -69,6 +69,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     handoff: new FileHandoffWriter({ writer, masker }),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlannerPrompt(promptsFolder),
+    prdPrompt: () => loadPrdPrompt(promptsFolder),
     ids: parts.ids,
   });
 }

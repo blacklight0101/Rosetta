@@ -27,7 +27,7 @@ import { FanOutSink } from '../../src/infrastructure/events/fan-out-sink.js';
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
 import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
 import { FileHandoffWriter } from '../../src/infrastructure/handoff/file-handoff-writer.js';
-import { loadPlannerPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
+import { loadPlannerPrompt, loadPrdPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { sampleAccount } from './account-fixtures.js';
 import { budgetTable, contractPrice } from './budget-harness.js';
@@ -101,6 +101,7 @@ function planExecutor(s: Stores, providers: UnderstandProviders): BuildPlan {
     handoff: new FileHandoffWriter({ writer, masker }),
     catalogue: () => Promise.resolve(shippedCatalogue),
     prompt: () => loadPlannerPrompt('prompts'),
+    prdPrompt: () => loadPrdPrompt('prompts'),
     ids: new SequenceIdGenerator(),
   });
 }
