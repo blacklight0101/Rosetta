@@ -108,7 +108,11 @@ function flowsOf(text: string): HandoffPackage['flows'] {
 }
 
 /** The package with this text in every model and repository field. */
-export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPackage {
+export function handoffOf(
+  text: string,
+  prd: PrdContent = emptyPrd,
+  extra: Partial<HandoffPackage> = {},
+): HandoffPackage {
   const content = assemblePlan(draft(text), new Set(['FEAT-001', 'INT-001'])).content;
   return {
     repository: { url: 'https://github.com/octo/demo', commitSha: 'c'.repeat(40) },
@@ -138,5 +142,7 @@ export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPack
     openQuestions: [{ cardId: 'OQ-001', question: text, area: text }],
     prd,
     prdQuestions: prdQuestions(prd),
+    shapes: undefined,
+    ...extra,
   };
 }

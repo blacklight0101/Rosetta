@@ -17,11 +17,13 @@ import { askPlanner } from '../plan/ask-planner.js';
 import { parsePlanAnswer } from '../plan/plan-answer.js';
 import { planDocuments, type DocumentPrompts } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
+import { planShapes } from '../plan/plan-shapes.js';
 import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { ProviderSetFactory } from '../ports/provider-set-factory.js';
+import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
@@ -42,6 +44,8 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 
 export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
   readonly users: UserRepository;
+  /** RF-632: the scan whose files the data shapes are measured from. */
+  readonly scans: ScanResults;
   readonly providers: ProviderSetFactory;
   readonly handoff: HandoffWriter;
   readonly costReports: CostReportWriter;
@@ -127,7 +131,11 @@ export class BuildPlan implements RunExecutor {
       { ...input, components: assembly.content.components },
       warn,
     );
-    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, documents);
+    const shapes = await planShapes(this.deps, inputs.value);
+    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, {
+      ...documents,
+      shapes,
+    });
     await this.deps.handoff.write(scopeOf(run), handoff);
     return { endState: 'Completed' };
   }

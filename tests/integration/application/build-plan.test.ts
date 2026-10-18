@@ -175,6 +175,7 @@ describe('BuildPlan: the parts of the package', () => {
       'decisions/ADR-003.md',
       'decisions/ADR-004.md',
       'entity-mapping.md',
+      'fixtures.md',
       'flows/README.md',
       'open-questions.md',
       'prd.md',
@@ -290,7 +291,6 @@ describe('BuildPlan: runs that cannot plan', () => {
       }),
     );
     await seeded();
-
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');

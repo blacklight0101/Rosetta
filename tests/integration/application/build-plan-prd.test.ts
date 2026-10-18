@@ -201,16 +201,19 @@ describe('BuildPlan: the documentation set', () => {
       'architecture.md',
       'decisions/ADR-001.md',
     ]);
-    expect(links.slice(-6)).toEqual([
+    expect(links.slice(-7)).toEqual([
       'roadmap.md',
       'tasks.md',
       'risks.md',
       'open-questions.md',
       'sources.md',
+      'fixtures.md',
       'conventions.md',
     ]);
   });
+});
 
+describe('BuildPlan: the documentation set links', () => {
   it('RF-620 every listed file exists and every link of every file resolves to a file and a heading', async () => {
     const files = await planned();
 

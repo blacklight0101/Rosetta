@@ -21,6 +21,7 @@ export const handoffFiles = {
   sources: 'sources.md',
   conventions: 'conventions.md',
   agents: 'AGENTS.md',
+  fixtures: 'fixtures.md',
 } as const;
 
 /**
@@ -62,4 +63,20 @@ export function sourceLinks(ids: readonly string[], depth = 0): string {
 /** A bulleted list of escaped text, or the line given for an empty list. */
 export function bullets(items: readonly string[], esc: MarkdownEscaper, empty: string): string[] {
   return items.length === 0 ? [empty] : items.map((item) => `- ${esc.inline(item)}`);
+}
+
+/** RF-632: the sections of `fixtures.md`; a task card links them by the anchor of the heading. */
+export const shapeSections = {
+  largest: 'Largest files',
+  byKind: 'Size by kind',
+  deepest: 'Deepest paths',
+  unusual: 'Unusual file names',
+  encodings: 'Encodings',
+  lineEndings: 'Line endings',
+  volumes: 'Data volumes stated by the cards',
+} as const;
+
+/** A link to a section of `fixtures.md`, from a file at the root of the package. */
+export function shapeLink(title: (typeof shapeSections)[keyof typeof shapeSections]): string {
+  return `[${title}](${handoffFiles.fixtures}#${title.toLowerCase().replaceAll(' ', '-')})`;
 }

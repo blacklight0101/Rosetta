@@ -1,6 +1,9 @@
 import { join } from 'node:path';
 import { vi } from 'vitest';
-import type { AnswerEntry, OpenQuestion } from '../../src/application/ports/answers-file.js';
+import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
+import type { ScanResults } from '../../src/application/ports/scan-results.js';
+import { ERROR_CODES } from '../../src/domain/errors/codes.js';
+import { RosettaError } from '../../src/domain/errors/rosetta-error.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
@@ -10,13 +13,11 @@ import type { ProjectSettings } from '../../src/application/projects/project-set
 import { BuildPlan } from '../../src/application/use-cases/build-plan.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { Project } from '../../src/application/projects/project.js';
-import type { Card } from '../../src/domain/cards/card.js';
 import { buildBrief, type BriefAnswers } from '../../src/domain/planning/planning-brief.js';
 import type { RunManifest } from '../../src/domain/runs/run-manifest.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-report-files.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
-import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
 import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -34,13 +35,11 @@ import {
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { filesUnder } from './files-under.js';
-import { sampleAccount } from './account-fixtures.js';
 import { budgetTable, contractPrice } from './budget-harness.js';
-import { cardSource } from './card-fixtures.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
+import { account, seedRun, seedScan, type UnderstandSeed } from './plan-run-seeds.js';
 import { sampleProject } from './project-fixtures.js';
 import { serverKeyText } from './provider-factory-harness.js';
-import { sampleManifest, sampleRun } from './run-fixtures.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 import { understandSettings } from './understand-run-harness.js';
 import { understandProviders, type UnderstandProviders } from './understand-providers.js';
@@ -50,9 +49,7 @@ import { stores, type Stores } from './understand-run-services.js';
 // provider factory and guards in front of a fake planner that replays a recording. The understand
 // run it plans from is seeded (row, manifest, cards, answers and brief) by the real adapters.
 
-const account = sampleAccount({ userName: 'plan.user' });
 const actor = { userId: account.id, role: 'user' } as const;
-const commitSha = '3f786850e387550fdab836ed7e6dc881de23001b';
 
 export interface PlanHarness {
   readonly s: Stores;
@@ -62,6 +59,8 @@ export interface PlanHarness {
   understandRun(seed: UnderstandSeed): Promise<Run>;
   answer(run: Run, answers: readonly AnswerEntry[]): Promise<void>;
   saveBrief(answers: BriefAnswers): Promise<void>;
+  /** Seeds a scan run that ended `Completed` on the snapshot the understand run read. */
+  seedScan(overrides?: Partial<Run>): Promise<Run>;
   /** Starts a plan run with these options as the queue does and waits for its end. */
   plan(options?: Readonly<Record<string, unknown>>): Promise<Run>;
   /** The plan estimate of the project, as the plan page shows it before the run starts. */
@@ -80,17 +79,19 @@ export interface PlanHarnessOptions {
   readonly cloudPlanner?: boolean;
   /** Changes the project settings, for example its caps (RF-613). */
   readonly settings?: (settings: ProjectSettings) => ProjectSettings;
+  /** The scan results the plan run measures the data shapes from; none readable if absent. */
+  readonly scans?: ScanResults;
   /** Runs before the planner call reaches the fake. */
   readonly beforeCall?: (harness: PlanHarness) => Promise<void>;
 }
 
-interface UnderstandSeed {
-  readonly cards: readonly Card[];
-  readonly questions?: readonly Pick<OpenQuestion, 'cardId' | 'question'>[];
-  readonly endState?: Run['endState'];
-}
+/** Scan results whose output is gone, as when a project has no readable scan. */
+const goneScans: ScanResults = {
+  open: () =>
+    Promise.reject(new RosettaError(ERROR_CODES.codeMapMissing, 'The scan has no code map.')),
+};
 
-function planExecutor(s: Stores, providers: UnderstandProviders): BuildPlan {
+function planExecutor(s: Stores, providers: UnderstandProviders, scans: ScanResults): BuildPlan {
   const { writer, masker, logger, manifests, runs, projects } = s;
   return new BuildPlan({
     ...{ projects, runs, manifests, logger, users: s.users },
@@ -109,10 +110,11 @@ function planExecutor(s: Stores, providers: UnderstandProviders): BuildPlan {
     dataModelPrompt: () => loadDataModelPrompt('prompts'),
     flowsPrompt: () => loadFlowsPrompt('prompts'),
     ids: new SequenceIdGenerator(),
+    scans,
   });
 }
 
-function queueOf(s: Stores, providers: UnderstandProviders): RunQueue {
+function queueOf(s: Stores, providers: UnderstandProviders, scans: ScanResults): RunQueue {
   const { runs, manifests, log, clock, logger } = s;
   const lifecycle = new RunLifecycle({
     ...{ runs, manifests, clock, logger },
@@ -121,7 +123,7 @@ function queueOf(s: Stores, providers: UnderstandProviders): RunQueue {
   });
   return new RunQueue({
     ...{ runs, lifecycle, clock, logger },
-    executors: { plan: planExecutor(s, providers) },
+    executors: { plan: planExecutor(s, providers, scans) },
     maxRunning: 1,
   });
 }
@@ -139,38 +141,6 @@ async function ended(s: Stores, run: Run): Promise<Run> {
   );
   if (latest === undefined) throw new Error('The run vanished');
   return latest;
-}
-
-async function seedRun(s: Stores, project: Project, seed: UnderstandSeed): Promise<Run> {
-  const run = sampleRun({
-    ...{ userId: account.id, projectId: project.id, stage: 'understand' },
-    ...{ runKey: '20261012-090000-understand', commitSha, snapshotKey: `octo__demo@${commitSha}` },
-    ...{ queueState: 'Ended', endState: seed.endState ?? 'Completed' },
-  });
-  await s.runs.insert(run);
-  const source = {
-    ...sampleManifest().source,
-    commitSha,
-    snapshotHash: `sha256:${'cd'.repeat(32)}`,
-  };
-  const manifest = sampleManifest({ runId: run.runKey, stage: 'understand', source });
-  await s.manifests.write(scopeOf(run), { ...manifest, codemapHash: `sha256:${'ab'.repeat(32)}` });
-  const cards = new FileCardOutputs({ writer: s.writer, masker: s.masker, logger: s.logger });
-  await cards.writeCards(scopeOf(run), {
-    cards: seed.cards,
-    source: cardSource,
-    areasWithoutCards: [],
-  });
-  const questions = (seed.questions ?? []).map((question) => ({
-    ...question,
-    runKey: run.runKey,
-    context: 'src/Orders/Cancel.cs:3-9 Cancel checks no role.',
-  }));
-  await new FileAnswersFile({ writer: s.writer, masker: s.masker }).addQuestions(
-    { userId: account.id, projectId: project.id },
-    questions,
-  );
-  return run;
 }
 
 /** The user and the project of the plan runs; the planner is the fake model. */
@@ -237,6 +207,7 @@ function harnessOf(parts: HarnessParts): PlanHarness {
   return {
     ...{ s, project, providers },
     understandRun: (seed) => seedRun(s, project, seed),
+    seedScan: (overrides) => seedScan(s, project, overrides),
     async answer(run, answers) {
       await new FileAnswersFile({ writer, masker }).recordAnswers(ref, run.runKey, answers);
     },
@@ -284,6 +255,7 @@ export async function createPlanHarness(
       if (made.harness !== undefined) await options.beforeCall?.(made.harness);
     },
   });
-  made.harness = harnessOf({ s, dataDir, project, providers, queue: queueOf(s, providers) });
+  const scans = options.scans ?? goneScans;
+  made.harness = harnessOf({ s, dataDir, project, providers, queue: queueOf(s, providers, scans) });
   return made.harness;
 }
