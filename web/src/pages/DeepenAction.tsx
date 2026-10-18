@@ -92,6 +92,29 @@ function Controls(props: Pick<DeepenStart, 'choice' | 'setChoice'>): JSX.Element
   );
 }
 
+function Consent(props: {
+  readonly cloud: ReturnType<typeof cloudRoles>;
+  readonly deepen: ReturnType<typeof useDeepenStart>;
+  readonly refused: ReturnType<typeof useDeepenStart>['error'];
+}): JSX.Element {
+  const { cloud, deepen, refused } = props;
+  return (
+    <>
+      {cloud.length === 0 ? null : (
+        <CloudNotice
+          roles={cloud}
+          consent={deepen.consent}
+          error={refused}
+          onConsent={deepen.setConsent}
+        />
+      )}
+      {deepen.error === undefined || refused !== undefined ? null : (
+        <ErrorBanner error={deepen.error} />
+      )}
+    </>
+  );
+}
+
 function Choices(props: { readonly runId: string }): JSX.Element {
   const deepen = useDeepenStart(props.runId);
   const load = useDeepenEstimate(props.runId, deepen.choice);
@@ -108,17 +131,7 @@ function Choices(props: { readonly runId: string }): JSX.Element {
     <>
       <Controls choice={deepen.choice} setChoice={deepen.setChoice} />
       <DeepenEstimateView load={load} />
-      {cloud.length === 0 ? null : (
-        <CloudNotice
-          roles={cloud}
-          consent={deepen.consent}
-          error={refused}
-          onConsent={deepen.setConsent}
-        />
-      )}
-      {deepen.error === undefined || refused !== undefined ? null : (
-        <ErrorBanner error={deepen.error} />
-      )}
+      <Consent cloud={cloud} deepen={deepen} refused={refused} />
       <Button
         variant="primary"
         {...(reason === undefined ? {} : { disabledReason: reason })}

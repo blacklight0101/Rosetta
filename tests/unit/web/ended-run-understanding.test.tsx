@@ -179,7 +179,9 @@ describe('RF-231 the edges of the summary', () => {
       '1 rejected claim was left out of scope',
     );
   });
+});
 
+describe('RF-231 the summary of a run that did not complete', () => {
   it('RF-231 shows no measures for a run that failed, which has no overview either', async () => {
     await openEnded({
       extra: { [understandingPath]: understanding(measures()) },
