@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import type { PlanEstimate } from '../../../../src/application/estimate/plan-estimate-types.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -54,15 +55,15 @@ describe('EstimatePlan: the planner range', () => {
       ...{ role: 'planner', provider: 'openai', kind: 'openai', model: 'priced-model' },
       ...{ keySource: 'server', priced: true },
     });
-    expect(planner.points.low.outputTokens).toBe(1024);
-    expect(planner.points.likely.outputTokens).toBe(2048);
-    expect(planner.points.high.outputTokens).toBe(4096);
+    expect(planner.points.low.outputTokens).toBe(2048);
+    expect(planner.points.likely.outputTokens).toBe(4096);
+    expect(planner.points.high.outputTokens).toBe(8192);
     expect(planner.points.low.inputTokens).toBeGreaterThan(0);
     expect(planner.points.high.inputTokens).toBe(planner.points.low.inputTokens);
     expect(planner.points.low.costMicros).toBeLessThan(planner.points.likely.costMicros);
     expect(planner.points.likely.costMicros).toBeLessThan(planner.points.high.costMicros);
-    expect(planner.points.high.costMicros).toBeGreaterThanOrEqual(8192n);
-    expect(assumptions).toMatchObject({ calls: 1, maxOutputTokens: 4096 });
+    expect(planner.points.high.costMicros).toBeGreaterThanOrEqual(16_384n);
+    expect(assumptions).toMatchObject({ calls: 2, maxOutputTokens: 4096 });
     expect(assumptions.promptTokens).toBe(planner.points.high.inputTokens);
     expect(estimate).toMatchObject({ currency: 'USD', priceTableVersion: '2026-10-11' });
   });
@@ -84,6 +85,24 @@ describe('EstimatePlan: the planner range', () => {
   });
 });
 
+describe('EstimatePlan: the PRD call', () => {
+  it('RF-613 RF-621 counts the PRD call too: its own prompt is measured and added to the plan call', async () => {
+    const { estimate } = await estimateOf();
+
+    const { assumptions, planner } = estimate;
+    const packageSize = (await readFile('prompts/planner/package.v2.md', 'utf8')).length;
+    const prdSize = (await readFile('prompts/planner/prd.v1.md', 'utf8')).length;
+    const planTokens = assumptions.promptTokens - assumptions.prdPromptTokens;
+    expect(assumptions.prdPromptTokens).toBeGreaterThan(0);
+    expect(planTokens).toBeGreaterThan(0);
+    expect(
+      Math.abs(planTokens - assumptions.prdPromptTokens - (packageSize - prdSize) / 4),
+    ).toBeLessThan(2);
+    expect(planner.points.high.inputTokens).toBe(assumptions.promptTokens);
+    expect(planner.points.high.outputTokens).toBe(2 * assumptions.maxOutputTokens);
+  });
+});
+
 describe('EstimatePlan: the planner price', () => {
   it('RF-613 a local planner costs nothing and still shows its tokens', async () => {
     const { estimate } = await estimateOf({
@@ -92,7 +111,7 @@ describe('EstimatePlan: the planner price', () => {
 
     expect(estimate.planner).toMatchObject({ kind: 'ollama', keySource: 'none', priced: true });
     expect(estimate.planner.points.high.costMicros).toBe(0n);
-    expect(estimate.planner.points.high.outputTokens).toBe(4096);
+    expect(estimate.planner.points.high.outputTokens).toBe(8192);
     expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
   });
 
@@ -103,7 +122,7 @@ describe('EstimatePlan: the planner price', () => {
 
     expect(estimate.planner.priced).toBe(false);
     expect(estimate.planner.points.high.costMicros).toBe(0n);
-    expect(estimate.planner.points.high.outputTokens).toBe(4096);
+    expect(estimate.planner.points.high.outputTokens).toBe(8192);
   });
 });
 
@@ -166,7 +185,7 @@ describe('EstimatePlan: against the account caps', () => {
   it('RF-1106 a server key is checked against what is left of the user day, in UTC', async () => {
     const h = await createPlanEstimateHarness({
       settings: plannerSettings(cloudPlanner),
-      account: { dailyCapMicros: 10_000n },
+      account: { dailyCapMicros: 12_000n },
     });
     const { userId } = h.actor;
     const row = { userId, currency: 'USD', keySource: 'server' } as const;
@@ -176,7 +195,7 @@ describe('EstimatePlan: against the account caps', () => {
     const estimate = valueOf(await run(h));
 
     expect(cap(estimate, 'user-day')).toMatchObject({
-      ...{ unit: 'micros', limit: 10_000n, spent: 6_000n, remaining: 4_000n },
+      ...{ unit: 'micros', limit: 12_000n, spent: 6_000n, remaining: 6_000n },
       fits: { low: true, likely: false, high: false },
     });
     expect(estimate.withinCaps).toEqual({ low: true, likely: false, high: false });

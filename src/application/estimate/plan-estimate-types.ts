@@ -8,10 +8,12 @@ import type { ByScenario, RoleEstimate } from './estimate-types.js';
 
 /** The numbers every figure of the plan estimate rests on, stated with it. */
 interface PlanAssumptions {
-  /** The planner makes one call per plan run. */
-  readonly calls: 1;
+  /** The planner makes two calls per plan run: the plan and the product requirements document. */
+  readonly calls: 2;
   /** The system prompt and the data blocks of the supported cards and the owner's input, at the guard's four characters per token. */
   readonly promptTokens: number;
+  /** The part of `promptTokens` that belongs to the PRD call (RF-621). */
+  readonly prdPromptTokens: number;
   /** The planner's `maxOutputTokens`: the high figure writes all of it, as the guard's worst case does. */
   readonly maxOutputTokens: number;
   /** The output of each scenario as a share of `maxOutputTokens`, in percent. */

@@ -10,6 +10,7 @@ import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { decisionFile, handoffFiles } from './handoff-links.js';
 import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
+import { prdMarkdown } from './handoff-prd-markdown.js';
 import {
   openQuestionsMarkdown,
   readmeMarkdown,
@@ -53,6 +54,7 @@ export function renderHandoff(
   );
   return {
     [handoffFiles.readme]: readmeMarkdown(handoff, esc),
+    [handoffFiles.prd]: prdMarkdown(handoff, esc),
     [handoffFiles.requirements]: requirementsMarkdown(handoff, esc),
     [handoffFiles.architecture]: architectureMarkdown(handoff, esc, masker),
     ...decisions,

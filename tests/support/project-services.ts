@@ -18,7 +18,7 @@ import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import type { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import type { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
-import { loadPlannerPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
+import { loadPlannerPrompt, loadPrdPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
 import { estimatePrices } from './estimate-harness.js';
 import type { FixedClock } from './fixed-clock.js';
@@ -76,6 +76,7 @@ export function projectServices(
       priceTable: estimatePrices,
       catalogue: () => Promise.resolve(shippedCatalogue),
       prompt: () => loadPlannerPrompt('prompts'),
+      prdPrompt: () => loadPrdPrompt('prompts'),
     }),
   };
 }

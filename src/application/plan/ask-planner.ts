@@ -3,11 +3,11 @@ import type { Run } from '../../domain/runs/run.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
-import { callIds, traceIdOf } from '../runs/run-ids.js';
+import { traceIdOf } from '../runs/run-ids.js';
 import { planMessage, type PlanMessageInput } from './plan-message.js';
 
-// RF-604, ADR-003, ADR-006, ADR-007: the one model call of a plan run. It goes to the planner's
-// guarded provider (budget guard, egress guard, call log) that the provider factory built for the
+// RF-604, RF-621, ADR-003, ADR-006, ADR-007: a model call of a plan run (the plan, then the PRD).
+// It goes to the planner's guarded provider (budget guard, egress guard, call log) that the provider factory built for the
 // run, with the run's abort signal; the system prompt is the versioned prompt file and the input
 // sits in data blocks of the user message. The model version the provider reports is recorded in
 // the manifest (RNF-004). A failed call rejects with the provider's error.
@@ -16,8 +16,12 @@ export interface PlannerCall {
   readonly run: Run;
   readonly planner: RoleProvider;
   readonly prompt: PromptFile;
+  /** The agent task the call is logged under: one per document the planner writes. */
+  readonly agentTaskId: string;
   readonly updates: ManifestUpdates;
   readonly tags: () => string;
+  /** One numbering for every call of the run (RF-408): both calls share one counter. */
+  readonly callId: () => string;
   readonly signal: AbortSignal;
 }
 
@@ -27,8 +31,8 @@ export async function askPlanner(call: PlannerCall, input: PlanMessageInput): Pr
   const traceId = traceIdOf(run);
   const response = await planner.provider.complete({
     context: {
-      ...{ runId: run.runKey, agentTaskId: 'planner-package', role: 'planner' },
-      ...{ callId: callIds(run)(), traceId, parentSpanId: `${traceId.slice(0, 13)}eee` },
+      ...{ runId: run.runKey, agentTaskId: call.agentTaskId, role: 'planner' },
+      ...{ callId: call.callId(), traceId, parentSpanId: `${traceId.slice(0, 13)}eee` },
     },
     model: planner.model,
     system: call.prompt.text,

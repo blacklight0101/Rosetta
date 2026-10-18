@@ -25,10 +25,12 @@ function plannerAnswering(tasks: readonly object[]): ReturnType<typeof recording
     phases: [{ name: 'Orders', goal: 'Orders move.', exitCriteria: ['Orders run.'] }],
     tasks,
   });
-  return recordingOf({
+  const reply = (answer: string) => ({
     retried: [],
-    response: { text, toolCalls: [], usage, finishReason: 'stop' },
+    response: { text: answer, toolCalls: [], usage, finishReason: 'stop' as const },
   });
+  // The second call is the PRD (RF-621); an unreadable answer leaves its sections placeholders.
+  return recordingOf(reply(text), reply('No PRD today.'));
 }
 
 const criteria = ['Given a basket, when confirmed, then an order is stored.'];

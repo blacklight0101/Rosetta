@@ -2,6 +2,7 @@ import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
 import type { DefaultedQuestion } from '../../domain/planning/brief-questions.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
+import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
@@ -46,4 +47,8 @@ export interface HandoffPackage {
   readonly excluded: readonly ExcludedClaim[];
   readonly briefQuestions: readonly DefaultedQuestion[];
   readonly openQuestions: readonly UnansweredQuestion[];
+  /** The product requirements document (RF-621), checked against the supported cards. */
+  readonly prd: PrdContent;
+  /** The PRD sections the cards could not fill, each with its default (RF-621, DEC-80). */
+  readonly prdQuestions: readonly DefaultedQuestion[];
 }

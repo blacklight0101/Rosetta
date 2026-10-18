@@ -14,11 +14,14 @@ import { useTempRoot } from '../../support/temp-root.js';
 
 const temp = useTempRoot('rosetta-plan-caps-');
 
-async function seededHarness(change?: (settings: ProjectSettings) => ProjectSettings) {
+async function seededHarness(
+  change?: (settings: ProjectSettings) => ProjectSettings,
+  folder = 'run',
+) {
   const recording = await loadRecording(
     join('tests', 'recordings', 'fake', 'planner-package.json'),
   );
-  const h = await createPlanHarness(temp.path, recording, {
+  const h = await createPlanHarness(join(temp.path, folder), recording, {
     cloudPlanner: true,
     ...(change === undefined ? {} : { settings: change }),
   });
@@ -50,7 +53,7 @@ async function assertNothingSent(h: PlanHarness, endState: string): Promise<void
 }
 
 describe('plan estimate against the budget guard', () => {
-  it('RF-613 the estimate shows the planner call the guard then meters, high being its worst case', async () => {
+  it('RF-613 the estimate shows the two planner calls the guard then meters, high being the sum of their worst cases', async () => {
     const h = await seededHarness();
 
     const estimate = await h.estimate();
@@ -58,14 +61,16 @@ describe('plan estimate against the budget guard', () => {
 
     expect(run.endState).toBe('Completed');
     expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
-    const reservation = h.providers.ledger.reservations[0]?.reservation;
+    const reservations = h.providers.ledger.reservations.map((each) => each.reservation);
     const { high } = estimate.planner.points;
-    expect(reservation?.role).toBe('planner');
-    expect(reservation?.worstCase.micros).toBe(high.costMicros);
-    expect(reservation?.worstCase.tokens).toBe(BigInt(high.inputTokens + high.outputTokens));
-    const [entry] = h.providers.ledger.entries;
-    expect(entry?.costMicros).toBeLessThanOrEqual(high.costMicros);
-    expect(h.providers.ledger.reservations).toHaveLength(1);
+    expect(reservations.map((each) => each.role)).toEqual(['planner', 'planner']);
+    const sum = (pick: (worst: (typeof reservations)[number]['worstCase']) => bigint): bigint =>
+      reservations.reduce((total, each) => total + pick(each.worstCase), 0n);
+    expect(sum((worst) => worst.micros)).toBe(high.costMicros);
+    expect(sum((worst) => worst.tokens)).toBe(BigInt(high.inputTokens + high.outputTokens));
+    const spent = h.providers.ledger.entries.reduce((total, each) => total + each.costMicros, 0n);
+    expect(spent).toBeLessThanOrEqual(high.costMicros);
+    expect(h.providers.ledger.entries).toHaveLength(2);
   });
 
   it('RF-613 a run cap the high figure does not fit is shown, and the guard refuses the call', async () => {
@@ -87,6 +92,26 @@ describe('plan estimate against the budget guard', () => {
 
     expect(estimate.caps.find((cap) => cap.kind === 'role-cost')?.fits.high).toBe(false);
     await assertNothingSent(h, 'CapReached');
+    expect(h.s.logger.entries).toContainEqual(
+      expect.objectContaining({ code: ERROR_CODES.budgetCapReached }),
+    );
+  });
+});
+
+describe('plan run: a cap that fits the plan call but not the PRD call', () => {
+  it('RF-423 RF-621 the planner role cap passed by the second call ends the run CapReached with no PRD sent', async () => {
+    const first = await seededHarness(undefined, 'first');
+    await first.plan({ cloudConsent: true });
+    const firstWorst = first.providers.ledger.reservations[0]?.reservation.worstCase.micros ?? 0n;
+    expect(firstWorst).toBeGreaterThan(0n);
+
+    const h = await seededHarness(cappedPlanner(Number(firstWorst)), 'second');
+    const run = await h.plan({ cloudConsent: true });
+
+    expect(run.endState).toBe('CapReached');
+    expect(h.providers.requests()).toHaveLength(1);
+    expect(h.providers.requests()[0]?.context.agentTaskId).toBe('planner-package');
+    expect(await h.handoffOf(run)).toEqual({});
     expect(h.s.logger.entries).toContainEqual(
       expect.objectContaining({ code: ERROR_CODES.budgetCapReached }),
     );
