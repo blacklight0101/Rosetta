@@ -7,6 +7,7 @@ import type { RunIndex } from '../application/ports/run-index.js';
 import type { RunManifestStore } from '../application/ports/run-manifest-store.js';
 import type { ScanResults } from '../application/ports/scan-results.js';
 import { BuildReport } from '../application/use-cases/build-report.js';
+import { FileReportCards } from '../infrastructure/cards/file-report-cards.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
@@ -40,6 +41,7 @@ export function composeBuildReport(parts: ReportParts): BuildReport {
     ...{ runs: parts.runs, manifests: parts.manifests, history: parts.history },
     ...{ scans: parts.scans, answers: parts.answers, logger, clock },
     files: new FileRunTextFiles(writer),
+    cards: new FileReportCards(writer),
     costs: new PgCostTotals(pool),
     writer: new FileReportWriter({ writer, masker, assetsFolder: reportTemplates }),
   });

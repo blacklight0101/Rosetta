@@ -4,9 +4,11 @@ import type {
   ProjectRef,
   RecordedQuestion,
 } from '../../src/application/ports/answers-file.js';
+import type { ReportCardFiles } from '../../src/application/ports/report-card-files.js';
 import type { ReportWriter } from '../../src/application/ports/report-writer.js';
 import type { RunScope } from '../../src/application/ports/run-events.js';
 import type { RunTextFiles } from '../../src/application/ports/run-text-files.js';
+import type { CardFile } from '../../src/application/report/card-evidence.js';
 import type { ReportModel } from '../../src/application/report/report-model.js';
 import { ok, type Result } from '../../src/domain/errors/result.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
@@ -62,15 +64,32 @@ export class QuestionsByRun implements AnswersFile {
   }
 }
 
+/** The card files of a test, the same for every run; remembers the paths it was asked for. */
+export class FixedReportCards implements ReportCardFiles {
+  readonly asked: (readonly string[])[] = [];
+  private readonly cards: readonly CardFile[];
+
+  constructor(cards: readonly CardFile[] = []) {
+    this.cards = cards;
+  }
+
+  read(_scope: RunScope, paths: readonly string[]): Promise<readonly CardFile[]> {
+    this.asked.push(paths);
+    return Promise.resolve(this.cards);
+  }
+}
+
 /** The ports `BuildReport` reads the figures of the report from: no questions, no ledger rows. */
 export function reportFigures(): {
   readonly answers: QuestionsByRun;
   readonly costs: MemoryCostTotals;
   readonly clock: FixedClock;
+  readonly cards: FixedReportCards;
 } {
   return {
     answers: new QuestionsByRun(),
     costs: new MemoryCostTotals(),
     clock: new FixedClock('2026-10-12T11:00:00.000Z'),
+    cards: new FixedReportCards(),
   };
 }

@@ -7,6 +7,7 @@ import type { AnswersFile } from '../ports/answers-file.js';
 import type { Clock } from '../ports/clock.js';
 import type { CostTotals } from '../ports/cost-totals.js';
 import type { ReportWriter } from '../ports/report-writer.js';
+import type { ReportCardFiles } from '../ports/report-card-files.js';
 import type { RunEventHistory, RunScope } from '../ports/run-events.js';
 import type { Logger } from '../ports/logger.js';
 import type { ScanResults } from '../ports/scan-results.js';
@@ -39,6 +40,8 @@ export interface BuildReportDependencies {
   /** RF-1010: the project totals at generation time. */
   readonly costs: CostTotals;
   readonly clock: Clock;
+  /** RF-502: the card files read for the pages of the cards. */
+  readonly cards: ReportCardFiles;
 }
 
 export interface BuiltReport {
@@ -73,6 +76,7 @@ export class BuildReport {
       overviewFile: await this.deps.files.read(scope, 'overview.json'),
       documents: await this.documentsOf(scope),
       areas: await this.areasOf(run),
+      cardDetails: [],
       ...(await this.figuresOf(run, scope)),
     });
     return ok({ files: await writer.write(scope, model) });
