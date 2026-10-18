@@ -670,7 +670,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-02, P1-43
 - **Gate**: G-08 (DEC-133)
-- **Status**: Done
+- **Status**: In review
 - **Reads**: `docs/environments-and-delivery.md` sections 2 and 8.
 - **Do**: a Pages workflow publishing `site/` from `main` with the smoke step that fetches the index and fails when the run id is missing; `site/` holding the escaped HTML report and the replay of the owner's demo run on the hosted URL (DEC-105), with a `.nojekyll` file, copied by the orchestrator after an output scan for secrets into a `needs-owner` pull request; the README link.
 - **Delivers**: `.github/workflows/pages.yml`, `site/`, the README link.
@@ -706,7 +706,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-46
 - **Gate**: none
-- **Status**: Done
+- **Status**: In review
 - **Reads**: `docs/rfc/RFC-001-rosetta.md` sections 1-4; `docs/process-flows.md`; Q-02 and Q-03.
 - **Do**: slides in Spanish (Q-03) presenting the problem, the pipeline, the live agents, evidence and the verifier, cost control, security, the build method and the results; a video script of about 5 minutes (Q-02) with the explainer and a clip of a real run; the owner records the video; both URLs added to the README.
 - **Delivers**: `docs/hand-in/slides/` source, `docs/hand-in/video-script.md`, README links.
