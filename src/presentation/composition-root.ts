@@ -133,7 +133,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
   });
   const projects = await composeProjects({
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
-    dataDir: environment.dataDir,
+    ...{ dataDir: environment.dataDir, priceTable: auth.priceTable },
   });
   const server = buildServer({
     logger,

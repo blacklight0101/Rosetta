@@ -14,8 +14,9 @@ import type { ServerSettings } from '../../application/ports/server-settings.js'
 import type { ProjectSettings } from '../../application/projects/project-settings.js';
 import { ownerLogger } from '../../application/runs/owner-logger.js';
 import { priceOverridesOf } from '../../application/projects/price-overrides.js';
+import { roleBudgetOf } from '../../application/projects/role-budget.js';
 import type { ProviderSet, RoleProvider } from '../../application/providers/provider-set.js';
-import { capsFor, type RoleBudget, type ServerCaps } from '../../domain/budget/budget.js';
+import { capsFor, type ServerCaps } from '../../domain/budget/budget.js';
 import type { PriceTable } from '../../domain/budget/price-table.js';
 import type { UsageCap } from '../../domain/budget/usage-cap.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
@@ -68,15 +69,6 @@ interface WrapParts {
 
 /** RF-407: the most one provider test call may cost or use, whoever pays (worst case, before the call). */
 const testCeiling = { costMicros: 100_000n, tokens: 2_000n } as const;
-
-/** RF-423: the caps the project sets for one role (`budget.roles`); none when it sets none. */
-function roleCapsOf(settings: ProjectSettings, role: AgentRole): RoleBudget {
-  const caps = settings.budget.roles?.[role];
-  return {
-    ...(caps?.maxCostMicros === undefined ? {} : { maxCostMicros: BigInt(caps.maxCostMicros) }),
-    ...(caps?.maxTokens === undefined ? {} : { maxTokens: BigInt(caps.maxTokens) }),
-  };
-}
 
 function providerTestCeiling(cap: UsageCap): bigint {
   if (cap.kind === 'run-cost') return testCeiling.costMicros;
@@ -248,7 +240,7 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const caps = capsFor(access.keySource, {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
       // RF-423: a provider test belongs to no run, so a role's run caps do not apply to it.
-      ...(request.run.id === null ? {} : { role: roleCapsOf(request.settings, role) }),
+      ...(request.run.id === null ? {} : { role: roleBudgetOf(request.settings, role) }),
       server,
       account: {
         dailyCapMicros: account.dailyCapMicros,

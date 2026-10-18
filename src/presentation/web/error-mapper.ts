@@ -58,6 +58,8 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.deleteRefusedInUse]: 409,
   [ERROR_CODES.runNotResumable]: 409,
   [ERROR_CODES.codeMapMissing]: 409,
+  [ERROR_CODES.planBriefMissing]: 409,
+  [ERROR_CODES.planSourceMissing]: 409,
   [ERROR_CODES.runInProgress]: 409,
   [ERROR_CODES.userNameTaken]: 409,
   [ERROR_CODES.accountStateInvalid]: 409,

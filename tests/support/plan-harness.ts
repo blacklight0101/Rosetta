@@ -5,6 +5,9 @@ import type { AnswerEntry, OpenQuestion } from '../../src/application/ports/answ
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
+import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
+import type { PlanEstimate } from '../../src/application/estimate/plan-estimate-types.js';
+import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { BuildPlan } from '../../src/application/use-cases/build-plan.js';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { Project } from '../../src/application/projects/project.js';
@@ -16,6 +19,9 @@ import { FileCostReportWriter } from '../../src/infrastructure/budget/cost-repor
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
+import { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
+import { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
+import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { FanOutSink } from '../../src/infrastructure/events/fan-out-sink.js';
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
@@ -24,7 +30,7 @@ import { FileHandoffWriter } from '../../src/infrastructure/handoff/file-handoff
 import { loadPlannerPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
 import { sampleAccount } from './account-fixtures.js';
-import { contractPrice } from './budget-harness.js';
+import { budgetTable, contractPrice } from './budget-harness.js';
 import { cardSource } from './card-fixtures.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
 import { sampleProject } from './project-fixtures.js';
@@ -54,6 +60,8 @@ export interface PlanHarness {
   saveBrief(answers: BriefAnswers): Promise<void>;
   /** Starts a plan run with these options as the queue does and waits for its end. */
   plan(options?: Readonly<Record<string, unknown>>): Promise<Run>;
+  /** The plan estimate of the project, as the plan page shows it before the run starts. */
+  estimate(): Promise<PlanEstimate>;
   /** Stops every running run, as the owner's stop does. */
   stopRunning(): Promise<void>;
   /** The folder of the run under the data folder. */
@@ -66,6 +74,8 @@ export interface PlanHarness {
 export interface PlanHarnessOptions {
   /** RF-143: the planner on OpenAI with the server's key, a provider that needs consent. */
   readonly cloudPlanner?: boolean;
+  /** Changes the project settings, for example its caps (RF-613). */
+  readonly settings?: (settings: ProjectSettings) => ProjectSettings;
   /** Runs before the planner call reaches the fake. */
   readonly beforeCall?: (harness: PlanHarness) => Promise<void>;
 }
@@ -177,15 +187,18 @@ async function seedRun(s: Stores, project: Project, seed: UnderstandSeed): Promi
 }
 
 /** The user and the project of the plan runs; the planner is the fake model. */
-async function projectOf(s: Stores, cloud: boolean): Promise<Project> {
+async function projectOf(s: Stores, options: PlanHarnessOptions): Promise<Project> {
+  const cloud = options.cloudPlanner === true;
   await s.users.insert(account);
   const planner = cloud
     ? { provider: 'openai', model: contractPrice.model }
     : { provider: 'fake', model: 'fake-model' };
-  const settings = understandSettings((base) => ({
-    ...base,
-    roles: { ...base.roles, planner: { ...base.roles.planner, ...planner } },
-  }));
+  const settings = understandSettings((base) =>
+    (options.settings ?? ((each) => each))({
+      ...base,
+      roles: { ...base.roles, planner: { ...base.roles.planner, ...planner } },
+    }),
+  );
   const project = sampleProject({
     userId: account.id,
     sourceUrl: 'https://github.com/octo/demo',
@@ -201,6 +214,24 @@ interface HarnessParts {
   readonly project: Project;
   readonly providers: UnderstandProviders;
   readonly queue: RunQueue;
+}
+
+async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
+  const { writer, masker, clock, runs, projects, users } = s;
+  const estimate = new EstimatePlan({
+    ...{ projects, runs, users, clock, priceTable: budgetTable },
+    briefs: new FilePlanningBriefStore({ writer, masker }),
+    cards: new FileRunCards(writer),
+    answers: new FileAnswersFile({ writer, masker }),
+    usage: new MemoryAccountUsage(),
+    serverSettings: new MemoryServerSettings({}),
+    keys: new MemoryProviderKeyRepository(),
+    catalogue: () => Promise.resolve(shippedCatalogue),
+    prompt: () => loadPlannerPrompt('prompts'),
+  });
+  const outcome = await estimate.execute({ actor, projectId: project.id });
+  if (!outcome.ok) throw new Error(`The plan estimate was refused: ${outcome.error}`);
+  return outcome.value;
 }
 
 function harnessOf(parts: HarnessParts): PlanHarness {
@@ -237,6 +268,7 @@ function harnessOf(parts: HarnessParts): PlanHarness {
       if (manifest === undefined) throw new Error('The run has no manifest');
       return manifest;
     },
+    estimate: () => estimateOf(s, project),
     async stopRunning() {
       for (const run of await s.runs.listRunning()) await queue.stop(run.userId, run.id);
     },
@@ -253,7 +285,7 @@ export async function createPlanHarness(
 ): Promise<PlanHarness> {
   const s = stores(dataDir);
   const cloud = options.cloudPlanner === true;
-  const project = await projectOf(s, cloud);
+  const project = await projectOf(s, options);
   const { writer, masker, logger, clock } = s;
   const made: { harness?: PlanHarness } = {};
   const providers = understandProviders({
