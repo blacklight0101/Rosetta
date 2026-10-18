@@ -1,6 +1,7 @@
 import type { ReportModel } from '../../application/report/report-model.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { escapeHtml } from './html-text.js';
+import type { DiagramAssets } from './report-assets.js';
 import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
@@ -18,7 +19,10 @@ import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 // is relative (RF-501); the pages carry the report content security policy in a `meta` element
 // (RF-1013). `.nojekyll` keeps Pages from running its own processing on the folder.
 
-export type ReportSiteAssets = Readonly<Record<'report.css' | 'replay.js', string>>;
+export type ReportSiteAssets = Readonly<Record<'report.css' | 'replay.js', string>> & {
+  /** RF-508: the vendored Mermaid build and its loader; without them the site has no diagrams page. */
+  readonly diagrams?: DiagramAssets;
+};
 
 /** The run's documents keyed by their path in the run folder, which is their path in the site. */
 export type SiteDocuments = Readonly<Record<string, string>>;

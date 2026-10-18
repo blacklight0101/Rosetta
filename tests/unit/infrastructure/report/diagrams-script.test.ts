@@ -1,0 +1,161 @@
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { Window } from 'happy-dom';
+import { describe, expect, it } from 'vitest';
+import { renderDiagramsPage } from '../../../../src/infrastructure/report/site/diagrams-page.js';
+import { reportModel } from '../../../support/report-fixtures.js';
+
+// RF-508, RF-507: the diagrams script draws each source with Mermaid (here a stand-in that answers
+// like it) and, for a diagram that does not draw, keeps the source and shows a note while the other
+// diagrams are drawn. It runs here in happy-dom against the page the writer produces; the end-to-end
+// spec runs it with the real build in a browser.
+
+const script = await readFile(
+  fileURLToPath(new URL('../../../../templates/report/diagrams.js', import.meta.url)),
+  'utf8',
+);
+
+const good = { document: 'spec.md', title: 'Good', source: 'flowchart LR\n  s1["Home"]' };
+const bad = { document: 'spec.md', title: 'Bad', source: 'flowchart LR\n  a --- (((' };
+const svg =
+  '<svg id="rosetta-diagram-1"><style>#rosetta-diagram-1 .n{fill:red}</style><g class="n" style="opacity:0.5"></g></svg>';
+
+interface Calls {
+  readonly config: unknown[];
+  readonly parsed: string[];
+  readonly rendered: [string, string][];
+}
+
+function pageWith(
+  diagrams: readonly (typeof good)[],
+  options: { mermaid?: boolean; renderFails?: boolean } = {},
+): { window: Window; calls: Calls } {
+  const window = new Window({ settings: { disableJavaScriptEvaluation: false } });
+  window.document.write(renderDiagramsPage(reportModel({ diagrams })));
+  const calls: Calls = { config: [], parsed: [], rendered: [] };
+  const stand = {
+    initialize: (config: unknown) => calls.config.push(config),
+    parse: (source: string) => {
+      calls.parsed.push(source);
+      return source.includes('(((')
+        ? Promise.reject(new Error('Parse error'))
+        : Promise.resolve(true);
+    },
+    render: (id: string, source: string) => {
+      calls.rendered.push([id, source]);
+      return options.renderFails === true
+        ? Promise.reject(new Error('Render error'))
+        : Promise.resolve({ svg });
+    },
+  };
+  if (options.mermaid !== false) {
+    Reflect.set(window, '__esbuild_esm_mermaid_nm', { mermaid: { default: stand } });
+  }
+  return { window, calls };
+}
+
+async function run(window: Window): Promise<void> {
+  window.eval(script);
+  await window.happyDOM.waitUntilComplete();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+}
+
+const figures = (window: Window) => [...window.document.querySelectorAll('figure[data-diagram]')];
+const noteShown = (figure: ReturnType<typeof figures>[number] | undefined): boolean =>
+  figure?.querySelector('[data-diagram-note]')?.hasAttribute('hidden') === false;
+
+describe('the diagrams script', () => {
+  it('RF-508 draws every diagram with securityLevel strict and no start on load', async () => {
+    const { window, calls } = pageWith([good, good]);
+
+    await run(window);
+
+    expect(calls.config).toHaveLength(1);
+    expect(calls.config[0]).toMatchObject({ securityLevel: 'strict', startOnLoad: false });
+    expect(calls.rendered.map(([, source]) => source)).toEqual([good.source, good.source]);
+    expect(new Set(calls.rendered.map(([id]) => id)).size).toBe(2);
+  });
+
+  it('RF-508 puts the drawing in the figure, closes the source and keeps the note hidden', async () => {
+    const { window } = pageWith([good]);
+
+    await run(window);
+
+    const [figure] = figures(window);
+    expect(figure?.querySelector('[data-diagram-drawing] svg')).not.toBeNull();
+    expect(figure?.querySelector('details')?.hasAttribute('open')).toBe(false);
+    expect(noteShown(figure)).toBe(false);
+  });
+
+  it('RF-1013 RF-508 takes the style rules out of the drawing, so the page needs no inline style', async () => {
+    const { window } = pageWith([good]);
+
+    await run(window);
+
+    const [figure] = figures(window);
+    expect(figure?.querySelectorAll('style')).toHaveLength(0);
+    expect(figure?.querySelectorAll('[style]')).toHaveLength(0);
+    expect(figure?.querySelector('g')?.style.opacity).toBe('0.5');
+  });
+});
+
+describe('the diagrams script and a diagram that does not draw', () => {
+  it('RF-508 shows a diagram that does not parse as its source with a note, and draws the others', async () => {
+    const { window } = pageWith([bad, good]);
+
+    await run(window);
+
+    const [first, second] = figures(window);
+    expect(noteShown(first)).toBe(true);
+    expect(first?.querySelector('details')?.hasAttribute('open')).toBe(true);
+    expect(first?.querySelector('pre')?.textContent).toBe(bad.source);
+    expect(first?.querySelector('svg')).toBeNull();
+    expect(noteShown(second)).toBe(false);
+    expect(second?.querySelector('svg')).not.toBeNull();
+  });
+
+  it('RF-508 shows a diagram whose drawing fails as its source with a note', async () => {
+    const { window } = pageWith([good], { renderFails: true });
+
+    await run(window);
+
+    const [figure] = figures(window);
+    expect(noteShown(figure)).toBe(true);
+    expect(figure?.querySelector('details')?.hasAttribute('open')).toBe(true);
+    expect(figure?.querySelector('svg')).toBeNull();
+  });
+
+  it('RF-508 removes the error drawing Mermaid leaves in the page when a diagram fails', async () => {
+    const { window } = pageWith([good], { renderFails: true });
+    const stray = window.document.createElement('div');
+    stray.id = 'drosetta-diagram-1';
+    window.document.body.append(stray);
+
+    await run(window);
+
+    expect(window.document.getElementById('drosetta-diagram-1')).toBeNull();
+  });
+});
+
+describe('the diagrams script and what it never trusts', () => {
+  it('RF-508 shows every source with a note when the Mermaid build did not load', async () => {
+    const { window } = pageWith([good, bad], { mermaid: false });
+
+    await run(window);
+
+    expect(figures(window).map((figure) => noteShown(figure))).toEqual([true, true]);
+  });
+
+  it('RF-507 never reads a source as markup: a hostile source is parsed as the text it is', async () => {
+    const hostile = {
+      ...good,
+      source: 'flowchart LR\n  a["<img src=x onerror=window.__pwned=1>"]',
+    };
+    const { window, calls } = pageWith([hostile]);
+
+    await run(window);
+
+    expect(calls.parsed).toEqual([hostile.source]);
+    expect(window.document.querySelectorAll('img')).toHaveLength(0);
+  });
+});
