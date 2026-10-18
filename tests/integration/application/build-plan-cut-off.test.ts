@@ -177,6 +177,12 @@ describe('BuildPlan: a document that stays cut off is kept, marked and named', (
     expect(files['prd.md']).toContain(`cut off at ${limit} output tokens`);
     expect(files['README.md']).toContain('## Incomplete documents');
     expect(files['README.md']).toContain('- [Product requirements document](prd.md)');
+    const listed = (files['README.md'] ?? '')
+      .split('## Incomplete documents')[1]
+      ?.split('## Reading order')[0]
+      ?.match(/^- .*$/gmu);
+    expect(listed).toHaveLength(1);
+    expect(listed?.[0]).toContain('Product requirements document');
     expect(files['data-model.md']).not.toContain('**Incomplete.**');
     const warnings = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     const named = warnings.some((entry) =>
