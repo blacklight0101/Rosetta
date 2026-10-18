@@ -56,11 +56,11 @@ interface BodyProps {
   readonly project: Project;
   readonly source: PlanSource | undefined;
   readonly sourceError: ApiFailure | undefined;
+  readonly sourceRunId: string | undefined;
 }
 
 function PlanSetupBody(props: BodyProps): JSX.Element {
-  const { projectId, catalogue, view, project, source, sourceError } = props;
-  const sourceRunId = source?.runId;
+  const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
   const session = usePlanSession({ projectId, sourceRunId }, view, project);
   return (
     <div class="rst-plan">
@@ -98,6 +98,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
       <PlanEstimateCard
         projectId={projectId}
         sourceRunId={sourceRunId}
+        sourceRefused={sourceError !== undefined}
         load={session.estimate}
         blockers={session.blockers}
         consent={session.consent}
@@ -135,6 +136,7 @@ export function PlanSetupPage(): JSX.Element {
       project={load.project}
       source={load.source}
       sourceError={load.sourceError}
+      sourceRunId={load.sourceRunId}
     />
   );
 }

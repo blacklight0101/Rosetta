@@ -21,6 +21,8 @@ export interface PlanEstimateCardProps {
   readonly projectId: string;
   /** RF-614: the understand run the package is written from. */
   readonly sourceRunId: string | undefined;
+  /** RST-1802: the source run was refused, so no package can be written from it. */
+  readonly sourceRefused: boolean;
   readonly load: EstimateLoad;
   readonly blockers: readonly Blocker[];
   readonly consent: boolean;
@@ -100,6 +102,7 @@ function Blockers({ blockers }: { readonly blockers: readonly Blocker[] }): JSX.
 
 function reasonOf(props: PlanEstimateCardProps): string | undefined {
   const { load, blockers, stepReason } = props;
+  if (props.sourceRefused) return 'The source run cannot be used. Fix it above first.';
   if (load.status === 'idle') return stepReason ?? 'Save your answers first.';
   if (load.status === 'loading') return 'The estimate is being read.';
   if (load.status === 'failed') return 'The estimate could not be read.';

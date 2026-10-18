@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import type { ApiFailure } from '../api/client.js';
+import type { ApiFailure, ApiResult } from '../api/client.js';
 import { getCatalogue, getPlanSource, getPlanningBrief } from '../api/plan.js';
 import type { BriefView, Catalogue, PlanSource } from '../api/plan-schemas.js';
 import { getProject } from '../api/projects.js';
@@ -24,7 +24,25 @@ export type SetupLoad =
       /** The run the plan is written from; undefined when there is none (see `sourceError`). */
       readonly source: PlanSource | undefined;
       readonly sourceError: ApiFailure | undefined;
+      /** The run the plan routes work from: the named one even when it is refused (RF-614). */
+      readonly sourceRunId: string | undefined;
     };
+
+/** RF-614: the source, why it was refused, and the run the plan routes work from (the named one). */
+function sourceFields(
+  source: ApiResult<PlanSource>,
+  runParam: string | undefined,
+): {
+  readonly source: PlanSource | undefined;
+  readonly sourceError: ApiFailure | undefined;
+  readonly sourceRunId: string | undefined;
+} {
+  return {
+    source: source.ok ? source.value : undefined,
+    sourceError: source.ok ? undefined : source.error,
+    sourceRunId: runParam ?? (source.ok ? source.value.runId : undefined),
+  };
+}
 
 // RF-605
 export function usePlanSetupLoad(projectId: string): SetupLoad {
@@ -50,8 +68,8 @@ export function usePlanSetupLoad(projectId: string): SetupLoad {
         setState({
           status: 'ready',
           ...{ catalogue: catalogue.value, view: view.value },
-          ...{ project: project.value, source: source.ok ? source.value : undefined },
-          sourceError: source.ok ? undefined : source.error,
+          project: project.value,
+          ...sourceFields(source, runParam),
         });
       }
     });
