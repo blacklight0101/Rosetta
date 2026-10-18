@@ -27,7 +27,7 @@ const readerPromptNames = [
   'reader/turns-left.v2.md',
 ];
 
-const surfacePromptNames = ['cards/flows.v1.md', 'cards/screens.v1.md'];
+const surfacePromptNames = ['cards/flows.v1.md', 'cards/screens.v2.md'];
 
 async function sha256Of(path: string): Promise<string> {
   return createHash('sha256')

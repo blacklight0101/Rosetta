@@ -1,4 +1,5 @@
 import type { Card } from '../../src/domain/cards/card.js';
+import type { ClaimStatus } from '../../src/domain/cards/card-vocabulary.js';
 import { base, claim, judgedCard } from './plan-cards.js';
 
 // RF-626: the `SCRN` cards a user-interface test adds to the seeded run of plan-cards.ts.
@@ -8,7 +9,14 @@ interface ScreenInput {
   readonly title: string;
   readonly route: string;
   readonly roles?: readonly string[];
-  readonly fields?: readonly { name: string; required?: boolean; inputKind?: string }[];
+  readonly fields?: readonly {
+    name: string;
+    required?: boolean;
+    inputKind?: string;
+    status?: 'Rejected';
+  }[];
+  /** True for a card written before P3-29: only the claims the agent and the actions made. */
+  readonly legacy?: boolean;
   /** An action's claim is `Supported` unless the test says the verifier rejected it. */
   readonly actions?: readonly {
     label: string;
@@ -17,10 +25,28 @@ interface ScreenInput {
     status?: 'Rejected';
   }[];
   readonly leadsTo?: readonly string[];
+  /** True when the verifier rejected the claim that states the route. */
+  readonly routeRejected?: boolean;
+  /** True when the verifier rejected every claim that states a link. */
+  readonly linksRejected?: boolean;
+}
+
+/** The status of each claim of a screen card in order: agent claim, actions, route, roles, fields, links. */
+function judgements(input: ScreenInput): ClaimStatus[] {
+  return [
+    'Supported',
+    ...(input.actions ?? []).map((action) => action.status ?? 'Supported'),
+    input.routeRejected === true ? 'Rejected' : 'Supported',
+    ...(input.roles ?? []).map((): ClaimStatus => 'Supported'),
+    ...(input.fields ?? []).map((field): ClaimStatus => field.status ?? 'Supported'),
+    ...(input.leadsTo ?? []).map((): ClaimStatus =>
+      input.linksRejected === true ? 'Rejected' : 'Supported',
+    ),
+  ];
 }
 
 /** RF-626: a `SCRN` card with one supported claim and the screen detail given. */
-function screenCard(input: ScreenInput): Card {
+export function screenCard(input: ScreenInput): Card {
   const { id, title, route } = input;
   const fields = (input.fields ?? []).map((field) => ({
     ...{ name: field.name, inputKind: field.inputKind ?? 'text' },
@@ -30,14 +56,18 @@ function screenCard(input: ScreenInput): Card {
     ...{ route, roles: input.roles ?? [], fields },
     ...{ actions: input.actions ?? [], leadsTo: input.leadsTo ?? [] },
   };
-  return judgedCard(
+  const statuses = judgements(input);
+  const card = judgedCard(
     {
       ...base(id, 'SCRN', title),
       screen,
       claims: [claim(`${title} is shown.`, 'src/Orders/Orders.cshtml')],
     },
-    ['Supported', ...(input.actions ?? []).map((action) => action.status ?? 'Supported')],
+    statuses,
   );
+  if (input.legacy !== true) return card;
+  const kept = 1 + (input.actions ?? []).length;
+  return { ...card, claims: card.claims.slice(0, kept) };
 }
 
 /**

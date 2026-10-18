@@ -1,10 +1,12 @@
 import type { ReportModel } from '../../application/report/report-model.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { escapeHtml } from './html-text.js';
+import type { DiagramAssets } from './report-assets.js';
 import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
 import { renderCostHtml } from './site/cost-page.js';
+import { renderDiagramsPage } from './site/diagrams-page.js';
 import { renderEvidencePages } from './site/evidence-pages.js';
 import { renderQuestionsHtml } from './site/questions-page.js';
 import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
@@ -18,7 +20,12 @@ import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 // is relative (RF-501); the pages carry the report content security policy in a `meta` element
 // (RF-1013). `.nojekyll` keeps Pages from running its own processing on the folder.
 
-export type ReportSiteAssets = Readonly<Record<'report.css' | 'replay.js' | 'filters.js', string>>;
+export type ReportSiteAssets = Readonly<
+  Record<'report.css' | 'replay.js' | 'filters.js', string>
+> & {
+  /** RF-508: the vendored Mermaid build and its loader; without them the site has no diagrams page. */
+  readonly diagrams?: DiagramAssets;
+};
 
 /** The run's documents keyed by their path in the run folder, which is their path in the site. */
 export type SiteDocuments = Readonly<Record<string, string>>;
@@ -30,10 +37,12 @@ export function buildSiteFiles(
   masker: TextMasker,
   documents: SiteDocuments,
 ): Readonly<Record<string, string>> {
+  // RF-508: the dashboard links the diagrams page only when the site has the build to draw them.
+  const withBuild = assets.diagrams === undefined ? { ...model, diagrams: undefined } : model;
   const files: Record<string, string> = {
     '.nojekyll': '',
     'index.html': masker.mask(renderIndex(model.runKey)).text,
-    'report.html': siteLinks(masker.mask(renderReportHtml(model)).text),
+    'report.html': siteLinks(masker.mask(renderReportHtml(withBuild)).text),
     'questions.html': siteLinks(masker.mask(renderQuestionsHtml(model)).text),
     'cost.html': siteLinks(masker.mask(renderCostHtml(model)).text),
     'report.md': siteLinks(renderReportMarkdown(model, masker)),
@@ -44,6 +53,10 @@ export function buildSiteFiles(
   };
   for (const [name, html] of Object.entries(renderEvidencePages(model))) {
     files[name] = siteLinks(masker.mask(html).text);
+  }
+  if (assets.diagrams !== undefined && (model.diagrams ?? []).length > 0) {
+    Object.assign(files, assets.diagrams);
+    files['diagrams.html'] = siteLinks(masker.mask(renderDiagramsPage(model)).text);
   }
   for (const [path, text] of Object.entries(documents)) {
     files[path] = masker.mask(text).text;
