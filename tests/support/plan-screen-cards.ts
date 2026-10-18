@@ -9,7 +9,13 @@ interface ScreenInput {
   readonly route: string;
   readonly roles?: readonly string[];
   readonly fields?: readonly { name: string; required?: boolean; inputKind?: string }[];
-  readonly actions?: readonly { label: string; handler?: string; flow?: string }[];
+  /** An action's claim is `Supported` unless the test says the verifier rejected it. */
+  readonly actions?: readonly {
+    label: string;
+    handler?: string;
+    flow?: string;
+    status?: 'Rejected';
+  }[];
   readonly leadsTo?: readonly string[];
 }
 
@@ -30,7 +36,7 @@ function screenCard(input: ScreenInput): Card {
       screen,
       claims: [claim(`${title} is shown.`, 'src/Orders/Orders.cshtml')],
     },
-    ['Supported'],
+    ['Supported', ...(input.actions ?? []).map((action) => action.status ?? 'Supported')],
   );
 }
 
@@ -60,7 +66,10 @@ export function orderScreenCards(): readonly Card[] {
     screenCard({
       ...{ id: 'SCRN-003', title: 'Checkout', route: '/checkout' },
       fields: [{ name: 'Delivery address', required: true }],
-      actions: [{ label: 'Pay', flow: 'FLOW-001' }],
+      actions: [
+        { label: 'Pay', flow: 'FLOW-001' },
+        { label: 'Delete everything', handler: 'dropAll', status: 'Rejected' },
+      ],
       leadsTo: ['SCRN-001'],
     }),
     screenCard({ id: 'SCRN-004', title: 'Fax confirmation', route: '/fax' }),

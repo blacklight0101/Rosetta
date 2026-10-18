@@ -39,7 +39,13 @@ describe('BuildPlan: what the screens call is sent', () => {
     ]) {
       expect(message).toContain(sent);
     }
-    for (const left of ['Place an order', 'FLOW-001.c1', 'ENT-001']) {
+    for (const left of [
+      'Place an order',
+      'FLOW-001.c1',
+      'ENT-001',
+      'Delete everything',
+      'dropAll',
+    ]) {
       expect(message).not.toContain(left);
     }
     expect(request?.system).toBe(await readFile('prompts/planner/ux.v1.md', 'utf8'));
@@ -123,6 +129,8 @@ describe('BuildPlan: ux/ wireframes', () => {
       expect(html).toContain(shown);
     }
     expect(html).toContain('href="SCRN-003.html"');
+    expect(written['ux/wireframes/SCRN-003.html']).toContain('Pay (starts flow FLOW-001)');
+    expect(written['ux/wireframes/SCRN-003.html']).not.toContain('Delete everything');
     expect(html).toContain('/ghost');
     expect(html).not.toContain('href="/ghost"');
   });
