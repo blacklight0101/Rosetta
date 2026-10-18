@@ -66,6 +66,7 @@ export function initialRunState(): RunState {
     log: [],
     roleCostMicros: {},
     roleTokens: {},
+    deepen: undefined,
     ended: undefined,
   };
 }

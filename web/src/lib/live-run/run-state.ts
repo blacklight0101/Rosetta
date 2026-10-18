@@ -89,6 +89,42 @@ interface RoleTokens {
   readonly outputTokens: number;
 }
 
+/** RF-209: the cards a Deepen starts from, as counts. */
+export interface DeepenSeeded {
+  readonly cards: number;
+  readonly claims: number;
+  readonly supported: number;
+  readonly rejected: number;
+  readonly notJudged: number;
+}
+
+/** RF-209: one round of a Deepen; `cut` is a round a cap or a Stop ended before its end. */
+export interface DeepenRoundState {
+  readonly round: number;
+  readonly status: 'running' | 'done' | 'cut';
+  readonly judge: number;
+  readonly reread: number;
+  readonly outOfScope: number;
+  readonly unreadFiles: number;
+  /** What the round added; zero until it ends. */
+  readonly newClaims: number;
+  readonly newSupported: number;
+  readonly filesRead: number;
+}
+
+/** RF-209: where a Deepen run stands, from its `deepen.*` events. */
+export interface DeepenProgress {
+  readonly parentRunId: string;
+  /** The folder name of the completed run it improves. */
+  readonly parentRunKey: string;
+  readonly maxRounds: number;
+  readonly coveragePass: boolean;
+  readonly seeded: DeepenSeeded;
+  readonly rounds: readonly DeepenRoundState[];
+  /** Why it stopped; undefined while it goes on, and again once a resume starts it. */
+  readonly stop: { readonly reason: string; readonly roundsDone: number } | undefined;
+}
+
 export interface RunState {
   readonly lastSeq: number;
   /** The `at` of `run.started`; the event log shows times from it. */
@@ -110,5 +146,7 @@ export interface RunState {
   readonly roleCostMicros: Readonly<Record<string, number>>;
   /** The tokens of each role from its `usage.recorded` events (P1-96); empty for older runs. */
   readonly roleTokens: Readonly<Record<string, RoleTokens>>;
+  /** RF-209: set only for a Deepen run. */
+  readonly deepen: DeepenProgress | undefined;
   readonly ended: EndedState | undefined;
 }
