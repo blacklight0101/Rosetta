@@ -117,6 +117,7 @@ Snapshot of the kick-off decisions; the canonical record is [docs/decision-log.m
 
 - Release notes: [docs/releases.md](docs/releases.md) (v0.1.0; the owner creates the tag).
 - Hosted application URL: [PENDIENTE: URL de la aplicación alojada]. The hosted deployment is card P1-55.
+- Hand-in values and the owner's day-before checklist: [docs/hand-in/m1.md](docs/hand-in/m1.md).
 - Slides URL: [PENDIENTE: URL de las diapositivas]. Source: [docs/hand-in/slides/slides.md](docs/hand-in/slides/slides.md) (Spanish).
 - Video URL: [PENDIENTE: URL del vídeo]. Script: [docs/hand-in/video-script.md](docs/hand-in/video-script.md) (Spanish, about 5 minutes).
 
