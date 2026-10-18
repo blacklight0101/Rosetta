@@ -132,7 +132,8 @@ export class FakeRosettaHost {
 
   private session(entry: HostRequest, response: ServerResponse): void {
     const { userName, password, accountState } = this.behaviour;
-    if (entry.method === 'DELETE') json(response, this.signedIn(entry) ? 204 : 401);
+    if (entry.method === 'GET') json(response, this.signedIn(entry) ? 200 : 401, { csrfToken });
+    else if (entry.method === 'DELETE') json(response, this.signedIn(entry) ? 204 : 401);
     else if (entry.method !== 'POST' || entry.headers.origin !== this.origin) {
       json(response, 403, { code: 'RST-1102' });
     } else if (entry.body !== JSON.stringify({ userName, password })) {
@@ -148,7 +149,6 @@ export class FakeRosettaHost {
 
   private api(entry: HostRequest, response: ServerResponse): void {
     const answers: Readonly<Record<string, readonly [number, unknown]>> = {
-      'GET /api/session': [200, { csrfToken }],
       'GET /api/projects': [200, { projects: [] }],
       'POST /api/projects': [201, { id: projectId }],
       [`POST /api/projects/${projectId}/runs`]: [202, { id: runId }],

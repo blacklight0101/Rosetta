@@ -184,14 +184,17 @@ describe('GitHub Actions workflows: limits', () => {
     expect(found).toEqual([]);
   });
 
-  it('RNF-001 every workflow has a concurrency group per branch that cancels superseded runs', async () => {
-    const found = await violations(({ lines }) =>
-      /^concurrency:\n {2}group: .*github\.ref.*\n {2}cancel-in-progress: true$/mu.test(
-        lines.join('\n'),
-      )
-        ? []
-        : ['concurrency'],
-    );
+  // release.yml (P1-55) queues instead: cancelling a release half-way could leave a pushed tag
+  // without its image or a deploy half done.
+  it('RNF-001 every workflow has a concurrency group per branch; all but release.yml cancel superseded runs', async () => {
+    const found = await violations(({ name, lines }) => {
+      const cancel = name === 'release.yml' ? 'false' : 'true';
+      const pattern = new RegExp(
+        `^concurrency:\n {2}group: .*github\\.ref.*\n {2}cancel-in-progress: ${cancel}$`,
+        'mu',
+      );
+      return pattern.test(lines.join('\n')) ? [] : ['concurrency'];
+    });
 
     expect(found).toEqual([]);
   });

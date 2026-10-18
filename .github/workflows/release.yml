@@ -1,0 +1,202 @@
+# Release (RF-1300, RF-1304, DEC-29, DEC-57, DEC-104, ADR-014, ADR-020, P1-55): builds the runtime
+# image once, scans it, and pushes it to GHCR as `sha-<short>` (and `X.Y.Z` for a `vX.Y.Z` tag);
+# for a tag it also attaches a CycloneDX SBOM to the GitHub release. It runs only on a pushed v* tag
+# or by hand (workflow_dispatch on main, the way the sha-<short> image of main is published before
+# v0.1.0, DEC-104); never on a pull request or a push to main.
+#
+# The deploy job is off until the owner opens gate G-07 (docs/runbooks/deploy.md, "Owner checklist
+# for the day the host is bought"). It runs only when the repository variable
+# ROSETTA_DEPLOY_ENABLED is 'true', in the GitHub environment `production`, which holds:
+#   secrets    RAILWAY_TOKEN (Railway project token), ROSETTA_SMOKE_PASSWORD (teacher password)
+#   variables  ROSETTA_PUBLIC_URL (the https URL), ROSETTA_SMOKE_USER (teacher)
+# No value is written here. Hardening as in ci.yml: read-only default token, write scopes only in
+# the job that needs them, actions pinned to a commit SHA, values reach shell steps through env:.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A release is never cancelled half-way through a push or a deploy.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    name: image (build, scan, push to GHCR)
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha-tag: ${{ steps.tags.outputs.sha-tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # sha-<short> always; X.Y.Z only for a tag that is v<package.json version> on main (DEC-29).
+      - name: Work out the image tags
+        id: tags
+        run: |
+          short="${GITHUB_SHA::7}"
+          tags="$IMAGE:sha-$short"
+          if [ "$REF_TYPE" = tag ]; then
+            version="${REF_NAME#v}"
+            package="$(node -p "require('./package.json').version")"
+            if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || [ "$version" != "$package" ]; then
+              echo "::error::The tag $REF_NAME is not v<the version of package.json> (v$package)."
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "::error::The tag $REF_NAME is not on main."
+              exit 1
+            fi
+            tags="$tags $IMAGE:$version"
+          fi
+          echo "Image tags: $tags"
+          echo "sha-tag=sha-$short" >> "$GITHUB_OUTPUT"
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE: ghcr.io/blacklight0101/rosetta
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+      - name: Build the runtime image
+        run: docker build --label "org.opencontainers.image.source=https://github.com/$REPOSITORY" --tag rosetta:release .
+        env:
+          REPOSITORY: ${{ github.repository }}
+      # The same gate as the image job of ci.yml: a fixable High or Critical finding stops the release.
+      - name: Scan the image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: rosetta:release
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          exit-code: '1'
+      - name: Log in to GHCR
+        run: printf '%s' "$TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+        env:
+          TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+      - name: Push the tags
+        run: |
+          for tag in $TAGS; do
+            docker tag rosetta:release "$tag"
+            docker push "$tag"
+          done
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io
+
+  sbom:
+    name: sbom (CycloneDX on the GitHub release)
+    needs: image
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # The runtime dependencies from the lock file, the ones the image ships (DEC-57).
+      - name: Write the CycloneDX SBOM
+        run: npm sbom --sbom-format cyclonedx --omit dev --package-lock-only > "rosetta-${REF_NAME#v}.cdx.json"
+        env:
+          REF_NAME: ${{ github.ref_name }}
+      # The owner normally creates the release with its notes; if it does not exist yet, a release
+      # pointing at docs/releases.md is created so the SBOM has a place to go.
+      - name: Attach the SBOM to the GitHub release
+        run: |
+          if ! gh release view "$REF_NAME" > /dev/null 2>&1; then
+            gh release create "$REF_NAME" --verify-tag --title "$REF_NAME" --notes "Release notes: docs/releases.md"
+          fi
+          gh release upload "$REF_NAME" "rosetta-${REF_NAME#v}.cdx.json" --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+
+  # Pending G-07: off until the owner sets ROSETTA_DEPLOY_ENABLED; the host steps are written by
+  # P1-55 part 2 once the Railway project exists (ADR-020).
+  deploy:
+    name: deploy (production)
+    needs: [image]
+    if: vars.ROSETTA_DEPLOY_ENABLED == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.ROSETTA_PUBLIC_URL }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # Threat model section 5: the zap-baseline check of ci.yml passed on this commit.
+      - name: The ZAP baseline passed on this commit
+        run: |
+          conclusion="$(gh api "repos/$GH_REPO/commits/$GITHUB_SHA/check-runs?check_name=zap-baseline" --jq '.check_runs[0].conclusion // "missing"')"
+          echo "zap-baseline on $GITHUB_SHA: $conclusion"
+          if [ "$conclusion" != success ]; then
+            echo "::error::The ZAP baseline did not pass on this commit; nothing is deployed."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+      - name: The deploy settings are stored
+        run: |
+          missing=''
+          for name in RAILWAY_TOKEN ROSETTA_SMOKE_PASSWORD ROSETTA_SMOKE_USER ROSETTA_PUBLIC_URL; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing in the production environment:$missing (docs/runbooks/deploy.md)."
+            exit 1
+          fi
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          ROSETTA_SMOKE_PASSWORD: ${{ secrets.ROSETTA_SMOKE_PASSWORD }}
+          ROSETTA_SMOKE_USER: ${{ vars.ROSETTA_SMOKE_USER }}
+          ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
+      # Pending G-07 (P1-55 part 2): back up the database, run the one-off migrate step of the new
+      # image (DATABASE_MIGRATOR_URL as its only secret, DEC-140), set the app's image to
+      # $IMAGE:$SHA_TAG on Railway, wait for /healthz. Until then this step fails, so a deploy
+      # switched on too early stops here instead of reporting a deploy that did not happen.
+      - name: Back up, migrate and deploy (Pending G-07)
+        run: |
+          echo "::error::Pending G-07: the Railway steps for $IMAGE:$SHA_TAG are added by P1-55 part 2."
+          exit 1
+        env:
+          IMAGE: ghcr.io/blacklight0101/rosetta
+          SHA_TAG: ${{ needs.image.outputs.sha-tag }}
+      - name: Smoke test on the public URL
+        run: node scripts/smoke.mjs "$ROSETTA_PUBLIC_URL"
+        env:
+          ROSETTA_PUBLIC_URL: ${{ vars.ROSETTA_PUBLIC_URL }}
+          ROSETTA_SMOKE_USER: ${{ vars.ROSETTA_SMOKE_USER }}
+          ROSETTA_SMOKE_PASSWORD: ${{ secrets.ROSETTA_SMOKE_PASSWORD }}
