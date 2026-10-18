@@ -93,6 +93,11 @@ describe('htmlProblems: other ways to load or hide something', () => {
     ],
     ['a comment', '<!-- hidden -->', 'comment'],
     ['a raw less-than sign in the text', '<p>1 < 2</p>', 'a < that starts no tag'],
+    [
+      'a greater-than sign in an attribute value that hides an event attribute',
+      '<p title="a>" onclick="x()">a</p>',
+      'a > that closes no tag',
+    ],
   ])('RF-626 finds %s', (_name, body, problem) => {
     expect(htmlProblems(withBody(body))).toContain(problem);
   });
