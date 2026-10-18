@@ -1,9 +1,9 @@
 # Journal
 
-| | |
-|---|---|
-| **Status** | Living |
-| **Owner** | BlackLigth (blacklight0101) |
+|             |                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**  | Living                                                                                                                                      |
+| **Owner**   | BlackLigth (blacklight0101)                                                                                                                 |
 | **Related** | [Decision log](../decision-log.md) - [Requirements, open questions](../spec/requirements.md#4-open-questions) - [Handoff](../../handoff.md) |
 
 The decision log records **what** the product owner decided, one row per decision. This journal summarises each
@@ -20,14 +20,14 @@ Rules:
 
 ## Entries
 
-| Date | Entry | Decisions |
-|---|---|---|
-| 2026-10-09 | [Kick-off](2026-10-09-kickoff.md) | DEC-01..DEC-39 |
-| 2026-10-10 | [Toolchain, formats, web UI and GitHub sources](2026-10-10-toolchain-web-ui.md) | DEC-40..DEC-55 |
-| 2026-10-11 | [Design system and design board](2026-10-11-design-system.md) | DEC-56 |
-| 2026-10-11 | [Master modules 07 and 08 folded in](2026-10-11-master-modules-07-08.md) | DEC-57, DEC-58 |
-| 2026-10-11 | [Hosted web application](2026-10-11-hosted-web-app.md) | DEC-59..DEC-69 |
-| 2026-10-11 | [Planning brief and principle catalogue](2026-10-11-planning-brief.md) | DEC-72..DEC-86 |
-| 2026-10-11 | [Roadmap and process flows](2026-10-11-roadmap-flows.md) | DEC-87..DEC-95 |
-| 2026-10-11 | [Build plan](2026-10-11-build-plan.md) | DEC-96..DEC-101 |
-| 2026-10-11 | [Build plan review fixes](2026-10-11-review-fixes.md) | DEC-102..DEC-112 |
+| Date       | Entry                                                                           | Decisions        |
+| ---------- | ------------------------------------------------------------------------------- | ---------------- |
+| 2026-10-09 | [Kick-off](2026-10-09-kickoff.md)                                               | DEC-01..DEC-39   |
+| 2026-10-10 | [Toolchain, formats, web UI and GitHub sources](2026-10-10-toolchain-web-ui.md) | DEC-40..DEC-55   |
+| 2026-10-11 | [Design system and design board](2026-10-11-design-system.md)                   | DEC-56           |
+| 2026-10-11 | [Master modules 07 and 08 folded in](2026-10-11-master-modules-07-08.md)        | DEC-57, DEC-58   |
+| 2026-10-11 | [Hosted web application](2026-10-11-hosted-web-app.md)                          | DEC-59..DEC-69   |
+| 2026-10-11 | [Planning brief and principle catalogue](2026-10-11-planning-brief.md)          | DEC-72..DEC-86   |
+| 2026-10-11 | [Roadmap and process flows](2026-10-11-roadmap-flows.md)                        | DEC-87..DEC-95   |
+| 2026-10-11 | [Build plan](2026-10-11-build-plan.md)                                          | DEC-96..DEC-101  |
+| 2026-10-11 | [Build plan review fixes](2026-10-11-review-fixes.md)                           | DEC-102..DEC-112 |

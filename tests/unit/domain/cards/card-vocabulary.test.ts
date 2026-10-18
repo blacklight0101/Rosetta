@@ -10,7 +10,8 @@ describe('CARD_TYPES', () => {
   });
 
   it('RF-260 architecture section 5 lists exactly the types of the vocabulary', () => {
-    const row = /^\| `CardType` \| (.+?) \|/m.exec(architecture)?.[1] ?? '';
+    // Prettier pads table cells to the column width, so the spaces after the first cell may be more than one.
+    const row = /^\| `CardType` +\| (.+?) \|/m.exec(architecture)?.[1] ?? '';
     const listed = [...row.matchAll(/`(\w+)`/g)].map((match) => match[1]);
 
     expect(listed).toEqual([...CARD_TYPES]);

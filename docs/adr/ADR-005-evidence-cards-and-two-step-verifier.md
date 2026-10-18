@@ -38,10 +38,12 @@ deleted (RF-302). Only `Supported` claims and answered questions feed `plan` (RF
 ## Consequences
 
 **Positive**
+
 - Precision and recall can be scored against a golden set (RNF-006).
 - The hand-off package traces every requirement to code (RF-602).
 
 **Negative**
+
 - Strict schemas are harder for small local models; a repair retry and a text protocol are needed (RF-202, RF-205).
 - Step 2 adds model calls; the verifier role needs its own budget (RF-423).
 - A claim supported by the absence of code (for example "there is no authorisation") cannot cite lines; such

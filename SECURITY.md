@@ -4,10 +4,10 @@
 
 No release is published yet, so no version is supported yet. The table applies from the first release.
 
-| Version | Supported |
-|---|---|
-| latest 0.x release | yes |
-| older releases | no |
+| Version            | Supported |
+| ------------------ | --------- |
+| latest 0.x release | yes       |
+| older releases     | no        |
 
 ## Reporting a vulnerability
 
