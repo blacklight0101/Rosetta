@@ -139,6 +139,29 @@ function byteCounter(gate: EntryGate): Transform {
 }
 
 /**
+ * The chunks of a web stream, one by one. A stream that ends early (the source was destroyed) is
+ * cancelled. Written by hand because `Readable.fromWeb` takes Node's own stream type, which clashes
+ * with the DOM one that Preact's typings bring into the build (P3-01).
+ */
+async function* chunksOf(body: ReadableStream<Uint8Array>): AsyncGenerator<Uint8Array> {
+  const reader = body.getReader();
+  let finished = false;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        finished = true;
+        return;
+      }
+      yield value;
+    }
+  } finally {
+    if (!finished) await reader.cancel();
+    reader.releaseLock();
+  }
+}
+
+/**
  * Streams a gzipped tarball into `targetDir` with the filter of ADR-019: no absolute paths, no `..`,
  * links skipped and counted, entry and byte limits (the byte limit counts the decompressed stream
  * as well as the declared entry sizes); the top-level folder GitHub adds is stripped.
@@ -151,7 +174,7 @@ export async function extractTarball(
   limits: ExtractionLimits,
   signal: AbortSignal,
 ): Promise<ExtractionResult> {
-  const source = Readable.fromWeb(body);
+  const source = Readable.from(chunksOf(body));
   const gate = new EntryGate(limits, (error) => source.destroy(error));
   const unpack = tarExtract({
     cwd: targetDir,

@@ -94,12 +94,14 @@ describe('renderReportHtml cards', () => {
     expect(hrefs(page)).toContain(
       'https://github.com/octo/demo/tree/3f786850e387550fdab836ed7e6dc881de23001b',
     );
-    expect(page.document.querySelector('nav a[aria-current="page"]')?.textContent).toBe('Report');
+    expect(page.document.querySelector('nav a[aria-current="page"]')?.textContent).toBe(
+      'Dashboard',
+    );
     expect(hrefs(page)).toContain('replay.html');
   });
 
   it('RF-504 gives a run without cards a sentence instead of an empty table', () => {
-    const page = pageOf({ cards: [] });
+    const page = pageOf({ cards: [], coverage: null });
 
     expect(page.document.querySelectorAll('table')).toHaveLength(0);
     expect(page.document.body.textContent).toContain('No cards.');

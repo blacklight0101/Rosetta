@@ -158,7 +158,8 @@ a:hover {
 
 .tabs {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 0 8px;
   border-bottom: 1px solid var(--rst-rule);
 }
 
@@ -242,6 +243,8 @@ td {
 
 /* P1-151: the Cards table breaks its cells at word boundaries only (a word too long for the cell
    still breaks, rather than widening the table); stacked at 720 px and below, each cell has the full width. */
+table.stacked th,
+table.stacked td,
 table.cards th,
 table.cards td {
   overflow-wrap: break-word;
@@ -367,6 +370,154 @@ tbody tr:last-child td {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* P3-01: the dashboard figures, the open questions and the cost page (RF-500). Every state is a
+   word and a glyph; the colour only repeats it. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.panel {
+  min-width: 0;
+  padding: 12px 16px;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: 6px;
+}
+
+/* The coverage table has four columns: it gets the whole row, not a quarter of it. */
+#coverage {
+  grid-column: 1 / -1;
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--rst-ink-muted);
+  font-weight: 500;
+}
+
+.panel p {
+  margin: 0 0 8px;
+}
+
+.headline {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-Supported {
+  color: var(--rst-ok-ink);
+}
+
+.status-Rejected,
+.status-CitationInvalid {
+  color: var(--rst-danger-ink);
+}
+
+.status-Unverified {
+  color: var(--rst-warn-ink);
+}
+
+.glyph {
+  flex: none;
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin: 8px 0;
+  border-radius: 4px;
+}
+
+.bar-track {
+  fill: var(--rst-surface-2);
+}
+
+.bar-Supported {
+  fill: var(--rst-ok-ink);
+}
+
+.bar-Rejected {
+  fill: var(--rst-danger-ink);
+}
+
+.bar-CitationInvalid {
+  fill: var(--rst-danger-ink);
+  opacity: 0.55;
+}
+
+.bar-Unverified {
+  fill: var(--rst-warn-ink);
+}
+
+.bar-Proposed {
+  fill: var(--rst-info-ink);
+}
+
+.questions {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.question {
+  padding: 12px 16px;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+.question p {
+  margin: 0 0 6px;
+}
+
+.question .context {
+  color: var(--rst-ink-muted);
+  font-size: 13px;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.state-open {
+  background: var(--rst-surface-2);
+  color: var(--rst-warn-ink);
+}
+
+.state-answered {
+  background: var(--rst-brand-tint);
+  color: var(--rst-ok-ink);
 }
 
 @media (max-width: 720px) {

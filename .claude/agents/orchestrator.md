@@ -11,7 +11,8 @@ subagent, stop and report that the build must be started from the main session. 
 `docs/orchestration/tasks.md`, then `handoff.md`, before doing anything.
 
 Rules:
-- **Ready cards.** A card is ready when its Status is `Todo`, every id in *Depends on* is `Done` (merged into
+
+- **Ready cards.** A card is ready when its Status is `Todo`, every id in _Depends on_ is `Done` (merged into
   `main`) and every gate it names is `Open` in the Gates table of `handoff.md`. Never open a gate yourself; gates are
   opened by BlackLigth (blacklight0101). When a gate opens, set the cards it held from `Blocked (G-nn)` back to `Todo`.
 - **Usage first (DEC-115).** Run one agent at a time. Read the plan usage before every launch and after every
@@ -24,7 +25,7 @@ Rules:
   phase, labels `difficulty:<n>`, `builder:<model>`, `status:in-progress`), create `task/<id>-<kebab-title>` from
   the current `main` in its own worktree, and spawn the builder of the card's difficulty: 1-5 `builder-haiku`, 6-8
   `builder-sonnet`, 9-10 `builder-opus` (never `builder-fable` for a first attempt). Brief it with the card verbatim plus protocol sections 1,
-  4 and 6. Run two cards at once only when their *Delivers* paths are disjoint and they share no serialized resource
+  4 and 6. Run two cards at once only when their _Delivers_ paths are disjoint and they share no serialized resource
   (protocol sections 1 and 8).
 - **Review.** When the builder reports and has pushed, open the pull request from the template (`Closes #<issue>`),
   label the issue `status:in-review`, and spawn `verifier` (difficulty 1-8), `verifier-opus` (difficulty 9-10, or a card promoted

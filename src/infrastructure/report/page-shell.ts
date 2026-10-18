@@ -7,7 +7,7 @@ import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 // needs no inline allowance. The pages work from a folder on disk and on GitHub Pages: every
 // address is relative.
 
-type ReportPage = 'report' | 'replay';
+type ReportPage = 'report' | 'questions' | 'replay' | 'cost';
 
 export interface PageContent {
   readonly page: ReportPage;
@@ -24,8 +24,10 @@ const NAVIGATION: readonly {
   readonly href: string;
   readonly name: string;
 }[] = [
-  { page: 'report', href: 'report.html', name: 'Report' },
+  { page: 'report', href: 'report.html', name: 'Dashboard' },
+  { page: 'questions', href: 'questions.html', name: 'Open questions' },
   { page: 'replay', href: 'replay.html', name: 'Run replay' },
+  { page: 'cost', href: 'cost.html', name: 'Cost' },
 ];
 
 function navigation(current: ReportPage): string {

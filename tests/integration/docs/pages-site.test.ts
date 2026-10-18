@@ -109,8 +109,10 @@ describe('the committed site/ folder', () => {
       [
         '.nojekyll',
         'cards/BR/BR-001.md',
+        'cost.html',
         'cost.md',
         'index.html',
+        'questions.html',
         'replay.html',
         'replay.js',
         'report.css',
@@ -167,12 +169,12 @@ describe('the committed site/ content', () => {
 
   it('RF-507 runs no script from the repository text: only the replay script loads', async () => {
     const pages = await Promise.all(
-      ['index.html', 'report.html', 'replay.html'].map(async (name) =>
-        auditHtml(await readFile(`${siteFolder}${name}`, 'utf8')),
+      ['index.html', 'report.html', 'replay.html', 'questions.html', 'cost.html'].map(
+        async (name) => auditHtml(await readFile(`${siteFolder}${name}`, 'utf8')),
       ),
     );
 
-    expect(pages.map((page) => page.scripts)).toEqual([[], [], ['replay.js']]);
+    expect(pages.map((page) => page.scripts)).toEqual([[], [], ['replay.js'], [], []]);
     expect(pages.flatMap((page) => page.foreignLinks)).toEqual([]);
   });
 });

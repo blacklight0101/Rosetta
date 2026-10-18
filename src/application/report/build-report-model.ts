@@ -4,8 +4,12 @@ import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import {
   parseCardIndex,
   type ReportArea,
+  type ReportCost,
+  type ReportCoverage,
   type ReportDocuments,
   type ReportModel,
+  type ReportProjectTotals,
+  type ReportQuestion,
 } from './report-model.js';
 import { parseOverview } from '../overview/overview-file.js';
 import { buildReplay } from './replay-timeline.js';
@@ -24,6 +28,13 @@ export interface ReportInputs {
   readonly overviewFile?: string | undefined;
   readonly documents: ReportDocuments;
   readonly areas: readonly ReportArea[];
+  /** RF-1010: the instant the report is generated. */
+  readonly generatedAt: string;
+  /** RF-500: the figures read from `coverage.json`, `cost.json`, the answers file and the ledger. */
+  readonly coverage: ReportCoverage | null;
+  readonly cost: ReportCost | null;
+  readonly projectTotals: ReportProjectTotals | null;
+  readonly questions: readonly ReportQuestion[];
 }
 
 // RF-504, RF-506
@@ -53,5 +64,10 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
     areas: inputs.areas,
     overview: parseOverview(inputs.overviewFile),
     replay: buildReplay(run.runKey, inputs.events),
+    generatedAt: inputs.generatedAt,
+    coverage: inputs.coverage,
+    cost: inputs.cost,
+    projectTotals: inputs.projectTotals,
+    questions: inputs.questions,
   };
 }

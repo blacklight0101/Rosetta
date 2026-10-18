@@ -99,7 +99,7 @@ describe('renderReplayHtml page rules', () => {
     );
     expect(
       [...page.document.querySelectorAll('nav a')].map((link) => link.getAttribute('href')),
-    ).toEqual(['report.html', 'replay.html']);
+    ).toEqual(['report.html', 'questions.html', 'replay.html', 'cost.html']);
   });
 });
 

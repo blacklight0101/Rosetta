@@ -1,12 +1,12 @@
 # RFC-001: Rosetta - from a legacy codebase to a verified specification and a modernisation hand-off
 
-| | |
-|---|---|
-| **Status** | Accepted 2026-10-11 by BlackLigth (blacklight0101), opening gate G-01 (DEC-113) |
-| **Date** | 2026-10-09 |
-| **Author** | BlackLigth (blacklight0101) |
-| **Reviewers** | BlackLigth (blacklight0101), product owner; master tutors (BIG School) receive the milestone hand-in |
-| **Related** | [Requirements](../spec/requirements.md) - [ADRs](../adr/README.md) - [Architecture](../architecture.md) - [Roadmap](../roadmap.md) - [Decision log](../decision-log.md) |
+|               |                                                                                                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**    | Accepted 2026-10-11 by BlackLigth (blacklight0101), opening gate G-01 (DEC-113)                                                                                         |
+| **Date**      | 2026-10-09                                                                                                                                                              |
+| **Author**    | BlackLigth (blacklight0101)                                                                                                                                             |
+| **Reviewers** | BlackLigth (blacklight0101), product owner; master tutors (BIG School) receive the milestone hand-in                                                                    |
+| **Related**   | [Requirements](../spec/requirements.md) - [ADRs](../adr/README.md) - [Architecture](../architecture.md) - [Roadmap](../roadmap.md) - [Decision log](../decision-log.md) |
 
 This document proposes the design. It contains no code; contracts are described as field lists and diagrams.
 Detailed behaviour lives in the requirements; decisions and their trade-offs live in the ADRs. This RFC links to
@@ -25,13 +25,13 @@ where each statement comes from, so nobody can check it.
 
 General-purpose AI assistants speed up reading, but used ad hoc they bring new problems:
 
-| Class | Examples | Register |
-|---|---|---|
-| Unverifiable output | a summary states a rule that is not in the code (hallucination); no file or line to check it against | - |
-| Incomplete coverage | the assistant reads what fits in its context and silently skips the rest | - |
-| Uncontrolled cost | long agent sessions on paid APIs with no estimate and no cap | - |
-| Lock-in and privacy | one vendor's tool; the whole repository, secrets included, is sent to a cloud service | - |
-| Not actionable | prose that a team cannot turn into a plan, decisions and tasks | - |
+| Class               | Examples                                                                                             | Register |
+| ------------------- | ---------------------------------------------------------------------------------------------------- | -------- |
+| Unverifiable output | a summary states a rule that is not in the code (hallucination); no file or line to check it against | -        |
+| Incomplete coverage | the assistant reads what fits in its context and silently skips the rest                             | -        |
+| Uncontrolled cost   | long agent sessions on paid APIs with no estimate and no cap                                         | -        |
+| Lock-in and privacy | one vendor's tool; the whole repository, secrets included, is sent to a cloud service                | -        |
+| Not actionable      | prose that a team cannot turn into a plan, decisions and tasks                                       | -        |
 
 Rosetta is a new tool; it replaces no system (DEC-03). It packages the discovery a senior developer does by hand
 into a repeatable pipeline where every statement is evidence-backed, every run has a known cost, and the output is
@@ -89,30 +89,30 @@ a hand-off package a team can build from.
 
 Snapshot; canonical entries are DEC-01..DEC-23 in [../decision-log.md](../decision-log.md).
 
-| Question | Chosen | Instead of |
-|---|---|---|
-| Name and code | **Rosetta** (working name), code `RST` | - |
-| Product owner | **BlackLigth (blacklight0101)**, sole owner; master final project | - |
-| Replaces a system | **No.** Rosetta analyses third-party legacy codebases | - |
-| First milestone (2026-10-26) | **Docs plus a working slice**, public repo, sample report on GitHub Pages, slides, video (changed by DEC-67: the hosted application is the deployment URL) | Docs plus a compiling skeleton; docs only |
-| Repository | **`C:\BuildingFolder\Rosetta`, local git, public GitHub `blacklight0101/Rosetta`** | Local only, GitHub later |
-| Document language | **English** | Spanish; mixed |
-| Stack | **TypeScript on Node.js** (changed by DEC-59, DEC-61: a web application in one container image, no CLI) | .NET 10; Python |
-| AI access | **Own agent loop behind a provider interface** (Ollama first, then OpenAI, then Anthropic) | Claude Agent SDK (Claude only); Claude Code plugin only |
-| Last stage | **A tool-agnostic hand-off package**; no rebuild | An optional rebuild stage |
-| Legacy stacks | **Any stack**: universal scan plus language packs | C# / WebForms only |
-| Demo target | **Microsoft eShopLegacyWebForms** (MIT) first; a different-stack target later | BlogEngine.NET |
-| Cost control | **Estimate, hard caps, live meter, price table, cost report** | Logging only |
-| Builders | **Claude agents build, the owner reviews** | The owner codes by hand |
+| Question                     | Chosen                                                                                                                                                     | Instead of                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Name and code                | **Rosetta** (working name), code `RST`                                                                                                                     | -                                                       |
+| Product owner                | **BlackLigth (blacklight0101)**, sole owner; master final project                                                                                          | -                                                       |
+| Replaces a system            | **No.** Rosetta analyses third-party legacy codebases                                                                                                      | -                                                       |
+| First milestone (2026-10-26) | **Docs plus a working slice**, public repo, sample report on GitHub Pages, slides, video (changed by DEC-67: the hosted application is the deployment URL) | Docs plus a compiling skeleton; docs only               |
+| Repository                   | **`C:\BuildingFolder\Rosetta`, local git, public GitHub `blacklight0101/Rosetta`**                                                                         | Local only, GitHub later                                |
+| Document language            | **English**                                                                                                                                                | Spanish; mixed                                          |
+| Stack                        | **TypeScript on Node.js** (changed by DEC-59, DEC-61: a web application in one container image, no CLI)                                                    | .NET 10; Python                                         |
+| AI access                    | **Own agent loop behind a provider interface** (Ollama first, then OpenAI, then Anthropic)                                                                 | Claude Agent SDK (Claude only); Claude Code plugin only |
+| Last stage                   | **A tool-agnostic hand-off package**; no rebuild                                                                                                           | An optional rebuild stage                               |
+| Legacy stacks                | **Any stack**: universal scan plus language packs                                                                                                          | C# / WebForms only                                      |
+| Demo target                  | **Microsoft eShopLegacyWebForms** (MIT) first; a different-stack target later                                                                              | BlogEngine.NET                                          |
+| Cost control                 | **Estimate, hard caps, live meter, price table, cost report**                                                                                              | Logging only                                            |
+| Builders                     | **Claude agents build, the owner reviews**                                                                                                                 | The owner codes by hand                                 |
 
 ## 3. Alternatives evaluated
 
-| Alternative | Pros | Cons |
-|---|---|---|
-| **A. Do nothing / keep the current way** (manual reading, ad-hoc chat assistants) | no tool to build; full human judgement | slow, expensive, single-person dependency; unverifiable and incomplete output; no cost control |
-| **B. A Claude Code plugin only** (skills and subagents, no standalone app) | little code; runs on an existing subscription | tied to one vendor and one tool; no own cost control; less to learn and to show |
-| **C. A standalone app on the Claude Agent SDK** | agent loop, tools and subagents for free | Claude only; the loop is hidden; no swap to local or other providers |
-| **D. A standalone CLI with an own agent loop behind a provider interface, plus a plugin run mode later** (chosen) | any provider including free local models; full control of cost, egress and verification; the loop itself is a learning goal | more code to write and test; provider differences must be absorbed by adapters |
+| Alternative                                                                                                       | Pros                                                                                                                        | Cons                                                                                           |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **A. Do nothing / keep the current way** (manual reading, ad-hoc chat assistants)                                 | no tool to build; full human judgement                                                                                      | slow, expensive, single-person dependency; unverifiable and incomplete output; no cost control |
+| **B. A Claude Code plugin only** (skills and subagents, no standalone app)                                        | little code; runs on an existing subscription                                                                               | tied to one vendor and one tool; no own cost control; less to learn and to show                |
+| **C. A standalone app on the Claude Agent SDK**                                                                   | agent loop, tools and subagents for free                                                                                    | Claude only; the loop is hidden; no swap to local or other providers                           |
+| **D. A standalone CLI with an own agent loop behind a provider interface, plus a plugin run mode later** (chosen) | any provider including free local models; full control of cost, egress and verification; the loop itself is a learning goal | more code to write and test; provider differences must be absorbed by adapters                 |
 
 Option D was chosen at kick-off; on 2026-10-11 its delivery changed to a web application with no CLI (DEC-59) and the plugin run mode left the scope (DEC-60). The own agent loop behind a provider interface stands.
 
@@ -164,6 +164,7 @@ next to a PostgreSQL database ([ADR-016](../adr/ADR-016-postgresql-and-files.md)
   writers, zip export, the PostgreSQL repositories, password hashing and secret encryption.
 
 The layers follow Clean Architecture ([ADR-009](../adr/ADR-009-clean-architecture.md)).
+
 - **Data folder** - the snapshot cache and each user's workspace with the run output, as files on a persistent disk;
   **database** - accounts, sessions, encrypted keys, projects, the run index, the cost ledger and the audit trail
   (both in [data-model.md](../data-model.md)).
@@ -294,7 +295,6 @@ concrete inputs the review will try, the legacy behaviour it must keep (cited), 
 scan, its files and pre-allocated identifiers so parallel builders cannot collide, and a risk class; the build method
 requires a failing test for every guard and names the measures that judge the process (RF-630..RF-638, DEC-135).
 
-
 ### 4.6 Identity, authorization and audit
 
 Rewritten 2026-10-11 (DEC-62, DEC-64, DEC-66, DEC-69). Users sign in with a user name and a password; there is no
@@ -346,18 +346,18 @@ and writes the same output folder; the verifier's step 1 runs as a script. Cover
 
 **Risks**
 
-| Risk | Mitigation |
-|---|---|
-| Local 7-9B models follow tool-calling and card formats poorly (Q-04) | spike card in P1 picks the model; strict JSON schemas with validation and one repair retry; the verifier and final runs can use a stronger cloud model |
-| Hallucinated rules reach the specification | two-step verifier; rejected claims stay visible; golden set measures precision (RNF-006) |
-| A run silently skips files | coverage table in every run: files read per area against files in the area (RF-230) |
-| Cost overrun on paid APIs | estimate, hard caps per run and per role, prepaid accounts with spending limits (ADR-007) |
-| Abuse of the hosted server or its keys | sign-in only for invited accounts, lockout and rate limits, caps per run, user-day and server-month (RF-1100, RF-1106), audit trail |
-| The hosted deployment is not ready for the hand-in | local Compose simulation first (RF-1301), host chosen by 2026-10-20 (Q-18), GitHub Pages report as fallback (DEC-67) |
-| Secrets or private code sent to a cloud provider | `.rosettaignore`, secret masking, cloud warning, record of every file sent (ADR-006) |
-| The demo app is small and has few business rules | second, richer target in a different stack after the milestone (Q-05) |
-| Seventeen days to the milestone | the milestone slice is cut to one area, Ollama and OpenAI only, the citation check without the model verifier (DEC-103); the build runs as agent task cards in parallel (DEC-96, DEC-100, DEC-102); everything else is later phases |
-| Provider APIs differ (tool-call formats, caching, usage fields) | adapters normalise to one port; a contract test runs against every adapter with recorded responses |
+| Risk                                                                 | Mitigation                                                                                                                                                                                                                          |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local 7-9B models follow tool-calling and card formats poorly (Q-04) | spike card in P1 picks the model; strict JSON schemas with validation and one repair retry; the verifier and final runs can use a stronger cloud model                                                                              |
+| Hallucinated rules reach the specification                           | two-step verifier; rejected claims stay visible; golden set measures precision (RNF-006)                                                                                                                                            |
+| A run silently skips files                                           | coverage table in every run: files read per area against files in the area (RF-230)                                                                                                                                                 |
+| Cost overrun on paid APIs                                            | estimate, hard caps per run and per role, prepaid accounts with spending limits (ADR-007)                                                                                                                                           |
+| Abuse of the hosted server or its keys                               | sign-in only for invited accounts, lockout and rate limits, caps per run, user-day and server-month (RF-1100, RF-1106), audit trail                                                                                                 |
+| The hosted deployment is not ready for the hand-in                   | local Compose simulation first (RF-1301), host chosen by 2026-10-20 (Q-18), GitHub Pages report as fallback (DEC-67)                                                                                                                |
+| Secrets or private code sent to a cloud provider                     | `.rosettaignore`, secret masking, cloud warning, record of every file sent (ADR-006)                                                                                                                                                |
+| The demo app is small and has few business rules                     | second, richer target in a different stack after the milestone (Q-05)                                                                                                                                                               |
+| Seventeen days to the milestone                                      | the milestone slice is cut to one area, Ollama and OpenAI only, the citation check without the model verifier (DEC-103); the build runs as agent task cards in parallel (DEC-96, DEC-100, DEC-102); everything else is later phases |
+| Provider APIs differ (tool-call formats, caching, usage fields)      | adapters normalise to one port; a contract test runs against every adapter with recorded responses                                                                                                                                  |
 
 **Costs**: a container host and a managed PostgreSQL for the evaluation period, estimated under 25 USD per month
 and chosen in Q-18; server model calls are capped per month (RF-1106). Development runs on local models at zero API cost; the OpenAI credit (10 EUR) and a
@@ -372,26 +372,26 @@ agent sessions build the code (DEC-22).
 
 Phases P0..Pn with exit criteria are maintained in [roadmap.md](../roadmap.md). Summary:
 
-| Phase | Delivers |
-|---|---|
-| P0 | this documentation set, decisions, open questions |
-| P1 | milestone slice (hosted by 2026-10-20, hand-in 2026-10-26): web application with sign-in, accounts and per-user keys, landing page, container image with local Compose and hosted deployment, project settings, providers Ollama and OpenAI, budget guard with reservations, universal scan and C# pack, `understand` on one area with the citation check, the live page, Markdown cards, the sample report as escaped HTML on GitHub Pages from the owner's hosted demo run (DEC-105), slides, video |
-| P2 | full `understand`: all areas, two-step verifier, open-question loop, golden-set evaluation, `estimate`, Anthropic and OpenAI-compatible adapters |
-| P3 | `report` (HTML) and `plan`: Plan setup, the principle catalogue and the hand-off package (ADR-018) |
-| P4 (R2) | second demo target in another stack, provider comparison, final master delivery; the Claude Code plugin mode only if brought back into scope (DEC-60) |
+| Phase   | Delivers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0      | this documentation set, decisions, open questions                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P1      | milestone slice (hosted by 2026-10-20, hand-in 2026-10-26): web application with sign-in, accounts and per-user keys, landing page, container image with local Compose and hosted deployment, project settings, providers Ollama and OpenAI, budget guard with reservations, universal scan and C# pack, `understand` on one area with the citation check, the live page, Markdown cards, the sample report as escaped HTML on GitHub Pages from the owner's hosted demo run (DEC-105), slides, video |
+| P2      | full `understand`: all areas, two-step verifier, open-question loop, golden-set evaluation, `estimate`, Anthropic and OpenAI-compatible adapters                                                                                                                                                                                                                                                                                                                                                      |
+| P3      | `report` (HTML) and `plan`: Plan setup, the principle catalogue and the hand-off package (ADR-018)                                                                                                                                                                                                                                                                                                                                                                                                    |
+| P4 (R2) | second demo target in another stack, provider comparison, final master delivery; the Claude Code plugin mode only if brought back into scope (DEC-60)                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 7. Success criteria
 
-| Metric | Target | How measured |
-|---|---|---|
-| Claim precision on the demo app | at least 90% of `Supported` claims are correct | golden set, hand-checked (RNF-006) |
-| Recall of known business rules | at least 70% of golden-set rules found | golden set (RNF-006) |
-| Citation validity | 100% of citations in `Supported` claims point to existing lines | verifier step 1 report |
-| Coverage | every file of an analysed area read at least once, or listed as skipped with a reason | run coverage table (RF-230) |
-| Cost of a full demo run | under 1 USD with the cheapest cloud model; 0 USD with Ollama | cost report (RF-426) |
-| Estimate accuracy | actual cost within 30% of the estimate | estimate versus cost report |
-| Scan time | under 10 seconds for the demo app | timing in the scan summary |
-| Repeatable tests | the full test suite passes with no network | CI run with network disabled (RNF-005) |
+| Metric                          | Target                                                                                | How measured                           |
+| ------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------- |
+| Claim precision on the demo app | at least 90% of `Supported` claims are correct                                        | golden set, hand-checked (RNF-006)     |
+| Recall of known business rules  | at least 70% of golden-set rules found                                                | golden set (RNF-006)                   |
+| Citation validity               | 100% of citations in `Supported` claims point to existing lines                       | verifier step 1 report                 |
+| Coverage                        | every file of an analysed area read at least once, or listed as skipped with a reason | run coverage table (RF-230)            |
+| Cost of a full demo run         | under 1 USD with the cheapest cloud model; 0 USD with Ollama                          | cost report (RF-426)                   |
+| Estimate accuracy               | actual cost within 30% of the estimate                                                | estimate versus cost report            |
+| Scan time                       | under 10 seconds for the demo app                                                     | timing in the scan summary             |
+| Repeatable tests                | the full test suite passes with no network                                            | CI run with network disabled (RNF-005) |
 
 ## 8. Open questions
 

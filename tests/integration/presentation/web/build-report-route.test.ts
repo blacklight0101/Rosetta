@@ -55,6 +55,8 @@ async function setup(): Promise<Setup> {
 const reportUrl = (run: Run): string => `/api/runs/${run.id}/report`;
 const fileUrl = (run: Run, path: string): string => `/runs/${run.id}/files/report/${path}`;
 const FILES = [
+  'report/cost.html',
+  'report/questions.html',
   'report/replay.html',
   'report/replay.js',
   'report/report.css',
@@ -108,7 +110,7 @@ describe('POST /api/runs/:runId/report and the pages it writes', () => {
     const { amy, run } = await setup();
     await amy.request({ method: 'POST', url: reportUrl(run) });
 
-    for (const name of ['report.html', 'replay.html']) {
+    for (const name of ['report.html', 'questions.html', 'replay.html', 'cost.html']) {
       const response = await amy.request({ method: 'GET', url: fileUrl(run, name) });
       const page = auditHtml(response.body);
 

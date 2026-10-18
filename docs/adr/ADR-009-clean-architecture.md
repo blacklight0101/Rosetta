@@ -41,10 +41,12 @@ check fails the build on any violation (RNF-013).
 ## Consequences
 
 **Positive**
+
 - Clear placement rule for every file; reviewers and the verifier can check it mechanically.
 - Persistence, if ever needed, would be another infrastructure adapter (PostgreSQL, DEC-37) without touching use cases.
 
 **Negative**
+
 - More files and mapping between layers than a small CLI strictly needs.
 - The dependency rule tool is one more development dependency (package baseline in
   `docs/environments-and-delivery.md`).

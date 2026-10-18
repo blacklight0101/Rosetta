@@ -8,8 +8,10 @@ import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { FileReportWriter } from '../../../../src/infrastructure/report/file-report-writer.js';
+import { REPORT_CSP } from '../../../../src/infrastructure/report/report-security.js';
 import { loadReportAssets } from '../../../../src/infrastructure/report/report-assets.js';
 import { renderReportMarkdown } from '../../../../src/infrastructure/report/report-markdown.js';
+import { auditHtml } from '../../../support/html-audit.js';
 import { MemoryLogger } from '../../../support/memory-logger.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
 import { RefusingWriter } from '../../../support/refusing-writer.js';
@@ -44,6 +46,8 @@ function writerOver(inner?: (real: NodeOutputWriter) => NodeOutputWriter | Refus
 }
 
 const paths = [
+  'report/cost.html',
+  'report/questions.html',
   'report/replay.html',
   'report/replay.js',
   'report/report.css',
@@ -96,6 +100,23 @@ describe('FileReportWriter', () => {
     await writerOver().write(scope, reportModel());
 
     expect(await readdir(runFolder())).toEqual(['report']);
+  });
+});
+
+describe('FileReportWriter and the pages', () => {
+  it('RF-500 writes the dashboard, the open questions and the cost report with the policy of RF-1013', async () => {
+    await writerOver().write(scope, reportModel());
+    const names = ['report.html', 'questions.html', 'cost.html', 'replay.html'];
+
+    const pages = await Promise.all(
+      names.map(async (name) =>
+        auditHtml(await readFile(join(runFolder(), 'report', name), 'utf8')),
+      ),
+    );
+
+    expect(pages.map((page) => page.csp)).toEqual(names.map(() => REPORT_CSP));
+    expect(pages.map((page) => page.referrer)).toEqual(names.map(() => 'no-referrer'));
+    expect(pages.flatMap((page) => page.handlers)).toEqual([]);
   });
 });
 
