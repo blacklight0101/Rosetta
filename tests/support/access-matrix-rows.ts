@@ -135,6 +135,18 @@ const projectRows: Rows = {
       expected: ownerOnly(200),
     },
   ],
+  // RF-613: the matrix project has no saved brief, so the owner's answer is RST-1801 (409).
+  'GET /api/projects/:id/plan-estimate': [
+    { method: 'GET', url: projectUrl('/plan-estimate'), expected: ownerOnly(409) },
+    {
+      method: 'GET',
+      url: () => '/api/projects/not-a-uuid/plan-estimate',
+      expected: active(401, 404),
+    },
+  ],
+  'HEAD /api/projects/:id/plan-estimate': [
+    { method: 'HEAD', url: projectUrl('/plan-estimate'), expected: ownerOnly(409) },
+  ],
   'GET /api/admin/users/:id/projects': [
     { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
     { method: 'GET', url: workspaceUrl(() => unknownUser), expected: adminOnly(404) },
