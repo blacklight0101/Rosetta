@@ -69,13 +69,15 @@ export interface RestoreFlags {
   readonly force: boolean;
 }
 
+const VALUE_FLAGS = ['--dump', '--data-copy', '--data-target'];
+
 export function parseFlags(argv: readonly string[]): RestoreFlags {
   const values = new Map<string, string>();
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index] ?? '';
     if (flag === '--force') continue;
     const value = argv[index + 1];
-    if (!['--dump', '--data-copy', '--data-target'].includes(flag) || value === undefined) {
+    if (!VALUE_FLAGS.includes(flag) || value === undefined || value.startsWith('--')) {
       throw new Error(`Unknown or incomplete option: ${flag}`);
     }
     values.set(flag, value);
@@ -133,5 +135,9 @@ export async function restoreMain(
 }
 
 export function parseTableCount(text: string): number {
-  return Number.parseInt(text, 10);
+  const digits = text.trim();
+  if (!/^\d+$/u.test(digits)) {
+    throw new Error('The database table count could not be read; nothing was restored.');
+  }
+  return Number.parseInt(digits, 10);
 }

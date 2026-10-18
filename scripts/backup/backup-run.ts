@@ -1,7 +1,7 @@
 // RF-1306: one backup run. The dump is written under a partial name and renamed when it is
 // complete, so a failed dump never counts and never causes a prune.
-import { cp, mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { cp, mkdir, readdir, realpath, rename, rm, stat } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { dataFolderName, dumpFileName } from './names.js';
 import { dataCopyDue, namesToPrune } from './retention.js';
 
@@ -21,13 +21,28 @@ export interface BackupResult {
   readonly pruned: readonly string[];
 }
 
-function isInside(parent: string, child: string): boolean {
-  const path = relative(resolve(parent), resolve(child));
-  return path !== '' && !path.startsWith('..') && !isAbsolute(path);
+/** The real path of `path`, also when the end of it does not exist yet. */
+async function realPathOf(path: string): Promise<string> {
+  const absolute = resolve(path);
+  try {
+    return await realpath(absolute);
+  } catch (error) {
+    const missing = error instanceof Error && 'code' in error && error.code === 'ENOENT';
+    const parent = dirname(absolute);
+    if (!missing || parent === absolute) throw error;
+    return join(await realPathOf(parent), basename(absolute));
+  }
 }
 
-function refuseOverlap(backupDir: string, dataDir: string): void {
-  if (isInside(dataDir, backupDir) || isInside(backupDir, dataDir)) {
+function isSameOrInside(parent: string, child: string): boolean {
+  const path = relative(parent, child);
+  return path === '' || (path.split(sep)[0] !== '..' && !isAbsolute(path));
+}
+
+async function refuseOverlap(backupDir: string, dataDir: string): Promise<void> {
+  const backups = await realPathOf(backupDir);
+  const data = await realPathOf(dataDir);
+  if (isSameOrInside(data, backups) || isSameOrInside(backups, data)) {
     throw new Error('The backup folder and the data folder must not be inside one another.');
   }
 }
@@ -68,7 +83,7 @@ async function copyData(options: BackupOptions, name: string): Promise<void> {
 
 export async function runBackup(options: BackupOptions): Promise<BackupResult> {
   const { now, backupDir, dataDir, log } = options;
-  refuseOverlap(backupDir, dataDir);
+  await refuseOverlap(backupDir, dataDir);
   await stat(dataDir);
   await mkdir(backupDir, { recursive: true });
   await removePartials(backupDir);
