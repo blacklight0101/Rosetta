@@ -708,9 +708,9 @@ verification summary and cards; escaped static HTML, DEC-112), `questions.html` 
 `answers.md`, each with its state and answer), `cost.html` (the cost report of `cost.json` by role, provider and model, and
 the project totals), `replay.html` (the run replay: agents, turns, tool calls, cards, verdicts and cost from
 `events.jsonl`, as a list that needs no script, with play, pause and step added by `replay.js` when scripts run),
-`report.css` and `replay.js`. The pages carry a `<meta>` content security policy and `referrer` of no-referrer
+`report.css` and `replay.js`, then a page per area (`area-<slug>-<hash>.html`: the slug is plain characters of the area name and the hash is the first eight hexadecimal characters of the SHA-256 of the whole name, so two areas never share a file) and a page per card that has a readable card file (`card-<ID>.html`), P3-02. An area page shows the map level, what the agents read, the notes of the coverage and the area's cards; a card page shows each claim with its status and the reason of the verdict and, under it, each citation: the cited lines with three lines of context on each side, their numbers, and the permalink `https://github.com/<owner>/<repo>/blob/<sha>/<path>#L<a>-L<b>` (RF-125), built from the repository address and the commit of the run's manifest and from nothing a card says. The lines are read from the snapshot of the scan through the read-only reader, so an ignored or denied file shows a reason instead of its lines, and a citation of more than 400 lines shows only the permalink. Source lines are code and are shown as text, never as links; every page is masked before it is written. The pages carry a `<meta>` content security policy and `referrer` of no-referrer
 (RF-1013); repository and model text is escaped, and only links that start with `https://github.com/` stay links
-(RF-507). The server serves these seven files as pages, styles and scripts; every other file of a run folder is text or
+(RF-507). The server serves these files (the seven above and the area and card pages, all direct files of `report/`) as pages, styles and scripts; every other file of a run folder is text or
 a download.
 
 The pages other than the replay are Preact function components rendered to HTML when the report is built (ADR-021):
@@ -728,10 +728,10 @@ their map level, `coarse` or `symbols`, the value `scan-summary.md` shows. They 
 understand run from the newest scan of its project that ended `Completed`; a report built without such a scan (none, or
 its output is gone) has no areas section. Area names are repository text and are escaped like the other repository text.
 
-Writing the report. Each of the seven files is written to a temporary name and renamed over its final name, so a file
+Writing the report. Each file is written to a temporary name and renamed over its final name, so a file
 is always whole or absent and never half written. The set of files is not written atomically: a build that fails
 part-way (RST-1701) can leave some files new and the others from an earlier build (for example a new `report.html`
-beside an old `report.md`). Building again writes all seven again, with the same bytes for the same run and the same
+beside an old `report.md`). Building again writes all of them again, with the same bytes for the same run and the same
 ledger. A run that
 recorded no events still builds: its replay page says so and has no controls.
 

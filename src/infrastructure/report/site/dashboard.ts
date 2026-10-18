@@ -27,6 +27,7 @@ import {
   ProjectTotals,
   RunCost,
 } from './dashboard-stats.js';
+import { areaLink, cardHref } from './crumbs.js';
 import { OverviewSection } from './overview-section.js';
 import { DataTable, Facts, ModelText } from './parts.js';
 
@@ -108,7 +109,10 @@ function Areas(props: { readonly model: ReportModel }): ComponentChild {
     h(DataTable, {
       label: 'Map level of the areas',
       columns: ['Area', 'Map level'],
-      rows: areas.map((area) => [h(ModelText, { text: area.name }), area.mapLevel]),
+      rows: areas.map((area) => [
+        areaLink(area.name, h(ModelText, { text: area.name })),
+        area.mapLevel,
+      ]),
     }),
   );
 }
@@ -131,11 +135,12 @@ function Verification(props: { readonly model: ReportModel }): ComponentChild {
   );
 }
 
-function cardRow(card: ReportCard): ComponentChild[] {
+function cardRow(model: ReportModel, card: ReportCard): ComponentChild[] {
+  const href = cardHref(model, card);
   return [
-    card.path === '' ? card.id : h('a', { href: `../${card.path}` }, card.id),
+    href === null ? card.id : h('a', { href }, card.id),
     card.type,
-    h(ModelText, { text: card.area }),
+    areaLink(card.area, h(ModelText, { text: card.area })),
     claimsText(card.claimCounts),
     h(ModelText, { text: card.title }),
   ];
@@ -154,7 +159,7 @@ function Cards(props: { readonly model: ReportModel }): ComponentChild {
           tableClass: 'cards',
           label: 'Cards of the run',
           columns: ['Card', 'Type', 'Area', 'Claims', 'Title'],
-          rows: cards.map(cardRow),
+          rows: cards.map((card) => cardRow(props.model, card)),
         }),
   );
 }

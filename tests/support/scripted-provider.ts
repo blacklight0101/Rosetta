@@ -23,6 +23,8 @@ export interface ScriptedOptions {
   readonly delayMs: number;
   /** The area whose first call never answers until the run is stopped. */
   readonly hold?: string;
+  /** When set, only the calls made with this model are held, so a journey can opt out of the hold. */
+  readonly holdModel?: string;
 }
 
 const AREA_LINE = /\narea: (.+)\n/u;
@@ -59,15 +61,17 @@ export class ScriptedProvider implements LlmProvider {
     if (attempt === undefined || !('response' in attempt)) {
       throw new RosettaError(ERROR_CODES.recordingExhausted);
     }
-    await this.wait(area, turn, request.signal);
+    await this.wait(area, turn, request);
     return attempt.response;
   }
 
-  private async wait(area: string | undefined, turn: number, signal: AbortSignal): Promise<void> {
-    const held = area === this.options.hold && turn === 0;
+  private async wait(area: string | undefined, turn: number, request: LlmRequest): Promise<void> {
+    const { hold, holdModel } = this.options;
+    const held =
+      area === hold && turn === 0 && (holdModel === undefined || request.model === holdModel);
     const delay = held ? 120_000 : this.options.delayMs;
     try {
-      await sleep(delay, undefined, { signal });
+      await sleep(delay, undefined, { signal: request.signal });
     } catch (error) {
       throw new RosettaError(ERROR_CODES.providerCallCancelled, undefined, { cause: error });
     }

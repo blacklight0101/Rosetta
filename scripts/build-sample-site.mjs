@@ -99,7 +99,7 @@ async function main() {
     coverage: null,
     cost: null,
     projectTotals: null,
-    questions: [],
+    ...{ questions: [], cardDetails: [] },
   });
   const documents = await documentsOf(model);
   const assets = {

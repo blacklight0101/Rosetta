@@ -11,6 +11,7 @@ import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
 import { renderCostHtml } from './site/cost-page.js';
+import { renderEvidencePages } from './site/evidence-pages.js';
 import { renderQuestionsHtml } from './site/questions-page.js';
 
 // RF-504, RF-506, RF-1013, DEC-112, data-model.md section 3.17: writes the report of a run into the
@@ -26,6 +27,16 @@ export interface FileReportWriterOptions {
 }
 
 const FOLDER = 'report';
+
+/** RF-500, RF-502: the pages of the areas and the cards; they hold source lines, so they are masked. */
+function maskedPages(model: ReportModel, masker: TextMasker): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(renderEvidencePages(model)).map(([name, html]) => [
+      name,
+      masker.mask(html).text,
+    ]),
+  );
+}
 
 export class FileReportWriter implements ReportWriter {
   private readonly options: FileReportWriterOptions;
@@ -48,6 +59,7 @@ export class FileReportWriter implements ReportWriter {
       'report.css': assets['report.css'],
       'report.html': masker.mask(renderReportHtml(model)).text,
       'report.md': renderReportMarkdown(model, masker),
+      ...maskedPages(model, masker),
     };
     const folder = `${runPath(scope.projectId, scope.runKey)}/${FOLDER}`;
     const written: string[] = [];

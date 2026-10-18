@@ -8,6 +8,7 @@ import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { NodeOutputWriter } from '../../../../src/infrastructure/files/node-output-writer.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { FileReportWriter } from '../../../../src/infrastructure/report/file-report-writer.js';
+import { areaPageName } from '../../../../src/infrastructure/report/site/page-names.js';
 import { REPORT_CSP } from '../../../../src/infrastructure/report/report-security.js';
 import { loadReportAssets } from '../../../../src/infrastructure/report/report-assets.js';
 import { renderReportMarkdown } from '../../../../src/infrastructure/report/report-markdown.js';
@@ -55,13 +56,16 @@ const paths = [
   'report/report.md',
 ];
 
+// RF-500: the model of the fixtures has two areas (the card's and the coverage's), so two area pages.
+const areaPages = ['catalog', 'orders'].map((area) => `report/${areaPageName(area)}`);
+
 describe('FileReportWriter', () => {
   it('RF-504 writes the Markdown report, the static pages and their assets into report/', async () => {
     const written = await writerOver().write(scope, reportModel());
 
-    expect(written).toEqual(paths);
+    expect(written).toEqual([...paths, ...areaPages]);
     expect((await readdir(join(runFolder(), 'report'))).sort()).toEqual(
-      paths.map((path) => path.replace('report/', '')),
+      [...paths, ...areaPages].map((path) => path.replace('report/', '')).sort(),
     );
   });
 
