@@ -10,19 +10,10 @@ import type { FinishReason } from '../ports/llm-provider.js';
 /** The most continuations of one planner call; the estimate reserves them (RF-613). */
 export const maxPlannerContinuations = 2;
 
-/** The shortest repeated stretch that counts as the model saying its last words again. */
-const MIN_OVERLAP = 12;
-/** The longest repeated stretch looked for. */
-const MAX_OVERLAP = 400;
+/** The shortest start of the first answer that a restart can repeat to count as a new start. */
+const MIN_RESTART = 12;
 /** How much of the first answer a restart has to repeat to count as a new start. */
 const RESTART_PREFIX = 24;
-/**
- * The longest unit of a repeated stretch too plain to tell a repeat from new text. Such a stretch
- * (`aaaa`, `1, 1, 1,`) is not joined either way: the answer stays cut off and ends in RST-1805,
- * because either reading could silently change the JSON. Repeats under MIN_OVERLAP characters are
- * not looked for (they are joined as written, as before P3-31).
- */
-const MAX_PERIOD = 4;
 
 export interface AnswerEnd {
   readonly finishReason: Exclude<FinishReason, 'error'>;
@@ -60,46 +51,19 @@ export function endsCutOff(
 const valueStart = /^\s*(?:["{}[\],:]|-?\d|(?:true|false|null)\b)/u;
 
 /**
- * How many characters at the start of the fragment repeat the end of the answer: 0 for none, -1
- * when the repeated stretch is a few characters over and over (`aaaa`, `1, 1, 1,`), which reads
- * as a repeat and as new text alike, so no join is safe.
- */
-function repeatedSize(earlier: string, fragment: string): number {
-  const longest = Math.min(earlier.length, fragment.length, MAX_OVERLAP);
-  for (let size = longest; size >= MIN_OVERLAP; size -= 1) {
-    const repeated = fragment.slice(0, size);
-    if (repeated.trim() === '' || !earlier.endsWith(repeated)) continue;
-    return hasShortPeriod(repeated) ? -1 : size;
-  }
-  return 0;
-}
-
-function hasShortPeriod(text: string): boolean {
-  for (let period = 1; period <= MAX_PERIOD; period += 1) {
-    let same = true;
-    for (let index = period; index < text.length && same; index += 1) {
-      same = text[index] === text[index - period];
-    }
-    if (same) return true;
-  }
-  return false;
-}
-
-/**
  * The answer up to its last complete JSON boundary (`resumePoint`, what the model was shown) with
- * the fragment it sent after being asked to continue. A fragment that does not start like JSON, or
- * repeats the end so plainly that it cannot be told from new text, is not joined: the answer
- * stays cut off, never JSON that was silently altered.
+ * the fragment it sent after being asked to continue. The fragment is joined whole: no stretch is
+ * ever cut out of it, since a repeat of the tail cannot be told from identical items or repeated
+ * text, and cutting would silently change the JSON. A fragment that does not start like JSON is
+ * not joined: the answer stays cut off (RST-1805). A fragment that starts the answer again
+ * replaces it.
  */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
   const base = resumePoint(earlier);
   const head = base.trimStart().slice(0, RESTART_PREFIX);
-  if (head.length >= MIN_OVERLAP && fragment.trimStart().startsWith(head)) return fragment;
-  const size = repeatedSize(base, fragment);
-  if (size < 0) return base;
-  const rest = fragment.slice(size);
-  return valueStart.test(rest) ? base + rest : base;
+  if (head.length >= MIN_RESTART && fragment.trimStart().startsWith(head)) return fragment;
+  return valueStart.test(fragment) ? base + fragment : base;
 }
 
 /** RST-1805: the cause and the setting that fixes it. */
