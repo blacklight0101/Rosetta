@@ -1,8 +1,9 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
-import { legacySafe } from '../../domain/planning/legacy-default.js';
+import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
 import { decisionFile, documentSet, handoffFiles, sourceLinks } from './handoff-links.js';
+import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 
 // RF-601..RF-604, RF-603: the README with the reading order, the risks, the open questions (the
 // brief's questions that took their default, the analysis questions without an answer and the
@@ -31,14 +32,15 @@ export function risksMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): st
 
 function briefQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.briefQuestions.length === 0) return ['Every question of the brief was answered.'];
+  const waiting = waitingOf(handoff);
   return [
-    '| Question | Id | Default the package used |',
-    '|---|---|---|',
+    '| Question | Id | Default the package used | Cards waiting |',
+    '|---|---|---|---|',
     ...handoff.briefQuestions
       .map(legacySafe)
       .map(
         (question) =>
-          `| ${esc.inline(question.question)} | ${esc.inline(question.id)} | ${esc.inline(question.answer)} |`,
+          `| ${esc.inline(question.question)} | ${esc.inline(question.id)} | ${esc.inline(question.answer)} | ${waitingCards(waiting, question.id)} |`,
       ),
   ];
 }
@@ -47,14 +49,15 @@ function briefQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): stri
 function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   if (handoff.prdQuestions.length === 0)
     return ['Every section of the PRD was filled from the cards.'];
+  const waiting = waitingOf(handoff);
   return [
-    '| Id | Question | Default the package used |',
-    '|---|---|---|',
+    '| Id | Question | Default the package used | Cards waiting |',
+    '|---|---|---|---|',
     ...handoff.prdQuestions
       .map(legacySafe)
       .map(
         (question) =>
-          `| ${question.id} | ${esc.inline(question.question)} | ${esc.inline(question.answer)} |`,
+          `| ${question.id} | ${esc.inline(question.question)} | ${esc.inline(question.answer)} | ${waitingCards(waiting, question.id)} |`,
       ),
   ];
 }
@@ -72,8 +75,10 @@ function excludedLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
 
 // RF-604
 export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
+  const waiting = waitingOf(handoff);
   const unanswered = handoff.openQuestions.map(
-    (question) => `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)}`,
+    (question) =>
+      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
   );
   return [
     '# Open questions',

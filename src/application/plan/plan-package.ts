@@ -52,7 +52,10 @@ export function handoffPackageOf(
     briefQuestions: defaultedQuestions(brief, catalogue),
     openQuestions: questions
       .filter((question) => question.answer.trim() === '')
-      .map(({ cardId, question }) => ({ cardId, question })),
+      .map(({ cardId, question }) => ({
+        ...{ cardId, question },
+        area: cards.find((card) => card.id === cardId)?.area ?? '',
+      })),
     prd,
     dataModel,
     prdQuestions: prdQuestions(prd),
