@@ -34,10 +34,10 @@
    * Gives the rules to the page as style sheets built in script. The page's content security policy
    * refuses a style element in the page, but does not restrict a style sheet made through the CSSOM.
    */
-  function adoptRules(rules) {
+  async function adoptRules(rules) {
     for (const css of rules) {
       const sheet = new globalThis.CSSStyleSheet();
-      sheet.replaceSync(css);
+      await sheet.replace(css);
       doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
     }
   }
@@ -54,7 +54,7 @@
       const rules = takeRules(drawing);
       const inserted = doc.importNode(drawing, true);
       figure.querySelector('[data-diagram-drawing]').replaceChildren(inserted);
-      adoptRules(rules);
+      await adoptRules(rules);
       figure.querySelector('details').open = false;
     } catch {
       // Mermaid can leave its error drawing in the page when a render fails: take it out.
