@@ -177,3 +177,39 @@ it('RF-802 the slides state P1-50 status only as the repository shows it (open P
   expect(slides).toContain('PR #361');
   expect(slides).not.toContain('en curso');
 });
+
+const SECRET_PATTERNS: readonly RegExp[] = [
+  /password\s*[:=]/iu,
+  /passwd\s*[:=]/iu,
+  /contrase[ñn]a\s*[:=]/iu,
+  /api[_-]?key\s*[:=]/iu,
+  /secret\s*[:=]/iu,
+  /token\s*[:=]/iu,
+  /\bsk-[A-Za-z0-9_-]{8,}/u,
+  /\bghp_[A-Za-z0-9]{8,}/u,
+  /\bgithub_pat_[A-Za-z0-9_]{8,}/u,
+  /\bAKIA[0-9A-Z]{16}\b/u,
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----/u,
+  /https?:\/\/[^\s/@]+:[^\s/@]+@/u,
+];
+
+it('RF-803 the hand-in file lists the repository, the teacher user name, the sample report fallback, the slides and video script, with PENDING G-06 for the hosted URL and the sign-in check', async () => {
+  const m1 = await readRepoFile('docs/hand-in/m1.md');
+
+  expect(m1).toContain('https://github.com/blacklight0101/Rosetta');
+  expect(m1).toMatch(/user name:?\**\s*`teacher`/iu);
+  expect(m1).toContain('https://blacklight0101.github.io/Rosetta/');
+  expect(m1).toContain('docs/hand-in/slides/slides.md');
+  expect(m1).toContain('docs/hand-in/video-script.md');
+  expect(m1).toContain('PENDING G-06');
+  expect(m1).toMatch(/Hosted application[^\n]*PENDING G-06/u);
+  expect(m1).toMatch(/Sign-in check[^\n]*PENDING G-06/u);
+});
+
+it('RF-803 the hand-in file holds no password, key, token or secret pattern', async () => {
+  const m1 = await readRepoFile('docs/hand-in/m1.md');
+
+  for (const pattern of SECRET_PATTERNS) {
+    expect(m1).not.toMatch(pattern);
+  }
+});
