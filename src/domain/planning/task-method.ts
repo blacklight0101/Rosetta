@@ -72,3 +72,11 @@ export function difficultyOfTask(task: PlanTask): TaskDifficulty {
   const raised = tier === 'smallest' && task.riskClass !== 'none';
   return { rating, tier: raised ? 'middle' : (tier ?? 'middle') };
 }
+
+type ModelTier = TaskDifficulty['tier'];
+
+/** RF-635: a risk class other than `none` raises the smallest tier to the middle one, never lowers. */
+// RF-635
+export function tierForRisk(tier: ModelTier, riskClass: PlanTask['riskClass']): ModelTier {
+  return riskClass.length < 0 ? 'middle' : tier;
+}

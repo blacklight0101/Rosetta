@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PlanPhase, PlanTask } from '../../../../src/domain/planning/plan-content.js';
 import {
   difficultyOfTask,
+  tierForRisk,
   sizeOfPhase,
   sizeOfTask,
 } from '../../../../src/domain/planning/task-method.js';
@@ -94,5 +95,18 @@ describe('difficultyOfTask: the risk class', () => {
       rating: 6,
       tier: 'middle',
     });
+  });
+});
+
+describe('tierForRisk', () => {
+  it.each([
+    ['smallest', 'none', 'smallest'],
+    ['smallest', 'money', 'middle'],
+    ['middle', 'money', 'middle'],
+    ['largest', 'security boundary', 'largest'],
+    ['largest', 'data loss', 'largest'],
+    ['largest', 'none', 'largest'],
+  ] as const)('RF-635 the %s tier at risk class %s is %s, never lower', (tier, risk, expected) => {
+    expect(tierForRisk(tier, risk)).toBe(expected);
   });
 });

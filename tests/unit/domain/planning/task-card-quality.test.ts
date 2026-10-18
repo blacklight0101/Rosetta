@@ -34,6 +34,8 @@ describe('cardProblem: the Done-when scenarios', () => {
     'When the customer confirms a basket of 60, then it is stored.',
     'Then the order is stored, when given a basket of 60.',
     'Given nothing happens, then when it ends.',
+    'Foo bar, when x, then y.',
+    'Given, when x, then y.',
     'Given a basket of 60, when, then the order is stored.',
     'Given a basket of 60, when the customer confirms, then',
     'Given a basket of 60, when the customer confirms, then.',
@@ -81,5 +83,24 @@ describe('cardProblem: the review probes', () => {
     expect(cardProblem(card({ invariant, acceptanceCriteria: ['x'], adds: ['filter'] }))).toMatch(
       /scenario/u,
     );
+  });
+});
+
+describe('cardProblem: hostile size', () => {
+  it.each([
+    'given '.repeat(170_000),
+    'Given a when '.repeat(80_000),
+    'Given a, when b, then '.repeat(50_000) + 'x'.repeat(5),
+    ' '.repeat(1_000_000),
+    'x'.repeat(1_000_000),
+  ])('RF-630 a 1 MB criterion is judged in linear time', (text) => {
+    const started = performance.now();
+    cardProblem(card({ acceptanceCriteria: [text.slice(0, 1_000_000)] }));
+
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+
+  it('RF-630 a 1 MB criterion with no scenario is refused', () => {
+    expect(cardProblem(card({ acceptanceCriteria: ['x '.repeat(500_000)] }))).toMatch(/scenario/u);
   });
 });
