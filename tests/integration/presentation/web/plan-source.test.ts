@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import type { Run } from '../../../../src/domain/runs/run.js';
@@ -160,7 +161,8 @@ describe('plan routes take the chosen run', () => {
     const newest = await amy.request({ method: 'GET', url: estimateUrl(project.id) });
 
     const supported = (body: unknown): number =>
-      (body as { assumptions: { supportedCards: number } }).assumptions.supportedCards;
+      z.object({ assumptions: z.object({ supportedCards: z.number() }) }).parse(body).assumptions
+        .supportedCards;
     expect(supported(chosen.json())).toBeGreaterThan(supported(newest.json()));
   });
 

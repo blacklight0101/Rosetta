@@ -9,9 +9,9 @@ import { signedInOf } from './request-actor.js';
 // RF-613, RF-1105: the estimate of a plan run. GET /api/projects/:id/plan-estimate answers the
 // planner's call as a low, likely and high figure against the caps the budget guard will check it
 // against. `?run=<run id>` (RF-614) measures it from that understand run, the project's newest
-// completed one when absent; another user's run id answers 404. It needs a session; a project without a saved planning brief answers 409 (RST-1801), one
-// without a finished understand run that holds a supported claim 409 (RST-1802), and another user's
-// project 404.
+// completed one when absent; another user's run id answers 404. It needs a session; a project
+// without a saved planning brief answers 409 (RST-1801), one without a finished understand run that
+// holds a supported claim 409 (RST-1802), and another user's project 404.
 
 export interface PlanEstimateServices {
   readonly estimatePlan: EstimatePlan;

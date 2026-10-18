@@ -189,3 +189,30 @@ describe('Plan setup details', () => {
     expect(pathsOf(page.calls).filter((path) => path.includes('?run='))).toEqual([]);
   });
 });
+
+describe('Plan setup with a named run that cannot be used', () => {
+  const named = (): ReturnType<typeof renderPlan> => {
+    window.history.pushState({}, '', '/projects/p-1/plan-setup?run=run-7');
+    return renderPlan({
+      ...savedAnswers,
+      [`GET ${base}/plan-source`]: failure(409, 'RST-1802'),
+      [`POST ${base}/runs`]: json(202, startedPlanRun),
+    });
+  };
+
+  it('RST-1802 keeps the named run id on the estimate and blocks Write the package', async () => {
+    const page = named();
+    await screen.findByRole('region', { name: 'Source run' });
+    await screen.findByRole('heading', { name: 'Plan setup', level: 1 });
+
+    await waitFor(() => {
+      expect(pathsOf(page.calls)).toContain(`${base}/plan-estimate?run=run-7`);
+    });
+    const button = screen.getByRole('button', { name: /^Write the package/u });
+    expect(button).toHaveProperty('disabled', true);
+    fireEvent.click(button);
+    expect(page.calls.some((call) => call.method === 'POST' && call.path === `${base}/runs`)).toBe(
+      false,
+    );
+  });
+});

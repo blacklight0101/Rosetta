@@ -168,6 +168,8 @@ test('RF-614 RF-604 from the completed understand run to the package: Set up the
     .getByRole('link', { name: /^View run /u })
     .click();
   const turn = page.getByRole('region', { name: 'Your turn' });
+  await expect(turn.getByRole('button', { name: 'Set up the plan' })).toBeVisible();
+  await expectNoSeriousViolations(page);
 
   await turn.getByRole('button', { name: 'Set up the plan' }).click();
 
@@ -175,6 +177,7 @@ test('RF-614 RF-604 from the completed understand run to the package: Set up the
   const source = page.getByRole('region', { name: 'Source run' });
   await expect(source).toContainText('-understand');
   await expect(source).toContainText(/\d+ Supported claims?/u);
+  await expectNoSeriousViolations(page);
   await expect(estimate(page)).toContainText(/\$[\d.]+ likely/u);
   await expect(writeButton(page)).toBeEnabled();
   await writeButton(page).click();
