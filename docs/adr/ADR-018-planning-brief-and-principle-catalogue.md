@@ -41,10 +41,12 @@ task-card checks.
 ## Consequences
 
 **Positive**
+
 - Packages are reproducible: same cards, brief and catalogue version, same instructions to the planner.
 - The package explains itself: every architectural choice is an ADR with the evidence behind it.
 
 **Negative**
+
 - A new page (Plan setup), a brief schema, catalogue files and their tests must be built and kept current.
 - The catalogue's content has to be written and reviewed; it must stay in Rosetta's own words.
 

@@ -52,11 +52,21 @@ Answer with one JSON object and nothing else:
       ],
       "primaryKey": ["id"],
       "uniqueKeys": [],
-      "foreignKeys": [{ "columns": ["customer_id"], "references": "customer", "referencedColumns": ["id"] }],
+      "foreignKeys": [
+        { "columns": ["customer_id"], "references": "customer", "referencedColumns": ["id"] }
+      ],
       "checks": ["status is one of the listed values"],
-      "indexes": [{ "columns": ["customer_id"], "unique": false, "reason": "Orders are listed by customer." }]
+      "indexes": [
+        { "columns": ["customer_id"], "unique": false, "reason": "Orders are listed by customer." }
+      ]
     }
   ],
-  "dropped": [{ "claim": "ENT-002.c3", "field": "Fax", "reason": "The new system contacts customers by email only." }]
+  "dropped": [
+    {
+      "claim": "ENT-002.c3",
+      "field": "Fax",
+      "reason": "The new system contacts customers by email only."
+    }
+  ]
 }
 ```

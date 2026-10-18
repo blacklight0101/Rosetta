@@ -41,10 +41,12 @@ when a model lacks native support (RF-205). A Claude Code plugin run mode reuses
 ## Consequences
 
 **Positive**
+
 - Any provider, local or cloud; switching is a configuration change.
 - Recorded responses at the port make the whole agent behaviour testable offline (ADR-008).
 
 **Negative**
+
 - We write and maintain the loop, retries, tool-call parsing and adapters (RF-400..RF-407).
 - Providers differ in tool-call formats, usage fields and caching; a contract test suite must run against every
   adapter.

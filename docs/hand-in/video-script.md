@@ -1,13 +1,13 @@
 # Guion del vídeo del Hito 1 (unos 5 minutos)
 
-| | |
-|---|---|
-| **Idioma** | Español (Q-03, DEC-101) |
-| **Duración** | Unos 5 minutos, 300 segundos (Q-02, DEC-101) |
-| **Quién graba** | El propietario, BlackLigth (blacklight0101). Claude redacta el guion. |
-| **Contenido** | Un explicador animado hecho con Claude y un clip de una ejecución real en la página web |
-| **Fuente de las cifras** | Las mismas que [las diapositivas](slides/slides.md); cada cifra cita su fuente allí |
-| **URL del vídeo** | [PENDIENTE: URL del vídeo publicado] |
+|                          |                                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| **Idioma**               | Español (Q-03, DEC-101)                                                                 |
+| **Duración**             | Unos 5 minutos, 300 segundos (Q-02, DEC-101)                                            |
+| **Quién graba**          | El propietario, BlackLigth (blacklight0101). Claude redacta el guion.                   |
+| **Contenido**            | Un explicador animado hecho con Claude y un clip de una ejecución real en la página web |
+| **Fuente de las cifras** | Las mismas que [las diapositivas](slides/slides.md); cada cifra cita su fuente allí     |
+| **URL del vídeo**        | [PENDIENTE: URL del vídeo publicado]                                                    |
 
 Los tiempos entre corchetes marcan cada segmento. Los segmentos son continuos y suman exactamente 5:00 (300 segundos).
 

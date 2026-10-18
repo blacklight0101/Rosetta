@@ -69,8 +69,8 @@ Plan the target system from that input and nothing else:
    - `dependsOn`: the positions in `tasks`, counted from 1, of the tasks that must be done first because this task
      uses what they build; an empty list for none. Only name an earlier task. Rosetta adds the order itself for
      tasks whose files overlap.
-   A task that states no invariant, a Done-when item that is not Given, When, Then, no risk class, or no probes
-   where they are required is not written by Rosetta, so state them all.
+     A task that states no invariant, a Done-when item that is not Given, When, Then, no risk class, or no probes
+     where they are required is not written by Rosetta, so state them all.
 8. `risks`: what could go wrong in the move, each with the ids of the cards that show it in `sources`.
 9. `technical`: the technical requirements of the new system, in four lists:
    - `integrations`: for each `INT` card in the cards block, whether the new system keeps the integration or
@@ -86,9 +86,8 @@ Plan the target system from that input and nothing else:
      each with its card ids in `sources`. A target nobody stated is not written.
    - `environments`: the environments (for example test and production) that the brief or the answers show, with
      the `purpose` of each.
-   Each item may carry `decision`: the position, counted from 1, of the entry in `decisions` that decided it, or
-   `null`.
-
+     Each item may carry `decision`: the position, counted from 1, of the entry in `decisions` that decided it, or
+     `null`.
 
 Rules:
 
@@ -113,7 +112,11 @@ Answer with one JSON object and nothing else:
     }
   ],
   "components": [
-    { "name": "Order service", "responsibility": "Creates and stores orders.", "dependsOn": ["Database"] },
+    {
+      "name": "Order service",
+      "responsibility": "Creates and stores orders.",
+      "dependsOn": ["Database"]
+    },
     { "name": "Database", "responsibility": "Keeps orders and products.", "dependsOn": [] }
   ],
   "decisions": [
@@ -126,10 +129,19 @@ Answer with one JSON object and nothing else:
     }
   ],
   "entities": [
-    { "legacy": "Order", "target": "Order", "notes": "The status becomes a closed list.", "sources": ["ENT-001"] }
+    {
+      "legacy": "Order",
+      "target": "Order",
+      "notes": "The status becomes a closed list.",
+      "sources": ["ENT-001"]
+    }
   ],
   "phases": [
-    { "name": "Orders first", "goal": "Orders run on the new system.", "exitCriteria": ["Every order is placed on the new system."] }
+    {
+      "name": "Orders first",
+      "goal": "Orders run on the new system.",
+      "exitCriteria": ["Every order is placed on the new system."]
+    }
   ],
   "tasks": [
     {
@@ -155,7 +167,9 @@ Answer with one JSON object and nothing else:
       "title": "Order history page",
       "phase": 1,
       "requirements": [1],
-      "acceptanceCriteria": ["Given a customer with three orders, when the page opens, then three orders are listed."],
+      "acceptanceCriteria": [
+        "Given a customer with three orders, when the page opens, then three orders are listed."
+      ],
       "invariant": "A customer sees every order of their own and no other.",
       "riskClass": "none",
       "adds": [],
@@ -165,9 +179,16 @@ Answer with one JSON object and nothing else:
       "dependsOn": [1]
     }
   ],
-  "risks": [{ "text": "The shipping threshold is read in two places and may differ.", "sources": ["BR-001"] }],
+  "risks": [
+    {
+      "text": "The shipping threshold is read in two places and may differ.",
+      "sources": ["BR-001"]
+    }
+  ],
   "technical": {
-    "integrations": [{ "card": "INT-001", "action": "replace", "note": "Reached through one port.", "decision": 1 }],
+    "integrations": [
+      { "card": "INT-001", "action": "replace", "note": "Reached through one port.", "decision": 1 }
+    ],
     "security": [
       {
         "name": "Upload filter",
@@ -179,8 +200,17 @@ Answer with one JSON object and nothing else:
         "decision": null
       }
     ],
-    "targets": [{ "name": "Checkout time", "target": "Most checkouts finish within two seconds.", "sources": ["FEAT-001"], "decision": null }],
-    "environments": [{ "name": "Staging", "purpose": "Runs the build before a release.", "decision": null }]
+    "targets": [
+      {
+        "name": "Checkout time",
+        "target": "Most checkouts finish within two seconds.",
+        "sources": ["FEAT-001"],
+        "decision": null
+      }
+    ],
+    "environments": [
+      { "name": "Staging", "purpose": "Runs the build before a release.", "decision": null }
+    ]
   }
 }
 ```

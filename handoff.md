@@ -55,14 +55,15 @@ semantics, estimate warning, ignore union, audit retention, owner checks and a t
 reach `main` through `docs/build-status` pull requests after merges; ADR-006, 007, 009, 014 and 015 amended.
 
 Next, in this order (ask the owner before each):
+
 1. ~~Design system v1 and the design brief~~ DONE 2026-10-11; approved at G-02 (DEC-56).
 2. ~~Artboards for the hosted screens (design-system.md section 14)~~ DONE 2026-10-11: artboards 7-13, approved as a
    G-02 amendment (DEC-70).
-2a. ~~Plan setup artboard~~ DONE 2026-10-11: artboard 14, approved as a G-02 amendment (DEC-86).
+   2a. ~~Plan setup artboard~~ DONE 2026-10-11: artboard 14, approved as a G-02 amendment (DEC-86).
 3. ~~Roadmap and process flows~~ DONE 2026-10-11: DEC-87..DEC-95; PDF and page published.
 4. ~~Build plan~~ DONE 2026-10-11: DEC-96..DEC-101, ADR-019; pull request for the owner to merge.
 5. ~~Create milestones P1..P3 and one issue per card~~ DONE 2026-10-11: issues #9..#88 (DEC-101).
-5a. ~~Owner merges `docs/review-fixes`; issues for P1-55 (#90) and P1-56 (#91); issue bodies synced~~ DONE
+   5a. ~~Owner merges `docs/review-fixes`; issues for P1-55 (#90) and P1-56 (#91); issue bodies synced~~ DONE
    2026-10-11 (bodies of the cards that changed (P1-03, 05..09, 11, 13, 14, 16..18, 21, 22, 24..27, 29,
    30, 34..36, 40, 42..50, 54, P2-01, P2-02, P2-12, P2-14, P3-08, P3-12).
 6. Owner: add the CI jobs as required status checks to the `main` ruleset once P1-02 is merged
@@ -123,17 +124,16 @@ Criteria for each gate are defined once in [docs/orchestration/README.md](docs/o
 Human gates). This table records only their state. Open a gate by setting State to `Open` with the date and who
 opened it; a `Provisional` gate names the only cards it releases.
 
-| Gate | Name | State | Since | Note |
-|---|---|---|---|---|
-| G-01 | Documentation set accepted | Open | 2026-10-11 | opened by BlackLigth (blacklight0101) after the light review and its fixes (DEC-113) |
-| G-02 | Design board approved (web UI and report) | Open | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70); v1 artboards 1-6 revised (DEC-71); Plan setup, artboard 14 (DEC-86) |
-| G-03 | Public GitHub repository ready | Open | 2026-10-11 | opened by BlackLigth (blacklight0101) in the build-plan session (DEC-101): `blacklight0101/Rosetta` exists, `main` pushed and protected |
-| G-04 | Provider access ready | Open | 2026-10-13 | opened by BlackLigth (blacklight0101): Ollama runs on the host (0.40.2) and the app reached it with `gemma4:e4b` (Test providers); OpenAI and Anthropic keys are stored; releases the live-check parts of P1-25, P1-26 and P1-47 (DEC-104); the reader model (Q-04) still comes from the P1-47 spike |
-| G-05 | Milestone hand-in approved | Closed | - | the owner submits the M1 URLs by 2026-10-26: hosted URL, teacher account (RF-803) |
-| G-06 | Hosted deployment ready | Closed | - | `sha-<short>` image deployed, smoke test passed, teacher account signs in; by 2026-10-24 |
-| G-07 | Host account and secrets ready | Closed | - | the owner creates the host account and stores the secrets after the host ADR of P1-48 merges (DEC-104) |
-| G-08 | Local acceptance | Open | 2026-10-13 | opened by BlackLigth (blacklight0101) after a first hands-on test of the Compose stack ("so far so good"); the bugs that test found are card P1-147 (in progress) and are re-tested by the owner when it merges; releases P1-49 and P1-50, and P1-55 now waits only for G-07 (DEC-133) |
-
+| Gate | Name                                      | State  | Since      | Note                                                                                                                                                                                                                                                                                                 |
+| ---- | ----------------------------------------- | ------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G-01 | Documentation set accepted                | Open   | 2026-10-11 | opened by BlackLigth (blacklight0101) after the light review and its fixes (DEC-113)                                                                                                                                                                                                                 |
+| G-02 | Design board approved (web UI and report) | Open   | 2026-10-11 | opened by BlackLigth (blacklight0101): v1 board approved without changes (DEC-56); amended 2026-10-11: hosted screens, artboards 7-13 (DEC-70); v1 artboards 1-6 revised (DEC-71); Plan setup, artboard 14 (DEC-86)                                                                                  |
+| G-03 | Public GitHub repository ready            | Open   | 2026-10-11 | opened by BlackLigth (blacklight0101) in the build-plan session (DEC-101): `blacklight0101/Rosetta` exists, `main` pushed and protected                                                                                                                                                              |
+| G-04 | Provider access ready                     | Open   | 2026-10-13 | opened by BlackLigth (blacklight0101): Ollama runs on the host (0.40.2) and the app reached it with `gemma4:e4b` (Test providers); OpenAI and Anthropic keys are stored; releases the live-check parts of P1-25, P1-26 and P1-47 (DEC-104); the reader model (Q-04) still comes from the P1-47 spike |
+| G-05 | Milestone hand-in approved                | Closed | -          | the owner submits the M1 URLs by 2026-10-26: hosted URL, teacher account (RF-803)                                                                                                                                                                                                                    |
+| G-06 | Hosted deployment ready                   | Closed | -          | `sha-<short>` image deployed, smoke test passed, teacher account signs in; by 2026-10-24                                                                                                                                                                                                             |
+| G-07 | Host account and secrets ready            | Closed | -          | the owner creates the host account and stores the secrets after the host ADR of P1-48 merges (DEC-104)                                                                                                                                                                                               |
+| G-08 | Local acceptance                          | Open   | 2026-10-13 | opened by BlackLigth (blacklight0101) after a first hands-on test of the Compose stack ("so far so good"); the bugs that test found are card P1-147 (in progress) and are re-tested by the owner when it merges; releases P1-49 and P1-50, and P1-55 now waits only for G-07 (DEC-133)               |
 
 ## Decisions pending
 

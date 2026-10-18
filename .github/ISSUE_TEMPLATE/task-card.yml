@@ -1,7 +1,7 @@
 name: Task card
 description: One build task from docs/orchestration/tasks.md
-title: "P<phase>-<nn>: <title>"
-labels: ["task"]
+title: 'P<phase>-<nn>: <title>'
+labels: ['task']
 body:
   - type: input
     id: card
@@ -14,7 +14,19 @@ body:
     id: difficulty
     attributes:
       label: Difficulty (DEC-32)
-      options: ["1 (haiku)", "2 (haiku)", "3 (haiku)", "4 (sonnet)", "5 (sonnet)", "6 (sonnet)", "7 (opus)", "8 (opus)", "9 (opus)", "10 (fable)"]
+      options:
+        [
+          '1 (haiku)',
+          '2 (haiku)',
+          '3 (haiku)',
+          '4 (sonnet)',
+          '5 (sonnet)',
+          '6 (sonnet)',
+          '7 (opus)',
+          '8 (opus)',
+          '9 (opus)',
+          '10 (fable)',
+        ]
     validations:
       required: true
   - type: input
