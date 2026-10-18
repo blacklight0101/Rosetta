@@ -27,6 +27,8 @@ export interface TaskCards {
   readonly drafts: readonly CardDraft[];
   /** RF-206: a note every card of the task carries, for example it was written without reading. */
   readonly note?: string;
+  /** RF-209: the rejected claims a Deepen re-read was given; only these may be named by `replaces`. */
+  readonly replaceable?: readonly string[];
 }
 
 /** The number in an id such as `BR-007`. */
@@ -37,6 +39,13 @@ function numberOf(id: string): number {
 /** `BR-007`: three digits at least, more when a run has more than 999 cards of a type. */
 export function formatCardId(type: CardType, number: number): string {
   return `${type}-${String(number).padStart(3, '0')}`;
+}
+
+/** RF-209: `replaces` names a claim the task was given to re-read, or it is dropped (the claim stays). */
+function withAllowedReplaces(claim: ClaimInput, replaceable: readonly string[] = []): ClaimInput {
+  if (claim.replaces === undefined || replaceable.includes(claim.replaces)) return claim;
+  const { text, citations, target, branches } = claim;
+  return { text, citations, target, branches };
 }
 
 /**
@@ -58,6 +67,7 @@ export function assignCardIds(
       counters.set(draft.type, number);
       const card = createCard({
         ...draft,
+        claims: draft.claims.map((claim) => withAllowedReplaces(claim, task.replaceable)),
         id: formatCardId(draft.type, number),
         area: task.area,
         agentTaskId: task.agentTaskId,

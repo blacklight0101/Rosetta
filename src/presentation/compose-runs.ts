@@ -16,9 +16,6 @@ import { ReopenQuestion } from '../application/use-cases/reopen-question.js';
 import { ReadRunFile } from '../application/use-cases/read-run-file.js';
 import { RunScan } from '../application/use-cases/run-scan.js';
 import { StartRun } from '../application/use-cases/start-run.js';
-import { ResumeRun } from '../application/use-cases/resume-run.js';
-import { resumeProblemCheck } from '../application/understand/resume-problem.js';
-import { FileTaskResults } from '../infrastructure/cards/file-task-results.js';
 import { StopRun } from '../application/use-cases/stop-run.js';
 import { SubmitRun } from '../application/use-cases/submit-run.js';
 import { SubscribeRunEvents } from '../application/use-cases/subscribe-run-events.js';
@@ -46,6 +43,7 @@ import { SnapshotScanPipeline } from '../infrastructure/scan/scan-pipeline.js';
 import { IntervalScheduler } from '../infrastructure/system/interval-scheduler.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import type { StreamRegistry } from './web/event-stream.js';
+import { composeDeepen, composeResume } from './compose-deepen.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
 import { composeBuildReport } from './compose-report.js';
@@ -185,14 +183,13 @@ function runServices(service: ServiceParts): RunServices {
     getRun: new GetRun({ runs, queue, files: new FileRunTextFiles(writer) }),
     subscribeRunEvents: new SubscribeRunEvents({ runs, history: log, feed: broadcaster }),
     stopRun: new StopRun({ queue }),
-    resumeRun: new ResumeRun({
-      ...{ projects, runs, manifests, queue, clock: parts.clock },
-      problem: resumeProblemCheck({
-        runs,
-        scans,
-        taskResults: new FileTaskResults({ writer, masker: parts.masker }),
-      }),
-      ...(ollamaHost === undefined ? {} : { ollamaHost }),
+    resumeRun: composeResume({
+      ...{ projects, runs, manifests, queue, scans, writer },
+      ...{ clock: parts.clock, masker: parts.masker, ollamaHost },
+    }),
+    ...composeDeepen({
+      ...{ pool: parts.pool, projects, runs, manifests, scans, submit: submitRun, writer },
+      ...{ masker: parts.masker, priceTable: parts.priceTable, ollamaHost },
     }),
     exportZip: new ExportZip({ runs, archives: new YazlArchiveWriter(parts.dataDir) }),
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),

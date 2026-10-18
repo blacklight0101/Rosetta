@@ -12,6 +12,10 @@ export interface ReaderTask {
   readonly area: Area;
   /** RF-241: the owner's answers to the questions of this area, in a re-run with answers. */
   readonly answers?: string;
+  /** RF-209: a Deepen re-read: the rejected claims with the verifier's reasons, as JSON. */
+  readonly rejected?: string;
+  /** RF-209: the ids of those claims, the only ones a new claim may name as replaced. */
+  readonly replaceable?: readonly string[];
 }
 
 export interface UnknownAreas {

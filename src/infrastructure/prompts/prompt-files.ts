@@ -25,6 +25,7 @@ const readerPromptNames = {
 } as const;
 
 const answersPromptName = 'reader/answers.v1.md';
+const rereadPromptName = 'reader/reread.v1.md';
 
 /** RF-260, RF-261: fragments of the card format, added only to areas the code map marks (Q-25). */
 const surfacePromptNames = { flows: 'cards/flows.v1.md', screens: 'cards/screens.v1.md' } as const;
@@ -152,4 +153,10 @@ export async function loadReaderPrompts(promptsFolder: string): Promise<ReaderPr
 export async function loadAnswersPrompt(promptsFolder: string): Promise<PromptFile> {
   const file = await loadPromptFile(promptsFolder, answersPromptName);
   return requirePlaceholder(file, readerPlaceholders.answers);
+}
+
+/** The prompt that carries the rejected claims to a Deepen re-read (RF-209), checked and hashed. */
+export async function loadRereadPrompt(promptsFolder: string): Promise<PromptFile> {
+  const file = await loadPromptFile(promptsFolder, rereadPromptName);
+  return requirePlaceholder(file, readerPlaceholders.reread);
 }

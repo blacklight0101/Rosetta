@@ -93,7 +93,7 @@ document is the canonical home of the error-code catalogue (section 6) and the t
   say whether the user or the resource exists. The status of each code with an HTTP cause is listed in
   `src/presentation/web/error-mapper.ts` (RST-2000..2006 for 400, 401, 403, 404, 409, 429 and 500; RST-2007,
   RST-2008 and RST-2212 for 403, RST-2201 for 401; the account rules RST-2202..2204, RST-2206, RST-2207, RST-2211 and
-  RST-2214 for 400; RST-2205, RST-2208, RST-2213, RST-2306 (a run, project or snapshot in use cannot be deleted) and RST-2307 (a run that cannot be resumed) for 409; the key rules RST-2301 and RST-2304 for 400; RST-1515, a cloud run without consent, for 400; RST-1007, a settings save that started from an older version, for 409); any other code
+  RST-2214 for 400; RST-2205, RST-2208, RST-2213, RST-2306 (a run, project or snapshot in use cannot be deleted) and RST-2307 (a run that cannot be resumed) and RST-2308 (a run that cannot be deepened) for 409; RST-2309, a Deepen without the owner's confirmation, for 400; the key rules RST-2301 and RST-2304 for 400; RST-1515, a cloud run without consent, for 400; RST-1007, a settings save that started from an older version, for 409); any other code
   answers 500, and the body carries the catalogue message and next step, never the error's own message.
 
 **Error-code catalogue** (canonical; a new code gets the next free number in its range). Individual codes live in one
