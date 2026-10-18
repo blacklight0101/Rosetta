@@ -141,3 +141,55 @@ it('RF-231 reads the measures once for the page', async () => {
     expect(page.calls.filter((call) => call.path.endsWith('/understanding'))).toHaveLength(1);
   });
 });
+
+describe('RF-231 the edges of the summary', () => {
+  it('RF-231 lists no files not read when every first-party file was read', async () => {
+    const all = measures({ filesNotReadCount: 0, filesNotRead: [] });
+    await openEnded({ extra: { [understandingPath]: understanding(all) } });
+
+    const panel = await summary();
+
+    expect(within(panel).getByTestId('measure-notRead').textContent).toContain('none');
+    expect(within(panel).queryByRole('list', { name: 'Largest files not read' })).toBeNull();
+  });
+
+  it('RF-231 shows no third-party row for a run with no third-party code', async () => {
+    const none = measures({ thirdParty: { files: 0, tokens: 0, claims: 0 } });
+    await openEnded({ extra: { [understandingPath]: understanding(none) } });
+
+    expect(within(await summary()).queryByTestId('measure-thirdParty')).toBeNull();
+  });
+
+  it('RF-209 shows a Deepen that has not ended without a table, a stop or an out-of-scope list', async () => {
+    const running = { ...deepenRecord, stopReason: null, after: null, outOfScope: [] };
+    await openEnded({ extra: { [understandingPath]: understanding(measures(), running) } });
+
+    const panel = await summary();
+
+    expect(within(panel).queryByRole('table')).toBeNull();
+    expect(within(panel).queryByTestId('deepen-stop')).toBeNull();
+    expect(within(panel).queryByTestId('deepen-out-of-scope')).toBeNull();
+  });
+
+  it('RF-209 speaks of one claim left out of scope in the singular', async () => {
+    const one = { ...deepenRecord, outOfScope: deepenRecord.outOfScope.slice(0, 1) };
+    await openEnded({ extra: { [understandingPath]: understanding(measures(), one) } });
+
+    expect(within(await summary()).getByTestId('deepen-out-of-scope').textContent).toContain(
+      '1 rejected claim was left out of scope',
+    );
+  });
+
+  it('RF-231 shows no measures for a run that failed, which has no overview either', async () => {
+    await openEnded({
+      extra: { [understandingPath]: understanding(measures()) },
+      endState: 'Failed',
+    });
+
+    await screen.findByRole('region', { name: 'Your turn' });
+    await waitFor(() => {
+      expect(screen.queryByRole('region', { name: 'Understanding measures' })).toBeNull();
+    });
+    expect(screen.queryByRole('tab', { name: /^Overview/u })).toBeNull();
+  });
+});

@@ -61,6 +61,13 @@ describe('RF-209 the Deepen action', () => {
     expect(screen.queryByRole('button', { name: 'Deepen this run' })).toBeNull();
   });
 
+  it('RF-209 offers no Deepen on a scan, which has no claims to go back over', async () => {
+    await openEnded({ extra: base, stage: 'scan' });
+
+    await screen.findByRole('region', { name: 'Your turn' });
+    expect(screen.queryByRole('button', { name: 'Deepen this run' })).toBeNull();
+  });
+
   it('RF-209 asks for the estimate with three rounds and the coverage pass ticked', async () => {
     const page = await opened();
 

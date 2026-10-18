@@ -72,7 +72,10 @@ const finishedEvents = [
 
 /** The same events, ending as the run did. */
 function eventsEnding(endState: string): typeof finishedEvents {
-  return [...finishedEvents.slice(0, -1), runEnded(8, endState)];
+  return [
+    ...finishedEvents.slice(0, -1),
+    runEnded(8, endState, endState === 'Failed' ? 'RST-2006' : undefined),
+  ];
 }
 
 export interface EndedOptions {
@@ -80,13 +83,19 @@ export interface EndedOptions {
   readonly overviewBody?: Response;
   /** How the run ended; Completed unless a test says otherwise. */
   readonly endState?: string;
+  /** The stage of the run; understand unless a test says otherwise. */
+  readonly stage?: string;
   readonly extra?: Readonly<Record<string, Response>>;
 }
 
 /** Opens the page of the ended run with the events replayed; resolves once the results tabs show. */
 export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
   const page = renderLive({
-    [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: options.endState ?? 'Completed' }),
+    [`GET ${runPath}`]: runRow({
+      stage: options.stage ?? 'understand',
+      queueState: 'Ended',
+      endState: options.endState ?? 'Completed',
+    }),
     [`GET ${runPath}/overview`]: options.overviewBody ?? json(200, { overview }),
     [`GET ${runPath}/answers`]: json(200, { questions: options.questions ?? threeQuestions }),
     [`GET ${codeMapPath}`]: codeMapAnswer(ownAreas),

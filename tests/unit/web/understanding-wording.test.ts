@@ -138,3 +138,21 @@ describe('RF-231 the words never to use', () => {
     expect(text(set)).not.toContain('well covered');
   });
 });
+
+describe('RF-231 percentages are cut down', () => {
+  it('RF-231 never shows a read share above zero as 0%', () => {
+    const set = measures({ firstPartyCoverage: 0.0004, notJudged: 0 });
+
+    expect(standingOf(set).text).toContain('less than 1% of first-party tokens read');
+    expect(measureRows(set)[0]?.value).toBe('less than 1%');
+  });
+
+  it('RF-231 works out well covered from the numbers, whatever the server flag says', () => {
+    const set = measures({ firstPartyCoverage: 0.8, notJudged: 0, wellCovered: false });
+
+    expect(standingOf(set).wellCovered).toBe(true);
+    expect(standingOf(set).text).toBe(
+      'Well covered: 80% of first-party tokens read and no claim left unjudged.',
+    );
+  });
+});

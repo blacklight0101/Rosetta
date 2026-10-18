@@ -140,3 +140,27 @@ describe('RF-209 the Deepen lines of the log', () => {
     ]);
   });
 });
+
+describe('RF-1002 Deepen events out of order', () => {
+  it('RF-1002 ignores a round that begins or ends, or a stop, before the Deepen started', () => {
+    const state = stateAfter(
+      deepenRoundStarted(1, 1),
+      deepenRoundEnded(2, 1),
+      deepenEnded(3, 'x', 1),
+    );
+
+    expect(state.deepen).toBeUndefined();
+  });
+
+  it('RF-1002 ignores the end of a round that never began', () => {
+    const state = stateAfter(deepenStarted(1), deepenRoundEnded(2, 4));
+
+    expect(state.deepen?.rounds).toEqual([]);
+  });
+
+  it('RF-1002 keeps the rounds in order when a later one is announced first', () => {
+    const state = stateAfter(deepenStarted(1), deepenRoundStarted(2, 2), deepenRoundStarted(3, 1));
+
+    expect(state.deepen?.rounds.map((round) => round.round)).toEqual([1, 2]);
+  });
+});

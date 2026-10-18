@@ -68,11 +68,13 @@ interface Setup {
   readonly results?: readonly TaskResult[];
   readonly manifest?: Partial<RunManifest>;
   readonly run?: Partial<Run>;
+  /** False: the project has no completed scan. */
+  readonly scanned?: boolean;
 }
 
 async function setup(options: Setup = {}) {
   const runs = new MemoryRunIndex();
-  await runs.insert(completedScan('project', userAmy.userId));
+  if (options.scanned !== false) await runs.insert(completedScan('project', userAmy.userId));
   const understand = sampleRun({
     projectId: 'project',
     userId: userAmy.userId,
@@ -147,6 +149,14 @@ describe('RF-231 a run with nothing to measure', () => {
     const outcome = await read.execute({ actor: userAmy, runId: understand.id });
 
     expect(outcome).toEqual({ ok: true, value: { measures: null, deepen: null } });
+  });
+
+  it('RF-231 has no measures when the project has no completed scan', async () => {
+    const { read, understand } = await setup({ scanned: false });
+
+    const outcome = await read.execute({ actor: userAmy, runId: understand.id });
+
+    expect(outcome).toMatchObject({ ok: true, value: { measures: null } });
   });
 
   it('RF-231 has no measures when the code map is not the one the run read', async () => {
