@@ -31,6 +31,7 @@ function claimHeader(claim: Claim): Record<string, unknown> {
     text: claim.text,
     citations: claim.citations.map(formatCitation),
     status: claim.status,
+    replaces: claim.replaces,
     verdict: claim.verdict,
     ...stepHeader(claim),
   };
@@ -68,6 +69,9 @@ function claimBody(
     '',
     esc.block(claim.text),
     '',
+    ...(claim.replaces === undefined
+      ? []
+      : [`Replaces the rejected claim ${esc.inline(claim.replaces)}.`, '']),
     'Evidence:',
   ];
   lines.push(...claim.citations.map((citation) => `- ${citationLink(citation, source)}`));
