@@ -4,7 +4,8 @@
 // parse or draw keeps its source visible and gets a note; the other diagrams are drawn anyway.
 // The source is read as text and the drawing is inserted as parsed nodes, never as markup built
 // from text (RF-507). The page's content security policy has no inline style allowance, so the
-// style rules Mermaid writes are applied through the CSSOM, which the policy does not restrict.
+// style rules Mermaid writes are given to the page through the CSSOM, which the policy does not
+// restrict.
 (function () {
   'use strict';
 
@@ -19,37 +20,26 @@
     if (note !== null) note.hidden = false;
   }
 
-  /** The drawing and everything in it, in document order. */
-  function elementsOf(drawing) {
-    return [drawing, ...Array.from(drawing.querySelectorAll('*'))];
-  }
-
-  /** Takes the style rules out of the drawing; the policy would refuse them as inline styles. */
-  function takeStyles(drawing) {
+  /** Takes the style elements out of a drawing and returns their rules. */
+  function takeRules(drawing) {
     const rules = [];
     for (const element of Array.from(drawing.querySelectorAll('style'))) {
       rules.push(element.textContent || '');
       element.remove();
     }
-    const inline = [];
-    elementsOf(drawing).forEach((element, position) => {
-      const css = element.getAttribute('style');
-      if (css === null) return;
-      inline.push([position, css]);
-      element.removeAttribute('style');
-    });
-    return { rules, inline };
+    return rules;
   }
 
-  /** Applies the rules and the inline styles through the CSSOM, which the policy does not restrict. */
-  function applyStyles(inserted, styles) {
-    for (const css of styles.rules) {
+  /**
+   * Gives the rules to the page as style sheets built in script. The page's content security policy
+   * refuses a style element in the page, but does not restrict a style sheet made through the CSSOM.
+   */
+  function adoptRules(rules) {
+    for (const css of rules) {
       const sheet = new globalThis.CSSStyleSheet();
       sheet.replaceSync(css);
       doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
     }
-    const elements = elementsOf(inserted);
-    for (const [position, css] of styles.inline) elements[position].style.cssText = css;
   }
 
   async function draw(figure, index) {
@@ -61,10 +51,10 @@
       const parsed = new globalThis.DOMParser().parseFromString('<body>' + svg, 'text/html');
       const drawing = parsed.body.firstElementChild;
       if (drawing === null || drawing.localName !== 'svg') throw new Error('No drawing');
-      const styles = takeStyles(drawing);
+      const rules = takeRules(drawing);
       const inserted = doc.importNode(drawing, true);
       figure.querySelector('[data-diagram-drawing]').replaceChildren(inserted);
-      applyStyles(inserted, styles);
+      adoptRules(rules);
       figure.querySelector('details').open = false;
     } catch {
       // Mermaid can leave its error drawing in the page when a render fails: take it out.
