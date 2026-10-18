@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { MemoryBriefStore } from './memory-brief-store.js';
 import { expect, vi } from 'vitest';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { Project } from '../../src/application/projects/project.js';
@@ -175,7 +176,7 @@ function starterOf(s: Stores, queue: RunQueue, project: Project): Starter {
     ids: new SequenceIdGenerator(),
     rosettaVersion: '1.2.3-test',
   });
-  const startRun = new StartRun({ projects: s.projects, submit });
+  const startRun = new StartRun({ projects: s.projects, briefs: new MemoryBriefStore(), submit });
   const ended = waitUntilEnded(s);
   return async (stage, extra) => {
     const started = await startRun.execute({

@@ -184,6 +184,64 @@ describe('POST /api/projects/:id/plan-options refuses', () => {
   });
 });
 
+describe('POST /api/projects/:id/plan-options refuses a body', () => {
+  it('RST-2000 a body with a key it does not know is refused, whatever else it holds', async () => {
+    const { amy, project, test } = await setup();
+
+    const response = await amy.request({
+      method: 'POST',
+      url: optionsUrl(project.id),
+      payload: { cloudConsent: true, other: 1 },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
+    expect(test.providerLedger.entries).toHaveLength(0);
+  });
+
+  it('RF-1100 a valid body padded over one kilobyte is refused before any call', async () => {
+    const { amy, project, test } = await setup();
+
+    const response = await amy.request({
+      method: 'POST',
+      url: optionsUrl(project.id),
+      headers: { 'content-type': 'application/json' },
+      payload: `{"cloudConsent":false}${' '.repeat(2_000)}`,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.requestInvalid });
+    expect(test.providerLedger.entries).toHaveLength(0);
+  });
+});
+
+describe('POST /api/projects/:id/plan-options limits', () => {
+  it('RF-1100 limits the calls of one address to twelve a minute, since each costs money', async () => {
+    const { amy, project } = await setup();
+
+    const statuses: number[] = [];
+    for (let call = 0; call < 14; call += 1) {
+      const response = await amy.request({ method: 'POST', url: optionsUrl(project.id) });
+      statuses.push(response.statusCode);
+    }
+
+    expect(statuses.slice(0, 12)).not.toContain(429);
+    expect(statuses.slice(12)).toEqual([429, 429]);
+  });
+
+  it('RF-407 a call over the caps of the project answers 409 with the cap code', async () => {
+    const tight = { ...templateSettings.budget.run, maxTokens: 1 };
+    const { amy, project } = await setup({
+      settings: { ...templateSettings, budget: { ...templateSettings.budget, run: tight } },
+    });
+
+    const response = await amy.request({ method: 'POST', url: optionsUrl(project.id) });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ code: ERROR_CODES.budgetCapReached });
+  });
+});
+
 describe('POST /api/projects/:id/plan-options and the cause of a failure', () => {
   it('RST-2302 a cloud planner with no key to use answers 409, not a server error', async () => {
     const { amy, project } = await setup({ settings: cloudPlanner });

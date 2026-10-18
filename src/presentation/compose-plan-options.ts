@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import type { Clock } from '../application/ports/clock.js';
+import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { OutputWriter } from '../application/ports/output-writer.js';
 import type { ProjectRepository } from '../application/ports/project-repository.js';
@@ -12,7 +13,7 @@ import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import { loadPlanOptionsPrompt } from '../infrastructure/prompts/prompt-files.js';
-import { unrecordedSinks } from '../infrastructure/providers/unrecorded-sinks.js';
+import { projectCallSinks } from '../infrastructure/providers/project-call-sinks.js';
 import { SystemTimeoutSignals } from '../infrastructure/system/system-timeout-signals.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 
@@ -29,6 +30,8 @@ export interface PlanOptionsParts {
   readonly logger: Logger;
   readonly clock: Clock;
   readonly writer: OutputWriter;
+  readonly masker: TextMasker;
+  readonly dataDir: string;
   readonly projects: ProjectRepository;
   readonly runs: RunIndex;
   readonly scans: ScanResults;
@@ -38,11 +41,12 @@ export interface PlanOptionsParts {
 // RF-608, RF-609
 export function composePlanOptions(parts: PlanOptionsParts): SuggestPlanOptions {
   const { pool, logger, clock, writer, projects, runs, scans, providers } = parts;
+  const { masker, dataDir } = parts;
   return new SuggestPlanOptions({
     ...{ projects, runs, scans, providers, logger },
     users: new PgUserRepository(pool),
     cards: new FileRunCards(writer),
-    unrecorded: unrecordedSinks(),
+    callSinks: projectCallSinks({ writer, masker, clock, dataDir }),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlanOptionsPrompt(promptsFolder),
     ids: new TimestampIdGenerator(clock),

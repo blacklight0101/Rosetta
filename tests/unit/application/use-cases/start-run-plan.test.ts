@@ -5,18 +5,23 @@ import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { MemoryProjectRepository } from '../../../../src/infrastructure/db/memory-project-repository.js';
 import { settingsFor } from '../../../support/provider-factory-harness.js';
 import { sampleProject } from '../../../support/project-fixtures.js';
+import { MemoryBriefStore } from '../../../support/memory-brief-store.js';
 import { createRunHarness, userAmy } from '../../../support/run-harness.js';
 
 // RF-604, RF-605, RF-143: Plan setup starts the `plan` stage through StartRun. The planner is the
 // only role of a plan run, so only it needs the consent to send code to a cloud provider; the
 // consent is recorded in the manifest, where the executor reads it back. A refusal creates no run.
 
-async function setup(settings: ProjectSettings) {
+async function setup(settings: ProjectSettings, options: { readonly brief?: boolean } = {}) {
   const harness = createRunHarness();
+  const briefs = new MemoryBriefStore();
   const projects = new MemoryProjectRepository();
   const project = sampleProject({ userId: userAmy.userId, settings });
   await projects.insertOrFind(project);
-  return { harness, project, startRun: new StartRun({ projects, submit: harness.submit }) };
+  if (options.brief !== false)
+    await briefs.saveEmpty({ userId: project.userId, projectId: project.id });
+  const startRun = new StartRun({ projects, briefs, submit: harness.submit });
+  return { harness, project, startRun };
 }
 
 const fakePlanner = settingsFor({ planner: { provider: 'fake', model: 'fake-model' } });
@@ -71,6 +76,34 @@ describe('StartRun for plan', () => {
     if (!started.ok) return;
     const manifest = await harness.manifests.read(harness.scopeOf(started.value.run));
     expect(manifest?.options).toEqual({ cloudConsent: true });
+  });
+});
+
+describe('StartRun for plan: the saved brief', () => {
+  it('RST-1801 refuses a plan run of a project with no saved brief, creating no run', async () => {
+    const { harness, project, startRun } = await setup(fakePlanner, { brief: false });
+
+    const started = await startRun.execute({
+      actor: userAmy,
+      projectId: project.id,
+      stage: 'plan',
+    });
+
+    expect(started).toEqual({ ok: false, error: ERROR_CODES.planBriefMissing });
+    expect(await harness.runs.list(userAmy.userId, project.id)).toEqual([]);
+    expect(harness.executor.started).toHaveLength(0);
+  });
+
+  it('RST-1801 asks for the brief before the consent: the owner fixes the brief first', async () => {
+    const { project, startRun } = await setup(cloudPlanner, { brief: false });
+
+    const started = await startRun.execute({
+      actor: userAmy,
+      projectId: project.id,
+      stage: 'plan',
+    });
+
+    expect(started).toEqual({ ok: false, error: ERROR_CODES.planBriefMissing });
   });
 });
 

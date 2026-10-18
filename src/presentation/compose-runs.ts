@@ -35,6 +35,7 @@ import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
 import { JsonlEventLog } from '../infrastructure/events/jsonl-event-log.js';
 import { SseBroadcaster } from '../infrastructure/events/sse-broadcaster.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
+import { FilePlanningBriefStore } from '../infrastructure/files/file-planning-brief-store.js';
 import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
 import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
 import { NodeRunFileReader } from '../infrastructure/files/node-run-file-reader.js';
@@ -177,6 +178,7 @@ function runServices(service: ServiceParts): RunServices {
   return {
     startRun: new StartRun({
       projects,
+      briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
       submit: submitRun,
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),

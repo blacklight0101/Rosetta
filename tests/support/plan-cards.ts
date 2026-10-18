@@ -116,3 +116,11 @@ export const planQuestions = [
   { cardId: 'OQ-001', question: 'Which roles may cancel a paid order?' },
   { cardId: 'OQ-002', question: 'Does a cancelled order refund the customer on its own?' },
 ] as const;
+
+/** A card with one supported claim that says what the test needs it to say (an attack on the request). */
+export function cardSaying(id: string, text: string): Card {
+  return judgedCard(
+    { ...base(id, 'BR', 'Attack on the request'), claims: [claim(text, 'src/Orders/Evil.cs')] },
+    ['Supported'],
+  );
+}

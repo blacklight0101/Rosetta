@@ -3,6 +3,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, type Result } from '../../domain/errors/result.js';
 import type { RunStage } from '../../domain/runs/run-states.js';
 import type { AgentRole } from '../ports/llm-provider.js';
+import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { Project } from '../projects/project.js';
 import { rolesNeedCloudConsent, understandOptionsOf } from '../understand/understand-options.js';
@@ -20,6 +21,8 @@ const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand', 'plan'];
 
 export interface StartRunDependencies {
   readonly projects: ProjectRepository;
+  /** RST-1801: a plan run needs the brief the owner saved. */
+  readonly briefs: Pick<PlanningBriefStore, 'read'>;
   readonly submit: SubmitRun;
   /** The host of the server's Ollama (`ROSETTA_OLLAMA_URL`); an Ollama elsewhere needs consent (RF-143). */
   readonly ollamaHost?: string;

@@ -52,6 +52,9 @@ export interface ProviderSinks {
   readonly budgetEvents: BudgetEvents;
 }
 
+/** The three sinks a call that belongs to no run still writes to (RF-142, RF-408, RF-141). */
+export type CallSinks = Pick<ProviderSinks, 'recorder' | 'egressLog' | 'security'>;
+
 export interface ProviderSetRequest {
   readonly account: ProviderAccount;
   readonly run: ProviderRun;

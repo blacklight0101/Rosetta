@@ -38,6 +38,8 @@ export interface PlanSourceSeed {
   /** The answer to the first open question; none by default. */
   readonly answer?: string;
   readonly briefAnswers?: BriefAnswers;
+  /** Changes of the understand run row, for example a run that is still running or failed. */
+  readonly run?: Partial<Run>;
 }
 
 const savedAt = '2026-10-12T09:30:00.000Z';
@@ -52,6 +54,7 @@ async function seedUnderstand(
   const run = sampleRun({
     ...{ userId: project.userId, projectId: project.id, stage: 'understand' },
     ...{ runKey: '20261012-090000-understand', queueState: 'Ended', endState: 'Completed' },
+    ...seed.run,
   });
   await stores.runs.insert(run);
   const cards = new FileCardOutputs({ writer: files, masker, logger: new RecordingLogger() });

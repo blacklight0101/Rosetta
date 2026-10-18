@@ -6,6 +6,8 @@ import { loadRecording } from '../../../src/infrastructure/providers/fake/record
 import { sampleProject } from '../../support/project-fixtures.js';
 import { settingsFor } from '../../support/provider-factory-harness.js';
 import { answerRecording } from '../../support/plan-options-harness.js';
+import { cardSaying } from '../../support/plan-cards.js';
+import { seedPlanSource } from '../../support/plan-source-seed.js';
 import {
   createSuggestOptionsHarness,
   type SuggestOptionsHarness,
@@ -127,4 +129,45 @@ describe('SuggestPlanOptions: what the project lacks', () => {
 
     expect(await ask(h)).toEqual({ ok: false, error: ERROR_CODES.planOptionsInvalid });
   });
+});
+
+describe('SuggestPlanOptions: which understand run it reads', () => {
+  const sentTo = (h: SuggestOptionsHarness): string => {
+    const message = h.factory.fakes.get('fake')?.requests[0]?.messages[0];
+    return message?.role === 'user' ? message.content : '';
+  };
+
+  it('RF-608 reads the newest completed understand run, not an older one', async () => {
+    const h = await harness();
+    await seedPlanSource(h.stores, h.project, {
+      brief: false,
+      cards: [cardSaying('BR-077', 'Refunds are paid by hand.')],
+      run: { runKey: '20261012-100000-understand' },
+    });
+
+    await ask(h);
+
+    expect(sentTo(h)).toContain('Refunds are paid by hand.');
+    expect(sentTo(h)).not.toContain('Checkout creates an order from the basket.');
+  });
+
+  it.each([
+    ['still running', { queueState: 'Running', endState: null } as const],
+    ['failed', { queueState: 'Ended', endState: 'Failed' } as const],
+  ])(
+    'RF-608 skips a newer understand run that is %s: its cards are not verified',
+    async (_n, run) => {
+      const h = await harness();
+      await seedPlanSource(h.stores, h.project, {
+        brief: false,
+        cards: [cardSaying('BR-078', 'Unfinished run claim.')],
+        run: { runKey: '20261012-100000-understand', ...run },
+      });
+
+      await ask(h);
+
+      expect(sentTo(h)).toContain('Checkout creates an order from the basket.');
+      expect(sentTo(h)).not.toContain('Unfinished run claim.');
+    },
+  );
 });

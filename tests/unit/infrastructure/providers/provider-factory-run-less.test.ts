@@ -62,3 +62,24 @@ describe('caps of a call that belongs to no run', () => {
     expect(caps.some((cap) => cap.kind === 'role-cost')).toBe(false);
   });
 });
+
+describe('caps of a run-less call fail closed', () => {
+  const ceiling = [
+    { kind: 'run-cost', limit: 100_000n },
+    { kind: 'run-tokens', limit: 2_000n },
+  ];
+  const project = '00000000-0000-4000-a000-0000000000c1';
+
+  it.each([
+    ['a stage that is not the plan stage', { stage: 'understand', projectId: project }],
+    ['an unknown stage', { stage: 'invented', projectId: project }],
+    ['the plan stage without a project to book it to', { stage: 'plan', projectId: null }],
+  ])('ADR-007 %s gets the small ceiling, not the caps of a project', async (_name, given) => {
+    const run = { id: null, userId: testRun.userId, ...given } as unknown as ProviderRun;
+
+    const caps = await plannerCaps(run);
+
+    expect(caps).toEqual(expect.arrayContaining(ceiling));
+    expect(caps.some((cap) => cap.kind === 'role-cost')).toBe(false);
+  });
+});

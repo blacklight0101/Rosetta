@@ -53,6 +53,23 @@ describe('EstimatePlan: the planner key', () => {
     expect(await own({ serverKeys: noServerKeys })).toBe(true);
     expect(await own({ account: { serverKeysAllowed: false } })).toBe(true);
   });
+});
+
+describe('EstimatePlan: the key source of the provider', () => {
+  it("RF-1104 a provider set to the user's own key only does not use the server key", async () => {
+    const ownOnly = plannerSettings({ provider: 'openai', model: 'priced-model' }, (settings) => ({
+      ...settings,
+      providers: {
+        ...settings.providers,
+        openai: {
+          ...{ kind: 'openai' as const, toolMode: 'text' as const },
+          ...{ timeoutSeconds: 60, maxRetries: 2, keySource: 'user' as const },
+        },
+      },
+    }));
+
+    expect(await keyAvailable({ settings: ownOnly })).toBe(false);
+  });
 
   it('RF-613 a local planner needs no key', async () => {
     const local = plannerSettings({ provider: 'ollama', model: 'gemma4:e4b' });

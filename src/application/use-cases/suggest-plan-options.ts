@@ -12,7 +12,7 @@ import { recommendPlanOptions, type PlanOptionsInput } from '../planning/recomme
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
-import type { ProviderSetFactory, ProviderSinks } from '../ports/provider-set-factory.js';
+import type { CallSinks, ProviderSetFactory } from '../ports/provider-set-factory.js';
 import type { RunCards } from '../ports/run-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
@@ -29,7 +29,8 @@ import { scopeOf } from '../runs/run-scope.js';
 // every model call, so it is masked and capped, and the ledger books it to the project at stage
 // `plan` with no run, the way the Test button of the settings page books its calls (RF-407). It
 // carries the consent the person gave on the page, because the cards and the scan summary leave
-// this machine for a cloud provider.
+// this machine for a cloud provider. Its egress line, provider-call record and masking counts go to a
+// log of the project (`callSinks`), because it has no run folder (RF-142, RF-408).
 
 export interface SuggestPlanOptionsDependencies {
   readonly projects: ProjectRepository;
@@ -38,8 +39,11 @@ export interface SuggestPlanOptionsDependencies {
   readonly scans: ScanResults;
   readonly users: UserRepository;
   readonly providers: ProviderSetFactory;
-  /** Where the records of the call go: it has no run folder, so they are not kept. */
-  readonly unrecorded: Pick<ProviderSinks, 'recorder' | 'egressLog' | 'security'>;
+  /** Where the egress line, the provider-call record and the masking counts of a call go. */
+  readonly callSinks: (target: {
+    readonly userId: string;
+    readonly projectId: string;
+  }) => CallSinks;
   readonly catalogue: () => Promise<Catalogue>;
   /** `planner/options.v<n>.md`. */
   readonly prompt: () => Promise<PromptFile>;
@@ -109,7 +113,7 @@ export class SuggestPlanOptions {
       roles: ['planner'],
       cloudConsent: request.cloudConsent,
       sinks: {
-        ...deps.unrecorded,
+        ...deps.callSinks({ userId: account.id, projectId: project.id }),
         costs: { addCall: () => Promise.resolve() },
         stopRun: () => undefined,
         budgetEvents: silentBudgetEvents,

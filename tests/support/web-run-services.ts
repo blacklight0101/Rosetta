@@ -1,4 +1,5 @@
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
+import { MemoryBriefStore } from './memory-brief-store.js';
 import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
 import type { Clock } from '../../src/application/ports/clock.js';
@@ -198,7 +199,7 @@ export function runServices(
     buildReport: reportOf(runs, outputs),
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ projects, submit: runs.submit }),
+    startRun: new StartRun({ projects, briefs: new MemoryBriefStore(), submit: runs.submit }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,

@@ -36,7 +36,7 @@ export function planOptionsService(parts: PlanOptionsParts): SuggestPlanOptions 
     ...{ projects, runs, users, providers, logger },
     cards: new FileRunCards(files),
     scans: new FixedScans([areaOf('Orders', 1000)]),
-    unrecorded: unrecordedSinks(),
+    callSinks: () => unrecordedSinks(),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlanOptionsPrompt(promptsFolder),
     ids: new SequenceIdGenerator(),

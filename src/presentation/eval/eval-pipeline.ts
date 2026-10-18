@@ -1,4 +1,5 @@
 import { EstimateRun } from '../../application/estimate/estimate-run.js';
+import { FilePlanningBriefStore } from '../../infrastructure/files/file-planning-brief-store.js';
 import type { Clock } from '../../application/ports/clock.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
 import type { Logger } from '../../application/ports/logger.js';
@@ -190,5 +191,15 @@ export function composePipeline(parts: PipelineParts): Pipeline {
     keys,
     priceTable: parts.priceTable,
   });
-  return { ...s, watcher, queue, startRun: new StartRun({ projects, submit }), estimateRun };
+  return {
+    ...s,
+    watcher,
+    queue,
+    startRun: new StartRun({
+      projects,
+      briefs: new FilePlanningBriefStore({ writer, masker }),
+      submit,
+    }),
+    estimateRun,
+  };
 }

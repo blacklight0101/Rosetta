@@ -1,5 +1,8 @@
 import { fileURLToPath } from 'node:url';
-import { SuggestPlanOptions } from '../../src/application/use-cases/suggest-plan-options.js';
+import {
+  SuggestPlanOptions,
+  type SuggestPlanOptionsDependencies,
+} from '../../src/application/use-cases/suggest-plan-options.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { Project } from '../../src/application/projects/project.js';
 import { actorOf, type Actor } from '../../src/domain/accounts/actor.js';
@@ -16,7 +19,7 @@ import type { Recording } from '../../src/infrastructure/providers/fake/recordin
 import { sampleAccount } from './account-fixtures.js';
 import { FixedScans, areaOf } from './estimate-harness.js';
 import { MemoryOutputWriter } from './memory-output-writer.js';
-import { seedPlanSource, type PlanSourceSeed } from './plan-source-seed.js';
+import { seedPlanSource, type PlanSourceSeed, type PlanSourceStores } from './plan-source-seed.js';
 import { sampleProject } from './project-fixtures.js';
 import { factoryHarness, settingsFor, type FactoryHarness } from './provider-factory-harness.js';
 import { sampleRun } from './run-fixtures.js';
@@ -34,10 +37,14 @@ export interface SuggestOptionsHarness {
   readonly account: UserAccount;
   readonly actor: Actor;
   readonly project: Project;
+  /** The stores the plan sources are seeded into, to add more runs. */
+  readonly stores: PlanSourceStores;
 }
 
 export interface SuggestOptionsOptions {
   readonly recording: Recording;
+  /** Where the logs of the call go; the memory sinks of the factory harness by default. */
+  readonly callSinks?: SuggestPlanOptionsDependencies['callSinks'];
   readonly settings?: ProjectSettings;
   readonly serverKeys?: { readonly openai?: string };
   /** What to seed; the plan cards and a finished scan by default. */
@@ -82,10 +89,11 @@ export async function createSuggestOptionsHarness(
     cards: new FileRunCards(files),
     scans: new FixedScans([areaOf('Orders', 1000)]),
     providers: factory.factory,
-    unrecorded: factory.sinks,
+    callSinks: options.callSinks ?? (() => factory.sinks),
     catalogue: () => loadCatalogue(promptsFolder),
     prompt: () => loadPlanOptionsPrompt(promptsFolder),
     signals: { after: () => new AbortController().signal },
   });
-  return { suggest, factory, account, actor: actorOf(account), project };
+  const stores = { files, briefs, runs };
+  return { suggest, factory, account, actor: actorOf(account), project, stores };
 }
