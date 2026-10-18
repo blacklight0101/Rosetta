@@ -203,10 +203,10 @@ describe('BuildPlan: the documentation set', () => {
       'decisions/ADR-001.md',
     ]);
     expect(links.slice(-7)).toEqual([
-      'roadmap.md',
       'tasks.md',
       'risks.md',
       'open-questions.md',
+      'checks.md',
       'sources.md',
       'fixtures.md',
       'conventions.md',

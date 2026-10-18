@@ -56,7 +56,7 @@ describe('assemblePlan', () => {
         requirements: ['REQ-001', 'REQ-002'],
         acceptanceCriteria: [scenario],
         ...{ invariant, riskClass: 'none', adds: [], probes: [] },
-        ...{ files: [], identifiers: [], dependsOn: [] },
+        ...{ files: [], identifiers: [], dependsOn: [], builds: [] },
       },
     ]);
   });

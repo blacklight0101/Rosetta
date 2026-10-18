@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { filesOf, readZip } from '../support/zip-reader.js';
 import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { openRunTab, runStatus } from './support/live-run-page.js';
@@ -7,7 +9,7 @@ import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
 import { transitionsDone } from './support/transitions.js';
 
-// RF-504, RF-506, DEC-131, RNF-010, P1-97: the report is built from the page of a finished recorded
+// RF-504, RF-505, RF-506, DEC-131, RNF-010, P1-97: the report is built from the page of a finished recorded
 // run (seed-replay.ts), the way the owner does it: open the run, press Build report, follow the
 // links. The server writes the real files; nothing of our own API is replaced.
 
@@ -80,4 +82,26 @@ test('RF-507 RF-1002 the hostile card of a recorded run is text on the page of t
   await expect(page.locator('body')).toContainText(hostileTexts.svg);
   await expectNothingInjected(page, dialogs);
   await expectNoSeriousViolations(page);
+});
+
+test('RF-505 the report the application serves offers Download all, and the zip of the run unzips', async ({
+  page,
+}, info) => {
+  await page.goto(runPage(info.project.name));
+  await page.getByRole('button', { name: 'Build report' }).click();
+  await page.getByRole('link', { name: 'Open the report', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Run report', level: 1 })).toBeVisible();
+  // The replay run has no hand-off package, so the zip of the run is the only download.
+  await expect(page.getByRole('link', { name: /hand-off package/u })).toHaveCount(0);
+  const waiting = page.waitForEvent('download');
+
+  await page.getByRole('link', { name: 'Download all: the run as a zip' }).click();
+
+  const download = await waiting;
+  expect(download.suggestedFilename()).toMatch(/\.zip$/u);
+  const files = filesOf(await readZip(await readFile(await download.path())));
+  const names = Object.keys(files);
+  expect(names.some((name) => name.endsWith('/manifest.json'))).toBe(true);
+  expect(names.some((name) => name.endsWith('/report/report.html'))).toBe(true);
+  expect(names.filter((name) => name.endsWith('.zip'))).toEqual([]);
 });

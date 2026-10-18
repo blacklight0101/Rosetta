@@ -10,11 +10,13 @@ import { BuildReport } from '../application/use-cases/build-report.js';
 import { FileReportCards } from '../infrastructure/cards/file-report-cards.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
+import { YazlArchiveWriter } from '../infrastructure/files/yazl-archive-writer.js';
 import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
 import { NodeRunFileReader } from '../infrastructure/files/node-run-file-reader.js';
 import type { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { FileReportWriter } from '../infrastructure/report/file-report-writer.js';
+import { ReportZipWriter } from '../infrastructure/report/report-zip-writer.js';
 
 // Architecture section 2 (composition root), RF-500, RF-504, RF-1010: the Build report use case over
 // the run folder, the answers file and the ledger.
@@ -47,5 +49,6 @@ export function composeBuildReport(parts: ReportParts): BuildReport {
     cards: new FileReportCards(new NodeRunFileReader(parts.dataDir)),
     costs: new PgCostTotals(pool),
     writer: new FileReportWriter({ writer, masker, assetsFolder: reportTemplates }),
+    downloads: new ReportZipWriter(parts.dataDir, new YazlArchiveWriter(parts.dataDir)),
   });
 }

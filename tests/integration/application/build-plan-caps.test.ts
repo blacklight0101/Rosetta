@@ -53,26 +53,35 @@ async function assertNothingSent(h: PlanHarness, endState: string): Promise<void
 }
 
 describe('plan estimate against the budget guard', () => {
-  it('RF-613 the estimate shows the three planner calls the guard then meters, high being their worst cases plus the continuations each may earn', async () => {
+  it('RF-613 RF-627 the estimate shows the four planner calls the guard then meters, high being their worst cases plus the continuations each may earn', async () => {
     const h = await seededHarness();
 
     const estimate = await h.estimate();
     const run = await h.plan({ cloudConsent: true });
 
     expect(run.endState).toBe('Completed');
-    expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
+    // RF-627: with the coverage call the worst case of all four calls together passes the run cost
+    // cap of 0.5 USD; the guard meters each call as it comes, so the run itself still fits.
+    expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: false });
     const reservations = h.providers.ledger.reservations.map((each) => each.reservation);
     const { high } = estimate.planner.points;
-    expect(reservations.map((each) => each.role)).toEqual(['planner', 'planner', 'planner']);
+    expect(reservations.map((each) => each.role)).toEqual([
+      'planner',
+      'planner',
+      'planner',
+      'planner',
+    ]);
     const sum = (pick: (worst: (typeof reservations)[number]['worstCase']) => bigint): bigint =>
       reservations.reduce((total, each) => total + pick(each.worstCase), 0n);
     expect(sum((worst) => worst.micros)).toBeLessThan(high.costMicros);
     expect(sum((worst) => worst.tokens)).toBeLessThan(BigInt(high.inputTokens + high.outputTokens));
     const spent = h.providers.ledger.entries.reduce((total, each) => total + each.costMicros, 0n);
     expect(spent).toBeLessThanOrEqual(high.costMicros);
-    expect(h.providers.ledger.entries).toHaveLength(3);
+    expect(h.providers.ledger.entries).toHaveLength(4);
   });
+});
 
+describe('plan estimate against the caps', () => {
   it('RF-613 a run cap the high figure does not fit is shown, and the guard refuses the call', async () => {
     const h = await seededHarness(cappedRun(1000));
 
