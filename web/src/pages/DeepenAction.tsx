@@ -102,7 +102,8 @@ function Choices(props: { readonly runId: string }): JSX.Element {
     if (deepen.error !== undefined) setAsking(false);
   }, [deepen.error]);
   const cloud = load.status === 'ready' ? cloudRoles(load.estimate) : [];
-  const refused = deepen.error?.code === consentCode ? deepen.error : undefined;
+  // The refusal of the consent shows at the checkbox when the notice is there, else as a banner.
+  const refused = cloud.length > 0 && deepen.error?.code === consentCode ? deepen.error : undefined;
   const reason = reasonOf(load, deepen.consent);
   return (
     <>
