@@ -35,7 +35,7 @@ export interface DeepenStart {
   readonly actor?: Actor;
 }
 
-function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
+export function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
   return async (run) => {
     let latest: Run | undefined;
     await vi.waitFor(
