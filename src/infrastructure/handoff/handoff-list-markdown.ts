@@ -171,6 +171,7 @@ function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     [`[Task cards](${handoffFiles.tasks})`],
     [`[Risks](${handoffFiles.risks})`],
     [`[Open questions](${handoffFiles.openQuestions})`],
+    [`[Package checks](${handoffFiles.checks})`],
     [`[Source cards](${handoffFiles.sources})`],
     [`[Realistic data shapes](${handoffFiles.fixtures})`],
     [`[Conventions](${handoffFiles.conventions})`],

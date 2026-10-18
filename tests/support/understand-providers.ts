@@ -49,6 +49,8 @@ const noCalls: Recording = { schemaVersion: 1, description: 'no verifier calls',
 class HookedProvider implements LlmProvider {
   readonly fake: FakeProvider;
   readonly verifier: FakeProvider;
+  /** RF-627: the planner's coverage call replays a recording of its own, whichever calls came before. */
+  readonly coverage: FakeProvider;
   private readonly before: BeforeCall | undefined;
   private readonly decorate: DecorateAnswer | undefined;
   private calls = 0;
@@ -56,13 +58,18 @@ class HookedProvider implements LlmProvider {
   private readonly beforeVerifier: BeforeCall | undefined;
 
   constructor(
-    recordings: { readonly reader: Recording; readonly verifier: Recording | undefined },
+    recordings: {
+      readonly reader: Recording;
+      readonly verifier: Recording | undefined;
+      readonly coverage: Recording | undefined;
+    },
     before: BeforeCall | undefined,
     decorate: DecorateAnswer | undefined,
     beforeVerifier?: BeforeCall,
   ) {
     this.fake = new FakeProvider({ testMode: true, recording: recordings.reader });
     this.verifier = new FakeProvider({ testMode: true, recording: recordings.verifier ?? noCalls });
+    this.coverage = new FakeProvider({ testMode: true, recording: recordings.coverage ?? noCalls });
     this.before = before;
     this.decorate = decorate;
     this.beforeVerifier = beforeVerifier;
@@ -73,6 +80,9 @@ class HookedProvider implements LlmProvider {
       this.verifierCalls += 1;
       await this.beforeVerifier?.(this.verifierCalls, request.signal);
       return this.verifier.complete(request, observer);
+    }
+    if (request.context.agentTaskId === 'planner-coverage') {
+      return this.coverage.complete(request, observer);
     }
     this.calls += 1;
     await this.before?.(this.calls, request.signal);
@@ -88,6 +98,8 @@ export interface UnderstandProviders {
   readonly requests: () => readonly LlmRequest[];
   /** The requests of the `verifier` role, in order (RF-301). */
   readonly verifierRequests: () => readonly LlmRequest[];
+  /** The requests of the planner's coverage call (RF-627), kept apart from the others. */
+  readonly coverageRequests: () => readonly LlmRequest[];
   readonly runSinks: (scope: RunScope) => Pick<ProviderSinks, 'recorder' | 'egressLog'>;
 }
 
@@ -100,6 +112,8 @@ export interface UnderstandProviderParts {
   readonly recording: Recording;
   /** What the `verifier` role answers (RF-301); without it every verifier call fails. */
   readonly verifierRecording?: Recording;
+  /** RF-627: what the planner answers to the coverage call (the links of the task cards). */
+  readonly coverageRecording?: Recording;
   readonly beforeCall?: BeforeCall;
   /** Runs before each `verifier` call, counted from 1 (the judgement step). */
   readonly beforeVerifierCall?: BeforeCall;
@@ -114,11 +128,19 @@ export interface UnderstandProviderParts {
   readonly ownAnthropicKey?: { readonly userId: string; readonly key: string };
 }
 
+/** The recordings the fake replays, one per kind of call. */
+function recordingsOf(parts: UnderstandProviderParts) {
+  return {
+    reader: parts.recording,
+    verifier: parts.verifierRecording,
+    coverage: parts.coverageRecording,
+  };
+}
+
 export function understandProviders(parts: UnderstandProviderParts): UnderstandProviders {
   const { dataDir, writer, masker, clock, logger } = parts;
-  const recordings = { reader: parts.recording, verifier: parts.verifierRecording };
   const hooks = [parts.beforeCall, parts.decorateAnswer, parts.beforeVerifierCall] as const;
-  const adapter = new HookedProvider(recordings, ...hooks);
+  const adapter = new HookedProvider(recordingsOf(parts), ...hooks);
   const ledger = new SpyLedger(new MemoryCostLedger());
   const keys = new MemoryProviderKeyRepository();
   const box = new AesGcmSecretBox({ current: fixtureSecret(3) });
@@ -154,6 +176,7 @@ export function understandProviders(parts: UnderstandProviderParts): UnderstandP
     ledger,
     requests: () => adapter.fake.requests,
     verifierRequests: () => adapter.verifier.requests,
+    coverageRequests: () => adapter.coverage.requests,
     runSinks: (scope) => ({
       recorder: new JsonlProviderCallLog({
         runDir: join(dataDir, 'users', scope.userId, runPath(scope.projectId, scope.runKey)),

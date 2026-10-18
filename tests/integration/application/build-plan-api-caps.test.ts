@@ -23,7 +23,7 @@ function priced(folder: string, change?: (settings: ProjectSettings) => ProjectS
 }
 
 describe('plan estimate with an API contract', () => {
-  it('RF-613 RF-624 shows five planner calls, high covering the sum of their worst cases', async () => {
+  it('RF-613 RF-624 RF-627 shows six planner calls (the coverage call last), high covering the sum of their worst cases', async () => {
     const h = await priced('four');
 
     const estimate = await h.estimate();
@@ -32,7 +32,7 @@ describe('plan estimate with an API contract', () => {
     expect(run.endState).toBe('Completed');
     const reservations = h.providers.ledger.reservations.map((each) => each.reservation);
     const { high } = estimate.planner.points;
-    expect(reservations).toHaveLength(5);
+    expect(reservations).toHaveLength(6);
     const sum = (pick: (worst: (typeof reservations)[number]['worstCase']) => bigint): bigint =>
       reservations.reduce((total, each) => total + pick(each.worstCase), 0n);
     // The flows call's components block is sized at the plan answer's limits (flows-estimate.ts), so the
@@ -41,7 +41,7 @@ describe('plan estimate with an API contract', () => {
     expect(BigInt(high.inputTokens + high.outputTokens)).toBeGreaterThanOrEqual(
       sum((worst) => worst.tokens),
     );
-    expect(estimate.assumptions.calls).toBe(5);
+    expect(estimate.assumptions.calls).toBe(6);
   });
 });
 
