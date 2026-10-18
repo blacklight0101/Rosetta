@@ -2,6 +2,7 @@ import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, type Result } from '../../domain/errors/result.js';
 import type { RunStage } from '../../domain/runs/run-states.js';
+import type { AgentRole } from '../ports/llm-provider.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { Project } from '../projects/project.js';
 import { rolesNeedCloudConsent, understandOptionsOf } from '../understand/understand-options.js';
@@ -14,7 +15,7 @@ import type { SubmitRun, SubmittedRun } from './submit-run.js';
 // would send code off this machine and the request has no consent, it is refused (RST-1515)
 // before any run exists, so nothing can be sent (RF-143).
 
-/** The stages that can be started through the API: `scan` (P1-23) and `understand` (P1-33). */
+/** The stages that can be started through the API: `scan` (P1-23), `understand` (P1-33) and `plan` (P3-08). */
 const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand', 'plan'];
 
 export interface StartRunDependencies {
@@ -55,9 +56,25 @@ export class StartRun {
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (!STARTABLE_STAGES.includes(stage)) return err(ERROR_CODES.runStageNotAvailable);
     if (stage === 'understand') return this.understand(request, project);
+    if (stage === 'plan') return this.plan(request, project);
     // The scan settings of this moment are the run's: an edit while it waits does not change it.
     const options = { scanSettings: project.settings.scan };
     return this.deps.submit.execute({ actor, project, stage, options });
+  }
+
+  // RF-143, RF-604: a plan run calls the planner only, so only the planner needs the consent; the
+  // brief and the source run are read by the run itself (RST-1801, RST-1802).
+  private async plan(
+    request: StartRunRequest,
+    project: Project,
+  ): Promise<Result<SubmittedRun, StartRunProblem>> {
+    const cloudConsent = request.cloudConsent === true;
+    const roles: readonly AgentRole[] = ['planner'];
+    if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost, roles)) {
+      return err(ERROR_CODES.cloudConsentMissing);
+    }
+    const { actor } = request;
+    return this.deps.submit.execute({ actor, project, stage: 'plan', options: { cloudConsent } });
   }
 
   // RF-143, RF-200
