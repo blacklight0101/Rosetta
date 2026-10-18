@@ -24,6 +24,8 @@ interface Setup {
   readonly role?: 'admin' | 'user';
   /** The projects the user can open, by id; any other id answers 404. */
   readonly projects?: Readonly<Record<string, string>>;
+  /** Holds back the answer to a project call until this promise is settled. */
+  readonly hold?: Promise<undefined>;
   /** What every other call answers, 404 by default. */
   readonly otherwise?: number;
 }
@@ -43,7 +45,7 @@ function appAt(path: string, setup: Setup = {}) {
     const id = projectIdOf(url);
     const name = id === undefined ? undefined : setup.projects?.[id];
     if (id !== undefined && name !== undefined) {
-      return Promise.resolve(json(200, projectOf(id, name)));
+      return (setup.hold ?? Promise.resolve()).then(() => json(200, projectOf(id, name)));
     }
     const status = setup.otherwise ?? 404;
     return Promise.resolve(failure(status, status === 404 ? 'RST-2003' : 'RST-2006'));
@@ -66,6 +68,7 @@ afterEach(() => {
 
 it('P1-175 names the project in its heading inside a project and links its pages', async () => {
   appAt('/projects/p-7/history', { projects: { 'p-7': 'octo/demo' } });
+  await screen.findByTestId('nav-group-project');
 
   expect(await projectGroup().findByText('Project: octo/demo')).not.toBeNull();
   expect(
@@ -78,6 +81,7 @@ it('P1-175 names the project in its heading inside a project and links its pages
 
 it('P1-175 marks the current page with aria-current in the project group and in the main group', async () => {
   appAt('/projects/p-7/history', { projects: { 'p-7': 'octo/demo' } });
+  await screen.findByTestId('nav-group-project');
   await projectGroup().findByText('Project: octo/demo');
 
   expect(projectGroup().getByRole('link', { name: 'History' }).getAttribute('aria-current')).toBe(
@@ -95,6 +99,7 @@ it('P1-175 marks the current page with aria-current in the project group and in 
 
 it('P1-175 keeps the last opened project in the group on a page outside a project', async () => {
   appAt('/projects/p-7/start', { projects: { 'p-7': 'octo/demo' }, role: 'admin' });
+  await screen.findByTestId('nav-group-project');
   await projectGroup().findByText('Project: octo/demo');
   const before = groupIds();
 
@@ -118,6 +123,7 @@ it('P1-175 uses a project kept from an earlier page of the session', async () =>
   rememberProject('p-3');
 
   appAt('/projects', { projects: { 'p-3': 'octo/kept' } });
+  await screen.findByTestId('nav-group-project');
 
   expect(await projectGroup().findByText('Project: octo/kept')).not.toBeNull();
   expect(projectGroup().getByRole('link', { name: 'History' }).getAttribute('href')).toBe(
@@ -127,6 +133,7 @@ it('P1-175 uses a project kept from an earlier page of the session', async () =>
 
 it('P1-175 offers a line and no link when no project was opened', async () => {
   appAt('/projects');
+  await screen.findByTestId('nav-group-project');
 
   expect(await projectGroup().findByText('Open a project to see its pages')).not.toBeNull();
   expect(projectGroup().queryAllByRole('link')).toHaveLength(0);
@@ -137,6 +144,7 @@ it('P1-175 gives no link to a kept project the user can no longer open', async (
   rememberProject('p-gone');
 
   appAt('/settings', { projects: { 'p-7': 'octo/demo' } });
+  await screen.findByTestId('nav-group-project');
 
   expect(await projectGroup().findByText('Open a project to see its pages')).not.toBeNull();
   expect(projectGroup().queryAllByRole('link')).toHaveLength(0);
@@ -145,14 +153,21 @@ it('P1-175 gives no link to a kept project the user can no longer open', async (
 
 it('P1-175 shows no project link before the kept project is confirmed', async () => {
   rememberProject('p-3');
-  appAt('/settings', { projects: { 'p-3': 'octo/kept' } });
+  const { promise, resolve } = Promise.withResolvers<undefined>();
+  appAt('/settings', { projects: { 'p-3': 'octo/kept' }, hold: promise });
+  await screen.findByTestId('nav-group-project');
 
   expect(projectGroup().queryAllByRole('link')).toHaveLength(0);
-  await projectGroup().findByText('Project: octo/kept');
+  expect(projectGroup().queryByText('Open a project to see its pages')).toBeNull();
+
+  resolve(undefined);
+  expect(await projectGroup().findByText('Project: octo/kept')).not.toBeNull();
+  expect(projectGroup().getAllByRole('link')).toHaveLength(5);
 });
 
 it('P1-175 gives no link to a project of the address that the user cannot open', async () => {
   appAt('/projects/p-other/start', { projects: {} });
+  await screen.findByTestId('nav-group-project');
 
   await waitFor(() => {
     expect(projectGroup().queryAllByRole('link')).toHaveLength(0);
@@ -164,6 +179,7 @@ it('P1-175 keeps a kept project when the check fails for another reason than 404
   rememberProject('p-3');
 
   appAt('/settings', { otherwise: 500 });
+  await screen.findByTestId('nav-group-project');
 
   expect(await projectGroup().findByText('Open a project to see its pages')).not.toBeNull();
   expect(rememberedProject()).toBe('p-3');
@@ -183,6 +199,7 @@ it.each(['/projects', '/projects/p-7/start', '/settings', '/runs/r-1'])(
 it('P1-175 gives the long project name its full text on hover and for screen readers', async () => {
   const name = `${'o'.repeat(60)}/${'r'.repeat(80)}`;
   appAt('/projects/p-7/start', { projects: { 'p-7': name } });
+  await screen.findByTestId('nav-group-project');
 
   const heading = await projectGroup().findByText(`Project: ${name}`);
 
@@ -192,6 +209,7 @@ it('P1-175 gives the long project name its full text on hover and for screen rea
 
 it('P1-175 moves between the pages without changing the groups', async () => {
   appAt('/projects', { projects: { 'p-7': 'octo/demo' }, role: 'admin' });
+  await screen.findByTestId('nav-group-project');
   await screen.findByTestId('nav-group-admin');
   const seen: string[][] = [];
   for (const path of ['/projects/p-7/cost', '/admin/users', '/settings']) {

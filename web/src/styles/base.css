@@ -138,6 +138,20 @@ select {
   color: var(--rst-ink-muted);
 }
 
+/* The project heading names owner/repo, which can be long: one line, cut with an ellipsis (the full
+   text is in the markup and in the title); a link wraps rather than widen the column. */
+.rst-nav__group[data-testid='nav-group-project'] .rst-nav__heading {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rst-nav__note {
+  margin: 0 var(--rst-sp-3);
+  font-size: var(--rst-fs-sm);
+  color: var(--rst-ink-muted);
+}
+
 .rst-root .rst-nav__link {
   display: flex;
   align-items: center;

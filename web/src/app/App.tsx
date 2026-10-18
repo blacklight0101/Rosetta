@@ -13,6 +13,7 @@ import { SignedInShell } from './SignedInShell.js';
 import type { RouteDefinition } from './route-types.js';
 import { useLocation } from './router.js';
 import { SessionContext } from './session-context.js';
+import { useNavProject } from './use-nav-project.js';
 import { useSession } from './use-session.js';
 import { useTheme } from './use-theme.js';
 
@@ -54,6 +55,7 @@ function SignedInPage(props: SignedInProps): JSX.Element {
     assign(signInPath);
   }, [assign]);
   const state = useSession(client, goToSignIn);
+  const project = useNavProject(client, match.params['projectId']);
   if (state.status === 'loading') {
     return (
       <p class="rst-loading" role="status">
@@ -78,7 +80,7 @@ function SignedInPage(props: SignedInProps): JSX.Element {
     routes,
     role: user.role,
     path: location,
-    project: { status: 'none' },
+    project,
   });
   return (
     <SessionContext.Provider value={user}>
