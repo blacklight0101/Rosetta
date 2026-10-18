@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { PlanDraft } from '../../domain/planning/plan-draft.js';
+import { identifierKinds } from '../../domain/planning/parallel-cards.js';
 import { guardKinds, riskClasses } from '../../domain/planning/task-card-quality.js';
 import { cardLimits } from '../cards/card-limits.js';
 import { searchJson } from '../cards/extract-json.js';
@@ -14,6 +15,7 @@ const MAX_ITEMS = 200;
 const MAX_LIST = 50;
 const TITLE = 200;
 const TEXT = 2000;
+const PATH = 500;
 
 const title = z.string().trim().min(1).max(TITLE);
 const text = z.string().trim().min(1).max(TEXT);
@@ -21,6 +23,9 @@ const optionalText = z.string().trim().max(TEXT).default('');
 const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
 const texts = z.array(text).max(MAX_LIST);
 const position = z.number().int().min(1).max(MAX_ITEMS);
+const path = z.string().trim().min(1).max(PATH);
+// RF-634: a need of a kind that does not exist is left out; it never makes the answer unusable.
+const need = z.object({ kind: z.enum(identifierKinds), purpose: title });
 
 const decision = position.nullable().default(null);
 
@@ -96,16 +101,13 @@ const answer = z.object({
         riskClass: z.enum(riskClasses).optional().catch(undefined),
         adds: z.array(z.enum(guardKinds)).max(guardKinds.length).default([]),
         probes: texts.default([]),
-        // stub until the parallel-safe fields are read (RF-634)
-        files: z
-          .array(z.string())
-          .transform((): string[] => [])
+        files: z.array(path).max(MAX_LIST).default([]),
+        needs: z
+          .array(need.nullable().catch(null))
+          .max(MAX_LIST)
+          .transform((list) => list.flatMap((each) => (each === null ? [] : [each])))
           .default([]),
-        needs: z.array(z.never()).default([]),
-        dependsOn: z
-          .array(position)
-          .transform((): number[] => [])
-          .default([]),
+        dependsOn: z.array(position).max(MAX_LIST).default([]),
       }),
     )
     .max(MAX_ITEMS)
