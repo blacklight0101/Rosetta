@@ -5,6 +5,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { cloudRoles } from '../lib/estimate-math.js';
+import type { DeepenEstimate } from '../api/understanding.js';
 import { allRoundsText, firstRoundText } from '../lib/understanding/deepen-estimate-text.js';
 import { CloudNotice } from './CloudNotice.js';
 import { DeepenEstimateView } from './DeepenEstimateView.js';
@@ -42,13 +43,11 @@ function reasonOf(load: DeepenEstimateLoad, consent: boolean): string | undefine
 }
 
 function Question(props: {
-  readonly load: DeepenEstimateLoad;
+  readonly estimate: DeepenEstimate;
   readonly busy: boolean;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
-}): JSX.Element | null {
-  const { load } = props;
-  if (load.status !== 'ready') return null;
+}): JSX.Element {
   return (
     <ConfirmDialog
       title="Start this Deepen?"
@@ -58,8 +57,8 @@ function Question(props: {
       onConfirm={props.onConfirm}
       onCancel={props.onCancel}
     >
-      <p>{firstRoundText(load.estimate)}</p>
-      <p>{allRoundsText(load.estimate)}</p>
+      <p>{firstRoundText(props.estimate)}</p>
+      <p>{allRoundsText(props.estimate)}</p>
     </ConfirmDialog>
   );
 }
@@ -129,9 +128,9 @@ function Choices(props: { readonly runId: string }): JSX.Element {
       >
         Start Deepen
       </Button>
-      {asking ? (
+      {asking && load.status === 'ready' ? (
         <Question
-          load={load}
+          estimate={load.estimate}
           busy={deepen.busy}
           onConfirm={deepen.start}
           onCancel={() => {

@@ -6,7 +6,7 @@ import type { MeasureFigures } from '../../api/understanding.js';
 // third-party and generated code, which is apart and in no percentage. The page never says
 // "complete" or "fully understood" and reports no percentage by claim. It says "well covered" only
 // when at least 80% of the first-party tokens were read and no claim is left unjudged (Q-K); it
-// works that out from the numbers, never from a flag alone, and a percentage is cut down, never
+// works that out from the numbers, whatever a flag says, and a percentage is cut down, never
 // rounded up, so 79.96% never reads as 80%.
 
 /** The measures of a run or of one side of a Deepen: the files not read are only counted here. */
@@ -45,9 +45,7 @@ const plural = (count: number, word: string): string =>
 /** RF-231, Q-K. */
 function isWellCovered(measures: MeasureSet): boolean {
   const share = measures.firstPartyCoverage;
-  return measures.wellCovered && share !== null && share >= WELL_COVERED_SHARE
-    ? measures.notJudged === 0
-    : false;
+  return share !== null && share >= WELL_COVERED_SHARE && measures.notJudged === 0;
 }
 
 // RF-231
