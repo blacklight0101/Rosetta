@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 172     | 64        | 90         | 18        | 0                  | 99      | 65      | 8      | 111        | 0         |
+| P1 Milestone slice (M1) | 173     | 64        | 91         | 18        | 0                  | 100     | 65      | 8      | 112        | 0         |
 | P2 Full understand      | 40      | 7         | 27         | 6         | 0                  | 13      | 26      | 1      | 20         | 0         |
 | P3 Report and plan      | 26      | 2         | 22         | 2         | 0                  | 3       | 21      | 2      | 1          | 0         |
-| **Total**               | **238** | **73**    | **139**    | **26**    | **0**              | **115** | **112** | **11** | **132**    | **0**     |
+| **Total**               | **239** | **73**    | **140**    | **26**    | **0**              | **116** | **112** | **11** | **133**    | **0**     |
 
 ## Conventions for every card
 
@@ -785,7 +785,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: M
 - **Depends on**: P1-45, P1-48
 - **Gate**: G-07, G-08 (DEC-133)
-- **Status**: Blocked (G-07)
+- **Status**: In progress
 - **Reads**: `docs/environments-and-delivery.md` sections 2, 3, 8, 10-12 and 14; the host ADR of P1-48; `docs/security/threat-model.md` section 5.
 - **Do**: the release workflow `.github/workflows/release.yml` (image to GHCR as `X.Y.Z` and `sha-<short>`, CycloneDX SBOM on releases); deploy the `sha-<short>` image of `main` to the chosen host (DEC-104) with managed PostgreSQL, the persistent disk at `ROSETTA_DATA_DIR`, every secret in the host's store, `ROSETTA_TRUST_PROXY=1`, HTTPS with HTTP redirected; the OWASP ZAP baseline scan against the Compose stack before the deploy; the smoke script (health, landing, sign-in, a cheap scan); measure RNF-017 once; `docs/runbooks/deploy.md` (deploy, rollback, backup, restore, roles in the host's console, teacher account); the owner creates the `teacher` account without a forced password change (RF-1107) and sets `defaultRoles` (DEC-106); redeploy as later P1 cards merge.
 - **Delivers**: the release workflow, the smoke script, the runbook, the ZAP report summary, the hosted URL recorded in `handoff.md`.
@@ -811,7 +811,7 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: P1-01
 - **Gate**: none
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: `.prettierignore`; `docs/conventions.md` section 8.
 - **Do**: run Prettier on every Markdown, `.github/` and `.claude/` file and narrow `.prettierignore` to nothing but generated files, so the format gate covers documentation (conventions section 8); the pull request is `needs-owner` because it reformats protected documents.
 - **Delivers**: the formatted files and the narrowed `.prettierignore`.
@@ -2325,6 +2325,19 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Done when**: every RF-1018 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-1001, RF-1018, RF-427, RNF-010, DEC-138.
 
+### P1-173 - Follow-up: run overview wording and coverage list after a chosen-area run
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `src/domain/overview/thin-run.ts`; the run page overview and its "What was not covered" list; `src/presentation/web/default-role-routes.ts` and the Default models page; the G-08 re-test of 2026-10-18 (a real understand on eShopModernizing with Ollama, 2 of 42 areas: 13 cards, 17/17 citations).
+- **Do**: (1) the thin-run banner: when the owner chose some areas, and the cards that passed are enough to describe those areas, the banner does not say "This run cannot explain the application yet. Most areas ... hold third-party code". It says how many areas were read out of how many the scan found, and that reading more areas gives a fuller picture. Keep today's wording for a run that really has too few cards, and keep the third-party reason when that is the actual cause. (2) "What was not covered" groups its lines by reason ("not selected for this run", "third-party code", "its reader could not finish"), with a count per group. Long groups are collapsed behind a disclosure that lists the areas. It stays accessible: keyboard operable, axe clean, and readable at 360 px. (3) Default models: when no admin default is set (`GET /api/admin/default-roles` answers `{roles:{}}`), the page and the API say that the built-in defaults apply and name them, so an empty default is not misread as "no model".
+- **Delivers**: domain and web changes, unit tests, an e2e or visual check of the grouped list.
+- **Done when**: a fixture run with 2 of 42 areas read and 13 passing cards shows the "N of M areas read" banner and a grouped coverage list; a thin run still shows the existing banner; the Default models page names the built-in defaults when none are set; `npm run verify` green.
+- **Refs**: RF-208, RF-240 and the overview requirements (the builder checks the right RF numbers against docs/spec), G-08 re-test 2026-10-18.
+
 ---
 
 ## Phase 2 - Full understand
@@ -2480,7 +2493,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P1-55
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In progress
 - **Reads**: `docs/environments-and-delivery.md` section 12; `docs/runbooks/deploy.md`.
 - **Do**: daily database backups kept 7 days (host or scheduled `pg_dump`), weekly data-folder copy, a restore drill into the local Compose stack recorded in the runbook.
 - **Delivers**: the backup configuration or script and the runbook section.
@@ -2493,7 +2506,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-01, P2-03, P2-04, P2-05, P2-06, P2-08
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `docs/process-flows.md` flows 2-4.
 - **Do**: journeys: understand every area with both verifier steps, a cap stop and resume, answer questions and re-run, consolidation visible in the specification.
 - **Delivers**: journey specs.
@@ -2861,7 +2874,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: L
 - **Depends on**: P1-43, P2-03
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/Report.dc.html`; `docs/data-model.md` section 3.17; ADR index deferred decision "Report rendering approach".
 - **Do**: a Proposed ADR for the rendering approach (Preact components rendered to static HTML at build time, DEC-52) as the first commit (the pull request is `needs-owner`); `BuildReport` writing a static site: dashboard (cards by type, claims by status, coverage, cost, project totals at generation time), the open questions and the cost report, every page carrying the meta CSP of RF-1013.
 - **Delivers**: the ADR, the site writer, the dashboard; snapshot tests.
@@ -2874,7 +2887,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-01
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: `docs/design/board/Report.dc.html`.
 - **Do**: a page per area and per card; each citation shows the cited lines with context, line numbers, the claim status and reason, and the permalink.
 - **Delivers**: the pages; snapshot tests.
@@ -2952,7 +2965,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-07, P3-09, P3-11
 - **Gate**: G-02
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/PlanSetup.dc.html`; `docs/design-system.md` section 14.
 - **Do**: `/projects/:id/plan-setup` as the approved artboard: steps principles, architecture, migration, stack, project context and build method; each question with its default, reason and "(Recommended)" option; catalogue toggles; "What I recorded" summary; the plan estimate (P3-11) and Write the package.
 - **Delivers**: the page; E2E specs with the fake provider.
@@ -2978,7 +2991,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-018-planning-brief-and-principle-catalogue.md`.
 - **Do**: each chosen principle as conventions rules and task-card checks (TDD lists the tests first, SDD names requirement ids, SOLID and KISS in review checklists); the style ADR and a target architecture following it; an ADR per stack layer; the migration strategy ordering the roadmap with its ADR; project context shaping phases and sizes; the AI-assisted build method (AGENTS.md, rated cards, plan before build, human review).
 - **Delivers**: the writers; structure tests.
@@ -2991,7 +3004,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/adr/ADR-007-cost-control.md`.
 - **Do**: the `planner` estimate against the user's caps on Plan setup; every planner call through the guards.
 - **Delivers**: the estimator extension and route; integration tests.
@@ -3043,7 +3056,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-09
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: ADR-018; RF-601..RF-604; the planner (P3-09).
 - **Do**: extend the package README reading order with the documentation set (RF-620); write `prd.md` from the brief and the verified cards (problem and goal, users and roles, features with MoSCoW and `FEAT` links, rules to keep with `BR` links, out of scope, non-functional expectations, success measures); sections the code cannot answer get a marked placeholder and an open question with its default; prompts versioned, recordings.
 - **Delivers**: writers, prompts, recordings, structure tests.
@@ -3056,7 +3069,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-10, P2-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-608..RF-610; the package ADR writers (P3-10).
 - **Do**: write `trd.md`: architecture overview with a generated Mermaid component diagram, stack per layer, integrations to keep or replace with `INT` links, security and data protection, non-functional targets, deployment and environments, migration approach; each section links the ADR that decided it.
 - **Delivers**: writer, prompt changes, recordings, structure tests.
@@ -3069,7 +3082,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-09, P2-22
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-262, RF-609, RF-623; the entity mapping written by P3-09.
 - **Do**: write the package `data-model.md`: each target table with columns, types in the chosen database, keys, constraints and indexes, the legacy source of each column or "new", dropped legacy fields with reasons, type changes that can lose data as migration risks, and a generated ER diagram; no executable DDL (RF-603); the entity mapping of RF-601 links it.
 - **Delivers**: writer, prompts, recordings, structure and snapshot tests.
@@ -3082,7 +3095,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-17
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-624; the target data model (P3-17); `package.json` dependency rules (DEC-125).
 - **Do**: when the chosen front end is separate from the back end, write `api/openapi.yaml` (OpenAPI 3.1, Q-28) covering every operation the target features and flows need, schemas from the target data model, errors and authentication, each operation naming its `FEAT` or `FLOW` card; otherwise the README says no contract applies and why; a dev-only OpenAPI schema validator checks the file in tests.
 - **Delivers**: writer, prompts, recordings, validation test.
@@ -3095,7 +3108,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-16, P2-20
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-625; the TRD components (P3-16).
 - **Do**: write `flows/` with one file per main journey (Q-27): steps mapped to target components and a generated sequence diagram, each linking its legacy `FLOW` card; journeys outside the brief listed as out of scope.
 - **Delivers**: writer, prompts, recordings, structure tests.
@@ -3147,7 +3160,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-09, P3-10
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-601, RF-612, RF-630, RF-633, RF-635; the task-card writer (P3-09); the build-method writer (P3-10); `docs/orchestration/tasks.md` of this repository as a worked example.
 - **Do**: the card template of the package gains an invariant, Given/When/Then Done-when with concrete inputs, a "review probes" list for cards that add a check, filter, limit or parser, and a risk class next to the difficulty; the build method states the guard-test rule with the mutation check and the tier rule for risky cards; prompts versioned, recordings.
 - **Delivers**: template, writers, prompts, recordings, structure tests.
@@ -3160,7 +3173,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-23, P2-22
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-631, RF-632; the code map and scan statistics; the `FEAT`, `BR`, `FLOW` and `SCRN` cards.
 - **Do**: each card that touches a covered item lists the behaviours to keep with their citations and an approval test for each; the open-questions writer refuses a default that changes legacy behaviour; `fixtures.md` is generated by code from the scan (largest files, size by kind, deepest paths, unusual names, encodings, line endings) and linked from limit and parser cards.
 - **Delivers**: writers, a generator for `fixtures.md`, structure and snapshot tests.
@@ -3173,7 +3186,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-23
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-612, RF-634, RF-636; the roadmap writer.
 - **Do**: each card lists expected files and the shared identifiers it needs, allocated by the plan per card or from one registry; overlapping cards are ordered, never in one parallel group; the roadmap lists parallel groups; `AGENTS.md` gains the operations section of RF-636.
 - **Delivers**: allocator, overlap check, writers, tests.
@@ -3186,7 +3199,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-23, P3-05
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-606, RF-637, RF-638; the principle catalogue files (P3-05).
 - **Do**: each open question lists the cards it blocks and the roadmap marks them waiting; the build method names the measures of RF-638; the "AI-assisted build" group of the principle catalogue gains entries for the lessons of DEC-135 (shared probes, behaviour to preserve, guard tests, parallel-safe ids, risk class, agent operations, measure one change at a time) with a new catalogue version.
 - **Delivers**: writers, catalogue entries, tests.
