@@ -5,11 +5,11 @@ import type { Catalogue } from '../../domain/planning/catalogue.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { Project } from '../projects/project.js';
-import type { ServerKeyPresence } from '../ports/server-key-presence.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
 import { planMessage } from '../plan/plan-message.js';
 import { ceilPercent } from './estimate-assumptions.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
+import { plannerKeyAvailable, type PlanKeyDependencies } from './plan-key.js';
 import { planCaps, type PlanCapDependencies } from './plan-caps.js';
 import type { PlanEstimate } from './plan-estimate-types.js';
 import { estimateRole, type RolePricing } from './role-estimate.js';
@@ -25,15 +25,13 @@ import { estimateRole, type RolePricing } from './role-estimate.js';
 // guard checks (plan-caps.ts).
 
 export interface EstimatePlanDependencies
-  extends PlanInputDependencies, RolePricing, PlanCapDependencies {
+  extends PlanInputDependencies, RolePricing, PlanCapDependencies, PlanKeyDependencies {
   /** The principle catalogue the run plans with (RF-606). */
   readonly catalogue: () => Promise<Catalogue>;
   /** The planner's versioned prompt file (RNF-004). */
   readonly prompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the product requirements document (RF-621). */
   readonly prdPrompt: () => Promise<PromptFile>;
-  /** Which providers the server holds a key for (RST-2302). */
-  readonly serverKeys: ServerKeyPresence;
 }
 
 export interface EstimatePlanRequest {
@@ -111,7 +109,7 @@ export class EstimatePlan {
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
       planner,
-      keyAvailable: true,
+      keyAvailable: await plannerKeyAvailable(this.deps, project, planner),
       assumptions: {
         ...{ calls: 2, promptTokens, prdPromptTokens: second.promptTokens },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
