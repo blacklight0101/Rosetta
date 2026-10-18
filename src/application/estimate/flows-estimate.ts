@@ -8,12 +8,15 @@ import { RESPONSIBILITY_CHARS } from '../plan/flows-message.js';
 // the input and the high figure stays the guard's worst case.
 const MAX_COMPONENTS = 50;
 const MAX_NAME = 200;
+// A control character is six characters once JSON-escaped (\u0001), the most a character of model
+// text can cost in the message, so the block is an upper bound whatever the plan names.
+const ESCAPED = String.fromCharCode(1);
 
 // RF-613, RF-625
 export function assumedComponents(): DraftComponent[] {
   return Array.from({ length: MAX_COMPONENTS }, (_, index) => ({
-    name: String(index).padEnd(MAX_NAME, 'c'),
-    responsibility: 'r'.repeat(RESPONSIBILITY_CHARS),
+    name: String(index).padEnd(MAX_NAME, ESCAPED),
+    responsibility: ESCAPED.repeat(RESPONSIBILITY_CHARS),
     dependsOn: [],
   }));
 }
