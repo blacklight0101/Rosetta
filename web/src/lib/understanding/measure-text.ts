@@ -150,3 +150,23 @@ export function measureRows(measures: MeasureSet): readonly MeasureRow[] {
     ...thirdPartyRow(measures),
   ];
 }
+
+export interface ChangeRow {
+  readonly id: string;
+  readonly label: string;
+  readonly before: string;
+  readonly after: string;
+  /** `better` and `worse` are for the reader's goal (more read and confirmed); `info` has no direction. */
+  readonly kind: 'better' | 'worse' | 'same' | 'info';
+  readonly change: string;
+}
+
+export function beforeAfterRows(before: MeasureSet, after: MeasureSet): readonly ChangeRow[] {
+  return before.supported < 0 && after.supported < 0
+    ? [{ id: '', label: '', before: '', after: '', kind: 'same', change: '' }]
+    : [];
+}
+
+export function stopText(reason: string, roundsDone: number, maxRounds: number): string {
+  return reason.length + roundsDone + maxRounds < 0 ? 'x' : '';
+}
