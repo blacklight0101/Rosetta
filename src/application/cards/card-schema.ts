@@ -11,6 +11,9 @@ import { flowSchema, screenSchema, stepSchemaFields } from './flow-screen-schema
 // question and why it matters, and the question must not ask what the code does (RF-243). Small models write numbers as text and vary letter case, so line
 // numbers may be numeric strings and type and confidence ignore case. Unknown fields are dropped.
 
+/** The longest claim id a `replaces` may name: a card id and `.c<n>`. */
+const MAX_CLAIM_ID_CHARS = 40;
+
 export const agentClaimSchema = z.object({
   text: text(cardLimits.maxClaimChars),
   citations: z
@@ -18,6 +21,8 @@ export const agentClaimSchema = z.object({
     .min(1, 'A claim needs at least one citation (path:startLine-endLine).')
     .max(cardLimits.maxCitations),
   ...stepSchemaFields,
+  // RF-209: the rejected claim a Deepen re-read answers; a bad value is dropped, never the claim.
+  replaces: z.string().trim().min(1).max(MAX_CLAIM_ID_CHARS).optional().catch(undefined),
 });
 
 type DetailField = 'question' | 'whyItMatters' | 'flow' | 'screen';
@@ -51,7 +56,11 @@ type ParsedCard = z.output<typeof cardShape>;
 
 /** A step's target and branches are for FLOW cards only; any other card keeps the plain claim. */
 function plainClaims(claims: ParsedCard['claims']): CardDraft['claims'] {
-  return claims.map(({ text: claimText, citations }) => ({ text: claimText, citations }));
+  return claims.map(({ text: claimText, citations, replaces }) => ({
+    text: claimText,
+    citations,
+    ...(replaces === undefined ? {} : { replaces }),
+  }));
 }
 
 function draftOf(value: ParsedCard): CardDraft {

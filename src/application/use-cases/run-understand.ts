@@ -24,7 +24,6 @@ import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
-import type { ProviderSet } from '../providers/provider-set.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
 import { ownerLogger } from '../runs/owner-logger.js';
@@ -44,6 +43,8 @@ import { UnderstandSession } from '../understand/understand-session.js';
 import { runProviderSinks } from '../understand/run-sinks.js';
 import { verifierPromptVersions, type VerifierPrompts } from '../verifier/verifier-prompts.js';
 import { sameFamilyWarning } from '../verifier/family-warning.js';
+import { runDeepen } from '../deepen/deepen-session.js';
+import { failed, stop, understandRolesOf, type Step } from '../understand/run-understand-steps.js';
 
 // RF-200, RF-240, RF-300, RF-302, RF-426, RNF-002, ADR-005, ADR-006, ADR-007: the executor of the
 // `understand` stage. It opens the code map and snapshot of the project's latest completed scan,
@@ -80,6 +81,8 @@ export interface RunUnderstandDependencies {
   readonly overviewPrompt: () => Promise<PromptFile>;
   /** Reads the answers prompt, used by a re-run with answers (RF-241, RNF-004). */
   readonly answersPrompt: () => Promise<PromptFile>;
+  /** Reads the re-read prompt, used by a Deepen run (RF-209, RNF-004). */
+  readonly rereadPrompt: () => Promise<PromptFile>;
   /** RF-241: the cards of earlier runs, read for a re-run and marked `Answered` by it. */
   readonly priorCards: PriorCards;
   readonly clock: Clock;
@@ -87,11 +90,6 @@ export interface RunUnderstandDependencies {
   /** RF-145: the random tag of every data block the reader's tools write. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
-
-const failed = (code: RosettaError['code']): RunOutcome => ({
-  endState: 'Failed',
-  errorCode: code,
-});
 
 export class RunUnderstand implements RunExecutor {
   private readonly deps: RunUnderstandDependencies;
@@ -121,7 +119,7 @@ export class RunUnderstand implements RunExecutor {
     const roles = await this.rolesOf(execution, prepared.value.project, updates, nextCallId);
     if (!roles.ok) return roles.outcome;
     if (execution.signal.aborted) return { endState: 'Interrupted' };
-    const session = new UnderstandSession({
+    const parts = {
       ...prepared.value,
       tasks: prepared.value.plan.tasks,
       kept: prepared.value.plan.kept,
@@ -134,7 +132,11 @@ export class RunUnderstand implements RunExecutor {
       nextCallId,
       traceId: traceIdOf(execution.run),
       ids: this.deps.ids,
-    });
+    };
+    // RF-209: a Deepen run goes back over a completed run instead of reading the areas anew.
+    const deepen = readUnderstandOptions(execution.manifest.options).deepen;
+    if (deepen !== undefined) return runDeepen({ ...parts, request: deepen });
+    const session = new UnderstandSession(parts);
     await session.plan();
     await session.run();
     await session.finish();
@@ -172,9 +174,9 @@ export class RunUnderstand implements RunExecutor {
     const skipped = rerun?.plan.skipped ?? [];
     await logSkippedQuestions(this.deps.logger, run, skipped);
     await publishSkippedQuestions(execution.events, skipped);
-    const withAnswers = rerun !== undefined && tasks.length > 0;
+    const use = { withAnswers: rerun !== undefined && tasks.length > 0, deepen: !!options.deepen };
     const marks = runMarks(tasks, scanned.codeMap);
-    const { prompts, versions } = await runPrompts(this.deps, project.settings, withAnswers, marks);
+    const { prompts, versions } = await runPrompts(this.deps, project.settings, use, marks);
     const [mergePrompt, overviewPrompt, verifierPrompts] = await Promise.all([
       this.deps.mergePrompt(),
       this.deps.overviewPrompt(),
@@ -280,19 +282,4 @@ export class RunUnderstand implements RunExecutor {
       ...{ runId: run.runKey, userId: run.userId, data },
     });
   }
-}
-
-function understandRolesOf(set: ProviderSet): UnderstandRoles | undefined {
-  const reader = set.get('reader');
-  const verifier = set.get('verifier');
-  const summariser = set.get('summariser');
-  if (reader === undefined || verifier === undefined || summariser === undefined) return undefined;
-  return { reader, verifier, summariser };
-}
-
-type Step<T> =
-  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly outcome: RunOutcome };
-
-function stop(outcome: RunOutcome): { readonly ok: false; readonly outcome: RunOutcome } {
-  return { ok: false, outcome };
 }

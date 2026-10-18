@@ -36,6 +36,10 @@ export interface ClaimJudgementParts {
   readonly clock: Clock;
   /** The model the verdicts name (data-model.md 3.7, `verdict.model`). */
   readonly model: string;
+  /** RF-209: the claims to judge; those awaiting judgement (RF-304) when absent. */
+  readonly awaits?: (claim: Claim) => boolean;
+  /** RF-209, RF-423: told when the verifier's own cap refused a call, so a Deepen ends `CapReached`. */
+  readonly onCapped?: () => void;
 }
 
 interface Pending {
@@ -55,9 +59,12 @@ function spanIdOf(traceId: string, index: number): string {
   return `${traceId.slice(0, 12)}f${(index + 1).toString(16).padStart(3, '0').slice(-3)}`;
 }
 
-function pendingOf(cards: readonly Card[]): Pending[] {
+function pendingOf(
+  cards: readonly Card[],
+  awaits: (claim: Claim) => boolean = awaitsJudgement,
+): Pending[] {
   const claims = cards.flatMap((card) =>
-    card.claims.filter(awaitsJudgement).map((claim) => ({ card, claim })),
+    card.claims.filter(awaits).map((claim) => ({ card, claim })),
   );
   return claims.map((each, index) => ({ ...each, index }));
 }
@@ -92,7 +99,7 @@ export async function judgeClaims(
     const data = { claimId: claim.claimId, status, reason };
     await events.emit('verify.claim.judged', data, card.agentTaskId);
   };
-  const pending = pendingOf(cards);
+  const pending = pendingOf(cards, parts.awaits);
   const options = { parallelism: parts.parallelism, signal: judge.call.signal };
   // RF-423: the verifier's own cap refuses its calls without stopping the run; once a call is
   // refused or cancelled, no further claim is sent.
@@ -105,6 +112,7 @@ export async function judgeClaims(
   });
   // RF-304: a cap (the verifier's or the run's) leaves every claim not judged `Unverified`; any
   // other stop leaves them `Proposed`.
+  if (halt.capped) parts.onCapped?.();
   if (halt.capped || isCapStop(judge.call.signal.reason)) {
     // A claim a cap already left `Unverified` keeps that verdict: it has nothing new to say.
     const left = pending.filter(({ claim }) => claim.status === 'Proposed');
@@ -137,7 +145,7 @@ export async function runJudgementStep(
   cards: readonly Card[],
   parts: ClaimJudgementParts,
 ): Promise<readonly Card[]> {
-  const claimIds = new Set(pendingOf(cards).map(({ claim }) => claim.claimId));
+  const claimIds = new Set(pendingOf(cards, parts.awaits).map(({ claim }) => claim.claimId));
   await parts.events.emit('verify.judgement.started', { claims: claimIds.size });
   const judged = await judgeClaims(cards, parts);
   await parts.events.emit('verify.judgement.ended', stepCounts(judged, claimIds));
