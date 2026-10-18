@@ -2,12 +2,14 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DeepenEstimate, EstimateDeepen } from '../../application/estimate/deepen-estimate.js';
 import type { ByScenario, EstimatePoint } from '../../application/estimate/estimate-types.js';
+import type { ReadUnderstanding } from '../../application/use-cases/read-understanding.js';
 import type { StartDeepen } from '../../application/use-cases/start-deepen.js';
 import { DEEPEN_ROUNDS } from '../../domain/deepen/stop-rule.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { signedInOf } from './request-actor.js';
 import { runView } from './run-view.js';
+import { understandingView } from './understanding-view.js';
 
 // RF-209, RF-425, RF-1105, ADR-007: the Deepen of a completed understand run.
 // - POST /api/runs/:runId/deepen/estimate `{ maxRounds?, coveragePass? }` answers the estimate of the
@@ -17,10 +19,14 @@ import { runView } from './run-view.js';
 //   answers 400 (RST-2309) and starts nothing; a run that is not a completed understand run 409
 //   (RST-2308); another user's run 404 like an unknown one; a round limit outside 1 to 5 400.
 // Both need a session, CSRF and Origin like every POST.
+// - GET /api/runs/:runId/understanding answers `{ measures, deepen }` (200): the honest measures of an
+//   ended understand run (RF-231) and the record of its rounds when it is a Deepen run; each is null
+//   when the run has none. Another user's run 404 like an unknown one.
 
 export interface DeepenServices {
   readonly startDeepen: StartDeepen;
   readonly estimateDeepen: EstimateDeepen;
+  readonly readUnderstanding: ReadUnderstanding;
 }
 
 const rounds = z.number().int().min(DEEPEN_ROUNDS.min).max(DEEPEN_ROUNDS.max);
@@ -63,8 +69,21 @@ function deepenEstimateView(estimate: DeepenEstimate): Record<string, unknown> {
   };
 }
 
-// RF-209
+// RF-209, RF-231
 export function registerDeepenRoutes(server: FastifyInstance, services: DeepenServices): void {
+  server.get<{ Params: { runId: string } }>(
+    '/api/runs/:runId/understanding',
+    { exposeHeadRoute: false, config: { access: 'user' } },
+    async (request, reply) => {
+      const outcome = await services.readUnderstanding.execute({
+        actor: signedInOf(request).actor,
+        runId: request.params.runId,
+      });
+      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
+      return reply.header('cache-control', 'no-store').send(understandingView(outcome.value));
+    },
+  );
+
   server.post<{ Params: { runId: string } }>(
     '/api/runs/:runId/deepen/estimate',
     { config: { access: 'user' } },
