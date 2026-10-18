@@ -25,6 +25,8 @@ export interface PackagePrinciple {
 
 /** An open question of the analysis that has no answer yet. */
 interface UnansweredQuestion {
+  /** The area of the question's card; the cards built from sources in it wait on it (RF-637). */
+  readonly area: string;
   readonly cardId: string;
   readonly question: string;
 }
