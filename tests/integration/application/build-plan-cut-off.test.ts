@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { resumePoint } from '../../../src/application/plan/json-tail.js';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
 import type { Recording } from '../../../src/infrastructure/providers/fake/recording.js';
 import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.js';
@@ -46,6 +47,12 @@ function cutAt(
   };
 }
 
+/** A cut at `at`, then the rest as the model writes it once shown the answer up to the boundary. */
+function cutIn(text: string, at: number): string[] {
+  const head = text.slice(0, at);
+  return [head, text.slice(resumePoint(head).length)];
+}
+
 function split(text: string, parts: number): string[] {
   const size = Math.ceil(text.length / parts);
   return Array.from({ length: parts }, (_, index) => text.slice(index * size, (index + 1) * size));
@@ -64,7 +71,8 @@ async function planned(recording: Recording, cloud = false): Promise<PlanHarness
 describe('BuildPlan: a planner answer cut off at the output limit', () => {
   it('RF-604 a cut-off first answer is continued and the run completes', async () => {
     const recording = await base();
-    const [head = '', tail = ''] = split(textOf(recording, 0), 2);
+    const text = textOf(recording, 0);
+    const [head = '', tail = ''] = cutIn(text, Math.ceil(text.length / 2));
     const h = await planned(cutAt(recording, 0, [head, tail]));
 
     const run = await h.plan();
@@ -78,7 +86,7 @@ describe('BuildPlan: a planner answer cut off at the output limit', () => {
     ]);
     const second = requests[1]?.messages ?? [];
     expect(second).toHaveLength(3);
-    expect(second[1]).toEqual({ role: 'assistant', content: head });
+    expect(second[1]).toEqual({ role: 'assistant', content: resumePoint(head) });
     expect(second[2]?.content).toContain('Continue exactly where it stopped');
     expect(Object.keys(await h.handoffOf(run))).toContain('prd.md');
     const manifest = await h.manifestOf(run);
@@ -109,7 +117,7 @@ describe('BuildPlan: a planner answer cut off at the output limit', () => {
 describe('BuildPlan: what a cut-off answer is not', () => {
   it('RF-602 a continued answer that names no supported requirement is RST-1803', async () => {
     const recording = await base();
-    const h = await planned(cutAt(recording, 0, [noSupport.slice(0, 60), noSupport.slice(60)]));
+    const h = await planned(cutAt(recording, 0, cutIn(noSupport, 60)));
 
     const run = await h.plan();
 
@@ -131,6 +139,20 @@ describe('BuildPlan: what a cut-off answer is not', () => {
   });
 });
 
+describe('BuildPlan: a last continuation that does not finish the JSON (P3-31)', () => {
+  it('RF-007 a last continuation that stops normally with JSON open is RST-1805, not RST-1803', async () => {
+    const recording = await base();
+    const head = textOf(recording, 0).slice(0, 80);
+    const h = await planned(cutAt(recording, 0, [head, ' Sorry, I cannot go on.']));
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Failed');
+    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1805' }));
+    expect(h.s.logger.entries).not.toContainEqual(expect.objectContaining({ code: 'RST-1803' }));
+  });
+});
+
 describe('BuildPlan: a cut-off document or a metered continuation', () => {
   it('RF-604 RF-621 a PRD that stays cut off leaves placeholders and a warning that names the setting', async () => {
     const recording = await base();
@@ -146,7 +168,8 @@ describe('BuildPlan: a cut-off document or a metered continuation', () => {
 
   it('RF-408 RF-613 the continuation is metered: one more call in the cost record, inside the high figure', async () => {
     const recording = await base();
-    const [head = '', tail = ''] = split(textOf(recording, 0), 2);
+    const text = textOf(recording, 0);
+    const [head = '', tail = ''] = cutIn(text, Math.ceil(text.length / 2));
     const h = await planned(cutAt(recording, 0, [head, tail]), true);
 
     const estimate = await h.estimate();
