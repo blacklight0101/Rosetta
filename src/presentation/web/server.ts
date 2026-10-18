@@ -27,6 +27,7 @@ import { registerCapRoutes, type CapServices } from './cap-routes.js';
 import { registerCostRoutes } from './cost-routes.js';
 import { registerDefaultRoleRoutes, type DefaultRoleServices } from './default-role-routes.js';
 import { registerHistoryRoutes, type HistoryServices } from './history-routes.js';
+import { registerHttpsRedirect } from './https-redirect.js';
 import { registerKeyRoutes, type KeyServices } from './key-routes.js';
 import { registerProviderTestRoutes, type ProviderTestServices } from './provider-test-routes.js';
 import { toErrorReply } from './error-mapper.js';
@@ -138,11 +139,14 @@ function logUnexpected(logger: Logger, request: FastifyRequest, error: unknown):
   ]);
 }
 
-function registerHooks(server: FastifyInstance, logger: Logger): void {
+function registerHooks(server: FastifyInstance, options: ServerOptions): void {
+  const { logger } = options;
   server.addHook('onRequest', (_request, reply, done) => {
     reply.header('X-Robots-Tag', robotsTag);
     done();
   });
+  // RF-1304: before the access hooks, so a plain-HTTP request never reaches sign-in, CSRF or a route.
+  registerHttpsRedirect(server, options);
   server.addHook('onResponse', (request, reply) => logResponse(logger, request, reply));
 }
 
@@ -230,7 +234,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   server.server.on('checkExpectation', expectationHandler(options.logger, options.publicUrl));
   server.server.on('connect', connectHandler(options.logger, options.publicUrl));
   void server.register(fastifyHelmet, securityHeaderOptions(options.publicUrl));
-  registerHooks(server, options.logger);
+  registerHooks(server, options);
   registerSessionPlugins(server, options.auth.refusals);
   registerAccess(server, options);
   registerErrorHandlers(server, options);

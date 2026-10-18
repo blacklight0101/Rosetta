@@ -8,6 +8,7 @@ import {
   jobs,
   load,
   runLines,
+  triggerAndSecretProblems,
   violations,
   workflowText,
 } from '../../support/workflow-files.js';
@@ -17,11 +18,11 @@ import {
 // package baseline.
 
 describe('GitHub Actions workflows: files', () => {
-  it('RNF-001 ships the CI, CodeQL, Pages and pull request title workflows and Dependabot configuration', async () => {
+  it('RNF-001 ships the CI, CodeQL, Pages, pull request title and release workflows and Dependabot configuration', async () => {
     const names = (await load()).map((workflow) => workflow.name);
     const dependabot = await readFile(join(process.cwd(), '.github', 'dependabot.yml'), 'utf8');
 
-    expect(names).toEqual(['ci.yml', 'codeql.yml', 'pages.yml', 'pr-title.yml']);
+    expect(names).toEqual(['ci.yml', 'codeql.yml', 'pages.yml', 'pr-title.yml', 'release.yml']);
     expect(dependabot).toContain('package-ecosystem: npm');
     expect(dependabot).toContain('package-ecosystem: github-actions');
   });
@@ -138,17 +139,38 @@ describe('GitHub Actions workflows: hardening', () => {
 
     expect(found).toEqual([]);
   });
+});
 
-  it('RNF-003 uses no pull_request_target trigger and no secrets', async () => {
-    const found = await violations(({ lines }) => {
-      const code = lines.filter((line) => !line.trimStart().startsWith('#')).join('\n');
-      return [
-        ...(code.includes('pull_request_target') ? ['pull_request_target'] : []),
-        ...(code.includes('secrets.') ? ['secrets context'] : []),
-      ];
-    });
+describe('GitHub Actions workflows: secrets', () => {
+  // The one exception is the deploy job of release.yml (P1-55, DEC-104): it reads the secrets of
+  // the `production` environment, which the owner creates at gate G-07.
+  it('RNF-003 uses no pull_request_target trigger and no secrets outside the deploy job of release.yml', async () => {
+    expect(await violations(triggerAndSecretProblems)).toEqual([]);
+  });
 
-    expect(found).toEqual([]);
+  it.each([
+    ['a top-level env after the last job', ['env:', '  TOKEN: ${{ secrets.X }}']],
+    ['a top-level env before the jobs', []],
+    ['another job after deploy', ['  other:', '    env:', '      TOKEN: ${{ secrets.X }}']],
+  ])('RNF-003 the secrets rule catches %s in release.yml', (_label, tail) => {
+    const head = ['name: Release', 'env:', '  A: ${{ secrets.Y }}'];
+    const lines = [
+      ...(tail.length === 0 ? head : ['name: Release']),
+      'jobs:',
+      '  deploy:',
+      '    env:',
+      '      OK: ${{ secrets.RAILWAY_TOKEN }}',
+      ...tail,
+    ];
+
+    expect(triggerAndSecretProblems({ name: 'release.yml', lines })).toEqual(['secrets context']);
+  });
+
+  it('RNF-003 the secrets rule allows secrets inside the deploy job of release.yml only', () => {
+    const lines = ['name: Release', 'jobs:', '  deploy:', '    env:', '      A: ${{ secrets.X }}'];
+
+    expect(triggerAndSecretProblems({ name: 'release.yml', lines })).toEqual([]);
+    expect(triggerAndSecretProblems({ name: 'ci.yml', lines })).toEqual(['secrets context']);
   });
 });
 
@@ -178,14 +200,17 @@ describe('GitHub Actions workflows: limits', () => {
     expect(found).toEqual([]);
   });
 
-  it('RNF-001 every workflow has a concurrency group per branch that cancels superseded runs', async () => {
-    const found = await violations(({ lines }) =>
-      /^concurrency:\n {2}group: .*github\.ref.*\n {2}cancel-in-progress: true$/mu.test(
-        lines.join('\n'),
-      )
-        ? []
-        : ['concurrency'],
-    );
+  // release.yml (P1-55) queues instead: cancelling a release half-way could leave a pushed tag
+  // without its image or a deploy half done.
+  it('RNF-001 every workflow has a concurrency group per branch; all but release.yml cancel superseded runs', async () => {
+    const found = await violations(({ name, lines }) => {
+      const cancel = name === 'release.yml' ? 'false' : 'true';
+      const pattern = new RegExp(
+        `^concurrency:\n {2}group: .*github\\.ref.*\n {2}cancel-in-progress: ${cancel}$`,
+        'mu',
+      );
+      return pattern.test(lines.join('\n')) ? [] : ['concurrency'];
+    });
 
     expect(found).toEqual([]);
   });
