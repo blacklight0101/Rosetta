@@ -4,6 +4,7 @@ import type { PlanTask } from '../../../../src/domain/planning/plan-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
+import { plain } from '../../../support/plan-method-harness.js';
 import { planTask } from '../../../support/task-card-fixtures.js';
 
 // RF-637, RF-638, DEC-135: each open question names the cards that wait on it, and the roadmap
@@ -30,12 +31,12 @@ function withTasks(tasks: readonly PlanTask[], aiAssisted = true): HandoffPackag
 }
 
 const first = planTask({ id: 'T-001', requirements: ['REQ-001'] });
-const second = planTask({ id: 'T-002', phase: 2, requirements: [] });
+const second = planTask({ id: 'T-002', requirements: [] });
 const link = (id: string): string => `[${id}](tasks.md#${id.toLowerCase()})`;
 
 describe('renderHandoff: the cards an open question blocks', () => {
   const files = renderHandoff(withTasks([first, second]), masker);
-  const questions = files['open-questions.md'] ?? '';
+  const questions = plain(files['open-questions.md']);
 
   it('RF-637 a question of the brief lists its default and the cards waiting on it', () => {
     expect(questions).toContain(
@@ -70,7 +71,7 @@ describe('renderHandoff: the cards an open question blocks', () => {
 });
 
 describe('renderHandoff: the roadmap marks the cards that wait on a question', () => {
-  const roadmap = renderHandoff(withTasks([first, second]), masker)['roadmap.md'] ?? '';
+  const roadmap = plain(renderHandoff(withTasks([first, second]), masker)['roadmap.md']);
 
   it('RF-637 a card that waits is marked with the questions it waits on', () => {
     expect(roadmap).toContain(

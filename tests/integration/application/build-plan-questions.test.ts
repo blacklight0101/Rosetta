@@ -33,23 +33,20 @@ describe('BuildPlan: open questions linked to the cards they block', () => {
   it('RF-637 every question of the package names a card or says none', async () => {
     const files = await h.handoffOf(await h.plan());
 
-    const rows = plain(files['open-questions.md'])
+    const text = plain(files['open-questions.md']);
+    const [asked = '', rest = ''] = text.split('## Questions from the analysis');
+    const rows = asked
       .split('\n')
-      .filter(
-        (line) => /^\| (?!Question|Id|Claim|---)/u.test(line) && !line.includes('| Rejected'),
-      );
-    const lines = plain(files['open-questions.md']).split('\n');
-    const analysis = lines.filter((line) => line.startsWith('- OQ-'));
-    expect(rows.length).toBeGreaterThan(3);
-    for (const row of rows.filter(
-      (each) => !/\| (Rejected|CitationInvalid|Unverified|Proposed) \|$/u.test(each),
-    )) {
-      expect(row).toMatch(
-        /\| (none|\[T-\d+\]\(tasks\.md#t-\d+\)(, \[T-\d+\]\(tasks\.md#t-\d+\))*) \|$/u,
-      );
+      .filter((line) => line.startsWith('| ') && !/^\| (Question|Id) \|/u.test(line));
+    expect(rows.length).toBeGreaterThan(5);
+    for (const row of rows) {
+      expect(row).toMatch(/\| (none|(\[T-\d+\]\(tasks\.md#t-\d+\)(, )?)+) \|$/u);
     }
-    expect(analysis).toHaveLength(1);
-    expect(analysis[0]).toMatch(/Cards waiting: (none|\[T-)/u);
+    const analysis = rest.split('\n').filter((line) => line.startsWith('- OQ-'));
+    expect(analysis).toHaveLength(2);
+    for (const line of analysis) {
+      expect(line).toMatch(/Cards waiting: (none|(\[T-\d+\]\(tasks\.md#t-\d+\)(, )?)+)$/u);
+    }
   });
 
   it('RF-637 the roadmap marks the cards that wait on a question', async () => {
