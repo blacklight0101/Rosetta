@@ -11,6 +11,7 @@
     "tests/e2e/plan-setup.spec.ts",
     "tests/e2e/project-settings.spec.ts",
     "tests/e2e/projects.spec.ts",
+    "tests/e2e/report-diagrams.spec.ts",
     "tests/e2e/settings-daily-cap.spec.ts",
     "tests/e2e/sign-in.spec.ts",
     "tests/e2e/smoke.spec.ts",

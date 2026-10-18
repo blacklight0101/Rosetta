@@ -82,7 +82,7 @@ every variable with a comment and a safe example.
 | Price table          | defaults shipped with Rosetta, dated; overrides in the project settings (RF-420)                                                             |
 
 Secret hygiene: `.env` and `.env.*` are git-ignored (except `.env.example`); GitHub secret scanning with push
-protection, Dependabot alerts and Dependabot security updates are enabled on the repository (DEC-42); gitleaks runs in CI; recordings under `tests/recordings/` are scrubbed of keys
+protection, Dependabot alerts and Dependabot security updates are enabled on the repository (DEC-42); gitleaks runs in CI (default rules; `.gitleaks.toml` leaves out only the vendored Mermaid build `templates/report/mermaid.min.js`, RF-508); recordings under `tests/recordings/` are scrubbed of keys
 before commit (ADR-008).
 
 ## 5. Source control and branching

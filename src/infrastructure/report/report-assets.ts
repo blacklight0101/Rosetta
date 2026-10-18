@@ -30,3 +30,18 @@ export async function loadReportAssets(folder: string): Promise<ReportAssets> {
     'filters.js': await readAsset(folder, 'filters.js'),
   };
 }
+
+/** RF-508: the files of the diagrams page: the vendored Mermaid build, its loader and its licence. */
+export type DiagramAssets = Readonly<
+  Record<'diagrams.js' | 'mermaid.min.js' | 'mermaid.LICENSE.txt', string>
+>;
+
+/** Reads the diagram assets from the templates folder; rejects with RST-1000 when one cannot be read. */
+// RF-508
+export async function loadDiagramAssets(folder: string): Promise<DiagramAssets> {
+  return {
+    'diagrams.js': await readAsset(folder, 'diagrams.js'),
+    'mermaid.min.js': await readAsset(folder, 'mermaid.min.js'),
+    'mermaid.LICENSE.txt': await readAsset(folder, 'mermaid.LICENSE.txt'),
+  };
+}
