@@ -49,6 +49,8 @@ const codeUnitOrder = (left: string, right: string): number =>
 
 /** The key of the line of the provider tests, which belong to no run (RF-407). */
 const TESTS_KEY = 'provider-tests';
+/** The project's calls that belong to no run: the options of Plan setup (RF-608). */
+const NO_RUN_KEY = 'plan-options';
 
 function costOf(groups: readonly SummaryGroup[]): CurrencyTotal[] {
   const known = new Map<string, bigint>();
@@ -111,9 +113,9 @@ function linesBy(
 const firstOf = (groups: readonly LedgerGroup[]): number =>
   Math.min(...groups.map((group) => group.firstAt.getTime()));
 
-/** By run in the order the runs started; the provider tests, of no run, last. */
+/** By run in the order the runs started; the calls of no run (Plan setup options), last. */
 function runLines(groups: readonly LedgerGroup[]): RunLine[] {
-  return grouped(groups, (group) => group.runId ?? TESTS_KEY)
+  return grouped(groups, (group) => group.runId ?? NO_RUN_KEY)
     .map(([key, members]) => ({
       ...lineOf(key, members),
       runId: members[0]?.runId ?? null,

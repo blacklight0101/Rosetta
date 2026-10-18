@@ -67,6 +67,7 @@ const estimateBody = z.object({
     }),
   ),
   withinCaps: scenarios,
+  keyAvailable: z.boolean(),
 });
 
 describe('GET /api/projects/:id/plan-estimate answers', () => {
@@ -90,6 +91,7 @@ describe('GET /api/projects/:id/plan-estimate answers', () => {
     ]);
     expect(body.caps[0]).toMatchObject({ unit: 'micros', limit: '500000', spent: '0' });
     expect(body.withinCaps).toEqual({ low: true, likely: true, high: true });
+    expect(body.keyAvailable).toBe(true);
   });
 
   it('RF-613 says when the high figure no longer fits the project run cap', async () => {

@@ -44,6 +44,12 @@ export interface PlanEstimate {
   readonly priceTableVersion: string;
   readonly currency: 'USD';
   readonly planner: RoleEstimate;
+  /**
+   * Whether the planner call would find a key: the user's own, the server's when the provider's
+   * `keySource` and the account allow it and the server holds one, or none needed (a local model).
+   * False means the run would be refused (RST-2302) whatever the figures say.
+   */
+  readonly keyAvailable: boolean;
   readonly assumptions: PlanAssumptions;
   readonly caps: readonly PlanCap[];
   /**

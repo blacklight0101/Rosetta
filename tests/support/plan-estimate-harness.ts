@@ -1,4 +1,5 @@
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
+import type { ServerKeyPresence } from '../../src/application/ports/server-key-presence.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { Project } from '../../src/application/projects/project.js';
 import { actorOf, type Actor } from '../../src/domain/accounts/actor.js';
@@ -44,6 +45,8 @@ export interface PlanEstimateHarness {
 export interface PlanEstimateOptions {
   readonly settings?: ProjectSettings;
   readonly account?: Partial<UserAccount>;
+  /** Which providers the server holds a key for; all of them by default. */
+  readonly serverKeys?: ServerKeyPresence;
   /** What to seed before the test starts; everything by default. Pass false to seed nothing. */
   readonly seed?: PlanSourceSeed | false;
 }
@@ -86,6 +89,7 @@ export async function createPlanEstimateHarness(
       ...{ projects, runs, briefs, users, serverSettings, usage, keys, clock },
       cards: new FileRunCards(files),
       answers: new FileAnswersFile({ writer: files, masker }),
+      serverKeys: options.serverKeys ?? { has: () => true },
       priceTable: estimatePrices,
       catalogue: () => Promise.resolve(shippedCatalogue),
       prompt: () => loadPlannerPrompt('prompts'),

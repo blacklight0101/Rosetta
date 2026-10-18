@@ -14,6 +14,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { MAX_AREAS, MAX_AREA_NAME, START_BODY_LIMIT_BYTES } from './area-limits.js';
 import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
+import { registerPlanOptionsRoutes, type PlanOptionsServices } from './plan-options-routes.js';
 import { registerOverviewRoutes, type OverviewServices } from './overview-routes.js';
 import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
 import { registerEventRoutes, type EventRouteServices } from './run-event-routes.js';
@@ -43,12 +44,14 @@ import { runView } from './run-view.js';
 //   be resumed answers 409 (RST-2307), another user's run 404, a cloud run without consent 400.
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 // - GET /api/runs/:runId/overview: the run's overview (overview-routes.ts, RF-264).
+// - POST /api/projects/:id/plan-options: the options of Plan setup (plan-options-routes.ts, RF-608).
 
 export interface RunServices
   extends
     RunFileServices,
     AnswerServices,
     OverviewServices,
+    PlanOptionsServices,
     ObservabilityServices,
     EventRouteServices {
   readonly startRun: StartRun;
@@ -192,5 +195,6 @@ export function registerRunRoutes(
   registerEstimateRoutes(server, services);
   registerAnswerRoutes(server, services);
   registerOverviewRoutes(server, services);
+  registerPlanOptionsRoutes(server, services);
   registerObservabilityRoutes(server, services);
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MemoryBriefStore } from '../../../support/memory-brief-store.js';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { StartRun } from '../../../../src/application/use-cases/start-run.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -18,6 +19,7 @@ async function setup(settings: ProjectSettings, ollamaHost?: string) {
   await projects.insertOrFind(project);
   const startRun = new StartRun({
     projects,
+    briefs: new MemoryBriefStore(),
     submit: harness.submit,
     ...(ollamaHost === undefined ? {} : { ollamaHost }),
   });

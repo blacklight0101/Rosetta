@@ -3,6 +3,7 @@ import { fixturePassword } from './account-fixtures.js';
 import { active, adminOnly, everyone, ownerOnly, signedIn } from './access-columns.js';
 import { budgetRoutes, outputRoutes, type Context, type Probe } from './access-probes.js';
 import { settingsWith } from './project-fixtures.js';
+import { planRows } from './access-plan-rows.js';
 import { fixtureKey } from './provider-key-fixtures.js';
 import type { TestUser } from './test-browser.js';
 
@@ -279,6 +280,7 @@ const pageRows: Rows = {
 export const matrixAreas = {
   public: publicRows,
   projects: projectRows,
+  plan: planRows,
   account: accountRows,
   admin: adminRows,
   pages: pageRows,

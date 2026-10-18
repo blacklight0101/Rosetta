@@ -8,7 +8,7 @@ import { buildBrief, type BriefAnswers } from '../../src/domain/planning/plannin
 import type { Run } from '../../src/domain/runs/run.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
-import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import { SecretMasker, type TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import { cardSource } from './card-fixtures.js';
 import type { MemoryOutputWriter } from './memory-output-writer.js';
 import { planCards, planQuestions } from './plan-cards.js';
@@ -38,8 +38,27 @@ export interface PlanSourceSeed {
   /** The answer to the first open question; none by default. */
   readonly answer?: string;
   readonly briefAnswers?: BriefAnswers;
+  /**
+   * Writes the cards as they are, with no masking: a card file that reached the disk with a secret in
+   * it (edited by hand, or written before a rule existed), so the guards are the last defence.
+   */
+  readonly unmaskedCards?: boolean;
+  /** Changes of the understand run row, for example a run that is still running or failed. */
+  readonly run?: Partial<Run>;
 }
 
+const passThrough: TextMasker = {
+  mask: (text) => ({
+    text,
+    counts: {
+      'api-key': 0,
+      'bearer-token': 0,
+      'connection-string': 0,
+      password: 0,
+      'private-key': 0,
+    },
+  }),
+};
 const savedAt = '2026-10-12T09:30:00.000Z';
 
 async function seedUnderstand(
@@ -49,12 +68,18 @@ async function seedUnderstand(
 ): Promise<Run> {
   const { files } = stores;
   const masker = new SecretMasker();
+  const cardMasker = seed.unmaskedCards === true ? passThrough : masker;
   const run = sampleRun({
     ...{ userId: project.userId, projectId: project.id, stage: 'understand' },
     ...{ runKey: '20261012-090000-understand', queueState: 'Ended', endState: 'Completed' },
+    ...seed.run,
   });
   await stores.runs.insert(run);
-  const cards = new FileCardOutputs({ writer: files, masker, logger: new RecordingLogger() });
+  const cards = new FileCardOutputs({
+    writer: files,
+    masker: cardMasker,
+    logger: new RecordingLogger(),
+  });
   await cards.writeCards(scopeOf(run), {
     cards: seed.cards ?? planCards(),
     source: cardSource,

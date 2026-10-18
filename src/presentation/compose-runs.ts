@@ -35,6 +35,7 @@ import { FanOutSink } from '../infrastructure/events/fan-out-sink.js';
 import { JsonlEventLog } from '../infrastructure/events/jsonl-event-log.js';
 import { SseBroadcaster } from '../infrastructure/events/sse-broadcaster.js';
 import { FileRunManifestStore } from '../infrastructure/files/file-run-manifest-store.js';
+import { FilePlanningBriefStore } from '../infrastructure/files/file-planning-brief-store.js';
 import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
 import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
 import { NodeRunFileReader } from '../infrastructure/files/node-run-file-reader.js';
@@ -50,6 +51,7 @@ import { FileReportWriter } from '../infrastructure/report/file-report-writer.js
 import type { StreamRegistry } from './web/event-stream.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
+import { composePlanOptions } from './compose-plan-options.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
@@ -176,6 +178,7 @@ function runServices(service: ServiceParts): RunServices {
   return {
     startRun: new StartRun({
       projects,
+      briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
       submit: submitRun,
       ...(ollamaHost === undefined ? {} : { ollamaHost }),
     }),
@@ -208,6 +211,8 @@ function runServices(service: ServiceParts): RunServices {
     reopenQuestion: new ReopenQuestion({ runs, answers, cards, logger: parts.logger }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     readOverview: new ReadOverview({ runs, files: new FileRunTextFiles(writer) }),
+    // RF-608, RF-609: the options of Plan setup, asked of the planner for a project.
+    suggestPlanOptions: composePlanOptions({ ...parts, writer, projects, runs, scans }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
     streams: parts.streams,

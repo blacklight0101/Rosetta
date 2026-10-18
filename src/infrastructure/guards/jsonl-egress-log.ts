@@ -17,14 +17,17 @@ import type { TextMasker } from './secret-masker.js';
 // owner's workspace). Appends run one after another, so `seq` has no gaps even when agent tasks
 // call in parallel. A crash can leave a torn last line: the first append of the process counts
 // the complete lines, removes the fragment and numbers on from there (RF-006). A masker failure is
-// thrown (RST-2101) and nothing is written.
+// thrown (RST-2101) and nothing is written. A call that belongs to a project and to no run logs to a
+// folder of the project instead (`folder`).
 
-export interface JsonlEgressLogOptions {
+/** Where the log lives: the folder of a run, or a folder of the owner's workspace given as is. */
+type EgressLogPlace =
+  { readonly scope: RunScope } | { readonly userId: string; readonly folder: string };
+
+export type JsonlEgressLogOptions = EgressLogPlace & {
   readonly writer: OutputWriter;
   readonly masker: TextMasker;
-  /** The run whose folder holds the log. */
-  readonly scope: RunScope;
-}
+};
 
 const schemaVersion = 1;
 
@@ -55,8 +58,13 @@ export class JsonlEgressLog implements EgressLog {
 
   constructor(options: JsonlEgressLogOptions) {
     this.options = options;
-    const { userId, projectId, runKey } = options.scope;
-    this.file = { userId, path: `${runPath(projectId, runKey)}/egress.log.jsonl` };
+    this.file =
+      'scope' in options
+        ? {
+            userId: options.scope.userId,
+            path: `${runPath(options.scope.projectId, options.scope.runKey)}/egress.log.jsonl`,
+          }
+        : { userId: options.userId, path: `${options.folder}/egress.log.jsonl` };
   }
 
   // RF-142

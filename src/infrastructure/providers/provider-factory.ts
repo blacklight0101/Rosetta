@@ -70,6 +70,19 @@ interface WrapParts {
 /** RF-407: the most one provider test call may cost or use, whoever pays (worst case, before the call). */
 const testCeiling = { costMicros: 100_000n, tokens: 2_000n } as const;
 
+/**
+ * ADR-007: a call that belongs to no run is held to the ceiling, unless it is a known call of a
+ * project: the options of Plan setup (stage `plan`, with a project to book it to) keep the project's
+ * caps and their role's cap. The rule fails closed: a run-less call of any other stage, the Test
+ * button included, gets the small ceiling, so a new kind of call cannot spend the project budget
+ * before someone decides it may.
+ */
+function isCeilinged(request: ProviderSetRequest): boolean {
+  const { run } = request;
+  if (run.id !== null) return false;
+  return !(run.stage === 'plan' && run.projectId !== null);
+}
+
 function providerTestCeiling(cap: UsageCap): bigint {
   if (cap.kind === 'run-cost') return testCeiling.costMicros;
   if (cap.kind === 'run-tokens') return testCeiling.tokens;
@@ -226,9 +239,10 @@ export class GuardedProviderFactory implements ProviderSetFactory {
   }
 
   /**
-   * DEC-107 caps for the key source. A provider test belongs to no run, so the project budget does
-   * not apply: the run caps become the fixed ceiling of one test call (its worst case may not
-   * exceed it), so a test of a user key with no daily cap is still bounded.
+   * DEC-107 caps for the key source. A call that belongs to no run, other than the options of Plan
+   * setup (a provider test is one), gets the fixed ceiling of one small call in place of the run
+   * caps (its worst case may not exceed it), so a test of a user key with no daily cap is still
+   * bounded. The options of Plan setup keep the project's caps.
    */
   private capsOf(
     { request, role }: { readonly request: ProviderSetRequest; readonly role: AgentRole },
@@ -239,15 +253,15 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const { account } = request;
     const caps = capsFor(access.keySource, {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
-      // RF-423: a provider test belongs to no run, so a role's run caps do not apply to it.
-      ...(request.run.id === null ? {} : { role: roleBudgetOf(request.settings, role) }),
+      // RF-423: a call held to the ceiling belongs to no run, so a role's run caps do not apply to it.
+      ...(isCeilinged(request) ? {} : { role: roleBudgetOf(request.settings, role) }),
       server,
       account: {
         dailyCapMicros: account.dailyCapMicros,
         ownDailyCapMicros: account.ownDailyCapMicros,
       },
     });
-    if (request.run.id !== null) return caps;
+    if (!isCeilinged(request)) return caps;
     return caps.map((cap) => ({ ...cap, limit: providerTestCeiling(cap) }));
   }
 }

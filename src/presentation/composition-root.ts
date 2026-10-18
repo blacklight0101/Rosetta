@@ -21,6 +21,7 @@ import { bootstrapAdministrator, composeAuth, reEncryptProviderKeys } from './co
 import type { Auth } from './compose-accounts.js';
 import { composeHistory } from './compose-history.js';
 import { checkSchema } from './compose-migrations.js';
+import { serverKeyPresence } from './server-key-presence.js';
 import { composeProjects } from './compose-projects.js';
 import { scheduledTasks, startScheduledTasks, type ScheduledParts } from './compose-schedule.js';
 import { composeRuns, runStartUpSteps, type RunComposition } from './compose-runs.js';
@@ -134,6 +135,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
   const projects = await composeProjects({
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
     ...{ dataDir: environment.dataDir, priceTable: auth.priceTable },
+    serverKeys: serverKeyPresence(environment, doubles !== undefined),
   });
   const server = buildServer({
     logger,

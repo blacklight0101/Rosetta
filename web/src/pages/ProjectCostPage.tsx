@@ -45,7 +45,7 @@ function runRows(cost: ProjectCost): CostRow[] {
     ...line,
     name:
       line.runId === null ? (
-        'Provider tests'
+        'Plan setup options'
       ) : (
         <>
           <Link href={`/runs/${encodeURIComponent(line.runId)}`} class="rst-mono">

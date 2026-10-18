@@ -219,7 +219,7 @@ interface HarnessParts {
 async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
   const { writer, masker, clock, runs, projects, users } = s;
   const estimate = new EstimatePlan({
-    ...{ projects, runs, users, clock, priceTable: budgetTable },
+    ...{ projects, runs, users, clock, priceTable: budgetTable, serverKeys: { has: () => true } },
     briefs: new FilePlanningBriefStore({ writer, masker }),
     cards: new FileRunCards(writer),
     answers: new FileAnswersFile({ writer, masker }),

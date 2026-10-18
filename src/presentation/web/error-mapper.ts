@@ -7,7 +7,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 // code, the catalogue's plain message and the next step. The error's own message and stack never
 // reach the body: they may name internals (conventions section 6).
 
-type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500;
+type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 429 | 500 | 502;
 
 interface ErrorBody {
   readonly code: ErrorCode;
@@ -60,6 +60,14 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.codeMapMissing]: 409,
   [ERROR_CODES.planBriefMissing]: 409,
   [ERROR_CODES.planSourceMissing]: 409,
+  // RF-608: the options of Plan setup are asked in a request, so a cause the person can fix (no
+  // key, no price, a cap) is a conflict and a planner that failed or answered badly a bad gateway.
+  [ERROR_CODES.providerKeyMissing]: 409,
+  [ERROR_CODES.providerUnavailable]: 409,
+  [ERROR_CODES.modelUnpriced]: 409,
+  [ERROR_CODES.budgetCapReached]: 409,
+  [ERROR_CODES.providerCallFailed]: 502,
+  [ERROR_CODES.planOptionsInvalid]: 502,
   [ERROR_CODES.runInProgress]: 409,
   [ERROR_CODES.userNameTaken]: 409,
   [ERROR_CODES.accountStateInvalid]: 409,
