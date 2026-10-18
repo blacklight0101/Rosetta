@@ -16,10 +16,12 @@ import type { PlanEstimate } from './plan-estimate-types.js';
 import { estimateRole, type RolePricing } from './role-estimate.js';
 
 // RF-613, ADR-007, DEC-81: the estimate before a plan run (`GET /api/projects/:id/plan-estimate`).
-// The plan run makes up to four planner calls (BuildPlan): the plan, the product requirements
-// document (RF-621), when the supported cards hold an `ENT` claim the target data model (RF-623)
-// and, when they hold a `FLOW` card, the target flows (RF-625, whose components block is sized at
-// the plan answer's limits, flows-estimate.ts). Each prompt is measured, not guessed: the planner's
+// The plan run makes up to six planner calls (BuildPlan): the plan, the product requirements
+// document (RF-621), when the supported cards hold an `ENT` claim the target data model (RF-623),
+// when they hold a `FLOW` card the target flows (RF-625, whose components block is sized at the
+// plan answer's limits, flows-estimate.ts), when the brief names a front end and a `FEAT` or
+// `FLOW` card is verified the API contract (RF-624) and, when a `SCRN` card is verified, the
+// user-interface material (RF-626). Each prompt is measured, not guessed: the planner's
 // system prompt and the message the run would send (the supported cards and the owner's brief and
 // answers in data blocks), at the budget guard's four characters per token. Its output is a share of
 // the planner's `maxOutputTokens`; the high figure is all of it, which is the guard's worst case, so
@@ -107,6 +109,7 @@ export class EstimatePlan {
           dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),
           flowsPromptTokens: tokensOf(calls, prompts, 'flows'),
           apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
+          uxPromptTokens: tokensOf(calls, prompts, 'ux'),
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         ...{

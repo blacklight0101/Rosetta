@@ -63,6 +63,7 @@ const estimateBody = z.object({
       prdPromptTokens: z.number(),
       dataModelPromptTokens: z.number(),
       apiContractPromptTokens: z.number(),
+      uxPromptTokens: z.number(),
       maxOutputTokens: z.number(),
     })
     .loose(),
