@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { keepLegacyDefault } from '../../../../src/domain/planning/legacy-default.js';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import type { PlanTask } from '../../../../src/domain/planning/plan-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
@@ -50,13 +51,13 @@ describe('renderHandoff: the cards an open question blocks', () => {
 
   it('RF-637 a question of the analysis lists its default and the cards built from its area', () => {
     expect(questions).toContain(
-      `- OQ-001: Who cancels? Default: keep the legacy behaviour. Cards waiting: ${link('T-001')}`,
+      `- OQ-001: Who cancels? Default: ${keepLegacyDefault} Cards waiting: ${link('T-001')}`,
     );
   });
 
   it('RF-637 a question of the analysis in an area no card was built from says none', () => {
     expect(questions).toContain(
-      '- OQ-002: Which tax? Default: keep the legacy behaviour. Cards waiting: none',
+      `- OQ-002: Which tax? Default: ${keepLegacyDefault} Cards waiting: none`,
     );
   });
 
