@@ -23,6 +23,23 @@ import { transitionsDone } from '../support/transitions.js';
 const claimIds = (page: Parameters<typeof openRunTab>[0]) =>
   page.getByRole('region', { name: 'Claims' }).getByTestId('claim');
 
+// RF-250, P1-174: the card list follows the merge too: each merged card once, none of the pair,
+// also after a reload.
+async function expectMergedCardsListed(page: Parameters<typeof openRunTab>[0]): Promise<void> {
+  const cards = page.getByTestId('card-row');
+  for (const reload of [false, true]) {
+    if (reload) {
+      await page.reload();
+      await openRunTab(page, 'Evidence');
+    }
+    await expect(cards).toHaveCount(2);
+    await expect(cards.filter({ hasText: 'ENT-001' })).toHaveCount(1);
+    await expect(cards.filter({ hasText: 'BR-001' })).toHaveCount(1);
+    await expect(cards.filter({ hasText: 'ENT-002' })).toHaveCount(0);
+    await expect(cards.filter({ hasText: 'BR-002' })).toHaveCount(0);
+  }
+}
+
 test('RF-250 RF-262 the cards two areas wrote about one entity and one rule are merged: the page, the report and the specification show each once', async ({
   page,
 }, info) => {
@@ -43,6 +60,7 @@ test('RF-250 RF-262 the cards two areas wrote about one entity and one rule are 
   }
   await expect(claims.filter({ hasText: 'ENT-002' })).toHaveCount(0);
   await expect(claims.filter({ hasText: 'BR-002' })).toHaveCount(0);
+  await expectMergedCardsListed(page);
 
   const files = await downloadedRunFiles(page);
   const spec = files['spec.md'] ?? '';

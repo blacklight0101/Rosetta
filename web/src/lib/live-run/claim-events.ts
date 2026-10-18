@@ -79,8 +79,9 @@ export function onClaimJudged(state: RunState, event: RunEvent): RunState {
   return withClaim(state, claimId, (claim) => ({ ...claim, status: verdict, reason }));
 }
 
-// RF-250, RF-1004: a card merge renumbered claims; each claim row follows its move, all at once, so
-// moves that exchange ids cannot overwrite each other.
+// RF-250, RF-1004: a card merge drops the cards it absorbed from the list and renumbered claims;
+// each claim row follows its move, all at once, so moves that exchange ids cannot overwrite each
+// other.
 export function onCardsMerged(state: RunState, event: RunEvent): RunState {
   const parsed = cardsMergedData.safeParse(event.data);
   if (!parsed.success) return state;
@@ -89,5 +90,8 @@ export function onCardsMerged(state: RunState, event: RunEvent): RunState {
     const to = moves.get(claim.claimId);
     return to === undefined ? claim : { ...claim, claimId: to, cardId: cardOf(to) };
   });
-  return { ...state, claims };
+  const { cardId, from = [] } = parsed.data;
+  const absorbed = new Set(from.filter((id) => id !== cardId));
+  const cards = state.cards.filter((card) => !absorbed.has(card.cardId));
+  return { ...state, cards, claims };
 }
