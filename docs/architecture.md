@@ -117,6 +117,9 @@ src/
                         the SCRN screen map (`screenMapDiagram`, RF-261) and the ER diagram of the data model
                         (`entityDiagram`, RF-262) with its model built from the ENT cards (`entityModelOf`: entities only, no
                         relation or cardinality is invented, P2-22); ids generated, never taken from the code
+    eval/               the quality measures of an evaluation (citation validity, claim match and score, structure score, verifier agreement, estimate accuracy, spread, ratio) and the golden set
+    observability/      call statistics and the log scope of a run
+    overview/           the project overview: its build, the eligible cards, the standing, the thin-run rule and the question links
     errors/             domain error codes and Result type
   application/
     ports/              port interfaces (section 7)
@@ -136,7 +139,13 @@ src/
     cards/              the card schema, lenient parsing that keeps valid cards and claims (`parseCardsLenient`), the repair request (RF-202, RF-208)
     verifier/           citation check (step 1, `checkCitations`, P1-33), judgement of one claim (step 2, `judgeClaim`, P2-02)
     estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30)
-    contracts/          event and API contract types shared with the front end in web/
+    audit/              the audit retention job and the refusal limiter
+    consolidate/        consolidating the cards of a run: the merge request and answer, the consolidation parts and the consolidate run
+    eval/               the calibration and evaluation runs: their ports and schemas, the golden and calibration sets, the reports and the experiment
+    overview/           the overview answer, request and file, and writing the overview
+    plan/               the plan answer and message, the planner's questions, the plan inputs and the hand-off package
+    projects/           project settings and their defaults, the folder sweep, price overrides and URL reasons
+    report/             the report model, its replay timeline and question steps, and the claim id moves
   infrastructure/
     providers/          ollama/, openai/ (also the OpenAI-compatible adapter and its guarded
                         transport, P2-10), anthropic/, fake/; at the root the
@@ -170,8 +179,11 @@ src/
     prompts/            prompt files read with their version and SHA-256 (`loadReaderPrompts`, `loadPlannerPrompt`, RNF-004)
                         and the principle catalogue (`loadCatalogue`: entry schema, version, SHA-256; RF-606)
     system/             clock, id generator, logger
+    eval/               calibration and golden-set files, the evaluation files, the calibration source and the run claims
+    report/             the report file writer, the report HTML, Markdown and overview pages, the page shell, report security and assets, the published site and the index check
   presentation/
     web/                Fastify server, plugins, auth hooks, API routes, server-sent events, error-to-status mapping; `GET /api/errors/:code` answers the catalogue's message and next step for a code (session required, a string that is not a code answers 404) so a page that only has a code, such as a run that ended with an error, says what it means (RF-007, RF-1108); `area-limits.ts` holds `MAX_AREAS`, `MAX_AREA_NAME` (the code map's own `MAX_AREA_NAME_LENGTH`, so a name the scan produces is never refused) and the body limit derived from them, shared by `POST /api/projects/:id/runs` and `POST /api/projects/:id/estimate` (RF-200, RF-425)
+    eval/               the evaluation and calibration commands: argument and settings parsing, the pipeline, the sinks, the report lines and the composition
     main.ts             server start-up: read environment (`DATABASE_URL` only; `DATABASE_MIGRATOR_URL` is refused, DEC-140), check the schema (`checkSchema` in compose-migrations.ts: a pending, changed or unknown migration stops it with RST-2405, RST-2401 or RST-2402, and a `DATABASE_URL` that owns the schema logs a warning), create the bootstrap admin, discard partial snapshot folders (RF-122), end interrupted runs, listen, start the scheduler
     composition-root.ts
     migrate.ts          the one-off migrate step (`node dist/presentation/migrate.js`, the `migrate` service of compose.yaml): reads `DATABASE_MIGRATOR_URL` only, applies the pending migrations with `PgMigrator` and ends with 0 (also when nothing was pending) or 1; it runs before the server, which never migrates (RF-1302, DEC-140)
@@ -208,8 +220,9 @@ eval/                   golden set (golden/eshop-webforms.json), the calibration
 site/                   published sample report (RF-800): built by `npm run site:build` (scripts/build-sample-site.mjs) from the benign recorded run of tests/fixtures/runs/sample-report, pages from src/infrastructure/report/published-site.ts, published by .github/workflows/pages.yml in three jobs (build, deploy, smoke); the smoke step runs scripts/pages-smoke.mjs, which checks the published index with src/infrastructure/report/index-check.ts and needs no package install
 docs/runbooks/          local and hosted deployment runbooks (environments-and-delivery.md section 14)
 
-The front end in `web/` has its own `web/tsconfig.json` with the DOM library and imports from `src/` only the event
-and API contract types in `src/application/contracts/` (dependency-cruiser rule, DEC-112).
+The front end in `web/` has its own `web/tsconfig.json` with the DOM library and its own wire schemas in `web/src/api/`;
+it imports nothing from `src/` today. The dependency-cruiser rule of DEC-112 allows an import from `src/` only from
+`src/application/contracts/`, a folder that does not exist yet.
 ```
 
 ## 5. Domain model
