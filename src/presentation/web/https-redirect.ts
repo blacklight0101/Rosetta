@@ -25,6 +25,9 @@ export function registerHttpsRedirect(
     if (request.headers['x-forwarded-proto'] === undefined || request.protocol !== 'http') return;
     // 308 keeps the method and body of a POST; 301 is the form every client follows for a GET.
     const status = methodsKeptBy301.has(request.method) ? 301 : 308;
-    await reply.redirect(new URL(request.url, publicUrl.origin).href, status);
+    // Appended to the origin, never resolved against it: a path such as `//other.host/x` would
+    // otherwise become a URL on another host.
+    const path = request.url.startsWith('/') ? request.url : '/';
+    await reply.redirect(`${publicUrl.origin}${path}`, status);
   });
 }
