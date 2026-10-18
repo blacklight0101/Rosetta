@@ -7,7 +7,7 @@ import type { ByScenario, RoleEstimate } from './estimate-types.js';
 // the ledger (DEC-54).
 
 /** The numbers every figure of the plan estimate rests on, stated with it. */
-export interface PlanAssumptions {
+interface PlanAssumptions {
   /** The planner makes one call per plan run. */
   readonly calls: 1;
   /** The system prompt and the data blocks of the supported cards and the owner's input, at the guard's four characters per token. */
