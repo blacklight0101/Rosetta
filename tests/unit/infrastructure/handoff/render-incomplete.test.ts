@@ -3,6 +3,7 @@ import type { HandoffPackage } from '../../../../src/application/plan/handoff-pa
 import { emptyPrd } from '../../../../src/domain/planning/prd-content.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
+import { incompleteNotice } from '../../../../src/infrastructure/handoff/handoff-incomplete-markdown.js';
 import { apiOperations } from '../../../support/api-contract-fixtures.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
 import { checkOpenApi } from '../../../support/openapi-check.js';
@@ -82,5 +83,31 @@ describe('renderHandoff: a document that stays cut off', () => {
     const readme = filesOf([])['README.md'] ?? '';
 
     expect(readme).not.toContain('Incomplete documents');
+  });
+});
+
+describe('the notice on every file of a cut-off flow or UX document', () => {
+  const opening = /^(?:> \*\*Incomplete\.\*\*|# Incomplete\.|<!-- Incomplete\.)/u;
+
+  it('RF-604 RF-625 every per-flow file and the index of cut-off flows open with the notice', () => {
+    const files = filesOf(cut('flows'));
+    const flowFiles = Object.keys(files).filter((path) => path.startsWith('flows/'));
+
+    expect(flowFiles.length).toBeGreaterThan(1);
+    for (const path of flowFiles) expect(files[path] ?? '').toMatch(opening);
+  });
+
+  it('RF-604 RF-626 the design brief and the wireframes of a cut-off UX document open with the notice', () => {
+    const handoff = handoffOf('Plain text.', emptyPrd, { incomplete: cut('ux') });
+
+    expect(incompleteNotice(handoff, 'ux/design-brief.md')).toMatch(/^> \*\*Incomplete\.\*\*/u);
+    expect(incompleteNotice(handoff, 'ux/wireframes/SCRN-001.html')).toMatch(/^<!-- Incomplete\./u);
+  });
+
+  it('RF-604 a file outside the cut-off document gets no notice', () => {
+    const handoff = handoffOf('Plain text.', emptyPrd, { incomplete: cut('flows') });
+
+    expect(incompleteNotice(handoff, 'ux/README.md')).toBe('');
+    expect(incompleteNotice(handoff, 'prd.md')).toBe('');
   });
 });
