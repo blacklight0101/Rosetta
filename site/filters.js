@@ -83,7 +83,7 @@
     const params = new globalThis.URLSearchParams(fragment);
     selects.forEach(function (select) {
       const wanted = params.get(keyOf(select));
-      if (wanted === null || wanted === '') return;
+      if (wanted === null) return;
       const known = Array.from(select.options).some(function (option) {
         return option.value === wanted;
       });
