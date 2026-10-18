@@ -1,12 +1,12 @@
 // RF-622, ADR-005, ADR-018, DEC-135: the technical part of the planner's draft and of the package.
 
 export const securityApproaches = ['allowlist', 'denylist', 'other'] as const;
-export type SecurityApproach = (typeof securityApproaches)[number];
+type SecurityApproach = (typeof securityApproaches)[number];
 
 export const integrationActions = ['keep', 'replace'] as const;
-export type IntegrationAction = (typeof integrationActions)[number];
+type IntegrationAction = (typeof integrationActions)[number];
 
-export interface DraftIntegration {
+interface DraftIntegration {
   /** The id of an `INT` card. */
   readonly card: string;
   readonly action: IntegrationAction;
@@ -15,7 +15,7 @@ export interface DraftIntegration {
   readonly decision: number | null;
 }
 
-export interface DraftControl {
+interface DraftControl {
   readonly name: string;
   readonly approach: SecurityApproach;
   readonly description: string;
@@ -27,14 +27,14 @@ export interface DraftControl {
   readonly decision: number | null;
 }
 
-export interface DraftTarget {
+interface DraftTarget {
   readonly name: string;
   readonly target: string;
   readonly sources: readonly string[];
   readonly decision: number | null;
 }
 
-export interface DraftEnvironment {
+interface DraftEnvironment {
   readonly name: string;
   readonly purpose: string;
   readonly decision: number | null;
@@ -54,8 +54,8 @@ interface Decided {
 
 export type PlanIntegration = Omit<DraftIntegration, 'decision'> & Decided;
 export type PlanControl = Omit<DraftControl, 'decision'> & Decided;
-export type PlanTarget = Omit<DraftTarget, 'decision'> & Decided;
-export type PlanEnvironment = Omit<DraftEnvironment, 'decision'> & Decided;
+type PlanTarget = Omit<DraftTarget, 'decision'> & Decided;
+type PlanEnvironment = Omit<DraftEnvironment, 'decision'> & Decided;
 
 export interface TechnicalContent {
   readonly integrations: readonly PlanIntegration[];
