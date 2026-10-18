@@ -8,7 +8,12 @@ import { cloudRoles } from '../lib/estimate-math.js';
 import { allRoundsText, firstRoundText } from '../lib/understanding/deepen-estimate-text.js';
 import { CloudNotice } from './CloudNotice.js';
 import { DeepenEstimateView } from './DeepenEstimateView.js';
-import { useDeepenEstimate, useDeepenStart, type DeepenEstimateLoad } from './use-deepen.js';
+import {
+  useDeepenEstimate,
+  useDeepenStart,
+  type DeepenEstimateLoad,
+  type DeepenStart,
+} from './use-deepen.js';
 
 // RF-209, RF-1017, RF-143, DEC-144, DEC-145: the Deepen action of the "Your turn" panel of a run that
 // ended Completed. It sends Rosetta back over what it did not confirm. The panel shows the round
@@ -59,18 +64,9 @@ function Question(props: {
   );
 }
 
-function Choices(props: { readonly runId: string }): JSX.Element {
-  const deepen = useDeepenStart(props.runId);
-  const { choice } = deepen;
-  const load = useDeepenEstimate(props.runId, choice);
-  const [asking, setAsking] = useState(false);
-  // A refusal closes the question; the reason shows on the page, and Start asks again.
-  useEffect(() => {
-    if (deepen.error !== undefined) setAsking(false);
-  }, [deepen.error]);
-  const cloud = load.status === 'ready' ? cloudRoles(load.estimate) : [];
-  const refused = deepen.error?.code === consentCode ? deepen.error : undefined;
-  const reason = reasonOf(load, deepen.consent);
+/** The round limit and the coverage pass. */
+function Controls(props: Pick<DeepenStart, 'choice' | 'setChoice'>): JSX.Element {
+  const { choice, setChoice } = props;
   return (
     <>
       <Field
@@ -81,7 +77,7 @@ function Choices(props: { readonly runId: string }): JSX.Element {
         value={String(choice.maxRounds)}
         options={roundChoices.map((each) => ({ value: each, label: each }))}
         onChange={(value) => {
-          deepen.setChoice({ ...choice, maxRounds: Number(value) });
+          setChoice({ ...choice, maxRounds: Number(value) });
         }}
       />
       <Field
@@ -90,9 +86,27 @@ function Choices(props: { readonly runId: string }): JSX.Element {
         label="Also read first-party files never read (coverage pass)"
         checked={choice.coveragePass}
         onChange={(checked) => {
-          deepen.setChoice({ ...choice, coveragePass: checked });
+          setChoice({ ...choice, coveragePass: checked });
         }}
       />
+    </>
+  );
+}
+
+function Choices(props: { readonly runId: string }): JSX.Element {
+  const deepen = useDeepenStart(props.runId);
+  const load = useDeepenEstimate(props.runId, deepen.choice);
+  const [asking, setAsking] = useState(false);
+  // A refusal closes the question; the reason shows on the page, and Start asks again.
+  useEffect(() => {
+    if (deepen.error !== undefined) setAsking(false);
+  }, [deepen.error]);
+  const cloud = load.status === 'ready' ? cloudRoles(load.estimate) : [];
+  const refused = deepen.error?.code === consentCode ? deepen.error : undefined;
+  const reason = reasonOf(load, deepen.consent);
+  return (
+    <>
+      <Controls choice={deepen.choice} setChoice={deepen.setChoice} />
       <DeepenEstimateView load={load} />
       {cloud.length === 0 ? null : (
         <CloudNotice

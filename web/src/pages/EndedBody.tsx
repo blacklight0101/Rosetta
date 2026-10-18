@@ -198,9 +198,23 @@ function Rail(props: RailProps): JSX.Element {
   );
 }
 
+/** The stepper, what failed, the areas that failed and, for a Deepen run, its rounds. */
+function Header(props: EndedBodyProps & { readonly reportBuilt: boolean }): JSX.Element {
+  const { run, state, shown, phase, stage } = props;
+  const built = { stage, commitSha: run.commitSha, reportBuilt: props.reportBuilt };
+  return (
+    <>
+      <RunStepper steps={stepperOf(built, shown, phase)} />
+      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
+      <FailedAreas state={shown} projectId={run.projectId} />
+      {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
+    </>
+  );
+}
+
 // RF-1015
 export function EndedBody(props: EndedBodyProps): JSX.Element {
-  const { run, state, shown, phase, stage } = props;
+  const { run, state, shown, stage } = props;
   const failed = state.ended?.errorCode !== undefined;
   const asks = stage === 'understand' && !failed;
   const report = useReportBuilt(run);
@@ -214,16 +228,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
       : undefined;
   return (
     <>
-      <RunStepper
-        steps={stepperOf(
-          { stage, commitSha: run.commitSha, reportBuilt: report.built },
-          shown,
-          phase,
-        )}
-      />
-      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
-      <FailedAreas state={shown} projectId={run.projectId} />
-      {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
+      <Header {...props} reportBuilt={report.built} />
       <div class="rst-p170-grid">
         <section class="rst-card rst-p170-main" aria-label="Results">
           <Tabs

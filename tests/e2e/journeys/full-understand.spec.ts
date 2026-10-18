@@ -17,6 +17,7 @@ import {
 import { accountFor } from '../support/seed.js';
 import { signInThroughPage } from '../support/sign-in-page.js';
 import { transitionsDone } from '../support/transitions.js';
+import { inEveryView } from '../support/views.js';
 
 // RF-006 is not here (cap-resume.spec.ts). RF-301, RF-300, RF-240, RF-241, RF-1007, ADR-010,
 // P2-13: flows 2 and 3 end to end through the pages and the real server. The first journey
@@ -105,4 +106,45 @@ test('RF-240 RF-241 RF-1007 the owner answers the open question and the area run
     .click();
   await openRunTab(page, 'Your questions');
   await expect(question).toContainText('Answered');
+});
+
+test('RF-209 RF-231 the run shows its measures and offers Deepen with an estimate that starts nothing', async ({
+  page,
+}, info) => {
+  test.setTimeout(240_000);
+  await signInThroughPage(page, accountFor('journey-run', info.project.name));
+  await expect(page).toHaveURL(/\/projects$/u);
+  await openHistory(page);
+  await runRow(page, '-understand')
+    .getByRole('link', { name: /^View run /u })
+    .last()
+    .click();
+  const measures = page.getByRole('region', { name: 'Understanding measures' });
+  await expect(measures.getByTestId('measure-coverage')).toContainText('First-party coverage');
+  await expect(measures.getByTestId('understanding-standing')).toBeVisible();
+  await expect(measures).not.toContainText(/complete|fully understood/iu);
+
+  const started: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().endsWith('/deepen')) {
+      started.push(request.url());
+    }
+  });
+  const turn = page.getByRole('region', { name: 'Your turn' });
+  await turn.getByRole('button', { name: 'Deepen this run' }).click();
+  await expect(turn.getByTestId('deepen-first-round')).toBeVisible();
+  await expect(turn.getByTestId('deepen-all-rounds')).toContainText(
+    'a working ceiling, not a maximum',
+  );
+  await expect(turn.getByTestId('deepen-all-rounds')).toContainText('is what stops the run');
+
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+  await inEveryView(page, info, async () => {
+    const fits = await page.evaluate(
+      'document.documentElement.scrollWidth <= document.documentElement.clientWidth',
+    );
+    expect(fits).toBe(true);
+  });
+  expect(started).toEqual([]);
 });
