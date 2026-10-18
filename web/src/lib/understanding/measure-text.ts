@@ -161,12 +161,86 @@ export interface ChangeRow {
   readonly change: string;
 }
 
-export function beforeAfterRows(before: MeasureSet, after: MeasureSet): readonly ChangeRow[] {
-  return before.supported < 0 && after.supported < 0
-    ? [{ id: '', label: '', before: '', after: '', kind: 'same', change: '' }]
-    : [];
+type Direction = 'higherIsBetter' | 'lowerIsBetter' | 'neutral';
+
+function kindOf(delta: number, direction: Direction): ChangeRow['kind'] {
+  if (delta === 0) return 'same';
+  if (direction === 'neutral') return 'info';
+  return delta > 0 === (direction === 'higherIsBetter') ? 'better' : 'worse';
 }
 
+function changeText(delta: number, unit: string): string {
+  if (delta === 0) return 'no change';
+  return `${delta > 0 ? 'up' : 'down'} ${countText(Math.abs(delta))}${unit}`;
+}
+
+interface Figure {
+  readonly id: string;
+  readonly label: string;
+  readonly direction: Direction;
+  readonly pick: (measures: MeasureSet) => number;
+  readonly show: (measures: MeasureSet) => string;
+  readonly unit?: string;
+}
+
+const figures: readonly Figure[] = [
+  {
+    ...{ id: 'coverage', label: 'First-party coverage', direction: 'higherIsBetter' },
+    pick: (m) => Math.round((m.firstPartyCoverage ?? 0) * 100),
+    show: (m) => (m.firstPartyCoverage === null ? 'none read' : percentText(m.firstPartyCoverage)),
+    unit: ' points',
+  },
+  {
+    ...{ id: 'notRead', label: 'First-party files not read', direction: 'lowerIsBetter' },
+    ...{ pick: (m) => m.filesNotReadCount, show: (m) => countText(m.filesNotReadCount) },
+  },
+  {
+    ...{ id: 'supported', label: 'Supported claims', direction: 'higherIsBetter' },
+    ...{ pick: (m) => m.supported, show: (m) => countText(m.supported) },
+  },
+  {
+    ...{ id: 'rejected', label: 'Rejected claims', direction: 'neutral' },
+    ...{ pick: (m) => m.rejected, show: (m) => countText(m.rejected) },
+  },
+  {
+    ...{ id: 'notJudged', label: 'Not judged', direction: 'lowerIsBetter' },
+    ...{ pick: (m) => m.notJudged, show: (m) => countText(m.notJudged) },
+  },
+  {
+    ...{ id: 'unresolved', label: 'Rejected, not replaced', direction: 'lowerIsBetter' },
+    ...{ pick: (m) => m.rejectedUnresolved, show: (m) => countText(m.rejectedUnresolved) },
+  },
+  {
+    ...{ id: 'afterReread', label: 'Supported after a re-read', direction: 'neutral' },
+    ...{ pick: (m) => m.supportedAfterReread, show: (m) => countText(m.supportedAfterReread) },
+  },
+];
+
+// RF-231
+export function beforeAfterRows(before: MeasureSet, after: MeasureSet): readonly ChangeRow[] {
+  return figures.map((figure) => {
+    const delta = figure.pick(after) - figure.pick(before);
+    const apart = figure.id === 'afterReread' && delta !== 0 ? ', listed apart' : '';
+    return {
+      ...{ id: figure.id, label: figure.label },
+      ...{ before: figure.show(before), after: figure.show(after) },
+      kind: kindOf(delta, figure.direction),
+      change: `${changeText(delta, figure.unit ?? '')}${apart}`,
+    };
+  });
+}
+
+const stops: Readonly<Record<string, (done: string) => string>> = {
+  noProgress: () =>
+    'No progress: the last round added no new supported claim and read no new first-party file.',
+  roundLimit: (done) => `The round limit was reached: ${done} rounds ran.`,
+  capReached: (done) => `A cap stopped it after ${done} rounds. The run can be resumed.`,
+  stopped: (done) => `You stopped it after ${done} rounds.`,
+};
+
+// RF-209
 export function stopText(reason: string, roundsDone: number, maxRounds: number): string {
-  return reason.length + roundsDone + maxRounds < 0 ? 'x' : '';
+  const done = `${String(roundsDone)} of ${String(maxRounds)}`;
+  const write = Object.hasOwn(stops, reason) ? stops[reason] : undefined;
+  return write === undefined ? `It stopped after ${done} rounds.` : write(done);
 }
