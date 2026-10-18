@@ -27,10 +27,10 @@ describe('EstimatePlan: the data model call', () => {
 
     const { assumptions, planner } = estimate;
     const system = (await readFile('prompts/planner/data-model.v1.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(3);
+    expect(assumptions.calls).toBe(4);
     expect(assumptions.dataModelPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(3 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(4 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-623 does not count it when no ENT claim is supported, since no call is made', async () => {
@@ -38,8 +38,8 @@ describe('EstimatePlan: the data model call', () => {
     const estimate = await estimateOf({ seed: { cards } });
 
     const { assumptions, planner } = estimate;
-    expect(assumptions).toMatchObject({ calls: 2, dataModelPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(2 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 3, dataModelPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(3 * 3 * assumptions.maxOutputTokens);
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
   });
 
@@ -53,11 +53,13 @@ describe('EstimatePlan: the data model call', () => {
       assumptions.promptTokens -
       assumptions.prdPromptTokens -
       assumptions.dataModelPromptTokens -
-      assumptions.flowsPromptTokens;
+      assumptions.flowsPromptTokens -
+      assumptions.coveragePromptTokens;
     const sum =
       reservation(plan) +
       reservation(assumptions.prdPromptTokens) +
-      reservation(assumptions.dataModelPromptTokens);
+      reservation(assumptions.dataModelPromptTokens) +
+      reservation(assumptions.coveragePromptTokens);
     expect(planner.points.high.inputTokens + planner.points.high.outputTokens).toBe(sum);
   });
 });

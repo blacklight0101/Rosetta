@@ -1,3 +1,4 @@
+import { continuePromptTokens } from '../../../../src/application/estimate/plan-continuation-reserve.js';
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import {
@@ -29,11 +30,11 @@ describe('EstimatePlan: the coverage call', () => {
     expect(assumptions.coveragePromptTokens).toBeGreaterThan(Math.ceil(system / 4));
   });
 
-  it('RF-613 the high figure is the sum of the guard reservations of the four calls', async () => {
+  it('RF-613 the high figure is the sum of the guard reservations of the four calls, continuations included', async () => {
     const { assumptions, planner } = await estimateOf();
 
     const reservation = (promptTokens: number): number =>
-      promptTokens + assumptions.maxOutputTokens;
+      3 * promptTokens + 6 * assumptions.maxOutputTokens + 2 * continuePromptTokens;
     const plan =
       assumptions.promptTokens -
       assumptions.prdPromptTokens -

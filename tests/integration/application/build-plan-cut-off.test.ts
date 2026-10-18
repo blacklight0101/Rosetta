@@ -153,7 +153,7 @@ describe('BuildPlan: a cut-off document or a metered continuation', () => {
     const run = await h.plan({ cloudConsent: true });
 
     expect(run.endState).toBe('Completed');
-    expect(h.providers.ledger.entries).toHaveLength(4);
+    expect(h.providers.ledger.entries).toHaveLength(5);
     const worst = h.providers.ledger.reservations.map((each) => each.reservation.worstCase);
     const tokens = worst.reduce((sum, each) => sum + each.tokens, 0n);
     const { high } = estimate.planner.points;

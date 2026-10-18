@@ -149,9 +149,8 @@ export class BuildPlan implements RunExecutor {
   }
 
   /**
-   * RF-621..RF-627: the documents the planner writes after the plan, the links of the task cards to
-   * the items they build, and the package. A package with an item no task card builds is written
-   * (checks.md lists it), but the run is not reported complete (RST-1806).
+   * RF-621..RF-627: the documents, the links of the task cards to the items they build, and the
+   * package. An item no task card builds is listed in checks.md and ends the run RST-1806.
    */
   private async finish(parts: Finish, prompts: PlanPrompts): Promise<RunOutcome> {
     const { run, call, input, assembly, inputs } = parts;
@@ -162,7 +161,10 @@ export class BuildPlan implements RunExecutor {
       { ...input, components: assembly.content.components },
       warn,
     );
-    const linking = { ...call, prompt: prompts.coverage, agentTaskId: 'planner-coverage' };
+    const linking = {
+      ...{ ...call, onCutOff: warn },
+      ...{ prompt: prompts.coverage, agentTaskId: 'planner-coverage' },
+    };
     const covered = await planCoverage(linking, { content: assembly.content, documents });
     for (const message of coverageWarnings(covered)) await warn(message);
     const shapes = await planShapes(this.deps, inputs);
