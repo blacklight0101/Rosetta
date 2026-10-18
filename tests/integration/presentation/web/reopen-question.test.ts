@@ -18,12 +18,19 @@ afterEach(async () => {
   current = undefined;
 });
 
-async function setup(options: { readonly ended?: boolean } = {}) {
+async function setup(options: { readonly ended?: boolean; readonly queued?: boolean } = {}) {
   const test = createTestServer();
   current = test;
   const amyUser = await addUser(test, { userName: 'amy' });
   const bobUser = await addUser(test, { userName: 'bob' });
   const owner = actorOf(amyUser.account);
+  if (options.queued === true) {
+    // The first run takes the only running slot, so the next one waits in the queue.
+    await test.runs.submit.execute({
+      ...{ actor: owner, project: sampleProject({ userId: owner.userId }) },
+      ...{ stage: 'understand', options: {} },
+    });
+  }
   const outcome = await test.runs.submit.execute({
     ...{ actor: owner, project: sampleProject({ userId: owner.userId }) },
     ...{ stage: 'understand', options: {} },
@@ -131,6 +138,32 @@ describe('POST /api/runs/:runId/answers/:cardId/reopen, a run that has not ended
     expect(response.statusCode).toBe(409);
     expect(cardFile('OQ-001')).toContain('State: Answered');
     expect(test.logger.entries.filter((entry) => /reopened/iu.test(entry.message))).toEqual([]);
+  });
+
+  it('RF-241 P2-44 answers 409 for a run that is still queued', async () => {
+    const { test, ref, run, amy, url, cardFile } = await setup({ ended: false, queued: true });
+    seedQuestionCards(test.answerFiles, ref, run.runKey, [
+      { id: 'OQ-001', area: 'Catalog', state: 'Answered' },
+    ]);
+
+    const response = await amy.request({ method: 'POST', url: `${url}/OQ-001/reopen` });
+
+    expect(run.queueState).toBe('Queued');
+    expect(response.statusCode).toBe(409);
+    expect(cardFile('OQ-001')).toContain('State: Answered');
+  });
+
+  it('RF-1105 P2-44 answers 404, not 409, for another user and for an unknown card', async () => {
+    const { test, ref, run, amy, bob, url } = await setup({ ended: false });
+    seedQuestionCards(test.answerFiles, ref, run.runKey, [
+      { id: 'OQ-001', area: 'Catalog', state: 'Answered' },
+    ]);
+
+    const other = await bob.request({ method: 'POST', url: `${url}/OQ-001/reopen` });
+    const unknown = await amy.request({ method: 'POST', url: `${url}/OQ-009/reopen` });
+
+    expect(other.statusCode).toBe(404);
+    expect(unknown.statusCode).toBe(404);
   });
 });
 
