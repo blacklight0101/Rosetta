@@ -11,6 +11,8 @@ import { flowsMessage } from '../plan/flows-message.js';
 import type { PlanInputs } from '../plan/plan-inputs.js';
 import { planMessage } from '../plan/plan-message.js';
 import { uxMessage } from '../plan/ux-message.js';
+import { coverageMessage } from '../plan/coverage-message.js';
+import { assumedCoverageInput } from './coverage-estimate.js';
 import { assumedComponents } from './flows-estimate.js';
 
 // RF-613, RF-621, RF-623, RF-624, RF-625, RF-626, ADR-007: the planner calls a plan run would make, each as its
@@ -35,9 +37,12 @@ export interface PlanPromptFiles {
   readonly apiContractPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the user-interface material (RF-626). */
   readonly uxPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the links of the task cards to the items (RF-627). */
+  readonly coveragePrompt: () => Promise<PromptFile>;
 }
 
-export type PlannedCallKind = 'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux';
+export type PlannedCallKind =
+  'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux' | 'coverage';
 
 interface PlannedCall {
   readonly kind: PlannedCallKind;
@@ -106,7 +111,7 @@ export async function plannedPrompts(
   inputs: PlanInputs,
 ): Promise<PlannedPrompts> {
   const { cards, brief, questions } = inputs;
-  const [catalogue, plan, prd, dataModel, flows, apiContract, ux] = await Promise.all([
+  const [catalogue, plan, prd, dataModel, flows, apiContract, ux, coverage] = await Promise.all([
     files.catalogue(),
     files.prompt(),
     files.prdPrompt(),
@@ -114,6 +119,7 @@ export async function plannedPrompts(
     files.flowsPrompt(),
     files.apiContractPrompt(),
     files.uxPrompt(),
+    files.coveragePrompt(),
   ]);
   const supported = supportedCards(cards);
   const answered = questions.filter((question) => question.answer.trim() !== '');
@@ -123,6 +129,12 @@ export async function plannedPrompts(
     { kind: 'plan', file: plan, message },
     { kind: 'prd', file: prd, message },
     ...documentCalls(supported, brief, { dataModel, flows, apiContract, ux }),
+    // RF-627: the links are asked for whenever a plan is written, so the call is always counted.
+    {
+      kind: 'coverage',
+      file: coverage,
+      message: coverageMessage(assumedCoverageInput(), () => TAG),
+    },
   ];
   return { calls, supportedCards: supported.length, answeredQuestions: answered.length };
 }

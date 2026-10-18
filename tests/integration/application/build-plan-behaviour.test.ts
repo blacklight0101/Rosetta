@@ -44,7 +44,7 @@ async function planned(
   return { files: await harness.handoffOf(run), harness };
 }
 
-/** The task cards of tasks.md by their id. */
+/** The task cards of tasks.md by their id; T-001 is the migration card (RF-623), so the planner's cards start at T-002. */
 function cardsById(files: Readonly<Record<string, string>>): Map<string, string> {
   const cards = plain(files['tasks.md']).split(/^## /mu).slice(1);
   return new Map(cards.map((card) => [card.split('\n')[0] ?? '', card]));
@@ -54,7 +54,7 @@ describe('RF-631 behaviour to preserve in a planned package', () => {
   it('RF-631 a task built on a feature and a rule lists their supported claims with citations', async () => {
     const { files } = await planned(undefined);
 
-    const card = cardsById(files).get('T-001') ?? '';
+    const card = cardsById(files).get('T-002') ?? '';
 
     expect(card).toContain('Behaviour to keep:');
     expect(card).toContain(
@@ -68,7 +68,7 @@ describe('RF-631 behaviour to preserve in a planned package', () => {
   it('RF-631 asks for an approval test of each behaviour before the change', async () => {
     const { files } = await planned(undefined);
 
-    const card = cardsById(files).get('T-001') ?? '';
+    const card = cardsById(files).get('T-002') ?? '';
 
     expect(card).toContain('Approval test before the change: pin FEAT-001.c1');
     expect(card).toContain('Approval test before the change: pin BR-001.c1');
@@ -77,7 +77,7 @@ describe('RF-631 behaviour to preserve in a planned package', () => {
   it('RF-631 never lists a claim the verifier did not find supported', async () => {
     const { files } = await planned(undefined);
 
-    const card = cardsById(files).get('T-001') ?? '';
+    const card = cardsById(files).get('T-002') ?? '';
 
     expect(card).not.toContain('FEAT-001.c2');
     expect(card).not.toContain('Checkout emails the warehouse');
@@ -86,7 +86,7 @@ describe('RF-631 behaviour to preserve in a planned package', () => {
   it('RF-631 a task built on a question card only lists no behaviour to keep', async () => {
     const { files } = await planned(undefined);
 
-    const card = cardsById(files).get('T-002') ?? '';
+    const card = cardsById(files).get('T-003') ?? '';
 
     expect(card).not.toContain('Behaviour to keep');
     expect(card).not.toContain('Approval test before the change');
@@ -114,10 +114,10 @@ describe('RF-632 fixtures.md, the scans it is taken from', () => {
 
     const cards = cardsById(files);
 
-    expect(cards.get('T-001')).toContain(
+    expect(cards.get('T-002')).toContain(
       'Data shapes to handle: [Largest files](fixtures.md#largest-files)',
     );
-    expect(cards.get('T-002')).not.toContain('fixtures.md');
+    expect(cards.get('T-003')).not.toContain('fixtures.md');
   });
 
   it('RF-632 does not use a scan of another snapshot', async () => {

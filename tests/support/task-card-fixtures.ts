@@ -25,7 +25,7 @@ export function planTask(overrides: Partial<PlanTask> = {}): PlanTask {
   return {
     ...{ id: 'T-001', title: 'A task', phase: 1, requirements: ['REQ-001'] },
     ...{ acceptanceCriteria: [scenario], invariant, riskClass: 'none', adds: [], probes: [] },
-    ...{ files: [], identifiers: [], dependsOn: [] },
+    ...{ files: [], identifiers: [], dependsOn: [], builds: [] },
     ...overrides,
   };
 }

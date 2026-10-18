@@ -63,6 +63,8 @@ export interface PlanTask {
   readonly identifiers: readonly AllocatedIdentifier[];
   /** `T-` ids of the cards this one waits for: declared, or added because the files overlap. */
   readonly dependsOn: readonly string[];
+  /** RF-627: the ids of the package items (features, tables, operations, flows, screens) it builds. */
+  readonly builds: readonly string[];
 }
 
 interface PlanRisk extends DraftRisk {
@@ -157,6 +159,7 @@ function tasksOf(
       ...{ invariant, riskClass, adds, probes, files },
       identifiers: identifiers[index] ?? [],
       dependsOn: (dependencies[index] ?? []).map((on) => planId('T', on + 1)),
+      builds: [],
     };
   });
 }

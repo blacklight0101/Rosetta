@@ -104,7 +104,7 @@ describe('a cap that fits the first three planner calls but not the flows call',
     const [, , third, fourth] = worst;
     if (third === undefined || fourth === undefined)
       throw new Error('The baseline made four calls');
-    expect(spent).toHaveLength(4);
+    expect(spent).toHaveLength(5);
     const before = spent.slice(0, 3).reduce((total, each) => total + each, 0n);
     const cap = before + fourth - 1n;
     expect(cap).toBeGreaterThanOrEqual(spent.slice(0, 2).reduce((t, e) => t + e, 0n) + third);

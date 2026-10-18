@@ -54,8 +54,8 @@ describe('BuildPlan: open questions linked to the cards they block', () => {
 
     const roadmap = plain(files['roadmap.md']);
     expect(roadmap).toContain('Waiting on open questions:');
-    expect(roadmap).toMatch(/- \[T-001\]\(tasks\.md#t-001\): .*OQ-002/u);
     expect(roadmap).toMatch(/- \[T-002\]\(tasks\.md#t-002\): .*OQ-002/u);
+    expect(roadmap).toMatch(/- \[T-003\]\(tasks\.md#t-003\): .*OQ-002/u);
   });
 });
 

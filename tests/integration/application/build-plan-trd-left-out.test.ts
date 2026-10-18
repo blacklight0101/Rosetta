@@ -8,7 +8,8 @@ import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 
 // RF-602, RF-622: when the only items the planner's answer loses are technical ones (a control no
-// supported card shows), the run still completes and the log names them.
+// supported card shows), the package is still written and the log names them (the run is not complete only because
+// the plan has no task card, RF-627).
 
 const answer = {
   requirements: [{ title: 'Order', statement: 'Place an order.', sources: ['FEAT-001'] }],
@@ -58,7 +59,9 @@ describe('BuildPlan: a technical item left out', () => {
   it('RF-602 RF-622 logs the item and writes a trd.md without it', async () => {
     const run = await h.plan();
 
-    expect(run.endState).toBe('Completed');
+    // RF-627: this plan has no task card, so no item is built and the run is not complete.
+    expect(run.endState).toBe('Failed');
+    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     const warnings = h.s.logger.entries.filter((entry) => entry.level === 'warn');
     expect(warnings.map((entry) => entry.message).join(' ')).toContain('1 technical item(s)');
     const trd = (await h.handoffOf(run))['trd.md'] ?? '';
