@@ -33,6 +33,21 @@ describe('HTTP to HTTPS redirect behind the proxy', () => {
     expect(response.statusCode).toBe(301);
     expect(response.headers.location).toBe('https://rosetta.example/projects?tab=runs');
   });
+});
+
+describe('the redirect target', () => {
+  it('RF-1304 a path that starts with two slashes stays on the public host (no open redirect)', async () => {
+    const { server } = serve(hostedUrl, 1);
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '//evil.example/steal',
+      headers: { 'x-forwarded-proto': 'http' },
+    });
+
+    expect(response.statusCode).toBe(301);
+    expect(new URL(String(response.headers.location)).host).toBe('rosetta.example');
+  });
 
   it('RF-1304 /healthz forwarded as http is redirected too', async () => {
     const { server } = serve(hostedUrl, 1);
