@@ -1,3 +1,4 @@
+import { areaPageName } from '../../../src/infrastructure/report/site/page-names.js';
 import { execFile } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
@@ -108,6 +109,7 @@ describe('the committed site/ folder', () => {
     expect(await filesOf(siteFolder)).toEqual(
       [
         '.nojekyll',
+        areaPageName('orders'),
         'cards/BR/BR-001.md',
         'cost.html',
         'cost.md',
