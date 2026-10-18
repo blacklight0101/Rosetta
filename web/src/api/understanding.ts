@@ -20,20 +20,20 @@ const measureFields = {
   notJudged: count,
   rejectedUnresolved: count,
   supportedAfterReread: count,
-  thirdParty: z.looseObject({ files: count, tokens: count, claims: count }),
+  thirdParty: z.object({ files: count, tokens: count, claims: count }),
   wellCovered: z.boolean(),
 };
 
-const measuresSchema = z.looseObject({
+const measuresSchema = z.object({
   ...measureFields,
   /** The largest first-party files no task read, at most ten; `filesNotReadCount` counts all. */
-  filesNotRead: z.array(z.looseObject({ path: z.string(), tokens: count })),
+  filesNotRead: z.array(z.object({ path: z.string(), tokens: count })),
   filesNotReadCount: count,
 });
 
 /** A measure set before or after a Deepen: the files not read are only counted there. */
 const summarySchema = z
-  .looseObject({ ...measureFields, filesNotRead: count })
+  .object({ ...measureFields, filesNotRead: count })
   .transform(({ filesNotRead, ...rest }) => ({ ...rest, filesNotReadCount: filesNotRead }));
 
 const roundSchema = z.looseObject({
