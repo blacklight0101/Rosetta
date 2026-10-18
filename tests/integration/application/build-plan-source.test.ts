@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
-import { cardSaying, planCards } from '../../support/plan-cards.js';
+import { cardSaying, planCards, planQuestions } from '../../support/plan-cards.js';
 import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.js';
 
 // RF-614, RF-604, RNF-004, RST-1802: a plan run is written from the source run it was started with,
@@ -68,6 +68,24 @@ describe('BuildPlan: the source run', () => {
     expect(firstMessage()).toContain('Archiving moves an order');
     expect(firstMessage()).not.toContain('Checkout creates an order from the basket.');
     expect((await h.manifestOf(run)).sourceRunId).toBe(newerKey);
+  });
+});
+
+describe('BuildPlan: what the source run supplies and refuses', () => {
+  it('RF-614 the answers sent are those of the chosen run only', async () => {
+    const older = await h.understandRun({
+      ...{ cards: planCards(), runKey: olderKey, questions: planQuestions },
+    });
+    const newer = await h.understandRun({
+      ...{ cards: planCards(), runKey: newerKey, questions: planQuestions },
+    });
+    await h.answer(older, [{ cardId: 'OQ-001', answer: 'Only a manager may cancel.' }]);
+    await h.answer(newer, [{ cardId: 'OQ-001', answer: 'Any clerk may cancel.' }]);
+
+    await h.plan({ sourceRunId: older.id });
+
+    expect(firstMessage()).toContain('Only a manager may cancel.');
+    expect(firstMessage()).not.toContain('Any clerk may cancel.');
   });
 
   it('RST-1802 a named run that ended CapReached fails the run before any model call', async () => {
