@@ -38,7 +38,9 @@ export interface HostRequest {
 
 const sessionId = 'fake-session';
 const csrfToken = 'fake-csrf-token';
-const projectId = 'project-1';
+// An id with a character that must be escaped in a path, so an unescaped id reaches no route.
+const projectId = 'project#1';
+const projectPath = encodeURIComponent(projectId);
 const runId = '20261018-100000-scan';
 
 async function bodyOf(request: IncomingMessage): Promise<string> {
@@ -154,8 +156,8 @@ export class FakeRosettaHost {
     const answers: Readonly<Record<string, readonly [number, unknown]>> = {
       'GET /api/projects': [200, { projects: [] }],
       'POST /api/projects': [this.behaviour.projectExists ? 200 : 201, { id: projectId }],
-      [`POST /api/projects/${projectId}/runs`]: [202, { id: runId }],
-      [`DELETE /api/projects/${projectId}`]: [200, {}],
+      [`POST /api/projects/${projectPath}/runs`]: [202, { id: runId }],
+      [`DELETE /api/projects/${projectPath}`]: [200, {}],
     };
     const answer = answers[`${entry.method} ${entry.path}`];
     if (answer !== undefined) json(response, answer[0], answer[1]);

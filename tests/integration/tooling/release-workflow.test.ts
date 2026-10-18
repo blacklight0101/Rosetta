@@ -1,3 +1,5 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { at, keysOf, stepIndex, stepTexts, workflowDocument } from '../../support/workflow-yaml.js';
 
@@ -7,6 +9,26 @@ import { at, keysOf, stepIndex, stepTexts, workflowDocument } from '../../suppor
 // gate G-07 (the repository variable ROSETTA_DEPLOY_ENABLED and the `production` environment).
 
 const release = (): Promise<unknown> => workflowDocument('release.yml');
+const run = promisify(execFile);
+
+/** The `run:` script of the deploy step whose name says it is pending G-07; empty when none. */
+function pendingStepScript(document: unknown): string {
+  const steps = at(document, 'jobs', 'deploy', 'steps');
+  const step: unknown = (Array.isArray(steps) ? steps : []).find((each: unknown) =>
+    String(at(each, 'name')).includes('Pending G-07'),
+  );
+  const script = at(step, 'run');
+  return typeof script === 'string' ? script : '';
+}
+
+/** Runs a step script with bash, as the runner does (`bash -e`), and returns its exit code. */
+async function exitCodeOf(script: string): Promise<number> {
+  const env = { PATH: process.env['PATH'] ?? '', IMAGE: 'image', SHA_TAG: 'sha-0000000' };
+  return run('bash', ['--noprofile', '--norc', '-eo', 'pipefail', '-c', script], { env }).then(
+    () => 0,
+    (error: unknown) => Number(at(error, 'code') ?? 1),
+  );
+}
 const image = 'ghcr.io/blacklight0101/rosetta';
 
 describe('release.yml triggers', () => {
@@ -32,10 +54,9 @@ describe('release.yml triggers', () => {
 
 describe('release.yml image job', () => {
   it('DEC-104 builds only from main or a v* tag', async () => {
-    const condition = String(at(await release(), 'jobs', 'image', 'if'));
-
-    expect(condition).toContain("github.ref == 'refs/heads/main'");
-    expect(condition).toContain("startsWith(github.ref, 'refs/tags/v')");
+    expect(at(await release(), 'jobs', 'image', 'if')).toBe(
+      "github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')",
+    );
   });
 
   it('RF-1300 tags the image sha-<short> and X.Y.Z of the tag, never latest', async () => {
@@ -43,15 +64,16 @@ describe('release.yml image job', () => {
 
     expect(steps).toContain(image);
     expect(steps).toContain('sha-');
-    expect(steps).toContain('${REF_NAME#v}');
+    expect(steps).toContain('bash scripts/release-tags.sh');
     expect(steps).not.toContain(':latest');
   });
 
-  it('DEC-29 refuses a tag that is not vX.Y.Z of package.json or not on main', async () => {
-    const steps = stepTexts(await release(), 'image').join('\n');
+  it('DEC-29 works out the tags with scripts/release-tags.sh before the build (release-tags.test.ts runs it)', async () => {
+    const document = await release();
+    const tags = stepIndex(document, 'image', 'bash scripts/release-tags.sh');
 
-    expect(steps).toContain('package.json');
-    expect(steps).toContain('git merge-base --is-ancestor');
+    expect(tags).toBeGreaterThan(-1);
+    expect(tags).toBeLessThan(stepIndex(document, 'image', 'docker build'));
   });
 
   it('RF-1300 scans the image with Trivy before it pushes anything', async () => {
@@ -78,9 +100,7 @@ describe('release.yml SBOM job', () => {
     const document = await release();
     const steps = stepTexts(document, 'sbom').join('\n');
 
-    expect(String(at(document, 'jobs', 'sbom', 'if'))).toContain(
-      "startsWith(github.ref, 'refs/tags/v')",
-    );
+    expect(at(document, 'jobs', 'sbom', 'if')).toBe("startsWith(github.ref, 'refs/tags/v')");
     expect(steps).toContain('npm sbom --sbom-format cyclonedx');
     expect(steps).toContain('gh release upload');
   });
@@ -90,7 +110,9 @@ describe('release.yml deploy job (pending G-07)', () => {
   it('DEC-104 is skipped unless the owner set ROSETTA_DEPLOY_ENABLED and runs in the production environment', async () => {
     const deploy = at(await release(), 'jobs', 'deploy');
 
-    expect(String(at(deploy, 'if'))).toContain("vars.ROSETTA_DEPLOY_ENABLED == 'true'");
+    expect(at(deploy, 'if')).toBe(
+      "vars.ROSETTA_DEPLOY_ENABLED == 'true' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))",
+    );
     const environment = at(deploy, 'environment');
     expect(typeof environment === 'string' ? environment : at(environment, 'name')).toBe(
       'production',
@@ -101,7 +123,6 @@ describe('release.yml deploy job (pending G-07)', () => {
   it('DEC-104 deploys only main or a v* tag, one deploy at a time, never cancelled half-way', async () => {
     const deploy = at(await release(), 'jobs', 'deploy');
 
-    expect(String(at(deploy, 'if'))).toContain("github.ref == 'refs/heads/main'");
     expect(at(deploy, 'concurrency', 'cancel-in-progress')).toBe(false);
   });
 
@@ -124,10 +145,10 @@ describe('release.yml deploy job (pending G-07)', () => {
     expect(steps.join('\n')).toContain('vars.ROSETTA_PUBLIC_URL');
   });
 
-  it('RF-1304 the host steps are marked pending G-07 and fail instead of pretending to deploy', async () => {
-    const steps = stepTexts(await release(), 'deploy').join('\n');
+  it('RF-1304 the host step is marked pending G-07 and, when run, fails instead of pretending to deploy', async () => {
+    const script = pendingStepScript(await release());
 
-    expect(steps).toContain('Pending G-07');
-    expect(steps).toContain('exit 1');
+    expect(script).toContain('Pending G-07');
+    expect(await exitCodeOf(script)).not.toBe(0);
   });
 });

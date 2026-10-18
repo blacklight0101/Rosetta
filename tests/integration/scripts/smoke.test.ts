@@ -79,7 +79,7 @@ describe('scripts/smoke.mjs on a healthy deployment', () => {
     await smoke([url], account);
 
     expect(fake.calls()).toEqual(
-      expect.arrayContaining(['DELETE /api/projects/project-1', 'DELETE /api/session']),
+      expect.arrayContaining(['DELETE /api/projects/project%231', 'DELETE /api/session']),
     );
     expect(fake.calls().at(-1)).toBe('DELETE /api/session');
   });
@@ -93,7 +93,7 @@ describe('scripts/smoke.mjs keeps the workspace as it was', () => {
     const outcome = await smoke([url], account);
 
     expect(outcome.code).toBe(0);
-    expect(fake.calls()).not.toContain('DELETE /api/projects/project-1');
+    expect(fake.calls()).not.toContain('DELETE /api/projects/project%231');
   });
 
   it('RNF-003 never prints the password', async () => {
@@ -155,7 +155,7 @@ describe('scripts/smoke.mjs on a broken deployment', () => {
 
     expect(outcome.code).toBe(1);
     expect(outcome.output).toMatch(/FAIL\s+scan.*Failed/u);
-    expect(fake.calls()).toContain('DELETE /api/projects/project-1');
+    expect(fake.calls()).toContain('DELETE /api/projects/project%231');
   });
 });
 
@@ -175,5 +175,34 @@ describe('scripts/smoke.mjs usage', () => {
     expect(outcome.code).toBe(2);
     expect(outcome.output).toContain('ROSETTA_SMOKE_USER');
     expect(outcome.output).toContain('ROSETTA_SMOKE_PASSWORD');
+  });
+});
+
+describe('scripts/smoke.mjs and the password', () => {
+  it('RNF-003 never prints the password when the sign-in fails', async () => {
+    const { host: fake, url } = await started();
+    fake.behaviour.password = 'another-password';
+
+    const outcome = await smoke([url], account);
+
+    expect(outcome.code).toBe(1);
+    expect(outcome.output).toMatch(/FAIL\s+sign-in/u);
+    expect(outcome.output).not.toContain(account.ROSETTA_SMOKE_PASSWORD);
+  });
+
+  it('RNF-003 refuses to send the password over plain http to a host that is not loopback', async () => {
+    const outcome = await smoke(['http://rosetta.example.invalid'], account);
+
+    expect(outcome.code).toBe(1);
+    expect(outcome.output).toMatch(/FAIL\s+sign-in.*plain http/u);
+    expect(outcome.output).not.toContain(account.ROSETTA_SMOKE_PASSWORD);
+  });
+
+  it('RNF-003 sends the password over plain http to a loopback address', async () => {
+    const { url } = await started();
+
+    const outcome = await smoke([url.replace('127.0.0.1', 'localhost')], account);
+
+    expect(outcome.output).not.toContain('plain http');
   });
 });

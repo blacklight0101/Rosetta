@@ -75,3 +75,19 @@ export async function jobIds(name: string): Promise<string[]> {
   const lines = (await load()).find((workflow) => workflow.name === name)?.lines ?? [];
   return jobs(lines).map((job) => job.id);
 }
+
+/**
+ * RNF-003, P1-55: the problems of one workflow with the trigger and secrets rule: no
+ * `pull_request_target`, and no `secrets.` anywhere except in the deploy job of release.yml.
+ */
+export function triggerAndSecretProblems(workflow: Workflow): string[] {
+  const code = workflow.lines.filter((line) => !line.trimStart().startsWith('#'));
+  const head = code.slice(0, code.indexOf('jobs:'));
+  const outsideDeploy = jobs(code)
+    .filter((job) => workflow.name !== 'release.yml' || job.id !== 'deploy')
+    .flatMap((job) => job.body);
+  return [
+    ...(code.join('\n').includes('pull_request_target') ? ['pull_request_target'] : []),
+    ...([...head, ...outsideDeploy].join('\n').includes('secrets.') ? ['secrets context'] : []),
+  ];
+}
