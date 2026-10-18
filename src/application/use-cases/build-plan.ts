@@ -3,6 +3,7 @@ import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-content.js';
+import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
 import {
@@ -100,11 +101,10 @@ export class BuildPlan implements RunExecutor {
       tags: () => this.deps.ids.dataBlockTag(),
     };
     const output = await askPlanner(call, { cards: supported, brief, catalogue, answered });
-    const assembly = await this.assemble(
-      run,
-      output,
-      supported.map((card) => card.id),
-    );
+    const assembly = await this.assemble(run, output, {
+      supported: supported.map((card) => card.id),
+      specificationDriven: brief.principles.includes(methodPrinciples.sdd),
+    });
     if (assembly === undefined) {
       const message = 'The planner answer named no requirement with a supported card.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
@@ -145,16 +145,17 @@ export class BuildPlan implements RunExecutor {
   private async assemble(
     run: Run,
     output: string,
-    supported: readonly string[],
+    checks: { readonly supported: readonly string[]; readonly specificationDriven: boolean },
   ): Promise<PlanAssembly | undefined> {
     const draft = parsePlanAnswer(output);
     if (draft === undefined) return undefined;
-    const assembly = assemblePlan(draft, new Set(supported));
+    const { specificationDriven } = checks;
+    const assembly = assemblePlan(draft, new Set(checks.supported), { specificationDriven });
     const { requirements, entities, tasks } = assembly.dropped;
     if (requirements + entities + tasks > 0) {
       await this.deps.logger.log({
         ...{ level: 'warn', logger: 'plan', runId: run.runKey, userId: run.userId },
-        message: `The planner answer had items without a supported card or phase; ${String(requirements)} requirement(s), ${String(entities)} entity mapping(s) and ${String(tasks)} task card(s) were left out.`,
+        message: `The planner answer had items without a supported card, a phase or (given SDD) a requirement; ${String(requirements)} requirement(s), ${String(entities)} entity mapping(s) and ${String(tasks)} task card(s) were left out.`,
       });
     }
     return assembly.content.requirements.length === 0 ? undefined : assembly;

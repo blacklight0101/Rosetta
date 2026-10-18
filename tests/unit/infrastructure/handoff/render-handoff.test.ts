@@ -65,3 +65,37 @@ describe('renderHandoff', () => {
     expect(holding(files, new RegExp(fakeOpenAiKey.slice(8, 30), 'u'))).toEqual([]);
   });
 });
+
+describe('renderHandoff: the method files', () => {
+  it('RF-607 RF-612 writes the conventions, and AGENTS.md for an AI-assisted build only', () => {
+    const files = renderHandoff(handoffOf('Plain text.'), masker);
+    const unassisted = handoffOf('Plain text.');
+    const without = renderHandoff(
+      { ...unassisted, brief: { ...unassisted.brief, buildMethod: { aiAssisted: false } } },
+      masker,
+    );
+
+    expect(Object.keys(files)).toEqual(expect.arrayContaining(['conventions.md', 'AGENTS.md']));
+    expect(Object.keys(without)).toContain('conventions.md');
+    expect(Object.keys(without)).not.toContain('AGENTS.md');
+    expect(files['README.md']).toContain('[AGENTS.md](AGENTS.md)');
+    expect(without['README.md']).not.toContain('AGENTS.md');
+  });
+
+  it('RF-607 text typed in the brief or taken from the catalogue shows as text in the method files', () => {
+    const files = renderHandoff(handoffOf(hostile), masker);
+
+    for (const name of ['AGENTS.md', 'conventions.md', 'roadmap.md', 'tasks.md']) {
+      expect(files[name]).toBeDefined();
+      expect(files[name]).not.toMatch(/<[A-Za-z!/?]/u);
+      expect(files[name]).not.toMatch(/\]\(javascript/u);
+      expect(files[name]).not.toMatch(/^# Title/mu);
+    }
+  });
+
+  it('RNF-003 masks a secret typed as a technology or an answer of the project context', () => {
+    const files = renderHandoff(handoffOf(`key ${fakeOpenAiKey}`), masker);
+
+    expect(holding(files, new RegExp(fakeOpenAiKey.slice(8, 30), 'u'))).toEqual([]);
+  });
+});

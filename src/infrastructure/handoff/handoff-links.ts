@@ -15,6 +15,8 @@ export const handoffFiles = {
   risks: 'risks.md',
   openQuestions: 'open-questions.md',
   sources: 'sources.md',
+  conventions: 'conventions.md',
+  agents: 'AGENTS.md',
 } as const;
 
 const decisionsFolder = 'decisions';
@@ -22,6 +24,11 @@ const decisionsFolder = 'decisions';
 /** `decisions/ADR-001.md`. */
 export function decisionFile(id: string): string {
   return `${decisionsFolder}/${id}.md`;
+}
+
+/** A link to a decision record, from a file at the root of the package. */
+export function decisionLink(id: string): string {
+  return `[${id}](${decisionFile(id)})`;
 }
 
 /** A link to the heading of an id in a file of the package, from a file `depth` folders down. */

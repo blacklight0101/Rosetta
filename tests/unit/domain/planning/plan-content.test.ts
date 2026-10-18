@@ -90,3 +90,41 @@ describe('assemblePlan: the other parts', () => {
     expect(assemblePlan(draft(), supported).content.phases).toMatchObject([{ number: 1 }]);
   });
 });
+
+describe('assemblePlan: specification-driven', () => {
+  const specified = { specificationDriven: true };
+
+  it('RF-607 leaves out a task that implements no requirement, and numbers the others again', () => {
+    const base = draft();
+    const withBare = {
+      ...base,
+      tasks: [
+        { title: 'Bare', phase: 1, requirements: [], acceptanceCriteria: ['Given.'] },
+        { title: 'Unknown', phase: 1, requirements: [9], acceptanceCriteria: ['Given.'] },
+        { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: ['Given.'] },
+      ],
+    };
+
+    const { content, dropped } = assemblePlan(withBare, supported, specified);
+
+    expect(content.tasks).toMatchObject([
+      { id: 'T-001', title: 'Orders', requirements: ['REQ-001'] },
+    ]);
+    expect(dropped.tasks).toBe(2);
+  });
+
+  it('RF-607 without SDD the same task is written with no requirement', () => {
+    const base = draft();
+    const bare = { title: 'Bare', phase: 1, requirements: [], acceptanceCriteria: ['Given.'] };
+
+    const { content } = assemblePlan({ ...base, tasks: [bare] }, supported);
+
+    expect(content.tasks).toMatchObject([{ title: 'Bare', requirements: [] }]);
+  });
+
+  it('RF-608 a planner decision is proposed and lists no options', () => {
+    expect(assemblePlan(draft(), supported).content.decisions).toMatchObject([
+      { status: 'Proposed', options: [] },
+    ]);
+  });
+});

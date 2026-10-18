@@ -150,7 +150,11 @@ describe('BuildPlan: the parts of the package', () => {
     expect(Object.keys(files).sort()).toEqual([
       'README.md',
       'architecture.md',
+      'conventions.md',
       'decisions/ADR-001.md',
+      'decisions/ADR-002.md',
+      'decisions/ADR-003.md',
+      'decisions/ADR-004.md',
       'entity-mapping.md',
       'open-questions.md',
       'requirements.md',
