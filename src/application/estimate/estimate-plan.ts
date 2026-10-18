@@ -3,6 +3,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Project } from '../projects/project.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
+import { maxPlannerContinuations } from '../plan/plan-continuation.js';
 import { ceilPercent } from './estimate-assumptions.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
 import { plannerKeyAvailable, type PlanKeyDependencies } from './plan-key.js';
@@ -24,6 +25,8 @@ import { estimateRole, type RolePricing } from './role-estimate.js';
 // answers in data blocks), at the budget guard's four characters per token. Its output is a share of
 // the planner's `maxOutputTokens`; the high figure is all of it, which is the guard's worst case, so
 // a high figure that does not fit a cap is a call the guard may refuse (the run ends `CapReached`).
+// The high figure also reserves the two continuations a cut-off answer may earn (RF-604): three
+// answers per call, the input of each continuation holding the answer so far.
 // Cost comes from the price table like the estimate of an understand run; the caps are the ones the
 // guard checks (plan-caps.ts).
 
@@ -47,8 +50,25 @@ export type EstimatePlanProblem =
 
 /** The planner's package is long: a quarter, half and all of its output limit (RNF-012 calibrates). */
 const OUTPUT_PERCENT: ByScenario<number> = { low: 25, likely: 50, high: 100 };
+/** The tokens of the continue prompt (planner/continue.vN.md is about 110), rounded up. */
+const CONTINUE_PROMPT_TOKENS = 120;
 /** The budget guard's estimate: four characters per token. */
 const CHARS_PER_TOKEN = 4;
+
+/**
+ * RF-604: the worst case of one call whose answer is cut off every time: the call and each of its
+ * continuations write the whole limit, and the input of a continuation holds the answer so far.
+ */
+function continuations(
+  promptTokens: number,
+  limit: number,
+): { readonly inputTokens: number; readonly outputTokens: number } {
+  let inputTokens = promptTokens;
+  for (let each = 1; each <= maxPlannerContinuations; each += 1) {
+    inputTokens += promptTokens + each * limit + CONTINUE_PROMPT_TOKENS;
+  }
+  return { inputTokens, outputTokens: (1 + maxPlannerContinuations) * limit };
+}
 
 function eachScenario<T>(figure: (scenario: Scenario) => T): ByScenario<T> {
   return { low: figure('low'), likely: figure('likely'), high: figure('high') };
@@ -69,11 +89,16 @@ export class EstimatePlan {
   ): Promise<{ readonly promptTokens: number; readonly role: RoleEstimate }> {
     // The guard's input estimate: system prompt, messages and the empty tool list `[]`.
     const promptTokens = Math.ceil((prompt + '[]').length / CHARS_PER_TOKEN);
-    const tokens = eachScenario((scenario) => ({
-      inputTokens: promptTokens,
-      outputTokens: Math.max(1, ceilPercent(maxOutputTokens, OUTPUT_PERCENT[scenario])),
-      cacheWriteTokens: promptTokens,
-    }));
+    const tokens = eachScenario((scenario) => {
+      const reserved =
+        scenario === 'high' ? continuations(promptTokens, maxOutputTokens) : undefined;
+      return {
+        inputTokens: reserved?.inputTokens ?? promptTokens,
+        outputTokens:
+          reserved?.outputTokens ?? ceilPercent(maxOutputTokens, OUTPUT_PERCENT[scenario]),
+        cacheWriteTokens: reserved?.inputTokens ?? promptTokens,
+      };
+    });
     return {
       promptTokens,
       role: await estimateRole(this.deps, project, { role: 'planner', tokens }),
@@ -109,6 +134,7 @@ export class EstimatePlan {
           apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
+        continuationsPerCall: maxPlannerContinuations,
         ...{
           supportedCards: planned.supportedCards,
           answeredQuestions: planned.answeredQuestions,

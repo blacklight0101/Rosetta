@@ -26,11 +26,16 @@ function textOf(recording: Recording, call: number): string {
 }
 
 /** The answer of call `at` as these pieces: each but the last stopped by the output limit. */
-function cutAt(recording: Recording, at: number, pieces: readonly string[]): Recording {
+function cutAt(
+  recording: Recording,
+  at: number,
+  pieces: readonly string[],
+  lastCut = false,
+): Recording {
   const attempt = recording.calls[at]?.attempts[0];
   if (attempt === undefined || !('response' in attempt)) throw new Error('No answer recorded');
   const calls = pieces.map((text, index) => {
-    const last = index === pieces.length - 1;
+    const last = index === pieces.length - 1 && !lastCut;
     const usage = { ...attempt.response.usage, outputTokens: last ? 300 : 4096 };
     const finishReason = last ? ('stop' as const) : ('length' as const);
     return { attempts: [{ response: { ...attempt.response, text, usage, finishReason } }] };
@@ -129,7 +134,7 @@ describe('BuildPlan: what a cut-off answer is not', () => {
 describe('BuildPlan: a cut-off document or a metered continuation', () => {
   it('RF-604 RF-621 a PRD that stays cut off leaves placeholders and a warning that names the setting', async () => {
     const recording = await base();
-    const h = await planned(cutAt(recording, 1, split(textOf(recording, 1), 3)));
+    const h = await planned(cutAt(recording, 1, split(textOf(recording, 1), 3), true));
 
     const run = await h.plan();
 

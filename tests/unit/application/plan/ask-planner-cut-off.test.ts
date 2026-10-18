@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { askPlannerWith, type PlannerCall } from '../../../../src/application/plan/ask-planner.js';
 import type {
-  FinishReason,
   LlmProvider,
   LlmRequest,
   LlmResponse,
@@ -26,16 +25,15 @@ const continuePrompt = {
 
 interface Piece {
   readonly text: string;
-  readonly finishReason?: FinishReason;
+  readonly finishReason?: LlmResponse['finishReason'];
   readonly outputTokens?: number;
 }
 
 function responseOf(piece: Piece): LlmResponse {
   const { text, finishReason = 'stop', outputTokens = 50 } = piece;
   const usage = { inputTokens: 10, outputTokens, cachedInputTokens: 0 } as const;
-  const kept = finishReason === 'tool_use' ? 'stop' : finishReason;
   return fakeResponse({
-    ...{ text, toolCalls: [], finishReason: kept },
+    ...{ text, toolCalls: [], finishReason },
     usage: { ...usage, usageSource: 'reported' },
   });
 }
@@ -158,8 +156,9 @@ describe('askPlannerWith: the limit of continuations', () => {
     ]);
 
     expect(await askPlannerWith(call, 'm')).toBe('{"a": [1, 2, 3]}');
-    expect(requests[2]?.messages).toHaveLength(3);
-    expect(requests[2]?.messages[1]).toEqual({ role: 'assistant', content: ' 2,' });
+    expect(requests[2]?.messages).toHaveLength(5);
+    expect(requests[2]?.messages[3]).toEqual({ role: 'assistant', content: ' 2,' });
+    expect(requests[1]?.messages).toHaveLength(3);
   });
 
   it('RF-604 a continuation that repeats the end of the answer is joined once', async () => {

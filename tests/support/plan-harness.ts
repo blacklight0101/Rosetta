@@ -29,6 +29,7 @@ import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
 import { FileHandoffWriter } from '../../src/infrastructure/handoff/file-handoff-writer.js';
 import {
   loadApiContractPrompt,
+  loadPlannerContinuePrompt,
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
@@ -111,6 +112,7 @@ function planExecutor(s: Stores, providers: UnderstandProviders, scans: ScanResu
     dataModelPrompt: () => loadDataModelPrompt('prompts'),
     flowsPrompt: () => loadFlowsPrompt('prompts'),
     apiContractPrompt: () => loadApiContractPrompt('prompts'),
+    continuePrompt: () => loadPlannerContinuePrompt('prompts'),
     ids: new SequenceIdGenerator(),
     scans,
   });
