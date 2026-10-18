@@ -93,6 +93,20 @@ describe('checks.md: the rest of the cases', () => {
   });
 });
 
+describe('tasks.md: text that is not Rosetta', () => {
+  it('RF-507 the name of an item a card builds shows as text', () => {
+    const hostile = '<script>alert(1)</script> [x](https://evil.example)';
+    const own = { ...prd, features: [{ ...(prd.features[0] ?? fail()), title: hostile }] };
+    const built = planTask({ builds: ['feature:F-001'] });
+
+    const tasks = filesOf([built], 'Plain text.', own)['tasks.md'] ?? '';
+
+    expect(tasks).not.toContain('<script>');
+    expect(tasks).not.toContain('](https://evil.example)');
+    expect(tasks).toContain('&lt;script&gt;');
+  });
+});
+
 describe('checks.md: text that is not Rosetta', () => {
   const hostile = '<script>alert(1)</script> [x](https://evil.example) | `tick`';
 
