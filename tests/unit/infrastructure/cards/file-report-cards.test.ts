@@ -4,7 +4,7 @@ import { FileReportCards } from '../../../../src/infrastructure/cards/file-repor
 import { renderCardFile } from '../../../../src/infrastructure/cards/card-markdown.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { cardSource } from '../../../support/card-fixtures.js';
-import { MemoryOutputWriter } from '../../../support/memory-output-writer.js';
+import { MemoryRunFileReader } from '../../../support/memory-run-file-reader.js';
 import { scopeFor } from '../../../support/run-event-fixtures.js';
 
 // RF-502, data-model.md section 3.7: the card files of a run read for the pages of the report: the
@@ -12,7 +12,6 @@ import { scopeFor } from '../../../support/run-event-fixtures.js';
 // file a person edited into something that does not read is left out, never half read.
 
 const scope = scopeFor('20261012-100000-understand');
-const folder = `projects/${scope.projectId}/runs/${scope.runKey}`;
 const masker = new SecretMasker();
 
 function cardWithVerdicts(): Card {
@@ -50,9 +49,9 @@ function cardWithVerdicts(): Card {
 }
 
 function setup(files: Readonly<Record<string, string>>) {
-  const writer = new MemoryOutputWriter();
-  for (const [name, text] of Object.entries(files)) writer.files.set(`${folder}/${name}`, text);
-  return new FileReportCards(writer);
+  const reader = new MemoryRunFileReader();
+  reader.seed(scope, files);
+  return new FileReportCards(reader);
 }
 
 const goodFile = renderCardFile(cardWithVerdicts(), cardSource, masker, []);
@@ -184,13 +183,104 @@ describe('FileReportCards and files that do not read', () => {
   });
 
   it('RF-502 reads only card files of the run: a path that is not one is never opened', async () => {
-    const writer = new MemoryOutputWriter();
-    writer.files.set(`${folder}/spec.md`, goodFile);
-    writer.files.set(`projects/${scope.projectId}/secret.md`, goodFile);
-    const cards = new FileReportCards(writer);
+    const cards = setup({ 'spec.md': goodFile, 'cards/BR/BR-001.md.bak': goodFile });
 
     const read = await cards.read(scope, ['spec.md', '../../secret.md', 'cards/../spec.md', '']);
 
     expect(read).toEqual([]);
+  });
+});
+
+describe('FileReportCards and the identity of a card', () => {
+  it('RF-502 skips a file whose header id is not the id in its file name', async () => {
+    const cards = setup({ 'cards/BR/BR-002.md': goodFile, 'cards/BR/BR-001.md': goodFile });
+
+    const read = await cards.read(scope, ['cards/BR/BR-002.md', 'cards/BR/BR-001.md']);
+
+    expect(read.map((card) => card.id)).toEqual(['BR-001']);
+  });
+
+  it('RF-502 skips a file whose header type is not the folder it is in', async () => {
+    const cards = setup({ 'cards/ENT/BR-001.md': goodFile });
+
+    expect(await cards.read(scope, ['cards/ENT/BR-001.md'])).toEqual([]);
+  });
+
+  it('RF-502 reads a card once however many times the paths name it', async () => {
+    const cards = setup({ 'cards/BR/BR-001.md': goodFile });
+
+    const read = await cards.read(scope, ['cards/BR/BR-001.md', 'cards/BR/BR-001.md']);
+
+    expect(read).toHaveLength(1);
+  });
+
+  it('RF-502 skips a claim id that does not belong to the card', async () => {
+    const cards = setup({ 'cards/BR/BR-001.md': goodFile.replaceAll('BR-001.c1', 'BR-009.c1') });
+
+    expect(await cards.read(scope, ['cards/BR/BR-001.md'])).toEqual([]);
+  });
+});
+
+const big = (field: string, value: string): string =>
+  goodFile.replace(`${field}: "`, `${field}: "${value}`);
+const lines = (...parts: string[]): string => parts.join(String.fromCharCode(10));
+const header = [
+  '---',
+  'id: "BR-001"',
+  'type: "BR"',
+  'title: "t"',
+  'summary: "s"',
+  'area: "a"',
+  'confidence: "High"',
+  'claims:',
+];
+const claim = (citations: string[]): string[] => [
+  '  - claimId: "BR-001.c1"',
+  '    text: "t"',
+  '    citations:',
+  ...citations,
+  '    status: "Proposed"',
+];
+
+describe('FileReportCards and oversized files', () => {
+  it('RF-507 skips a card file larger than the limit without parsing it', async () => {
+    const huge = lines(goodFile, 'x'.repeat(300_000));
+    const cards = setup({ 'cards/BR/BR-001.md': huge });
+
+    expect(await cards.read(scope, ['cards/BR/BR-001.md'])).toEqual([]);
+  });
+
+  it('RF-507 skips a card whose title, summary or area is longer than the card limits', async () => {
+    for (const field of ['title', 'summary', 'area']) {
+      const cards = setup({ 'cards/BR/BR-001.md': big(field, 'x'.repeat(5000)) });
+
+      expect(await cards.read(scope, ['cards/BR/BR-001.md'])).toEqual([]);
+    }
+  });
+
+  it('RF-507 skips a card whose claim text is longer than the card limit', async () => {
+    const cards = setup({ 'cards/BR/BR-001.md': big('text', 'x'.repeat(5000)) });
+
+    expect(await cards.read(scope, ['cards/BR/BR-001.md'])).toEqual([]);
+  });
+});
+
+describe('FileReportCards and too many claims or citations', () => {
+  it('RF-507 skips a card with more claims than the limit', async () => {
+    const many = Array.from({ length: 300 }, () => claim(['      - "a.cs:1-1"']));
+    const cards = setup({
+      'cards/BR/BR-001.md': lines(...header, ...many.flat(), '---', ''),
+    });
+
+    expect(await cards.read(scope, ['cards/BR/BR-001.md'])).toEqual([]);
+  });
+
+  it('RF-507 skips a claim with more citations than the limit', async () => {
+    const citations = Array.from({ length: 100 }, () => '      - "a.cs:1-1"');
+    const cards = setup({
+      'cards/BR/BR-001.md': lines(...header, ...claim(citations), '---', ''),
+    });
+
+    expect(await cards.read(scope, ['cards/BR/BR-001.md'])).toEqual([]);
   });
 });

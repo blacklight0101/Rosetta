@@ -67,3 +67,20 @@ describe('the card page permalinks and untrusted text', () => {
     ]);
   });
 });
+
+describe('the card page permalinks and a repository that is a dot segment', () => {
+  it('RF-125 builds no link when the owner or the repository is . or ..', () => {
+    const sources = [
+      'https://github.com/../r',
+      'https://github.com/o/..',
+      'https://github.com/./r',
+      'https://github.com/o/.',
+    ];
+
+    for (const url of sources) {
+      const page = pageOf(plainDetail, { source: { url, commitSha: commit } });
+
+      expect(page.document.querySelectorAll('a.permalink')).toHaveLength(0);
+    }
+  });
+});
