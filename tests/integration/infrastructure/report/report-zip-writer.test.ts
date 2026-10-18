@@ -1,6 +1,8 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import type { ArchiveWriter } from '../../../../src/application/ports/archive-writer.js';
+import { ok } from '../../../../src/domain/errors/result.js';
 import { RosettaError } from '../../../../src/domain/errors/rosetta-error.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { YazlArchiveWriter } from '../../../../src/infrastructure/files/yazl-archive-writer.js';
@@ -126,3 +128,48 @@ describe('ReportZipWriter refusals', () => {
     expect(await readdir(dirname(reportFolder()))).not.toContain('escape.zip');
   });
 });
+
+describe('ReportZipWriter failures', () => {
+  it('RF-505 removes the half-written zip, and keeps the zip of the earlier build, when the archive fails half way', async () => {
+    await seed(files);
+    await writer().write(scope, { run: names.run });
+    const before = await readFile(join(reportFolder(), names.run));
+
+    const failure = await new ReportZipWriter(data.path, brokenArchive())
+      .write(scope, { run: names.run })
+      .catch((error: unknown) => error);
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.reportWriteFailed });
+    expect((await readdir(reportFolder())).sort()).toEqual([names.run, 'report.html']);
+    expect(await readFile(join(reportFolder(), names.run))).toEqual(before);
+  });
+
+  it('RF-005 refuses a scope that names no run folder, even for an archive that answers', async () => {
+    const stranger = { ...scope, runKey: '../other-run' };
+
+    const failure = await new ReportZipWriter(data.path, answeringArchive())
+      .write(stranger, { run: names.run })
+      .catch((error: unknown) => error);
+
+    expect(failure).toMatchObject({ code: ERROR_CODES.reportWriteFailed });
+  });
+});
+
+/** An archive that answers whatever the scope. */
+function answeringArchive(): ArchiveWriter {
+  async function* body(): AsyncGenerator<Uint8Array> {
+    await Promise.resolve();
+    yield new Uint8Array([80, 75]);
+  }
+  return { archive: () => Promise.resolve(ok(body())) };
+}
+
+/** An archive whose first chunk arrives and whose stream then fails. */
+function brokenArchive(): ArchiveWriter {
+  async function* body(): AsyncGenerator<Uint8Array> {
+    await Promise.resolve();
+    yield new Uint8Array([80, 75]);
+    throw new Error('the disk read failed');
+  }
+  return { archive: () => Promise.resolve(ok(body())) };
+}
