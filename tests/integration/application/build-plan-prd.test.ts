@@ -174,6 +174,14 @@ describe('BuildPlan: untrusted and unreadable PRD answers', () => {
 });
 
 describe('BuildPlan: the documentation set', () => {
+  it('RF-408 RF-621 the plan call and the PRD call carry distinct call ids', async () => {
+    await planned();
+
+    const ids = h.providers.requests().map((request) => request.context.callId);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+  });
+
   it('RF-620 the README reading order starts with the PRD, then the parts of RF-601', async () => {
     const files = await planned();
 
