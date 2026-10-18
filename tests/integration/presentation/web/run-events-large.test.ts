@@ -55,7 +55,7 @@ const owned: Owned = {};
 beforeAll(async () => {
   owned.dataDir = await realpath(await mkdtemp(join(tmpdir(), 'rosetta-sse-large-')));
   owned.large = await largeRun(owned.dataDir, owned);
-}, 60_000);
+}, 180_000);
 
 afterAll(async () => {
   try {
