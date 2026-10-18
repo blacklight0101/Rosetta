@@ -12,6 +12,7 @@ import { checksMarkdown } from './handoff-checks-markdown.js';
 import { dataModelMarkdown } from './handoff-data-model-markdown.js';
 import { flowFile, flowMarkdown, flowsIndexMarkdown } from './handoff-flows-markdown.js';
 import { decisionFile, handoffFiles } from './handoff-links.js';
+import { withIncompleteNotice } from './handoff-incomplete-markdown.js';
 import { openApiYaml } from './handoff-openapi-yaml.js';
 import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
 import { fixturesMarkdown } from './handoff-fixtures-markdown.js';
@@ -74,7 +75,7 @@ export function renderHandoff(
       flowMarkdown(flow, handoff, esc, masker),
     ]),
   );
-  return {
+  const files: Record<string, string> = {
     [handoffFiles.readme]: readmeMarkdown(handoff, esc),
     [handoffFiles.prd]: prdMarkdown(handoff, esc),
     [handoffFiles.trd]: trdMarkdown(handoff, esc, masker),
@@ -99,6 +100,17 @@ export function renderHandoff(
       ? { [handoffFiles.agents]: agentsMarkdown(handoff, esc) }
       : {}),
   };
+  return withIncompleteNotices(handoff, files);
+}
+
+/** RF-604: each file of a cut-off document opens with its notice; the others are unchanged. */
+function withIncompleteNotices(
+  handoff: HandoffPackage,
+  files: Record<string, string>,
+): Readonly<Record<string, string>> {
+  return Object.fromEntries(
+    Object.entries(files).map(([path, text]) => [path, withIncompleteNotice(handoff, path, text)]),
+  );
 }
 
 export class FileHandoffWriter implements HandoffWriter {

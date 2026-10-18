@@ -6,6 +6,7 @@ import type { TargetFlows } from '../../domain/planning/target-flows.js';
 import type { TargetUx } from '../../domain/planning/target-ux.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlanner, type PlannerCall } from './ask-planner.js';
+import type { IncompleteDocument } from './handoff-package.js';
 import { apiContractWarnings, planApiContract } from './plan-api-contract.js';
 import { dataModelWarnings, planDataModel } from './plan-data-model.js';
 import { flowsWarnings, planFlows } from './plan-flows.js';
@@ -33,6 +34,40 @@ export interface PlannedDocuments {
   readonly flows: TargetFlows;
   readonly apiContract: ApiContract;
   readonly ux: TargetUx;
+  /** RF-604: the documents whose answer stayed cut off, in the order they were written. */
+  readonly incomplete: readonly IncompleteDocument[];
+}
+
+const titles: Readonly<Record<IncompleteDocument['document'], string>> = {
+  prd: 'product requirements document',
+  dataModel: 'target data model',
+  flows: 'target flows',
+  apiContract: 'API contract',
+  ux: 'user-interface material',
+};
+
+/**
+ * RF-604: the call of one document. A cut-off answer is recorded for the package and named in the
+ * run's warnings; the document keeps what the planner wrote.
+ */
+interface CutOffSink {
+  readonly base: PlannerCall;
+  readonly incomplete: IncompleteDocument[];
+  readonly warn: (message: string) => Promise<void>;
+}
+
+function documentCall(
+  sink: CutOffSink,
+  document: IncompleteDocument['document'],
+  prompt: PromptFile,
+  agentTaskId: string,
+): PlannerCall {
+  const { base, incomplete, warn } = sink;
+  const onCutOff = async (problem: string): Promise<void> => {
+    incomplete.push({ document, outputTokens: base.planner.maxOutputTokens });
+    await warn(`The ${titles[document]} is incomplete: ${problem}`);
+  };
+  return { ...base, prompt, agentTaskId, onCutOff };
 }
 
 // RF-621
@@ -63,23 +98,33 @@ export async function planDocuments(
   input: PlanMessageInput & { readonly components: readonly DraftComponent[] },
   warn: (message: string) => Promise<void>,
 ): Promise<PlannedDocuments> {
-  const prd = await planPrd(
-    { ...base, prompt: prompts.prd, agentTaskId: 'planner-prd' },
-    input,
-    warn,
-  );
-  const modelCall = { ...base, prompt: prompts.dataModel, agentTaskId: 'planner-data-model' };
+  const incomplete: IncompleteDocument[] = [];
+  const sink: CutOffSink = { base, incomplete, warn };
+  const callOf = (
+    document: IncompleteDocument['document'],
+    prompt: PromptFile,
+    agentTaskId: string,
+  ): PlannerCall => documentCall(sink, document, prompt, agentTaskId);
+  const prd = await planPrd(callOf('prd', prompts.prd, 'planner-prd'), input, warn);
+  const modelCall = callOf('dataModel', prompts.dataModel, 'planner-data-model');
   const model = await planDataModel(modelCall, { cards: input.cards, brief: input.brief });
   for (const message of dataModelWarnings(model)) await warn(message);
-  const flowsCall = { ...base, prompt: prompts.flows, agentTaskId: 'planner-flows' };
+  const flowsCall = callOf('flows', prompts.flows, 'planner-flows');
   const flows = await planFlows(flowsCall, input);
   for (const message of flowsWarnings(flows)) await warn(message);
-  const apiCall = { ...base, prompt: prompts.apiContract, agentTaskId: 'planner-api-contract' };
+  const apiCall = callOf('apiContract', prompts.apiContract, 'planner-api-contract');
   const dataModel = model.assembly.model;
   const api = await planApiContract(apiCall, { cards: input.cards, brief: input.brief, dataModel });
   for (const message of apiContractWarnings(api)) await warn(message);
-  const uxCall = { ...base, prompt: prompts.ux, agentTaskId: 'planner-ux' };
+  const uxCall = callOf('ux', prompts.ux, 'planner-ux');
   const ux = await planUx(uxCall, { cards: input.cards, brief: input.brief });
   for (const message of uxWarnings(ux)) await warn(message);
-  return { prd, dataModel, flows: flows.flows, apiContract: api.contract, ux: ux.ux };
+  return {
+    prd,
+    dataModel,
+    flows: flows.flows,
+    apiContract: api.contract,
+    ux: ux.ux,
+    incomplete,
+  };
 }

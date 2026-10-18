@@ -27,6 +27,13 @@ export interface PackagePrinciple {
   readonly group: CatalogueGroup | undefined;
 }
 
+/** A document of the package the planner's answer stayed cut off for, after its continuations (RF-604). */
+export interface IncompleteDocument {
+  readonly document: 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux';
+  /** The output-token limit the answer hit: the planner's `maxOutputTokens`. */
+  readonly outputTokens: number;
+}
+
 /** An open question of the analysis that has no answer yet. */
 interface UnansweredQuestion {
   /** The area of the question's card; the cards built from sources in it wait on it (RF-637). */
@@ -68,4 +75,6 @@ export interface HandoffPackage {
   readonly prdQuestions: readonly DefaultedQuestion[];
   /** RF-632: the shapes measured from the scan; undefined when the scan could not be read. */
   readonly shapes: ScanShapes | undefined;
+  /** RF-604: the documents that stayed cut off, in the order they were written; empty when none did. */
+  readonly incomplete: readonly IncompleteDocument[];
 }
