@@ -62,10 +62,8 @@ describe('citation check of SCRN validations and actions', () => {
     const card = checked(screenDraft({ ...validScreen, fields }));
 
     expect(card?.claims.map((claim) => claim.status)).toEqual([
-      'Proposed',
-      'CitationInvalid',
-      'Proposed',
-      'Proposed',
+      ...['Proposed', 'CitationInvalid', 'Proposed', 'Proposed'],
+      ...['Proposed', 'Proposed', 'Proposed', 'Proposed'],
     ]);
   });
 
@@ -74,10 +72,6 @@ describe('citation check of SCRN validations and actions', () => {
 
     const card = checked({ ...screenDraft({ ...validScreen, fields: [] }), claims });
 
-    expect(card?.claims.map((claim) => claim.status)).toEqual([
-      'CitationInvalid',
-      'CitationInvalid',
-      'CitationInvalid',
-    ]);
+    expect(card?.claims.map((claim) => claim.status)).toEqual(Array(6).fill('CitationInvalid'));
   });
 });

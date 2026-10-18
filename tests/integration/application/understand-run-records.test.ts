@@ -57,7 +57,7 @@ describe('an understand run: cost and prompts', () => {
       'cards/continue.v1.md',
       'cards/flows.v1.md',
       'cards/repair.v1.md',
-      'cards/screens.v1.md',
+      'cards/screens.v2.md',
       'reader/area.v3.md',
       'reader/read-first.v1.md',
       'reader/task.v2.md',

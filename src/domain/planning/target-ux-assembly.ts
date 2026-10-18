@@ -111,6 +111,19 @@ function fieldsOf(cards: readonly SourceCard[]): WireframeField[] {
   return [...fields.values()];
 }
 
+/** The fields no claim states, from old cards, a name once and never one a supported card confirms. */
+function uncheckedFieldsOf(
+  cards: readonly SourceCard[],
+  confirmed: readonly WireframeField[],
+): WireframeField[] {
+  const known = new Set(confirmed.map((field) => field.name));
+  const fields: WireframeField[] = [];
+  for (const field of cards.flatMap((card) => card.screen?.uncheckedFields ?? [])) {
+    addUnique(fields, known, field, field.name);
+  }
+  return fields;
+}
+
 function actionsOf(cards: readonly SourceCard[]): WireframeAction[] {
   const actions: WireframeAction[] = [];
   const seen = new Set<string>();
@@ -157,6 +170,17 @@ function navigationOf(
   return links;
 }
 
+/** The fields of a screen: confirmed, not checked, and whether the verifier refused them all. */
+function fieldsPart(
+  cards: readonly SourceCard[],
+): Pick<TargetScreen, 'fields' | 'uncheckedFields' | 'fieldsNotConfirmed'> {
+  const fields = fieldsOf(cards);
+  const uncheckedFields = uncheckedFieldsOf(cards, fields);
+  const refused = cards.some((card) => (card.screen?.unsupportedFields ?? 0) > 0);
+  const fieldsNotConfirmed = fields.length === 0 && uncheckedFields.length === 0 && refused;
+  return { fields, uncheckedFields, fieldsNotConfirmed };
+}
+
 function screenOf(group: Group, context: Context): TargetScreen {
   const cards = group.cards.flatMap((id) => context.cards.get(id) ?? []);
   const id = group.cards[0] ?? '';
@@ -164,7 +188,7 @@ function screenOf(group: Group, context: Context): TargetScreen {
   return {
     ...{ id, name: context.names.get(id) ?? id, purpose: group.purpose.trim() },
     ...{ reason: group.reason, cards: group.cards, roles: roles.toSorted(byCodeUnit) },
-    fields: fieldsOf(cards),
+    ...fieldsPart(cards),
     actions: actionsOf(cards),
     navigation: navigationOf(cards, id, context),
   };
