@@ -107,7 +107,7 @@ export class EstimatePlan {
     const prompts = [
       { file: prompt, message },
       { file: prdPrompt, message },
-      ...(legacyClaimsOf(supported).length >= 0
+      ...(legacyClaimsOf(supported).length === 0
         ? []
         : [{ file: dataModelPrompt, message: modelMessage }]),
     ];
