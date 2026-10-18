@@ -1,5 +1,6 @@
 import type { CardType, ClaimStatus } from '../cards/card-vocabulary.js';
 import type { Citation } from '../cards/citation.js';
+import { actionClaimText } from '../cards/screen-claims.js';
 
 // RF-604, ADR-005: what `plan` takes from the cards of an understand run. Only claims the verifier
 // found `Supported` reach the planner and the package; every other claim (`Rejected`,
@@ -61,12 +62,26 @@ function isSupported(claim: SourceClaim): boolean {
   return claim.status === 'Supported';
 }
 
+/**
+ * The screen of a card with only the actions whose claim is `Supported` (RF-626, ADR-005): an
+ * action is a claim of its card, stated in the text `actionClaimText` gives.
+ */
+function supportedScreen(
+  card: SourceCard,
+  supported: readonly SourceClaim[],
+): { screen?: SourceScreen } {
+  if (card.screen === undefined) return {};
+  const stated = new Set(supported.map((claim) => claim.text));
+  const actions = card.screen.actions.filter((action) => stated.has(actionClaimText(action)));
+  return { screen: { ...card.screen, actions } };
+}
+
 /** The cards with their `Supported` claims only, in card order; a card without one is left out. */
 // RF-604
 export function supportedCards(cards: readonly SourceCard[]): SourceCard[] {
   return cards.flatMap((card) => {
     const claims = card.claims.filter(isSupported);
-    return claims.length === 0 ? [] : [{ ...card, claims }];
+    return claims.length === 0 ? [] : [{ ...card, claims, ...supportedScreen(card, claims) }];
   });
 }
 
