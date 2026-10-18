@@ -73,11 +73,22 @@
     }
   }
 
+  /**
+   * The elements and attributes a label may not carry. Mermaid's own sanitiser runs on every label
+   * in strict mode; this narrows it, so a label that holds an image, a link or a style is shown
+   * without it and no request starts before the drawing is in the page (RF-507, RF-508).
+   */
+  const dompurifyConfig = {
+    FORBID_TAGS: ['img', 'a', 'style', 'iframe', 'object', 'embed', 'video', 'audio', 'source'],
+    FORBID_ATTR: ['src', 'srcset', 'href', 'xlink:href', 'style'],
+  };
+
   async function drawAll() {
     mermaid.initialize({
-      ...{ startOnLoad: false, securityLevel: 'strict', logLevel: 5 },
-      // Labels are drawn as SVG text, not as HTML in a foreign object (RF-507, RF-508).
-      ...{ htmlLabels: false, flowchart: { htmlLabels: false } },
+      startOnLoad: false,
+      securityLevel: 'strict',
+      logLevel: 5,
+      dompurifyConfig,
     });
     for (const [index, figure] of figures.entries()) await draw(figure, index);
   }
