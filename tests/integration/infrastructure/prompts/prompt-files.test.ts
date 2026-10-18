@@ -6,7 +6,10 @@ import { promptVersionsOf } from '../../../../src/application/agent/reader-promp
 import { recordPromptVersions } from '../../../../src/domain/runs/run-manifest.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
 import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/memory-run-manifest-store.js';
-import { loadReaderPrompts } from '../../../../src/infrastructure/prompts/prompt-files.js';
+import {
+  loadPromptFile,
+  loadReaderPrompts,
+} from '../../../../src/infrastructure/prompts/prompt-files.js';
 import { failureOf } from '../../../support/failure-of.js';
 import { scopeFor } from '../../../support/run-event-fixtures.js';
 import { sampleManifest } from '../../../support/run-fixtures.js';
@@ -94,5 +97,15 @@ describe('loadReaderPrompts refusals', () => {
     const failure = await failureOf(loadReaderPrompts(temp.path));
 
     expect(failure).toMatchObject({ code: ERROR_CODES.configurationInvalid });
+  });
+});
+
+describe('loadPlannerContinuePrompt', () => {
+  it('RNF-004 RF-604 loads the planner continue prompt with its version and the SHA-256 of its bytes', async () => {
+    const file = await loadPromptFile('prompts', 'planner/continue.v1.md');
+
+    expect(file).toMatchObject({ name: 'planner/continue.v1.md', version: 'v1' });
+    expect(file.sha256).toBe(await sha256Of('prompts/planner/continue.v1.md'));
+    expect(file.text).toMatch(/JSON/);
   });
 });

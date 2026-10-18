@@ -16,6 +16,10 @@ export interface PlannerCall {
   readonly run: Run;
   readonly planner: RoleProvider;
   readonly prompt: PromptFile;
+  /** RF-604: the versioned prompt that asks a cut-off answer to go on. */
+  readonly continuePrompt?: PromptFile;
+  /** RF-604: told when the answer is still cut off; without it the call fails with RST-1805. */
+  readonly onCutOff?: (message: string) => Promise<void>;
   /** The agent task the call is logged under: one per document the planner writes. */
   readonly agentTaskId: string;
   readonly updates: ManifestUpdates;
