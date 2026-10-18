@@ -13,6 +13,7 @@ import type { ProviderKeyRepository } from '../ports/provider-key-repository.js'
 import type { RunIndex } from '../ports/run-index.js';
 import type { ScanResults } from '../ports/scan-results.js';
 import type { TaskResults } from '../ports/task-results.js';
+import { scopeOf } from '../runs/run-scope.js';
 import { assumptionsOf } from './estimate-assumptions.js';
 import { shareTokens, sumPoints } from './estimate-run.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
@@ -159,13 +160,14 @@ export class EstimateDeepen {
   }
 
   /** RF-209: the first round of a Deepen of the run, as its results stand. */
-  private planOf(run: Run, codeMap: CodeMap, coveragePass: boolean): Promise<RoundPlan> {
-    return Promise.resolve(
-      planRound({
-        ...{ cards: [], coverage: [], files: [] },
-        ...{ reread: new Set<string>(), writtenHere: new Set<string>(), coveragePass },
-      }),
-    );
+  private async planOf(run: Run, codeMap: CodeMap, coveragePass: boolean): Promise<RoundPlan> {
+    const results = await this.deps.taskResults.read(scopeOf(run));
+    return planRound({
+      cards: results.flatMap((result) => result.cards),
+      coverage: results.map((result) => result.coverage),
+      files: codeMap.files,
+      ...{ reread: new Set<string>(), writtenHere: new Set<string>(), coveragePass },
+    });
   }
 
   /** The code map of the project's newest completed scan, the one a Deepen reads. */
