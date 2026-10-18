@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import type { BriefView, Catalogue } from '../api/plan-schemas.js';
+import type { Project } from '../api/project-schemas.js';
 import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { PlanConsentNotice } from './PlanConsentNotice.js';
@@ -34,10 +35,11 @@ interface BodyProps {
   readonly projectId: string;
   readonly catalogue: Catalogue;
   readonly view: BriefView;
+  readonly project: Project;
 }
 
-function PlanSetupBody({ projectId, catalogue, view }: BodyProps): JSX.Element {
-  const session = usePlanSession(projectId, view);
+function PlanSetupBody({ projectId, catalogue, view, project }: BodyProps): JSX.Element {
+  const session = usePlanSession(projectId, view, project);
   return (
     <div class="rst-plan">
       <div>
@@ -66,9 +68,9 @@ function PlanSetupBody({ projectId, catalogue, view }: BodyProps): JSX.Element {
           onSave={session.save}
         />
       </section>
-      {session.planner !== undefined && session.cloud ? (
+      {session.cloud ? (
         <PlanConsentNotice
-          provider={session.planner.planner.provider}
+          provider={session.plannerProvider}
           consent={session.consent}
           onConsent={session.setConsent}
         />
@@ -105,5 +107,12 @@ export function PlanSetupPage(): JSX.Element {
       </div>
     );
   }
-  return <PlanSetupBody projectId={projectId} catalogue={load.catalogue} view={load.view} />;
+  return (
+    <PlanSetupBody
+      projectId={projectId}
+      catalogue={load.catalogue}
+      view={load.view}
+      project={load.project}
+    />
+  );
 }

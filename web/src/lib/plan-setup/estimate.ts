@@ -1,4 +1,5 @@
 import type { PlanCap, PlanEstimate } from '../../api/plan-schemas.js';
+import type { Project } from '../../api/project-schemas.js';
 import { dollars } from '../estimate-math.js';
 
 // RF-613, RF-143, RF-427, RF-1001: what Plan setup works out of the plan estimate. The planner is
@@ -18,8 +19,15 @@ export interface Blocker {
 const LOCAL_KINDS: readonly string[] = ['ollama', 'fake'];
 
 /** RF-143: a planner that is not a local model sends code off this machine. */
-export function needsConsent(estimate: PlanEstimate): boolean {
-  return !LOCAL_KINDS.includes(estimate.planner.kind);
+export const needsConsent = (kind: string): boolean => !LOCAL_KINDS.includes(kind);
+
+/** The provider the planner role uses and its kind, from the project's settings. */
+export function plannerOfProject(project: Project): {
+  readonly provider: string;
+  readonly kind: string;
+} {
+  const { provider } = project.settings.roles.planner;
+  return { provider, kind: project.settings.providers[provider]?.kind ?? provider };
 }
 
 /** RST-1601 and RST-2302 in the catalogue's words; empty when the run can start. */

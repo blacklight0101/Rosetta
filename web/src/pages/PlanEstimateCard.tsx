@@ -98,6 +98,7 @@ function Blockers({ blockers }: { readonly blockers: readonly Blocker[] }): JSX.
 
 function reasonOf(props: PlanEstimateCardProps): string | undefined {
   const { load, blockers, stepReason } = props;
+  if (load.status === 'idle') return stepReason ?? 'Save your answers first.';
   if (load.status === 'loading') return 'The estimate is being read.';
   if (load.status === 'failed') return 'The estimate could not be read.';
   if (blockers.length > 0) return 'Fix the problem above first.';
@@ -120,6 +121,9 @@ export function PlanEstimateCard(props: PlanEstimateCardProps): JSX.Element {
         The planner writes the package under your caps. Questions left on their default appear as
         open questions in the package.
       </p>
+      {load.status === 'idle' ? (
+        <p class="rst-plan-note">The estimate appears once your answers are saved.</p>
+      ) : null}
       {load.status === 'failed' ? <ErrorBanner error={load.error} /> : null}
       {load.status === 'ready' ? <Figures estimate={load.estimate} /> : null}
       <Blockers blockers={blockers} />

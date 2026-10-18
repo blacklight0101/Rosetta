@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import type { BriefView, PlanEstimate, PlanOptions } from '../api/plan-schemas.js';
+import type { Project } from '../api/project-schemas.js';
 import { chooseStyle } from '../lib/plan-setup/choices.js';
 import { isAnswered, type Draft } from '../lib/plan-setup/draft.js';
-import { blockersOf, needsConsent, type Blocker } from '../lib/plan-setup/estimate.js';
+import {
+  blockersOf,
+  needsConsent,
+  plannerOfProject,
+  type Blocker,
+} from '../lib/plan-setup/estimate.js';
 import { usePlanEstimate, type EstimateLoad } from './use-plan-estimate.js';
 import { usePlanOptions, type OptionsLoad } from './use-plan-options.js';
 import { usePlanSetup, type PlanSetupActions, type PlanSetupState } from './use-plan-setup.js';
@@ -14,6 +20,8 @@ import { usePlanSetup, type PlanSetupActions, type PlanSetupState } from './use-
 export interface PlanSession extends PlanSetupState, PlanSetupActions {
   readonly estimate: EstimateLoad;
   readonly planner: PlanEstimate | undefined;
+  /** The provider the planner role uses, from the project's settings. */
+  readonly plannerProvider: string;
   readonly blockers: readonly Blocker[];
   /** The planner would send code off this machine. */
   readonly cloud: boolean;
@@ -52,16 +60,23 @@ function useOptionsWanted(step: string): boolean {
 }
 
 // RF-605
-export function usePlanSession(projectId: string, view: BriefView): PlanSession {
-  const estimate = usePlanEstimate(projectId);
+export function usePlanSession(projectId: string, view: BriefView, project: Project): PlanSession {
+  const [saved, setSaved] = useState(view.saved);
+  const estimate = usePlanEstimate(projectId, saved);
   const [consent, setConsent] = useState(false);
-  const setup = usePlanSetup(projectId, view, estimate.reload);
+  const { reload } = estimate;
+  const onSaved = useCallback(() => {
+    setSaved(true);
+    reload();
+  }, [reload]);
+  const setup = usePlanSetup(projectId, view, onSaved);
   const planner = estimate.load.status === 'ready' ? estimate.load.estimate : undefined;
-  const cloud = planner !== undefined && needsConsent(planner);
+  const { provider, kind } = plannerOfProject(project);
+  const cloud = needsConsent(kind);
   const options = usePlanOptions({
     projectId,
     wanted: useOptionsWanted(setup.step),
-    allowed: planner !== undefined && (!cloud || consent),
+    allowed: !cloud || consent,
     consent: cloud && consent,
   });
   const proposed = options.load.status === 'ready' ? options.load.options : undefined;
@@ -70,6 +85,7 @@ export function usePlanSession(projectId: string, view: BriefView): PlanSession 
     ...setup,
     estimate: estimate.load,
     planner,
+    plannerProvider: provider,
     blockers: planner === undefined ? [] : blockersOf(planner),
     cloud,
     consent: cloud && consent,
