@@ -43,7 +43,8 @@ export interface StartRunRequest {
 export type StartRunProblem =
   | typeof ERROR_CODES.notFound
   | typeof ERROR_CODES.runStageNotAvailable
-  | typeof ERROR_CODES.cloudConsentMissing;
+  | typeof ERROR_CODES.cloudConsentMissing
+  | typeof ERROR_CODES.planBriefMissing;
 
 export class StartRun {
   private readonly deps: StartRunDependencies;
@@ -66,11 +67,17 @@ export class StartRun {
   }
 
   // RF-143, RF-604: a plan run calls the planner only, so only the planner needs the consent; the
-  // brief and the source run are read by the run itself (RST-1801, RST-1802).
+  // source run is read by the run itself (RST-1802); the saved brief is checked here (RST-1801).
   private async plan(
     request: StartRunRequest,
     project: Project,
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
+    // RST-1801: no run is created for a project whose owner has saved no brief.
+    const brief = await this.deps.briefs.read({
+      userId: request.actor.userId,
+      projectId: project.id,
+    });
+    if (brief === undefined) return err(ERROR_CODES.planBriefMissing);
     const cloudConsent = request.cloudConsent === true;
     const roles: readonly AgentRole[] = ['planner'];
     if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost, roles)) {
