@@ -67,6 +67,21 @@ export function leadsToClaimText(target: string): string {
   return `The screen leads to ${target}.`;
 }
 
+export type DetailKind = 'route' | 'role' | 'field' | 'leadsTo';
+
+/**
+ * The kind of detail a claim text states, when it is one of the claims above (RF-626). It reads the
+ * fixed words around the value, which masking never changes, so `plan` can tell a card that has
+ * such claims from an old one even when masking altered the value inside the text.
+ */
+export function detailKindOf(text: string): DetailKind | undefined {
+  if (text.startsWith('The screen is at the route ')) return 'route';
+  if (text.startsWith('The role ')) return 'role';
+  if (text.startsWith('The screen leads to ')) return 'leadsTo';
+  if (text.startsWith('Field ') && text.includes(') is on the screen')) return 'field';
+  return undefined;
+}
+
 /** The texts of the claims that state the route, roles, fields and links of a screen. */
 function detailTexts(screen: ScreenDetail): readonly string[] {
   return [

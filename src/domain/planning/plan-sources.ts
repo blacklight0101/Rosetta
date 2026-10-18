@@ -2,6 +2,8 @@ import type { CardType, ClaimStatus } from '../cards/card-vocabulary.js';
 import type { Citation } from '../cards/citation.js';
 import {
   actionClaimText,
+  detailKindOf,
+  type DetailKind,
   fieldClaimText,
   leadsToClaimText,
   roleClaimText,
@@ -79,37 +81,50 @@ function isSupported(claim: SourceClaim): boolean {
 
 type Judgement = 'supported' | 'unsupported' | 'unstated';
 
-/** What the card's claims say about a text: supported, judged otherwise, or never stated. */
-function judgementOf(claims: readonly SourceClaim[]): (text: string) => Judgement {
-  const byText = new Map<string, Judgement>();
-  for (const claim of claims) {
-    if (byText.get(claim.text) === 'supported') continue;
-    byText.set(claim.text, isSupported(claim) ? 'supported' : 'unsupported');
-  }
-  return (text) => byText.get(text) ?? 'unstated';
+/**
+ * What the card's claims say about a text of one kind of detail. A text with a Supported claim is
+ * supported. Otherwise, a card that has claims of that kind judged it (unsupported); only a card
+ * with none, written before they were claims, leaves it unstated. This is decided per card, not per
+ * text: the card writer masks the header and each claim on its own, so a secret-looking value can
+ * stop a text matching its claim, and that must never make a rejected item look like an old one.
+ */
+function judgementOf(
+  claims: readonly SourceClaim[],
+): (kind: DetailKind | 'action', text: string) => Judgement {
+  const supported = new Set(claims.filter(isSupported).map((claim) => claim.text));
+  const kinds = new Set(claims.map((claim) => detailKindOf(claim.text)));
+  return (kind, text) => {
+    if (supported.has(text)) return 'supported';
+    return kind !== 'action' && !kinds.has(kind) ? 'unstated' : 'unsupported';
+  };
 }
 
 /**
  * The screen of a card with only what the verifier supported (RF-626, ADR-005): an action, a
  * field, a role, the route and a link are claims of the card, stated in the texts of
- * `screen-claims.ts`. An action or field with no supported claim is dropped; a field no claim
- * states at all (a card written before they were claims) is kept apart as unchecked; a role, a
- * link or the route is dropped only when its claim was judged and not supported, so an old card
- * keeps them as before.
+ * `screen-claims.ts`. An action or field with no supported claim is dropped. A card with no claim
+ * of a kind at all (written before they were claims) keeps its route, roles and links as before and
+ * keeps its fields apart as unchecked; a card that has claims of the kind keeps only the items a
+ * Supported claim states.
  */
 function supportedScreen(card: SourceCard, all: readonly SourceClaim[]): { screen?: SourceScreen } {
   const { screen } = card;
   if (screen === undefined) return {};
   const judge = judgementOf(all);
-  const kept = (text: string): boolean => judge(text) !== 'unsupported';
-  const fields = screen.fields.map((field) => ({ field, judged: judge(fieldClaimText(field)) }));
-  const actions = screen.actions.filter((action) => judge(actionClaimText(action)) === 'supported');
+  const kept = (kind: DetailKind, text: string): boolean => judge(kind, text) !== 'unsupported';
+  const fields = screen.fields.map((field) => ({
+    field,
+    judged: judge('field', fieldClaimText(field)),
+  }));
+  const actions = screen.actions.filter(
+    (action) => judge('action', actionClaimText(action)) === 'supported',
+  );
   return {
     screen: {
       ...screen,
-      route: kept(routeClaimText(screen.route)) ? screen.route : '',
-      roles: screen.roles.filter((role) => kept(roleClaimText(role))),
-      leadsTo: screen.leadsTo.filter((target) => kept(leadsToClaimText(target))),
+      route: kept('route', routeClaimText(screen.route)) ? screen.route : '',
+      roles: screen.roles.filter((role) => kept('role', roleClaimText(role))),
+      leadsTo: screen.leadsTo.filter((target) => kept('leadsTo', leadsToClaimText(target))),
       fields: fields.filter(({ judged }) => judged === 'supported').map(({ field }) => field),
       uncheckedFields: fields
         .filter(({ judged }) => judged === 'unstated')
