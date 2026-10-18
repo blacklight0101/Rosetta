@@ -9,6 +9,7 @@ import {
 } from '../../support/documentation-set.js';
 import { leaveDemoPackage, runJourney, type Journey } from '../../support/journey-harness.js';
 import { useTempRoot } from '../../support/temp-root.js';
+import { filesOf, readZip } from '../../support/zip-reader.js';
 import { useSharedValue } from '../../support/understand-full-run.js';
 
 // RF-260..RF-263, RF-508, RF-620..RF-627, ADR-008, DEC-134, P3-22: the documentation set journey.
@@ -175,6 +176,17 @@ describe('the documentation set journey: screen claims', () => {
 });
 
 describe('the documentation set journey: the package for the owner', () => {
+  it('RF-505 the report of the plan run offers the package as one hand-off zip holding every document', async () => {
+    const { documents, handoffZip } = current();
+
+    const zipped = filesOf(await readZip(handoffZip));
+
+    expect(Object.keys(documents).length).toBeGreaterThan(25);
+    expect(zipped['prd.md'] ?? zipped['handoff/prd.md']).toBe(documents['prd.md']);
+    const names = Object.keys(zipped).map((name) => name.replace(/^handoff\//u, ''));
+    expect(names.sort()).toEqual(Object.keys(documents).sort());
+  });
+
   const out = useTempRoot('rosetta-journey-out-');
 
   it('P3-22 leaves the specification, the package and the report in a folder for the owner to read', async () => {

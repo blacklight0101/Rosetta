@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import { BuildReport } from '../../src/application/use-cases/build-report.js';
@@ -9,7 +9,9 @@ import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-plan
 import { FileRunTextFiles } from '../../src/infrastructure/files/file-run-text-files.js';
 import { NodeRunFileReader } from '../../src/infrastructure/files/node-run-file-reader.js';
 import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
+import { YazlArchiveWriter } from '../../src/infrastructure/files/yazl-archive-writer.js';
 import { FileReportWriter } from '../../src/infrastructure/report/file-report-writer.js';
+import { ReportZipWriter } from '../../src/infrastructure/report/report-zip-writer.js';
 import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
 import { buildBrief } from '../../src/domain/planning/planning-brief.js';
 import type { Run } from '../../src/domain/runs/run.js';
@@ -50,6 +52,8 @@ export interface Journey {
   readonly documents: Readonly<Record<string, string>>;
   /** The files the report of the understand run adds under `report/`, by path inside it. */
   readonly report: Readonly<Record<string, string>>;
+  /** The hand-off zip the report of the plan run offers (RF-505): the package, as one download. */
+  readonly handoffZip: Buffer;
   readonly folderOf: (run: Run) => string;
 }
 
@@ -87,12 +91,14 @@ function reportBuilder(s: Stores, dataDir: string): BuildReport {
     files: new FileRunTextFiles(writer),
     cards: new FileReportCards(new NodeRunFileReader(dataDir)),
     costs: new MemoryCostTotals(),
-    writer: new FileReportWriter({
-      writer,
-      masker,
-      assetsFolder: join('templates', 'report'),
-    }),
+    writer: new FileReportWriter({ writer, masker, assetsFolder: join('templates', 'report') }),
+    downloads: new ReportZipWriter(dataDir, new YazlArchiveWriter(dataDir)),
   });
+}
+
+/** The files without the zips the report offers, which are bytes and not text. */
+function textOnly(files: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(Object.entries(files).filter(([path]) => !path.endsWith('.zip')));
 }
 
 // RF-620
@@ -133,13 +139,17 @@ export async function runJourney(dataDir: string): Promise<Journey> {
   const plan = await waitUntilEnded(s)(submitted.value.run);
   const folderOf = (run: Run): string =>
     join(dataDir, 'users', account.id, runPath(run.projectId, run.runKey));
-  const built = await reportBuilder(s, dataDir).execute({ actor, runId: understand.id });
-  if (!built.ok) throw new Error(`The report was refused: ${built.error}`);
+  const reports = reportBuilder(s, dataDir);
+  for (const run of [understand, plan]) {
+    const built = await reports.execute({ actor, runId: run.id });
+    if (!built.ok) throw new Error(`The report was refused: ${built.error}`);
+  }
   return {
     ...{ s, providers, scan, understand, plan, folderOf },
     specification: await filesUnder(folderOf(understand)),
     documents: await filesUnder(join(folderOf(plan), 'handoff')),
-    report: await filesUnder(join(folderOf(understand), 'report')),
+    report: textOnly(await filesUnder(join(folderOf(understand), 'report'))),
+    handoffZip: await readFile(join(folderOf(plan), 'report', `${plan.runKey}-handoff.zip`)),
   };
 }
 
