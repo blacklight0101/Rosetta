@@ -124,7 +124,7 @@ export class EstimatePlan {
       planner,
       keyAvailable: await plannerKeyAvailable(this.deps, project, planner),
       assumptions: {
-        ...{ calls: calls.length === 3 ? (3 as const) : (2 as const), promptTokens },
+        ...{ calls: calls.length, promptTokens },
         ...{
           prdPromptTokens: calls[1]?.promptTokens ?? 0,
           dataModelPromptTokens: calls[2]?.promptTokens ?? 0,

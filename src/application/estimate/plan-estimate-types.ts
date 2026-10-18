@@ -9,7 +9,7 @@ import type { ByScenario, RoleEstimate } from './estimate-types.js';
 /** The numbers every figure of the plan estimate rests on, stated with it. */
 interface PlanAssumptions {
   /** The plan and the PRD, plus the target data model when a supported `ENT` claim exists (RF-623). */
-  readonly calls: 2 | 3;
+  readonly calls: number;
   /** The system prompt and the data blocks of the supported cards and the owner's input, at the guard's four characters per token. */
   readonly promptTokens: number;
   /** The part of `promptTokens` that belongs to the PRD call (RF-621). */

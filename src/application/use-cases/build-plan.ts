@@ -40,8 +40,8 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // catalogue version and its SHA-256, and the planner's prompt version in the manifest, asks the
 // planner once through the guarded provider the factory builds for the run, checks the answer
 // against the supported cards, asks it a second time for the product requirements document (RF-621,
-// its own versioned prompt) and a third time for the target data model (RF-623) and writes `handoff/`. Only `Supported` claims and answered questions
-// reach the planner; the claims left out and the brief's defaults are listed in the package. The
+// its own versioned prompt), a third time for the target data model (RF-623) and writes `handoff/`.
+// Only `Supported` claims and answered questions reach the planner; the claims left out and the brief's defaults are listed in the package. The
 // cost report is written at every end.
 
 export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
