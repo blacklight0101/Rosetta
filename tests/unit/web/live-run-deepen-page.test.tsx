@@ -118,6 +118,7 @@ describe('RF-209 a Deepen run that has ended', () => {
     for (const event of ended) connection.event(event);
 
     await screen.findByRole('tablist', { name: 'Results' });
+    await screen.findByTestId('deepen-progress-stop');
     expect(textOf('deepen-round-2')).toContain('Round 2 of 3, done');
     expect(textOf('deepen-progress-stop')).toContain(
       'The round limit was reached: 2 of 3 rounds ran.',

@@ -51,7 +51,7 @@ describe('RF-209 the Deepen action', () => {
     const page = await openEnded({ extra: base });
 
     expect(await within(turn()).findByRole('button', { name: 'Deepen this run' })).toBeTruthy();
-    expect(page.calls.filter((call) => call.method === 'POST')).toEqual([]);
+    expect(page.calls.filter((call) => call.path.includes('/deepen'))).toEqual([]);
   });
 
   it('RF-209 offers no Deepen on a run that did not end Completed', async () => {
@@ -163,7 +163,7 @@ describe('RF-143 a Deepen whose provider is in the cloud', () => {
     await opened(cloud);
 
     const start = screen.getByRole('button', { name: 'Start Deepen' });
-    expect(start.getAttribute('aria-disabled')).toBe('true');
+    expect(start).toHaveProperty('disabled', true);
     expect(screen.getByText('Code will leave this machine.')).toBeTruthy();
   });
 

@@ -244,3 +244,33 @@ export function stopText(reason: string, roundsDone: number, maxRounds: number):
   const write = Object.hasOwn(stops, reason) ? stops[reason] : undefined;
   return write === undefined ? `It stopped after ${done} rounds.` : write(done);
 }
+
+/** RF-231: whether a run in a list can have measures: an understand run that ended and read something. */
+export function mayHaveMeasures(run: {
+  readonly stage: string;
+  readonly queueState: string;
+  readonly endState: string | null;
+}): boolean {
+  const readSomething = ['Completed', 'CapReached', 'Interrupted'];
+  return (
+    run.stage === 'understand' &&
+    run.queueState === 'Ended' &&
+    run.endState !== null &&
+    readSomething.includes(run.endState)
+  );
+}
+
+/** RF-231: the measures of a run on one line, for a list: what was read, confirmed and not judged. */
+export function measureLine(measures: MeasureSet): string {
+  const share = measures.firstPartyCoverage;
+  const read =
+    share === null
+      ? 'no first-party code read'
+      : `${percentText(share)} of first-party tokens read`;
+  const judged = measures.supported + measures.rejected;
+  const confirmed =
+    judged === 0
+      ? 'no claim judged'
+      : `${countText(measures.supported)} of ${countText(judged)} judged claims supported`;
+  return [read, confirmed, `${countText(measures.notJudged)} not judged`].join(' · ');
+}
