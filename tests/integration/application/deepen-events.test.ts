@@ -82,3 +82,43 @@ describe('RF-209 the events of a Deepen run', UNDERSTAND_TIMEOUT, () => {
     });
   });
 });
+
+describe('RF-209 the counts of the events of a Deepen', UNDERSTAND_TIMEOUT, () => {
+  it('RF-209 counts the claims it starts from by their status, the one left unjudged apart', async () => {
+    const { h, run } = await completedRun({
+      dataDir: temp.path,
+      recording: 'deepen-judge.json',
+      verifierRecording: 'verifier-deepen-judge.json',
+    });
+
+    const deepen = await h.deepen(run, { coveragePass: false });
+
+    if (!deepen.ok) throw new Error(deepen.error);
+    const started = (await h.eventsOf(deepen.value)).find(
+      (event) => event.type === 'deepen.started',
+    );
+    expect(started?.data['seeded']).toEqual({
+      cards: 2,
+      claims: 2,
+      supported: 1,
+      rejected: 0,
+      notJudged: 1,
+    });
+  });
+
+  it('RF-209 counts a new claim that was rejected as new but not as supported', async () => {
+    const { h, run } = await completedRun({
+      dataDir: temp.path,
+      recording: 'deepen-no-progress.json',
+      verifierRecording: 'verifier-deepen-no-progress.json',
+    });
+
+    const deepen = await h.deepen(run, { coveragePass: false });
+
+    if (!deepen.ok) throw new Error(deepen.error);
+    const ended = (await h.eventsOf(deepen.value)).find(
+      (event) => event.type === 'deepen.round.ended',
+    );
+    expect(ended?.data).toMatchObject({ newClaims: 1, newSupported: 0 });
+  });
+});
