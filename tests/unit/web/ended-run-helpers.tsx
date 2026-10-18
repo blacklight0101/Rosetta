@@ -94,7 +94,11 @@ export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
     options.judged === undefined
       ? []
       : [ev(8, 'verify.claim.judged', { claimId: 'BR-001.c1', status: options.judged })];
-  const events = [...finishedEvents.slice(0, -1), ...judged, runEnded(9, options.endState ?? 'Completed')];
+  const events = [
+    ...finishedEvents.slice(0, -1),
+    ...judged,
+    runEnded(9, options.endState ?? 'Completed'),
+  ];
   for (const event of events) connection.event(event);
   await screen.findByRole('tablist', { name: 'Results' });
   return page;

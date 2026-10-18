@@ -2,11 +2,12 @@ import type { JSX } from 'preact';
 import { Button } from '../components/Button.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
+import { PlanNext } from './PlanNext.js';
 import type { RunState } from '../lib/live-run/run-state.js';
 import type { AnswersLoad } from './use-run-answers.js';
 
-// RF-1015, RF-1017, DEC-137, design-system.md section 14: the "Your turn" panel of an ended run:
-// how many questions wait for the user and the way to them, and the facts of the run. A run that
+// RF-1015, RF-1017, RF-614, DEC-137, design-system.md section 14: the "Your turn" panel of an ended run:
+// how many questions wait for the user and the way to them, the way on to the plan (PlanNext) and the facts of the run. A run that
 // failed says so and points to the failure above; a run with nothing to answer says that. All the
 // styles are under `.rst-p170-`.
 
@@ -19,6 +20,10 @@ export interface YourTurnProps {
   readonly asks: boolean;
   readonly answers: AnswersLoad;
   readonly onAnswer: () => void;
+  /** RF-614: the run and its project, to open Plan setup for this run. */
+  readonly run: { readonly id: string; readonly projectId: string };
+  /** RF-006: called once the server has queued the run again. */
+  readonly onResumed: () => void;
 }
 
 function plural(count: number, word: string): string {
@@ -65,13 +70,26 @@ function Fact(props: { readonly label: string; readonly value: string }): JSX.El
   );
 }
 
-// RF-1015
+/** Questions are open when the answers are read and at least one waits. */
+function questionsOpen(answers: AnswersLoad): boolean {
+  return answers.status === 'ready' && answers.questions.some((each) => each.state === 'Open');
+}
+
+// RF-1015, RF-614
 export function YourTurn(props: YourTurnProps): JSX.Element {
   const facts = endFactsOf(props.state);
+  const { run, state } = props;
   return (
     <section class="rst-card rst-p170-turn" aria-label="Your turn">
       <h2 class="rst-live-section__title">Your turn</h2>
       <Next {...props} />
+      {props.asks || props.failed ? (
+        <PlanNext
+          {...{ runId: run.id, projectId: run.projectId, onResumed: props.onResumed }}
+          {...{ endState: state.ended?.endState ?? '', supportedClaims: facts.supportedClaims }}
+          questionsOpen={questionsOpen(props.answers)}
+        />
+      ) : null}
       <ul class="rst-p170-facts" aria-label="Run facts">
         <Fact label="Cards" value={String(facts.cards)} />
         <Fact

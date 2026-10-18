@@ -41,14 +41,15 @@ it('RF-614 Answer questions comes first and stays the main action while question
 
   await waitFor(() => {
     expect(within(turn()).getByRole('button', { name: 'Answer 2 questions' })).toBeTruthy();
+    expect(setUp()).toBeTruthy();
   });
   const buttons = within(turn()).getAllByRole('button');
   const names = buttons.map((button) => button.textContent);
   expect(names.indexOf('Answer 2 questions')).toBeLessThan(names.indexOf('Set up the plan'));
   expect(setUp().className).not.toContain('rst-button--primary');
-  expect(
-    within(turn()).getByRole('button', { name: 'Answer 2 questions' }).className,
-  ).toContain('rst-button--primary');
+  expect(within(turn()).getByRole('button', { name: 'Answer 2 questions' }).className).toContain(
+    'rst-button--primary',
+  );
 });
 
 it('RST-1802 a completed run with no Supported claim offers no plan and says why', async () => {

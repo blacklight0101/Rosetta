@@ -19,6 +19,8 @@ import { useWritePackage } from './use-write-package.js';
 
 export interface PlanEstimateCardProps {
   readonly projectId: string;
+  /** RF-614: the understand run the package is written from. */
+  readonly sourceRunId: string | undefined;
   readonly load: EstimateLoad;
   readonly blockers: readonly Blocker[];
   readonly consent: boolean;
@@ -107,8 +109,8 @@ function reasonOf(props: PlanEstimateCardProps): string | undefined {
 
 // RF-613
 export function PlanEstimateCard(props: PlanEstimateCardProps): JSX.Element {
-  const { projectId, load, blockers, consent, outOfDate } = props;
-  const writing = useWritePackage(projectId, consent);
+  const { projectId, sourceRunId, load, blockers, consent, outOfDate } = props;
+  const writing = useWritePackage({ projectId, sourceRunId }, consent);
   const reason = reasonOf(props);
   return (
     <section

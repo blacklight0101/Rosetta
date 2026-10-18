@@ -108,6 +108,37 @@ describe('GET /api/projects/:id/plan-source', () => {
   });
 });
 
+describe('GET /api/projects/:id/plan-source details', () => {
+  it('RF-614 gives the instant the run ended as ISO text', async () => {
+    const { amy, project, seed } = await setup();
+    const ended = Date.UTC(2026, 9, 12, 9, 41, 0);
+    const run = runOf(await seed({ brief: false, run: { endedAt: ended } }));
+
+    const response = await amy.request({ method: 'GET', url: sourceUrl(project.id, run.id) });
+
+    expect(response.json()).toMatchObject({ endedAt: '2026-10-12T09:41:00.000Z' });
+  });
+
+  it('RF-614 a run that has no end instant answers null', async () => {
+    const { amy, project, older } = await setup();
+
+    const response = await amy.request({ method: 'GET', url: sourceUrl(project.id, older.id) });
+
+    expect(response.json()).toMatchObject({ endedAt: null });
+  });
+
+  it('RF-614 the estimate refuses a run id that is too long with 400', async () => {
+    const { amy, project } = await setup();
+
+    const response = await amy.request({
+      method: 'GET',
+      url: estimateUrl(project.id, 'x'.repeat(100)),
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+});
+
 describe('GET /api/projects/:id/plan-source refuses', () => {
   it('RF-614 a run id that is too long answers 400', async () => {
     const { amy, project } = await setup();

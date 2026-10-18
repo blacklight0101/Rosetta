@@ -147,3 +147,45 @@ describe('Plan setup when the source run cannot be used', () => {
     });
   });
 });
+
+describe('Plan setup details', () => {
+  it('RF-614 an empty ?run= is no run: the newest completed one is asked for', async () => {
+    window.history.pushState({}, '', '/projects/p-1/plan-setup?run=');
+    const page = renderPlan();
+    await ready();
+
+    expect(pathsOf(page.calls)).toContain(`${base}/plan-source`);
+  });
+
+  it('RF-614 a run that does not say when it ended is named without a date', async () => {
+    renderPlan({ [`GET ${base}/plan-source`]: json(200, { ...planSource, endedAt: null }) });
+    await ready();
+
+    expect(source().textContent).toContain('20261012-090000-understand. Areas');
+  });
+
+  it('RF-614 a run with no area says none is named', async () => {
+    renderPlan({ [`GET ${base}/plan-source`]: json(200, { ...planSource, areas: [] }) });
+    await ready();
+
+    expect(source().textContent).toContain('Areas: none named');
+  });
+
+  it('RST-1802 without a usable run nothing asks for a run: no run id is sent', async () => {
+    const page = renderPlan({
+      [`GET ${base}/plan-source`]: failure(409, 'RST-1802'),
+      [`GET ${base}/plan-estimate`]: failure(409, 'RST-1802'),
+    });
+    await screen.findByRole('region', { name: 'Source run' });
+    await screen.findByRole('heading', { name: 'Plan setup', level: 1 });
+    press('Save and continue');
+    await screen.findByRole('heading', { name: /Which architecture/u, level: 2 });
+
+    await waitFor(() => {
+      expect(page.calls.find((call) => call.path === `${base}/plan-options`)?.body).toEqual({
+        cloudConsent: false,
+      });
+    });
+    expect(pathsOf(page.calls).filter((path) => path.includes('?run='))).toEqual([]);
+  });
+});

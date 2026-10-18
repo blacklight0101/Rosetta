@@ -60,9 +60,14 @@ function useOptionsWanted(step: string): boolean {
 }
 
 // RF-605
-export function usePlanSession(projectId: string, view: BriefView, project: Project): PlanSession {
+export function usePlanSession(
+  request: { readonly projectId: string; readonly sourceRunId: string | undefined },
+  view: BriefView,
+  project: Project,
+): PlanSession {
+  const { projectId, sourceRunId } = request;
   const [saved, setSaved] = useState(view.saved);
-  const estimate = usePlanEstimate(projectId, saved);
+  const estimate = usePlanEstimate(request, saved);
   const [consent, setConsent] = useState(false);
   const { reload } = estimate;
   const onSaved = useCallback(() => {
@@ -78,6 +83,7 @@ export function usePlanSession(projectId: string, view: BriefView, project: Proj
     wanted: useOptionsWanted(setup.step),
     allowed: !cloud || consent,
     consent: cloud && consent,
+    sourceRunId,
   });
   const proposed = options.load.status === 'ready' ? options.load.options : undefined;
   const accepted = setup.step === 'architecture' ? shownChoice(setup.draft, proposed) : undefined;
