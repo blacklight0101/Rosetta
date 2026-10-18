@@ -11,8 +11,8 @@ import { withStates, type StatedQuestion } from './question-states.js';
 // `Answered` again, so an answer edited after that is used by the next re-run with answers (a re-run
 // skips an Answered question). A question several areas asked is one question with a card in each
 // area: every card behind it that is Answered is opened. The reopening is logged; a run's event log
-// is closed once the run ended (data-model.md section 3.9), so it cannot hold it. A run that has not ended is refused: its agents are still writing the cards (P2-44). Another user's run
-// id, an unknown run and a card id the run has no question for give the same answer.
+// is closed once the run ended (data-model.md section 3.9), so it cannot hold it. A run that has not ended is refused: its agents are still writing the
+// cards (P2-44). Another user's run id, an unknown run and a card id the run has no question for give the same answer.
 
 export interface ReopenQuestionDependencies {
   readonly runs: RunIndex;

@@ -207,6 +207,7 @@ function standsAlone(tokens: readonly Token[], from: number, to: number): boolea
   }
   return framed;
 }
+
 /** Whether the name at these token indexes is a marker. */
 function framed(tokens: readonly Token[], name: readonly number[]): boolean {
   const first = name[0] ?? 0;
