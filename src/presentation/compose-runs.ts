@@ -198,7 +198,7 @@ function runServices(service: ServiceParts): RunServices {
     readRunFile: new ReadRunFile({ runs, files: new NodeRunFileReader(parts.dataDir) }),
     buildReport: composeBuildReport({
       ...{ pool: parts.pool, logger: parts.logger, clock: parts.clock, masker: parts.masker },
-      ...{ writer, runs, manifests, history: log, scans, answers },
+      ...{ writer, runs, manifests, history: log, scans, answers, dataDir: parts.dataDir },
     }),
     listAnswers: new ListAnswers({ runs, answers, cards }),
     recordAnswers: new RecordAnswers({ runs, answers, cards }),

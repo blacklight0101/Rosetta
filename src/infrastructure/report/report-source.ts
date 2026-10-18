@@ -5,7 +5,9 @@ import { parseCommitSha } from '../../domain/sources/commit-sha.js';
 // RF-504, RF-125: the link to the commit a run read, built by Rosetta from a normalised GitHub
 // address and a full commit hash; anything else is shown as text and linked nowhere.
 
-const REPOSITORY = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/u;
+// Owner and repository are not `.` or `..`: those would turn the link into another path on github.com.
+const REPOSITORY =
+  /^https:[/][/]github[.]com[/](?![.]{1,2}[/])([A-Za-z0-9_.-]+)[/](?![.]{1,2}$)([A-Za-z0-9_.-]+)$/u;
 const COMMIT = /^[0-9a-f]{40}$/u;
 
 export interface SourceLink {
