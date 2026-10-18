@@ -80,3 +80,26 @@ describe('uxMessage: the owner and the claims', () => {
     expect(scan.ok && scan.value.blocks).toBe(2);
   });
 });
+
+describe('uxMessage: fields the verifier did not confirm', () => {
+  function cardWith(screen: Record<string, unknown>) {
+    const [card] = shopScreens();
+    if (card?.screen === undefined) throw new Error('The fixture has a screen');
+    return { ...card, screen: { ...card.screen, ...screen } };
+  }
+
+  it('RF-626 ADR-005 sends the supported fields only, never a legacy unchecked field or a count', () => {
+    const text = message([
+      cardWith({
+        fields: [{ name: 'Confirmed', inputKind: 'text', required: false }],
+        uncheckedFields: [{ name: 'LegacyField', inputKind: 'text', required: false }],
+        unsupportedFields: 3,
+      }),
+    ]);
+
+    expect(text).toContain('"name": "Confirmed"');
+    expect(text).not.toContain('LegacyField');
+    expect(text).not.toContain('uncheckedFields');
+    expect(text).not.toContain('unsupportedFields');
+  });
+});

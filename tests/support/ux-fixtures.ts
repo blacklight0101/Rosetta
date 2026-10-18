@@ -119,6 +119,8 @@ export function hostileScreen(text: string): TargetScreen {
     ...{ id: 'SCRN-001', name: text, purpose: text, reason: text, cards: ['SCRN-001'] },
     roles: [text],
     fields: [{ name: text, inputKind: text, required: true }],
+    uncheckedFields: [{ name: text, inputKind: text, required: false }],
+    fieldsNotConfirmed: false,
     actions: [
       { label: text, handler: text, flow: null },
       { label: text, handler: null, flow: 'FLOW-001' },
@@ -167,6 +169,8 @@ export function ordersScreen(): TargetScreen {
       { name: 'Status', inputKind: 'dropdown', required: false },
       { name: 'Order number', inputKind: 'text', required: true },
     ],
+    uncheckedFields: [],
+    fieldsNotConfirmed: false,
     actions: [
       { label: 'Open order', handler: 'openOrder', flow: null },
       { label: 'Place order', handler: null, flow: 'FLOW-001' },

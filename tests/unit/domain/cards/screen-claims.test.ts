@@ -33,7 +33,7 @@ describe('the claims of a SCRN card', () => {
     const second = { path: page, startLine: 20, endLine: 24 };
     const claims = [{ text: 'The page is served.', citations: [first, second] }];
 
-    const actions = claimsOf({ ...screenDraft(), claims }).slice(2);
+    const actions = claimsOf({ ...screenDraft(), claims }).slice(2, 4);
 
     expect(actions.map((claim) => claim.text)).toEqual([
       'Action Pay starts the handler PayButton_Click.',
@@ -45,21 +45,25 @@ describe('the claims of a SCRN card', () => {
     ]);
   });
 
-  it('RF-261 claim ids run on without a gap: agent claims, then validations, then actions', () => {
+  it('RF-261 claim ids run on without a gap: agent claims, then validations, actions, route, roles, fields, links', () => {
     expect(claimsOf().map((claim) => claim.claimId)).toEqual([
       'SCRN-001.c1',
       'SCRN-001.c2',
       'SCRN-001.c3',
       'SCRN-001.c4',
+      'SCRN-001.c5',
+      'SCRN-001.c6',
+      'SCRN-001.c7',
+      'SCRN-001.c8',
     ]);
   });
 });
 
 describe('the claims of a SCRN card: what is left out', () => {
-  it('RF-261 a screen without validations or actions has only the claims the agent wrote', () => {
-    const screen = { ...validScreen, fields: [], actions: [] };
+  it('RF-261 a screen without validations or actions has only the claims the agent wrote and its route', () => {
+    const screen = { ...validScreen, roles: [], fields: [], actions: [], leadsTo: [] };
 
-    expect(claimsOf(screenDraft(screen))).toHaveLength(1);
+    expect(claimsOf(screenDraft(screen))).toHaveLength(2);
   });
 
   it('RF-261 lines cited twice by the screen claims are cited once by an action', () => {

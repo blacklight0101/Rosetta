@@ -14,10 +14,17 @@ export interface UxMessageInput {
   readonly brief: PlanningBrief;
 }
 
+/** The screen as the planner sees it: what the verifier supported, never an unchecked field (ADR-005). */
+function screenOf(screen: SourceCard['screen']): object | null {
+  if (screen === undefined) return null;
+  const { route, roles, fields, actions, leadsTo } = screen;
+  return { route, roles, fields, actions, leadsTo };
+}
+
 function cardsText(cards: readonly SourceCard[]): string {
   const screenCards = cards.map(({ id, title, summary, screen, claims }) => ({
     ...{ id, title, summary },
-    screen: screen ?? null,
+    screen: screenOf(screen),
     claims: claims
       .filter((claim) => claim.status === 'Supported')
       .map(({ claimId, text, citations }) => ({
