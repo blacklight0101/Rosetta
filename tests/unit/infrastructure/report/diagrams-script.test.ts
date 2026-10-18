@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { Window } from 'happy-dom';
+import { z } from 'zod';
 import { describe, expect, it } from 'vitest';
 import { renderDiagramsPage } from '../../../../src/infrastructure/report/site/diagrams-page.js';
 import { reportModel } from '../../../support/report-fixtures.js';
@@ -21,6 +22,10 @@ const bad = { document: 'spec.md', title: 'Bad', source: 'flowchart LR\n  a --- 
 // moved out of the drawing and the inline styles are applied through the CSSOM is checked in a browser
 // (tests/e2e/report-diagrams.spec.ts); here the inline style must still reach the shape.
 const svg = '<svg id="rosetta-diagram-1"><g class="n" style="opacity:0.5"></g></svg>';
+
+const sanitiserConfig = z.object({
+  dompurifyConfig: z.object({ FORBID_TAGS: z.array(z.string()), FORBID_ATTR: z.array(z.string()) }),
+});
 
 interface Calls {
   readonly config: unknown[];
@@ -74,6 +79,29 @@ describe('the diagrams script', () => {
 
     expect(calls.config).toHaveLength(1);
     expect(calls.config[0]).toMatchObject({ securityLevel: 'strict', startOnLoad: false });
+  });
+
+  it('RF-507 RF-508 keeps images, links and styles out of every label before the drawing exists', async () => {
+    const { window, calls } = pageWith([good]);
+
+    await run(window);
+
+    const { dompurifyConfig } = sanitiserConfig.parse(calls.config[0]);
+    expect(dompurifyConfig.FORBID_TAGS).toEqual(
+      expect.arrayContaining(['img', 'a', 'style', 'iframe', 'object', 'embed']),
+    );
+    expect(dompurifyConfig.FORBID_ATTR).toEqual(
+      expect.arrayContaining(['src', 'href', 'xlink:href', 'style']),
+    );
+  });
+});
+
+describe('the diagrams script and the drawing it inserts', () => {
+  it('RF-508 gives each diagram an id of its own', async () => {
+    const { window, calls } = pageWith([good, good]);
+
+    await run(window);
+
     expect(calls.rendered.map(([, source]) => source)).toEqual([good.source, good.source]);
     expect(new Set(calls.rendered.map(([id]) => id)).size).toBe(2);
   });
