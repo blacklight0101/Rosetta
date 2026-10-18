@@ -43,6 +43,14 @@ export function projectPath(projectId: string): string {
   return `projects/${requireId(projectId, uuid)}`;
 }
 
+/**
+ * `projects/<projectId>/plan-options`, relative to the workspace: the logs of the model calls a
+ * project makes outside any run. It lies inside the project folder, so it goes with the project.
+ */
+export function planOptionsPath(projectId: string): string {
+  return `${projectPath(projectId)}/plan-options`;
+}
+
 /** `projects/<projectId>/runs/<runId>`, relative to the workspace. */
 export function runPath(projectId: string, run: string): string {
   return `${projectPath(projectId)}/runs/${requireId(run, runId)}`;
