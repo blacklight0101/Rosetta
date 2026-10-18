@@ -29,6 +29,16 @@ const SURFACE_PROMPT_TOKENS = 900;
 const SURFACE_OUTPUT_TOKENS: ByScenario<number> = { low: 300, likely: 800, high: 2000 };
 /** The system prompt and the tool definitions every turn resends. */
 const PROMPT_OVERHEAD_TOKENS = 2000;
+/**
+ * The verifier calls one screen adds for the claims of its SCRN card (RF-626, DEC-147): one for its
+ * route, two for its roles, four for its fields and two for its links. A guess, like the shares above,
+ * that RNF-012 calibrates over real runs; a screen with no claims of these kinds adds none.
+ */
+const VERIFIER_CALLS_PER_SCREEN = 9;
+/** One judgement of a claim already written: its claim and cited lines in, a reason and a verdict out (DEC-145). */
+export const JUDGE_INPUT_TOKENS: ByScenario<number> = { low: 600, likely: 1000, high: 1600 };
+/** The output of one such judgement: its reason and its verdict, in output tokens (DEC-145). */
+export const JUDGE_OUTPUT_TOKENS: ByScenario<number> = { low: 60, likely: 100, high: 200 };
 
 /** A share of a whole number, in percent, rounded up so a figure is never under-counted. */
 export function ceilPercent(value: number, percent: number): number {
@@ -59,6 +69,7 @@ export function assumptionsOf(settings: ProjectSettings): ReaderAssumptions {
     ),
     readSharePercent: READ_PERCENT,
     verifierSharePercent: VERIFIER_PERCENT,
+    verifierCallsPerScreen: VERIFIER_CALLS_PER_SCREEN,
     summariserSharePercent: SUMMARISER_PERCENT,
     overviewOutputTokens: OVERVIEW_OUTPUT_TOKENS,
     summariserBatchTokens: MERGE_BATCH_TOKENS,

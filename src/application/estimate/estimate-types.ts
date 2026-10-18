@@ -55,6 +55,8 @@ export interface ReaderAssumptions {
   readonly readSharePercent: ByScenario<number>;
   /** The verifier's tokens as a share of the readers' tokens, in percent. */
   readonly verifierSharePercent: ByScenario<number>;
+  /** The verifier calls one screen adds for its route, roles, fields and links (RF-626). */
+  readonly verifierCallsPerScreen: number;
   /** The summariser's tokens as a share of the readers' tokens, in percent (RF-250). */
   readonly summariserSharePercent: ByScenario<number>;
   /** The overview call of the summariser: the cards read once more, and this many tokens written (RF-264). */

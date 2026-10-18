@@ -5,7 +5,8 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Run } from '../../domain/runs/run.js';
 import { CURRENT_SCANNER_VERSION, type CodeMap } from '../../domain/code-map/code-map.js';
-import { marksOf } from '../../domain/code-map/area-surface.js';
+import { marksOf, surfaceOf } from '../../domain/code-map/area-surface.js';
+import type { Area } from '../../domain/code-map/area.js';
 import { thirdPartyAreaNames } from '../../domain/code-map/third-party.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
@@ -18,7 +19,12 @@ import {
   MERGE_BATCH_TOKENS,
   MERGE_PROMPT_TOKENS,
 } from '../consolidate/merge-request.js';
-import { assumptionsOf, ceilPercent } from './estimate-assumptions.js';
+import {
+  assumptionsOf,
+  ceilPercent,
+  JUDGE_INPUT_TOKENS,
+  JUDGE_OUTPUT_TOKENS,
+} from './estimate-assumptions.js';
 import type {
   ByScenario,
   ReaderAssumptions,
@@ -72,6 +78,30 @@ export function shareTokens(
     };
   };
   return { low: share('low'), likely: share('likely'), high: share('high') };
+}
+
+/**
+ * RF-626, DEC-147: the tokens of `calls` more judgements of claims already written. Each one costs what
+ * a judgement of the verifier costs (DEC-145), and it adds no cache write, as on a Deepen.
+ */
+export function withJudgements(
+  tokens: ByScenario<TokenFigures>,
+  calls: number,
+): ByScenario<TokenFigures> {
+  const judged = (scenario: Scenario): TokenFigures => ({
+    ...tokens[scenario],
+    inputTokens: tokens[scenario].inputTokens + calls * JUDGE_INPUT_TOKENS[scenario],
+    outputTokens: tokens[scenario].outputTokens + calls * JUDGE_OUTPUT_TOKENS[scenario],
+  });
+  return { low: judged('low'), likely: judged('likely'), high: judged('high') };
+}
+
+/**
+ * RF-626: the screens of the areas, taken to be one SCRN card for each page file the code map marks
+ * (the same marks as the reader prompt, Q-25); each card adds its claims as verifier calls.
+ */
+function screensOf(areas: readonly Area[], codeMap: CodeMap): number {
+  return areas.reduce((total, area) => total + surfaceOf(area, codeMap).pages.length, 0);
 }
 
 /**
@@ -133,12 +163,16 @@ export class EstimateRun {
     const assumptions = assumptionsOf(project.settings);
     const marks = new Map(areas.map((area) => [area.name, marksOf(area, codeMap)]));
     const reader = readerTokens(areas, assumptions, marks);
+    const screenClaimCalls = screensOf(areas, codeMap) * assumptions.verifierCallsPerScreen;
     const summariser = summariserFigures(reader, assumptions);
     const roles = await Promise.all([
       estimateRole(this.deps, project, { role: 'reader', tokens: reader }),
       estimateRole(this.deps, project, {
         role: 'verifier',
-        tokens: shareTokens(reader, assumptions.verifierSharePercent),
+        tokens: withJudgements(
+          shareTokens(reader, assumptions.verifierSharePercent),
+          screenClaimCalls,
+        ),
       }),
       estimateRole(this.deps, project, {
         role: 'summariser',

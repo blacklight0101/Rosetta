@@ -15,9 +15,9 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { TaskResults } from '../ports/task-results.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { assumptionsOf } from './estimate-assumptions.js';
-import { shareTokens, sumPoints } from './estimate-run.js';
+import { shareTokens, sumPoints, withJudgements } from './estimate-run.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
-import { readerTokens, type TokenFigures } from './reader-estimate.js';
+import { readerTokens } from './reader-estimate.js';
 import { estimateRole } from './role-estimate.js';
 
 // RF-209, RF-425, ADR-007, DEC-145: the estimate the owner sees before a Deepen starts. The first
@@ -75,20 +75,8 @@ export type DeepenEstimateProblem =
   | typeof ERROR_CODES.requestInvalid
   | typeof ERROR_CODES.codeMapMissing;
 
-/** One judgement of a claim already written: its claim and cited lines in, a reason and a verdict out. */
-const JUDGE_INPUT: ByScenario<number> = { low: 600, likely: 1000, high: 1600 };
-const JUDGE_OUTPUT: ByScenario<number> = { low: 60, likely: 100, high: 200 };
-
 function byScenario<T>(figure: (scenario: Scenario) => T): ByScenario<T> {
   return { low: figure('low'), likely: figure('likely'), high: figure('high') };
-}
-
-function plus(left: ByScenario<TokenFigures>, judged: number): ByScenario<TokenFigures> {
-  return byScenario((scenario) => ({
-    ...left[scenario],
-    inputTokens: left[scenario].inputTokens + judged * JUDGE_INPUT[scenario],
-    outputTokens: left[scenario].outputTokens + judged * JUDGE_OUTPUT[scenario],
-  }));
 }
 
 function times(points: ByScenario<EstimatePoint>, rounds: number): ByScenario<EstimatePoint> {
@@ -141,7 +129,10 @@ export class EstimateDeepen {
       roundTasks(plan, codeMap, 1).map((task) => task.area),
       assumptions,
     );
-    const verifier = plus(shareTokens(reader, assumptions.verifierSharePercent), plan.judge.length);
+    const verifier = withJudgements(
+      shareTokens(reader, assumptions.verifierSharePercent),
+      plan.judge.length,
+    );
     const overview = byScenario((scenario) => ({
       ...shareTokens(reader, assumptions.summariserSharePercent)[scenario],
       outputTokens: assumptions.overviewOutputTokens[scenario],
