@@ -1,0 +1,62 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
+import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
+import type { BriefAnswers } from '../../src/domain/planning/planning-brief.js';
+import { planCards, planQuestions } from './plan-cards.js';
+import { createPlanHarness } from './plan-harness.js';
+import { shippedCatalogue } from './planning-brief-harness.js';
+
+// RF-607..RF-612: generates a hand-off package for a planning brief, over a seeded understand run
+// and the planner's recorded answer, and returns its files by their path inside `handoff/`.
+
+export type PackageFiles = Readonly<Record<string, string>>;
+
+/** The text as a reader sees it: the escaper's backslashes removed. */
+export function plain(text: string | undefined): string {
+  return (text ?? '').replaceAll('\\', '');
+}
+
+/** The catalogue entry with this id. */
+export function entryOf(id: string): (typeof shippedCatalogue.entries)[number] {
+  const entry = shippedCatalogue.entries.find((each) => each.id === id);
+  if (entry === undefined) throw new Error(`The catalogue has no entry ${id}`);
+  return entry;
+}
+
+/** Every file of the package as one reader-visible text. */
+export function allText(files: PackageFiles): string {
+  return plain(Object.values(files).join(String.fromCharCode(10)));
+}
+
+/** The cards of a task-card file, each from its `## T-nnn` heading. */
+export function cardsOf(files: PackageFiles): string[] {
+  return plain(files['tasks.md']).split(/^## /mu).slice(1);
+}
+
+/** The decision records of the package by their path, plain text. */
+export function decisionsOf(files: PackageFiles): [string, string][] {
+  return Object.entries(files)
+    .filter(([path]) => path.startsWith('decisions/'))
+    .map(([path, text]) => [path, plain(text)]);
+}
+
+/** Runs `plan` for the brief answers and returns the files of the package. */
+export async function packageOf(
+  answers: BriefAnswers,
+  recording?: Recording,
+): Promise<PackageFiles> {
+  const dataDir = await mkdtemp(join(tmpdir(), 'rosetta-plan-method-'));
+  try {
+    const replayed =
+      recording ??
+      (await loadRecording(join('tests', 'recordings', 'fake', 'planner-package.json')));
+    const h = await createPlanHarness(dataDir, replayed);
+    await h.understandRun({ cards: planCards(), questions: planQuestions });
+    await h.saveBrief(answers);
+    return await h.handoffOf(await h.plan());
+  } finally {
+    await rm(dataDir, { recursive: true, force: true });
+  }
+}
