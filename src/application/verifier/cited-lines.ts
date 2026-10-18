@@ -36,6 +36,8 @@ export interface CitedExcerpt {
   readonly startLine: number;
   readonly endLine: number;
   readonly lines: readonly string[];
+  /** True for a file the scan did not read: `lines` is a note, and it is no excerpt (P2-44). */
+  readonly skipped: boolean;
 }
 
 /**
@@ -58,11 +60,11 @@ function withMargin(citation: Citation): Citation {
 
 /**
  * RF-100, P2-39: a file the scan did not read (binary, too large) is never read or sent, whatever
- * the reader could do with it: the verifier gets its path and a note, as the reader's tools say it
- * cannot be read.
+ * the reader could do with it: the verifier gets a note, as the reader's tools say it cannot be
+ * read, and the note carries no excerpt, so the egress log names nothing that was not sent (P2-44).
  */
 function skippedExcerpt({ path, startLine, endLine }: Citation, reason: SkipReason): CitedExcerpt {
-  return { path, startLine, endLine, lines: [`${reason}, not sent`] };
+  return { path, startLine, endLine, lines: [`${reason}, not sent`], skipped: true };
 }
 
 function lineCount(citations: readonly Citation[]): number {
@@ -107,7 +109,7 @@ export async function readCitedLines(
     if (!read.ok) return err(`The cited lines could not be read: ${read.error.message}`);
     const { path, startLine, endLine } = read.value;
     const cut = read.value.lines.map((line) => cutLine(line, defaultToolLimits.maxLineChars));
-    excerpts.push({ path, startLine, endLine, lines: cut });
+    excerpts.push({ path, startLine, endLine, lines: cut, skipped: false });
   }
   const chars = charCount(excerpts);
   if (chars > limits.maxChars) return err(tooLarge('characters', chars, limits.maxChars));
