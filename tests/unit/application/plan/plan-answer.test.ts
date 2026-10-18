@@ -4,6 +4,8 @@ import { parsePlanAnswer } from '../../../../src/application/plan/plan-answer.js
 
 // RF-601, ADR-013: the planner's answer is untrusted text read as one bounded JSON object.
 
+import { invariant, scenario } from '../../../support/task-card-fixtures.js';
+
 const requirement = { title: 'Order', statement: 'Place an order.', sources: ['FEAT-001'] };
 
 describe('parsePlanAnswer', () => {
@@ -49,6 +51,40 @@ describe('parsePlanAnswer', () => {
     const long = { ...requirement, statement: 'x'.repeat(2001) };
 
     expect(parsePlanAnswer(JSON.stringify({ requirements: [long] }))).toBeUndefined();
+  });
+});
+
+describe('parsePlanAnswer: task-card quality', () => {
+  const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
+
+  function tasksOf(extra: object): unknown {
+    const answer = JSON.stringify({ requirements: [requirement], tasks: [{ ...task, ...extra }] });
+    return parsePlanAnswer(answer)?.tasks;
+  }
+
+  it('RF-630 reads the invariant, the risk class, the guard kinds and the probes of a task', () => {
+    const extra = {
+      ...{ invariant, riskClass: 'money', adds: ['limit', 'filter'] },
+      probes: ['A basket of 50.01.'],
+    };
+
+    expect(tasksOf(extra)).toEqual([{ ...task, ...extra }]);
+  });
+
+  it('RF-630 a task that says none of it is read with no invariant, class or probes', () => {
+    expect(tasksOf({})).toEqual([{ ...task, invariant: '', adds: [], probes: [] }]);
+  });
+
+  it('RF-635 a risk class that does not exist is read as no class', () => {
+    expect(tasksOf({ riskClass: 'catastrophic' })).toMatchObject([{ riskClass: undefined }]);
+  });
+
+  it('RF-630 a kind of guard that does not exist makes the answer unusable', () => {
+    expect(tasksOf({ adds: ['regex'] })).toBeUndefined();
+  });
+
+  it('RF-630 a blank probe makes the answer unusable', () => {
+    expect(tasksOf({ probes: [' '] })).toBeUndefined();
   });
 });
 
