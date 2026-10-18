@@ -11,6 +11,7 @@ import {
   type ReportProjectTotals,
   type ReportQuestion,
 } from './report-model.js';
+import type { ReportCardDetail } from './card-detail.js';
 import { parseOverview } from '../overview/overview-file.js';
 import { buildReplay } from './replay-timeline.js';
 
@@ -35,6 +36,8 @@ export interface ReportInputs {
   readonly cost: ReportCost | null;
   readonly projectTotals: ReportProjectTotals | null;
   readonly questions: readonly ReportQuestion[];
+  /** RF-502: the cards with the cited lines read from the snapshot. */
+  readonly cardDetails: readonly ReportCardDetail[];
 }
 
 // RF-504, RF-506
@@ -69,5 +72,6 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
     cost: inputs.cost,
     projectTotals: inputs.projectTotals,
     questions: inputs.questions,
+    cardDetails: inputs.cardDetails,
   };
 }

@@ -23,6 +23,8 @@ describe('kindOfRunFile', () => {
     ['report/replay.html', 'text/html; charset=utf-8'],
     ['report/report.css', 'text/css; charset=utf-8'],
     ['report/replay.js', 'text/javascript; charset=utf-8'],
+    ['report/area-orders-1c168adb.html', 'text/html; charset=utf-8'],
+    ['report/card-BR-001.html', 'text/html; charset=utf-8'],
   ])('RF-506 shows the report file %s inline as %s', (path, contentType) => {
     expect(kindOfRunFile(path)).toEqual({ contentType, disposition: 'inline' });
   });

@@ -9,20 +9,12 @@ import { CLAIM_STATUSES } from '../../../domain/cards/card-vocabulary.js';
 import { formatShare, summariseVerification } from '../../../domain/cards/verification-summary.js';
 import { summaryHeadline } from '../../cards/verification-summary-text.js';
 import { claimsByArea, costPhrase, dollars, plural, unknownCostText } from '../report-format.js';
+import { STATUS_GLYPHS } from './claim-status.js';
 import { DataTable, Glyph, Headline, ModelText, Panel } from './parts.js';
 
 // RF-500, RF-1010, DEC-44: the figures at the top of the dashboard: the cards by type, the claims by
 // status, the coverage, the cost of the run and the totals of the project when the report was
 // generated. Every figure is written as text; a drawing only repeats it.
-
-/** The glyph that goes with a claim status; the status name is always written next to it. */
-const STATUS_GLYPHS: Readonly<Record<string, string>> = {
-  Supported: 'check',
-  Rejected: 'cross',
-  CitationInvalid: 'warning',
-  Proposed: 'dot',
-  Unverified: 'open',
-};
 
 const byCodeUnit = (left: string, right: string): number =>
   left < right ? -1 : left > right ? 1 : 0;
