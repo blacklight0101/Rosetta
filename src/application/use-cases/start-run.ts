@@ -15,7 +15,7 @@ import type { SubmitRun, SubmittedRun } from './submit-run.js';
 // before any run exists, so nothing can be sent (RF-143).
 
 /** The stages that can be started through the API: `scan` (P1-23) and `understand` (P1-33). */
-const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand'];
+const STARTABLE_STAGES: readonly RunStage[] = ['scan', 'understand', 'plan'];
 
 export interface StartRunDependencies {
   readonly projects: ProjectRepository;
