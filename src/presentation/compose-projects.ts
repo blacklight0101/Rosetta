@@ -41,6 +41,15 @@ import type { ProjectServices } from './web/project-routes.js';
 // use cases behind the projects API. The default settings come from `templates/` and are checked
 // here, so a broken template stops the start-up instead of the first new project.
 
+/** The planner's three versioned prompt files, read for each plan or plan estimate. */
+function plannerPrompts(folder: string) {
+  return {
+    prompt: () => loadPlannerPrompt(folder),
+    prdPrompt: () => loadPrdPrompt(folder),
+    dataModelPrompt: () => loadDataModelPrompt(folder),
+  };
+}
+
 export interface ProjectParts {
   readonly pool: DatabasePool;
   readonly logger: Logger;
@@ -99,9 +108,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       serverSettings: settings,
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
       catalogue: () => Promise.resolve(catalogue),
-      prompt: () => loadPlannerPrompt(parts.promptsFolder),
-      prdPrompt: () => loadPrdPrompt(parts.promptsFolder),
-      dataModelPrompt: () => loadDataModelPrompt(parts.promptsFolder),
+      ...plannerPrompts(parts.promptsFolder),
     }),
     catalogue,
     // RF-428, RF-1010: the cost page and the totals pill.
