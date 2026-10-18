@@ -7,6 +7,7 @@ import { assemblePlan } from '../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../src/domain/planning/plan-draft.js';
 import { buildBrief } from '../../src/domain/planning/planning-brief.js';
 import { draftTask } from './task-card-fixtures.js';
+import { targetModel } from './data-model-fixtures.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
 
 // RF-601: a hand-off package whose every model and repository text is the given text.
@@ -84,6 +85,16 @@ function sourcesOf(text: string): HandoffPackage['sources'] {
   return [sourceOf('FEAT-001', 'FEAT', text), sourceOf('INT-001', 'INT', text)];
 }
 
+/** RF-623: the target data model with this text as the purpose of a table and the reason of a dropped field. */
+function dataModelOf(text: string): HandoffPackage['dataModel'] {
+  const model = targetModel();
+  return {
+    ...model,
+    tables: model.tables.map((table) => ({ ...table, purpose: text })),
+    dropped: model.dropped.map((field) => ({ ...field, reason: text })),
+  };
+}
+
 /** The package with this text in every model and repository field. */
 export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPackage {
   const content = assemblePlan(draft(text), new Set(['FEAT-001', 'INT-001'])).content;
@@ -107,6 +118,7 @@ export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPack
       ...content,
       decisions: content.decisions.map((decision) => ({ ...decision, options: [text] })),
     },
+    dataModel: dataModelOf(text),
     sources: sourcesOf(text),
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],

@@ -2,6 +2,7 @@ import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
+import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-content.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
@@ -18,6 +19,7 @@ import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { parsePlanAnswer } from '../plan/plan-answer.js';
 import type { PlanMessageInput } from '../plan/plan-message.js';
 import { parsePrdAnswer } from '../plan/prd-answer.js';
+import { dataModelWarnings, planDataModel } from '../plan/plan-data-model.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
 import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
@@ -38,7 +40,7 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // catalogue version and its SHA-256, and the planner's prompt version in the manifest, asks the
 // planner once through the guarded provider the factory builds for the run, checks the answer
 // against the supported cards, asks it a second time for the product requirements document (RF-621,
-// its own versioned prompt) and writes `handoff/`. Only `Supported` claims and answered questions
+// its own versioned prompt) and a third time for the target data model (RF-623) and writes `handoff/`. Only `Supported` claims and answered questions
 // reach the planner; the claims left out and the brief's defaults are listed in the package. The
 // cost report is written at every end.
 
@@ -53,6 +55,8 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly prompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the product requirements document (RF-621). */
   readonly prdPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the target data model (RF-623). */
+  readonly dataModelPrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
@@ -60,6 +64,7 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
 interface PlanPrompts {
   readonly plan: PromptFile;
   readonly prd: PromptFile;
+  readonly dataModel: PromptFile;
 }
 
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
@@ -121,16 +126,25 @@ export class BuildPlan implements RunExecutor {
     }
     const prdCall = { ...call, prompt: prompts.prd, agentTaskId: 'planner-prd' };
     const prd = await this.prd(prdCall, input);
-    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, prd);
+    const modelCall = { ...call, prompt: prompts.dataModel, agentTaskId: 'planner-data-model' };
+    const dataModel = await this.dataModel(modelCall, {
+      ...{ cards: supported, brief },
+    });
+    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, { prd, dataModel });
     await this.deps.handoff.write(scopeOf(run), handoff);
     return { endState: 'Completed' };
   }
 
   /** The principle catalogue and the planner's two versioned prompts, read for this run. */
   private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
-    const { catalogue, prompt, prdPrompt } = this.deps;
-    const [loaded, plan, prd] = await Promise.all([catalogue(), prompt(), prdPrompt()]);
-    return { catalogue: loaded, prompts: { plan, prd } };
+    const { catalogue, prompt, prdPrompt, dataModelPrompt } = this.deps;
+    const [loaded, plan, prd, dataModel] = await Promise.all([
+      catalogue(),
+      prompt(),
+      prdPrompt(),
+      dataModelPrompt(),
+    ]);
+    return { catalogue: loaded, prompts: { plan, prd, dataModel } };
   }
 
   /**
@@ -164,6 +178,27 @@ export class BuildPlan implements RunExecutor {
     return content;
   }
 
+  /**
+   * RF-623: the target data model from the planner's third call, checked against the supported
+   * `ENT` claims. An answer with no usable table leaves the model without tables and every legacy
+   * claim listed as dropped; that and what the checks refused are logged. The call failing fails the run.
+   */
+  private async dataModel(
+    call: PlannerCall,
+    input: Parameters<typeof planDataModel>[1],
+  ): Promise<TargetDataModel> {
+    const planned = await planDataModel(call, input);
+    for (const message of dataModelWarnings(planned)) await this.warn(call.run, message);
+    return planned.assembly.model;
+  }
+
+  private warn(run: Run, message: string): Promise<void> {
+    return this.deps.logger.log({
+      ...{ level: 'warn', logger: 'plan', runId: run.runKey, userId: run.userId },
+      message,
+    });
+  }
+
   /** RNF-004: the brief, the catalogue, the prompts and the source the package comes from. */
   private async record(
     execution: RunExecution,
@@ -177,7 +212,7 @@ export class BuildPlan implements RunExecutor {
     const { inputs, catalogue, prompts } = used;
     const { version, sha256 } = catalogue;
     const versions = Object.fromEntries(
-      [prompts.plan, prompts.prd].map((file) => [
+      [prompts.plan, prompts.prd, prompts.dataModel].map((file) => [
         file.name,
         { version: file.version, sha256: file.sha256 },
       ]),

@@ -29,7 +29,11 @@ import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js'
 import { loadProjectTemplate } from '../infrastructure/files/project-template.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
-import { loadPlannerPrompt, loadPrdPrompt } from '../infrastructure/prompts/prompt-files.js';
+import {
+  loadDataModelPrompt,
+  loadPlannerPrompt,
+  loadPrdPrompt,
+} from '../infrastructure/prompts/prompt-files.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import type { ProjectServices } from './web/project-routes.js';
 
@@ -97,6 +101,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       catalogue: () => Promise.resolve(catalogue),
       prompt: () => loadPlannerPrompt(parts.promptsFolder),
       prdPrompt: () => loadPrdPrompt(parts.promptsFolder),
+      dataModelPrompt: () => loadDataModelPrompt(parts.promptsFolder),
     }),
     catalogue,
     // RF-428, RF-1010: the cost page and the totals pill.

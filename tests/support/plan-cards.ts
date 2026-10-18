@@ -124,3 +124,19 @@ export function cardSaying(id: string, text: string): Card {
     ['Supported'],
   );
 }
+
+/** RF-623: a second `ENT` card with four supported claims, for the data model tests. */
+export function customerCard(): Card {
+  const claims = [
+    claim('A customer has an email.', 'src/Orders/Customer.cs'),
+    claim('A customer has a loyalty tier.', 'src/Orders/Customer.cs'),
+    claim('A customer has a fax number.', 'src/Orders/Customer.cs'),
+    claim('A customer has a nickname.', 'src/Orders/Customer.cs'),
+  ];
+  return judgedCard({ ...base('ENT-002', 'ENT', 'Customer'), claims }, [
+    'Supported',
+    'Supported',
+    'Supported',
+    'Supported',
+  ]);
+}

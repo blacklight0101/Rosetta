@@ -53,7 +53,7 @@ async function assertNothingSent(h: PlanHarness, endState: string): Promise<void
 }
 
 describe('plan estimate against the budget guard', () => {
-  it('RF-613 the estimate shows the two planner calls the guard then meters, high being the sum of their worst cases', async () => {
+  it('RF-613 the estimate shows the three planner calls the guard then meters, high being the sum of their worst cases', async () => {
     const h = await seededHarness();
 
     const estimate = await h.estimate();
@@ -63,14 +63,14 @@ describe('plan estimate against the budget guard', () => {
     expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
     const reservations = h.providers.ledger.reservations.map((each) => each.reservation);
     const { high } = estimate.planner.points;
-    expect(reservations.map((each) => each.role)).toEqual(['planner', 'planner']);
+    expect(reservations.map((each) => each.role)).toEqual(['planner', 'planner', 'planner']);
     const sum = (pick: (worst: (typeof reservations)[number]['worstCase']) => bigint): bigint =>
       reservations.reduce((total, each) => total + pick(each.worstCase), 0n);
     expect(sum((worst) => worst.micros)).toBe(high.costMicros);
     expect(sum((worst) => worst.tokens)).toBe(BigInt(high.inputTokens + high.outputTokens));
     const spent = h.providers.ledger.entries.reduce((total, each) => total + each.costMicros, 0n);
     expect(spent).toBeLessThanOrEqual(high.costMicros);
-    expect(h.providers.ledger.entries).toHaveLength(2);
+    expect(h.providers.ledger.entries).toHaveLength(3);
   });
 
   it('RF-613 a run cap the high figure does not fit is shown, and the guard refuses the call', async () => {

@@ -14,7 +14,11 @@ import { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-
 import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
-import { loadPlannerPrompt, loadPrdPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
+import {
+  loadDataModelPrompt,
+  loadPlannerPrompt,
+  loadPrdPrompt,
+} from '../../src/infrastructure/prompts/prompt-files.js';
 import { sampleAccount } from './account-fixtures.js';
 import { estimatePrices } from './estimate-harness.js';
 import { FixedClock } from './fixed-clock.js';
@@ -94,6 +98,7 @@ export async function createPlanEstimateHarness(
       catalogue: () => Promise.resolve(shippedCatalogue),
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),
+      dataModelPrompt: () => loadDataModelPrompt('prompts'),
     }),
     async seed(seed) {
       await seedPlanSource({ files, briefs, runs }, project, seed);

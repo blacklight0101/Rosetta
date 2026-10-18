@@ -36,8 +36,9 @@ function plannerAnswering(tasks: readonly object[]): ReturnType<typeof recording
     retried: [],
     response: { text: answer, toolCalls: [], usage, finishReason: 'stop' as const },
   });
-  // The second call is the PRD (RF-621); an unreadable answer leaves its sections placeholders.
-  return recordingOf(reply(text), reply('No PRD today.'));
+  // The second call is the PRD (RF-621) and the third the data model (RF-623); an unreadable
+  // answer leaves the PRD sections placeholders and lists every legacy field as dropped.
+  return recordingOf(reply(text), reply('No PRD today.'), reply('No data model today.'));
 }
 
 const probes = ['A total of 50, of 49.99 and of 50.01.', 'The same total written as 5e1.'];

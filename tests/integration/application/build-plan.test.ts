@@ -151,6 +151,7 @@ describe('BuildPlan: the run manifest', () => {
     expect(manifest.promptVersions).toEqual({
       'planner/package.v4.md': { version: 'v4', sha256: await sha('package.v4.md') },
       'planner/prd.v1.md': { version: 'v1', sha256: await sha('prd.v1.md') },
+      'planner/data-model.v1.md': { version: 'v1', sha256: await sha('data-model.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');
@@ -168,6 +169,7 @@ describe('BuildPlan: the parts of the package', () => {
       'README.md',
       'architecture.md',
       'conventions.md',
+      'data-model.md',
       'decisions/ADR-001.md',
       'decisions/ADR-002.md',
       'decisions/ADR-003.md',
