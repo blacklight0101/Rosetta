@@ -1,7 +1,17 @@
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { lineBreaksOf, maskOrphanKeyEnds } from './private-key-pieces.js';
-import { caseless, identifierValue, placeholderValue } from './secret-value-pieces.js';
+import { extraRules } from './secret-extra-rules.js';
+import {
+  notContinuation,
+  optionStart,
+  optionValue,
+  tokenBlank,
+  tokenProse,
+  tokenScheme,
+  tokenValue,
+} from './secret-option-pieces.js';
+import { caseless, identifierValue, notMasked, placeholderValue } from './secret-value-pieces.js';
 
 export type SecretKind =
   'api-key' | 'bearer-token' | 'connection-string' | 'password' | 'private-key';
@@ -26,22 +36,11 @@ export interface MaskRule {
   readonly pattern: RegExp;
 }
 
-// A value that an earlier rule already replaced is never masked again.
-const notMasked = String.raw`(?!\[MASKED:)`;
 // RF-141: anchored on a keyword or a delimiter (no open-ended prefix) so no pattern rescans the
 // input from every position. A prefix is bounded; a secret value runs to a delimiter its own class
 // excludes (whitespace, a quote, `/`, `;`, `<`), so a value has no length limit and is still read
 // once, and it ends where the next anchor could start.
 const passwordName = '(?:password|passwd|pwd)';
-// A blank, or a shell line continuation (a backslash, `^` or a backtick at the end of the line, then
-// any line terminator: LF, CRLF, a lone CR, U+2028 or U+2029), so a value on the next line is still
-// the value. The alternatives start with different characters, so a run of them can be read one
-// way only.
-const lineEnd = String.raw`(?:\r\n|[\n\r\u2028\u2029])`;
-const tokenBlank = String.raw`(?:[ \t]|[\\^\x60][ \t]*${lineEnd})`;
-// A continuation mark that ends the line, which no value starts with (so a run of blanks that gives
-// back its last blank cannot make the mark a value, and masking stays idempotent).
-const notContinuation = String.raw`(?![\\^\x60][ \t]*(?:${lineEnd}|$))`;
 const passwordKey = String.raw`${passwordName}["']?[ \t]{0,16}(?::=|[:=])${tokenBlank}{0,16}${notContinuation}`;
 // Not preceded by a letter or digit: an underscore before the key is allowed (`prod_sk-...`).
 const keyStart = '(?<![A-Za-z0-9])';
@@ -62,30 +61,6 @@ const mysqlRedirect = String.raw`[0-9]?(?:&>>?|>\||>&|<|>>?)[ \t]{0,16}`;
 const mysqlWord = String.raw`[ \t]+(?:(?:${mysqlRedirect})?(?:${mysqlQuoted}|[^\s\-,;"'<>|&=][^\s,;"'<>|&]*)|[0-9]?[<>]&-)(?=[ \t])`;
 // At most three positional words, each followed by at most 16 options, anywhere before `-p`.
 const mysqlArguments = String.raw`(?:${mysqlOption('first')}){0,16}(?:${mysqlWord}(?:${mysqlOption('later')}){0,16}){0,3}`;
-// The value of a long option such as `--password <value>`: one quoted value (to its closing quote or
-// the end of the line) or a bare word that does not start with `-`, a quote or a shell operator.
-const optionValue = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s\-"'<>|&;][^\s"'<>|&;]*)`;
-const schemeNames =
-  'bearer|basic|token|digest|negotiate|ntlm|kerberos|oauth|hawk|mutual|dpop|apikey|jwt|aws4-hmac-sha256';
-// What a value may start with: a character that is not a flag or an operator, or a dash and at least
-// six more characters (`-<value>`; a short `-v` is a flag). A lone continuation mark that ends the
-// line is not a value.
-const tokenValueStart = String.raw`(?=[^\s\-<>|&;]|-[^\s\-"'<>|&;][^\s"'<>|&;]{5,})${notContinuation}`;
-const dashValue = String.raw`-[^\s\-"'<>|&;][^\s"'<>|&;]{5,}`;
-// A scheme word before the value of `--token` stays visible, bare or quoted, once or repeated, with
-// any run of blanks or continuations after it: `--token Bearer <value>`. A scheme word joins the run
-// only when a value starts after it; before a flag, a redirect or an operator it is the value
-// (`--token Negotiate -v`).
-const tokenSchemeWord = String.raw`(?:"(?:${schemeNames})"|'(?:${schemeNames})'|(?:${schemeNames})(?![\w-]))`;
-// The run of scheme words is atomic (a lookahead capture, then a back reference), so a failed value
-// never retries a shorter run and the scan stays linear.
-const tokenScheme = String.raw`(?=(?<schemes>(?:${tokenSchemeWord}${tokenBlank}+${tokenValueStart})*))\k<schemes>`;
-// A word that starts with a scheme name and has more characters (`Bearer-x`, `Bearerx`) is a value,
-// and so is the word after it, bare or quoted, so that word does not stay visible.
-const schemePrefixedValue = String.raw`(?:${schemeNames})[\w-]+(?:${tokenBlank}+(?!\[MASKED:)${tokenValueStart}(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'<>|&;]+))?`;
-const tokenValue = String.raw`(?:${schemePrefixedValue}|${dashValue}|${optionValue})`;
-// Not preceded by a letter, digit or dash, so `x--token` and `---token` are left alone.
-const optionStart = '(?<![A-Za-z0-9-])--';
 // A quoted part runs to its closing quote (or the end of the line), spaces included; the token goes
 // on to the next space, so `-p"abc"def` is masked whole. The alternatives start differently.
 const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'])+`;
@@ -93,13 +68,10 @@ const mysqlPassword = String.raw`(?:"[^"\r\n]*"?|'[^'\r\n]*'?|[^\s"'])+`;
 // prefix and attributes, and blanks before the value.
 const xmlPasswordOpen = String.raw`<[\w.:-]{0,32}?${passwordName}(?:[ \t][^<>\r\n]{0,256})?>[ \t]{0,16}`;
 const cdataOpen = String.raw`<!\[CDATA\[`;
-// After `--token=` and one blank, one of these words is prose (`the --token= flag`), not a value
-// (P2-40). Any other word, a longer word (`flags`), two blanks or a tab is still a value.
-const tokenProse = String.raw`(?:flag|option|parameter|argument|value|switch|is)(?![\w.+/=@#$%^*~!:-])`;
 
 // The detection patterns (README section 5.1 allows secret-like literals here). The order matters:
 // whole private key blocks first, then self-identifying keys and tokens, then key=value settings.
-const defaultRules: readonly MaskRule[] = [
+const baseRules: readonly MaskRule[] = [
   {
     kind: 'private-key',
     pattern:
@@ -226,6 +198,8 @@ const defaultRules: readonly MaskRule[] = [
     ),
   },
 ];
+
+const defaultRules: readonly MaskRule[] = [...baseRules, ...extraRules];
 
 /** Every kind, in name order. */
 export const SECRET_KINDS: readonly SecretKind[] = [
