@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadRecording } from '../../../src/infrastructure/providers/fake/recording.js';
 import type { Recording } from '../../../src/infrastructure/providers/fake/recording.js';
+import { htmlProblems } from '../../support/html-check.js';
 import { seededUxPlan } from '../../support/ux-plan-harness.js';
 import { useTempRoot } from '../../support/temp-root.js';
 
@@ -12,7 +13,7 @@ import { useTempRoot } from '../../support/temp-root.js';
 
 const temp = useTempRoot('rosetta-incomplete-');
 
-const NOTICE = /^(?:> \*\*Incomplete\.\*\*|# Incomplete\.|<!-- Incomplete\.)/u;
+const NOTICE = /^(?:> \*\*Incomplete\.\*\*|# Incomplete\.)|<strong>Incomplete\.<\/strong>/u;
 
 const documents = [
   {
@@ -56,6 +57,13 @@ const documents = [
     prefix: 'ux/',
   },
 ] as const;
+
+/** RF-626: what the HTML check finds in every noticed wireframe page, each named by its path. */
+function wireframeProblems(files: Readonly<Record<string, string>>, noticed: readonly string[]) {
+  return noticed
+    .filter((path) => path.endsWith('.html'))
+    .flatMap((path) => htmlProblems(files[path] ?? '').map((problem) => `${path}: ${problem}`));
+}
 
 function textOf(recording: Recording, at: number): string {
   const attempt = recording.calls[at]?.attempts[0];
@@ -108,6 +116,7 @@ describe('BuildPlan: each plan document that stays cut off is marked and named',
           ? NOTICE.test(apiSection)
           : noticed.includes(file) && noticed.every((path) => path.startsWith(prefix));
       expect(carried).toBe(true);
+      expect(wireframeProblems(files, noticed)).toEqual([]);
       const limit = String(h.providers.requests()[0]?.maxOutputTokens);
       const listed =
         readme

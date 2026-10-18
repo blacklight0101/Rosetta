@@ -12,7 +12,7 @@ import { checksMarkdown } from './handoff-checks-markdown.js';
 import { dataModelMarkdown } from './handoff-data-model-markdown.js';
 import { flowFile, flowMarkdown, flowsIndexMarkdown } from './handoff-flows-markdown.js';
 import { decisionFile, handoffFiles } from './handoff-links.js';
-import { incompleteNotice } from './handoff-incomplete-markdown.js';
+import { withIncompleteNotice } from './handoff-incomplete-markdown.js';
 import { openApiYaml } from './handoff-openapi-yaml.js';
 import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
 import { fixturesMarkdown } from './handoff-fixtures-markdown.js';
@@ -109,7 +109,7 @@ function withIncompleteNotices(
   files: Record<string, string>,
 ): Readonly<Record<string, string>> {
   return Object.fromEntries(
-    Object.entries(files).map(([path, text]) => [path, incompleteNotice(handoff, path) + text]),
+    Object.entries(files).map(([path, text]) => [path, withIncompleteNotice(handoff, path, text)]),
   );
 }
 

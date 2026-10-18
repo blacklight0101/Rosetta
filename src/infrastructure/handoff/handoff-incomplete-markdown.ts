@@ -1,4 +1,5 @@
 import type { HandoffPackage, IncompleteDocument } from '../../application/plan/handoff-package.js';
+import { escapeHtml } from '../report/html-text.js';
 import { documentSet, handoffFiles } from './handoff-links.js';
 
 // RF-604: a document whose planner answer stayed cut off at the output limit is kept, its file
@@ -33,20 +34,36 @@ function kindOf(path: string): Kind | undefined {
   return undefined;
 }
 
-/** The notice in the file's own syntax: a YAML comment, an HTML comment or a Markdown quote. */
+/**
+ * The notice in the file's own syntax: a YAML comment, a Markdown quote, or for a wireframe page an
+ * escaped paragraph (the wireframe HTML check rejects comments and bare `>` characters).
+ */
 function noticeOf(path: string, text: string): string {
   if (path.endsWith('.yaml')) return `# Incomplete. ${text}\n`;
-  if (path.endsWith('.html')) return `<!-- Incomplete. ${text} -->\n`;
+  if (path.endsWith('.html'))
+    return `<p class="box"><strong>Incomplete.</strong> ${escapeHtml(text)}</p>\n`;
   return `> **Incomplete.** ${text}\n\n`;
 }
 
-/** The notice a file opens with, or '' when its document was not cut off. */
+/** The notice of a file, or '' when its document was not cut off. */
 // RF-604
 export function incompleteNotice(handoff: HandoffPackage, path: string): string {
   const kind = kindOf(path);
   const found = handoff.incomplete.find((each) => each.document === kind);
   if (found === undefined) return '';
   return noticeOf(path, explanation(found));
+}
+
+/**
+ * RF-604: the file's text with its notice, first in the file; for a wireframe page, first in its
+ * body, so the page keeps the doctype and the head the check expects.
+ */
+// RF-604, RF-626
+export function withIncompleteNotice(handoff: HandoffPackage, path: string, text: string): string {
+  const notice = incompleteNotice(handoff, path);
+  if (notice === '') return text;
+  if (!path.endsWith('.html')) return notice + text;
+  return text.replace('<body>', () => `<body>\n${notice}`);
 }
 
 /**
