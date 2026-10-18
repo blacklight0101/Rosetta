@@ -13,7 +13,7 @@ import { STEP_IDS, type StepId } from '../lib/plan-setup/steps.js';
 // written.
 
 /** What is wrong with the draft, by question id. */
-export type Problems = Readonly<Record<string, string>>;
+type Problems = Readonly<Record<string, string>>;
 
 export interface PlanSetupState {
   readonly draft: Draft;

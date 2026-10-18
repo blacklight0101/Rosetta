@@ -28,7 +28,7 @@ export const catalogue = {
   ],
 };
 
-export const defaultBrief = {
+const defaultBrief = {
   savedAt: null,
   catalogueVersion: 2026,
   principles: ['solid', 'kiss', 'tdd'],

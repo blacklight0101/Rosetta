@@ -9,10 +9,10 @@ import { CONTEXT_FIELDS, STACK_LAYERS, STEP_IDS, questionsOf, type ContextField 
 
 export const MAX_TEXT = 500;
 export const MAX_CHOICE = 200;
-export const MAX_INTEGRATIONS = 20;
-export const MAX_TEAM = 10_000;
+const MAX_INTEGRATIONS = 20;
+const MAX_TEAM = 10_000;
 
-export type ContextText = Readonly<Record<ContextField, string>>;
+type ContextText = Readonly<Record<ContextField, string>>;
 
 export interface Draft {
   readonly principles: readonly string[];

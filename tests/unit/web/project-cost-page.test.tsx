@@ -52,7 +52,9 @@ describe('project cost page', () => {
     expect(screen.getByText(/not part of this project's totals/u)).not.toBeNull();
     expect(within(await table('By run')).queryByText('Provider tests')).toBeNull();
   });
+});
 
+describe('project cost page plan setup', () => {
   it('RF-608 lists the calls of Plan setup, which belong to the project and to no run, as plan setup options', async () => {
     const options = {
       key: 'plan-options',

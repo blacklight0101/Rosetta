@@ -9,8 +9,6 @@ import { dollars } from '../estimate-math.js';
 
 export type Scenario = 'low' | 'likely' | 'high';
 
-export const SCENARIOS: readonly Scenario[] = ['low', 'likely', 'high'];
-
 export interface Blocker {
   readonly code: string;
   readonly message: string;

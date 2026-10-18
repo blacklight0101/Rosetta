@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/preact';
 import { expect } from 'vitest';
 import { PlanSetupPage } from '../../../web/src/pages/PlanSetupPage.js';
-import { failure, json, renderPage, type Answer, type RenderedPage } from './fake-api.js';
+import { json, renderPage, type Answer, type RenderedPage } from './fake-api.js';
 import {
   catalogue,
   planEstimate,
@@ -16,7 +16,7 @@ import {
 
 export const base = '/api/projects/p-1';
 
-export const baseAnswers: Readonly<Record<string, Answer>> = {
+const baseAnswers: Readonly<Record<string, Answer>> = {
   'GET /api/plan/catalogue': json(200, catalogue),
   [`GET ${base}/planning-brief`]: json(200, unsavedBrief),
   [`PUT ${base}/planning-brief`]: json(200, savedBrief),
@@ -26,8 +26,6 @@ export const baseAnswers: Readonly<Record<string, Answer>> = {
 
 export const renderPlan = (answers: Readonly<Record<string, Answer>> = {}): RenderedPage =>
   renderPage(<PlanSetupPage />, { ...baseAnswers, ...answers }, undefined, { projectId: 'p-1' });
-
-export const refusal = (status: number, code: string): Answer => failure(status, code);
 
 export async function ready(): Promise<void> {
   await screen.findByRole('heading', { name: 'Plan setup', level: 1 });
