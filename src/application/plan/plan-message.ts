@@ -1,5 +1,6 @@
 import { formatCitation } from '../../domain/cards/citation.js';
 import { renderDataBlock } from '../../domain/egress/data-block.js';
+import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
@@ -37,13 +38,22 @@ function principlesOf(brief: PlanningBrief, catalogue: Catalogue): object[] {
   });
 }
 
+/** The chosen style with its rule, so the components follow it (RF-608). */
+function styleOf(brief: PlanningBrief, catalogue: Catalogue): object {
+  const entry = catalogue.entries.find((each) => each.id === brief.architecture.style);
+  return { id: brief.architecture.style, title: entry?.title, rule: entry?.rule };
+}
+
 function ownerText(input: PlanMessageInput): string {
   const { brief, catalogue } = input;
   return JSON.stringify(
     {
       planningBrief: {
-        architectureStyle: brief.architecture.style,
-        migration: brief.migration,
+        architectureStyle: styleOf(brief, catalogue),
+        migration: {
+          strategy: brief.migration,
+          order: migrationStrategyInfo[brief.migration].ordering,
+        },
         stack: brief.stack.map(({ layer, choice }) => ({ layer, choice })),
         context: brief.context,
         aiAssistedBuild: brief.buildMethod.aiAssisted,

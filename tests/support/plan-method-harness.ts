@@ -18,11 +18,12 @@ export function plain(text: string | undefined): string {
   return (text ?? '').replaceAll('\\', '');
 }
 
-/** The catalogue entry with this id. */
+/** The catalogue entry with this id, its texts on one line as the package shows them. */
 export function entryOf(id: string): (typeof shippedCatalogue.entries)[number] {
   const entry = shippedCatalogue.entries.find((each) => each.id === id);
   if (entry === undefined) throw new Error(`The catalogue has no entry ${id}`);
-  return entry;
+  const line = (text: string): string => text.replace(/\s+/gu, ' ').trim();
+  return { ...entry, rule: line(entry.rule), why: line(entry.why), check: line(entry.check) };
 }
 
 /** Every file of the package as one reader-visible text. */

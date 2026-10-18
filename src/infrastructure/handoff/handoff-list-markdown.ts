@@ -133,6 +133,8 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     `7. [Risks](${handoffFiles.risks})`,
     `8. [Open questions](${handoffFiles.openQuestions})`,
     `9. [Source cards](${handoffFiles.sources})`,
+    `10. [Conventions](${handoffFiles.conventions})`,
+    ...(brief.buildMethod.aiAssisted ? [`11. [AGENTS.md](${handoffFiles.agents})`] : []),
     '',
     '## Principles and practices',
     '',

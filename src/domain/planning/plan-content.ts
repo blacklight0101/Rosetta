@@ -22,6 +22,10 @@ interface PlanRequirement extends DraftRequirement {
 
 export interface PlanDecision extends DraftDecision {
   readonly id: string;
+  /** The planner proposes; a choice the owner made in the planning brief is accepted. */
+  readonly status: 'Proposed' | 'Accepted';
+  /** The options considered, one line each; the planner's decisions list none. */
+  readonly options: readonly string[];
 }
 
 export interface PlanPhase {
@@ -32,7 +36,7 @@ export interface PlanPhase {
   readonly exitCriteria: readonly string[];
 }
 
-interface PlanTask {
+export interface PlanTask {
   readonly id: string;
   readonly title: string;
   readonly phase: number;
@@ -67,7 +71,7 @@ export interface PlanAssembly {
 }
 
 /** `REQ-001`, three digits at least. */
-function planId(prefix: string, number: number): string {
+export function planId(prefix: string, number: number): string {
   return `${prefix}-${String(number).padStart(3, '0')}`;
 }
 
@@ -105,15 +109,16 @@ function tasksOf(
   drafts: readonly DraftTask[],
   phases: number,
   idAt: ReadonlyMap<number, string>,
+  specified: boolean,
 ): PlanTask[] {
-  const kept = drafts.filter((task) => task.phase >= 1 && task.phase <= phases);
-  return kept.map((task, index) => ({
-    id: planId('T', index + 1),
-    title: task.title,
-    phase: task.phase,
-    requirements: unique(task.requirements.flatMap((at) => idAt.get(at) ?? [])),
-    acceptanceCriteria: task.acceptanceCriteria,
-  }));
+  const kept = drafts
+    .filter((task) => task.phase >= 1 && task.phase <= phases)
+    .map((task) => ({
+      ...task,
+      requirements: unique(task.requirements.flatMap((at) => idAt.get(at) ?? [])),
+    }))
+    .filter((task) => !specified || task.requirements.length > 0);
+  return kept.map((task, index) => ({ ...task, id: planId('T', index + 1) }));
 }
 
 function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
@@ -126,14 +131,24 @@ function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
   }));
 }
 
-// RF-601, RF-602
-export function assemblePlan(draft: PlanDraft, supported: ReadonlySet<string>): PlanAssembly {
+export interface AssemblyOptions {
+  /** RF-607: given SDD, a task that implements no requirement is not written. */
+  readonly specificationDriven?: boolean;
+}
+
+// RF-601, RF-602, RF-607
+export function assemblePlan(
+  draft: PlanDraft,
+  supported: ReadonlySet<string>,
+  options: AssemblyOptions = {},
+): PlanAssembly {
   const requirements = requirementsOf(draft.requirements, supported);
   const entities = draft.entities.flatMap((entity) => {
     const sources = knownSources(entity.sources, supported);
     return sources.length === 0 ? [] : [{ ...entity, sources }];
   });
-  const tasks = tasksOf(draft.tasks, draft.phases.length, requirements.idAt);
+  const specified = options.specificationDriven === true;
+  const tasks = tasksOf(draft.tasks, draft.phases.length, requirements.idAt, specified);
   const withSources = <T extends { readonly sources: readonly string[] }>(item: T): T => ({
     ...item,
     sources: knownSources(item.sources, supported),
@@ -145,7 +160,7 @@ export function assemblePlan(draft: PlanDraft, supported: ReadonlySet<string>): 
       components: componentsOf(draft.components),
       decisions: draft.decisions.map((decision, index) => ({
         ...withSources(decision),
-        id: planId('ADR', index + 1),
+        ...{ id: planId('ADR', index + 1), status: 'Proposed' as const, options: [] },
       })),
       entities,
       phases: draft.phases.map((phase, index) => ({ ...phase, number: index + 1 })),

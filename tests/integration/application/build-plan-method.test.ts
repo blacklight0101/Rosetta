@@ -90,7 +90,7 @@ describe('RF-610 the migration strategy', () => {
   const cases = [
     ['strangler-fig', 'Strangler Fig', 'one part at a time'],
     ['parallel-change', 'Parallel Change', 'beside the old'],
-    ['rewrite', 'full rewrite', 'single cut-over'],
+    ['rewrite', 'Full rewrite', 'single cut-over'],
   ] as const;
 
   it.each(cases)(

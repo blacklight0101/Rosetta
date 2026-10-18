@@ -1,3 +1,4 @@
+import { briefDecisions } from '../../domain/planning/brief-decisions.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
@@ -12,9 +13,11 @@ import type { PlanInputs } from './plan-inputs.js';
 
 function principleOf(catalogue: Catalogue, id: string): PackagePrinciple {
   const entry = catalogue.entries.find((each) => each.id === id);
-  return entry === undefined
-    ? { id, title: id, rule: '' }
-    : { id, title: entry.title, rule: entry.rule };
+  if (entry === undefined) {
+    return { id, title: id, rule: '', why: '', check: '', group: undefined };
+  }
+  const { title, rule, why, check, group } = entry;
+  return { id, title, rule, why, check, group };
 }
 
 // RF-601, RF-604
@@ -24,14 +27,18 @@ export function handoffPackageOf(
   catalogue: Catalogue,
 ): HandoffPackage {
   const { brief, sourceRun, project, cards, questions } = inputs;
+  const sources = supportedCards(cards);
+  const supported = new Set(sources.map((card) => card.id));
+  const fromBrief = briefDecisions(brief, catalogue, supported, content.decisions.length);
   return {
     repository: { url: project.sourceUrl, commitSha: sourceRun.commitSha },
     sourceRun: sourceRun.runKey,
     brief,
     style: principleOf(catalogue, brief.architecture.style),
     principles: brief.principles.map((id) => principleOf(catalogue, id)),
-    content,
-    sources: supportedCards(cards),
+    content: { ...content, decisions: [...content.decisions, ...fromBrief.decisions] },
+    choices: fromBrief.choices,
+    sources,
     excluded: excludedClaims(cards),
     briefQuestions: defaultedQuestions(brief, catalogue),
     openQuestions: questions
