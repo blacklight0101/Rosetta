@@ -50,6 +50,7 @@ import { planOptionsService } from './web-plan-options.js';
 import { FixedReportCards, MapRunTextFiles, RecordingReportWriter } from './report-doubles.js';
 import { catalogAreas, estimatePrices, FixedScans } from './estimate-harness.js';
 import type { RunHarness } from './run-harness.js';
+import { deepenServices } from './web-deepen-services.js';
 
 /** RF-008, RF-504, RF-506: where the run folder is read from, zipped and reported on. */
 export interface RunOutputs {
@@ -206,6 +207,7 @@ export function runServices(
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, briefs: new MemoryBriefStore(), submit: runs.submit }),
+    ...deepenServices(runs, { projects, keys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,
