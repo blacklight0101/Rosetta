@@ -13,6 +13,7 @@ export const handoffFiles = {
   architecture: 'architecture.md',
   entities: 'entity-mapping.md',
   dataModel: 'data-model.md',
+  flows: 'flows/README.md',
   roadmap: 'roadmap.md',
   tasks: 'tasks.md',
   risks: 'risks.md',
@@ -26,13 +27,14 @@ export const handoffFiles = {
 /**
  * RF-620: the documentation set the README's reading order opens with, in the order of the
  * requirement. Each document of the set is added here by the card that writes its file (the TRD,
- * the API contract, the flows, the user-interface material and the
+ * the API contract, the user-interface material and the
  * implementation plan), so the reading order never links a file the package does not have.
  */
 export const documentSet = [
   { title: 'Product requirements document', file: handoffFiles.prd },
   { title: 'Technical requirements document', file: handoffFiles.trd },
   { title: 'Target data model', file: handoffFiles.dataModel },
+  { title: 'Target flows', file: handoffFiles.flows },
 ] as const;
 
 const decisionsFolder = 'decisions';

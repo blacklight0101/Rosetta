@@ -24,6 +24,7 @@ import { FileHandoffWriter } from '../infrastructure/handoff/file-handoff-writer
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import {
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
@@ -77,6 +78,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     prompt: () => loadPlannerPrompt(promptsFolder),
     prdPrompt: () => loadPrdPrompt(promptsFolder),
     dataModelPrompt: () => loadDataModelPrompt(promptsFolder),
+    flowsPrompt: () => loadFlowsPrompt(promptsFolder),
     ids: parts.ids,
   });
 }

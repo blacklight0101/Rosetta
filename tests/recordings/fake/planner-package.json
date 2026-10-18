@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "RF-601..RF-604, RF-621: the planner's two answers for the hand-off package of the planning integration test. First the plan: requirements that cite supported cards, one that cites a card with no supported claim and an unknown id, one holding hostile Markdown and HTML, an entity mapping without a supported card, and a task in a phase that does not exist. The two tasks that are kept state an invariant, a risk class, the guards they add and review probes (RF-630, RF-635). Second the product requirements document: features that cite FEAT cards (one a card with no supported claim, one holding hostile Markdown and HTML), rules that cite BR cards (one citing a FEAT card), an out-of-scope item, and a role and a non-functional item holding hostile Markdown and HTML. Written by hand for the fake provider; no real provider was called. The third call is the data model (RF-623, P3-17): tables that map supported ENT claims, a column whose legacy claim is not supported, a type that is not a type name, a name that is not an identifier, a foreign key to a missing table and a dropped field.",
+  "description": "RF-601..RF-604, RF-621: the planner's two answers for the hand-off package of the planning integration test. First the plan: requirements that cite supported cards, one that cites a card with no supported claim and an unknown id, one holding hostile Markdown and HTML, an entity mapping without a supported card, and a task in a phase that does not exist. The two tasks that are kept state an invariant, a risk class, the guards they add and review probes (RF-630, RF-635). Second the product requirements document: features that cite FEAT cards (one a card with no supported claim, one holding hostile Markdown and HTML), rules that cite BR cards (one citing a FEAT card), an out-of-scope item, and a role and a non-functional item holding hostile Markdown and HTML. Written by hand for the fake provider; no real provider was called. The third call is the data model (RF-623, P3-17): tables that map supported ENT claims, a column whose legacy claim is not supported, a type that is not a type name, a name that is not an identifier, a foreign key to a missing table and a dropped field. The fourth call is the target flows (RF-625, P3-19): FLOW-001 mapped with a step to a component the architecture lacks, a rejected step, a step of another card and a repeated step; FLOW-002 out of scope with a reason; FLOW-077, which no card has; FLOW-003 left unmentioned. Used only by runs whose cards include FLOW cards.",
   "calls": [
     {
       "attempts": [
@@ -54,6 +54,25 @@
             },
             "finishReason": "stop",
             "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"flows\": [\n    {\n      \"card\": \"FLOW-001\",\n      \"inScope\": true,\n      \"reason\": \"\",\n      \"steps\": [\n        {\n          \"claim\": \"FLOW-001.c1\",\n          \"component\": \"Web front end\",\n          \"action\": \"Shows the basket and sends it. <img src=x onerror=alert(1)> [x](javascript:alert(1))\"\n        },\n        {\n          \"claim\": \"FLOW-001.c2\",\n          \"component\": \"Order service\",\n          \"action\": \"Creates the order and totals the lines.\"\n        },\n        {\n          \"claim\": \"FLOW-001.c3\",\n          \"component\": \"Payment gateway\",\n          \"action\": \"Takes the payment.\"\n        },\n        {\n          \"claim\": \"FLOW-001.c4\",\n          \"component\": \"Order service\",\n          \"action\": \"Emails the warehouse.\"\n        },\n        {\n          \"claim\": \"FLOW-002.c1\",\n          \"component\": \"Order service\",\n          \"action\": \"Belongs to another card.\"\n        },\n        {\n          \"claim\": \"FLOW-001.c2\",\n          \"component\": \"Database\",\n          \"action\": \"Repeats a step.\"\n        }\n      ]\n    },\n    {\n      \"card\": \"FLOW-002\",\n      \"inScope\": false,\n      \"reason\": \"The staff export is not part of the new shop.\",\n      \"steps\": []\n    },\n    {\n      \"card\": \"FLOW-077\",\n      \"inScope\": true,\n      \"reason\": \"\",\n      \"steps\": [\n        {\n          \"claim\": \"FLOW-077.c1\",\n          \"component\": \"Order service\",\n          \"action\": \"Names a card nobody wrote.\"\n        }\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1800,
+              "outputTokens": 500,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
             "modelVersion": "fake-model-2026-10-01"
           }
         }

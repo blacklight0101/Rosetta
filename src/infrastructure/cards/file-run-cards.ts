@@ -23,12 +23,14 @@ const headerSchema = z.object({
   title: z.string(),
   summary: z.string(),
   area: z.string(),
+  flow: z.object({ trigger: z.string(), outcome: z.string() }).optional(),
   claims: z.array(
     z.object({
       claimId: z.string(),
       text: z.string(),
       citations: z.array(z.string()),
       status: z.enum(CLAIM_STATUSES),
+      target: z.string().optional(),
     }),
   ),
 });

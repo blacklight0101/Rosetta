@@ -31,6 +31,7 @@ import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import {
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
@@ -41,12 +42,13 @@ import type { ProjectServices } from './web/project-routes.js';
 // use cases behind the projects API. The default settings come from `templates/` and are checked
 // here, so a broken template stops the start-up instead of the first new project.
 
-/** The planner's three versioned prompt files, read for each plan or plan estimate. */
+/** The planner's four versioned prompt files, read for each plan or plan estimate. */
 function plannerPrompts(folder: string) {
   return {
     prompt: () => loadPlannerPrompt(folder),
     prdPrompt: () => loadPrdPrompt(folder),
     dataModelPrompt: () => loadDataModelPrompt(folder),
+    flowsPrompt: () => loadFlowsPrompt(folder),
   };
 }
 
