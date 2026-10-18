@@ -152,7 +152,7 @@ describe('BuildPlan: ux/ wireframes', () => {
     expect(brief).toContain('WCAG 2.1 AA');
     expect(brief).toContain('Front end: React');
     expect(brief).toContain('Roles named by the legacy screens: Shopper, Staff.');
-    expect(brief).not.toMatch(/<script|\]\(javascript/u);
+    expect(written['ux/design-brief.md']).not.toMatch(/<script|\]\(javascript/u);
   });
 });
 

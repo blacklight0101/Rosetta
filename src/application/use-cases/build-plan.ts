@@ -39,7 +39,8 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // planner once through the guarded provider the factory builds for the run, checks the answer
 // against the supported cards, asks it a second time for the product requirements document (RF-621,
 // its own versioned prompt), a third time for the target data model (RF-623), a fourth for the target flows (RF-625), a fifth for the API contract when the front end
-// is separate (RF-624) and writes `handoff/`.
+// is separate (RF-624), a sixth for the user-interface material when a `SCRN` card is verified (RF-626)
+// and writes `handoff/`.
 // Only `Supported` claims and answered questions reach the planner; the claims left out and the brief's defaults are listed in the package. The
 // cost report is written at every end.
 
@@ -180,9 +181,14 @@ export class BuildPlan implements RunExecutor {
     const { inputs, catalogue, prompts } = used;
     const { version, sha256 } = catalogue;
     const versions = Object.fromEntries(
-      [...[prompts.plan, prompts.prd, prompts.dataModel, prompts.flows, prompts.apiContract]].map(
-        (file) => [file.name, { version: file.version, sha256: file.sha256 }],
-      ),
+      [
+        prompts.plan,
+        prompts.prd,
+        prompts.dataModel,
+        prompts.flows,
+        prompts.apiContract,
+        prompts.ux,
+      ].map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));

@@ -14,7 +14,7 @@ interface ScreenInput {
 }
 
 /** RF-626: a `SCRN` card with one supported claim and the screen detail given. */
-export function screenCard(input: ScreenInput): Card {
+function screenCard(input: ScreenInput): Card {
   const { id, title, route } = input;
   const fields = (input.fields ?? []).map((field) => ({
     ...{ name: field.name, inputKind: field.inputKind ?? 'text' },

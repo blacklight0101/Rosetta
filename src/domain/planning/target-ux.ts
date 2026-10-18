@@ -10,7 +10,7 @@ import type { SourceCard } from './plan-sources.js';
 /** Q-27: the most target screens that get a wireframe; the rest are dropped with their reason. */
 export const MAX_SCREENS = 20;
 
-export type ScreenDisposition = 'kept' | 'merged' | 'dropped';
+type ScreenDisposition = 'kept' | 'merged' | 'dropped';
 
 interface DraftScreen {
   /** The name of the target screen. */

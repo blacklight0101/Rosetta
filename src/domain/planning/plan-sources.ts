@@ -18,7 +18,7 @@ interface SourceClaim {
 }
 
 /** What a `SCRN` card says about its screen, as the plan needs it (RF-626); the validations stay in the card. */
-export interface SourceScreen {
+interface SourceScreen {
   /** The route or page name. */
   readonly route: string;
   readonly roles: readonly string[];
