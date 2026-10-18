@@ -55,6 +55,8 @@ interface Token {
   readonly letter: string;
   /** Where, in the line, the character the token comes from ends. */
   readonly end: number;
+  /** The index after the run of letters that starts here (this index for a token that is no letter). */
+  readonly wordEnd: number;
 }
 
 const leet: Readonly<Record<string, string>> = {
@@ -85,6 +87,19 @@ function kindOf(char: string): [Kind, string] {
   return ['gap', ''];
 }
 
+/** Fills `wordEnd` from the back, so a word is walked once however many names precede it. */
+function withWordEnds(tokens: Token[]): Token[] {
+  for (let at = tokens.length - 1; at >= 0; at -= 1) {
+    const token = tokens[at];
+    const after = tokens[at + 1];
+    if (token === undefined) continue;
+    const wordEnd =
+      token.kind !== 'letter' ? at : after?.kind === 'letter' ? after.wordEnd : at + 1;
+    tokens[at] = { ...token, wordEnd };
+  }
+  return tokens;
+}
+
 /** The skeleton of one line (no `\n` in it). */
 function tokensOf(line: string): Token[] {
   const ascii = isAscii(line);
@@ -95,9 +110,10 @@ function tokensOf(line: string): Token[] {
   for (const char of text) {
     unit += char.length;
     const [kind, letter] = kindOf(char);
-    tokens.push({ kind, letter, end: fold === undefined ? unit : (fold.ends[unit - 1] ?? 0) });
+    const end = fold === undefined ? unit : (fold.ends[unit - 1] ?? 0);
+    tokens.push({ kind, letter, end, wordEnd: 0 });
   }
-  return tokens;
+  return withWordEnds(tokens);
 }
 
 const isOpen = (token: Token | undefined): boolean =>
@@ -154,8 +170,7 @@ function endBefore(tokens: readonly Token[], first: number): boolean {
 function opensObject(tokens: readonly Token[], last: number): boolean {
   let at = skipGaps(tokens, last + 1, 1);
   if (tokens[at]?.kind === 'letter') {
-    while (tokens[at]?.kind === 'letter') at += 1;
-    at = skipGaps(tokens, at, 1);
+    at = skipGaps(tokens, tokens[at]?.wordEnd ?? at, 1);
   }
   return counts(tokens[at], openingBrace);
 }
@@ -174,22 +189,24 @@ function nameAt(tokens: readonly Token[], letters: readonly number[], start: num
   return unknown > MAX_UNKNOWN || stopped ? undefined : at;
 }
 
-/** The tokens of the part of the line between line breaks that holds `from..to`. */
-function segmentOf(tokens: readonly Token[], from: number, to: number): readonly Token[] {
-  let start = from;
-  while (start > 0 && tokens[start - 1]?.kind !== 'line') start -= 1;
-  let end = to;
-  while (end + 1 < tokens.length && tokens[end + 1]?.kind !== 'line') end += 1;
-  return tokens.slice(start, end + 1);
-}
-
-/** Whether the name is all its part of the line spells, marked as a frame by a bracket. */
+/**
+ * Whether the name is all its part of the line (between line breaks) spells, marked as a frame by
+ * a bracket. The walk out from the name stops at the first other letter, so a long line of names
+ * costs each name a few steps and not the length of the line (P2-44).
+ */
 function standsAlone(tokens: readonly Token[], from: number, to: number): boolean {
-  const segment = segmentOf(tokens, from, to);
-  const letters = segment.filter((token) => token.kind === 'letter').length;
-  return letters === NAME.length && segment.some((token) => counts(token, angle));
+  let framed = tokens.slice(from, to + 1).some((token) => counts(token, angle));
+  for (const [start, step] of [
+    [from - 1, -1],
+    [to + 1, 1],
+  ] as const) {
+    for (let at = start; tokens[at] !== undefined && tokens[at]?.kind !== 'line'; at += step) {
+      if (tokens[at]?.kind === 'letter') return false;
+      framed ||= counts(tokens[at], angle);
+    }
+  }
+  return framed;
 }
-
 /** Whether the name at these token indexes is a marker. */
 function framed(tokens: readonly Token[], name: readonly number[]): boolean {
   const first = name[0] ?? 0;

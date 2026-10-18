@@ -94,7 +94,11 @@ function registerReopenRoute(server: FastifyInstance, services: AnswerServices):
         runId: request.params.runId,
         cardId: request.params.cardId,
       });
-      if (!outcome.ok) throw new RosettaError(ERROR_CODES.notFound);
+      if (!outcome.ok) {
+        throw new RosettaError(
+          outcome.error === 'not-found' ? ERROR_CODES.notFound : ERROR_CODES.conflict,
+        );
+      }
       return reply.header('cache-control', 'no-store').send(questionsView(outcome.value));
     },
   );
