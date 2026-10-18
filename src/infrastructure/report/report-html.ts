@@ -18,6 +18,6 @@ export function renderReportHtml(model: ReportModel): string {
     runKey: model.runKey,
     title: 'Run report',
     main,
-    ...(model.cards.length === 0 ? {} : { script: 'filters.js' }),
+    ...(model.cards.length === 0 ? {} : { scripts: ['filters.js'] }),
   });
 }

@@ -7,7 +7,7 @@ import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 // needs no inline allowance. The pages work from a folder on disk and on GitHub Pages: every
 // address is relative.
 
-type ReportPage = 'report' | 'questions' | 'replay' | 'cost' | 'area' | 'card';
+type ReportPage = 'report' | 'questions' | 'replay' | 'cost' | 'area' | 'card' | 'diagrams';
 
 export interface PageContent {
   readonly page: ReportPage;
@@ -15,8 +15,8 @@ export interface PageContent {
   readonly title: string;
   /** The markup of the page body; the caller has escaped everything in it. */
   readonly main: string;
-  /** A script of the report folder to load deferred (a file name), if the page has one. */
-  readonly script?: string;
+  /** The scripts of the report folder to load deferred, in this order (file names); none by default. */
+  readonly scripts?: readonly string[];
 }
 
 const NAVIGATION: readonly {
@@ -40,10 +40,9 @@ function navigation(current: ReportPage): string {
 
 // RF-1013, RF-507
 export function renderPage(content: PageContent): string {
-  const script =
-    content.script === undefined
-      ? ''
-      : `\n<script src="${escapeHtml(content.script)}" defer></script>`;
+  const scripts = (content.scripts ?? [])
+    .map((name) => `\n<script src="${escapeHtml(name)}" defer></script>`)
+    .join('');
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -52,7 +51,7 @@ export function renderPage(content: PageContent): string {
 <meta name="referrer" content="${REPORT_REFERRER}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(content.title)} - ${escapeHtml(content.runKey)}</title>
-<link rel="stylesheet" href="report.css">${script}
+<link rel="stylesheet" href="report.css">${scripts}
 </head>
 <body>
 <a class="skip" href="#main">Skip to the content</a>
