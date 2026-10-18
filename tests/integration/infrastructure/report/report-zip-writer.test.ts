@@ -83,11 +83,9 @@ describe('ReportZipWriter', () => {
     expect(Object.keys(await unzipped(names.run)).filter((path) => path.endsWith('.zip'))).toEqual(
       [],
     );
-    expect((await readdir(reportFolder())).sort()).toEqual([
-      names.run,
-      names.handoff,
-      'report.html',
-    ]);
+    expect((await readdir(reportFolder())).sort()).toEqual(
+      [names.run, names.handoff, 'report.html'].sort(),
+    );
   });
 });
 
@@ -112,5 +110,19 @@ describe('ReportZipWriter refusals', () => {
       .catch((error: unknown) => error);
 
     expect(failure).toMatchObject({ code: ERROR_CODES.reportWriteFailed });
+  });
+
+  it('RF-005 refuses a zip name that holds a folder, or is not a zip, and writes nothing', async () => {
+    await seed(files);
+
+    for (const run of ['../escape.zip', 'sub/inside.zip', 'report.txt']) {
+      const failure = await writer()
+        .write(scope, { run })
+        .catch((error: unknown) => error);
+
+      expect(failure).toMatchObject({ code: ERROR_CODES.reportWriteFailed });
+    }
+    expect(await readdir(reportFolder())).toEqual(['report.html']);
+    expect(await readdir(dirname(reportFolder()))).not.toContain('escape.zip');
   });
 });

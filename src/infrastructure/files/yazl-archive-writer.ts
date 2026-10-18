@@ -20,6 +20,13 @@ import { isOwnFile, isRealFolder, runFolderOf } from './run-folder.js';
 
 const HANDOFF_FOLDER = 'handoff';
 
+/**
+ * RF-505: the zips the report writes into its own folder (`report/<name>.zip`, and the file a zip
+ * is written to until it is whole). They are left out of the archive of the run, so a zip never
+ * holds an earlier one.
+ */
+const REPORT_ZIP = /^report\/[^/]+\.zip(\.part)?$/u;
+
 /** Where the part lives, as the data folder's real path plus the names Rosetta builds from ids. */
 function locate(realData: string, scope: RunScope, part: ArchivePart): string | undefined {
   const run = runFolderOf(realData, scope);
@@ -31,8 +38,14 @@ function byName(left: string, right: string): number {
   return left < right ? -1 : 1;
 }
 
-/** Adds the folder's contents under `prefix` (ending in `/`); folders get their own entry. */
-async function addFolder(zip: ZipFile, folder: string, prefix: string): Promise<void> {
+/** Where a folder sits in the archive (`prefix`, ending in `/`) and in the run folder (`inRun`). */
+interface Place {
+  readonly prefix: string;
+  readonly inRun: string;
+}
+
+/** Adds the folder's contents at `place`; folders get their own entry. */
+async function addFolder(zip: ZipFile, folder: string, place: Place): Promise<void> {
   const entries = await readdir(folder, { withFileTypes: true });
   entries.sort((left, right) => byName(left.name, right.name));
   for (const entry of entries) {
@@ -40,10 +53,17 @@ async function addFolder(zip: ZipFile, folder: string, prefix: string): Promise<
     // A backslash in a name cannot be told from a separator by some unzip tools.
     if (entry.isSymbolicLink() || entry.name.includes('\\')) continue;
     if (entry.isDirectory()) {
-      zip.addEmptyDirectory(`${prefix}${entry.name}/`);
-      await addFolder(zip, path, `${prefix}${entry.name}/`);
-    } else if (entry.isFile() && (await isOwnFile(path))) {
-      zip.addFile(path, `${prefix}${entry.name}`);
+      zip.addEmptyDirectory(`${place.prefix}${entry.name}/`);
+      await addFolder(zip, path, {
+        prefix: `${place.prefix}${entry.name}/`,
+        inRun: `${place.inRun}${entry.name}/`,
+      });
+    } else if (
+      entry.isFile() &&
+      !REPORT_ZIP.test(`${place.inRun}${entry.name}`) &&
+      (await isOwnFile(path))
+    ) {
+      zip.addFile(path, `${place.prefix}${entry.name}`);
     }
   }
 }
@@ -76,7 +96,11 @@ export class YazlArchiveWriter implements ArchiveWriter {
     const zip = new ZipFile();
     const stream = streamOf(zip);
     try {
-      await addFolder(zip, folder, part === 'handoff' ? `${HANDOFF_FOLDER}/` : `${scope.runKey}/`);
+      const handoff = part === 'handoff';
+      await addFolder(zip, folder, {
+        prefix: handoff ? `${HANDOFF_FOLDER}/` : `${scope.runKey}/`,
+        inRun: handoff ? `${HANDOFF_FOLDER}/` : '',
+      });
     } catch (error) {
       stream.destroy();
       throw error;

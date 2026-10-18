@@ -104,6 +104,39 @@ function Documents(props: { readonly model: ReportModel }): ComponentChild {
   );
 }
 
+/** RF-505: "Download all", the zips written beside the report; none for a report without them. */
+function Downloads(props: { readonly model: ReportModel }): ComponentChild {
+  const { downloads } = props.model;
+  if (downloads === undefined) return null;
+  return h(
+    'section',
+    { id: 'downloads-section', 'aria-labelledby': 'downloads' },
+    h('h2', { id: 'downloads' }, 'Download all'),
+    h(
+      'ul',
+      null,
+      h(
+        'li',
+        null,
+        h('a', { href: downloads.run, download: downloads.run }, 'Download all: the run as a zip'),
+        ': every card, the specification and the folder structure.',
+      ),
+      downloads.handoff === undefined
+        ? null
+        : h(
+            'li',
+            null,
+            h(
+              'a',
+              { href: downloads.handoff, download: downloads.handoff },
+              'Download the hand-off package as a zip',
+            ),
+            '.',
+          ),
+    ),
+  );
+}
+
 function Areas(props: { readonly model: ReportModel }): ComponentChild {
   const { areas } = props.model;
   if (areas.length === 0) return null;
@@ -191,6 +224,7 @@ export function Dashboard(props: { readonly model: ReportModel }): ComponentChil
       h(ProjectTotals, { model }),
     ),
     h(Documents, { model }),
+    h(Downloads, { model }),
     h(Areas, { model }),
     h(Verification, { model }),
     h(Cards, { model }),

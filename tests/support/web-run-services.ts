@@ -47,7 +47,12 @@ import type { MemorySnapshotCache } from './memory-snapshot-cache.js';
 import type { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
 import { MemoryRunFileReader } from './memory-run-file-reader.js';
 import { planOptionsService } from './web-plan-options.js';
-import { FixedReportCards, MapRunTextFiles, RecordingReportWriter } from './report-doubles.js';
+import {
+  FixedReportCards,
+  RecordingReportDownloads,
+  MapRunTextFiles,
+  RecordingReportWriter,
+} from './report-doubles.js';
 import { catalogAreas, estimatePrices, FixedScans } from './estimate-harness.js';
 import type { RunHarness } from './run-harness.js';
 import { deepenServices } from './web-deepen-services.js';
@@ -166,6 +171,7 @@ function reportOf(
     files: outputs.text,
     writer: outputs.reportWriter,
     cards: new FixedReportCards(),
+    downloads: new RecordingReportDownloads(),
     scans: new FixedScans(catalogAreas),
     logger: new RecordingLogger(),
     ...{ answers: extra.answers, costs: new MemoryCostTotals(), clock: extra.clock },
