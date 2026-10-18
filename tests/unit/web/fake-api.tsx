@@ -67,7 +67,8 @@ function answerTo(
   answers: Readonly<Record<string, Answer>>,
   call: RecordedCall,
 ): Response | Promise<Response> {
-  const answer = answers[`${call.method} ${call.path}`];
+  const [pathOnly = call.path] = call.path.split('?', 1);
+  const answer = answers[`${call.method} ${call.path}`] ?? answers[`${call.method} ${pathOnly}`];
   if (answer === undefined) return failure(404, 'RST-2003');
   return typeof answer === 'function' ? answer(call) : answer.clone();
 }

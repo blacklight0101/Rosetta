@@ -90,7 +90,7 @@ describe('plan estimate before a brief is saved', () => {
     await waitFor(() => {
       expect(card.textContent).toContain('$0.18 likely');
     });
-    expect(page.calls.some((call) => call.path === `${base}/plan-estimate`)).toBe(true);
+    expect(page.calls.some((call) => call.path.startsWith(`${base}/plan-estimate`))).toBe(true);
   });
 });
 
@@ -149,7 +149,7 @@ describe('write the package', () => {
       expect(window.location.pathname).toBe(`/runs/${startedPlanRun.id}`);
     });
     const start = page.calls.find((call) => call.path === `${base}/runs`);
-    expect(start?.body).toEqual({ stage: 'plan', cloudConsent: false });
+    expect(start?.body).toEqual({ stage: 'plan', cloudConsent: false, sourceRunId: 'run-1' });
   });
 });
 
@@ -176,6 +176,7 @@ describe('write the package with consent', () => {
     expect(page.calls.find((call) => call.path === `${base}/runs`)?.body).toEqual({
       stage: 'plan',
       cloudConsent: true,
+      sourceRunId: 'run-1',
     });
   });
 

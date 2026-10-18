@@ -226,7 +226,7 @@ export async function createScanRunHarness(
   const fixture = fixtureFetcher(new FixedClock('2026-10-12T10:00:00.000Z'));
   const parts = await assemble(options, fixture);
   const { runs, project, projects, submitRun, queue, manifests, log, logger } = parts;
-  const startRun = new StartRun({ projects, briefs: new MemoryBriefStore(), submit: submitRun });
+  const startRun = new StartRun({ ...parts, briefs: new MemoryBriefStore(), submit: submitRun });
   const ended = waitUntilEnded(runs, log);
   const submit = async (runOptions: Readonly<Record<string, unknown>> = {}): Promise<Run> => {
     const submitted = await submitRun.execute({

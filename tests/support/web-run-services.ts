@@ -205,7 +205,7 @@ export function runServices(
     buildReport: reportOf(runs, outputs, { answers, clock }),
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ projects, briefs: new MemoryBriefStore(), submit: runs.submit }),
+    startRun: new StartRun({ ...runs, projects, briefs: new MemoryBriefStore() }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,

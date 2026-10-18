@@ -176,7 +176,9 @@ function starterOf(s: Stores, queue: RunQueue, project: Project): Starter {
     ids: new SequenceIdGenerator(),
     rosettaVersion: '1.2.3-test',
   });
-  const startRun = new StartRun({ projects: s.projects, briefs: new MemoryBriefStore(), submit });
+  const startRun = new StartRun({
+    ...{ projects: s.projects, runs: s.runs, briefs: new MemoryBriefStore(), submit },
+  });
   const ended = waitUntilEnded(s);
   return async (stage, extra) => {
     const started = await startRun.execute({
