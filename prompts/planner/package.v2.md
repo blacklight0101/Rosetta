@@ -58,8 +58,8 @@ Plan the target system from that input and nothing else:
    - `probes`: the review probes, concrete hostile or edge inputs that a reviewer and the builder will try: other
      spellings and letter cases, encodings, neighbouring code paths that do the same thing, values one step past a
      limit. Required when `adds` is not empty or `riskClass` is not `none`; otherwise an empty list.
-   A task that states no invariant, a Done-when item that is not Given, When, Then, no risk class, or no probes
-   where they are required is not written by Rosetta, so state them all.
+     A task that states no invariant, a Done-when item that is not Given, When, Then, no risk class, or no probes
+     where they are required is not written by Rosetta, so state them all.
 8. `risks`: what could go wrong in the move, each with the ids of the cards that show it in `sources`.
 
 Rules:
@@ -85,7 +85,11 @@ Answer with one JSON object and nothing else:
     }
   ],
   "components": [
-    { "name": "Order service", "responsibility": "Creates and stores orders.", "dependsOn": ["Database"] },
+    {
+      "name": "Order service",
+      "responsibility": "Creates and stores orders.",
+      "dependsOn": ["Database"]
+    },
     { "name": "Database", "responsibility": "Keeps orders and products.", "dependsOn": [] }
   ],
   "decisions": [
@@ -98,10 +102,19 @@ Answer with one JSON object and nothing else:
     }
   ],
   "entities": [
-    { "legacy": "Order", "target": "Order", "notes": "The status becomes a closed list.", "sources": ["ENT-001"] }
+    {
+      "legacy": "Order",
+      "target": "Order",
+      "notes": "The status becomes a closed list.",
+      "sources": ["ENT-001"]
+    }
   ],
   "phases": [
-    { "name": "Orders first", "goal": "Orders run on the new system.", "exitCriteria": ["Every order is placed on the new system."] }
+    {
+      "name": "Orders first",
+      "goal": "Orders run on the new system.",
+      "exitCriteria": ["Every order is placed on the new system."]
+    }
   ],
   "tasks": [
     {
@@ -124,13 +137,20 @@ Answer with one JSON object and nothing else:
       "title": "Order history page",
       "phase": 1,
       "requirements": [1],
-      "acceptanceCriteria": ["Given a customer with three orders, when the page opens, then three orders are listed."],
+      "acceptanceCriteria": [
+        "Given a customer with three orders, when the page opens, then three orders are listed."
+      ],
       "invariant": "A customer sees every order of their own and no other.",
       "riskClass": "none",
       "adds": [],
       "probes": []
     }
   ],
-  "risks": [{ "text": "The shipping threshold is read in two places and may differ.", "sources": ["BR-001"] }]
+  "risks": [
+    {
+      "text": "The shipping threshold is read in two places and may differ.",
+      "sources": ["BR-001"]
+    }
+  ]
 }
 ```

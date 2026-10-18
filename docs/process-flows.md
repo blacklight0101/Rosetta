@@ -2,10 +2,10 @@
 
 Status: 2026-10-11
 
-| | |
-|---|---|
-| **Audience** | the teachers evaluating the master's final project first, then prospective customers; plain words, no internal codes (DEC-93) |
-| **Source** | derived from [RFC-001](rfc/RFC-001-rosetta.md) and the [requirements](spec/requirements.md); when a flow changes, change the RFC or the spec first and this page in the same branch |
+|               |                                                                                                                                                                                                                                                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Audience**  | the teachers evaluating the master's final project first, then prospective customers; plain words, no internal codes (DEC-93)                                                                                                                                                                                   |
+| **Source**    | derived from [RFC-001](rfc/RFC-001-rosetta.md) and the [requirements](spec/requirements.md); when a flow changes, change the RFC or the spec first and this page in the same branch                                                                                                                             |
 | **Published** | the same diagrams as a private shareable page and as `docs/rosetta-flows.pdf` (A4: a cover page and one landscape page per diagram), regenerated whenever a flow changes (DEC-95); page: https://claude.ai/artifact/1LY8Fx8ZFjxSQXvtRFDoDj (private); last regenerated 2026-10-11 (after the build-plan review) |
 
 ## About this page

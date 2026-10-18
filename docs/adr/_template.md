@@ -41,9 +41,11 @@ one bullet on why each rejected option lost. -->
 ## Consequences
 
 **Positive**
+
 - <!-- FILL: what becomes easier or safer -->
 
 **Negative**
+
 - <!-- FILL: what becomes harder, what it costs, what must now be designed or tested because of this decision -->
 
 ## References

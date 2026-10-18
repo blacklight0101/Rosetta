@@ -50,10 +50,12 @@ plain HTML.
 ## Consequences
 
 **Positive**
+
 - One place escapes and refuses unsafe markup; a test for it covers every page.
 - No dependency is added; the report build stays a plain function over a model, testable without a browser.
 
 **Negative**
+
 - Rosetta owns a hundred and twenty lines of serialiser (void elements, attribute names, boolean attributes) and must test them.
 - Components use `h` calls instead of JSX; they read less like the components of `web/`.
 

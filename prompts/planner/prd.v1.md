@@ -61,10 +61,20 @@ Answer with one JSON object and nothing else:
 
 ```json
 {
-  "problem": { "text": "The order rules sit in several pages of the legacy shop.", "sources": ["BR-001"] },
-  "goal": { "text": "Move the order flow to the new system one part at a time.", "sources": ["FEAT-001"] },
+  "problem": {
+    "text": "The order rules sit in several pages of the legacy shop.",
+    "sources": ["BR-001"]
+  },
+  "goal": {
+    "text": "Move the order flow to the new system one part at a time.",
+    "sources": ["FEAT-001"]
+  },
   "roles": [
-    { "name": "Clerk", "description": "Cancels orders on a customer's request.", "sources": ["FEAT-003"] }
+    {
+      "name": "Clerk",
+      "description": "Cancels orders on a customer's request.",
+      "sources": ["FEAT-003"]
+    }
   ],
   "features": [
     {

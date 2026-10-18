@@ -19,16 +19,16 @@ project's tokens and cost, and Rosetta talks to AI providers over their APIs. No
 
 ## Repository and deployment
 
-| Key | Value |
-|---|---|
-| Local path | `C:\BuildingFolder\Rosetta` |
-| Short code | `RST` (prefix for names that must be unique across systems, see `docs/conventions.md`) |
-| Product owner | BlackLigth (blacklight0101) |
-| Version control | git, branch `main`; remote `origin` = public GitHub `blacklight0101/Rosetta` (created at gate G-03); never push unless asked |
-| Branching | branch off `main` per change -> review -> fast-forward or squash merge -> linear history |
-| Hosting target | One container image ([ADR-014](docs/adr/ADR-014-container-image-local-and-hosted.md)): locally Docker Compose (app + PostgreSQL, port on `127.0.0.1:8080`); hosted on a container host chosen in Q-18 for the teachers; the sample report is also published as a static site on GitHub Pages |
-| Data store | PostgreSQL for accounts, sessions, keys, projects, run index, cost ledger and audit; files in the data folder for snapshots and run output ([ADR-016](docs/adr/ADR-016-postgresql-and-files.md), [docs/data-model.md](docs/data-model.md)) |
-| Read-only references | Snapshots of the public GitHub repositories being analysed, including `dotnet-architecture/eShopModernizing` |
+| Key                  | Value                                                                                                                                                                                                                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local path           | `C:\BuildingFolder\Rosetta`                                                                                                                                                                                                                                                                  |
+| Short code           | `RST` (prefix for names that must be unique across systems, see `docs/conventions.md`)                                                                                                                                                                                                       |
+| Product owner        | BlackLigth (blacklight0101)                                                                                                                                                                                                                                                                  |
+| Version control      | git, branch `main`; remote `origin` = public GitHub `blacklight0101/Rosetta` (created at gate G-03); never push unless asked                                                                                                                                                                 |
+| Branching            | branch off `main` per change -> review -> fast-forward or squash merge -> linear history                                                                                                                                                                                                     |
+| Hosting target       | One container image ([ADR-014](docs/adr/ADR-014-container-image-local-and-hosted.md)): locally Docker Compose (app + PostgreSQL, port on `127.0.0.1:8080`); hosted on a container host chosen in Q-18 for the teachers; the sample report is also published as a static site on GitHub Pages |
+| Data store           | PostgreSQL for accounts, sessions, keys, projects, run index, cost ledger and audit; files in the data folder for snapshots and run output ([ADR-016](docs/adr/ADR-016-postgresql-and-files.md), [docs/data-model.md](docs/data-model.md))                                                   |
+| Read-only references | Snapshots of the public GitHub repositories being analysed, including `dotnet-architecture/eShopModernizing`                                                                                                                                                                                 |
 
 ## Sources of truth
 
@@ -52,7 +52,6 @@ applied, and fixing it is part of applying the decision.
    `tasks.md` (task cards `P<phase>-nn`). Agents live in `.claude/agents/`. The orchestrator edits only the Status
    lines of cards and appends follow-up cards (through a `docs/build-status` pull request); every finished card is
    verified before it is merged.
-
 
 ## Hard rules for the documents
 
@@ -114,6 +113,7 @@ applied, and fixing it is part of applying the decision.
 ## Stack rules
 
 <!-- STACK-RULES:BEGIN -->
+
 - **Runtime:** Node.js LTS (exact version in `docs/environments-and-delivery.md`), TypeScript in `strict` mode,
   ES modules. No `any` without a comment that says why.
 - **Architecture:** Clean Architecture ([ADR-009](docs/adr/ADR-009-clean-architecture.md)). `domain` imports nothing
@@ -135,6 +135,7 @@ applied, and fixing it is part of applying the decision.
 - **Coding rules:** `docs/conventions.md` (types parsed at boundaries, no `any`/`!`/casts, determinism ports, timeouts
   and abort signals, error-code catalogue, size limits, named exports).
 - **Packages:** the baseline list in `docs/environments-and-delivery.md`; any new runtime dependency needs an ADR.
+
 <!-- STACK-RULES:END -->
 
 ## Read-only paths

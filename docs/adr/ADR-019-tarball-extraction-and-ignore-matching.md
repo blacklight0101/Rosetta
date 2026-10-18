@@ -40,9 +40,11 @@ not rest on the package alone.
 ## Consequences
 
 **Positive**
+
 - Two small, widely used packages instead of two hand-written security-sensitive parsers.
 
 **Negative**
+
 - Two more runtime dependencies to keep updated (Dependabot covers them); the extraction filter and the post-check
   must both be tested with hostile fixture archives.
 

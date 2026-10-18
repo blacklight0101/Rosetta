@@ -19,14 +19,14 @@ cp .env.example .env
 
 Set these values in `.env` (the rest of the file is optional):
 
-| Variable | What to put | How to make one |
-|---|---|---|
-| `ROSETTA_DB_ADMIN_PASSWORD` | the password of the PostgreSQL bootstrap superuser | `openssl rand -hex 24` |
-| `ROSETTA_APP_DB_PASSWORD` | the password of the `rosetta_app` role the server uses | `openssl rand -hex 24` |
-| `ROSETTA_MIGRATOR_DB_PASSWORD` | the password of the `rosetta_migrator` role that applies the migrations | `openssl rand -hex 24` |
-| `ROSETTA_SECRET_KEY` | 32 random bytes, base64: encrypts the provider keys stored in the database | `openssl rand -base64 32` |
-| `ROSETTA_ADMIN_USER` | the name of the first administrator | for example `admin` |
-| `ROSETTA_ADMIN_PASSWORD` | the temporary password of the first administrator (at least 12 characters, not a common one) | `openssl rand -hex 16` |
+| Variable                       | What to put                                                                                  | How to make one           |
+| ------------------------------ | -------------------------------------------------------------------------------------------- | ------------------------- |
+| `ROSETTA_DB_ADMIN_PASSWORD`    | the password of the PostgreSQL bootstrap superuser                                           | `openssl rand -hex 24`    |
+| `ROSETTA_APP_DB_PASSWORD`      | the password of the `rosetta_app` role the server uses                                       | `openssl rand -hex 24`    |
+| `ROSETTA_MIGRATOR_DB_PASSWORD` | the password of the `rosetta_migrator` role that applies the migrations                      | `openssl rand -hex 24`    |
+| `ROSETTA_SECRET_KEY`           | 32 random bytes, base64: encrypts the provider keys stored in the database                   | `openssl rand -base64 32` |
+| `ROSETTA_ADMIN_USER`           | the name of the first administrator                                                          | for example `admin`       |
+| `ROSETTA_ADMIN_PASSWORD`       | the temporary password of the first administrator (at least 12 characters, not a common one) | `openssl rand -hex 16`    |
 
 The [README quick start](../../README.md#quick-start) generates and writes all of these for you, in PowerShell or bash.
 To make a value by hand on Windows, where OpenSSL is usually missing, PowerShell makes the same values:
@@ -120,14 +120,14 @@ steps above once and records the result; the Compose smoke test in CI uses the f
 
 ## 5. Stop, restart and reset
 
-| Goal | Command | What happens to the data |
-|---|---|---|
-| Stop | `docker compose down` | containers removed; accounts, projects, runs and snapshots stay in the volumes |
-| Start again | `docker compose up -d` | the app finds the same data (RF-1301) |
-| Update after a `git pull` | `docker compose up -d --build` | rebuilds the image; the `migrate` service applies pending migrations before the app starts (RF-1302) |
-| Apply the migrations by hand | `docker compose run --rm migrate` | applies pending migrations and ends; run again it applies nothing |
-| Logs | `docker compose logs -f app` | none |
-| Reset everything | `docker compose down -v` | deletes `pgdata` and `rosetta-data`: every account, project, run and snapshot is lost |
+| Goal                         | Command                           | What happens to the data                                                                             |
+| ---------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Stop                         | `docker compose down`             | containers removed; accounts, projects, runs and snapshots stay in the volumes                       |
+| Start again                  | `docker compose up -d`            | the app finds the same data (RF-1301)                                                                |
+| Update after a `git pull`    | `docker compose up -d --build`    | rebuilds the image; the `migrate` service applies pending migrations before the app starts (RF-1302) |
+| Apply the migrations by hand | `docker compose run --rm migrate` | applies pending migrations and ends; run again it applies nothing                                    |
+| Logs                         | `docker compose logs -f app`      | none                                                                                                 |
+| Reset everything             | `docker compose down -v`          | deletes `pgdata` and `rosetta-data`: every account, project, run and snapshot is lost                |
 
 ### Upgrading a stack whose app applied the migrations itself
 
@@ -174,6 +174,7 @@ app to fail its database calls for the short time between steps 2 and 3.
    ```
 
    Run `\password postgres` only when you rotate `ROSETTA_DB_ADMIN_PASSWORD`.
+
 3. Put the same values in `.env` (`ROSETTA_APP_DB_PASSWORD`, `ROSETTA_MIGRATOR_DB_PASSWORD`,
    `ROSETTA_DB_ADMIN_PASSWORD`) and run `docker compose up -d`. Compose recreates the containers whose environment
    changed; the volumes, and so the data, stay.
@@ -185,16 +186,17 @@ into the host's secret store in step 3. Rotate after anyone who knew the old val
 The previous values stop working at step 2, so nothing else needs revoking.
 
 ## Troubleshooting
-| Symptom | Likely cause and fix |
-|---|---|
-| `docker compose` stops with `Set ... in .env` | a required value is empty; set it in `.env` (section 1) |
-| `password authentication failed for user "rosetta_app"` | the volume was created with other passwords; rotate the passwords (section 6) or reset (section 5) |
+
+| Symptom                                                                   | Likely cause and fix                                                                                                                                                                    |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker compose` stops with `Set ... in .env`                             | a required value is empty; set it in `.env` (section 1)                                                                                                                                 |
+| `password authentication failed for user "rosetta_app"`                   | the volume was created with other passwords; rotate the passwords (section 6) or reset (section 5)                                                                                      |
 | The app is never started and `docker compose logs migrate` shows an error | the migrate step failed (for example `password authentication failed for user "rosetta_migrator"`, or an `RST-24xx` migration code); fix the cause and run `docker compose up -d` again |
-| The app stops with `RST-1000` naming `DATABASE_MIGRATOR_URL` | the server was given the migrator URL; remove it from the server's environment (section 5, upgrading) |
-| The app stops with `RST-2405` | the migrate step has not applied every migration; run `docker compose run --rm migrate`, then `docker compose up -d` |
-| Port 8080 or 5432 already in use | stop the other program; the ports are fixed to `127.0.0.1:8080` and `127.0.0.1:5432` |
-| The app cannot reach Ollama | section 4: Ollama must listen on an address the container reaches |
-| You forgot the administrator password | another administrator resets it in the app; with none left, reset the stack (section 5) |
+| The app stops with `RST-1000` naming `DATABASE_MIGRATOR_URL`              | the server was given the migrator URL; remove it from the server's environment (section 5, upgrading)                                                                                   |
+| The app stops with `RST-2405`                                             | the migrate step has not applied every migration; run `docker compose run --rm migrate`, then `docker compose up -d`                                                                    |
+| Port 8080 or 5432 already in use                                          | stop the other program; the ports are fixed to `127.0.0.1:8080` and `127.0.0.1:5432`                                                                                                    |
+| The app cannot reach Ollama                                               | section 4: Ollama must listen on an address the container reaches                                                                                                                       |
+| You forgot the administrator password                                     | another administrator resets it in the app; with none left, reset the stack (section 5)                                                                                                 |
 
 ## CI smoke test
 
