@@ -13,6 +13,19 @@ const NO_INVARIANT = 'Not stated; define what must always hold before building.'
 const DEFAULT_RECOMMENDATION =
   'Prefer an allowlist of what is permitted, or a rule that does not depend on the shape of the input, where one exists.';
 
+/**
+ * A control the planner did not mark as a denylist can still read like one. This short word list
+ * is only a fallback for the recommendation; the label and the denylist wording stay the planner's.
+ */
+const denylistWords =
+  /block ?list|black ?list|deny ?list|forbidden|blocked|blocks the|rejects .* list/iu;
+
+function readsLikeDenylist(control: PlanControl): boolean {
+  return (
+    control.approach === 'other' && denylistWords.test(`${control.name} ${control.description}`)
+  );
+}
+
 function approachLine(control: PlanControl): string {
   return control.approach === 'denylist'
     ? 'Approach: denylist. It works by listing forbidden patterns.'
@@ -22,9 +35,15 @@ function approachLine(control: PlanControl): string {
 function guardLines(control: PlanControl, esc: MarkdownEscaper): string[] {
   const { invariant, alternative } = control;
   if (control.approach !== 'denylist') {
+    const fallback = alternative === '' && readsLikeDenylist(control);
     return [
       ...(invariant === '' ? [] : [`Invariant: ${esc.inline(invariant)}`, '']),
-      ...(alternative === '' ? [] : [`Recommendation: ${esc.inline(alternative)}`, '']),
+      ...(alternative === '' && !fallback
+        ? []
+        : [
+            `Recommendation: ${alternative === '' ? DEFAULT_RECOMMENDATION : esc.inline(alternative)}`,
+            '',
+          ]),
     ];
   }
   return [
