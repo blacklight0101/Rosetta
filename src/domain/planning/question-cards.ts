@@ -60,7 +60,10 @@ export function waitingOnQuestions(input: WaitingInput): WaitingResult {
   for (const question of input.questions) {
     const cards = cardsOf(question, input);
     byQuestion.set(question.id, cards);
-    for (const card of cards) byCard.set(card, [...(byCard.get(card) ?? []), question.id]);
+    for (const card of cards) {
+      const asked = byCard.get(card) ?? [];
+      if (!asked.includes(question.id)) byCard.set(card, [...asked, question.id]);
+    }
   }
   return { byQuestion, byCard };
 }
