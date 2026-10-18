@@ -7,6 +7,7 @@ import {
   type ReportCost,
   type ReportCoverage,
   type ReportDocuments,
+  type ReportDownloadNames,
   type ReportModel,
   type ReportProjectTotals,
   type ReportQuestion,
@@ -41,6 +42,8 @@ export interface ReportInputs {
   readonly cardDetails: readonly ReportCardDetail[];
   /** RF-508: the Mermaid diagrams of the run's documents. */
   readonly diagrams?: readonly ReportDiagram[] | undefined;
+  /** RF-505: the zips the dashboard links. */
+  readonly downloads?: ReportDownloadNames | undefined;
 }
 
 // RF-504, RF-506
@@ -77,5 +80,6 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
     questions: inputs.questions,
     cardDetails: inputs.cardDetails,
     diagrams: inputs.diagrams,
+    downloads: inputs.downloads,
   };
 }

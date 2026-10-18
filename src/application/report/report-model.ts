@@ -113,6 +113,14 @@ export interface ReportQuestion {
   readonly answer: string;
 }
 
+/** RF-505: the file names of the zips the report links, written beside it in the `report/` folder. */
+export interface ReportDownloadNames {
+  /** The zip of the whole run folder. */
+  readonly run: string;
+  /** The zip of the hand-off package; present only when the run has one. */
+  readonly handoff?: string | undefined;
+}
+
 interface ReportTotals {
   readonly inputTokens: number;
   readonly outputTokens: number;
@@ -149,6 +157,8 @@ export interface ReportModel {
   readonly cardDetails: readonly ReportCardDetail[];
   /** RF-508: the Mermaid diagrams of the run's documents, drawn on the diagrams page; none when it has none. */
   readonly diagrams?: readonly ReportDiagram[] | undefined;
+  /** RF-505: the zips the dashboard offers as "Download all"; none for a report written without them. */
+  readonly downloads?: ReportDownloadNames | undefined;
 }
 
 const CARD_FILE = /^cards\/[A-Z]+\/[A-Z]+-\d+\.md$/u;

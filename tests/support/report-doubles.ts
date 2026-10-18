@@ -4,12 +4,16 @@ import type {
   ProjectRef,
   RecordedQuestion,
 } from '../../src/application/ports/answers-file.js';
+import type { ReportDownloads } from '../../src/application/ports/report-downloads.js';
 import type { ReportCardFiles } from '../../src/application/ports/report-card-files.js';
 import type { ReportWriter } from '../../src/application/ports/report-writer.js';
 import type { RunScope } from '../../src/application/ports/run-events.js';
 import type { RunTextFiles } from '../../src/application/ports/run-text-files.js';
 import type { CardFile } from '../../src/application/report/card-evidence.js';
-import type { ReportModel } from '../../src/application/report/report-model.js';
+import type {
+  ReportDownloadNames,
+  ReportModel,
+} from '../../src/application/report/report-model.js';
 import { ok, type Result } from '../../src/domain/errors/result.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import { FixedClock } from './fixed-clock.js';
@@ -23,6 +27,16 @@ export class RecordingReportWriter implements ReportWriter {
   write(scope: RunScope, model: ReportModel): Promise<readonly string[]> {
     this.written.push({ scope, model });
     return Promise.resolve(['report/report.md', 'report/report.html']);
+  }
+}
+
+/** Keeps the zips it was asked to write; writes none. */
+export class RecordingReportDownloads implements ReportDownloads {
+  readonly written: { readonly scope: RunScope; readonly names: ReportDownloadNames }[] = [];
+
+  write(scope: RunScope, names: ReportDownloadNames): Promise<void> {
+    this.written.push({ scope, names });
+    return Promise.resolve();
   }
 }
 
@@ -85,11 +99,13 @@ export function reportFigures(): {
   readonly costs: MemoryCostTotals;
   readonly clock: FixedClock;
   readonly cards: FixedReportCards;
+  readonly downloads: RecordingReportDownloads;
 } {
   return {
     answers: new QuestionsByRun(),
     costs: new MemoryCostTotals(),
     clock: new FixedClock('2026-10-12T11:00:00.000Z'),
     cards: new FixedReportCards(),
+    downloads: new RecordingReportDownloads(),
   };
 }

@@ -77,4 +77,29 @@ export function archiveWriterContract(name: string, fresh: FreshArchives): void 
     expect(await writer.archive(stranger, 'run')).toEqual({ ok: false, error: 'not-found' });
     expect(await writer.archive(stranger, 'handoff')).toEqual({ ok: false, error: 'not-found' });
   });
+  reportZipsContract(name, fresh);
+}
+
+/** RF-505: the zips of the report never enter the zip of the run. */
+function reportZipsContract(name: string, fresh: FreshArchives): void {
+  it(`RF-505 ${name} leaves the zips of the report out of the zip of the run, so one never holds another`, async () => {
+    const { writer, seed } = await fresh();
+    await seed(scope, {
+      ...files,
+      'report/report.html': '<p>report</p>',
+      'report/20261012-100000-understand.zip': 'older run zip',
+      'report/20261012-100000-understand-handoff.zip': 'older hand-off zip',
+      'report/20261012-100000-understand.zip.part': 'unfinished zip',
+      'report/nested/keep.zip': 'a zip that is not the report own',
+    });
+
+    expect(Object.keys(await filesArchived(writer, scope, 'run')).sort()).toEqual([
+      '20261012-100000-understand/cards/BEHAVIOUR/BEH-001.md',
+      '20261012-100000-understand/handoff/README.md',
+      '20261012-100000-understand/handoff/tasks/T-001.md',
+      '20261012-100000-understand/manifest.json',
+      '20261012-100000-understand/report/nested/keep.zip',
+      '20261012-100000-understand/report/report.html',
+    ]);
+  });
 }

@@ -6,6 +6,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { AnswersFile } from '../ports/answers-file.js';
 import type { Clock } from '../ports/clock.js';
 import type { CostTotals } from '../ports/cost-totals.js';
+import type { ReportDownloads } from '../ports/report-downloads.js';
 import type { ReportWriter } from '../ports/report-writer.js';
 import type { ReportCardFiles } from '../ports/report-card-files.js';
 import type { RunEventHistory, RunScope } from '../ports/run-events.js';
@@ -17,10 +18,15 @@ import type { RunTextFiles } from '../ports/run-text-files.js';
 import { addEvidence } from '../report/card-evidence.js';
 import { buildReportModel, type ReportInputs } from '../report/build-report-model.js';
 import { parseCostReport, parseCoverage, projectTotalsOf } from '../report/report-extras.js';
-import { parseCardIndex, type ReportDocuments } from '../report/report-model.js';
+import {
+  parseCardIndex,
+  type ReportDocuments,
+  type ReportDownloadNames,
+} from '../report/report-model.js';
 import { diagramDocumentPaths, extractDiagrams } from '../report/report-diagrams.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { exportFileName } from './export-zip.js';
 
 // RF-504, RF-506, RF-1013, RF-1105: Build report on a run. It gives the owner of a finished run its
 // report: `report/report.md` linking the specification, every card, the coverage and the cost
@@ -45,6 +51,8 @@ export interface BuildReportDependencies {
   readonly clock: Clock;
   /** RF-502: the card files read for the pages of the cards. */
   readonly cards: ReportCardFiles;
+  /** RF-505: writes the zips "Download all" links, once the pages are written. */
+  readonly downloads: ReportDownloads;
 }
 
 export interface BuiltReport {
@@ -72,6 +80,7 @@ export class BuildReport {
     if (run.queueState !== 'Ended') return err('in-progress');
     const scope = scopeOf(run);
     const scanned = await this.scanOf(run);
+    const downloads = await this.downloadsOf(run, scope);
     const cardIndex = await this.deps.files.read(scope, 'cards/index.json');
     const model = buildReportModel({
       run,
@@ -83,9 +92,23 @@ export class BuildReport {
       areas: scanned?.codeMap.areas.map(({ name, mapLevel }) => ({ name, mapLevel })) ?? [],
       cardDetails: await this.cardDetailsOf(scope, cardIndex, scanned),
       diagrams: await this.diagramsOf(scope),
+      downloads,
       ...(await this.figuresOf(run, scope)),
     });
-    return ok({ files: await writer.write(scope, model) });
+    const written = await writer.write(scope, model);
+    await this.deps.downloads.write(scope, downloads);
+    const zips =
+      downloads.handoff === undefined ? [downloads.run] : [downloads.run, downloads.handoff];
+    return ok({ files: [...written, ...zips.map((name) => `report/${name}`)] });
+  }
+
+  /** RF-505: the run zip always, the hand-off zip only when the run has a hand-off package. */
+  private async downloadsOf(run: Run, scope: RunScope): Promise<ReportDownloadNames> {
+    const handoff = await this.deps.files.read(scope, 'handoff/README.md');
+    return {
+      run: exportFileName(run.runKey, 'run'),
+      ...(handoff === undefined ? {} : { handoff: exportFileName(run.runKey, 'handoff') }),
+    };
   }
 
   /** RF-500, RF-1010: the figures of the dashboard, the questions and the cost page. */
