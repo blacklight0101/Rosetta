@@ -5,6 +5,7 @@ import type { Catalogue } from '../../domain/planning/catalogue.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { Project } from '../projects/project.js';
+import type { ServerKeyPresence } from '../ports/server-key-presence.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
 import { planMessage } from '../plan/plan-message.js';
 import { ceilPercent } from './estimate-assumptions.js';
@@ -31,6 +32,8 @@ export interface EstimatePlanDependencies
   readonly prompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the product requirements document (RF-621). */
   readonly prdPrompt: () => Promise<PromptFile>;
+  /** Which providers the server holds a key for (RST-2302). */
+  readonly serverKeys: ServerKeyPresence;
 }
 
 export interface EstimatePlanRequest {
@@ -108,6 +111,7 @@ export class EstimatePlan {
       priceTableVersion: this.deps.priceTable.version,
       currency: this.deps.priceTable.currency,
       planner,
+      keyAvailable: true,
       assumptions: {
         ...{ calls: 2, promptTokens, prdPromptTokens: second.promptTokens },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },

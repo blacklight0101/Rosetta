@@ -24,8 +24,9 @@ function rangeView(points: ByScenario<EstimatePoint>): Record<string, unknown> {
 // RF-613
 export function planEstimateView(estimate: PlanEstimate): Record<string, unknown> {
   const { priceTableVersion, currency, planner, assumptions, withinCaps } = estimate;
+  const { keyAvailable } = estimate;
   return {
-    ...{ priceTableVersion, currency, assumptions, withinCaps },
+    ...{ priceTableVersion, currency, assumptions, withinCaps, keyAvailable },
     planner: {
       ...{ role: planner.role, provider: planner.provider, kind: planner.kind },
       ...{ model: planner.model, keySource: planner.keySource, priced: planner.priced },

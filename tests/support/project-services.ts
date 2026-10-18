@@ -73,6 +73,7 @@ export function projectServices(
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, answers, users, serverSettings, usage, clock, keys },
       cards: new FileRunCards(answerFiles),
+      serverKeys: { has: () => true },
       priceTable: estimatePrices,
       catalogue: () => Promise.resolve(shippedCatalogue),
       prompt: () => loadPlannerPrompt('prompts'),

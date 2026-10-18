@@ -1,6 +1,7 @@
 import { EstimatePlan } from '../application/estimate/estimate-plan.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
+import type { ServerKeyPresence } from '../application/ports/server-key-presence.js';
 import { CreateProject } from '../application/use-cases/create-project.js';
 import { GetAccountTotals } from '../application/use-cases/get-account-totals.js';
 import { GetCaps } from '../application/use-cases/get-caps.js';
@@ -48,6 +49,8 @@ export interface ProjectParts {
   readonly dataDir: string;
   /** The shipped price table the plan estimate prices the planner with (RF-613). */
   readonly priceTable: PriceTable;
+  /** Which providers the server holds a key for; the plan estimate says when a call has none. */
+  readonly serverKeys: ServerKeyPresence;
 }
 
 // RF-010
@@ -91,6 +94,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       users: new PgUserRepository(pool),
       serverSettings: settings,
       keys: new PgProviderKeyRepository(pool),
+      serverKeys: parts.serverKeys,
       catalogue: () => Promise.resolve(catalogue),
       prompt: () => loadPlannerPrompt(parts.promptsFolder),
       prdPrompt: () => loadPrdPrompt(parts.promptsFolder),
