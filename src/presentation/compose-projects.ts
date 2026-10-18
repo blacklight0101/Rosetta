@@ -99,6 +99,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       prompt: () => loadPlannerPrompt(parts.promptsFolder),
       prdPrompt: () => loadPrdPrompt(parts.promptsFolder),
     }),
+    catalogue,
     // RF-428, RF-1010: the cost page and the totals pill.
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),

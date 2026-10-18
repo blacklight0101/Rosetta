@@ -70,6 +70,7 @@ export function projectServices(
     getProjectCost: new GetProjectCost({ projects, costs }),
     getAccountTotals: new GetAccountTotals({ costs, caps }),
     ...briefServices({ projects, runs, briefs, clock }),
+    catalogue: shippedCatalogue,
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, answers, users, serverSettings, usage, clock, keys },
       cards: new FileRunCards(answerFiles),

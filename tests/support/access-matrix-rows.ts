@@ -147,6 +147,13 @@ const projectRows: Rows = {
   'HEAD /api/projects/:id/plan-estimate': [
     { method: 'HEAD', url: projectUrl('/plan-estimate'), expected: ownerOnly(409) },
   ],
+  // RF-606: the catalogue is the same for everyone who is signed in.
+  'GET /api/plan/catalogue': [
+    { method: 'GET', url: () => '/api/plan/catalogue', expected: active(401, 200) },
+  ],
+  'HEAD /api/plan/catalogue': [
+    { method: 'HEAD', url: () => '/api/plan/catalogue', expected: active(401, 200) },
+  ],
   'GET /api/admin/users/:id/projects': [
     { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
     { method: 'GET', url: workspaceUrl(() => unknownUser), expected: adminOnly(404) },
