@@ -1,5 +1,6 @@
 import type { CardType, ClaimStatus } from '../cards/card-vocabulary.js';
 import type { Citation } from '../cards/citation.js';
+import { actionClaimText } from '../cards/screen-claims.js';
 
 // RF-604, ADR-005: what `plan` takes from the cards of an understand run. Only claims the verifier
 // found `Supported` reach the planner and the package; every other claim (`Rejected`,
@@ -17,6 +18,25 @@ interface SourceClaim {
   readonly target?: string | undefined;
 }
 
+/** What a `SCRN` card says about its screen, as the plan needs it (RF-626); the validations stay in the card. */
+interface SourceScreen {
+  /** The route or page name. */
+  readonly route: string;
+  readonly roles: readonly string[];
+  readonly fields: readonly {
+    readonly name: string;
+    readonly inputKind: string;
+    readonly required: boolean;
+  }[];
+  readonly actions: readonly {
+    readonly label: string;
+    readonly handler?: string | undefined;
+    readonly flow?: string | undefined;
+  }[];
+  /** The screens it leads to: `SCRN` card ids or routes. */
+  readonly leadsTo: readonly string[];
+}
+
 /** A card of the run as its file holds it, with every claim and its status. */
 export interface SourceCard {
   readonly id: string;
@@ -27,6 +47,8 @@ export interface SourceCard {
   readonly claims: readonly SourceClaim[];
   /** `FLOW` cards only: what starts the journey and how it ends (RF-260). */
   readonly flow?: { readonly trigger: string; readonly outcome: string } | undefined;
+  /** `SCRN` cards only: the screen's route, roles, fields, actions and where it leads (RF-261). */
+  readonly screen?: SourceScreen | undefined;
 }
 
 /** A claim the package does not use, named by its id and the status that kept it out. */
@@ -40,12 +62,26 @@ function isSupported(claim: SourceClaim): boolean {
   return claim.status === 'Supported';
 }
 
+/**
+ * The screen of a card with only the actions whose claim is `Supported` (RF-626, ADR-005): an
+ * action is a claim of its card, stated in the text `actionClaimText` gives.
+ */
+function supportedScreen(
+  card: SourceCard,
+  supported: readonly SourceClaim[],
+): { screen?: SourceScreen } {
+  if (card.screen === undefined) return {};
+  const stated = new Set(supported.map((claim) => claim.text));
+  const actions = card.screen.actions.filter((action) => stated.has(actionClaimText(action)));
+  return { screen: { ...card.screen, actions } };
+}
+
 /** The cards with their `Supported` claims only, in card order; a card without one is left out. */
 // RF-604
 export function supportedCards(cards: readonly SourceCard[]): SourceCard[] {
   return cards.flatMap((card) => {
     const claims = card.claims.filter(isSupported);
-    return claims.length === 0 ? [] : [{ ...card, claims }];
+    return claims.length === 0 ? [] : [{ ...card, claims, ...supportedScreen(card, claims) }];
   });
 }
 

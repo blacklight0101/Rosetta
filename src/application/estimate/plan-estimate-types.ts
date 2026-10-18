@@ -20,6 +20,8 @@ interface PlanAssumptions {
   readonly flowsPromptTokens: number;
   /** The part of `promptTokens` that belongs to the API contract call (RF-624); 0 when none is made. */
   readonly apiContractPromptTokens: number;
+  /** The part of `promptTokens` that belongs to the user-interface call (RF-626); 0 when none is made. */
+  readonly uxPromptTokens: number;
   /** The planner's `maxOutputTokens`: the high figure writes all of it, as the guard's worst case does. */
   readonly maxOutputTokens: number;
   /** RF-604: the continuations one planner call may make when its answer is cut off; the high figure reserves them. */

@@ -134,7 +134,7 @@ describe('BuildPlan: what a cut-off answer is not', () => {
 describe('BuildPlan: a cut-off document or a metered continuation', () => {
   it('RF-604 RF-621 a PRD that stays cut off leaves placeholders and a warning that names the setting', async () => {
     const recording = await base();
-    const h = await planned(cutAt(recording, 1, split(textOf(recording, 1), 3), true));
+    const h = await planned(cutAt(recording, 1, split(textOf(recording, 1), 4).slice(0, 3), true));
 
     const run = await h.plan();
 

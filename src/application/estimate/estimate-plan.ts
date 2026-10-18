@@ -4,6 +4,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Project } from '../projects/project.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
 import { maxPlannerContinuations } from '../plan/plan-continuation.js';
+import { reservedWithContinuations } from './plan-continuation-reserve.js';
 import { ceilPercent } from './estimate-assumptions.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
 import { plannerKeyAvailable, type PlanKeyDependencies } from './plan-key.js';
@@ -17,10 +18,12 @@ import type { PlanEstimate } from './plan-estimate-types.js';
 import { estimateRole, type RolePricing } from './role-estimate.js';
 
 // RF-613, ADR-007, DEC-81: the estimate before a plan run (`GET /api/projects/:id/plan-estimate`).
-// The plan run makes up to four planner calls (BuildPlan): the plan, the product requirements
-// document (RF-621), when the supported cards hold an `ENT` claim the target data model (RF-623)
-// and, when they hold a `FLOW` card, the target flows (RF-625, whose components block is sized at
-// the plan answer's limits, flows-estimate.ts). Each prompt is measured, not guessed: the planner's
+// The plan run makes up to six planner calls (BuildPlan): the plan, the product requirements
+// document (RF-621), when the supported cards hold an `ENT` claim the target data model (RF-623),
+// when they hold a `FLOW` card the target flows (RF-625, whose components block is sized at the
+// plan answer's limits, flows-estimate.ts), when the brief names a front end and a `FEAT` or
+// `FLOW` card is verified the API contract (RF-624) and, when a `SCRN` card is verified, the
+// user-interface material (RF-626). Each prompt is measured, not guessed: the planner's
 // system prompt and the message the run would send (the supported cards and the owner's brief and
 // answers in data blocks), at the budget guard's four characters per token. Its output is a share of
 // the planner's `maxOutputTokens`; the high figure is all of it, which is the guard's worst case, so
@@ -50,25 +53,8 @@ export type EstimatePlanProblem =
 
 /** The planner's package is long: a quarter, half and all of its output limit (RNF-012 calibrates). */
 const OUTPUT_PERCENT: ByScenario<number> = { low: 25, likely: 50, high: 100 };
-/** The tokens of the continue prompt (planner/continue.vN.md is about 110), rounded up. */
-const CONTINUE_PROMPT_TOKENS = 120;
 /** The budget guard's estimate: four characters per token. */
 const CHARS_PER_TOKEN = 4;
-
-/**
- * RF-604: the worst case of one call whose answer is cut off every time: the call and each of its
- * continuations write the whole limit, and the input of a continuation holds the answer so far.
- */
-function continuations(
-  promptTokens: number,
-  limit: number,
-): { readonly inputTokens: number; readonly outputTokens: number } {
-  let inputTokens = promptTokens;
-  for (let each = 1; each <= maxPlannerContinuations; each += 1) {
-    inputTokens += promptTokens + each * limit + CONTINUE_PROMPT_TOKENS;
-  }
-  return { inputTokens, outputTokens: (1 + maxPlannerContinuations) * limit };
-}
 
 function eachScenario<T>(figure: (scenario: Scenario) => T): ByScenario<T> {
   return { low: figure('low'), likely: figure('likely'), high: figure('high') };
@@ -91,7 +77,7 @@ export class EstimatePlan {
     const promptTokens = Math.ceil((prompt + '[]').length / CHARS_PER_TOKEN);
     const tokens = eachScenario((scenario) => {
       const reserved =
-        scenario === 'high' ? continuations(promptTokens, maxOutputTokens) : undefined;
+        scenario === 'high' ? reservedWithContinuations(promptTokens, maxOutputTokens) : undefined;
       return {
         inputTokens: reserved?.inputTokens ?? promptTokens,
         outputTokens:
@@ -132,6 +118,7 @@ export class EstimatePlan {
           dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),
           flowsPromptTokens: tokensOf(calls, prompts, 'flows'),
           apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
+          uxPromptTokens: tokensOf(calls, prompts, 'ux'),
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         continuationsPerCall: maxPlannerContinuations,
