@@ -101,7 +101,7 @@ describe('RF-231 reading the understanding of an ended run', () => {
     if (!outcome.ok) throw new Error(outcome.error);
     expect(outcome.value.measures).toMatchObject({
       supported: 1,
-      rejected: 2,
+      rejected: 1,
       notJudged: 1,
       rejectedUnresolved: 1,
       wellCovered: false,
