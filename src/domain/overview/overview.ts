@@ -60,7 +60,7 @@ export interface QuestionLink {
 
 export interface Overview {
   readonly state: OverviewState;
-  /** Why the overview is `thin` or `unavailable`, and the next step; absent for a full one. */
+  /** Why the overview is `thin` or `unavailable`, and the next step; a full one has one only when the run read chosen areas. */
   readonly notice?: string;
   /** Only the sections that have a statement, in the order of `OVERVIEW_SECTIONS`. */
   readonly sections: readonly OverviewSection[];

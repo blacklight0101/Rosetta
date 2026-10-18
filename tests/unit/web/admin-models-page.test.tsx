@@ -86,3 +86,43 @@ it('DEC-106 a refusal of the server shows its code next to the provider and mode
   expect(screen.getByLabelText('Reader model').getAttribute('aria-invalid')).toBe('true');
   expect(screen.queryByTestId('error-banner')).toBeNull();
 });
+
+const builtIn = {
+  reader: { provider: 'ollama', model: 'gemma4:e4b' },
+  verifier: { provider: 'ollama', model: 'gemma4:e4b' },
+  planner: { provider: 'ollama', model: 'gemma4:e4b' },
+  summariser: { provider: 'ollama', model: 'gemma4:e4b' },
+};
+
+it('DEC-106 with no default set it says the built-in defaults apply and names them', async () => {
+  renderPage(
+    <AdminModelsPage />,
+    { ...base, 'GET /api/admin/default-roles': json(200, { roles: {}, builtIn }) },
+    root,
+  );
+
+  const note = await screen.findByTestId('built-in-defaults');
+
+  expect(note.textContent).toContain('No default models are set');
+  expect(note.textContent).toContain('built-in defaults apply');
+  for (const title of ['Reader', 'Verifier', 'Planner', 'Summariser']) {
+    expect(note.textContent).toContain(`${title}: ollama / gemma4:e4b`);
+  }
+});
+
+it('DEC-106 once a default is set the page does not claim the built-in defaults apply to all', async () => {
+  renderPage(
+    <AdminModelsPage />,
+    {
+      ...base,
+      'GET /api/admin/default-roles': json(200, {
+        roles: { reader: { provider: 'ollama', model: 'gemma4:e4b' } },
+        builtIn,
+      }),
+    },
+    root,
+  );
+  await screen.findByLabelText('Reader provider');
+
+  expect(screen.queryByTestId('built-in-defaults')).toBeNull();
+});

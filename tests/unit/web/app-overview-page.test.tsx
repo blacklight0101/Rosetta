@@ -104,7 +104,8 @@ describe('the overview and its cards', () => {
     const links = within(features).getAllByRole('link');
     expect(links.map((link) => link.textContent)).toEqual(['FEAT-001', 'ENT-001']);
     expect(links[0]?.getAttribute('href')).toBe(`/runs/${runUuid}/files/cards/FEAT/FEAT-001.md`);
-    expect(within(region).getByText(/Vendor: third-party code/u)).toBeTruthy();
+    expect(within(region).getByText('Third-party code (1)')).toBeTruthy();
+    expect(within(region).getByText('Vendor')).toBeTruthy();
   });
 
   it('RF-264 links each question to the section of the overview it concerns and the link opens it', async () => {

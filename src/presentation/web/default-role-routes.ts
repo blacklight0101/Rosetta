@@ -9,7 +9,8 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { signedInOf } from './request-actor.js';
 
 // DEC-106, P1-42: the default models per role for new projects.
-// - GET /api/admin/default-roles answers `{ roles }`, `{}` until the administrator sets them.
+// - GET /api/admin/default-roles answers `{ roles, builtIn }`: `roles` is `{}` until the administrator sets them, and
+//   `builtIn` names the template's provider and model per role, which apply to a role left out.
 // - PUT /api/admin/default-roles with `{ roles }` replaces them (administrators only); a role
 //   left out keeps the template's model, and projects that exist are not touched.
 
@@ -27,7 +28,10 @@ export function registerDefaultRoleRoutes(
   services: DefaultRoleServices,
 ): void {
   server.get('/api/admin/default-roles', { config: { access: 'admin' } }, async (_request, reply) =>
-    reply.status(200).send({ roles: await services.getDefaultRoles.execute() }),
+    reply.status(200).send({
+      roles: await services.getDefaultRoles.execute(),
+      builtIn: services.getDefaultRoles.builtIn(),
+    }),
   );
 
   server.put(

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import type { FieldProblem } from '../../domain/errors/field-problems.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
-import { PROVIDER_KINDS } from './project-settings.js';
+import { PROVIDER_KINDS, ROLE_NAMES, type ProjectSettings } from './project-settings.js';
 
 // DEC-106, data-model.md section 4 (`server_settings`): the `defaultRoles` server setting, the
 // provider and the dated model id the administrator chose for each role of a new project. A role
@@ -64,4 +64,15 @@ export function parseDefaultRoles(input: unknown): Result<DefaultRoles, readonly
   const parsed = defaultRolesSchema.safeParse(input);
   if (parsed.success) return ok(parsed.data);
   return err(parsed.error.issues.flatMap(problemsOf).toSorted(byField));
+}
+
+/** The provider and model each role starts with when the administrator has set nothing: the template's. */
+// DEC-106
+export function builtInRolesOf(template: ProjectSettings): DefaultRoles {
+  return Object.fromEntries(
+    ROLE_NAMES.map((name) => {
+      const { provider, model } = template.roles[name];
+      return [name, { provider, model }];
+    }),
+  );
 }
