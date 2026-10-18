@@ -24,6 +24,10 @@ export type RunEventType =
   | 'budget.warning'
   | 'budget.capReached'
   | 'cards.merged'
+  | 'deepen.started'
+  | 'deepen.round.started'
+  | 'deepen.round.ended'
+  | 'deepen.ended'
   | 'question.answered'
   | 'question.skipped'
   | 'run.ended';

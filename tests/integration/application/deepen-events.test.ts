@@ -65,7 +65,7 @@ describe('RF-209 the events of a Deepen run', UNDERSTAND_TIMEOUT, () => {
       ...{ outOfScope: 0, unreadFiles: 0 },
     });
     expect(ended?.data).toMatchObject({
-      ...{ round: 1, complete: true, newClaims: 1, newSupported: 0 },
+      ...{ round: 1, complete: true, newClaims: 1, newSupported: 1 },
       ...{ filesRead: 0 },
     });
     expect(stop?.data).toEqual({ stopReason: 'noProgress', roundsDone: 1, maxRounds: 2 });
