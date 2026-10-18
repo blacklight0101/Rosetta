@@ -124,11 +124,22 @@ describe('trdMarkdown: a control marked other', () => {
       },
     });
 
-    const blocking = trdOf(withControl('Blocks the words DROP and DELETE in search text.'));
-    const plainRule = trdOf(withControl('Only the manager role may cancel a paid order.'));
+    const hints = [
+      'Checks search text against a block list of SQL words.',
+      'Rejects a host found on the deny list.',
+      'Keeps a blocklist, a blacklist or a denylist of hosts.',
+    ].map((text) => trdOf(withControl(text)));
+    const rules = [
+      'Blocks the account after five failed logins.',
+      'Answers 403 Forbidden to a user without the manager role.',
+      'Blocked users cannot sign in.',
+      'Only the manager role may cancel a paid order.',
+    ].map((text) => trdOf(withControl(text)));
 
-    expect(blocking).toContain('Approach: other.');
-    expect(blocking).toContain('Recommendation: Prefer an allowlist of what is permitted');
-    expect(plainRule).not.toContain('Recommendation:');
+    for (const trd of hints) {
+      expect(trd).toContain('Approach: other.');
+      expect(trd).toContain('Recommendation: Prefer an allowlist of what is permitted');
+    }
+    for (const trd of rules) expect(trd).not.toContain('Recommendation:');
   });
 });
