@@ -520,6 +520,91 @@ tbody tr:last-child td {
   color: var(--rst-ok-ink);
 }
 
+/* P3-02: the pages of an area and of a card: the trail, the claims and the cited lines. */
+.crumbs {
+  margin: 0 0 8px;
+  color: var(--rst-ink-muted);
+  font-size: 13px;
+}
+
+.claims,
+.citations {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.claim {
+  padding: 12px 16px;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+.claim p {
+  margin: 0 0 6px;
+}
+
+.claim-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 650;
+}
+
+.claim-verdict {
+  color: var(--rst-ink-soft);
+}
+
+.citation-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 13px;
+}
+
+.excerpt-unavailable {
+  color: var(--rst-ink-muted);
+  font-size: 13px;
+}
+
+table.code {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--rst-mono);
+  font-size: 13px;
+}
+
+table.code td {
+  padding: 0 8px;
+  border: 0;
+  vertical-align: top;
+}
+
+table.code .mark {
+  width: 1.5em;
+  color: var(--rst-brand);
+  font-weight: 700;
+}
+
+table.code .ln {
+  width: 1%;
+  color: var(--rst-ink-muted);
+  text-align: right;
+  user-select: none;
+}
+
+table.code .src {
+  white-space: pre;
+}
+
+table.code tr.cited {
+  background: var(--rst-brand-tint);
+}
+
 @media (max-width: 720px) {
   .step {
     grid-template-columns: 1fr;

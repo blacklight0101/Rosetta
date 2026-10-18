@@ -14,9 +14,11 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { RunTextFiles } from '../ports/run-text-files.js';
+import { addEvidence } from '../report/card-evidence.js';
 import { buildReportModel, type ReportInputs } from '../report/build-report-model.js';
 import { parseCostReport, parseCoverage, projectTotalsOf } from '../report/report-extras.js';
-import type { ReportArea, ReportDocuments } from '../report/report-model.js';
+import { parseCardIndex, type ReportDocuments } from '../report/report-model.js';
+import type { ScannedSource } from '../ports/scan-results.js';
 import { scopeOf } from '../runs/run-scope.js';
 
 // RF-504, RF-506, RF-1013, RF-1105: Build report on a run. It gives the owner of a finished run its
@@ -68,15 +70,17 @@ export class BuildReport {
     if (run === undefined) return err('not-found');
     if (run.queueState !== 'Ended') return err('in-progress');
     const scope = scopeOf(run);
+    const scanned = await this.scanOf(run);
+    const cardIndex = await this.deps.files.read(scope, 'cards/index.json');
     const model = buildReportModel({
       run,
       manifest: await manifests.read(scope),
       events: await history.read(scope, 0),
-      cardIndex: await this.deps.files.read(scope, 'cards/index.json'),
+      cardIndex,
       overviewFile: await this.deps.files.read(scope, 'overview.json'),
       documents: await this.documentsOf(scope),
-      areas: await this.areasOf(run),
-      cardDetails: [],
+      areas: scanned?.codeMap.areas.map(({ name, mapLevel }) => ({ name, mapLevel })) ?? [],
+      cardDetails: await this.cardDetailsOf(scope, cardIndex, scanned),
       ...(await this.figuresOf(run, scope)),
     });
     return ok({ files: await writer.write(scope, model) });
@@ -103,8 +107,24 @@ export class BuildReport {
     };
   }
 
-  /** RF-112: the areas of the run's own scan, or of the newest completed scan of its project. */
-  private async areasOf(run: Run): Promise<readonly ReportArea[]> {
+  /** RF-502: the cards that have a page, with the cited lines read from the scan's snapshot. */
+  private async cardDetailsOf(
+    scope: RunScope,
+    cardIndex: string | undefined,
+    scanned: ScannedSource | undefined,
+  ): Promise<ReportInputs['cardDetails']> {
+    const paths = parseCardIndex(cardIndex)
+      .map((card) => card.path)
+      .filter((path) => path !== '');
+    const files = await this.deps.cards.read(scope, paths);
+    return addEvidence(files, scanned?.reader);
+  }
+
+  /**
+   * RF-112: the run's own scan, or the newest completed scan of its project: its code map gives the
+   * areas and its snapshot the cited lines. Undefined when there is none or its output is gone.
+   */
+  private async scanOf(run: Run): Promise<ScannedSource | undefined> {
     const { scans, runs } = this.deps;
     const own = run.stage === 'scan' ? run : undefined;
     const scan =
@@ -112,14 +132,13 @@ export class BuildReport {
       (await runs.list(run.userId, run.projectId)).find(
         (each) => each.stage === 'scan' && each.endState === 'Completed',
       );
-    if (scan === undefined) return [];
+    if (scan === undefined) return undefined;
     try {
-      const { codeMap } = await scans.open(scan);
-      return codeMap.areas.map(({ name, mapLevel }) => ({ name, mapLevel }));
+      return await scans.open(scan);
     } catch (error) {
       // The scan's output is gone or fails its check: the report is still worth building without it.
       await this.logUnreadable(run, scan, error);
-      return [];
+      return undefined;
     }
   }
 

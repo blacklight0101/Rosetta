@@ -42,7 +42,7 @@ describe('renderEvidencePages', () => {
   });
 
   it('RF-500 makes no card page for a card without a detail, and no page for a run without cards or areas', () => {
-    const noDetail = reportModel({ cards: [plainCard], cardDetails: [] });
+    const noDetail = reportModel({ cards: [plainCard], cardDetails: [], coverage: null });
     const nothing = reportModel({ cards: [], areas: [], coverage: null, cardDetails: [] });
 
     expect(Object.keys(renderEvidencePages(noDetail))).toEqual([areaPageName('orders')]);

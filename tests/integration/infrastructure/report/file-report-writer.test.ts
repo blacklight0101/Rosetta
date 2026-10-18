@@ -56,16 +56,16 @@ const paths = [
   'report/report.md',
 ];
 
-// RF-500: the model of the fixtures has one area, so it has one area page.
-const areaPage = `report/${areaPageName('orders')}`;
+// RF-500: the model of the fixtures has two areas (the card's and the coverage's), so two area pages.
+const areaPages = ['catalog', 'orders'].map((area) => `report/${areaPageName(area)}`);
 
 describe('FileReportWriter', () => {
   it('RF-504 writes the Markdown report, the static pages and their assets into report/', async () => {
     const written = await writerOver().write(scope, reportModel());
 
-    expect(written).toEqual([...paths, areaPage]);
+    expect(written).toEqual([...paths, ...areaPages]);
     expect((await readdir(join(runFolder(), 'report'))).sort()).toEqual(
-      [...paths, areaPage].map((path) => path.replace('report/', '')).sort(),
+      [...paths, ...areaPages].map((path) => path.replace('report/', '')).sort(),
     );
   });
 

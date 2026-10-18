@@ -49,6 +49,7 @@ describe('buildSiteFiles', () => {
     expect(Object.keys(site).sort()).toEqual(
       [
         '.nojekyll',
+        areaPageName('catalog'),
         areaPageName('orders'),
         'cards/BR/BR-001.md',
         'cost.html',
