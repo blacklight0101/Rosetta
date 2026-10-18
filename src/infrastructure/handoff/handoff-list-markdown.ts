@@ -1,6 +1,7 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
 import { decisionFile, documentSet, handoffFiles, sourceLinks } from './handoff-links.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 
@@ -35,10 +36,12 @@ function briefQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): stri
   return [
     '| Question | Id | Default the package used | Cards waiting |',
     '|---|---|---|---|',
-    ...handoff.briefQuestions.map(
-      (question) =>
-        `| ${esc.inline(question.question)} | ${esc.inline(question.id)} | ${esc.inline(question.answer)} | ${waitingCards(waiting, question.id)} |`,
-    ),
+    ...handoff.briefQuestions
+      .map(legacySafe)
+      .map(
+        (question) =>
+          `| ${esc.inline(question.question)} | ${esc.inline(question.id)} | ${esc.inline(question.answer)} | ${waitingCards(waiting, question.id)} |`,
+      ),
   ];
 }
 
@@ -50,10 +53,12 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
   return [
     '| Id | Question | Default the package used | Cards waiting |',
     '|---|---|---|---|',
-    ...handoff.prdQuestions.map(
-      (question) =>
-        `| ${question.id} | ${esc.inline(question.question)} | ${esc.inline(question.answer)} | ${waitingCards(waiting, question.id)} |`,
-    ),
+    ...handoff.prdQuestions
+      .map(legacySafe)
+      .map(
+        (question) =>
+          `| ${question.id} | ${esc.inline(question.question)} | ${esc.inline(question.answer)} | ${waitingCards(waiting, question.id)} |`,
+      ),
   ];
 }
 
@@ -73,10 +78,14 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
   const waiting = waitingOf(handoff);
   const unanswered = handoff.openQuestions.map(
     (question) =>
-      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: keep the legacy behaviour. Cards waiting: ${waitingCards(waiting, question.cardId)}`,
+      `- ${esc.inline(question.cardId)}: ${esc.inline(question.question)} Default: ${keepLegacyDefault} Cards waiting: ${waitingCards(waiting, question.cardId)}`,
   );
   return [
     '# Open questions',
+    '',
+    '## The rule for a default',
+    '',
+    'A default keeps the legacy behaviour: a default that would change what users see today is not allowed, and a question that proposed one says so and takes the legacy behaviour instead.',
     '',
     '## Planning brief questions that took their default',
     '',
@@ -148,6 +157,7 @@ function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     [`[Risks](${handoffFiles.risks})`],
     [`[Open questions](${handoffFiles.openQuestions})`],
     [`[Source cards](${handoffFiles.sources})`],
+    [`[Realistic data shapes](${handoffFiles.fixtures})`],
     [`[Conventions](${handoffFiles.conventions})`],
     ...(handoff.brief.buildMethod.aiAssisted ? [[`[AGENTS.md](${handoffFiles.agents})`]] : []),
   ];
