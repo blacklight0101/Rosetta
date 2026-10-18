@@ -11,8 +11,8 @@ import { withStates, type StatedQuestion } from './question-states.js';
 // `Answered` again, so an answer edited after that is used by the next re-run with answers (a re-run
 // skips an Answered question). A question several areas asked is one question with a card in each
 // area: every card behind it that is Answered is opened. The reopening is logged; a run's event log
-// is closed once the run ended (data-model.md section 3.9), so it cannot hold it. Another user's run
-// id, an unknown run and a card id the run has no question for give the same answer.
+// is closed once the run ended (data-model.md section 3.9), so it cannot hold it. A run that has not ended is refused: its agents are still writing the
+// cards (P2-44). Another user's run id, an unknown run and a card id the run has no question for give the same answer.
 
 export interface ReopenQuestionDependencies {
   readonly runs: RunIndex;
@@ -20,6 +20,8 @@ export interface ReopenQuestionDependencies {
   readonly cards: PriorCards & QuestionReopener;
   readonly logger: Logger;
 }
+
+export type ReopenQuestionProblem = 'not-found' | 'run-not-ended';
 
 export class ReopenQuestion {
   private readonly deps: ReopenQuestionDependencies;
@@ -33,13 +35,14 @@ export class ReopenQuestion {
     readonly actor: Actor;
     readonly runId: string;
     readonly cardId: string;
-  }): Promise<Result<readonly StatedQuestion[], 'not-found'>> {
+  }): Promise<Result<readonly StatedQuestion[], ReopenQuestionProblem>> {
     const { runs, answers, cards } = this.deps;
     const run = await runs.find(request.actor.userId, request.runId);
     if (run === undefined) return err('not-found');
     const project = { userId: run.userId, projectId: run.projectId };
     const questions = await answers.questionsOf(project, run.runKey);
     if (!questions.some((question) => question.cardId === request.cardId)) return err('not-found');
+    if (run.queueState !== 'Ended') return err('run-not-ended');
     const earlier = await cards.cardsOf(project, run.runKey);
     const card = earlier.find((each) => each.id === request.cardId && each.type === 'OQ');
     const answered = (card === undefined ? [] : askingTheSame(card, earlier))

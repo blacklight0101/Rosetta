@@ -24,9 +24,10 @@ import { scanTree } from '../../support/scan-harness.js';
 import { useTempRoot } from '../../support/temp-root.js';
 import { verifierHarness } from '../../support/verifier-harness.js';
 
-// RF-100, RF-145, P2-39: a crafted repository with a binary file the claim cites. The scan lists
-// it as skipped; the verifier's request names its path and says "binary, not sent", and no byte
-// of it is in any message, even when the citation spells the path in another case.
+// RF-100, RF-142, RF-145, P2-39, P2-44: a crafted repository with a binary file the claim cites.
+// The scan lists it as skipped; the verifier's request says "binary, not sent" and carries no
+// excerpt for it (the egress log names only what was sent), and no byte of it is in any message,
+// even when the citation spells the path in another case.
 
 const span = '0123456789abf001';
 const PAYLOAD = 'TOPSECRET-PAYLOAD-7';
@@ -73,7 +74,7 @@ describe('a claim that cites a binary file of a crafted repository', () => {
   });
 
   it.each(['assets/blob.dat', 'Assets/BLOB.DAT'])(
-    'RF-100 the verifier is sent the path of %s and a note, never its bytes',
+    'RF-100 the verifier is sent the path of %s and a note, never its bytes, and it is no excerpt',
     async (cited) => {
       const { codeMap, reader } = await craftedRepository();
       const index = new CodeMapIndex(codeMap);
@@ -97,10 +98,8 @@ describe('a claim that cites a binary file of a crafted repository', () => {
       expect(sent).toHaveLength(1);
       expect(sent.join('\n')).not.toContain(PAYLOAD);
       const scan = scanDataBlocks(sent[0] ?? '');
-      expect(scan.ok && scan.value.excerpts.map((excerpt) => excerpt.path)).toEqual([
-        cited,
-        'src/A.cs',
-      ]);
+      // P2-44: the egress log names only what was sent, so the skipped file has no excerpt.
+      expect(scan.ok && scan.value.excerpts.map((excerpt) => excerpt.path)).toEqual(['src/A.cs']);
       const texts = scan.ok ? scan.value.parts.filter((part) => !part.frame) : [];
       expect(texts.some((part) => part.text === 'binary, not sent')).toBe(true);
     },

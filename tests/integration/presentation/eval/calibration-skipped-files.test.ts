@@ -7,8 +7,8 @@ import { ModelRouter, answersFor, calibrationParts } from '../../../support/cali
 import { useTempRoot } from '../../../support/temp-root.js';
 
 // RF-100, RF-305, P2-39: a file the scan would skip (a binary file, or one above the size limit) is
-// never read or sent to the verifier, in a calibration as in a run: the model gets the path and a
-// note, and the bytes of the file never reach the provider.
+// never read or sent to the verifier, in a calibration as in a run: the model gets a
+// note without the path (P2-44), and the bytes of the file never reach the provider.
 
 const temp = useTempRoot('rosetta-calibration-skip-');
 const judge = { provider: 'fake', model: 'judge-a' };
@@ -57,7 +57,7 @@ const binary = Uint8Array.from([
 ]);
 
 describe('the calibration and the files the scan would skip', () => {
-  it('RF-100 sends a cited binary file as a path and a note, never its bytes', async () => {
+  it('RF-100 sends a cited binary file as a note only, never its path or bytes', async () => {
     const { router, result } = await calibrate({
       'Page.cs': 'Title = "x";\nDone();\n',
       'blob.bin': binary,
@@ -65,7 +65,7 @@ describe('the calibration and the files the scan would skip', () => {
     const message = router.requests[1]?.messages[0]?.content ?? '';
 
     expect(result.ok).toBe(true);
-    expect(message).toContain('blob.bin');
+    expect(message).not.toContain('blob.bin');
     expect(message).toContain('binary, not sent');
     expect(message).not.toContain('SECRET');
     expect(message).not.toContain('\u0000');
