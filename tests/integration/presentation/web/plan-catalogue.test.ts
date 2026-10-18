@@ -62,7 +62,13 @@ describe('GET /api/plan/catalogue', () => {
     const body = catalogueBody.parse(response.json());
     const on = body.entries.filter((each) => each.defaultOn).map((each) => each.id);
     expect(on.sort()).toEqual(defaultPrinciples(shippedCatalogue));
-    expect(on).toHaveLength(10);
+    expect(on).toEqual(
+      expect.arrayContaining([
+        ...['solid', 'kiss', 'dry', 'yagni', 'tdd', 'sdd', 'adrs'],
+        ...['testing-pyramid', 'security-by-design', 'ci-gates'],
+      ]),
+    );
+    expect(body.entries.filter((each) => !each.defaultOn).length).toBeGreaterThan(10);
   });
 });
 
