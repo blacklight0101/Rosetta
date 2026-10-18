@@ -107,3 +107,28 @@ describe('trdMarkdown: sections and controls', () => {
     expect(trdOf(other)).not.toMatch(/denylist|forbidden patterns/u);
   });
 });
+
+describe('trdMarkdown: a control marked other', () => {
+  it('RF-622 DEC-135 a control marked other that reads like a denylist still gets the allowlist recommendation', () => {
+    const full = handoffOf('Plain text.');
+    const [control] = full.content.technical.security;
+    if (control === undefined) throw new Error('The fixture has no control');
+    const withControl = (description: string): HandoffPackage => ({
+      ...full,
+      content: {
+        ...full.content,
+        technical: {
+          ...full.content.technical,
+          security: [{ ...control, approach: 'other', description, alternative: '' }],
+        },
+      },
+    });
+
+    const blocking = trdOf(withControl('Blocks the words DROP and DELETE in search text.'));
+    const plainRule = trdOf(withControl('Only the manager role may cancel a paid order.'));
+
+    expect(blocking).toContain('Approach: other.');
+    expect(blocking).toContain('Recommendation: Prefer an allowlist of what is permitted');
+    expect(plainRule).not.toContain('Recommendation:');
+  });
+});

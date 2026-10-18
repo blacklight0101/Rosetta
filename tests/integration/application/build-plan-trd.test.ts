@@ -212,6 +212,7 @@ describe('trd.md: targets, deployment and migration', () => {
     expect(deployment).toContain('| Staging | Runs the build before a release. |');
     expect(deployment).toContain('| Production | Serves customers. |');
     expect(deployment).not.toContain('ADR-099');
+    expect(deployment).toContain('Decision records: [ADR-006](decisions/ADR-006.md)');
   });
 
   it('RF-610 RF-622 the migration approach states the strategy, its record and the phases', () => {
