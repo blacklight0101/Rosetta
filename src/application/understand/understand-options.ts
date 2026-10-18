@@ -51,15 +51,17 @@ export function readUnderstandOptions(
 }
 
 /**
- * RF-143: whether a role of the run sends code off this machine. Ollama is local when the server's
+ * RF-143: whether a role of the run sends code off this machine (the roles of an understand run,
+ * or the ones given: a plan run calls the planner only). Ollama is local when the server's
  * Ollama host is this machine; with no Ollama address configured no Ollama call can be made, so it
  * needs no consent.
  */
 export function rolesNeedCloudConsent(
   settings: ProjectSettings,
   ollamaHost: string | undefined,
+  roles: readonly AgentRole[] = UNDERSTAND_ROLES,
 ): boolean {
-  return UNDERSTAND_ROLES.some((role) => {
+  return roles.some((role) => {
     const provider = settings.providers[settings.roles[role].provider];
     if (provider === undefined) return false;
     const endpointHost = provider.kind === 'ollama' ? (ollamaHost ?? 'localhost') : '';

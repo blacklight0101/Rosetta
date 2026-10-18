@@ -7,21 +7,43 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 
 export const handoffFiles = {
   readme: 'README.md',
+  prd: 'prd.md',
+  trd: 'trd.md',
   requirements: 'requirements.md',
   architecture: 'architecture.md',
   entities: 'entity-mapping.md',
+  dataModel: 'data-model.md',
   roadmap: 'roadmap.md',
   tasks: 'tasks.md',
   risks: 'risks.md',
   openQuestions: 'open-questions.md',
   sources: 'sources.md',
+  conventions: 'conventions.md',
+  agents: 'AGENTS.md',
 } as const;
+
+/**
+ * RF-620: the documentation set the README's reading order opens with, in the order of the
+ * requirement. Each document of the set is added here by the card that writes its file (the TRD,
+ * the API contract, the flows, the user-interface material and the
+ * implementation plan), so the reading order never links a file the package does not have.
+ */
+export const documentSet = [
+  { title: 'Product requirements document', file: handoffFiles.prd },
+  { title: 'Technical requirements document', file: handoffFiles.trd },
+  { title: 'Target data model', file: handoffFiles.dataModel },
+] as const;
 
 const decisionsFolder = 'decisions';
 
 /** `decisions/ADR-001.md`. */
 export function decisionFile(id: string): string {
   return `${decisionsFolder}/${id}.md`;
+}
+
+/** A link to a decision record, from a file at the root of the package. */
+export function decisionLink(id: string): string {
+  return `[${id}](${decisionFile(id)})`;
 }
 
 /** A link to the heading of an id in a file of the package, from a file `depth` folders down. */

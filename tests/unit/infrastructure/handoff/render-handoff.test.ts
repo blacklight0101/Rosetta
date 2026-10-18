@@ -31,6 +31,14 @@ describe('renderHandoff', () => {
     expect(files['README.md']).toContain('](decisions/ADR-001.md)');
   });
 
+  it('RF-623 writes data-model.md, linked from the README and from the entity mapping', () => {
+    const files = renderHandoff(handoffOf('Plain text.'), masker);
+
+    expect(files['data-model.md']).toContain('# Target data model');
+    expect(files['README.md']).toContain('](data-model.md)');
+    expect(files['entity-mapping.md']).toContain('](data-model.md)');
+  });
+
   it('RF-603 model text adds no HTML, link, heading or fence to any file', () => {
     const files = renderHandoff(handoffOf(hostile), masker);
 
@@ -64,4 +72,70 @@ describe('renderHandoff', () => {
 
     expect(holding(files, new RegExp(fakeOpenAiKey.slice(8, 30), 'u'))).toEqual([]);
   });
+});
+
+describe('renderHandoff: the method files', () => {
+  it('RF-607 RF-612 writes the conventions, and AGENTS.md for an AI-assisted build only', () => {
+    const files = renderHandoff(handoffOf('Plain text.'), masker);
+    const unassisted = handoffOf('Plain text.');
+    const without = renderHandoff(
+      { ...unassisted, brief: { ...unassisted.brief, buildMethod: { aiAssisted: false } } },
+      masker,
+    );
+
+    expect(Object.keys(files)).toEqual(expect.arrayContaining(['conventions.md', 'AGENTS.md']));
+    expect(Object.keys(without)).toContain('conventions.md');
+    expect(Object.keys(without)).not.toContain('AGENTS.md');
+    expect(files['README.md']).toContain('[AGENTS.md](AGENTS.md)');
+    expect(without['README.md']).not.toContain('AGENTS.md');
+  });
+
+  it('RF-607 text typed in the brief or taken from the catalogue shows as text in the method files', () => {
+    const files = renderHandoff(handoffOf(hostile), masker);
+
+    for (const name of ['AGENTS.md', 'conventions.md', 'roadmap.md', 'tasks.md']) {
+      expect(files[name]).toBeDefined();
+      expect(files[name]).not.toMatch(/<[A-Za-z!/?]/u);
+      expect(files[name]).not.toMatch(/\]\(javascript/u);
+      expect(files[name]).not.toMatch(/^# Title/mu);
+    }
+  });
+
+  it('RNF-003 masks a secret typed as a technology or an answer of the project context', () => {
+    const files = renderHandoff(handoffOf(`key ${fakeOpenAiKey}`), masker);
+
+    expect(holding(files, new RegExp(fakeOpenAiKey.slice(8, 30), 'u'))).toEqual([]);
+  });
+});
+
+describe('renderHandoff: the invariant and the review probes', () => {
+  const attack = [
+    'Line one',
+    '# Injected heading',
+    '<script>alert(1)</script> [click](http://evil.example/x)',
+    `key ${fakeOpenAiKey}`,
+  ].join('\n');
+
+  function tasksOf(text: string): string {
+    const base = handoffOf('Plain text.');
+    const [task] = base.content.tasks;
+    if (task === undefined) throw new Error('The fixture has no task');
+    const content = { ...base.content, tasks: [{ ...task, invariant: text, probes: [text] }] };
+    return renderHandoff({ ...base, content }, masker)['tasks.md'] ?? '';
+  }
+
+  it.each(['Invariant: ', '- '])(
+    'RF-630 hostile text after "%s" is one escaped, masked line',
+    (lead) => {
+      const lines = tasksOf(attack)
+        .split('\n')
+        .filter((line) => line.startsWith(lead));
+      const line = lines.find((each) => each.includes('Line one')) ?? '';
+
+      expect(line).not.toBe('');
+      expect(line).not.toMatch(/<script|\]\(http|sk-/u);
+      expect(tasksOf(attack)).not.toMatch(/^#+ Injected/mu);
+      expect(tasksOf(attack)).not.toContain(fakeOpenAiKey.slice(8, 30));
+    },
+  );
 });

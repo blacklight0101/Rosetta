@@ -7,6 +7,7 @@ import { AdminUsersPage } from '../pages/AdminUsersPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
 import { HistoryPage } from '../pages/HistoryPage.js';
 import { LiveRunPage } from '../pages/LiveRunPage.js';
+import { PlanSetupPage } from '../pages/PlanSetupPage.js';
 import { ProjectCostPage } from '../pages/ProjectCostPage.js';
 import { ProjectSettingsPage } from '../pages/ProjectSettingsPage.js';
 import { ProjectsPage } from '../pages/ProjectsPage.js';
@@ -105,6 +106,14 @@ export const routes: readonly RouteDefinition[] = [
     chrome: 'shell',
     component: AdminSnapshotsPage,
     nav: { group: 'admin', label: 'Snapshots', order: 40 },
+  },
+  {
+    path: '/projects/:projectId/plan-setup',
+    title: 'Plan setup',
+    access: 'user',
+    chrome: 'shell',
+    component: PlanSetupPage,
+    nav: { group: 'project', label: 'Plan setup', order: 60 },
   },
   {
     path: '/projects/:projectId/history',

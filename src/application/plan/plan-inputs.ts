@@ -56,7 +56,10 @@ const problems = {
 } as const;
 
 /** RF-604: the newest understand run of the project that ended `Completed`. */
-async function sourceRunOf(runs: RunIndex, run: Run): Promise<Run | undefined> {
+async function sourceRunOf(
+  runs: RunIndex,
+  run: Pick<Run, 'userId' | 'projectId'>,
+): Promise<Run | undefined> {
   const listed = await runs.list(run.userId, run.projectId);
   return listed.find((each) => each.stage === 'understand' && each.endState === 'Completed');
 }
@@ -64,7 +67,7 @@ async function sourceRunOf(runs: RunIndex, run: Run): Promise<Run | undefined> {
 // RF-604
 export async function planInputs(
   deps: PlanInputDependencies,
-  run: Run,
+  run: Pick<Run, 'userId' | 'projectId'>,
 ): Promise<Result<PlanInputs, PlanInputProblem>> {
   const project = await deps.projects.find(run.userId, run.projectId);
   if (project === undefined) return err(problems.project);

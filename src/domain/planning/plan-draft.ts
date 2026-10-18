@@ -1,4 +1,8 @@
-// RF-601, RF-602, ADR-018: what the planner answers, once its JSON has been read. It is untrusted
+import type { IdentifierNeed } from './parallel-cards.js';
+import type { GuardKind, RiskClass } from './task-card-quality.js';
+import type { TechnicalDraft } from './technical-content.js';
+
+// RF-601, RF-602, RF-630, RF-635, ADR-018: what the planner answers, once its JSON has been read. It is untrusted
 // model output: every card id it names is checked against the supported cards, and every
 // position it names against the lists it points into, before anything is written (plan-content.ts).
 
@@ -44,6 +48,20 @@ export interface DraftTask {
   /** Positions in `requirements`, from 1. */
   readonly requirements: readonly number[];
   readonly acceptanceCriteria: readonly string[];
+  /** What must hold when the card is done (RF-630); empty when the planner left it out. */
+  readonly invariant: string;
+  /** Undefined when the planner left it out or named a class that does not exist (RF-635). */
+  readonly riskClass?: RiskClass | undefined;
+  /** The kinds of guard the card adds (RF-630). */
+  readonly adds: readonly GuardKind[];
+  /** Hostile or edge inputs a reviewer will try (RF-630). */
+  readonly probes: readonly string[];
+  /** The files and folders the card expects to change (RF-634). */
+  readonly files: readonly string[];
+  /** The shared identifiers the card needs; the plan allocates them (RF-634). */
+  readonly needs: readonly IdentifierNeed[];
+  /** Positions in `tasks`, from 1, of the cards this one waits for (RF-634). */
+  readonly dependsOn: readonly number[];
 }
 
 export interface DraftRisk {
@@ -60,4 +78,6 @@ export interface PlanDraft {
   readonly phases: readonly DraftPhase[];
   readonly tasks: readonly DraftTask[];
   readonly risks: readonly DraftRisk[];
+  /** The technical requirements document (RF-622). */
+  readonly technical: TechnicalDraft;
 }

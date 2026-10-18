@@ -25,11 +25,13 @@ export type ProviderAccount = Pick<
 >;
 
 /**
- * What the ledger books the calls to. A provider test (RF-407) belongs to no run: its `id` and
- * `projectId` are null, its stage is `provider-test`, and no run cap applies to it.
+ * What the ledger books the calls to. A call with a null `id` belongs to no run. A provider test
+ * (RF-407) has a null `projectId` too and the stage `provider-test`; the options of Plan setup
+ * (RF-608) have a project and the stage `plan`. Only the second keeps the project's caps: any other
+ * run-less call is held to the small ceiling of a test call (ADR-007).
  */
 export interface ProviderRun {
-  /** The run row's UUID; null for a provider test. */
+  /** The run row's UUID; null for a call that belongs to no run. */
   readonly id: string | null;
   readonly userId: string;
   readonly projectId: string | null;
@@ -51,6 +53,9 @@ export interface ProviderSinks {
   /** `usage.recorded`, `budget.warning` and `budget.capReached` of the run (RF-1003). */
   readonly budgetEvents: BudgetEvents;
 }
+
+/** The three sinks a call that belongs to no run still writes to (RF-142, RF-408, RF-141). */
+export type CallSinks = Pick<ProviderSinks, 'recorder' | 'egressLog' | 'security'>;
 
 export interface ProviderSetRequest {
   readonly account: ProviderAccount;

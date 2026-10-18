@@ -19,7 +19,7 @@ interface RecordedCall {
   readonly body: unknown;
 }
 
-export type Answer = Response | ((call: RecordedCall) => Response);
+export type Answer = Response | ((call: RecordedCall) => Response | Promise<Response>);
 
 export const json = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -63,7 +63,10 @@ function recordedCall(input: RequestInfo | URL, init: RequestInit | undefined): 
   return { method: init?.method ?? 'GET', path, csrf, ...named, body };
 }
 
-function answerTo(answers: Readonly<Record<string, Answer>>, call: RecordedCall): Response {
+function answerTo(
+  answers: Readonly<Record<string, Answer>>,
+  call: RecordedCall,
+): Response | Promise<Response> {
   const answer = answers[`${call.method} ${call.path}`];
   if (answer === undefined) return failure(404, 'RST-2003');
   return typeof answer === 'function' ? answer(call) : answer.clone();

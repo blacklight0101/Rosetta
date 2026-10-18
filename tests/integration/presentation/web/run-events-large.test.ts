@@ -11,11 +11,12 @@ import { addUser, signedInBrowser, type TestBrowser } from '../../../support/tes
 import { createTestServer, type TestServer } from '../../../support/web-server.js';
 
 // RF-1006: a page that connects late reads the whole stored history, however long it is. The log
-// here holds more than 1 MiB (520 events of about 2 KB), which is more than a page may leave
+// here holds more than 1 MiB (60 events of about 20 KB), which is more than a page may leave
 // unread; the replay must wait for the page to read instead of dropping it.
 
-const EVENTS = 520;
-const NOTE = 'x'.repeat(2000);
+const EVENTS = 60;
+const NOTE = 'x'.repeat(20_000);
+const RESUME_AFTER = 30;
 
 interface Large {
   readonly amy: TestBrowser;
@@ -55,7 +56,7 @@ const owned: Owned = {};
 beforeAll(async () => {
   owned.dataDir = await realpath(await mkdtemp(join(tmpdir(), 'rosetta-sse-large-')));
   owned.large = await largeRun(owned.dataDir, owned);
-}, 60_000);
+});
 
 afterAll(async () => {
   try {
@@ -95,11 +96,11 @@ describe('GET /api/runs/:runId/events with a history over 1 MiB', () => {
     const response = await amy.request({
       method: 'GET',
       url: `/api/runs/${runId}/events`,
-      headers: { 'last-event-id': '260' },
+      headers: { 'last-event-id': String(RESUME_AFTER) },
     });
 
     expect(seqsOf(response.body)).toEqual(
-      Array.from({ length: lastSeq - 260 }, (_u, index) => index + 261),
+      Array.from({ length: lastSeq - RESUME_AFTER }, (_u, index) => RESUME_AFTER + 1 + index),
     );
     expect(response.body).toContain('event: run.ended');
   });

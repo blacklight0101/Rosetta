@@ -29,9 +29,16 @@ const variable = String.raw`(?:[A-Z][A-Z0-9_]{0,40}|${caseless('token')})`;
  */
 export const placeholderValue = String.raw`(?:<${word}>|\{${word}\}|\[${word}\]|${caseless('your')}[_-]?(?:[A-Za-z]+[_-])?${caseless('token')}|[Xx]{4,}|${caseless('token')}|${caseless('header')}|\$\{?${variable}\}?)${valueEnd}`;
 
+// A value that an earlier rule already replaced is never masked again.
+export const notMasked = String.raw`(?!\[MASKED:)`;
+
+// The roots of a dotted name that is code, not a key: the environment and the configuration objects
+// of the common languages (P2-43). Any other dotted name (`client.fakevalue0`) may be a secret.
+const knownRoot = String.raw`(?:process\.env|import\.meta\.env|os\.environ|env|config|settings|options|opts|props|args|params|vars|secrets|this|self)`;
+
 /**
- * A value that is code, not a key: `process.env.KEY` (a known environment root and one name), a
- * name with one dot (`config.apiKey`), or a words-only constant (`YOUR_API_KEY`). A value that
- * starts with `eyJ` or has more dots (a JWT, `abc.def.ghijkl`) is never code.
+ * A value that is code, not a key: a name under a known root (`process.env.KEY`, `config.apiKey`) or an
+ * UPPER_SNAKE words-only constant (`YOUR_API_KEY`). A value that starts with `eyJ` or has more dots (a
+ * JWT, `abc.def.ghijkl`) is never code, and neither is a lower-case `my_secret_word` (P2-43).
  */
-export const identifierValue = String.raw`(?!eyJ)(?:(?:process\.env|import\.meta\.env|os\.environ)\.[A-Za-z_]\w*|[A-Za-z_]\w*\.[A-Za-z_]\w*|[A-Za-z]+(?:_[A-Za-z]+)+)${valueEnd}`;
+export const identifierValue = String.raw`(?!eyJ)(?:${knownRoot}\.[A-Za-z_]\w*|[A-Z]+(?:_[A-Z]+)+)${valueEnd}`;

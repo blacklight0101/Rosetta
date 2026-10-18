@@ -4,10 +4,12 @@ import type { ProviderSinks } from '../../application/ports/provider-set-factory
 import type { RunSecurityRecorder } from '../../application/runs/run-security-record.js';
 import { transcriptRef } from './provider-call-lines.js';
 
-// RF-407: a provider test belongs to no run, so it has no run folder, call log, egress log or
-// manifest. These sinks accept what the decorators write and keep nothing; the calls are still
-// metered and capped (the ledger) and masked (the egress guard). The prompt is fixed and holds no
-// repository content, so there is nothing for an egress line to name.
+// RF-407: a provider test belongs to no run and to no project, so it has no folder to log to. These
+// sinks accept what the decorators write and keep nothing; the calls are still metered and capped
+// (the ledger) and masked (the egress guard). Only the Test button may use them: its prompt is
+// fixed and holds no repository content, so there is nothing for an egress line to name. A call
+// that carries repository content must log (RF-142, RF-408): `projectCallSinks` does that for the
+// options of Plan setup.
 
 export type UnrecordedSinks = Pick<ProviderSinks, 'recorder' | 'egressLog' | 'security'>;
 

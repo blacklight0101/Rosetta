@@ -3,6 +3,7 @@ import { fixturePassword } from './account-fixtures.js';
 import { active, adminOnly, everyone, ownerOnly, signedIn } from './access-columns.js';
 import { budgetRoutes, outputRoutes, type Context, type Probe } from './access-probes.js';
 import { settingsWith } from './project-fixtures.js';
+import { planRows } from './access-plan-rows.js';
 import { fixtureKey } from './provider-key-fixtures.js';
 import type { TestUser } from './test-browser.js';
 
@@ -134,6 +135,18 @@ const projectRows: Rows = {
       payload: () => ({}),
       expected: ownerOnly(200),
     },
+  ],
+  // RF-613: the matrix project has no saved brief, so the owner's answer is RST-1801 (409).
+  'GET /api/projects/:id/plan-estimate': [
+    { method: 'GET', url: projectUrl('/plan-estimate'), expected: ownerOnly(409) },
+    {
+      method: 'GET',
+      url: () => '/api/projects/not-a-uuid/plan-estimate',
+      expected: active(401, 404),
+    },
+  ],
+  'HEAD /api/projects/:id/plan-estimate': [
+    { method: 'HEAD', url: projectUrl('/plan-estimate'), expected: ownerOnly(409) },
   ],
   'GET /api/admin/users/:id/projects': [
     { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
@@ -267,6 +280,7 @@ const pageRows: Rows = {
 export const matrixAreas = {
   public: publicRows,
   projects: projectRows,
+  plan: planRows,
   account: accountRows,
   admin: adminRows,
   pages: pageRows,

@@ -64,3 +64,19 @@ describe('planMessage', () => {
     expect(message()).toContain(`"rule": ${JSON.stringify(kiss?.rule)}`);
   });
 });
+
+describe('planMessage: the choices the planner follows', () => {
+  it('RF-608 gives the chosen style with its rule from the catalogue', () => {
+    const style = shippedCatalogue.entries.find((entry) => entry.id === 'layered');
+
+    expect(message()).toContain(`"rule": ${JSON.stringify(style?.rule)}`);
+    expect(message()).toContain('"id": "layered"');
+  });
+
+  it('RF-610 gives the migration strategy with the order its phases follow', () => {
+    const text = message();
+
+    expect(text).toContain('"strategy": "strangler-fig"');
+    expect(text).toContain('one part at a time');
+  });
+});

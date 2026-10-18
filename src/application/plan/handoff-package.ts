@@ -1,5 +1,9 @@
+import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
+import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
+import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { DefaultedQuestion } from '../../domain/planning/brief-questions.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
+import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 
@@ -12,6 +16,11 @@ export interface PackagePrinciple {
   readonly id: string;
   readonly title: string;
   readonly rule: string;
+  readonly why: string;
+  /** How a reviewer checks the rule. */
+  readonly check: string;
+  /** The catalogue group; undefined for an id the catalogue does not know. */
+  readonly group: CatalogueGroup | undefined;
 }
 
 /** An open question of the analysis that has no answer yet. */
@@ -30,10 +39,19 @@ export interface HandoffPackage {
   readonly style: PackagePrinciple;
   /** The chosen principles and practices, in the brief's order. */
   readonly principles: readonly PackagePrinciple[];
+  /** The planner's content and the decision records of the brief's choices (RF-608..RF-610). */
   readonly content: PlanContent;
+  /** The decision record of the style, of each chosen stack layer and of the migration. */
+  readonly choices: BriefChoices;
+  /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
+  readonly dataModel: TargetDataModel;
   /** The cards with their `Supported` claims, in card order. */
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];
   readonly briefQuestions: readonly DefaultedQuestion[];
   readonly openQuestions: readonly UnansweredQuestion[];
+  /** The product requirements document (RF-621), checked against the supported cards. */
+  readonly prd: PrdContent;
+  /** The PRD sections the cards could not fill, each with its default (RF-621, DEC-80). */
+  readonly prdQuestions: readonly DefaultedQuestion[];
 }

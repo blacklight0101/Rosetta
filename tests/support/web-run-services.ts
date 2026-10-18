@@ -1,4 +1,5 @@
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
+import { MemoryBriefStore } from './memory-brief-store.js';
 import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
 import type { Clock } from '../../src/application/ports/clock.js';
@@ -29,6 +30,8 @@ import { ListHistory } from '../../src/application/use-cases/list-history.js';
 import { ListSnapshots } from '../../src/application/use-cases/list-snapshots.js';
 import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
+import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
+import type { UserRepository } from '../../src/application/ports/user-repository.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -43,6 +46,7 @@ import type { MemoryOutputWriter } from './memory-output-writer.js';
 import type { MemorySnapshotCache } from './memory-snapshot-cache.js';
 import type { MemoryWorkspaceFolders } from './memory-workspace-folders.js';
 import { MemoryRunFileReader } from './memory-run-file-reader.js';
+import { planOptionsService } from './web-plan-options.js';
 import { MapRunTextFiles, RecordingReportWriter } from './report-doubles.js';
 import { catalogAreas, estimatePrices, FixedScans } from './estimate-harness.js';
 import type { RunHarness } from './run-harness.js';
@@ -148,6 +152,24 @@ function answerServices(
   };
 }
 
+/** RF-504: the report use case over the harness's runs and the test's report doubles. */
+function reportOf(
+  runs: RunHarness,
+  outputs: RunOutputs,
+  extra: { readonly answers: AnswersFile; readonly clock: Clock },
+): BuildReport {
+  return new BuildReport({
+    runs: runs.runs,
+    manifests: runs.manifests,
+    history: runs.events,
+    files: outputs.text,
+    writer: outputs.reportWriter,
+    scans: new FixedScans(catalogAreas),
+    logger: new RecordingLogger(),
+    ...{ answers: extra.answers, costs: new MemoryCostTotals(), clock: extra.clock },
+  });
+}
+
 /** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
 export function runServices(
   runs: RunHarness,
@@ -160,6 +182,9 @@ export function runServices(
     readonly calls: RunCallReader;
     readonly logs: ApplicationLogReader;
     readonly clock: Clock;
+    readonly users: UserRepository;
+    readonly factory: ProviderSetFactory;
+    readonly answerFiles: MemoryOutputWriter;
   } & ObservedFiles,
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
@@ -176,19 +201,15 @@ export function runServices(
     }),
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),
-    buildReport: new BuildReport({
-      runs: runs.runs,
-      manifests: runs.manifests,
-      history: runs.events,
-      files: outputs.text,
-      writer: outputs.reportWriter,
-      scans: new FixedScans(catalogAreas),
-      logger: new RecordingLogger(),
-      ...{ answers, costs: new MemoryCostTotals(), clock },
-    }),
+    buildReport: reportOf(runs, outputs, { answers, clock }),
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ projects, submit: runs.submit }),
+    startRun: new StartRun({ projects, briefs: new MemoryBriefStore(), submit: runs.submit }),
+    suggestPlanOptions: planOptionsService({
+      ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
+      runs: runs.runs,
+      providers: stores.factory,
+    }),
     estimateRun: new EstimateRun({
       projects,
       runs: runs.runs,

@@ -1,3 +1,9 @@
+import {
+  allocateIdentifiers,
+  dependenciesOf,
+  listedFiles,
+  type AllocatedIdentifier,
+} from './parallel-cards.js';
 import type {
   DraftComponent,
   DraftDecision,
@@ -7,6 +13,8 @@ import type {
   DraftTask,
   PlanDraft,
 } from './plan-draft.js';
+import { cardProblem, type GuardKind, type RiskClass } from './task-card-quality.js';
+import { assembleTechnical, type TechnicalContent } from './technical-content.js';
 
 // RF-601, RF-602, ADR-005, ADR-013: the planner's draft made into the content of the package.
 // Every card id the model names is kept only when it is one of the supported cards, so a
@@ -22,6 +30,10 @@ interface PlanRequirement extends DraftRequirement {
 
 export interface PlanDecision extends DraftDecision {
   readonly id: string;
+  /** The planner proposes; a choice the owner made in the planning brief is accepted. */
+  readonly status: 'Proposed' | 'Accepted';
+  /** The options considered, one line each; the planner's decisions list none. */
+  readonly options: readonly string[];
 }
 
 export interface PlanPhase {
@@ -32,13 +44,25 @@ export interface PlanPhase {
   readonly exitCriteria: readonly string[];
 }
 
-interface PlanTask {
+export interface PlanTask {
   readonly id: string;
   readonly title: string;
   readonly phase: number;
   /** `REQ-` ids. */
   readonly requirements: readonly string[];
   readonly acceptanceCriteria: readonly string[];
+  /** What must hold when the card is done (RF-630). */
+  readonly invariant: string;
+  readonly riskClass: RiskClass;
+  readonly adds: readonly GuardKind[];
+  /** Hostile or edge inputs a reviewer will try; empty for a card with no guard and no risk. */
+  readonly probes: readonly string[];
+  /** The files and folders the card expects to change (RF-634). */
+  readonly files: readonly string[];
+  /** The shared identifiers the plan allocated to this card, and no other card (RF-634). */
+  readonly identifiers: readonly AllocatedIdentifier[];
+  /** `T-` ids of the cards this one waits for: declared, or added because the files overlap. */
+  readonly dependsOn: readonly string[];
 }
 
 interface PlanRisk extends DraftRisk {
@@ -54,6 +78,8 @@ export interface PlanContent {
   readonly phases: readonly PlanPhase[];
   readonly tasks: readonly PlanTask[];
   readonly risks: readonly PlanRisk[];
+  /** The content of the technical requirements document (RF-622). */
+  readonly technical: TechnicalContent;
 }
 
 export interface PlanAssembly {
@@ -63,11 +89,12 @@ export interface PlanAssembly {
     readonly requirements: number;
     readonly entities: number;
     readonly tasks: number;
+    readonly technical: number;
   };
 }
 
 /** `REQ-001`, three digits at least. */
-function planId(prefix: string, number: number): string {
+export function planId(prefix: string, number: number): string {
   return `${prefix}-${String(number).padStart(3, '0')}`;
 }
 
@@ -105,15 +132,33 @@ function tasksOf(
   drafts: readonly DraftTask[],
   phases: number,
   idAt: ReadonlyMap<number, string>,
+  specified: boolean,
 ): PlanTask[] {
-  const kept = drafts.filter((task) => task.phase >= 1 && task.phase <= phases);
-  return kept.map((task, index) => ({
-    id: planId('T', index + 1),
-    title: task.title,
-    phase: task.phase,
-    requirements: unique(task.requirements.flatMap((at) => idAt.get(at) ?? [])),
-    acceptanceCriteria: task.acceptanceCriteria,
-  }));
+  const kept = drafts.flatMap((task, index) => {
+    const { riskClass } = task;
+    if (task.phase < 1 || task.phase > phases) return [];
+    if (riskClass === undefined || cardProblem({ ...task, riskClass }) !== undefined) return [];
+    const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
+    if (specified && requirements.length === 0) return [];
+    return [{ position: index + 1, task, riskClass, requirements, files: listedFiles(task.files) }];
+  });
+  const identifiers = allocateIdentifiers(kept.map((each) => each.task.needs));
+  const at = new Map(kept.map((each, index) => [each.position, index]));
+  const dependencies = dependenciesOf(
+    kept.map(({ task, files }) => ({
+      ...{ phase: task.phase, files },
+      declared: task.dependsOn.flatMap((position) => at.get(position) ?? []),
+    })),
+  );
+  return kept.map(({ task, riskClass, requirements, files }, index) => {
+    const { title, phase, acceptanceCriteria, invariant, adds, probes } = task;
+    return {
+      ...{ id: planId('T', index + 1), title, phase, requirements, acceptanceCriteria },
+      ...{ invariant, riskClass, adds, probes, files },
+      identifiers: identifiers[index] ?? [],
+      dependsOn: (dependencies[index] ?? []).map((on) => planId('T', on + 1)),
+    };
+  });
 }
 
 function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
@@ -126,18 +171,33 @@ function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {
   }));
 }
 
-// RF-601, RF-602
-export function assemblePlan(draft: PlanDraft, supported: ReadonlySet<string>): PlanAssembly {
+export interface AssemblyOptions {
+  /** RF-607: given SDD, a task that implements no requirement is not written. */
+  readonly specificationDriven?: boolean;
+}
+
+// RF-601, RF-602, RF-607
+export function assemblePlan(
+  draft: PlanDraft,
+  supported: ReadonlySet<string>,
+  options: AssemblyOptions = {},
+): PlanAssembly {
   const requirements = requirementsOf(draft.requirements, supported);
   const entities = draft.entities.flatMap((entity) => {
     const sources = knownSources(entity.sources, supported);
     return sources.length === 0 ? [] : [{ ...entity, sources }];
   });
-  const tasks = tasksOf(draft.tasks, draft.phases.length, requirements.idAt);
+  const specified = options.specificationDriven === true;
+  const tasks = tasksOf(draft.tasks, draft.phases.length, requirements.idAt, specified);
   const withSources = <T extends { readonly sources: readonly string[] }>(item: T): T => ({
     ...item,
     sources: knownSources(item.sources, supported),
   });
+  const technical = assembleTechnical(
+    draft.technical,
+    supported,
+    draft.decisions.map((_, index) => planId('ADR', index + 1)),
+  );
   return {
     content: {
       summary: draft.summary,
@@ -145,7 +205,7 @@ export function assemblePlan(draft: PlanDraft, supported: ReadonlySet<string>): 
       components: componentsOf(draft.components),
       decisions: draft.decisions.map((decision, index) => ({
         ...withSources(decision),
-        id: planId('ADR', index + 1),
+        ...{ id: planId('ADR', index + 1), status: 'Proposed' as const, options: [] },
       })),
       entities,
       phases: draft.phases.map((phase, index) => ({ ...phase, number: index + 1 })),
@@ -154,11 +214,13 @@ export function assemblePlan(draft: PlanDraft, supported: ReadonlySet<string>): 
         ...withSources(risk),
         id: planId('RISK', index + 1),
       })),
+      technical: technical.content,
     },
     dropped: {
       requirements: draft.requirements.length - requirements.kept.length,
       entities: draft.entities.length - entities.length,
       tasks: draft.tasks.length - tasks.length,
+      technical: technical.dropped,
     },
   };
 }

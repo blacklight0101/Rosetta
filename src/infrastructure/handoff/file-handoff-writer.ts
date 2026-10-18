@@ -8,7 +8,10 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { markdownEscaper } from '../cards/markdown-text.js';
 import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
+import { dataModelMarkdown } from './handoff-data-model-markdown.js';
 import { decisionFile, handoffFiles } from './handoff-links.js';
+import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
+import { prdMarkdown } from './handoff-prd-markdown.js';
 import {
   openQuestionsMarkdown,
   readmeMarkdown,
@@ -20,9 +23,10 @@ import {
   decisionMarkdown,
   entityMappingMarkdown,
   requirementsMarkdown,
-  roadmapMarkdown,
-  tasksMarkdown,
 } from './handoff-plan-markdown.js';
+import { roadmapMarkdown } from './handoff-roadmap-markdown.js';
+import { trdMarkdown } from './handoff-trd-markdown.js';
+import { tasksMarkdown } from './handoff-task-markdown.js';
 
 // RF-601, RF-603, RNF-003, data-model.md section 3.17: writes the hand-off package of a plan run
 // into the `handoff/` folder of its run folder, through the workspace guard. Every file is plain
@@ -52,15 +56,22 @@ export function renderHandoff(
   );
   return {
     [handoffFiles.readme]: readmeMarkdown(handoff, esc),
+    [handoffFiles.prd]: prdMarkdown(handoff, esc),
+    [handoffFiles.trd]: trdMarkdown(handoff, esc, masker),
     [handoffFiles.requirements]: requirementsMarkdown(handoff, esc),
     [handoffFiles.architecture]: architectureMarkdown(handoff, esc, masker),
     ...decisions,
     [handoffFiles.entities]: entityMappingMarkdown(handoff, esc),
+    [handoffFiles.dataModel]: dataModelMarkdown(handoff.dataModel, esc, masker),
     [handoffFiles.roadmap]: roadmapMarkdown(handoff, esc),
     [handoffFiles.tasks]: tasksMarkdown(handoff, esc),
     [handoffFiles.risks]: risksMarkdown(handoff, esc),
     [handoffFiles.openQuestions]: openQuestionsMarkdown(handoff, esc),
     [handoffFiles.sources]: sourcesMarkdown(handoff, esc),
+    [handoffFiles.conventions]: conventionsMarkdown(handoff, esc),
+    ...(handoff.brief.buildMethod.aiAssisted
+      ? { [handoffFiles.agents]: agentsMarkdown(handoff, esc) }
+      : {}),
   };
 }
 

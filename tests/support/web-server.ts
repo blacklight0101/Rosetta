@@ -1,6 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
-import type { RunIndex } from '../../src/application/ports/run-index.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import type { SessionStore } from '../../src/application/ports/session-store.js';
@@ -15,14 +13,6 @@ import { ResetPassword } from '../../src/application/use-cases/reset-password.js
 import { SignOut } from '../../src/application/use-cases/sign-out.js';
 import { UpdateUser } from '../../src/application/use-cases/update-user.js';
 import type { TestProviders } from '../../src/application/use-cases/test-providers.js';
-import { CreateProject } from '../../src/application/use-cases/create-project.js';
-import { GetAccountTotals } from '../../src/application/use-cases/get-account-totals.js';
-import { GetCaps } from '../../src/application/use-cases/get-caps.js';
-import { GetProjectCost } from '../../src/application/use-cases/get-project-cost.js';
-import { GetProject } from '../../src/application/use-cases/get-project.js';
-import { ListProjects } from '../../src/application/use-cases/list-projects.js';
-import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
-import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import type { MemoryAccountUsage } from '../../src/infrastructure/db/memory-account-usage.js';
 import { MemoryAuditLog } from '../../src/infrastructure/db/memory-audit-log.js';
 import type { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
@@ -53,9 +43,9 @@ import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import { answerStore, observabilityStore } from './observability-store.js';
 import type { MemoryOutputWriter } from './memory-output-writer.js';
-import { templateSettings } from './project-fixtures.js';
 import type { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
+import { projectServices } from './project-services.js';
 import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
 import {
   keyParts,
@@ -66,7 +56,6 @@ import {
   type KeyParts,
 } from './web-server-parts.js';
 import { createRunHarness, type EventStore, type RunHarness } from './run-harness.js';
-import { briefServices } from './planning-brief-harness.js';
 import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
@@ -136,39 +125,6 @@ export interface TestServerOptions
   readonly dummyHash?: string;
   /** RF-1011: a data folder makes the calls and logs routes the composition root's, over its logs. */
   readonly logDir?: string;
-}
-
-interface ProjectParts {
-  readonly projects: MemoryProjectRepository;
-  readonly serverSettings: MemoryServerSettings;
-  readonly users: MemoryUserRepository;
-  readonly auditLog: MemoryAuditLog;
-  readonly logger: MemoryLogger;
-  readonly clock: FixedClock;
-  readonly costs: MemoryCostTotals;
-  readonly usage: MemoryAccountUsage;
-}
-
-/** RF-010, RF-1105: the project use cases over memory adapters and predictable ids. */
-function projectServices(
-  parts: ProjectParts,
-  briefs: PlanningBriefStore,
-  runs: RunIndex,
-): ServerOptions['projects'] {
-  const { projects, serverSettings, users, auditLog, logger, clock, costs, usage } = parts;
-  const ids = new SequenceIdGenerator();
-  const caps = new GetCaps({ settings: serverSettings, usage, clock });
-  const template = templateSettings;
-  return {
-    createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
-    listProjects: new ListProjects({ projects }),
-    getProject: new GetProject({ projects }),
-    updateProjectSettings: new UpdateProjectSettings({ projects, clock }),
-    openWorkspace: new OpenWorkspace({ projects, users, auditLog, logger, clock }),
-    getProjectCost: new GetProjectCost({ projects, costs }),
-    getAccountTotals: new GetAccountTotals({ costs, caps }),
-    ...briefServices({ projects, runs, briefs, clock }),
-  };
 }
 
 interface AuthParts {
@@ -272,7 +228,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
   const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
   const [keys, stores] = [keyParts(), { projects, ...files, clock, masker, logDir, logger }];
-  const { providers, providerLedger, testProviders } = providerTestService({
+  const { providers, providerLedger, testProviders, factory } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
   const projectParts = { projects, serverSettings, users, auditLog, logger, clock, costs, usage };
@@ -286,8 +242,8 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ users, hasher, auditLog, logger, clock, dummyHash, usage, keys },
       ...{ sessions: endingSessions, serverSettings, testProviders },
     }),
-    projects: projectServices(projectParts, files.briefs, runs.runs),
-    runs: runServices(runs, { ...stores, keys: keys.keys }, route, outputs),
+    projects: projectServices(projectParts, { ...files, keys: keys.keys }, runs.runs),
+    runs: runServices(runs, { ...stores, keys: keys.keys, users, factory }, route, outputs),
     history: historyServices({ runs, projects, folders, snapshots, logger, costs }),
     onRoute: recorder.onRoute,
     ...overrides,

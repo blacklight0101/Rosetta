@@ -1,4 +1,5 @@
 import type { Catalogue } from './catalogue.js';
+import { migrationStrategyInfo } from './migration-strategy.js';
 import type { PlanningBrief } from './planning-brief.js';
 
 // RF-604, DEC-80, data-model.md section 3.20: the questions of the planning brief that took their
@@ -15,7 +16,7 @@ export interface DefaultedQuestion {
   readonly answer: string;
 }
 
-const layerNames: Readonly<Record<string, string>> = {
+export const layerNames: Readonly<Record<string, string>> = {
   'language-runtime': 'language and runtime',
   'backend-framework': 'back-end framework',
   'front-end': 'front end',
@@ -23,12 +24,6 @@ const layerNames: Readonly<Record<string, string>> = {
   'data-access': 'data access',
   testing: 'testing',
   hosting: 'hosting',
-};
-
-const migrationNames: Readonly<Record<PlanningBrief['migration'], string>> = {
-  'strangler-fig': 'Strangler Fig: replace the legacy system one part at a time',
-  'parallel-change': 'Parallel Change: run the old and the new side by side, then switch',
-  rewrite: 'a full rewrite',
 };
 
 const contextQuestions: Readonly<Record<string, string>> = {
@@ -83,7 +78,7 @@ function questionOf(id: string, brief: PlanningBrief, catalogue: Catalogue): Def
       return {
         id,
         question: 'How should the team move from the legacy system to the new one?',
-        answer: migrationNames[brief.migration],
+        answer: migrationStrategyInfo[brief.migration].answer,
       };
     case 'buildMethod':
       return {

@@ -1,0 +1,262 @@
+/* RF-605, RF-608, RF-609, RF-613, design-system.md section 14 (Plan setup, artboard 14): the
+   interview page. Tokens only, so both colour schemes follow the theme. */
+
+.rst-plan {
+  display: grid;
+  gap: var(--rst-sp-5);
+  max-width: 980px;
+}
+
+.rst-plan-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rst-plan-steps__pill {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--rst-radius-pill);
+  border: 1px solid var(--rst-rule);
+  background: var(--rst-surface);
+  color: var(--rst-ink-soft);
+  font: inherit;
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+  cursor: pointer;
+}
+
+.rst-plan-steps__pill--done {
+  color: var(--rst-ok-ink);
+  background: var(--rst-ok-bg);
+  border-color: transparent;
+}
+
+.rst-plan-steps__pill[aria-current='step'] {
+  color: var(--rst-brand-ink);
+  background: var(--rst-brand);
+  border-color: var(--rst-brand);
+}
+
+.rst-plan-card {
+  display: grid;
+  gap: var(--rst-sp-4);
+  padding: 20px;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-lg);
+  box-shadow: var(--rst-shadow-1);
+}
+
+.rst-plan-card__title,
+.rst-plan-step__title {
+  margin: 0;
+  font-size: var(--rst-fs-xl);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-plan-step {
+  display: grid;
+  gap: var(--rst-sp-4);
+}
+
+.rst-plan-why,
+.rst-plan-note {
+  margin: 0;
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-plan-default {
+  margin: 0;
+  font-size: var(--rst-fs-sm);
+  font-weight: var(--rst-fw-label);
+}
+
+.rst-plan-group {
+  display: grid;
+  gap: var(--rst-sp-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.rst-plan-group legend {
+  padding: 0;
+  margin-bottom: var(--rst-sp-2);
+  font-size: var(--rst-fs-md);
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-plan-options {
+  display: grid;
+  gap: var(--rst-sp-3);
+}
+
+.rst-plan-opt {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-surface);
+}
+
+.rst-plan-opt--selected {
+  border-color: var(--rst-brand);
+  background: var(--rst-brand-tint);
+  box-shadow: 0 0 0 1px var(--rst-brand);
+}
+
+.rst-plan-opt input {
+  margin-top: 3px;
+  accent-color: var(--rst-brand);
+}
+
+.rst-plan-opt__body {
+  display: grid;
+  gap: var(--rst-sp-2);
+  min-width: 0;
+}
+
+.rst-plan-opt__title {
+  font-weight: var(--rst-fw-head);
+  cursor: pointer;
+}
+
+.rst-plan-opt ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-plan-label,
+.rst-plan-evidence {
+  margin: 0;
+  font-size: var(--rst-fs-xs);
+  color: var(--rst-ink-muted);
+}
+
+.rst-plan-evidence .rst-chip {
+  margin-left: 6px;
+}
+
+.rst-plan-layers {
+  display: grid;
+  gap: 0;
+}
+
+.rst-plan-layers__head {
+  margin: 0 0 var(--rst-sp-2);
+  font-size: var(--rst-fs-xs);
+  color: var(--rst-ink-muted);
+}
+
+.rst-plan-layer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rst-rule);
+}
+
+.rst-plan-layer__option {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-plan-layer__option input {
+  margin-top: 3px;
+  accent-color: var(--rst-brand);
+}
+
+@media (min-width: 800px) {
+  .rst-plan-layer {
+    grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+}
+
+.rst-plan-actions {
+  display: grid;
+  gap: var(--rst-sp-3);
+}
+
+.rst-plan-actions__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rst-sp-3);
+  align-items: center;
+}
+
+.rst-plan-actions__spacer {
+  flex: 1;
+}
+
+.rst-plan-recorded {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 12px;
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-plan-recorded > div {
+  display: contents;
+}
+
+.rst-plan-recorded dt {
+  color: var(--rst-ink-muted);
+}
+
+.rst-plan-recorded dd {
+  margin: 0;
+}
+
+.rst-plan-default-tag {
+  color: var(--rst-ink-muted);
+}
+
+.rst-plan-estimate__lead {
+  margin: 0;
+  font-size: var(--rst-fs-md);
+}
+
+.rst-plan-caps {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-plan-caps caption {
+  text-align: left;
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+  padding-bottom: var(--rst-sp-2);
+}
+
+.rst-plan-caps th,
+.rst-plan-caps td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rst-rule);
+}
+
+.rst-plan-warning {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+  font-size: var(--rst-fs-sm);
+}

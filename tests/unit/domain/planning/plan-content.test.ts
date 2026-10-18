@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assemblePlan } from '../../../../src/domain/planning/plan-content.js';
-import type { PlanDraft } from '../../../../src/domain/planning/plan-draft.js';
+import type { DraftTask, PlanDraft } from '../../../../src/domain/planning/plan-draft.js';
+import { draftTask, invariant, scenario } from '../../../support/task-card-fixtures.js';
 
 // RF-601, RF-602, ADR-005: the planner's draft is checked against the supported cards before it
 // becomes the content of the package.
@@ -27,11 +28,9 @@ function draft(): PlanDraft {
       { legacy: 'Export', target: 'Export', notes: '', sources: ['FEAT-002'] },
     ],
     phases: [{ name: 'First', goal: 'Orders.', exitCriteria: ['Orders run.'] }],
-    tasks: [
-      { title: 'Orders', phase: 1, requirements: [1, 2, 3, 3, 9], acceptanceCriteria: ['Given.'] },
-      { title: 'Later', phase: 2, requirements: [1], acceptanceCriteria: ['Given.'] },
-    ],
+    tasks: [draftTask({ requirements: [1, 2, 3, 3, 9] }), draftTask({ title: 'Later', phase: 2 })],
     risks: [{ text: 'Two thresholds.', sources: ['BR-001', 'FEAT-002'] }],
+    technical: { integrations: [], security: [], targets: [], environments: [] },
   };
 }
 
@@ -55,7 +54,9 @@ describe('assemblePlan', () => {
         title: 'Orders',
         phase: 1,
         requirements: ['REQ-001', 'REQ-002'],
-        acceptanceCriteria: ['Given.'],
+        acceptanceCriteria: [scenario],
+        ...{ invariant, riskClass: 'none', adds: [], probes: [] },
+        ...{ files: [], identifiers: [], dependsOn: [] },
       },
     ]);
   });
@@ -88,5 +89,197 @@ describe('assemblePlan: the other parts', () => {
 
   it('RF-601 numbers the phases from 1', () => {
     expect(assemblePlan(draft(), supported).content.phases).toMatchObject([{ number: 1 }]);
+  });
+});
+
+describe('assemblePlan: specification-driven', () => {
+  const specified = { specificationDriven: true };
+
+  it('RF-607 leaves out a task that implements no requirement, and numbers the others again', () => {
+    const base = draft();
+    const withBare = {
+      ...base,
+      tasks: [
+        draftTask({ title: 'Bare', requirements: [] }),
+        draftTask({ title: 'Unknown', requirements: [9] }),
+        draftTask({ title: 'Orders' }),
+      ],
+    };
+
+    const { content, dropped } = assemblePlan(withBare, supported, specified);
+
+    expect(content.tasks).toMatchObject([
+      { id: 'T-001', title: 'Orders', requirements: ['REQ-001'] },
+    ]);
+    expect(dropped.tasks).toBe(2);
+  });
+
+  it('RF-607 without SDD the same task is written with no requirement', () => {
+    const base = draft();
+    const bare = draftTask({ title: 'Bare', requirements: [] });
+
+    const { content } = assemblePlan({ ...base, tasks: [bare] }, supported);
+
+    expect(content.tasks).toMatchObject([{ title: 'Bare', requirements: [] }]);
+  });
+
+  it('RF-608 a planner decision is proposed and lists no options', () => {
+    expect(assemblePlan(draft(), supported).content.decisions).toMatchObject([
+      { status: 'Proposed', options: [] },
+    ]);
+  });
+});
+
+describe('assemblePlan: task-card quality', () => {
+  function assembled(tasks: PlanDraft['tasks']): ReturnType<typeof assemblePlan> {
+    return assemblePlan({ ...draft(), tasks }, supported);
+  }
+
+  it('RF-630 a task keeps its invariant, risk class, guard kinds and probes', () => {
+    const task = draftTask({
+      ...{ riskClass: 'money', adds: ['limit', 'check'], probes: ['A basket of 50.01.'] },
+    });
+
+    expect(assembled([task]).content.tasks).toMatchObject([
+      { invariant, riskClass: 'money', adds: ['limit', 'check'], probes: ['A basket of 50.01.'] },
+    ]);
+  });
+
+  it('RF-630 a task with no invariant is not written and is counted as left out', () => {
+    const { content, dropped } = assembled([draftTask({ invariant: '' }), draftTask()]);
+
+    expect(content.tasks.map((task) => task.id)).toEqual(['T-001']);
+    expect(dropped.tasks).toBe(1);
+  });
+});
+
+describe('assemblePlan: task cards that are not cards', () => {
+  function assembled(tasks: PlanDraft['tasks']): ReturnType<typeof assemblePlan> {
+    return assemblePlan({ ...draft(), tasks }, supported);
+  }
+
+  it('RF-630 a task with a criterion that is not a scenario is not written', () => {
+    const { content, dropped } = assembled([
+      draftTask({ acceptanceCriteria: [scenario, 'The order is stored.'] }),
+    ]);
+
+    expect(content.tasks).toEqual([]);
+    expect(dropped.tasks).toBe(1);
+  });
+
+  it('RF-630 a task that adds a parser but lists no probes is not written', () => {
+    expect(assembled([draftTask({ adds: ['parser'], probes: [] })]).content.tasks).toEqual([]);
+  });
+
+  it('RF-635 a task with no risk class is not written, whatever else it states', () => {
+    const task = draftTask({
+      riskClass: undefined,
+      adds: ['check'],
+      probes: ['A role in capitals.'],
+    });
+    const { content, dropped } = assembled([task]);
+
+    expect(content.tasks).toEqual([]);
+    expect(dropped.tasks).toBe(1);
+  });
+
+  it('RF-635 a task at a risk with no probes is not written', () => {
+    expect(assembled([draftTask({ riskClass: 'data loss' })]).content.tasks).toEqual([]);
+  });
+
+  it('RF-630 the tasks that are written are numbered again without a gap', () => {
+    const { content } = assembled([
+      draftTask({ invariant: '' }),
+      draftTask({ title: 'Second' }),
+      draftTask({ title: 'Third' }),
+    ]);
+
+    expect(content.tasks.map((task) => [task.id, task.title])).toEqual([
+      ['T-001', 'Second'],
+      ['T-002', 'Third'],
+    ]);
+  });
+});
+
+describe('assemblePlan: parallel-safe cards', () => {
+  const orders = ['src/orders/order.ts', 'tests/orders/'];
+
+  function assembled(tasks: PlanDraft['tasks']): ReturnType<typeof assemblePlan>['content'] {
+    return assemblePlan({ ...draft(), tasks }, supported).content;
+  }
+
+  const needsCode = (purpose: string): DraftTask['needs'] => [{ kind: 'error code', purpose }];
+
+  it('RF-634 a card keeps the files it expects to change, trimmed and listed once', () => {
+    const tasks = assembled([
+      draftTask({ files: [' src/a.ts ', 'src/a.ts', 'SRC/A.ts', 'docs/'] }),
+    ]);
+
+    expect(tasks.tasks[0]?.files).toEqual(['src/a.ts', 'docs/']);
+  });
+
+  it('RF-634 two cards that need an error code get two different codes', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'Orders', needs: needsCode('order not found') }),
+      draftTask({ title: 'Payments', needs: needsCode('payment declined') }),
+    ]);
+
+    expect(tasks.map((task) => task.identifiers)).toEqual([
+      [{ kind: 'error code', purpose: 'order not found', value: 'ERR-001' }],
+      [{ kind: 'error code', purpose: 'payment declined', value: 'ERR-002' }],
+    ]);
+  });
+
+  it('RF-634 a card that is left out takes no identifier', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'Lost', phase: 9, needs: needsCode('lost') }),
+      draftTask({ title: 'Kept', needs: needsCode('kept') }),
+    ]);
+
+    expect(tasks.map((task) => task.identifiers.map((each) => each.value))).toEqual([['ERR-001']]);
+  });
+
+  it('RF-634 two cards that list the same file are ordered, the later one waiting', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'First', files: orders }),
+      draftTask({ title: 'Second', files: ['SRC/Orders/Order.ts'] }),
+      draftTask({ title: 'Other', files: ['src/other.ts'] }),
+    ]);
+
+    expect(tasks.map((task) => task.dependsOn)).toEqual([[], ['T-001'], []]);
+  });
+});
+
+describe('assemblePlan: the order of parallel-safe cards', () => {
+  function assembled(tasks: PlanDraft['tasks']): ReturnType<typeof assemblePlan>['content'] {
+    return assemblePlan({ ...draft(), tasks }, supported).content;
+  }
+
+  it('RF-634 a declared dependency names the card by its new id, even after a card was left out', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'Lost', phase: 9 }),
+      draftTask({ title: 'First' }),
+      draftTask({ title: 'Second', dependsOn: [2, 1, 3, 9] }),
+    ]);
+
+    expect(tasks.map((task) => task.dependsOn)).toEqual([[], ['T-001']]);
+  });
+
+  it('RF-634 a card in a later phase is ordered after an overlapping card of an earlier phase', () => {
+    const base = draft();
+    const phases = [...base.phases, { name: 'Second', goal: 'More.', exitCriteria: ['Done.'] }];
+    const { content } = assemblePlan(
+      {
+        ...base,
+        phases,
+        tasks: [
+          draftTask({ title: 'Late', phase: 2, files: ['a.ts'] }),
+          draftTask({ title: 'Early', phase: 1, files: ['a.ts'] }),
+        ],
+      },
+      supported,
+    );
+
+    expect(content.tasks.map((task) => task.dependsOn)).toEqual([['T-002'], []]);
   });
 });

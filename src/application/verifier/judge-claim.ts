@@ -79,9 +79,13 @@ function evidenceMessage(
 ): string {
   const tag = (): string => parts.ids.dataBlockTag();
   const claimBlock = renderDataBlock({ source: 'claim', excerpts: [], text: claim.text }, tag());
-  const lineBlocks = excerpts.map(({ path, startLine, endLine, lines }) =>
+  const lineBlocks = excerpts.map(({ path, startLine, endLine, lines, skipped }) =>
     renderDataBlock(
-      { source: 'cited_lines', excerpts: [{ path, startLine, endLine }], text: lines.join('\n') },
+      {
+        source: 'cited_lines',
+        excerpts: skipped ? [] : [{ path, startLine, endLine }],
+        text: lines.join('\n'),
+      },
       tag(),
     ),
   );

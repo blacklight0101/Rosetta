@@ -116,3 +116,35 @@ export const planQuestions = [
   { cardId: 'OQ-001', question: 'Which roles may cancel a paid order?' },
   { cardId: 'OQ-002', question: 'Does a cancelled order refund the customer on its own?' },
 ] as const;
+
+/** A card with one supported claim that says what the test needs it to say (an attack on the request). */
+export function cardSaying(id: string, text: string): Card {
+  return judgedCard(
+    { ...base(id, 'BR', 'Attack on the request'), claims: [claim(text, 'src/Orders/Evil.cs')] },
+    ['Supported'],
+  );
+}
+
+/** RF-623: a second `ENT` card with four supported claims, for the data model tests. */
+export function customerCard(): Card {
+  const claims = [
+    claim('A customer has an email.', 'src/Orders/Customer.cs'),
+    claim('A customer has a loyalty tier.', 'src/Orders/Customer.cs'),
+    claim('A customer has a fax number.', 'src/Orders/Customer.cs'),
+    claim('A customer has a nickname.', 'src/Orders/Customer.cs'),
+  ];
+  return judgedCard({ ...base('ENT-002', 'ENT', 'Customer'), claims }, [
+    'Supported',
+    'Supported',
+    'Supported',
+    'Supported',
+  ]);
+}
+
+/** RF-623, RNF-003: an `ENT` card with one supported claim that says what the test needs it to say. */
+export function entityCardSaying(id: string, text: string): Card {
+  return judgedCard(
+    { ...base(id, 'ENT', 'Customer'), claims: [claim(text, 'src/Orders/Customer.cs')] },
+    ['Supported'],
+  );
+}
