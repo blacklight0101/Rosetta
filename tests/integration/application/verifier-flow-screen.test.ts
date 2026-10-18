@@ -84,6 +84,8 @@ describe('verifier checks of a SCRN card', () => {
       ['SCRN-001.c1', 'Supported'],
       ['SCRN-001.c2', 'Rejected'],
       ['SCRN-001.c3', 'Rejected'],
+      ['SCRN-001.c4', 'Supported'],
+      ['SCRN-001.c5', 'Supported'],
     ]);
     expect(screen?.claims[1]?.verdict?.reason).toContain('no length is checked');
   });

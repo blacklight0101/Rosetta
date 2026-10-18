@@ -1,6 +1,12 @@
 import type { CardType, ClaimStatus } from '../cards/card-vocabulary.js';
 import type { Citation } from '../cards/citation.js';
-import { actionClaimText } from '../cards/screen-claims.js';
+import {
+  actionClaimText,
+  fieldClaimText,
+  leadsToClaimText,
+  roleClaimText,
+  routeClaimText,
+} from '../cards/screen-claims.js';
 
 // RF-604, ADR-005: what `plan` takes from the cards of an understand run. Only claims the verifier
 // found `Supported` reach the planner and the package; every other claim (`Rejected`,
@@ -71,18 +77,47 @@ function isSupported(claim: SourceClaim): boolean {
   return claim.status === 'Supported';
 }
 
+type Judgement = 'supported' | 'unsupported' | 'unstated';
+
+/** What the card's claims say about a text: supported, judged otherwise, or never stated. */
+function judgementOf(claims: readonly SourceClaim[]): (text: string) => Judgement {
+  const byText = new Map<string, Judgement>();
+  for (const claim of claims) {
+    if (byText.get(claim.text) === 'supported') continue;
+    byText.set(claim.text, isSupported(claim) ? 'supported' : 'unsupported');
+  }
+  return (text) => byText.get(text) ?? 'unstated';
+}
+
 /**
- * The screen of a card with only the actions whose claim is `Supported` (RF-626, ADR-005): an
- * action is a claim of its card, stated in the text `actionClaimText` gives.
+ * The screen of a card with only what the verifier supported (RF-626, ADR-005): an action, a
+ * field, a role, the route and a link are claims of the card, stated in the texts of
+ * `screen-claims.ts`. An action or field with no supported claim is dropped; a field no claim
+ * states at all (a card written before they were claims) is kept apart as unchecked; a role, a
+ * link or the route is dropped only when its claim was judged and not supported, so an old card
+ * keeps them as before.
  */
-function supportedScreen(
-  card: SourceCard,
-  supported: readonly SourceClaim[],
-): { screen?: SourceScreen } {
-  if (card.screen === undefined) return {};
-  const stated = new Set(supported.map((claim) => claim.text));
-  const actions = card.screen.actions.filter((action) => stated.has(actionClaimText(action)));
-  return { screen: { ...card.screen, actions } };
+function supportedScreen(card: SourceCard, all: readonly SourceClaim[]): { screen?: SourceScreen } {
+  const { screen } = card;
+  if (screen === undefined) return {};
+  const judge = judgementOf(all);
+  const kept = (text: string): boolean => judge(text) !== 'unsupported';
+  const fields = screen.fields.map((field) => ({ field, judged: judge(fieldClaimText(field)) }));
+  const actions = screen.actions.filter((action) => judge(actionClaimText(action)) === 'supported');
+  return {
+    screen: {
+      ...screen,
+      route: kept(routeClaimText(screen.route)) ? screen.route : '',
+      roles: screen.roles.filter((role) => kept(roleClaimText(role))),
+      leadsTo: screen.leadsTo.filter((target) => kept(leadsToClaimText(target))),
+      fields: fields.filter(({ judged }) => judged === 'supported').map(({ field }) => field),
+      uncheckedFields: fields
+        .filter(({ judged }) => judged === 'unstated')
+        .map(({ field }) => field),
+      unsupportedFields: fields.filter(({ judged }) => judged === 'unsupported').length,
+      actions,
+    },
+  };
 }
 
 /** The cards with their `Supported` claims only, in card order; a card without one is left out. */
@@ -90,7 +125,7 @@ function supportedScreen(
 export function supportedCards(cards: readonly SourceCard[]): SourceCard[] {
   return cards.flatMap((card) => {
     const claims = card.claims.filter(isSupported);
-    return claims.length === 0 ? [] : [{ ...card, claims, ...supportedScreen(card, claims) }];
+    return claims.length === 0 ? [] : [{ ...card, claims, ...supportedScreen(card, card.claims) }];
   });
 }
 

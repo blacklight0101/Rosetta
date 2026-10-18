@@ -13,7 +13,7 @@ const read = (name: string): Promise<string> =>
 // Markdown wraps lines anywhere, so the wording is checked with line ends as spaces.
 const flat = (text: string): string => text.replace(/\s+/gu, ' ');
 const flowsFile = await read('flows.v1.md');
-const screensFile = await read('screens.v1.md');
+const screensFile = await read('screens.v2.md');
 const flowsPrompt = flat(flowsFile);
 const screensPrompt = flat(screensFile);
 

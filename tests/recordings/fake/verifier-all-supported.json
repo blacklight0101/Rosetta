@@ -305,6 +305,462 @@
           }
         }
       ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-17",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-18",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-19",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-20",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-21",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-22",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-23",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-24",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-25",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-26",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-27",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-28",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-29",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-30",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-31",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-32",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-33",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-34",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-35",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-36",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-37",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-38",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-39",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines show what the claim says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-40",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
     }
   ]
 }
