@@ -62,7 +62,7 @@ const deepenSchema = z.looseObject({
   after: summarySchema.nullable(),
 });
 
-export const understandingSchema = z.looseObject({
+const understandingSchema = z.looseObject({
   measures: measuresSchema.nullable(),
   deepen: deepenSchema.nullable(),
 });
@@ -70,7 +70,6 @@ export const understandingSchema = z.looseObject({
 export type MeasureFigures = z.output<typeof measuresSchema>;
 export type DeepenRecordData = z.output<typeof deepenSchema>;
 export type Understanding = z.output<typeof understandingSchema>;
-export type StopReason = NonNullable<DeepenRecordData['stopReason']>;
 
 const point = z.object({
   inputTokens: z.number(),
@@ -79,7 +78,7 @@ const point = z.object({
 });
 const range = { low: point, likely: point, high: point };
 
-export const deepenEstimateSchema = z.looseObject({
+const deepenEstimateSchema = z.looseObject({
   currency: z.string(),
   maxRounds: count,
   coveragePass: z.boolean(),

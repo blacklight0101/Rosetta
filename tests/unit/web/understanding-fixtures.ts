@@ -90,7 +90,7 @@ function role(name: string, kind: string, provider: string) {
   };
 }
 
-export const localRoles = ['reader', 'verifier', 'summariser'].map((name) =>
+const localRoles = ['reader', 'verifier', 'summariser'].map((name) =>
   role(name, 'ollama', 'ollama'),
 );
 export const cloudRoles = ['reader', 'verifier', 'summariser'].map((name) =>

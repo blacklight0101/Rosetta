@@ -34,7 +34,7 @@ export function countText(count: number): string {
 }
 
 /** A share in whole percent, cut down: 0.7996 is 79%, and a share above zero is never 0%. */
-export function percentText(share: number): string {
+function percentText(share: number): string {
   const whole = Math.floor(share * 100);
   return whole === 0 && share > 0 ? 'less than 1%' : `${String(whole)}%`;
 }
@@ -43,7 +43,7 @@ const plural = (count: number, word: string): string =>
   `${countText(count)} ${word}${count === 1 ? '' : 's'}`;
 
 /** RF-231, Q-K. */
-export function isWellCovered(measures: MeasureSet): boolean {
+function isWellCovered(measures: MeasureSet): boolean {
   const share = measures.firstPartyCoverage;
   return measures.wellCovered && share !== null && share >= WELL_COVERED_SHARE
     ? measures.notJudged === 0

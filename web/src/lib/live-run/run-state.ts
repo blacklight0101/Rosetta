@@ -90,7 +90,7 @@ interface RoleTokens {
 }
 
 /** RF-209: the cards a Deepen starts from, as counts. */
-export interface DeepenSeeded {
+interface DeepenSeeded {
   readonly cards: number;
   readonly claims: number;
   readonly supported: number;
