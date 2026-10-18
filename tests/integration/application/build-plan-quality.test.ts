@@ -198,7 +198,7 @@ describe('RF-635 the risk class next to the difficulty', () => {
     const files = await packageOf(aiAssisted);
 
     const classes = cardsOf(files).map(
-      (card) => /\nDifficulty: .+\nRisk class: (.+)\n/u.exec(card)?.[1],
+      (card) => /\nDifficulty: .+\n\nRisk class: (.+)\n/u.exec(card)?.[1],
     );
     expect(classes).toEqual(['money', 'security boundary']);
   });
@@ -238,7 +238,7 @@ describe('RF-635 the risk class and the model tier', () => {
     const files = await packageOf(aiAssisted, plannerAnswering([plainTask]));
 
     expect(cardsOf(files)[0]).toContain(
-      '\nDifficulty: 4 (smallest model tier)\nRisk class: none\n',
+      '\nDifficulty: 4 (smallest model tier)\n\nRisk class: none\n',
     );
   });
 

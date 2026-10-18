@@ -20,8 +20,28 @@ export interface CardQualityFields {
   readonly acceptanceCriteria: readonly string[];
 }
 
+/**
+ * A Done-when item that reads Given ..., when ..., then ... in that order, each part with at least
+ * one word, in any letter case and layout. Linear in the text, so a hostile one costs no more.
+ */
+function isScenario(text: string): boolean {
+  const words: string[] = text.toLowerCase().match(/[a-z']+/gu) ?? [];
+  const when = words.indexOf('when', 1);
+  if (words[0] !== 'given' || when < 2) return false;
+  const then = words.indexOf('then', when + 1);
+  return then > when + 1 && then < words.length - 1;
+}
+
 /** Why a draft is not a card an agent can build without guessing; undefined when it is one. */
-// RF-630
+// RF-630, RF-635
 export function cardProblem(card: CardQualityFields): string | undefined {
-  return card.acceptanceCriteria.length < 0 ? 'never' : undefined;
+  if (card.invariant.trim() === '') return 'The card states no invariant.';
+  if (card.acceptanceCriteria.length === 0 || !card.acceptanceCriteria.every(isScenario)) {
+    return 'A Done-when item is not a Given/When/Then scenario.';
+  }
+  const atRisk = card.adds.length > 0 || card.riskClass !== 'none';
+  if (atRisk && !card.probes.some((probe) => probe.trim() !== '')) {
+    return 'The card adds a guard or sits at a risk and lists no review probes.';
+  }
+  return undefined;
 }

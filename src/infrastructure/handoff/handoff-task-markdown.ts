@@ -8,10 +8,12 @@ import {
 } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { bullets, decisionLink, handoffFiles, idLink } from './handoff-links.js';
+import { invariantLines, probeLines, riskLines } from './handoff-quality-markdown.js';
 
-// RF-601, RF-607, RF-609, RF-611, RF-612, DEC-75: the task cards. Each is in one phase, names the
-// requirements it builds and its acceptance criteria, and carries its size. What the chosen
-// principles add: given TDD the tests to write first, given SDD the specification check, given a
+// RF-601, RF-607, RF-609, RF-611, RF-612, RF-630, RF-635, DEC-75: the task cards. Each is in one
+// phase, names the requirements it builds, the invariant it makes true and its acceptance criteria,
+// and carries its size, its risk class and, where it adds a guard or sits at a risk, its probes.
+// What the chosen principles add: given TDD the tests to write first, given SDD the specification check, given a
 // design principle (SOLID, KISS, ...) a review checklist that names the principle and what a
 // reviewer looks for. A principle that was not chosen adds nothing. Given a chosen stack the card
 // names the technologies and their decision records, and given an AI-assisted build its rating.
@@ -84,14 +86,17 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     `Phase: ${phaseLink(handoff.content.phases[task.phase - 1], task.phase, esc)}`,
     '',
     ...sizeLines(task, handoff),
+    ...riskLines(task),
     `Requirements: ${requirements.length === 0 ? 'none' : requirements.join(', ')}`,
     '',
+    ...invariantLines(task, esc),
     ...specificationLines(handoff, esc),
     ...technologyLines(handoff, esc),
     'Acceptance criteria:',
     '',
     ...bullets(task.acceptanceCriteria, esc, 'None stated.'),
     '',
+    ...probeLines(task, esc),
     ...testLines(task, handoff, esc),
     ...checklistLines(handoff, esc),
   ];

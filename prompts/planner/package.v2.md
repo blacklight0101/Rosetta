@@ -42,9 +42,24 @@ Plan the target system from that input and nothing else:
 5. `entities`: how each legacy entity maps to a target entity, with notes on what changes, and the ids of the cards
    that show the legacy entity in `sources`.
 6. `phases`: the roadmap, following the chosen migration strategy, each phase with its goal and its exit criteria.
-7. `tasks`: task cards a developer can pick up, each in one phase (`phase` is the phase's position in `phases`,
-   counted from 1), naming the requirements it builds (`requirements` holds their positions in `requirements`,
-   counted from 1) and its acceptance criteria written as Given, When, Then.
+7. `tasks`: task cards a developer or an agent can build without guessing, each in one phase (`phase` is the
+   phase's position in `phases`, counted from 1), naming the requirements it builds (`requirements` holds their
+   positions in `requirements`, counted from 1). Every task states:
+   - `invariant`: one sentence on what must hold when the work is done, for example "no text from a user reaches
+     the page as HTML, in any spelling", not only the change to make.
+   - `acceptanceCriteria`: the Done-when items, each written as Given, When, Then in that order, with concrete
+     inputs (a basket of 60, a total of 50.01), never "valid input" or "an error".
+   - `riskClass`: exactly one of `security boundary` (the card sits where untrusted input, identity or
+     permissions are decided), `data loss` (a mistake deletes, overwrites or corrupts stored data), `money` (a
+     mistake charges, pays or prices wrongly) or `none`. Take the first three whenever one applies, however small
+     the card is.
+   - `adds`: the kinds of guard the task adds, from `check`, `filter`, `limit` and `parser`; an empty list
+     when it adds none.
+   - `probes`: the review probes, concrete hostile or edge inputs that a reviewer and the builder will try: other
+     spellings and letter cases, encodings, neighbouring code paths that do the same thing, values one step past a
+     limit. Required when `adds` is not empty or `riskClass` is not `none`; otherwise an empty list.
+   A task that states no invariant, a Done-when item that is not Given, When, Then, no risk class, or no probes
+   where they are required is not written by Rosetta, so state them all.
 8. `risks`: what could go wrong in the move, each with the ids of the cards that show it in `sources`.
 
 Rules:
@@ -93,7 +108,27 @@ Answer with one JSON object and nothing else:
       "title": "Order placement",
       "phase": 1,
       "requirements": [1],
-      "acceptanceCriteria": ["Given a basket with one product, when the customer confirms, then an order is stored."]
+      "acceptanceCriteria": [
+        "Given a basket with one product priced 20, when the customer confirms, then an order of 20 is stored.",
+        "Given a basket of 60, when the customer confirms, then the order is stored with free shipping."
+      ],
+      "invariant": "An order ships free exactly when its total is over 50.",
+      "riskClass": "money",
+      "adds": ["limit"],
+      "probes": [
+        "A total of exactly 50, of 49.99 and of 50.01.",
+        "The same total written as 50.00, 50,00 and 5e1."
+      ]
+    },
+    {
+      "title": "Order history page",
+      "phase": 1,
+      "requirements": [1],
+      "acceptanceCriteria": ["Given a customer with three orders, when the page opens, then three orders are listed."],
+      "invariant": "A customer sees every order of their own and no other.",
+      "riskClass": "none",
+      "adds": [],
+      "probes": []
     }
   ],
   "risks": [{ "text": "The shipping threshold is read in two places and may differ.", "sources": ["BR-001"] }]

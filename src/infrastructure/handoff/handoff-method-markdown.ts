@@ -3,6 +3,7 @@ import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
+import { qualityRuleLines } from './handoff-quality-markdown.js';
 
 // RF-607, RF-608, RF-609, RF-612, DEC-75, DEC-76: the working rules of the package. The
 // conventions document turns each chosen principle into a rule with its reason and its check, and
@@ -112,6 +113,7 @@ export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '',
     ...bandLines(),
     '',
+    ...qualityRuleLines(),
     '## Human review',
     '',
     'A person reviews every pull request before it is merged. The reviewer checks the card, the acceptance criteria and the review checklist on the card, and no agent merges its own work.',
