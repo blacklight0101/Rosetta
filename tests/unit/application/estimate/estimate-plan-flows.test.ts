@@ -63,7 +63,8 @@ describe('EstimatePlan: the target flows call', () => {
   it('RF-625 sizes the components the plan will name at the limits of its answer', async () => {
     const { assumptions } = await estimateOf();
 
-    const fifty = 50 * (200 + 300);
-    expect(assumptions.flowsPromptTokens).toBeGreaterThan(Math.ceil(fifty / 4));
+    // A control character is six characters once JSON-escaped, the worst a model text can cost.
+    const escaped = 50 * 6 * (200 + 300);
+    expect(assumptions.flowsPromptTokens).toBeGreaterThan(Math.ceil(escaped / 4));
   });
 });
