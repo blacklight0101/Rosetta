@@ -144,6 +144,8 @@ describe('parsePlanAnswer: the technical part', () => {
         parsePlanAnswer(JSON.stringify({ requirements: [requirement], technical: bad })),
       ).toBeUndefined();
     }
+  });
+});
 
 describe('parsePlanAnswer: parallel-safe cards', () => {
   const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
