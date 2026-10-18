@@ -27,6 +27,8 @@ export interface EstimatePlanDependencies
   readonly catalogue: () => Promise<Catalogue>;
   /** The planner's versioned prompt file (RNF-004). */
   readonly prompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the product requirements document (RF-621). */
+  readonly prdPrompt: () => Promise<PromptFile>;
 }
 
 export interface EstimatePlanRequest {

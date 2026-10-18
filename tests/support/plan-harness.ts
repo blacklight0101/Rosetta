@@ -43,8 +43,7 @@ import { stores, type Stores } from './understand-run-services.js';
 
 // RF-601..RF-604, ADR-008: a plan run over real files in a temporary data folder, with the real
 // provider factory and guards in front of a fake planner that replays a recording. The understand
-// run it plans from is seeded: its row, its manifest, its card files, the project's answers and
-// the planning brief, written by the real adapters.
+// run it plans from is seeded (row, manifest, cards, answers and brief) by the real adapters.
 
 const account = sampleAccount({ userName: 'plan.user' });
 const actor = { userId: account.id, role: 'user' } as const;
@@ -227,8 +226,8 @@ async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
     usage: new MemoryAccountUsage(),
     serverSettings: new MemoryServerSettings({}),
     keys: new MemoryProviderKeyRepository(),
-    catalogue: () => Promise.resolve(shippedCatalogue),
-    prompt: () => loadPlannerPrompt('prompts'),
+    ...{ catalogue: () => Promise.resolve(shippedCatalogue) },
+    ...{ prompt: () => loadPlannerPrompt('prompts'), prdPrompt: () => loadPrdPrompt('prompts') },
   });
   const outcome = await estimate.execute({ actor, projectId: project.id });
   if (!outcome.ok) throw new Error(`The plan estimate was refused: ${outcome.error}`);
