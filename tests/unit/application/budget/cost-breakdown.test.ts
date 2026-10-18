@@ -61,13 +61,13 @@ describe('totalsOf', () => {
 });
 
 describe('breakdownOf', () => {
-  it('RF-428 breaks the project down by run in the order the runs started, the tests last', () => {
+  it('RF-428 breaks the project down by run in the order the runs started, the calls of no run last', () => {
     const { byRun } = breakdownOf(ledger);
 
     expect(byRun.map((line) => line.runId)).toEqual([costRunA, costRunB, null]);
     expect(byRun[0]?.totals).toMatchObject({ calls: 3, inputTokens: 4000 });
     expect(byRun[0]?.totals.cost).toEqual([{ currency: 'USD', costMicros: 2_000n }]);
-    expect(byRun[2]).toMatchObject({ key: 'provider-tests', runId: null });
+    expect(byRun[2]).toMatchObject({ key: 'plan-options', runId: null });
     expect(byRun[2]?.totals.cost).toEqual([{ currency: 'USD', costMicros: 5n }]);
   });
 

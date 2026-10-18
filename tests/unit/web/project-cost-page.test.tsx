@@ -53,6 +53,22 @@ describe('project cost page', () => {
     expect(within(await table('By run')).queryByText('Provider tests')).toBeNull();
   });
 
+  it('RF-608 lists the calls of Plan setup, which belong to the project and to no run, as plan setup options', async () => {
+    const options = {
+      key: 'plan-options',
+      runId: null,
+      firstAt: '2026-10-12T11:00:00.000Z',
+      local: false,
+      totals: projectCost.byRun[0]?.totals ?? projectCost.totals,
+    };
+    renderCost(json(200, { ...projectCost, byRun: [...projectCost.byRun, options] }));
+
+    const runs = await table('By run');
+
+    expect(within(runs).getByText('Plan setup options')).not.toBeNull();
+    expect(within(runs).queryByText('Provider tests')).toBeNull();
+  });
+
   it('RF-428 shows no provider tests table when the user has none', async () => {
     renderCost(json(200, { ...projectCost, providerTests: null }));
 
