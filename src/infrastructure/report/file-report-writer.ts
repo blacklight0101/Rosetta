@@ -6,11 +6,12 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
-import { loadReportAssets } from './report-assets.js';
+import { loadDiagramAssets, loadReportAssets } from './report-assets.js';
 import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
 import { renderCostHtml } from './site/cost-page.js';
+import { renderDiagramsPage } from './site/diagrams-page.js';
 import { renderEvidencePages } from './site/evidence-pages.js';
 import { renderQuestionsHtml } from './site/questions-page.js';
 
@@ -38,6 +39,23 @@ function maskedPages(model: ReportModel, masker: TextMasker): Record<string, str
   );
 }
 
+/**
+ * RF-508: the diagrams page, the Mermaid build, its loader and its licence, only for a run that
+ * has a diagram. The page holds repository text, so it is masked; the three files are the
+ * templates, written as they are.
+ */
+async function diagramFiles(
+  model: ReportModel,
+  masker: TextMasker,
+  assetsFolder: string,
+): Promise<Record<string, string>> {
+  if ((model.diagrams ?? []).length === 0) return {};
+  return {
+    ...(await loadDiagramAssets(assetsFolder)),
+    'diagrams.html': masker.mask(renderDiagramsPage(model)).text,
+  };
+}
+
 export class FileReportWriter implements ReportWriter {
   private readonly options: FileReportWriterOptions;
 
@@ -61,6 +79,7 @@ export class FileReportWriter implements ReportWriter {
       'report.html': masker.mask(renderReportHtml(model)).text,
       'report.md': renderReportMarkdown(model, masker),
       ...maskedPages(model, masker),
+      ...(await diagramFiles(model, masker, this.options.assetsFolder)),
     };
     const folder = `${runPath(scope.projectId, scope.runKey)}/${FOLDER}`;
     const written: string[] = [];

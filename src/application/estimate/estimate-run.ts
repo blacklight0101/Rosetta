@@ -59,7 +59,7 @@ export type EstimateRunProblem =
   typeof ERROR_CODES.notFound | typeof ERROR_CODES.codeMapMissing | typeof ERROR_CODES.areaUnknown;
 
 /** The tokens of a role that is a share of the readers' (the verifier, ADR-005; the summariser, RF-250). */
-function shareTokens(
+export function shareTokens(
   reader: ByScenario<TokenFigures>,
   percentOf: ByScenario<number>,
 ): ByScenario<TokenFigures> {
@@ -103,7 +103,7 @@ function summariserFigures(
   return { tokens: { low: total('low'), likely: total('likely'), high: total('high') }, batches };
 }
 
-function sumPoints(points: readonly ByScenario<EstimatePoint>[]): ByScenario<EstimatePoint> {
+export function sumPoints(points: readonly ByScenario<EstimatePoint>[]): ByScenario<EstimatePoint> {
   const total = (scenario: Scenario): EstimatePoint => ({
     inputTokens: points.reduce((sum, each) => sum + each[scenario].inputTokens, 0),
     outputTokens: points.reduce((sum, each) => sum + each[scenario].outputTokens, 0),

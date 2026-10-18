@@ -21,6 +21,7 @@ import { registerEventRoutes, type EventRouteServices } from './run-event-routes
 import { registerRunFileRoutes, type RunFileServices } from './run-file-routes.js';
 import { signedInOf } from './request-actor.js';
 import { registerEstimateRoutes } from './estimate-routes.js';
+import { registerDeepenRoutes, type DeepenServices } from './deepen-routes.js';
 import { runView } from './run-view.js';
 
 // RF-1006, RF-1108, RF-1105: the run routes.
@@ -42,6 +43,7 @@ import { runView } from './run-view.js';
 // - POST /api/runs/:runId/resume queues an understand run that stopped at a cap, failed or was
 //   interrupted again, as the same run (202 with the run and its position; RF-006); a run that cannot
 //   be resumed answers 409 (RST-2307), another user's run 404, a cloud run without consent 400.
+// - POST /api/runs/:runId/deepen and /deepen/estimate: the Deepen of a completed run (deepen-routes.ts, RF-209).
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 // - GET /api/runs/:runId/overview: the run's overview (overview-routes.ts, RF-264).
 // - POST /api/projects/:id/plan-options: the options of Plan setup (plan-options-routes.ts, RF-608).
@@ -53,7 +55,8 @@ export interface RunServices
     OverviewServices,
     PlanOptionsServices,
     ObservabilityServices,
-    EventRouteServices {
+    EventRouteServices,
+    DeepenServices {
   readonly startRun: StartRun;
   readonly estimateRun: EstimateRun;
   readonly getRun: GetRun;
@@ -194,6 +197,7 @@ export function registerRunRoutes(
   registerRunFileRoutes(server, services);
   registerStop(server, services);
   registerResume(server, services);
+  registerDeepenRoutes(server, services);
   registerStart(server, services);
   registerEstimateRoutes(server, services);
   registerAnswerRoutes(server, services);

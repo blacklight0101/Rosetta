@@ -652,6 +652,69 @@ table.code tr.cited {
   }
 }
 
+/* P3-14: the diagrams page (RF-508). A drawing sits on a white panel in both themes, because Mermaid
+   draws with fixed light colours; the source is the text of the same diagram. */
+.diagram {
+  min-width: 0;
+  margin: 24px 0;
+  padding: 12px 16px;
+  background: var(--rst-surface);
+  border: 1px solid var(--rst-rule);
+  border-radius: 6px;
+}
+
+.diagram figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.diagram-title {
+  margin: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.diagram-drawing {
+  overflow-x: auto;
+  padding: 8px;
+  background: #ffffff;
+  border-radius: 4px;
+}
+
+.diagram-drawing:empty {
+  display: none;
+}
+
+.diagram-drawing svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.diagram-note {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: var(--rst-surface-2);
+  border-left: 4px solid var(--rst-warn-ink);
+}
+
+.diagram-source summary {
+  cursor: pointer;
+}
+
+.diagram-source pre {
+  margin: 8px 0 0;
+  padding: 12px;
+  overflow: auto;
+  background: var(--rst-surface-2);
+  font-family: var(--rst-mono);
+  font-size: 13px;
+}
+
 @media print {
   .controls,
   .filters,

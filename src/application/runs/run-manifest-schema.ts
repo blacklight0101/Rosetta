@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import { RUN_END_STATES, RUN_STAGES } from '../../domain/runs/run-states.js';
 import { planningBriefSchema } from '../planning/planning-brief-schema.js';
+import { deepenRecordSchema } from './deepen-record-schema.js';
 
 // Data-model.md section 3.6, DEC-43: `manifest.json` parsed at the boundary. A field added later
 // without a version bump is ignored here; a newer `schemaVersion` is refused.
@@ -63,6 +64,8 @@ const manifestSchema = z.object({
   brief: planningBriefSchema.nullable().default(null),
   // Written from RF-614 on; a manifest stored before that reads as no source run.
   sourceRunId: nullableText.default(null),
+  // RF-209: written by a Deepen run only.
+  deepen: deepenRecordSchema.optional(),
   caps: z.object({
     run: z.object({ maxCostMicros: count, maxTokens: count }),
     roles: z.record(z.string(), roleCapsSchema),

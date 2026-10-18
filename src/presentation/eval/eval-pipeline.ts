@@ -34,6 +34,7 @@ import { NodeOutputWriter } from '../../infrastructure/files/node-output-writer.
 import type { SecretMasker } from '../../infrastructure/guards/secret-masker.js';
 import {
   loadAnswersPrompt,
+  loadRereadPrompt,
   loadMergePrompt,
   loadOverviewPrompt,
   loadReaderPrompts,
@@ -154,6 +155,7 @@ function understandOf(parts: PipelineParts, s: Stores): RunUnderstand {
     verifierPrompts: () => loadVerifierPrompts(folder),
     textToolProtocol: () => loadTextToolProtocol(folder),
     answersPrompt: () => loadAnswersPrompt(folder),
+    rereadPrompt: () => loadRereadPrompt(folder),
     priorCards: new FilePriorCards(writer),
     ids: parts.ids,
   });

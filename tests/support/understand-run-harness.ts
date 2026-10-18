@@ -1,18 +1,13 @@
 import { join } from 'node:path';
-import { MemoryBriefStore } from './memory-brief-store.js';
-import { expect, vi } from 'vitest';
+import { expect } from 'vitest';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { Project } from '../../src/application/projects/project.js';
 import type { RunQueue } from '../../src/application/runs/run-queue.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
-import { StartRun } from '../../src/application/use-cases/start-run.js';
-import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
-import { SubmitRun } from '../../src/application/use-cases/submit-run.js';
 import type { AnswerEntry } from '../../src/application/ports/answers-file.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FilePriorCards } from '../../src/infrastructure/cards/prior-cards.js';
 import type { Result } from '../../src/domain/errors/result.js';
-import type { Actor } from '../../src/domain/accounts/actor.js';
 import type { RunEvent } from '../../src/domain/runs/run-event.js';
 import type { RunManifest } from '../../src/domain/runs/run-manifest.js';
 import type { Run } from '../../src/domain/runs/run.js';
@@ -20,15 +15,19 @@ import type { MemoryLogger } from './memory-logger.js';
 import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
 import { projectPath, runPath } from '../../src/infrastructure/files/workspace-paths.js';
 import type { PriceTable } from '../../src/domain/budget/price-table.js';
-import { UNDERSTAND_RUN_WAIT } from './understand-timeout.js';
 import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
 import { sampleProject } from './project-fixtures.js';
-import { SequenceIdGenerator } from './sequence-id-generator.js';
-import { queueOf, scanResultsOf, stores, type Stores } from './understand-run-services.js';
-import { resumeProblemCheck } from '../../src/application/understand/resume-problem.js';
-import { FileTaskResults } from '../../src/infrastructure/cards/file-task-results.js';
+import { queueOf, stores, type Stores } from './understand-run-services.js';
+import {
+  deepenerOf,
+  resumerOf,
+  starterOf,
+  submitOf,
+  type DeepenStart,
+  type UnderstandStart,
+} from './understand-run-starters.js';
 import {
   understandProviders,
   type BeforeCall,
@@ -42,7 +41,6 @@ import {
 // provider factory and guards in front of a fake provider that replays a recording.
 
 const account = sampleAccount({ userName: 'understand.user' });
-const understandActor: Actor = { userId: account.id, role: 'user' };
 
 /**
  * The fake reader, one task at a time (the fake replays its calls in order), and a fake verifier
@@ -97,12 +95,6 @@ export interface UnderstandHarnessOptions {
   ) => Promise<void>;
 }
 
-interface UnderstandStart {
-  readonly areas?: readonly string[];
-  readonly cloudConsent?: boolean;
-  readonly withAnswers?: boolean;
-}
-
 export interface UnderstandHarness {
   readonly project: Project;
   readonly logger: MemoryLogger;
@@ -121,6 +113,8 @@ export interface UnderstandHarness {
    * run cannot be resumed.
    */
   resume(run: Run): Promise<Result<Run, string>>;
+  /** RF-209: confirms a Deepen of a completed run as the Deepen button does and waits for its end. */
+  deepen(run: Run, request?: DeepenStart): Promise<Result<Run, string>>;
   /** Saves new project settings, as the settings page does (for example raised caps). */
   changeSettings(change: (settings: ProjectSettings) => ProjectSettings): Promise<void>;
   /** Stops the running runs, as the Stop button does. */
@@ -130,67 +124,6 @@ export interface UnderstandHarness {
   /** The absolute folder of a run, and of the project. */
   runFolder(run: Run): string;
   projectFolder(): string;
-}
-
-function waitUntilEnded(s: Stores): (run: Run) => Promise<Run> {
-  return async (run) => {
-    let latest: Run | undefined;
-    await vi.waitFor(
-      async () => {
-        latest = await s.runs.find(run.userId, run.id);
-        if (latest?.queueState !== 'Ended') throw new Error('The run has not ended');
-        const events = await s.log.read(scopeOf(latest), 0);
-        if (events.at(-1)?.type !== 'run.ended') throw new Error('No run.ended yet');
-      },
-      { timeout: UNDERSTAND_RUN_WAIT, interval: 2 },
-    );
-    if (latest === undefined) throw new Error('The run vanished');
-    return latest;
-  };
-}
-
-type Starter = (stage: 'scan' | 'understand', extra: UnderstandStart) => Promise<Run>;
-type Resumer = (run: Run) => Promise<Result<Run, string>>;
-
-/** Resumes ended runs as the API does and waits for their end. */
-function resumerOf(s: Stores, queue: RunQueue): Resumer {
-  const resumeRun = new ResumeRun({
-    ...{ projects: s.projects, runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
-    problem: resumeProblemCheck({
-      ...{ runs: s.runs, scans: scanResultsOf(s) },
-      taskResults: new FileTaskResults({ writer: s.writer, masker: s.masker }),
-    }),
-  });
-  const ended = waitUntilEnded(s);
-  return async (run) => {
-    const resumed = await resumeRun.execute({ actor: understandActor, runId: run.id });
-    if (!resumed.ok) return resumed;
-    return { ok: true, value: await ended(resumed.value.run) };
-  };
-}
-
-/** Starts runs of the project as the API does and waits for their end. */
-function starterOf(s: Stores, queue: RunQueue, project: Project): Starter {
-  const submit = new SubmitRun({
-    ...{ runs: s.runs, manifests: s.manifests, queue, clock: s.clock },
-    ids: new SequenceIdGenerator(),
-    rosettaVersion: '1.2.3-test',
-  });
-  const startRun = new StartRun({
-    ...{ projects: s.projects, runs: s.runs, briefs: new MemoryBriefStore(), submit },
-  });
-  const ended = waitUntilEnded(s);
-  return async (stage, extra) => {
-    const started = await startRun.execute({
-      actor: understandActor,
-      projectId: project.id,
-      stage,
-      ...extra,
-    });
-    expect(started, `the ${stage} run is accepted`).toMatchObject({ ok: true });
-    if (!started.ok) throw new Error(`The ${stage} run was refused: ${started.error}`);
-    return ended(started.value.run);
-  };
 }
 
 interface HarnessParts {
@@ -203,8 +136,10 @@ interface HarnessParts {
 
 function harnessOf(parts: HarnessParts): UnderstandHarness {
   const { s, queue, project, providers, dataDir } = parts;
-  const start = starterOf(s, queue, project);
+  const submit = submitOf(s, queue);
+  const start = starterOf(s, submit, project);
   const resume = resumerOf(s, queue);
+  const deepen = deepenerOf(s, submit);
   return {
     ...{ project, logger: s.logger, providers, runs: s.runs },
     scan: () => start('scan', {}),
@@ -223,6 +158,7 @@ function harnessOf(parts: HarnessParts): UnderstandHarness {
         cardIds,
       ),
     resume,
+    deepen,
     async changeSettings(change) {
       const current = await s.projects.find(account.id, project.id);
       if (current === undefined) throw new Error('The project vanished');

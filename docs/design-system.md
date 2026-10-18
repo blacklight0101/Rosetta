@@ -129,6 +129,15 @@ flowchart TB
 | 1280-1439 px      | side navigation                      | agent panels in 3 columns                      |
 | below 1280 px     | side navigation stacks above content | supported but not optimised; nothing is hidden |
 
+**One side navigation on every signed-in page (P1-175).** The navigation always has the same groups in the same
+order: the main pages (Projects, Settings and keys), the project group, and Administration for the administrator
+only. The project group is never absent. Its heading names the project (`Project: owner/repo`), cut with an ellipsis
+when long, with the full name as the hover title and in the text for screen readers. Inside a project the group links
+that project's pages. On a page outside a project it keeps the last project opened in this browser session
+(`sessionStorage`, cleared at sign-out) and links to it only after the server confirms the user can open it; with no
+such project it shows the line "Open a project to see its pages" and no link. The current page carries
+`aria-current="page"` in whichever group it is.
+
 **Report** (static site, any width from 360 px): header with wordmark and the run's identity, tab navigation
 (Dashboard, Areas, Cards, Open questions, Run replay, Cost), centred content up to 1180 px wide; summary cards
 reflow from four columns to one.

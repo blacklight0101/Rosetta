@@ -11,6 +11,7 @@
     "tests/e2e/plan-setup.spec.ts",
     "tests/e2e/project-settings.spec.ts",
     "tests/e2e/projects.spec.ts",
+    "tests/e2e/report-diagrams.spec.ts",
     "tests/e2e/settings-daily-cap.spec.ts",
     "tests/e2e/sign-in.spec.ts",
     "tests/e2e/smoke.spec.ts",
@@ -34,7 +35,8 @@
     "tests/e2e/run-report-filters.spec.ts",
     "tests/e2e/run-report.spec.ts",
     "tests/e2e/settings-provider-test.spec.ts",
-    "tests/e2e/visual/sweep-account.spec.ts"
+    "tests/e2e/visual/sweep-account.spec.ts",
+    "tests/e2e/side-navigation.spec.ts"
   ],
   "3": [
     "tests/e2e/account-password.spec.ts",

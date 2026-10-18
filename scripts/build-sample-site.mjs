@@ -14,6 +14,8 @@ const { parseRunEvent } = await import('../src/application/runs/run-event-schema
 const { parseRunManifest } = await import('../src/application/runs/run-manifest-schema.ts');
 const { SecretMasker } = await import('../src/infrastructure/guards/secret-masker.ts');
 const { buildSiteFiles } = await import('../src/infrastructure/report/published-site.ts');
+const { extractDiagrams } = await import('../src/application/report/report-diagrams.ts');
+const { loadDiagramAssets } = await import('../src/infrastructure/report/report-assets.ts');
 
 const recorded = fileURLToPath(new URL('../tests/fixtures/runs/sample-report/', import.meta.url));
 const assetsFolder = fileURLToPath(new URL('../templates/report/', import.meta.url));
@@ -47,7 +49,7 @@ async function recordedEvents() {
 // every card of the index (their paths are the links of the report).
 async function documentsOf(model) {
   const documents = {};
-  for (const name of ['spec.md', 'cost.md']) {
+  for (const name of ['spec.md', 'data-model.md', 'cost.md']) {
     if (await exists(name)) documents[name] = await readRunFile(name);
   }
   for (const card of model.cards) documents[card.path] = await readRunFile(card.path);
@@ -59,6 +61,17 @@ async function readAssets() {
   const names = ['report.css', 'replay.js', 'filters.js'];
   const texts = await Promise.all(names.map((name) => readFile(join(assetsFolder, name), 'utf8')));
   return Object.fromEntries(names.map((name, index) => [name, texts[index]]));
+}
+
+// RF-508: when the recorded run's documents hold diagrams (the specification and the data model), the
+// site gets the diagrams page and the Mermaid build that draws them.
+async function assetsAndDiagrams(documents) {
+  const assets = await readAssets();
+  const diagrams = extractDiagrams(
+    Object.fromEntries(Object.entries(documents).filter(([name]) => !name.startsWith('cards/'))),
+  );
+  if (diagrams.length > 0) assets.diagrams = await loadDiagramAssets(assetsFolder);
+  return { assets, diagrams };
 }
 
 async function writeSite(files) {
@@ -109,8 +122,8 @@ async function main() {
     ...{ questions: [], cardDetails: [] },
   });
   const documents = await documentsOf(model);
-  const assets = await readAssets();
-  const files = buildSiteFiles(model, assets, new SecretMasker(), documents);
+  const { assets, diagrams } = await assetsAndDiagrams(documents);
+  const files = buildSiteFiles({ ...model, diagrams }, assets, new SecretMasker(), documents);
   await writeSite(files);
   console.log(
     `wrote ${String(Object.keys(files).length)} files to ${siteFolder} for run ${manifest.runId}`,

@@ -16,17 +16,29 @@ import { needsCloudConsent } from '../providers/cloud-consent.js';
  */
 export const UNDERSTAND_ROLES: readonly AgentRole[] = ['reader', 'verifier', 'summariser'];
 
+/** RF-209: a Deepen run: the completed run it improves and what the owner confirmed. */
+export interface DeepenOptions {
+  readonly parentRunId: string;
+  readonly maxRounds: number;
+  readonly coveragePass: boolean;
+}
+
 export interface UnderstandOptions {
   readonly areas?: readonly string[];
   readonly cloudConsent: boolean;
   /** RF-241: run again the areas of the answered questions, with the answers as context. */
   readonly withAnswers?: boolean;
+  /** RF-209: present only for a Deepen run. */
+  readonly deepen?: DeepenOptions;
 }
 
 const optionsSchema = z.object({
   areas: z.array(z.string()).optional(),
   cloudConsent: z.boolean().optional(),
   withAnswers: z.boolean().optional(),
+  deepen: z
+    .object({ parentRunId: z.string(), maxRounds: z.number().int(), coveragePass: z.boolean() })
+    .optional(),
 });
 
 /** The options as the manifest records them; `areas` only when the request sent it, as sent (empty kept). */
@@ -34,10 +46,12 @@ export function understandOptionsOf(request: {
   readonly areas?: readonly string[] | undefined;
   readonly cloudConsent?: boolean | undefined;
   readonly withAnswers?: boolean | undefined;
+  readonly deepen?: DeepenOptions | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
   const answers = request.withAnswers === true ? { withAnswers: true } : {};
-  const base = { ...consent, ...answers };
+  const deepen = request.deepen === undefined ? {} : { deepen: { ...request.deepen } };
+  const base = { ...consent, ...answers, ...deepen };
   return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 

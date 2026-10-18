@@ -50,6 +50,7 @@ import { planOptionsService } from './web-plan-options.js';
 import { FixedReportCards, MapRunTextFiles, RecordingReportWriter } from './report-doubles.js';
 import { catalogAreas, estimatePrices, FixedScans } from './estimate-harness.js';
 import type { RunHarness } from './run-harness.js';
+import { deepenServices } from './web-deepen-services.js';
 
 /** RF-008, RF-504, RF-506: where the run folder is read from, zipped and reported on. */
 export interface RunOutputs {
@@ -98,6 +99,8 @@ export function runOutputs(given: RunOutputGiven): {
 interface ObservedFiles {
   readonly callFiles: MemoryOutputWriter;
   readonly masker: TextMasker;
+  /** RF-614: the saved briefs `StartRun` reads (RST-1801). */
+  readonly briefs: PlanningBriefStore;
   readonly logDir?: string | undefined;
 }
 
@@ -186,7 +189,6 @@ export function runServices(
     readonly users: UserRepository;
     readonly factory: ProviderSetFactory;
     readonly answerFiles: MemoryOutputWriter;
-    readonly briefs: PlanningBriefStore;
   } & ObservedFiles,
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
@@ -207,6 +209,7 @@ export function runServices(
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ ...runs, projects, briefs: stores.briefs }),
+    ...deepenServices(runs, { projects, keys }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,
