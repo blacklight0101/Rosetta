@@ -228,7 +228,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
   const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
   const [keys, stores] = [keyParts(), { projects, ...files, clock, masker, logDir, logger }];
-  const { providers, providerLedger, testProviders } = providerTestService({
+  const { providers, providerLedger, testProviders, factory } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
   const projectParts = { projects, serverSettings, users, auditLog, logger, clock, costs, usage };
@@ -243,7 +243,7 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ sessions: endingSessions, serverSettings, testProviders },
     }),
     projects: projectServices(projectParts, { ...files, keys: keys.keys }, runs.runs),
-    runs: runServices(runs, { ...stores, keys: keys.keys }, route, outputs),
+    runs: runServices(runs, { ...stores, keys: keys.keys, users, factory }, route, outputs),
     history: historyServices({ runs, projects, folders, snapshots, logger, costs }),
     onRoute: recorder.onRoute,
     ...overrides,

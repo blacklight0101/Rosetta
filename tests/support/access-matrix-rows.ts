@@ -3,6 +3,7 @@ import { fixturePassword } from './account-fixtures.js';
 import { active, adminOnly, everyone, ownerOnly, signedIn } from './access-columns.js';
 import { budgetRoutes, outputRoutes, type Context, type Probe } from './access-probes.js';
 import { settingsWith } from './project-fixtures.js';
+import { planRows } from './access-plan-rows.js';
 import { fixtureKey } from './provider-key-fixtures.js';
 import type { TestUser } from './test-browser.js';
 
@@ -147,13 +148,6 @@ const projectRows: Rows = {
   'HEAD /api/projects/:id/plan-estimate': [
     { method: 'HEAD', url: projectUrl('/plan-estimate'), expected: ownerOnly(409) },
   ],
-  // RF-606: the catalogue is the same for everyone who is signed in.
-  'GET /api/plan/catalogue': [
-    { method: 'GET', url: () => '/api/plan/catalogue', expected: active(401, 200) },
-  ],
-  'HEAD /api/plan/catalogue': [
-    { method: 'HEAD', url: () => '/api/plan/catalogue', expected: active(401, 200) },
-  ],
   'GET /api/admin/users/:id/projects': [
     { method: 'GET', url: workspaceUrl((c) => c.userId), expected: adminOnly(200) },
     { method: 'GET', url: workspaceUrl(() => unknownUser), expected: adminOnly(404) },
@@ -286,6 +280,7 @@ const pageRows: Rows = {
 export const matrixAreas = {
   public: publicRows,
   projects: projectRows,
+  plan: planRows,
   account: accountRows,
   admin: adminRows,
   pages: pageRows,

@@ -50,6 +50,7 @@ import { FileReportWriter } from '../infrastructure/report/file-report-writer.js
 import type { StreamRegistry } from './web/event-stream.js';
 import { composeObservability } from './compose-observability.js';
 import { composePlan } from './compose-plan.js';
+import { composePlanOptions } from './compose-plan-options.js';
 import { composeScanResults, composeUnderstand, ollamaHostOf } from './compose-understand.js';
 import type { ObservabilityServices } from './web/observability-routes.js';
 import type { RunServices } from './web/run-routes.js';
@@ -208,6 +209,8 @@ function runServices(service: ServiceParts): RunServices {
     reopenQuestion: new ReopenQuestion({ runs, answers, cards, logger: parts.logger }),
     countAnswered: new CountAnsweredQuestions({ projects, answers, cards }),
     readOverview: new ReadOverview({ runs, files: new FileRunTextFiles(writer) }),
+    // RF-608, RF-609: the options of Plan setup, asked of the planner for a project.
+    suggestPlanOptions: composePlanOptions({ ...parts, writer, projects, runs, scans }),
     ...observability,
     heartbeat: keepAliveScheduler(parts.logger),
     streams: parts.streams,

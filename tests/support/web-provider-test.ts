@@ -30,6 +30,8 @@ export interface ProviderTestParts {
 }
 
 export interface ProviderTestService {
+  /** The guarded factory with the fake adapters; Plan setup's options use it too (RF-608). */
+  readonly factory: GuardedProviderFactory;
   readonly providers: FakeAdapters;
   readonly providerLedger: SpyLedger;
   readonly testProviders: TestProviders;
@@ -52,5 +54,5 @@ export function providerTestService(parts: ProviderTestParts): ProviderTestServi
     unrecorded: unrecordedSinks(),
     signals: new FakeTimeoutSignals(),
   });
-  return { providers, providerLedger, testProviders };
+  return { factory, providers, providerLedger, testProviders };
 }
