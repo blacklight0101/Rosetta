@@ -2,7 +2,7 @@ import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
-import { decisionFile, documentSet, handoffFiles, sourceLinks } from './handoff-links.js';
+import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
 
 // RF-601..RF-604, RF-603: the README with the reading order, the risks, the open questions (the
@@ -144,10 +144,24 @@ function decisionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string[] 
   );
 }
 
+/** The reading-order line of a document of the set; the API contract links its file only when there is one. */
+function documentLine(
+  document: (typeof documentSet)[number],
+  handoff: HandoffPackage,
+  esc: MarkdownEscaper,
+): string {
+  const { title, file } = document;
+  const { apiContract } = handoff;
+  if (file !== handoffFiles.apiContract || apiContract.kind === 'openapi') {
+    return `[${title}](${file})`;
+  }
+  return `${title}: no contract applies. ${esc.inline(apiContract.reason)}`;
+}
+
 /** RF-620, RF-601: the documentation set first, then the parts of RF-601, each linking its file. */
 function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   const entries = [
-    ...documentSet.map(({ title, file }) => [`[${title}](${file})`]),
+    ...documentSet.map((document) => [documentLine(document, handoff, esc)]),
     [`[Requirements specification](${handoffFiles.requirements})`],
     [`[Target architecture](${handoffFiles.architecture})`],
     ['Architecture decision records', ...decisionLines(handoff, esc)],
@@ -166,6 +180,38 @@ function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
   );
 }
 
+/** RF-624: where the API contract is, or why none applies, and the cards no operation serves. */
+function apiContractSection(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
+  const { apiContract } = handoff;
+  if (apiContract.kind === 'none') {
+    return [
+      '## API contract',
+      '',
+      `No API contract applies to this package: ${esc.inline(apiContract.reason)}`,
+      '',
+    ];
+  }
+  const count = apiContract.operations.length;
+  const unit = count === 1 ? 'operation' : 'operations';
+  return [
+    '## API contract',
+    '',
+    `The OpenAPI 3.1 contract is the file \`${handoffFiles.apiContract}\`: ${String(count)} ${unit}, each naming the feature or flow cards it serves, with schemas from the target data model, error responses and authentication.`,
+    ...(apiContract.unserved.length === 0
+      ? []
+      : [
+          '',
+          'Cards no operation serves:',
+          '',
+          ...apiContract.unserved.map(
+            ({ cardId, reason }) =>
+              `- ${idLink(cardId, handoffFiles.sources)}: ${esc.inline(reason)}`,
+          ),
+        ]),
+    '',
+  ];
+}
+
 // RF-601, RF-603, RF-620
 export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
   const { repository, brief } = handoff;
@@ -175,12 +221,13 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '',
     `Planned from the analysis of ${esc.inline(repository.url)} at commit ${esc.inline(commit)} (understand run ${esc.inline(handoff.sourceRun)}), with the planning brief saved at ${esc.inline(brief.savedAt)}.`,
     '',
-    'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown; the diagrams are Mermaid.',
+    'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown (the API contract, when there is one, is YAML); the diagrams are Mermaid.',
     '',
     '## Reading order',
     '',
     ...readingOrder(handoff, esc),
     '',
+    ...apiContractSection(handoff, esc),
     '## Principles and practices',
     '',
     ...(handoff.principles.length === 0

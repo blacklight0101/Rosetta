@@ -19,6 +19,7 @@ import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/me
 import type { MemoryServerSettings } from '../../src/infrastructure/db/memory-server-settings.js';
 import type { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import {
+  loadApiContractPrompt,
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
@@ -86,6 +87,7 @@ export function projectServices(
       prdPrompt: () => loadPrdPrompt('prompts'),
       dataModelPrompt: () => loadDataModelPrompt('prompts'),
       flowsPrompt: () => loadFlowsPrompt('prompts'),
+      apiContractPrompt: () => loadApiContractPrompt('prompts'),
     }),
   };
 }

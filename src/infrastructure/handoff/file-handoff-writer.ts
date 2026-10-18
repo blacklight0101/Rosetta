@@ -11,6 +11,7 @@ import type { TextMasker } from '../guards/secret-masker.js';
 import { dataModelMarkdown } from './handoff-data-model-markdown.js';
 import { flowFile, flowMarkdown, flowsIndexMarkdown } from './handoff-flows-markdown.js';
 import { decisionFile, handoffFiles } from './handoff-links.js';
+import { openApiYaml } from './handoff-openapi-yaml.js';
 import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
 import { fixturesMarkdown } from './handoff-fixtures-markdown.js';
 import { prdMarkdown } from './handoff-prd-markdown.js';
@@ -33,7 +34,8 @@ import { tasksMarkdown } from './handoff-task-markdown.js';
 // RF-601, RF-603, RNF-003, data-model.md section 3.17: writes the hand-off package of a plan run
 // into the `handoff/` folder of its run folder, through the workspace guard. Every file is plain
 // Markdown (Mermaid inside fences); every piece of text is masked and escaped as it is written,
-// and the finished file is masked once more as a last guard. The same package gives the same
+// and the finished file is masked once more as a last guard. The one YAML file, the API contract (RF-624),
+// comes from the serializer. The same package gives the same
 // bytes. Each file is written whole or not at all; a refusal or a disk failure is RST-1804.
 
 export interface FileHandoffWriterOptions {
@@ -42,6 +44,14 @@ export interface FileHandoffWriterOptions {
 }
 
 const FOLDER = 'handoff';
+
+/** RF-624: `api/openapi.yaml` when the package has an API contract, no file otherwise. */
+function apiContractFile(handoff: HandoffPackage, masker: TextMasker): Record<string, string> {
+  const { apiContract, dataModel } = handoff;
+  return apiContract.kind === 'openapi'
+    ? { [handoffFiles.apiContract]: openApiYaml(apiContract.operations, dataModel, masker) }
+    : {};
+}
 
 /** Every file of the package by its path inside `handoff/`. */
 // RF-601, RF-603
@@ -73,6 +83,7 @@ export function renderHandoff(
     ...flows,
     [handoffFiles.entities]: entityMappingMarkdown(handoff, esc),
     [handoffFiles.dataModel]: dataModelMarkdown(handoff.dataModel, esc, masker),
+    ...apiContractFile(handoff, masker),
     [handoffFiles.roadmap]: roadmapMarkdown(handoff, esc),
     [handoffFiles.tasks]: tasksMarkdown(handoff, esc),
     [handoffFiles.risks]: risksMarkdown(handoff, esc),
