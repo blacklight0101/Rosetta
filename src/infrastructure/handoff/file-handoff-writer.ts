@@ -28,6 +28,7 @@ import {
   requirementsMarkdown,
 } from './handoff-plan-markdown.js';
 import { roadmapMarkdown } from './handoff-roadmap-markdown.js';
+import { uxFiles } from './handoff-ux-markdown.js';
 import { trdMarkdown } from './handoff-trd-markdown.js';
 import { tasksMarkdown } from './handoff-task-markdown.js';
 
@@ -84,6 +85,7 @@ export function renderHandoff(
     [handoffFiles.entities]: entityMappingMarkdown(handoff, esc),
     [handoffFiles.dataModel]: dataModelMarkdown(handoff.dataModel, esc, masker),
     ...apiContractFile(handoff, masker),
+    ...uxFiles(handoff, esc, masker),
     [handoffFiles.roadmap]: roadmapMarkdown(handoff, esc),
     [handoffFiles.tasks]: tasksMarkdown(handoff, esc),
     [handoffFiles.risks]: risksMarkdown(handoff, esc),

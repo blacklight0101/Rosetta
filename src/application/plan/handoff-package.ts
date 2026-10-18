@@ -3,6 +3,7 @@ import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { TargetFlows } from '../../domain/planning/target-flows.js';
+import type { TargetUx } from '../../domain/planning/target-ux.js';
 import type { DefaultedQuestion } from '../../domain/planning/brief-questions.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
@@ -54,6 +55,8 @@ export interface HandoffPackage {
   readonly flows: TargetFlows;
   /** The API contract: the operations of a separate front end, or why none applies (RF-624). */
   readonly apiContract: ApiContract;
+  /** The target screens, how each legacy screen was kept, merged or dropped, and the design brief (RF-626). */
+  readonly ux: TargetUx;
   /** The cards with their `Supported` claims, in card order. */
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];

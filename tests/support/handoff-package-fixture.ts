@@ -3,6 +3,7 @@ import type {
   PackagePrinciple,
 } from '../../src/application/plan/handoff-package.js';
 import { noApiContract } from '../../src/domain/planning/api-contract.js';
+import { noUx } from '../../src/domain/planning/target-ux.js';
 import { emptyPrd, prdQuestions, type PrdContent } from '../../src/domain/planning/prd-content.js';
 import { assemblePlan } from '../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../src/domain/planning/plan-draft.js';
@@ -138,6 +139,7 @@ export function handoffOf(
     dataModel: dataModelOf(text),
     flows: flowsOf(text),
     apiContract: noApiContract(text),
+    ux: noUx,
     sources: sourcesOf(text),
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],

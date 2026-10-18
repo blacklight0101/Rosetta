@@ -155,8 +155,9 @@ describe('README and open questions with the PRD', () => {
     const order = (files['README.md'] ?? '').split('## Reading order')[1]?.split('##')[0] ?? '';
     const links = [...order.matchAll(/\]\(([^)#]+)\)/gu)].map((match) => match[1]);
     expect(links[0]).toBe('prd.md');
-    expect(links.slice(1, 6)).toEqual([
-      ...['trd.md', 'data-model.md', 'flows/README.md', 'requirements.md', 'architecture.md'],
+    expect(links.slice(1, 7)).toEqual([
+      ...['trd.md', 'data-model.md', 'flows/README.md', 'ux/README.md', 'requirements.md'],
+      'architecture.md',
     ]);
     for (const link of links) expect(Object.keys(files)).toContain(link);
   });

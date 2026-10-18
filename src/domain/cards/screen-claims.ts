@@ -39,6 +39,11 @@ function screenEvidence(claims: readonly DerivedClaim[]): readonly Citation[] {
   return evidence;
 }
 
+/** The text of the claim that states an action, so a reader of the card can find it again (RF-626). */
+export function actionClaimText(action: ScreenAction): string {
+  return `Action ${action.label} starts ${startsOf(action)}.`;
+}
+
 /** The claims a screen adds to the ones the agent wrote: its validations, then its actions. */
 export function screenClaims(
   screen: ScreenDetail,
@@ -49,7 +54,7 @@ export function screenClaims(
   );
   const evidence = screenEvidence(written);
   const actions = screen.actions.map((action) => ({
-    text: `Action ${action.label} starts ${startsOf(action)}.`,
+    text: actionClaimText(action),
     citations: evidence,
   }));
   return [...validations, ...actions];

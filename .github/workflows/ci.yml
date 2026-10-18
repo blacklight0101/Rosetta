@@ -379,6 +379,15 @@ jobs:
         run: |
           set -a; . ./.env; set +a
           npx playwright test --config=playwright.compose.config.ts persistence
+      # The smoke script of a deployment (scripts/smoke.mjs, P1-55) on the same stack: health,
+      # landing, sign-in of the administrator with the password the smoke spec chose, a scan.
+      - name: Smoke script (health, landing, sign-in, scan)
+        if: needs.changes.outputs.code != 'false'
+        run: |
+          set -a; . ./.env; set +a
+          export ROSETTA_SMOKE_USER="$ROSETTA_ADMIN_USER" ROSETTA_SMOKE_PASSWORD="$ROSETTA_SMOKE_NEW_PASSWORD"
+          export ROSETTA_SMOKE_REPO=https://github.com/octo/demo
+          node scripts/smoke.mjs http://127.0.0.1:8080
       - name: Stack logs
         if: failure()
         run: docker compose -f compose.yaml -f compose.ci.yaml logs --no-color --tail 200
@@ -386,3 +395,60 @@ jobs:
       - name: Remove the stack and its volumes
         if: always() && needs.changes.outputs.code != 'false'
         run: docker compose -f compose.yaml -f compose.ci.yaml down -v --rmi local
+
+  # OWASP ZAP baseline (threat model section 5, environments-and-delivery.md section 10, P1-55): a
+  # passive scan of the Compose stack of the runtime image, the image that is deployed (no CI
+  # overlay). The deploy job of release.yml refuses a commit on which this check did not pass.
+  # The ZAP image is pinned by digest (2.17.0); scripts/zap-summary.mjs writes the job summary and
+  # fails on a High alert.
+  zap-baseline:
+    name: zap-baseline
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Documentation-only change
+        if: needs.changes.outputs.code == 'false'
+        run: echo "::notice title=Documentation only::The steps of this job are skipped."
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: needs.changes.outputs.code != 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # A throwaway .env for this run: fresh random values, masked in the log, never committed.
+      - name: Write a throwaway .env
+        if: needs.changes.outputs.code != 'false'
+        run: |
+          : > .env
+          add() { value="$(openssl rand "$2" "$3")"; echo "::add-mask::$value"; echo "$1=$value" >> .env; }
+          add ROSETTA_DB_ADMIN_PASSWORD -hex 16
+          add ROSETTA_APP_DB_PASSWORD -hex 16
+          add ROSETTA_MIGRATOR_DB_PASSWORD -hex 16
+          add ROSETTA_SECRET_KEY -base64 32
+          add ROSETTA_ADMIN_PASSWORD -hex 16
+          echo "ROSETTA_ADMIN_USER=zap-admin" >> .env
+      - name: Start the stack (runtime image)
+        if: needs.changes.outputs.code != 'false'
+        run: docker compose -f compose.yaml up -d --build --wait
+      - name: Wait for /healthz
+        if: needs.changes.outputs.code != 'false'
+        run: curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 http://127.0.0.1:8080/healthz
+      # -I: warnings do not fail the scan; the summary step decides on the risk of each alert.
+      - name: Run the ZAP baseline scan
+        if: needs.changes.outputs.code != 'false'
+        run: |
+          mkdir -p "$RUNNER_TEMP/zap"
+          chmod 777 "$RUNNER_TEMP/zap"
+          docker run --rm --network host --volume "$RUNNER_TEMP/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:2.17.0@sha256:5ccfff9a411743ab2615136a2edd7416bec9ce41572fa94e935df38c14adb2b6 zap-baseline.py -t http://127.0.0.1:8080 -m 2 -I -J zap-report.json
+      - name: Summarise the report (fails on a High alert)
+        if: needs.changes.outputs.code != 'false'
+        run: node scripts/zap-summary.mjs "$RUNNER_TEMP/zap/zap-report.json"
+      - name: Stack logs
+        if: failure() && needs.changes.outputs.code != 'false'
+        run: docker compose -f compose.yaml logs --no-color --tail 200
+      - name: Remove the stack and its volumes
+        if: always() && needs.changes.outputs.code != 'false'
+        run: docker compose -f compose.yaml down -v --rmi local

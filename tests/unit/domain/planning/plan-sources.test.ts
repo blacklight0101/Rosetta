@@ -52,3 +52,54 @@ describe('excludedClaims', () => {
     ]);
   });
 });
+
+describe('supportedCards: the actions of a screen', () => {
+  const claim = (n: number, text: string, status: Status): SourceCard['claims'][number] => ({
+    ...{ claimId: `SCRN-001.c${String(n)}`, text, citations: [citation], status },
+  });
+
+  function screen(claims: SourceCard['claims']): SourceCard {
+    return {
+      ...{ id: 'SCRN-001', type: 'SCRN', title: 'Orders', summary: 'Summary.', area: 'orders' },
+      screen: {
+        ...{ route: '/orders', roles: [], fields: [], leadsTo: [] },
+        actions: [
+          { label: 'Open order', handler: 'openOrder' },
+          { label: 'Pay', flow: 'FLOW-001' },
+          { label: 'Cancel', handler: 'cancel', flow: 'FLOW-002' },
+        ],
+      },
+      claims,
+    };
+  }
+
+  it('RF-626 ADR-005 keeps an action only when the claim that states it is Supported', () => {
+    const [kept] = supportedCards([
+      screen([
+        claim(1, 'Orders is shown.', 'Supported'),
+        claim(2, 'Action Open order starts the handler openOrder.', 'Supported'),
+        claim(3, 'Action Pay starts the flow FLOW-001.', 'Rejected'),
+        claim(4, 'Action Cancel starts the handler cancel and the flow FLOW-002.', 'Supported'),
+      ]),
+    ]);
+
+    expect(kept?.screen?.actions.map((action) => action.label)).toEqual(['Open order', 'Cancel']);
+  });
+
+  it('RF-626 a screen whose action claims are all unsupported keeps none, and the rest of the screen', () => {
+    const [kept] = supportedCards([
+      screen([
+        claim(1, 'Orders is shown.', 'Supported'),
+        claim(2, 'Action Open order starts the handler openOrder.', 'Unverified'),
+      ]),
+    ]);
+
+    expect(kept?.screen).toMatchObject({ route: '/orders', actions: [] });
+  });
+
+  it('RF-626 a card without screen detail is unchanged', () => {
+    const [kept] = supportedCards([card('FEAT-001', ['Supported'])]);
+
+    expect(kept?.screen).toBeUndefined();
+  });
+});
