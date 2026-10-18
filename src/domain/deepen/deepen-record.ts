@@ -1,4 +1,5 @@
 import type { ClaimStatus } from '../cards/card-vocabulary.js';
+import type { Run } from '../runs/run.js';
 import type { OutOfScopeClaim } from './round-plan.js';
 import type { DeepenStopReason } from './stop-rule.js';
 import type { UnderstandingMeasures } from './understanding-measures.js';
@@ -10,11 +11,11 @@ import type { UnderstandingMeasures } from './understanding-measures.js';
 // the measures before and after.
 
 /** The measures without the list of unread files, which the summary counts. */
-export type MeasureSummary = Omit<UnderstandingMeasures, 'filesNotRead'> & {
+type MeasureSummary = Omit<UnderstandingMeasures, 'filesNotRead'> & {
   readonly filesNotRead: number;
 };
 
-export interface DeepenNewClaim {
+interface DeepenNewClaim {
   readonly claimId: string;
   readonly status: ClaimStatus;
   readonly replaces?: string | undefined;
@@ -50,7 +51,7 @@ export interface DeepenRecord {
   readonly after: MeasureSummary | null;
 }
 
-export function measureSummaryOf(measures: UnderstandingMeasures): MeasureSummary {
+function measureSummaryOf(measures: UnderstandingMeasures): MeasureSummary {
   return { ...measures, filesNotRead: measures.filesNotRead.length };
 }
 
@@ -72,20 +73,24 @@ export function newDeepenRecord(
 
 /** The record with one more round; only a round that ran to its end counts as done. */
 // RF-209
-export function withRound(
+export function withRound(record: DeepenRecord, round: DeepenRound): DeepenRecord {
+  const rounds = [...record.rounds, round];
+  return { ...record, rounds, roundsDone: rounds.filter((each) => each.complete).length };
+}
+
+/** RF-209: the rejected claims a round plan left out of scope, each listed once. */
+export function withOutOfScope(
   record: DeepenRecord,
-  round: DeepenRound,
   outOfScope: readonly OutOfScopeClaim[],
 ): DeepenRecord {
-  const rounds = [...record.rounds, round];
   const known = new Set(record.outOfScope.map((each) => each.claimId));
   const added = outOfScope.filter((each) => !known.has(each.claimId));
-  return {
-    ...record,
-    rounds,
-    roundsDone: rounds.filter((each) => each.complete).length,
-    outOfScope: [...record.outOfScope, ...added],
-  };
+  return added.length === 0 ? record : { ...record, outOfScope: [...record.outOfScope, ...added] };
+}
+
+/** RF-209: the claims written in this Deepen, in any round. */
+export function writtenIn(record: DeepenRecord): ReadonlySet<string> {
+  return new Set(record.rounds.flatMap((round) => round.newClaims.map((each) => each.claimId)));
 }
 
 // RF-209, RF-231
@@ -105,4 +110,9 @@ export function reopenedDeepen(record: DeepenRecord): DeepenRecord {
 /** RF-209: the claims this Deepen sent back to a reader, in any round, finished or not. */
 export function rereadIn(record: DeepenRecord): ReadonlySet<string> {
   return new Set(record.rounds.flatMap((round) => round.reread.map((each) => each.claimId)));
+}
+
+/** RF-209: only an understand run that ended `Completed` can be deepened (a Deepen run too, Q-L). */
+export function canDeepen(run: Pick<Run, 'stage' | 'endState'>): boolean {
+  return run.stage === 'understand' && run.endState === 'Completed';
 }

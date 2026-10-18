@@ -140,5 +140,6 @@ export async function runReaderTask(
     nextCallId: context.nextCallId,
     signal: execution.signal,
     ...(task.answers === undefined ? {} : { answers: task.answers }),
+    ...(task.rejected === undefined ? {} : { rejected: task.rejected }),
   });
 }

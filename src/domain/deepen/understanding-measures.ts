@@ -13,7 +13,7 @@ import { isThirdPartyFile, isThirdPartyPath } from '../code-map/third-party.js';
 // read and no claim left unjudged; nothing ever says complete.
 
 /** A first-party file no task read, with its estimated tokens. */
-export interface UnreadFile {
+interface UnreadFile {
   readonly path: string;
   readonly tokens: number;
 }
@@ -53,7 +53,7 @@ export interface MeasureInput {
 }
 
 /** RF-231, Q-K: the first-party share of tokens read from which a run may be called well covered. */
-export const WELL_COVERED_SHARE = 0.8;
+const WELL_COVERED_SHARE = 0.8;
 
 interface FileRead {
   readonly path: string;
