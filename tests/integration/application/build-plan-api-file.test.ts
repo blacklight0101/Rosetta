@@ -8,7 +8,7 @@ import { checkOpenApi } from '../../support/openapi-check.js';
 import { keysAt, valueAt } from '../../support/value-at.js';
 
 // RF-624, RF-623, RF-603, RF-601, ADR-008: `api/openapi.yaml` of the hand-off package from a plan run
-// whose fourth planner answer replays tests/recordings/fake/planner-package.json: five operations
+// whose fifth planner answer replays tests/recordings/fake/planner-package.json: five operations
 // the checks keep and three they refuse.
 
 let dataDir: string;
@@ -89,8 +89,9 @@ describe('BuildPlan: api/openapi.yaml and the rest of the package', () => {
     const readme = written['README.md'] ?? '';
     const order = readme.split('## Reading order')[1]?.split('\n## ')[0] ?? '';
     const links = [...order.matchAll(/\]\(([^)#]+)\)/gu)].map((match) => match[1]);
-    expect(links.slice(0, 5)).toEqual([
-      ...['prd.md', 'trd.md', 'data-model.md', 'api/openapi.yaml', 'requirements.md'],
+    expect(links.slice(0, 6)).toEqual([
+      ...['prd.md', 'trd.md', 'data-model.md', 'api/openapi.yaml'],
+      ...['flows/README.md', 'requirements.md'],
     ]);
     expect(readme).toContain('5 operations');
   });

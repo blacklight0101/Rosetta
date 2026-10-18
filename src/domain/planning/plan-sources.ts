@@ -13,6 +13,8 @@ interface SourceClaim {
   readonly text: string;
   readonly citations: readonly Citation[];
   readonly status: ClaimStatus;
+  /** `FLOW` steps only: the card id the step touches (RF-260). */
+  readonly target?: string | undefined;
 }
 
 /** A card of the run as its file holds it, with every claim and its status. */
@@ -23,6 +25,8 @@ export interface SourceCard {
   readonly summary: string;
   readonly area: string;
   readonly claims: readonly SourceClaim[];
+  /** `FLOW` cards only: what starts the journey and how it ends (RF-260). */
+  readonly flow?: { readonly trigger: string; readonly outcome: string } | undefined;
 }
 
 /** A claim the package does not use, named by its id and the status that kept it out. */

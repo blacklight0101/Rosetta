@@ -21,7 +21,7 @@ const written: ApiContract = {
 };
 
 function files(contract: ApiContract, text = 'Plain text.'): Readonly<Record<string, string>> {
-  return renderHandoff(handoffOf(text, emptyPrd, contract), masker);
+  return renderHandoff(handoffOf(text, emptyPrd, { apiContract: contract }), masker);
 }
 
 function order(readme: string | undefined): string {
@@ -39,11 +39,12 @@ describe('renderHandoff: a package with an API contract', () => {
   it('RF-620 the reading order lists the API contract fourth, after the data model, and links it', () => {
     const links = [...order(files(written)['README.md']).matchAll(/\]\(([^)#]+)\)/gu)];
 
-    expect(links.slice(0, 5).map((match) => match[1])).toEqual([
+    expect(links.slice(0, 6).map((match) => match[1])).toEqual([
       'prd.md',
       'trd.md',
       'data-model.md',
       'api/openapi.yaml',
+      'flows/README.md',
       'requirements.md',
     ]);
   });
@@ -85,10 +86,11 @@ describe('renderHandoff: a package without an API contract', () => {
   it('RF-620 the reading order still has one link for each of the other files', () => {
     const links = [...order(files(none)['README.md']).matchAll(/\]\(([^)#]+)\)/gu)];
 
-    expect(links.slice(0, 4).map((match) => match[1])).toEqual([
+    expect(links.slice(0, 5).map((match) => match[1])).toEqual([
       'prd.md',
       'trd.md',
       'data-model.md',
+      'flows/README.md',
       'requirements.md',
     ]);
   });

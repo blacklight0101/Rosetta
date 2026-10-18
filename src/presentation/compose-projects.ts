@@ -32,6 +32,7 @@ import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import {
   loadApiContractPrompt,
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
@@ -48,6 +49,7 @@ function plannerPrompts(folder: string) {
     prompt: () => loadPlannerPrompt(folder),
     prdPrompt: () => loadPrdPrompt(folder),
     dataModelPrompt: () => loadDataModelPrompt(folder),
+    flowsPrompt: () => loadFlowsPrompt(folder),
     apiContractPrompt: () => loadApiContractPrompt(folder),
   };
 }

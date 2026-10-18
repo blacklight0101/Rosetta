@@ -9,9 +9,8 @@ import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 import { shippedCatalogue } from '../../support/planning-brief-harness.js';
 
-// RF-601..RF-604, RNF-004, ADR-005, ADR-008, DEC-80: a plan run over a seeded understand run, real
-// files in a temporary data folder and the real provider factory, with the planner replaying
-// tests/recordings/fake/planner-package.json. The package is checked by its structure.
+// RF-601..RF-604, RNF-004, ADR-005, ADR-008, DEC-80: a plan run over a seeded understand run with
+// the real provider factory, the planner replaying tests/recordings/fake/planner-package.json.
 
 const briefAnswers = {
   architecture: { style: 'hexagonal' },
@@ -138,7 +137,6 @@ describe('BuildPlan: the run manifest', () => {
     await seeded();
 
     const manifest = await h.manifestOf(await h.plan());
-
     expect(manifest.brief).toMatchObject({ ...briefAnswers, savedAt: '2026-10-12T09:30:00.000Z' });
     expect(manifest.catalogue).toEqual({
       version: shippedCatalogue.version,
@@ -152,6 +150,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/package.v4.md': { version: 'v4', sha256: await sha('package.v4.md') },
       'planner/prd.v1.md': { version: 'v1', sha256: await sha('prd.v1.md') },
       'planner/data-model.v1.md': { version: 'v1', sha256: await sha('data-model.v1.md') },
+      'planner/flows.v1.md': { version: 'v1', sha256: await sha('flows.v1.md') },
       'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
@@ -176,6 +175,8 @@ describe('BuildPlan: the parts of the package', () => {
       'decisions/ADR-003.md',
       'decisions/ADR-004.md',
       'entity-mapping.md',
+      'fixtures.md',
+      'flows/README.md',
       'open-questions.md',
       'prd.md',
       'requirements.md',
@@ -290,7 +291,6 @@ describe('BuildPlan: runs that cannot plan', () => {
       }),
     );
     await seeded();
-
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');

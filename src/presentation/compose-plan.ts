@@ -11,6 +11,7 @@ import type { RunManifestStore } from '../application/ports/run-manifest-store.j
 import { BuildPlan } from '../application/use-cases/build-plan.js';
 import { FileCostReportWriter } from '../infrastructure/budget/cost-report-files.js';
 import { FileRunCards } from '../infrastructure/cards/file-run-cards.js';
+import { composeScanResults } from './compose-understand.js';
 import { PgCostLedger } from '../infrastructure/db/pg-cost-ledger.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
@@ -24,6 +25,7 @@ import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import {
   loadApiContractPrompt,
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
@@ -57,6 +59,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
   return new BuildPlan({
     ...{ projects: parts.projects, runs: parts.runs, manifests: parts.manifests, logger },
     users: new PgUserRepository(pool),
+    scans: composeScanResults(parts),
     briefs: new FilePlanningBriefStore({ writer, masker }),
     cards: new FileRunCards(writer),
     answers: parts.answers,
@@ -76,6 +79,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     prompt: () => loadPlannerPrompt(promptsFolder),
     prdPrompt: () => loadPrdPrompt(promptsFolder),
     dataModelPrompt: () => loadDataModelPrompt(promptsFolder),
+    flowsPrompt: () => loadFlowsPrompt(promptsFolder),
     apiContractPrompt: () => loadApiContractPrompt(promptsFolder),
     ids: parts.ids,
   });

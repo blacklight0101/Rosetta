@@ -9,9 +9,11 @@ import { markdownEscaper } from '../cards/markdown-text.js';
 import { runPath } from '../files/workspace-paths.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { dataModelMarkdown } from './handoff-data-model-markdown.js';
+import { flowFile, flowMarkdown, flowsIndexMarkdown } from './handoff-flows-markdown.js';
 import { decisionFile, handoffFiles } from './handoff-links.js';
 import { openApiYaml } from './handoff-openapi-yaml.js';
 import { agentsMarkdown, conventionsMarkdown } from './handoff-method-markdown.js';
+import { fixturesMarkdown } from './handoff-fixtures-markdown.js';
 import { prdMarkdown } from './handoff-prd-markdown.js';
 import {
   openQuestionsMarkdown,
@@ -64,6 +66,12 @@ export function renderHandoff(
       decisionMarkdown(decision, esc),
     ]),
   );
+  const flows = Object.fromEntries(
+    handoff.flows.flows.map((flow) => [
+      flowFile(flow.cardId),
+      flowMarkdown(flow, handoff, esc, masker),
+    ]),
+  );
   return {
     [handoffFiles.readme]: readmeMarkdown(handoff, esc),
     [handoffFiles.prd]: prdMarkdown(handoff, esc),
@@ -71,6 +79,8 @@ export function renderHandoff(
     [handoffFiles.requirements]: requirementsMarkdown(handoff, esc),
     [handoffFiles.architecture]: architectureMarkdown(handoff, esc, masker),
     ...decisions,
+    [handoffFiles.flows]: flowsIndexMarkdown(handoff, esc),
+    ...flows,
     [handoffFiles.entities]: entityMappingMarkdown(handoff, esc),
     [handoffFiles.dataModel]: dataModelMarkdown(handoff.dataModel, esc, masker),
     ...apiContractFile(handoff, masker),
@@ -80,6 +90,7 @@ export function renderHandoff(
     [handoffFiles.openQuestions]: openQuestionsMarkdown(handoff, esc),
     [handoffFiles.sources]: sourcesMarkdown(handoff, esc),
     [handoffFiles.conventions]: conventionsMarkdown(handoff, esc),
+    [handoffFiles.fixtures]: fixturesMarkdown(handoff, esc),
     ...(handoff.brief.buildMethod.aiAssisted
       ? { [handoffFiles.agents]: agentsMarkdown(handoff, esc) }
       : {}),

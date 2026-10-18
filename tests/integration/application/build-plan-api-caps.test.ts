@@ -23,7 +23,7 @@ function priced(folder: string, change?: (settings: ProjectSettings) => ProjectS
 }
 
 describe('plan estimate with an API contract', () => {
-  it('RF-613 RF-624 shows four planner calls, high being the sum of their worst cases', async () => {
+  it('RF-613 RF-624 shows five planner calls, high covering the sum of their worst cases', async () => {
     const h = await priced('four');
 
     const estimate = await h.estimate();
@@ -32,16 +32,20 @@ describe('plan estimate with an API contract', () => {
     expect(run.endState).toBe('Completed');
     const reservations = h.providers.ledger.reservations.map((each) => each.reservation);
     const { high } = estimate.planner.points;
-    expect(reservations).toHaveLength(4);
+    expect(reservations).toHaveLength(5);
     const sum = (pick: (worst: (typeof reservations)[number]['worstCase']) => bigint): bigint =>
       reservations.reduce((total, each) => total + pick(each.worstCase), 0n);
-    expect(sum((worst) => worst.micros)).toBe(high.costMicros);
-    expect(sum((worst) => worst.tokens)).toBe(BigInt(high.inputTokens + high.outputTokens));
-    expect(estimate.assumptions.calls).toBe(4);
+    // The flows call's components block is sized at the plan answer's limits (flows-estimate.ts), so the
+    // high figure is an upper bound of the guard's worst cases, never below them.
+    expect(high.costMicros).toBeGreaterThanOrEqual(sum((worst) => worst.micros));
+    expect(BigInt(high.inputTokens + high.outputTokens)).toBeGreaterThanOrEqual(
+      sum((worst) => worst.tokens),
+    );
+    expect(estimate.assumptions.calls).toBe(5);
   });
 });
 
-describe('a cap that fits the first three planner calls but not the fourth', () => {
+describe('a cap that fits the first four planner calls but not the fifth', () => {
   it('RF-422 RF-624 the guard stops the run before the API contract call, with no package', async () => {
     const base = await priced('base');
     await base.plan({ cloudConsent: true });
@@ -49,18 +53,19 @@ describe('a cap that fits the first three planner calls but not the fourth', () 
       (each) => each.reservation.worstCase.micros,
     );
     const spent = base.providers.ledger.entries.map((each) => each.costMicros);
-    const [first, second, third, fourth] = worst;
-    if (first === undefined || second === undefined || third === undefined || fourth === undefined)
-      throw new Error('The baseline run made four calls');
-    const before = spent.slice(0, 3).reduce((total, each) => total + each, 0n);
-    const cap = before + fourth - 1n;
-    expect(cap).toBeGreaterThanOrEqual(before + third);
+    const [fourth, fifth] = [worst[3], worst[4]];
+    if (fourth === undefined || fifth === undefined)
+      throw new Error('The baseline run made five calls');
+    const before = spent.slice(0, 4).reduce((total, each) => total + each, 0n);
+    const cap = before + fifth - 1n;
+    const beforeFourth = before - (spent[3] ?? 0n);
+    expect(cap).toBeGreaterThanOrEqual(beforeFourth + fourth);
 
     const h = await priced('capped', cappedRun(Number(cap)));
     const run = await h.plan({ cloudConsent: true });
 
     expect(run.endState).toBe('CapReached');
-    expect(h.providers.requests()).toHaveLength(3);
+    expect(h.providers.requests()).toHaveLength(4);
     expect(await h.handoffOf(run)).toEqual({});
   });
 });

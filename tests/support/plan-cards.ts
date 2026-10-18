@@ -172,3 +172,80 @@ export function featureCardSaying(id: string, text: string): Card {
     ['Supported'],
   );
 }
+
+function flowBase(
+  id: string,
+  title: string,
+  trigger: string,
+  outcome: string,
+): Omit<CardInput, 'claims'> {
+  return { ...base(id, 'FLOW', title), flow: { trigger, outcome } };
+}
+
+function step(text: string, target?: string): CardInput['claims'][number] {
+  return { ...claim(text, 'src/Orders/Checkout.cs'), ...(target === undefined ? {} : { target }) };
+}
+
+/**
+ * RF-625: the `FLOW` cards a flows test adds to the seeded run. FLOW-001 has three supported steps
+ * (one touching the supported card ENT-001, one touching a card the run does not have) and one
+ * rejected; FLOW-002 and FLOW-003 are supported journeys; FLOW-004 has no supported step.
+ */
+export function orderFlowCards(): readonly Card[] {
+  return [
+    judgedCard(
+      {
+        ...flowBase(
+          'FLOW-001',
+          'Place an order',
+          'The customer presses Pay on the checkout page.',
+          'The order is stored and the customer sees a receipt.',
+        ),
+        claims: [
+          step('The checkout page posts the basket.', 'FEAT-001'),
+          step('The order is saved with its lines.', 'ENT-001'),
+          step('The payment is taken.', 'INT-009'),
+          step('The warehouse is emailed.'),
+        ],
+      },
+      ['Supported', 'Supported', 'Supported', 'Rejected'],
+    ),
+    judgedCard(
+      {
+        ...flowBase('FLOW-002', 'Export orders', 'Staff open the export page.', 'A file is sent.'),
+        claims: [step('The export lists the orders of a day.')],
+      },
+      ['Supported'],
+    ),
+    judgedCard(
+      {
+        ...flowBase(
+          'FLOW-003',
+          'Cancel an order',
+          'Staff press Cancel.',
+          'The order is cancelled.',
+        ),
+        claims: [step('Cancel marks the order cancelled.')],
+      },
+      ['Supported'],
+    ),
+    judgedCard(
+      {
+        ...flowBase('FLOW-004', 'Print a label', 'Staff press Print.', 'A label is printed.'),
+        claims: [step('Print sends the label to the printer.')],
+      },
+      ['Rejected'],
+    ),
+  ];
+}
+
+/** RNF-003, RF-625: a `FLOW` card with one supported step that says what the test needs it to say. */
+export function flowCardSaying(id: string, text: string): Card {
+  return judgedCard(
+    {
+      ...flowBase(id, 'Attack on the request', 'A user acts.', 'Something happens.'),
+      claims: [step(text)],
+    },
+    ['Supported'],
+  );
+}

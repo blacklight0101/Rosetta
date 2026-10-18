@@ -2,11 +2,13 @@ import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
+import type { TargetFlows } from '../../domain/planning/target-flows.js';
 import type { DefaultedQuestion } from '../../domain/planning/brief-questions.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
+import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 
 // RF-601..RF-604, data-model.md section 3.17: everything the hand-off package is written from. The
 // planner's content, checked; the cards it may cite with their supported claims and citations;
@@ -48,6 +50,8 @@ export interface HandoffPackage {
   readonly choices: BriefChoices;
   /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
   readonly dataModel: TargetDataModel;
+  /** The main journeys mapped to target components, and those out of scope (RF-625). */
+  readonly flows: TargetFlows;
   /** The API contract: the operations of a separate front end, or why none applies (RF-624). */
   readonly apiContract: ApiContract;
   /** The cards with their `Supported` claims, in card order. */
@@ -59,4 +63,6 @@ export interface HandoffPackage {
   readonly prd: PrdContent;
   /** The PRD sections the cards could not fill, each with its default (RF-621, DEC-80). */
   readonly prdQuestions: readonly DefaultedQuestion[];
+  /** RF-632: the shapes measured from the scan; undefined when the scan could not be read. */
+  readonly shapes: ScanShapes | undefined;
 }

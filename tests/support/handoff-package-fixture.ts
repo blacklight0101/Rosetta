@@ -2,7 +2,7 @@ import type {
   HandoffPackage,
   PackagePrinciple,
 } from '../../src/application/plan/handoff-package.js';
-import { noApiContract, type ApiContract } from '../../src/domain/planning/api-contract.js';
+import { noApiContract } from '../../src/domain/planning/api-contract.js';
 import { emptyPrd, prdQuestions, type PrdContent } from '../../src/domain/planning/prd-content.js';
 import { assemblePlan } from '../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../src/domain/planning/plan-draft.js';
@@ -96,11 +96,23 @@ function dataModelOf(text: string): HandoffPackage['dataModel'] {
   };
 }
 
+/** RF-625: one mapped journey and one journey out of scope, with this text in every model field. */
+function flowsOf(text: string): HandoffPackage['flows'] {
+  const step = { claimId: 'FLOW-001.c1', text, touches: 'FEAT-001', component: text, action: text };
+  const unmapped = { ...step, claimId: 'FLOW-001.c2', touches: null, component: null, action: '' };
+  return {
+    flows: [
+      { cardId: 'FLOW-001', title: text, trigger: text, outcome: text, steps: [step, unmapped] },
+    ],
+    outOfScope: [{ cardId: 'FLOW-002', title: text, reason: text, byPlanner: true }],
+  };
+}
+
 /** The package with this text in every model and repository field. */
 export function handoffOf(
   text: string,
   prd: PrdContent = emptyPrd,
-  apiContract: ApiContract = noApiContract(text),
+  extra: Partial<HandoffPackage> = {},
 ): HandoffPackage {
   const content = assemblePlan(draft(text), new Set(['FEAT-001', 'INT-001'])).content;
   return {
@@ -124,12 +136,15 @@ export function handoffOf(
       decisions: content.decisions.map((decision) => ({ ...decision, options: [text] })),
     },
     dataModel: dataModelOf(text),
-    apiContract,
+    flows: flowsOf(text),
+    apiContract: noApiContract(text),
     sources: sourcesOf(text),
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],
     openQuestions: [{ cardId: 'OQ-001', question: text, area: text }],
     prd,
     prdQuestions: prdQuestions(prd),
+    shapes: undefined,
+    ...extra,
   };
 }

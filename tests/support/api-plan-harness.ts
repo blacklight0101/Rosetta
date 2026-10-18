@@ -7,7 +7,7 @@ import { customerCard, flowCard, planCards, planQuestions } from './plan-cards.j
 import { createPlanHarness, type PlanHarness, type PlanHarnessOptions } from './plan-harness.js';
 
 // RF-624, RF-623, ADR-008: a plan run whose brief names a React front end, over FEAT, FLOW and ENT
-// cards, replaying the fourth planner answer of tests/recordings/fake/planner-package.json.
+// cards, replaying the fifth planner answer of tests/recordings/fake/planner-package.json.
 
 const recordingPath = join('tests', 'recordings', 'fake', 'planner-package.json');
 
@@ -52,13 +52,13 @@ export async function seededApiPlan(
   return h;
 }
 
-/** The recording with another text as the planner's fourth answer. */
-export async function withFourthAnswer(text: string): Promise<Recording> {
+/** The recording with another text as the planner's fifth answer (the API contract). */
+export async function withApiAnswer(text: string): Promise<Recording> {
   const base = await loadRecording(recordingPath);
-  const attempt = base.calls[3]?.attempts[0];
+  const attempt = base.calls[4]?.attempts[0];
   if (attempt === undefined || !('response' in attempt)) {
-    throw new Error('The recording has four calls');
+    throw new Error('The recording has five calls');
   }
   const fourth = { attempts: [{ response: { ...attempt.response, text } }] };
-  return { ...base, calls: [...base.calls.slice(0, 3), fourth] };
+  return { ...base, calls: [...base.calls.slice(0, 4), fourth] };
 }

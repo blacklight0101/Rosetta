@@ -1,9 +1,7 @@
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { ok } from '../../domain/errors/result.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
-import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
-import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-content.js';
 import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
@@ -15,17 +13,17 @@ import {
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { PromptFile } from '../agent/prompt-file.js';
-import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
-import { apiContractWarnings, planApiContract } from '../plan/plan-api-contract.js';
+import { askPlanner } from '../plan/ask-planner.js';
 import { parsePlanAnswer } from '../plan/plan-answer.js';
-import { planPrd } from '../plan/plan-prd.js';
-import { dataModelWarnings, planDataModel } from '../plan/plan-data-model.js';
+import { planDocuments, type DocumentPrompts } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
+import { planShapes } from '../plan/plan-shapes.js';
 import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { ProviderSetFactory } from '../ports/provider-set-factory.js';
+import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
@@ -40,13 +38,15 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // catalogue version and its SHA-256, and the planner's prompt version in the manifest, asks the
 // planner once through the guarded provider the factory builds for the run, checks the answer
 // against the supported cards, asks it a second time for the product requirements document (RF-621,
-// its own versioned prompt), a third time for the target data model (RF-623), a fourth time for the
-// API contract when the front end is separate (RF-624) and writes `handoff/`.
+// its own versioned prompt), a third time for the target data model (RF-623), a fourth for the target flows (RF-625), a fifth for the API contract when the front end
+// is separate (RF-624) and writes `handoff/`.
 // Only `Supported` claims and answered questions reach the planner; the claims left out and the brief's defaults are listed in the package. The
 // cost report is written at every end.
 
 export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
   readonly users: UserRepository;
+  /** RF-632: the scan whose files the data shapes are measured from. */
+  readonly scans: ScanResults;
   readonly providers: ProviderSetFactory;
   readonly handoff: HandoffWriter;
   readonly costReports: CostReportWriter;
@@ -58,17 +58,16 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly prdPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the target data model (RF-623). */
   readonly dataModelPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the target flows (RF-625). */
+  readonly flowsPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the API contract (RF-624). */
   readonly apiContractPrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
-interface PlanPrompts {
+interface PlanPrompts extends DocumentPrompts {
   readonly plan: PromptFile;
-  readonly prd: PromptFile;
-  readonly dataModel: PromptFile;
-  readonly apiContract: PromptFile;
 }
 
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
@@ -128,57 +127,34 @@ export class BuildPlan implements RunExecutor {
       const message = 'The planner answer named no requirement with a supported card.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
-    const prdCall = { ...call, prompt: prompts.prd, agentTaskId: 'planner-prd' };
-    const prd = await planPrd(prdCall, input, (message) => this.warn(run, message));
-    const modelCall = { ...call, prompt: prompts.dataModel, agentTaskId: 'planner-data-model' };
-    const dataModel = await this.dataModel(modelCall, { cards: supported, brief });
-    const apiCall = { ...call, prompt: prompts.apiContract, agentTaskId: 'planner-api-contract' };
-    const apiContract = await this.apiContract(apiCall, { cards: supported, brief, dataModel });
-    const documents = { prd, dataModel, apiContract };
-    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, documents);
+    const warn = (message: string): Promise<void> => this.warn(run, message);
+    const documents = await planDocuments(
+      call,
+      prompts,
+      { ...input, components: assembly.content.components },
+      warn,
+    );
+    const shapes = await planShapes(this.deps, inputs.value);
+    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, {
+      ...documents,
+      shapes,
+    });
     await this.deps.handoff.write(scopeOf(run), handoff);
     return { endState: 'Completed' };
   }
 
-  /** The principle catalogue and the planner's two versioned prompts, read for this run. */
+  /** The principle catalogue and the planner's versioned prompts, read for this run. */
   private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
-    const { catalogue, prompt, prdPrompt, dataModelPrompt } = this.deps;
-    const [loaded, plan, prd, dataModel, apiContract] = await Promise.all([
+    const { catalogue, prompt, prdPrompt, dataModelPrompt, flowsPrompt } = this.deps;
+    const [loaded, plan, prd, dataModel, flows, apiContract] = await Promise.all([
       catalogue(),
       prompt(),
       prdPrompt(),
       dataModelPrompt(),
+      flowsPrompt(),
       this.deps.apiContractPrompt(),
     ]);
-    return { catalogue: loaded, prompts: { plan, prd, dataModel, apiContract } };
-  }
-
-  /**
-   * RF-623: the target data model from the planner's third call, checked against the supported
-   * `ENT` claims. An answer with no usable table leaves the model without tables and every legacy
-   * claim listed as dropped; that and what the checks refused are logged. The call failing fails the run.
-   */
-  private async dataModel(
-    call: PlannerCall,
-    input: Parameters<typeof planDataModel>[1],
-  ): Promise<TargetDataModel> {
-    const planned = await planDataModel(call, input);
-    for (const message of dataModelWarnings(planned)) await this.warn(call.run, message);
-    return planned.assembly.model;
-  }
-
-  /**
-   * RF-624: the API contract from the planner's fourth call, when the brief names a front end and a
-   * verified feature or flow exists; otherwise no call is made and the contract says why none applies.
-   * An answer with no usable operation leaves no file and is logged. The call failing fails the run.
-   */
-  private async apiContract(
-    call: PlannerCall,
-    input: Parameters<typeof planApiContract>[1],
-  ): Promise<ApiContract> {
-    const planned = await planApiContract(call, input);
-    for (const message of apiContractWarnings(planned)) await this.warn(call.run, message);
-    return planned.contract;
+    return { catalogue: loaded, prompts: { plan, prd, dataModel, flows, apiContract } };
   }
 
   private warn(run: Run, message: string): Promise<void> {
@@ -201,10 +177,9 @@ export class BuildPlan implements RunExecutor {
     const { inputs, catalogue, prompts } = used;
     const { version, sha256 } = catalogue;
     const versions = Object.fromEntries(
-      [prompts.plan, prompts.prd, prompts.dataModel, prompts.apiContract].map((file) => [
-        file.name,
-        { version: file.version, sha256: file.sha256 },
-      ]),
+      [...[prompts.plan, prompts.prd, prompts.dataModel, prompts.flows, prompts.apiContract]].map(
+        (file) => [file.name, { version: file.version, sha256: file.sha256 }],
+      ),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));

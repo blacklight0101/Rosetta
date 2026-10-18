@@ -14,6 +14,7 @@ export const handoffFiles = {
   entities: 'entity-mapping.md',
   dataModel: 'data-model.md',
   apiContract: 'api/openapi.yaml',
+  flows: 'flows/README.md',
   roadmap: 'roadmap.md',
   tasks: 'tasks.md',
   risks: 'risks.md',
@@ -21,13 +22,14 @@ export const handoffFiles = {
   sources: 'sources.md',
   conventions: 'conventions.md',
   agents: 'AGENTS.md',
+  fixtures: 'fixtures.md',
 } as const;
 
 /**
  * RF-620: the documentation set the README's reading order opens with, in the order of the
- * requirement. Each document of the set is added here by the card that writes its file (the flows,
- * the user-interface material and the implementation plan), so the reading order never links a file
- * the package does not have. The API contract is written only when the front end is separate (RF-624),
+ * requirement. Each document of the set is added here by the card that writes its file (the
+ * user-interface material and the implementation plan), so the reading order never links a file the
+ * package does not have. The API contract is written only when the front end is separate (RF-624),
  * so its entry links the file only when the package has it (readingOrder in handoff-list-markdown.ts).
  */
 export const documentSet = [
@@ -35,6 +37,7 @@ export const documentSet = [
   { title: 'Technical requirements document', file: handoffFiles.trd },
   { title: 'Target data model', file: handoffFiles.dataModel },
   { title: 'API contract', file: handoffFiles.apiContract },
+  { title: 'Target flows', file: handoffFiles.flows },
 ] as const;
 
 const decisionsFolder = 'decisions';
@@ -63,4 +66,20 @@ export function sourceLinks(ids: readonly string[], depth = 0): string {
 /** A bulleted list of escaped text, or the line given for an empty list. */
 export function bullets(items: readonly string[], esc: MarkdownEscaper, empty: string): string[] {
   return items.length === 0 ? [empty] : items.map((item) => `- ${esc.inline(item)}`);
+}
+
+/** RF-632: the sections of `fixtures.md`; a task card links them by the anchor of the heading. */
+export const shapeSections = {
+  largest: 'Largest files',
+  byKind: 'Size by kind',
+  deepest: 'Deepest paths',
+  unusual: 'Unusual file names',
+  encodings: 'Encodings',
+  lineEndings: 'Line endings',
+  volumes: 'Data volumes stated by the cards',
+} as const;
+
+/** A link to a section of `fixtures.md`, from a file at the root of the package. */
+export function shapeLink(title: (typeof shapeSections)[keyof typeof shapeSections]): string {
+  return `[${title}](${handoffFiles.fixtures}#${title.toLowerCase().replaceAll(' ', '-')})`;
 }

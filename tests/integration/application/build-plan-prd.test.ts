@@ -192,24 +192,28 @@ describe('BuildPlan: the documentation set', () => {
 
     const order = (files['README.md'] ?? '').split('## Reading order')[1]?.split('\n## ')[0] ?? '';
     const links = [...order.matchAll(/\]\(([^)#]+)\)/gu)].map((match) => match[1]);
-    expect(links.slice(0, 6)).toEqual([
+    expect(links.slice(0, 7)).toEqual([
       'prd.md',
       'trd.md',
       'data-model.md',
+      'flows/README.md',
       'requirements.md',
       'architecture.md',
       'decisions/ADR-001.md',
     ]);
-    expect(links.slice(-6)).toEqual([
+    expect(links.slice(-7)).toEqual([
       'roadmap.md',
       'tasks.md',
       'risks.md',
       'open-questions.md',
       'sources.md',
+      'fixtures.md',
       'conventions.md',
     ]);
   });
+});
 
+describe('BuildPlan: the documentation set links', () => {
   it('RF-620 every listed file exists and every link of every file resolves to a file and a heading', async () => {
     const files = await planned();
 

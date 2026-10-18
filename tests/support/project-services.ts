@@ -21,6 +21,7 @@ import type { MemoryUserRepository } from '../../src/infrastructure/db/memory-us
 import {
   loadApiContractPrompt,
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -85,6 +86,7 @@ export function projectServices(
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),
       dataModelPrompt: () => loadDataModelPrompt('prompts'),
+      flowsPrompt: () => loadFlowsPrompt('prompts'),
       apiContractPrompt: () => loadApiContractPrompt('prompts'),
     }),
   };
