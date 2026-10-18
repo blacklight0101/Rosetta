@@ -8,6 +8,7 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 export const handoffFiles = {
   readme: 'README.md',
   prd: 'prd.md',
+  trd: 'trd.md',
   requirements: 'requirements.md',
   architecture: 'architecture.md',
   entities: 'entity-mapping.md',
@@ -28,6 +29,7 @@ export const handoffFiles = {
  */
 export const documentSet = [
   { title: 'Product requirements document', file: handoffFiles.prd },
+  { title: 'Technical requirements document', file: handoffFiles.trd },
 ] as const;
 
 const decisionsFolder = 'decisions';

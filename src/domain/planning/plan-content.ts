@@ -166,7 +166,11 @@ export function assemblePlan(
     ...item,
     sources: knownSources(item.sources, supported),
   });
-  const technical = assembleTechnical();
+  const technical = assembleTechnical(
+    draft.technical,
+    supported,
+    draft.decisions.map((_, index) => planId('ADR', index + 1)),
+  );
   return {
     content: {
       summary: draft.summary,

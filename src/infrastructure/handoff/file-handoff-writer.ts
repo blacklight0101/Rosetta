@@ -24,6 +24,7 @@ import {
   requirementsMarkdown,
 } from './handoff-plan-markdown.js';
 import { roadmapMarkdown } from './handoff-roadmap-markdown.js';
+import { trdMarkdown } from './handoff-trd-markdown.js';
 import { tasksMarkdown } from './handoff-task-markdown.js';
 
 // RF-601, RF-603, RNF-003, data-model.md section 3.17: writes the hand-off package of a plan run
@@ -55,6 +56,7 @@ export function renderHandoff(
   return {
     [handoffFiles.readme]: readmeMarkdown(handoff, esc),
     [handoffFiles.prd]: prdMarkdown(handoff, esc),
+    [handoffFiles.trd]: trdMarkdown(handoff, esc, masker),
     [handoffFiles.requirements]: requirementsMarkdown(handoff, esc),
     [handoffFiles.architecture]: architectureMarkdown(handoff, esc, masker),
     ...decisions,

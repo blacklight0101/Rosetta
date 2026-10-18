@@ -70,10 +70,50 @@ export interface TechnicalAssembly {
   readonly dropped: number;
 }
 
-// RF-622
-export function assembleTechnical(): TechnicalAssembly {
+function unique<T>(items: readonly T[]): T[] {
+  return [...new Set(items)];
+}
+
+// RF-622, ADR-005: the draft's technical part checked. An integration stays only for a supported
+// card, once (the first answer counts); a security control or a target stays only with a
+// supported source card; a decision position names the record of the draft's decision at that
+// position (`decisionIds`, in the draft's order) or no record at all.
+export function assembleTechnical(
+  draft: TechnicalDraft,
+  supported: ReadonlySet<string>,
+  decisionIds: readonly string[],
+): TechnicalAssembly {
+  const decided = (position: number | null): string =>
+    position === null ? '' : (decisionIds[position - 1] ?? '');
+  const answered = new Set<string>();
+  const integrations = draft.integrations.flatMap((item) => {
+    if (!supported.has(item.card) || answered.has(item.card)) return [];
+    answered.add(item.card);
+    return [{ ...item, decision: decided(item.decision) }];
+  });
+  const withSources = <T extends { readonly sources: readonly string[] }>(
+    items: readonly T[],
+  ): (T & { readonly sources: readonly string[] })[] =>
+    items.flatMap((item) => {
+      const sources = unique(item.sources.filter((id) => supported.has(id)));
+      return sources.length === 0 ? [] : [{ ...item, sources }];
+    });
+  const security = withSources(draft.security).map((item) => ({
+    ...item,
+    decision: decided(item.decision),
+  }));
+  const targets = withSources(draft.targets).map((item) => ({
+    ...item,
+    decision: decided(item.decision),
+  }));
+  const environments = draft.environments.map((item) => ({
+    ...item,
+    decision: decided(item.decision),
+  }));
+  const kept = integrations.length + security.length + targets.length;
+  const given = draft.integrations.length + draft.security.length + draft.targets.length;
   return {
-    content: { integrations: [], security: [], targets: [], environments: [] },
-    dropped: 0,
+    content: { integrations, security, targets, environments },
+    dropped: given - kept,
   };
 }
