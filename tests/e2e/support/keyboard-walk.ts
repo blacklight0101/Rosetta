@@ -40,7 +40,7 @@ const FOCUSED = `
   })()
 `;
 
-export interface Walk {
+interface Walk {
   /** How many controls the page has. */
   readonly controls: number;
   /** The controls reached, by their position in the page. */
@@ -51,7 +51,7 @@ export interface Walk {
 
 /** Presses Tab from the top of the page once per control, plus a few spare presses. */
 // RNF-010
-export async function walkWithKeyboard(page: Page): Promise<Walk> {
+async function walkWithKeyboard(page: Page): Promise<Walk> {
   const controls = z.number().parse(await page.evaluate(MARK));
   await page.evaluate(
     'document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0)',
