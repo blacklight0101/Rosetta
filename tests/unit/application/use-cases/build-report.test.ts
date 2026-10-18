@@ -106,7 +106,9 @@ describe('BuildReport', () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { files: ['report/report.md', 'report/report.html'] },
+      value: {
+        files: ['report/report.md', 'report/report.html', `report/${replayDemoRunKey}.zip`],
+      },
     });
     const [written] = writer.written;
     expect(written?.scope).toEqual(scopeOf(run));

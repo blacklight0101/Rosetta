@@ -8,7 +8,9 @@ import { NodeOutputWriter } from '../../src/infrastructure/files/node-output-wri
 import { FileRunTextFiles } from '../../src/infrastructure/files/file-run-text-files.js';
 import { NodeRunFileReader } from '../../src/infrastructure/files/node-run-file-reader.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
+import { YazlArchiveWriter } from '../../src/infrastructure/files/yazl-archive-writer.js';
 import { FileReportWriter } from '../../src/infrastructure/report/file-report-writer.js';
+import { ReportZipWriter } from '../../src/infrastructure/report/report-zip-writer.js';
 import { FixedClock } from './fixed-clock.js';
 import { MemoryLogger } from './memory-logger.js';
 import {
@@ -37,6 +39,7 @@ export function realRunOutputs(
     report: {
       text: new FileRunTextFiles(writer),
       writer: new FileReportWriter({ writer, masker, assetsFolder: templates }),
+      downloads: new ReportZipWriter(dataDir, new YazlArchiveWriter(dataDir)),
     },
   };
 }
