@@ -66,6 +66,12 @@ export class BuildPlan implements RunExecutor {
     } catch (error) {
       if (execution.signal.aborted) return { endState: 'Interrupted' };
       if (!(error instanceof RosettaError)) throw error;
+      // RF-422, RF-423: a refusal by the planner's role cap leaves the run's signal alone, but the
+      // run did not finish what it was asked to write, so it ends CapReached like any cap stop.
+      if (error.code === ERROR_CODES.budgetCapReached) {
+        await this.log(execution.run, error.code, 'The planner call would pass a cap.');
+        return { endState: 'CapReached', errorCode: error.code };
+      }
       await this.log(execution.run, error.code, 'The hand-off package could not be written.');
       return failed(error.code);
     } finally {
