@@ -66,6 +66,14 @@ describe('extractDiagrams edge cases', () => {
     expect(extractDiagrams({ 'spec.md': text })).toEqual([]);
   });
 
+  it('RF-508 reads a document with Windows line ends', () => {
+    const text = ['## Screens', ...fence('flowchart LR\n  a')].join('\r\n');
+
+    expect(extractDiagrams({ 'spec.md': text })).toEqual([
+      { document: 'spec.md', title: 'Screens', source: 'flowchart LR\n  a' },
+    ]);
+  });
+
   it('RF-508 names a diagram by its document when no heading comes before it', () => {
     expect(extractDiagrams({ 'handoff/trd.md': fence('flowchart LR\n a').join('\n') })).toEqual([
       { document: 'handoff/trd.md', title: 'handoff/trd.md', source: 'flowchart LR\n a' },
@@ -96,6 +104,7 @@ describe('diagramDocumentPaths', () => {
     const index = [
       '- [FLOW-001](FLOW-001.md): Check out',
       '- [FLOW-012](FLOW-012.md): Return',
+      '- [FLOW-001](FLOW-001.md): listed twice',
       '| [FLOW-003](sources.md#flow-003) | Journey | reason |',
     ].join('\n');
 

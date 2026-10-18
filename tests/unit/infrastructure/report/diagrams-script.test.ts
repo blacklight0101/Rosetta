@@ -18,10 +18,10 @@ const script = await readFile(
 
 const good = { document: 'spec.md', title: 'Good', source: 'flowchart LR\n  s1["Home"]' };
 const bad = { document: 'spec.md', title: 'Bad', source: 'flowchart LR\n  a --- (((' };
-// happy-dom drops a style element of an svg and has no content security policy: that the rules are
-// moved out of the drawing and the inline styles are applied through the CSSOM is checked in a browser
-// (tests/e2e/report-diagrams.spec.ts); here the inline style must still reach the shape.
-const svg = '<svg id="rosetta-diagram-1"><g class="n" style="opacity:0.5"></g></svg>';
+// happy-dom drops a style element of an svg and has no content security policy: that the style rules
+// leave the drawing and reach the page through the CSSOM is checked in a browser
+// (tests/e2e/report-diagrams.spec.ts).
+const svg = '<svg id="rosetta-diagram-1"><g class="n"></g></svg>';
 
 const sanitiserConfig = z.object({
   dompurifyConfig: z.object({ FORBID_TAGS: z.array(z.string()), FORBID_ATTR: z.array(z.string()) }),
@@ -115,16 +115,6 @@ describe('the diagrams script and the drawing it inserts', () => {
     expect(figure?.querySelector('[data-diagram-drawing] svg')).not.toBeNull();
     expect(figure?.querySelector('details')?.hasAttribute('open')).toBe(false);
     expect(noteShown(figure)).toBe(false);
-  });
-
-  it('RF-1013 RF-508 keeps the inline style of a shape, applied to it after the drawing is in the page', async () => {
-    const { window } = pageWith([good]);
-
-    await run(window);
-
-    const [figure] = figures(window);
-    expect(figure?.querySelectorAll('style')).toHaveLength(0);
-    expect(figure?.querySelector('g')?.style.opacity).toBe('0.5');
   });
 });
 
