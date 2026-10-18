@@ -138,7 +138,8 @@ module.exports = {
     },
     {
       name: 'web-imports-contracts-only',
-      comment: 'web/ may import from src/ only src/application/contracts/ (DEC-112)',
+      comment:
+        'web/ may import from src/ only src/application/contracts/ (DEC-112); that folder is not created yet, so no web/ file imports src/ today',
       severity: 'error',
       from: { path: '^web/' },
       to: { path: '^src/', pathNot: '^src/application/contracts/' },
