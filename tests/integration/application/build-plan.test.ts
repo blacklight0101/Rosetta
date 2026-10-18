@@ -138,7 +138,6 @@ describe('BuildPlan: the run manifest', () => {
     await seeded();
 
     const manifest = await h.manifestOf(await h.plan());
-
     expect(manifest.brief).toMatchObject({ ...briefAnswers, savedAt: '2026-10-12T09:30:00.000Z' });
     expect(manifest.catalogue).toEqual({
       version: shippedCatalogue.version,
@@ -152,6 +151,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/package.v4.md': { version: 'v4', sha256: await sha('package.v4.md') },
       'planner/prd.v1.md': { version: 'v1', sha256: await sha('prd.v1.md') },
       'planner/data-model.v1.md': { version: 'v1', sha256: await sha('data-model.v1.md') },
+      'planner/flows.v1.md': { version: 'v1', sha256: await sha('flows.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');
@@ -175,6 +175,7 @@ describe('BuildPlan: the parts of the package', () => {
       'decisions/ADR-003.md',
       'decisions/ADR-004.md',
       'entity-mapping.md',
+      'flows/README.md',
       'open-questions.md',
       'prd.md',
       'requirements.md',

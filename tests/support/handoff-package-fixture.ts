@@ -95,6 +95,18 @@ function dataModelOf(text: string): HandoffPackage['dataModel'] {
   };
 }
 
+/** RF-625: one mapped journey and one journey out of scope, with this text in every model field. */
+function flowsOf(text: string): HandoffPackage['flows'] {
+  const step = { claimId: 'FLOW-001.c1', text, touches: 'FEAT-001', component: text, action: text };
+  const unmapped = { ...step, claimId: 'FLOW-001.c2', touches: null, component: null, action: '' };
+  return {
+    flows: [
+      { cardId: 'FLOW-001', title: text, trigger: text, outcome: text, steps: [step, unmapped] },
+    ],
+    outOfScope: [{ cardId: 'FLOW-002', title: text, reason: text, byPlanner: true }],
+  };
+}
+
 /** The package with this text in every model and repository field. */
 export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPackage {
   const content = assemblePlan(draft(text), new Set(['FEAT-001', 'INT-001'])).content;
@@ -119,6 +131,7 @@ export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPack
       decisions: content.decisions.map((decision) => ({ ...decision, options: [text] })),
     },
     dataModel: dataModelOf(text),
+    flows: flowsOf(text),
     sources: sourcesOf(text),
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],

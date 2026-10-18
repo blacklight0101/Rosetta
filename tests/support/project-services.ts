@@ -20,6 +20,7 @@ import type { MemoryServerSettings } from '../../src/infrastructure/db/memory-se
 import type { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-repository.js';
 import {
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -84,6 +85,7 @@ export function projectServices(
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),
       dataModelPrompt: () => loadDataModelPrompt('prompts'),
+      flowsPrompt: () => loadFlowsPrompt('prompts'),
     }),
   };
 }

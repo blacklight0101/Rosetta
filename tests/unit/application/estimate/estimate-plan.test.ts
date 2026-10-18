@@ -93,7 +93,10 @@ describe('EstimatePlan: the PRD call', () => {
     const packageSize = (await readFile('prompts/planner/package.v4.md', 'utf8')).length;
     const prdSize = (await readFile('prompts/planner/prd.v1.md', 'utf8')).length;
     const planTokens =
-      assumptions.promptTokens - assumptions.prdPromptTokens - assumptions.dataModelPromptTokens;
+      assumptions.promptTokens -
+      assumptions.prdPromptTokens -
+      assumptions.dataModelPromptTokens -
+      assumptions.flowsPromptTokens;
     expect(assumptions.prdPromptTokens).toBeGreaterThan(0);
     expect(planTokens).toBeGreaterThan(0);
     expect(

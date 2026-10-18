@@ -28,6 +28,7 @@ import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
 import { FileHandoffWriter } from '../../src/infrastructure/handoff/file-handoff-writer.js';
 import {
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -106,6 +107,7 @@ function planExecutor(s: Stores, providers: UnderstandProviders): BuildPlan {
     prompt: () => loadPlannerPrompt('prompts'),
     prdPrompt: () => loadPrdPrompt('prompts'),
     dataModelPrompt: () => loadDataModelPrompt('prompts'),
+    flowsPrompt: () => loadFlowsPrompt('prompts'),
     ids: new SequenceIdGenerator(),
   });
 }
@@ -214,6 +216,7 @@ async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
     ...{ catalogue: () => Promise.resolve(shippedCatalogue) },
     ...{ prompt: () => loadPlannerPrompt('prompts'), prdPrompt: () => loadPrdPrompt('prompts') },
     dataModelPrompt: () => loadDataModelPrompt('prompts'),
+    flowsPrompt: () => loadFlowsPrompt('prompts'),
   });
   const outcome = await estimate.execute({ actor, projectId: project.id });
   if (!outcome.ok) throw new Error(`The plan estimate was refused: ${outcome.error}`);

@@ -16,6 +16,7 @@ import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-plan
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import {
   loadDataModelPrompt,
+  loadFlowsPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
@@ -99,6 +100,7 @@ export async function createPlanEstimateHarness(
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),
       dataModelPrompt: () => loadDataModelPrompt('prompts'),
+      flowsPrompt: () => loadFlowsPrompt('prompts'),
     }),
     async seed(seed) {
       await seedPlanSource({ files, briefs, runs }, project, seed);
