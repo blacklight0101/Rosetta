@@ -39,7 +39,7 @@ describe('targetFlowDiagram', () => {
       '  p1->>p2: 1. Sends it.',
       '  p2->>p3: 2. Legacy step 2.',
       '  p3->>p2: 4. Shows it.',
-      '  Note over p2: Outcome: The order is stored.',
+      '  Note over p2: Outcome#58; The order is stored.',
       '',
     ]);
   });
@@ -78,7 +78,7 @@ describe('targetFlowDiagram: names and secrets', () => {
     const lines = text.split('\n').filter((line) => line !== '');
     expect(lines[0]).toBe('sequenceDiagram');
     expect(lines).toHaveLength(1 + 2 + 1 + 1);
-    expect(text).not.toMatch(/[<>"`%{}]|direction|injected;/u);
+    expect(text).not.toMatch(/[<"`%{}]|direction|injected;/u);
     const shape = /^ {2}(participant p\d+ as |p\d+->>p\d+: |Note over p\d+: )/u;
     expect(lines.slice(1).every((line) => shape.test(line))).toBe(true);
   });

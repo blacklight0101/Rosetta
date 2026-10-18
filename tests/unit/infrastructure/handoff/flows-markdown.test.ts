@@ -56,7 +56,9 @@ describe('flows/README.md', () => {
 
 describe('flows/<FLOW-id>.md', () => {
   it('RF-625 one file per main journey, none for a journey out of scope', () => {
-    const names = Object.keys(filesOf()).filter((name) => name.startsWith('flows/'));
+    const names = Object.keys(filesOf())
+      .filter((name) => name.startsWith('flows/'))
+      .sort();
 
     expect(names).toEqual(['flows/FLOW-001.md', 'flows/README.md']);
   });
