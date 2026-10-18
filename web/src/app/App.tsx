@@ -77,8 +77,8 @@ function SignedInPage(props: SignedInProps): JSX.Element {
   const navigation = buildNavigation({
     routes,
     role: user.role,
-    params: match.params,
     path: location,
+    project: { status: 'none' },
   });
   return (
     <SessionContext.Provider value={user}>

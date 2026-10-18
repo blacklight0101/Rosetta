@@ -16,16 +16,20 @@ export interface NavGroup {
   /** Absent for the main group, which has no heading. */
   readonly label?: string;
   readonly items: readonly NavItem[];
+  readonly note?: string;
 }
+
+export type ProjectNav =
+  | { readonly status: 'none' }
+  | { readonly status: 'pending' }
+  | { readonly status: 'open'; readonly id: string; readonly name?: string };
 
 export interface NavigationInput {
   readonly routes: readonly RouteDefinition[];
   readonly role: 'admin' | 'user';
-  /** The parameters of the current route. */
-  readonly params: Readonly<Record<string, string>>;
   /** The current location. */
   readonly path: string;
-  readonly projectName?: string;
+  readonly project: ProjectNav;
 }
 
 const groupOrder: readonly NavGroupId[] = ['main', 'project', 'admin'];
@@ -61,12 +65,12 @@ export function buildNavigation(input: NavigationInput): readonly NavGroup[] {
       .filter((route) => route.access !== 'admin' || input.role === 'admin')
       .toSorted((a, b) => (a.nav?.order ?? 0) - (b.nav?.order ?? 0))
       .flatMap((route) => {
-        const path = fill(route.path, input.params);
+        const path = fill(route.path, {});
         return path === undefined || route.nav === undefined
           ? []
           : [{ path, label: route.nav.label, current: path === here }];
       });
-    const label = labelOf(id, input.projectName);
+    const label = labelOf(id, undefined);
     if (items.length > 0) groups.push(label === undefined ? { id, items } : { id, label, items });
   }
   return groups;
