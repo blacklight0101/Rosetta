@@ -168,6 +168,15 @@ export const SERVER_ERROR_DESCRIPTIONS: Readonly<Record<ServerErrorCode, ErrorDe
     nextStep:
       'Only an understand run that stopped at a cap, failed or was interrupted can be resumed, and only once at a time; start a new run instead.',
   },
+  'RST-2308': {
+    message: 'This run cannot be deepened.',
+    nextStep:
+      'Only an understand run that ended Completed can be deepened; resume a run that stopped, or start a new run.',
+  },
+  'RST-2309': {
+    message: 'A Deepen starts only after you confirm its estimate.',
+    nextStep: 'Look at the estimate for the rounds, then confirm to start the Deepen.',
+  },
   'RST-2400': {
     message: 'A database migration file has an invalid name or a duplicate number.',
     nextStep: 'Name each file NNNN_snake_name.sql with a number used once, then start again.',

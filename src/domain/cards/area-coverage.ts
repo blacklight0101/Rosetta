@@ -66,7 +66,7 @@ export type CoverageArea = Pick<Area, 'name' | 'files' | 'estimatedTokens'>;
 export type CoverageFile = Pick<FileEntry, 'path' | 'lines' | 'estimatedTokens'>;
 
 /** The ranges cut to lines 1..`lines`, sorted, with overlapping and adjacent ones merged. */
-function mergedRanges(ranges: readonly LineRange[], lines: number): LineRange[] {
+export function mergedRanges(ranges: readonly LineRange[], lines: number): LineRange[] {
   const cut = ranges
     .map((range) => ({
       startLine: Math.max(1, range.startLine),
@@ -89,12 +89,12 @@ function linesIn(ranges: readonly LineRange[]): number {
 }
 
 /** The file's tokens in proportion to the share of its lines that were read, rounded. */
-function tokensRead(file: CoverageFile | undefined, read: readonly LineRange[]): number {
+export function tokensRead(file: CoverageFile | undefined, read: readonly LineRange[]): number {
   if (file === undefined || file.lines === 0) return 0;
   return Math.round((file.estimatedTokens * linesIn(read)) / file.lines);
 }
 
-function rounded(value: number, decimals: number): number {
+export function rounded(value: number, decimals: number): number {
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
 }

@@ -148,6 +148,8 @@ export const ERROR_CODES = {
   runStageNotAvailable: 'RST-2305',
   deleteRefusedInUse: 'RST-2306',
   runNotResumable: 'RST-2307',
+  runNotDeepenable: 'RST-2308',
+  deepenNotConfirmed: 'RST-2309',
   migrationFileInvalid: 'RST-2400',
   migrationChanged: 'RST-2401',
   migrationUnknown: 'RST-2402',
