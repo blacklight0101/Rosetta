@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Written by hand for this repository; no real provider was called. The verifier judges the claims of a FLOW card and a SCRN card on the webforms-csharp fixture that pass the citation check, in card and claim order: a supported and a rejected flow step, then a supported screen claim, a made-up validation and a made-up action, both rejected (P2-20).",
+  "description": "Written by hand for this repository; no real provider was called. The verifier judges the claims of a FLOW card and a SCRN card on the webforms-csharp fixture that pass the citation check, in card and claim order: a supported and a rejected flow step, then a supported screen claim, a made-up validation and a made-up action, both rejected (P2-20), then the route and the field of the screen, both supported (P3-29).",
   "calls": [
     {
       "attempts": [
@@ -92,6 +92,44 @@
             },
             "finishReason": "stop",
             "requestId": "fake-verifier-5",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The cited lines are the Details page itself, so the route is shown.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-6",
+            "modelVersion": "fake-judge-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "Reason: The page holds one label, NameLabel, as the field says.\nVerdict: Supported",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 420,
+              "outputTokens": 40,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-verifier-7",
             "modelVersion": "fake-judge-2026-10-01"
           }
         }

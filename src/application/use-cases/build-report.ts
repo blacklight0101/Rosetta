@@ -18,6 +18,7 @@ import { addEvidence } from '../report/card-evidence.js';
 import { buildReportModel, type ReportInputs } from '../report/build-report-model.js';
 import { parseCostReport, parseCoverage, projectTotalsOf } from '../report/report-extras.js';
 import { parseCardIndex, type ReportDocuments } from '../report/report-model.js';
+import { diagramDocumentPaths, extractDiagrams } from '../report/report-diagrams.js';
 import type { ScannedSource } from '../ports/scan-results.js';
 import { scopeOf } from '../runs/run-scope.js';
 
@@ -81,6 +82,7 @@ export class BuildReport {
       documents: await this.documentsOf(scope),
       areas: scanned?.codeMap.areas.map(({ name, mapLevel }) => ({ name, mapLevel })) ?? [],
       cardDetails: await this.cardDetailsOf(scope, cardIndex, scanned),
+      diagrams: await this.diagramsOf(scope),
       ...(await this.figuresOf(run, scope)),
     });
     return ok({ files: await writer.write(scope, model) });
@@ -151,6 +153,18 @@ export class BuildReport {
       runId: run.id,
       data: { scanRunId: scan.id },
     });
+  }
+
+  /** RF-508: the Mermaid diagrams of the documents of the run: the specification, the data model and the package. */
+  private async diagramsOf(scope: RunScope): Promise<ReturnType<typeof extractDiagrams>> {
+    const { files } = this.deps;
+    const flows = await files.read(scope, 'handoff/flows/README.md');
+    const texts: Record<string, string> = {};
+    for (const path of diagramDocumentPaths(flows)) {
+      const text = await files.read(scope, path);
+      if (text !== undefined) texts[path] = text;
+    }
+    return extractDiagrams(texts);
   }
 
   private async documentsOf(scope: RunScope): Promise<ReportDocuments> {

@@ -141,7 +141,7 @@ describe('an understand run over the WebForms shop: prompts', () => {
     const manifest = await h.manifestOf(run);
 
     expect(manifest.promptVersions['cards/flows.v1.md']?.version).toBe('v1');
-    expect(manifest.promptVersions['cards/screens.v1.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
+    expect(manifest.promptVersions['cards/screens.v2.md']?.sha256).toMatch(/^[0-9a-f]{64}$/u);
   });
 });
 

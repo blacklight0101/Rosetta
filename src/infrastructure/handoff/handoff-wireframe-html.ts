@@ -35,14 +35,29 @@ function actionText(action: TargetScreen['actions'][number]): string {
   return how.length === 0 ? action.label : `${action.label} (${how.join(', ')})`;
 }
 
+type Field = TargetScreen['fields'][number];
+
+function fieldText(field: Field, text: Text): string {
+  return `${text(field.name)} (${text(field.inputKind)}, ${field.required ? 'required' : 'optional'})`;
+}
+
+/** The fields: the confirmed ones, then those of an old card, marked "not checked" (RF-626). */
+function fieldItems(screen: TargetScreen, text: Text): string[] {
+  return [
+    ...screen.fields.map((field) => fieldText(field, text)),
+    ...screen.uncheckedFields.map((field) => `${fieldText(field, text)} - not checked`),
+  ];
+}
+
+function emptyFields(screen: TargetScreen): string {
+  return screen.fieldsNotConfirmed ? 'fields not confirmed' : 'This screen has no field.';
+}
+
 /** The wireframe of a target screen; `mask` hides the secrets in every text first. */
 // RF-626
 export function wireframeHtml(screen: TargetScreen, mask: Text): string {
   const text: Text = (value) => escapeHtml(mask(value));
-  const fields = screen.fields.map(
-    (field) =>
-      `${text(field.name)} (${text(field.inputKind)}, ${field.required ? 'required' : 'optional'})`,
-  );
+  const fields = fieldItems(screen, text);
   const actions = screen.actions.map((action) => text(actionText(action)));
   const navigation = screen.navigation.map((link) =>
     link.screenId !== null && CARD_ID.test(link.screenId)
@@ -70,7 +85,7 @@ export function wireframeHtml(screen: TargetScreen, mask: Text): string {
     box(text, navigation, 'This screen leads nowhere.'),
     '</nav>',
     '<main class="box">',
-    section('Fields', box(text, fields, 'This screen has no field.')),
+    section('Fields', box(text, fields, emptyFields(screen))),
     section('Actions', box(text, actions, 'This screen has no action.')),
     '</main>',
     '<footer class="box">',

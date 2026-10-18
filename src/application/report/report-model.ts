@@ -3,6 +3,7 @@ import { CLAIM_STATUSES } from '../../domain/cards/card-vocabulary.js';
 import type { Overview } from '../../domain/overview/overview.js';
 import type { MapLevel } from '../../domain/code-map/map-level.js';
 import type { ReportCardDetail } from './card-detail.js';
+import type { ReportDiagram } from './report-diagrams.js';
 import type { ReplayModel } from './replay-model.js';
 
 // RF-504, RF-506, data-model.md section 3.17: what the report writers need to know about a finished
@@ -146,6 +147,8 @@ export interface ReportModel {
   readonly questions: readonly ReportQuestion[];
   /** RF-502: the cards that have a page, with their claims, citations and cited lines. */
   readonly cardDetails: readonly ReportCardDetail[];
+  /** RF-508: the Mermaid diagrams of the run's documents, drawn on the diagrams page; none when it has none. */
+  readonly diagrams?: readonly ReportDiagram[] | undefined;
 }
 
 const CARD_FILE = /^cards\/[A-Z]+\/[A-Z]+-\d+\.md$/u;

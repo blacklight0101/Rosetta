@@ -6,7 +6,8 @@ import { cardSource } from '../../../support/card-fixtures.js';
 import { FixedClock } from '../../../support/fixed-clock.js';
 import { MemoryLogger } from '../../../support/memory-logger.js';
 import { openWriter } from '../../../support/open-writer.js';
-import { orderScreenCards } from '../../../support/plan-screen-cards.js';
+import { supportedCards } from '../../../../src/domain/planning/plan-sources.js';
+import { orderScreenCards, screenCard } from '../../../support/plan-screen-cards.js';
 import { useTempRoot } from '../../../support/temp-root.js';
 
 // RF-626, RF-261, data-model.md section 3.7: the screen detail of a SCRN card (route, roles,
@@ -51,5 +52,31 @@ describe('FileRunCards: screens', () => {
       ...{ route: '/fax', roles: [], fields: [] },
       ...{ actions: [], leadsTo: [] },
     });
+  });
+});
+
+describe('FileRunCards: masked screens', () => {
+  it('RF-626 ADR-005 a rejected route and rejected links with secret-looking values do not survive the masked card file', async () => {
+    const writer = openWriter(data.path);
+    const masker = new SecretMasker();
+    const logger = new MemoryLogger(new FixedClock('2026-10-12T10:00:00.000Z'), masker);
+    // Built from pieces so no secret-looking literal sits in the file.
+    const secret = ['tok', 'en=', 'abc123', 'xyz789'].join('');
+    const card = screenCard({
+      ...{ id: 'SCRN-001', title: 'Login', route: `/login?${secret}` },
+      leadsTo: [`/next?${secret}`, '/home'],
+      routeRejected: true,
+      linksRejected: true,
+    });
+    await new FileCardOutputs({ writer, masker, logger }).writeCards(scope, {
+      cards: [card],
+      source: cardSource,
+      areasWithoutCards: [],
+    });
+
+    const [kept] = supportedCards(await new FileRunCards(writer).cardsOf(scope));
+
+    expect(kept?.screen?.route).toBe('');
+    expect(kept?.screen?.leadsTo).toEqual([]);
   });
 });
