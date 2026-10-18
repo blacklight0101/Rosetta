@@ -31,4 +31,10 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
     message: 'The hand-off package of this run could not be written.',
     nextStep: 'Check the free space of the data folder, then write the package again.',
   },
+  'RST-1805': {
+    message:
+      'The planner answer was cut off at the output limit, even after it was asked to continue.',
+    nextStep:
+      'Raise Planner max output tokens in Project settings (up to 32,768), or choose a planner model that writes longer answers, then write the package again.',
+  },
 };

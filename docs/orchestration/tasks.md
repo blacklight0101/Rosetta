@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 173     | 64        | 91         | 18        | 0                  | 100     | 65      | 8      | 112        | 0         |
-| P2 Full understand      | 40      | 7         | 27         | 6         | 0                  | 13      | 26      | 1      | 20         | 0         |
-| P3 Report and plan      | 26      | 2         | 22         | 2         | 0                  | 3       | 21      | 2      | 1          | 0         |
-| **Total**               | **239** | **73**    | **140**    | **26**    | **0**              | **116** | **112** | **11** | **133**    | **0**     |
+| P1 Milestone slice (M1) | 175     | 64        | 93         | 18        | 0                  | 102     | 65      | 8      | 114        | 0         |
+| P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
+| P3 Report and plan      | 29      | 2         | 25         | 2         | 0                  | 3       | 24      | 2      | 3          | 0         |
+| **Total**               | **245** | **73**    | **145**    | **27**    | **0**              | **118** | **115** | **12** | **137**    | **0**     |
 
 ## Conventions for every card
 
@@ -2338,6 +2338,32 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Done when**: a fixture run with 2 of 42 areas read and 13 passing cards shows the "N of M areas read" banner and a grouped coverage list; a thin run still shows the existing banner; the Default models page names the built-in defaults when none are set; `npm run verify` green.
 - **Refs**: RF-208, RF-240 and the overview requirements (the builder checks the right RF numbers against docs/spec), G-08 re-test 2026-10-18.
 
+### P1-174 - Follow-up: run page Evidence tab follows merged cards (P2-13 finding)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Done
+- **Reads**: RF-250 (docs/spec/requirements.md:524-528), RF-1140; `web/src/lib/live-run/claim-events.ts:84`, `web/src/lib/live-run/reduce-run.ts:48`; the consolidation journey `tests/e2e/journeys/consolidation.spec.ts` (P2-13, #549).
+- **Do**: the run page Evidence tab's card list follows `cards.merged` the way the claims already do. After consolidation it lists the merged card once (e.g. a single ENT card), not the pre-merge cards (ENT-001 and ENT-002, BR-001 and BR-002). The same holds after a page reload and when the run is replayed from its events.
+- **Delivers**: a reducer change, unit tests, and an added assertion in the consolidation journey.
+- **Done when**: the consolidation journey asserts the Evidence tab card list shows only the merged cards; a unit test of the reducer turns red without the fix; `npm run verify` green.
+- **Refs**: RF-250, RF-1140, P2-13 verifier finding (#549).
+
+### P1-175 - Follow-up: one side navigation on every page
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `web/src/app/routes.ts` (the `nav` groups main, project and admin); the side-navigation component that renders them; `docs/design-system.md`; the owner's report of 2026-10-18: on /projects the menu has 6 items, inside a project it has 11 ("Project" group: Start a run, Plan setup, History, Cost, Project settings), so the menu seems to change and the owner gets lost.
+- **Do**: (1) The "Project" group is always shown in the same place. Inside a project its heading names the project (owner/repo, truncated with the full name on hover and for screen readers). (2) On pages outside a project (Projects, Settings and keys, admin pages) the group keeps the last project the user opened in this browser session and links to it. If the user has opened none, the group shows one line, "Open a project to see its pages", and no dead links. (3) The current page is marked the same way in every group (`aria-current="page"`). (4) The order of groups never changes: main, project, administration. It stays accessible: keyboard operable, axe clean, readable at 360 px.
+- **Delivers**: the web change, unit tests for the group logic, an e2e check that moves between /projects, a project page and an admin page and asserts the same groups and order.
+- **Done when**: the menu shows the same three groups in the same order on every signed-in page; the project group names its project; no link in it points to a project the user cannot open; `npm run verify` green.
+- **Refs**: the side-navigation requirements in docs/spec (the builder names them), design-system.md, owner report 2026-10-18.
+
 ---
 
 ## Phase 2 - Full understand
@@ -2506,7 +2532,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P2-01, P2-03, P2-04, P2-05, P2-06, P2-08
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/process-flows.md` flows 2-4.
 - **Do**: journeys: understand every area with both verifier steps, a cap stop and resume, answer questions and re-run, consolidation visible in the specification.
 - **Delivers**: journey specs.
@@ -2864,6 +2890,19 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Done when**: each item has a test that fails without it; no existing masked shape becomes unmasked; `npm run verify` green.
 - **Refs**: RF-141, RNF-003, P2-33, P1-162.
 
+### P2-41 - Re-read loop for claims that did not pass (needs the owner's spec change)
+
+- **Difficulty**: 9 (opus)
+- **Size**: L
+- **Depends on**: P2-01
+- **Gate**: owner (RFC-003 merged into docs/spec)
+- **Status**: Blocked (owner: RFC-003)
+- **Reads**: RFC-003 once the owner merges it; P2-01 (resume), P2-02 (verifier judgement), ADR-005, ADR-007.
+- **Do**: as RFC-003 decides. The owner asked for a loop that goes back over claims that were not confirmed, so that the system ends up fully understood. On the owner's run of 2026-10-18 (Ollama gemma4:e4b), 118 claims were judged: 68 Supported and 50 Rejected. Others stayed Unverified. The readers read 47 of 79 files, about 12% of the area tokens.
+- **Delivers**: per RFC-003.
+- **Done when**: per RFC-003's acceptance scenarios.
+- **Refs**: owner request 2026-10-18, RF-006, RF-304, RFC-003.
+
 ---
 
 ## Phase 3 - Report and plan
@@ -2887,7 +2926,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-01
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: `docs/design/board/Report.dc.html`.
 - **Do**: a page per area and per card; each citation shows the cited lines with context, line numbers, the claim status and reason, and the permalink.
 - **Delivers**: the pages; snapshot tests.
@@ -3205,3 +3244,42 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: writers, catalogue entries, tests.
 - **Done when**: every RF-637 and RF-638 scenario has a passing test; the catalogue version increases and the run manifest records it; `npm run verify` green.
 - **Refs**: RF-606, RF-637, RF-638, ADR-018, DEC-135.
+
+### P3-27 - Follow-up: planner answers cut off at the output limit
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/plan/ask-planner.ts`, `plan-answer.ts`, `plan-documents.ts` and every planner call; how the cards stage handles a cut-off answer (`prompts/cards/continue.v1.md` and its caller); the error descriptions (`src/domain/errors/plan-descriptions.ts`); the owner's plan run of 2026-10-18 on the test stack. That run used Ollama gemma4:e4b with planner max output tokens 4096. The answer stopped at exactly 4096 output tokens in the middle of the JSON. The run failed with RST-1803 "The planner answer named no requirement with a supported card", which hid the real cause.
+- **Do**: (1) Detect a cut-off planner answer: the provider reports the output limit as the stop reason, or the output tokens equal the limit and the JSON does not close. (2) Then ask the planner to continue, the way the cards stage does, at most twice per call. Add a new versioned prompt, `prompts/planner/continue.v1.md`; never edit an existing prompt file. Count the extra calls in the estimate reservations and in the cost record. (3) If the answer is still cut off, the run fails with a new stable error code whose description names the cause and the fix: "the planner answer was cut off at N output tokens; raise Planner max output tokens in Project settings". It does not report RST-1803. (4) Raise the built-in default for planner max output tokens to a value that fits the first planner call on the eShopModernizing fixture. Name the value and the reason in the PR. Keep the allowed range.
+- **Delivers**: the change, unit and integration tests with the fake provider (a recording whose first answer is cut off, then continued; one that stays cut off), the error description.
+- **Done when**: a cut-off first planner answer is continued and the run completes; a never-ending one fails with the new code and its message names the setting; RST-1803 is raised only when a complete answer really names no supported requirement; `npm run verify` green.
+- **Refs**: RF-601..RF-604, RF-007, owner report 2026-10-18 (run 20261018-121153-plan).
+
+### P3-28 - Plan as the last step of a run (needs the owner's spec change)
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-27
+- **Gate**: owner (RFC-002 merged into docs/spec)
+- **Status**: Blocked (owner: RFC-002)
+- **Reads**: RFC-002 once the owner merges it; Plan setup (P3-08, P3-11); the run page.
+- **Do**: as RFC-002 decides. The owner asked that, after the understand run and its questions, the plan setup becomes the next step of the same flow and the final package is the result. Today understand and plan are separate pages that do not point to each other.
+- **Delivers**: per RFC-002.
+- **Done when**: per RFC-002's acceptance scenarios.
+- **Refs**: owner request 2026-10-18, RFC-002.
+
+### P3-29 - Follow-up: screen fields, roles and routes checked before they reach the wireframes
+
+- **Difficulty**: 8 (sonnet)
+- **Size**: M
+- **Depends on**: P3-20
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: P3-20 (#556) and its verifier comment (MINOR 1); `src/domain/planning/target-ux-assembly.ts`, `src/application/plan/ux-message.ts`, `src/domain/planning/plan-sources.ts` (`supportedScreen`), `src/infrastructure/runs/file-run-cards.ts` (screen parsing), the SCRN card format and its reader prompt; ADR-005.
+- **Do**: owner decision of 2026-10-18: a screen's fields, roles, routes and leads-to links are checked against the code before they reach the planner or a wireframe, the same way actions are. (1) A SCRN card states each field, role, route and leads-to link as a claim with citations, so the verifier judges it. Any new card-format or reader prompt goes in a new versioned file; never edit an existing `*.vN.md`. (2) Only Supported ones are sent to the planner and drawn in the wireframe and the screen map. (3) A screen whose fields are all unsupported still appears, with the note "fields not confirmed". (4) Old runs whose SCRN cards carry header-only fields still render: the wireframe keeps those fields marked "not checked", and they are never sent to the planner as facts.
+- **Delivers**: card-format and reader-prompt versions if needed, the domain and application changes, unit and integration tests with the fake provider.
+- **Done when**: a fixture with one supported and one rejected field shows only the supported one in the wireframe and the planner message; a header-only legacy card renders with "not checked"; `npm run verify` green.
+- **Refs**: RF-626, RF-507, ADR-005, owner decision 2026-10-18 (P3-20 owner questions 2 and 3).
