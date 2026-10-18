@@ -12,10 +12,10 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 
 | Phase                   | Cards   | haiku 1-5 | sonnet 6-8 | opus 9-10 | fable (escalation) | S       | M       | L      | Follow-ups | Withdrawn |
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
-| P1 Milestone slice (M1) | 175     | 64        | 93         | 18        | 0                  | 102     | 65      | 8      | 114        | 0         |
+| P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 29      | 2         | 25         | 2         | 0                  | 3       | 24      | 2      | 3          | 0         |
-| **Total**               | **245** | **73**    | **145**    | **27**    | **0**              | **118** | **115** | **12** | **137**    | **0**     |
+| P3 Report and plan      | 33      | 4         | 27         | 2         | 0                  | 6       | 25      | 2      | 6          | 0         |
+| **Total**               | **250** | **76**    | **147**    | **27**    | **0**              | **122** | **116** | **12** | **141**    | **0**     |
 
 ## Conventions for every card
 
@@ -2357,12 +2357,25 @@ of P1-40, the verification view part of P1-35, then the queue part of P1-22 move
 - **Size**: S
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `web/src/app/routes.ts` (the `nav` groups main, project and admin); the side-navigation component that renders them; `docs/design-system.md`; the owner's report of 2026-10-18: on /projects the menu has 6 items, inside a project it has 11 ("Project" group: Start a run, Plan setup, History, Cost, Project settings), so the menu seems to change and the owner gets lost.
 - **Do**: (1) The "Project" group is always shown in the same place. Inside a project its heading names the project (owner/repo, truncated with the full name on hover and for screen readers). (2) On pages outside a project (Projects, Settings and keys, admin pages) the group keeps the last project the user opened in this browser session and links to it. If the user has opened none, the group shows one line, "Open a project to see its pages", and no dead links. (3) The current page is marked the same way in every group (`aria-current="page"`). (4) The order of groups never changes: main, project, administration. It stays accessible: keyboard operable, axe clean, readable at 360 px.
 - **Delivers**: the web change, unit tests for the group logic, an e2e check that moves between /projects, a project page and an admin page and asserts the same groups and order.
 - **Done when**: the menu shows the same three groups in the same order on every signed-in page; the project group names its project; no link in it points to a project the user cannot open; `npm run verify` green.
 - **Refs**: the side-navigation requirements in docs/spec (the builder names them), design-system.md, owner report 2026-10-18.
+
+### P1-176 - Follow-up: claim counts per card on the Evidence tab instead of one "citation invalid" tag
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: none
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `web/src/lib/live-run/card-checks.ts`, `web/src/pages/CardsTab.tsx`, `web/src/components/badge-specs.ts`; the owner's report of 2026-10-18. On the run page Evidence tab, FEAT-001 had 2 Supported claims, 1 Rejected and 1 Citation invalid, yet its card showed only "citation invalid". ENT-001 had no invalid citation, only one Rejected claim, and it showed the same tag.
+- **Do**: replace the single per-card check (checked / invalid / waiting) with counts per claim status: "N supported · M rejected · K citation invalid · J waiting", showing only the non-zero parts in that order. Each part carries its glyph and text as well as colour, using the same badge vocabulary as the claim rows. A card whose claims are all Supported keeps a single "all supported" mark. While claims are still being checked, the waiting count updates live. A Rejected claim is never called "citation invalid".
+- **Delivers**: the change, with unit tests of the counting and a component test of the row.
+- **Done when**: the FEAT-001 case shows "2 supported · 1 rejected · 1 citation invalid"; the ENT-001 case shows no "citation invalid"; it is accessible (axe, keyboard, 360 px); `npm run verify` is green.
+- **Refs**: RF-1004, RF-1014, RF-1015, RF-301, owner report 2026-10-18, PR #577
 
 ---
 
@@ -2896,7 +2909,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: L
 - **Depends on**: P2-01
 - **Gate**: owner (RFC-003 merged into docs/spec)
-- **Status**: Blocked (owner: RFC-003)
+- **Status**: In progress
 - **Reads**: RFC-003 once the owner merges it; P2-01 (resume), P2-02 (verifier judgement), ADR-005, ADR-007.
 - **Do**: as RFC-003 decides. The owner asked for a loop that goes back over claims that were not confirmed, so that the system ends up fully understood. On the owner's run of 2026-10-18 (Ollama gemma4:e4b), 118 claims were judged: 68 Supported and 50 Rejected. Others stayed Unverified. The readers read 47 of 79 files, about 12% of the area tokens.
 - **Delivers**: per RFC-003.
@@ -2939,7 +2952,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-02
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design/board/Report.dc.html`.
 - **Do**: client-side filters by type, area and status without a server; the replay page of P1-43 linked from the dashboard.
 - **Delivers**: the filters; E2E specs.
@@ -2952,7 +2965,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-03
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/design-system.md` section 8.
 - **Do**: the report works from disk and from a sub-path with no external request; "Download all" zips of the run and, when present, the hand-off package; WCAG 2.1 AA in both themes (axe plus a keyboard walk).
 - **Delivers**: the changes; E2E specs from disk and from a sub-path, downloading and unzipping both files, axe.
@@ -3082,7 +3095,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-01, P2-21
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-507, RF-508; the HTML report (P3-01..P3-04); `package.json` dependency rules (DEC-125).
 - **Do**: ship a pinned Mermaid build inside the report folder (Q-26; version at least two weeks old, licence notice kept), draw every diagram of the specification and the package with `securityLevel: 'strict'` and no network; a diagram that fails shows its source as text with a note.
 - **Delivers**: the rendering, the vendored file, end-to-end tests.
@@ -3160,7 +3173,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-19
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-626; `docs/design-system-brief.md` (as the model of a design brief); RF-507.
 - **Do**: write `ux/`: a generated target screen map with each legacy screen kept, merged or dropped and why; one low-fidelity wireframe per main screen (Q-27) as a plain HTML file (layout boxes, fields, actions, navigation; no script, no event attribute, no external resource, text escaped); a design brief for an external design tool (audience, tone, components, WCAG 2.1 AA).
 - **Delivers**: writers, prompts, recordings, an HTML check in tests.
@@ -3173,7 +3186,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-15, P3-17, P3-18, P3-19, P3-20
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-601, RF-627; the roadmap and task-card writers (P3-09).
 - **Do**: make the package roadmap and task cards cover the whole set: every PRD feature, target table, API operation, target flow and main screen named by at least one task card that links it; the first card writes the migrations in the chosen stack (RF-623); uncovered items go to the package checks file and the run is not reported complete.
 - **Delivers**: planner changes, a coverage check, tests.
@@ -3251,7 +3264,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/application/plan/ask-planner.ts`, `plan-answer.ts`, `plan-documents.ts` and every planner call; how the cards stage handles a cut-off answer (`prompts/cards/continue.v1.md` and its caller); the error descriptions (`src/domain/errors/plan-descriptions.ts`); the owner's plan run of 2026-10-18 on the test stack. That run used Ollama gemma4:e4b with planner max output tokens 4096. The answer stopped at exactly 4096 output tokens in the middle of the JSON. The run failed with RST-1803 "The planner answer named no requirement with a supported card", which hid the real cause.
 - **Do**: (1) Detect a cut-off planner answer: the provider reports the output limit as the stop reason, or the output tokens equal the limit and the JSON does not close. (2) Then ask the planner to continue, the way the cards stage does, at most twice per call. Add a new versioned prompt, `prompts/planner/continue.v1.md`; never edit an existing prompt file. Count the extra calls in the estimate reservations and in the cost record. (3) If the answer is still cut off, the run fails with a new stable error code whose description names the cause and the fix: "the planner answer was cut off at N output tokens; raise Planner max output tokens in Project settings". It does not report RST-1803. (4) Raise the built-in default for planner max output tokens to a value that fits the first planner call on the eShopModernizing fixture. Name the value and the reason in the PR. Keep the allowed range.
 - **Delivers**: the change, unit and integration tests with the fake provider (a recording whose first answer is cut off, then continued; one that stays cut off), the error description.
@@ -3264,7 +3277,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-27
 - **Gate**: owner (RFC-002 merged into docs/spec)
-- **Status**: Blocked (owner: RFC-002)
+- **Status**: In review
 - **Reads**: RFC-002 once the owner merges it; Plan setup (P3-08, P3-11); the run page.
 - **Do**: as RFC-002 decides. The owner asked that, after the understand run and its questions, the plan setup becomes the next step of the same flow and the final package is the result. Today understand and plan are separate pages that do not point to each other.
 - **Delivers**: per RFC-002.
@@ -3277,9 +3290,61 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-20
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: P3-20 (#556) and its verifier comment (MINOR 1); `src/domain/planning/target-ux-assembly.ts`, `src/application/plan/ux-message.ts`, `src/domain/planning/plan-sources.ts` (`supportedScreen`), `src/infrastructure/runs/file-run-cards.ts` (screen parsing), the SCRN card format and its reader prompt; ADR-005.
 - **Do**: owner decision of 2026-10-18: a screen's fields, roles, routes and leads-to links are checked against the code before they reach the planner or a wireframe, the same way actions are. (1) A SCRN card states each field, role, route and leads-to link as a claim with citations, so the verifier judges it. Any new card-format or reader prompt goes in a new versioned file; never edit an existing `*.vN.md`. (2) Only Supported ones are sent to the planner and drawn in the wireframe and the screen map. (3) A screen whose fields are all unsupported still appears, with the note "fields not confirmed". (4) Old runs whose SCRN cards carry header-only fields still render: the wireframe keeps those fields marked "not checked", and they are never sent to the planner as facts.
 - **Delivers**: card-format and reader-prompt versions if needed, the domain and application changes, unit and integration tests with the fake provider.
 - **Done when**: a fixture with one supported and one rejected field shows only the supported one in the wireframe and the planner message; a header-only legacy card renders with "not checked"; `npm run verify` green.
 - **Refs**: RF-626, RF-507, ADR-005, owner decision 2026-10-18 (P3-20 owner questions 2 and 3).
+
+### P3-30 - Journey from code to package (RFC-002 step 2)
+
+- **Difficulty**: 7 (sonnet)
+- **Size**: M
+- **Depends on**: P3-28
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: RF-615, RF-1015, DEC-142, DEC-143, docs/rfc/RFC-002-plan-as-a-run-step.md; the run page and Plan setup after P3-28.
+- **Do**: the journey strip of RF-615 on the understand run page, on Plan setup and on the plan run page. It shows scan, understand, questions, brief, estimate, plan and package, each with its state (done, current, locked with a reason, failed with its code, or out of date), its cost, and one next action. A failed plan offers "Try the plan again", which leads to a new estimate. A stopped understand run locks the plan steps and offers Resume. When the brief or the source run changes, the package is marked out of date.
+- **Delivers**: the component, its wiring, component tests of every state, and an e2e test of the failure paths with the fake provider.
+- **Done when**: every RF-615 scenario has a passing test; it is accessible (text and glyph as well as colour, keyboard, axe, 360 px); `npm run verify` is green.
+- **Refs**: RF-615, RF-1015, DEC-142, DEC-143, issue #570
+
+### P3-31 - Follow-up: planner continuation edge cases (P3-27 verifier)
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-27
+- **Gate**: none
+- **Status**: Done
+- **Reads**: the P3-27 verifier comment on PR #568; `src/application/plan/plan-continuation.ts`, `ask-planner.ts`.
+- **Do**: (1) `joinContinuation` must never produce valid but altered JSON without saying so. A fragment that starts with prose while the cut was inside a string, or a real continuation that repeats 12 or more characters of the cut, is either joined correctly or treated as still cut off. It is never silently mangled. (2) A last continuation that ends with a normal stop and unclosed JSON fails with RST-1805, not RST-1803.
+- **Delivers**: test-first fixes with abuse tests for both cases.
+- **Done when**: both cases have failing-then-passing tests; RST-1803 is raised only for a complete answer; `npm run verify` is green.
+- **Refs**: RF-601..RF-604, RF-007, P3-27 (#568) verifier MINORs 1 and 2, PR #576
+
+### P3-32 - Follow-up: count the extra screen-claim verifier calls in the understand estimate
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P3-29
+- **Gate**: none
+- **Status**: Done
+- **Reads**: `src/application/estimate/estimate-assumptions.ts` (line 21); the estimate rules (RF-42x).
+- **Do**: Since P3-29, each SCRN card's derived route, role, field and link claims are verified one by one, which costs extra verifier calls per screen. `src/application/estimate/estimate-assumptions.ts:21` does not count them, so the understand estimate is low for projects with many screens. The budget guard still caps the real spending. Add the verifier calls per SCRN card to the estimate (assumed claims per screen, documented as an assumption).
+- **Delivers**: the estimate change, a unit test that shows the estimate grows with the screen count, and the existing estimate tests updated with a reason.
+- **Done when**: the unit test passes; existing estimate tests are updated with a reason; no docs/spec edits.
+- **Refs**: RF-626, DEC-147, the estimate rules (RF-42x), PR #585.
+
+### P3-33 - Follow-up: mark a plan document that stays cut off
+
+- **Difficulty**: 4 (haiku)
+- **Size**: S
+- **Depends on**: P3-27
+- **Gate**: none
+- **Status**: In review
+- **Reads**: the owner's choice B of 2026-10-18; `src/application/use-cases/build-plan.ts` (the onCutOff path); the P3-27 card and PR #568.
+- **Do**: When a planner answer is still cut off after its continuations (onCutOff path in `src/application/use-cases/build-plan.ts`), keep the partial document and: (1) open the document with an "Incomplete" notice that names the output-token limit it hit and the setting to raise (Project settings > Planner max output tokens), with no model text in the notice; (2) flag that document as incomplete in the hand-off package manifest (a per-document field), and list it in the package README/index; (3) end the plan run "completed with warnings" (the existing run warning is kept) and show on the run page which document is incomplete; (4) leave a document that is not cut off unchanged (no notice, no flag).
+- **Delivers**: unit tests for the notice and the manifest flag; a use-case test with a fake planner that stays cut off; a snapshot of the package index.
+- **Done when**: those tests pass; the existing P3-27 tests still pass; no docs/spec or decision-log edits.
+- **Refs**: RF-604, RST-1805, P3-27 (#568), PR #583.
