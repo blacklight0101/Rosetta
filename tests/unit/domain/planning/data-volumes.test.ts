@@ -58,3 +58,18 @@ describe('statedVolumes', () => {
     expect(statedVolumes([])).toEqual([]);
   });
 });
+
+describe('statedVolumes and claims the verifier did not support', () => {
+  it('RF-632 lists only the Supported claims, never a rejected one', () => {
+    const base = card('ENT-003', 'ENT', ['Holds 500 rows.', 'Holds 900 rows.']);
+    const mixed: SourceCard = {
+      ...base,
+      claims: base.claims.map((claim, at) => ({
+        ...claim,
+        status: at === 0 ? 'Supported' : 'Rejected',
+      })),
+    };
+
+    expect(statedVolumes([mixed]).map((each) => each.claimId)).toEqual(['ENT-003.c1']);
+  });
+});

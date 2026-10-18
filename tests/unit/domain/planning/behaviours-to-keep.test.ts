@@ -83,3 +83,27 @@ describe('behavioursToKeep', () => {
     expect(keptBy(['REQ-099'])).toEqual([]);
   });
 });
+
+describe('behavioursToKeep and claims the verifier did not support', () => {
+  it('RF-631 lists only the Supported claims of a card, never a rejected or unverified one', () => {
+    const mixed: SourceCard = {
+      ...card('FEAT-009', 'FEAT', ['Supported claim.', 'Rejected claim.', 'Unverified claim.']),
+      claims: card('FEAT-009', 'FEAT', [
+        'Supported claim.',
+        'Rejected claim.',
+        'Unverified claim.',
+      ]).claims.map((claim, at) => ({
+        ...claim,
+        status: (['Supported', 'Rejected', 'Unverified'] as const)[at] ?? 'Rejected',
+      })),
+    };
+
+    const kept = behavioursToKeep(
+      planTask({ requirements: ['REQ-009'] }),
+      [{ id: 'REQ-009', sources: ['FEAT-009'] }],
+      [mixed],
+    );
+
+    expect(kept.map((each) => each.claimId)).toEqual(['FEAT-009.c1']);
+  });
+});

@@ -218,3 +218,19 @@ describe('the rule in the build method', () => {
     expect(text).toContain('ask the owner');
   });
 });
+
+describe('the default of a PRD question', () => {
+  it('RF-631 a PRD default that would change what users see today is replaced, and says so', () => {
+    const files = filesOf('Plain text.', {
+      prdQuestions: [
+        { id: 'prd.rules', question: 'Q two?', answer: 'Drop free shipping.', changesLegacy: true },
+      ],
+    });
+
+    const text = plain(files['open-questions.md']);
+
+    expect(text).not.toContain('Drop free shipping');
+    expect(text).toContain('| prd.rules | Q two? | Keep the legacy behaviour exactly');
+    expect(text).toContain('would change what users see today and is not allowed');
+  });
+});

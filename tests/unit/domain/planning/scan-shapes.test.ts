@@ -6,6 +6,8 @@ import { shapesOf } from '../../../../src/domain/planning/scan-shapes.js';
 // the size by kind, the deepest paths, the unusual names, the encodings and the line endings. The
 // same files always give the same shapes, in a fixed order.
 
+const REASON_CASE = 'differs from another path only by letter case';
+
 function file(path: string, bytes: number, extra: Partial<MeasuredFile> = {}): MeasuredFile {
   return { path, bytes, kind: 'source', encoding: 'ASCII', lineEnding: 'LF', ...extra };
 }
@@ -125,5 +127,21 @@ describe('shapesOf contents', () => {
     const files = [file('b.cs', 5), file('a.cs', 5), file('c/d.cs', 9)];
 
     expect(shapesOf([...files].reverse(), [], 0)).toEqual(shapesOf(files, [], 0));
+  });
+});
+
+describe('shapesOf, other spellings and bounds', () => {
+  it('RF-632 names two paths that differ only by letter case after Unicode normalisation', () => {
+    const composed = 'src/CafÉ.md';
+    const decomposed = 'src/café.md';
+
+    const shapes = shapesOf([file(composed, 1), file(decomposed, 1)], [], 0);
+
+    expect(shapes.unusualNames.map((each) => each.reasons.includes(REASON_CASE))).toContain(true);
+  });
+
+  it('RF-632 keeps the count of files whose content was not read for the total limit', () => {
+    expect(shapesOf([file('a.cs', 1)], [], 0, 4).beyondTotal).toBe(4);
+    expect(shapesOf([file('a.cs', 1)], [], 0).beyondTotal).toBe(0);
   });
 });

@@ -153,3 +153,12 @@ describe('measuredFile', () => {
     expect(file.lineEnding).toBeUndefined();
   });
 });
+
+describe('unusualNameReasons, other spellings of a reserved name', () => {
+  it.each(['COM¹', 'src/lpt².txt', 'COM³.log'])(
+    'RF-632 names %s a reserved device name (superscript digit)',
+    (path) => {
+      expect(unusualNameReasons(path)).toContain('reserved device name');
+    },
+  );
+});

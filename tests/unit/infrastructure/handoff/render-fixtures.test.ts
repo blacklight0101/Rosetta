@@ -146,3 +146,24 @@ describe('fixtures.md in the package', () => {
     expect(fixturesOf({ shapes: await demoShapes() })).toMatchSnapshot();
   });
 });
+
+describe('fixtures.md names that cannot be seen', () => {
+  it('RF-632 shows a space or a control character that makes a name unusual', async () => {
+    const scan = scanOf({ 'src/dir /file.txt': 'x\n', 'src/a\u0007b.txt': 'y\n' });
+    const shapes = await measureScan(scan.codeMap, scan.reader);
+
+    const text = plain(fixturesOf({ shapes }));
+
+    expect(text).toContain('src/dir[U+0020]/file.txt: character or ending some systems refuse');
+    expect(text).toContain('src/a[U+0007]b.txt: character or ending some systems refuse');
+  });
+
+  it('RF-632 says how many files were sized but not read for the total limit', async () => {
+    const scan = scanOf({ 'a.cs': 'x\n' });
+    const shapes = { ...(await measureScan(scan.codeMap, scan.reader)), beyondTotal: 2 };
+
+    expect(fixturesOf({ shapes })).toContain(
+      '2 files were sized but their content was not read: the total read limit was reached.',
+    );
+  });
+});

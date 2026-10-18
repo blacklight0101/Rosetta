@@ -91,3 +91,33 @@ describe('measureScan limits and refusals', () => {
     expect(shapes.largest[0]?.path).toBe('Archive/old-export.csv');
   });
 });
+
+describe('measureScan total bound', () => {
+  it('RF-632 stops reading content once the total limit is reached, and still sizes the rest', async () => {
+    const scan = scanOf({ 'a.cs': 'aaaaaa', 'b.cs': 'bbbbbb', 'c.cs': 'cccccc' });
+    const seen: number[] = [];
+    const reader = {
+      ...scan.reader,
+      readBytes: (request: ReadBytesRequest) => {
+        seen.push(request.maxBytes);
+        return scan.reader.readBytes(request);
+      },
+    };
+
+    const shapes = await measureScan(scan.codeMap, reader, { perFile: 100, total: 10 });
+
+    expect(seen).toEqual([100, 100, 0]);
+    expect(shapes.totalBytes).toBe(18);
+    expect(shapes.beyondTotal).toBe(1);
+    expect(shapes.encodings).toEqual([{ name: 'ASCII', files: 2 }]);
+  });
+
+  it('RF-632 reads everything when the total limit is not reached', async () => {
+    const scan = scanOf({ 'a.cs': 'aaaaaa', 'b.cs': 'bbbbbb' });
+
+    const shapes = await measureScan(scan.codeMap, scan.reader, { perFile: 100, total: 100 });
+
+    expect(shapes.beyondTotal).toBe(0);
+    expect(shapes.encodings).toEqual([{ name: 'ASCII', files: 2 }]);
+  });
+});
