@@ -16,7 +16,7 @@ const LARGEST = 10;
 const DEEPEST = 5;
 const REASON_CASE = 'differs from another path only by letter case';
 
-export interface KindTotal {
+interface KindTotal {
   readonly kind: FileKind;
   readonly files: number;
   readonly bytes: number;

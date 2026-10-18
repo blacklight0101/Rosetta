@@ -14,7 +14,7 @@ import type { Stores } from './understand-run-services.js';
 // from (row, manifest, cards and open questions), the scan that run read, and the files the run wrote.
 
 export const account = sampleAccount({ userName: 'plan.user' });
-export const commitSha = '3f786850e387550fdab836ed7e6dc881de23001b';
+const commitSha = '3f786850e387550fdab836ed7e6dc881de23001b';
 
 export interface UnderstandSeed {
   readonly cards: readonly Card[];

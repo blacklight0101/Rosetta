@@ -7,7 +7,7 @@ import type { SourceCard } from './plan-sources.js';
 // FLOW and SCRN cards that the requirements the task builds come from.
 
 /** The card types whose behaviour a rewrite must keep. */
-export const coveredTypes: readonly string[] = ['FEAT', 'BR', 'FLOW', 'SCRN'];
+const coveredTypes: readonly string[] = ['FEAT', 'BR', 'FLOW', 'SCRN'];
 
 export interface KeptBehaviour {
   readonly cardId: string;

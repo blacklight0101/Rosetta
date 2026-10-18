@@ -16,20 +16,17 @@ export const fileKinds = [
 ] as const;
 export type FileKind = (typeof fileKinds)[number];
 
-export const encodings = [
-  'empty',
-  'ASCII',
-  'UTF-8',
-  'UTF-8 with BOM',
-  'UTF-16 LE',
-  'UTF-16 BE',
-  'legacy 8-bit',
-  'binary',
-] as const;
-export type Encoding = (typeof encodings)[number];
+export type Encoding =
+  | 'empty'
+  | 'ASCII'
+  | 'UTF-8'
+  | 'UTF-8 with BOM'
+  | 'UTF-16 LE'
+  | 'UTF-16 BE'
+  | 'legacy 8-bit'
+  | 'binary';
 
-export const lineEndings = ['LF', 'CRLF', 'CR', 'mixed', 'single line'] as const;
-export type LineEnding = (typeof lineEndings)[number];
+export type LineEnding = 'LF' | 'CRLF' | 'CR' | 'mixed' | 'single line';
 
 export interface MeasuredFile {
   readonly path: string;
