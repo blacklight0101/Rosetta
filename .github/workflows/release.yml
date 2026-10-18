@@ -45,25 +45,7 @@ jobs:
       # sha-<short> always; X.Y.Z only for a tag that is v<package.json version> on main (DEC-29).
       - name: Work out the image tags
         id: tags
-        run: |
-          short="${GITHUB_SHA::7}"
-          tags="$IMAGE:sha-$short"
-          if [ "$REF_TYPE" = tag ]; then
-            version="${REF_NAME#v}"
-            package="$(node -p "require('./package.json').version")"
-            if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || [ "$version" != "$package" ]; then
-              echo "::error::The tag $REF_NAME is not v<the version of package.json> (v$package)."
-              exit 1
-            fi
-            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-              echo "::error::The tag $REF_NAME is not on main."
-              exit 1
-            fi
-            tags="$tags $IMAGE:$version"
-          fi
-          echo "Image tags: $tags"
-          echo "sha-tag=sha-$short" >> "$GITHUB_OUTPUT"
-          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+        run: bash scripts/release-tags.sh
         env:
           IMAGE: ghcr.io/blacklight0101/rosetta
           REF_TYPE: ${{ github.ref_type }}

@@ -61,9 +61,13 @@ async function readJson(response, expected, what) {
 }
 
 async function scanOf(client, projectId, timeoutMs) {
-  const start = await client.request('POST', `/api/projects/${projectId}/runs`, {
-    body: { stage: 'scan' },
-  });
+  const start = await client.request(
+    'POST',
+    `/api/projects/${encodeURIComponent(projectId)}/runs`,
+    {
+      body: { stage: 'scan' },
+    },
+  );
   const run = await readJson(start, [202], 'starting the scan');
   let endState = 'no run.ended event';
   await client.followEvents(
@@ -86,7 +90,8 @@ async function scan(client, env) {
     return await scanOf(client, project.id, timeoutMs);
   } finally {
     // Only a project this check created is removed; an existing one stays (RF-1107).
-    if (create.status === 201) await client.request('DELETE', `/api/projects/${project.id}`);
+    if (create.status === 201)
+      await client.request('DELETE', `/api/projects/${encodeURIComponent(project.id)}`);
   }
 }
 

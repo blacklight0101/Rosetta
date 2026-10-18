@@ -63,7 +63,6 @@ describe('release.yml image job', () => {
     const steps = stepTexts(await release(), 'image').join('\n');
 
     expect(steps).toContain(image);
-    expect(steps).toContain('sha-');
     expect(steps).toContain('bash scripts/release-tags.sh');
     expect(steps).not.toContain(':latest');
   });

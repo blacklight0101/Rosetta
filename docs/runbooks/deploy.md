@@ -54,6 +54,10 @@ From the appendix of ADR-020, in order. Do it in one sitting; nothing here goes 
    in GitHub, Settings, Environments, create `production` with the secrets `RAILWAY_TOKEN` and
    `ROSETTA_SMOKE_PASSWORD` (the teacher password) and the variables `ROSETTA_PUBLIC_URL` and `ROSETTA_SMOKE_USER`
    (`teacher`); add yourself as a required reviewer if you want to approve each deploy.
+   Defence in depth, because `release.yml` runs on any pushed `v*` tag and by hand:
+   - add a tag ruleset for `v*` so only you can create, move or delete release tags;
+   - in the `production` environment, limit Deployment branches and tags to `main` and `v*`, so no other ref can
+     reach its secrets even if the workflow changes.
 9. Domain: the `*.railway.app` domain is enough for the hand-in; a custom domain needs a CNAME and a TXT record.
 10. Tell the orchestrator that G-07 is open; P1-55 part 2 then writes the host step of the deploy job, and only after it
     merges do you set the repository variable `ROSETTA_DEPLOY_ENABLED` to `true`.

@@ -6,6 +6,9 @@
 
 const REQUEST_TIMEOUT_MS = 20_000;
 
+/** RNF-003: the only hosts the password may reach over plain http (a local stack). */
+const loopbackHosts = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
 /** The smoke account from ROSETTA_SMOKE_USER and ROSETTA_SMOKE_PASSWORD, or undefined. */
 export function accountFrom(env) {
   const userName = env.ROSETTA_SMOKE_USER ?? '';
@@ -61,6 +64,9 @@ export class RosettaClient {
 
   /** RF-1100: signs in and returns the account the server answered. */
   async signIn(account) {
+    if (this.base.protocol !== 'https:' && !loopbackHosts.has(this.base.hostname)) {
+      throw new Error(`refusing to send the password over plain http to ${this.base.host}`);
+    }
     const response = await this.request('POST', '/api/session', { body: account });
     if (response.status !== 200) {
       throw new Error(`POST /api/session answered ${String(response.status)}`);

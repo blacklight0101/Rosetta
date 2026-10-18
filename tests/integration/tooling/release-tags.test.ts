@@ -67,7 +67,7 @@ describe('scripts/release-tags.sh', () => {
 
     expect(outcome.code).toBe(0);
     expect(outcome.output).toContain(`sha-tag=sha-${main.slice(0, 7)}`);
-    expect(outcome.output).toContain(`tags=${image}:sha-${main.slice(0, 7)}\n`);
+    expect(outcome.output.split('\n')).toContain(`tags=${image}:sha-${main.slice(0, 7)}`);
   });
 
   it('DEC-29 a tag v<package.json version> on main gets sha-<short> and X.Y.Z', async () => {
