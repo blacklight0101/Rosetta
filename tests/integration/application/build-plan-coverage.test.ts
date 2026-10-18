@@ -7,7 +7,7 @@ import { useTempRoot } from '../../support/temp-root.js';
 // RF-627, RF-623, RF-613, ADR-008: the implementation plan covers the whole set. After the plan and
 // the documents, the planner is asked a seventh time which items each task card builds; the
 // package says what no card builds in checks.md, and a run with such a gap is not complete. The
-// seventh call replays tests/recordings/fake/planner-package.json.
+// seventh call replays tests/recordings/fake/planner-coverage.json.
 
 const temp = useTempRoot('rosetta-coverage-');
 
@@ -24,7 +24,7 @@ describe('BuildPlan: the coverage call is sent', () => {
 
     await h.plan();
 
-    const request = h.providers.requests()[6];
+    const request = h.providers.coverageRequests()[0];
     const message = request?.messages.map((each) => each.content).join('\n') ?? '';
     for (const sent of [
       '"position": 1',
@@ -39,8 +39,8 @@ describe('BuildPlan: the coverage call is sent', () => {
     }
     expect(request?.system).toBe(await readFile('prompts/planner/coverage.v1.md', 'utf8'));
     expect(request?.context).toMatchObject({ role: 'planner', agentTaskId: 'planner-coverage' });
-    const callIds = h.providers.requests().map((each) => each.context.callId);
-    expect(new Set(callIds).size).toBe(7);
+    const all = [...h.providers.requests(), ...h.providers.coverageRequests()];
+    expect(new Set(all.map((each) => each.context.callId)).size).toBe(7);
   });
 
   it('RF-627 the manifest records the prompt of the coverage call', async () => {
@@ -82,7 +82,9 @@ describe('BuildPlan: a plan with a gap', () => {
   const linksOne = JSON.stringify({ links: [{ task: 1, builds: ['feature:F-001'] }] });
 
   it('RF-627 an item no card builds is listed in checks.md and the run is not complete', async () => {
-    const h = await seededUxPlan(temp.path, { recording: await withCoverageAnswer(linksOne) });
+    const h = await seededUxPlan(temp.path, {
+      harness: { coverageRecording: await withCoverageAnswer(linksOne) },
+    });
 
     const run = await h.plan();
 
@@ -98,7 +100,7 @@ describe('BuildPlan: a plan with a gap', () => {
 
   it('RF-627 an answer that is not links leaves every item without a card but the tables', async () => {
     const recording = await withCoverageAnswer('Everything is covered.');
-    const h = await seededUxPlan(temp.path, { recording });
+    const h = await seededUxPlan(temp.path, { harness: { coverageRecording: recording } });
 
     const run = await h.plan();
 
@@ -114,7 +116,9 @@ describe('BuildPlan: the package of a run with a gap', () => {
   const linksOne = JSON.stringify({ links: [{ task: 1, builds: ['feature:F-001'] }] });
 
   it('RF-627 the package of a run with a gap is still written whole', async () => {
-    const h = await seededUxPlan(temp.path, { recording: await withCoverageAnswer(linksOne) });
+    const h = await seededUxPlan(temp.path, {
+      harness: { coverageRecording: await withCoverageAnswer(linksOne) },
+    });
 
     const written = await h.handoffOf(await h.plan());
 
@@ -127,7 +131,9 @@ describe('BuildPlan: the package of a run with a gap', () => {
     const answer = JSON.stringify({
       links: [{ task: 1, builds: ['feature:F-099', 'F-001', 'FEAT-001', 'operation:ghost'] }],
     });
-    const h = await seededUxPlan(temp.path, { recording: await withCoverageAnswer(answer) });
+    const h = await seededUxPlan(temp.path, {
+      harness: { coverageRecording: await withCoverageAnswer(answer) },
+    });
 
     const run = await h.plan();
 
@@ -147,9 +153,7 @@ describe('BuildPlan: a plan with no task card', () => {
 
     expect(run.endState).toBe('Failed');
     expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1805' }));
-    expect(h.providers.requests().map((each) => each.context.agentTaskId)).not.toContain(
-      'planner-coverage',
-    );
+    expect(h.providers.coverageRequests()).toHaveLength(0);
     const checks = ((await h.handoffOf(run))['checks.md'] ?? '').replaceAll('\\', '');
     for (const listed of ['feature:F-001', 'table:customer', 'flow:FLOW-001', 'screen:SCRN-001']) {
       expect(checks).toContain(listed);

@@ -33,6 +33,14 @@ export function allText(files: PackageFiles): string {
 
 /** The cards of a task-card file, each from its `## T-nnn` heading. */
 export function cardsOf(files: PackageFiles): string[] {
+  return allCardsOf(files).filter((card) => !card.includes(migrationTitle));
+}
+
+/** RF-623: the card the plan always starts with when there is a data model; code writes it. */
+const migrationTitle = 'Write the database migrations in the chosen stack';
+
+/** Every task card, the migration card first when the package has one. */
+export function allCardsOf(files: PackageFiles): string[] {
   return plain(files['tasks.md']).split(/^## /mu).slice(1);
 }
 

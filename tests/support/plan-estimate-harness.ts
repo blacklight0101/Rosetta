@@ -20,6 +20,7 @@ import {
   loadFlowsPrompt,
   loadPlannerPrompt,
   loadUxPrompt,
+  loadCoveragePrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import { sampleAccount } from './account-fixtures.js';
@@ -105,6 +106,7 @@ export async function createPlanEstimateHarness(
       flowsPrompt: () => loadFlowsPrompt('prompts'),
       apiContractPrompt: () => loadApiContractPrompt('prompts'),
       uxPrompt: () => loadUxPrompt('prompts'),
+      coveragePrompt: () => loadCoveragePrompt('prompts'),
     }),
     async seed(seed) {
       await seedPlanSource({ files, briefs, runs }, project, seed);

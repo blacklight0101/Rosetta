@@ -110,7 +110,7 @@ export class EstimatePlan {
           flowsPromptTokens: tokensOf(calls, prompts, 'flows'),
           apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
           uxPromptTokens: tokensOf(calls, prompts, 'ux'),
-          coveragePromptTokens: 0,
+          coveragePromptTokens: tokensOf(calls, prompts, 'coverage'),
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         ...{

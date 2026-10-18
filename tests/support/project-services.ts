@@ -24,6 +24,7 @@ import {
   loadFlowsPrompt,
   loadPlannerPrompt,
   loadUxPrompt,
+  loadCoveragePrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { ServerOptions } from '../../src/presentation/web/server.js';
@@ -90,6 +91,7 @@ export function projectServices(
       flowsPrompt: () => loadFlowsPrompt('prompts'),
       apiContractPrompt: () => loadApiContractPrompt('prompts'),
       uxPrompt: () => loadUxPrompt('prompts'),
+      coveragePrompt: () => loadCoveragePrompt('prompts'),
     }),
   };
 }

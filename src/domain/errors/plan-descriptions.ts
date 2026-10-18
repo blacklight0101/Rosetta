@@ -31,5 +31,10 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
     message: 'The hand-off package of this run could not be written.',
     nextStep: 'Check the free space of the data folder, then write the package again.',
   },
-  'RST-1805': { message: '', nextStep: '' },
+  'RST-1805': {
+    message:
+      'The hand-off package was written, but some feature, table, operation, journey or screen in it is built by no task card, so the plan is not complete.',
+    nextStep:
+      'Open checks.md in the package to see the items no task card builds, then write the package again.',
+  },
 };

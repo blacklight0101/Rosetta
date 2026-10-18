@@ -22,11 +22,13 @@ function responseOf(recording: Recording, at: number) {
   return attempt.response;
 }
 
-/** The recording with this text as the planner's seventh answer. */
+/** The coverage recording with this text as the planner's answer. */
 export async function withCoverageAnswer(text: string): Promise<Recording> {
-  const recording = await base();
-  const seventh = { attempts: [{ response: { ...responseOf(recording, 5), text } }] };
-  return { ...recording, calls: [...recording.calls.slice(0, 6), seventh] };
+  const recording = await loadRecording(
+    join('tests', 'recordings', 'fake', 'planner-coverage.json'),
+  );
+  const response = { ...responseOf(recording, 0), text };
+  return { ...recording, calls: [{ attempts: [{ response }] }] };
 }
 
 /** The recording whose plan has no task card at all. */

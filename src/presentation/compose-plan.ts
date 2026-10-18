@@ -28,6 +28,7 @@ import {
   loadFlowsPrompt,
   loadPlannerPrompt,
   loadUxPrompt,
+  loadCoveragePrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
@@ -83,6 +84,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     flowsPrompt: () => loadFlowsPrompt(promptsFolder),
     apiContractPrompt: () => loadApiContractPrompt(promptsFolder),
     uxPrompt: () => loadUxPrompt(promptsFolder),
+    coveragePrompt: () => loadCoveragePrompt(promptsFolder),
     ids: parts.ids,
   });
 }

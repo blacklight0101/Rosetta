@@ -33,9 +33,11 @@ import {
   loadFlowsPrompt,
   loadPlannerPrompt,
   loadUxPrompt,
+  loadCoveragePrompt,
   loadPrdPrompt,
 } from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
+import { loadRecording } from '../../src/infrastructure/providers/fake/recording.js';
 import { filesUnder } from './files-under.js';
 import { budgetTable, contractPrice } from './budget-harness.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
@@ -77,6 +79,8 @@ export interface PlanHarness {
 }
 
 export interface PlanHarnessOptions {
+  /** RF-627: the planner's answer to the coverage call; tests/recordings/fake/planner-coverage.json if absent. */
+  readonly coverageRecording?: Recording;
   /** RF-143: the planner on OpenAI with the server's key, a provider that needs consent. */
   readonly cloudPlanner?: boolean;
   /** Changes the project settings, for example its caps (RF-613). */
@@ -113,6 +117,7 @@ function planExecutor(s: Stores, providers: UnderstandProviders, scans: ScanResu
     flowsPrompt: () => loadFlowsPrompt('prompts'),
     apiContractPrompt: () => loadApiContractPrompt('prompts'),
     uxPrompt: () => loadUxPrompt('prompts'),
+    coveragePrompt: () => loadCoveragePrompt('prompts'),
     ids: new SequenceIdGenerator(),
     scans,
   });
@@ -193,6 +198,7 @@ async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
     flowsPrompt: () => loadFlowsPrompt('prompts'),
     apiContractPrompt: () => loadApiContractPrompt('prompts'),
     uxPrompt: () => loadUxPrompt('prompts'),
+    coveragePrompt: () => loadCoveragePrompt('prompts'),
   });
   const outcome = await estimate.execute({ actor, projectId: project.id });
   if (!outcome.ok) throw new Error(`The plan estimate was refused: ${outcome.error}`);
@@ -256,6 +262,9 @@ export async function createPlanHarness(
   const made: { harness?: PlanHarness } = {};
   const providers = understandProviders({
     ...{ dataDir, writer, masker, clock, logger, recording },
+    coverageRecording:
+      options.coverageRecording ??
+      (await loadRecording(join('tests', 'recordings', 'fake', 'planner-coverage.json'))),
     ...(cloud ? { serverOpenAiKey: serverKeyText } : {}),
     beforeCall: async () => {
       if (made.harness !== undefined) await options.beforeCall?.(made.harness);

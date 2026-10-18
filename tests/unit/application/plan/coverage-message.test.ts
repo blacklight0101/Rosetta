@@ -67,7 +67,9 @@ describe('coverageMessage: text that is not Rosetta', () => {
     if (first === undefined) throw new Error('The fixture has items');
     const long = { ...first, detail: 'd'.repeat(5000) };
 
-    const text = coverageMessage({ tasks: twoTasks(), items: [long] }, () => 'T'.repeat(24));
+    const ids = new SequenceIdGenerator();
+
+    const text = coverageMessage({ tasks: twoTasks(), items: [long] }, () => ids.dataBlockTag());
 
     expect(text).toContain('d'.repeat(300));
     expect(text).not.toContain('d'.repeat(301));
