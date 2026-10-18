@@ -21,7 +21,7 @@ import type { TextMasker } from './secret-masker.js';
 // folder of the project instead (`folder`).
 
 /** Where the log lives: the folder of a run, or a folder of the owner's workspace given as is. */
-export type EgressLogPlace =
+type EgressLogPlace =
   { readonly scope: RunScope } | { readonly userId: string; readonly folder: string };
 
 export type JsonlEgressLogOptions = EgressLogPlace & {
