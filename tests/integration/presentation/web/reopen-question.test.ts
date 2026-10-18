@@ -8,7 +8,8 @@ import { createTestServer, type TestServer } from '../../../support/web-server.j
 // RF-241, RF-1007, RF-1105: POST /api/runs/:runId/answers/:cardId/reopen opens an Answered question
 // again, so an answer edited after that is used by the next re-run. It writes the card files, logs the
 // reopening, answers the run's questions as they are now, and answers 404 for an unknown question or
-// another user's run.
+// another user's run. A run that has not ended (queued or running) is refused with 409, as its agents
+// are still writing the cards (P2-44).
 
 let current: TestServer | undefined;
 
@@ -17,7 +18,7 @@ afterEach(async () => {
   current = undefined;
 });
 
-async function setup() {
+async function setup(options: { readonly ended?: boolean } = {}) {
   const test = createTestServer();
   current = test;
   const amyUser = await addUser(test, { userName: 'amy' });
@@ -29,6 +30,9 @@ async function setup() {
   });
   if (!outcome.ok) throw new Error('The run was not accepted');
   const { run } = outcome.value;
+  if (options.ended !== false) {
+    await test.runs.runs.end(run.id, 'Interrupted', test.runs.clock.now().getTime());
+  }
   const ref = { userId: run.userId, projectId: run.projectId };
   await test.answers.addQuestions(ref, [
     { cardId: 'OQ-001', runKey: run.runKey, question: 'Is stock shown?', context: 'b:3-4 y' },
@@ -112,6 +116,21 @@ describe('POST /api/runs/:runId/answers/:cardId/reopen, merged and refused', () 
     expect(unknown.statusCode).toBe(404);
     expect(other.statusCode).toBe(404);
     expect(cardFile('OQ-001')).toContain('State: Answered');
+  });
+});
+
+describe('POST /api/runs/:runId/answers/:cardId/reopen, a run that has not ended', () => {
+  it('RF-241 RF-1105 P2-44 answers 409 and changes nothing while the run has not ended', async () => {
+    const { test, ref, run, amy, url, cardFile } = await setup({ ended: false });
+    seedQuestionCards(test.answerFiles, ref, run.runKey, [
+      { id: 'OQ-001', area: 'Catalog', state: 'Answered' },
+    ]);
+
+    const response = await amy.request({ method: 'POST', url: `${url}/OQ-001/reopen` });
+
+    expect(response.statusCode).toBe(409);
+    expect(cardFile('OQ-001')).toContain('State: Answered');
+    expect(test.logger.entries.filter((entry) => /reopened/iu.test(entry.message))).toEqual([]);
   });
 });
 
