@@ -120,6 +120,7 @@ function claimsOf(input: CardInput): Result<readonly Claim[], CardProblem> {
       citations: claim.citations,
       status: 'Proposed',
       ...step.value,
+      ...(claim.replaces === undefined ? {} : { replaces: claim.replaces }),
     });
   }
   return ok(claims);

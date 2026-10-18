@@ -1,8 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- stubs until the feat commit fills them */
-import type { AreaCoverage } from '../cards/area-coverage.js';
-import type { Card } from '../cards/card.js';
+import { mergedRanges, type AreaCoverage } from '../cards/area-coverage.js';
+import type { Card, Claim } from '../cards/card.js';
 import type { Citation } from '../cards/citation.js';
+import { readsByPath } from '../cards/coverage-union.js';
+import { byCodeUnit } from '../code-map/code-unit-order.js';
 import type { FileEntry } from '../code-map/file-entry.js';
+import { isThirdPartyFile } from '../code-map/third-party.js';
+import { citesOnlyThirdParty } from './understanding-measures.js';
 
 // RF-209, DEC-144, DEC-145, ADR-005: what one round of a Deepen does. It judges every claim left
 // `Unverified` (or `Proposed` by a stop); it re-reads, with the verifier's reason, each `Rejected`
@@ -60,12 +63,64 @@ export interface RoundInput {
 export const OUT_OF_SCOPE_REASON =
   'It cites only third-party or generated code, which a Deepen does not read.';
 
+interface Placed {
+  readonly card: Card;
+  readonly claim: Claim;
+}
+
+/** RF-209: a replacement written in this Deepen that was rejected again is never re-read in it. */
+function mayReread(claim: Claim, input: RoundInput): boolean {
+  if (input.reread.has(claim.claimId)) return false;
+  return claim.replaces === undefined || !input.writtenHere.has(claim.claimId);
+}
+
+function rereadOf({ card, claim }: Placed): RereadClaim {
+  const { claimId, text, citations } = claim;
+  return { claimId, area: card.area, text, citations, reason: claim.verdict?.reason ?? '' };
+}
+
+/** RF-209, Q-J: the first-party files no entry read lines of, largest first, then by path. */
+function gapsOf(input: RoundInput): readonly GapFile[] {
+  if (!input.coveragePass) return [];
+  const files = new Map(input.files.map((file) => [file.path, file]));
+  const reads = readsByPath(input.coverage);
+  const gaps = new Map<string, GapFile>();
+  for (const entry of input.coverage) {
+    for (const { path } of entry.files) {
+      const file = files.get(path);
+      if (file === undefined || gaps.has(path) || isThirdPartyFile(file)) continue;
+      const read = mergedRanges(reads.get(path) ?? [], file.lines).length > 0;
+      if (!read && file.estimatedTokens > 0) {
+        gaps.set(path, { path, area: entry.area, tokens: file.estimatedTokens });
+      }
+    }
+  }
+  return [...gaps.values()].sort(
+    (left, right) => right.tokens - left.tokens || byCodeUnit(left.path, right.path),
+  );
+}
+
 // RF-209
 export function planRound(input: RoundInput): RoundPlan {
-  return { judge: [], reread: [], outOfScope: [], gaps: [] };
+  const placed = input.cards.flatMap((card) => card.claims.map((claim) => ({ card, claim })));
+  const status = (wanted: Claim['status']) => placed.filter(({ claim }) => claim.status === wanted);
+  const rejected = status('Rejected');
+  const ownCode = rejected.filter(({ claim }) => !citesOnlyThirdParty(claim, input.files));
+  const library = rejected.filter(({ claim }) => citesOnlyThirdParty(claim, input.files));
+  return {
+    judge: placed
+      .filter(({ claim }) => claim.status === 'Unverified' || claim.status === 'Proposed')
+      .map(({ claim }) => claim.claimId),
+    reread: ownCode.filter(({ claim }) => mayReread(claim, input)).map(rereadOf),
+    outOfScope: library.map(({ claim }) => ({
+      claimId: claim.claimId,
+      reason: OUT_OF_SCOPE_REASON,
+    })),
+    gaps: gapsOf(input),
+  };
 }
 
 /** A round with nothing to judge, re-read or read makes no progress and is not run. */
 export function isEmptyRound(plan: RoundPlan): boolean {
-  return false;
+  return plan.judge.length === 0 && plan.reread.length === 0 && plan.gaps.length === 0;
 }

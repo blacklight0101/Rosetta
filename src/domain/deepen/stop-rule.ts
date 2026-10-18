@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- stubs until the feat commit fills them */
 // RF-209, DEC-145 (Q-H): when a Deepen ends. A round that adds no new `Supported` claim and reads
 // no new first-party file ends it ("no progress"); so does the round limit (default 3, allowed 1 to
 // 5), a cap (`CapReached`, resumable with RF-006) and the owner's Stop.
@@ -22,9 +21,16 @@ export interface RoundSnapshot {
   readonly filesRead: ReadonlySet<string>;
 }
 
+function added(before: ReadonlySet<string>, after: ReadonlySet<string>): number {
+  return [...after].filter((each) => !before.has(each)).length;
+}
+
 // RF-209
 export function roundProgress(before: RoundSnapshot, after: RoundSnapshot): RoundProgress {
-  return { newSupported: 0, newFilesRead: 0 };
+  return {
+    newSupported: added(before.supported, after.supported),
+    newFilesRead: added(before.filesRead, after.filesRead),
+  };
 }
 
 /** Why the Deepen ends after a round that ran to its end, or undefined when another round follows. */
@@ -34,10 +40,11 @@ export function stopAfterRound(
   roundsDone: number,
   maxRounds: number,
 ): DeepenStopReason | undefined {
-  return undefined;
+  if (progress.newSupported === 0 && progress.newFilesRead === 0) return 'noProgress';
+  return roundsDone >= maxRounds ? 'roundLimit' : undefined;
 }
 
 /** Whether a requested round limit is allowed (1 to 5). */
 export function isAllowedRoundLimit(rounds: number): boolean {
-  return true;
+  return Number.isInteger(rounds) && rounds >= DEEPEN_ROUNDS.min && rounds <= DEEPEN_ROUNDS.max;
 }

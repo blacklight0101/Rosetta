@@ -41,6 +41,13 @@ export function formatCardId(type: CardType, number: number): string {
   return `${type}-${String(number).padStart(3, '0')}`;
 }
 
+/** RF-209: `replaces` names a claim the task was given to re-read, or it is dropped (the claim stays). */
+function withAllowedReplaces(claim: ClaimInput, replaceable: readonly string[] = []): ClaimInput {
+  if (claim.replaces === undefined || replaceable.includes(claim.replaces)) return claim;
+  const { text, citations, target, branches } = claim;
+  return { text, citations, target, branches };
+}
+
 /**
  * Gives every draft its id; `tasks` must already be in area order. Ids continue after the cards
  * in `after` (a resumed run keeps the ids it already gave, RF-006).
@@ -60,6 +67,7 @@ export function assignCardIds(
       counters.set(draft.type, number);
       const card = createCard({
         ...draft,
+        claims: draft.claims.map((claim) => withAllowedReplaces(claim, task.replaceable)),
         id: formatCardId(draft.type, number),
         area: task.area,
         agentTaskId: task.agentTaskId,
