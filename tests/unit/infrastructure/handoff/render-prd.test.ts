@@ -116,6 +116,10 @@ describe('prd.md: untrusted text', () => {
         ...filled,
         problem: { text, sources: ['FEAT-001'] },
         features: [{ title: text, description: text, priority: 'Must', sources: ['FEAT-001'] }],
+        roles: [{ name: text, description: text, sources: ['FEAT-001'] }],
+        rules: [{ text, sources: ['FEAT-001'] }],
+        outOfScope: [{ text, sources: ['FEAT-001'] }],
+        nonFunctional: [{ text, sources: ['FEAT-001'] }],
       },
       text,
     );
@@ -124,15 +128,23 @@ describe('prd.md: untrusted text', () => {
     expect(prd).not.toContain('](javascript');
     expect(prd).not.toMatch(/^# Title/mu);
     expect(prd).not.toMatch(/^```/mu);
+    expect(prd.match(/&lt;img src/gu)).toHaveLength(8);
   });
 
   it('RNF-003 masks a secret in PRD text', () => {
+    const text = `key ${fakeOpenAiKey}`;
+    const sources = ['FEAT-001'];
     const prd = prdOf({
       ...filled,
-      goal: { text: `key ${fakeOpenAiKey}`, sources: ['FEAT-001'] },
+      goal: { text, sources },
+      roles: [{ name: text, description: text, sources }],
+      rules: [{ text, sources }],
+      outOfScope: [{ text, sources }],
+      nonFunctional: [{ text, sources }],
     });
 
     expect(prd).not.toContain(fakeOpenAiKey.slice(8, 30));
+    expect(prd.match(/key /gu)).toHaveLength(6);
   });
 });
 

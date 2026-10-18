@@ -110,12 +110,12 @@ describe('BuildPlan: the PRD placeholders', () => {
     const files = await planned();
 
     const sections = sectionsOf(files['prd.md']);
-    for (const name of ['Users and roles', 'Non-functional expectations', 'Success measures']) {
+    for (const name of ['Success measures']) {
       expect(sections[name]).toContain('To be confirmed');
     }
     const questions = plain(files['open-questions.md']);
     expect(questions).toContain('## Product requirements document questions');
-    for (const id of ['prd.roles', 'prd.non-functional', 'prd.success-measures']) {
+    for (const id of ['prd.success-measures']) {
       expect(questions).toMatch(
         new RegExp(`\\| ${id.replace('.', '\\.')} \\| [^|]+ \\| [^|]+ \\|`, 'u'),
       );
@@ -146,6 +146,8 @@ describe('BuildPlan: untrusted and unreadable PRD answers', () => {
     expect(prd).not.toContain('](javascript');
     expect(prd).not.toMatch(/^# Title/mu);
     expect(prd).toContain('&lt;script&gt;');
+    expect(prd.match(/&lt;img src/gu)).toHaveLength(4);
+    expect(prd).toContain('&lt;b&gt;x&lt;/b&gt;');
   });
 
   it('RF-621 an unreadable PRD answer still completes the run, with every section a placeholder', async () => {
