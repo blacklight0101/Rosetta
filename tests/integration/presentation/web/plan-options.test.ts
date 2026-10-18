@@ -104,7 +104,8 @@ describe('POST /api/projects/:id/plan-options answers', () => {
     expect(body.architecture.options.map((option) => option.style)).toEqual([
       ...['layered', 'modular-monolith'],
     ]);
-    expect(body.architecture.options[0]?.evidence).toEqual(['BR-001', 'FEAT-001', 'INT-001']);
+    // The recording also cites INT-001, which is no verified card of the seeded run: it is dropped.
+    expect(body.architecture.options[0]?.evidence).toEqual(['BR-001', 'FEAT-001']);
     expect(body.stack).toHaveLength(7);
     for (const layer of body.stack) expect(layer.options).toHaveLength(2);
   });
