@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { HandoffPackage } from '../../../../src/application/plan/handoff-package.js';
 import { emptyPrd } from '../../../../src/domain/planning/prd-content.js';
+import { noUx } from '../../../../src/domain/planning/target-ux.js';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
 import { renderHandoff } from '../../../../src/infrastructure/handoff/file-handoff-writer.js';
 import { incompleteNotice } from '../../../../src/infrastructure/handoff/handoff-incomplete-markdown.js';
 import { apiOperations } from '../../../support/api-contract-fixtures.js';
 import { handoffOf } from '../../../support/handoff-package-fixture.js';
+import { htmlProblems } from '../../../support/html-check.js';
 import { checkOpenApi } from '../../../support/openapi-check.js';
+import { ordersScreen } from '../../../support/ux-fixtures.js';
 
 // RF-604: a document the planner's answer stayed cut off for is kept, its file opens with an
 // Incomplete notice that names the output limit and the setting, and the package README lists it.
@@ -101,7 +104,24 @@ describe('the notice on every file of a cut-off flow or UX document', () => {
     const handoff = handoffOf('Plain text.', emptyPrd, { incomplete: cut('ux') });
 
     expect(incompleteNotice(handoff, 'ux/design-brief.md')).toMatch(/^> \*\*Incomplete\.\*\*/u);
-    expect(incompleteNotice(handoff, 'ux/wireframes/SCRN-001.html')).toMatch(/^<!-- Incomplete\./u);
+    expect(incompleteNotice(handoff, 'ux/wireframes/SCRN-001.html')).toMatch(
+      /^<p class="box"><strong>Incomplete\.<\/strong>/u,
+    );
+  });
+
+  it('RF-626 RF-604 a wireframe of a cut-off UX document passes the HTML check and carries the notice', () => {
+    const ux = { ...noUx, screens: [ordersScreen()] };
+    const files = renderHandoff(
+      handoffOf('Plain text.', emptyPrd, { ux, incomplete: cut('ux') }),
+      masker,
+    );
+    const page = files['ux/wireframes/SCRN-001.html'] ?? '';
+
+    expect(page).toContain(
+      '<body>\n<p class="box"><strong>Incomplete.</strong> The planner answer for this document was cut off at 4096 output tokens',
+    );
+    expect(page).toContain('Project settings &gt; Planner max output tokens');
+    expect(htmlProblems(page)).toEqual([]);
   });
 
   it('RF-604 a file outside the cut-off document gets no notice', () => {
