@@ -70,6 +70,14 @@ interface WrapParts {
 /** RF-407: the most one provider test call may cost or use, whoever pays (worst case, before the call). */
 const testCeiling = { costMicros: 100_000n, tokens: 2_000n } as const;
 
+/**
+ * ADR-007: only the Test button is held to the ceiling. A call that belongs to no run but to a
+ * project (the options of Plan setup, stage `plan`) keeps the project's caps and its role's cap.
+ */
+function isProviderTest(request: ProviderSetRequest): boolean {
+  return request.run.stage === 'provider-test';
+}
+
 function providerTestCeiling(cap: UsageCap): bigint {
   if (cap.kind === 'run-cost') return testCeiling.costMicros;
   if (cap.kind === 'run-tokens') return testCeiling.tokens;
@@ -240,14 +248,14 @@ export class GuardedProviderFactory implements ProviderSetFactory {
     const caps = capsFor(access.keySource, {
       run: { maxCostMicros: BigInt(run.maxCostMicros), maxTokens: BigInt(run.maxTokens) },
       // RF-423: a provider test belongs to no run, so a role's run caps do not apply to it.
-      ...(request.run.id === null ? {} : { role: roleBudgetOf(request.settings, role) }),
+      ...(isProviderTest(request) ? {} : { role: roleBudgetOf(request.settings, role) }),
       server,
       account: {
         dailyCapMicros: account.dailyCapMicros,
         ownDailyCapMicros: account.ownDailyCapMicros,
       },
     });
-    if (request.run.id !== null) return caps;
+    if (!isProviderTest(request)) return caps;
     return caps.map((cap) => ({ ...cap, limit: providerTestCeiling(cap) }));
   }
 }
