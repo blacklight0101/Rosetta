@@ -153,6 +153,7 @@ describe('trd.md: integrations', () => {
       '| [INT-002](sources.md#int-002) | Warehouse mail | Not decided |',
     );
     expect(integrations).not.toContain('INT-009');
+    expect(integrations).not.toMatch(/FEAT-|BR-|ENT-|OQ-/u);
     expect(integrations).not.toContain('A second answer');
     expect(integrations).toContain('The nightly stock feed');
     expect(integrations).toContain('Decision records: [ADR-002](decisions/ADR-002.md)');
