@@ -72,9 +72,16 @@ describe('RNF-010 router', () => {
 });
 
 describe('RNF-010 navigation', () => {
+  const none = { status: 'none' } as const;
+
   it('RNF-010 groups the pages of a user in order and marks the current one', () => {
-    const groups = buildNavigation({ routes: table, role: 'user', params: {}, path: '/settings' });
-    expect(groups.map((group) => group.id)).toEqual(['main']);
+    const groups = buildNavigation({
+      routes: table,
+      role: 'user',
+      path: '/settings',
+      project: none,
+    });
+    expect(groups.map((group) => group.id)).toEqual(['main', 'project']);
     expect(groups[0]?.items).toEqual([
       { path: '/projects', label: 'Projects', current: false },
       { path: '/settings', label: 'Settings and keys', current: true },
@@ -82,12 +89,17 @@ describe('RNF-010 navigation', () => {
   });
 
   it('RF-1105 offers the administration group to an administrator only', () => {
-    const asUser = buildNavigation({ routes: table, role: 'user', params: {}, path: '/projects' });
+    const asUser = buildNavigation({
+      routes: table,
+      role: 'user',
+      path: '/projects',
+      project: none,
+    });
     const asAdmin = buildNavigation({
       routes: table,
       role: 'admin',
-      params: {},
       path: '/projects',
+      project: none,
     });
     expect(asUser.some((group) => group.id === 'admin')).toBe(false);
     const admin = asAdmin.find((group) => group.id === 'admin');
@@ -95,15 +107,12 @@ describe('RNF-010 navigation', () => {
     expect(admin?.items.map((item) => item.path)).toEqual(['/admin/users']);
   });
 
-  it('RNF-010 shows the project group only inside a project and fills its parameters', () => {
-    const outside = buildNavigation({ routes: table, role: 'user', params: {}, path: '/projects' });
-    expect(outside.some((group) => group.id === 'project')).toBe(false);
+  it('RNF-010 fills the parameters of the project pages from the open project', () => {
     const inside = buildNavigation({
       routes: table,
       role: 'user',
-      params: { projectId: 'p-1' },
       path: '/projects/p-1/runs/new',
-      projectName: 'eShopModernizing',
+      project: { status: 'open', id: 'p-1', name: 'eShopModernizing' },
     });
     const project = inside.find((group) => group.id === 'project');
     expect(project?.label).toBe('Project: eShopModernizing');
