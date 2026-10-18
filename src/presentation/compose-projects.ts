@@ -30,6 +30,7 @@ import { loadProjectTemplate } from '../infrastructure/files/project-template.js
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import {
+  loadApiContractPrompt,
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
@@ -49,6 +50,7 @@ function plannerPrompts(folder: string) {
     prdPrompt: () => loadPrdPrompt(folder),
     dataModelPrompt: () => loadDataModelPrompt(folder),
     flowsPrompt: () => loadFlowsPrompt(folder),
+    apiContractPrompt: () => loadApiContractPrompt(folder),
   };
 }
 

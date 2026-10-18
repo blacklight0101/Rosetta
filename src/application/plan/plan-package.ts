@@ -30,7 +30,7 @@ export function handoffPackageOf(
   catalogue: Catalogue,
   documents: PlannedDocuments & { readonly shapes: ScanShapes | undefined },
 ): HandoffPackage {
-  const { prd, dataModel, flows } = documents;
+  const { prd, dataModel, flows, apiContract } = documents;
   const { brief, sourceRun, project, cards, questions } = inputs;
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
@@ -55,6 +55,7 @@ export function handoffPackageOf(
     prd,
     dataModel,
     flows,
+    apiContract,
     prdQuestions: prdQuestions(prd),
     shapes: documents.shapes,
   };
