@@ -16,7 +16,11 @@ import { parseCitation, type Citation } from '../../domain/cards/citation.js';
 
 /** The most bytes of a card file that are read; a larger file is no card of Rosetta's. */
 const MAX_FILE_BYTES = 256 * 1024;
-/** A merged card holds the claims of every member (RF-250), so it may hold more than one agent wrote. */
+/**
+ * A merged card holds the claims of every member (RF-250), so it may hold more than one agent wrote.
+ * The factor 4 allows a merge of four cards that were each at the limit; a card beyond that is not
+ * one Rosetta wrote, and 200 claims still keep the page bounded.
+ */
 const MAX_CLAIMS = 4 * cardLimits.maxClaims;
 const MAX_CITATION_CHARS = cardLimits.maxPathChars + 24;
 

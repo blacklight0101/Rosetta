@@ -16,7 +16,12 @@ afterEach(() => {
 });
 
 it('RF-010 lists Projects in the main navigation of a signed-in user', () => {
-  const groups = buildNavigation({ routes, role: 'user', params: {}, path: '/projects' });
+  const groups = buildNavigation({
+    routes,
+    role: 'user',
+    path: '/projects',
+    project: { status: 'none' },
+  });
 
   const main = groups.find((group) => group.id === 'main');
   expect(main?.items.map((item) => item.label)).toContain('Projects');
@@ -36,8 +41,8 @@ it('RF-002 matches the settings page of a project and lists it in the project na
   const groups = buildNavigation({
     routes,
     role: 'user',
-    params: { projectId: 'p-7' },
     path: '/projects/p-7/settings',
+    project: { status: 'open', id: 'p-7' },
   });
   expect(groups.find((group) => group.id === 'project')?.items).toEqual([
     { path: '/projects/p-7/start', label: 'Start a run', current: false },
@@ -51,10 +56,15 @@ it('RF-002 matches the settings page of a project and lists it in the project na
   ]);
 });
 
-it('RF-1105 offers no project navigation outside a project', () => {
-  const groups = buildNavigation({ routes, role: 'user', params: {}, path: '/projects' });
+it('RF-1105 offers no project page link outside a project that was never opened', () => {
+  const groups = buildNavigation({
+    routes,
+    role: 'user',
+    path: '/projects',
+    project: { status: 'none' },
+  });
 
-  expect(groups.find((group) => group.id === 'project')).toBeUndefined();
+  expect(groups.find((group) => group.id === 'project')?.items).toEqual([]);
 });
 
 function Probe() {
@@ -99,8 +109,8 @@ it('RF-1001 matches the start page of a project and lists it first in the projec
   const groups = buildNavigation({
     routes,
     role: 'user',
-    params: { projectId: 'p-7' },
     path: '/projects/p-7/start',
+    project: { status: 'open', id: 'p-7' },
   });
   expect(groups.find((group) => group.id === 'project')?.items[0]).toEqual({
     path: '/projects/p-7/start',

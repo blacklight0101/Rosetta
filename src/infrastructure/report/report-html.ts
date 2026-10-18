@@ -7,10 +7,17 @@ import { renderStatic } from './site/static-render.js';
 // RF-500, RF-504, RF-507, RF-1013, DEC-44, DEC-52, DEC-112, ADR-021: `report.html`, the dashboard of
 // the run as static HTML, rendered from Preact components when the report is built. Every repository
 // and model text is escaped by the renderer (model text keeps only the links to github.com), so the
-// published `site/` never relies on a Markdown renderer. No script: the page is a document.
+// published `site/` never relies on a Markdown renderer. The one script of the page (`filters.js`,
+// RF-503) filters the cards table and is loaded only when the run has cards.
 
 // RF-500, RF-504, RF-507, RF-1013, DEC-112
 export function renderReportHtml(model: ReportModel): string {
   const main = renderStatic(h(Dashboard, { model }));
-  return renderPage({ page: 'report', runKey: model.runKey, title: 'Run report', main });
+  return renderPage({
+    page: 'report',
+    runKey: model.runKey,
+    title: 'Run report',
+    main,
+    ...(model.cards.length === 0 ? {} : { scripts: ['filters.js'] }),
+  });
 }

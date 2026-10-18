@@ -15,7 +15,12 @@ const diagrams = {
   'mermaid.min.js': 'void 1;',
   'mermaid.LICENSE.txt': 'MIT License',
 } as const;
-const assets: ReportSiteAssets = { 'report.css': 'body {}', 'replay.js': 'void 0;', diagrams };
+const assets: ReportSiteAssets = {
+  'report.css': 'body {}',
+  'replay.js': 'void 0;',
+  'filters.js': 'void 2;',
+  diagrams,
+};
 const diagram = { document: 'spec.md', title: 'Screens', source: 'flowchart LR\n  s1["Home"]' };
 const masker = new SecretMasker();
 
@@ -56,7 +61,7 @@ describe('buildSiteFiles and the diagrams', () => {
     const none = buildSiteFiles(reportModel(), assets, masker, {});
     const unbuilt = buildSiteFiles(
       reportModel({ diagrams: [diagram] }),
-      { 'report.css': 'body {}', 'replay.js': 'void 0;' },
+      { 'report.css': 'body {}', 'replay.js': 'void 0;', 'filters.js': 'void 2;' },
       masker,
       {},
     );

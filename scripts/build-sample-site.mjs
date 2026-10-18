@@ -56,13 +56,17 @@ async function documentsOf(model) {
   return documents;
 }
 
-// The stylesheet and the replay script, and, when the recorded run's documents hold diagrams (RF-508),
-// the diagrams of the specification and the data model with the Mermaid build that draws them.
+/** The stylesheet and the two scripts of the report, from the templates folder. */
+async function readAssets() {
+  const names = ['report.css', 'replay.js', 'filters.js'];
+  const texts = await Promise.all(names.map((name) => readFile(join(assetsFolder, name), 'utf8')));
+  return Object.fromEntries(names.map((name, index) => [name, texts[index]]));
+}
+
+// RF-508: when the recorded run's documents hold diagrams (the specification and the data model), the
+// site gets the diagrams page and the Mermaid build that draws them.
 async function assetsAndDiagrams(documents) {
-  const assets = {
-    'report.css': await readFile(join(assetsFolder, 'report.css'), 'utf8'),
-    'replay.js': await readFile(join(assetsFolder, 'replay.js'), 'utf8'),
-  };
+  const assets = await readAssets();
   const diagrams = extractDiagrams(
     Object.fromEntries(Object.entries(documents).filter(([name]) => !name.startsWith('cards/'))),
   );

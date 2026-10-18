@@ -717,7 +717,57 @@ table.code tr.cited {
 
 @media print {
   .controls,
+  .filters,
   .skip {
     display: none;
   }
+}
+
+/* RF-503: the filters of the cards table; the script shows them (they start hidden). */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter label {
+  color: var(--rst-ink-soft);
+  font-size: 12px;
+}
+
+.filter select,
+.filters button {
+  min-height: 44px;
+  padding: 0 12px;
+  background: var(--rst-surface);
+  color: var(--rst-ink);
+  border: 1px solid var(--rst-rule-strong);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.filters button {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.filters button:hover {
+  background: var(--rst-surface-2);
+}
+
+.empty {
+  margin: 0 0 12px;
+  padding: 16px;
+  background: var(--rst-surface-2);
+  border: 1px dashed var(--rst-rule-strong);
+  border-radius: 6px;
+  color: var(--rst-ink-soft);
 }

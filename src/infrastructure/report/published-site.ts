@@ -20,7 +20,9 @@ import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 // is relative (RF-501); the pages carry the report content security policy in a `meta` element
 // (RF-1013). `.nojekyll` keeps Pages from running its own processing on the folder.
 
-export type ReportSiteAssets = Readonly<Record<'report.css' | 'replay.js', string>> & {
+export type ReportSiteAssets = Readonly<
+  Record<'report.css' | 'replay.js' | 'filters.js', string>
+> & {
   /** RF-508: the vendored Mermaid build and its loader; without them the site has no diagrams page. */
   readonly diagrams?: DiagramAssets;
 };
@@ -46,6 +48,7 @@ export function buildSiteFiles(
     'report.md': siteLinks(renderReportMarkdown(model, masker)),
     'replay.html': siteLinks(masker.mask(renderReplayHtml(model)).text),
     'replay.js': assets['replay.js'],
+    'filters.js': assets['filters.js'],
     'report.css': assets['report.css'],
   };
   for (const [name, html] of Object.entries(renderEvidencePages(model))) {

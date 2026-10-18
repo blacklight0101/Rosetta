@@ -145,6 +145,7 @@ export async function serveSite(
   const assets = {
     'report.css': await readFile(join(templates, 'report.css'), 'utf8'),
     'replay.js': await readFile(join(templates, 'replay.js'), 'utf8'),
+    'filters.js': await readFile(join(templates, 'filters.js'), 'utf8'),
     diagrams: await loadDiagramAssets(templates),
   };
   const files = buildSiteFiles(reportModel({ diagrams }), assets, new SecretMasker(), {});

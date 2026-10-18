@@ -29,12 +29,13 @@ import {
 } from './dashboard-stats.js';
 import { areaLink, cardHref } from './crumbs.js';
 import { OverviewSection } from './overview-section.js';
+import { CardFilters, cardRowAttributes } from './card-filters.js';
 import { DataTable, Facts, ModelText } from './parts.js';
 
 // RF-500, RF-504, RF-507, RF-1013, DEC-44, DEC-52, ADR-021: `report.html`, the dashboard of a run: the
 // facts of the run, the figures (cards by type, claims by status, coverage, cost, project totals),
-// the documents and pages of the report, the areas, the verification summary and the cards. No script:
-// the page is a document.
+// the documents and pages of the report, the areas, the verification summary and the cards. The page is a document: the one script (`filters.js`, RF-503)
+// only filters the rows of the cards table when cards exist, and the page is whole without it.
 
 function sourceValue(model: ReportModel): ComponentChild {
   if (model.source === null) return null;
@@ -157,6 +158,7 @@ function Cards(props: { readonly model: ReportModel }): ComponentChild {
     { 'aria-labelledby': 'cards' },
     h('h2', { id: 'cards' }, 'Cards'),
     h('p', null, cardsSummary(cards.length, claimTotals(cards))),
+    cards.length === 0 ? null : h(CardFilters, { cards }),
     cards.length === 0
       ? null
       : h(DataTable, {
@@ -164,6 +166,7 @@ function Cards(props: { readonly model: ReportModel }): ComponentChild {
           label: 'Cards of the run',
           columns: ['Card', 'Type', 'Area', 'Claims', 'Title'],
           rows: cards.map((card) => cardRow(props.model, card)),
+          rowAttributes: cards.map(cardRowAttributes),
         }),
   );
 }
