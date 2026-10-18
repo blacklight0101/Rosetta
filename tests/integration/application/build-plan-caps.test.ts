@@ -117,3 +117,27 @@ describe('plan run: a cap that fits the plan call but not the PRD call', () => {
     );
   });
 });
+
+describe('a cap that fits the first two planner calls but not the third', () => {
+  it('RF-422 RF-623 the guard stops the run before the data model call, with no package', async () => {
+    const base = await seededHarness(undefined, 'base');
+    await base.plan({ cloudConsent: true });
+    const worst = base.providers.ledger.reservations.map(
+      (each) => each.reservation.worstCase.micros,
+    );
+    const spent = base.providers.ledger.entries.map((each) => each.costMicros);
+    const [first, second, third] = worst;
+    if (first === undefined || second === undefined || third === undefined) {
+      throw new Error('The baseline run made three calls');
+    }
+    const cap = (spent[0] ?? 0n) + (spent[1] ?? 0n) + third - 1n;
+    expect(cap).toBeGreaterThanOrEqual((spent[0] ?? 0n) + second);
+
+    const h = await seededHarness(cappedRun(Number(cap)), 'capped');
+    const run = await h.plan({ cloudConsent: true });
+
+    expect(run.endState).toBe('CapReached');
+    expect(h.providers.requests()).toHaveLength(2);
+    expect(await h.handoffOf(run)).toEqual({});
+  });
+});

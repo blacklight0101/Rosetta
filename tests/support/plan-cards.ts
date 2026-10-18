@@ -140,3 +140,11 @@ export function customerCard(): Card {
     'Supported',
   ]);
 }
+
+/** RF-623, RNF-003: an `ENT` card with one supported claim that says what the test needs it to say. */
+export function entityCardSaying(id: string, text: string): Card {
+  return judgedCard(
+    { ...base(id, 'ENT', 'Customer'), claims: [claim(text, 'src/Orders/Customer.cs')] },
+    ['Supported'],
+  );
+}

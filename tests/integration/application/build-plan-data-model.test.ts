@@ -7,7 +7,13 @@ import {
   type Recording,
 } from '../../../src/infrastructure/providers/fake/recording.js';
 import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.js';
-import { customerCard, planCards, planQuestions } from '../../support/plan-cards.js';
+import { fakeOpenAiKey } from '../../support/secret-fixture.js';
+import {
+  customerCard,
+  entityCardSaying,
+  planCards,
+  planQuestions,
+} from '../../support/plan-cards.js';
 
 // RF-623, RF-603, RF-601, ADR-008: the data model of the hand-off package from a plan run over a
 // seeded understand run with two ENT cards, real files in a temporary data folder and the real
@@ -246,5 +252,26 @@ describe('BuildPlan: a stop during the data model call', () => {
 
     expect(run.endState).toBe('Interrupted');
     expect(await h.handoffOf(run)).toEqual({});
+  });
+});
+
+describe('BuildPlan: a secret in an ENT card', () => {
+  it('RNF-003 RF-623 never reaches the data model call or the file', async () => {
+    const h = await createPlanHarness(dataDir, await loadRecording(recordingPath));
+    const card = entityCardSaying('ENT-002', `A customer has a token ${fakeOpenAiKey}.`);
+    await h.understandRun({ cards: [...planCards(), card], questions: planQuestions });
+    await h.saveBrief(briefAnswers);
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Completed');
+    const sent = h.providers
+      .requests()[2]
+      ?.messages.map((each) => each.content)
+      .join(' ');
+    expect(sent).toContain('A customer has a token');
+    expect(sent).not.toContain(fakeOpenAiKey.slice(8, 30));
+    const files = Object.values(await h.handoffOf(run)).join(' ');
+    expect(files).not.toContain(fakeOpenAiKey.slice(8, 30));
   });
 });
