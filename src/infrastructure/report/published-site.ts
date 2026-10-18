@@ -5,6 +5,7 @@ import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
 import { renderCostHtml } from './site/cost-page.js';
+import { renderEvidencePages } from './site/evidence-pages.js';
 import { renderQuestionsHtml } from './site/questions-page.js';
 import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 
@@ -40,6 +41,9 @@ export function buildSiteFiles(
     'replay.js': assets['replay.js'],
     'report.css': assets['report.css'],
   };
+  for (const [name, html] of Object.entries(renderEvidencePages(model))) {
+    files[name] = siteLinks(masker.mask(html).text);
+  }
   for (const [path, text] of Object.entries(documents)) {
     files[path] = masker.mask(text).text;
   }

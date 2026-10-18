@@ -7,9 +7,11 @@ import type { RunIndex } from '../application/ports/run-index.js';
 import type { RunManifestStore } from '../application/ports/run-manifest-store.js';
 import type { ScanResults } from '../application/ports/scan-results.js';
 import { BuildReport } from '../application/use-cases/build-report.js';
+import { FileReportCards } from '../infrastructure/cards/file-report-cards.js';
 import { PgCostTotals } from '../infrastructure/db/pg-cost-totals.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FileRunTextFiles } from '../infrastructure/files/file-run-text-files.js';
+import { NodeRunFileReader } from '../infrastructure/files/node-run-file-reader.js';
 import type { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { FileReportWriter } from '../infrastructure/report/file-report-writer.js';
@@ -21,6 +23,8 @@ import { FileReportWriter } from '../infrastructure/report/file-report-writer.js
 const reportTemplates = fileURLToPath(new URL('../../templates/report/', import.meta.url));
 
 export interface ReportParts {
+  /** The data folder; the card files are read from the run folders in it. */
+  readonly dataDir: string;
   readonly pool: DatabasePool;
   readonly logger: Logger;
   readonly clock: Clock;
@@ -40,6 +44,7 @@ export function composeBuildReport(parts: ReportParts): BuildReport {
     ...{ runs: parts.runs, manifests: parts.manifests, history: parts.history },
     ...{ scans: parts.scans, answers: parts.answers, logger, clock },
     files: new FileRunTextFiles(writer),
+    cards: new FileReportCards(new NodeRunFileReader(parts.dataDir)),
     costs: new PgCostTotals(pool),
     writer: new FileReportWriter({ writer, masker, assetsFolder: reportTemplates }),
   });

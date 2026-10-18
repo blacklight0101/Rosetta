@@ -7,7 +7,7 @@ import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 // needs no inline allowance. The pages work from a folder on disk and on GitHub Pages: every
 // address is relative.
 
-type ReportPage = 'report' | 'questions' | 'replay' | 'cost';
+type ReportPage = 'report' | 'questions' | 'replay' | 'cost' | 'area' | 'card';
 
 export interface PageContent {
   readonly page: ReportPage;

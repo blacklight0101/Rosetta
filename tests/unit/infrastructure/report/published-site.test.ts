@@ -8,7 +8,16 @@ import {
   type ReportSiteAssets,
 } from '../../../../src/infrastructure/report/published-site.js';
 import { auditHtml } from '../../../support/html-audit.js';
-import { hostileCard, plainCard, reportModel } from '../../../support/report-fixtures.js';
+import {
+  areaPageName,
+  cardPageName,
+} from '../../../../src/infrastructure/report/site/page-names.js';
+import {
+  hostileCard,
+  plainCard,
+  plainDetail,
+  reportModel,
+} from '../../../support/report-fixtures.js';
 
 // RF-800, RF-501, RF-507, RNF-003: the files of the published sample report (the `site/` folder of
 // `main`) and the check of its index that the Pages smoke step runs.
@@ -40,6 +49,8 @@ describe('buildSiteFiles', () => {
     expect(Object.keys(site).sort()).toEqual(
       [
         '.nojekyll',
+        areaPageName('catalog'),
+        areaPageName('orders'),
         'cards/BR/BR-001.md',
         'cost.html',
         'cost.md',
@@ -54,6 +65,64 @@ describe('buildSiteFiles', () => {
       ].sort(),
     );
     expect(site['.nojekyll']).toBe('');
+  });
+});
+
+describe('buildSiteFiles area and card pages', () => {
+  const withDetail = buildSiteFiles(
+    reportModel({ cardDetails: [plainDetail] }),
+    assets,
+    masker,
+    documents,
+  );
+
+  it('RF-500 publishes the page of each card that has one, beside the others', () => {
+    expect(Object.keys(withDetail)).toEqual(expect.arrayContaining([cardPageName('BR-001')]));
+    expect(withDetail[cardPageName('BR-001')]).toContain('Gift orders also ship free.');
+  });
+
+  it('RF-501 links the card file and the pages inside the site, not one folder up', () => {
+    const page = withDetail[cardPageName('BR-001')] ?? '';
+
+    expect(page).not.toContain('href="../');
+    expect(page).toContain('href="cards/BR/BR-001.md"');
+    expect(auditHtml(page).foreignLinks).toEqual([]);
+    expect(withDetail['report.html']).toContain(`href="${cardPageName('BR-001')}"`);
+  });
+});
+
+describe('buildSiteFiles and masking of the pages', () => {
+  it('RNF-003 masks a key in a cited line of a published card page', () => {
+    const fakeKey = ['sk', `ant-${'x'.repeat(24)}`].join('-');
+    const leaky = buildSiteFiles(
+      reportModel({
+        cardDetails: [
+          {
+            ...plainDetail,
+            claims: [
+              {
+                claimId: 'BR-001.c1',
+                text: 'x',
+                status: 'Supported',
+                citations: [
+                  {
+                    path: 'a.cs',
+                    startLine: 1,
+                    endLine: 1,
+                    excerpt: { kind: 'lines', firstLine: 1, lines: [`key ${fakeKey}`] },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+      assets,
+      masker,
+      documents,
+    );
+
+    expect(leaky[cardPageName('BR-001')] ?? '').not.toContain(fakeKey);
   });
 });
 

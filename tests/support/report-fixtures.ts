@@ -1,3 +1,4 @@
+import type { ReportCardDetail, ReportCitation } from '../../src/application/report/card-detail.js';
 import type { ReplayModel, ReplayStep } from '../../src/application/report/replay-model.js';
 import type {
   ReportCard,
@@ -94,6 +95,7 @@ export function reportModel(overrides: Partial<ReportModel> = {}): ReportModel {
     cost: plainCost,
     projectTotals: plainProjectTotals,
     questions: plainQuestions,
+    cardDetails: [],
     ...overrides,
   };
 }
@@ -162,4 +164,53 @@ const plainProjectTotals: ReportProjectTotals = {
   cachedInputTokens: 0,
   cost: [{ currency: 'USD', costMicros: 3_990_000 }],
   unknownCostCalls: 0,
+};
+
+// RF-502, RF-125: the page of a card. Lines 7 to 15 of Orders/Shipping.cs are shown, 10 to 12 are cited.
+
+/** The lines `first` to `last` of a source file, each saying its own number. */
+export function sourceLines(first: number, last: number): string[] {
+  return Array.from(
+    { length: last - first + 1 },
+    (_, index) => `    total += ${String(first + index)};`,
+  );
+}
+
+export const shippingCitation: ReportCitation = {
+  path: 'Orders/Shipping.cs',
+  startLine: 10,
+  endLine: 12,
+  excerpt: { kind: 'lines', firstLine: 7, lines: sourceLines(7, 15) },
+};
+
+export const plainDetail: ReportCardDetail = {
+  id: 'BR-001',
+  type: 'BR',
+  title: 'Free shipping over 50',
+  summary: 'Orders over 50 ship free.',
+  area: 'orders',
+  confidence: 'High',
+  claims: [
+    {
+      claimId: 'BR-001.c1',
+      text: 'Shipping is free when the total is over 50.',
+      status: 'Supported',
+      reason: 'The cited lines compare the total with 50.',
+      citations: [shippingCitation],
+    },
+    {
+      claimId: 'BR-001.c2',
+      text: 'Gift orders also ship free.',
+      status: 'Rejected',
+      reason: 'The cited lines have no check for gifts.',
+      citations: [
+        {
+          path: 'Orders/Gifts.cs',
+          startLine: 1,
+          endLine: 2,
+          excerpt: { kind: 'lines', firstLine: 1, lines: sourceLines(1, 5) },
+        },
+      ],
+    },
+  ],
 };

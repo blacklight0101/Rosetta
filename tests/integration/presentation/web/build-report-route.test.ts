@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { z } from 'zod';
 import { afterEach, describe, expect, it } from 'vitest';
 import { scopeOf } from '../../../../src/application/runs/run-scope.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -64,6 +65,13 @@ const FILES = [
   'report/report.md',
 ];
 
+/** RF-500: the files the answer lists, without the pages of the areas and the cards. */
+function mainFiles(body: unknown): unknown {
+  const files = z.object({ files: z.array(z.string()) }).parse(body).files;
+  const pages = ['report/area-', 'report/card-'];
+  return { files: files.filter((file) => !pages.some((prefix) => file.startsWith(prefix))) };
+}
+
 describe('POST /api/runs/:runId/report', () => {
   it('RF-504 builds the report of a finished run and lists the files it wrote', async () => {
     const { amy, run } = await setup();
@@ -71,7 +79,7 @@ describe('POST /api/runs/:runId/report', () => {
     const response = await amy.request({ method: 'POST', url: reportUrl(run) });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ files: FILES });
+    expect(mainFiles(response.json())).toEqual({ files: FILES });
   });
 
   it('RF-504 makes a report.md that links the specification, the cards and the cost report', async () => {
@@ -179,7 +187,7 @@ describe('POST /api/runs/:runId/report and a run with no events', () => {
     const replay = await amy.request({ method: 'GET', url: fileUrl(bare, 'replay.html') });
     const read = await amy.request({ method: 'GET', url: fileUrl(bare, 'report.md') });
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ files: FILES });
+    expect(mainFiles(response.json())).toEqual({ files: FILES });
     expect(read.statusCode).toBe(200);
     expect(replay.body).toContain('This run recorded no events.');
   });
