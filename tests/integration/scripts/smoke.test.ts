@@ -83,6 +83,18 @@ describe('scripts/smoke.mjs on a healthy deployment', () => {
     );
     expect(fake.calls().at(-1)).toBe('DELETE /api/session');
   });
+});
+
+describe('scripts/smoke.mjs keeps the workspace as it was', () => {
+  it('RF-1107 leaves a project that already existed in place', async () => {
+    const { host: fake, url } = await started();
+    fake.behaviour.projectExists = true;
+
+    const outcome = await smoke([url], account);
+
+    expect(outcome.code).toBe(0);
+    expect(fake.calls()).not.toContain('DELETE /api/projects/project-1');
+  });
 
   it('RNF-003 never prints the password', async () => {
     const { url } = await started();

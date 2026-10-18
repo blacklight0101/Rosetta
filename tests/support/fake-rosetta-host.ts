@@ -25,6 +25,8 @@ export interface FakeHostBehaviour {
   landingDelayMs: number;
   /** Milliseconds between the creation of a live event and its `at` (a late event). */
   eventLagMs: number;
+  /** True when the account already has a project for the repository: creating it answers 200. */
+  projectExists: boolean;
 }
 
 export interface HostRequest {
@@ -66,6 +68,7 @@ export class FakeRosettaHost {
     endState: 'Completed',
     landingDelayMs: 0,
     eventLagMs: 0,
+    projectExists: false,
   };
   private origin = '';
   private readonly server = createServer((request, response) => {
@@ -150,7 +153,7 @@ export class FakeRosettaHost {
   private api(entry: HostRequest, response: ServerResponse): void {
     const answers: Readonly<Record<string, readonly [number, unknown]>> = {
       'GET /api/projects': [200, { projects: [] }],
-      'POST /api/projects': [201, { id: projectId }],
+      'POST /api/projects': [this.behaviour.projectExists ? 200 : 201, { id: projectId }],
       [`POST /api/projects/${projectId}/runs`]: [202, { id: runId }],
       [`DELETE /api/projects/${projectId}`]: [200, {}],
     };
