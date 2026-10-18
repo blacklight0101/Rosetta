@@ -131,9 +131,7 @@ export class BuildPlan implements RunExecutor {
     const prdCall = { ...call, prompt: prompts.prd, agentTaskId: 'planner-prd' };
     const prd = await this.prd(prdCall, input);
     const modelCall = { ...call, prompt: prompts.dataModel, agentTaskId: 'planner-data-model' };
-    const dataModel = await this.dataModel(modelCall, {
-      ...{ cards: supported, brief },
-    });
+    const dataModel = await this.dataModel(modelCall, { cards: supported, brief });
     const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, {
       prd,
       dataModel,
