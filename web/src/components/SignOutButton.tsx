@@ -3,10 +3,12 @@ import { useState } from 'preact/hooks';
 import { signOut } from '../api/account.js';
 import type { ApiFailure } from '../api/client.js';
 import { useApp } from '../app/app-context.js';
+import { forgetProject } from '../app/remembered-project.js';
 import { Button } from './Button.js';
 
 // RF-1101: Sign out in the header. The session is deleted on the server first; only when that
 // worked does the page leave for the sign-in page. A failure stays on the page with its code.
+// The project the navigation remembered goes with the session (P1-175).
 
 const signInPath = '/sign-in';
 
@@ -21,6 +23,7 @@ export function SignOutButton(): JSX.Element {
     setFailure(undefined);
     const result = await signOut(client);
     if (result.ok) {
+      forgetProject();
       assign(signInPath);
       return;
     }
