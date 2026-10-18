@@ -46,22 +46,6 @@ Plan the target system from that input and nothing else:
    counted from 1), naming the requirements it builds (`requirements` holds their positions in `requirements`,
    counted from 1) and its acceptance criteria written as Given, When, Then.
 8. `risks`: what could go wrong in the move, each with the ids of the cards that show it in `sources`.
-9. `technical`: the technical requirements of the new system, in four lists:
-   - `integrations`: for each `INT` card in the cards block, whether the new system keeps the integration or
-     replaces it (`action` is `keep` or `replace`), a short `note`, and `card`, the card id. Leave out an
-     integration that the cards and the answers do not decide.
-   - `security`: the security and data-protection controls the new system needs, each shown by a card or an answer,
-     with at least one card id in `sources`. `approach` is `denylist` when the control works by listing forbidden
-     patterns (blocked words, file extensions, hosts, characters or keywords), `allowlist` when it works by listing
-     what is permitted, and `other` otherwise. For every denylist write the `invariant`, what must always hold
-     for the control to do its job, and the `alternative`, an allowlist or a rule that does not depend on the shape of
-     the input, when one exists.
-   - `targets`: non-functional targets (speed, availability, volume, retention) that a card or an answer states,
-     each with its card ids in `sources`. A target nobody stated is not written.
-   - `environments`: the environments (for example test and production) that the brief or the answers show, with
-     the `purpose` of each.
-   Each item may carry `decision`: the position, counted from 1, of the entry in `decisions` that decided it, or
-   `null`.
 
 Rules:
 
@@ -112,22 +96,6 @@ Answer with one JSON object and nothing else:
       "acceptanceCriteria": ["Given a basket with one product, when the customer confirms, then an order is stored."]
     }
   ],
-  "risks": [{ "text": "The shipping threshold is read in two places and may differ.", "sources": ["BR-001"] }],
-  "technical": {
-    "integrations": [{ "card": "INT-001", "action": "replace", "note": "Reached through one port.", "decision": 1 }],
-    "security": [
-      {
-        "name": "Upload filter",
-        "approach": "denylist",
-        "description": "Rejects a file whose extension is on a list of forbidden ones.",
-        "invariant": "No uploaded file is ever run by the server.",
-        "alternative": "Accept only a list of allowed extensions.",
-        "sources": ["BR-001"],
-        "decision": null
-      }
-    ],
-    "targets": [{ "name": "Checkout time", "target": "Most checkouts finish within two seconds.", "sources": ["FEAT-001"], "decision": null }],
-    "environments": [{ "name": "Staging", "purpose": "Runs the build before a release.", "decision": null }]
-  }
+  "risks": [{ "text": "The shipping threshold is read in two places and may differ.", "sources": ["BR-001"] }]
 }
 ```
