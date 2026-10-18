@@ -64,6 +64,7 @@ const estimateBody = z.object({
       dataModelPromptTokens: z.number(),
       apiContractPromptTokens: z.number(),
       uxPromptTokens: z.number(),
+      coveragePromptTokens: z.number(),
       maxOutputTokens: z.number(),
     })
     .loose(),
@@ -90,7 +91,7 @@ describe('GET /api/projects/:id/plan-estimate answers', () => {
       ...{ role: 'planner', provider: 'openai', model: 'priced-model' },
       ...{ keySource: 'server', priced: true },
     });
-    expect(body.planner.high.outputTokens).toBe(3 * 3 * body.assumptions.maxOutputTokens);
+    expect(body.planner.high.outputTokens).toBe(4 * 3 * body.assumptions.maxOutputTokens);
     expect(body.planner.high.inputTokens).toBeGreaterThan(body.assumptions.promptTokens);
     expect(BigInt(body.planner.high.costMicros)).toBeGreaterThan(0n);
     expect(body.caps.map((cap) => cap.kind)).toEqual([

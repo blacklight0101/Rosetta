@@ -99,7 +99,7 @@ function priced(folder: string, change?: (settings: ProjectSettings) => ProjectS
 }
 
 describe('plan estimate with the screens call', () => {
-  it('RF-613 RF-626 shows six planner calls, high covering the sum of their worst cases', async () => {
+  it('RF-613 RF-626 RF-627 shows seven planner calls (the coverage call last), high covering the sum of their worst cases', async () => {
     const h = await priced('six');
 
     const estimate = await h.estimate();
@@ -108,7 +108,7 @@ describe('plan estimate with the screens call', () => {
     expect(run.endState).toBe('Completed');
     const reservations = h.providers.ledger.reservations.map((each) => each.reservation);
     const { high } = estimate.planner.points;
-    expect(reservations).toHaveLength(6);
+    expect(reservations).toHaveLength(7);
     const sum = (pick: (worst: (typeof reservations)[number]['worstCase']) => bigint): bigint =>
       reservations.reduce((total, each) => total + pick(each.worstCase), 0n);
     // The flows call's components block is sized at the plan answer's limits (flows-estimate.ts), so the
@@ -117,7 +117,7 @@ describe('plan estimate with the screens call', () => {
     expect(BigInt(high.inputTokens + high.outputTokens)).toBeGreaterThanOrEqual(
       sum((worst) => worst.tokens),
     );
-    expect(estimate.assumptions.calls).toBe(6);
+    expect(estimate.assumptions.calls).toBe(7);
   });
 });
 
@@ -129,7 +129,7 @@ describe('a cap that fits the first five planner calls but not the sixth', () =>
       (each) => each.reservation.worstCase.micros,
     );
     const spent = base.providers.ledger.entries.map((each) => each.costMicros);
-    expect(worst).toHaveLength(6);
+    expect(worst).toHaveLength(7);
     const [fifth = 0n, sixth = 0n] = [worst[4], worst[5]];
     const before = spent.slice(0, 5).reduce((total, each) => total + each, 0n);
     const cap = before + sixth - 1n;

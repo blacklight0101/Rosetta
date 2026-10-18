@@ -25,6 +25,7 @@ export const handoffFiles = {
   conventions: 'conventions.md',
   agents: 'AGENTS.md',
   fixtures: 'fixtures.md',
+  checks: 'checks.md',
 } as const;
 
 /**

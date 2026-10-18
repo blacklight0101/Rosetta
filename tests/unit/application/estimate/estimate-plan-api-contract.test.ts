@@ -29,17 +29,17 @@ describe('EstimatePlan: the API contract call', () => {
     const { assumptions, planner } = await estimateOf({ seed: { briefAnswers: frontEnd } });
 
     const system = (await readFile('prompts/planner/api-contract.v1.md', 'utf8')).length;
-    expect(assumptions.calls).toBe(4);
+    expect(assumptions.calls).toBe(5);
     expect(assumptions.apiContractPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
     expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(4 * 3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(5 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-624 does not count it when the brief names no front end, since no call is made', async () => {
     const { assumptions, planner } = await estimateOf();
 
-    expect(assumptions).toMatchObject({ calls: 3, apiContractPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(3 * 3 * assumptions.maxOutputTokens);
+    expect(assumptions).toMatchObject({ calls: 4, apiContractPromptTokens: 0 });
+    expect(planner.points.high.outputTokens).toBe(4 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-624 does not count it when no FEAT or FLOW card is verified', async () => {
@@ -47,7 +47,7 @@ describe('EstimatePlan: the API contract call', () => {
 
     const { assumptions } = await estimateOf({ seed: { cards, briefAnswers: frontEnd } });
 
-    expect(assumptions).toMatchObject({ calls: 3, apiContractPromptTokens: 0 });
+    expect(assumptions).toMatchObject({ calls: 4, apiContractPromptTokens: 0 });
   });
 
   it('RF-613 the high figure is the sum of the guard reservations of the four calls', async () => {
@@ -59,12 +59,14 @@ describe('EstimatePlan: the API contract call', () => {
       assumptions.promptTokens -
       assumptions.prdPromptTokens -
       assumptions.dataModelPromptTokens -
-      assumptions.apiContractPromptTokens;
+      assumptions.apiContractPromptTokens -
+      assumptions.coveragePromptTokens;
     const sum = [
       plan,
       assumptions.prdPromptTokens,
       assumptions.dataModelPromptTokens,
       assumptions.apiContractPromptTokens,
+      assumptions.coveragePromptTokens,
     ]
       .map(reservation)
       .reduce((total, each) => total + each, 0);

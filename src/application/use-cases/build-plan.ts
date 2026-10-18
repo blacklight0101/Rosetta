@@ -14,8 +14,10 @@ import {
 } from '../../domain/runs/run-manifest.js';
 import type { Run } from '../../domain/runs/run.js';
 import type { PromptFile } from '../agent/prompt-file.js';
-import { askPlanner } from '../plan/ask-planner.js';
+import { askPlanner, type PlannerCall } from '../plan/ask-planner.js';
 import { parsePlanAnswer } from '../plan/plan-answer.js';
+import { coverageWarnings, planCoverage } from '../plan/plan-coverage.js';
+import type { PlanMessageInput } from '../plan/plan-message.js';
 import { planDocuments, type DocumentPrompts } from '../plan/plan-documents.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
 import { planShapes } from '../plan/plan-shapes.js';
@@ -35,15 +37,11 @@ import { scopeOf } from '../runs/run-scope.js';
 import { runProviderSinks, type RunSinkDependencies } from '../understand/run-sinks.js';
 
 // RF-601..RF-604, RNF-004, ADR-005, ADR-018, DEC-80: the executor of the `plan` stage. It reads the
-// project's saved planning brief and the newest completed understand run, records the brief, the
-// catalogue version and its SHA-256, and the planner's prompt version in the manifest, asks the
-// planner once through the guarded provider the factory builds for the run, checks the answer
-// against the supported cards, asks it a second time for the product requirements document (RF-621,
-// its own versioned prompt), a third time for the target data model (RF-623), a fourth for the target flows (RF-625), a fifth for the API contract when the front end
-// is separate (RF-624), a sixth for the user-interface material when a `SCRN` card is verified (RF-626)
-// and writes `handoff/`.
-// Only `Supported` claims and answered questions reach the planner; the claims left out and the brief's defaults are listed in the package. The
-// cost report is written at every end.
+// saved planning brief and the source understand run (RF-614; else the newest completed one), records
+// them with the catalogue and prompt versions, asks the planner through the guarded provider (RF-621,
+// RF-623..RF-627 add the PRD, data model, flows, API contract, user interface and task items) and writes
+// `handoff/` (an item no card builds: RST-1806). Only `Supported` claims and answered questions reach
+// the planner. The cost report is written at every end.
 
 export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
   readonly users: UserRepository;
@@ -68,13 +66,22 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly continuePrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the user-interface material (RF-626). */
   readonly uxPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the links of the task cards to the items (RF-627). */
+  readonly coveragePrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
-interface PlanPrompts extends DocumentPrompts {
-  readonly plan: PromptFile;
-  readonly continue: PromptFile;
+type PlanPrompts = Readonly<
+  Record<keyof DocumentPrompts | 'plan' | 'coverage' | 'continue', PromptFile>
+>;
+
+interface Finish {
+  readonly run: Run;
+  readonly call: PlannerCall;
+  readonly input: PlanMessageInput;
+  readonly assembly: PlanAssembly;
+  readonly inputs: PlanInputs;
 }
 
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
@@ -138,6 +145,15 @@ export class BuildPlan implements RunExecutor {
       const message = 'The planner answer named no requirement with a supported card.';
       return this.fail(run, ERROR_CODES.plannerAnswerInvalid, message);
     }
+    return this.finish({ ...{ run, call, input, assembly }, inputs: inputs.value }, prompts);
+  }
+
+  /**
+   * RF-621..RF-627: the documents, the links of the task cards to the items they build, and the
+   * package. An item no task card builds is listed in checks.md and ends the run RST-1806.
+   */
+  private async finish(parts: Finish, prompts: PlanPrompts): Promise<RunOutcome> {
+    const { run, call, input, assembly, inputs } = parts;
     const warn = (message: string): Promise<void> => this.warn(run, message);
     const documents = await planDocuments(
       { ...call, onCutOff: warn },
@@ -145,29 +161,40 @@ export class BuildPlan implements RunExecutor {
       { ...input, components: assembly.content.components },
       warn,
     );
-    const shapes = await planShapes(this.deps, inputs.value);
-    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, {
+    const linking = {
+      ...{ ...call, onCutOff: warn },
+      ...{ prompt: prompts.coverage, agentTaskId: 'planner-coverage' },
+    };
+    const covered = await planCoverage(linking, { content: assembly.content, documents });
+    for (const message of coverageWarnings(covered)) await warn(message);
+    const shapes = await planShapes(this.deps, inputs);
+    const handoff = handoffPackageOf(inputs, covered.content, input.catalogue, {
       ...documents,
       shapes,
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
-    return { endState: 'Completed' };
+    const gaps = covered.report.uncovered.length;
+    if (gaps === 0) return { endState: 'Completed' };
+    const message = `The package was written, but ${String(gaps)} item(s) are built by no task card; see checks.md.`;
+    return this.fail(run, ERROR_CODES.planCoverageGap, message);
   }
 
   /** The principle catalogue and the planner's versioned prompts, read for this run. */
   private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
     const { catalogue, prompt, prdPrompt, dataModelPrompt, flowsPrompt } = this.deps;
-    const [loaded, plan, prd, dataModel, flows, apiContract, ux, cont] = await Promise.all([
-      catalogue(),
-      prompt(),
-      prdPrompt(),
-      dataModelPrompt(),
-      flowsPrompt(),
-      this.deps.apiContractPrompt(),
-      this.deps.uxPrompt(),
-      this.deps.continuePrompt(),
-    ]);
-    const prompts = { plan, prd, dataModel, flows, apiContract, ux, continue: cont };
+    const [loaded, plan, prd, dataModel, flows, apiContract, ux, coverage, cont] =
+      await Promise.all([
+        catalogue(),
+        prompt(),
+        prdPrompt(),
+        dataModelPrompt(),
+        flowsPrompt(),
+        this.deps.apiContractPrompt(),
+        this.deps.uxPrompt(),
+        this.deps.coveragePrompt(),
+        this.deps.continuePrompt(),
+      ]);
+    const prompts = { plan, prd, dataModel, flows, apiContract, ux, coverage, continue: cont };
     return { catalogue: loaded, prompts };
   }
 
@@ -191,23 +218,17 @@ export class BuildPlan implements RunExecutor {
     const { inputs, catalogue, prompts } = used;
     const { version, sha256 } = catalogue;
     const versions = Object.fromEntries(
-      [
-        prompts.plan,
-        prompts.continue,
-        prompts.prd,
-        prompts.dataModel,
-        prompts.flows,
-        prompts.apiContract,
-        prompts.ux,
-      ].map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),
+      Object.values(prompts).map((file) => [
+        file.name,
+        { version: file.version, sha256: file.sha256 },
+      ]),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
     await updates.update((manifest) => recordManifestSourceRun(manifest, inputs.sourceRun.runKey));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
     await updates.update((manifest) => ok(recordPromptVersions(manifest, versions)));
-    const { sourceRun } = inputs;
-    const source = await this.deps.manifests.read(scopeOf(sourceRun));
-    const { commitSha, snapshotKey } = sourceRun;
+    const source = await this.deps.manifests.read(scopeOf(inputs.sourceRun));
+    const { commitSha, snapshotKey } = inputs.sourceRun;
     const snapshotHash = source?.source.snapshotHash ?? null;
     if (commitSha !== null && snapshotKey !== null && snapshotHash !== null)
       await execution.recordSource({ commitSha, snapshotKey, snapshotHash });

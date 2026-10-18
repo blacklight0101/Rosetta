@@ -36,6 +36,7 @@ import {
   loadFlowsPrompt,
   loadPlannerPrompt,
   loadUxPrompt,
+  loadCoveragePrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
@@ -54,6 +55,7 @@ function plannerPrompts(folder: string) {
     flowsPrompt: () => loadFlowsPrompt(folder),
     apiContractPrompt: () => loadApiContractPrompt(folder),
     uxPrompt: () => loadUxPrompt(folder),
+    coveragePrompt: () => loadCoveragePrompt(folder),
   };
 }
 
