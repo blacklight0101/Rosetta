@@ -185,7 +185,7 @@ describe('EstimatePlan: against the account caps', () => {
   it('RF-1106 a server key is checked against what is left of the user day, in UTC', async () => {
     const h = await createPlanEstimateHarness({
       settings: plannerSettings(cloudPlanner),
-      account: { dailyCapMicros: 10_000n },
+      account: { dailyCapMicros: 12_000n },
     });
     const { userId } = h.actor;
     const row = { userId, currency: 'USD', keySource: 'server' } as const;
@@ -195,7 +195,7 @@ describe('EstimatePlan: against the account caps', () => {
     const estimate = valueOf(await run(h));
 
     expect(cap(estimate, 'user-day')).toMatchObject({
-      ...{ unit: 'micros', limit: 10_000n, spent: 6_000n, remaining: 4_000n },
+      ...{ unit: 'micros', limit: 12_000n, spent: 6_000n, remaining: 6_000n },
       fits: { low: true, likely: false, high: false },
     });
     expect(estimate.withinCaps).toEqual({ low: true, likely: false, high: false });

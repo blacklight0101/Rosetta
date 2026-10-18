@@ -193,12 +193,13 @@ describe('BuildPlan: the documentation set', () => {
       'architecture.md',
       'decisions/ADR-001.md',
     ]);
-    expect(links.slice(-5)).toEqual([
+    expect(links.slice(-6)).toEqual([
       'roadmap.md',
       'tasks.md',
       'risks.md',
       'open-questions.md',
       'sources.md',
+      'conventions.md',
     ]);
   });
 
