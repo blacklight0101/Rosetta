@@ -31,4 +31,5 @@ export const PLAN_ERROR_DESCRIPTIONS: Readonly<Record<PlanErrorCode, ErrorDescri
     message: 'The hand-off package of this run could not be written.',
     nextStep: 'Check the free space of the data folder, then write the package again.',
   },
+  'RST-1805': { message: '', nextStep: '' },
 };
