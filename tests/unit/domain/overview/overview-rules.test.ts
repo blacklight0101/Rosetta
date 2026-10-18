@@ -103,7 +103,7 @@ describe('sectionsOf and the cards it keeps', () => {
 });
 
 describe('isThin and thinNotice', () => {
-  const reach = { cards: 6, areas: 4, areasWithCards: 3, thirdPartyAreas: 0 };
+  const reach = { cards: 6, areas: 4, areasWithCards: 3, thirdPartyAreas: 0, found: 4, chosen: 4 };
 
   it('RF-264 a run with enough cards from enough areas is not thin', () => {
     expect(isThin(reach)).toBe(false);
@@ -119,7 +119,14 @@ describe('isThin and thinNotice', () => {
   });
 
   it('RF-264 says the run cannot explain the application and names the next step', () => {
-    const notice = thinNotice({ cards: 1, areas: 4, areasWithCards: 1, thirdPartyAreas: 1 });
+    const notice = thinNotice({
+      cards: 1,
+      areas: 4,
+      areasWithCards: 1,
+      thirdPartyAreas: 1,
+      found: 4,
+      chosen: 3,
+    });
 
     expect(notice).toContain('cannot explain the application yet');
     expect(notice).toContain('Next step');
@@ -127,7 +134,14 @@ describe('isThin and thinNotice', () => {
   });
 
   it('RF-264 says most areas are third-party code when they are', () => {
-    const notice = thinNotice({ cards: 0, areas: 4, areasWithCards: 0, thirdPartyAreas: 3 });
+    const notice = thinNotice({
+      cards: 0,
+      areas: 4,
+      areasWithCards: 0,
+      thirdPartyAreas: 3,
+      found: 4,
+      chosen: 1,
+    });
 
     expect(notice).toContain('Most areas of this repository hold third-party code');
   });

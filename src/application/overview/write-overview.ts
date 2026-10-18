@@ -7,6 +7,8 @@ import type { Overview } from '../../domain/overview/overview.js';
 import { questionLinks } from '../../domain/overview/question-links.js';
 import { notCoveredOf, type AreaStanding } from '../../domain/overview/standing.js';
 import {
+  chosenNotice,
+  isChosenRun,
   isThin,
   MIN_CARDS_FOR_OVERVIEW,
   thinNotice,
@@ -80,6 +82,8 @@ function reachOf(cards: readonly Card[], standing: readonly AreaStanding[]): Run
     areas: areas.length,
     areasWithCards: areas.filter((area) => withCards.has(area.name)).length,
     thirdPartyAreas: areas.filter((area) => area.thirdParty).length,
+    found: standing.length,
+    chosen: standing.filter((area) => area.selected && !area.thirdParty).length,
   };
 }
 
@@ -126,7 +130,9 @@ export async function writeOverview(parts: OverviewParts, input: OverviewInput):
     );
   if (sections.length === 0) return noticeOverview('thin', EMPTY, notCovered);
   const questions = questionLinks(sections, input.cards);
-  const thin = isThin(reach);
   const base = { sections, notCovered, questions };
-  return thin ? { ...base, state: 'thin', notice: thinNotice(reach) } : { ...base, state: 'full' };
+  if (isThin(reach)) return { ...base, state: 'thin', notice: thinNotice(reach) };
+  return isChosenRun(reach)
+    ? { ...base, state: 'full', notice: chosenNotice(reach) }
+    : { ...base, state: 'full' };
 }
