@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
+import { readZip } from '../../../support/zip-reader.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { scopeOf } from '../../../../src/application/runs/run-scope.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -66,11 +67,12 @@ const FILES = [
   'report/report.md',
 ];
 
-/** RF-500: the files the answer lists, without the pages of the areas and the cards. */
+/** RF-500, RF-505: the files the answer lists, without the pages of the areas and the cards and the zips. */
 function mainFiles(body: unknown): unknown {
   const files = z.object({ files: z.array(z.string()) }).parse(body).files;
   const pages = ['report/area-', 'report/card-'];
-  return { files: files.filter((file) => !pages.some((prefix) => file.startsWith(prefix))) };
+  const kept = files.filter((file) => !pages.some((prefix) => file.startsWith(prefix)));
+  return { files: kept.filter((file) => !file.endsWith('.zip')) };
 }
 
 describe('POST /api/runs/:runId/report', () => {
@@ -81,6 +83,22 @@ describe('POST /api/runs/:runId/report', () => {
 
     expect(response.statusCode).toBe(200);
     expect(mainFiles(response.json())).toEqual({ files: FILES });
+  });
+
+  it('RF-505 writes the zip of the run beside the report and serves it as a download that unzips', async () => {
+    const { amy, run } = await setup();
+
+    const built = await amy.request({ method: 'POST', url: reportUrl(run) });
+    const zip = await amy.request({ method: 'GET', url: fileUrl(run, `${run.runKey}.zip`) });
+
+    expect(z.object({ files: z.array(z.string()) }).parse(built.json()).files).toContain(
+      `report/${run.runKey}.zip`,
+    );
+    expect(zip.statusCode).toBe(200);
+    expect(zip.headers['content-disposition']).toContain(`filename="${run.runKey}.zip"`);
+    const names = (await readZip(zip.rawPayload)).map((entry) => entry.name);
+    expect(names).toContain(`${run.runKey}/report/report.html`);
+    expect(names.filter((name) => name.endsWith('.zip'))).toEqual([]);
   });
 
   it('RF-504 makes a report.md that links the specification, the cards and the cost report', async () => {

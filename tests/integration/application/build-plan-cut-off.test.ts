@@ -58,6 +58,15 @@ function split(text: string, parts: number): string[] {
   return Array.from({ length: parts }, (_, index) => text.slice(index * size, (index + 1) * size));
 }
 
+/**
+ * The answer cut in two the way the model is shown it (P3-31): the head is cut at the middle, and
+ * the continuation writes the rest from the head's resume point, not from the cut itself.
+ */
+function cutAtResumePoint(text: string): [string, string] {
+  const head = text.slice(0, Math.floor(text.length / 2));
+  return [head, text.slice(resumePoint(head).length)];
+}
+
 async function planned(recording: Recording, cloud = false): Promise<PlanHarness> {
   const h = await createPlanHarness(join(temp.path, cloud ? 'cloud' : 'local'), recording, {
     cloudPlanner: cloud,
@@ -183,5 +192,47 @@ describe('BuildPlan: a cut-off document or a metered continuation', () => {
     expect(tokens).toBeLessThanOrEqual(BigInt(high.inputTokens + high.outputTokens));
     const ids = h.providers.requests().map((request) => request.context.callId);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('BuildPlan: a document that stays cut off is kept, marked and named', () => {
+  it('RF-604 RF-621 a PRD that stays cut off opens with an Incomplete notice, is listed in the README and named in the run log', async () => {
+    const recording = await base();
+    const h = await planned(cutAt(recording, 1, split(textOf(recording, 1), 4).slice(0, 3), true));
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Completed');
+    const files = await h.handoffOf(run);
+    const limit = String(h.providers.requests()[1]?.maxOutputTokens);
+    expect(files['prd.md']?.startsWith('> **Incomplete.**')).toBe(true);
+    expect(files['prd.md']).toContain(`cut off at ${limit} output tokens`);
+    expect(files['README.md']).toContain('## Incomplete documents');
+    expect(files['README.md']).toContain('- [Product requirements document](prd.md)');
+    const listed = (files['README.md'] ?? '')
+      .split('## Incomplete documents')[1]
+      ?.split('## Reading order')[0]
+      ?.match(/^- .*$/gmu);
+    expect(listed).toHaveLength(1);
+    expect(listed?.[0]).toContain('Product requirements document');
+    expect(files['data-model.md']).not.toContain('**Incomplete.**');
+    const warnings = h.s.logger.entries.filter((entry) => entry.level === 'warn');
+    const named = warnings.some((entry) =>
+      entry.message.includes('The product requirements document is incomplete'),
+    );
+    expect(named).toBe(true);
+  });
+
+  it('RF-604 RF-621 a PRD cut off once and then finished is not marked', async () => {
+    const recording = await base();
+    const [head, tail] = cutAtResumePoint(textOf(recording, 1));
+    const h = await planned(cutAt(recording, 1, [head, tail]));
+
+    const run = await h.plan();
+
+    expect(run.endState).toBe('Completed');
+    const files = await h.handoffOf(run);
+    expect(files['prd.md']).not.toContain('Incomplete.');
+    expect(files['README.md']).not.toContain('## Incomplete documents');
   });
 });
