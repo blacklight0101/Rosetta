@@ -1,10 +1,10 @@
-import type { Card } from '../../domain/cards/card.js';
 import type { CodeMap } from '../../domain/code-map/code-map.js';
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import { buildPlanOptions, type PlanOptions } from '../../domain/planning/plan-options.js';
+import type { SourceCard } from '../../domain/planning/plan-sources.js';
 import { verifiedCards } from '../../domain/planning/verified-cards.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { IdGenerator } from '../ports/id-generator.js';
@@ -41,7 +41,7 @@ export interface PlanOptionsParts {
 export interface PlanOptionsInput {
   readonly codeMap: CodeMap;
   /** Every card of the project; only the verified claims are sent. */
-  readonly cards: readonly Card[];
+  readonly cards: readonly SourceCard[];
   readonly catalogue: Catalogue;
 }
 
@@ -68,7 +68,7 @@ function problem(code: ErrorCode, message: string): Result<never, PlanOptionsPro
 async function ask(
   parts: PlanOptionsParts,
   input: PlanOptionsInput,
-  cards: readonly Card[],
+  cards: readonly SourceCard[],
 ): Promise<Result<string, PlanOptionsProblem>> {
   const { role, signal, ids } = parts;
   const tags = { cards: ids.dataBlockTag(), scan: ids.dataBlockTag() };

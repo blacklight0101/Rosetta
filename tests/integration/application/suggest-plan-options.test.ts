@@ -72,13 +72,13 @@ describe('SuggestPlanOptions: the options', () => {
 
 describe('SuggestPlanOptions: what stops it', () => {
   it('RF-143 a cloud planner without the consent is refused before any call', async () => {
-    const settings = settingsFor({ planner: { provider: 'openai', model: 'gpt-5-mini' } });
+    const settings = settingsFor({ planner: { provider: 'openai', model: 'contract-model' } });
     const h = await harness({ settings, serverKeys: { openai: 'sk-server' } });
 
     const result = await ask(h, false);
 
     expect(result).toEqual({ ok: false, error: ERROR_CODES.cloudConsentMissing });
-    expect(h.factory.fakes.get('fake')?.requests ?? []).toHaveLength(0);
+    expect(h.factory.fakes.get('openai')?.requests ?? []).toHaveLength(0);
     expect(h.factory.ledger.entries).toHaveLength(0);
   });
 
