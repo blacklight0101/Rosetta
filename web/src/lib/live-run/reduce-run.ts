@@ -15,6 +15,12 @@ import {
   onClaimJudged,
   onClaimsProposed,
 } from './claim-events.js';
+import {
+  onDeepenEnded,
+  onDeepenRoundEnded,
+  onDeepenRoundStarted,
+  onDeepenStarted,
+} from './deepen-events.js';
 import { logText } from './log-text.js';
 import type { RunState } from './run-state.js';
 import { onRunEnded, onRunStarted, onScanCompleted, onSourceResolved } from './run-level-events.js';
@@ -46,6 +52,11 @@ const handlers: Readonly<Record<string, Handler>> = {
   'verify.claim.judged': onClaimJudged,
   // RF-250: the merge renumbered claims; their rows follow.
   'cards.merged': onCardsMerged,
+  // RF-209: a Deepen run's cards, rounds and stop.
+  'deepen.started': onDeepenStarted,
+  'deepen.round.started': onDeepenRoundStarted,
+  'deepen.round.ended': onDeepenRoundEnded,
+  'deepen.ended': onDeepenEnded,
   // RF-1014: the judgement step's start and end; the claims wait for it only in between (or before).
   'verify.judgement.started': (state) => ({ ...state, judgement: 'running' }),
   'verify.judgement.ended': (state) => ({ ...state, judgement: 'ended' }),

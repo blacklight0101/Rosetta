@@ -85,7 +85,13 @@ describe('RF-006 a resumed Deepen', () => {
       deepenEnded(4, 'capReached', 0),
       runEnded(5, 'CapReached'),
       ev(6, 'run.started', { stage: 'understand' }),
-      { ...deepenStarted(7), data: { ...deepenStarted(7).data, seeded: { cards: 1 } } },
+      {
+        ...deepenStarted(7),
+        data: {
+          ...deepenStarted(7).data,
+          seeded: { cards: 1, claims: 1, supported: 1, rejected: 0, notJudged: 0 },
+        },
+      },
       deepenRoundStarted(8, 2),
     );
 
