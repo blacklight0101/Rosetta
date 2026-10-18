@@ -15,6 +15,7 @@ export function draftTask(overrides: Partial<DraftTask> = {}): DraftTask {
   return {
     ...{ title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] },
     ...{ invariant, riskClass: 'none', adds: [], probes: [] },
+    ...{ files: [], needs: [], dependsOn: [] },
     ...overrides,
   };
 }
@@ -24,6 +25,7 @@ export function planTask(overrides: Partial<PlanTask> = {}): PlanTask {
   return {
     ...{ id: 'T-001', title: 'A task', phase: 1, requirements: ['REQ-001'] },
     ...{ acceptanceCriteria: [scenario], invariant, riskClass: 'none', adds: [], probes: [] },
+    ...{ files: [], identifiers: [], dependsOn: [] },
     ...overrides,
   };
 }

@@ -1,3 +1,9 @@
+import {
+  allocateIdentifiers,
+  dependenciesOf,
+  listedFiles,
+  type AllocatedIdentifier,
+} from './parallel-cards.js';
 import type {
   DraftComponent,
   DraftDecision,
@@ -51,6 +57,12 @@ export interface PlanTask {
   readonly adds: readonly GuardKind[];
   /** Hostile or edge inputs a reviewer will try; empty for a card with no guard and no risk. */
   readonly probes: readonly string[];
+  /** The files and folders the card expects to change (RF-634). */
+  readonly files: readonly string[];
+  /** The shared identifiers the plan allocated to this card, and no other card (RF-634). */
+  readonly identifiers: readonly AllocatedIdentifier[];
+  /** `T-` ids of the cards this one waits for: declared, or added because the files overlap. */
+  readonly dependsOn: readonly string[];
 }
 
 interface PlanRisk extends DraftRisk {
@@ -122,16 +134,31 @@ function tasksOf(
   idAt: ReadonlyMap<number, string>,
   specified: boolean,
 ): PlanTask[] {
-  const kept = drafts
-    .filter((task) => task.phase >= 1 && task.phase <= phases)
-    .flatMap((task) => {
-      const { riskClass } = task;
-      if (riskClass === undefined || cardProblem({ ...task, riskClass }) !== undefined) return [];
-      const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
-      return [{ ...task, riskClass, requirements }];
-    })
-    .filter((task) => !specified || task.requirements.length > 0);
-  return kept.map((task, index) => ({ ...task, id: planId('T', index + 1) }));
+  const kept = drafts.flatMap((task, index) => {
+    const { riskClass } = task;
+    if (task.phase < 1 || task.phase > phases) return [];
+    if (riskClass === undefined || cardProblem({ ...task, riskClass }) !== undefined) return [];
+    const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
+    if (specified && requirements.length === 0) return [];
+    return [{ position: index + 1, task, riskClass, requirements, files: listedFiles(task.files) }];
+  });
+  const identifiers = allocateIdentifiers(kept.map((each) => each.task.needs));
+  const at = new Map(kept.map((each, index) => [each.position, index]));
+  const dependencies = dependenciesOf(
+    kept.map(({ task, files }) => ({
+      ...{ phase: task.phase, files },
+      declared: task.dependsOn.flatMap((position) => at.get(position) ?? []),
+    })),
+  );
+  return kept.map(({ task, riskClass, requirements, files }, index) => {
+    const { title, phase, acceptanceCriteria, invariant, adds, probes } = task;
+    return {
+      ...{ id: planId('T', index + 1), title, phase, requirements, acceptanceCriteria },
+      ...{ invariant, riskClass, adds, probes, files },
+      identifiers: identifiers[index] ?? [],
+      dependsOn: (dependencies[index] ?? []).map((on) => planId('T', on + 1)),
+    };
+  });
 }
 
 function componentsOf(drafts: readonly DraftComponent[]): DraftComponent[] {

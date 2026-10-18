@@ -1,3 +1,4 @@
+import type { IdentifierNeed } from './parallel-cards.js';
 import type { GuardKind, RiskClass } from './task-card-quality.js';
 import type { TechnicalDraft } from './technical-content.js';
 
@@ -55,6 +56,12 @@ export interface DraftTask {
   readonly adds: readonly GuardKind[];
   /** Hostile or edge inputs a reviewer will try (RF-630). */
   readonly probes: readonly string[];
+  /** The files and folders the card expects to change (RF-634). */
+  readonly files: readonly string[];
+  /** The shared identifiers the card needs; the plan allocates them (RF-634). */
+  readonly needs: readonly IdentifierNeed[];
+  /** Positions in `tasks`, from 1, of the cards this one waits for (RF-634). */
+  readonly dependsOn: readonly number[];
 }
 
 export interface DraftRisk {
