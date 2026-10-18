@@ -18,12 +18,21 @@ test.beforeEach(async ({ context, page }, info) => {
   await signInAs(context, accountFor('admin', info.project.name));
   await page.goto('/projects');
   // A new project stays on the list; the same address again opens the existing project (RF-010).
+  // The account of a worker is kept between tests, so the project may exist already.
+  const startPath = /\/projects\/[^/]+\/start$/u;
   await page.getByLabel('GitHub repository URL').fill(demoUrl);
   await page.getByRole('button', { name: 'Create project' }).click();
-  await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
-  await page.getByLabel('GitHub repository URL').fill(demoUrl);
-  await page.getByRole('button', { name: 'Create project' }).click();
-  await expect(page).toHaveURL(/\/projects\/[^/]+\/start$/u);
+  await expect(
+    page
+      .getByRole('status')
+      .filter({ hasText: 'Created octo/demo' })
+      .or(page.getByRole('heading', { name: 'Start a run' })),
+  ).toBeVisible();
+  if (!startPath.test(page.url())) {
+    await page.getByLabel('GitHub repository URL').fill(demoUrl);
+    await page.getByRole('button', { name: 'Create project' }).click();
+  }
+  await expect(page).toHaveURL(startPath);
 });
 
 const nav = (page: Page) => page.getByTestId('navigation');
