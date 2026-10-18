@@ -9,6 +9,7 @@ import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import { traceIdOf } from '../runs/run-ids.js';
 import {
   cutOffMessage,
+  endsCutOff,
   isCutOff,
   joinContinuation,
   maxPlannerContinuations,
@@ -52,7 +53,8 @@ export async function askPlannerWith(call: PlannerCall, message: string): Promis
   const messages: LlmMessage[] = [{ role: 'user', content: message }];
   let response = await send(call, messages);
   let text = response.text;
-  for (let used = 0; used < maxPlannerContinuations; used += 1) {
+  let continued = 0;
+  for (; continued < maxPlannerContinuations; continued += 1) {
     if (!isCutOff(text, { ...response.usage, finishReason: response.finishReason }, limit)) break;
     messages.push(
       { role: 'assistant', content: response.text },
@@ -61,9 +63,8 @@ export async function askPlannerWith(call: PlannerCall, message: string): Promis
     response = await send(call, messages);
     text = joinContinuation(text, response.text);
   }
-  if (!isCutOff(text, { ...response.usage, finishReason: response.finishReason }, limit)) {
-    return text;
-  }
+  const end = { ...response.usage, finishReason: response.finishReason };
+  if (!endsCutOff(text, end, limit, continued)) return text;
   const problem = cutOffMessage(limit);
   if (call.onCutOff === undefined) {
     throw new RosettaError(ERROR_CODES.plannerAnswerCutOff, problem);

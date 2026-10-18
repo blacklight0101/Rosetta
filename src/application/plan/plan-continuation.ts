@@ -1,4 +1,5 @@
 import { searchJson } from '../cards/extract-json.js';
+import { isProseRest, jsonTail } from './json-tail.js';
 import type { FinishReason } from '../ports/llm-provider.js';
 
 // RF-604, RF-208, RF-007: a planner answer that stops inside its JSON because the model hit the
@@ -15,6 +16,8 @@ const MIN_OVERLAP = 12;
 const MAX_OVERLAP = 400;
 /** How much of the first answer a restart has to repeat to count as a new start. */
 const RESTART_PREFIX = 24;
+/** The longest unit of a repeated stretch that is too plain to tell a repeat from new text. */
+const MAX_PERIOD = 4;
 
 export interface AnswerEnd {
   readonly finishReason: Exclude<FinishReason, 'error'>;
@@ -33,7 +36,10 @@ export function isCutOff(text: string, end: AnswerEnd, limit: number): boolean {
   return end.outputTokens >= limit && json.unclosed;
 }
 
-/** Whether the answer is cut off after `continued` continuations. */
+/**
+ * Whether the answer is still cut off once `continued` continuations were asked for: also an
+ * answer that stops normally with JSON still open, which was continued and is still not whole.
+ */
 // RF-604, RF-007
 export function endsCutOff(
   text: string,
@@ -41,22 +47,46 @@ export function endsCutOff(
   limit: number,
   continued: number,
 ): boolean {
-  return continued < 0 || isCutOff(text, end, limit);
+  if (isCutOff(text, end, limit)) return true;
+  return continued > 0 && searchJson(text).unclosed;
 }
 
-/** The answer so far with the fragment the model sent after being asked to continue. */
+/** How many characters at the start of the fragment repeat the end of the answer, or 0. */
+function repeatedSize(earlier: string, fragment: string): number {
+  const longest = Math.min(earlier.length, fragment.length, MAX_OVERLAP);
+  for (let size = longest; size >= MIN_OVERLAP; size -= 1) {
+    const repeated = fragment.slice(0, size);
+    if (repeated.trim() === '' || !earlier.endsWith(repeated)) continue;
+    // A stretch of a few characters over and over may as well be new text: keep it.
+    if (!hasShortPeriod(repeated)) return size;
+  }
+  return 0;
+}
+
+function hasShortPeriod(text: string): boolean {
+  for (let period = 1; period <= MAX_PERIOD; period += 1) {
+    let same = true;
+    for (let index = period; index < text.length && same; index += 1) {
+      same = text[index] === text[index - period];
+    }
+    if (same) return true;
+  }
+  return false;
+}
+
+/**
+ * The answer so far with the fragment the model sent after being asked to continue. A fragment
+ * that is prose where the cut string goes on is not joined: the answer stays cut off, never JSON
+ * with a mangled key or value.
+ */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
   const head = earlier.trimStart().slice(0, RESTART_PREFIX);
   if (head.length >= MIN_OVERLAP && fragment.trimStart().startsWith(head)) return fragment;
-  const longest = Math.min(earlier.length, fragment.length, MAX_OVERLAP);
-  for (let size = longest; size >= MIN_OVERLAP; size -= 1) {
-    const repeated = fragment.slice(0, size);
-    if (repeated.trim() !== '' && earlier.endsWith(repeated)) {
-      return earlier + fragment.slice(size);
-    }
-  }
-  return earlier + fragment;
+  const rest = fragment.slice(repeatedSize(earlier, fragment));
+  const tail = jsonTail(earlier);
+  if (tail.inString && isProseRest(rest, tail.inKey)) return earlier;
+  return earlier + rest;
 }
 
 /** RST-1805: the cause and the setting that fixes it. */
