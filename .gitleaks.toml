@@ -1,0 +1,12 @@
+# gitleaks configuration (RNF-003, docs/environments-and-delivery.md section 4): the default rules,
+# with one file left out. templates/report/mermaid.min.js is the vendored Mermaid build of the report
+# (RF-508, DEC-125): a byte-for-byte copy of node_modules/mermaid/dist/mermaid.min.js, which
+# tests/integration/infrastructure/report/vendored-mermaid.test.ts compares. Minified names such as
+# `keyCount=...` match the generic-api-key rule; the file holds no secret of ours and is never edited.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Vendored third-party Mermaid build of the report (RF-508)"
+paths = ['''^templates/report/mermaid\.min\.js$''']
