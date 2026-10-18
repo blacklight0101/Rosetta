@@ -1,14 +1,16 @@
 import type { Actor } from '../../domain/accounts/actor.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import { apiScope } from '../../domain/planning/api-contract.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import { legacyClaimsOf } from '../../domain/planning/data-model.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { Project } from '../projects/project.js';
+import { apiContractMessage } from '../plan/api-contract-message.js';
 import { dataModelMessage } from '../plan/data-model-message.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
-import { planMessage } from '../plan/plan-message.js';
+import { planMessage, type PlanMessageInput } from '../plan/plan-message.js';
 import { ceilPercent } from './estimate-assumptions.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
 import { plannerKeyAvailable, type PlanKeyDependencies } from './plan-key.js';
@@ -37,6 +39,8 @@ export interface EstimatePlanDependencies
   readonly prdPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the target data model (RF-623). */
   readonly dataModelPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the API contract (RF-624). */
+  readonly apiContractPrompt: () => Promise<PromptFile>;
 }
 
 export interface EstimatePlanRequest {
@@ -58,6 +62,13 @@ const CHARS_PER_TOKEN = 4;
 
 function eachScenario<T>(figure: (scenario: Scenario) => T): ByScenario<T> {
   return { low: figure('low'), likely: figure('likely'), high: figure('high') };
+}
+
+/** A planner call the run would make: its prompt file and the message it would send. */
+interface PlannedCall {
+  readonly name: 'plan' | 'prd' | 'dataModel' | 'apiContract';
+  readonly file: PromptFile;
+  readonly message: string;
 }
 
 export class EstimatePlan {
@@ -86,35 +97,52 @@ export class EstimatePlan {
     };
   }
 
+  /**
+   * The calls BuildPlan would make, each with its message: the plan and the PRD always, the data
+   * model when a supported `ENT` claim exists (RF-623) and the API contract when the brief names a
+   * front end and a verified `FEAT` or `FLOW` card exists (RF-624).
+   */
+  private async plannedCalls(input: Omit<PlanMessageInput, 'catalogue'>): Promise<PlannedCall[]> {
+    const { cards, brief } = input;
+    const catalogue = await this.deps.catalogue();
+    // The plan and the PRD send the same data blocks; only the system prompt differs.
+    const message = planMessage({ ...input, catalogue }, () => TAG);
+    const files = await Promise.all([
+      this.deps.prompt(),
+      this.deps.prdPrompt(),
+      this.deps.dataModelPrompt(),
+      this.deps.apiContractPrompt(),
+    ]);
+    const [plan, prd, dataModel, apiContract] = files;
+    const model = { name: 'dataModel', file: dataModel } as const;
+    const api = { name: 'apiContract', file: apiContract } as const;
+    return [
+      { name: 'plan', file: plan, message },
+      { name: 'prd', file: prd, message },
+      ...(legacyClaimsOf(cards).length === 0
+        ? []
+        : [{ ...model, message: dataModelMessage({ cards, brief }, () => TAG) }]),
+      ...(apiScope(cards, brief).ask
+        ? [{ ...api, message: apiContractMessage({ cards, brief }, () => TAG) }]
+        : []),
+    ];
+  }
+
   // RF-613, RF-1105
   async execute(request: EstimatePlanRequest): Promise<Result<PlanEstimate, EstimatePlanProblem>> {
     const ref = { userId: request.actor.userId, projectId: request.projectId };
     const inputs = await planInputs(this.deps, ref);
     if (!inputs.ok) return err(problemOf(inputs.error.code));
     const { project, cards, brief, questions } = inputs.value;
-    const [catalogue, prompt, prdPrompt, dataModelPrompt] = await Promise.all([
-      this.deps.catalogue(),
-      this.deps.prompt(),
-      this.deps.prdPrompt(),
-      this.deps.dataModelPrompt(),
-    ]);
     const supported = supportedCards(cards);
     const answered = questions.filter((question) => question.answer.trim() !== '');
-    // The plan and the PRD send the same data blocks; only the system prompt differs.
-    const message = planMessage({ cards: supported, brief, catalogue, answered }, () => TAG);
-    // RF-623: the data model call is made only when a supported `ENT` claim exists.
-    const modelMessage = dataModelMessage({ cards: supported, brief }, () => TAG);
-    const prompts = [
-      { file: prompt, message },
-      { file: prdPrompt, message },
-      ...(legacyClaimsOf(supported).length === 0
-        ? []
-        : [{ file: dataModelPrompt, message: modelMessage }]),
-    ];
+    const prompts = await this.plannedCalls({ cards: supported, brief, answered });
     const { maxOutputTokens } = project.settings.roles.planner;
     const calls = await Promise.all(
       prompts.map((each) => this.callOf(project, each.file.text + each.message, maxOutputTokens)),
     );
+    const tokensOf = (name: PlannedCall['name']): number =>
+      calls.find((_, at) => prompts[at]?.name === name)?.promptTokens ?? 0;
     const planner = calls.map((call) => call.role).reduce(sumRoles);
     const promptTokens = calls.reduce((sum, call) => sum + call.promptTokens, 0);
     const { caps, withinCaps } = await planCaps(this.deps, project, planner);
@@ -125,10 +153,8 @@ export class EstimatePlan {
       keyAvailable: await plannerKeyAvailable(this.deps, project, planner),
       assumptions: {
         ...{ calls: calls.length, promptTokens },
-        ...{
-          prdPromptTokens: calls[1]?.promptTokens ?? 0,
-          dataModelPromptTokens: calls[2]?.promptTokens ?? 0,
-        },
+        ...{ prdPromptTokens: tokensOf('prd'), dataModelPromptTokens: tokensOf('dataModel') },
+        apiContractPromptTokens: tokensOf('apiContract'),
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         ...{ supportedCards: supported.length, answeredQuestions: answered.length },
       },

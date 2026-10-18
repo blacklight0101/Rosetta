@@ -58,7 +58,7 @@ describe('openApiYaml: hostile text', () => {
     const model = targetModel();
     const [first, ...rest] = model.tables;
     if (first === undefined) throw new Error('The fixture has tables');
-    const names = ['no', 'on', 'y', 'null', '123'];
+    const names = ['123', 'no', 'on', 'y', 'null'];
     const columns = names.map((name) => ({
       ...{ name, type: 'text', nullable: true, legacy: null, migrationRisk: '' },
     }));

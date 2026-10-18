@@ -1,3 +1,4 @@
+import type { ApiContract } from '../../domain/planning/api-contract.js';
 import { briefDecisions } from '../../domain/planning/brief-decisions.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
@@ -27,9 +28,13 @@ export function handoffPackageOf(
   inputs: PlanInputs,
   content: PlanContent,
   catalogue: Catalogue,
-  documents: { readonly prd: PrdContent; readonly dataModel: TargetDataModel },
+  documents: {
+    readonly prd: PrdContent;
+    readonly dataModel: TargetDataModel;
+    readonly apiContract: ApiContract;
+  },
 ): HandoffPackage {
-  const { prd, dataModel } = documents;
+  const { prd, dataModel, apiContract } = documents;
   const { brief, sourceRun, project, cards, questions } = inputs;
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
@@ -53,6 +58,7 @@ export function handoffPackageOf(
       })),
     prd,
     dataModel,
+    apiContract,
     prdQuestions: prdQuestions(prd),
   };
 }

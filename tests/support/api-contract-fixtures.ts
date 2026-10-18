@@ -32,7 +32,7 @@ export function apiCards(): SourceCard[] {
 
 /** The planning brief of a project whose front end is this technology (null: none chosen). */
 export function briefWithFrontEnd(choice: string | null): PlanningBrief {
-  const stack = choice === null ? [] : [{ layer: 'front-end', choice, custom: false }];
+  const stack = choice === null ? [] : [{ layer: 'front-end', choice, custom: false } as const];
   const built = buildBrief({ stack }, shippedCatalogue);
   return { ...built, savedAt: '2026-10-12T09:30:00.000Z' };
 }

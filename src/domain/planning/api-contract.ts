@@ -29,7 +29,7 @@ export interface DraftOperation {
   readonly errors: readonly number[];
 }
 
-export interface DraftNotServed {
+interface DraftNotServed {
   readonly card: string;
   readonly reason: string;
 }
@@ -103,8 +103,19 @@ export function noApiContract(reason: string): ApiContract {
   return { kind: 'none', reason };
 }
 
+/** The schema names the code keeps for itself; a table of that name gets no schema. */
+export const reservedSchemaNames: readonly string[] = ['ApiError'];
+
+const noFrontEnd =
+  'The planning brief names no front end, so it is not known whether one is separate from the back end. Choose a front end in the plan setup and plan again to get a contract.';
+const noFeature =
+  'The verified cards hold no verified feature or flow, so there is no operation to describe.';
+
 /** Whether the planner is asked for the contract, or the reason it is not. */
 // RF-624
 export function apiScope(cards: readonly SourceCard[], brief: PlanningBrief): ApiScope {
-  return { ask: false, reason: [cards, brief].length === 2 ? '' : 'never' };
+  const frontEnd = brief.stack.find((entry) => entry.layer === 'front-end')?.choice.trim() ?? '';
+  if (frontEnd === '') return { ask: false, reason: noFrontEnd };
+  if (servableCards(cards).length === 0) return { ask: false, reason: noFeature };
+  return { ask: true };
 }

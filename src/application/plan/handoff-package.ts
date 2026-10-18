@@ -1,3 +1,4 @@
+import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { BriefChoices } from '../../domain/planning/brief-decisions.js';
 import type { CatalogueGroup } from '../../domain/planning/catalogue.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
@@ -47,6 +48,8 @@ export interface HandoffPackage {
   readonly choices: BriefChoices;
   /** The target tables, with the legacy source of each column and the dropped legacy fields (RF-623). */
   readonly dataModel: TargetDataModel;
+  /** The API contract: the operations of a separate front end, or why none applies (RF-624). */
+  readonly apiContract: ApiContract;
   /** The cards with their `Supported` claims, in card order. */
   readonly sources: readonly SourceCard[];
   readonly excluded: readonly ExcludedClaim[];
