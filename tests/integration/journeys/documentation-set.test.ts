@@ -121,7 +121,9 @@ describe('the documentation set journey: the report diagrams', () => {
     expect(page.match(/erDiagram/gu)).toHaveLength(1);
     expect(page.match(/flowchart/gu)).toHaveLength(1);
     for (const asset of ['mermaid.min.js', 'diagrams.js']) expect(report[asset]).toBeDefined();
-    expect(page).not.toMatch(/<script>|onerror=|javascript:/u);
+    // The two scripts are files of the report; no script is written into the page itself.
+    const inline = page.replace(/<script src="[\w.-]+" defer><\/script>/giu, '');
+    expect(inline).not.toMatch(/<script|\son\w+=|javascript:/iu);
   });
 });
 
