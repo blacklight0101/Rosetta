@@ -84,6 +84,18 @@ describe('scripts/measure-rnf017.mjs', () => {
     expect(outcome.code).toBe(1);
     expect(outcome.output).toMatch(/FAIL\s+events/u);
   }, 20_000);
+});
+
+describe('scripts/measure-rnf017.mjs failures and usage', () => {
+  it('RNF-017 still reports the pages when the run cannot be followed', async () => {
+    const { url } = await started();
+
+    const outcome = await measure([url, '--run', 'no-such-run', '--samples', '1']);
+
+    expect(outcome.code).toBe(1);
+    expect(outcome.output).toMatch(/ok\s+page \/api\/projects/u);
+    expect(outcome.output).toMatch(/FAIL\s+events.*404/u);
+  });
 
   it('RNF-017 exits 2 without a run id', async () => {
     const { url } = await started();
