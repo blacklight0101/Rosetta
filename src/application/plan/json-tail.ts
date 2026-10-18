@@ -1,66 +1,43 @@
-// RF-604: where a cut-off planner answer stops. Joining a continuation to it depends on whether
-// the cut is inside a string, and inside a key or a value. Pure text scanning, no model text kept.
-
-export interface JsonTail {
-  /** The text ends inside a string of the JSON it started. */
-  readonly inString: boolean;
-  /** ... and that string is the key of an object member. */
-  readonly inKey: boolean;
-}
+// RF-604: a cut-off planner answer is shown to the model again only up to the last complete JSON
+// value boundary, so the model writes the cut string or number again whole and the join never has
+// to guess where text that continues a string begins. Pure text scanning.
 
 const jsonOpening = /[{[]\s*(?:["{[\]}]|$)/;
+const partialToken = /[\w.+-]+$/u;
 
 interface Scan {
-  readonly containers: string[];
-  last: string;
+  containers: number;
   inString: boolean;
-  inKey: boolean;
   escaped: boolean;
+  stringAt: number;
 }
 
-function stepInString(scan: Scan, char: string): void {
-  if (scan.escaped) scan.escaped = false;
-  else if (char === '\\') scan.escaped = true;
-  else if (char === '"') scan.inString = false;
-}
-
-function stepOutside(scan: Scan, char: string): void {
-  if (/\s/u.test(char)) return;
-  if (char === '"') {
+function step(scan: Scan, char: string, index: number): void {
+  if (scan.inString) {
+    if (scan.escaped) scan.escaped = false;
+    else if (char === '\\') scan.escaped = true;
+    else if (char === '"') scan.inString = false;
+  } else if (char === '"') {
     scan.inString = true;
-    scan.inKey = scan.containers.at(-1) === '{' && (scan.last === '{' || scan.last === ',');
-  } else if (char === '{' || char === '[') scan.containers.push(char);
-  else if (char === '}' || char === ']') scan.containers.pop();
-  scan.last = char;
+    scan.stringAt = index;
+  } else if (char === '{' || char === '[') scan.containers += 1;
+  else if (char === '}' || char === ']') scan.containers -= 1;
 }
-
-/** Whether the text, read from the first JSON it starts, ends inside a string, and which. */
-export function jsonTail(text: string): JsonTail {
-  const start = text.search(jsonOpening);
-  const scan: Scan = { containers: [], last: '', inString: false, inKey: false, escaped: false };
-  if (start >= 0) {
-    for (const char of text.slice(start)) {
-      if (scan.inString) stepInString(scan, char);
-      else stepOutside(scan, char);
-    }
-  }
-  return { inString: scan.inString, inKey: scan.inString && scan.inKey };
-}
-
-const preamble =
-  /^\s*(?:sure|certainly|of course|okay|ok|here(?:'s| is| are)|continuing)\b[^"\n]{0,80}:\s/iu;
 
 /**
- * Whether the rest of a string that was cut off reads as prose of the model instead of the rest of
- * the string: an opening like "Sure, here is the rest: ", or, for a key, anything but one word.
+ * The answer up to its last complete JSON boundary: a cut inside a string goes back to before the
+ * opening quote, a cut number or word to where it starts. Text that ends at a boundary, or holds
+ * no open JSON, is returned as it is.
  */
-export function isProseRest(rest: string, inKey: boolean): boolean {
-  if (preamble.test(rest)) return true;
-  if (!inKey) return false;
-  const end = rest.indexOf('"');
-  return /[\s:,]/u.test(end < 0 ? rest : rest.slice(0, end));
-}
-
+// RF-604
 export function resumePoint(text: string): string {
-  return text;
+  const start = text.search(jsonOpening);
+  if (start < 0) return text;
+  const scan: Scan = { containers: 0, inString: false, escaped: false, stringAt: -1 };
+  for (let index = start; index < text.length; index += 1) {
+    step(scan, text[index] ?? '', index);
+  }
+  if (scan.inString) return text.slice(0, scan.stringAt);
+  if (scan.containers <= 0) return text;
+  return text.replace(partialToken, '');
 }

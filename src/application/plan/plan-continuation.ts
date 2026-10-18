@@ -1,5 +1,5 @@
 import { searchJson } from '../cards/extract-json.js';
-import { isProseRest, jsonTail } from './json-tail.js';
+import { resumePoint } from './json-tail.js';
 import type { FinishReason } from '../ports/llm-provider.js';
 
 // RF-604, RF-208, RF-007: a planner answer that stops inside its JSON because the model hit the
@@ -16,7 +16,12 @@ const MIN_OVERLAP = 12;
 const MAX_OVERLAP = 400;
 /** How much of the first answer a restart has to repeat to count as a new start. */
 const RESTART_PREFIX = 24;
-/** The longest unit of a repeated stretch that is too plain to tell a repeat from new text. */
+/**
+ * The longest unit of a repeated stretch too plain to tell a repeat from new text. Such a stretch
+ * (`aaaa`, `1, 1, 1,`) is not joined either way: the answer stays cut off and ends in RST-1805,
+ * because either reading could silently change the JSON. Repeats under MIN_OVERLAP characters are
+ * not looked for (they are joined as written, as before P3-31).
+ */
 const MAX_PERIOD = 4;
 
 export interface AnswerEnd {
@@ -51,14 +56,20 @@ export function endsCutOff(
   return continued > 0 && searchJson(text).unclosed;
 }
 
-/** How many characters at the start of the fragment repeat the end of the answer, or 0. */
+/** What the model may write right after a value boundary: a quote, punctuation or a value. */
+const valueStart = /^\s*(?:["{}[\],:]|-?\d|(?:true|false|null)\b)/u;
+
+/**
+ * How many characters at the start of the fragment repeat the end of the answer: 0 for none, -1
+ * when the repeated stretch is a few characters over and over (`aaaa`, `1, 1, 1,`), which reads
+ * as a repeat and as new text alike, so no join is safe.
+ */
 function repeatedSize(earlier: string, fragment: string): number {
   const longest = Math.min(earlier.length, fragment.length, MAX_OVERLAP);
   for (let size = longest; size >= MIN_OVERLAP; size -= 1) {
     const repeated = fragment.slice(0, size);
     if (repeated.trim() === '' || !earlier.endsWith(repeated)) continue;
-    // A stretch of a few characters over and over may as well be new text: keep it.
-    if (!hasShortPeriod(repeated)) return size;
+    return hasShortPeriod(repeated) ? -1 : size;
   }
   return 0;
 }
@@ -75,18 +86,20 @@ function hasShortPeriod(text: string): boolean {
 }
 
 /**
- * The answer so far with the fragment the model sent after being asked to continue. A fragment
- * that is prose where the cut string goes on is not joined: the answer stays cut off, never JSON
- * with a mangled key or value.
+ * The answer up to its last complete JSON boundary (`resumePoint`, what the model was shown) with
+ * the fragment it sent after being asked to continue. A fragment that does not start like JSON, or
+ * repeats the end so plainly that it cannot be told from new text, is not joined: the answer
+ * stays cut off, never JSON that was silently altered.
  */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
-  const head = earlier.trimStart().slice(0, RESTART_PREFIX);
+  const base = resumePoint(earlier);
+  const head = base.trimStart().slice(0, RESTART_PREFIX);
   if (head.length >= MIN_OVERLAP && fragment.trimStart().startsWith(head)) return fragment;
-  const rest = fragment.slice(repeatedSize(earlier, fragment));
-  const tail = jsonTail(earlier);
-  if (tail.inString && isProseRest(rest, tail.inKey)) return earlier;
-  return earlier + rest;
+  const size = repeatedSize(base, fragment);
+  if (size < 0) return base;
+  const rest = fragment.slice(size);
+  return valueStart.test(rest) ? base + rest : base;
 }
 
 /** RST-1805: the cause and the setting that fixes it. */

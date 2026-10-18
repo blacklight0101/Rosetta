@@ -43,6 +43,7 @@ describe('resumePoint', () => {
 
   it('RF-604 text with no open JSON is unchanged', () => {
     expect(resumePoint('Here is the plan: ')).toBe('Here is the plan: ');
+    expect(resumePoint('He said "hi')).toBe('He said "hi');
     expect(resumePoint('{"a": 1}\nThat is all')).toBe('{"a": 1}\nThat is all');
   });
 });
@@ -87,7 +88,7 @@ describe('joinContinuation: a fragment that does not start like JSON (P3-31)', (
     },
   );
 
-  it.each(['truth]}', 'none]}', 'Sure]}', 'x]}', '\n```\n'])(
+  it.each(['truth]}', 'trueish]}', 'nullable]}', 'none]}', 'Sure]}', 'x]}', '\n```\n'])(
     'RF-604 a fragment that starts with %j is not JSON and stays cut off',
     (fragment) => {
       expect(joinContinuation('{"a": [', fragment)).toBe('{"a": [');
