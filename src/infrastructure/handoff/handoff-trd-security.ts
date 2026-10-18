@@ -17,8 +17,7 @@ const DEFAULT_RECOMMENDATION =
  * A control the planner did not mark as a denylist can still read like one. This short word list
  * is only a fallback for the recommendation; the label and the denylist wording stay the planner's.
  */
-const denylistWords =
-  /block ?list|black ?list|deny ?list|forbidden|blocked|blocks the|rejects .* list/iu;
+const denylistWords = /\b(?:block ?list|black ?list|deny ?list)\b/iu;
 
 function readsLikeDenylist(control: PlanControl): boolean {
   return (
