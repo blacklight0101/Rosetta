@@ -3,11 +3,11 @@ import { join } from 'node:path';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 
-// RF-506, RF-1013: the stylesheet and the script every report folder gets, shipped in
+// RF-503, RF-506, RF-1013: the stylesheet and the two scripts every report folder gets, shipped in
 // `templates/report/`. The pages load them as files of their own folder, so the content security
 // policy needs no inline allowance.
 
-export type ReportAssets = Readonly<Record<'report.css' | 'replay.js', string>>;
+export type ReportAssets = Readonly<Record<'report.css' | 'replay.js' | 'filters.js', string>>;
 
 async function readAsset(folder: string, name: string): Promise<string> {
   try {
@@ -27,5 +27,6 @@ export async function loadReportAssets(folder: string): Promise<ReportAssets> {
   return {
     'report.css': await readAsset(folder, 'report.css'),
     'replay.js': await readAsset(folder, 'replay.js'),
+    'filters.js': await readAsset(folder, 'filters.js'),
   };
 }

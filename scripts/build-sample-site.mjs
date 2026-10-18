@@ -54,6 +54,13 @@ async function documentsOf(model) {
   return documents;
 }
 
+/** The stylesheet and the two scripts of the report, from the templates folder. */
+async function readAssets() {
+  const names = ['report.css', 'replay.js', 'filters.js'];
+  const texts = await Promise.all(names.map((name) => readFile(join(assetsFolder, name), 'utf8')));
+  return Object.fromEntries(names.map((name, index) => [name, texts[index]]));
+}
+
 async function writeSite(files) {
   await rm(siteFolder, { recursive: true, force: true });
   for (const [name, text] of Object.entries(files)) {
@@ -102,10 +109,7 @@ async function main() {
     ...{ questions: [], cardDetails: [] },
   });
   const documents = await documentsOf(model);
-  const assets = {
-    'report.css': await readFile(join(assetsFolder, 'report.css'), 'utf8'),
-    'replay.js': await readFile(join(assetsFolder, 'replay.js'), 'utf8'),
-  };
+  const assets = await readAssets();
   const files = buildSiteFiles(model, assets, new SecretMasker(), documents);
   await writeSite(files);
   console.log(

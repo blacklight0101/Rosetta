@@ -78,17 +78,19 @@ test.describe('the filters, opened from disk with no server', () => {
     );
     await expect(visibleRows(page)).toHaveText(['FEAT-001', 'BR-001', 'ENT-001', 'BR-002']);
 
-    await page.getByLabel('Type').selectOption('BR');
+    await page.getByRole('combobox', { name: 'Type', exact: true }).selectOption('BR');
     await expect(visibleRows(page)).toHaveText(['BR-001', 'BR-002']);
     await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toHaveText(
       'Showing 2 of 4 cards',
     );
 
-    await page.getByLabel('Area').selectOption('orders');
+    await page.getByRole('combobox', { name: 'Area', exact: true }).selectOption('orders');
     await expect(visibleRows(page)).toHaveText(['BR-001']);
-    await page.getByLabel('Status').selectOption('Rejected');
+    await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption('Rejected');
     await expect(visibleRows(page)).toHaveText(['BR-001']);
-    await page.getByLabel('Status').selectOption('CitationInvalid');
+    await page
+      .getByRole('combobox', { name: 'Status', exact: true })
+      .selectOption('CitationInvalid');
     await expect(visibleRows(page)).toHaveCount(0);
 
     // Every request was a file of the folder: no server, no network.
@@ -103,8 +105,8 @@ test.describe('the filters and the empty state, from disk', () => {
   }) => {
     const { page } = await openFromDisk(browser, { javaScript: true }, address('report.html'));
 
-    await page.getByLabel('Type').selectOption('ENT');
-    await page.getByLabel('Area').selectOption('orders');
+    await page.getByRole('combobox', { name: 'Type', exact: true }).selectOption('ENT');
+    await page.getByRole('combobox', { name: 'Area', exact: true }).selectOption('orders');
 
     await expect(page.getByText('No cards match these filters')).toBeVisible();
     await expect(page.locator('table.cards')).toBeHidden();
@@ -126,7 +128,7 @@ test.describe('the filters and the empty state, from disk', () => {
     );
 
     await expect(visibleRows(page)).toHaveText(['BR-002']);
-    await expect(page.getByLabel('Type')).toHaveValue('BR');
+    await expect(page.getByRole('combobox', { name: 'Type', exact: true })).toHaveValue('BR');
     await page.context().close();
   });
 });
@@ -163,15 +165,15 @@ test.describe('the filters and a hostile address, from disk', () => {
     const { page } = await openFromDisk(browser, { javaScript: true }, address('report.html'));
     await expectNoSeriousViolations(page);
 
-    await page.getByLabel('Type').focus();
+    await page.getByRole('combobox', { name: 'Type', exact: true }).focus();
     await page.keyboard.press('Tab');
-    await expect(page.getByLabel('Area')).toBeFocused();
+    await expect(page.getByRole('combobox', { name: 'Area', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(page.getByLabel('Status')).toBeFocused();
+    await expect(page.getByRole('combobox', { name: 'Status', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Reset filters' })).toBeFocused();
 
-    await page.getByLabel('Status').focus();
+    await page.getByRole('combobox', { name: 'Status', exact: true }).focus();
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('status').filter({ hasText: 'Showing' })).toContainText(
       'of 4 cards',
@@ -187,7 +189,7 @@ test.describe('the filters without scripts and the replay link, from disk', () =
     const { page } = await openFromDisk(browser, { javaScript: false }, address('report.html'));
 
     await expect(visibleRows(page)).toHaveCount(4);
-    await expect(page.getByLabel('Type')).toBeHidden();
+    await expect(page.locator('[data-card-filters]')).toBeHidden();
     await page.context().close();
   });
 

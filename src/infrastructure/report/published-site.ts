@@ -18,7 +18,7 @@ import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 // is relative (RF-501); the pages carry the report content security policy in a `meta` element
 // (RF-1013). `.nojekyll` keeps Pages from running its own processing on the folder.
 
-export type ReportSiteAssets = Readonly<Record<'report.css' | 'replay.js', string>>;
+export type ReportSiteAssets = Readonly<Record<'report.css' | 'replay.js' | 'filters.js', string>>;
 
 /** The run's documents keyed by their path in the run folder, which is their path in the site. */
 export type SiteDocuments = Readonly<Record<string, string>>;
@@ -39,6 +39,7 @@ export function buildSiteFiles(
     'report.md': siteLinks(renderReportMarkdown(model, masker)),
     'replay.html': siteLinks(masker.mask(renderReplayHtml(model)).text),
     'replay.js': assets['replay.js'],
+    'filters.js': assets['filters.js'],
     'report.css': assets['report.css'],
   };
   for (const [name, html] of Object.entries(renderEvidencePages(model))) {

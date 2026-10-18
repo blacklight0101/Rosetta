@@ -37,6 +37,20 @@ describe('the card filters options and rows', () => {
         .map((option) => option.getAttribute('value')),
     ).toEqual(['', '', '']);
   });
+});
+
+describe('the card filters options and the rows', () => {
+  it('RF-503 lists a type outside the vocabulary after the known ones instead of dropping its cards', () => {
+    const odd = filterCards.map((card, index) => (index === 0 ? { ...card, type: 'ZED' } : card));
+    const page = filterPage(odd);
+
+    expect(texts(page, 'select[data-filter="type"] option')).toEqual([
+      'All types',
+      'BR',
+      'ENT',
+      'ZED',
+    ]);
+  });
 
   it('RF-503 puts on each row the type, the area and the statuses its claims have', () => {
     const page = filterPage();

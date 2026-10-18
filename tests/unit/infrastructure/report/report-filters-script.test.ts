@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { Window, type HTMLSelectElement } from 'happy-dom';
 import { describe, expect, it } from 'vitest';
-import { filterHtml } from '../../../support/report-filter-fixtures.js';
+import { filterCards, filterHtml } from '../../../support/report-filter-fixtures.js';
 
 // RF-503, RF-507: the filter script hides the rows that do not match the chosen type, area and
 // status, says how many are left, shows an empty state when none is, and takes its start state
@@ -14,9 +14,9 @@ const script = await readFile(
   'utf8',
 );
 
-function pageAt(address = 'http://localhost/report.html'): Window {
+function pageAt(address = 'http://localhost/report.html', cards = filterCards): Window {
   const window = new Window({ url: address, settings: { disableJavaScriptEvaluation: false } });
-  window.document.write(filterHtml());
+  window.document.write(filterHtml(cards));
   window.eval(script);
   return window;
 }
@@ -52,6 +52,12 @@ describe('the filter script', () => {
     expect(isHidden(window, '[data-card-filters]')).toBe(false);
     expect(shown(window)).toEqual(['FEAT-001', 'BR-001', 'ENT-001', 'BR-002']);
     expect(statusOf(window)).toBe('Showing 4 of 4 cards');
+  });
+
+  it('RF-503 says card, not cards, for a run with one card', () => {
+    const window = pageAt('http://localhost/report.html', filterCards.slice(0, 1));
+
+    expect(statusOf(window)).toBe('Showing 1 of 1 card');
   });
 
   it('RF-503 shows only the cards of the chosen type', () => {
@@ -170,6 +176,9 @@ describe('the filter script and a hostile address', () => {
       expect(window.document.querySelectorAll('script, img')).toHaveLength(1);
       expect(isHidden(window, '[data-filter-empty]')).toBe(true);
       expect(statusOf(window)).toBe('Showing 4 of 4 cards');
+      for (const key of ['type', 'area', 'status']) {
+        expect(selectOf(window, key).selectedIndex).toBe(0);
+      }
     }
   });
 });
