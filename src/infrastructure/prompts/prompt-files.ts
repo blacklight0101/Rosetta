@@ -77,6 +77,12 @@ export function loadPlannerPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/package.v4.md');
 }
 
+/** The planner's prompt that asks a cut-off answer to go on (RF-604), checked and hashed. */
+// RNF-004
+export function loadPlannerContinuePrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/continue.v1.md');
+}
+
 /** The planner's prompt for the product requirements document (RF-621), checked and hashed. */
 // RNF-004
 export function loadPrdPrompt(promptsFolder: string): Promise<PromptFile> {
@@ -99,6 +105,12 @@ export function loadFlowsPrompt(promptsFolder: string): Promise<PromptFile> {
 // RNF-004
 export function loadApiContractPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/api-contract.v1.md');
+}
+
+/** The planner's prompt for the user-interface material (RF-626), checked and hashed. */
+// RNF-004
+export function loadUxPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/ux.v1.md');
 }
 
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {

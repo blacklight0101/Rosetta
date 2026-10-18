@@ -25,7 +25,7 @@ export const ranges = {
 
 /** The value the template gives each setting, in the units the form shows (dollars for amounts). */
 export const templateDefaults = {
-  maxOutputTokens: { reader: 4_096, verifier: 2_048, planner: 4_096, summariser: 2_048 },
+  maxOutputTokens: { reader: 4_096, verifier: 2_048, planner: 16_384, summariser: 2_048 },
   maxTurns: 12,
   runCost: 0.5,
   runTokens: 2_000_000,

@@ -39,7 +39,8 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // planner once through the guarded provider the factory builds for the run, checks the answer
 // against the supported cards, asks it a second time for the product requirements document (RF-621,
 // its own versioned prompt), a third time for the target data model (RF-623), a fourth for the target flows (RF-625), a fifth for the API contract when the front end
-// is separate (RF-624) and writes `handoff/`.
+// is separate (RF-624), a sixth for the user-interface material when a `SCRN` card is verified (RF-626)
+// and writes `handoff/`.
 // Only `Supported` claims and answered questions reach the planner; the claims left out and the brief's defaults are listed in the package. The
 // cost report is written at every end.
 
@@ -62,12 +63,17 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly flowsPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the API contract (RF-624). */
   readonly apiContractPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file that asks a cut-off answer to continue (RF-604). */
+  readonly continuePrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the user-interface material (RF-626). */
+  readonly uxPrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
 interface PlanPrompts extends DocumentPrompts {
   readonly plan: PromptFile;
+  readonly continue: PromptFile;
 }
 
 const failed = (errorCode: ErrorCode): RunOutcome => ({ endState: 'Failed', errorCode });
@@ -92,7 +98,9 @@ export class BuildPlan implements RunExecutor {
         await this.log(execution.run, error.code, 'The planner call would pass a cap.');
         return { endState: 'CapReached', errorCode: error.code };
       }
-      await this.log(execution.run, error.code, 'The hand-off package could not be written.');
+      const cutOff = error.code === ERROR_CODES.plannerAnswerCutOff;
+      const message = cutOff ? error.message : 'The hand-off package could not be written.';
+      await this.log(execution.run, error.code, message);
       return failed(error.code);
     } finally {
       await writeCostReport(this.deps, execution.run);
@@ -114,6 +122,7 @@ export class BuildPlan implements RunExecutor {
     const answered = questions.filter((question) => question.answer.trim() !== '');
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
+      continuePrompt: prompts.continue,
       tags: () => this.deps.ids.dataBlockTag(),
       callId: callIds(run),
     };
@@ -129,7 +138,7 @@ export class BuildPlan implements RunExecutor {
     }
     const warn = (message: string): Promise<void> => this.warn(run, message);
     const documents = await planDocuments(
-      call,
+      { ...call, onCutOff: warn },
       prompts,
       { ...input, components: assembly.content.components },
       warn,
@@ -146,15 +155,18 @@ export class BuildPlan implements RunExecutor {
   /** The principle catalogue and the planner's versioned prompts, read for this run. */
   private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
     const { catalogue, prompt, prdPrompt, dataModelPrompt, flowsPrompt } = this.deps;
-    const [loaded, plan, prd, dataModel, flows, apiContract] = await Promise.all([
+    const [loaded, plan, prd, dataModel, flows, apiContract, ux, cont] = await Promise.all([
       catalogue(),
       prompt(),
       prdPrompt(),
       dataModelPrompt(),
       flowsPrompt(),
       this.deps.apiContractPrompt(),
+      this.deps.uxPrompt(),
+      this.deps.continuePrompt(),
     ]);
-    return { catalogue: loaded, prompts: { plan, prd, dataModel, flows, apiContract } };
+    const prompts = { plan, prd, dataModel, flows, apiContract, ux, continue: cont };
+    return { catalogue: loaded, prompts };
   }
 
   private warn(run: Run, message: string): Promise<void> {
@@ -177,9 +189,15 @@ export class BuildPlan implements RunExecutor {
     const { inputs, catalogue, prompts } = used;
     const { version, sha256 } = catalogue;
     const versions = Object.fromEntries(
-      [...[prompts.plan, prompts.prd, prompts.dataModel, prompts.flows, prompts.apiContract]].map(
-        (file) => [file.name, { version: file.version, sha256: file.sha256 }],
-      ),
+      [
+        prompts.plan,
+        prompts.continue,
+        prompts.prd,
+        prompts.dataModel,
+        prompts.flows,
+        prompts.apiContract,
+        prompts.ux,
+      ].map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));

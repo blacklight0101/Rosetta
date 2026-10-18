@@ -148,10 +148,12 @@ describe('BuildPlan: the run manifest', () => {
         .digest('hex');
     expect(manifest.promptVersions).toEqual({
       'planner/package.v4.md': { version: 'v4', sha256: await sha('package.v4.md') },
+      'planner/continue.v1.md': { version: 'v1', sha256: await sha('continue.v1.md') },
       'planner/prd.v1.md': { version: 'v1', sha256: await sha('prd.v1.md') },
       'planner/data-model.v1.md': { version: 'v1', sha256: await sha('data-model.v1.md') },
       'planner/flows.v1.md': { version: 'v1', sha256: await sha('flows.v1.md') },
       'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
+      'planner/ux.v1.md': { version: 'v1', sha256: await sha('ux.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');
@@ -170,10 +172,7 @@ describe('BuildPlan: the parts of the package', () => {
       'architecture.md',
       'conventions.md',
       'data-model.md',
-      'decisions/ADR-001.md',
-      'decisions/ADR-002.md',
-      'decisions/ADR-003.md',
-      'decisions/ADR-004.md',
+      ...[1, 2, 3, 4].map((n) => `decisions/ADR-00${String(n)}.md`),
       'entity-mapping.md',
       'fixtures.md',
       'flows/README.md',
@@ -185,6 +184,7 @@ describe('BuildPlan: the parts of the package', () => {
       'sources.md',
       'tasks.md',
       'trd.md',
+      'ux/README.md',
     ]);
     const links = [...(files['README.md'] ?? '').matchAll(/\]\(([^)#]+)\)/gu)].map((m) => m[1]);
     expect(links).toHaveLength(Object.keys(files).length - 1);

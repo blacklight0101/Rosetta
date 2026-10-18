@@ -113,6 +113,7 @@ describe('the committed site/ folder', () => {
         'cards/BR/BR-001.md',
         'cost.html',
         'cost.md',
+        'filters.js',
         'index.html',
         'questions.html',
         'replay.html',
@@ -151,6 +152,11 @@ describe('the committed site/ folder', () => {
   });
 });
 
+const allowedScripts = new Set([
+  '<script src="replay.js" defer>',
+  '<script src="filters.js" defer>',
+]);
+
 describe('the committed site/ content', () => {
   it('RF-507 the sample carries no script text, no javascript: link and no link to another host than GitHub', async () => {
     const found: string[] = [];
@@ -159,7 +165,7 @@ describe('the committed site/ content', () => {
       const text = await readFile(join(siteFolder, name), 'utf8');
       if (/javascript:|onerror|__pwned/iu.test(text)) found.push(`${name}: active text`);
       for (const tag of text.match(/<script[^>]*>/giu) ?? []) {
-        if (tag !== '<script src="replay.js" defer>') found.push(`${name}: ${tag}`);
+        if (!allowedScripts.has(tag)) found.push(`${name}: ${tag}`);
       }
       for (const address of text.match(/https?:\/\/[^"\s)]+/gu) ?? []) {
         if (!address.startsWith('https://github.com/')) found.push(`${name}: ${address}`);
@@ -169,14 +175,14 @@ describe('the committed site/ content', () => {
     expect(found).toEqual([]);
   });
 
-  it('RF-507 runs no script from the repository text: only the replay script loads', async () => {
+  it('RF-507 runs no script from the repository text: only the replay and filter scripts load', async () => {
     const pages = await Promise.all(
       ['index.html', 'report.html', 'replay.html', 'questions.html', 'cost.html'].map(
         async (name) => auditHtml(await readFile(`${siteFolder}${name}`, 'utf8')),
       ),
     );
 
-    expect(pages.map((page) => page.scripts)).toEqual([[], [], ['replay.js'], [], []]);
+    expect(pages.map((page) => page.scripts)).toEqual([[], ['filters.js'], ['replay.js'], [], []]);
     expect(pages.flatMap((page) => page.foreignLinks)).toEqual([]);
   });
 });

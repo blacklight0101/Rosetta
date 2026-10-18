@@ -56,7 +56,10 @@ test('RF-507 the hostile card is text in the report page: nothing runs and no el
 
   await expect(page.getByRole('heading', { name: 'Run report', level: 1 })).toBeVisible();
   await expect(page.locator('body')).toContainText(hostileTexts.script);
-  await expect(page.locator('script')).toHaveCount(0);
+  // RF-503: the one script is the filter script of the report folder; the card text adds none.
+  await expect(page.locator('script:not([src])')).toHaveCount(0);
+  await expect(page.locator('script[src]')).toHaveCount(1);
+  await expect(page.locator('script[src="filters.js"]')).toHaveCount(1);
   await expectNothingInjected(page, dialogs);
   await expectNoSeriousViolations(page);
 });

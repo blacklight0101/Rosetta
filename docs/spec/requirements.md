@@ -493,11 +493,30 @@ As a developer I want an agent's good cards kept and its failed work retried so 
 - Given a run in which some areas failed, when it ends, then its end state and summary say how many areas failed and why; it is never shown as a plain success.
   Verification: unit tests of the parser on answers recorded in the owner's 2026-10-14 runs; integration tests of the second repair, the continuation and the task retry with recorded responses.
 
-**RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks - ADR-005
+**RF-209 Deepen a completed run** - R1 - Should - Source RFC-003, DEC-144, DEC-145 - ADR-005, ADR-007
+As a developer I want to send Rosetta back over what it did not confirm so that more of my application is understood, with evidence, at a cost I approved.
+
+- Given an understand run that ended `Completed`, when I press Deepen, then the page shows the estimate for one round and the maximum for all rounds against my caps, and starts nothing until I confirm; the coverage pass is ticked by default and can be unticked.
+- Given a confirmed Deepen, when it runs, then a new understand run linked to the completed one starts from its cards, judges the `Unverified` claims, re-reads the files cited by `Rejected` first-party claims with the verifier's reasons, reads first-party files never read (ranked by size, within the cap), and verifies every new claim with both steps by the same verifier role and model.
+- Given a rejected claim whose citations are all in third-party or generated code, when a round is planned, then it is not re-read and the summary lists it as out of scope with that reason.
+- Given a round that adds no new `Supported` claim and reads no new first-party file, when it ends, then the Deepen run ends with the stop reason "no progress"; it also ends at the round limit (default 3, allowed 1 to 5), at a cap (`CapReached`, resumable with RF-006) or when I press Stop.
+- Given a re-read that produces a claim for a rejected one, when results are written, then the new claim records the id it replaces, the rejected claim stays `Rejected` with its reason, and a replacement that is rejected again is not re-read in the same Deepen.
+- Given a Deepen run that ended, when I open it, then it can be deepened again as a new linked run; Deepen never starts by itself at the end of a run.
+  Verification: integration tests with recorded responses for each stop reason; unit tests of the round planner and the stop rule.
+
+**RF-230 Coverage per area** - R1 - Must - Source RFC-001 risks, DEC-144 - ADR-005
 As a developer I want to know which files each agent actually read so that silent gaps are visible.
 
-- Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of area tokens read.
+- Given a finished agent task, when results are written, then a coverage table lists every file in the area as read (with line ranges) or not read, and the run summary shows the percentage of first-party tokens read, with third-party and generated code shown apart (RF-231).
   Verification: integration test with the fake provider.
+
+**RF-231 Honest understanding measures** - R1 - Must - Source RFC-003, DEC-144, DEC-145 - ADR-005
+As a developer I want to know how much of my own code was read and confirmed so that I trust the result for what it is and never more.
+
+- Given an ended understand run, when its summary and overview are shown, then they state first-party coverage by tokens, the first-party files not read, the Supported share with its counts, the `Unverified` count, and the rejected claims without a supported replacement; third-party and generated code is shown apart and is not part of any percentage.
+- Given a Deepen run, when it ends, then each measure is shown before and after, with "supported after a re-read" listed apart.
+- Given any measure, when it is worded, then the page never says "complete" or "fully understood"; it may say "well covered" only at 80% first-party coverage or more with no `Unverified` claim.
+  Verification: unit tests of the measures; snapshot test of the summary.
 
 **RF-240 Collect open questions** - R1 (M1, DEC-98) - Must - Source DEC-15 - ADR-005
 As a developer I want all `OQ` cards gathered into one answers file so that I can answer them in one place.
@@ -584,10 +603,10 @@ As a developer I want a model to check that the cited lines support each claim s
 - Given a configuration where the `verifier` role uses the same model family as the `reader` role, when a run starts, then a warning names the self-preference risk; the run continues.
   Verification: integration tests with recorded responses; unit test on the family check.
 
-**RF-302 Keep rejected claims** - R1 (M1) - Must - Source DEC-19 - ADR-005
+**RF-302 Keep rejected claims** - R1 (M1) - Must - Source DEC-19, DEC-144 - ADR-005
 As a developer I want rejected and invalid claims kept and visible so that nothing is silently removed.
 
-- Given any verdict, when results are written, then the card keeps every claim with its status and reason; outputs never delete a claim.
+- Given any verdict, when results are written, then the card keeps every claim with its status and reason; outputs never delete a claim. A claim that replaces a rejected one (RF-209) records the id it replaces; the rejected claim is kept.
   Verification: integration test.
 
 **RF-303 Verification summary** - R1 - Must - Source DEC-19 - ADR-005
@@ -816,18 +835,18 @@ As a modernisation team I want plain Markdown with no dependency on Rosetta, a b
 - Given the package, when it is read outside Rosetta, then it is plain Markdown and Mermaid, with no Rosetta-specific syntax.
   Verification: structure test.
 
-**RF-604 Produce the hand-off package from the planning brief** - R1 - Must - Source DEC-72, DEC-80, DEC-82 - ADR-005, ADR-018
+**RF-604 Produce the hand-off package from the planning brief** - R1 - Must - Source DEC-72, DEC-80, DEC-82, DEC-142 - ADR-005, ADR-018
 As a developer I want to start `plan` from the web UI once the planning brief is saved so that a team receives a package built the way we chose.
 
-- Given a run with verified cards and answers and a saved planning brief, when I start `plan`, then a `handoff/` folder is written using only `Supported` claims and answered questions; `Rejected`, invalid and unverified claims are listed as excluded with their ids.
+- Given the source understand run chosen in RF-614, with verified cards and answers, and a saved planning brief, when I start `plan`, then a `handoff/` folder is written using only `Supported` claims and answered questions; `Rejected`, invalid and unverified claims are listed as excluded with their ids.
 - Given a planning brief with unanswered questions, when `plan` runs, then each takes its default and the package lists it in its open-questions file with that default (DEC-80).
 - Given a finished package, when its run manifest is read, then it records the planning brief, the catalogue version and the prompt versions used (RNF-004).
   Verification: integration test with recorded responses.
 
-**RF-605 Plan setup page** - R1 - Must - Source DEC-72, DEC-80 - ADR-012, ADR-018
+**RF-605 Plan setup page** - R1 - Must - Source DEC-72, DEC-80, DEC-142 - ADR-012, ADR-018
 As a developer I want Rosetta to interview me before it plans, the way a senior architect would, so that the package follows my choices instead of guesses.
 
-- Given a project with a finished `understand` run, when I open Plan setup, then the questions appear in small groups (principles, architecture, migration, stack, project context, build method), each with a default, the reason it matters and the option Rosetta recommends marked "(Recommended)".
+- Given a finished `understand` run, when I open Plan setup from it or from the project, then the page names the source run (RF-614) and the questions appear in small groups (principles, architecture, migration, stack, project context, build method), each with a default, the reason it matters and the option Rosetta recommends marked "(Recommended)".
 - Given I accept the defaults or change some answers, when I save, then the planning brief is stored with the project (data-model.md section 3.20) and shown as a "What I recorded" summary that I can edit and save again.
 - Given a saved brief, when I change an answer after a package exists, then the page says the package is out of date and offers to run `plan` again.
   Verification: end-to-end test of the page with the fake provider; unit tests of the brief schema.
@@ -885,6 +904,25 @@ As a developer I want to see what `plan` will cost before it starts so that it s
 
 - Given a saved brief, when I start `plan`, then the page shows the estimate for the `planner` role against my caps, and every call goes through the budget guard like any other run (RF-420..RF-429).
   Verification: integration test with the fake provider.
+
+**RF-614 Plan as the next step of a run** - R1 - Must - Source RFC-002, DEC-142, DEC-143 - ADR-007, ADR-018
+As a developer I want the plan to follow the understand run I just read so that I reach the hand-off package without looking for another page.
+
+- Given an understand run that ended `Completed` with at least one `Supported` claim, when its page is in "after the run" mode, then the "Your turn" panel offers "Set up the plan" as its main action, after "Answer questions" when questions are open; a run that ended `CapReached`, `Failed` or `Interrupted` offers Resume (RF-006) instead and `plan` keeps refusing it (RST-1802).
+- Given I press "Set up the plan", when Plan setup opens, then it names the source run (date, areas, Supported claims) and prefills the brief from that run's evidence (RF-608, RF-609) or shows my saved brief; the brief stays one per project.
+- Given I open Plan setup from the project instead of from a run, when it loads, then it uses the newest completed understand run and names it on the page.
+- Given a saved brief, when I continue, then the page shows the plan estimate against my caps (RF-613) and starts `plan` only when I press "Write the package"; the start page shows no plan cost before the brief exists.
+- Given a plan run, when its manifest is read, then it records the source understand run, and the estimate and the package use that run's cards and answers only.
+  Verification: end-to-end test with the fake provider from a completed run to a package; integration test that the source run, not the newest run, feeds `plan`.
+
+**RF-615 Journey from code to package** - R1 - Should - Source RFC-002, DEC-142, DEC-143 - ADR-012
+As a developer I want to see every step from scan to package with its state and cost so that I always know where I am and what to do next.
+
+- Given an understand run, when its page, its Plan setup or its plan run page opens, then a journey strip shows scan, understand, questions, brief, estimate, plan and package, each with its state (done, current, locked with a reason, failed with its code, out of date) and its cost, and one next action.
+- Given the plan run failed, when the journey is shown, then the understand run, its cards and the brief are unchanged, and the next action is "Try the plan again", which starts a new plan run after a new estimate; a failed plan run is not resumed.
+- Given the understand run stopped (`Failed`, `CapReached`, `Interrupted`), when the journey is shown, then the plan steps are locked with the reason and the next action is Resume (RF-006).
+- Given the brief or the source run changed after a package was written, when the journey is shown, then the package step is marked out of date.
+  Verification: component tests of each step state; end-to-end test of the failure paths with the fake provider.
 
 **RF-620 Documentation set of the package** - R1 - Must - Source DEC-134 - ADR-018
 As a modernisation team I want the package to read like a complete project documentation set so that we can start building from it alone.
@@ -1133,11 +1171,11 @@ As a user I want the verification state to say what was checked and what was not
 - Given the judgement step is built, when a claim is waiting for it, then "waiting for judgement" is shown only while that step is queued or running.
   Verification: unit test of the labels; end-to-end test of the live run page.
 
-**RF-1015 Run page in two modes** - R1 (M1) - Must - Source DEC-137 - ADR-012
+**RF-1015 Run page in two modes** - R1 (M1) - Must - Source DEC-137, DEC-142 - ADR-012
 As a user who may not know the analysed code I want the run page to show one thing at a time so that I always know what is happening and what to do next.
 
 - Given a queued or running run, when its page opens, then it is in "while running" mode: the run journey (map the code, read, check citations, explain, your questions) with the current step, the living code map (RF-1016), the spend for the run against its cap, and up to three "working now" agents in plain words; cards so far, all agents, and activity (events, provider calls and logs) sit in tabs below, one list at a time.
-- Given a run that has ended, when its page opens, then it is in "after the run" mode: the overview (RF-264) first, a "Your turn" panel with the number of open questions and the next actions, and tabs for Your questions, Evidence (cards, claims, citations, coverage, code map) and Activity (replay, events, calls, logs); the page switches modes by itself when the run ends.
+- Given a run that has ended, when its page opens, then it is in "after the run" mode: the overview (RF-264) first, a "Your turn" panel with the number of open questions and the next actions, followed by the journey to the package (RF-615), and tabs for Your questions, Evidence (cards, claims, citations, coverage, code map) and Activity (replay, events, calls, logs); the page switches modes by itself when the run ends.
 - Given either mode, when it is used with the keyboard or a screen reader, then tabs follow the tab pattern, every state is carried by text and a glyph as well as colour, and RF-1002..RF-1005, RF-1007, RF-1010 and RF-1011 keep their content in these places.
   Verification: end-to-end tests of both modes and the switch; accessibility checks; the design proposal `docs/design/proposals/run-page-v2.html` is the reference.
 
@@ -1148,11 +1186,12 @@ As a user watching a run I want to see the code being read so that the run is ea
 - Given the operating system asks for reduced motion, when the map updates, then nothing moves; states change in place.
   Verification: component tests of the tile states; end-to-end test with recorded events; reduced-motion check.
 
-**RF-1017 Overview and questions after the run** - R1 (M1) - Must - Source DEC-137 - ADR-012
+**RF-1017 Overview and questions after the run** - R1 (M1) - Must - Source DEC-137, DEC-142, DEC-144 - ADR-012
 As a user I want the end of a run to read like an explanation followed by a short request for help so that I understand the application before I answer anything.
 
 - Given an ended run, when its page opens, then the Overview tab shows the overview of RF-264 with its sections (features, screens, data, integrations), each item linking its cards, the honest verification note of RF-1014 and what was not covered.
 - Given open questions (RF-243), when the Your questions tab opens, then each shows the question, why the code cannot answer it with its citation, how many items depend on it, an answer field and the default that applies if it is skipped.
+- Given a run that ended `Completed`, when the "Your turn" panel lists the next actions, then they include "Set up the plan" (RF-614) and Deepen with its estimate (RF-209).
   Verification: end-to-end test with a recorded run.
 
 **RF-1018 Choose areas quickly** - R1 (M1) - Must - Source DEC-138 - ADR-012
@@ -1364,6 +1403,7 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-113, RF-206, RF-207, RF-243, RF-264           | DEC-136                                                                                       | ADR-004, ADR-005                                     | P1 (M1)                                                                                   | P1-166, P1-167, P1-168                                                                                                                                                                                                                                                          |
 | RF-1014..RF-1018                                 | DEC-136, DEC-137, DEC-138                                                                     | ADR-005, ADR-012                                     | P1 (M1)                                                                                   | P1-166, P1-169, P1-170, P1-172                                                                                                                                                                                                                                                  |
 | RF-208                                           | DEC-138                                                                                       | ADR-005                                              | P1 (M1)                                                                                   | P1-171                                                                                                                                                                                                                                                                          |
+| RF-209, RF-231                                   | RFC-003, DEC-144, DEC-145                                                                     | ADR-005, ADR-007                                     | P2                                                                                        | P2-41                                                                                                                                                                                                                                                                           |
 | RF-260..RF-263                                   | DEC-134                                                                                       | ADR-005, ADR-013                                     | P2                                                                                        | P2-18, P2-19, P2-20, P2-21, P2-22, P2-23, P3-22                                                                                                                                                                                                                                 |
 | RF-300, RF-302                                   | DEC-19                                                                                        | ADR-005                                              | P1                                                                                        | P1-32, P1-33                                                                                                                                                                                                                                                                    |
 | RF-301, RF-303..RF-305                           | DEC-19, DEC-57                                                                                | ADR-005, ADR-008                                     | P2                                                                                        | P2-01, P2-02, P2-03, P2-13                                                                                                                                                                                                                                                      |
@@ -1371,6 +1411,7 @@ cards are added. A requirement with no card, or a card with no requirement, is a
 | RF-420..RF-428                                   | DEC-13, DEC-49                                                                                | ADR-007                                              | P1 (RF-423, RF-427 and the second RF-425 scenario: P2; DEC-97)                            | P1-27, P1-30, P1-33, P1-34, P1-35, P1-36, P2-08                                                                                                                                                                                                                                 |
 | RF-500..RF-507                                   | DEC-04, DEC-05, DEC-24, DEC-26, DEC-44, DEC-46, DEC-57, DEC-131                               | ADR-002, ADR-005, ADR-012, ADR-013                   | P3 (RF-504, RF-506, RF-507: P1)                                                           | P1-12, P1-43, P1-50, P3-01, P3-02, P3-03, P3-04                                                                                                                                                                                                                                 |
 | RF-600..RF-613                                   | DEC-10, DEC-72..DEC-85                                                                        | ADR-005, ADR-007, ADR-018                            | P3 (RF-600 withdrawn)                                                                     | P3-05, P3-06, P3-07, P3-08, P3-09, P3-10, P3-11, P3-12                                                                                                                                                                                                                          |
+| RF-614..RF-615                                   | RFC-002, DEC-142, DEC-143                                                                     | ADR-007, ADR-012, ADR-018                            | P3                                                                                        | P3-28                                                                                                                                                                                                                                                                           |
 | RF-620..RF-627, RF-508                           | DEC-134                                                                                       | ADR-013, ADR-018                                     | P3                                                                                        | P3-14, P3-15, P3-16, P3-17, P3-18, P3-19, P3-20, P3-21, P3-22                                                                                                                                                                                                                   |
 | RF-630..RF-638                                   | DEC-135                                                                                       | ADR-018                                              | P3                                                                                        | P3-23, P3-24, P3-25, P3-26                                                                                                                                                                                                                                                      |
 | RF-800..RF-803                                   | DEC-04, DEC-67                                                                                | ADR-002, ADR-014, ADR-015                            | P1                                                                                        | P1-45, P1-50, P1-52, P1-53, P1-54, P1-55                                                                                                                                                                                                                                        |

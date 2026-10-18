@@ -17,6 +17,22 @@ import { runPath } from '../files/workspace-paths.js';
 // rejects the whole read (RST-1802), so a plan never silently leaves claims out.
 
 const indexSchema = z.object({ cards: z.array(z.object({ path: z.string() })) });
+// RF-626: a screen's validations stay in the card file; the plan needs the rest.
+const optionalText = z
+  .string()
+  .nullish()
+  .transform((value) => value ?? undefined);
+const screenSchema = z.object({
+  route: z.string(),
+  roles: z.array(z.string()).default([]),
+  fields: z
+    .array(z.object({ name: z.string(), inputKind: z.string(), required: z.boolean() }))
+    .default([]),
+  actions: z
+    .array(z.object({ label: z.string(), handler: optionalText, flow: optionalText }))
+    .default([]),
+  leadsTo: z.array(z.string()).default([]),
+});
 const headerSchema = z.object({
   id: z.string().regex(/^[A-Z]+-\d+$/u),
   type: z.enum(CARD_TYPES),
@@ -24,6 +40,7 @@ const headerSchema = z.object({
   summary: z.string(),
   area: z.string(),
   flow: z.object({ trigger: z.string(), outcome: z.string() }).optional(),
+  screen: screenSchema.optional(),
   claims: z.array(
     z.object({
       claimId: z.string(),
