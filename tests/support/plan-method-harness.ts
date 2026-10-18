@@ -40,7 +40,7 @@ export function cardsOf(files: PackageFiles): string[] {
 const migrationTitle = 'Write the database migrations in the chosen stack';
 
 /** Every task card, the migration card first when the package has one. */
-export function allCardsOf(files: PackageFiles): string[] {
+function allCardsOf(files: PackageFiles): string[] {
   return plain(files['tasks.md']).split(/^## /mu).slice(1);
 }
 

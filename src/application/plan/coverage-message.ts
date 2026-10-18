@@ -9,7 +9,7 @@ import type { CoverageItem } from '../../domain/planning/plan-coverage.js';
 // system prompt.
 
 /** The longest detail sent; the link needs a hint, not the whole text. */
-export const DETAIL_CHARS = 300;
+const DETAIL_CHARS = 300;
 
 export interface CoverageMessageInput {
   readonly tasks: readonly PlanTask[];

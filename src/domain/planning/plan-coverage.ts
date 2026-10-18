@@ -16,7 +16,7 @@ import type { TargetUx } from './target-ux.js';
 // table (RF-623), so the data model never reaches the package without work that builds it.
 
 /** The kinds of item, in the order the checks list them. */
-export const coverageKinds = ['feature', 'table', 'operation', 'flow', 'screen'] as const;
+const coverageKinds = ['feature', 'table', 'operation', 'flow', 'screen'] as const;
 
 export type CoverageKind = (typeof coverageKinds)[number];
 
