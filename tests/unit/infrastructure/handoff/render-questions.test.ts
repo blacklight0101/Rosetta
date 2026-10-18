@@ -94,6 +94,53 @@ describe('renderHandoff: the roadmap marks the cards that wait on a question', (
   });
 });
 
+describe('renderHandoff: hostile text in the question links', () => {
+  const token = ['ghp', 'a1B2'.repeat(9)].join('_');
+  const hostile = `<script>alert(1)</script> | [x](javascript:alert(1)) ${token}`;
+
+  function hostileFiles(): Readonly<Record<string, string>> {
+    const base = handoffOf(hostile);
+    const tasks = [planTask({ id: 'T-001', requirements: ['REQ-001'] })];
+    return renderHandoff(
+      {
+        ...base,
+        content: { ...base.content, tasks },
+        briefQuestions: [{ id: `stack.${hostile}`, question: hostile, answer: hostile }],
+        prdQuestions: [{ id: 'prd.problem', question: hostile, answer: hostile }],
+        openQuestions: [{ cardId: hostile, question: hostile, area: hostile }],
+      },
+      masker,
+    );
+  }
+
+  it.each(['open-questions.md', 'roadmap.md'])(
+    'RF-637 question text, area and card id show as text in %s and no token survives',
+    (name) => {
+      const text = hostileFiles()[name] ?? '';
+
+      expect(text).not.toContain('<script');
+      expect(text).not.toMatch(/\]\(javascript:/u);
+      expect(text).not.toContain(token.slice(4, 30));
+    },
+  );
+
+  it('RF-637 the roadmap still marks the card as waiting on the hostile question', () => {
+    const roadmap = hostileFiles()['roadmap.md'] ?? '';
+
+    expect(roadmap).toContain('Waiting on open questions:');
+    expect(roadmap).toContain('stack.');
+  });
+
+  it('RF-637 a pipe in a question id does not add a column to its table row', () => {
+    const rows = (hostileFiles()['open-questions.md'] ?? '')
+      .split('\n')
+      .filter((line) => line.startsWith('| ') && line.includes('stack.'));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.replaceAll('\\|', '').split('|')).toHaveLength(6);
+  });
+});
+
 describe('renderHandoff: the measures of the build', () => {
   const agents = renderHandoff(withTasks([first]), masker)['AGENTS.md'] ?? '';
   const section = agents.split(/^## /mu).find((part) => part.startsWith('Build metrics')) ?? '';

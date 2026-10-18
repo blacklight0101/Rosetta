@@ -67,3 +67,17 @@ describe('RF-637 the cards that wait on a question', () => {
     expect(byCard.has('T-005')).toBe(false);
   });
 });
+
+describe('RF-637 a question listed twice', () => {
+  it('RF-637 a question listed twice is held once by each card', () => {
+    const { byCard } = waiting([
+      { id: 'stack.database' },
+      { id: 'stack.database' },
+      { id: 'OQ-001', area: 'orders' },
+      { id: 'OQ-001', area: 'orders' },
+    ]);
+
+    expect(byCard.get('T-001')).toEqual(['stack.database', 'OQ-001']);
+    expect(byCard.get('T-004')).toEqual(['stack.database']);
+  });
+});
