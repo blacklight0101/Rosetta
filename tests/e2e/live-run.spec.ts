@@ -134,8 +134,8 @@ test('RF-264 the overview of the application comes first on the page of a finish
   await expect(overview).not.toContainText('send an email');
   // Controllers was not asked for; the rejected claim of Services leaves it with no card that passed.
   const covered = overview.getByRole('region', { name: 'What was not covered' });
-  await expect(covered).toContainText(['Not selected for this run (1)', 'Controllers']);
-  await expect(covered).toContainText(['No card passed the citation check (1)', 'Services']);
+  await expect(covered).toContainText(/Not selected for this run (1)s*Controllers/u);
+  await expect(covered).toContainText(/No card passed the citation check (1)s*Services/u);
   // The hostile statement is text: no script ran and nothing was injected into the page.
   await expect(overview.locator('script, img')).toHaveCount(0);
   await expect(overview).toContainText('<script>');
