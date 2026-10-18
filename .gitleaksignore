@@ -1,0 +1,6 @@
+# The one finding gitleaks reports in the vendored Mermaid build of the report (RF-508, DEC-125):
+# `m.atlasCount` in minified code, which the generic-api-key rule reads as a key. The file is a
+# byte-for-byte copy of node_modules/mermaid/dist/mermaid.min.js and is never edited, so the line
+# is stable. The path:rule:line form matches in git and dir mode and for any commit, so it holds
+# after a squash merge. tests/integration/tooling/gitleaks-ignore.test.ts pins this list.
+templates/report/mermaid.min.js:generic-api-key:636
