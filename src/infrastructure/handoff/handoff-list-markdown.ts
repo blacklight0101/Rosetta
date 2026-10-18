@@ -1,6 +1,7 @@
 import type { HandoffPackage } from '../../application/plan/handoff-package.js';
 import { formatCitation } from '../../domain/cards/citation.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { legacySafe } from '../../domain/planning/legacy-default.js';
 import { decisionFile, documentSet, handoffFiles, sourceLinks } from './handoff-links.js';
 
 // RF-601..RF-604, RF-603: the README with the reading order, the risks, the open questions (the
@@ -33,10 +34,12 @@ function briefQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): stri
   return [
     '| Question | Id | Default the package used |',
     '|---|---|---|',
-    ...handoff.briefQuestions.map(
-      (question) =>
-        `| ${esc.inline(question.question)} | ${esc.inline(question.id)} | ${esc.inline(question.answer)} |`,
-    ),
+    ...handoff.briefQuestions
+      .map(legacySafe)
+      .map(
+        (question) =>
+          `| ${esc.inline(question.question)} | ${esc.inline(question.id)} | ${esc.inline(question.answer)} |`,
+      ),
   ];
 }
 
@@ -47,10 +50,12 @@ function prdQuestionLines(handoff: HandoffPackage, esc: MarkdownEscaper): string
   return [
     '| Id | Question | Default the package used |',
     '|---|---|---|',
-    ...handoff.prdQuestions.map(
-      (question) =>
-        `| ${question.id} | ${esc.inline(question.question)} | ${esc.inline(question.answer)} |`,
-    ),
+    ...handoff.prdQuestions
+      .map(legacySafe)
+      .map(
+        (question) =>
+          `| ${question.id} | ${esc.inline(question.question)} | ${esc.inline(question.answer)} |`,
+      ),
   ];
 }
 
@@ -72,6 +77,10 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
   );
   return [
     '# Open questions',
+    '',
+    '## The rule for a default',
+    '',
+    'A default keeps the legacy behaviour: a default that would change what users see today is not allowed, and a question that proposed one says so and takes the legacy behaviour instead.',
     '',
     '## Planning brief questions that took their default',
     '',
@@ -143,6 +152,7 @@ function readingOrder(handoff: HandoffPackage, esc: MarkdownEscaper): string[] {
     [`[Risks](${handoffFiles.risks})`],
     [`[Open questions](${handoffFiles.openQuestions})`],
     [`[Source cards](${handoffFiles.sources})`],
+    [`[Realistic data shapes](${handoffFiles.fixtures})`],
     [`[Conventions](${handoffFiles.conventions})`],
     ...(handoff.brief.buildMethod.aiAssisted ? [[`[AGENTS.md](${handoffFiles.agents})`]] : []),
   ];

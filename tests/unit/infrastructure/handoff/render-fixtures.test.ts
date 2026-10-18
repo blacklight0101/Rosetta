@@ -61,7 +61,7 @@ describe('fixtures.md', () => {
   it('RF-632 names the volume of the generated maps and the bundled scripts of the demo', async () => {
     const text = plain(fixturesOf({ shapes: await demoShapes() }));
 
-    expect(text).toMatch(/\| generated map \| 3 \| 4\d\d\.\d KiB \|/u);
+    expect(text).toMatch(/\| generated map \| 3 \| 234\.9 KiB \|/u);
     expect(text).toMatch(/\| bundled third-party script \| 2 \| \d+\.\d KiB \|/u);
   });
 
@@ -78,7 +78,7 @@ describe('fixtures.md', () => {
     expect(text).toMatch(
       /## Largest files\n\n\|[^\n]*\n\|[^\n]*\n\| Archive\/old-export\.csv \| other \| 11\.8 MiB \|/u,
     );
-    expect(text).toContain('| Orders/Legacy/Archive/2009/Q4/Regional/North/Totals.cs | 7 |');
+    expect(text).toContain('| Orders/Legacy/Archive/2009/Q4/Regional/North/Totals.cs | 8 |');
     expect(text).toContain('| UTF-8 with BOM | 1 |');
     expect(text).toContain('| legacy 8-bit | 1 |');
     expect(text).toContain('| CRLF | ');

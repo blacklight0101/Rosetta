@@ -4,6 +4,7 @@ import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
+import { behaviourRuleLines } from './handoff-behaviour-markdown.js';
 import { qualityRuleLines } from './handoff-quality-markdown.js';
 
 // RF-607, RF-608, RF-609, RF-612, RF-636, DEC-75, DEC-76: the working rules of the package. The
@@ -115,6 +116,7 @@ export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     ...bandLines(),
     '',
     ...qualityRuleLines(),
+    ...behaviourRuleLines(),
     ...operationsLines(),
     '## Human review',
     '',

@@ -21,6 +21,7 @@ import type { PlanMessageInput } from '../plan/plan-message.js';
 import { parsePrdAnswer } from '../plan/prd-answer.js';
 import { dataModelWarnings, planDataModel } from '../plan/plan-data-model.js';
 import { planInputs, type PlanInputDependencies, type PlanInputs } from '../plan/plan-inputs.js';
+import { planShapes } from '../plan/plan-shapes.js';
 import { handoffPackageOf } from '../plan/plan-package.js';
 import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
@@ -136,7 +137,7 @@ export class BuildPlan implements RunExecutor {
     const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, {
       prd,
       dataModel,
-      shapes: undefined,
+      shapes: await planShapes(this.deps, inputs.value),
     });
     await this.deps.handoff.write(scopeOf(run), handoff);
     return { endState: 'Completed' };
