@@ -3327,7 +3327,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 
 - **Difficulty**: 4 (haiku)
 - **Size**: S
-- **Depends on**: P3-29 (#574)
+- **Depends on**: P3-29
 - **Gate**: none
 - **Status**: Done
 - **Reads**: `src/application/estimate/estimate-assumptions.ts` (line 21); the estimate rules (RF-42x).
@@ -3340,7 +3340,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 
 - **Difficulty**: 4 (haiku)
 - **Size**: S
-- **Depends on**: P3-27 (Done, e31d7573)
+- **Depends on**: P3-27
 - **Gate**: none
 - **Status**: In review
 - **Reads**: the owner's choice B of 2026-10-18; `src/application/use-cases/build-plan.ts` (the onCutOff path); the P3-27 card and PR #568.
