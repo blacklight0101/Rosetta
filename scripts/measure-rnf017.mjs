@@ -97,8 +97,15 @@ async function main(argv, env) {
   await client.signIn(account);
   const results = [];
   try {
+    // The stream is followed while the pages are timed; a run that cannot be followed is a failed
+    // check, reported next to the page timings.
+    const events = timeEvents(client, options.runId, options.watchMs).catch((error) => ({
+      name: 'events',
+      ok: false,
+      detail: messageOf(error),
+    }));
     for (const path of pages) results.push(await timePage(client, path, options.samples));
-    results.push(await timeEvents(client, options.runId, options.watchMs));
+    results.push(await events);
   } finally {
     await client.signOut().catch(messageOf);
   }
