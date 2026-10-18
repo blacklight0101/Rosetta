@@ -98,6 +98,7 @@ export const ERROR_CODES = {
   planSourceMissing: 'RST-1802',
   plannerAnswerInvalid: 'RST-1803',
   handoffWriteFailed: 'RST-1804',
+  plannerAnswerCutOff: 'RST-1805',
   githubUrlInvalid: 'RST-1900',
   githubRefNotFound: 'RST-1901',
   githubRateLimited: 'RST-1902',

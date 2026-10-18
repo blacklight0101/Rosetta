@@ -115,7 +115,7 @@ it('RF-002 a role on a provider the project does not define brings that provider
       ollama: { kind: 'ollama' },
       openai: { kind: 'openai', keySource: 'user-then-server', timeoutSeconds: 120 },
     },
-    roles: { planner: { provider: 'openai', model: 'gpt-5-mini', maxOutputTokens: 4096 } },
+    roles: { planner: { provider: 'openai', model: 'gpt-5-mini', maxOutputTokens: 16384 } },
   });
 });
 

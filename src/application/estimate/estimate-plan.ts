@@ -3,6 +3,8 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Project } from '../projects/project.js';
 import { planInputs, type PlanInputDependencies } from '../plan/plan-inputs.js';
+import { maxPlannerContinuations } from '../plan/plan-continuation.js';
+import { reservedWithContinuations } from './plan-continuation-reserve.js';
 import { ceilPercent } from './estimate-assumptions.js';
 import type { ByScenario, EstimatePoint, RoleEstimate, Scenario } from './estimate-types.js';
 import { plannerKeyAvailable, type PlanKeyDependencies } from './plan-key.js';
@@ -26,6 +28,8 @@ import { estimateRole, type RolePricing } from './role-estimate.js';
 // answers in data blocks), at the budget guard's four characters per token. Its output is a share of
 // the planner's `maxOutputTokens`; the high figure is all of it, which is the guard's worst case, so
 // a high figure that does not fit a cap is a call the guard may refuse (the run ends `CapReached`).
+// The high figure also reserves the two continuations a cut-off answer may earn (RF-604): three
+// answers per call, the input of each continuation holding the answer so far.
 // Cost comes from the price table like the estimate of an understand run; the caps are the ones the
 // guard checks (plan-caps.ts).
 
@@ -71,11 +75,16 @@ export class EstimatePlan {
   ): Promise<{ readonly promptTokens: number; readonly role: RoleEstimate }> {
     // The guard's input estimate: system prompt, messages and the empty tool list `[]`.
     const promptTokens = Math.ceil((prompt + '[]').length / CHARS_PER_TOKEN);
-    const tokens = eachScenario((scenario) => ({
-      inputTokens: promptTokens,
-      outputTokens: Math.max(1, ceilPercent(maxOutputTokens, OUTPUT_PERCENT[scenario])),
-      cacheWriteTokens: promptTokens,
-    }));
+    const tokens = eachScenario((scenario) => {
+      const reserved =
+        scenario === 'high' ? reservedWithContinuations(promptTokens, maxOutputTokens) : undefined;
+      return {
+        inputTokens: reserved?.inputTokens ?? promptTokens,
+        outputTokens:
+          reserved?.outputTokens ?? ceilPercent(maxOutputTokens, OUTPUT_PERCENT[scenario]),
+        cacheWriteTokens: reserved?.inputTokens ?? promptTokens,
+      };
+    });
     return {
       promptTokens,
       role: await estimateRole(this.deps, project, { role: 'planner', tokens }),
@@ -112,6 +121,7 @@ export class EstimatePlan {
           uxPromptTokens: tokensOf(calls, prompts, 'ux'),
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
+        continuationsPerCall: maxPlannerContinuations,
         ...{
           supportedCards: planned.supportedCards,
           answeredQuestions: planned.answeredQuestions,
