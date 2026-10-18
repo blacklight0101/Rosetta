@@ -12,6 +12,7 @@ import { PgProviderKeyRepository } from '../infrastructure/db/pg-provider-key-re
 import { PgServerSettings } from '../infrastructure/db/pg-server-settings.js';
 import { PgUserRepository } from '../infrastructure/db/pg-user-repository.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
+import type { ProjectSettings } from '../application/projects/project-settings.js';
 import { loadProjectTemplate } from '../infrastructure/files/project-template.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { realAdapters } from '../infrastructure/providers/adapter-builder.js';
@@ -86,6 +87,8 @@ export interface ComposedProviders {
   readonly factory: ProviderSetFactory;
   /** The shipped price table, loaded once; the run estimate prices the roles with it (RF-425). */
   readonly priceTable: PriceTable;
+  /** The shipped settings template, loaded once: its roles are the built-in default models. */
+  readonly template: ProjectSettings;
 }
 
 // RF-407
@@ -106,14 +109,15 @@ export async function composeProviders(parts: ProviderParts): Promise<ComposedPr
     adapters: await adaptersFor(parts),
     ...{ clock, ids, logger },
   });
+  const template = await loadProjectTemplate(templatesFolder);
   const testProviders = new TestProviders({
     users: new PgUserRepository(pool),
     serverSettings,
-    template: await loadProjectTemplate(templatesFolder),
+    template,
     factory,
     ids,
     unrecorded: unrecordedSinks(),
     signals: new SystemTimeoutSignals(),
   });
-  return { testProviders, factory, priceTable };
+  return { testProviders, factory, priceTable, template };
 }

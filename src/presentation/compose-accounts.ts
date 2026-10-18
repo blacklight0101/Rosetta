@@ -16,6 +16,7 @@ import { CreateUser } from '../application/use-cases/create-user.js';
 import { ListAudit } from '../application/use-cases/list-audit.js';
 import { ListUsers } from '../application/use-cases/list-users.js';
 import { GetCaps } from '../application/use-cases/get-caps.js';
+import type { ProjectSettings } from '../application/projects/project-settings.js';
 import { GetDefaultRoles } from '../application/use-cases/get-default-roles.js';
 import { GetSpendLimits } from '../application/use-cases/get-spend-limits.js';
 import { GetOwnDailyCap } from '../application/use-cases/get-own-daily-cap.js';
@@ -122,6 +123,7 @@ interface AccountAdapters {
   readonly logger: Logger;
   readonly clock: Clock;
   readonly testProviders: TestProviders;
+  readonly template: ProjectSettings;
 }
 
 // RF-1104: the key use cases. Base URLs are checked through node:dns on save (DEC-112).
@@ -142,7 +144,7 @@ function composeKeys(adapters: AccountAdapters): KeyServices {
 
 // RF-1106, DEC-107: the server caps (administrator) and the user's own daily cap.
 function composeCaps(adapters: AccountAdapters): CapServices & DefaultRoleServices {
-  const { pool, users, auditLog, masker, logger, clock } = adapters;
+  const { pool, users, auditLog, masker, logger, clock, template } = adapters;
   const settings = new PgServerSettings(pool);
   const usage = new PgAccountUsage(pool);
   return {
@@ -153,7 +155,7 @@ function composeCaps(adapters: AccountAdapters): CapServices & DefaultRoleServic
       logger,
       clock,
     }),
-    getDefaultRoles: new GetDefaultRoles({ settings }),
+    getDefaultRoles: new GetDefaultRoles({ settings, template }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),
     getOwnDailyCap: new GetOwnDailyCap({ users }),
     getSpendLimits: new GetSpendLimits({ users, settings, usage, clock }),
@@ -201,7 +203,7 @@ export async function composeAuth(
 ): Promise<Auth> {
   const { pool, logger, clock, masker, hasher, secretBox } = parts;
   // RF-407: loads the price table, so an invalid one stops the start-up (RST-1602).
-  const { testProviders, factory, priceTable } = await composeProviders({
+  const { testProviders, factory, priceTable, template } = await composeProviders({
     ...parts,
     environment: mode.environment,
     doubles: mode.doubles,
@@ -229,6 +231,7 @@ export async function composeAuth(
           logger,
           clock,
           testProviders,
+          template,
         },
       }),
       signIn: new SignIn({ users, hasher, sessions, auditLog, logger, clock, dummyHash }),
