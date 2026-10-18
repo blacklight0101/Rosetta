@@ -19,8 +19,8 @@ it('RF-1102 lists the pages under Administration for an administrator, in order'
   const groups = buildNavigation({
     routes,
     role: 'admin',
-    params: {},
     path: '/admin/audit',
+    project: { status: 'none' },
   });
 
   const admin = groups.find((group) => group.id === 'admin');
@@ -36,7 +36,12 @@ it('RF-1102 lists the pages under Administration for an administrator, in order'
 });
 
 it('RF-1105 lists no administration page for a user', () => {
-  const groups = buildNavigation({ routes, role: 'user', params: {}, path: '/projects' });
+  const groups = buildNavigation({
+    routes,
+    role: 'user',
+    path: '/projects',
+    project: { status: 'none' },
+  });
 
   expect(groups.some((group) => group.id === 'admin')).toBe(false);
 });

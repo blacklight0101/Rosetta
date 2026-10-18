@@ -58,3 +58,13 @@ describe('loadProjectTemplate', () => {
     });
   });
 });
+
+describe('loadProjectTemplate: output limits', () => {
+  it('RF-604 the planner may write a whole package: its output limit is 16384, inside the allowed range', () => {
+    const { planner, reader } = templateSettings.roles;
+
+    expect(planner.maxOutputTokens).toBe(16_384);
+    expect(planner.maxOutputTokens).toBeLessThanOrEqual(32_768);
+    expect(reader.maxOutputTokens).toBe(4096);
+  });
+});

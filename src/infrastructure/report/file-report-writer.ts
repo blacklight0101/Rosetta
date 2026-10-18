@@ -16,13 +16,13 @@ import { renderQuestionsHtml } from './site/questions-page.js';
 
 // RF-504, RF-506, RF-1013, DEC-112, data-model.md section 3.17: writes the report of a run into the
 // `report/` folder of its run folder, through the workspace guard: `report.md`, the same report as
-// escaped static HTML, the "Run replay" page, and the stylesheet and script the pages load. Every
+// escaped static HTML, the "Run replay" page, and the stylesheet and scripts the pages load. Every
 // text is masked before it is written (RNF-003); the same report always gives the same bytes.
 
 export interface FileReportWriterOptions {
   readonly writer: OutputWriter;
   readonly masker: TextMasker;
-  /** The folder with `report.css` and `replay.js` (`templates/report/`). */
+  /** The folder with `report.css`, `replay.js` and `filters.js` (`templates/report/`). */
   readonly assetsFolder: string;
 }
 
@@ -49,10 +49,11 @@ export class FileReportWriter implements ReportWriter {
   async write(scope: RunScope, model: ReportModel): Promise<readonly string[]> {
     const { masker } = this.options;
     const assets = await loadReportAssets(this.options.assetsFolder);
-    // The pages are made of repository and model text, so they are masked; the two assets are the
+    // The pages are made of repository and model text, so they are masked; the three assets are the
     // files of `templates/report/`, written as they are.
     const files: Readonly<Record<string, string>> = {
       'cost.html': masker.mask(renderCostHtml(model)).text,
+      'filters.js': assets['filters.js'],
       'questions.html': masker.mask(renderQuestionsHtml(model)).text,
       'replay.html': masker.mask(renderReplayHtml(model)).text,
       'replay.js': assets['replay.js'],

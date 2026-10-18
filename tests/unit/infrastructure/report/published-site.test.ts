@@ -23,7 +23,11 @@ import {
 // `main`) and the check of its index that the Pages smoke step runs.
 
 const runKey = '20261012-100000-understand';
-const assets: ReportSiteAssets = { 'report.css': 'body {}', 'replay.js': 'void 0;' };
+const assets: ReportSiteAssets = {
+  'report.css': 'body {}',
+  'replay.js': 'void 0;',
+  'filters.js': 'void 1;',
+};
 const documents = {
   'spec.md': '# Specification\n\n- [card file](cards/BR/BR-001.md)\n',
   'cost.md': '# Cost\n',
@@ -54,6 +58,7 @@ describe('buildSiteFiles', () => {
         'cards/BR/BR-001.md',
         'cost.html',
         'cost.md',
+        'filters.js',
         'index.html',
         'questions.html',
         'replay.html',
@@ -152,14 +157,14 @@ describe('buildSiteFiles pages', () => {
     }
   });
 
-  it('RF-507 a card that holds markup runs nothing: only the replay script loads', () => {
+  it('RF-507 a card that holds markup runs nothing: only the replay and filter scripts load', () => {
     const hostile = siteOf([plainCard, hostileCard]);
     const [index, report, replay, questions, cost] = htmlPages.map((name) =>
       auditHtml(hostile[name] ?? ''),
     );
 
     expect(index?.scripts).toEqual([]);
-    expect(report?.scripts).toEqual([]);
+    expect(report?.scripts).toEqual(['filters.js']);
     expect(questions?.scripts).toEqual([]);
     expect(cost?.scripts).toEqual([]);
     expect(replay?.scripts).toEqual(['replay.js']);

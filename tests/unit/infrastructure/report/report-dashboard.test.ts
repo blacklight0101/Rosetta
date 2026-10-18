@@ -171,12 +171,12 @@ describe('the dashboard as a site page', () => {
     );
   });
 
-  it('RF-1013 carries the policy in a meta element and loads only the stylesheet', () => {
+  it('RF-1013 carries the policy in a meta element and loads only the stylesheet and the filter script', () => {
     const page = pageOf();
 
     expect(page.csp).toContain("default-src 'self'");
     expect(page.referrer).toBe('no-referrer');
-    expect(page.scripts).toEqual([]);
+    expect(page.scripts).toEqual(['filters.js']);
     expect(page.styleElements).toBe(0);
   });
 
