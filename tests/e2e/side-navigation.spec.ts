@@ -3,6 +3,7 @@ import { expect, test } from './support/fixtures.js';
 import { expectNoSeriousViolations } from './support/axe.js';
 import { accountFor } from './support/seed.js';
 import { signInAs } from './support/sign-in.js';
+import { transitionsDone } from './support/transitions.js';
 import { signInThroughPage } from './support/sign-in-page.js';
 
 // P1-175, RNF-010, design-system.md section 3: one side navigation on every signed-in page. The
@@ -16,6 +17,10 @@ const groupsOrder = ['nav-group-main', 'nav-group-project', 'nav-group-admin'];
 test.beforeEach(async ({ context, page }, info) => {
   await signInAs(context, accountFor('admin', info.project.name));
   await page.goto('/projects');
+  // A new project stays on the list; the same address again opens the existing project (RF-010).
+  await page.getByLabel('GitHub repository URL').fill(demoUrl);
+  await page.getByRole('button', { name: 'Create project' }).click();
+  await expect(page.getByRole('row').filter({ hasText: 'octo/demo' })).toHaveCount(1);
   await page.getByLabel('GitHub repository URL').fill(demoUrl);
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(page).toHaveURL(/\/projects\/[^/]+\/start$/u);
@@ -76,6 +81,9 @@ test(
       'document.documentElement.scrollWidth - window.innerWidth',
     );
     expect(Number(overflow)).toBeLessThanOrEqual(0);
+    // The start page's own button is still settling; axe runs on the projects page instead.
+    await page.goto('/projects');
+    await transitionsDone(page);
     await expectNoSeriousViolations(page);
   },
 );

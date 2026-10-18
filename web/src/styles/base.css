@@ -120,6 +120,7 @@ select {
   flex: 1 1 12.5rem;
   flex-direction: column;
   gap: var(--rst-sp-1);
+  min-width: 0;
   max-width: 15rem;
   padding: var(--rst-sp-4) var(--rst-sp-3);
   border-inline-end: 1px solid var(--rst-rule);
@@ -127,6 +128,8 @@ select {
 }
 
 .rst-nav__group {
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: 2px;
