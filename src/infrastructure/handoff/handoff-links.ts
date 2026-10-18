@@ -15,6 +15,8 @@ export const handoffFiles = {
   dataModel: 'data-model.md',
   apiContract: 'api/openapi.yaml',
   flows: 'flows/README.md',
+  ux: 'ux/README.md',
+  designBrief: 'ux/design-brief.md',
   roadmap: 'roadmap.md',
   tasks: 'tasks.md',
   risks: 'risks.md',
@@ -28,7 +30,7 @@ export const handoffFiles = {
 /**
  * RF-620: the documentation set the README's reading order opens with, in the order of the
  * requirement. Each document of the set is added here by the card that writes its file (the
- * user-interface material and the implementation plan), so the reading order never links a file the
+ * implementation plan is the one still to come), so the reading order never links a file the
  * package does not have. The API contract is written only when the front end is separate (RF-624),
  * so its entry links the file only when the package has it (readingOrder in handoff-list-markdown.ts).
  */
@@ -38,6 +40,7 @@ export const documentSet = [
   { title: 'Target data model', file: handoffFiles.dataModel },
   { title: 'API contract', file: handoffFiles.apiContract },
   { title: 'Target flows', file: handoffFiles.flows },
+  { title: 'User-interface material', file: handoffFiles.ux },
 ] as const;
 
 const decisionsFolder = 'decisions';

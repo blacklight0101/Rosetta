@@ -101,6 +101,12 @@ export function loadApiContractPrompt(promptsFolder: string): Promise<PromptFile
   return loadPromptFile(promptsFolder, 'planner/api-contract.v1.md');
 }
 
+/** The planner's prompt for the user-interface material (RF-626), checked and hashed. */
+// RNF-004
+export function loadUxPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/ux.v1.md');
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }
