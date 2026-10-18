@@ -120,6 +120,7 @@ src/
     eval/               the quality measures of an evaluation (citation validity, claim match and score, structure score, verifier agreement, estimate accuracy, spread, ratio) and the golden set
     observability/      call statistics and the log scope of a run
     overview/           the project overview: its build, the eligible cards, the standing, the thin-run rule and the question links
+    verifier/           the model family of a model id (`modelFamilyOf`, `sameModelFamily`, RF-301, DEC-57): a verifier of the reader's family is warned
     errors/             domain error codes and Result type
   application/
     ports/              port interfaces (section 7)
@@ -139,6 +140,9 @@ src/
     cards/              the card schema, lenient parsing that keeps valid cards and claims (`parseCardsLenient`), the repair request (RF-202, RF-208)
     verifier/           citation check (step 1, `checkCitations`, P1-33), judgement of one claim (step 2, `judgeClaim`, P2-02)
     estimate/           `EstimateRun`, the assumptions and the reader's token estimate (RF-425, P1-30)
+    accounts/           the account summary shown to administration (RF-1102: no password hash, no lockout counters) and the administered account
+    budget/             the cost breakdown and the cost report of a run (RF-426, RF-428)
+    planning/           the plan options request and answer, the planning brief state and schema, and the recommendation of plan options
     audit/              the audit retention job and the refusal limiter
     consolidate/        consolidating the cards of a run: the merge request and answer, the consolidation parts and the consolidate run
     eval/               the calibration and evaluation runs: their ports and schemas, the golden and calibration sets, the reports and the experiment
