@@ -6,6 +6,7 @@ import type { PlanContent } from '../../domain/planning/plan-content.js';
 import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
+import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 
 // RF-601..RF-604, data-model.md section 3.17: everything the hand-off package is written from. The
 // planner's content, checked; the cards it may cite with their supported claims and citations;
@@ -54,4 +55,6 @@ export interface HandoffPackage {
   readonly prd: PrdContent;
   /** The PRD sections the cards could not fill, each with its default (RF-621, DEC-80). */
   readonly prdQuestions: readonly DefaultedQuestion[];
+  /** RF-632: the shapes measured from the scan; undefined when the scan could not be read. */
+  readonly shapes: ScanShapes | undefined;
 }

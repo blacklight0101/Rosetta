@@ -26,6 +26,7 @@ import type { CostReportWriter } from '../ports/cost-report-writer.js';
 import type { HandoffWriter } from '../ports/handoff-writer.js';
 import type { IdGenerator } from '../ports/id-generator.js';
 import type { ProviderSetFactory } from '../ports/provider-set-factory.js';
+import type { ScanResults } from '../ports/scan-results.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
@@ -46,6 +47,8 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 
 export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
   readonly users: UserRepository;
+  /** RF-632: the scan whose files the data shapes are measured from. */
+  readonly scans: ScanResults;
   readonly providers: ProviderSetFactory;
   readonly handoff: HandoffWriter;
   readonly costReports: CostReportWriter;
@@ -130,7 +133,11 @@ export class BuildPlan implements RunExecutor {
     const dataModel = await this.dataModel(modelCall, {
       ...{ cards: supported, brief },
     });
-    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, { prd, dataModel });
+    const handoff = handoffPackageOf(inputs.value, assembly.content, catalogue, {
+      prd,
+      dataModel,
+      shapes: undefined,
+    });
     await this.deps.handoff.write(scopeOf(run), handoff);
     return { endState: 'Completed' };
   }

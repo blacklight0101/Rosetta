@@ -20,6 +20,7 @@ export const handoffFiles = {
   sources: 'sources.md',
   conventions: 'conventions.md',
   agents: 'AGENTS.md',
+  fixtures: 'fixtures.md',
 } as const;
 
 /**
