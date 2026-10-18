@@ -9,10 +9,12 @@ import type { ManifestUpdates } from '../runs/manifest-updates.js';
 import { traceIdOf } from '../runs/run-ids.js';
 import {
   cutOffMessage,
+  endsCutOff,
   isCutOff,
   joinContinuation,
   maxPlannerContinuations,
 } from './plan-continuation.js';
+import { resumePoint } from './json-tail.js';
 import { planMessage, type PlanMessageInput } from './plan-message.js';
 
 // RF-604, RF-621, ADR-003, ADR-006, ADR-007: a model call of a plan run (the plan, then the PRD).
@@ -52,18 +54,22 @@ export async function askPlannerWith(call: PlannerCall, message: string): Promis
   const messages: LlmMessage[] = [{ role: 'user', content: message }];
   let response = await send(call, messages);
   let text = response.text;
-  for (let used = 0; used < maxPlannerContinuations; used += 1) {
+  let continued = 0;
+  for (; continued < maxPlannerContinuations; continued += 1) {
     if (!isCutOff(text, { ...response.usage, finishReason: response.finishReason }, limit)) break;
-    messages.push(
-      { role: 'assistant', content: response.text },
+    // The model is shown the answer up to its last complete JSON boundary and writes the rest.
+    text = resumePoint(text);
+    messages.splice(
+      1,
+      messages.length,
+      { role: 'assistant', content: text },
       { role: 'user', content: call.continuePrompt.text.trimEnd() },
     );
     response = await send(call, messages);
     text = joinContinuation(text, response.text);
   }
-  if (!isCutOff(text, { ...response.usage, finishReason: response.finishReason }, limit)) {
-    return text;
-  }
+  const end = { ...response.usage, finishReason: response.finishReason };
+  if (!endsCutOff(text, end, limit, continued)) return text;
   const problem = cutOffMessage(limit);
   if (call.onCutOff === undefined) {
     throw new RosettaError(ERROR_CODES.plannerAnswerCutOff, problem);
