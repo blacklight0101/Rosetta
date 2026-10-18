@@ -30,6 +30,7 @@ function draft(): PlanDraft {
     phases: [{ name: 'First', goal: 'Orders.', exitCriteria: ['Orders run.'] }],
     tasks: [draftTask({ requirements: [1, 2, 3, 3, 9] }), draftTask({ title: 'Later', phase: 2 })],
     risks: [{ text: 'Two thresholds.', sources: ['BR-001', 'FEAT-002'] }],
+    technical: { integrations: [], security: [], targets: [], environments: [] },
   };
 }
 

@@ -21,6 +21,8 @@ const ids = z.array(z.string().max(40)).max(MAX_LIST).default([]);
 const texts = z.array(text).max(MAX_LIST);
 const position = z.number().int().min(1).max(MAX_ITEMS);
 
+const noTechnical = { integrations: [], security: [], targets: [], environments: [] };
+
 const answer = z.object({
   summary: optionalText,
   requirements: z
@@ -70,6 +72,10 @@ const answer = z.object({
     .array(z.object({ text, sources: ids }))
     .max(MAX_LIST)
     .default([]),
+  technical: z
+    .object({})
+    .default({})
+    .transform(() => noTechnical),
 });
 
 /** The draft of the answer, or undefined when no JSON object of the answer reads as a plan. */

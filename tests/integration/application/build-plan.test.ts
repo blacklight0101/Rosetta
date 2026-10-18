@@ -180,6 +180,7 @@ describe('BuildPlan: the parts of the package', () => {
       'roadmap.md',
       'sources.md',
       'tasks.md',
+      'trd.md',
     ]);
     const links = [...(files['README.md'] ?? '').matchAll(/\]\(([^)#]+)\)/gu)].map((m) => m[1]);
     expect(links).toHaveLength(Object.keys(files).length - 1);
