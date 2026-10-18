@@ -9,6 +9,7 @@ import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
+import { BuiltInDefaults } from './BuiltInDefaults.js';
 import { defaultModelProviders } from './provider-choices.js';
 
 // DEC-106, design-system.md section 14: the provider and the dated model each role of a new project
@@ -60,6 +61,8 @@ function rolesOf(draft: Draft): {
 }
 
 interface Editing {
+  /** The default models as last saved: empty until the administrator sets one. */
+  readonly applied: DefaultRoles;
   readonly draft: Draft;
   readonly missing: readonly DefaultRoleName[];
   readonly busy: boolean;
@@ -73,6 +76,7 @@ interface Editing {
 function useEditing(saved: DefaultRoles): Editing {
   const { client } = useApp();
   const [draft, setDraft] = useState(draftOf(saved));
+  const [applied, setApplied] = useState(saved);
   const [missing, setMissing] = useState<readonly DefaultRoleName[]>([]);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<ApiFailure | undefined>();
@@ -97,13 +101,14 @@ function useEditing(saved: DefaultRoles): Editing {
       return;
     }
     setDraft(draftOf(result.value));
+    setApplied(result.value);
     setMessage('Default models saved.');
   };
   const edit = (name: DefaultRoleName, patch: Partial<RoleDraft>): void => {
     setDraft((current) => ({ ...current, [name]: { ...current[name], ...patch } }));
     setMissing((current) => current.filter((role) => role !== name));
   };
-  return { draft, missing, busy, failure, message, refusals, edit, submit };
+  return { applied, draft, missing, busy, failure, message, refusals, edit, submit };
 }
 
 function RoleFields(props: { readonly name: DefaultRoleName; readonly editing: Editing }) {
@@ -151,7 +156,11 @@ function RoleFields(props: { readonly name: DefaultRoleName; readonly editing: E
   );
 }
 
-function ModelsForm({ saved }: { readonly saved: DefaultRoles }): JSX.Element {
+function ModelsForm(props: {
+  readonly saved: DefaultRoles;
+  readonly builtIn: DefaultRoles;
+}): JSX.Element {
+  const { saved, builtIn } = props;
   const editing = useEditing(saved);
   const formRef = useRef<HTMLFormElement>(null);
   useRefusalFocus(formRef, editing.refusals);
@@ -172,6 +181,7 @@ function ModelsForm({ saved }: { readonly saved: DefaultRoles }): JSX.Element {
       ) ? null : (
         <ErrorBanner error={editing.failure} />
       )}
+      <BuiltInDefaults applied={editing.applied} builtIn={builtIn} />
       <p class="rst-settings__note">
         A new project starts with these. A role left on Template default keeps the model of the
         template. Projects that exist keep their own models.
@@ -194,7 +204,7 @@ function ModelsForm({ saved }: { readonly saved: DefaultRoles }): JSX.Element {
 type Loaded =
   | { readonly status: 'loading' }
   | { readonly status: 'failed'; readonly error: ApiFailure }
-  | { readonly status: 'ready'; readonly saved: DefaultRoles };
+  | { readonly status: 'ready'; readonly saved: DefaultRoles; readonly builtIn: DefaultRoles };
 
 function useSavedRoles(): Loaded {
   const { client } = useApp();
@@ -205,7 +215,7 @@ function useSavedRoles(): Loaded {
       if (abort.signal.aborted) return;
       setState(
         result.ok
-          ? { status: 'ready', saved: result.value }
+          ? { status: 'ready', saved: result.value.roles, builtIn: result.value.builtIn }
           : { status: 'failed', error: result.error },
       );
     });
@@ -233,7 +243,9 @@ export function AdminModelsPage(): JSX.Element {
         </p>
       ) : null}
       {loaded.status === 'failed' ? <ErrorBanner error={loaded.error} /> : null}
-      {loaded.status === 'ready' ? <ModelsForm saved={loaded.saved} /> : null}
+      {loaded.status === 'ready' ? (
+        <ModelsForm saved={loaded.saved} builtIn={loaded.builtIn} />
+      ) : null}
     </div>
   );
 }

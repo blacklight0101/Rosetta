@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { cardFilePath, sectionTitles, type RunOverviewData } from '../api/overview.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { RenderedText } from '../components/RenderedText.js';
+import { NotCovered } from './NotCovered.js';
 import type { OverviewLoad } from './use-run-overview.js';
 
 // RF-264, RF-507, design-system.md section 14: the overview of the application, the first thing
@@ -56,27 +57,6 @@ function SectionView(props: { readonly runId: string; readonly section: Section 
   );
 }
 
-function NotCovered({ lines }: { readonly lines: readonly string[] }): JSX.Element {
-  return (
-    <section class="rst-p168-section" aria-labelledby="overview-not-covered">
-      <h3 class="rst-p168-section__title" id="overview-not-covered">
-        What was not covered
-      </h3>
-      {lines.length === 0 ? (
-        <p>Every area of the run gave at least one card.</p>
-      ) : (
-        <ul class="rst-p168-statements">
-          {lines.map((line) => (
-            <li key={line}>
-              <RenderedText text={line} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 function Body(props: { readonly runId: string; readonly load: OverviewLoad }): JSX.Element {
   const { load, runId } = props;
   if (load.status === 'loading') {
@@ -94,7 +74,11 @@ function Body(props: { readonly runId: string; readonly load: OverviewLoad }): J
   return (
     <>
       {overview.notice === undefined ? null : (
-        <p class="rst-callout rst-callout--warn" role="status" data-testid="overview-notice">
+        <p
+          class={`rst-callout rst-callout--${overview.state === 'full' ? 'info' : 'warn'}`}
+          role="status"
+          data-testid="overview-notice"
+        >
           <RenderedText text={overview.notice} />
         </p>
       )}

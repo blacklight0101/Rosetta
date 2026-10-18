@@ -12,6 +12,7 @@ import {
   type Caps,
   type CapsView,
   type DefaultRoles,
+  type DefaultRolesView,
   type ListedAccount,
   type Workspace,
 } from './admin-schemas.js';
@@ -152,14 +153,13 @@ export function listAudit(
 export async function getDefaultRoles(
   client: ApiClient,
   signal: AbortSignal,
-): Promise<ApiResult<DefaultRoles>> {
-  const result = await client.request({
+): Promise<ApiResult<DefaultRolesView>> {
+  return client.request({
     method: 'GET',
     path: '/api/admin/default-roles',
     schema: defaultRolesAnswerSchema,
     signal,
   });
-  return result.ok ? { ok: true, value: result.value.roles } : result;
 }
 
 // DEC-106

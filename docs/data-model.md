@@ -420,9 +420,11 @@ as `spec.md`, which opens with the same text under `## Overview`.
 
 - `overview.json`: `{ schemaVersion: 1, state, notice?, sections, notCovered, questions }`. `state` is `full` (written from
   the cards), `thin` (too few cards to explain the application: fewer than 3 cards that passed, or cards from fewer than
-  half of the areas the run was asked to read or that are third-party; the summariser is not asked when there are fewer
-  than 3 cards) or `unavailable` (the run was stopped, or the call failed or was refused by a cap). `notice` is present
-  for `thin` and `unavailable` and says why and what to do next. `sections` holds only the sections that have a statement,
+  half of the areas the run was asked to read or that are third-party; when the owner chose some areas and left others of the
+  application's own code out, the areas to compare with are the chosen ones; the summariser is not asked when there are
+  fewer than 3 cards) or `unavailable` (the run was stopped, or the call failed or was refused by a cap). `notice` is present
+  for `thin` and `unavailable` and says why and what to do next; a `full` overview of a run of chosen areas also has one,
+  saying how many areas were read out of how many the scan found and that reading more gives a fuller picture. `sections` holds only the sections that have a statement,
   in the order `application`, `users`, `features`, `screens`, `data`, `integrations`; each is
   `{ id, statements: [{ text, cards: [{ id, type }] }] }` with at least one card per statement: the summariser's
   statements that name no card, or only cards it was not shown, are dropped (and counted in the log). `notCovered` lists,

@@ -109,7 +109,7 @@ it('RF-1017 RF-1014 the Overview tab says what was checked and what was not, and
   expect(note.textContent).toContain('2 of 2 citations checked');
   expect(note.textContent).toContain('those claims were not judged');
   const region = screen.getByRole('region', { name: 'Overview of the application' });
-  expect(region.textContent).toContain('Vendor: third-party code');
+  expect(region.textContent).toContain('Third-party code (1)');
   expect(region.textContent).toContain('What was not covered');
 });
 

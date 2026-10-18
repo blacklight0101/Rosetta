@@ -101,4 +101,13 @@ const defaultRolesSchema = z.object({
 
 export type DefaultRoles = z.output<typeof defaultRolesSchema>;
 
-export const defaultRolesAnswerSchema = z.object({ roles: defaultRolesSchema });
+// `builtIn` names the template's model per role, which applies to a role left out. Only the GET answer has it, so it defaults to `{}`.
+export const defaultRolesAnswerSchema = z.object({
+  roles: defaultRolesSchema,
+  builtIn: defaultRolesSchema.default({}),
+});
+
+export interface DefaultRolesView {
+  readonly roles: DefaultRoles;
+  readonly builtIn: DefaultRoles;
+}

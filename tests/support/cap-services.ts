@@ -8,6 +8,7 @@ import { MemoryServerCapsStore } from '../../src/infrastructure/db/memory-server
 import { SetCaps } from '../../src/application/use-cases/set-caps.js';
 import { SetDefaultRoles } from '../../src/application/use-cases/set-default-roles.js';
 import { SetOwnDailyCap } from '../../src/application/use-cases/set-own-daily-cap.js';
+import { templateSettings } from './project-fixtures.js';
 import type { AccountUsage } from '../../src/application/ports/account-usage.js';
 import type { Logger } from '../../src/application/ports/logger.js';
 import type { Clock } from '../../src/application/ports/clock.js';
@@ -37,7 +38,7 @@ export function capServices(parts: CapParts): CapServices & DefaultRoleServices 
       logger,
       clock,
     }),
-    getDefaultRoles: new GetDefaultRoles({ settings }),
+    getDefaultRoles: new GetDefaultRoles({ settings, template: templateSettings }),
     setDefaultRoles: new SetDefaultRoles({ settings, auditLog, logger, clock }),
     getOwnDailyCap: new GetOwnDailyCap({ users }),
     getSpendLimits: new GetSpendLimits({ users, settings, usage, clock }),
