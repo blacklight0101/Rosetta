@@ -11,7 +11,7 @@ import {
   startAndOpenLiveRun,
   startUnderstand,
 } from '../support/live-run-page.js';
-import { openPlanSetup, openStep } from '../support/plan-setup-page.js';
+import { expectOptions, openPlanSetup, openStep } from '../support/plan-setup-page.js';
 import { accountFor } from '../support/seed.js';
 import { signInAs } from '../support/sign-in.js';
 import { expectNoMidWordBreak, expectPageInView } from '../support/sweep.js';
@@ -129,9 +129,7 @@ test(
     await expectPageInView(page);
 
     await openStep(page, 'Architecture');
-    await expect(page.getByRole('radio', { name: /\(Recommended\)$/u })).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOptions(page);
     await expectPageInView(page);
 
     await openStep(page, 'Stack');

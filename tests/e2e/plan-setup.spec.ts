@@ -3,6 +3,7 @@ import { expect, test } from './support/fixtures.js';
 import { openStartPage } from './support/live-run-page.js';
 import {
   estimate,
+  expectOptions,
   openPlanSetup,
   openStep,
   recorded,
@@ -65,8 +66,7 @@ test('RF-608 the architecture step proposes two styles from the code with their 
 
   await openStep(page, 'Architecture');
 
-  const recommended = page.getByRole('radio', { name: /\(Recommended\)$/u });
-  await expect(recommended).toBeVisible({ timeout: 20_000 });
+  const recommended = await expectOptions(page);
   await expect(recommended).toBeChecked();
   await expect(page.locator('.rst-plan-evidence .rst-chip').first()).toBeVisible();
   await expect(page.getByRole('group', { name: /^Other styles \(\d+\)$/u })).toBeVisible();

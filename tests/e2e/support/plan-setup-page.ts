@@ -34,6 +34,20 @@ export async function openStep(page: Page, name: string): Promise<void> {
   await expect(stepPill(page, name)).toHaveAttribute('aria-current', 'step');
 }
 
+/**
+ * Waits for the options of the planner on the architecture step: the recommended style. When the
+ * page shows the refusal of the options instead, the test fails with the refusal in its message.
+ */
+export async function expectOptions(page: Page): Promise<Locator> {
+  const recommended = page.getByRole('radio', { name: /\(Recommended\)$/u });
+  const refusal = page.getByTestId('error-banner');
+  await expect(recommended.or(refusal).first()).toBeVisible({ timeout: 20_000 });
+  if (await refusal.first().isVisible()) {
+    throw new Error(`The options were refused: ${await refusal.first().innerText()}`);
+  }
+  return recommended;
+}
+
 export const recorded = (page: Page): Locator =>
   page.getByRole('region', { name: 'What I recorded' });
 

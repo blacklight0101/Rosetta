@@ -3,6 +3,7 @@ import { PgProjectRepository } from '../../../src/infrastructure/db/pg-project-r
 import { PgRunIndex } from '../../../src/infrastructure/db/pg-run-index.js';
 import { PgUserRepository } from '../../../src/infrastructure/db/pg-user-repository.js';
 import { createPool } from '../../../src/infrastructure/db/pool.js';
+import { SystemClock } from '../../../src/infrastructure/system/system-clock.js';
 import { sampleRun } from '../../support/run-fixtures.js';
 import { disposableSchemaUrl } from './database.js';
 import { e2ePort } from './server-config.js';
@@ -28,7 +29,7 @@ export async function leaveAPackage(userName: string): Promise<void> {
     if (user === undefined) throw new Error(`The account ${userName} does not exist.`);
     const project = (await new PgProjectRepository(pool).list(user.id))[0];
     if (project === undefined) throw new Error(`The account ${userName} has no project.`);
-    const startedAt = Date.now() - anHour;
+    const startedAt = new SystemClock().now().getTime() - anHour;
     const inserted = await new PgRunIndex(pool).insert(
       sampleRun({
         ...{ id: randomUUID(), projectId: project.id, userId: user.id, stage: 'plan' },
