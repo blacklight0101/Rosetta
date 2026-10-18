@@ -69,11 +69,13 @@ describe('parsePlanAnswer: task-card quality', () => {
       probes: ['A basket of 50.01.'],
     };
 
-    expect(tasksOf(extra)).toEqual([{ ...task, ...extra }]);
+    expect(tasksOf(extra)).toEqual([{ ...task, ...extra, files: [], needs: [], dependsOn: [] }]);
   });
 
   it('RF-630 a task that says none of it is read with no invariant, class or probes', () => {
-    expect(tasksOf({})).toEqual([{ ...task, invariant: '', adds: [], probes: [] }]);
+    expect(tasksOf({})).toEqual([
+      { ...task, ...{ invariant: '', adds: [], probes: [] }, files: [], needs: [], dependsOn: [] },
+    ]);
   });
 
   it('RF-635 a risk class that does not exist is read as no class', () => {
@@ -142,6 +144,50 @@ describe('parsePlanAnswer: the technical part', () => {
         parsePlanAnswer(JSON.stringify({ requirements: [requirement], technical: bad })),
       ).toBeUndefined();
     }
+
+describe('parsePlanAnswer: parallel-safe cards', () => {
+  const task = { title: 'Orders', phase: 1, requirements: [1], acceptanceCriteria: [scenario] };
+
+  function tasksOf(extra: object): unknown {
+    const answer = JSON.stringify({ requirements: [requirement], tasks: [{ ...task, ...extra }] });
+    return parsePlanAnswer(answer)?.tasks;
+  }
+
+  it('RF-634 reads the files, the needed identifiers and the cards a task waits for', () => {
+    const extra = {
+      files: ['src/orders/', 'tests/orders.test.ts'],
+      needs: [{ kind: 'error code', purpose: 'order not found' }],
+      dependsOn: [2],
+    };
+
+    expect(tasksOf(extra)).toMatchObject([extra]);
+  });
+
+  it('RF-634 a need of a kind that does not exist is left out, the answer stays usable', () => {
+    const needs = [
+      { kind: 'ticket number', purpose: 'a' },
+      { kind: 'port', purpose: 'api' },
+      { kind: 'port' },
+      'port',
+    ];
+
+    expect(tasksOf({ needs })).toMatchObject([{ needs: [{ kind: 'port', purpose: 'api' }] }]);
+  });
+
+  it.each([
+    ['a blank file', { files: [' '] }],
+    [
+      'more files than the bound',
+      { files: Array.from({ length: 51 }, (_, at) => `f${String(at)}`) },
+    ],
+    ['a file longer than the bound', { files: ['x'.repeat(501)] }],
+    ['a dependency that is not a position', { dependsOn: [0] }],
+    [
+      'more needs than the bound',
+      { needs: Array.from({ length: 51 }, () => ({ kind: 'port', purpose: 'p' })) },
+    ],
+  ])('RF-634 %s makes the answer unusable', (_, extra) => {
+    expect(tasksOf(extra)).toBeUndefined();
   });
 });
 

@@ -96,6 +96,16 @@ const answer = z.object({
         riskClass: z.enum(riskClasses).optional().catch(undefined),
         adds: z.array(z.enum(guardKinds)).max(guardKinds.length).default([]),
         probes: texts.default([]),
+        // stub until the parallel-safe fields are read (RF-634)
+        files: z
+          .array(z.string())
+          .transform((): string[] => [])
+          .default([]),
+        needs: z.array(z.never()).default([]),
+        dependsOn: z
+          .array(position)
+          .transform((): number[] => [])
+          .default([]),
       }),
     )
     .max(MAX_ITEMS)

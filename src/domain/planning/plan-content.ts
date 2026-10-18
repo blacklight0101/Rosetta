@@ -1,3 +1,4 @@
+import type { AllocatedIdentifier } from './parallel-cards.js';
 import type {
   DraftComponent,
   DraftDecision,
@@ -51,6 +52,12 @@ export interface PlanTask {
   readonly adds: readonly GuardKind[];
   /** Hostile or edge inputs a reviewer will try; empty for a card with no guard and no risk. */
   readonly probes: readonly string[];
+  /** The files and folders the card expects to change (RF-634). */
+  readonly files: readonly string[];
+  /** The shared identifiers the plan allocated to this card, and no other card (RF-634). */
+  readonly identifiers: readonly AllocatedIdentifier[];
+  /** `T-` ids of the cards this one waits for: declared, or added because the files overlap. */
+  readonly dependsOn: readonly string[];
 }
 
 interface PlanRisk extends DraftRisk {
@@ -128,7 +135,7 @@ function tasksOf(
       const { riskClass } = task;
       if (riskClass === undefined || cardProblem({ ...task, riskClass }) !== undefined) return [];
       const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
-      return [{ ...task, riskClass, requirements }];
+      return [{ ...task, riskClass, requirements, files: [], identifiers: [], dependsOn: [] }];
     })
     .filter((task) => !specified || task.requirements.length > 0);
   return kept.map((task, index) => ({ ...task, id: planId('T', index + 1) }));

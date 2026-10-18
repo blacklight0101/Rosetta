@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assemblePlan } from '../../../../src/domain/planning/plan-content.js';
-import type { PlanDraft } from '../../../../src/domain/planning/plan-draft.js';
+import type { DraftTask, PlanDraft } from '../../../../src/domain/planning/plan-draft.js';
 import { draftTask, invariant, scenario } from '../../../support/task-card-fixtures.js';
 
 // RF-601, RF-602, ADR-005: the planner's draft is checked against the supported cards before it
@@ -56,6 +56,7 @@ describe('assemblePlan', () => {
         requirements: ['REQ-001', 'REQ-002'],
         acceptanceCriteria: [scenario],
         ...{ invariant, riskClass: 'none', adds: [], probes: [] },
+        ...{ files: [], identifiers: [], dependsOn: [] },
       },
     ]);
   });
@@ -197,5 +198,88 @@ describe('assemblePlan: task cards that are not cards', () => {
       ['T-001', 'Second'],
       ['T-002', 'Third'],
     ]);
+  });
+});
+
+describe('assemblePlan: parallel-safe cards', () => {
+  const orders = ['src/orders/order.ts', 'tests/orders/'];
+
+  function assembled(tasks: PlanDraft['tasks']): ReturnType<typeof assemblePlan>['content'] {
+    return assemblePlan({ ...draft(), tasks }, supported).content;
+  }
+
+  const needsCode = (purpose: string): DraftTask['needs'] => [{ kind: 'error code', purpose }];
+
+  it('RF-634 a card keeps the files it expects to change, trimmed and listed once', () => {
+    const tasks = assembled([
+      draftTask({ files: [' src/a.ts ', 'src/a.ts', 'SRC/A.ts', 'docs/'] }),
+    ]);
+
+    expect(tasks.tasks[0]?.files).toEqual(['src/a.ts', 'docs/']);
+  });
+
+  it('RF-634 two cards that need an error code get two different codes', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'Orders', needs: needsCode('order not found') }),
+      draftTask({ title: 'Payments', needs: needsCode('payment declined') }),
+    ]);
+
+    expect(tasks.map((task) => task.identifiers)).toEqual([
+      [{ kind: 'error code', purpose: 'order not found', value: 'ERR-001' }],
+      [{ kind: 'error code', purpose: 'payment declined', value: 'ERR-002' }],
+    ]);
+  });
+
+  it('RF-634 a card that is left out takes no identifier', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'Lost', phase: 9, needs: needsCode('lost') }),
+      draftTask({ title: 'Kept', needs: needsCode('kept') }),
+    ]);
+
+    expect(tasks.map((task) => task.identifiers.map((each) => each.value))).toEqual([['ERR-001']]);
+  });
+
+  it('RF-634 two cards that list the same file are ordered, the later one waiting', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'First', files: orders }),
+      draftTask({ title: 'Second', files: ['SRC/Orders/Order.ts'] }),
+      draftTask({ title: 'Other', files: ['src/other.ts'] }),
+    ]);
+
+    expect(tasks.map((task) => task.dependsOn)).toEqual([[], ['T-001'], []]);
+  });
+});
+
+describe('assemblePlan: the order of parallel-safe cards', () => {
+  function assembled(tasks: PlanDraft['tasks']): ReturnType<typeof assemblePlan>['content'] {
+    return assemblePlan({ ...draft(), tasks }, supported).content;
+  }
+
+  it('RF-634 a declared dependency names the card by its new id, even after a card was left out', () => {
+    const { tasks } = assembled([
+      draftTask({ title: 'Lost', phase: 9 }),
+      draftTask({ title: 'First' }),
+      draftTask({ title: 'Second', dependsOn: [2, 1, 3, 9] }),
+    ]);
+
+    expect(tasks.map((task) => task.dependsOn)).toEqual([[], ['T-001']]);
+  });
+
+  it('RF-634 a card in a later phase is ordered after an overlapping card of an earlier phase', () => {
+    const base = draft();
+    const phases = [...base.phases, { name: 'Second', goal: 'More.', exitCriteria: ['Done.'] }];
+    const { content } = assemblePlan(
+      {
+        ...base,
+        phases,
+        tasks: [
+          draftTask({ title: 'Late', phase: 2, files: ['a.ts'] }),
+          draftTask({ title: 'Early', phase: 1, files: ['a.ts'] }),
+        ],
+      },
+      supported,
+    );
+
+    expect(content.tasks.map((task) => task.dependsOn)).toEqual([['T-002'], []]);
   });
 });
