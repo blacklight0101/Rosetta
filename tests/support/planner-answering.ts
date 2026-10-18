@@ -28,6 +28,6 @@ export function plannerAnswering(tasks: readonly object[]): ReturnType<typeof re
     retried: [],
     response: { text: answer, toolCalls: [], usage, finishReason: 'stop' as const },
   });
-  // The second call is the PRD (RF-621); an unreadable answer leaves its sections placeholders.
-  return recordingOf(reply(text), reply('No PRD today.'));
+  // The second call is the PRD (RF-621), the third the data model (RF-623); unreadable answers degrade.
+  return recordingOf(reply(text), reply('No PRD today.'), reply('No data model today.'));
 }
