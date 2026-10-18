@@ -1,3 +1,5 @@
+import { projectOf, templateSettings } from './project-fixtures.js';
+
 // RF-605, RF-606, RF-608, RF-613: the answers the Plan setup page reads, as the server writes them.
 
 const entry = (id: string, group: string, title: string, defaultOn: boolean) => ({
@@ -146,3 +148,27 @@ export const startedPlanRun = {
   queueState: 'queued',
   position: 1,
 };
+
+/** The project as `GET /api/projects/:id` answers it: the planner is a local Ollama model. */
+export const localProject = projectOf('p-1', 'octo/demo');
+
+/** The same project with an Anthropic planner: its code would leave this machine. */
+export const cloudProject = projectOf('p-1', 'octo/demo', {
+  settings: {
+    ...templateSettings(),
+    providers: {
+      ...templateSettings().providers,
+      anthropic: {
+        kind: 'anthropic',
+        keySource: 'user-then-server',
+        toolMode: 'native',
+        timeoutSeconds: 120,
+        maxRetries: 3,
+      },
+    },
+    roles: {
+      ...templateSettings().roles,
+      planner: { provider: 'anthropic', model: 'claude-sonnet', maxOutputTokens: 4096 },
+    },
+  },
+});

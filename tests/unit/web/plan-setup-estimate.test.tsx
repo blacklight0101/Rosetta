@@ -1,7 +1,13 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
-import { cloudEstimate, planEstimate, savedBrief, startedPlanRun } from './plan-setup-fixtures.js';
+import {
+  cloudEstimate,
+  cloudProject,
+  planEstimate,
+  savedBrief,
+  startedPlanRun,
+} from './plan-setup-fixtures.js';
 import { base, ready, renderPlan } from './plan-setup-helpers.js';
 
 // RF-613, RF-143, RF-427, RF-605: the estimate of the plan run against the caps, what stops
@@ -71,6 +77,23 @@ describe('plan estimate', () => {
   });
 });
 
+describe('plan estimate before a brief is saved', () => {
+  it('RF-613 asks no estimate while no brief is saved, and shows it after the first save', async () => {
+    const page = renderPlan();
+    await ready();
+
+    const card = screen.getByRole('region', { name: 'Plan estimate' });
+    expect(card.textContent).toContain('appears once your answers are saved');
+    expect(page.calls.some((call) => call.path === `${base}/plan-estimate`)).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Use the defaults for the rest' }));
+
+    await waitFor(() => {
+      expect(card.textContent).toContain('$0.18 likely');
+    });
+    expect(page.calls.some((call) => call.path === `${base}/plan-estimate`)).toBe(true);
+  });
+});
+
 describe('plan estimate blockers', () => {
   it('RF-427 blocks an unpriced planner model with a clear message', async () => {
     renderPlan({ ...savedAnswers, ...withPlanner({ priced: false }) });
@@ -134,6 +157,7 @@ describe('write the package with consent', () => {
   it('RF-143 needs the consent of a cloud planner and sends it with the run', async () => {
     const page = renderPlan({
       ...savedAnswers,
+      [`GET ${base}`]: json(200, cloudProject),
       [`GET ${base}/plan-estimate`]: json(200, cloudEstimate),
       [`POST ${base}/runs`]: json(202, startedPlanRun),
     });

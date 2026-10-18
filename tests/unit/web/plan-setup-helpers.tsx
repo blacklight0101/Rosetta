@@ -4,6 +4,7 @@ import { PlanSetupPage } from '../../../web/src/pages/PlanSetupPage.js';
 import { json, renderPage, type Answer, type RenderedPage } from './fake-api.js';
 import {
   catalogue,
+  localProject,
   planEstimate,
   planOptions,
   unsavedBrief,
@@ -18,6 +19,7 @@ export const base = '/api/projects/p-1';
 
 const baseAnswers: Readonly<Record<string, Answer>> = {
   'GET /api/plan/catalogue': json(200, catalogue),
+  [`GET ${base}`]: json(200, localProject),
   [`GET ${base}/planning-brief`]: json(200, unsavedBrief),
   [`PUT ${base}/planning-brief`]: json(200, savedBrief),
   [`POST ${base}/plan-options`]: json(200, planOptions),

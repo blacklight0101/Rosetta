@@ -9,7 +9,7 @@ import {
   overCaps,
 } from '../../../web/src/lib/plan-setup/estimate.js';
 import { recordedLines } from '../../../web/src/lib/plan-setup/recorded.js';
-import { catalogue, cloudEstimate, planEstimate, unsavedBrief } from './plan-setup-fixtures.js';
+import { catalogue, planEstimate, unsavedBrief } from './plan-setup-fixtures.js';
 
 // RF-605, RF-611, RF-613, RF-427, RF-143: the pure parts of Plan setup: what a save sends, what is
 // wrong with a draft, the lines of "What I recorded" and what stops the plan run.
@@ -83,8 +83,10 @@ describe('plan estimate', () => {
   });
 
   it('RF-143 needs the consent of a planner that is not a local model', () => {
-    expect(needsConsent(estimate)).toBe(false);
-    expect(needsConsent(planEstimateSchema.parse(cloudEstimate))).toBe(true);
+    expect(needsConsent('ollama')).toBe(false);
+    expect(needsConsent('fake')).toBe(false);
+    expect(needsConsent('anthropic')).toBe(true);
+    expect(needsConsent('openai-compatible')).toBe(true);
   });
 
   it('RF-613 names the caps a figure would pass and writes token caps in tokens', () => {

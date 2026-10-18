@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
 import { failure, json } from './fake-api.js';
-import { cloudEstimate } from './plan-setup-fixtures.js';
+import { cloudProject } from './plan-setup-fixtures.js';
 import { base, press, ready, renderPlan, saves } from './plan-setup-helpers.js';
 
 // RF-608, RF-609, RF-143: the architecture and stack steps ask the planner for two options each,
@@ -77,7 +77,7 @@ describe('architecture step when asking fails', () => {
   });
 
   it('RF-143 asks for consent before a cloud planner sees the code and then asks it', async () => {
-    const page = renderPlan({ [`GET ${base}/plan-estimate`]: json(200, cloudEstimate) });
+    const page = renderPlan({ [`GET ${base}`]: json(200, cloudProject) });
     await openArchitecture(page);
 
     expect(await screen.findByText(/Code will leave this machine/u)).not.toBeNull();
