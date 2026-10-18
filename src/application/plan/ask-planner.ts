@@ -3,7 +3,7 @@ import type { Run } from '../../domain/runs/run.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import type { ManifestUpdates } from '../runs/manifest-updates.js';
-import { callIds, traceIdOf } from '../runs/run-ids.js';
+import { traceIdOf } from '../runs/run-ids.js';
 import { planMessage, type PlanMessageInput } from './plan-message.js';
 
 // RF-604, RF-621, ADR-003, ADR-006, ADR-007: a model call of a plan run (the plan, then the PRD).
@@ -20,6 +20,8 @@ export interface PlannerCall {
   readonly agentTaskId: string;
   readonly updates: ManifestUpdates;
   readonly tags: () => string;
+  /** One numbering for every call of the run (RF-408): both calls share one counter. */
+  readonly callId: () => string;
   readonly signal: AbortSignal;
 }
 
@@ -30,7 +32,7 @@ export async function askPlanner(call: PlannerCall, input: PlanMessageInput): Pr
   const response = await planner.provider.complete({
     context: {
       ...{ runId: run.runKey, agentTaskId: call.agentTaskId, role: 'planner' },
-      ...{ callId: callIds(run)(), traceId, parentSpanId: `${traceId.slice(0, 13)}eee` },
+      ...{ callId: call.callId(), traceId, parentSpanId: `${traceId.slice(0, 13)}eee` },
     },
     model: planner.model,
     system: call.prompt.text,

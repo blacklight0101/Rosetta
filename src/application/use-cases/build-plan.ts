@@ -27,6 +27,7 @@ import type { ProviderSetFactory } from '../ports/provider-set-factory.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
+import { callIds } from '../runs/run-ids.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -106,6 +107,7 @@ export class BuildPlan implements RunExecutor {
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
       tags: () => this.deps.ids.dataBlockTag(),
+      callId: callIds(run),
     };
     const input = { cards: supported, brief, catalogue, answered };
     const output = await askPlanner(call, input);
