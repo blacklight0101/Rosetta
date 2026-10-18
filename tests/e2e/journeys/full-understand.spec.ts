@@ -148,3 +148,46 @@ test('RF-209 RF-231 the run shows its measures and offers Deepen with an estimat
   });
   expect(started).toEqual([]);
 });
+
+test('RF-209 RF-231 a confirmed Deepen runs its rounds on the page and shows what it changed', async ({
+  page,
+}, info) => {
+  test.setTimeout(240_000);
+  await signInThroughPage(page, accountFor('journey-run', info.project.name));
+  await expect(page).toHaveURL(/\/projects$/u);
+  await openHistory(page);
+  await runRow(page, '-understand')
+    .getByRole('link', { name: /^View run /u })
+    .last()
+    .click();
+  const parentUrl = page.url();
+  const turn = page.getByRole('region', { name: 'Your turn' });
+  await turn.getByRole('button', { name: 'Deepen this run' }).click();
+  await expect(turn.getByTestId('deepen-first-round')).toBeVisible();
+  await turn.getByRole('button', { name: 'Start Deepen' }).click();
+  await page
+    .getByRole('dialog', { name: 'Start this Deepen?' })
+    .getByRole('button', { name: 'Confirm and start' })
+    .click();
+
+  await expect(page).not.toHaveURL(parentUrl);
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
+  const progress = page.getByRole('region', { name: 'Deepen progress' });
+  await expect(progress).toContainText('Started from');
+  await expect(progress.getByTestId('deepen-progress-stop')).toBeVisible();
+  const changes = page.getByRole('table', { name: 'Before and after this Deepen' });
+  await expect(changes.getByTestId('change-coverage')).toBeVisible();
+
+  await transitionsDone(page);
+  await expectNoSeriousViolations(page);
+  await inEveryView(page, info, async () => {
+    const fits = await page.evaluate(
+      'document.documentElement.scrollWidth <= document.documentElement.clientWidth',
+    );
+    expect(fits).toBe(true);
+  });
+  // A reload shows the same rounds as the live page did.
+  const live = (await progress.textContent()) ?? '';
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Deepen progress' })).toHaveText(live);
+});
