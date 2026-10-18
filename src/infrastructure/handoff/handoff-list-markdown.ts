@@ -4,6 +4,7 @@ import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { keepLegacyDefault, legacySafe } from '../../domain/planning/legacy-default.js';
 import { decisionFile, documentSet, handoffFiles, idLink, sourceLinks } from './handoff-links.js';
 import { waitingCards, waitingOf } from './handoff-waiting-markdown.js';
+import { incompleteApiLines, incompleteLines } from './handoff-incomplete-markdown.js';
 
 // RF-601..RF-604, RF-603: the README with the reading order, the risks, the open questions (the
 // brief's questions that took their default, the analysis questions without an answer and the
@@ -188,6 +189,7 @@ function apiContractSection(handoff: HandoffPackage, esc: MarkdownEscaper): stri
     return [
       '## API contract',
       '',
+      ...incompleteApiLines(handoff),
       `No API contract applies to this package: ${esc.inline(apiContract.reason)}`,
       '',
     ];
@@ -224,6 +226,7 @@ export function readmeMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '',
     'Only claims the verifier found supported by the code were used. Every requirement names its source cards, and every source card lists its citations into the legacy code. The files are plain Markdown (the API contract, when there is one, is YAML); the diagrams are Mermaid.',
     '',
+    ...incompleteLines(handoff),
     '## Reading order',
     '',
     ...readingOrder(handoff, esc),

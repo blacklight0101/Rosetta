@@ -140,6 +140,7 @@ export function handoffOf(
     flows: flowsOf(text),
     apiContract: noApiContract(text),
     ux: noUx,
+    incomplete: [],
     sources: sourcesOf(text),
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],
