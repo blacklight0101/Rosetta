@@ -23,21 +23,21 @@ BlackLigth (blacklight0101) - Hito 1 (M1), entrega 2026-10-26
 - Las reglas de negocio reales están escondidas en manejadores de página, procedimientos almacenados, banderas de configuración y cadenas SQL.
 - Descubrirlas a mano lleva semanas, depende de una persona y nadie puede comprobar de dónde sale cada afirmación.
 
-*Fuente: [RFC-001, sección 1](../../rfc/RFC-001-rosetta.md)*
+_Fuente: [RFC-001, sección 1](../../rfc/RFC-001-rosetta.md)_
 
 ---
 
 # Problema: usar un asistente de IA sin más
 
-| Riesgo | Qué ocurre |
-|---|---|
-| Salida no verificable | Una regla aparece en el resumen y no existe en el código |
-| Cobertura incompleta | El asistente lee lo que cabe en su contexto y omite el resto en silencio |
-| Coste sin control | Sesiones largas de agentes con APIs de pago y sin tope |
+| Riesgo                   | Qué ocurre                                                               |
+| ------------------------ | ------------------------------------------------------------------------ |
+| Salida no verificable    | Una regla aparece en el resumen y no existe en el código                 |
+| Cobertura incompleta     | El asistente lee lo que cabe en su contexto y omite el resto en silencio |
+| Coste sin control        | Sesiones largas de agentes con APIs de pago y sin tope                   |
 | Dependencia y privacidad | Un solo proveedor; todo el repositorio, con sus secretos, sale a la nube |
-| No accionable | Prosa que un equipo no puede convertir en plan, decisiones y tareas |
+| No accionable            | Prosa que un equipo no puede convertir en plan, decisiones y tareas      |
 
-*Fuente: [RFC-001, sección 1](../../rfc/RFC-001-rosetta.md)*
+_Fuente: [RFC-001, sección 1](../../rfc/RFC-001-rosetta.md)_
 
 ---
 
@@ -49,7 +49,7 @@ BlackLigth (blacklight0101) - Hito 1 (M1), entrega 2026-10-26
 - Entrega un paquete de traspaso independiente de la herramienta: arquitectura objetivo, decisiones, hoja de ruta y tareas.
 - No reemplaza ningún sistema. No reconstruye el sistema legado.
 
-*Fuente: [README.md](../../../README.md) y [RFC-001, sección 2](../../rfc/RFC-001-rosetta.md)*
+_Fuente: [README.md](../../../README.md) y [RFC-001, sección 2](../../rfc/RFC-001-rosetta.md)_
 
 ---
 
@@ -63,7 +63,7 @@ BlackLigth (blacklight0101) - Hito 1 (M1), entrega 2026-10-26
 
 En el hito 1 están **scan** y **understand** sobre un área de la aplicación de demostración, con la comprobación de citas, y el informe Markdown con un informe de ejemplo en GitHub Pages (P1-50; PR #361 abierto). El HTML completo del informe y el plan llegan en la fase P3.
 
-*Fuente: [RFC-001, secciones 4.5 y 6](../../rfc/RFC-001-rosetta.md); [handoff.md](../../../handoff.md) para el estado de cada parte*
+_Fuente: [RFC-001, secciones 4.5 y 6](../../rfc/RFC-001-rosetta.md); [handoff.md](../../../handoff.md) para el estado de cada parte_
 
 ---
 
@@ -74,7 +74,7 @@ En el hito 1 están **scan** y **understand** sobre un área de la aplicación d
 - La página publicada reproduce la ejecución después.
 - Las llamadas a cada modelo pasan por un único puerto `LlmProvider`: Ollama en local, OpenAI y Anthropic en la nube.
 
-*Fuente: [RFC-001, sección 2, objetivos 4 y 9](../../rfc/RFC-001-rosetta.md)*
+_Fuente: [RFC-001, sección 2, objetivos 4 y 9](../../rfc/RFC-001-rosetta.md)_
 
 ---
 
@@ -85,7 +85,7 @@ En el hito 1 están **scan** y **understand** sobre un área de la aplicación d
 - Las afirmaciones rechazadas o con cita inválida **se conservan y se muestran**; nada se borra.
 - Las preguntas abiertas pasan a una persona que responde en la página.
 
-*Fuente: [RFC-001, sección 4.4](../../rfc/RFC-001-rosetta.md) y ADR-005*
+_Fuente: [RFC-001, sección 4.4](../../rfc/RFC-001-rosetta.md) y ADR-005_
 
 ---
 
@@ -101,7 +101,7 @@ Cada afirmación recorre estos estados:
 
 En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo paso, con modelo, llega después: hasta entonces una afirmación con cita válida se muestra como pendiente de verificación por modelo.
 
-*Fuente: [process-flows.md, sección 3](../../process-flows.md) y [RFC-001, sección 4.4](../../rfc/RFC-001-rosetta.md)*
+_Fuente: [process-flows.md, sección 3](../../process-flows.md) y [RFC-001, sección 4.4](../../rfc/RFC-001-rosetta.md)_
 
 ---
 
@@ -113,7 +113,7 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 - **Topes** por ejecución, por usuario y día, y por servidor y mes.
 - Los modelos locales cuestan cero, pero sus tokens se registran igual.
 
-*Fuente: [RFC-001, secciones 4.6 y 4.8](../../rfc/RFC-001-rosetta.md) y [process-flows.md, sección 4](../../process-flows.md)*
+_Fuente: [RFC-001, secciones 4.6 y 4.8](../../rfc/RFC-001-rosetta.md) y [process-flows.md, sección 4](../../process-flows.md)_
 
 ---
 
@@ -126,7 +126,7 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 - Cada archivo enviado a un proveedor queda en el registro de egreso.
 - Acceso con cuentas creadas por el administrador; claves de usuario cifradas; accesos de administrador auditados.
 
-*Fuente: [process-flows.md, secciones 5 y 6](../../process-flows.md) y [RFC-001, sección 4.6](../../rfc/RFC-001-rosetta.md)*
+_Fuente: [process-flows.md, secciones 5 y 6](../../process-flows.md) y [RFC-001, sección 4.6](../../rfc/RFC-001-rosetta.md)_
 
 ---
 
@@ -138,7 +138,7 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 - El agente verificador, independiente del que escribió la tarjeta, repite las comprobaciones y publica su veredicto.
 - El orquestador fusiona cada tarjeta cuando la CI está en verde y el verificador da PASS. La persona dueña del proyecto decide la especificación, las ADR, el RFC, el registro de decisiones y CLAUDE.md.
 
-*Fuente: [docs/orchestration/tasks.md, Totales](../../orchestration/tasks.md), [DEC-96 en el registro de decisiones](../../decision-log.md) y [ADR-010](../../adr/ADR-010-spec-driven-and-test-driven-development.md)*
+_Fuente: [docs/orchestration/tasks.md, Totales](../../orchestration/tasks.md), [DEC-96 en el registro de decisiones](../../decision-log.md) y [ADR-010](../../adr/ADR-010-spec-driven-and-test-driven-development.md)_
 
 ---
 
@@ -159,11 +159,11 @@ En el hito 1 solo está construido el paso 1 (existencia de la cita). El segundo
 
 Objetivos de la release 1 ([RFC-001, sección 7](../../rfc/RFC-001-rosetta.md)). **Son objetivos, no resultados**:
 
-| Métrica | Objetivo | Medida |
-|---|---|---|
-| Precisión de las afirmaciones respaldadas | al menos 90 % correctas | [PENDIENTE] |
-| Recuperación de reglas conocidas | al menos 70 % encontradas | [PENDIENTE] |
-| Citas válidas en afirmaciones respaldadas | 100 % | [PENDIENTE] |
+| Métrica                                         | Objetivo                                                             | Medida      |
+| ----------------------------------------------- | -------------------------------------------------------------------- | ----------- |
+| Precisión de las afirmaciones respaldadas       | al menos 90 % correctas                                              | [PENDIENTE] |
+| Recuperación de reglas conocidas                | al menos 70 % encontradas                                            | [PENDIENTE] |
+| Citas válidas en afirmaciones respaldadas       | 100 %                                                                | [PENDIENTE] |
 | Coste de una ejecución completa de demostración | menos de 1 USD con el modelo en la nube más barato; 0 USD con Ollama | [PENDIENTE] |
 
 ---
