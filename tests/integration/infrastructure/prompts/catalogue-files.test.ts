@@ -30,7 +30,18 @@ const expectedIds = {
   documentation: ['adrs', 'api-contracts', 'docs-as-code'],
   security: ['owasp-top-10', 'secure-sdlc', 'security-by-design', 'stride'],
   delivery: ['build-once', 'containers', 'dora-metrics', 'observability'],
-  'ai-assisted-build': ['agent-instructions', 'human-review', 'plan-before-build'],
+  'ai-assisted-build': [
+    'agent-instructions',
+    'agent-operations',
+    'behaviour-to-preserve',
+    'guard-tests',
+    'human-review',
+    'one-change-at-a-time',
+    'parallel-safe-ids',
+    'plan-before-build',
+    'risk-class',
+    'shared-probes',
+  ],
 } as const;
 
 async function catalogueSha256(folder: string): Promise<string> {
@@ -87,7 +98,7 @@ describe('the shipped catalogue defaults and version', () => {
   });
 
   it('RF-606 is read with its version and the SHA-256 of its files', async () => {
-    expect(shipped.version).toBe(1);
+    expect(shipped.version).toBe(2);
     expect(shipped.sha256).toBe(await catalogueSha256('prompts/catalogue'));
   });
 
@@ -96,6 +107,37 @@ describe('the shipped catalogue defaults and version', () => {
 
     expect(readme).toContain('Master en Desarrollo con IA');
     expect(readme).toContain('BIG School');
+  });
+});
+
+describe('the lessons of DEC-135 in the AI-assisted build group', () => {
+  const lessons = [
+    ['shared-probes', 'probes'],
+    ['behaviour-to-preserve', 'legacy behaviour'],
+    ['guard-tests', 'fails when'],
+    ['parallel-safe-ids', 'identifier'],
+    ['risk-class', 'risk class'],
+    ['agent-operations', 'one pull request at a time'],
+    ['one-change-at-a-time', 'one change'],
+  ] as const;
+
+  it.each(lessons)('RF-606 DEC-135 %s is an entry of the group, off in a new brief', (id, word) => {
+    const entry = shipped.entries.find((each) => each.id === id);
+
+    expect(entry?.group).toBe('ai-assisted-build');
+    expect(entry?.defaultOn).toBe(false);
+    const text = `${entry?.rule ?? ''} ${entry?.why ?? ''} ${entry?.check ?? ''}`;
+    expect(text.toLowerCase()).toContain(word);
+  });
+
+  it('RF-606 the README lists the lessons in its group table', async () => {
+    const readme = await readFile('prompts/catalogue/readme.v1.md', 'utf8');
+    const row = readme.split('\n').find((line) => line.startsWith('| `ai-assisted-build`')) ?? '';
+
+    for (const [id] of lessons) {
+      const title = shipped.entries.find((each) => each.id === id)?.title ?? id;
+      expect(row.toLowerCase()).toContain(title.toLowerCase());
+    }
   });
 });
 

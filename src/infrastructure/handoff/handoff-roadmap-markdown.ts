@@ -5,6 +5,7 @@ import { sizeOfPhase } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { groupLines } from './handoff-parallel-markdown.js';
 import { bullets, decisionLink, handoffFiles, idLink } from './handoff-links.js';
+import { waitingLines, waitingNote, waitingOf } from './handoff-waiting-markdown.js';
 
 // RF-601, RF-610, RF-611, RF-634, DEC-76, DEC-79: the roadmap. It states the migration strategy and
 // the order its phases follow (linking the decision record), the project context the owner gave
@@ -74,6 +75,7 @@ function phaseLines(phase: PlanPhase, handoff: HandoffPackage, esc: MarkdownEsca
     `Task cards: ${own.length === 0 ? 'none' : own.map((task) => idLink(task.id, handoffFiles.tasks)).join(', ')}`,
     '',
     ...groupLines(tasks, phase.number),
+    ...waitingLines(waitingOf(handoff), own, esc),
   ];
 }
 
@@ -86,6 +88,7 @@ export function roadmapMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): 
     '',
     ...strategyLines(handoff, esc),
     ...contextLines(handoff, esc),
+    ...(waitingOf(handoff).byCard.size === 0 ? [] : [waitingNote, '']),
     ...handoff.content.phases.flatMap((phase) => phaseLines(phase, handoff, esc)),
   ].join('\n');
 }

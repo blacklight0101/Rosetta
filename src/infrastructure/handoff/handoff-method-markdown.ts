@@ -3,6 +3,7 @@ import { migrationStrategyInfo } from '../../domain/planning/migration-strategy.
 import { difficultyBands } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
 import { decisionLink, handoffFiles } from './handoff-links.js';
+import { metricsRuleLines } from './handoff-metrics-markdown.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
 import { qualityRuleLines } from './handoff-quality-markdown.js';
 
@@ -116,6 +117,7 @@ export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): s
     '',
     ...qualityRuleLines(),
     ...operationsLines(),
+    ...metricsRuleLines(),
     '## Human review',
     '',
     'A person reviews every pull request before it is merged. The reviewer checks the card, the acceptance criteria and the review checklist on the card, and no agent merges its own work.',
