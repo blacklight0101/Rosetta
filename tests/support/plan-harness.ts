@@ -1,4 +1,3 @@
-import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { vi } from 'vitest';
 import type { AnswerEntry, OpenQuestion } from '../../src/application/ports/answers-file.js';
@@ -27,8 +26,13 @@ import { FanOutSink } from '../../src/infrastructure/events/fan-out-sink.js';
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
 import { runPath } from '../../src/infrastructure/files/workspace-paths.js';
 import { FileHandoffWriter } from '../../src/infrastructure/handoff/file-handoff-writer.js';
-import { loadPlannerPrompt, loadPrdPrompt } from '../../src/infrastructure/prompts/prompt-files.js';
+import {
+  loadDataModelPrompt,
+  loadPlannerPrompt,
+  loadPrdPrompt,
+} from '../../src/infrastructure/prompts/prompt-files.js';
 import type { Recording } from '../../src/infrastructure/providers/fake/recording.js';
+import { filesUnder } from './files-under.js';
 import { sampleAccount } from './account-fixtures.js';
 import { budgetTable, contractPrice } from './budget-harness.js';
 import { cardSource } from './card-fixtures.js';
@@ -101,6 +105,7 @@ function planExecutor(s: Stores, providers: UnderstandProviders): BuildPlan {
     catalogue: () => Promise.resolve(shippedCatalogue),
     prompt: () => loadPlannerPrompt('prompts'),
     prdPrompt: () => loadPrdPrompt('prompts'),
+    dataModelPrompt: () => loadDataModelPrompt('prompts'),
     ids: new SequenceIdGenerator(),
   });
 }
@@ -132,26 +137,6 @@ async function ended(s: Stores, run: Run): Promise<Run> {
   );
   if (latest === undefined) throw new Error('The run vanished');
   return latest;
-}
-
-/** The files under the folder; none when the folder does not exist. */
-async function filesUnder(root: string): Promise<Record<string, string>> {
-  const entries = await readdir(root, { recursive: true, withFileTypes: true }).catch(
-    (error: unknown) => {
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
-      throw error;
-    },
-  );
-  const files: Record<string, string> = {};
-  for (const entry of entries.filter((each) => each.isFile())) {
-    const absolute = join(entry.parentPath, entry.name);
-    const path = absolute
-      .slice(root.length + 1)
-      .split('\\')
-      .join('/');
-    files[path] = await readFile(absolute, 'utf8');
-  }
-  return files;
 }
 
 async function seedRun(s: Stores, project: Project, seed: UnderstandSeed): Promise<Run> {
@@ -228,6 +213,7 @@ async function estimateOf(s: Stores, project: Project): Promise<PlanEstimate> {
     keys: new MemoryProviderKeyRepository(),
     ...{ catalogue: () => Promise.resolve(shippedCatalogue) },
     ...{ prompt: () => loadPlannerPrompt('prompts'), prdPrompt: () => loadPrdPrompt('prompts') },
+    dataModelPrompt: () => loadDataModelPrompt('prompts'),
   });
   const outcome = await estimate.execute({ actor, projectId: project.id });
   if (!outcome.ok) throw new Error(`The plan estimate was refused: ${outcome.error}`);

@@ -116,6 +116,8 @@ export function entityMappingMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
     '',
     'How each legacy entity maps to an entity of the new system.',
     '',
+    `The tables, columns and keys of the target entities are in [the target data model](${handoffFiles.dataModel}).`,
+    '',
     ...(rows.length === 0
       ? ['The planner mapped no entity.']
       : ['| Legacy entity | Target entity | Notes | Source cards |', '|---|---|---|---|', ...rows]),

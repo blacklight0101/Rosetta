@@ -31,6 +31,14 @@ describe('renderHandoff', () => {
     expect(files['README.md']).toContain('](decisions/ADR-001.md)');
   });
 
+  it('RF-623 writes data-model.md, linked from the README and from the entity mapping', () => {
+    const files = renderHandoff(handoffOf('Plain text.'), masker);
+
+    expect(files['data-model.md']).toContain('# Target data model');
+    expect(files['README.md']).toContain('](data-model.md)');
+    expect(files['entity-mapping.md']).toContain('](data-model.md)');
+  });
+
   it('RF-603 model text adds no HTML, link, heading or fence to any file', () => {
     const files = renderHandoff(handoffOf(hostile), masker);
 

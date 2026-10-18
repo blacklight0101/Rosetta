@@ -53,7 +53,7 @@ async function assertNothingSent(h: PlanHarness, endState: string): Promise<void
 }
 
 describe('plan estimate against the budget guard', () => {
-  it('RF-613 the estimate shows the two planner calls the guard then meters, high being the sum of their worst cases', async () => {
+  it('RF-613 the estimate shows the three planner calls the guard then meters, high being the sum of their worst cases', async () => {
     const h = await seededHarness();
 
     const estimate = await h.estimate();
@@ -63,14 +63,14 @@ describe('plan estimate against the budget guard', () => {
     expect(estimate.withinCaps).toEqual({ low: true, likely: true, high: true });
     const reservations = h.providers.ledger.reservations.map((each) => each.reservation);
     const { high } = estimate.planner.points;
-    expect(reservations.map((each) => each.role)).toEqual(['planner', 'planner']);
+    expect(reservations.map((each) => each.role)).toEqual(['planner', 'planner', 'planner']);
     const sum = (pick: (worst: (typeof reservations)[number]['worstCase']) => bigint): bigint =>
       reservations.reduce((total, each) => total + pick(each.worstCase), 0n);
     expect(sum((worst) => worst.micros)).toBe(high.costMicros);
     expect(sum((worst) => worst.tokens)).toBe(BigInt(high.inputTokens + high.outputTokens));
     const spent = h.providers.ledger.entries.reduce((total, each) => total + each.costMicros, 0n);
     expect(spent).toBeLessThanOrEqual(high.costMicros);
-    expect(h.providers.ledger.entries).toHaveLength(2);
+    expect(h.providers.ledger.entries).toHaveLength(3);
   });
 
   it('RF-613 a run cap the high figure does not fit is shown, and the guard refuses the call', async () => {
@@ -115,5 +115,29 @@ describe('plan run: a cap that fits the plan call but not the PRD call', () => {
     expect(h.s.logger.entries).toContainEqual(
       expect.objectContaining({ code: ERROR_CODES.budgetCapReached }),
     );
+  });
+});
+
+describe('a cap that fits the first two planner calls but not the third', () => {
+  it('RF-422 RF-623 the guard stops the run before the data model call, with no package', async () => {
+    const base = await seededHarness(undefined, 'base');
+    await base.plan({ cloudConsent: true });
+    const worst = base.providers.ledger.reservations.map(
+      (each) => each.reservation.worstCase.micros,
+    );
+    const spent = base.providers.ledger.entries.map((each) => each.costMicros);
+    const [first, second, third] = worst;
+    if (first === undefined || second === undefined || third === undefined) {
+      throw new Error('The baseline run made three calls');
+    }
+    const cap = (spent[0] ?? 0n) + (spent[1] ?? 0n) + third - 1n;
+    expect(cap).toBeGreaterThanOrEqual((spent[0] ?? 0n) + second);
+
+    const h = await seededHarness(cappedRun(Number(cap)), 'capped');
+    const run = await h.plan({ cloudConsent: true });
+
+    expect(run.endState).toBe('CapReached');
+    expect(h.providers.requests()).toHaveLength(2);
+    expect(await h.handoffOf(run)).toEqual({});
   });
 });

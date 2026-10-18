@@ -48,7 +48,7 @@ describe('BuildPlan: cloud consent', () => {
     const run = await h.plan({ cloudConsent: true });
 
     expect(run.endState).toBe('Completed');
-    expect(h.providers.requests()).toHaveLength(2);
+    expect(h.providers.requests()).toHaveLength(3);
     expect(Object.keys(await h.handoffOf(run))).toContain('README.md');
   });
 });

@@ -26,7 +26,13 @@ export interface PlannerCall {
 }
 
 // RF-604
-export async function askPlanner(call: PlannerCall, input: PlanMessageInput): Promise<string> {
+export function askPlanner(call: PlannerCall, input: PlanMessageInput): Promise<string> {
+  return askPlannerWith(call, planMessage(input, call.tags));
+}
+
+/** RF-623: a call with a user message the caller built (the data model has its own input). */
+// RF-623
+export async function askPlannerWith(call: PlannerCall, message: string): Promise<string> {
   const { run, planner, signal } = call;
   const traceId = traceIdOf(run);
   const response = await planner.provider.complete({
@@ -36,7 +42,7 @@ export async function askPlanner(call: PlannerCall, input: PlanMessageInput): Pr
     },
     model: planner.model,
     system: call.prompt.text,
-    messages: [{ role: 'user', content: planMessage(input, call.tags) }],
+    messages: [{ role: 'user', content: message }],
     tools: [],
     maxOutputTokens: planner.maxOutputTokens,
     ...(planner.temperature === undefined ? {} : { temperature: planner.temperature }),

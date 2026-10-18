@@ -1,5 +1,6 @@
 import { briefDecisions } from '../../domain/planning/brief-decisions.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
+import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
 import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
@@ -26,8 +27,9 @@ export function handoffPackageOf(
   inputs: PlanInputs,
   content: PlanContent,
   catalogue: Catalogue,
-  prd: PrdContent,
+  documents: { readonly prd: PrdContent; readonly dataModel: TargetDataModel },
 ): HandoffPackage {
+  const { prd, dataModel } = documents;
   const { brief, sourceRun, project, cards, questions } = inputs;
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
@@ -47,6 +49,7 @@ export function handoffPackageOf(
       .filter((question) => question.answer.trim() === '')
       .map(({ cardId, question }) => ({ cardId, question })),
     prd,
+    dataModel,
     prdQuestions: prdQuestions(prd),
   };
 }

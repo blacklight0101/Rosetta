@@ -29,13 +29,26 @@ import { NodeOutputWriter } from '../infrastructure/files/node-output-writer.js'
 import { loadProjectTemplate } from '../infrastructure/files/project-template.js';
 import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
-import { loadPlannerPrompt, loadPrdPrompt } from '../infrastructure/prompts/prompt-files.js';
+import {
+  loadDataModelPrompt,
+  loadPlannerPrompt,
+  loadPrdPrompt,
+} from '../infrastructure/prompts/prompt-files.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
 import type { ProjectServices } from './web/project-routes.js';
 
 // Architecture section 2 (composition root), RF-010, RF-002, RF-1105: the project adapters and the
 // use cases behind the projects API. The default settings come from `templates/` and are checked
 // here, so a broken template stops the start-up instead of the first new project.
+
+/** The planner's three versioned prompt files, read for each plan or plan estimate. */
+function plannerPrompts(folder: string) {
+  return {
+    prompt: () => loadPlannerPrompt(folder),
+    prdPrompt: () => loadPrdPrompt(folder),
+    dataModelPrompt: () => loadDataModelPrompt(folder),
+  };
+}
 
 export interface ProjectParts {
   readonly pool: DatabasePool;
@@ -95,8 +108,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       serverSettings: settings,
       ...{ keys: new PgProviderKeyRepository(pool), serverKeys: parts.serverKeys },
       catalogue: () => Promise.resolve(catalogue),
-      prompt: () => loadPlannerPrompt(parts.promptsFolder),
-      prdPrompt: () => loadPrdPrompt(parts.promptsFolder),
+      ...plannerPrompts(parts.promptsFolder),
     }),
     catalogue,
     // RF-428, RF-1010: the cost page and the totals pill.

@@ -161,7 +161,10 @@ describe('BuildPlan: untrusted and unreadable PRD answers', () => {
         finishReason: 'stop',
       },
     });
-    const recording = { ...base, calls: [...base.calls.slice(0, 1), ...unreadable.calls] };
+    const recording = {
+      ...base,
+      calls: [...base.calls.slice(0, 1), ...unreadable.calls, ...base.calls.slice(2)],
+    };
 
     const files = await planned(recording);
 
@@ -180,8 +183,8 @@ describe('BuildPlan: the documentation set', () => {
     await planned();
 
     const ids = h.providers.requests().map((request) => request.context.callId);
-    expect(ids).toHaveLength(2);
-    expect(new Set(ids).size).toBe(2);
+    expect(ids).toHaveLength(3);
+    expect(new Set(ids).size).toBe(3);
   });
 
   it('RF-620 the README reading order starts with the PRD and the TRD, then the parts of RF-601', async () => {
@@ -189,9 +192,10 @@ describe('BuildPlan: the documentation set', () => {
 
     const order = (files['README.md'] ?? '').split('## Reading order')[1]?.split('\n## ')[0] ?? '';
     const links = [...order.matchAll(/\]\(([^)#]+)\)/gu)].map((match) => match[1]);
-    expect(links.slice(0, 5)).toEqual([
+    expect(links.slice(0, 6)).toEqual([
       'prd.md',
       'trd.md',
+      'data-model.md',
       'requirements.md',
       'architecture.md',
       'decisions/ADR-001.md',

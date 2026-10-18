@@ -58,7 +58,12 @@ const scenarios = z.object({ low: z.boolean(), likely: z.boolean(), high: z.bool
 const estimateBody = z.object({
   planner: z.object({ role: z.string(), low: point, likely: point, high: point }).loose(),
   assumptions: z
-    .object({ promptTokens: z.number(), prdPromptTokens: z.number(), maxOutputTokens: z.number() })
+    .object({
+      promptTokens: z.number(),
+      prdPromptTokens: z.number(),
+      dataModelPromptTokens: z.number(),
+      maxOutputTokens: z.number(),
+    })
     .loose(),
   caps: z.array(
     z.object({
@@ -83,7 +88,7 @@ describe('GET /api/projects/:id/plan-estimate answers', () => {
       ...{ role: 'planner', provider: 'openai', model: 'priced-model' },
       ...{ keySource: 'server', priced: true },
     });
-    expect(body.planner.high.outputTokens).toBe(8192);
+    expect(body.planner.high.outputTokens).toBe(12288);
     expect(body.planner.high.inputTokens).toBe(body.assumptions.promptTokens);
     expect(BigInt(body.planner.high.costMicros)).toBeGreaterThan(0n);
     expect(body.caps.map((cap) => cap.kind)).toEqual([
