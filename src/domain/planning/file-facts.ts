@@ -97,7 +97,7 @@ export function kindOf(entry: FileEntry): FileKind {
   return entry.language === 'unknown' ? 'other' : 'source';
 }
 
-const RESERVED = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/iu;
+const RESERVED = /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])$/iu;
 const REFUSED_CHARACTERS = '<>:"|?*';
 const FIRST_PRINTABLE = 0x20;
 const LAST_ASCII = 0x7f;

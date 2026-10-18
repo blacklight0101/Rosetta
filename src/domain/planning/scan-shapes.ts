@@ -32,6 +32,8 @@ export interface ScanShapes {
   readonly totalBytes: number;
   /** Files the reader refused; they are not counted anywhere else. */
   readonly unreadable: number;
+  /** Files sized but not read, because the total read limit was reached. */
+  readonly beyondTotal: number;
   readonly largest: readonly MeasuredFile[];
   readonly byKind: readonly KindTotal[];
   readonly deepest: readonly { readonly path: string; readonly depth: number }[];
@@ -60,7 +62,7 @@ function kindTotals(files: readonly MeasuredFile[]): KindTotal[] {
 function caseCollisions(paths: readonly string[]): Set<string> {
   const byLower = new Map<string, string[]>();
   for (const path of paths) {
-    const key = path.toLowerCase();
+    const key = path.normalize('NFC').toLowerCase();
     byLower.set(key, [...(byLower.get(key) ?? []), path]);
   }
   return new Set([...byLower.values()].filter((same) => same.length > 1).flat());
@@ -79,6 +81,7 @@ export function shapesOf(
   files: readonly MeasuredFile[],
   refusedNames: readonly string[],
   unreadable: number,
+  beyondTotal = 0,
 ): ScanShapes {
   const byPath = [...files].sort((a, b) => byCodeUnit(a.path, b.path));
   const depths = byPath.map((file) => ({ path: file.path, depth: file.path.split('/').length }));
@@ -86,6 +89,7 @@ export function shapesOf(
     files: files.length,
     totalBytes: files.reduce((sum, file) => sum + file.bytes, 0),
     unreadable,
+    beyondTotal,
     largest: [...byPath].sort((a, b) => b.bytes - a.bytes).slice(0, LARGEST),
     byKind: kindTotals(files),
     deepest: depths.sort((a, b) => b.depth - a.depth).slice(0, DEEPEST),

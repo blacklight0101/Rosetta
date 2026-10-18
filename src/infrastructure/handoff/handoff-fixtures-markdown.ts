@@ -18,6 +18,19 @@ function size(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 }
 
+/** A name with its spaces at the edge of a segment and its control characters written out. */
+function visibleName(path: string): string {
+  const written = (code: number): string =>
+    `[U+${code.toString(16).toUpperCase().padStart(4, '0')}]`;
+  const segment = (text: string): string =>
+    Array.from({ length: text.length }, (_none, at) => {
+      const code = text.charCodeAt(at);
+      const edge = code === 0x20 && (at === 0 || at === text.length - 1);
+      return code < 0x20 || edge ? written(code) : text.charAt(at);
+    }).join('');
+  return path.split('/').map(segment).join('/');
+}
+
 function table(header: readonly string[], rows: readonly (readonly string[])[]): string[] {
   if (rows.length === 0) return ['None found.'];
   const rule = header.map(() => '---');
@@ -56,7 +69,9 @@ function measuredSections(shapes: ScanShapes, esc: MarkdownEscaper): string[] {
       shapeSections.unusual,
       unusualNames.length === 0
         ? ['None found.']
-        : unusualNames.map((each) => `- ${esc.inline(each.path)}: ${each.reasons.join('; ')}`),
+        : unusualNames.map(
+            (each) => `- ${esc.inline(visibleName(each.path))}: ${each.reasons.join('; ')}`,
+          ),
     ),
     ...section(
       shapeSections.encodings,
@@ -107,8 +122,15 @@ function introLines(shapes: ScanShapes | undefined): string[] {
           `${String(shapes.unreadable)} file${shapes.unreadable === 1 ? '' : 's'} could not be read and is not counted.`,
           '',
         ];
+  const skipped =
+    shapes.beyondTotal === 0
+      ? []
+      : [
+          `${String(shapes.beyondTotal)} file${shapes.beyondTotal === 1 ? ' was' : 's were'} sized but ${shapes.beyondTotal === 1 ? 'its' : 'their'} content was not read: the total read limit was reached.`,
+          '',
+        ];
   const counted = `${String(shapes.files)} files, ${size(shapes.totalBytes)} in all.`;
-  return [lead, '', `Measured: ${counted}`, '', ...unread];
+  return [lead, '', `Measured: ${counted}`, '', ...unread, ...skipped];
 }
 
 // RF-632
