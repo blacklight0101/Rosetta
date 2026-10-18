@@ -156,6 +156,16 @@ describe('RF-209 starting a Deepen', () => {
   });
 });
 
+describe('RF-143 a refusal of the consent', () => {
+  it('RF-143 shows the refusal when the server asks for the consent of a provider the page took for local', async () => {
+    await opened({ [startPath]: failure(400, 'RST-1515') });
+
+    await confirmStart();
+
+    expect(await screen.findByText('Message of RST-1515.')).toBeTruthy();
+  });
+});
+
 describe('RF-143 a Deepen whose provider is in the cloud', () => {
   const cloud = { [estimatePath]: deepenEstimate({ roles: cloudRoles }) };
 
@@ -176,6 +186,40 @@ describe('RF-143 a Deepen whose provider is in the cloud', () => {
     await waitFor(() => {
       expect(posts(page, '/deepen').at(-1)?.body).toMatchObject({ cloudConsent: true });
     });
+  });
+});
+
+describe('RF-209 an estimate that cannot be read', () => {
+  it('RF-209 shows why, and keeps Start off', async () => {
+    await openEnded({ extra: { ...base, [estimatePath]: failure(500, 'RST-2006') } });
+    fireEvent.click(await within(turn()).findByRole('button', { name: 'Deepen this run' }));
+
+    expect(await screen.findByText('Message of RST-2006.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start Deepen' })).toHaveProperty('disabled', true);
+  });
+});
+
+describe('RF-209 closing the question', () => {
+  it('RF-209 closes the question when the server refuses, and asks again on the next Start', async () => {
+    await opened({ [startPath]: failure(404, 'RST-2003') });
+
+    await confirmStart();
+
+    expect(await screen.findByText('Message of RST-2003.')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Start Deepen' }));
+    expect(await screen.findByRole('dialog', { name: 'Start this Deepen?' })).toBeTruthy();
+  });
+
+  it('RF-209 leaves the panel with Not now and starts nothing', async () => {
+    const page = await opened();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+
+    expect(screen.getByRole('button', { name: 'Deepen this run' })).toBeTruthy();
+    expect(posts(page, '/deepen')).toEqual([]);
   });
 });
 
