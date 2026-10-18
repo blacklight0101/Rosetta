@@ -8,7 +8,7 @@ import type { ClaimRow, RunState } from './run-state.js';
 export type CountKind =
   'supported' | 'rejected' | 'citation-invalid' | 'unverified' | 'not-judged' | 'waiting';
 
-export interface CountPart {
+interface CountPart {
   readonly kind: CountKind;
   readonly count: number;
 }
@@ -53,7 +53,7 @@ function kindOf(claim: ClaimRow, pending: boolean): CountKind {
 }
 
 // RF-1014
-export function summaryOf(claims: readonly ClaimRow[], pending: boolean): CardSummary {
+function summaryOf(claims: readonly ClaimRow[], pending: boolean): CardSummary {
   if (claims.length === 0) return { kind: 'waiting' };
   if (claims.every((claim) => claim.status === 'Supported')) return { kind: 'all-supported' };
   const counted = new Map<CountKind, number>();
