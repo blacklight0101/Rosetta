@@ -8,14 +8,12 @@
 // - Every other question (the project context and the PRD sections) shapes the roadmap or a
 //   document, not a card, and holds none.
 
-export interface WaitingQuestion {
-  readonly id: string;
-  /** The area of the card of an analysis question; undefined for the other questions. */
-  readonly area?: string;
-}
-
 export interface WaitingInput {
-  readonly questions: readonly WaitingQuestion[];
+  readonly questions: readonly {
+    readonly id: string;
+    /** The area of the card of an analysis question; undefined for the other questions. */
+    readonly area?: string;
+  }[];
   readonly tasks: readonly { readonly id: string; readonly requirements: readonly string[] }[];
   readonly requirements: readonly { readonly id: string; readonly sources: readonly string[] }[];
   /** The area of each source card, by card id. */
@@ -47,7 +45,7 @@ function areasOfTask(
 }
 
 /** The cards that wait on this question. */
-function cardsOf(question: WaitingQuestion, input: WaitingInput): string[] {
+function cardsOf(question: WaitingInput['questions'][number], input: WaitingInput): string[] {
   if (everyCard(question.id)) return input.tasks.map((task) => task.id);
   const { area } = question;
   if (area === undefined) return [];
