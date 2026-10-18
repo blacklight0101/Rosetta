@@ -4,6 +4,8 @@ import { escapeHtml } from './html-text.js';
 import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
+import { renderCostHtml } from './site/cost-page.js';
+import { renderQuestionsHtml } from './site/questions-page.js';
 import { REPORT_CSP, REPORT_REFERRER } from './report-security.js';
 
 // RF-800, RF-501, RF-507, RNF-003, DEC-112: the files of the published sample report, the `site/`
@@ -31,6 +33,8 @@ export function buildSiteFiles(
     '.nojekyll': '',
     'index.html': masker.mask(renderIndex(model.runKey)).text,
     'report.html': siteLinks(masker.mask(renderReportHtml(model)).text),
+    'questions.html': siteLinks(masker.mask(renderQuestionsHtml(model)).text),
+    'cost.html': siteLinks(masker.mask(renderCostHtml(model)).text),
     'report.md': siteLinks(renderReportMarkdown(model, masker)),
     'replay.html': siteLinks(masker.mask(renderReplayHtml(model)).text),
     'replay.js': assets['replay.js'],
@@ -70,6 +74,8 @@ function renderIndex(runKey: string): string {
 <ul>
 <li><a href="report.html">Report</a>: the specification, the cards, the coverage and the cost of the run.</li>
 <li><a href="replay.html">Run replay</a>: the steps of the run in order.</li>
+<li><a href="questions.html">Open questions</a>: what the run could not decide.</li>
+<li><a href="cost.html">Cost</a>: what the run and its project cost.</li>
 <li><a href="report.md">Markdown report</a>.</li>
 </ul>
 </main>

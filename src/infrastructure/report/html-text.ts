@@ -8,10 +8,20 @@ const entities: Readonly<Record<string, string>> = {
   "'": '&#39;',
 };
 
-/** The text with `& < > " '` replaced by entities, safe in element text and in quoted attributes. */
+// NUL and the other C0 controls (tab, line feed and carriage return stay), DEL, and the bidi
+// controls that reorder the text around them.
+// eslint-disable-next-line no-control-regex -- the point is to find control characters in text
+const INVISIBLE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u202a-\u202e\u2066-\u2069]/gu;
+
+/**
+ * The text with `& < > " '` replaced by entities, safe in element text and in quoted attributes,
+ * and without NUL and bidi controls.
+ */
 // RF-507
 export function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (character) => entities[character] ?? character);
+  return text
+    .replace(INVISIBLE, '')
+    .replace(/[&<>"']/g, (character) => entities[character] ?? character);
 }
 
 const GITHUB_PREFIX = 'https://github.com/';
@@ -37,21 +47,45 @@ export function isGitHubLink(address: string): boolean {
 
 const MARKDOWN_LINK = /\[([^\]\n]{1,200})\]\(([^)\s]{1,500})\)/gu;
 
+/** A piece of model text: plain text, or a Markdown link whose address is a github.com one. */
+export type ModelTextPart =
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'link'; readonly label: string; readonly address: string };
+
 /**
- * Model text as HTML: every character shown as text; a Markdown link `[label](address)` stays a
- * link only when the address is an `https://github.com/` one, any other is shown as the text it was.
+ * Model text in pieces: a Markdown link `[label](address)` is a link only when the address is an
+ * `https://github.com/` one; any other stays in the text it was, character for character (RF-507).
  */
 // RF-507
-export function renderModelText(text: string): string {
-  let html = '';
+export function modelTextParts(text: string): ModelTextPart[] {
+  const parts: ModelTextPart[] = [];
   let from = 0;
+  let plain = '';
   for (const match of text.matchAll(MARKDOWN_LINK)) {
     const [whole = '', label = '', address = ''] = match;
-    html += escapeHtml(text.slice(from, match.index));
-    html += isGitHubLink(address)
-      ? `<a href="${escapeHtml(address)}" rel="noopener noreferrer nofollow">${escapeHtml(label)}</a>`
-      : escapeHtml(whole);
+    plain += text.slice(from, match.index);
     from = match.index + whole.length;
+    if (!isGitHubLink(address)) {
+      plain += whole;
+      continue;
+    }
+    if (plain !== '') parts.push({ kind: 'text', text: plain });
+    plain = '';
+    parts.push({ kind: 'link', label, address });
   }
-  return html + escapeHtml(text.slice(from));
+  plain += text.slice(from);
+  if (plain !== '') parts.push({ kind: 'text', text: plain });
+  return parts;
+}
+
+/** Model text as HTML: every character shown as text, a github.com Markdown link as a link. */
+// RF-507
+export function renderModelText(text: string): string {
+  return modelTextParts(text)
+    .map((part) =>
+      part.kind === 'text'
+        ? escapeHtml(part.text)
+        : `<a href="${escapeHtml(part.address)}" rel="noopener noreferrer nofollow">${escapeHtml(part.label)}</a>`,
+    )
+    .join('');
 }

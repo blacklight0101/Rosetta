@@ -692,22 +692,37 @@ Ids are numbered in the order the planner wrote the items, after the checks. The
 
 `report/` is written by the `BuildReport` use case (P1-43) and holds, all directly in the folder: `report.md` (links the
 specification, every card, the cost report and, once P2-04 writes one, the coverage report; a link is written only for a
-file the run has), `report.html` (the same report as escaped static HTML, DEC-112), `replay.html` (the run replay: agents,
-turns, tool calls, cards, verdicts and cost from `events.jsonl`, as a list that needs no script, with play, pause and
-step added by `replay.js` when scripts run), `report.css` and `replay.js`. The pages carry a `<meta>` content security
-policy and `referrer` of no-referrer (RF-1013); repository and model text is escaped, and only links that start with
-`https://github.com/` stay links (RF-507). The server serves these five files as pages, styles and scripts; every other
-file of a run folder is text or a download.
+file the run has), `report.html` (the dashboard, P3-01: the facts of the run, the cards by type, the claims by status,
+the coverage, the cost of the run and the project totals when the report was generated, then the documents, areas,
+verification summary and cards; escaped static HTML, DEC-112), `questions.html` (the open questions of the run from
+`answers.md`, each with its state and answer), `cost.html` (the cost report of `cost.json` by role, provider and model, and
+the project totals), `replay.html` (the run replay: agents, turns, tool calls, cards, verdicts and cost from
+`events.jsonl`, as a list that needs no script, with play, pause and step added by `replay.js` when scripts run),
+`report.css` and `replay.js`. The pages carry a `<meta>` content security policy and `referrer` of no-referrer
+(RF-1013); repository and model text is escaped, and only links that start with `https://github.com/` stay links
+(RF-507). The server serves these seven files as pages, styles and scripts; every other file of a run folder is text or
+a download.
+
+The pages other than the replay are Preact function components rendered to HTML when the report is built (ADR-021):
+the renderer escapes every text and attribute and refuses event handlers, `style`, `dangerouslySetInnerHTML`,
+script-like elements and any link that is not a relative address or an `https://github.com/` one, and a refusal stops
+the build with RST-1701. The pages ship no script and no Preact.
+
+Figures (RF-500, RF-1010). The dashboard and the cost page read `coverage.json` (3.8) and `cost.json` (3.12); a file
+that is missing, torn or of another version gives no figures and the page says so. The project totals are the sums of the
+project's `cost_ledger` rows when the report is built (3.13) and the page states that instant, so rebuilding a report
+later gives the same pages except for these totals and that instant (the published sample has no ledger and says so).
 
 Contents (RF-112). Besides the run facts, the documents and the cards, both report pages list the areas of the code map with
 their map level, `coarse` or `symbols`, the value `scan-summary.md` shows. They come from the run's own scan, or for an
 understand run from the newest scan of its project that ended `Completed`; a report built without such a scan (none, or
 its output is gone) has no areas section. Area names are repository text and are escaped like the other repository text.
 
-Writing the report. Each of the five files is written to a temporary name and renamed over its final name, so a file
+Writing the report. Each of the seven files is written to a temporary name and renamed over its final name, so a file
 is always whole or absent and never half written. The set of files is not written atomically: a build that fails
 part-way (RST-1701) can leave some files new and the others from an earlier build (for example a new `report.html`
-beside an old `report.md`). Building again writes all five again, with the same bytes for the same run. A run that
+beside an old `report.md`). Building again writes all seven again, with the same bytes for the same run and the same
+ledger. A run that
 recorded no events still builds: its replay page says so and has no controls.
 
 The `<meta>` content security policy of the report pages carries no `frame-ancestors`: browsers ignore that directive

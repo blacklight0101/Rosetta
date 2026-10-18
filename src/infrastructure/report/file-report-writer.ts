@@ -10,6 +10,8 @@ import { loadReportAssets } from './report-assets.js';
 import { renderReplayHtml } from './replay-html.js';
 import { renderReportHtml } from './report-html.js';
 import { renderReportMarkdown } from './report-markdown.js';
+import { renderCostHtml } from './site/cost-page.js';
+import { renderQuestionsHtml } from './site/questions-page.js';
 
 // RF-504, RF-506, RF-1013, DEC-112, data-model.md section 3.17: writes the report of a run into the
 // `report/` folder of its run folder, through the workspace guard: `report.md`, the same report as
@@ -39,6 +41,8 @@ export class FileReportWriter implements ReportWriter {
     // The pages are made of repository and model text, so they are masked; the two assets are the
     // files of `templates/report/`, written as they are.
     const files: Readonly<Record<string, string>> = {
+      'cost.html': masker.mask(renderCostHtml(model)).text,
+      'questions.html': masker.mask(renderQuestionsHtml(model)).text,
       'replay.html': masker.mask(renderReplayHtml(model)).text,
       'replay.js': assets['replay.js'],
       'report.css': assets['report.css'],

@@ -32,7 +32,7 @@ import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
 import type { UserRepository } from '../../src/application/ports/user-repository.js';
-import type { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
+import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
 import type { TextMasker } from '../../src/infrastructure/guards/secret-masker.js';
@@ -153,7 +153,11 @@ function answerServices(
 }
 
 /** RF-504: the report use case over the harness's runs and the test's report doubles. */
-function reportOf(runs: RunHarness, outputs: RunOutputs): BuildReport {
+function reportOf(
+  runs: RunHarness,
+  outputs: RunOutputs,
+  extra: { readonly answers: AnswersFile; readonly clock: Clock },
+): BuildReport {
   return new BuildReport({
     runs: runs.runs,
     manifests: runs.manifests,
@@ -162,6 +166,7 @@ function reportOf(runs: RunHarness, outputs: RunOutputs): BuildReport {
     writer: outputs.reportWriter,
     scans: new FixedScans(catalogAreas),
     logger: new RecordingLogger(),
+    ...{ answers: extra.answers, costs: new MemoryCostTotals(), clock: extra.clock },
   });
 }
 
@@ -184,7 +189,7 @@ export function runServices(
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
 ): ServerOptions['runs'] {
-  const { projects, keys, calls, logs, clock } = stores;
+  const { projects, keys, calls, logs, clock, answers } = stores;
   return {
     getRun: new GetRun({ runs: runs.runs, queue: runs.queue, files: outputs.text }),
     readOverview: new ReadOverview({ runs: runs.runs, files: outputs.text }),
@@ -196,7 +201,7 @@ export function runServices(
     }),
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),
-    buildReport: reportOf(runs, outputs),
+    buildReport: reportOf(runs, outputs, { answers, clock }),
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ projects, briefs: new MemoryBriefStore(), submit: runs.submit }),

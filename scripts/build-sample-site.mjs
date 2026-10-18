@@ -93,6 +93,13 @@ async function main() {
       cost: await exists('cost.md'),
     },
     areas: [],
+    // The sample is a recording: it has no ledger, no coverage or cost file and no answers, and its
+    // generation time is the time the run ended, so rebuilding it gives the same bytes (RF-1010).
+    generatedAt: manifest.endedAt ?? manifest.startedAt ?? '',
+    coverage: null,
+    cost: null,
+    projectTotals: null,
+    questions: [],
   });
   const documents = await documentsOf(model);
   const assets = {

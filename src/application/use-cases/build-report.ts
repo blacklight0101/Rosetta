@@ -3,6 +3,9 @@ import type { Run } from '../../domain/runs/run.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
+import type { AnswersFile } from '../ports/answers-file.js';
+import type { Clock } from '../ports/clock.js';
+import type { CostTotals } from '../ports/cost-totals.js';
 import type { ReportWriter } from '../ports/report-writer.js';
 import type { RunEventHistory, RunScope } from '../ports/run-events.js';
 import type { Logger } from '../ports/logger.js';
@@ -10,7 +13,8 @@ import type { ScanResults } from '../ports/scan-results.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { RunTextFiles } from '../ports/run-text-files.js';
-import { buildReportModel } from '../report/build-report-model.js';
+import { buildReportModel, type ReportInputs } from '../report/build-report-model.js';
+import { parseCostReport, parseCoverage, projectTotalsOf } from '../report/report-extras.js';
 import type { ReportArea, ReportDocuments } from '../report/report-model.js';
 import { scopeOf } from '../runs/run-scope.js';
 
@@ -30,6 +34,11 @@ export interface BuildReportDependencies {
   /** Where the map level of the areas is read (RF-112). */
   readonly scans: ScanResults;
   readonly logger: Logger;
+  /** RF-500: the open questions of the run and their answers. */
+  readonly answers: AnswersFile;
+  /** RF-1010: the project totals at generation time. */
+  readonly costs: CostTotals;
+  readonly clock: Clock;
 }
 
 export interface BuiltReport {
@@ -64,8 +73,30 @@ export class BuildReport {
       overviewFile: await this.deps.files.read(scope, 'overview.json'),
       documents: await this.documentsOf(scope),
       areas: await this.areasOf(run),
+      ...(await this.figuresOf(run, scope)),
     });
     return ok({ files: await writer.write(scope, model) });
+  }
+
+  /** RF-500, RF-1010: the figures of the dashboard, the questions and the cost page. */
+  private async figuresOf(
+    run: Run,
+    scope: RunScope,
+  ): Promise<
+    Pick<ReportInputs, 'generatedAt' | 'coverage' | 'cost' | 'projectTotals' | 'questions'>
+  > {
+    const { files, answers, costs, clock } = this.deps;
+    const questions = await answers.questionsOf(
+      { userId: run.userId, projectId: run.projectId },
+      run.runKey,
+    );
+    return {
+      generatedAt: clock.now().toISOString(),
+      coverage: parseCoverage(await files.read(scope, 'coverage.json')),
+      cost: parseCostReport(await files.read(scope, 'cost.json')),
+      projectTotals: projectTotalsOf(await costs.projectGroups(run.userId, run.projectId)),
+      questions,
+    };
   }
 
   /** RF-112: the areas of the run's own scan, or of the newest completed scan of its project. */

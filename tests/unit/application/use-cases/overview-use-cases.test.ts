@@ -9,7 +9,11 @@ import { MemoryRunManifestStore } from '../../../../src/infrastructure/files/mem
 import { fullOverview } from '../../../support/app-overview-fixtures.js';
 import { FixedScans } from '../../../support/estimate-harness.js';
 import { RecordingLogger } from '../../../support/recording-logger.js';
-import { MapRunTextFiles, RecordingReportWriter } from '../../../support/report-doubles.js';
+import {
+  MapRunTextFiles,
+  RecordingReportWriter,
+  reportFigures,
+} from '../../../support/report-doubles.js';
 import { replayDemoRunKey } from '../../../support/replay-fixture.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy, userBob } from '../../../support/run-harness.js';
@@ -77,7 +81,7 @@ describe('BuildReport and the overview', () => {
     const build = new BuildReport({
       ...{ runs: await indexed(), manifests: new MemoryRunManifestStore() },
       ...{ history: new MemoryEventSink(), files: new MapRunTextFiles(files), writer },
-      ...{ scans: new FixedScans([]), logger: new RecordingLogger() },
+      ...{ scans: new FixedScans([]), logger: new RecordingLogger(), ...reportFigures() },
     });
     await build.execute({ actor: userAmy, runId: run.id });
     return writer.written[0]?.model;
