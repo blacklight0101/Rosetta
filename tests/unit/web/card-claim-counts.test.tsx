@@ -23,9 +23,7 @@ function cardsView(...events: readonly RunEvent[]): JSX.Element {
 
 /** The counts element of the card row with this id. */
 function countsOf(cardId: string): HTMLElement {
-  const row = screen
-    .getAllByTestId('card-row')
-    .find((each) => (each.textContent ?? '').includes(cardId));
+  const row = screen.getAllByTestId('card-row').find((each) => each.textContent.includes(cardId));
   if (row === undefined) throw new Error(`no card row for ${cardId}`);
   return within(row).getByTestId('card-counts');
 }

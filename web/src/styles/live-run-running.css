@@ -319,24 +319,43 @@
 
 .rst-cardrow__chip {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--rst-sp-1);
+  max-inline-size: 100%;
   padding: 3px var(--rst-sp-2);
   border-radius: var(--rst-radius-pill);
-  background: var(--rst-info-bg);
-  color: var(--rst-info-ink);
+  background: var(--rst-neutral-bg);
+  color: var(--rst-neutral-ink);
   font-size: var(--rst-fs-xs);
+}
+
+.rst-cardrow__count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rst-sp-1);
   white-space: nowrap;
 }
 
-.rst-cardrow__chip--invalid {
-  background: var(--rst-warn-bg);
+.rst-cardrow__count--supported {
+  color: var(--rst-ok-ink);
+}
+
+.rst-cardrow__count--rejected,
+.rst-cardrow__count--citation-invalid {
+  color: var(--rst-danger-ink);
+}
+
+.rst-cardrow__count--unverified {
   color: var(--rst-warn-ink);
 }
 
-.rst-cardrow__chip--waiting {
-  background: var(--rst-neutral-bg);
+.rst-cardrow__count--not-judged {
   color: var(--rst-neutral-ink);
+}
+
+.rst-cardrow__count--waiting {
+  color: var(--rst-info-ink);
 }
 
 @media (max-width: 980px) {
