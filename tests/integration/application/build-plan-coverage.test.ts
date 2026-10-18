@@ -89,7 +89,7 @@ describe('BuildPlan: a plan with a gap', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1805' }));
+    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     const checks = ((await h.handoffOf(run))['checks.md'] ?? '').replaceAll('\\', '');
     expect(checks).not.toContain('feature:F-001 ');
     for (const listed of ['operation:placeOrder', 'flow:FLOW-001', 'screen:SCRN-001']) {
@@ -152,7 +152,7 @@ describe('BuildPlan: a plan with no task card', () => {
     const run = await h.plan();
 
     expect(run.endState).toBe('Failed');
-    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1805' }));
+    expect(h.s.logger.entries).toContainEqual(expect.objectContaining({ code: 'RST-1806' }));
     expect(h.providers.coverageRequests()).toHaveLength(0);
     const checks = ((await h.handoffOf(run))['checks.md'] ?? '').replaceAll('\\', '');
     for (const listed of ['feature:F-001', 'table:customer', 'flow:FLOW-001', 'screen:SCRN-001']) {

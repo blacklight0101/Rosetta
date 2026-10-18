@@ -120,6 +120,7 @@ select {
   flex: 1 1 12.5rem;
   flex-direction: column;
   gap: var(--rst-sp-1);
+  min-width: 0;
   max-width: 15rem;
   padding: var(--rst-sp-4) var(--rst-sp-3);
   border-inline-end: 1px solid var(--rst-rule);
@@ -127,6 +128,8 @@ select {
 }
 
 .rst-nav__group {
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -135,6 +138,20 @@ select {
 .rst-nav__heading {
   margin: var(--rst-sp-3) var(--rst-sp-3) var(--rst-sp-1);
   font-size: var(--rst-fs-xs);
+  color: var(--rst-ink-muted);
+}
+
+/* The project heading names owner/repo, which can be long: one line, cut with an ellipsis (the full
+   text is in the markup and in the title); a link wraps rather than widen the column. */
+.rst-nav__group[data-testid='nav-group-project'] .rst-nav__heading {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rst-nav__note {
+  margin: 0 var(--rst-sp-3);
+  font-size: var(--rst-fs-sm);
   color: var(--rst-ink-muted);
 }
 

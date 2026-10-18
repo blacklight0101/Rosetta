@@ -23,7 +23,7 @@ function buildTemplate() {
     roles: {
       reader: { ...role(4096), maxTurns: 12 },
       verifier: role(2048),
-      planner: role(4096),
+      planner: role(16384),
       summariser: role(2048),
     },
     budget: {

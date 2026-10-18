@@ -42,8 +42,7 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // against the supported cards, asks it a second time for the product requirements document (RF-621,
 // its own versioned prompt), a third time for the target data model (RF-623), a fourth for the target flows (RF-625), a fifth for the API contract when the front end
 // is separate (RF-624), a sixth for the user-interface material when a `SCRN` card is verified (RF-626),
-// a seventh for the items each task card builds (RF-627), and writes `handoff/` (an item no card builds: RST-1805).
-// Only `Supported` claims and answered questions reach the planner. The cost report is written at every end.
+// a seventh for the items each task card builds (RF-627), and writes `handoff/` (an item no card builds: RST-1806). Only `Supported` claims and answered questions reach the planner. The cost report is written at every end.
 
 export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDependencies {
   readonly users: UserRepository;
@@ -64,6 +63,8 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly flowsPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the API contract (RF-624). */
   readonly apiContractPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file that asks a cut-off answer to continue (RF-604). */
+  readonly continuePrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the user-interface material (RF-626). */
   readonly uxPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the links of the task cards to the items (RF-627). */
@@ -72,10 +73,9 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
 
-interface PlanPrompts extends DocumentPrompts {
-  readonly plan: PromptFile;
-  readonly coverage: PromptFile;
-}
+type PlanPrompts = Readonly<
+  Record<keyof DocumentPrompts | 'plan' | 'coverage' | 'continue', PromptFile>
+>;
 
 interface Finish {
   readonly run: Run;
@@ -107,7 +107,9 @@ export class BuildPlan implements RunExecutor {
         await this.log(execution.run, error.code, 'The planner call would pass a cap.');
         return { endState: 'CapReached', errorCode: error.code };
       }
-      await this.log(execution.run, error.code, 'The hand-off package could not be written.');
+      const cutOff = error.code === ERROR_CODES.plannerAnswerCutOff;
+      const message = cutOff ? error.message : 'The hand-off package could not be written.';
+      await this.log(execution.run, error.code, message);
       return failed(error.code);
     } finally {
       await writeCostReport(this.deps, execution.run);
@@ -129,6 +131,7 @@ export class BuildPlan implements RunExecutor {
     const answered = questions.filter((question) => question.answer.trim() !== '');
     const call = {
       ...{ run, planner, prompt: prompts.plan, agentTaskId: 'planner-package', updates, signal },
+      continuePrompt: prompts.continue,
       tags: () => this.deps.ids.dataBlockTag(),
       callId: callIds(run),
     };
@@ -148,13 +151,13 @@ export class BuildPlan implements RunExecutor {
   /**
    * RF-621..RF-627: the documents the planner writes after the plan, the links of the task cards to
    * the items they build, and the package. A package with an item no task card builds is written
-   * (checks.md lists it), but the run is not reported complete (RST-1805).
+   * (checks.md lists it), but the run is not reported complete (RST-1806).
    */
   private async finish(parts: Finish, prompts: PlanPrompts): Promise<RunOutcome> {
     const { run, call, input, assembly, inputs } = parts;
     const warn = (message: string): Promise<void> => this.warn(run, message);
     const documents = await planDocuments(
-      call,
+      { ...call, onCutOff: warn },
       prompts,
       { ...input, components: assembly.content.components },
       warn,
@@ -177,20 +180,20 @@ export class BuildPlan implements RunExecutor {
   /** The principle catalogue and the planner's versioned prompts, read for this run. */
   private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
     const { catalogue, prompt, prdPrompt, dataModelPrompt, flowsPrompt } = this.deps;
-    const [loaded, plan, prd, dataModel, flows, apiContract, ux, coverage] = await Promise.all([
-      catalogue(),
-      prompt(),
-      prdPrompt(),
-      dataModelPrompt(),
-      flowsPrompt(),
-      this.deps.apiContractPrompt(),
-      this.deps.uxPrompt(),
-      this.deps.coveragePrompt(),
-    ]);
-    return {
-      catalogue: loaded,
-      prompts: { plan, prd, dataModel, flows, apiContract, ux, coverage },
-    };
+    const [loaded, plan, prd, dataModel, flows, apiContract, ux, coverage, cont] =
+      await Promise.all([
+        catalogue(),
+        prompt(),
+        prdPrompt(),
+        dataModelPrompt(),
+        flowsPrompt(),
+        this.deps.apiContractPrompt(),
+        this.deps.uxPrompt(),
+        this.deps.coveragePrompt(),
+        this.deps.continuePrompt(),
+      ]);
+    const prompts = { plan, prd, dataModel, flows, apiContract, ux, coverage, continue: cont };
+    return { catalogue: loaded, prompts };
   }
 
   private warn(run: Run, message: string): Promise<void> {
@@ -213,15 +216,10 @@ export class BuildPlan implements RunExecutor {
     const { inputs, catalogue, prompts } = used;
     const { version, sha256 } = catalogue;
     const versions = Object.fromEntries(
-      [
-        prompts.plan,
-        prompts.prd,
-        prompts.dataModel,
-        prompts.flows,
-        prompts.apiContract,
-        prompts.ux,
-        prompts.coverage,
-      ].map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),
+      Object.values(prompts).map((file) => [
+        file.name,
+        { version: file.version, sha256: file.sha256 },
+      ]),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));

@@ -1,3 +1,4 @@
+import { continuePromptTokens } from '../../../../src/application/estimate/plan-continuation-reserve.js';
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import {
@@ -33,22 +34,22 @@ describe('EstimatePlan: the screens call', () => {
     const system = (await readFile('prompts/planner/ux.v1.md', 'utf8')).length;
     expect(assumptions.calls).toBe(4);
     expect(assumptions.uxPromptTokens).toBeGreaterThan(Math.ceil(system / 4));
-    expect(planner.points.high.inputTokens).toBe(assumptions.promptTokens);
-    expect(planner.points.high.outputTokens).toBe(4 * assumptions.maxOutputTokens);
+    expect(planner.points.low.inputTokens).toBe(assumptions.promptTokens);
+    expect(planner.points.high.outputTokens).toBe(4 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 RF-626 does not count it when no SCRN card has a supported claim, since no call is made', async () => {
     const { assumptions, planner } = await estimateOf({ seed: { cards: planCards() } });
 
     expect(assumptions).toMatchObject({ calls: 3, uxPromptTokens: 0 });
-    expect(planner.points.high.outputTokens).toBe(3 * assumptions.maxOutputTokens);
+    expect(planner.points.high.outputTokens).toBe(3 * 3 * assumptions.maxOutputTokens);
   });
 
   it('RF-613 the high figure is the sum of the guard reservations of the four calls', async () => {
     const { assumptions, planner } = await estimateOf();
 
     const reservation = (promptTokens: number): number =>
-      promptTokens + assumptions.maxOutputTokens;
+      3 * promptTokens + 6 * assumptions.maxOutputTokens + 2 * continuePromptTokens;
     const plan =
       assumptions.promptTokens -
       assumptions.prdPromptTokens -

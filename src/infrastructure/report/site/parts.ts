@@ -54,12 +54,14 @@ export function DataTable(props: {
   readonly label: string;
   readonly columns: readonly string[];
   readonly rows: readonly (readonly ComponentChildren[])[];
+  /** Attributes of each row, in the order of `rows` (a script reads them; a row without any gets none). */
+  readonly rowAttributes?: readonly Readonly<Record<string, string>>[];
 }): ComponentChild {
   const head = props.columns.map((name) => h('th', { scope: 'col' }, name));
-  const body = props.rows.map((cells) =>
+  const body = props.rows.map((cells, row) =>
     h(
       'tr',
-      null,
+      props.rowAttributes?.[row] ?? null,
       cells.map((cell, index) => h('td', { 'data-label': props.columns[index] ?? '' }, cell)),
     ),
   );
