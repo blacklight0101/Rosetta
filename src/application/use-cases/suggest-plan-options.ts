@@ -21,6 +21,7 @@ import type { UserRepository } from '../ports/user-repository.js';
 import type { Project } from '../projects/project.js';
 import { silentBudgetEvents } from '../runs/run-budget-events.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { planSourceRun } from '../plan/plan-source.js';
 
 // RF-608, RF-609, RF-143, ADR-003, ADR-007: Plan setup asks Rosetta for its options. From the
 // project's newest completed understand run (its verified cards) and newest completed scan (its code
@@ -58,6 +59,8 @@ export interface SuggestPlanOptionsRequest {
   readonly projectId: string;
   /** RF-143: the person's consent to send the cards and the scan summary to a cloud provider. */
   readonly cloudConsent: boolean;
+  /** RF-614: recommend from this understand run (its id); the newest completed one when absent. */
+  readonly sourceRunId?: string;
 }
 
 /** A planner call that has not answered by then is cancelled. */
@@ -76,10 +79,12 @@ export class SuggestPlanOptions {
     const { actor, projectId } = request;
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
+    const owner = { userId: actor.userId, projectId };
+    const source = await planSourceRun(this.deps.runs, owner, request.sourceRunId);
+    if (!source.ok) return err(source.error);
+    const understand = source.value;
     const listed = await this.deps.runs.list(actor.userId, projectId);
-    const understand = listed.find((run) => run.stage === 'understand' && isCompleted(run));
     const scan = listed.find((run) => run.stage === 'scan' && isCompleted(run));
-    if (understand === undefined) return err(ERROR_CODES.planSourceMissing);
     const cards = await this.deps.cards.cardsOf(scopeOf(understand));
     if (supportedCards(cards).length === 0) return err(ERROR_CODES.planSourceMissing);
     const codeMap = await this.codeMapOf(scan);

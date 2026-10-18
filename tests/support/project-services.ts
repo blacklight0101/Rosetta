@@ -1,3 +1,4 @@
+import { GetPlanSource } from '../../src/application/use-cases/get-plan-source.js';
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
 import type { RunIndex } from '../../src/application/ports/run-index.js';
@@ -78,6 +79,7 @@ export function projectServices(
     getAccountTotals: new GetAccountTotals({ costs, caps }),
     ...briefServices({ projects, runs, briefs, clock }),
     catalogue: shippedCatalogue,
+    getPlanSource: new GetPlanSource({ projects, runs, cards: new FileRunCards(answerFiles) }),
     estimatePlan: new EstimatePlan({
       ...{ projects, runs, briefs, answers, users, serverSettings, usage, clock, keys },
       cards: new FileRunCards(answerFiles),

@@ -6,6 +6,7 @@ import { assemblePlan, type PlanAssembly } from '../../domain/planning/plan-cont
 import { methodPrinciples } from '../../domain/planning/task-method.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import { recordManifestBrief } from '../../domain/runs/manifest-brief.js';
+import { recordManifestSourceRun } from '../../domain/runs/manifest-source-run.js';
 import {
   recordManifestCatalogue,
   recordManifestCodeMap,
@@ -109,7 +110,8 @@ export class BuildPlan implements RunExecutor {
 
   private async plan(execution: RunExecution): Promise<RunOutcome> {
     const { run, signal } = execution;
-    const inputs = await planInputs(this.deps, run);
+    const named = execution.manifest.options['sourceRunId'];
+    const inputs = await planInputs(this.deps, run, typeof named === 'string' ? named : undefined);
     if (!inputs.ok) return this.fail(run, inputs.error.code, inputs.error.message);
     const updates = new ManifestUpdates(this.deps.manifests, scopeOf(run));
     const { catalogue, prompts } = await this.loadFiles();
@@ -200,6 +202,7 @@ export class BuildPlan implements RunExecutor {
       ].map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
+    await updates.update((manifest) => recordManifestSourceRun(manifest, inputs.sourceRun.runKey));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
     await updates.update((manifest) => ok(recordPromptVersions(manifest, versions)));
     const { sourceRun } = inputs;

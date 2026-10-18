@@ -1,5 +1,5 @@
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
-import { MemoryBriefStore } from './memory-brief-store.js';
+import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
 import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
 import type { Clock } from '../../src/application/ports/clock.js';
@@ -186,6 +186,7 @@ export function runServices(
     readonly users: UserRepository;
     readonly factory: ProviderSetFactory;
     readonly answerFiles: MemoryOutputWriter;
+    readonly briefs: PlanningBriefStore;
   } & ObservedFiles,
   route: Pick<ServerOptions['runs'], 'heartbeat' | 'streams' | 'clock'>,
   outputs: RunOutputs,
@@ -205,7 +206,7 @@ export function runServices(
     buildReport: reportOf(runs, outputs, { answers, clock }),
     ...answerServices(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
-    startRun: new StartRun({ ...runs, projects, briefs: new MemoryBriefStore() }),
+    startRun: new StartRun({ ...runs, projects, briefs: stores.briefs }),
     suggestPlanOptions: planOptionsService({
       ...{ projects, users: stores.users, logger: stores.logger, files: stores.answerFiles },
       runs: runs.runs,

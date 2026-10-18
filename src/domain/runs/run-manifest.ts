@@ -94,6 +94,8 @@ export interface RunManifest {
   readonly catalogue: ManifestCatalogue | null;
   /** The planning brief a plan run was written from (RF-604, RNF-004); null for the other stages. */
   readonly brief: PlanningBrief | null;
+  /** The folder name of the understand run a plan run was written from (RF-614); null for the other stages. */
+  readonly sourceRunId: string | null;
   readonly caps: ManifestCaps;
   /** Secrets masked, per kind (RF-141). */
   readonly masking: Readonly<Record<string, number>>;

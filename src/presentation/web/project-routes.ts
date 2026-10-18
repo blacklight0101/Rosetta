@@ -16,6 +16,7 @@ import {
   registerPlanCatalogueRoutes,
   type PlanCatalogueServices,
 } from './plan-catalogue-routes.js';
+import { registerPlanSourceRoutes, type PlanSourceServices } from './plan-source-routes.js';
 import { registerPlanEstimateRoutes, type PlanEstimateServices } from './plan-estimate-routes.js';
 import {
   registerPlanningBriefRoutes,
@@ -33,6 +34,7 @@ import { signedInOf } from './request-actor.js';
 //   written (P1-106); a malformed value answers 400; without the header the save is unconditional.
 // - GET and PUT /api/projects/:id/planning-brief: the planning brief (planning-brief-routes.ts).
 // - GET /api/projects/:id/plan-estimate: the estimate of a plan run (plan-estimate-routes.ts).
+// - GET /api/projects/:id/plan-source: the understand run Plan setup plans from (plan-source-routes.ts).
 // - GET /api/plan/catalogue: the principle catalogue Plan setup lists (plan-catalogue-routes.ts).
 // - GET /api/admin/users/:id/projects (administrator) reads another user's projects and writes an
 //   audit row.
@@ -40,7 +42,12 @@ import { signedInOf } from './request-actor.js';
 
 /** The cost routes (RF-428, RF-1010) read the same projects, so they share these services. */
 export interface ProjectServices
-  extends CostServices, PlanningBriefServices, PlanEstimateServices, PlanCatalogueServices {
+  extends
+    CostServices,
+    PlanningBriefServices,
+    PlanEstimateServices,
+    PlanSourceServices,
+    PlanCatalogueServices {
   readonly createProject: CreateProject;
   readonly listProjects: ListProjects;
   readonly getProject: GetProject;
@@ -187,6 +194,7 @@ export function registerProjectRoutes(server: FastifyInstance, services: Project
   registerSettings(server, services);
   registerPlanningBriefRoutes(server, services);
   registerPlanEstimateRoutes(server, services);
+  registerPlanSourceRoutes(server, services);
   registerPlanCatalogueRoutes(server, services);
   registerWorkspace(server, services);
 }

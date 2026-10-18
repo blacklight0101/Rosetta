@@ -10,11 +10,13 @@ import type { RunCards } from '../ports/run-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
 import type { Project } from '../projects/project.js';
 import { scopeOf } from '../runs/run-scope.js';
+import { planSourceRun } from './plan-source.js';
 
-// RF-604, DEC-80: what a plan run is written from: the project, its saved planning brief, the
-// newest understand run of the project that ended `Completed`, that run's cards and the open
-// questions it found with their answers. A project without a saved brief (RST-1801), without such
-// a run, or whose run has no supported claim (RST-1802) stops the run before any model call.
+// RF-604, RF-614, DEC-80: what a plan run is written from: the project, its saved planning brief, the
+// understand run the plan was started from (the newest one that ended `Completed` when none was
+// named), that run's cards and the open questions it found with their answers. A project without a
+// saved brief (RST-1801), without such a run, or whose run has no supported claim (RST-1802) stops the
+// run before any model call; a named run that is not the user's is not found (RF-1105).
 
 export interface PlanInputDependencies {
   readonly projects: ProjectRepository;
@@ -47,35 +49,31 @@ const problems = {
   },
   run: {
     code: ERROR_CODES.planSourceMissing,
-    message: 'The project has no understand run that ended Completed.',
+    message: 'There is no understand run that ended Completed to plan from.',
   },
+  missing: { code: ERROR_CODES.notFound, message: 'The source run of the plan run is gone.' },
   claims: {
     code: ERROR_CODES.planSourceMissing,
-    message: 'The newest completed understand run has no supported claim.',
+    message: 'The source understand run has no supported claim.',
   },
 } as const;
 
-/** RF-604: the newest understand run of the project that ended `Completed`. */
-async function sourceRunOf(
-  runs: RunIndex,
-  run: Pick<Run, 'userId' | 'projectId'>,
-): Promise<Run | undefined> {
-  const listed = await runs.list(run.userId, run.projectId);
-  return listed.find((each) => each.stage === 'understand' && each.endState === 'Completed');
-}
-
-// RF-604
+// RF-604, RF-614
 export async function planInputs(
   deps: PlanInputDependencies,
   run: Pick<Run, 'userId' | 'projectId'>,
+  sourceRunId?: string,
 ): Promise<Result<PlanInputs, PlanInputProblem>> {
   const project = await deps.projects.find(run.userId, run.projectId);
   if (project === undefined) return err(problems.project);
   const ref = { userId: run.userId, projectId: run.projectId };
   const brief = await deps.briefs.read(ref);
   if (brief === undefined) return err(problems.brief);
-  const sourceRun = await sourceRunOf(deps.runs, run);
-  if (sourceRun === undefined) return err(problems.run);
+  const found = await planSourceRun(deps.runs, run, sourceRunId);
+  if (!found.ok) {
+    return err(found.error === ERROR_CODES.notFound ? problems.missing : problems.run);
+  }
+  const sourceRun = found.value;
   const cards = await deps.cards.cardsOf(scopeOf(sourceRun));
   if (supportedCards(cards).length === 0) return err(problems.claims);
   const questions = await deps.answers.questionsOf(ref, sourceRun.runKey);
