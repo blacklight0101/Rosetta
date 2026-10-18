@@ -30,6 +30,8 @@
     "live:anthropic": "npm run build && node --env-file=.env scripts/anthropic-live-check.mjs",
     "eval": "node --env-file-if-exists=.env --import ./scripts/register-ts.mjs scripts/eval.mjs",
     "site:build": "node --import ./scripts/register-ts.mjs scripts/build-sample-site.mjs",
+    "backup": "node --import ./scripts/register-ts.mjs scripts/backup.mjs",
+    "restore": "node --import ./scripts/register-ts.mjs scripts/restore.mjs",
     "hooks:install": "lefthook install"
   },
   "devDependencies": {
