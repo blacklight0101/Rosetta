@@ -18,6 +18,7 @@ import './styles/api-calls.css';
 import './styles/cost.css';
 import './styles/history.css';
 import './styles/projects.css';
+import './styles/plan-setup.css';
 
 // P1-12: mounts the application. No inline script or style anywhere (RF-1013).
 

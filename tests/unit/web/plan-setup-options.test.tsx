@@ -95,7 +95,8 @@ describe('stack step', () => {
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
 
-    const layer = await screen.findByRole('radiogroup', { name: 'Database' });
+    await screen.findByRole('radio', { name: 'database A' });
+    const layer = screen.getByRole('radiogroup', { name: 'Database' });
     expect(within(layer).getByRole('radio', { name: 'database A' })).not.toBeNull();
     expect(within(layer).getByRole('radio', { name: 'database B' })).not.toBeNull();
     expect(within(layer).getByLabelText('Your own for Database')).not.toBeNull();
@@ -106,7 +107,8 @@ describe('stack step', () => {
     const page = renderPlan();
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Stack' }));
-    const database = await screen.findByRole('radiogroup', { name: 'Database' });
+    await screen.findByRole('radio', { name: 'database B' });
+    const database = screen.getByRole('radiogroup', { name: 'Database' });
 
     fireEvent.click(within(database).getByRole('radio', { name: 'database B' }));
     fireEvent.input(screen.getByLabelText('Your own for Hosting'), {

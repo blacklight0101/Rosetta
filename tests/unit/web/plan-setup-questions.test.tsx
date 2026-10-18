@@ -1,13 +1,15 @@
-import { fireEvent, screen, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
-import { press, ready, renderPlan, saves } from './plan-setup-helpers.js';
+import { press, ready, renderPlan, saves, stepName } from './plan-setup-helpers.js';
 
 // RF-610, RF-611, RF-612: the migration, project context and build method steps.
 
 async function openStep(name: string): Promise<void> {
   await ready();
   fireEvent.click(screen.getByRole('button', { name }));
-  await screen.findByRole('heading', { level: 2 });
+  await waitFor(() => {
+    expect(stepName()).toBe(name);
+  });
 }
 
 describe('migration step', () => {

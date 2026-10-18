@@ -58,7 +58,7 @@ function contextLine(draft: Draft): RecordedLine {
   return {
     key: 'Project context',
     value: given === 0 ? none : `${String(given)} of ${total} answered`,
-    isDefault: given === 0,
+    isDefault: !CONTEXT_FIELDS.some((field) => isAnswered(draft, `context.${field}`)),
   };
 }
 
