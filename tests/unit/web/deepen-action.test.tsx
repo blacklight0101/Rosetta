@@ -38,6 +38,13 @@ async function opened(extra: EndedOptions['extra'] = {}) {
 const posts = (page: Pick<RenderedPage, 'calls'>, suffix: string) =>
   page.calls.filter((call) => call.method === 'POST' && call.path.endsWith(suffix));
 
+/** Waits until the page has folded the events of the run: its facts then show the claims checked. */
+async function eventsApplied(): Promise<void> {
+  await waitFor(() => {
+    expect(turn().textContent).toContain('1 / 2');
+  });
+}
+
 const startAnswer = { [startPath]: json(202, { id: 'run-new', stage: 'understand' }) };
 
 async function confirmStart(): Promise<void> {
@@ -57,14 +64,14 @@ describe('RF-209 the Deepen action', () => {
   it('RF-209 offers no Deepen on a run that did not end Completed', async () => {
     await openEnded({ extra: base, endState: 'CapReached' });
 
-    await screen.findByRole('region', { name: 'Your turn' });
+    await eventsApplied();
     expect(screen.queryByRole('button', { name: 'Deepen this run' })).toBeNull();
   });
 
   it('RF-209 offers no Deepen on a scan, which has no claims to go back over', async () => {
     await openEnded({ extra: base, stage: 'scan' });
 
-    await screen.findByRole('region', { name: 'Your turn' });
+    await eventsApplied();
     expect(screen.queryByRole('button', { name: 'Deepen this run' })).toBeNull();
   });
 
@@ -202,6 +209,18 @@ describe('RF-209 an estimate that cannot be read', () => {
     fireEvent.click(await within(turn()).findByRole('button', { name: 'Deepen this run' }));
 
     expect(await screen.findByText('Message of RST-2006.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start Deepen' })).toHaveProperty('disabled', true);
+  });
+});
+
+describe('RF-209 an estimate that is still being read', () => {
+  it('RF-209 keeps Start off until the estimate is there', async () => {
+    const pending = (): Promise<Response> => new Promise(() => undefined);
+    await openEnded({ extra: { ...base, [estimatePath]: pending } });
+    fireEvent.click(await within(turn()).findByRole('button', { name: 'Deepen this run' }));
+
+    await screen.findByText('Reading the estimate');
+
     expect(screen.getByRole('button', { name: 'Start Deepen' })).toHaveProperty('disabled', true);
   });
 });

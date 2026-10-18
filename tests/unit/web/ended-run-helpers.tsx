@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/preact';
-import { json } from './fake-api.js';
+import { json, type Answer } from './fake-api.js';
 import {
   agentEnded,
   agentStarted,
@@ -70,10 +70,12 @@ const finishedEvents = [
   runEnded(8, 'Completed'),
 ];
 
-/** The same events, ending as the run did. */
-function eventsEnding(endState: string): typeof finishedEvents {
+/** The same events, for a run of this stage that ended as it did. */
+function eventsOf(options: Pick<EndedOptions, 'stage' | 'endState'>): typeof finishedEvents {
+  const { stage = 'understand', endState = 'Completed' } = options;
   return [
-    ...finishedEvents.slice(0, -1),
+    ev(1, 'run.started', { ...startedData, stage }),
+    ...finishedEvents.slice(1, -1),
     runEnded(8, endState, endState === 'Failed' ? 'RST-2006' : undefined),
   ];
 }
@@ -85,7 +87,7 @@ export interface EndedOptions {
   readonly endState?: string;
   /** The stage of the run; understand unless a test says otherwise. */
   readonly stage?: string;
-  readonly extra?: Readonly<Record<string, Response>>;
+  readonly extra?: Readonly<Record<string, Answer>>;
 }
 
 /** Opens the page of the ended run with the events replayed; resolves once the results tabs show. */
@@ -102,7 +104,7 @@ export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
     ...options.extra,
   });
   const connection = await page.stream.connection();
-  for (const event of eventsEnding(options.endState ?? 'Completed')) connection.event(event);
+  for (const event of eventsOf(options)) connection.event(event);
   await screen.findByRole('tablist', { name: 'Results' });
   return page;
 }

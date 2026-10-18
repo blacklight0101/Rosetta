@@ -22,7 +22,7 @@ const measures: MeasureSet = {
   wellCovered: false,
 };
 
-const run = { stage: 'understand', queueState: 'Ended', endState: 'Completed' };
+const run = { stage: 'understand', endState: 'Completed' };
 
 describe('RF-231 which runs can have measures', () => {
   it.each(['Completed', 'CapReached', 'Interrupted'])(
@@ -34,8 +34,7 @@ describe('RF-231 which runs can have measures', () => {
 
   it.each([
     ['a scan', { stage: 'scan' }],
-    ['a run in the queue', { queueState: 'Queued', endState: null }],
-    ['a run that is working', { queueState: 'Running', endState: null }],
+    ['a run that has not ended', { endState: null }],
     ['a run that failed', { endState: 'Failed' }],
     ['a plan run', { stage: 'plan' }],
   ])('RF-231 not %s', (_name, change) => {

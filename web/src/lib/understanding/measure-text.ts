@@ -246,15 +246,11 @@ export function stopText(reason: string, roundsDone: number, maxRounds: number):
 /** RF-231: whether a run in a list can have measures: an understand run that ended and read something. */
 export function mayHaveMeasures(run: {
   readonly stage: string;
-  readonly queueState: string;
   readonly endState: string | null;
 }): boolean {
   const readSomething = ['Completed', 'CapReached', 'Interrupted'];
   return (
-    run.stage === 'understand' &&
-    run.queueState === 'Ended' &&
-    run.endState !== null &&
-    readSomething.includes(run.endState)
+    run.stage === 'understand' && run.endState !== null && readSomething.includes(run.endState)
   );
 }
 
