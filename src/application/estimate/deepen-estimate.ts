@@ -23,8 +23,10 @@ import { estimateRole } from './role-estimate.js';
 // RF-209, RF-425, ADR-007, DEC-145: the estimate the owner sees before a Deepen starts. The first
 // round is planned from the completed run as it is (claims to judge, rejected first-party claims to
 // re-read, first-party files never read), and its reader, verifier and summariser tokens are priced
-// like any estimate; the most all rounds can cost is that round's figure times the round limit,
-// since a later round never has more to do than the first. Both are compared with the run cap.
+// like any estimate. All rounds are given as that round's figure times the round limit: a working
+// ceiling, not a proven maximum. A later round usually has less to do (fewer rejected claims, fewer
+// unread files), but its replacements and new claims may need more verifier calls than the first
+// round's, so the figure can be passed. Both are compared with the run cap, which stops the run.
 
 export interface DeepenEstimateDependencies {
   readonly projects: Pick<ProjectRepository, 'find'>;
@@ -57,6 +59,10 @@ export interface DeepenEstimate {
   };
   readonly roles: readonly RoleEstimate[];
   readonly round: ByScenario<EstimatePoint>;
+  /**
+   * The first round times the round limit: a working ceiling, not a proven maximum. A page that
+   * shows it must say so, and that the run cap is what stops the run (part 2 of P2-41).
+   */
   readonly allRounds: ByScenario<EstimatePoint>;
   readonly cap: { readonly maxCostMicros: number; readonly maxTokens: number };
   /** Whether the high figure passes the run cap. */
@@ -146,6 +152,7 @@ export class EstimateDeepen {
       estimateRole(this.deps, project, { role: 'summariser', tokens: overview }),
     ]);
     const round = sumPoints(roles.map((role) => role.points));
+    // A working ceiling, not a proven maximum (see the comment at the top of the file).
     const allRounds = times(round, maxRounds);
     const { run: cap } = project.settings.budget;
     return ok({

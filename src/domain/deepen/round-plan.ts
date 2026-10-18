@@ -68,9 +68,13 @@ interface Placed {
   readonly claim: Claim;
 }
 
-/** RF-209: a replacement written in this Deepen that was rejected again is never re-read in it. */
-function mayReread(claim: Claim, input: RoundInput): boolean {
-  if (input.reread.has(claim.claimId)) return false;
+/**
+ * RF-209: a replacement written in this Deepen that was rejected again is never re-read in it, and
+ * a rejected claim that a Supported replacement already answers (an earlier Deepen's, Q-L) is not
+ * re-read either: it would spend tokens on a fact the run already holds.
+ */
+function mayReread(claim: Claim, input: RoundInput, answered: ReadonlySet<string>): boolean {
+  if (input.reread.has(claim.claimId) || answered.has(claim.claimId)) return false;
   return claim.replaces === undefined || !input.writtenHere.has(claim.claimId);
 }
 
@@ -107,11 +111,16 @@ export function planRound(input: RoundInput): RoundPlan {
   const rejected = status('Rejected');
   const ownCode = rejected.filter(({ claim }) => !citesOnlyThirdParty(claim, input.files));
   const library = rejected.filter(({ claim }) => citesOnlyThirdParty(claim, input.files));
+  const answered = new Set(
+    status('Supported').flatMap(({ claim }) =>
+      claim.replaces === undefined ? [] : [claim.replaces],
+    ),
+  );
   return {
     judge: placed
       .filter(({ claim }) => claim.status === 'Unverified' || claim.status === 'Proposed')
       .map(({ claim }) => claim.claimId),
-    reread: ownCode.filter(({ claim }) => mayReread(claim, input)).map(rereadOf),
+    reread: ownCode.filter(({ claim }) => mayReread(claim, input, answered)).map(rereadOf),
     outOfScope: library.map(({ claim }) => ({
       claimId: claim.claimId,
       reason: OUT_OF_SCOPE_REASON,
