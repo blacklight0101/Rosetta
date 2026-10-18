@@ -57,6 +57,7 @@ const reportUrl = (run: Run): string => `/api/runs/${run.id}/report`;
 const fileUrl = (run: Run, path: string): string => `/runs/${run.id}/files/report/${path}`;
 const FILES = [
   'report/cost.html',
+  'report/filters.js',
   'report/questions.html',
   'report/replay.html',
   'report/replay.js',

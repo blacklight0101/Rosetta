@@ -32,10 +32,10 @@ describe('renderReportHtml page', () => {
     expect(html.startsWith('<!doctype html>')).toBe(true);
   });
 
-  it('RF-507 runs nothing: no script, no handler, no inline style, no foreign address', () => {
+  it('RF-507 runs nothing from the cards: only the filter script, no handler, no inline style, no foreign address', () => {
     const page = pageOf({ cards: [hostileCard] });
 
-    expect(page.scripts).toEqual([]);
+    expect(page.scripts).toEqual(['filters.js']);
     expect(page.handlers).toEqual([]);
     expect(page.inlineStyles).toBe(0);
     expect(page.styleElements).toBe(0);

@@ -48,6 +48,7 @@ function writerOver(inner?: (real: NodeOutputWriter) => NodeOutputWriter | Refus
 
 const paths = [
   'report/cost.html',
+  'report/filters.js',
   'report/questions.html',
   'report/replay.html',
   'report/replay.js',
@@ -80,7 +81,7 @@ describe('FileReportWriter', () => {
   it('RF-506 ships the stylesheet and the replay script of the templates folder', async () => {
     await writerOver().write(scope, reportModel());
 
-    for (const name of ['report.css', 'replay.js']) {
+    for (const name of ['report.css', 'replay.js', 'filters.js']) {
       expect(await readFile(join(runFolder(), 'report', name), 'utf8')).toBe(
         await readFile(join(templates, name), 'utf8'),
       );
@@ -151,6 +152,7 @@ describe('loadReportAssets', () => {
 
     expect(assets['report.css']).toContain('prefers-color-scheme: dark');
     expect(assets['replay.js']).toContain('data-replay-steps');
+    expect(assets['filters.js']).toContain('data-card-filters');
   });
 
   it('RF-506 rejects with RST-1000 when the templates folder lacks them', async () => {
