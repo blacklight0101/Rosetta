@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "RF-601..RF-604, RF-621: the planner's two answers for the hand-off package of the planning integration test. First the plan: requirements that cite supported cards, one that cites a card with no supported claim and an unknown id, one holding hostile Markdown and HTML, an entity mapping without a supported card, and a task in a phase that does not exist. The two tasks that are kept state an invariant, a risk class, the guards they add and review probes (RF-630, RF-635). Second the product requirements document: features that cite FEAT cards (one a card with no supported claim, one holding hostile Markdown and HTML), rules that cite BR cards (one citing a FEAT card), an out-of-scope item, and a role and a non-functional item holding hostile Markdown and HTML. Written by hand for the fake provider; no real provider was called. The third call is the data model (RF-623, P3-17): tables that map supported ENT claims, a column whose legacy claim is not supported, a type that is not a type name, a name that is not an identifier, a foreign key to a missing table and a dropped field. The fourth call is the target flows (RF-625, P3-19): FLOW-001 mapped with a step to a component the architecture lacks, a rejected step, a step of another card and a repeated step; FLOW-002 out of scope with a reason; FLOW-077, which no card has; FLOW-003 left unmentioned. Used only by runs whose cards include FLOW cards. The fifth call is the API contract (RF-624, P3-18), made only when the brief names a front end and a FEAT or FLOW card is verified: operations that serve FEAT and FLOW cards (one also naming an ENT card and an unknown card, one marked public although it carries customers), a name that is not an identifier, a path that climbs, an operation that serves a card nobody verified and a summary holding hostile Markdown and HTML.",
+  "description": "RF-601..RF-604, RF-621: the planner's two answers for the hand-off package of the planning integration test. First the plan: requirements that cite supported cards, one that cites a card with no supported claim and an unknown id, one holding hostile Markdown and HTML, an entity mapping without a supported card, and a task in a phase that does not exist. The two tasks that are kept state an invariant, a risk class, the guards they add and review probes (RF-630, RF-635). Second the product requirements document: features that cite FEAT cards (one a card with no supported claim, one holding hostile Markdown and HTML), rules that cite BR cards (one citing a FEAT card), an out-of-scope item, and a role and a non-functional item holding hostile Markdown and HTML. Written by hand for the fake provider; no real provider was called. The third call is the data model (RF-623, P3-17): tables that map supported ENT claims, a column whose legacy claim is not supported, a type that is not a type name, a name that is not an identifier, a foreign key to a missing table and a dropped field. The fourth call is the target flows (RF-625, P3-19): FLOW-001 mapped with a step to a component the architecture lacks, a rejected step, a step of another card and a repeated step; FLOW-002 out of scope with a reason; FLOW-077, which no card has; FLOW-003 left unmentioned. Used only by runs whose cards include FLOW cards. The fifth call is the API contract (RF-624, P3-18), made only when the brief names a front end and a FEAT or FLOW card is verified: operations that serve FEAT and FLOW cards (one also naming an ENT card and an unknown card, one marked public although it carries customers), a name that is not an identifier, a path that climbs, an operation that serves a card nobody verified and a summary holding hostile Markdown and HTML. The sixth call is the user-interface material (RF-626, P3-20), made only when a SCRN card is verified: Orders merging SCRN-001 and SCRN-002 (its purpose holding hostile HTML), Checkout keeping SCRN-003 with a card nobody has (its name holding a script), a screen of a card nobody has, a screen of a card already placed, SCRN-004 dropped with a reason, a drop of a card already kept and of a card nobody has, SCRN-005 left unmentioned, and a design brief holding hostile HTML.",
   "calls": [
     {
       "attempts": [
@@ -92,6 +92,25 @@
             },
             "finishReason": "stop",
             "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"screens\": [\n    {\n      \"name\": \"Orders\",\n      \"purpose\": \"Lists the orders and shows one in full. <img src=x onerror=alert(1)>\",\n      \"reason\": \"The list and the detail show the same data to the same people.\",\n      \"cards\": [\n        \"SCRN-001\",\n        \"SCRN-002\"\n      ]\n    },\n    {\n      \"name\": \"Checkout </title><script>alert(1)</script>\",\n      \"purpose\": \"Takes the payment and places the order. [pay](javascript:alert(1))\",\n      \"reason\": \"It is the main journey of a shopper.\",\n      \"cards\": [\n        \"SCRN-003\",\n        \"SCRN-404\"\n      ]\n    },\n    {\n      \"name\": \"Ghost\",\n      \"purpose\": \"A screen nobody has.\",\n      \"reason\": \"Made up.\",\n      \"cards\": [\n        \"SCRN-404\"\n      ]\n    },\n    {\n      \"name\": \"Again\",\n      \"purpose\": \"The checkout a second time.\",\n      \"reason\": \"Twice.\",\n      \"cards\": [\n        \"SCRN-003\"\n      ]\n    }\n  ],\n  \"dropped\": [\n    {\n      \"card\": \"SCRN-004\",\n      \"reason\": \"The fax page is not part of the new shop.\"\n    },\n    {\n      \"card\": \"SCRN-001\",\n      \"reason\": \"Already kept above.\"\n    },\n    {\n      \"card\": \"SCRN-405\",\n      \"reason\": \"Names a card no run has.\"\n    }\n  ],\n  \"designBrief\": {\n    \"audience\": \"Shoppers who order and staff who handle the orders. <script>alert(1)</script>\",\n    \"tone\": \"Calm and plain.\",\n    \"components\": [\n      \"Data table\",\n      \"Form field with an error message\",\n      \"Confirmation dialog\"\n    ]\n  }\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
             "modelVersion": "fake-model-2026-10-01"
           }
         }

@@ -75,3 +75,32 @@ export async function jobIds(name: string): Promise<string[]> {
   const lines = (await load()).find((workflow) => workflow.name === name)?.lines ?? [];
   return jobs(lines).map((job) => job.id);
 }
+
+/**
+ * RNF-003, P1-55: the problems of one workflow with the trigger and secrets rule: no
+ * `pull_request_target`, and no `secrets.` anywhere except in the deploy job of release.yml.
+ */
+export function triggerAndSecretProblems(workflow: Workflow): string[] {
+  const code = workflow.lines.filter((line) => !line.trimStart().startsWith('#'));
+  const [start, end] = workflow.name === 'release.yml' ? jobRange(code, 'deploy') : [0, 0];
+  // Every line but the deploy job's own, so a key written after the last job is checked too.
+  const outsideDeploy = [...code.slice(0, start), ...code.slice(end)];
+  return [
+    ...(code.join('\n').includes('pull_request_target') ? ['pull_request_target'] : []),
+    ...(outsideDeploy.join('\n').includes('secrets.') ? ['secrets context'] : []),
+  ];
+}
+
+/**
+ * The lines [start, end) of one job, from its `  <id>:` header to the next job header or the next
+ * top-level key; [0, 0] when the job is missing.
+ */
+function jobRange(lines: readonly string[], id: string): [number, number] {
+  const jobsAt = lines.indexOf('jobs:');
+  const start = lines.findIndex((line, i) => i > jobsAt && jobsAt >= 0 && line === `  ${id}:`);
+  if (start < 0) return [0, 0];
+  const next = lines.findIndex(
+    (line, i) => i > start && (/^ {2}[\w-]+:\s*$/u.test(line) || /^\S/u.test(line)),
+  );
+  return [start, next < 0 ? lines.length : next];
+}

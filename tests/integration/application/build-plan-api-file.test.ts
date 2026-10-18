@@ -89,9 +89,9 @@ describe('BuildPlan: api/openapi.yaml and the rest of the package', () => {
     const readme = written['README.md'] ?? '';
     const order = readme.split('## Reading order')[1]?.split('\n## ')[0] ?? '';
     const links = [...order.matchAll(/\]\(([^)#]+)\)/gu)].map((match) => match[1]);
-    expect(links.slice(0, 6)).toEqual([
+    expect(links.slice(0, 7)).toEqual([
       ...['prd.md', 'trd.md', 'data-model.md', 'api/openapi.yaml'],
-      ...['flows/README.md', 'requirements.md'],
+      ...['flows/README.md', 'ux/README.md', 'requirements.md'],
     ]);
     expect(readme).toContain('5 operations');
   });

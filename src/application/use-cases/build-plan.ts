@@ -39,7 +39,8 @@ import { runProviderSinks, type RunSinkDependencies } from '../understand/run-si
 // planner once through the guarded provider the factory builds for the run, checks the answer
 // against the supported cards, asks it a second time for the product requirements document (RF-621,
 // its own versioned prompt), a third time for the target data model (RF-623), a fourth for the target flows (RF-625), a fifth for the API contract when the front end
-// is separate (RF-624) and writes `handoff/`.
+// is separate (RF-624), a sixth for the user-interface material when a `SCRN` card is verified (RF-626)
+// and writes `handoff/`.
 // Only `Supported` claims and answered questions reach the planner; the claims left out and the brief's defaults are listed in the package. The
 // cost report is written at every end.
 
@@ -62,6 +63,8 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly flowsPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the API contract (RF-624). */
   readonly apiContractPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the user-interface material (RF-626). */
+  readonly uxPrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
@@ -146,15 +149,16 @@ export class BuildPlan implements RunExecutor {
   /** The principle catalogue and the planner's versioned prompts, read for this run. */
   private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
     const { catalogue, prompt, prdPrompt, dataModelPrompt, flowsPrompt } = this.deps;
-    const [loaded, plan, prd, dataModel, flows, apiContract] = await Promise.all([
+    const [loaded, plan, prd, dataModel, flows, apiContract, ux] = await Promise.all([
       catalogue(),
       prompt(),
       prdPrompt(),
       dataModelPrompt(),
       flowsPrompt(),
       this.deps.apiContractPrompt(),
+      this.deps.uxPrompt(),
     ]);
-    return { catalogue: loaded, prompts: { plan, prd, dataModel, flows, apiContract } };
+    return { catalogue: loaded, prompts: { plan, prd, dataModel, flows, apiContract, ux } };
   }
 
   private warn(run: Run, message: string): Promise<void> {
@@ -177,9 +181,14 @@ export class BuildPlan implements RunExecutor {
     const { inputs, catalogue, prompts } = used;
     const { version, sha256 } = catalogue;
     const versions = Object.fromEntries(
-      [...[prompts.plan, prompts.prd, prompts.dataModel, prompts.flows, prompts.apiContract]].map(
-        (file) => [file.name, { version: file.version, sha256: file.sha256 }],
-      ),
+      [
+        prompts.plan,
+        prompts.prd,
+        prompts.dataModel,
+        prompts.flows,
+        prompts.apiContract,
+        prompts.ux,
+      ].map((file) => [file.name, { version: file.version, sha256: file.sha256 }]),
     );
     await updates.update((manifest) => recordManifestBrief(manifest, inputs.brief));
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
