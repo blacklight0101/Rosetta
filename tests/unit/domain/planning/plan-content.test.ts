@@ -170,7 +170,12 @@ describe('assemblePlan: task cards that are not cards', () => {
   });
 
   it('RF-635 a task with no risk class is not written, whatever else it states', () => {
-    const { content, dropped } = assembled([draftTask({ riskClass: undefined })]);
+    const task = draftTask({
+      riskClass: undefined,
+      adds: ['check'],
+      probes: ['A role in capitals.'],
+    });
+    const { content, dropped } = assembled([task]);
 
     expect(content.tasks).toEqual([]);
     expect(dropped.tasks).toBe(1);

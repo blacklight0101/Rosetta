@@ -142,6 +142,7 @@ describe('RF-630 review probes on cards that add a check, a filter, a limit or a
 
     expect(card).toContain('\nReview probes:\n\n- A total of 50, of 49.99 and of 50.01.\n');
     expect(card).not.toContain('Adds:');
+    expect(card).not.toContain('Guard test');
   });
 });
 

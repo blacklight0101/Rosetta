@@ -34,6 +34,9 @@ describe('cardProblem: the Done-when scenarios', () => {
     'When the customer confirms a basket of 60, then it is stored.',
     'Then the order is stored, when given a basket of 60.',
     'Given nothing happens, then when it ends.',
+    'Given a basket of 60, when, then the order is stored.',
+    'Given a basket of 60, when the customer confirms, then',
+    'Given a basket of 60, when the customer confirms, then.',
     '',
   ])('RF-630 %j is not a Given/When/Then scenario', (text) => {
     expect(cardProblem(card({ acceptanceCriteria: [scenario, text] }))).toMatch(/scenario/u);
