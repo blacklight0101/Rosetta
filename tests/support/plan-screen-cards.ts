@@ -25,6 +25,10 @@ interface ScreenInput {
     status?: 'Rejected';
   }[];
   readonly leadsTo?: readonly string[];
+  /** True when the verifier rejected the claim that states the route. */
+  readonly routeRejected?: boolean;
+  /** True when the verifier rejected every claim that states a link. */
+  readonly linksRejected?: boolean;
 }
 
 /** The status of each claim of a screen card in order: agent claim, actions, route, roles, fields, links. */
@@ -32,10 +36,12 @@ function judgements(input: ScreenInput): ClaimStatus[] {
   return [
     'Supported',
     ...(input.actions ?? []).map((action) => action.status ?? 'Supported'),
-    'Supported',
+    input.routeRejected === true ? 'Rejected' : 'Supported',
     ...(input.roles ?? []).map((): ClaimStatus => 'Supported'),
     ...(input.fields ?? []).map((field): ClaimStatus => field.status ?? 'Supported'),
-    ...(input.leadsTo ?? []).map((): ClaimStatus => 'Supported'),
+    ...(input.leadsTo ?? []).map((): ClaimStatus =>
+      input.linksRejected === true ? 'Rejected' : 'Supported',
+    ),
   ];
 }
 
