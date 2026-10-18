@@ -96,6 +96,6 @@ export function renderReplayHtml(model: ReportModel): string {
     runKey: model.runKey,
     title: 'Run replay',
     main: main.join('\n'),
-    ...(empty ? {} : { script: 'replay.js' }),
+    ...(empty ? {} : { scripts: ['replay.js'] }),
   });
 }

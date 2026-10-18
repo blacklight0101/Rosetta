@@ -74,6 +74,7 @@ function documentItem(name: string, path: string, exists: boolean): ComponentChi
 
 function Documents(props: { readonly model: ReportModel }): ComponentChild {
   const { documents: present, questions } = props.model;
+  const diagrams = props.model.diagrams?.length ?? 0;
   return h(
     'section',
     { 'aria-labelledby': 'documents' },
@@ -94,6 +95,9 @@ function Documents(props: { readonly model: ReportModel }): ComponentChild {
       ),
       h('li', null, h('a', { href: 'cost.html' }, 'Cost report')),
       h('li', null, h('a', { href: 'replay.html' }, 'Run replay')),
+      diagrams === 0
+        ? null
+        : h('li', null, h('a', { href: 'diagrams.html' }, 'Diagrams'), ` (${String(diagrams)})`),
       h('li', null, h('a', { href: 'report.md' }, 'This report as Markdown')),
     ),
   );

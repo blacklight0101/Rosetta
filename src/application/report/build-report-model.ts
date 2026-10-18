@@ -12,6 +12,7 @@ import {
   type ReportQuestion,
 } from './report-model.js';
 import type { ReportCardDetail } from './card-detail.js';
+import type { ReportDiagram } from './report-diagrams.js';
 import { parseOverview } from '../overview/overview-file.js';
 import { buildReplay } from './replay-timeline.js';
 
@@ -38,6 +39,8 @@ export interface ReportInputs {
   readonly questions: readonly ReportQuestion[];
   /** RF-502: the cards with the cited lines read from the snapshot. */
   readonly cardDetails: readonly ReportCardDetail[];
+  /** RF-508: the Mermaid diagrams of the run's documents. */
+  readonly diagrams?: readonly ReportDiagram[] | undefined;
 }
 
 // RF-504, RF-506
@@ -73,5 +76,6 @@ export function buildReportModel(inputs: ReportInputs): ReportModel {
     projectTotals: inputs.projectTotals,
     questions: inputs.questions,
     cardDetails: inputs.cardDetails,
+    diagrams: inputs.diagrams,
   };
 }
