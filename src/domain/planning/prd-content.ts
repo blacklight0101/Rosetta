@@ -13,19 +13,19 @@ import type { DefaultedQuestion } from './brief-questions.js';
 export const MOSCOW = ['Must', 'Should', 'Could', 'Wont'] as const;
 export type Moscow = (typeof MOSCOW)[number];
 
-export interface PrdStatement {
+interface PrdStatement {
   readonly text: string;
   /** Card ids. */
   readonly sources: readonly string[];
 }
 
-export interface PrdRole {
+interface PrdRole {
   readonly name: string;
   readonly description: string;
   readonly sources: readonly string[];
 }
 
-export interface PrdFeature {
+interface PrdFeature {
   readonly title: string;
   readonly description: string;
   readonly priority: Moscow;
