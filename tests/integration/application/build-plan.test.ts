@@ -75,7 +75,7 @@ describe('BuildPlan: what the planner is sent', () => {
     ]) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/package.v1.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/package.v2.md', 'utf8'));
     expect(request?.context.role).toBe('planner');
   });
 });
@@ -128,10 +128,10 @@ describe('BuildPlan: the run manifest', () => {
       version: shippedCatalogue.version,
       sha256: shippedCatalogue.sha256,
     });
-    const prompt = await readFile('prompts/planner/package.v1.md');
+    const prompt = await readFile('prompts/planner/package.v2.md');
     expect(manifest.promptVersions).toEqual({
-      'planner/package.v1.md': {
-        version: 'v1',
+      'planner/package.v2.md': {
+        version: 'v2',
         sha256: createHash('sha256').update(prompt).digest('hex'),
       },
     });

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { PlanDraft } from '../../domain/planning/plan-draft.js';
+import { guardKinds, riskClasses } from '../../domain/planning/task-card-quality.js';
 import { cardLimits } from '../cards/card-limits.js';
 import { searchJson } from '../cards/extract-json.js';
 
@@ -57,6 +58,10 @@ const answer = z.object({
         phase: position,
         requirements: z.array(position).max(MAX_LIST).default([]),
         acceptanceCriteria: texts.min(1),
+        invariant: optionalText,
+        riskClass: z.enum(riskClasses).optional().catch(undefined),
+        adds: z.array(z.enum(guardKinds)).max(guardKinds.length).default([]),
+        probes: texts.default([]),
       }),
     )
     .max(MAX_ITEMS)

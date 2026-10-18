@@ -32,6 +32,7 @@ function plannerAnswering(tasks: readonly object[]): ReturnType<typeof recording
 }
 
 const criteria = ['Given a basket, when confirmed, then an order is stored.'];
+const quality = { invariant: 'An order is stored once.', riskClass: 'none' } as const;
 
 describe('RF-607 chosen principles as conventions', () => {
   it('RF-607 a chosen principle is a rule in conventions.md and a principle not chosen appears nowhere', async () => {
@@ -72,9 +73,21 @@ describe('RF-607 TDD on the task cards', () => {
 describe('RF-607 SDD on the task cards', () => {
   it('RF-607 given SDD, every card names its requirement ids and a card with none is not written', async () => {
     const recording = plannerAnswering([
-      { title: 'Order', phase: 1, requirements: [1], acceptanceCriteria: criteria },
-      { title: 'No requirement', phase: 1, requirements: [], acceptanceCriteria: criteria },
-      { title: 'Unknown one', phase: 1, requirements: [9], acceptanceCriteria: criteria },
+      { title: 'Order', phase: 1, requirements: [1], acceptanceCriteria: criteria, ...quality },
+      {
+        title: 'No requirement',
+        phase: 1,
+        requirements: [],
+        acceptanceCriteria: criteria,
+        ...quality,
+      },
+      {
+        title: 'Unknown one',
+        phase: 1,
+        requirements: [9],
+        acceptanceCriteria: criteria,
+        ...quality,
+      },
     ]);
 
     const files = await packageOf({ principles: ['sdd'] }, recording);
@@ -87,8 +100,14 @@ describe('RF-607 SDD on the task cards', () => {
 
   it('RF-607 without SDD a card with no requirement is still written', async () => {
     const recording = plannerAnswering([
-      { title: 'Order', phase: 1, requirements: [1], acceptanceCriteria: criteria },
-      { title: 'No requirement', phase: 1, requirements: [], acceptanceCriteria: criteria },
+      { title: 'Order', phase: 1, requirements: [1], acceptanceCriteria: criteria, ...quality },
+      {
+        title: 'No requirement',
+        phase: 1,
+        requirements: [],
+        acceptanceCriteria: criteria,
+        ...quality,
+      },
     ]);
 
     const files = await packageOf({ principles: ['kiss'] }, recording);
