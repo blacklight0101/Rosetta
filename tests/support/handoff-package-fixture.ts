@@ -6,6 +6,7 @@ import { emptyPrd, prdQuestions, type PrdContent } from '../../src/domain/planni
 import { assemblePlan } from '../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../src/domain/planning/plan-draft.js';
 import { buildBrief } from '../../src/domain/planning/planning-brief.js';
+import { draftTask } from './task-card-fixtures.js';
 import { shippedCatalogue } from './planning-brief-harness.js';
 
 // RF-601: a hand-off package whose every model and repository text is the given text.
@@ -25,7 +26,12 @@ function draft(text: string): PlanDraft {
     decisions: [{ title: text, context: text, decision: text, consequences: text, sources: [] }],
     entities: [{ legacy: text, target: text, notes: text, sources: ['FEAT-001'] }],
     phases: [{ name: text, goal: text, exitCriteria: [text] }],
-    tasks: [{ title: text, phase: 1, requirements: [1], acceptanceCriteria: [text] }],
+    tasks: [
+      draftTask({
+        ...{ title: text, acceptanceCriteria: [`Given ${text}, when ${text}, then ${text}.`] },
+        ...{ invariant: text, riskClass: 'security boundary', adds: ['parser'], probes: [text] },
+      }),
+    ],
     risks: [{ text, sources: ['FEAT-001'] }],
   };
 }

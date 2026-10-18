@@ -7,6 +7,7 @@ import type {
   DraftTask,
   PlanDraft,
 } from './plan-draft.js';
+import { cardProblem, type GuardKind, type RiskClass } from './task-card-quality.js';
 
 // RF-601, RF-602, ADR-005, ADR-013: the planner's draft made into the content of the package.
 // Every card id the model names is kept only when it is one of the supported cards, so a
@@ -43,6 +44,12 @@ export interface PlanTask {
   /** `REQ-` ids. */
   readonly requirements: readonly string[];
   readonly acceptanceCriteria: readonly string[];
+  /** What must hold when the card is done (RF-630). */
+  readonly invariant: string;
+  readonly riskClass: RiskClass;
+  readonly adds: readonly GuardKind[];
+  /** Hostile or edge inputs a reviewer will try; empty for a card with no guard and no risk. */
+  readonly probes: readonly string[];
 }
 
 interface PlanRisk extends DraftRisk {
@@ -113,10 +120,12 @@ function tasksOf(
 ): PlanTask[] {
   const kept = drafts
     .filter((task) => task.phase >= 1 && task.phase <= phases)
-    .map((task) => ({
-      ...task,
-      requirements: unique(task.requirements.flatMap((at) => idAt.get(at) ?? [])),
-    }))
+    .flatMap((task) => {
+      const { riskClass } = task;
+      if (riskClass === undefined || cardProblem({ ...task, riskClass }) !== undefined) return [];
+      const requirements = unique(task.requirements.flatMap((at) => idAt.get(at) ?? []));
+      return [{ ...task, riskClass, requirements }];
+    })
     .filter((task) => !specified || task.requirements.length > 0);
   return kept.map((task, index) => ({ ...task, id: planId('T', index + 1) }));
 }

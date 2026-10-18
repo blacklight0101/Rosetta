@@ -75,7 +75,7 @@ describe('BuildPlan: what the planner is sent', () => {
     ]) {
       expect(message).not.toContain(left);
     }
-    expect(request?.system).toBe(await readFile('prompts/planner/package.v1.md', 'utf8'));
+    expect(request?.system).toBe(await readFile('prompts/planner/package.v2.md', 'utf8'));
     expect(request?.context.role).toBe('planner');
   });
 
@@ -149,7 +149,7 @@ describe('BuildPlan: the run manifest', () => {
         .update(await readFile(`prompts/planner/${name}`))
         .digest('hex');
     expect(manifest.promptVersions).toEqual({
-      'planner/package.v1.md': { version: 'v1', sha256: await sha('package.v1.md') },
+      'planner/package.v2.md': { version: 'v2', sha256: await sha('package.v2.md') },
       'planner/prd.v1.md': { version: 'v1', sha256: await sha('prd.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');

@@ -99,3 +99,35 @@ describe('renderHandoff: the method files', () => {
     expect(holding(files, new RegExp(fakeOpenAiKey.slice(8, 30), 'u'))).toEqual([]);
   });
 });
+
+describe('renderHandoff: the invariant and the review probes', () => {
+  const attack = [
+    'Line one',
+    '# Injected heading',
+    '<script>alert(1)</script> [click](http://evil.example/x)',
+    `key ${fakeOpenAiKey}`,
+  ].join('\n');
+
+  function tasksOf(text: string): string {
+    const base = handoffOf('Plain text.');
+    const [task] = base.content.tasks;
+    if (task === undefined) throw new Error('The fixture has no task');
+    const content = { ...base.content, tasks: [{ ...task, invariant: text, probes: [text] }] };
+    return renderHandoff({ ...base, content }, masker)['tasks.md'] ?? '';
+  }
+
+  it.each(['Invariant: ', '- '])(
+    'RF-630 hostile text after "%s" is one escaped, masked line',
+    (lead) => {
+      const lines = tasksOf(attack)
+        .split('\n')
+        .filter((line) => line.startsWith(lead));
+      const line = lines.find((each) => each.includes('Line one')) ?? '';
+
+      expect(line).not.toBe('');
+      expect(line).not.toMatch(/<script|\]\(http|sk-/u);
+      expect(tasksOf(attack)).not.toMatch(/^#+ Injected/mu);
+      expect(tasksOf(attack)).not.toContain(fakeOpenAiKey.slice(8, 30));
+    },
+  );
+});

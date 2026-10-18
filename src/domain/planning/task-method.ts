@@ -61,10 +61,21 @@ export interface TaskDifficulty {
   readonly tier: (typeof difficultyBands)[number]['tier'];
 }
 
-/** RF-612: the builder difficulty of a card, from 1 to 10, and the model tier that builds it. */
-// RF-612
+/**
+ * RF-612, RF-635: the builder difficulty of a card, from 1 to 10, and the model tier that builds
+ * it: the tier of its band, and at least the middle one when its risk class is not `none`.
+ */
+// RF-612, RF-635
 export function difficultyOfTask(task: PlanTask): TaskDifficulty {
   const rating = difficultyOfSize[sizeOfTask(task).size];
-  const band = difficultyBands.find((each) => rating >= each.from && rating <= each.to);
-  return { rating, tier: band?.tier ?? 'middle' };
+  const tier = difficultyBands.find((each) => rating >= each.from && rating <= each.to)?.tier;
+  return { rating, tier: tierForRisk(tier ?? 'middle', task.riskClass) };
+}
+
+type ModelTier = TaskDifficulty['tier'];
+
+/** RF-635: a risk class other than `none` raises the smallest tier to the middle one, never lowers. */
+// RF-635
+export function tierForRisk(tier: ModelTier, riskClass: PlanTask['riskClass']): ModelTier {
+  return tier === 'smallest' && riskClass !== 'none' ? 'middle' : tier;
 }
