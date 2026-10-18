@@ -1,30 +1,34 @@
+import type { ApiContract } from '../../domain/planning/api-contract.js';
 import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { DraftComponent } from '../../domain/planning/plan-draft.js';
 import { assemblePrd, emptyPrd, type PrdContent } from '../../domain/planning/prd-content.js';
 import type { TargetFlows } from '../../domain/planning/target-flows.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { askPlanner, type PlannerCall } from './ask-planner.js';
+import { apiContractWarnings, planApiContract } from './plan-api-contract.js';
 import { dataModelWarnings, planDataModel } from './plan-data-model.js';
 import { flowsWarnings, planFlows } from './plan-flows.js';
 import type { PlanMessageInput } from './plan-message.js';
 import { parsePrdAnswer } from './prd-answer.js';
 
-// RF-621, RF-623, RF-625, ADR-003: the documents of the package the planner writes after the plan,
+// RF-621, RF-623, RF-625, RF-624, ADR-003: the documents of the package the planner writes after the plan,
 // each from its own call through the same guarded provider, in this order: the product
 // requirements document, the target data model and the target flows (which map each journey onto
-// the components of the plan). An answer that cannot be read leaves its document empty and is
+// the components of the plan) and the API contract (only when the front end is separate, RF-624). An answer that cannot be read leaves its document empty and is
 // logged; the call itself failing rejects, so the run fails or stops at its cap.
 
 export interface DocumentPrompts {
   readonly prd: PromptFile;
   readonly dataModel: PromptFile;
   readonly flows: PromptFile;
+  readonly apiContract: PromptFile;
 }
 
 export interface PlannedDocuments {
   readonly prd: PrdContent;
   readonly dataModel: TargetDataModel;
   readonly flows: TargetFlows;
+  readonly apiContract: ApiContract;
 }
 
 // RF-621
@@ -48,7 +52,7 @@ async function planPrd(
   return content;
 }
 
-// RF-621, RF-623, RF-625
+// RF-621, RF-623, RF-625, RF-624
 export async function planDocuments(
   base: PlannerCall,
   prompts: DocumentPrompts,
@@ -66,5 +70,9 @@ export async function planDocuments(
   const flowsCall = { ...base, prompt: prompts.flows, agentTaskId: 'planner-flows' };
   const flows = await planFlows(flowsCall, input);
   for (const message of flowsWarnings(flows)) await warn(message);
-  return { prd, dataModel: model.assembly.model, flows: flows.flows };
+  const apiCall = { ...base, prompt: prompts.apiContract, agentTaskId: 'planner-api-contract' };
+  const dataModel = model.assembly.model;
+  const api = await planApiContract(apiCall, { cards: input.cards, brief: input.brief, dataModel });
+  for (const message of apiContractWarnings(api)) await warn(message);
+  return { prd, dataModel, flows: flows.flows, apiContract: api.contract };
 }

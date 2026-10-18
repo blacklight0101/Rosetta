@@ -95,6 +95,12 @@ export function loadFlowsPrompt(promptsFolder: string): Promise<PromptFile> {
   return loadPromptFile(promptsFolder, 'planner/flows.v1.md');
 }
 
+/** The planner's prompt for the API contract (RF-624), checked and hashed. */
+// RNF-004
+export function loadApiContractPrompt(promptsFolder: string): Promise<PromptFile> {
+  return loadPromptFile(promptsFolder, 'planner/api-contract.v1.md');
+}
+
 function requirePlaceholders(file: PromptFile, placeholders: readonly string[]): PromptFile {
   return placeholders.reduce(requirePlaceholder, file);
 }

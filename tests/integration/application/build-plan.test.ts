@@ -9,9 +9,8 @@ import { createPlanHarness, type PlanHarness } from '../../support/plan-harness.
 import { planCards, planQuestions } from '../../support/plan-cards.js';
 import { shippedCatalogue } from '../../support/planning-brief-harness.js';
 
-// RF-601..RF-604, RNF-004, ADR-005, ADR-008, DEC-80: a plan run over a seeded understand run, real
-// files in a temporary data folder and the real provider factory, with the planner replaying
-// tests/recordings/fake/planner-package.json. The package is checked by its structure.
+// RF-601..RF-604, RNF-004, ADR-005, ADR-008, DEC-80: a plan run over a seeded understand run with
+// the real provider factory, the planner replaying tests/recordings/fake/planner-package.json.
 
 const briefAnswers = {
   architecture: { style: 'hexagonal' },
@@ -152,6 +151,7 @@ describe('BuildPlan: the run manifest', () => {
       'planner/prd.v1.md': { version: 'v1', sha256: await sha('prd.v1.md') },
       'planner/data-model.v1.md': { version: 'v1', sha256: await sha('data-model.v1.md') },
       'planner/flows.v1.md': { version: 'v1', sha256: await sha('flows.v1.md') },
+      'planner/api-contract.v1.md': { version: 'v1', sha256: await sha('api-contract.v1.md') },
     });
     expect(manifest.roles['planner']?.modelVersion).toBe('fake-model-2026-10-01');
     expect(manifest.source.commitSha).toBe('3f786850e387550fdab836ed7e6dc881de23001b');

@@ -8,7 +8,7 @@ import type { ByScenario, RoleEstimate } from './estimate-types.js';
 
 /** The numbers every figure of the plan estimate rests on, stated with it. */
 interface PlanAssumptions {
-  /** The plan and the PRD, plus the target data model when a supported `ENT` claim exists (RF-623) and the target flows when a verified `FLOW` card exists (RF-625). */
+  /** The plan and the PRD, plus the target data model when a supported `ENT` claim exists (RF-623), the target flows when a verified `FLOW` card exists (RF-625) and the API contract when the brief names a front end (RF-624). */
   readonly calls: number;
   /** The system prompt and the data blocks of the supported cards and the owner's input, at the guard's four characters per token. */
   readonly promptTokens: number;
@@ -18,6 +18,8 @@ interface PlanAssumptions {
   readonly dataModelPromptTokens: number;
   /** The part of `promptTokens` that belongs to the target flows call (RF-625); 0 when none is made. */
   readonly flowsPromptTokens: number;
+  /** The part of `promptTokens` that belongs to the API contract call (RF-624); 0 when none is made. */
+  readonly apiContractPromptTokens: number;
   /** The planner's `maxOutputTokens`: the high figure writes all of it, as the guard's worst case does. */
   readonly maxOutputTokens: number;
   /** The output of each scenario as a share of `maxOutputTokens`, in percent. */

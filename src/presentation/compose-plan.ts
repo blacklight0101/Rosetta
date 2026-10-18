@@ -23,6 +23,7 @@ import type { TextMasker } from '../infrastructure/guards/secret-masker.js';
 import { FileHandoffWriter } from '../infrastructure/handoff/file-handoff-writer.js';
 import { loadCatalogue } from '../infrastructure/prompts/catalogue-files.js';
 import {
+  loadApiContractPrompt,
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
@@ -79,6 +80,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     prdPrompt: () => loadPrdPrompt(promptsFolder),
     dataModelPrompt: () => loadDataModelPrompt(promptsFolder),
     flowsPrompt: () => loadFlowsPrompt(promptsFolder),
+    apiContractPrompt: () => loadApiContractPrompt(promptsFolder),
     ids: parts.ids,
   });
 }
