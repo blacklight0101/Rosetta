@@ -160,17 +160,6 @@ describe('askPlannerWith: the limit of continuations', () => {
     expect(requests[2]?.messages[1]).toEqual({ role: 'assistant', content: '{"a": [1, 2,' });
     expect(requests[1]?.messages).toHaveLength(3);
   });
-
-  it('RF-604 a continuation that repeats the end of the answer is joined once', async () => {
-    const { call } = setup([
-      { text: '{"title": "Place an order", "sta', finishReason: 'length' },
-      { text: '"Place an order", "statement": "Pay."}' },
-    ]);
-
-    expect(await askPlannerWith(call, 'm')).toBe(
-      '{"title": "Place an order", "statement": "Pay."}',
-    );
-  });
 });
 
 describe('askPlannerWith: what the continuation holds', () => {
@@ -285,4 +274,21 @@ describe('askPlannerWith: a cut inside a string is resumed at the boundary befor
       expect(error.message).not.toContain('Pay the');
     },
   );
+});
+
+describe('askPlannerWith: a single string longer than the limit (P3-31)', () => {
+  it('RF-007 a string that never fits is rewritten from its quote each time and ends in RST-1805', async () => {
+    const cut = { finishReason: 'length', outputTokens: limit } as const;
+    const { call, requests } = setup([
+      { text: '{"a": "xxxxxxxx', ...cut },
+      { text: '"xxxxxxxxxxxxxxxx', ...cut },
+      { text: '"xxxxxxxxxxxxxxxx', ...cut },
+    ]);
+
+    const error = await failureOf(askPlannerWith(call, 'm'));
+
+    expect(error.code).toBe('RST-1805');
+    expect(requests).toHaveLength(3);
+    expect(requests[2]?.messages[1]).toEqual({ role: 'assistant', content: '{"a": ' });
+  });
 });

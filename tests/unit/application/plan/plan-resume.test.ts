@@ -96,20 +96,48 @@ describe('joinContinuation: a fragment that does not start like JSON (P3-31)', (
   );
 });
 
-describe('joinContinuation: a repeat that cannot be told from new text (P3-31)', () => {
-  it('RF-604 a repeat of a few characters over and over leaves the answer cut off', () => {
-    const earlier = '{"a": [1, 1, 1, 1, 1, 1,';
-    const zeros = '{"a": [0,0,0,0,0,0,0,0,0,0,0,0,';
+describe('joinContinuation: the fragment is never shortened (P3-31)', () => {
+  /** The answer cut right after its `count`-th comma that follows a closing brace. */
+  function cutAfter(full: string, count: number): [string, string] {
+    let at = -1;
+    for (let seen = 0; seen < count; seen += 1) at = full.indexOf('},', at + 1);
+    return [full.slice(0, at + 2), full.slice(at + 2)];
+  }
 
-    expect(joinContinuation(earlier, ' 1, 1, 1, 1,]}')).toBe(earlier);
-    expect(joinContinuation(zeros, '0,0,0,0,0,0,0,0,0,0,0,0,]}')).toBe(zeros);
+  it('RF-604 a pretty-printed array of identical items keeps every item', () => {
+    const full = JSON.stringify({ a: Array.from({ length: 14 }, () => ({ s: 'todo' })) }, null, 2);
+    const [base, rest] = cutAfter(full, 6);
+
+    const joined = joinContinuation(base, rest);
+
+    expect(joined).toBe(full);
+    expect(JSON.parse(joined)).toEqual(JSON.parse(full));
   });
 
-  it('RF-604 a repeat of natural text is dropped once', () => {
-    const earlier = '{"a": [1], "statement": "Pay the order before the end", ';
+  it('RF-604 a compact array of identical objects keeps every object', () => {
+    const full = JSON.stringify({ a: Array.from({ length: 14 }, () => ({ s: 'todo' })) });
+    const [base, rest] = cutAfter(full, 6);
 
-    expect(joinContinuation(earlier, '"Pay the order before the end", "b": 2}')).toBe(
-      '{"a": [1], "statement": "Pay the order before the end", "b": 2}',
+    expect(joinContinuation(base, rest)).toBe(full);
+  });
+
+  it('RF-604 repeated text in list items is kept whole', () => {
+    const item = '"abcdeabcdeabcde"';
+    const base = `[${item},${item},`;
+    const full = `${base}${item},${item}]`;
+
+    expect(joinContinuation(base, `${item},${item}]`)).toBe(full);
+  });
+
+  it('RF-604 a repeat of fewer than 12 characters is kept too', () => {
+    expect(joinContinuation('{"tags":["red",', '"red","dark blue"]}')).toBe(
+      '{"tags":["red","red","dark blue"]}',
     );
+  });
+
+  it('RF-604 a model that repeats its tail gets it kept, so the answer is not silently shortened', () => {
+    const joined = joinContinuation('{"a": [1, 2, 3, 4, 5, 6, 7, 8,', ' 3, 4, 5, 6, 7, 8, 9]}');
+
+    expect(joined).toBe('{"a": [1, 2, 3, 4, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 9]}');
   });
 });

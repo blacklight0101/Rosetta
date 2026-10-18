@@ -63,14 +63,6 @@ describe('joinContinuation', () => {
     expect(joinContinuation(earlier, `${' '.repeat(14)}2]}`)).toBe(`{"a": [1,${' '.repeat(28)}2]}`);
   });
 
-  it('RF-604 drops the tail the fragment repeats', () => {
-    const earlier = '{"title": "Place an order", "sta';
-
-    expect(joinContinuation(earlier, '"Place an order", "statement": "Pay."}')).toBe(
-      '{"title": "Place an order", "statement": "Pay."}',
-    );
-  });
-
   it('RF-604 a fragment that starts the answer again replaces it', () => {
     const earlier = '{"requirements": [{"title": "A", "sta';
     const again = '{"requirements": [{"title": "A", "statement": "B"}]}';
