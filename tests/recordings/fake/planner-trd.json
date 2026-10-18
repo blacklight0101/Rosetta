@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "RF-622: the planner answer of planner-package.json with a technical part for the technical requirements document: integrations (one unknown card, one repeated), four security controls (two denylists, one with no supported card), two non-functional targets (one with no source card) and two environments (one pointing at a decision that does not exist). Written by hand for the fake provider; no real provider was called. The second call is the PRD answer of planner-package.json.",
+  "description": "RF-622: the planner answer of planner-package.json with a technical part for the technical requirements document: integrations (one unknown card, one repeated), four security controls (two denylists, one with no supported card), two non-functional targets (one with no source card) and two environments (one pointing at a decision that does not exist). Written by hand for the fake provider; no real provider was called. The second call is the PRD answer of planner-package.json. Its third call is the same data model as planner-package.json (RF-623).",
   "calls": [
     {
       "attempts": [
@@ -35,6 +35,25 @@
             },
             "finishReason": "stop",
             "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"tables\": [\n    {\n      \"name\": \"customer\",\n      \"purpose\": \"Keeps the people who place orders.\",\n      \"sources\": [\n        \"ENT-002\"\n      ],\n      \"columns\": [\n        {\n          \"name\": \"id\",\n          \"type\": \"uuid\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"email\",\n          \"type\": \"varchar(200)\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-002.c1\",\n            \"field\": \"Email\"\n          },\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"loyalty_tier\",\n          \"type\": \"smallint\",\n          \"nullable\": true,\n          \"legacy\": {\n            \"claim\": \"ENT-002.c2\",\n            \"field\": \"LoyaltyTier\"\n          },\n          \"risk\": \"The legacy tier is free text; a value that is not a number is lost.\"\n        }\n      ],\n      \"primaryKey\": [\n        \"id\"\n      ],\n      \"uniqueKeys\": [\n        [\n          \"email\"\n        ]\n      ],\n      \"foreignKeys\": [],\n      \"checks\": [],\n      \"indexes\": []\n    },\n    {\n      \"name\": \"customer_order\",\n      \"purpose\": \"Keeps one order a customer placed. <script>alert(1)</script> [click](javascript:alert(1)) ```mermaid\",\n      \"sources\": [\n        \"ENT-001\",\n        \"XYZ-999\"\n      ],\n      \"columns\": [\n        {\n          \"name\": \"id\",\n          \"type\": \"uuid\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"customer_id\",\n          \"type\": \"uuid\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"status\",\n          \"type\": \"varchar(20)\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-001.c1\",\n            \"field\": \"Status\"\n          },\n          \"risk\": \"The legacy status is free text; a value outside the new list is refused.\"\n        },\n        {\n          \"name\": \"card_number\",\n          \"type\": \"varchar(19)\",\n          \"nullable\": true,\n          \"legacy\": {\n            \"claim\": \"ENT-001.c2\",\n            \"field\": \"CardNumber\"\n          },\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"total\",\n          \"type\": \"numeric(10,2)\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"note\",\n          \"type\": \"integer); DROP TABLE customer;--\",\n          \"nullable\": true,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"bad name; drop\",\n          \"type\": \"text\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        }\n      ],\n      \"primaryKey\": [\n        \"id\"\n      ],\n      \"uniqueKeys\": [],\n      \"foreignKeys\": [\n        {\n          \"columns\": [\n            \"customer_id\"\n          ],\n          \"references\": \"customer\",\n          \"referencedColumns\": [\n            \"id\"\n          ]\n        },\n        {\n          \"columns\": [\n            \"ghost_id\"\n          ],\n          \"references\": \"ghost\",\n          \"referencedColumns\": [\n            \"id\"\n          ]\n        }\n      ],\n      \"checks\": [\n        \"total is zero or more\"\n      ],\n      \"indexes\": [\n        {\n          \"columns\": [\n            \"customer_id\"\n          ],\n          \"unique\": false,\n          \"reason\": \"Orders are listed by customer.\"\n        }\n      ]\n    }\n  ],\n  \"dropped\": [\n    {\n      \"claim\": \"ENT-002.c3\",\n      \"field\": \"Fax\",\n      \"reason\": \"The new system contacts customers by email only.\"\n    },\n    {\n      \"claim\": \"ENT-009.c1\",\n      \"field\": \"Ghost\",\n      \"reason\": \"Names a claim no card has.\"\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 2000,
+              "outputTokens": 700,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
             "modelVersion": "fake-model-2026-10-01"
           }
         }
