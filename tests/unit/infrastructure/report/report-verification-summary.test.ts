@@ -86,13 +86,13 @@ describe('report.html verification summary', () => {
     expect(page.document.querySelector('#verification')).toBeNull();
   });
 
-  it('RF-507 shows a hostile area name as text and runs nothing', () => {
+  it('RF-507 shows a hostile area name as text and runs nothing but the filter script', () => {
     const page = auditHtml(
       renderReportHtml(reportModel({ cards: [card('BR-010', hostileText, { Supported: 1 })] })),
     );
 
     expect(summaryRows(page)[0]?.[0]).toBe(hostileText);
-    expect(page.scripts).toEqual([]);
+    expect(page.scripts).toEqual(['filters.js']);
     expect(page.handlers).toEqual([]);
     expect(page.document.querySelectorAll('img')).toHaveLength(0);
   });
