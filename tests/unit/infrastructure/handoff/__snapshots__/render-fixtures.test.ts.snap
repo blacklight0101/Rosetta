@@ -1,0 +1,73 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`fixtures.md in the package > RF-632 the demo fixtures.md matches its snapshot 1`] = `
+"# Realistic data shapes
+
+The shapes of the legacy repository that tests of a limit or a parser must meet. They were measured by code from the scan, not written by a model; task cards that add a limit or a parser link the sections they must handle.
+
+Measured: 14 files, 12.2 MiB in all.
+
+## Largest files
+
+| File | Kind | Size |
+| --- | --- | --- |
+| Archive/old\\-export.csv | other | 11.8 MiB |
+| Scripts/jquery\\-3.4.1.min.map | generated map | 150.3 KiB |
+| Scripts/bootstrap.bundle.js | bundled third-party script | 101.6 KiB |
+| Scripts/bootstrap.bundle.js.map | generated map | 83.5 KiB |
+| Scripts/jquery\\-3.4.1.min.js | bundled third-party script | 60.6 KiB |
+| Catalog/Services/CatalogService.cs | source | 3.2 KiB |
+| Content/site.css.map | generated map | 1.1 KiB |
+| Catalog/Default.aspx.cs | source | 960 B |
+| Catalog/Default.aspx | source | 800 B |
+| Orders/Legacy/Archive/2009/Q4/Regional/North/Totals.cs | source | 550 B |
+
+## Size by kind
+
+| Kind | Files | Size |
+| --- | --- | --- |
+| source | 5 | 5.5 KiB |
+| data and configuration | 1 | 513 B |
+| documentation | 1 | 11 B |
+| generated map | 3 | 234.9 KiB |
+| bundled third-party script | 2 | 162.2 KiB |
+| binary | 1 | 6 B |
+| other | 1 | 11.8 MiB |
+
+## Deepest paths
+
+| Path | Depth |
+| --- | --- |
+| Orders/Legacy/Archive/2009/Q4/Regional/North/Totals.cs | 8 |
+| Catalog/Services/CatalogService.cs | 3 |
+| Archive/old\\-export.csv | 2 |
+| Catalog/Default.aspx | 2 |
+| Catalog/Default.aspx.cs | 2 |
+
+## Unusual file names
+
+- Orders/Con.txt: reserved device name
+- Orders/aux.c: reserved device name
+
+## Encodings
+
+| Encoding | Files |
+| --- | --- |
+| ASCII | 10 |
+| UTF-8 with BOM | 1 |
+| binary | 1 |
+| legacy 8-bit | 1 |
+
+## Line endings
+
+| Line ending | Files |
+| --- | --- |
+| single line | 5 |
+| LF | 4 |
+| CRLF | 3 |
+
+## Data volumes stated by the cards
+
+The cards state no data volume.
+"
+`;

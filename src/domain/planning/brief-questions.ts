@@ -14,6 +14,8 @@ export interface DefaultedQuestion {
   readonly question: string;
   /** The value the package used, in words. */
   readonly answer: string;
+  /** RF-631: true when the default would change what users see today; the writer refuses it. */
+  readonly changesLegacy?: boolean;
 }
 
 export const layerNames: Readonly<Record<string, string>> = {

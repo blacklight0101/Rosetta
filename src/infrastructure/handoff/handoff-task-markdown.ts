@@ -7,6 +7,7 @@ import {
   sizeOfTask,
 } from '../../domain/planning/task-method.js';
 import type { MarkdownEscaper } from '../cards/markdown-text.js';
+import { behaviourLines, shapeLines } from './handoff-behaviour-markdown.js';
 import { bullets, decisionLink, handoffFiles, idLink } from './handoff-links.js';
 import { parallelCardLines } from './handoff-parallel-markdown.js';
 import { invariantLines, probeLines, riskLines } from './handoff-quality-markdown.js';
@@ -93,6 +94,7 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     `Requirements: ${requirements.length === 0 ? 'none' : requirements.join(', ')}`,
     '',
     ...invariantLines(task, esc),
+    ...behaviourLines(task, handoff, esc),
     ...specificationLines(handoff, esc),
     ...technologyLines(handoff, esc),
     'Acceptance criteria:',
@@ -100,6 +102,7 @@ function cardLines(task: PlanTask, handoff: HandoffPackage, esc: MarkdownEscaper
     ...bullets(task.acceptanceCriteria, esc, 'None stated.'),
     '',
     ...probeLines(task, esc),
+    ...shapeLines(task),
     ...parallelCardLines(task, esc),
     ...testLines(task, handoff, esc),
     ...checklistLines(handoff, esc),

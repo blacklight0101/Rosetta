@@ -49,7 +49,10 @@ describe('EstimatePlan: the data model call', () => {
     const reservation = (promptTokens: number): number =>
       promptTokens + assumptions.maxOutputTokens;
     const plan =
-      assumptions.promptTokens - assumptions.prdPromptTokens - assumptions.dataModelPromptTokens;
+      assumptions.promptTokens -
+      assumptions.prdPromptTokens -
+      assumptions.dataModelPromptTokens -
+      assumptions.flowsPromptTokens;
     const sum =
       reservation(plan) +
       reservation(assumptions.prdPromptTokens) +

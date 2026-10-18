@@ -1,11 +1,12 @@
 import { briefDecisions } from '../../domain/planning/brief-decisions.js';
 import { defaultedQuestions } from '../../domain/planning/brief-questions.js';
-import type { TargetDataModel } from '../../domain/planning/data-model.js';
 import type { Catalogue } from '../../domain/planning/catalogue.js';
 import type { PlanContent } from '../../domain/planning/plan-content.js';
-import { prdQuestions, type PrdContent } from '../../domain/planning/prd-content.js';
+import { prdQuestions } from '../../domain/planning/prd-content.js';
 import { excludedClaims, supportedCards } from '../../domain/planning/plan-sources.js';
 import type { HandoffPackage, PackagePrinciple } from './handoff-package.js';
+import type { PlannedDocuments } from './plan-documents.js';
+import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
 import type { PlanInputs } from './plan-inputs.js';
 
 // RF-601..RF-604, RF-621, DEC-80: the hand-off package of a plan run from its inputs, the planner's checked
@@ -27,9 +28,9 @@ export function handoffPackageOf(
   inputs: PlanInputs,
   content: PlanContent,
   catalogue: Catalogue,
-  documents: { readonly prd: PrdContent; readonly dataModel: TargetDataModel },
+  documents: PlannedDocuments & { readonly shapes: ScanShapes | undefined },
 ): HandoffPackage {
-  const { prd, dataModel } = documents;
+  const { prd, dataModel, flows } = documents;
   const { brief, sourceRun, project, cards, questions } = inputs;
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
@@ -53,6 +54,8 @@ export function handoffPackageOf(
       })),
     prd,
     dataModel,
+    flows,
     prdQuestions: prdQuestions(prd),
+    shapes: documents.shapes,
   };
 }

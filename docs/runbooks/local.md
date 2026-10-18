@@ -153,7 +153,8 @@ After a reset the next `up` starts from an empty database: the roles are created
 passwords and the first administrator is created from `ROSETTA_ADMIN_USER` and `ROSETTA_ADMIN_PASSWORD`.
 
 Back up before you reset anything you want to keep: `docker compose exec db pg_dump -U postgres rosetta > rosetta.sql`
-for the database, and a copy of the `rosetta-data` volume for the files.
+for the database, and a copy of the `rosetta-data` volume for the files. The scheduled script, its retention and the
+restore steps are in [backup.md](backup.md).
 
 ## 6. Rotate the database role passwords
 
