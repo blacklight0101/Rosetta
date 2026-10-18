@@ -29,7 +29,7 @@ export interface PlanPromptFiles {
 
 export type PlannedCallKind = 'plan' | 'prd' | 'dataModel' | 'flows';
 
-export interface PlannedCall {
+interface PlannedCall {
   readonly kind: PlannedCallKind;
   readonly file: PromptFile;
   readonly message: string;

@@ -35,7 +35,7 @@ export function rejectedFlowCard(id: string): SourceCard {
 }
 
 /** A card of another type, which a flow step may touch. */
-export function touchedCard(id: string): SourceCard {
+function touchedCard(id: string): SourceCard {
   return {
     ...{ id, type: 'ENT', title: 'Order', summary: 'An order.', area: 'orders' },
     claims: [

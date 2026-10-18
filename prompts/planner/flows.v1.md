@@ -37,8 +37,16 @@ Answer with one JSON object and nothing else:
       "inScope": true,
       "reason": "",
       "steps": [
-        { "claim": "FLOW-001.c1", "component": "Web front end", "action": "Shows the basket and sends the order." },
-        { "claim": "FLOW-001.c2", "component": "Order service", "action": "Creates the order and totals the lines." }
+        {
+          "claim": "FLOW-001.c1",
+          "component": "Web front end",
+          "action": "Shows the basket and sends the order."
+        },
+        {
+          "claim": "FLOW-001.c2",
+          "component": "Order service",
+          "action": "Creates the order and totals the lines."
+        }
       ]
     },
     {
