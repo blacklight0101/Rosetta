@@ -17,6 +17,25 @@ interface SourceClaim {
   readonly target?: string | undefined;
 }
 
+/** What a `SCRN` card says about its screen, as the plan needs it (RF-626); the validations stay in the card. */
+export interface SourceScreen {
+  /** The route or page name. */
+  readonly route: string;
+  readonly roles: readonly string[];
+  readonly fields: readonly {
+    readonly name: string;
+    readonly inputKind: string;
+    readonly required: boolean;
+  }[];
+  readonly actions: readonly {
+    readonly label: string;
+    readonly handler?: string | undefined;
+    readonly flow?: string | undefined;
+  }[];
+  /** The screens it leads to: `SCRN` card ids or routes. */
+  readonly leadsTo: readonly string[];
+}
+
 /** A card of the run as its file holds it, with every claim and its status. */
 export interface SourceCard {
   readonly id: string;
@@ -27,6 +46,8 @@ export interface SourceCard {
   readonly claims: readonly SourceClaim[];
   /** `FLOW` cards only: what starts the journey and how it ends (RF-260). */
   readonly flow?: { readonly trigger: string; readonly outcome: string } | undefined;
+  /** `SCRN` cards only: the screen's route, roles, fields, actions and where it leads (RF-261). */
+  readonly screen?: SourceScreen | undefined;
 }
 
 /** A claim the package does not use, named by its id and the status that kept it out. */

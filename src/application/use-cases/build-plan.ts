@@ -62,6 +62,8 @@ export interface BuildPlanDependencies extends PlanInputDependencies, RunSinkDep
   readonly flowsPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the API contract (RF-624). */
   readonly apiContractPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the user-interface material (RF-626). */
+  readonly uxPrompt: () => Promise<PromptFile>;
   /** RF-145: the random tag of every data block. */
   readonly ids: Pick<IdGenerator, 'dataBlockTag'>;
 }
@@ -146,15 +148,16 @@ export class BuildPlan implements RunExecutor {
   /** The principle catalogue and the planner's versioned prompts, read for this run. */
   private async loadFiles(): Promise<{ catalogue: Catalogue; prompts: PlanPrompts }> {
     const { catalogue, prompt, prdPrompt, dataModelPrompt, flowsPrompt } = this.deps;
-    const [loaded, plan, prd, dataModel, flows, apiContract] = await Promise.all([
+    const [loaded, plan, prd, dataModel, flows, apiContract, ux] = await Promise.all([
       catalogue(),
       prompt(),
       prdPrompt(),
       dataModelPrompt(),
       flowsPrompt(),
       this.deps.apiContractPrompt(),
+      this.deps.uxPrompt(),
     ]);
-    return { catalogue: loaded, prompts: { plan, prd, dataModel, flows, apiContract } };
+    return { catalogue: loaded, prompts: { plan, prd, dataModel, flows, apiContract, ux } };
   }
 
   private warn(run: Run, message: string): Promise<void> {

@@ -107,6 +107,7 @@ export class EstimatePlan {
           dataModelPromptTokens: tokensOf(calls, prompts, 'dataModel'),
           flowsPromptTokens: tokensOf(calls, prompts, 'flows'),
           apiContractPromptTokens: tokensOf(calls, prompts, 'apiContract'),
+          uxPromptTokens: tokensOf(calls, prompts, 'ux'),
         },
         ...{ maxOutputTokens, outputPercent: OUTPUT_PERCENT },
         ...{

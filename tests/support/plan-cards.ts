@@ -17,12 +17,12 @@ const verdict = {
   at: '2026-10-12T09:00:00.000Z',
 } as const;
 
-function claim(text: string, path: string): CardInput['claims'][number] {
+export function claim(text: string, path: string): CardInput['claims'][number] {
   return { text, citations: [{ path, startLine: 3, endLine: 9 }] };
 }
 
 /** A card whose claims end in these statuses, in order (`Proposed` stays as written). */
-function judgedCard(input: CardInput, statuses: readonly ClaimStatus[]): Card {
+export function judgedCard(input: CardInput, statuses: readonly ClaimStatus[]): Card {
   const created = createCard(input);
   if (!created.ok) throw new Error(`The card ${input.id} is not valid: ${created.error}`);
   let card = created.value;
@@ -35,7 +35,11 @@ function judgedCard(input: CardInput, statuses: readonly ClaimStatus[]): Card {
   return card;
 }
 
-function base(id: string, type: CardInput['type'], title: string): Omit<CardInput, 'claims'> {
+export function base(
+  id: string,
+  type: CardInput['type'],
+  title: string,
+): Omit<CardInput, 'claims'> {
   return {
     ...{ id, type, title, summary: `${title}, as the code shows it.`, area: 'orders' },
     ...{ agentTaskId: 'task-orders', confidence: 'High' },

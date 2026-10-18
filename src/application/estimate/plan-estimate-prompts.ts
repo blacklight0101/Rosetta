@@ -30,9 +30,11 @@ export interface PlanPromptFiles {
   readonly flowsPrompt: () => Promise<PromptFile>;
   /** The planner's versioned prompt file for the API contract (RF-624). */
   readonly apiContractPrompt: () => Promise<PromptFile>;
+  /** The planner's versioned prompt file for the user-interface material (RF-626). */
+  readonly uxPrompt: () => Promise<PromptFile>;
 }
 
-export type PlannedCallKind = 'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract';
+export type PlannedCallKind = 'plan' | 'prd' | 'dataModel' | 'flows' | 'apiContract' | 'ux';
 
 interface PlannedCall {
   readonly kind: PlannedCallKind;

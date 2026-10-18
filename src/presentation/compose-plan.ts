@@ -27,6 +27,7 @@ import {
   loadDataModelPrompt,
   loadFlowsPrompt,
   loadPlannerPrompt,
+  loadUxPrompt,
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { JsonlProviderCallLog } from '../infrastructure/providers/jsonl-provider-call-log.js';
@@ -81,6 +82,7 @@ export function composePlan(parts: PlanParts): BuildPlan {
     dataModelPrompt: () => loadDataModelPrompt(promptsFolder),
     flowsPrompt: () => loadFlowsPrompt(promptsFolder),
     apiContractPrompt: () => loadApiContractPrompt(promptsFolder),
+    uxPrompt: () => loadUxPrompt(promptsFolder),
     ids: parts.ids,
   });
 }
