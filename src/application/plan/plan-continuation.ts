@@ -1,4 +1,5 @@
 import { searchJson } from '../cards/extract-json.js';
+import { resumePoint } from './json-tail.js';
 import type { FinishReason } from '../ports/llm-provider.js';
 
 // RF-604, RF-208, RF-007: a planner answer that stops inside its JSON because the model hit the
@@ -9,10 +10,8 @@ import type { FinishReason } from '../ports/llm-provider.js';
 /** The most continuations of one planner call; the estimate reserves them (RF-613). */
 export const maxPlannerContinuations = 2;
 
-/** The shortest repeated stretch that counts as the model saying its last words again. */
-const MIN_OVERLAP = 12;
-/** The longest repeated stretch looked for. */
-const MAX_OVERLAP = 400;
+/** The shortest start of the first answer that a restart can repeat to count as a new start. */
+const MIN_RESTART = 12;
 /** How much of the first answer a restart has to repeat to count as a new start. */
 const RESTART_PREFIX = 24;
 
@@ -33,19 +32,38 @@ export function isCutOff(text: string, end: AnswerEnd, limit: number): boolean {
   return end.outputTokens >= limit && json.unclosed;
 }
 
-/** The answer so far with the fragment the model sent after being asked to continue. */
+/**
+ * Whether the answer is still cut off once `continued` continuations were asked for: also an
+ * answer that stops normally with JSON still open, which was continued and is still not whole.
+ */
+// RF-604, RF-007
+export function endsCutOff(
+  text: string,
+  end: AnswerEnd,
+  limit: number,
+  continued: number,
+): boolean {
+  if (isCutOff(text, end, limit)) return true;
+  return continued > 0 && searchJson(text).unclosed;
+}
+
+/** What the model may write right after a value boundary: a quote, punctuation or a value. */
+const valueStart = /^\s*(?:["{}[\],:]|-?\d|(?:true|false|null)\b)/u;
+
+/**
+ * The answer up to its last complete JSON boundary (`resumePoint`, what the model was shown) with
+ * the fragment it sent after being asked to continue. The fragment is joined whole: no stretch is
+ * ever cut out of it, since a repeat of the tail cannot be told from identical items or repeated
+ * text, and cutting would silently change the JSON. A fragment that does not start like JSON is
+ * not joined: the answer stays cut off (RST-1805). A fragment that starts the answer again
+ * replaces it.
+ */
 // RF-604
 export function joinContinuation(earlier: string, fragment: string): string {
-  const head = earlier.trimStart().slice(0, RESTART_PREFIX);
-  if (head.length >= MIN_OVERLAP && fragment.trimStart().startsWith(head)) return fragment;
-  const longest = Math.min(earlier.length, fragment.length, MAX_OVERLAP);
-  for (let size = longest; size >= MIN_OVERLAP; size -= 1) {
-    const repeated = fragment.slice(0, size);
-    if (repeated.trim() !== '' && earlier.endsWith(repeated)) {
-      return earlier + fragment.slice(size);
-    }
-  }
-  return earlier + fragment;
+  const base = resumePoint(earlier);
+  const head = base.trimStart().slice(0, RESTART_PREFIX);
+  if (head.length >= MIN_RESTART && fragment.trimStart().startsWith(head)) return fragment;
+  return valueStart.test(fragment) ? base + fragment : base;
 }
 
 /** RST-1805: the cause and the setting that fixes it. */

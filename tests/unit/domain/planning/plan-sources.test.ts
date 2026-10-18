@@ -103,3 +103,93 @@ describe('supportedCards: the actions of a screen', () => {
     expect(kept?.screen).toBeUndefined();
   });
 });
+
+const field = (name: string, required = false) => ({ name, inputKind: 'text', required });
+const stated = {
+  route: 'The screen is at the route /orders.',
+  role: (role: string) => `The role ${role} can open the screen.`,
+  field: (name: string, kind = 'optional') => `Field ${name} (text, ${kind}) is on the screen.`,
+  link: (target: string) => `The screen leads to ${target}.`,
+};
+
+function screen(texts: Partial<Record<string, Status>>, legacy = false): SourceCard {
+  const judged = Object.entries(texts).map(([text, status], index) => ({
+    ...{ claimId: `SCRN-001.c${String(index + 2)}`, text, citations: [citation] },
+    status: status ?? 'Supported',
+  }));
+  return {
+    ...{ id: 'SCRN-001', type: 'SCRN', title: 'Orders', summary: 'Summary.', area: 'orders' },
+    screen: {
+      ...{ route: '/orders', roles: ['Staff', 'Guest'], actions: [] },
+      fields: [field('Search'), field('Status', true)],
+      leadsTo: ['/checkout', '/ghost'],
+    },
+    claims: [
+      {
+        ...{ claimId: 'SCRN-001.c1', text: 'Orders is shown.' },
+        citations: [citation],
+        status: 'Supported',
+      },
+      ...(legacy ? [] : judged),
+    ],
+  };
+}
+
+describe('supportedCards: the route, roles, fields and links of a screen', () => {
+  it('RF-626 ADR-005 keeps a field only when the claim that states it is Supported', () => {
+    const [kept] = supportedCards([
+      screen({
+        [stated.field('Search')]: 'Supported',
+        [stated.field('Status', 'required')]: 'Rejected',
+      }),
+    ]);
+
+    expect(kept?.screen?.fields.map((each) => each.name)).toEqual(['Search']);
+    expect(kept?.screen?.uncheckedFields).toEqual([]);
+    expect(kept?.screen?.unsupportedFields).toBe(1);
+  });
+
+  it('RF-626 ADR-005 keeps a role and a link only when its claim is not rejected or unverified', () => {
+    const [kept] = supportedCards([
+      screen({
+        [stated.route]: 'Supported',
+        [stated.role('Staff')]: 'Supported',
+        [stated.role('Guest')]: 'Rejected',
+        [stated.link('/checkout')]: 'Supported',
+        [stated.link('/ghost')]: 'Unverified',
+      }),
+    ]);
+
+    expect(kept?.screen).toMatchObject({
+      ...{ route: '/orders', roles: ['Staff'], leadsTo: ['/checkout'] },
+    });
+  });
+});
+
+describe('supportedCards: unsupported and legacy screen parts', () => {
+  it('RF-626 a route the verifier did not support is not kept', () => {
+    const [kept] = supportedCards([screen({ [stated.route]: 'CitationInvalid' })]);
+
+    expect(kept?.screen?.route).toBe('');
+  });
+
+  it('RF-626 a screen whose fields are all unsupported keeps none and counts them', () => {
+    const [kept] = supportedCards([
+      screen({
+        [stated.field('Search')]: 'Rejected',
+        [stated.field('Status', 'required')]: 'Unverified',
+      }),
+    ]);
+
+    expect(kept?.screen).toMatchObject({ fields: [], uncheckedFields: [], unsupportedFields: 2 });
+  });
+
+  it('RF-626 a header-only legacy card keeps its fields as not checked, none as facts', () => {
+    const [kept] = supportedCards([screen({}, true)]);
+
+    expect(kept?.screen?.fields).toEqual([]);
+    expect(kept?.screen?.uncheckedFields?.map((each) => each.name)).toEqual(['Search', 'Status']);
+    expect(kept?.screen?.unsupportedFields).toBe(0);
+    expect(kept?.screen).toMatchObject({ route: '/orders', roles: ['Staff', 'Guest'] });
+  });
+});

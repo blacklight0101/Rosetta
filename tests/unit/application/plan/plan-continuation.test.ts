@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   cutOffMessage,
+  endsCutOff,
   isCutOff,
   joinContinuation,
 } from '../../../../src/application/plan/plan-continuation.js';
@@ -53,21 +54,13 @@ describe('joinContinuation', () => {
   });
 
   it('RF-604 keeps a short repeated stretch: it may be real text', () => {
-    expect(joinContinuation('{"a": [1, 2', ', 2]}')).toBe('{"a": [1, 2, 2]}');
+    expect(joinContinuation('{"a": [1, 2,', ' 2]}')).toBe('{"a": [1, 2, 2]}');
   });
 
   it('RF-604 keeps white space that both sides hold', () => {
-    const earlier = `{"a": "x${' '.repeat(14)}`;
+    const earlier = `{"a": [1,${' '.repeat(14)}`;
 
-    expect(joinContinuation(earlier, `${' '.repeat(14)}y"}`)).toBe(`{"a": "x${' '.repeat(28)}y"}`);
-  });
-
-  it('RF-604 drops the tail the fragment repeats', () => {
-    const earlier = '{"title": "Place an order", "sta';
-
-    expect(joinContinuation(earlier, '"Place an order", "statement": "Pay."}')).toBe(
-      '{"title": "Place an order", "statement": "Pay."}',
-    );
+    expect(joinContinuation(earlier, `${' '.repeat(14)}2]}`)).toBe(`{"a": [1,${' '.repeat(28)}2]}`);
   });
 
   it('RF-604 a fragment that starts the answer again replaces it', () => {
@@ -79,6 +72,25 @@ describe('joinContinuation', () => {
 
   it('RF-604 a short answer is not mistaken for a restart', () => {
     expect(joinContinuation('{"a"', '{"a"')).toBe('{"a"{"a"');
+  });
+});
+
+describe('endsCutOff', () => {
+  const end = { finishReason: 'stop', outputTokens: 5 } as const;
+
+  it('RF-007 a continued answer that stops with JSON still open is cut off', () => {
+    expect(endsCutOff('{"a": [1,', end, limit, 1)).toBe(true);
+  });
+
+  it('RF-007 an answer that was never continued keeps the meaning of isCutOff', () => {
+    expect(endsCutOff('{"a": [1,', end, limit, 0)).toBe(false);
+    expect(endsCutOff('{"a": [1,', { finishReason: 'length', outputTokens: 5 }, limit, 0)).toBe(
+      true,
+    );
+  });
+
+  it('RF-007 a continued answer with closed JSON is complete', () => {
+    expect(endsCutOff('{"a": [1]}', end, limit, 2)).toBe(false);
   });
 });
 

@@ -129,3 +129,42 @@ describe('wireframeHtml: text from the code and the model is text', () => {
     expect(html).not.toContain('Orders');
   });
 });
+
+describe('wireframeHtml: fields the verifier did not confirm', () => {
+  it('RF-626 marks a field of an old card "not checked" and does not mark a confirmed one', () => {
+    const screen = {
+      ...ordersScreen(),
+      uncheckedFields: [{ name: 'Legacy', inputKind: 'text', required: false }],
+    };
+
+    const html = wireframeHtml(screen, keep);
+
+    expect(html).toContain('Legacy (text, optional) - not checked');
+    expect(html).toContain('Search (text, required)</li>');
+    expect(html).not.toContain('fields not confirmed');
+  });
+
+  it('RF-626 a screen whose fields are all unsupported says "fields not confirmed", not "no field"', () => {
+    const screen = { ...ordersScreen(), fields: [], fieldsNotConfirmed: true };
+
+    const html = wireframeHtml(screen, keep);
+
+    expect(html).toContain('fields not confirmed');
+    expect(html).not.toContain('This screen has no field.');
+    expect(htmlProblems(html)).toEqual([]);
+  });
+
+  it('RF-626 a screen that has no field says so', () => {
+    const html = wireframeHtml({ ...ordersScreen(), fields: [] }, keep);
+
+    expect(html).toContain('This screen has no field.');
+    expect(html).not.toContain('fields not confirmed');
+  });
+
+  it('RF-507 a hostile name of a not-checked field stays escaped text', () => {
+    const html = wireframeHtml(hostileScreen(hostile), keep);
+
+    expect(htmlProblems(html)).toEqual([]);
+    expect(html).not.toContain('<script>');
+  });
+});

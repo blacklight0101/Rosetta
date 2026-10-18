@@ -13,7 +13,7 @@ const read = (name: string): Promise<string> =>
 // Markdown wraps lines anywhere, so the wording is checked with line ends as spaces.
 const flat = (text: string): string => text.replace(/\s+/gu, ' ');
 const flowsFile = await read('flows.v1.md');
-const screensFile = await read('screens.v1.md');
+const screensFile = await read('screens.v2.md');
 const flowsPrompt = flat(flowsFile);
 const screensPrompt = flat(screensFile);
 
@@ -83,6 +83,13 @@ describe('the screens fragment', () => {
     expect(screensPrompt).toContain('`OQ`');
     expect(screensPrompt).toMatch(/only suspect/u);
     expect(screensPrompt).toMatch(/never invent a validation/iu);
+  });
+
+  it('RF-626 says the route, roles, fields and links are checked claims and never listed on suspicion', () => {
+    expect(screensPrompt).toMatch(
+      /route, each role, each field and each `leadsTo` entry into a claim/u,
+    );
+    expect(screensPrompt).toMatch(/Never list a field you only suspect/u);
   });
 
   it('DEC-134 forbids writing diagrams: Rosetta draws the screen map', () => {

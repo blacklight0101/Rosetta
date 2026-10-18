@@ -17,8 +17,8 @@ describe('loadReaderPrompts: flows and screens', () => {
     const { surface } = await loadReaderPrompts('prompts');
 
     expect(surface?.flows).toMatchObject({ name: 'cards/flows.v1.md', version: 'v1' });
-    expect(surface?.screens).toMatchObject({ name: 'cards/screens.v1.md', version: 'v1' });
+    expect(surface?.screens).toMatchObject({ name: 'cards/screens.v2.md', version: 'v2' });
     expect(surface?.flows.sha256).toBe(await sha256Of('prompts/cards/flows.v1.md'));
-    expect(surface?.screens.sha256).toBe(await sha256Of('prompts/cards/screens.v1.md'));
+    expect(surface?.screens.sha256).toBe(await sha256Of('prompts/cards/screens.v2.md'));
   });
 });

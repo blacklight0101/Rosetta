@@ -73,6 +73,10 @@ export interface TargetScreen {
   readonly cards: readonly string[];
   readonly roles: readonly string[];
   readonly fields: readonly WireframeField[];
+  /** Fields of an old card that no claim states: drawn marked "not checked" (RF-626). */
+  readonly uncheckedFields: readonly WireframeField[];
+  /** True when the legacy cards had fields and the verifier supported none of them. */
+  readonly fieldsNotConfirmed: boolean;
   readonly actions: readonly WireframeAction[];
   readonly navigation: readonly NavigationLink[];
 }
