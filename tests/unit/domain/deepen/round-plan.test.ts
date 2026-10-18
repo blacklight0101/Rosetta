@@ -166,3 +166,26 @@ describe('isEmptyRound', () => {
     expect(isEmptyRound(plan)).toBe(false);
   });
 });
+
+describe('planRound in a Deepen of a Deepen', () => {
+  it('RF-209 does not re-read a rejected claim an earlier Deepen answered with a Supported replacement', () => {
+    const cards = [
+      cardOf('src', [claimOf('BR-001.c1', 'Rejected', ['src/a.cs'])]),
+      cardOf('src', [claimOf('BR-003.c1', 'Supported', ['src/a.cs'], { replaces: 'BR-001.c1' })]),
+    ];
+
+    expect(planRound(input({ cards })).reread).toEqual([]);
+  });
+
+  it('RF-209 still re-reads a rejected claim whose replacement was rejected too', () => {
+    const cards = [
+      cardOf('src', [claimOf('BR-001.c1', 'Rejected', ['src/a.cs'])]),
+      cardOf('src', [claimOf('BR-003.c1', 'Rejected', ['src/b.cs'], { replaces: 'BR-001.c1' })]),
+    ];
+
+    expect(planRound(input({ cards })).reread.map((claim) => claim.claimId)).toEqual([
+      'BR-001.c1',
+      'BR-003.c1',
+    ]);
+  });
+});
