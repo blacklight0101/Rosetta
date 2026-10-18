@@ -31,7 +31,7 @@ const templates = fileURLToPath(new URL('../../../templates/report/', import.met
 const citation = { path: 'src/Orders/Checkout.cs', startLine: 3, endLine: 9 };
 
 /** Mermaid syntax, HTML and a `javascript:` link in one name. */
-export const payload =
+const payload =
   "end\"] click a \"javascript:window.__pwned='click'\" <img src=x onerror=\"window.__pwned='img'\"> <script>window.__pwned='script'</script>";
 
 /** The diagram that cannot be parsed, and the heading it sits under. */
@@ -73,7 +73,7 @@ const fence = (source: string): string => ['```mermaid', source.trimEnd(), '```'
 const flow = cards.find((each) => each.type === 'FLOW');
 
 /** The specification and the data model of the run, with the diagrams of RF-508 in them. */
-export function documents(): Record<string, string> {
+function documents(): Record<string, string> {
   return {
     'spec.md': [
       '## Screens',
