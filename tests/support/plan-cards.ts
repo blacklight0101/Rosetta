@@ -148,3 +148,27 @@ export function entityCardSaying(id: string, text: string): Card {
     ['Supported'],
   );
 }
+
+/** RF-624: a `FLOW` card with two supported steps, for the API contract tests. */
+export function flowCard(): Card {
+  const steps = [
+    claim('The basket is validated.', 'src/Orders/Checkout.cs'),
+    claim('The order is saved.', 'src/Orders/Checkout.cs'),
+  ];
+  return judgedCard(
+    {
+      ...base('FLOW-001', 'FLOW', 'Checkout journey'),
+      flow: { trigger: 'The shopper presses Pay.', outcome: 'An order is stored.' },
+      claims: steps,
+    },
+    ['Supported', 'Supported'],
+  );
+}
+
+/** RNF-003, RF-624: a `FEAT` card with one supported claim that says what the test needs it to say. */
+export function featureCardSaying(id: string, text: string): Card {
+  return judgedCard(
+    { ...base(id, 'FEAT', 'Attack on the contract'), claims: [claim(text, 'src/Orders/Evil.cs')] },
+    ['Supported'],
+  );
+}

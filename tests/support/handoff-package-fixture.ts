@@ -2,6 +2,7 @@ import type {
   HandoffPackage,
   PackagePrinciple,
 } from '../../src/application/plan/handoff-package.js';
+import { noApiContract, type ApiContract } from '../../src/domain/planning/api-contract.js';
 import { emptyPrd, prdQuestions, type PrdContent } from '../../src/domain/planning/prd-content.js';
 import { assemblePlan } from '../../src/domain/planning/plan-content.js';
 import type { PlanDraft } from '../../src/domain/planning/plan-draft.js';
@@ -96,7 +97,11 @@ function dataModelOf(text: string): HandoffPackage['dataModel'] {
 }
 
 /** The package with this text in every model and repository field. */
-export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPackage {
+export function handoffOf(
+  text: string,
+  prd: PrdContent = emptyPrd,
+  apiContract: ApiContract = noApiContract(text),
+): HandoffPackage {
   const content = assemblePlan(draft(text), new Set(['FEAT-001', 'INT-001'])).content;
   return {
     repository: { url: 'https://github.com/octo/demo', commitSha: 'c'.repeat(40) },
@@ -119,6 +124,7 @@ export function handoffOf(text: string, prd: PrdContent = emptyPrd): HandoffPack
       decisions: content.decisions.map((decision) => ({ ...decision, options: [text] })),
     },
     dataModel: dataModelOf(text),
+    apiContract,
     sources: sourcesOf(text),
     excluded: [{ claimId: 'FEAT-001.c2', cardId: 'FEAT-001', status: 'Rejected' }],
     briefQuestions: [{ id: 'migration', question: text, answer: text }],

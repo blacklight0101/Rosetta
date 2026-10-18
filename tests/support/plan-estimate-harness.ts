@@ -15,6 +15,7 @@ import { MemoryUserRepository } from '../../src/infrastructure/db/memory-user-re
 import { FilePlanningBriefStore } from '../../src/infrastructure/files/file-planning-brief-store.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import {
+  loadApiContractPrompt,
   loadDataModelPrompt,
   loadPlannerPrompt,
   loadPrdPrompt,
@@ -99,6 +100,7 @@ export async function createPlanEstimateHarness(
       prompt: () => loadPlannerPrompt('prompts'),
       prdPrompt: () => loadPrdPrompt('prompts'),
       dataModelPrompt: () => loadDataModelPrompt('prompts'),
+      apiContractPrompt: () => loadApiContractPrompt('prompts'),
     }),
     async seed(seed) {
       await seedPlanSource({ files, briefs, runs }, project, seed);
