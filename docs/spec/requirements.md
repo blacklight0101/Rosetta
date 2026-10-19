@@ -400,11 +400,11 @@ As a developer I want an uploaded zip extracted under the same limits as a GitHu
 - Given an archive above the upload limit (the server setting `ROSETTA_UPLOAD_MAX_MB`: default 500 locally, 100 on the hosted deployment, DEC-149), when it is uploaded, then the request stops while streaming, with an error code, and the temporary file is deleted.
 - Given a data folder with less free space than twice the upload limit, when an upload starts, then it is refused before any byte is stored, with an error code and the message that the server is low on space and old projects or runs can be deleted.
 - Given an archive with more entries than the limit (default 100,000) or a total uncompressed size above the limit, by its central directory or while writing, when it is extracted, then extraction stops with an error code and the partial folder is deleted.
-- Given an entry whose compression ratio exceeds the limit (default 200 : 1), when it is extracted, then extraction stops with an error code.
+- Given an entry whose uncompressed size is above 4 MiB and whose compression ratio exceeds the limit (default 200 : 1), when it is extracted, then extraction stops with an error code; entries of 4 MiB or less are not checked for ratio, so a small, highly compressible file is accepted. Given an archive whose total uncompressed size is above 64 MiB and whose overall ratio (total uncompressed to total compressed) exceeds 200 : 1, then extraction stops with the same error code (changed by DEC-151).
 - Given an entry with an absolute path, a drive letter, a `..` segment, a backslash or a NUL character, when it is extracted, then extraction stops with an error code; an entry with a name Windows cannot write is skipped and counted (RF-122).
 - Given a symbolic link entry, when it is extracted, then it is skipped and counted; given an encrypted entry or an unsupported compression method, then extraction stops with an error code.
-- Given entries under `.git/`, `node_modules/`, `bin/` or `obj/`, when the archive is extracted, then they are left out and counted; the deny list (RF-147) and `.rosettaignore` (RF-140) then apply as to any snapshot.
-  Verification: integration tests with fixture zips (oversize, many entries, ratio bomb, a lying size header, `../`, absolute path, drive letter, symlink, encrypted entry, device name, `node_modules`).
+- Given entries under `.git/`, `node_modules/`, `bin/`, `obj/` or `__MACOSX/` (macOS zip metadata; changed by DEC-151), when the archive is extracted, then they are left out and counted; the deny list (RF-147) and `.rosettaignore` (RF-140) then apply as to any snapshot.
+  Verification: integration tests with fixture zips (oversize, many entries, ratio bomb, a small file of one repeated byte, a ratio bomb spread over many small entries, a `__MACOSX/` tree, a lying size header, `../`, absolute path, drive letter, symlink, encrypted entry, device name, `node_modules`).
 
 **RF-130 The upload as a snapshot** - R1 (M1) - Must - Source DEC-148 - ADR-012
 As a developer I want an uploaded project to behave like a GitHub snapshot so that every stage works on it unchanged.
@@ -428,8 +428,10 @@ As a developer I want an explicit warning before excerpts of my own uploaded cod
 
 - Given a run on a project of kind `upload` with any role on a non-local provider (RF-143), when the start page shows, then a second confirmation, separate from the RF-143 consent, names the project and each cloud provider in plain words and offers a link to switch every role to Ollama; Start stays disabled until both are ticked.
 - Given an API request that starts such a run without the second confirmation, when it arrives, then it is refused with an error code before any call.
+- Given a queued run, when it actually starts, then the confirmation is checked again against the project's roles at that moment: if a role changed to a cloud provider, or the confirmation no longer holds, the run does not start and the message says why (changed by DEC-151).
+- Given the link that switches every role to Ollama, when it is shown, then its text names the model it sets, so nothing is changed silently (changed by DEC-151).
 - Given a run whose roles are all local, when the start page shows, then neither confirmation is asked.
-  Verification: integration tests for the three cases; end-to-end test of the start page.
+  Verification: integration tests for the three cases and for the queued run re-check; end-to-end test of the start page, including the model named on the link.
 
 **RF-133 Uploads in the hosted workspace** - R1 (M1) - Must - Source DEC-148 - ADR-015, ADR-016
 As an administrator I want uploaded code kept private to its owner and removed with the project so that the host holds no code nobody asked for.

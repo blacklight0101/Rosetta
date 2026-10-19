@@ -105,6 +105,8 @@ Zip reading uses `yauzl` (the reading companion of `yazl`, which the zip export 
 - The deny list (RF-147) and `.rosettaignore` (RF-140) apply to the extracted tree exactly as to a GitHub snapshot, and
   `.git/`, `node_modules/`, `bin/` and `obj/` folders are left out at extraction and counted.
 
+_Note, 2026-10-19, DEC-151: the per-entry ratio limit applies only to entries above 4 MiB uncompressed, with an archive-wide check of 200 : 1 when the total is above 64 MiB; `__MACOSX/` folders are also left out and counted. The text above is kept as accepted; the current rules are in RF-129._
+
 ### 4.4 Privacy
 
 A zip is usually private code. When any role of a run on an `upload` project uses a non-local provider, the start page
