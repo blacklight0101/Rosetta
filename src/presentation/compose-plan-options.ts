@@ -36,6 +36,7 @@ export interface PlanOptionsParts {
   readonly runs: RunIndex;
   readonly scans: ScanResults;
   readonly providers: ProviderSetFactory;
+  readonly ollamaHost?: string | undefined;
 }
 
 // RF-608, RF-609
@@ -51,5 +52,6 @@ export function composePlanOptions(parts: PlanOptionsParts): SuggestPlanOptions 
     prompt: () => loadPlanOptionsPrompt(promptsFolder),
     ids: new TimestampIdGenerator(clock),
     signals: new SystemTimeoutSignals(),
+    ...(parts.ollamaHost === undefined ? {} : { ollamaHost: parts.ollamaHost }),
   });
 }

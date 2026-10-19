@@ -142,7 +142,11 @@ const startedSchema = z.looseObject({ id: z.string() });
 export function startDeepen(
   client: ApiClient,
   runId: string,
-  choice: DeepenChoice & { readonly cloudConsent: boolean },
+  choice: DeepenChoice & {
+    readonly cloudConsent: boolean;
+    /** RF-132: sent only when ticked. */
+    readonly privateCodeConfirmed?: boolean;
+  },
 ): Promise<ApiResult<{ readonly id: string }>> {
   return client.request({
     method: 'POST',

@@ -26,6 +26,8 @@ export interface PlanEstimateCardProps {
   readonly load: EstimateLoad;
   readonly blockers: readonly Blocker[];
   readonly consent: boolean;
+  /** RF-132: the second confirmation was ticked. */
+  readonly privateConfirmed: boolean;
   /** Why the package cannot be written yet for a reason of the steps or the consent. */
   readonly stepReason: string | undefined;
   readonly outOfDate: boolean;
@@ -113,7 +115,7 @@ function reasonOf(props: PlanEstimateCardProps): string | undefined {
 // RF-613
 export function PlanEstimateCard(props: PlanEstimateCardProps): JSX.Element {
   const { projectId, sourceRunId, load, blockers, consent, outOfDate } = props;
-  const writing = useWritePackage({ projectId, sourceRunId }, consent);
+  const writing = useWritePackage({ projectId, sourceRunId }, consent, props.privateConfirmed);
   const reason = reasonOf(props);
   return (
     <section

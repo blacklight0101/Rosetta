@@ -7,6 +7,8 @@ import type { CodeMap } from '../../domain/code-map/code-map.js';
 import type { PlanOptions } from '../../domain/planning/plan-options.js';
 import { supportedCards } from '../../domain/planning/plan-sources.js';
 import type { Run } from '../../domain/runs/run.js';
+import { rolesNeedPrivateConfirmation } from '../understand/understand-options.js';
+import type { AgentRole } from '../ports/llm-provider.js';
 import type { PromptFile } from '../agent/prompt-file.js';
 import { recommendPlanOptions, type PlanOptionsInput } from '../planning/recommend-plan-options.js';
 import type { IdGenerator } from '../ports/id-generator.js';
@@ -52,6 +54,8 @@ export interface SuggestPlanOptionsDependencies {
   readonly logger: Logger;
   /** A call that has not answered by then is cancelled. */
   readonly signals: TimeoutSignals;
+  /** The host of the server's Ollama; an Ollama elsewhere counts as a cloud provider (DEC-118). */
+  readonly ollamaHost?: string;
 }
 
 export interface SuggestPlanOptionsRequest {
@@ -59,6 +63,8 @@ export interface SuggestPlanOptionsRequest {
   readonly projectId: string;
   /** RF-143: the person's consent to send the cards and the scan summary to a cloud provider. */
   readonly cloudConsent: boolean;
+  /** RF-132: the second confirmation, for an uploaded project whose planner uses a cloud provider. */
+  readonly privateCodeConfirmed?: boolean;
   /** RF-614: recommend from this understand run (its id); the newest completed one when absent. */
   readonly sourceRunId?: string;
 }
@@ -79,6 +85,13 @@ export class SuggestPlanOptions {
     const { actor, projectId } = request;
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
+    // RF-132: refused before any call when the code of an upload would go to a cloud planner.
+    const roles: readonly AgentRole[] = ['planner'];
+    // The cloud consent is asked first; its refusal (RST-1515) comes from the egress guard.
+    const needsPrivate = rolesNeedPrivateConfirmation(project, this.deps.ollamaHost, roles);
+    if (needsPrivate && request.cloudConsent && request.privateCodeConfirmed !== true) {
+      return err(ERROR_CODES.privateCodeNotConfirmed);
+    }
     const owner = { userId: actor.userId, projectId };
     const source = await planSourceRun(this.deps.runs, owner, request.sourceRunId);
     if (!source.ok) return err(source.error);

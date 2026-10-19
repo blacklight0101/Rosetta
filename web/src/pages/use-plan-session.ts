@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'preact/hooks';
-import type { BriefView, PlanEstimate, PlanOptions } from '../api/plan-schemas.js';
+import type { BriefView, PlanEstimate } from '../api/plan-schemas.js';
 import type { Project } from '../api/project-schemas.js';
 import { chooseStyle } from '../lib/plan-setup/choices.js';
 import { isAnswered, type Draft } from '../lib/plan-setup/draft.js';
@@ -11,6 +11,7 @@ import {
 } from '../lib/plan-setup/estimate.js';
 import { usePlanEstimate, type EstimateLoad } from './use-plan-estimate.js';
 import { usePlanOptions, type OptionsLoad } from './use-plan-options.js';
+import { usePrivateCode, type PrivateCode } from './use-private-code.js';
 import { usePlanSetup, type PlanSetupActions, type PlanSetupState } from './use-plan-setup.js';
 
 // RF-605, RF-608, RF-613, RF-143: everything the Plan setup page keeps together: the answers, the
@@ -25,8 +26,14 @@ export interface PlanSession extends PlanSetupState, PlanSetupActions {
   readonly blockers: readonly Blocker[];
   /** The planner would send code off this machine. */
   readonly cloud: boolean;
+  /** The options wait for a confirmation that is not given yet. */
+  readonly waitingForConsent: boolean;
   readonly consent: boolean;
   readonly setConsent: (consent: boolean) => void;
+  /** RF-132: the second confirmation of an uploaded project whose planner uses a cloud provider. */
+  readonly privateCode: PrivateCode;
+  /** The project as the page has it: the settings after a switch to Ollama. */
+  readonly project: Project;
   readonly options: OptionsLoad;
   readonly askAgain: () => void;
   /** Why the package cannot be written for a reason of the steps or the consent. */
@@ -39,16 +46,26 @@ export interface PlanSession extends PlanSetupState, PlanSetupActions {
 
 const OPTION_STEPS: readonly string[] = ['architecture', 'stack'];
 
-function shownChoice(draft: Draft, options: PlanOptions | undefined): Draft | undefined {
-  if (options === undefined || isAnswered(draft, 'architecture')) return undefined;
+function shownChoice(setup: PlanSetupState, load: OptionsLoad): Draft | undefined {
+  const { draft } = setup;
+  const options = load.status === 'ready' ? load.options : undefined;
+  if (setup.step !== 'architecture' || options === undefined) return undefined;
+  if (isAnswered(draft, 'architecture')) return undefined;
   return chooseStyle(draft, options, options.architecture.recommended);
 }
 
-function stepReasonOf(finished: boolean, cloud: boolean, consent: boolean): string | undefined {
+function stepReasonOf(
+  finished: boolean,
+  consent: { readonly cloud: boolean; readonly given: boolean; readonly private: PrivateCode },
+): string | undefined {
   if (!finished) {
     return 'Finish the steps first: answer what you know or use the defaults for the rest.';
   }
-  return cloud && !consent ? 'Give the consent above first.' : undefined;
+  if (consent.cloud && !consent.given) return 'Give the consent above first.';
+  if (consent.private.needed && !consent.private.checked) {
+    return 'Give the private code confirmation above first.';
+  }
+  return undefined;
 }
 
 /** Latches once a step that shows the options of the planner has been opened. */
@@ -59,6 +76,18 @@ function useOptionsWanted(step: string): boolean {
     if (optionStep) setWanted(true);
   }, [optionStep]);
   return wanted;
+}
+
+/** The project as the page has it, its planner, and the confirmations the planner needs (RF-132). */
+function usePlanner(project: Project, onSwitched: () => void) {
+  const [current, setProject] = useState(project);
+  const { provider, kind } = plannerOfProject(current);
+  const cloud = needsConsent(kind);
+  const privateCode = usePrivateCode(current, cloud, (saved) => {
+    setProject(saved);
+    onSwitched();
+  });
+  return { current, provider, cloud, privateCode };
 }
 
 // RF-605
@@ -80,17 +109,16 @@ export function usePlanSession(
   }, [reload]);
   const setup = usePlanSetup(projectId, view, onSaved);
   const planner = estimate.load.status === 'ready' ? estimate.load.estimate : undefined;
-  const { provider, kind } = plannerOfProject(project);
-  const cloud = needsConsent(kind);
+  const { current, provider, cloud, privateCode } = usePlanner(project, reload);
+  const waiting = cloud && !(consent && (!privateCode.needed || privateCode.checked));
   const options = usePlanOptions({
     projectId,
     wanted: useOptionsWanted(setup.step),
-    allowed: !cloud || consent,
+    allowed: !waiting,
     consent: cloud && consent,
+    privateConfirmed: privateCode.confirmed,
     sourceRunId,
   });
-  const proposed = options.load.status === 'ready' ? options.load.options : undefined;
-  const accepted = setup.step === 'architecture' ? shownChoice(setup.draft, proposed) : undefined;
   return {
     ...setup,
     estimate: estimate.load,
@@ -98,14 +126,17 @@ export function usePlanSession(
     plannerProvider: provider,
     blockers: planner === undefined ? [] : blockersOf(planner),
     cloud,
+    waitingForConsent: waiting,
     consent: cloud && consent,
     setConsent,
+    privateCode,
+    project: current,
     options: options.load,
     askAgain: options.askAgain,
-    stepReason: stepReasonOf(setup.finished, cloud, consent),
+    stepReason: stepReasonOf(setup.finished, { cloud, given: consent, private: privateCode }),
     savedVersion,
     save: () => {
-      setup.saveAndContinue(accepted);
+      setup.saveAndContinue(shownChoice(setup, options.load));
     },
   };
 }

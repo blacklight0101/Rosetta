@@ -42,14 +42,19 @@ const uploadAnswers = (estimate: unknown): Readonly<Record<string, Answer>> => (
   [`GET ${estimatePath}`]: json(200, estimate),
 });
 
-function roleProviders(body: unknown): readonly unknown[] {
+function roleField(body: unknown, field: string): readonly unknown[] {
   if (typeof body !== 'object' || body === null || !('roles' in body)) return [];
   const { roles } = body;
   if (typeof roles !== 'object' || roles === null) return [];
-  return Object.values(roles).map((role: unknown) =>
-    typeof role === 'object' && role !== null && 'provider' in role ? role.provider : undefined,
-  );
+  return Object.values(roles).map((role: unknown): unknown => {
+    if (typeof role !== 'object' || role === null) return undefined;
+    const value: unknown = Reflect.get(role, field);
+    return value;
+  });
 }
+
+const roleProviders = (body: unknown) => roleField(body, 'provider');
+const roleModels = (body: unknown) => roleField(body, 'model');
 
 it('RF-132 an uploaded project with a cloud role shows a second notice that names the project and the provider', async () => {
   renderStart(uploadAnswers(oneCloudRole));
@@ -204,6 +209,7 @@ it('RF-132 the link is a button that switches every role to Ollama, with no furt
   const put = calls.find((call) => call.method === 'PUT');
   expect(put?.ifMatch).toBe('"1"');
   expect(roleProviders(put?.body)).toEqual(['ollama', 'ollama', 'ollama', 'ollama']);
+  expect(roleModels(put?.body)).toEqual(Array(4).fill('gemma4:e4b'));
   expect(screen.queryByText(/Code will leave this machine/u)).toBeNull();
   await waitFor(() => {
     expect(start().disabled).toBe(false);
@@ -229,4 +235,26 @@ it('RF-132 a GitHub project does not offer the switch link', async () => {
   await ready();
 
   expect(screen.queryByRole('button', { name: switchName })).toBeNull();
+});
+
+it('RF-132 DEC-118 after the switch the notices an Ollama refusal had raised go away', async () => {
+  let saved = false;
+  renderStart({
+    [`GET ${projectPath}`]: () => json(200, saved ? uploadProjectOnOllama : uploadProject),
+    [`GET ${estimatePath}`]: json(200, allLocalRoles),
+    [`POST ${runsPath}`]: failure(400, 'RST-1515'),
+    [`PUT ${projectPath}/settings`]: () => {
+      saved = true;
+      return json(200, uploadProjectOnOllama);
+    },
+  });
+  await ready();
+  fireEvent.click(start());
+  const notice = await screen.findByRole('region', { name: noticeName });
+
+  fireEvent.click(within(notice).getByRole('button', { name: switchName }));
+
+  await waitFor(() => {
+    expect(screen.queryByRole('region', { name: noticeName })).toBeNull();
+  });
 });

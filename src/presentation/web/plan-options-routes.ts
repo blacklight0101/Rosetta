@@ -24,6 +24,8 @@ const ADDRESS_RATE = { max: 12, timeWindow: 60_000 } as const;
 
 const body = z.strictObject({
   cloudConsent: z.boolean().optional(),
+  /** RF-132: the second confirmation for the private code of an upload. */
+  privateCodeConfirmed: z.boolean().optional(),
   /** RF-614: recommend from this understand run (its id); the newest completed one when absent. */
   sourceRunId: z.string().min(1).max(64).optional(),
 });
@@ -54,6 +56,7 @@ export function registerPlanOptionsRoutes(
         actor: signedInOf(request).actor,
         projectId: request.params.id,
         cloudConsent: parsed.data.cloudConsent === true,
+        privateCodeConfirmed: parsed.data.privateCodeConfirmed === true,
         ...(parsed.data.sourceRunId === undefined ? {} : { sourceRunId: parsed.data.sourceRunId }),
       });
       if (!outcome.ok) throw new RosettaError(outcome.error);

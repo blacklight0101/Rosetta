@@ -8,7 +8,11 @@ import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
 import { planSourceRun } from '../plan/plan-source.js';
 import type { Project } from '../projects/project.js';
-import { rolesNeedCloudConsent, understandOptionsOf } from '../understand/understand-options.js';
+import {
+  rolesNeedCloudConsent,
+  rolesNeedPrivateConfirmation,
+  understandOptionsOf,
+} from '../understand/understand-options.js';
 import type { SubmitRun, SubmittedRun } from './submit-run.js';
 
 // RF-003, RF-1108, RF-1105, RF-143, RF-132, RF-200: Start run is what `POST /api/projects/:id/runs` calls.
@@ -102,6 +106,10 @@ export class StartRun {
     if (!cloudConsent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost, roles)) {
       return err(ERROR_CODES.cloudConsentMissing);
     }
+    // RF-132: an uploaded project also needs the second confirmation for the planner.
+    if (rolesNeedPrivateConfirmation(project, this.deps.ollamaHost, roles)) {
+      if (request.privateCodeConfirmed !== true) return err(ERROR_CODES.privateCodeNotConfirmed);
+    }
     const options = { cloudConsent, ...(sourceRunId === undefined ? {} : { sourceRunId }) };
     return this.deps.submit.execute({ actor, project, stage: 'plan', options });
   }
@@ -111,13 +119,18 @@ export class StartRun {
     request: StartRunRequest,
     project: Project,
   ): Promise<Result<SubmittedRun, StartRunProblem>> {
-    const options = understandOptionsOf(request);
-    if (rolesNeedCloudConsent(project.settings, this.deps.ollamaHost)) {
-      if (!options.cloudConsent) return err(ERROR_CODES.cloudConsentMissing);
-      // RF-132: the code of an upload is usually private; a second, separate confirmation is needed.
-      if (project.sourceKind === 'upload' && request.privateCodeConfirmed !== true) {
-        return err(ERROR_CODES.privateCodeNotConfirmed);
-      }
+    const { ollamaHost } = this.deps;
+    const needsPrivate = rolesNeedPrivateConfirmation(project, ollamaHost);
+    const options = understandOptionsOf({
+      ...request,
+      privateCodeConfirmed: needsPrivate && request.privateCodeConfirmed === true,
+    });
+    if (!options.cloudConsent && rolesNeedCloudConsent(project.settings, ollamaHost)) {
+      return err(ERROR_CODES.cloudConsentMissing);
+    }
+    // RF-132: the code of an upload is usually private; a second, separate confirmation is needed.
+    if (needsPrivate && options.privateCodeConfirmed !== true) {
+      return err(ERROR_CODES.privateCodeNotConfirmed);
     }
     const { actor } = request;
     return this.deps.submit.execute({

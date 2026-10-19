@@ -179,8 +179,7 @@ async function requestRun(steps: Steps): Promise<boolean> {
   const { client, inputs, refuse, show } = steps;
   const result = await startRun(client, inputs.project.id, requestOf(inputs));
   if (!result.ok) {
-    const { code } = result.error;
-    if (code === NO_CONSENT || code === NO_PRIVATE_CONFIRMATION) inputs.onConsentRefused();
+    if (result.error.code === NO_CONSENT) inputs.onConsentRefused();
     return refuse(refusalOf(result.error));
   }
   const { id, position, stage } = result.value;

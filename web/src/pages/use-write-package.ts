@@ -11,6 +11,7 @@ import { navigate } from '../app/router.js';
 export function useWritePackage(
   request: { readonly projectId: string; readonly sourceRunId: string | undefined },
   consent: boolean,
+  privateCodeConfirmed: boolean,
 ): {
   readonly busy: boolean;
   readonly error: ApiFailure | undefined;
@@ -23,7 +24,9 @@ export function useWritePackage(
   const write = (): void => {
     setBusy(true);
     setError(undefined);
-    void startPlanRun(client, projectId, { cloudConsent: consent, sourceRunId }).then((result) => {
+    void startPlanRun(client, projectId, {
+      ...{ cloudConsent: consent, privateCodeConfirmed, sourceRunId },
+    }).then((result) => {
       if (result.ok) {
         navigate(`/runs/${encodeURIComponent(result.value.id)}`);
         return;
