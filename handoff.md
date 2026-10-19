@@ -1,6 +1,6 @@
 # Rosetta - Handoff
 
-_Last updated 2026-10-14 (afternoon). Phase **P1 - milestone slice** in progress: G-01 open (DEC-113); 152 of 195 cards Done (see `docs/orchestration/tasks.md`); sign-in with the request protection, accounts, projects and settings, the start-run page with estimate, the live run page with the stage stepper, the live coverage map, Pause updates and run meter, the project totals header and cost page, the API calls and logs panels, history and deletion, answering open questions in the page, administration pages, the landing page, understand as a run with the citation check and coverage per area, the Anthropic adapter, the zip export, the Markdown report with the run replay built from the run page, the audit purge, the milestone end-to-end journeys (P1-46) and the container image with Compose all work; no hosted deployment before the owner declares the local system ready (G-08, DEC-133); builders run two at a time with local, API and cloud verifiers (DEC-130)._
+_Last updated 2026-10-19. Release 1 is built: **244 of 252 cards are Done** (see the [tasks.md totals](docs/orchestration/tasks.md)); P1, P2 and P3 are complete except P3-22 (owner review of the sample package) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. No hosted deployment before the owner declares the local system ready (G-08, DEC-133). Milestone hand-in: 2026-10-26. The latest state is the first entry of the resume point below._
 
 ## Current state
 
@@ -29,6 +29,8 @@ _Last updated 2026-10-14 (afternoon). Phase **P1 - milestone slice** in progress
   after the light review (DEC-102..DEC-112: P1-55 and P1-56 added, gate G-07).
 
 ## Resume point
+
+**Clean-up (2026-10-19).** Leftover worktrees, scratch folders and logs under `G:\BuildingFolder\Rosetta-wt` and stale branches (local `backup/P1-36-local-fix`, `old-p3-17`, `p1-167-ref`, `task/P1-174-*`, `task/P1-55-prehost-release`, `task/P3-02-*`; remote `docs/roadmap-flows`) were removed after checking that every card they held is merged. The untracked `tests/unit/zz/probe.test.ts` and the G-08 hands-on specs are backed up in `G:\BuildingFolder\Rosetta-wt\_backup`. Only `main` and Dependabot #405 remain.
 
 **Resume (2026-10-19, morning).** Latest main: 7bbd7ad5 (after #596, P3-35: the R1 matrix guard and the hand-off journey checks, appended as Done; 244 of 252 cards are Done). Before that: 929470a3 (after #592, P3-30). Merged since the status pull request #587: #582 (P3-28), #583 (P3-33), #588 (P3-22 journey), #590 (P2-41 part 2, Deepen on the run page; closes #561), #591 (P3-34), #593 (P3-12 release 1 journeys and the verification matrix `docs/verification/r1-matrix.md`), #592 (P3-30). Set to Done in this status pull request: P2-41, P3-28, P3-33, P3-12, P3-30; P3-34 is appended as Done. P3-22 is In review: its journey is merged and it waits for the owner to read the sample package and file changes. 243 of 251 cards are Done. Left: P3-22 (owner review) and the gated cards P1-50, P1-53, P1-54, P1-55, P2-12, P2-14 and P2-34, each waiting for its gate or the owner's check. Owner questions from P3-12 (RF-209, RF-231, RF-614 and RF-615 are in no roadmap backlog row; RNF-011 has no test until the local-first run) and P3-30 (the sixth "upcoming" step state and the cost labels) are in the pull requests.
 
