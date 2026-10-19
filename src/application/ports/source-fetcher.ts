@@ -1,5 +1,10 @@
 import type { GitHubRepoRef } from '../../domain/sources/github-repo-ref.js';
-import type { GithubSource, Source, UploadSource } from '../../domain/sources/source.js';
+import type {
+  GithubSource,
+  Source,
+  UploadSource,
+  WorkbookSource,
+} from '../../domain/sources/source.js';
 
 /** What every kind of snapshot records about its extracted tree. */
 interface SnapshotTree {
@@ -13,7 +18,7 @@ interface SnapshotTree {
 
 /** Where a snapshot lives on disk. */
 interface SnapshotLocation {
-  /** The folder name under `<data>/sources/`: `<owner>__<repo>@<sha>` or `upload__<project id>@<16 hex>`. */
+  /** The folder name under `<data>/sources/`: `<owner>__<repo>@<sha>` or `upload__<project id>@<16 hex>` or `workbook__<project id>@<16 hex>`. */
   readonly key: string;
   /** Absolute path of the read-only tree (`files/` inside the snapshot folder). */
   readonly rootDir: string;
@@ -26,6 +31,9 @@ export type GithubSnapshotInfo = GithubSource & SnapshotTree;
 
 /** The content of an upload `snapshot.json`: `kind`, `fileName`, `uploadedAt` and the tree (RF-130). */
 export type UploadSnapshotInfo = UploadSource & SnapshotTree;
+
+/** The content of a workbook `snapshot.json`: `kind`, `uploadedAt`, `rendererVersion`, `workbooks` and the tree (RF-152). */
+export type WorkbookSnapshotInfo = WorkbookSource & SnapshotTree;
 
 /** The content of `snapshot.json`: a record without `kind` is a GitHub one (RF-130). */
 export type SnapshotInfo = Source & SnapshotTree;

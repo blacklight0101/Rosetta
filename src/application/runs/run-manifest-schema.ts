@@ -49,6 +49,7 @@ const manifestSchema = z.object({
     snapshotHash: nullableText,
     fileName: text.optional(),
     uploadedAt: text.optional(),
+    rendererVersion: text.optional(),
   }),
   codemapHash: nullableText,
   options: z.record(z.string(), z.unknown()),

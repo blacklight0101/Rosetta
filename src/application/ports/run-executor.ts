@@ -39,6 +39,8 @@ export interface ResolvedSource {
   /** An upload: the zip as sent and the instant it was stored (RF-131). */
   readonly fileName?: string;
   readonly uploadedAt?: string;
+  /** A workbook: the renderer that wrote the tree (RF-152). */
+  readonly rendererVersion?: string;
 }
 
 export interface RunOutcome {
