@@ -17,6 +17,7 @@ import { join, sep } from 'node:path';
 import type { Snapshot, SnapshotInfo } from '../../application/ports/source-fetcher.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { isWorkbookSnapshotKey } from '../../domain/sources/workbook-key.js';
 import { parseSnapshotRecord } from './snapshot-record.js';
 import { errorCode, snapshotWriteFailed } from './snapshot-errors.js';
 
@@ -172,6 +173,13 @@ export class SnapshotStore {
         ERROR_CODES.snapshotEntryRefused,
         `The cached snapshot ${key} has an invalid ${INFO_FILE}.`,
         { cause: parsed.error },
+      );
+    }
+    // RF-152: a workbook record lives under a workbook key and nowhere else, and a workbook key holds nothing else.
+    if ((parsed.value.kind === 'workbook') !== isWorkbookSnapshotKey(key)) {
+      throw new RosettaError(
+        ERROR_CODES.snapshotEntryRefused,
+        `The cached snapshot ${key} has a ${INFO_FILE} of another kind than its folder name says.`,
       );
     }
     return { ...parsed.value, key, rootDir: this.filesDir(key), cached: true };

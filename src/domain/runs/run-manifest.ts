@@ -132,6 +132,8 @@ export function recordManifestSource(
     /** An upload run: the zip as sent and the instant it was stored (RF-131). */
     readonly fileName?: string;
     readonly uploadedAt?: string;
+    /** A workbook run: the renderer that wrote the tree (RF-152). */
+    readonly rendererVersion?: string;
   },
 ): Result<RunManifest, ManifestProblem> {
   if (manifest.endState !== null) return err('already-ended');
