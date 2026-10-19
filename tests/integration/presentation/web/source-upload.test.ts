@@ -89,6 +89,21 @@ describe('PUT /api/projects/:id/source a request that is not an upload', () => {
     expect(response.json()).toMatchObject({ code: ERROR_CODES.zipNotReadable });
     expect(uploads.requests).toEqual([]);
   });
+});
+
+describe('PUT /api/projects/:id/source the file name header', () => {
+  it('RF-128 refuses X-File-Name: %E0%A4%A with its own message, not "not a readable zip"', async () => {
+    const { amy, uploads } = await setup();
+    const id = await createUploadProject(amy);
+
+    const response = await put(amy, id, { headers: { 'x-file-name': '%E0%A4%A' } });
+
+    expect(response.statusCode).toBe(400);
+    const body: unknown = response.json();
+    expect(body).toMatchObject({ code: 'RST-1930' });
+    expect(JSON.stringify(body)).not.toMatch(/readable zip/iu);
+    expect(uploads.requests).toEqual([]);
+  });
 
   it('RF-128 answers 400 RST-2000 to a body that is not application/zip', async () => {
     const { amy, uploads } = await setup();

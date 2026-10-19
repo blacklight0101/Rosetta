@@ -23,6 +23,7 @@ describe('StoreUpload a stored zip', () => {
         snapshotHash: uploads.hash,
         fileName: 'OrderDesk.zip',
         uploadedAt: '2026-10-19T08:30:00.000Z',
+        codeChangedSinceLastRun: false,
       },
     });
   });
@@ -119,6 +120,15 @@ describe('StoreUpload refusals', () => {
     const outcome = await useCase.execute(request(project, { fileName: 'OrderDesk.rar' }));
 
     expect(outcome).toEqual({ ok: false, error: ERROR_CODES.zipNotReadable });
+    expect(uploads.requests).toEqual([]);
+  });
+
+  it('RF-128 a name that is not valid percent-encoding is refused with its own code, not RST-1909', async () => {
+    const { useCase, project, uploads } = await setup();
+
+    const outcome = await useCase.execute(request(project, { fileName: '%E0%A4%A' }));
+
+    expect(outcome).toEqual({ ok: false, error: 'RST-1930' });
     expect(uploads.requests).toEqual([]);
   });
 
