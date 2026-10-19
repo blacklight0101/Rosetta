@@ -1,3 +1,4 @@
+import { FakeUploadStore } from '../../../support/fake-upload-store.js';
 import { describe, expect, it } from 'vitest';
 import { DeleteProject } from '../../../../src/application/use-cases/delete-project.js';
 import { DeleteRun } from '../../../../src/application/use-cases/delete-run.js';
@@ -15,6 +16,9 @@ import { sampleProject } from '../../../support/project-fixtures.js';
 import { runningRun, sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy, userBob } from '../../../support/run-harness.js';
 import { sampleCachedSnapshot } from '../../../support/snapshot-listing-fixtures.js';
+
+// RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
+const uploads = new FakeUploadStore();
 
 // RF-1012, DEC-55, RF-1105: deleting a run, a project and a snapshot.
 
@@ -120,7 +124,7 @@ describe('DeleteProject', () => {
     const second = await ended();
     folders.seed(target, { 'codemap.json': 'y'.repeat(50) });
 
-    const result = await new DeleteProject({ projects, runs, folders, logger }).execute({
+    const result = await new DeleteProject({ projects, runs, folders, logger, uploads }).execute({
       actor: userAmy,
       projectId: project.id,
     });
@@ -145,7 +149,7 @@ describe('DeleteProject refusals', () => {
     const done = await ended();
     await runs.insert(runningRun({ userId: userAmy.userId, projectId: project.id }));
 
-    const result = await new DeleteProject({ projects, runs, folders, logger }).execute({
+    const result = await new DeleteProject({ projects, runs, folders, logger, uploads }).execute({
       actor: userAmy,
       projectId: project.id,
     });
@@ -159,7 +163,7 @@ describe('DeleteProject refusals', () => {
 
   it("RF-1105 answers not found for another user's project and for an unknown id", async () => {
     const { projects, runs, folders, logger, project } = await setup();
-    const deleteProject = new DeleteProject({ projects, runs, folders, logger });
+    const deleteProject = new DeleteProject({ projects, runs, folders, logger, uploads });
 
     const other = await deleteProject.execute({ actor: userBob, projectId: project.id });
     const unknown = await deleteProject.execute({ actor: userAmy, projectId: 'not-a-uuid' });

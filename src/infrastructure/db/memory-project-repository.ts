@@ -3,7 +3,9 @@ import type {
   SettingsChange,
   SettingsUpdate,
   StoredProject,
+  UploadAttachment,
 } from '../../application/ports/project-repository.js';
+import type { RunIndex } from '../../application/ports/run-index.js';
 import type { Project } from '../../application/projects/project.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -27,6 +29,12 @@ function newestFirst(left: Project, right: Project): number {
 
 export class MemoryProjectRepository implements ProjectRepository {
   private readonly projects = new Map<string, Project>();
+  private runs: Pick<RunIndex, 'list'> | undefined;
+
+  /** The runs `lastRunSnapshotKey` is read from, as the database reads them. */
+  followRuns(runs: Pick<RunIndex, 'list'>): void {
+    this.runs = runs;
+  }
 
   insertOrFind(project: Project): Promise<StoredProject> {
     if (!hasValidSourceShape(project.sourceKind, project)) {
@@ -42,13 +50,19 @@ export class MemoryProjectRepository implements ProjectRepository {
     return Promise.resolve({ project, created: true });
   }
 
-  list(userId: string, limit?: number): Promise<readonly Project[]> {
+  async list(userId: string, limit?: number): Promise<readonly Project[]> {
     const own = [...this.projects.values()].filter((project) => project.userId === userId);
-    return Promise.resolve(own.sort(newestFirst).slice(0, limit));
+    return Promise.all(
+      own
+        .sort(newestFirst)
+        .slice(0, limit)
+        .map((p) => this.withLastRun(p)),
+    );
   }
 
-  find(userId: string, projectId: string): Promise<Project | undefined> {
-    return Promise.resolve(this.owned(userId, projectId));
+  async find(userId: string, projectId: string): Promise<Project | undefined> {
+    const project = this.owned(userId, projectId);
+    return project === undefined ? undefined : this.withLastRun(project);
   }
 
   updateSettings(change: SettingsChange): Promise<SettingsUpdate> {
@@ -68,6 +82,14 @@ export class MemoryProjectRepository implements ProjectRepository {
     return Promise.resolve({ kind: 'updated', project: updated });
   }
 
+  async attachUpload(change: UploadAttachment): Promise<Project | undefined> {
+    const project = this.owned(change.userId, change.projectId);
+    if (project?.sourceKind !== 'upload') return undefined;
+    const updated = { ...project, upload: change.upload, updatedAt: change.updatedAt };
+    this.projects.set(project.id, updated);
+    return this.withLastRun(updated);
+  }
+
   async remove(
     userId: string,
     projectId: string,
@@ -77,6 +99,14 @@ export class MemoryProjectRepository implements ProjectRepository {
     this.projects.delete(projectId);
     await afterRowsGone();
     return true;
+  }
+
+  /** The project with the snapshot of its newest run that has one, as the database reads it. */
+  private async withLastRun(project: Project): Promise<Project> {
+    if (this.runs === undefined) return project;
+    const runs = await this.runs.list(project.userId, project.id);
+    const key = runs.find((run) => run.snapshotKey !== null)?.snapshotKey;
+    return key === undefined || key === null ? project : { ...project, lastRunSnapshotKey: key };
   }
 
   private owned(userId: string, projectId: string): Project | undefined {

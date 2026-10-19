@@ -178,7 +178,11 @@ export function composePipeline(parts: PipelineParts): Pipeline {
   const queue = new RunQueue({
     ...{ runs, lifecycle, clock, logger },
     executors: {
-      scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
+      scan: new RunScan({
+        ...{ fetcher, projects, pipeline, manifests, clock, logger },
+        // An evaluation reads the golden GitHub fixtures only; it has no uploaded zip.
+        uploads: { read: () => Promise.resolve(undefined) },
+      }),
       understand: understandOf(parts, s),
     },
     maxRunning: 1,

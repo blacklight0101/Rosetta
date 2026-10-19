@@ -103,6 +103,8 @@ function failureRecord(error: unknown): LogRecord {
 interface CreatedServer {
   readonly server: ReturnType<typeof buildServer>;
   readonly runs: RunComposition;
+  /** RF-129: stops the uploads in flight, so a shutdown does not wait for a slow sender. */
+  readonly abortUploads: () => void;
 }
 
 interface ServerParts {
@@ -135,6 +137,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
   const projects = await composeProjects({
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
     ...{ dataDir: environment.dataDir, priceTable: auth.priceTable },
+    uploadMaxMb: environment.uploadMaxMb,
     serverKeys: serverKeyPresence(environment, doubles !== undefined),
   });
   const server = buildServer({
@@ -146,15 +149,23 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     history: composeHistory({ pool, logger, dataDir: environment.dataDir }),
     ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,
+    uploadMaxMb: environment.uploadMaxMb,
     staticRoot,
   });
-  return { server, runs };
+  return {
+    server,
+    runs,
+    abortUploads: () => {
+      projects.storeUpload.abortAll();
+    },
+  };
 }
 
 // RF-1108, RNF-002: the runs stop first (they end as Interrupted and their streams end), then the
 // server closes.
 function closer(created: CreatedServer): () => Promise<void> {
   return async () => {
+    created.abortUploads();
     await created.runs.queue.shutDown();
     await created.server.close();
   };
@@ -214,11 +225,11 @@ export function composeApplication(options: ApplicationOptions): Application {
     try {
       await file.applyRetention();
       const auth = await composeAuth(options, { pool, logger, clock, masker, hasher, secretBox });
-      const { server, runs } = await createServer({
+      const { server, runs, abortUploads } = await createServer({
         ...{ environment, logger, pool, clock, masker, doubles, promptsFolder: catalogueFolder },
         auth,
       });
-      close = closer({ server, runs });
+      close = closer({ server, runs, abortUploads });
       const parts = { file, auth, pool, clock, runs: runs.queue, logger, environment };
       let address = '';
       await startUp({

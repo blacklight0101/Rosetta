@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SnapshotInfo } from '../../../../src/application/ports/source-fetcher.js';
@@ -180,5 +180,35 @@ describe('SnapshotStore writes the kind of a snapshot', () => {
     );
     expect(written).toEqual(uploadRecord);
     expect(await store.readExisting(uploadKey)).toMatchObject({ kind: 'upload', fileCount: 12 });
+  });
+});
+
+describe('SnapshotStore.rewriteInfo when the write fails', () => {
+  it('RF-128 leaves the description file and its folder read-only again', async () => {
+    class FailingStore extends SnapshotStore {
+      override writeInfo(): Promise<void> {
+        return Promise.reject(new Error('disk full'));
+      }
+    }
+    const store = new FailingStore(root.path);
+    const dir = store.snapshotDir(uploadKey);
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'snapshot.json'), '{}', 'utf8');
+    await new SnapshotStore(root.path).makeReadOnly(dir);
+
+    const failed = store.rewriteInfo(uploadKey, {
+      kind: 'upload',
+      fileName: 'New.zip',
+      uploadedAt: '2026-10-20T09:00:00.000Z',
+      fileCount: 1,
+      totalBytes: 1,
+      skippedLinks: 0,
+      snapshotHash: HASH,
+    });
+
+    await expect(failed).rejects.toThrow();
+    expect((await stat(join(dir, 'snapshot.json'))).mode & 0o222).toBe(0);
+    // Windows has no read-only folders; the mode of a folder says nothing there.
+    expect(process.platform === 'win32' ? 0 : (await stat(dir)).mode & 0o222).toBe(0);
   });
 });

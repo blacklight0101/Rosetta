@@ -1,3 +1,4 @@
+import { heldZip } from '../../../support/upload-run-fixtures.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { actorOf } from '../../../../src/domain/accounts/actor.js';
 import { ERROR_CODES } from '../../../../src/domain/errors/codes.js';
@@ -33,7 +34,7 @@ async function setup(kind: SourceKind, settings = cloudReader) {
   const userId = actorOf(amyUser.account).userId;
   const project =
     kind === 'upload'
-      ? sampleProject({ userId, settings, sourceKind: 'upload', sourceUrl: '' })
+      ? sampleProject({ userId, settings, sourceKind: 'upload', sourceUrl: '', upload: heldZip })
       : sampleProject({ userId, settings });
   await test.projects.insertOrFind(project);
   return { test, project, amy: await signedInBrowser(test.server, amyUser), userId };

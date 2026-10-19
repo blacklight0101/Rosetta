@@ -1,3 +1,4 @@
+import { FakeUploadStore } from '../../../support/fake-upload-store.js';
 import { describe, expect, it } from 'vitest';
 import type { FolderTarget } from '../../../../src/application/ports/workspace-folders.js';
 import { DeleteProject } from '../../../../src/application/use-cases/delete-project.js';
@@ -13,6 +14,9 @@ import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folder
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
+
+// RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
+const uploads = new FakeUploadStore();
 
 // P2-41 (audit M1), RF-1012: a delete flow marks the folder before it removes any row, so the sweep
 // of folders without rows can tell a folder somebody deleted from one a wrong database lost. A
@@ -83,7 +87,7 @@ describe('DeleteProject marks the folder first', () => {
   it('P2-41 marks the project folder before the rows go and before the folder is removed', async () => {
     const { projects, runs, folders, logger, project } = await setup();
 
-    await new DeleteProject({ projects, runs, folders, logger }).execute({
+    await new DeleteProject({ projects, runs, folders, logger, uploads }).execute({
       actor: userAmy,
       projectId: project.id,
     });
@@ -96,7 +100,7 @@ describe('DeleteProject marks the folder first', () => {
     const { projects, runs, folders, logger, project, target } = await setup();
     folders.refuseRemoval = true;
 
-    const failed = new DeleteProject({ projects, runs, folders, logger }).execute({
+    const failed = new DeleteProject({ projects, runs, folders, logger, uploads }).execute({
       actor: userAmy,
       projectId: project.id,
     });
@@ -111,7 +115,7 @@ describe('DeleteProject when the mark or the removal does not happen', () => {
     const { projects, runs, folders, logger, project, target, run } = await setup();
     folders.refuseMark = true;
 
-    const failed = new DeleteProject({ projects, runs, folders, logger }).execute({
+    const failed = new DeleteProject({ projects, runs, folders, logger, uploads }).execute({
       actor: userAmy,
       projectId: project.id,
     });
@@ -131,7 +135,7 @@ describe('DeleteProject when the mark or the removal does not happen', () => {
     const { projects, runs, folders, logger, project, target } = await setup();
     projects.refuse = true;
 
-    const result = await new DeleteProject({ projects, runs, folders, logger }).execute({
+    const result = await new DeleteProject({ projects, runs, folders, logger, uploads }).execute({
       actor: userAmy,
       projectId: project.id,
     });

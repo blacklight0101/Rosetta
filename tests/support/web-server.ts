@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { UploadStore } from '../../src/application/ports/upload-store.js';
 import type { DefaultRoles } from '../../src/application/projects/default-roles.js';
 import type { PasswordHasher } from '../../src/application/ports/password-hasher.js';
 import type { SessionStore } from '../../src/application/ports/session-store.js';
@@ -45,7 +46,8 @@ import { answerStore, observabilityStore } from './observability-store.js';
 import type { MemoryOutputWriter } from './memory-output-writer.js';
 import type { ManualScheduler } from './manual-scheduler.js';
 import { capServices } from './cap-services.js';
-import { projectServices } from './project-services.js';
+import { FakeUploadStore } from './fake-upload-store.js';
+import { projectServices, type UploadParts } from './project-services.js';
 import { historyServices, runServices, type RunOutputGiven } from './web-run-services.js';
 import {
   keyParts,
@@ -60,6 +62,10 @@ import { SequenceIdGenerator } from './sequence-id-generator.js';
 
 /** The version the test servers report on /healthz. */
 export const testVersion = '1.2.3-test';
+
+/** RF-129: the upload limit of a test server that does not set one. */
+const DEFAULT_TEST_UPLOAD_MB = 5;
+const BYTES_PER_MB = 1024 * 1024;
 
 /** The public URL of the test servers; state-changing requests send it as their Origin. */
 export const testPublicUrl = 'http://127.0.0.1:8080';
@@ -123,6 +129,8 @@ export interface TestServerOptions
   readonly hasher?: PasswordHasher;
   /** The hash sign-in verifies for unknown user names; a fake one by default. */
   readonly dummyHash?: string;
+  /** RF-128: where uploads go; a fake that keeps nothing by default. The limit is `uploadMaxMb` (5 MB when not given). */
+  readonly uploads?: UploadStore;
   /** RF-1011: a data folder makes the calls and logs routes the composition root's, over its logs. */
   readonly logDir?: string;
 }
@@ -191,12 +199,34 @@ function runHarnessOf(
   clock: FixedClock,
   logger: MemoryLogger,
   eventStore: TestServerOptions['eventStore'],
+  projects: MemoryProjectRepository,
 ): RunHarness {
-  return createRunHarness({
+  const harness = createRunHarness({
     clock,
     logger,
     ...(eventStore === undefined ? {} : { eventStore: eventStore(logger) }),
   });
+  projects.followRuns(harness.runs);
+  return harness;
+}
+
+/** The observability and answer files of a test server, the key stores and what the run routes read. */
+function fileDoubles(parts: {
+  readonly projects: MemoryProjectRepository;
+  readonly clock: FixedClock;
+  readonly masker: SecretMasker;
+  readonly logDir: string | undefined;
+  readonly logger: MemoryLogger;
+}) {
+  const { masker, logger } = parts;
+  const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
+  return { files, keys: keyParts(), stores: { ...parts, ...files } };
+}
+
+/** RF-128, RF-129: the store uploads go to (a fake by default) and the limit it is given. */
+function uploadPartsOf(options: TestServerOptions): UploadParts {
+  const { uploads = new FakeUploadStore(), uploadMaxMb = DEFAULT_TEST_UPLOAD_MB } = options;
+  return { store: uploads, limitBytes: uploadMaxMb * BYTES_PER_MB };
 }
 
 /**
@@ -224,13 +254,13 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
   const { route, endingSessions } = streamRoute(clock, sessions);
   const auditLog = new MemoryAuditLog(masker);
   const serverSettings = new MemoryServerSettings(defaultRoles ?? {});
-  const runs = runHarnessOf(clock, logger, eventStore);
+  const runs = runHarnessOf(clock, logger, eventStore, projects);
   const { outputs, recorder, doubles } = outputsAndRoutes({ archiveWriter, runFileReader, report });
-  const files = { ...answerStore(masker), ...observabilityStore(masker, logger) };
-  const [keys, stores] = [keyParts(), { projects, ...files, clock, masker, logDir, logger }];
+  const { files, keys, stores } = fileDoubles({ projects, clock, masker, logDir, logger });
   const { providers, providerLedger, testProviders, factory } = providerTestService({
     ...{ users, serverSettings, clock, logger, masker, keys, recordings: providerRecordings },
   });
+  const upload = uploadPartsOf(options);
   const projectParts = { projects, serverSettings, users, auditLog, logger, clock, costs, usage };
   const server = buildServer({
     logger,
@@ -242,9 +272,9 @@ export function createTestServer(options: TestServerOptions = {}): TestServer {
       ...{ users, hasher, auditLog, logger, clock, dummyHash, usage, keys },
       ...{ sessions: endingSessions, serverSettings, testProviders },
     }),
-    projects: projectServices(projectParts, { ...files, keys: keys.keys }, runs.runs),
+    projects: projectServices(projectParts, { ...files, keys: keys.keys }, runs.runs, upload),
     runs: runServices(runs, { ...stores, keys: keys.keys, users, factory }, route, outputs),
-    history: historyServices({ runs, projects, folders, snapshots, logger, costs }),
+    history: historyServices({ runs, projects, folders, snapshots, logger, costs, upload }),
     onRoute: recorder.onRoute,
     ...overrides,
   });

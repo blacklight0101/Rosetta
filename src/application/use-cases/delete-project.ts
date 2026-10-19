@@ -4,6 +4,7 @@ import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Logger } from '../ports/logger.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { UploadStore } from '../ports/upload-store.js';
 import type { WorkspaceFolders } from '../ports/workspace-folders.js';
 import type { Deleted, DeleteRunProblem } from './delete-run.js';
 import { markFolder, removeFolder } from './remove-folder.js';
@@ -25,6 +26,8 @@ export interface DeleteProjectDependencies {
   readonly runs: RunIndex;
   readonly folders: WorkspaceFolders;
   readonly logger: Logger;
+  /** RF-133: the snapshots of an upload project go with it. */
+  readonly uploads: Pick<UploadStore, 'removeAllOf'>;
 }
 
 export class DeleteProject {
@@ -50,6 +53,8 @@ export class DeleteProject {
     await markFolder(folders, logger, target);
     const afterRowsGone = async (): Promise<void> => {
       await runs.removeEndedOfProject(userId, project.id);
+      // RF-133: the zips the project was fed go with it; the runs that used them are gone.
+      await this.deps.uploads.removeAllOf(project.id);
       await removeFolder(folders, logger, target, 'gone');
     };
     if (!(await projects.remove(userId, project.id, afterRowsGone))) {

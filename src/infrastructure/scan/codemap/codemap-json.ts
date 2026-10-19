@@ -2,9 +2,11 @@ import { z } from 'zod';
 import { MAX_AREA_NAME_LENGTH, type AreaProblem } from '../../../domain/code-map/area.js';
 import {
   createCodeMap,
+  isUploadSource,
   type CodeLink,
   type CodeMap,
   type CodeMapProblem,
+  type CodeMapSource,
   type CodeSymbol,
 } from '../../../domain/code-map/code-map.js';
 import {
@@ -93,12 +95,21 @@ const entitySchema = z.strictObject({
 const codeMapSchema = z.strictObject({
   schemaVersion: z.literal(1),
   scannerVersion: z.number().int().nonnegative().optional(),
-  source: z.strictObject({
-    owner: z.string().min(1).max(100),
-    repo: z.string().min(1).max(100),
-    commitSha: z.string().regex(/^[0-9a-f]{40}$/u),
-    subpath: z.string().max(maxPath),
-  }),
+  source: z.union([
+    z.strictObject({
+      owner: z.string().min(1).max(100),
+      repo: z.string().min(1).max(100),
+      commitSha: z.string().regex(/^[0-9a-f]{40}$/u),
+      subpath: z.string().max(maxPath),
+    }),
+    // RF-130: an uploaded zip has a name and a tree hash, no repository and no commit.
+    z.strictObject({
+      kind: z.literal('upload'),
+      fileName: z.string().min(1).max(maxPath),
+      snapshotHash: z.string().regex(/^sha256:[0-9a-f]{64}$/u),
+      subpath: z.literal(''),
+    }),
+  ]),
   files: z.array(fileSchema).max(maxFiles),
   areas: z.array(areaSchema).max(maxAreas),
   symbols: z.array(symbolSchema).max(maxSymbols),
@@ -146,17 +157,21 @@ function linkJson(link: CodeLink): Record<string, unknown> {
   };
 }
 
+function sourceJson(source: CodeMapSource): Record<string, unknown> {
+  if (isUploadSource(source)) {
+    const { kind, fileName, snapshotHash, subpath } = source;
+    return { kind, fileName, snapshotHash, subpath };
+  }
+  const { owner, repo, commitSha, subpath } = source;
+  return { owner, repo, commitSha, subpath };
+}
+
 /** The text of `codemap.json`: two-space indent, fixed key order, one final line break. */
 export function serialiseCodeMap(map: CodeMap): string {
   const json = {
     schemaVersion: map.schemaVersion,
     ...(map.scannerVersion === undefined ? {} : { scannerVersion: map.scannerVersion }),
-    source: {
-      owner: map.source.owner,
-      repo: map.source.repo,
-      commitSha: map.source.commitSha,
-      subpath: map.source.subpath,
-    },
+    source: sourceJson(map.source),
     files: map.files.map(fileJson),
     areas: map.areas.map((area) => ({
       name: area.name,

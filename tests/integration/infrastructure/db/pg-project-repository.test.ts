@@ -7,6 +7,7 @@ import {
   projectOwners,
   projectRepositoryContract,
 } from '../../../contracts/project-repository.contract.js';
+import { projectUploadSourceContract } from '../../../contracts/project-upload-source.contract.js';
 import {
   serverCapsContract,
   serverSettingsContract,
@@ -20,14 +21,16 @@ import { hasTestDatabase, useTestDatabase } from '../../../support/postgres.js';
 describe.skipIf(!hasTestDatabase)('PgProjectRepository', () => {
   const database = useTestDatabase();
 
-  projectRepositoryContract('PgProjectRepository', async () => {
+  const fresh = async () => {
     const { pool } = await database.createSchema({ migrate: true });
     const users = new PgUserRepository(pool);
     for (const [index, id] of projectOwners.entries()) {
       await users.insert(sampleAccount({ id, userName: `owner${String(index)}` }));
     }
     return new PgProjectRepository(pool);
-  });
+  };
+  projectRepositoryContract('PgProjectRepository', fresh);
+  projectUploadSourceContract('PgProjectRepository', fresh);
 
   it('RF-010 the stored settings are parsed again on every read', async () => {
     const { pool } = await database.createSchema({ migrate: true });

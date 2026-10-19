@@ -49,6 +49,19 @@ it('RF-128 sends the zip to the project source with the CSRF token and parses th
   expect(await answer).toEqual({ ok: true, value: summary });
 });
 
+it('RF-128 names the file in X-File-Name, percent-encoded, so the snapshot keeps it', async () => {
+  const server = installFakeUploadServer();
+  const client = createApiClient();
+  const answer = uploadSource(client, 'p1', zipFile('Café Orders.zip'), { onProgress: vi.fn() });
+  await Promise.resolve();
+
+  const sent = server.pending();
+  sent.respond(201, summary);
+
+  expect(sent.headers['x-file-name']).toBe('Caf%C3%A9%20Orders.zip');
+  expect((await answer).ok).toBe(true);
+});
+
 it('RF-128 an answer that is not a summary is reported as unreadable, not trusted', async () => {
   const { server, answer } = await startUpload();
 

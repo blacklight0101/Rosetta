@@ -1,5 +1,5 @@
 import type { EpochMs } from '../../domain/accounts/user.js';
-import type { Project } from '../projects/project.js';
+import type { Project, ProjectUpload } from '../projects/project.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 
 // Architecture section 7, RF-010, RF-1105: projects and their settings. Every operation takes the
@@ -26,6 +26,13 @@ export type SettingsUpdate =
   | { readonly kind: 'missing' }
   | { readonly kind: 'stale'; readonly currentVersion: number };
 
+export interface UploadAttachment {
+  readonly userId: string;
+  readonly projectId: string;
+  readonly upload: ProjectUpload;
+  readonly updatedAt: EpochMs;
+}
+
 export interface ProjectRepository {
   /** Stores the project, or returns the owner's existing project with the same source. */
   insertOrFind(project: Project): Promise<StoredProject>;
@@ -40,6 +47,11 @@ export interface ProjectRepository {
    * for an unknown id and for another user's project, whatever the version.
    */
   updateSettings(change: SettingsChange): Promise<SettingsUpdate>;
+  /**
+   * Records the zip an upload project holds now (RF-128), replacing the earlier one. Undefined for an
+   * unknown id, another user's project and a GitHub project, and then nothing is written.
+   */
+  attachUpload(change: UploadAttachment): Promise<Project | undefined>;
   /**
    * Removes the project (RF-1012); false for an unknown id and for another user's project, and
    * then `afterRowsGone` is not called. PostgreSQL also refuses (false) while a run of the project

@@ -25,3 +25,11 @@ describe('RF-125 pinned source of the citations', () => {
     expect(caught).toMatchObject({ code: ERROR_CODES.codeMapInvalid });
   });
 });
+
+describe('RF-131 pinned source of an uploaded zip', () => {
+  it('RF-131 needs no commit: the citations link to the report', () => {
+    const source = { kind: 'upload', owner: '', repo: '' };
+
+    expect(pinnedSourceOf(source, null)).toEqual({ kind: 'upload' });
+  });
+});

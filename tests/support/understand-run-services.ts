@@ -1,3 +1,5 @@
+import type { UploadStore } from '../../src/application/ports/upload-store.js';
+import { fixtureUploadsAt } from './upload-run-fixtures.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue, type RunQueueDependencies } from '../../src/application/runs/run-queue.js';
 import { RunScan } from '../../src/application/use-cases/run-scan.js';
@@ -77,6 +79,8 @@ export interface Stores {
   readonly runs: MemoryRunIndex;
   readonly projects: MemoryProjectRepository;
   readonly users: MemoryUserRepository;
+  /** The snapshot of the zip an upload project holds: the repository folder of the run (RF-130). */
+  readonly uploads: Pick<UploadStore, 'read'>;
 }
 
 /** A writer that refuses to remove a card file, as a workspace that has lost the right to would. */
@@ -109,6 +113,7 @@ export function stores(
     runs: new MemoryRunIndex(),
     projects: new MemoryProjectRepository(),
     users: new MemoryUserRepository(),
+    uploads: fixtureUploadsAt(repository ?? fixtureRoot(fixture)),
   };
 }
 
@@ -173,7 +178,9 @@ export async function queueOf(
   return new RunQueue({
     ...{ runs, lifecycle, clock, logger },
     executors: {
-      scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
+      scan: new RunScan({
+        ...{ fetcher, projects, pipeline, manifests, clock, logger, uploads: s.uploads },
+      }),
       understand: understandExecutor(s, providers, cardWritesFail),
       ...more,
     },

@@ -1,4 +1,5 @@
 import type { ApplicationLogReader } from '../../src/application/ports/application-log-reader.js';
+import type { UploadStore } from '../../src/application/ports/upload-store.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
 import type { AnswersFile } from '../../src/application/ports/answers-file.js';
 import type { ArchiveWriter } from '../../src/application/ports/archive-writer.js';
@@ -272,14 +273,19 @@ export function historyServices(parts: {
   readonly snapshots: MemorySnapshotCache;
   readonly logger: MemoryLogger;
   readonly costs: MemoryCostTotals;
+  /** RF-133: the store whose snapshots a deleted project takes with it. */
+  readonly upload: { readonly store: UploadStore };
 }): ServerOptions['history'] {
-  const { projects, folders, snapshots, logger, costs } = parts;
+  const { projects, folders, snapshots, logger, costs, upload } = parts;
   const runs = parts.runs.runs;
   return {
     listHistory: new ListHistory({ projects, runs, folders }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
-    deleteProject: new DeleteProject({ projects, runs, folders, logger }),
+    deleteProject: new DeleteProject({
+      ...{ projects, runs, folders, logger },
+      uploads: upload.store,
+    }),
     listSnapshots: new ListSnapshots({ snapshots, runs }),
     deleteSnapshot: new DeleteSnapshot({ snapshots, runs, logger }),
   };

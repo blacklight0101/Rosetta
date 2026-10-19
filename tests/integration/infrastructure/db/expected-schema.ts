@@ -53,6 +53,9 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'updated_at timestamptz',
     'settings_version int4',
     'source_kind text',
+    'source_snapshot_key text null',
+    'source_file_name text null',
+    'source_uploaded_at timestamptz null',
   ],
   runs: [
     'id uuid',

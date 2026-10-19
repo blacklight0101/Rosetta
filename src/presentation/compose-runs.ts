@@ -1,3 +1,4 @@
+import { createUploadStore } from './compose-uploads.js';
 import { EstimateRun } from '../application/estimate/estimate-run.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
@@ -134,7 +135,10 @@ function composeScan(
   const { manifests } = stores;
   return {
     fetcher,
-    executor: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
+    executor: new RunScan({
+      ...{ fetcher, projects, pipeline, manifests, clock, logger },
+      uploads: createUploadStore(dataDir),
+    }),
   };
 }
 

@@ -7,12 +7,29 @@ import type { LinkKind, SqlVerb, SymbolKind } from './vocabulary.js';
 // RF-105, RF-106: the code map aggregate (data-model 3.4). It holds no time and no absolute path,
 // and every list is in a fixed order, so the same input always gives the same map.
 
-export interface CodeMapSource {
+/** A GitHub repository at a pinned commit. */
+interface GithubCodeMapSource {
   readonly owner: string;
   readonly repo: string;
   readonly commitSha: string;
   /** '' for the whole repository. */
   readonly subpath: string;
+}
+
+/** A zip the user uploaded (RF-130): named by its file and the hash of its tree, with no commit. */
+export interface UploadCodeMapSource {
+  readonly kind: 'upload';
+  readonly fileName: string;
+  readonly snapshotHash: string;
+  /** Always '': an upload is the whole tree. */
+  readonly subpath: string;
+}
+
+export type CodeMapSource = GithubCodeMapSource | UploadCodeMapSource;
+
+/** True for the source of an uploaded zip. */
+export function isUploadSource(source: CodeMapSource): source is UploadCodeMapSource {
+  return 'kind' in source;
 }
 
 export interface CodeSymbol {

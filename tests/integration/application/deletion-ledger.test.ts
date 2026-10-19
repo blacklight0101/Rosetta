@@ -1,3 +1,4 @@
+import { FakeUploadStore } from '../../support/fake-upload-store.js';
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '../../../src/domain/accounts/actor.js';
 import { DeleteProject } from '../../../src/application/use-cases/delete-project.js';
@@ -18,6 +19,9 @@ import { MemoryWorkspaceFolders } from '../../support/memory-workspace-folders.j
 import { hasTestDatabase, useTestDatabase } from '../../support/postgres.js';
 import { sampleProject } from '../../support/project-fixtures.js';
 import { sampleRun } from '../../support/run-fixtures.js';
+
+// RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
+const uploads = new FakeUploadStore();
 
 // RF-1012, DEC-55, data-model.md section 9: deleting a run or a project on PostgreSQL removes the
 // run rows and the folders and never a `cost_ledger` row, so the totals of RF-1010 still include
@@ -107,7 +111,7 @@ describe.skipIf(!hasTestDatabase)('deleting a project on PostgreSQL', () => {
     await spend(first, 400n);
     await spend(second, 250n);
 
-    const result = await new DeleteProject({ projects, runs, folders, logger }).execute({
+    const result = await new DeleteProject({ projects, runs, folders, logger, uploads }).execute({
       actor,
       projectId: project.id,
     });
@@ -152,7 +156,7 @@ describe.skipIf(!hasTestDatabase)(
       const { projects, runs, folders, logger, project, ended } = await setup(database);
       const done = await ended();
       folders.refuseRemoval = true;
-      const deleteProject = new DeleteProject({ projects, runs, folders, logger });
+      const deleteProject = new DeleteProject({ projects, runs, folders, logger, uploads });
 
       await expect(deleteProject.execute({ actor, projectId: project.id })).rejects.toMatchObject({
         code: ERROR_CODES.folderRemovalFailed,

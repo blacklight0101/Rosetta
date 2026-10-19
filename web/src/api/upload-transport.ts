@@ -7,6 +7,7 @@ export interface BlobSend {
   readonly path: string;
   readonly file: Blob;
   readonly contentType: string;
+  readonly headers: Readonly<Record<string, string>>;
   readonly csrfToken: string | undefined;
   readonly timeoutMs: number;
   readonly signal: AbortSignal | undefined;
@@ -28,6 +29,7 @@ export function sendBlob(send: BlobSend): Promise<BlobOutcome> {
     request.timeout = send.timeoutMs;
     request.setRequestHeader('content-type', send.contentType);
     request.setRequestHeader('accept', 'application/json');
+    for (const [name, value] of Object.entries(send.headers)) request.setRequestHeader(name, value);
     if (send.csrfToken !== undefined) request.setRequestHeader('x-csrf-token', send.csrfToken);
     request.upload.onprogress = (event) => {
       if (event.lengthComputable) send.onProgress?.(event.loaded, event.total);

@@ -11,6 +11,7 @@ import { PgRunIndex } from '../infrastructure/db/pg-run-index.js';
 import type { DatabasePool } from '../infrastructure/db/pool.js';
 import { FileSnapshotCache } from '../infrastructure/files/file-snapshot-cache.js';
 import { NodeWorkspaceFolders } from '../infrastructure/files/node-workspace-folders.js';
+import { createUploadStore } from './compose-uploads.js';
 import type { HistoryServices } from './web/history-routes.js';
 
 // Architecture section 2 (composition root), RF-1008, RF-1012, RF-1105: the adapters and the use
@@ -35,7 +36,10 @@ export function composeHistory(parts: HistoryParts): HistoryServices {
     listHistory: new ListHistory({ projects, runs, folders }),
     listProjectOverview: new ListProjectOverview({ projects, runs, costs: new PgCostTotals(pool) }),
     deleteRun: new DeleteRun({ runs, folders, logger }),
-    deleteProject: new DeleteProject({ projects, runs, folders, logger }),
+    deleteProject: new DeleteProject({
+      ...{ projects, runs, folders, logger },
+      uploads: createUploadStore(dataDir),
+    }),
     listSnapshots: new ListSnapshots({ snapshots, runs }),
     deleteSnapshot: new DeleteSnapshot({ snapshots, runs, logger }),
   };

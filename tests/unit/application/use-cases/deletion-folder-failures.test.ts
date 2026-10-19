@@ -1,3 +1,4 @@
+import { FakeUploadStore } from '../../../support/fake-upload-store.js';
 import { describe, expect, it } from 'vitest';
 import { DeleteProject } from '../../../../src/application/use-cases/delete-project.js';
 import { DeleteRun } from '../../../../src/application/use-cases/delete-run.js';
@@ -13,6 +14,9 @@ import { MemoryWorkspaceFolders } from '../../../support/memory-workspace-folder
 import { sampleProject } from '../../../support/project-fixtures.js';
 import { sampleRun } from '../../../support/run-fixtures.js';
 import { userAmy } from '../../../support/run-harness.js';
+
+// RF-133: a deleted project also asks the upload store to drop its snapshots; these tests ignore it.
+const uploads = new FakeUploadStore();
 
 // RF-1012, DEC-55, data-model.md section 9, P1-121 (finding 5 of the P1-40 verdict): a folder that
 // cannot be removed is always logged. Delete run removes the folder before the row; a failed
@@ -46,7 +50,7 @@ const refusal = { name: 'RosettaError', code: ERROR_CODES.folderRemovalFailed };
 describe('DeleteProject when the folder cannot be removed', () => {
   it('RF-1012 logs the folder with RST-1115 after the rows are gone and leaves the folder', async () => {
     const { projects, runs, folders, logger, project, target, run } = await setup();
-    const deleteProject = new DeleteProject({ projects, runs, folders, logger });
+    const deleteProject = new DeleteProject({ projects, runs, folders, logger, uploads });
     folders.refuseRemoval = true;
 
     const failed = deleteProject.execute({ actor: userAmy, projectId: project.id });
