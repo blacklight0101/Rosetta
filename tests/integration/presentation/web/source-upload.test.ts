@@ -27,6 +27,7 @@ describe('PUT /api/projects/:id/source', () => {
       snapshotHash: uploads.hash,
       fileName: 'OrderDesk.zip',
       uploadedAt: '2026-10-11T09:00:00.000Z',
+      codeChangedSinceLastRun: false,
     });
   });
 
