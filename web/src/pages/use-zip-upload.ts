@@ -52,7 +52,7 @@ interface Checked {
   readonly problem: string | undefined;
 }
 
-function useUploadLimit(): number {
+export function useUploadLimit(): number {
   const { client } = useApp();
   const [limitMb, setLimitMb] = useState(defaultUploadLimitMb);
   useEffect(() => {
@@ -112,7 +112,7 @@ interface Flow {
 }
 
 /** A signal that fires when the form goes away (another tab, another page), so an upload stops. */
-function useAbortOnLeave(): AbortSignal {
+export function useAbortOnLeave(): AbortSignal {
   const controller = useRef(new AbortController());
   useEffect(() => {
     const current = controller.current;
