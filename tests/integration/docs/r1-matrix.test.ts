@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  lineNamesId,
   matrixProblems,
   matrixRows,
   releaseOneIds,
@@ -82,10 +83,34 @@ describe('the guard of the release 1 verification matrix', () => {
     expect(mentions(await matrixProblems(input(bad)), 'RF-003:')).toBeGreaterThan(0);
   });
 
+  it('RNF-005 fails a Should row whose counts are - / - / - too', async () => {
+    const bad = withRow('RF-103', (line) => line.replace(/\d+ \/ \d+ \/ \d+/u, '- / - / -'));
+
+    expect(mentions(await matrixProblems(input(bad)), 'not three whole numbers')).toBe(1);
+  });
+
   it('RNF-005 fails a row that names a card that is not in tasks.md', async () => {
     const bad = withRow('RF-615', (line) => line.replace('card P3-30', 'card P9-99'));
 
     expect(mentions(await matrixProblems(input(bad)), 'P9-99')).toBe(1);
+  });
+
+  it('RNF-005 fails a Must with no tests whose only card does not exist', async () => {
+    const bad = withRow('RF-802', (line) =>
+      line.replace('13 / 0 / 0', '0 / 0 / 0').replace('card P1-54', 'card P9-99'),
+    );
+
+    const problems = await matrixProblems(input(bad));
+
+    expect(mentions(problems, 'a Must without a test')).toBe(1);
+  });
+});
+
+describe('the guard of the release 1 verification matrix on rows and examples', () => {
+  it('RNF-005 fails an example with no line number', async () => {
+    const bad = withRow('RF-003', (line) => line.replace(/:\d+`/u, '`'));
+
+    expect(mentions(await matrixProblems(input(bad)), 'no line number')).toBe(1);
   });
 
   it('RNF-005 fails a row that names a proposed card the matrix does not propose', async () => {
@@ -99,7 +124,15 @@ describe('the guard of the release 1 verification matrix', () => {
       line.replace('| Must     | 31 / 13 / 0 ', '| Should   | 0 / 0 / 0   '),
     );
 
-    expect(mentions(await matrixProblems(input(bad)), 'RF-003:')).toBeGreaterThan(0);
+    const problems = await matrixProblems(input(bad));
+
+    expect(mentions(problems, 'a Must without a test')).toBe(1);
+  });
+
+  it('RNF-005 fails a Must relabelled Should even when it has tests', async () => {
+    const bad = withRow('RF-003', (line) => line.replace('| Must ', '| Should'));
+
+    expect(mentions(await matrixProblems(input(bad)), 'specification says Must')).toBe(1);
   });
 
   it('RNF-005 fails an example that points at the first line of a file', async () => {
@@ -112,5 +145,40 @@ describe('the guard of the release 1 verification matrix', () => {
     const bad = withRow('RF-003', (line) => line.replace('pg-run-index', 'no-such-file'));
 
     expect(mentions(await matrixProblems(input(bad)), 'RF-003:')).toBeGreaterThan(0);
+  });
+});
+
+describe('the example line of the release 1 verification matrix', () => {
+  const source = [
+    "import { it } from 'vitest';",
+    '',
+    "describe('RF-620..RF-627 the set', () => {",
+    "  it('RF-300 first', () => {",
+    '    run();',
+    '  });',
+    '',
+    '  it(',
+    "    'RF-301 a title on the next line',",
+    '    () => {',
+    '      run();',
+    '    },',
+    '  );',
+    '});',
+  ].join('\n');
+
+  it('RNF-005 accepts a line inside a test that names the id', () => {
+    expect(lineNamesId(source, 5, 'RF-300')).toBe(true);
+    expect(lineNamesId(source, 11, 'RF-301')).toBe(true);
+  });
+
+  it('RNF-005 accepts a line inside a describe whose range names the id', () => {
+    expect(lineNamesId(source, 5, 'RF-624')).toBe(true);
+  });
+
+  it('RNF-005 refuses line 1, a test of another id and an id outside the range', () => {
+    expect(lineNamesId(source, 1, 'RF-300')).toBe(false);
+    expect(lineNamesId(source, 5, 'RF-301')).toBe(false);
+    expect(lineNamesId(source, 5, 'RF-628')).toBe(false);
+    expect(lineNamesId(source, 5, 'RNF-624')).toBe(false);
   });
 });

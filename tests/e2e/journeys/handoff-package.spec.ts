@@ -4,6 +4,8 @@ import {
   decisionsOf,
   defaultedBriefIds,
   packageFile,
+  plainFile,
+  projectContextIds,
   saveBrief,
   understandFromUrl,
   untracedRequirements,
@@ -51,9 +53,10 @@ test('RF-604 RF-610 RF-611 from a GitHub URL to a downloaded hand-off package th
   const decisions = decisionsOf(files);
   expect(decisions).toContain('Migration strategy: Parallel Change');
   expect(decisions).toContain('Technology for the hosting layer: On-premises Kubernetes');
-  expect(packageFile(files, 'AGENTS.md')).not.toBe('');
+  expect(plainFile(files, 'AGENTS.md')).toContain('On-premises Kubernetes');
   expect(defaultedBriefIds(files)).not.toContain('migration');
   expect(defaultedBriefIds(files)).not.toContain('stack.hosting');
+  expect(defaultedBriefIds(files)).toEqual(expect.arrayContaining([...projectContextIds]));
   expect(untracedRequirements(files)).toEqual([]);
 });
 
@@ -75,6 +78,7 @@ test('RF-601 RF-605 RF-612 a brief saved with every default gives a package that
   expect(decisions).toContain('Migration strategy: Strangler Fig');
   expect(decisions).not.toContain('Technology for the hosting layer');
   expect(defaultedBriefIds(files)).toContain('migration');
+  expect(defaultedBriefIds(files)).toEqual(expect.arrayContaining([...projectContextIds]));
   expect(untracedRequirements(files)).toEqual([]);
   expect(Object.keys(files).some((path) => path.endsWith('AGENTS.md'))).toBe(false);
 });

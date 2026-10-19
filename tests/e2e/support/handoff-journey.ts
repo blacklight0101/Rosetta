@@ -57,6 +57,11 @@ export function packageFile(files: Readonly<Record<string, string>>, name: strin
   return files[path] ?? '';
 }
 
+/** A file of the package without its Markdown escapes (a hyphen in a name is written \-). */
+export function plainFile(files: Readonly<Record<string, string>>, name: string): string {
+  return packageFile(files, name).replaceAll('\\', '');
+}
+
 /** Every decision record of the package, joined, without the Markdown escapes. */
 export function decisionsOf(files: Readonly<Record<string, string>>): string {
   return Object.entries(files)
@@ -64,6 +69,15 @@ export function decisionsOf(files: Readonly<Record<string, string>>): string {
     .map(([, text]) => text.replaceAll('\\', ''))
     .join('\n');
 }
+
+/** RF-611: the optional project questions; unanswered, each is listed in open-questions.md with its default. */
+export const projectContextIds = [
+  'context.teamSize',
+  'context.experience',
+  'context.deadline',
+  'context.keepIntegrations',
+  'context.dataMigration',
+] as const;
 
 /** RF-612: the ids of the brief questions the package says took their default (open-questions.md). */
 export function defaultedBriefIds(files: Readonly<Record<string, string>>): readonly string[] {
