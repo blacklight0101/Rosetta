@@ -129,7 +129,7 @@ src/
     ports/              port interfaces (section 7)
     use-cases/          one file per use case (section 6)
     support/            helpers the use cases share (KeyedQueue: sign-in attempts per user name one at a time)
-    runs/               the run queue (`RunQueue`), the run lifecycle (manifest start and end, `run.started`, `run.ended`), the event publisher, the accepted manifest, the event and manifest schemas, the manifest security recorder (mask counts and blocked calls)
+    runs/               the run queue (`RunQueue`), the run lifecycle (manifest start and end, `run.started`, `run.ended`), the event publisher, the accepted manifest, the event and manifest schemas, the manifest security recorder (mask counts and blocked calls), `PrivateCodeRecheck` (P3-54, RF-132: wraps the understand and plan executors; a queued run whose roles now send private code to a cloud provider without the recorded confirmation ends `Failed` with `RST-1521` and starts nothing)
     providers/          provider rules the use cases share: which kinds need cloud consent (`needsCloudConsent`, RF-143)
     agent/              the agent loop (`runAgentTask`, its end states and reasons), the read-only tools
                         (`ReadOnlyTools`: definitions, zod-checked arguments, code-map lookup by exact

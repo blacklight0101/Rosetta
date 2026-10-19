@@ -122,10 +122,15 @@ export class StartRun {
       return err(ERROR_CODES.cloudConsentMissing);
     }
     // RF-132: an uploaded project also needs the second confirmation for the planner.
-    if (rolesNeedPrivateConfirmation(project, this.deps.ollamaHost, roles)) {
-      if (request.privateCodeConfirmed !== true) return err(ERROR_CODES.privateCodeNotConfirmed);
+    // DEC-151: it is recorded, so the queue can check it again when the run starts.
+    const needsPrivate = rolesNeedPrivateConfirmation(project, this.deps.ollamaHost, roles);
+    if (needsPrivate && request.privateCodeConfirmed !== true) {
+      return err(ERROR_CODES.privateCodeNotConfirmed);
     }
-    const options = { cloudConsent, ...(sourceRunId === undefined ? {} : { sourceRunId }) };
+    const options = {
+      ...{ cloudConsent, ...(needsPrivate ? { privateCodeConfirmed: true } : {}) },
+      ...(sourceRunId === undefined ? {} : { sourceRunId }),
+    };
     return this.submit({ actor, project, stage: 'plan', options });
   }
 
