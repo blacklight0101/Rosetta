@@ -166,7 +166,7 @@ it('RF-006 RF-615 Resume queues the understand run again and tells the page', as
     [`POST /api/runs/${sourceId}/resume`]: json(202, { id: sourceId }),
   });
 
-  fireEvent.click(within(journey()).getByRole('button', { name: 'Resume' }));
+  fireEvent.click(within(journey()).getByRole('button', { name: 'Resume this run' }));
 
   await waitFor(() => {
     expect(onResumed).toHaveBeenCalledTimes(1);
@@ -182,12 +182,12 @@ it('RF-006 RF-615 a refused Resume shows its code and keeps the button', async (
     [`POST /api/runs/${sourceId}/resume`]: failure(409, 'RST-2307'),
   });
 
-  fireEvent.click(within(journey()).getByRole('button', { name: 'Resume' }));
+  fireEvent.click(within(journey()).getByRole('button', { name: 'Resume this run' }));
 
   await waitFor(() => {
     expect(journey().textContent).toContain('RST-2307');
   });
-  expect(within(journey()).getByRole('button', { name: 'Resume' })).toBeTruthy();
+  expect(within(journey()).getByRole('button', { name: 'Resume this run' })).toBeTruthy();
 });
 
 it('RF-615 a step that is current by its state says so once, not twice', () => {

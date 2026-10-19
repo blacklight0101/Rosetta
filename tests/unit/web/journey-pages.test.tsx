@@ -81,7 +81,7 @@ it('RF-615 RF-006 a stopped understand run shows Resume in the strip, which resu
   });
   await screen.findByRole('region', { name: 'Journey from code to package' });
 
-  fireEvent.click(within(strip()).getByRole('button', { name: 'Resume' }));
+  fireEvent.click(within(strip()).getByRole('button', { name: 'Resume this run' }));
 
   await waitFor(() => {
     expect(page.calls.map((call) => `${call.method} ${call.path}`)).toContain(

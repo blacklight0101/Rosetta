@@ -132,7 +132,7 @@ describe('journeyOf: an understand run that stopped', () => {
       );
 
       expect(step(view, 'understand')).toMatchObject({ state: 'failed', detail: text, here: true });
-      expect(view.action).toEqual({ kind: 'resume', label: 'Resume', runId: sourceId });
+      expect(view.action).toEqual({ kind: 'resume', label: 'Resume this run', runId: sourceId });
     },
   );
 

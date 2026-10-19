@@ -151,7 +151,7 @@ it('RF-615 RF-006 Resume in the strip opens the run page of the source run unles
   });
   await screen.findByRole('region', { name: 'Journey from code to package' });
 
-  fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Resume this run' }));
 
   await waitFor(() => {
     expect(window.location.pathname).toBe(`/runs/${sourceId}`);

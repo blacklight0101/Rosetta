@@ -26,7 +26,10 @@ function afterTheRun(c: Context): Next | undefined {
   const phase = phaseOf(source);
   if (phase === 'working') return { action: undefined, here: 'understand' };
   if (phase === 'stopped') {
-    return { action: { kind: 'resume', label: 'Resume', runId: source.id }, here: 'understand' };
+    return {
+      action: { kind: 'resume', label: 'Resume this run', runId: source.id },
+      here: 'understand',
+    };
   }
   if (source.supportedClaims === 0) {
     return {

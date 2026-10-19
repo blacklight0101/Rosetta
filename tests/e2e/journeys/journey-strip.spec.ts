@@ -78,7 +78,7 @@ test('RF-615 RF-006 an understand run that was stopped locks the plan steps and 
   await transitionsDone(page);
   await expectNoSeriousViolations(page);
 
-  await journey(page).getByRole('button', { name: 'Resume' }).click();
+  await journey(page).getByRole('button', { name: 'Resume this run' }).click();
 
   await expect(page).toHaveURL(live);
   await expect(runStatus(page)).toContainText('Running', { timeout: 30_000 });
