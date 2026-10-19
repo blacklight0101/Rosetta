@@ -142,6 +142,18 @@ describe('the run page of an uploaded project', () => {
     expect(facts?.textContent).not.toContain('github');
   });
 
+  it('RF-131 names only what the run has recorded of the zip', async () => {
+    const { stream } = renderLive();
+    const connection = await stream.connection();
+    const { fileName, uploadedAt, snapshotHash, ...bare } = uploadEvent.source;
+    expect([fileName, uploadedAt, snapshotHash]).toHaveLength(3);
+
+    connection.event(ev(1, 'run.started', { ...startedData, source: bare }));
+
+    const name = await screen.findByText('Uploaded zip');
+    expect(name.closest('p')?.textContent).toBe('Uploaded zip');
+  });
+
   it('RF-131 shows a file name that is markup as text', async () => {
     const hostile = '<img src=x onerror=alert(1)>.zip';
     const { stream, container } = renderLive();

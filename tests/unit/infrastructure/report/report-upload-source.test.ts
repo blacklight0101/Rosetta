@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { buildSiteFiles } from '../../../../src/infrastructure/report/published-site.js';
 import { renderReportHtml } from '../../../../src/infrastructure/report/report-html.js';
 import { renderReportMarkdown } from '../../../../src/infrastructure/report/report-markdown.js';
 import { renderEvidencePages } from '../../../../src/infrastructure/report/site/evidence-pages.js';
@@ -104,6 +105,26 @@ describe('report.html of an uploaded project', () => {
     expect(foreignLinks).toEqual([]);
     expect(html).not.toContain('<img src=x');
   });
+});
+
+describe('the header of report.html when the manifest holds little', () => {
+  it('RF-131 names only what the manifest holds', () => {
+    const source = {
+      kind: 'upload',
+      fileName: null,
+      uploadedAt: null,
+      snapshotHash: null,
+    } as const;
+    const { document } = auditHtml(renderReportHtml(reportModel({ source })));
+
+    const names = [...document.querySelectorAll('dl.facts > div > dt')].map((dt) => dt.textContent);
+    expect(names).toContain('Source');
+    expect(names).not.toContain('Uploaded');
+    expect(names).not.toContain('Snapshot');
+    expect(document.querySelector('dl.facts')?.textContent).toContain(
+      'An uploaded zip (its name was not recorded)',
+    );
+  });
 
   it('RF-131 links the zip nowhere', () => {
     const { document } = auditHtml(renderReportHtml(uploadModel()));
@@ -116,23 +137,27 @@ describe('report.html of an uploaded project', () => {
 });
 
 describe('every page of the report of an uploaded project', () => {
-  it('RF-131 holds no github.com address and no link outside Rosetta', () => {
-    const model = uploadModel();
-    const pages = {
-      'report.html': renderReportHtml(model),
-      'diagrams.html': renderDiagramsPage(model),
-      ...renderEvidencePages(model),
-    };
+  const assets = { 'report.css': 'body {}', 'replay.js': 'void 0;', 'filters.js': 'void 1;' };
 
-    const withGithub = Object.entries(pages)
-      .filter(([, html]) => html.includes('github.com'))
-      .map(([name]) => name);
-    const withForeign = Object.entries(pages)
+  it('RF-131 holds no github.com address and no link outside Rosetta', () => {
+    const files = buildSiteFiles(uploadModel(), assets, masker, {});
+    const pages = Object.entries(files).filter(([name]) => name.endsWith('.html'));
+
+    expect(pages.length).toBeGreaterThan(5);
+    const withGithub = pages.filter(([, html]) => html.includes('github.com')).map(([n]) => n);
+    const withForeign = pages
       .filter(([, html]) => auditHtml(html).foreignLinks.length > 0)
       .map(([name]) => name);
     expect(withGithub).toEqual([]);
     expect(withForeign).toEqual([]);
-    expect(renderReportMarkdown(model, masker)).not.toContain('github.com');
+    expect(files['report.md']).not.toContain('github.com');
+  });
+
+  it('RF-131 holds none in the diagrams page either', () => {
+    const html = renderDiagramsPage(uploadModel());
+
+    expect(html).not.toContain('github.com');
+    expect(auditHtml(html).foreignLinks).toEqual([]);
   });
 });
 
