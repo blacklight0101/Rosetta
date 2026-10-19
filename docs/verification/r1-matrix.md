@@ -24,7 +24,7 @@ the cards not filed yet are proposed in section 5 for the orchestrator to file (
 | The release 1 journeys (flows 1 and 7) | pass: from a GitHub URL to a downloaded hand-off package with a saved brief, recorded responses only (section 3)                              |
 | Documentation set requirements (P3-22) | RF-260..RF-263, RF-508 and RF-620..RF-627 are in the matrix, each with passing tests                                                          |
 | Requirements missing from the backlog  | RF-209, RF-231, RF-614 and RF-615 are `R1` in the specification but not in the roadmap backlog (open question 1, section 6)                   |
-| Pyramid for release 1                  | Unit 8802 / Integration 3887 / E2E 230 (68% / 30% / 2%; target 60 / 30 / 10 with 10 points of tolerance, DEC-30), section 7                   |
+| Pyramid for release 1                  | Unit 8897 / Integration 3943 / E2E 232 (68% / 30% / 2%; target 60 / 30 / 10 with 10 points of tolerance, DEC-30), section 7                   |
 
 ## 2. Method
 
@@ -302,8 +302,8 @@ Proposed cards:
 
 ## 7. Pyramid for release 1
 
-`npm run verify` on this branch (its `test-levels` step), from the local Windows run with a disposable
-PostgreSQL: **Unit 8802 / Integration 3887 / E2E 230**, shares 68% / 30% / 2% against the target 60% / 30% / 10%
+`npm run verify` (its `test-levels` step) in the CI run of the P3-35 pull request, job `verify (ubuntu-latest)`:
+**Unit 8897 / Integration 3943 / E2E 232**, shares 68% / 30% / 2% against the target 60% / 30% / 10%
 with 10 points of tolerance (DEC-30). Every share is inside the tolerance. The end-to-end share is low by count
 because each Playwright journey covers many requirements at once. Since the [M1 matrix](m1-matrix.md) (Unit 4740 /
-Integration 2395 / E2E 168) the suite grew by 4062 unit, 1492 integration and 62 end-to-end tests.
+Integration 2395 / E2E 168) the suite grew by 4157 unit, 1548 integration and 64 end-to-end tests.
