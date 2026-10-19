@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-601..RF-627, P3-22: the planner's six answers for the plan run of the documentation-set journey over the webforms-shop demo (understand-shop-journey.json): the plan, the product requirements document, the data model, the target flows, the API contract and the user-interface material. Every answer cites the cards that run writes. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"summary\": \"A small web shop that replaces the legacy WebForms shop, moved one part at a time beside it.\",\n  \"requirements\": [\n    {\n      \"title\": \"Search the catalogue\",\n      \"statement\": \"A visitor finds items by a search term and opens one.\",\n      \"sources\": [\n        \"FEAT-001\",\n        \"FLOW-001\"\n      ]\n    },\n    {\n      \"title\": \"Keep a basket\",\n      \"statement\": \"A visitor adds an item and a quantity from 1 to 10 to the basket.\",\n      \"sources\": [\n        \"FEAT-003\",\n        \"FLOW-002\"\n      ]\n    },\n    {\n      \"title\": \"Place an order\",\n      \"statement\": \"A visitor with a basket gives an e-mail address and a shipping choice and places the order.\",\n      \"sources\": [\n        \"FEAT-002\",\n        \"FLOW-003\"\n      ]\n    },\n    {\n      \"title\": \"Shipping fee\",\n      \"statement\": \"Express shipping costs 12 and any other choice costs 4.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"components\": [\n    {\n      \"name\": \"Web front end\",\n      \"responsibility\": \"Shows the catalogue, the item, the checkout and the confirmation pages.\",\n      \"dependsOn\": [\n        \"Shop service\"\n      ]\n    },\n    {\n      \"name\": \"Shop service\",\n      \"responsibility\": \"Finds items, keeps the basket and places orders.\",\n      \"dependsOn\": [\n        \"Database\"\n      ]\n    },\n    {\n      \"name\": \"Database\",\n      \"responsibility\": \"Keeps the catalogue items and the basket lines.\",\n      \"dependsOn\": []\n    }\n  ],\n  \"decisions\": [\n    {\n      \"title\": \"Keep the shop rules in one service\",\n      \"context\": \"The shipping fee sits in the order service of the legacy shop.\",\n      \"decision\": \"The shop service owns the search, the basket and the shipping fee.\",\n      \"consequences\": \"Pages call the service and hold no rule.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"entities\": [\n    {\n      \"legacy\": \"Catalog item\",\n      \"target\": \"catalog_item\",\n      \"notes\": \"The price keeps two decimals.\",\n      \"sources\": [\n        \"ENT-001\"\n      ]\n    },\n    {\n      \"legacy\": \"Basket line\",\n      \"target\": \"basket_line\",\n      \"notes\": \"The basket is held in the session today; the new line belongs to a stored basket.\",\n      \"sources\": [\n        \"ENT-002\"\n      ]\n    }\n  ],\n  \"phases\": [\n    {\n      \"name\": \"Catalogue and basket\",\n      \"goal\": \"Visitors browse and fill a basket on the new system.\",\n      \"exitCriteria\": [\n        \"A visitor finds an item and adds it to the basket on the new system.\"\n      ]\n    },\n    {\n      \"name\": \"Orders\",\n      \"goal\": \"Orders are placed on the new system.\",\n      \"exitCriteria\": [\n        \"Every order is placed on the new system with the same shipping fee.\"\n      ]\n    }\n  ],\n  \"tasks\": [\n    {\n      \"title\": \"Catalogue search and basket\",\n      \"phase\": 1,\n      \"requirements\": [\n        1,\n        2\n      ],\n      \"acceptanceCriteria\": [\n        \"Given the term \\\"lamp\\\", when a visitor searches, then the items whose name holds lamp are listed.\",\n        \"Given a quantity of 11, when a visitor adds an item, then the basket is unchanged and the page shows an error.\"\n      ],\n      \"invariant\": \"A basket line always names one catalogue item and a whole quantity from 1 to 10, however the quantity is written.\",\n      \"riskClass\": \"data loss\",\n      \"adds\": [\n        \"limit\"\n      ],\n      \"probes\": [\n        \"A quantity of 0, 1, 10 and 11.\",\n        \"A quantity written 1.0, 01 and 1e1.\",\n        \"An item id that is not in the catalogue.\"\n      ],\n      \"files\": [\n        \"src/catalogue/\",\n        \"src/basket/\",\n        \"tests/basket/\"\n      ],\n      \"needs\": [\n        {\n          \"kind\": \"error code\",\n          \"purpose\": \"quantity outside 1 to 10\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Checkout and order placement\",\n      \"phase\": 2,\n      \"requirements\": [\n        3,\n        4\n      ],\n      \"acceptanceCriteria\": [\n        \"Given a basket and the shipping choice express, when the visitor places the order, then the fee is 12.\",\n        \"Given a basket and any other shipping choice, when the visitor places the order, then the fee is 4.\"\n      ],\n      \"invariant\": \"The shipping fee is 12 exactly when the choice is express, whatever its letter case.\",\n      \"riskClass\": \"money\",\n      \"adds\": [\n        \"check\"\n      ],\n      \"probes\": [\n        \"The choices express, Express and EXPRESS and \\\"express \\\" with a trailing space.\",\n        \"A blank, an unknown and a missing shipping choice.\",\n        \"An e-mail address with no at sign, with two at signs and with a blank name.\"\n      ],\n      \"files\": [\n        \"src/orders/\",\n        \"tests/orders/\"\n      ],\n      \"needs\": [\n        {\n          \"kind\": \"error code\",\n          \"purpose\": \"malformed e-mail address\"\n        }\n      ],\n      \"dependsOn\": [\n        1\n      ]\n    }\n  ],\n  \"risks\": [\n    {\n      \"text\": \"The legacy checkout does not return after the redirect for a visitor without a basket, so an empty order may be placed today.\",\n      \"sources\": [\n        \"OQ-001\"\n      ]\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 3000,
+              "outputTokens": 900,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-1",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"problem\": {\n    \"text\": \"The shop rules sit in pages and services of a WebForms application that is hard to change.\",\n    \"sources\": [\n      \"BR-001\"\n    ]\n  },\n  \"goal\": {\n    \"text\": \"Move the catalogue, the basket and the checkout to the new system, one part at a time beside the old one.\",\n    \"sources\": [\n      \"FEAT-002\"\n    ]\n  },\n  \"features\": [\n    {\n      \"title\": \"Search the catalogue\",\n      \"description\": \"A visitor finds items by a search term.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    },\n    {\n      \"title\": \"Keep a basket\",\n      \"description\": \"A visitor adds an item and a quantity to the basket.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"FEAT-003\"\n      ]\n    },\n    {\n      \"title\": \"Place an order\",\n      \"description\": \"A visitor places the order with an e-mail address and a shipping choice.\",\n      \"priority\": \"Must\",\n      \"sources\": [\n        \"FEAT-002\"\n      ]\n    }\n  ],\n  \"rules\": [\n    {\n      \"text\": \"Express shipping costs 12 and any other choice costs 4.\",\n      \"sources\": [\n        \"BR-001\"\n      ]\n    }\n  ],\n  \"outOfScope\": [\n    {\n      \"text\": \"Orders placed by staff for a visitor with an empty basket are not planned.\",\n      \"sources\": [\n        \"OQ-001\"\n      ]\n    }\n  ],\n  \"roles\": [\n    {\n      \"name\": \"Visitor\",\n      \"description\": \"Anyone who opens the shop; the code checks no sign-in.\",\n      \"sources\": [\n        \"FLOW-003\"\n      ]\n    }\n  ],\n  \"nonFunctional\": [\n    {\n      \"text\": \"A search answers on the page the visitor is on without a full reload.\",\n      \"sources\": [\n        \"FEAT-001\"\n      ]\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 2500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-2",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"tables\": [\n    {\n      \"name\": \"catalog_item\",\n      \"purpose\": \"Keeps what the shop sells.\",\n      \"sources\": [\n        \"ENT-001\"\n      ],\n      \"columns\": [\n        {\n          \"name\": \"id\",\n          \"type\": \"integer\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-001.c1\",\n            \"field\": \"Id\"\n          },\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"name\",\n          \"type\": \"varchar(200)\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-001.c1\",\n            \"field\": \"Name\"\n          },\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"price\",\n          \"type\": \"numeric(10,2)\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-001.c1\",\n            \"field\": \"Price\"\n          },\n          \"risk\": \"The legacy price is a decimal without a stated scale; a value with more than two decimals is rounded.\"\n        }\n      ],\n      \"primaryKey\": [\n        \"id\"\n      ],\n      \"uniqueKeys\": [],\n      \"foreignKeys\": [],\n      \"checks\": [\n        \"price is zero or more\"\n      ],\n      \"indexes\": [\n        {\n          \"columns\": [\n            \"name\"\n          ],\n          \"unique\": false,\n          \"reason\": \"Items are searched by name.\"\n        }\n      ]\n    },\n    {\n      \"name\": \"basket_line\",\n      \"purpose\": \"Keeps one item and a quantity in a basket.\",\n      \"sources\": [\n        \"ENT-002\"\n      ],\n      \"columns\": [\n        {\n          \"name\": \"id\",\n          \"type\": \"uuid\",\n          \"nullable\": false,\n          \"legacy\": null,\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"catalog_item_id\",\n          \"type\": \"integer\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-002.c2\",\n            \"field\": \"ItemId\"\n          },\n          \"risk\": \"\"\n        },\n        {\n          \"name\": \"quantity\",\n          \"type\": \"smallint\",\n          \"nullable\": false,\n          \"legacy\": {\n            \"claim\": \"ENT-002.c1\",\n            \"field\": \"Quantity\"\n          },\n          \"risk\": \"\"\n        }\n      ],\n      \"primaryKey\": [\n        \"id\"\n      ],\n      \"uniqueKeys\": [],\n      \"foreignKeys\": [\n        {\n          \"columns\": [\n            \"catalog_item_id\"\n          ],\n          \"references\": \"catalog_item\",\n          \"referencedColumns\": [\n            \"id\"\n          ]\n        }\n      ],\n      \"checks\": [\n        \"quantity is from 1 to 10\"\n      ],\n      \"indexes\": [\n        {\n          \"columns\": [\n            \"catalog_item_id\"\n          ],\n          \"unique\": false,\n          \"reason\": \"Lines are read by item.\"\n        }\n      ]\n    }\n  ],\n  \"dropped\": [\n    {\n      \"claim\": \"ENT-002.c3\",\n      \"field\": \"CustomerAccount\",\n      \"reason\": \"The legacy basket lives in the session and has no account; the new basket is anonymous.\"\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 2000,
+              "outputTokens": 700,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-3",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"flows\": [\n    {\n      \"card\": \"FLOW-001\",\n      \"inScope\": true,\n      \"reason\": \"\",\n      \"steps\": [\n        {\n          \"claim\": \"FLOW-001.c1\",\n          \"component\": \"Web front end\",\n          \"action\": \"Shows the catalogue and the search box.\"\n        },\n        {\n          \"claim\": \"FLOW-001.c3\",\n          \"component\": \"Shop service\",\n          \"action\": \"Finds the items for the term and returns the list.\"\n        }\n      ]\n    },\n    {\n      \"card\": \"FLOW-002\",\n      \"inScope\": true,\n      \"reason\": \"\",\n      \"steps\": [\n        {\n          \"claim\": \"FLOW-002.c1\",\n          \"component\": \"Shop service\",\n          \"action\": \"Reads the item to show its name and price.\"\n        },\n        {\n          \"claim\": \"FLOW-002.c2\",\n          \"component\": \"Web front end\",\n          \"action\": \"Refuses a quantity outside 1 to 10.\"\n        },\n        {\n          \"claim\": \"FLOW-002.c3\",\n          \"component\": \"Shop service\",\n          \"action\": \"Adds the line to the basket.\"\n        }\n      ]\n    },\n    {\n      \"card\": \"FLOW-003\",\n      \"inScope\": true,\n      \"reason\": \"\",\n      \"steps\": [\n        {\n          \"claim\": \"FLOW-003.c1\",\n          \"component\": \"Web front end\",\n          \"action\": \"Checks the e-mail address before it sends anything.\"\n        },\n        {\n          \"claim\": \"FLOW-003.c2\",\n          \"component\": \"Web front end\",\n          \"action\": \"Sends a visitor without a basket to the home page.\"\n        },\n        {\n          \"claim\": \"FLOW-003.c3\",\n          \"component\": \"Shop service\",\n          \"action\": \"Places the order and works out the shipping fee.\"\n        },\n        {\n          \"claim\": \"FLOW-003.c4\",\n          \"component\": \"Database\",\n          \"action\": \"Empties the basket and keeps the order number.\"\n        }\n      ]\n    }\n  ]\n}\n```",
+            "usage": {
+              "inputTokens": 1800,
+              "outputTokens": 500,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-4",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"applies\": true,\n  \"reason\": \"\",\n  \"operations\": [\n    {\n      \"public\": false,\n      \"errors\": [],\n      \"list\": true,\n      \"entity\": \"ENT-001\",\n      \"operationId\": \"searchCatalogue\",\n      \"method\": \"get\",\n      \"path\": \"/catalogue\",\n      \"summary\": \"Lists the catalogue items for a search term.\",\n      \"serves\": [\n        \"FEAT-001\",\n        \"FLOW-001\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [\n        404\n      ],\n      \"list\": false,\n      \"entity\": \"ENT-001\",\n      \"operationId\": \"getCatalogueItem\",\n      \"method\": \"get\",\n      \"path\": \"/catalogue/{itemId}\",\n      \"summary\": \"Reads one catalogue item.\",\n      \"serves\": [\n        \"FLOW-002\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [\n        404,\n        422\n      ],\n      \"list\": false,\n      \"entity\": \"ENT-002\",\n      \"operationId\": \"addToBasket\",\n      \"method\": \"post\",\n      \"path\": \"/basket/lines\",\n      \"summary\": \"Adds an item and a quantity to the basket.\",\n      \"serves\": [\n        \"FEAT-003\",\n        \"FLOW-002\"\n      ]\n    },\n    {\n      \"public\": false,\n      \"errors\": [\n        409,\n        422\n      ],\n      \"list\": false,\n      \"entity\": null,\n      \"operationId\": \"placeOrder\",\n      \"method\": \"post\",\n      \"path\": \"/orders\",\n      \"summary\": \"Places the order of the basket with an e-mail address and a shipping choice.\",\n      \"serves\": [\n        \"FEAT-002\",\n        \"FLOW-003\"\n      ]\n    }\n  ],\n  \"notServed\": []\n}\n```",
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-5",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    },
+    {
+      "attempts": [
+        {
+          "response": {
+            "toolCalls": [],
+            "text": "```json\n{\n  \"screens\": [\n    {\n      \"name\": \"Catalogue\",\n      \"purpose\": \"Lists the items, searches them and opens one.\",\n      \"reason\": \"The list and the details show the same items to the same visitor.\",\n      \"cards\": [\n        \"SCRN-001\",\n        \"SCRN-002\"\n      ]\n    },\n    {\n      \"name\": \"Checkout\",\n      \"purpose\": \"Collects the e-mail address and the shipping choice and places the order.\",\n      \"reason\": \"It is the main journey of a visitor.\",\n      \"cards\": [\n        \"SCRN-003\"\n      ]\n    },\n    {\n      \"name\": \"Order confirmation\",\n      \"purpose\": \"Tells the visitor the order number.\",\n      \"reason\": \"The visitor must see that the order was placed.\",\n      \"cards\": [\n        \"SCRN-004\"\n      ]\n    }\n  ],\n  \"dropped\": [],\n  \"designBrief\": {\n    \"audience\": \"Visitors who browse and order from their own device.\",\n    \"tone\": \"Calm and plain.\",\n    \"components\": [\n      \"Data table\",\n      \"Form field with an error message\",\n      \"Search box\"\n    ]\n  }\n}\n```",
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-6",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
