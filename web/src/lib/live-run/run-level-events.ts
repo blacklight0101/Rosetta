@@ -19,6 +19,7 @@ function sourceStateOf(source: StartedSource): SourceState {
       uploadedAt: source.uploadedAt,
       snapshotHash: source.snapshotHash ?? undefined,
       runId: undefined,
+      reportBuilt: false,
     };
   }
   return {

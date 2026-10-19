@@ -68,7 +68,7 @@ function evidenceHref(
   citation: CitationRef,
   claim: ClaimRef | undefined,
 ): string | undefined {
-  if (source.runId === undefined || claim === undefined) return undefined;
+  if (!source.reportBuilt || source.runId === undefined || claim === undefined) return undefined;
   if (linesOf(citation) === undefined || segmentsOf('', citation.path) === undefined) {
     return undefined;
   }

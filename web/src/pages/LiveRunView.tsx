@@ -35,7 +35,7 @@ export interface LiveRunViewProps {
 function sourceOf(state: RunState, run: RunRow): SourceState | undefined {
   const { source } = state;
   if (source === undefined) return undefined;
-  if (source.kind === 'upload') return { ...source, runId: run.id };
+  if (source.kind === 'upload') return { ...source, runId: run.id, reportBuilt: run.reportBuilt };
   return { ...source, commitSha: source.commitSha ?? run.commitSha ?? undefined };
 }
 

@@ -42,24 +42,28 @@ function Citations(props: {
   readonly source: SourceState | undefined;
 }): JSX.Element | null {
   if (props.claim.citations.length === 0) return null;
+  const waits = props.source?.kind === 'upload' && !props.source.reportBuilt;
   return (
-    <ul class="rst-live-claim__lines" aria-label="Cited lines">
-      {props.claim.citations.map((citation) => {
-        const label = formatCitationRef(citation);
-        const href = citationHref(props.source, citation, props.claim);
-        return (
-          <li key={label} class="rst-mono">
-            {href === undefined ? (
-              label
-            ) : (
-              <a href={href} rel="noopener noreferrer" target="_blank">
-                {label}
-              </a>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      <ul class="rst-live-claim__lines" aria-label="Cited lines">
+        {props.claim.citations.map((citation) => {
+          const label = formatCitationRef(citation);
+          const href = citationHref(props.source, citation, props.claim);
+          return (
+            <li key={label} class="rst-mono">
+              {href === undefined ? (
+                label
+              ) : (
+                <a href={href} rel="noopener noreferrer" target="_blank">
+                  {label}
+                </a>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {waits ? <p class="rst-settings__note">Build the report to open the evidence.</p> : null}
+    </>
   );
 }
 

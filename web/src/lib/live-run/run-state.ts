@@ -76,6 +76,8 @@ export interface UploadSourceState {
   readonly snapshotHash: string | undefined;
   /** The run the report belongs to; the events do not carry it, the page sets it. */
   readonly runId: string | undefined;
+  /** The report, whose card pages the citations open, exists; the page sets it. */
+  readonly reportBuilt: boolean;
 }
 
 export type SourceState = GithubSourceState | UploadSourceState;

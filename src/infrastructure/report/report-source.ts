@@ -11,6 +11,13 @@ const REPOSITORY =
   /^https:[/][/]github[.]com[/](?![.]{1,2}[/])([A-Za-z0-9_.-]+)[/](?![.]{1,2}$)([A-Za-z0-9_.-]+)$/u;
 const COMMIT = /^[0-9a-f]{40}$/u;
 
+/** RF-131: whether the run is on an uploaded zip. */
+export function isUploadModel(model: {
+  readonly source: { readonly kind?: string | undefined } | null;
+}): boolean {
+  return model.source?.kind === 'upload';
+}
+
 export interface SourceLink {
   readonly label: string;
   readonly href: string;

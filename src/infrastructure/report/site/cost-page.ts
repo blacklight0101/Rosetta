@@ -1,6 +1,7 @@
 import { h, type ComponentChild } from 'preact';
 import type { ReportCostLine, ReportModel } from '../../../application/report/report-model.js';
 import { renderPage } from '../page-shell.js';
+import { isUploadModel } from '../report-source.js';
 import { dollars, moneyText, unknownCostText } from '../report-format.js';
 import { ProjectTotals, usageSentence } from './dashboard-stats.js';
 import { DataTable, Facts, Headline, ModelText } from './parts.js';
@@ -108,5 +109,11 @@ function CostPage(props: { readonly model: ReportModel }): ComponentChild {
 // RF-500, RF-507, RF-1013
 export function renderCostHtml(model: ReportModel): string {
   const main = renderStatic(h(CostPage, { model }));
-  return renderPage({ page: 'cost', runKey: model.runKey, title: 'Cost report', main });
+  return renderPage({
+    page: 'cost',
+    runKey: model.runKey,
+    title: 'Cost report',
+    main,
+    upload: isUploadModel(model),
+  });
 }
