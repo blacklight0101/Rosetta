@@ -82,7 +82,9 @@ async function runQueued(scenario: Scenario) {
   });
   harness.executor.settle(blocker.id, { endState: 'Completed' });
   const ended = await waitForStartOrEnd(harness, submitted.value.run.id, submitted.value.run);
-  return { harness, logger, ended };
+  const events = await harness.events.read(harness.scopeOf(ended), 0);
+  const code = events.find((event) => event.type === 'run.ended')?.data['errorCode'];
+  return { harness, logger, ended, code };
 }
 
 async function waitForStartOrEnd(
@@ -105,13 +107,13 @@ async function waitForStartOrEnd(
 
 describe('a queued run starts only if the confirmation still holds (RF-132, DEC-151)', () => {
   it('RF-132 a queued run whose roles changed to a cloud provider does not start and says why', async () => {
-    const { harness, logger, ended } = await runQueued({
+    const { harness, logger, ended, code } = await runQueued({
       ...{ queuedWith: local, startsWith: cloud },
       options: { cloudConsent: true },
     });
 
     expect(ended.endState).toBe('Failed');
-    expect(ended.errorCode).toBe(ERROR_CODES.privateCodeNotConfirmed);
+    expect(code).toBe(ERROR_CODES.privateCodeNotConfirmed);
     expect(harness.executor.startedKeys).toHaveLength(1);
     const entry = logger.entries.find((e) => e.code === ERROR_CODES.privateCodeNotConfirmed);
     expect(entry?.message).toMatch(/changed to a cloud provider/u);
@@ -160,12 +162,12 @@ describe('a queued run that is not blocked (RF-132, DEC-151)', () => {
 
 describe('a queued run and the host of Ollama, or the plan stage (RF-132, DEC-118)', () => {
   it('RF-132 DEC-118 roles moved to an Ollama of another host do not start unconfirmed', async () => {
-    const { ended } = await runQueued({
+    const { code } = await runQueued({
       ...{ queuedWith: local, startsWith: ollama, ollamaHost: 'gpu.example.net' },
       options: { cloudConsent: true },
     });
 
-    expect(ended.errorCode).toBe(ERROR_CODES.privateCodeNotConfirmed);
+    expect(code).toBe(ERROR_CODES.privateCodeNotConfirmed);
   });
 
   it('RF-132 roles moved to an Ollama on this machine start', async () => {
@@ -189,7 +191,7 @@ describe('a queued run and the host of Ollama, or the plan stage (RF-132, DEC-11
       options: {},
     });
 
-    expect(refused.ended.errorCode).toBe(ERROR_CODES.privateCodeNotConfirmed);
+    expect(refused.code).toBe(ERROR_CODES.privateCodeNotConfirmed);
     expect(allowed.harness.executor.startedKeys).toContain(allowed.ended.runKey);
   });
 });
