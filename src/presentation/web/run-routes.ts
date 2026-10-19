@@ -14,7 +14,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { MAX_AREAS, MAX_AREA_NAME, START_BODY_LIMIT_BYTES } from './area-limits.js';
 import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
-import type { JourneyServices } from './journey-routes.js';
+import { registerJourneyRoutes, type JourneyServices } from './journey-routes.js';
 import { registerPlanOptionsRoutes, type PlanOptionsServices } from './plan-options-routes.js';
 import { registerOverviewRoutes, type OverviewServices } from './overview-routes.js';
 import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
@@ -48,6 +48,7 @@ import { runView } from './run-view.js';
 // - GET and PUT /api/runs/:runId/answers: the run's open questions (answer-routes.ts, RF-1007).
 // - GET /api/runs/:runId/overview: the run's overview (overview-routes.ts, RF-264).
 // - POST /api/projects/:id/plan-options: the options of Plan setup (plan-options-routes.ts, RF-608).
+// - GET /api/projects/:id/journey: the facts of the journey strip (journey-routes.ts, RF-615).
 
 export interface RunServices
   extends
@@ -203,6 +204,7 @@ export function registerRunRoutes(
   registerStart(server, services);
   registerEstimateRoutes(server, services);
   registerAnswerRoutes(server, services);
+  registerJourneyRoutes(server, services);
   registerOverviewRoutes(server, services);
   registerPlanOptionsRoutes(server, services);
   registerObservabilityRoutes(server, services);
