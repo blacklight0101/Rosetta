@@ -24,12 +24,12 @@ the cards not filed yet are proposed in section 5 for the orchestrator to file (
 | The release 1 journeys (flows 1 and 7) | pass: from a GitHub URL to a downloaded hand-off package with a saved brief, recorded responses only (section 3)                              |
 | Documentation set requirements (P3-22) | RF-260..RF-263, RF-508 and RF-620..RF-627 are in the matrix, each with passing tests                                                          |
 | Requirements missing from the backlog  | RF-209, RF-231, RF-614 and RF-615 are `R1` in the specification but not in the roadmap backlog (open question 1, section 6)                   |
-| Pyramid for release 1                  | Unit 8802 / Integration 3883 / E2E 230 (68% / 30% / 2%; target 60 / 30 / 10 with 10 points of tolerance, DEC-30), section 7                   |
+| Pyramid for release 1                  | Unit 8802 / Integration 3887 / E2E 230 (68% / 30% / 2%; target 60 / 30 / 10 with 10 points of tolerance, DEC-30), section 7                   |
 
 ## 2. Method
 
 - **Tests.** The full Vitest suite ran locally on Windows against a disposable PostgreSQL 17
-  (`ROSETTA_TEST_DATABASE_URL` set, `--maxWorkers=2`): 12707 tests, 12686 passed, 0 failed, 21 skipped (the
+  (`ROSETTA_TEST_DATABASE_URL` set, `--maxWorkers=2`): 12711 tests, 12690 passed, 0 failed, 21 skipped (the
   Linux-only checks; they run in CI). The Playwright specs were listed for the `desktop-light` project, which runs
   every end-to-end test (231 tests in 55 files); they run in the three e2e jobs of CI. The two journeys of this card
   also ran locally against the test server (section 3).
@@ -244,7 +244,7 @@ the requirement passed in the local run; **Gap** means no test names it yet.
 | RNF-002 | Robustness                                           | P1                                   | NFR      | 23 / 15 / 0     | `tests/integration/application/understand-coverage-ends.test.ts:74`                          | Tests pass                                                                                            |
 | RNF-003 | Secrets                                              | P1                                   | NFR      | 82 / 145 / 0    | `tests/integration/application/build-plan-api-contract.test.ts:133`                          | Tests pass                                                                                            |
 | RNF-004 | Reproducibility                                      | P1                                   | NFR      | 107 / 15 / 0    | `tests/integration/application/build-plan.test.ts:134`                                       | Tests pass                                                                                            |
-| RNF-005 | Offline tests                                        | P1                                   | NFR      | 95 / 96 / 6     | `tests/e2e/toolchain.test.ts:22`                                                             | Tests pass                                                                                            |
+| RNF-005 | Offline tests                                        | P1                                   | NFR      | 95 / 100 / 6    | `tests/e2e/toolchain.test.ts:22`                                                             | Tests pass                                                                                            |
 | RNF-006 | Measured quality                                     | P2                                   | NFR      | 41 / 16 / 0     | `tests/integration/tooling/provider-factory-boundary.test.ts:130`                            | Tests pass; the golden-set result needs the live evaluation, card P2-34 (Todo)                        |
 | RNF-007 | Performance                                          | P1                                   | NFR      | 1 / 1 / 0       | `tests/integration/infrastructure/scan/code-map-scan.test.ts:159`                            | Tests pass; timed on the demo in the M1 review                                                        |
 | RNF-008 | Usability                                            | P1                                   | NFR      | 11 / 0 / 0      | `tests/unit/web/api-client.test.ts:50`                                                       | Tests pass                                                                                            |
@@ -296,8 +296,8 @@ Proposed cards:
 
 ## 7. Pyramid for release 1
 
-`node scripts/test-levels.mjs --report <vitest-json>` on this branch, from the local Windows run with a disposable
-PostgreSQL: **Unit 8802 / Integration 3883 / E2E 230**, shares 68% / 30% / 2% against the target 60% / 30% / 10%
+`npm run verify` on this branch (its `test-levels` step), from the local Windows run with a disposable
+PostgreSQL: **Unit 8802 / Integration 3887 / E2E 230**, shares 68% / 30% / 2% against the target 60% / 30% / 10%
 with 10 points of tolerance (DEC-30). Every share is inside the tolerance. The end-to-end share is low by count
 because each Playwright journey covers many requirements at once. Since the [M1 matrix](m1-matrix.md) (Unit 4740 /
-Integration 2395 / E2E 168) the suite grew by 4062 unit, 1488 integration and 62 end-to-end tests.
+Integration 2395 / E2E 168) the suite grew by 4062 unit, 1492 integration and 62 end-to-end tests.
