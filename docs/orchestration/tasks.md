@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 52      | 5         | 45         | 2         | 0                  | 15      | 35      | 2      | 8          | 0         |
-| **Total**               | **269** | **77**    | **165**    | **27**    | **0**              | **131** | **126** | **12** | **143**    | **0**     |
+| P3 Report and plan      | 55      | 5         | 48         | 2         | 0                  | 18      | 35      | 2      | 11         | 0         |
+| **Total**               | **272** | **77**    | **168**    | **27**    | **0**              | **134** | **126** | **12** | **146**    | **0**     |
 
 ## Conventions for every card
 
@@ -3627,3 +3627,48 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: journey, matrix rows, runbook text.
 - **Done when**: the journey passes in CI; the R1 matrix guard passes with the rows no longer gaps; `npm run verify` and `npm run test:e2e` green.
 - **Refs**: RF-150..RF-158, RNF-005, DEC-150.
+
+### P3-53 - Follow-up: zip ratio floor and `__MACOSX`
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-37
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/infrastructure/sources/zip-entry-plan.ts` and its tests; the zip fixtures of P3-37; RF-129 (as changed by DEC-151); the verdict on #608.
+- **Do**: the per-entry ratio check (default 200 : 1, RST-1912) applies only to entries whose uncompressed size is above 4 MiB; add an archive-wide check of 200 : 1 on the total uncompressed to the total compressed size, applied when the total uncompressed size is above 64 MiB, with the same code; both thresholds are named constants next to the ratio limit; `__MACOSX/` joins `.git/`, `node_modules/`, `bin/` and `obj/` in the folders left out at extraction and counted (at any depth, as the others are, so a project folder literally named `__MACOSX` below the top level is left out too; the decision is recorded in the test name).
+- **Review probes**: a 1 MiB file of one repeated byte (accepted); a 5 MiB entry at 300 : 1 (refused RST-1912); many small entries totalling above 64 MiB at 300 : 1 overall (refused); a `__MACOSX/` tree (left out and counted); a project folder literally named `__MACOSX` below the top level (left out too); an archive of 60 MiB at 300 : 1 overall made of small entries (accepted, below the archive threshold).
+- **Behaviour to preserve**: every other P3-37 guard (entry count, size, paths, links, encryption), the `.git/`, `node_modules/`, `bin/` and `obj/` counting, and the workbook zip guards that reuse the same plan (RF-153).
+- **Delivers**: the check changes, the folder list change, the new fixtures and tests.
+- **Done when**: every changed RF-129 scenario has a passing test; `npm run verify` green.
+- **Refs**: RF-129, ADR-022, DEC-151, P3-37 (verifier question).
+
+### P3-54 - Follow-up: re-check the private-code confirmation when a queued run starts; name the model on the Ollama link
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-41
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: `src/application/use-cases/start-run.ts` and the code that starts a queued run; the start page and `web/src/pages/local-roles.ts`; the second confirmation of P3-41; RF-132 (as changed by DEC-151); the verdict on #611.
+- **Do**: when a queued run actually starts, run the same private-code check as the API start (RST-1521, or the code the code base uses for it) against the project's roles at that moment; if a role is now on a cloud provider and the confirmation no longer holds, the run does not start, is marked with that code, and the message says why (roles changed to a cloud provider, private code needs confirming again). The link "Switch every role to Ollama" shows the model it sets in its text, taking the name from the one constant in `local-roles.ts` (`gemma4:e4b` today), not written a second time.
+- **Review probes**: a queued run whose project roles change to a cloud provider before it starts (does not start, RST-1521 or the code the code base uses, the message names why); a queued run with unchanged roles (starts); a queued run whose roles are all local (starts); the link text names `gemma4:e4b` and changing the constant changes the text (a test reads the constant); GitHub projects unchanged (never asked, never blocked).
+- **Behaviour to preserve**: the start-page confirmation and the API refusal without it; runs that start at once; the RF-143 consent.
+- **Delivers**: the re-check, the link text, tests.
+- **Done when**: every changed RF-132 scenario has a passing test; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-132, RF-143, ADR-006, DEC-151, P3-41 (verifier questions).
+
+### P3-55 - Follow-up: upload polish from the zip verifiers
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-38, P3-42
+- **Gate**: none
+- **Status**: Todo
+- **Reads**: the upload endpoint and the `X-File-Name` handling from P3-38; the free-space check (DEC-149); `web/src/.../UploadSourceSection.tsx` and the start page; the P3-42 journey; the verdicts on #614 and #615.
+- **Do**: the minors the P3-38 and P3-42 verifiers recorded. (1) Strip the Unicode bidi controls U+202A..U+202E, U+2066..U+2069, U+200E and U+200F from `X-File-Name`, and keep surrogate pairs whole when cutting the name at 200 characters. (2) A name that fails percent-decoding gets its own clear message and code instead of "not a readable zip". (3) The free-space check (DEC-149, twice the limit) reserves space while an upload runs, so parallel uploads cannot each pass against the same free bytes; the reservation is released when the upload ends or fails. (4) After a replacing upload the start page shows "The code changed since the last run." without a reload (`UploadSourceSection.tsx`), and the P3-42 journey drops its `page.reload()`.
+- **Review probes**: a name with a right-to-left override (stripped); a name cut at 200 characters in the middle of an emoji (the pair stays whole or is dropped whole); `X-File-Name: %E0%A4%A` (own message); two uploads started together with room for one (the second is refused for space); an upload that fails (its reservation is released); a replacing upload (notice shown, no reload).
+- **Behaviour to preserve**: the 100 MB and 500 MB limits (DEC-149), names that are already clean, the refusal for a bad zip, the other start-page notices.
+- **Delivers**: the four changes and tests; the journey without `page.reload()`.
+- **Done when**: each probe has a passing test; the P3-42 journey passes without the reload; `npm run verify` and `npm run test:e2e` green.
+- **Refs**: RF-128, RF-129, RF-133, RF-134, DEC-149, P3-38 and P3-42 (verifier MINORs).

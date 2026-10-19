@@ -50,3 +50,5 @@ smuggle entries past the count and size checks. It streams, so memory stays flat
 - RFC-004, DEC-148, RF-127, RF-129, ADR-013, ADR-019.
 
 ## Notes
+
+- 2026-10-19, DEC-151: the ratio check described above applies per entry only above 4 MiB uncompressed, plus an archive-wide 200 : 1 check above 64 MiB total; `__MACOSX/` folders are left out and counted. The decision (yauzl) is unchanged; see RF-129.
