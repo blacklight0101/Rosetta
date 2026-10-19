@@ -28,10 +28,12 @@ async function setup(settings: ProjectSettings, kind: SourceKind = 'upload', oll
         })
       : sampleProject({ userId: userAmy.userId, settings });
   await projects.insertOrFind(project);
+  const briefs = new MemoryBriefStore();
+  await briefs.saveEmpty({ userId: project.userId, projectId: project.id });
   const startRun = new StartRun({
     projects,
     runs: harness.runs,
-    briefs: new MemoryBriefStore(),
+    briefs,
     submit: harness.submit,
     ...(ollamaHost === undefined ? {} : { ollamaHost }),
   });
@@ -177,5 +179,36 @@ describe('StartRun where no second confirmation is asked (RF-132)', () => {
     });
 
     expect(started.ok).toBe(true);
+  });
+});
+
+describe('StartRun records the second confirmation of a plan run (RF-132, DEC-151)', () => {
+  const plan = (projectId: string) => ({ actor: userAmy, projectId, stage: 'plan' }) as const;
+  const cloudPlanner = settingsFor({ planner: { provider: 'openai', model: 'gpt-5-mini' } });
+
+  it('RF-132 a plan run that needed the confirmation records it, so the queue can check it again', async () => {
+    const { harness, project, startRun } = await setup(cloudPlanner);
+
+    const started = await startRun.execute({
+      ...plan(project.id),
+      cloudConsent: true,
+      privateCodeConfirmed: true,
+    });
+
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const manifest = await harness.manifests.read(harness.scopeOf(started.value.run));
+    expect(manifest?.options['privateCodeConfirmed']).toBe(true);
+  });
+
+  it('RF-132 a plan run that needed no confirmation records none', async () => {
+    const { harness, project, startRun } = await setup(allFake);
+
+    const started = await startRun.execute(plan(project.id));
+
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const manifest = await harness.manifests.read(harness.scopeOf(started.value.run));
+    expect(manifest?.options).toEqual({ cloudConsent: false });
   });
 });

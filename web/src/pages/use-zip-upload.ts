@@ -123,6 +123,13 @@ export function useAbortOnLeave(): AbortSignal {
   return controller.current.signal;
 }
 
+/** The project as the server now holds it: the stored zip's name and date, and whether the code changed. */
+function projectAfter(project: Project, zip: File, stored: UploadSummary): Project {
+  const { fileName = zip.name, uploadedAt = new Date().toISOString() } = stored;
+  const { codeChangedSinceLastRun = project.codeChangedSinceLastRun } = stored;
+  return { ...project, source: { fileName, uploadedAt }, codeChangedSinceLastRun };
+}
+
 /** Makes the project (unless there is one), sends the archive and follows it. */
 function useUploadFlow(options: ZipUploadOptions): Flow {
   const { client } = useApp();
@@ -169,8 +176,7 @@ function useUploadFlow(options: ZipUploadOptions): Flow {
     }
     setSummary(stored.value);
     setPhase('done');
-    const { fileName = zip.name, uploadedAt = new Date().toISOString() } = stored.value;
-    options.onStored({ ...target, source: { fileName, uploadedAt } });
+    options.onStored(projectAfter(target, zip, stored.value));
   };
   return { project, phase, percent, summary, failure, send, reset };
 }

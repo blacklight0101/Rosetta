@@ -42,13 +42,16 @@ export interface UploadSummary {
   readonly snapshotHash: string;
   readonly fileName: string;
   readonly uploadedAt: string;
+  /** The newest run read another snapshot than the one just stored (false while no run has one). */
+  readonly codeChangedSinceLastRun: boolean;
 }
 
 export type UploadProblem =
   | typeof ERROR_CODES.notFound
   | typeof ERROR_CODES.conflict
   | typeof ERROR_CODES.uploadInProgress
-  | typeof ERROR_CODES.zipNotReadable;
+  | typeof ERROR_CODES.zipNotReadable
+  | typeof ERROR_CODES.uploadNameUnreadable;
 
 export class StoreUpload {
   readonly deps: StoreUploadDependencies;
@@ -86,7 +89,13 @@ export class StoreUpload {
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (project.sourceKind !== 'upload') return err(ERROR_CODES.conflict);
     const name = uploadFileName(request.fileName, project.name);
-    if (!name.ok) return err(ERROR_CODES.zipNotReadable);
+    if (!name.ok) {
+      return err(
+        name.error === 'bad-encoding'
+          ? ERROR_CODES.uploadNameUnreadable
+          : ERROR_CODES.zipNotReadable,
+      );
+    }
     const uploadedAt = clock.now();
     const stored = await uploads.store({
       projectId: project.id,
@@ -117,6 +126,8 @@ export class StoreUpload {
       snapshotHash: stored.info.snapshotHash,
       fileName: name.value,
       uploadedAt: uploadedAt.toISOString(),
+      codeChangedSinceLastRun:
+        project.lastRunSnapshotKey !== undefined && project.lastRunSnapshotKey !== stored.key,
     });
   }
 

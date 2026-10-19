@@ -63,6 +63,8 @@ export class ZipUploadStore implements UploadStore {
   private readonly options: ZipUploadStoreOptions;
   private readonly snapshots: SnapshotStore;
   private readonly cache: FileSnapshotCache;
+  /** Free bytes the uploads running now may still need, held back from the next check. */
+  private reservedBytes = 0;
 
   constructor(options: ZipUploadStoreOptions) {
     this.options = options;
@@ -74,7 +76,16 @@ export class ZipUploadStore implements UploadStore {
     if (request.declaredBytes !== undefined && request.declaredBytes > request.limitBytes) {
       throw uploadTooLarge(request.limitBytes);
     }
-    await this.ensureFreeSpace(request.limitBytes * FREE_SPACE_FACTOR);
+    const reserved = request.limitBytes * FREE_SPACE_FACTOR;
+    await this.reserveSpace(reserved);
+    try {
+      return await this.storeInPartial(request);
+    } finally {
+      this.reservedBytes -= reserved;
+    }
+  }
+
+  private async storeInPartial(request: UploadRequest): Promise<StoredUpload> {
     const partial = join(this.snapshots.sourcesDir, `${PARTIAL_PREFIX}${randomUUID()}`);
     try {
       await mkdir(partial, { recursive: true }).catch((error: unknown) => {
@@ -113,9 +124,15 @@ export class ZipUploadStore implements UploadStore {
     return removed;
   }
 
-  private async ensureFreeSpace(requiredBytes: number): Promise<void> {
+  /**
+   * Checks the free space against what the uploads already running hold back (DEC-149), then holds
+   * back this one's share. Nothing awaits between the check and the hold, so uploads that start
+   * together cannot each pass against the same free bytes; the caller releases the share.
+   */
+  private async reserveSpace(requiredBytes: number): Promise<void> {
     const free = await (this.options.freeBytes ?? this.fileSystemFreeBytes.bind(this))();
-    if (free < requiredBytes) throw noSpace(requiredBytes);
+    if (free - this.reservedBytes < requiredBytes) throw noSpace(requiredBytes);
+    this.reservedBytes += requiredBytes;
   }
 
   private async fileSystemFreeBytes(): Promise<number> {

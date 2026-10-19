@@ -122,6 +122,8 @@ export const ERROR_CODES = {
   uploadTimedOut: 'RST-1918',
   uploadInProgress: 'RST-1919',
   projectNoSource: 'RST-1920',
+  // RST-1921..1928 are the workbook codes of RFC-005.
+  uploadNameUnreadable: 'RST-1930',
   requestInvalid: 'RST-2000',
   notSignedIn: 'RST-2001',
   notAllowed: 'RST-2002',
