@@ -3411,7 +3411,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-36, P3-37
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: RFC-004 sections 4.2 and 4.4; the projects routes and repository; `src/presentation/` route conventions (session, CSRF, `Origin`, body limits); RF-010, RF-128, RF-130, RF-133, RF-1009, RF-1105.
 - **Do**: create a project of kind `upload`; `PUT /api/projects/:id/source` checks free space first (at least twice `ROSETTA_UPLOAD_MAX_MB`, DEC-149) and streams `application/zip` to a temporary file with that limit (default 500, the hosted deployment sets 100), extracts (P3-37), hashes, writes the snapshot and deletes the zip; replacing the source makes a new snapshot and keeps the ones earlier runs use; the project page data says when the code changed since the last run; deleting the project deletes its snapshots; an audit row per upload (name, size, hash). Every refusal returns its code and message.
 - **Review probes**: free space just under twice the limit (refused before storing); `ROSETTA_UPLOAD_MAX_MB` empty, 0, negative or not a number (start-up refuses or uses the default, as other settings do); no session; no CSRF token; another user's project (404); a body larger than the limit with and without `Content-Length`; an aborted upload (no temporary file left); two uploads at once to one project; a run started on a project with no source; delete during a running scan.
@@ -3471,7 +3471,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-38, P3-39, P3-40, P3-41
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the existing end-to-end journeys (P1-46, P2-13, P3-12); `docs/verification/r1-matrix.md`; RF-128..RF-134.
 - **Do**: an end-to-end journey that zips a small first-party fixture project in the test (no employer code, no committed binary), uploads it, scans, runs understand with the fake provider, opens the report and the package, and checks that every citation opens an evidence page and no link leaves Rosetta; add RF-128..RF-134 to the R1 matrix; the runbook explains how to make a zip.
 - **Review probes**: the journey on Windows and Linux CI; an upload replaced between two runs (the second run's report names the new hash).
