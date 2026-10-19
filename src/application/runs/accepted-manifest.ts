@@ -75,8 +75,12 @@ function repositoryOf(project: Project): { owner: string; repo: string } {
     : { owner: '', repo: '' };
 }
 
-/** RF-131: the zip an upload run reads, by its name and instant; the hash is recorded once the snapshot is read. */
+/**
+ * RF-131, RF-152: the zip an upload run reads, by its name and instant; a workbook run names only its
+ * kind, because its instant and renderer version are known once the snapshot is read, with the hash.
+ */
 function uploadOf(project: Project): Pick<ManifestSource, 'kind' | 'fileName' | 'uploadedAt'> {
+  if (project.sourceKind === 'workbook') return { kind: 'workbook' };
   if (project.sourceKind !== 'upload') return {};
   const { upload } = project;
   if (upload === undefined) return { kind: 'upload' };

@@ -74,16 +74,26 @@ describe('isInLeftOutFolder', () => {
     ['obj/a.json'],
     ['src/Bin/app.dll'],
     ['src\\OBJ\\a.json'],
+    ['__MACOSX/._a.txt'],
+    ['proj/__MACOSX/b.txt'],
+    ['proj/__macosx/b.txt'],
   ])('RF-129 leaves out %j', (path) => {
     expect(isInLeftOutFolder(splitPath(path))).toBe(true);
   });
 
-  it.each([['bin'], ['binary/a.txt'], ['src/a.cs'], ['git/config'], ['.gitignore'], ['a/obj']])(
-    'RF-129 keeps %j',
-    (path) => {
-      expect(isInLeftOutFolder(splitPath(path))).toBe(false);
-    },
-  );
+  it.each([
+    ['bin'],
+    ['binary/a.txt'],
+    ['src/a.cs'],
+    ['git/config'],
+    ['.gitignore'],
+    ['a/obj'],
+    ['__MACOSX'],
+    ['MACOSX/a.txt'],
+    ['src/__MACOSX_notes.txt'],
+  ])('RF-129 keeps %j', (path) => {
+    expect(isInLeftOutFolder(splitPath(path))).toBe(false);
+  });
 });
 
 describe('LimitCounter', () => {

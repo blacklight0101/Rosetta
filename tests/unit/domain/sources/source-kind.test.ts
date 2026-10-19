@@ -5,8 +5,8 @@ import { SOURCE_KINDS, sourceKindOf } from '../../../../src/domain/sources/sourc
 // does not say which is a GitHub one.
 
 describe('source kinds', () => {
-  it('RF-130 the kinds are github and upload, in that order', () => {
-    expect(SOURCE_KINDS).toEqual(['github', 'upload']);
+  it('RF-130 the kinds are github, upload and workbook, in that order', () => {
+    expect(SOURCE_KINDS).toEqual(['github', 'upload', 'workbook']);
   });
 
   it('RF-130 a record without a kind is a GitHub one', () => {
@@ -17,5 +17,6 @@ describe('source kinds', () => {
   it('RF-130 a record names its kind', () => {
     expect(sourceKindOf({ kind: 'upload' })).toBe('upload');
     expect(sourceKindOf({ kind: 'github' })).toBe('github');
+    expect(sourceKindOf({ kind: 'workbook' })).toBe('workbook');
   });
 });
