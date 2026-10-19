@@ -7,6 +7,7 @@ import {
   splitPath,
 } from './entry-guards.js';
 import {
+  zipArchiveRatioTooHigh,
   zipEmpty,
   zipEntryPathUnsafe,
   zipEntryUnsupported,
@@ -14,7 +15,11 @@ import {
   zipTooLarge,
   zipTooManyEntries,
 } from './zip-errors.js';
-import type { ZipExtractionLimits } from './zip-limits.js';
+import {
+  RATIO_ARCHIVE_FLOOR_BYTES,
+  RATIO_ENTRY_FLOOR_BYTES,
+  type ZipExtractionLimits,
+} from './zip-limits.js';
 
 // RF-129, RF-130: what the central directory says, judged before a byte is written. The central
 // directory is the authoritative list of entries, so a crafted local header cannot smuggle one past.
@@ -72,6 +77,8 @@ function commonTopFolder(files: readonly PlannedFile[]): string | undefined {
 class PlanBuilder {
   skippedLinks = 0;
   leftOutEntries = 0;
+  private keptUncompressed = 0;
+  private keptCompressed = 0;
   readonly candidates: PlannedFile[] = [];
   private readonly limits: ZipExtractionLimits;
 
@@ -91,14 +98,31 @@ class PlanBuilder {
     } else if (isInLeftOutFolder(segments)) {
       this.leftOutEntries += 1;
     } else {
-      if (entry.uncompressedSize > this.limits.maxRatio * entry.compressedSize) {
+      if (
+        entry.uncompressedSize > RATIO_ENTRY_FLOOR_BYTES &&
+        entry.uncompressedSize > this.limits.maxRatio * entry.compressedSize
+      ) {
         throw zipRatioTooHigh(name, this.limits.maxRatio);
       }
+      this.keptUncompressed += entry.uncompressedSize;
+      this.keptCompressed += entry.compressedSize;
       this.candidates.push({ entry, segments });
     }
   }
 
+  /** The overall ratio of the files that will be written, judged once the archive is large (DEC-151). */
+  private checkArchiveRatio(): void {
+    const { maxRatio } = this.limits;
+    if (
+      this.keptUncompressed > RATIO_ARCHIVE_FLOOR_BYTES &&
+      this.keptUncompressed > maxRatio * this.keptCompressed
+    ) {
+      throw zipArchiveRatioTooHigh(maxRatio);
+    }
+  }
+
   build(): ZipPlan {
+    this.checkArchiveRatio();
     const top = commonTopFolder(this.candidates);
     const files: PlannedFile[] = [];
     let skippedDeviceNames = 0;

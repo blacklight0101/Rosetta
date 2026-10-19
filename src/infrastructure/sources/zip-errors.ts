@@ -41,6 +41,14 @@ export function zipRatioTooHigh(name: string, ratio: number): RosettaError {
   );
 }
 
+/** RST-1912, for the whole archive: it unpacks to far more than it takes (DEC-151). */
+export function zipArchiveRatioTooHigh(ratio: number): RosettaError {
+  return new RosettaError(
+    ERROR_CODES.zipRatioTooHigh,
+    `The zip is compressed more than ${String(ratio)} to 1 overall.`,
+  );
+}
+
 /** RST-1913: an entry path that would land outside the destination. */
 export function zipEntryPathUnsafe(name: string): RosettaError {
   return new RosettaError(
