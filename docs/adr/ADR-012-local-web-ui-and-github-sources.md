@@ -80,3 +80,4 @@ We choose option 1.
   stream, the always-visible cost and the GitHub-only sources of this ADR stand.
 - 2026-10-11 (review): snapshots are cached in `<data>/sources/<owner>__<repo>@<sha>/` (ADR-016), not under `rosetta-out/`; extraction uses `tar` (ADR-019).
 - 2026-10-19 (DEC-148, RFC-004): a project may also come from an uploaded zip, extracted under ADR-022 into a read-only snapshot identified by its content hash; its citations link to Rosetta's evidence pages. GitHub sources are unchanged and private GitHub repositories are still refused.
+- 2026-10-19 (DEC-150, RFC-005): a project may also come from one or more uploaded Excel workbooks, read under ADR-023 and rendered into a read-only text snapshot identified by the hash of the rendered tree; its citations link to Rosetta's evidence pages with the workbook, sheet and cells. GitHub sources are unchanged.

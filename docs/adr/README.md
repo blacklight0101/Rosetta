@@ -34,8 +34,9 @@ changed in part by a later decision; see the ADR's Notes).
 | [ADR-020](ADR-020-host-on-railway-eu-west.md)                 | Host the hosted deployment on Railway in EU West (Amsterdam)                                                                                                                  | Proposed | 2026-10-11 |
 | [ADR-021](ADR-021-report-rendering-with-preact.md)            | Render the HTML report from Preact components to static HTML                                                                                                                  | Proposed | 2026-10-17 |
 | [ADR-022](ADR-022-zip-extraction-with-yauzl.md)               | Read uploaded zip archives with `yauzl`                                                                                                                                       | Proposed | 2026-10-19 |
+| [ADR-023](ADR-023-workbook-reading-with-saxes-and-cfb.md)     | Read Excel workbooks with `yauzl`, `saxes` and `cfb`                                                                                                                          | Proposed | 2026-10-19 |
 
-**Totals**: 22 in total - Accepted 10, Proposed 3, Amended 9, Superseded 0.
+**Totals**: 23 in total - Accepted 10, Proposed 4, Amended 9, Superseded 0.
 
 ## Relationships
 
