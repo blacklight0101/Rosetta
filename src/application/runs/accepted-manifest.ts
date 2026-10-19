@@ -87,6 +87,7 @@ export function acceptedManifest(accepted: AcceptedRun): RunManifest {
     endState: null,
     resumedFrom: null,
     source: {
+      ...(project.sourceKind === 'upload' ? { kind: project.sourceKind } : {}),
       url: project.sourceUrl,
       ...repositoryOf(project),
       ref: project.ref,

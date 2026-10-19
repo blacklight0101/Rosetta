@@ -1,6 +1,7 @@
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { err, ok, type Result } from '../errors/result.js';
 import type { DeepenRecord } from '../deepen/deepen-record.js';
+import type { SourceKind } from '../sources/source-kind.js';
 import type { PlanningBrief } from '../planning/planning-brief.js';
 import type { RunEndState, RunStage } from './run-states.js';
 
@@ -10,6 +11,7 @@ import type { RunEndState, RunStage } from './run-states.js';
 // so the file always has the same fields. The end state is set exactly once.
 
 interface ManifestSource {
+  readonly kind?: SourceKind | undefined; // RF-130: an upload run only; absent is github
   readonly url: string;
   readonly owner: string;
   readonly repo: string;

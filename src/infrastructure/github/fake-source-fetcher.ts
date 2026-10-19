@@ -1,5 +1,5 @@
 import type { Clock } from '../../application/ports/clock.js';
-import type { Snapshot, SourceFetcher } from '../../application/ports/source-fetcher.js';
+import type { GithubSnapshot, SourceFetcher } from '../../application/ports/source-fetcher.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { parseCommitSha } from '../../domain/sources/commit-sha.js';
@@ -38,7 +38,7 @@ export class FakeSourceFetcher implements SourceFetcher {
     this.clock = clock;
   }
 
-  fetch(ref: GitHubRepoRef, signal: AbortSignal): Promise<Snapshot> {
+  fetch(ref: GitHubRepoRef, signal: AbortSignal): Promise<GithubSnapshot> {
     this.fetched.push(ref);
     if (signal.aborted) {
       return Promise.reject(

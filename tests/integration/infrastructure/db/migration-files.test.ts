@@ -58,6 +58,7 @@ describe('release migrations', () => {
       '0011_runs_failed_areas.sql',
       '0012_cost_reservations_role.sql',
       '0013_cost_ledger_cache_writes.sql',
+      '0014_project_source_kind.sql',
     ]);
   });
 

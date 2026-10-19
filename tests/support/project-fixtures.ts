@@ -49,6 +49,7 @@ export function sampleProject(overrides: Partial<Project> = {}): Project {
     id: `00000000-0000-4000-a000-${number}`,
     userId: '00000000-0000-4000-9000-000000000001',
     name: `owner/repo-${number}`,
+    sourceKind: 'github',
     sourceUrl: `https://github.com/owner/repo-${number}`,
     ref: '',
     subpath: '',

@@ -65,6 +65,7 @@ export class CreateProject {
     const project: Project = {
       id: ids.uuid(),
       userId: request.actor.userId,
+      sourceKind: 'github',
       ...sourceOf(parsed.value),
       settings: await this.newSettings(),
       settingsVersion: 1,

@@ -14,10 +14,10 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { join, sep } from 'node:path';
-import { z } from 'zod';
 import type { Snapshot, SnapshotInfo } from '../../application/ports/source-fetcher.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { parseSnapshotRecord } from './snapshot-record.js';
 import { errorCode, snapshotWriteFailed } from './snapshot-errors.js';
 
 export interface TreeSummary {
@@ -31,22 +31,6 @@ const FILES = 'files';
 const INFO_FILE = 'snapshot.json';
 const READ_ONLY_FILE = 0o444;
 const READ_ONLY_DIR = 0o555;
-
-const INFO_SCHEMA = z.object({
-  url: z.string(),
-  owner: z.string(),
-  repo: z.string(),
-  commitSha: z.string().regex(/^[0-9a-f]{40}$/),
-  resolvedFrom: z.string(),
-  downloadedAt: z.string(),
-  fileCount: z.number().int().nonnegative(),
-  totalBytes: z.number().int().nonnegative(),
-  skippedLinks: z.number().int().nonnegative(),
-  snapshotHash: z.string().regex(/^sha256:[0-9a-f]{64}$/),
-  licence: z.string(),
-});
-
-const SNAPSHOT_SCHEMA = INFO_SCHEMA.extend({ schemaVersion: z.literal(1) });
 
 function entryRefused(detail: string): RosettaError {
   return new RosettaError(ERROR_CODES.snapshotEntryRefused, `The extracted tree ${detail}.`);
@@ -180,16 +164,15 @@ export class SnapshotStore {
       if (errorCode(error) === 'ENOENT') return undefined;
       throw snapshotWriteFailed(`${key} could not be read`, error);
     }
-    const parsed = SNAPSHOT_SCHEMA.safeParse(parseJson(text));
-    if (!parsed.success) {
+    const parsed = parseSnapshotRecord(parseJson(text));
+    if (!parsed.ok) {
       throw new RosettaError(
         ERROR_CODES.snapshotEntryRefused,
         `The cached snapshot ${key} has an invalid ${INFO_FILE}.`,
         { cause: parsed.error },
       );
     }
-    const info: SnapshotInfo = INFO_SCHEMA.parse(parsed.data);
-    return { ...info, key, rootDir: this.filesDir(key), cached: true };
+    return { ...parsed.value, key, rootDir: this.filesDir(key), cached: true };
   }
 
   /** Walks the extracted tree: counts, bytes and the `sha256:` hash of sorted path and file hash pairs. */

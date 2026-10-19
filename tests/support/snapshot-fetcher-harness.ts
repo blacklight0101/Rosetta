@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { Snapshot } from '../../src/application/ports/source-fetcher.js';
+import type { GithubSnapshot } from '../../src/application/ports/source-fetcher.js';
 import type { GitHubRepoRef } from '../../src/domain/sources/github-repo-ref.js';
 import { SecretMasker } from '../../src/infrastructure/guards/secret-masker.js';
 import type { FetchFunction } from '../../src/infrastructure/github/github-http-client.js';
@@ -49,7 +49,7 @@ export async function demoGitHub(
 export interface FetcherHarness {
   readonly fetcher: GitHubSnapshotFetcher;
   readonly logger: MemoryLogger;
-  readonly fetch: (overrides?: Partial<GitHubRepoRef>) => Promise<Snapshot>;
+  readonly fetch: (overrides?: Partial<GitHubRepoRef>) => Promise<GithubSnapshot>;
 }
 
 /** A fetcher on `dataDir` with a fixed clock, sequence ids and a memory logger. */
