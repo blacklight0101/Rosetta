@@ -31,6 +31,7 @@ import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executo
 import type { UserRepository } from '../ports/user-repository.js';
 import type { RoleProvider } from '../providers/provider-set.js';
 import { callIds } from '../runs/run-ids.js';
+import { resolvedSourceOf } from '../plan/resolved-source-of.js';
 import { ManifestUpdates } from '../runs/manifest-updates.js';
 import { writeCostReport } from '../runs/run-cost-report.js';
 import { scopeOf } from '../runs/run-scope.js';
@@ -228,10 +229,9 @@ export class BuildPlan implements RunExecutor {
     await updates.update((manifest) => recordManifestCatalogue(manifest, { version, sha256 }));
     await updates.update((manifest) => ok(recordPromptVersions(manifest, versions)));
     const source = await this.deps.manifests.read(scopeOf(inputs.sourceRun));
-    const { commitSha, snapshotKey } = inputs.sourceRun;
-    const snapshotHash = source?.source.snapshotHash ?? null;
-    if (commitSha !== null && snapshotKey !== null && snapshotHash !== null)
-      await execution.recordSource({ commitSha, snapshotKey, snapshotHash });
+    // RF-130: an upload run has a snapshot and no commit.
+    const resolved = resolvedSourceOf(inputs.sourceRun, source);
+    if (resolved !== undefined) await execution.recordSource(resolved);
     const codemapHash = source?.codemapHash ?? null;
     if (codemapHash !== null)
       await updates.update((manifest) => recordManifestCodeMap(manifest, codemapHash));

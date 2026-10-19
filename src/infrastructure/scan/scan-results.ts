@@ -57,7 +57,8 @@ export class FileScanResults implements ScanResults {
   // RF-200, RF-126
   async open(scan: Run): Promise<ScannedSource> {
     const { commitSha, snapshotKey } = scan;
-    if (commitSha === null || snapshotKey === null) throw missing('snapshot');
+    // An upload has a snapshot and no commit (RF-130).
+    if (snapshotKey === null) throw missing('snapshot');
     const manifest = await this.options.manifests.read(scopeOf(scan));
     const snapshotHash = manifest?.source.snapshotHash ?? null;
     if (manifest === undefined || snapshotHash === null) throw missing('manifest');

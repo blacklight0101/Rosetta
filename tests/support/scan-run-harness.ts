@@ -1,3 +1,5 @@
+import type { UploadStore } from '../../src/application/ports/upload-store.js';
+import { noUploads } from './no-uploads.js';
 import { vi } from 'vitest';
 import { MemoryBriefStore } from './memory-brief-store.js';
 import type {
@@ -48,6 +50,8 @@ export interface ScanRunHarnessOptions {
   readonly dataDir: string;
   readonly fetcher?: (inner: FakeSourceFetcher) => SourceFetcher;
   readonly pipeline?: ScanPipeline;
+  /** The snapshots of uploaded zips; none by default. */
+  readonly uploads?: Pick<UploadStore, 'read'>;
   readonly project?: Partial<Project>;
   /** False leaves the project out of the repository, as if it had been deleted. */
   readonly registerProject?: boolean;
@@ -65,6 +69,8 @@ export interface ScanRunHarness {
   submit(options?: Readonly<Record<string, unknown>>): Promise<Run>;
   /** Starts a scan run as the API does: the project is read and its scan settings recorded. */
   start(): Promise<Run>;
+  /** Asks to start a scan run as the API does and returns the answer, a refusal included. */
+  tryStart(): ReturnType<StartRun['execute']>;
   /** Replaces the stored settings of the project, as an edit on the settings page does. */
   updateSettings(settings: ProjectSettings): Promise<void>;
   /** Stops every run that is running, as the Stop button does. */
@@ -165,7 +171,8 @@ async function assemble(
     clock,
     logger,
   });
-  const executor = new RunScan({ fetcher, projects, pipeline, manifests, clock, logger });
+  const uploads = options.uploads ?? noUploads;
+  const executor = new RunScan({ fetcher, projects, pipeline, manifests, clock, logger, uploads });
   const queue = new RunQueue({
     runs,
     lifecycle,
@@ -244,6 +251,7 @@ export async function createScanRunHarness(
     runs,
     logger,
     submit,
+    tryStart: () => startRun.execute({ actor: scanActor, projectId: project.id, stage: 'scan' }),
     async start() {
       const started = await startRun.execute({
         actor: scanActor,

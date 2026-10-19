@@ -47,6 +47,8 @@ const manifestSchema = z.object({
     commitSha: nullableText,
     subpath: text,
     snapshotHash: nullableText,
+    fileName: text.optional(),
+    uploadedAt: text.optional(),
   }),
   codemapHash: nullableText,
   options: z.record(z.string(), z.unknown()),

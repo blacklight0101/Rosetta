@@ -30,11 +30,15 @@ export interface RunExecution {
 }
 
 export interface ResolvedSource {
-  readonly commitSha: string;
+  /** Null for an upload, which has no commit (RF-130). */
+  readonly commitSha: string | null;
   /** The snapshot folder name. */
   readonly snapshotKey: string;
   /** `sha256:` of the snapshot tree. */
   readonly snapshotHash: string;
+  /** An upload: the zip as sent and the instant it was stored (RF-131). */
+  readonly fileName?: string;
+  readonly uploadedAt?: string;
 }
 
 export interface RunOutcome {

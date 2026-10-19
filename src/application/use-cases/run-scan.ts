@@ -1,3 +1,4 @@
+import type { CodeMapSource } from '../../domain/code-map/code-map.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import type { Result } from '../../domain/errors/result.js';
@@ -16,7 +17,8 @@ import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { ScanPipeline, ScanReport, ScanRequest } from '../ports/scan-pipeline.js';
-import type { GithubSnapshot, SourceFetcher } from '../ports/source-fetcher.js';
+import type { SourceFetcher } from '../ports/source-fetcher.js';
+import type { UploadStore } from '../ports/upload-store.js';
 import { scopeOf } from '../runs/run-scope.js';
 
 // RF-003, RF-005, RF-100, RF-121, RF-126, ADR-004, ADR-012: Run scan is the executor of the `scan`
@@ -28,11 +30,19 @@ import { scopeOf } from '../runs/run-scope.js';
 
 export interface RunScanDependencies {
   readonly fetcher: SourceFetcher;
+  /** RF-128: reads the snapshot of the zip an upload project holds. */
+  readonly uploads: Pick<UploadStore, 'read'>;
   readonly projects: ProjectRepository;
   readonly pipeline: ScanPipeline;
   readonly manifests: RunManifestStore;
   readonly clock: Clock;
   readonly logger: Logger;
+}
+
+/** The tree a scan reads and the source its code map records. */
+interface ScannedTree {
+  readonly rootDir: string;
+  readonly source: CodeMapSource;
 }
 
 const INTERRUPTED: RunOutcome = { endState: 'Interrupted' };
@@ -65,18 +75,15 @@ export class RunScan implements RunExecutor {
     const { run, signal } = execution;
     const project = await this.deps.projects.find(run.userId, run.projectId);
     if (project === undefined) return { endState: 'Failed', errorCode: ERROR_CODES.notFound };
-    const snapshot = await this.fetch(execution);
+    const snapshot =
+      project.sourceKind === 'upload'
+        ? await this.fetchUpload(execution, project)
+        : await this.fetch(execution);
     if (isStopped(signal)) return INTERRUPTED;
-    const { subpath } = execution.manifest.source;
     const report = await this.deps.pipeline.scan({
       scope: scopeOf(run),
       root: snapshot.rootDir,
-      source: {
-        owner: snapshot.owner,
-        repo: snapshot.repo,
-        commitSha: snapshot.commitSha,
-        subpath,
-      },
+      source: snapshot.source,
       settings: await this.settingsOf(execution, project),
       signal,
     });
@@ -132,7 +139,7 @@ export class RunScan implements RunExecutor {
   }
 
   /** Fetches the snapshot, records the source (RF-126) and publishes the two source events. */
-  private async fetch(execution: RunExecution): Promise<GithubSnapshot> {
+  private async fetch(execution: RunExecution): Promise<ScannedTree> {
     const { source } = execution.manifest;
     const began = this.deps.clock.now().getTime();
     const snapshot = await this.deps.fetcher.fetch(
@@ -163,7 +170,37 @@ export class RunScan implements RunExecutor {
       durationMs: this.deps.clock.now().getTime() - began,
       cached: snapshot.cached,
     });
-    return snapshot;
+    const { owner, repo, commitSha, rootDir } = snapshot;
+    return { rootDir, source: { owner, repo, commitSha, subpath: source.subpath } };
+  }
+
+  /**
+   * RF-128, RF-130: reads the zip the project holds as a snapshot, records it as the run's source
+   * (no commit, the name and instant of the zip) and publishes what was read. A project whose zip
+   * is gone has no source: the run fails with RST-1920 and nothing is scanned.
+   */
+  private async fetchUpload(execution: RunExecution, project: Project): Promise<ScannedTree> {
+    const began = this.deps.clock.now().getTime();
+    const key = project.upload?.snapshotKey;
+    const snapshot = key === undefined ? undefined : await this.deps.uploads.read(key);
+    if (snapshot === undefined) throw new RosettaError(ERROR_CODES.projectNoSource);
+    const { fileName, uploadedAt, snapshotHash } = snapshot;
+    await execution.recordSource({
+      ...{ commitSha: null, snapshotKey: snapshot.key, snapshotHash, fileName, uploadedAt },
+    });
+    await this.update(execution.run, (stored) =>
+      recordManifestSkippedLinks(stored, snapshot.skippedLinks),
+    );
+    await execution.events.emit('source.downloaded', {
+      fileCount: snapshot.fileCount,
+      totalBytes: snapshot.totalBytes,
+      durationMs: this.deps.clock.now().getTime() - began,
+      cached: true,
+    });
+    return {
+      rootDir: snapshot.rootDir,
+      source: { kind: 'upload', fileName, snapshotHash, subpath: '' },
+    };
   }
 
   private async update(

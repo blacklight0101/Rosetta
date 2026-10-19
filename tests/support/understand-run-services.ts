@@ -1,3 +1,4 @@
+import { noUploads } from './no-uploads.js';
 import { RunLifecycle } from '../../src/application/runs/run-lifecycle.js';
 import { RunQueue, type RunQueueDependencies } from '../../src/application/runs/run-queue.js';
 import { RunScan } from '../../src/application/use-cases/run-scan.js';
@@ -173,7 +174,9 @@ export async function queueOf(
   return new RunQueue({
     ...{ runs, lifecycle, clock, logger },
     executors: {
-      scan: new RunScan({ fetcher, projects, pipeline, manifests, clock, logger }),
+      scan: new RunScan({
+        ...{ fetcher, projects, pipeline, manifests, clock, logger, uploads: noUploads },
+      }),
       understand: understandExecutor(s, providers, cardWritesFail),
       ...more,
     },

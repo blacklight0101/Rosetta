@@ -1,7 +1,7 @@
 import { byCodeUnit } from '../code-map/code-unit-order.js';
 import { err, ok, type Result } from '../errors/result.js';
 import type { DeepenRecord } from '../deepen/deepen-record.js';
-import type { SourceKind } from '../sources/source-kind.js';
+import type { ManifestSource } from './manifest-source.js';
 import type { PlanningBrief } from '../planning/planning-brief.js';
 import type { RunEndState, RunStage } from './run-states.js';
 
@@ -9,17 +9,6 @@ import type { RunEndState, RunStage } from './run-states.js';
 // used. Instants are ISO 8601 UTC text. A field that is not known yet is `null` (the end state and
 // time while the run is not over, the commit and the snapshot hash until the source is resolved),
 // so the file always has the same fields. The end state is set exactly once.
-
-interface ManifestSource {
-  readonly kind?: SourceKind | undefined; // RF-130: an upload run only; absent is github
-  readonly url: string;
-  readonly owner: string;
-  readonly repo: string;
-  readonly ref: string;
-  readonly commitSha: string | null;
-  readonly subpath: string;
-  readonly snapshotHash: string | null;
-}
 
 export interface ManifestRole {
   readonly provider: string;
@@ -136,7 +125,14 @@ export function endManifest(
 // RF-126
 export function recordManifestSource(
   manifest: RunManifest,
-  resolved: { readonly commitSha: string; readonly snapshotHash: string },
+  resolved: {
+    /** Null for an upload, which has no commit (RF-130). */
+    readonly commitSha: string | null;
+    readonly snapshotHash: string;
+    /** An upload run: the zip as sent and the instant it was stored (RF-131). */
+    readonly fileName?: string;
+    readonly uploadedAt?: string;
+  },
 ): Result<RunManifest, ManifestProblem> {
   if (manifest.endState !== null) return err('already-ended');
   return ok({ ...manifest, source: { ...manifest.source, ...resolved } });

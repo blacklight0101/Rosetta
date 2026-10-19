@@ -9,9 +9,10 @@ import type { CardSource } from '../ports/card-outputs.js';
 /** The pinned repository of the citations' permalinks (RF-125). */
 export function pinnedSourceOf(
   source: { readonly owner: string; readonly repo: string },
-  scannedCommitSha: string,
+  scannedCommitSha: string | null,
 ): CardSource {
-  const commitSha = parseCommitSha(scannedCommitSha);
+  // An upload has no commit to pin the permalinks to; its citations are a later card (RF-131).
+  const commitSha = parseCommitSha(scannedCommitSha ?? '');
   if (!commitSha.ok) {
     throw new RosettaError(ERROR_CODES.codeMapInvalid, 'The scan recorded no valid commit.');
   }

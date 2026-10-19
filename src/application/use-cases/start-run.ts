@@ -51,7 +51,8 @@ export type StartRunProblem =
   | typeof ERROR_CODES.runStageNotAvailable
   | typeof ERROR_CODES.cloudConsentMissing
   | typeof ERROR_CODES.planBriefMissing
-  | typeof ERROR_CODES.planSourceMissing;
+  | typeof ERROR_CODES.planSourceMissing
+  | typeof ERROR_CODES.projectNoSource;
 
 export class StartRun {
   private readonly deps: StartRunDependencies;
@@ -66,6 +67,10 @@ export class StartRun {
     const project = await this.deps.projects.find(actor.userId, projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
     if (!STARTABLE_STAGES.includes(stage)) return err(ERROR_CODES.runStageNotAvailable);
+    // RF-128: an upload project reads its zip, so a run needs one; no run is created without it.
+    if (project.sourceKind === 'upload' && project.upload === undefined) {
+      return err(ERROR_CODES.projectNoSource);
+    }
     if (stage === 'understand') return this.understand(request, project);
     if (stage === 'plan') return this.plan(request, project);
     // The scan settings of this moment are the run's: an edit while it waits does not change it.
