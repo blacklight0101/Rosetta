@@ -20,12 +20,20 @@ export interface UnderstandSeed {
   readonly cards: readonly Card[];
   readonly questions?: readonly Pick<OpenQuestion, 'cardId' | 'question'>[];
   readonly endState?: Run['endState'];
+  /** RF-614: the folder name of the run, when a test seeds more than one understand run. */
+  readonly runKey?: string;
+  /** RF-614: the areas the run read, as its manifest options record them. */
+  readonly areas?: readonly string[];
 }
 
 export async function seedRun(s: Stores, project: Project, seed: UnderstandSeed): Promise<Run> {
   const run = sampleRun({
     ...{ userId: account.id, projectId: project.id, stage: 'understand' },
-    ...{ runKey: '20261012-090000-understand', commitSha, snapshotKey: `octo__demo@${commitSha}` },
+    ...{
+      runKey: seed.runKey ?? '20261012-090000-understand',
+      commitSha,
+      snapshotKey: `octo__demo@${commitSha}`,
+    },
     ...{ queueState: 'Ended', endState: seed.endState ?? 'Completed' },
   });
   await s.runs.insert(run);
@@ -34,7 +42,8 @@ export async function seedRun(s: Stores, project: Project, seed: UnderstandSeed)
     commitSha,
     snapshotHash: `sha256:${'cd'.repeat(32)}`,
   };
-  const manifest = sampleManifest({ runId: run.runKey, stage: 'understand', source });
+  const options = seed.areas === undefined ? {} : { areas: seed.areas };
+  const manifest = sampleManifest({ runId: run.runKey, stage: 'understand', source, options });
   await s.manifests.write(scopeOf(run), { ...manifest, codemapHash: `sha256:${'ab'.repeat(32)}` });
   const cards = new FileCardOutputs({ writer: s.writer, masker: s.masker, logger: s.logger });
   await cards.writeCards(scopeOf(run), {

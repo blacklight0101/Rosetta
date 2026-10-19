@@ -8,6 +8,7 @@ import { settingsFor } from '../../support/provider-factory-harness.js';
 import { answerRecording } from '../../support/plan-options-harness.js';
 import { cardSaying } from '../../support/plan-cards.js';
 import { seedPlanSource } from '../../support/plan-source-seed.js';
+import { sampleRun } from '../../support/run-fixtures.js';
 import {
   createSuggestOptionsHarness,
   type SuggestOptionsHarness,
@@ -170,4 +171,66 @@ describe('SuggestPlanOptions: which understand run it reads', () => {
       expect(sentTo(h)).not.toContain('Unfinished run claim.');
     },
   );
+});
+
+describe('SuggestPlanOptions: the chosen source run (RF-614)', () => {
+  const sentTo = (h: SuggestOptionsHarness): string => {
+    const message = h.factory.fakes.get('fake')?.requests[0]?.messages[0];
+    return message?.role === 'user' ? message.content : '';
+  };
+
+  function askFrom(h: SuggestOptionsHarness, sourceRunId: string) {
+    return h.suggest.execute({
+      ...{ actor: h.actor, projectId: h.project.id, cloudConsent: false, sourceRunId },
+    });
+  }
+
+  it('RF-614 RF-608 recommends from the chosen run, not the newest', async () => {
+    const h = await harness({ seed: { understand: false } });
+    const older = await seedPlanSource(h.stores, h.project, {
+      brief: false,
+      run: { runKey: '20261010-090000-understand' },
+    });
+    await seedPlanSource(h.stores, h.project, {
+      brief: false,
+      cards: [cardSaying('BR-077', 'Refunds are paid by hand.')],
+      run: { runKey: '20261012-100000-understand' },
+    });
+
+    const result = await askFrom(h, older?.id ?? '');
+
+    expect(result.ok).toBe(true);
+    expect(sentTo(h)).toContain('Checkout creates an order from the basket.');
+    expect(sentTo(h)).not.toContain('Refunds are paid by hand.');
+  });
+});
+
+describe('SuggestPlanOptions: a chosen source run that cannot be used (RF-614)', () => {
+  function askFrom(h: SuggestOptionsHarness, sourceRunId: string) {
+    return h.suggest.execute({
+      ...{ actor: h.actor, projectId: h.project.id, cloudConsent: false, sourceRunId },
+    });
+  }
+
+  it('RST-1802 refuses a chosen run that ended CapReached, making no call', async () => {
+    const h = await harness();
+    const stopped = await seedPlanSource(h.stores, h.project, {
+      brief: false,
+      run: { runKey: '20261012-100000-understand', endState: 'CapReached' },
+    });
+
+    const result = await askFrom(h, stopped?.id ?? '');
+
+    expect(result).toEqual({ ok: false, error: ERROR_CODES.planSourceMissing });
+    expect(h.factory.ledger.entries).toHaveLength(0);
+  });
+
+  it('RF-1105 an unknown run id is not found, making no call', async () => {
+    const h = await harness();
+
+    const result = await askFrom(h, sampleRun().id);
+
+    expect(result).toEqual({ ok: false, error: ERROR_CODES.notFound });
+    expect(h.factory.ledger.entries).toHaveLength(0);
+  });
 });

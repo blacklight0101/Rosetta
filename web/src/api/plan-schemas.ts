@@ -112,3 +112,15 @@ export const planEstimateSchema = z.object({
 
 export type PlanEstimate = z.output<typeof planEstimateSchema>;
 export type PlanCap = PlanEstimate['caps'][number];
+
+// RF-614: the understand run Plan setup plans from.
+export const planSourceSchema = z.object({
+  runId: z.string(),
+  runKey: z.string(),
+  endedAt: z.string().nullable(),
+  areas: z.array(z.string()),
+  supportedClaims: z.number().int().min(0),
+  newest: z.boolean(),
+});
+
+export type PlanSource = z.output<typeof planSourceSchema>;

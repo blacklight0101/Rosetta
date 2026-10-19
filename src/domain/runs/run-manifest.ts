@@ -95,6 +95,8 @@ export interface RunManifest {
   readonly catalogue: ManifestCatalogue | null;
   /** The planning brief a plan run was written from (RF-604, RNF-004); null for the other stages. */
   readonly brief: PlanningBrief | null;
+  /** The folder name of the understand run a plan run was written from (RF-614); null for the other stages. */
+  readonly sourceRunId: string | null;
   /** RF-209: the rounds of a Deepen run and the run it improves; absent for every other run. */
   readonly deepen?: DeepenRecord | undefined;
   readonly caps: ManifestCaps;

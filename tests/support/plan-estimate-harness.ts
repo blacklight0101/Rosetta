@@ -3,6 +3,7 @@ import type { ServerKeyPresence } from '../../src/application/ports/server-key-p
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import type { Project } from '../../src/application/projects/project.js';
 import { actorOf, type Actor } from '../../src/domain/accounts/actor.js';
+import type { Run } from '../../src/domain/runs/run.js';
 import type { UserAccount } from '../../src/domain/accounts/user.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
@@ -47,7 +48,7 @@ export interface PlanEstimateHarness {
   readonly serverSettings: MemoryServerSettings;
   readonly clock: FixedClock;
   /** Seeds (or re-seeds) the plan sources of the project. */
-  seed(seed?: PlanSourceSeed): Promise<void>;
+  seed(seed?: PlanSourceSeed): Promise<Run | undefined>;
 }
 
 export interface PlanEstimateOptions {
@@ -108,9 +109,7 @@ export async function createPlanEstimateHarness(
       uxPrompt: () => loadUxPrompt('prompts'),
       coveragePrompt: () => loadCoveragePrompt('prompts'),
     }),
-    async seed(seed) {
-      await seedPlanSource({ files, briefs, runs }, project, seed);
-    },
+    seed: (seed) => seedPlanSource({ files, briefs, runs }, project, seed),
   };
   if (options.seed !== false) await harness.seed(options.seed);
   return harness;

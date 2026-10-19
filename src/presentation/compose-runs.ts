@@ -171,6 +171,7 @@ function runServices(service: ServiceParts): RunServices {
   return {
     startRun: new StartRun({
       projects,
+      runs,
       briefs: new FilePlanningBriefStore({ writer, masker: parts.masker }),
       submit: submitRun,
       ...(ollamaHost === undefined ? {} : { ollamaHost }),

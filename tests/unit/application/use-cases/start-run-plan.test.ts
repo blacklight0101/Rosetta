@@ -20,7 +20,7 @@ async function setup(settings: ProjectSettings, options: { readonly brief?: bool
   await projects.insertOrFind(project);
   if (options.brief !== false)
     await briefs.saveEmpty({ userId: project.userId, projectId: project.id });
-  const startRun = new StartRun({ projects, briefs, submit: harness.submit });
+  const startRun = new StartRun({ projects, runs: harness.runs, briefs, submit: harness.submit });
   return { harness, project, startRun };
 }
 
