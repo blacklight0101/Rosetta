@@ -8,6 +8,7 @@ import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { err, ok, type Result } from '../../domain/errors/result.js';
 import type { Run } from '../../domain/runs/run.js';
 import { roundTasks } from '../deepen/deepen-tasks.js';
+import { latestScan } from '../deepen/latest-scan.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { ProviderKeyRepository } from '../ports/provider-key-repository.js';
 import type { RunIndex } from '../ports/run-index.js';
@@ -120,8 +121,9 @@ export class EstimateDeepen {
     if (!isAllowedRoundLimit(maxRounds)) return err(ERROR_CODES.requestInvalid);
     const project = await this.deps.projects.find(run.userId, run.projectId);
     if (project === undefined) return err(ERROR_CODES.notFound);
-    const codeMap = await this.codeMapOf(run);
-    if (codeMap === undefined) return err(ERROR_CODES.codeMapMissing);
+    const scanned = await latestScan(this.deps, run);
+    if (scanned === undefined) return err(ERROR_CODES.codeMapMissing);
+    const { codeMap } = scanned;
     const coveragePass = request.coveragePass !== false;
     const plan = await this.planOf(run, codeMap, coveragePass);
     const assumptions = assumptionsOf(project.settings);
@@ -166,12 +168,5 @@ export class EstimateDeepen {
       files: codeMap.files,
       ...{ reread: new Set<string>(), writtenHere: new Set<string>(), coveragePass },
     });
-  }
-
-  /** The code map of the project's newest completed scan, the one a Deepen reads. */
-  private async codeMapOf(run: Run): Promise<CodeMap | undefined> {
-    const runs = await this.deps.runs.list(run.userId, run.projectId);
-    const scan = runs.find((each) => each.stage === 'scan' && each.endState === 'Completed');
-    return scan === undefined ? undefined : (await this.deps.scans.open(scan)).codeMap;
   }
 }

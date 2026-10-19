@@ -115,3 +115,39 @@ export const cardsMergedData = z.looseObject({
   from: z.array(text).optional(),
   claims: z.array(z.object({ from: text, to: text })),
 });
+
+/** `deepen.started` (RF-209): the run it improves, what was confirmed, the cards it starts from. */
+export const deepenStartedData = z.looseObject({
+  parentRunId: text,
+  parentRunKey: text,
+  maxRounds: count,
+  coveragePass: z.boolean(),
+  seeded: z.looseObject({
+    cards: count,
+    claims: count,
+    supported: count,
+    rejected: count,
+    notJudged: count,
+  }),
+});
+
+/** `deepen.round.started` (RF-209): the counts of the round plan. */
+export const deepenRoundStartedData = z.looseObject({
+  round: count,
+  judge: count,
+  reread: count,
+  outOfScope: count,
+  unreadFiles: count,
+});
+
+/** `deepen.round.ended` (RF-209): what the round added; `complete` is false when a cap or a Stop cut it. */
+export const deepenRoundEndedData = z.looseObject({
+  round: count,
+  complete: z.boolean(),
+  newClaims: count,
+  newSupported: count,
+  filesRead: count,
+});
+
+/** `deepen.ended` (RF-209): why the Deepen stopped. */
+export const deepenEndedData = z.looseObject({ stopReason: text, roundsDone: count });

@@ -1,0 +1,139 @@
+/* Deepen and the honest measures (P2-41, RF-209, RF-231, RFC-003): the measures of an ended run, what
+   a Deepen changed, the progress of a Deepen run and the Deepen action of the "Your turn" panel.
+   Every class here starts with rst-p241 so the components own their styles; colours, spacing and
+   type come from the tokens. Nothing is told by colour alone: each state has words and a glyph. */
+
+.rst-p241-summary,
+.rst-p241-progress,
+.rst-p241-deepen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-p241-summary p,
+.rst-p241-progress p,
+.rst-p241-deepen p {
+  margin: 0;
+}
+
+.rst-p241-standing,
+.rst-p241-warning,
+.rst-p241-round {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--rst-sp-2);
+}
+
+.rst-p241-standing {
+  padding: var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-info-bg);
+  color: var(--rst-info-ink);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-p241-warning {
+  padding: var(--rst-sp-3);
+  border-radius: var(--rst-radius-md);
+  background: var(--rst-warn-bg);
+  color: var(--rst-warn-ink);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-p241-measures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--rst-sp-3);
+  margin: 0;
+}
+
+.rst-p241-measure {
+  min-inline-size: 0;
+  padding: var(--rst-sp-3);
+  border: 1px solid var(--rst-rule);
+  border-radius: var(--rst-radius-md);
+}
+
+.rst-p241-measure dt {
+  color: var(--rst-ink-muted);
+  font-size: var(--rst-fs-xs);
+}
+
+.rst-p241-measure dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rst-p241-measure dd b {
+  font-size: 1.125rem;
+  font-weight: var(--rst-fw-head);
+}
+
+.rst-p241-measure dd span {
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+}
+
+.rst-p241-notread ul,
+.rst-p241-scope ul {
+  margin: var(--rst-sp-2) 0 0;
+  padding-inline-start: var(--rst-sp-5);
+  overflow-wrap: anywhere;
+}
+
+.rst-p241-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.rst-p241-bar {
+  inline-size: 100%;
+  accent-color: var(--rst-info-solid);
+}
+
+.rst-p241-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rst-p241-action,
+.rst-p241-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--rst-sp-3);
+  min-inline-size: 0;
+}
+
+.rst-p241-panel {
+  inline-size: 100%;
+  padding-block-start: var(--rst-sp-3);
+  border-block-start: 1px solid var(--rst-rule);
+}
+
+.rst-p241-estimate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rst-sp-3);
+  inline-size: 100%;
+}
+
+.rst-p241-estimate p {
+  margin: 0;
+  color: var(--rst-ink-soft);
+  font-size: var(--rst-fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.rst-p241-line {
+  display: block;
+  max-inline-size: 15rem;
+  overflow-wrap: anywhere;
+}

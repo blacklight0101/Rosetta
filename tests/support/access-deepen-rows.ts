@@ -21,6 +21,15 @@ export const deepenRows: Readonly<Record<string, readonly Probe[]>> = {
       expected: active(401, 404),
     },
   ],
+  // The seeded ended run is a scan: its owner is answered with no measures, anyone else 404.
+  'GET /api/runs/:runId/understanding': [
+    {
+      method: 'GET',
+      url: (context) => `/api/runs/${context.endedRunId}/understanding`,
+      expected: ownerOnly(200),
+    },
+    { method: 'GET', url: () => '/api/runs/not-a-uuid/understanding', expected: active(401, 404) },
+  ],
   'POST /api/runs/:runId/deepen/estimate': [
     { method: 'POST', url: deepenUrl('/estimate'), payload: () => ({}), expected: ownerOnly(409) },
     {

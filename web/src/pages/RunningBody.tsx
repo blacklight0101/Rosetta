@@ -13,6 +13,7 @@ import { ActivityTab } from './ActivityTab.js';
 import { AgentsTab } from './AgentsTab.js';
 import { CardsTab } from './CardsTab.js';
 import { CodeMap } from './CodeMap.js';
+import { DeepenProgress } from './DeepenProgress.js';
 import { RunJourney } from './RunJourney.js';
 import { SpendPanel } from './SpendPanel.js';
 import { useCodeAreas } from './use-code-areas.js';
@@ -122,6 +123,7 @@ export function RunningBody(props: RunningBodyProps): JSX.Element {
     <>
       <Facts state={state} source={props.source} />
       <RunJourney steps={journeyOf({ stage, phase, state, tiles })} />
+      {state.deepen === undefined ? null : <DeepenProgress progress={state.deepen} />}
       <div class="rst-running__grid">
         <CodeMap
           tiles={tiles}

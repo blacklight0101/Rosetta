@@ -127,3 +127,31 @@ export const runEnded = (
 export function stateAfter(...events: readonly RunEvent[]): RunState {
   return events.reduce(applyEvent, initialRunState());
 }
+
+// RF-209: the events of a Deepen run, as the server publishes them (data-model.md section 3.9).
+
+export const deepenStarted = (seq: number, maxRounds = 3): RunEvent =>
+  ev(seq, 'deepen.started', {
+    parentRunId: 'parent-uuid',
+    parentRunKey: '20261001-090000-understand',
+    maxRounds,
+    coveragePass: true,
+    seeded: { cards: 24, claims: 118, supported: 68, rejected: 40, notJudged: 10 },
+  });
+
+export const deepenRoundStarted = (seq: number, round: number): RunEvent =>
+  ev(seq, 'deepen.round.started', {
+    ...{ round, maxRounds: 3, judge: 10, reread: 40 },
+    outOfScope: 6,
+    unreadFiles: 12,
+  });
+
+export const deepenRoundEnded = (seq: number, round: number, complete = true): RunEvent =>
+  ev(seq, 'deepen.round.ended', {
+    ...{ round, complete, newClaims: 30, newSupported: 22, filesRead: 9 },
+    tokens: 90_000,
+    costMicros: 120_000,
+  });
+
+export const deepenEnded = (seq: number, stopReason: string, roundsDone: number): RunEvent =>
+  ev(seq, 'deepen.ended', { stopReason, roundsDone, maxRounds: 3 });

@@ -10,7 +10,9 @@ import { stateLists } from '../components/badge-specs.js';
 import { isResumable } from '../lib/live-run/resumable.js';
 import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { secondsText } from './admin-format.js';
+import { mayHaveMeasures } from '../lib/understanding/measure-text.js';
 import { ResumeButton } from './ResumeButton.js';
+import { RunMeasures } from './RunMeasures.js';
 import { ScrollRegion } from './ScrollRegion.js';
 
 // RF-1008, RF-1012, History artboard: the runs of a project, newest first, each with its start, stage,
@@ -140,6 +142,7 @@ function Row(props: {
       </td>
       <td data-label="State">
         <StateBadge run={run} />
+        {mayHaveMeasures(run) ? <RunMeasures runId={run.id} /> : null}
       </td>
       <td class="rst-table__num" data-label="Tokens">
         {tokensLabel(inputTokens + outputTokens)}

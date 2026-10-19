@@ -63,6 +63,6 @@ const LOCAL_KINDS: readonly string[] = ['ollama', 'fake'];
  * RF-143: the roles whose provider is not a local one. An Ollama server on another machine also
  * needs the consent; the page cannot see its host, so the server's refusal (RST-1515) adds it.
  */
-export function cloudRoles(estimate: RunEstimate): readonly RoleEstimate[] {
+export function cloudRoles(estimate: Pick<RunEstimate, 'roles'>): readonly RoleEstimate[] {
   return estimate.roles.filter((role) => !LOCAL_KINDS.includes(role.kind));
 }

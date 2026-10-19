@@ -4,6 +4,8 @@ import { FailedAreasNote } from '../components/FailedAreasNote.js';
 import { Link } from '../components/Link.js';
 import { StatusBadge } from '../components/StatusBadge.js';
 import { tokensText, totalCostText } from '../lib/cost-text.js';
+import { mayHaveMeasures } from '../lib/understanding/measure-text.js';
+import { RunMeasures } from './RunMeasures.js';
 
 // RF-010, RF-1008, RF-1108, RF-1010, design-system.md section 14 (Projects): the table of the
 // user's projects with the last run, its state (with the queue position of a queued run), the runs,
@@ -25,6 +27,7 @@ function RunState({ run }: { readonly run: LastRun | null }): JSX.Element | null
       <>
         <StatusBadge list="RunEndState" value={run.endState} />
         <FailedAreasNote count={run.failedAreas} />
+        {mayHaveMeasures(run) ? <RunMeasures runId={run.id} /> : null}
       </>
     );
   }

@@ -15,6 +15,12 @@ import {
 import { ERROR_CODES, type ErrorCode } from '../../domain/errors/codes.js';
 import type { RunOutcome } from '../ports/run-executor.js';
 import { leaveUnverified } from '../verifier/leave-unverified.js';
+import {
+  announceDeepen,
+  announceRoundEnd,
+  announceRoundStart,
+  announceStop,
+} from './deepen-events.js';
 import { addQuestions, overviewOf, saveRecord, writeOutputs } from './deepen-outputs.js';
 import type { DeepenParts } from './deepen-parts.js';
 import { runRound } from './deepen-round.js';
@@ -55,7 +61,10 @@ async function nextRound(
   const listed = withOutOfScope(record, plan.outOfScope);
   if (isEmptyRound(plan)) return { progress: { state, record: listed }, stop: 'noProgress' };
   const before = snapshotOf(state, codeMap);
-  const end = await runRound(parts, state, { plan, round: record.rounds.length + 1 });
+  const round = record.rounds.length + 1;
+  await announceRoundStart(parts, { round, maxRounds: record.maxRounds, plan });
+  const end = await runRound(parts, state, { plan, round });
+  await announceRoundEnd(parts, end.round);
   const next = { state: end.state, record: withRound(listed, end.round) };
   await saveRecord(parts, next.record);
   await writeOutputs(parts, next.state);
@@ -80,6 +89,7 @@ async function finish(
   await addQuestions(parts, fresh);
   await writeOutputs(parts, final, await overviewOf(parts, final));
   await saveRecord(parts, endedDeepen(record, stop, measuresOf(final, parts.scanned.codeMap)));
+  await announceStop(parts, record, stop);
   if (stop === 'stopped') return { endState: 'Interrupted' };
   if (stop === 'capReached')
     return { endState: 'CapReached', errorCode: ERROR_CODES.budgetCapReached };
@@ -103,6 +113,7 @@ export async function runDeepen(parts: DeepenParts): Promise<RunOutcome> {
   let progress: Progress = seeded.value;
   await saveRecord(parts, progress.record);
   await writeOutputs(parts, progress.state);
+  await announceDeepen(parts, progress.state, progress.record);
   for (;;) {
     const step = await nextRound(parts, progress);
     progress = step.progress;
