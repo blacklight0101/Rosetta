@@ -15,9 +15,9 @@ import { hasValidSourceShape } from '../../domain/sources/source-shape.js';
 // contract suite as PgProjectRepository: unique on user, source URL, ref and subpath; every
 // operation scoped by the owner; lists newest first, ties by id.
 
-/** A GitHub source is one project per user; an upload is only ever itself (RF-128). */
+/** A GitHub source is one project per user; an upload or a workbook project is only ever itself (RF-128, RF-152). */
 function sourceKey(project: Project): string {
-  if (project.sourceKind === 'upload') return JSON.stringify(['upload', project.id]);
+  if (project.sourceKind !== 'github') return JSON.stringify([project.sourceKind, project.id]);
   return JSON.stringify([project.userId, project.sourceUrl, project.ref, project.subpath]);
 }
 
@@ -39,7 +39,10 @@ export class MemoryProjectRepository implements ProjectRepository {
   insertOrFind(project: Project): Promise<StoredProject> {
     if (!hasValidSourceShape(project.sourceKind, project)) {
       return Promise.reject(
-        new RosettaError(ERROR_CODES.requestInvalid, 'An uploaded project has no source address.'),
+        new RosettaError(
+          ERROR_CODES.requestInvalid,
+          'An uploaded or workbook project has no source address.',
+        ),
       );
     }
     const existing = [...this.projects.values()].find(

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { CachedSnapshot, SnapshotCache } from '../../application/ports/snapshot-cache.js';
 import { isRealFolder } from './run-folder.js';
 import { isUploadSnapshotKey } from '../../domain/sources/upload-name.js';
+import { isWorkbookSnapshotKey } from '../../domain/sources/workbook-key.js';
 import { snapshotCacheRoot } from './workspace-paths.js';
 
 // RF-1012, RF-005, data-model.md section 3.3: the snapshots of `<data>/sources/`, listed from their
@@ -14,7 +15,7 @@ import { snapshotCacheRoot } from './workspace-paths.js';
 const GITHUB_KEY = /^[a-z0-9._-]+__[a-z0-9._-]+@[0-9a-f]{40}$/u;
 
 function isSnapshotKey(key: string): boolean {
-  return GITHUB_KEY.test(key) || isUploadSnapshotKey(key);
+  return GITHUB_KEY.test(key) || isUploadSnapshotKey(key) || isWorkbookSnapshotKey(key);
 }
 const INFO_FILE = 'snapshot.json';
 const WRITABLE_FILE = 0o644;
@@ -33,6 +34,15 @@ const githubInfo = z.looseObject({
 const uploadInfo = z.looseObject({
   kind: z.literal('upload'),
   fileName: z.string(),
+  uploadedAt: z.string(),
+  snapshotHash: z.string(),
+  fileCount: z.number().int().nonnegative(),
+  totalBytes: z.number().int().nonnegative(),
+});
+
+// RF-152: a workbook record names its kind, the instant and the renderer; it has no repository, commit or zip.
+const workbookInfo = z.looseObject({
+  kind: z.literal('workbook'),
   uploadedAt: z.string(),
   snapshotHash: z.string(),
   fileCount: z.number().int().nonnegative(),
@@ -81,6 +91,19 @@ function describeRecord(json: unknown, key: string): CachedSnapshot | undefined 
     return {
       key,
       repository: `${fileName} (upload)`,
+      commitSha: snapshotHash,
+      downloadedAt: uploadedAt,
+      fileCount,
+      totalBytes,
+    };
+  }
+  if (isWorkbookSnapshotKey(key)) {
+    const workbook = workbookInfo.safeParse(json);
+    if (!workbook.success) return undefined;
+    const { uploadedAt, snapshotHash, fileCount, totalBytes } = workbook.data;
+    return {
+      key,
+      repository: 'Excel workbooks',
       commitSha: snapshotHash,
       downloadedAt: uploadedAt,
       fileCount,

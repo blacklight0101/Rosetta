@@ -5,6 +5,7 @@ import type { Logger } from '../../application/ports/logger.js';
 import type {
   GithubSnapshot,
   GithubSnapshotInfo,
+  Snapshot,
   SourceFetcher,
 } from '../../application/ports/source-fetcher.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -15,6 +16,7 @@ import {
   snapshotKey,
   type GitHubRepoRef,
 } from '../../domain/sources/github-repo-ref.js';
+import { sourceKindOf } from '../../domain/sources/source-kind.js';
 import { GitHubApi, type RepositoryInfo } from './github-api.js';
 import { GitHubHttpClient, type FetchFunction } from './github-http-client.js';
 import { SnapshotStore } from './snapshot-store.js';
@@ -24,6 +26,11 @@ import {
   tooLarge,
   type ExtractionLimits,
 } from './tarball-extractor.js';
+
+/** True for the snapshot of a GitHub commit, whether or not its record names the kind (RF-130, RF-152). */
+function isGithubSnapshot(snapshot: Snapshot): snapshot is GithubSnapshot {
+  return sourceKindOf(snapshot) === 'github';
+}
 
 export interface GitHubSnapshotFetcherOptions {
   readonly dataDir: string;
@@ -118,10 +125,10 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
   /** The snapshot cached under a GitHub key; an upload record there is a damaged cache (RF-130). */
   private async readGithub(key: string): Promise<GithubSnapshot | undefined> {
     const snapshot = await this.store.readExisting(key);
-    if (snapshot?.kind !== 'upload') return snapshot;
+    if (snapshot === undefined || isGithubSnapshot(snapshot)) return snapshot;
     throw new RosettaError(
       ERROR_CODES.snapshotEntryRefused,
-      `The cached snapshot ${key} is an upload, not a GitHub commit.`,
+      `The cached snapshot ${key} is an upload or a workbook, not a GitHub commit.`,
     );
   }
 
