@@ -3,6 +3,7 @@ import type {
   ProjectRepository,
   SettingsChange,
 } from '../../src/application/ports/project-repository.js';
+import type { Project } from '../../src/application/projects/project.js';
 import type { ProjectSettings } from '../../src/application/projects/project-settings.js';
 import { settingsWith, sampleProject } from '../support/project-fixtures.js';
 import { parseProjectSettings } from '../../src/application/projects/project-settings.js';
@@ -225,6 +226,65 @@ function removalTests(name: string, fresh: FreshProjects): void {
   });
 }
 
+const upload = (overrides: Partial<Project> = {}): Project =>
+  sampleProject({
+    userId: amy,
+    name: 'OrderDesk',
+    sourceKind: 'upload',
+    sourceUrl: '',
+    ref: '',
+    subpath: '',
+    ...overrides,
+  });
+
+function sourceKindTests(name: string, fresh: FreshProjects): void {
+  it(`RF-130 ${name} stores a project of kind github unless told otherwise`, async () => {
+    const projects = await fresh();
+    const project = sampleProject({ userId: amy });
+
+    await projects.insertOrFind(project);
+
+    expect(await projects.find(amy, project.id)).toMatchObject({ sourceKind: 'github' });
+  });
+
+  it(`RF-130 ${name} stores an upload project and finds it by its owner and id`, async () => {
+    const projects = await fresh();
+    const project = upload();
+
+    const stored = await projects.insertOrFind(project);
+
+    expect(stored).toEqual({ project, created: true });
+    expect(await projects.find(amy, project.id)).toEqual(project);
+    expect(await projects.find(bob, project.id)).toBeUndefined();
+  });
+
+  it(`RF-128 ${name} keeps two uploads of the same user apart`, async () => {
+    const projects = await fresh();
+    const first = upload();
+    const second = upload();
+
+    const results = [await projects.insertOrFind(first), await projects.insertOrFind(second)];
+
+    expect(results.map((result) => result.created)).toEqual([true, true]);
+    expect((await projects.list(amy)).map((project) => project.id).sort()).toEqual(
+      [first.id, second.id].sort(),
+    );
+  });
+}
+
+function uploadRefusalTests(name: string, fresh: FreshProjects): void {
+  it.each([
+    ['a source address', { sourceUrl: 'https://github.com/o/r' }],
+    ['a ref', { ref: 'main' }],
+    ['a subpath', { subpath: 'src' }],
+  ])(`RF-130 ${name} refuses an upload project that holds %s`, async (_what, overrides) => {
+    const projects = await fresh();
+
+    await expect(projects.insertOrFind(upload(overrides))).rejects.toThrow();
+    expect(await projects.list(amy)).toEqual([]);
+  });
+}
+
 export const projectOwners: readonly string[] = [amy, bob];
 
 export function projectRepositoryContract(name: string, fresh: FreshProjects): void {
@@ -233,4 +293,6 @@ export function projectRepositoryContract(name: string, fresh: FreshProjects): v
   updatingTests(name, fresh);
   versionTests(name, fresh);
   removalTests(name, fresh);
+  sourceKindTests(name, fresh);
+  uploadRefusalTests(name, fresh);
 }
