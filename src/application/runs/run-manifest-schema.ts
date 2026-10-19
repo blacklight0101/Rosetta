@@ -62,6 +62,8 @@ const manifestSchema = z.object({
   catalogue: z.object({ version: count, sha256: text }).nullable().default(null),
   // Written from RF-604 on; a manifest stored before that reads as no brief.
   brief: planningBriefSchema.nullable().default(null),
+  // Written from RF-614 on; a manifest stored before that reads as no source run.
+  sourceRunId: nullableText.default(null),
   // RF-209: written by a Deepen run only.
   deepen: deepenRecordSchema.optional(),
   caps: z.object({

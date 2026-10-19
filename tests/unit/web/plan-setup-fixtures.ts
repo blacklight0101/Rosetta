@@ -172,3 +172,13 @@ export const cloudProject = projectOf('p-1', 'octo/demo', {
     },
   },
 });
+
+/** RF-614: the understand run Plan setup names and plans from. */
+export const planSource = {
+  runId: 'run-1',
+  runKey: '20261012-090000-understand',
+  endedAt: '2026-10-12T09:41:00.000Z',
+  areas: ['Orders', 'Catalog'],
+  supportedClaims: 12,
+  newest: true,
+};

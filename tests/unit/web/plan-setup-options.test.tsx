@@ -29,7 +29,7 @@ describe('architecture step', () => {
     expect(screen.getByText('One deployable unit')).not.toBeNull();
     expect(screen.getByText('Modules must be policed')).not.toBeNull();
     expect(screen.getByText('BR-001')).not.toBeNull();
-    expect(optionsCalls(page)).toEqual([{ cloudConsent: false }]);
+    expect(optionsCalls(page)).toEqual([{ cloudConsent: false, sourceRunId: 'run-1' }]);
   });
 
   it('RF-608 saves the chosen style with the evidence behind it', async () => {
@@ -85,7 +85,7 @@ describe('architecture step when asking fails', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /I understand; send masked excerpts/u }));
 
     await screen.findByRole('radio', { name: /Modular monolith/u });
-    expect(optionsCalls(page)).toEqual([{ cloudConsent: true }]);
+    expect(optionsCalls(page)).toEqual([{ cloudConsent: true, sourceRunId: 'run-1' }]);
   });
 });
 

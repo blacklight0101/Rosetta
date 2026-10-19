@@ -71,6 +71,10 @@ const finishedEvents = [
 ];
 
 export interface EndedOptions {
+  /** RF-614: the verdict of the judgement step on the first claim of BR-001; none by default. */
+  readonly judged?: 'Supported' | 'Rejected';
+  /** How the run ended; `Completed` by default. */
+  readonly endState?: string;
   readonly questions?: readonly QuestionRow[];
   readonly overviewBody?: Response;
   readonly extra?: Readonly<Record<string, Response>>;
@@ -79,14 +83,23 @@ export interface EndedOptions {
 /** Opens the page of the ended run with the events replayed; resolves once the results tabs show. */
 export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
   const page = renderLive({
-    [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: 'Completed' }),
+    [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: options.endState ?? 'Completed' }),
     [`GET ${runPath}/overview`]: options.overviewBody ?? json(200, { overview }),
     [`GET ${runPath}/answers`]: json(200, { questions: options.questions ?? threeQuestions }),
     [`GET ${codeMapPath}`]: codeMapAnswer(ownAreas),
     ...options.extra,
   });
   const connection = await page.stream.connection();
-  for (const event of finishedEvents) connection.event(event);
+  const judged =
+    options.judged === undefined
+      ? []
+      : [ev(8, 'verify.claim.judged', { claimId: 'BR-001.c1', status: options.judged })];
+  const events = [
+    ...finishedEvents.slice(0, -1),
+    ...judged,
+    runEnded(9, options.endState ?? 'Completed'),
+  ];
+  for (const event of events) connection.event(event);
   await screen.findByRole('tablist', { name: 'Results' });
   return page;
 }

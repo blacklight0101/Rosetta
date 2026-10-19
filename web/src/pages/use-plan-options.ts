@@ -22,6 +22,8 @@ export interface OptionsRequest {
   /** The planner may be called: its kind is known, and any consent it needs is given. */
   readonly allowed: boolean;
   readonly consent: boolean;
+  /** RF-614: the understand run the options are recommended from. */
+  readonly sourceRunId: string | undefined;
 }
 
 // RF-608
@@ -30,7 +32,7 @@ export function usePlanOptions(request: OptionsRequest): {
   readonly askAgain: () => void;
 } {
   const { client } = useApp();
-  const { projectId, wanted, allowed, consent } = request;
+  const { projectId, wanted, allowed, consent, sourceRunId } = request;
   const [load, setLoad] = useState<OptionsLoad>({ status: 'idle' });
   const [attempt, setAttempt] = useState(0);
   const start = wanted && allowed;
@@ -38,18 +40,20 @@ export function usePlanOptions(request: OptionsRequest): {
     if (!start) return undefined;
     let current = true;
     setLoad({ status: 'loading' });
-    void getPlanOptions(client, projectId, consent).then((result) => {
-      if (!current) return;
-      setLoad(
-        result.ok
-          ? { status: 'ready', options: result.value }
-          : { status: 'failed', error: result.error },
-      );
-    });
+    void getPlanOptions(client, projectId, { cloudConsent: consent, sourceRunId }).then(
+      (result) => {
+        if (!current) return;
+        setLoad(
+          result.ok
+            ? { status: 'ready', options: result.value }
+            : { status: 'failed', error: result.error },
+        );
+      },
+    );
     return () => {
       current = false;
     };
-  }, [client, projectId, start, consent, attempt]);
+  }, [client, projectId, start, consent, sourceRunId, attempt]);
   const askAgain = useCallback(() => {
     setAttempt((each) => each + 1);
   }, []);

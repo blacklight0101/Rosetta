@@ -101,7 +101,9 @@ export function deepenerOf(s: Stores, submit: SubmitRun): Deepener {
 
 /** Starts runs of the project as the API does and waits for their end. */
 export function starterOf(s: Stores, submit: SubmitRun, project: Project): Starter {
-  const startRun = new StartRun({ projects: s.projects, briefs: new MemoryBriefStore(), submit });
+  const startRun = new StartRun({
+    ...{ projects: s.projects, runs: s.runs, briefs: new MemoryBriefStore(), submit },
+  });
   const ended = waitUntilEnded(s);
   return async (stage, extra) => {
     const started = await startRun.execute({

@@ -44,6 +44,8 @@ export interface EstimatePlanDependencies
 export interface EstimatePlanRequest {
   readonly actor: Actor;
   readonly projectId: string;
+  /** RF-614: the understand run to plan from, the run's id; the newest completed one when absent. */
+  readonly sourceRunId?: string;
 }
 
 export type EstimatePlanProblem =
@@ -94,7 +96,7 @@ export class EstimatePlan {
   // RF-613, RF-1105
   async execute(request: EstimatePlanRequest): Promise<Result<PlanEstimate, EstimatePlanProblem>> {
     const ref = { userId: request.actor.userId, projectId: request.projectId };
-    const inputs = await planInputs(this.deps, ref);
+    const inputs = await planInputs(this.deps, ref, request.sourceRunId);
     if (!inputs.ok) return err(problemOf(inputs.error.code));
     const { project } = inputs.value;
     const planned = await plannedPrompts(this.deps, inputs.value);

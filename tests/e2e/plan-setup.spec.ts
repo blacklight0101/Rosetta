@@ -1,6 +1,7 @@
 import { expectNoSeriousViolations } from './support/axe.js';
 import { expect, test } from './support/fixtures.js';
-import { openStartPage } from './support/live-run-page.js';
+import { openHistory, runRow } from './support/history-page.js';
+import { openStartPage, runStatus } from './support/live-run-page.js';
 import {
   estimate,
   expectOptions,
@@ -155,4 +156,31 @@ test('RF-604 Write the package starts the plan run and opens its live page', asy
 
   await expect(page.getByRole('heading', { name: 'Live run', level: 1 })).toBeVisible();
   await expect(page).toHaveURL(/\/runs\/[0-9a-f-]{36}$/u);
+});
+
+test('RF-614 RF-604 from the completed understand run to the package: Set up the plan opens Plan setup for that run', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await openHistory(page);
+  await runRow(page, '-understand')
+    .first()
+    .getByRole('link', { name: /^View run /u })
+    .click();
+  const turn = page.getByRole('region', { name: 'Your turn' });
+  await expect(turn.getByRole('button', { name: 'Set up the plan' })).toBeVisible();
+  await expectNoSeriousViolations(page);
+
+  await turn.getByRole('button', { name: 'Set up the plan' }).click();
+
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}\/plan-setup\?run=[0-9a-f-]{36}$/u);
+  const source = page.getByRole('region', { name: 'Source run' });
+  await expect(source).toContainText('-understand');
+  await expect(source).toContainText(/\d+ Supported claims?/u);
+  await expect(estimate(page)).toContainText(/\$[\d.]+ likely/u);
+  await expect(writeButton(page)).toBeEnabled();
+  await expectNoSeriousViolations(page);
+  await writeButton(page).click();
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 90_000 });
+  await expect(page.getByRole('link', { name: 'Download hand-off zip' })).toBeVisible();
 });
