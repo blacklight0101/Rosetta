@@ -8,7 +8,7 @@ import type { LinkKind, SqlVerb, SymbolKind } from './vocabulary.js';
 // and every list is in a fixed order, so the same input always gives the same map.
 
 /** A GitHub repository at a pinned commit. */
-export interface GithubCodeMapSource {
+interface GithubCodeMapSource {
   readonly owner: string;
   readonly repo: string;
   readonly commitSha: string;

@@ -8,7 +8,7 @@ import { fixtureRoot } from './scan-harness.js';
 
 export const UPLOAD_HASH = `sha256:${'cd'.repeat(32)}`;
 export const UPLOADED_AT = '2026-10-19T08:00:00.000Z';
-export const UPLOAD_PROJECT_ID = '00000000-0000-4000-a000-0000000000d1';
+const UPLOAD_PROJECT_ID = '00000000-0000-4000-a000-0000000000d1';
 
 export const UPLOAD_KEY = uploadSnapshotKey(UPLOAD_PROJECT_ID, UPLOAD_HASH);
 
@@ -28,7 +28,7 @@ export const uploadProjectFields: Partial<Project> = {
 };
 
 /** The snapshot an upload store answers for the key, with the C# fixture repository as its tree. */
-export function fixtureUploadSnapshot(): UploadSnapshot {
+function fixtureUploadSnapshot(): UploadSnapshot {
   return {
     kind: 'upload',
     fileName: 'OrderDesk.zip',

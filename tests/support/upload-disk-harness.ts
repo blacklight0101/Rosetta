@@ -66,7 +66,7 @@ export interface RawResponse {
 }
 
 /** What a body writer can do with the request. */
-export interface Wire {
+interface Wire {
   readonly write: (chunk: Buffer) => boolean;
   readonly end: () => void;
   readonly destroy: () => void;
