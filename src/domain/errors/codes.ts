@@ -130,6 +130,7 @@ export const ERROR_CODES = {
   workbookTooLarge: 'RST-1926',
   workbookNotReadable: 'RST-1927',
   workbookDuplicateName: 'RST-1928',
+  uploadNameUnreadable: 'RST-1930',
   requestInvalid: 'RST-2000',
   notSignedIn: 'RST-2001',
   notAllowed: 'RST-2002',
