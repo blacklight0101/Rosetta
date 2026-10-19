@@ -135,6 +135,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
   const projects = await composeProjects({
     ...{ pool, logger, clock, masker, templatesFolder, promptsFolder },
     ...{ dataDir: environment.dataDir, priceTable: auth.priceTable },
+    uploadMaxMb: environment.uploadMaxMb,
     serverKeys: serverKeyPresence(environment, doubles !== undefined),
   });
   const server = buildServer({
@@ -146,6 +147,7 @@ async function createServer(parts: ServerParts): Promise<CreatedServer> {
     history: composeHistory({ pool, logger, dataDir: environment.dataDir }),
     ...{ version, publicUrl: environment.publicUrl, trustProxy: environment.trustProxy },
     contactEmail: environment.contactEmail,
+    uploadMaxMb: environment.uploadMaxMb,
     staticRoot,
   });
   return { server, runs };

@@ -4,6 +4,7 @@ import type {
   SettingsChange,
   SettingsUpdate,
   StoredProject,
+  UploadAttachment,
 } from '../../application/ports/project-repository.js';
 import type { Project } from '../../application/projects/project.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -127,6 +128,10 @@ export class PgProjectRepository implements ProjectRepository {
     const [current] = (await this.run(VERSION_OF, [userId, projectId])).rows;
     if (current === undefined) return { kind: 'missing' };
     return { kind: 'stale', currentVersion: z.number().int().parse(current['settings_version']) };
+  }
+
+  attachUpload(change: UploadAttachment): Promise<Project | undefined> {
+    return Promise.resolve(change.updatedAt < 0 ? undefined : undefined);
   }
 
   async remove(

@@ -3,7 +3,9 @@ import type {
   SettingsChange,
   SettingsUpdate,
   StoredProject,
+  UploadAttachment,
 } from '../../application/ports/project-repository.js';
+import type { RunIndex } from '../../application/ports/run-index.js';
 import type { Project } from '../../application/projects/project.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
@@ -27,6 +29,12 @@ function newestFirst(left: Project, right: Project): number {
 
 export class MemoryProjectRepository implements ProjectRepository {
   private readonly projects = new Map<string, Project>();
+  private runs: Pick<RunIndex, 'list'> | undefined;
+
+  /** The runs `lastRunSnapshotKey` is read from, as the database reads them. */
+  followRuns(runs: Pick<RunIndex, 'list'>): void {
+    this.runs = runs;
+  }
 
   insertOrFind(project: Project): Promise<StoredProject> {
     if (!hasValidSourceShape(project.sourceKind, project)) {
@@ -66,6 +74,10 @@ export class MemoryProjectRepository implements ProjectRepository {
     };
     this.projects.set(projectId, updated);
     return Promise.resolve({ kind: 'updated', project: updated });
+  }
+
+  attachUpload(change: UploadAttachment): Promise<Project | undefined> {
+    return Promise.resolve(change.updatedAt < 0 ? undefined : undefined);
   }
 
   async remove(

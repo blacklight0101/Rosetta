@@ -80,6 +80,8 @@ export interface ServerOptions {
   readonly trustProxy: number;
   /** `ROSETTA_CONTACT_EMAIL`: the address behind the landing page's Request access link (RF-1201). */
   readonly contactEmail?: string | undefined;
+  /** `ROSETTA_UPLOAD_MAX_MB`, told to the page by `GET /api/session` (RF-134); left out when not given. */
+  readonly uploadMaxMb?: number;
   /** The folder of the built front end; no static files are served without it. */
   readonly staticRoot?: string;
   /**

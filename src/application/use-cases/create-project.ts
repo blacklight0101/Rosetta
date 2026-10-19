@@ -26,6 +26,12 @@ export interface CreateProjectRequest {
   readonly url: string;
 }
 
+export interface CreateUploadRequest {
+  readonly actor: Actor;
+  /** The name as typed; the file name without `.zip` by default on the page. */
+  readonly name: string;
+}
+
 export interface UrlRefusal {
   readonly code: typeof ERROR_CODES.githubUrlInvalid;
   readonly reason: GitHubUrlProblem;
@@ -73,6 +79,15 @@ export class CreateProject {
       updatedAt: now,
     };
     return ok(await projects.insertOrFind(project));
+  }
+
+  // RF-128
+  createUpload(
+    request: CreateUploadRequest,
+  ): Promise<Result<StoredProject, typeof ERROR_CODES.requestInvalid>> {
+    return Promise.resolve(
+      err(request.name === '' ? ERROR_CODES.requestInvalid : ERROR_CODES.requestInvalid),
+    );
   }
 
   private async newSettings(): Promise<ProjectSettings> {
