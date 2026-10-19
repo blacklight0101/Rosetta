@@ -40,6 +40,8 @@ export interface Environment {
 const DEFAULT_LOG_LEVEL: LogLevel = 'info';
 const DEFAULT_LOG_RETENTION_DAYS = 14;
 const MAX_TRUST_PROXY_HOPS = 16;
+const MAX_UPLOAD_MB = 500;
+const UPLOAD_VARIABLE = 'ROSETTA_UPLOAD_MAX_MB';
 const SECRET_KEY_BYTES = 32;
 
 // Variables that exist only for tests and development; an https public URL means a real
@@ -144,6 +146,11 @@ const SCHEMA = z.object({
     maxParseBudgetMs,
     `must be a whole number of milliseconds from 1 to ${String(maxParseBudgetMs)}`,
   ).optional(),
+  ROSETTA_UPLOAD_MAX_MB: whole(
+    1,
+    MAX_UPLOAD_MB,
+    `must be a whole number of megabytes from 1 to ${String(MAX_UPLOAD_MB)}`,
+  ).optional(),
   ROSETTA_APP_DB_PASSWORD: text().optional(),
   ROSETTA_MIGRATOR_DB_PASSWORD: text().optional(),
   ROSETTA_DB_ADMIN_PASSWORD: text().optional(),
@@ -161,7 +168,8 @@ function setOrUndefined(value: string | undefined): string | undefined {
 function pick(source: EnvironmentSource): Record<string, string | undefined> {
   const input: Record<string, string | undefined> = {};
   for (const name of Object.keys(SCHEMA.shape)) {
-    input[name] = setOrUndefined(source[name]);
+    // An empty upload limit is a mistake, not an unset variable: Compose passes 500 (compose.yaml).
+    input[name] = name === UPLOAD_VARIABLE ? source[name] : setOrUndefined(source[name]);
   }
   return input;
 }
@@ -201,7 +209,7 @@ function toEnvironment(parsed: Parsed): Environment {
     logRetentionDays: parsed.ROSETTA_LOG_RETENTION_DAYS ?? DEFAULT_LOG_RETENTION_DAYS,
     trustProxy: parsed.ROSETTA_TRUST_PROXY ?? 0,
     scanParseBudgetMs: parsed.ROSETTA_SCAN_PARSE_BUDGET_MS ?? defaultParseBudgetMs,
-    uploadMaxMb: 0,
+    uploadMaxMb: parsed.ROSETTA_UPLOAD_MAX_MB ?? MAX_UPLOAD_MB,
     appDbPassword: parsed.ROSETTA_APP_DB_PASSWORD,
     migratorDbPassword: parsed.ROSETTA_MIGRATOR_DB_PASSWORD,
     dbAdminPassword: parsed.ROSETTA_DB_ADMIN_PASSWORD,

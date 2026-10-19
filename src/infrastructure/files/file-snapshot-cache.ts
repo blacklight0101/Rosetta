@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import type { CachedSnapshot, SnapshotCache } from '../../application/ports/snapshot-cache.js';
 import { isRealFolder } from './run-folder.js';
+import { isUploadSnapshotKey } from '../../domain/sources/upload-name.js';
 import { snapshotCacheRoot } from './workspace-paths.js';
 
 // RF-1012, RF-005, data-model.md section 3.3: the snapshots of `<data>/sources/`, listed from their
@@ -10,16 +11,30 @@ import { snapshotCacheRoot } from './workspace-paths.js';
 // partial download (`.partial-*`), a folder without a readable snapshot.json and anything else is
 // neither listed nor removable, and a key that is not of that shape never reaches the file system.
 
-const KEY = /^[a-z0-9._-]+__[a-z0-9._-]+@[0-9a-f]{40}$/u;
+const GITHUB_KEY = /^[a-z0-9._-]+__[a-z0-9._-]+@[0-9a-f]{40}$/u;
+
+function isSnapshotKey(key: string): boolean {
+  return GITHUB_KEY.test(key) || isUploadSnapshotKey(key);
+}
 const INFO_FILE = 'snapshot.json';
 const WRITABLE_FILE = 0o644;
 const WRITABLE_DIR = 0o755;
 
-const info = z.looseObject({
+const githubInfo = z.looseObject({
   owner: z.string(),
   repo: z.string(),
   commitSha: z.string(),
   downloadedAt: z.string(),
+  fileCount: z.number().int().nonnegative(),
+  totalBytes: z.number().int().nonnegative(),
+});
+
+// RF-130: an upload record names its kind, the zip and the instant; it has no repository or commit.
+const uploadInfo = z.looseObject({
+  kind: z.literal('upload'),
+  fileName: z.string(),
+  uploadedAt: z.string(),
+  snapshotHash: z.string(),
   fileCount: z.number().int().nonnegative(),
   totalBytes: z.number().int().nonnegative(),
 });
@@ -54,7 +69,25 @@ async function describeSnapshot(folder: string, key: string): Promise<CachedSnap
   } catch {
     return undefined;
   }
-  const parsed = info.safeParse(json);
+  return describeRecord(json, key);
+}
+
+/** The listing of a record, read as the kind its folder name says; undefined when it is neither. */
+function describeRecord(json: unknown, key: string): CachedSnapshot | undefined {
+  if (isUploadSnapshotKey(key)) {
+    const upload = uploadInfo.safeParse(json);
+    if (!upload.success) return undefined;
+    const { fileName, uploadedAt, snapshotHash, fileCount, totalBytes } = upload.data;
+    return {
+      key,
+      repository: `${fileName} (upload)`,
+      commitSha: snapshotHash,
+      downloadedAt: uploadedAt,
+      fileCount,
+      totalBytes,
+    };
+  }
+  const parsed = githubInfo.safeParse(json);
   if (!parsed.success) return undefined;
   const { owner, repo, commitSha, downloadedAt, fileCount, totalBytes } = parsed.data;
   return { key, repository: `${owner}/${repo}`, commitSha, downloadedAt, fileCount, totalBytes };
@@ -100,7 +133,7 @@ export class FileSnapshotCache implements SnapshotCache {
     }
     const found: CachedSnapshot[] = [];
     for (const entry of entries) {
-      if (!entry.isDirectory() || !KEY.test(entry.name)) continue;
+      if (!entry.isDirectory() || !isSnapshotKey(entry.name)) continue;
       const snapshot = await describeSnapshot(join(root, entry.name), entry.name);
       if (snapshot !== undefined) found.push(snapshot);
     }
@@ -110,7 +143,7 @@ export class FileSnapshotCache implements SnapshotCache {
   // RF-1012, RF-005
   async remove(key: string): Promise<boolean> {
     const root = await this.#root();
-    if (root === undefined || !KEY.test(key)) return false;
+    if (root === undefined || !isSnapshotKey(key)) return false;
     const folder = join(root, key);
     if (!(await isRealFolder(folder))) return false;
     await makeWritable(this.#files, folder);

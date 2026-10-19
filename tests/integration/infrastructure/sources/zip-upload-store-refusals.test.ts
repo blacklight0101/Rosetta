@@ -11,7 +11,7 @@ import {
   sourcesEntries,
   storeIn,
 } from '../../../support/upload-store-harness.js';
-import { buildZip } from '../../../support/zip-fixtures.js';
+import { buildRawNameZip, buildZip } from '../../../support/zip-fixtures.js';
 
 // RF-128, RF-129, RFC-004 section 4.2: every refusal of the upload store, over a real folder and
 // the real extractor. Every failure leaves nothing in `<data>/sources/`.
@@ -93,8 +93,7 @@ describe('ZipUploadStore refusals leave nothing behind', () => {
   });
 
   it('RF-129 a zip with an entry outside the folder is refused as RST-1913', async () => {
-    const zip = await buildZip([{ name: 'ok.cs', data: 'x' }]);
-    const hostile = Buffer.from(zip.toString('latin1').replaceAll('ok.cs', '../x.c'), 'latin1');
+    const hostile = await buildRawNameZip([{ name: '../x.c', data: 'x' }]);
 
     await expect(storeIn(root.path).store(requestOf(bodyOf(hostile)))).rejects.toMatchObject({
       code: 'RST-1913',
