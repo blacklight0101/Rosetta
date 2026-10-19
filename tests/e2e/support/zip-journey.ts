@@ -12,7 +12,7 @@ import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
 // understand run is the one the test server replays (e2e-provider.ts).
 
 const FIXTURE = join('tests', 'fixtures', 'repos', 'webforms-csharp');
-export const ZIP_TOP_FOLDER = 'ShopWeb';
+const ZIP_TOP_FOLDER = 'ShopWeb';
 
 async function itemsBelow(folder: string, prefix: string): Promise<readonly ZipItem[]> {
   const entries = await readdir(join(FIXTURE, folder), { withFileTypes: true });
