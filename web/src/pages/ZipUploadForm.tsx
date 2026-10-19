@@ -87,6 +87,7 @@ function Outcome({ upload }: { readonly upload: ZipUpload }): JSX.Element | null
 function reasonToWait(upload: ZipUpload): string | undefined {
   if (upload.file === undefined) return 'Choose a zip file first.';
   if (!upload.ready) return upload.problem ?? 'Checking the file.';
+  if (upload.needsName) return 'Enter a project name.';
   return undefined;
 }
 
@@ -142,7 +143,7 @@ export function ZipUploadForm(props: ZipUploadOptions): JSX.Element {
       }}
     >
       <HowTo limitMb={upload.limitMb} />
-      <ChosenFields upload={upload} hasProject={props.existing !== undefined} />
+      <ChosenFields upload={upload} hasProject={upload.project !== undefined} />
       <Outcome upload={upload} />
       <div class="rst-projects__actions">
         <Button

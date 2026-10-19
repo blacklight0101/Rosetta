@@ -18,6 +18,9 @@ export const uploadSummarySchema = z.object({
   /** Entries left out: links, deny-listed or ignored folders (RF-122, RF-129). */
   skipped: z.number().int().nonnegative(),
   snapshotHash: z.string(),
+  /** What the server stored (P3-38); absent until it says, then the page uses its own. */
+  fileName: z.string().optional(),
+  uploadedAt: z.string().optional(),
 });
 
 export type UploadSummary = z.output<typeof uploadSummarySchema>;
@@ -32,19 +35,26 @@ export function createUploadProject(client: ApiClient, name: string): Promise<Ap
   });
 }
 
+/** Who follows an upload: its progress, and the signal that cancels it. */
+interface UploadWatch {
+  readonly onProgress: (loaded: number, total: number) => void;
+  readonly signal?: AbortSignal;
+}
+
 // RF-128
 export function uploadSource(
   client: ApiClient,
   projectId: string,
   file: File,
-  onProgress: (loaded: number, total: number) => void,
+  watch: UploadWatch,
 ): Promise<ApiResult<UploadSummary>> {
   return client.upload({
     path: `/api/projects/${encodeURIComponent(projectId)}/source`,
     file,
     contentType: 'application/zip',
     schema: uploadSummarySchema,
-    onProgress,
+    onProgress: watch.onProgress,
+    ...(watch.signal === undefined ? {} : { signal: watch.signal }),
   });
 }
 

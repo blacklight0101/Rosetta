@@ -35,6 +35,8 @@ export interface ZipUpload {
   readonly name: string;
   readonly setName: (name: string) => void;
   readonly limitMb: number;
+  /** A new project would get an empty name: the user must type one. */
+  readonly needsName: boolean;
   readonly phase: UploadPhase;
   readonly percent: number;
   readonly summary: UploadSummary | undefined;
@@ -74,21 +76,25 @@ interface Chosen {
   readonly choose: (file: File | undefined) => void;
 }
 
-/** The file chosen, checked at once; a slower check of an earlier file never overwrites a later one. */
+/** The file chosen, checked at once and again when the limit changes; a late check never wins. */
 function useChosenFile(limitMb: number): Chosen {
   const [file, setFile] = useState<File | undefined>();
   const [checked, setChecked] = useState<Checked | undefined>();
   const [name, setName] = useState('');
-  const latest = useRef<File | undefined>(undefined);
-  const choose = (chosen: File | undefined): void => {
-    latest.current = chosen;
-    setFile(chosen);
+  useEffect(() => {
     setChecked(undefined);
-    if (chosen === undefined) return;
-    setName(projectNameOf(chosen.name));
-    void zipProblem(chosen, limitMb).then((found) => {
-      if (latest.current === chosen) setChecked({ file: chosen, problem: found });
+    if (file === undefined) return undefined;
+    let current = true;
+    void zipProblem(file, limitMb).then((found) => {
+      if (current) setChecked({ file, problem: found });
     });
+    return () => {
+      current = false;
+    };
+  }, [file, limitMb]);
+  const choose = (chosen: File | undefined): void => {
+    setFile(chosen);
+    if (chosen !== undefined) setName(projectNameOf(chosen.name));
   };
   const problem = checked?.problem;
   const ready = file !== undefined && checked?.file === file && problem === undefined;
@@ -103,6 +109,18 @@ interface Flow {
   readonly failure: ApiFailure | undefined;
   readonly send: (zip: File, name: string) => Promise<void>;
   readonly reset: () => void;
+}
+
+/** A signal that fires when the form goes away (another tab, another page), so an upload stops. */
+function useAbortOnLeave(): AbortSignal {
+  const controller = useRef(new AbortController());
+  useEffect(() => {
+    const current = controller.current;
+    return () => {
+      current.abort();
+    };
+  }, []);
+  return controller.current.signal;
 }
 
 /** Makes the project (unless there is one), sends the archive and follows it. */
@@ -121,8 +139,8 @@ function useUploadFlow(options: ZipUploadOptions): Flow {
     setSummary(undefined);
     setFailure(undefined);
     setPhase('idle');
-    setProject(options.existing);
   };
+  const abort = useAbortOnLeave();
   const send = async (zip: File, name: string): Promise<void> => {
     setPhase('sending');
     setFailure(undefined);
@@ -138,8 +156,12 @@ function useUploadFlow(options: ZipUploadOptions): Flow {
       setProject(target);
       options.onCreated?.(target);
     }
-    const stored = await uploadSource(client, target.id, zip, (loaded, total) => {
-      setPercent(Math.floor((loaded * 100) / total));
+    const signal = abort;
+    const stored = await uploadSource(client, target.id, zip, {
+      onProgress: (loaded, total) => {
+        setPercent(Math.floor((loaded * 100) / total));
+      },
+      signal,
     });
     if (!stored.ok) {
       fail(stored.error);
@@ -147,10 +169,8 @@ function useUploadFlow(options: ZipUploadOptions): Flow {
     }
     setSummary(stored.value);
     setPhase('done');
-    options.onStored({
-      ...target,
-      source: { fileName: zip.name, uploadedAt: new Date().toISOString() },
-    });
+    const { fileName = zip.name, uploadedAt = new Date().toISOString() } = stored.value;
+    options.onStored({ ...target, source: { fileName, uploadedAt } });
   };
   return { project, phase, percent, summary, failure, send, reset };
 }
@@ -160,14 +180,16 @@ export function useZipUpload(options: ZipUploadOptions): ZipUpload {
   const limitMb = useUploadLimit();
   const chosen = useChosenFile(limitMb);
   const flow = useUploadFlow(options);
-  const { file, ready, name } = chosen;
+  const { file, ready } = chosen;
+  const name = chosen.name.trim() || projectNameOf(file?.name ?? '').trim();
+  const needsName = flow.project === undefined && name === '';
   const submit = (): void => {
-    if (file === undefined || !ready || flow.phase === 'sending') return;
+    if (file === undefined || !ready || needsName || flow.phase === 'sending') return;
     void flow.send(file, name);
   };
   const choose = (picked: File | undefined): void => {
     flow.reset();
     chosen.choose(picked);
   };
-  return { ...chosen, ...flow, limitMb, choose, submit };
+  return { ...chosen, ...flow, limitMb, needsName, choose, submit };
 }

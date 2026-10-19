@@ -31,7 +31,7 @@ it('RF-128 after a failed upload another file goes to the same project: one POST
   await screen.findByRole('alert');
 
   await chooseValid('Other.zip');
-  fireEvent.click(screen.getByRole('button', { name: 'Upload again' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Upload zip' }));
 
   await waitFor(() => {
     expect(server.requests).toHaveLength(2);
@@ -57,7 +57,7 @@ it('RF-128 a cleared project name falls back to the file name without .zip', asy
 
 it('RF-128 a file called .zip with no name typed is held with the reason, nothing is sent', async () => {
   const server = installFakeUploadServer();
-  renderUploadTab({ 'POST /api/projects': json(201, sourceless) });
+  const view = renderUploadTab({ 'POST /api/projects': json(201, sourceless) });
   chooseFile(zipFile('.zip'));
   await screen.findByLabelText('Project name');
 
@@ -65,7 +65,9 @@ it('RF-128 a file called .zip with no name typed is held with the reason, nothin
     expect(uploadButton().getAttribute('title')).toBe('Enter a project name.');
   });
   fireEvent.submit(nameField().closest('form') ?? document.body);
+  await new Promise((resolve) => setTimeout(resolve, 20));
   expect(server.requests).toHaveLength(0);
+  expect(view.calls.filter((call) => call.method === 'POST')).toHaveLength(0);
 });
 
 it('RF-128 leaving the tab while the zip goes out cancels the upload', async () => {

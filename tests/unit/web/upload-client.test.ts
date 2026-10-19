@@ -25,8 +25,10 @@ async function startUpload(): Promise<Started> {
   const client = createApiClient();
   client.setCsrfToken('csrf-up');
   const progress: number[] = [];
-  const answer = uploadSource(client, 'p 1', zipFile(), (loaded) => {
-    progress.push(loaded);
+  const answer = uploadSource(client, 'p 1', zipFile(), {
+    onProgress: (loaded) => {
+      progress.push(loaded);
+    },
   });
   await Promise.resolve();
   return { server, answer, progress };

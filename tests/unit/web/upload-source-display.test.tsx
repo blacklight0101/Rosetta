@@ -131,9 +131,8 @@ it('RF-128 a failed new upload to a project that already has a source does not s
     nextStep: 'Zip again.',
   });
 
-  await screen.findByRole('alert');
+  expect(await screen.findByRole('button', { name: 'Upload again' })).not.toBeNull();
   expect(screen.queryByText(/has no source/u)).toBeNull();
-  expect(screen.getByRole('button', { name: 'Upload again' })).not.toBeNull();
 });
 
 it('RF-128 a stored zip updates the source line and releases Start', async () => {
