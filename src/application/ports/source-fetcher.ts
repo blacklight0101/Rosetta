@@ -41,3 +41,6 @@ export type Snapshot = SnapshotInfo & SnapshotLocation;
 export interface SourceFetcher {
   fetch(ref: GitHubRepoRef, signal: AbortSignal): Promise<GithubSnapshot>;
 }
+
+/** A cached, read-only snapshot of an uploaded zip (RF-130). */
+export type UploadSnapshot = UploadSnapshotInfo & SnapshotLocation;

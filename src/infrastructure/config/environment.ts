@@ -28,6 +28,8 @@ export interface Environment {
   readonly trustProxy: number;
   /** The scan-wide parse budget of the language packs, in milliseconds (RF-110). */
   readonly scanParseBudgetMs: number;
+  /** The largest zip a user may upload, in MB (RF-129, DEC-149). */
+  readonly uploadMaxMb: number;
   readonly appDbPassword: string | undefined;
   readonly migratorDbPassword: string | undefined;
   readonly dbAdminPassword: string | undefined;
@@ -199,6 +201,7 @@ function toEnvironment(parsed: Parsed): Environment {
     logRetentionDays: parsed.ROSETTA_LOG_RETENTION_DAYS ?? DEFAULT_LOG_RETENTION_DAYS,
     trustProxy: parsed.ROSETTA_TRUST_PROXY ?? 0,
     scanParseBudgetMs: parsed.ROSETTA_SCAN_PARSE_BUDGET_MS ?? defaultParseBudgetMs,
+    uploadMaxMb: 0,
     appDbPassword: parsed.ROSETTA_APP_DB_PASSWORD,
     migratorDbPassword: parsed.ROSETTA_MIGRATOR_DB_PASSWORD,
     dbAdminPassword: parsed.ROSETTA_DB_ADMIN_PASSWORD,
