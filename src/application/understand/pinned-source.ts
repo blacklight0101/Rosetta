@@ -8,10 +8,12 @@ import type { CardSource } from '../ports/card-outputs.js';
 
 /** The pinned repository of the citations' permalinks (RF-125). */
 export function pinnedSourceOf(
-  source: { readonly owner: string; readonly repo: string },
-  scannedCommitSha: string,
+  source: { readonly kind?: string | undefined; readonly owner: string; readonly repo: string },
+  scannedCommitSha: string | null,
 ): CardSource {
-  const commitSha = parseCommitSha(scannedCommitSha);
+  // RF-131: an upload has no commit; its citations link to the evidence pages of the report.
+  if (source.kind === 'upload') return { kind: 'upload' };
+  const commitSha = parseCommitSha(scannedCommitSha ?? '');
   if (!commitSha.ok) {
     throw new RosettaError(ERROR_CODES.codeMapInvalid, 'The scan recorded no valid commit.');
   }

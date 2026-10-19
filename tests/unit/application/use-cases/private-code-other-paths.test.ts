@@ -1,3 +1,4 @@
+import { heldZip } from '../../../support/upload-run-fixtures.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
 import { ResumeRun } from '../../../../src/application/use-cases/resume-run.js';
@@ -27,7 +28,7 @@ async function setup(settings: ProjectSettings, kind: SourceKind) {
   const owner = { userId: userAmy.userId, settings };
   const project =
     kind === 'upload'
-      ? sampleProject({ ...owner, sourceKind: 'upload', sourceUrl: '' })
+      ? sampleProject({ ...owner, sourceKind: 'upload', sourceUrl: '', upload: heldZip })
       : sampleProject(owner);
   await projects.insertOrFind(project);
   const briefs = new MemoryBriefStore();

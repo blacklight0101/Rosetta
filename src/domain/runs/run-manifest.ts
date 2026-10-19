@@ -125,7 +125,14 @@ export function endManifest(
 // RF-126
 export function recordManifestSource(
   manifest: RunManifest,
-  resolved: { readonly commitSha: string; readonly snapshotHash: string },
+  resolved: {
+    /** Null for an upload, which has no commit (RF-130). */
+    readonly commitSha: string | null;
+    readonly snapshotHash: string;
+    /** An upload run: the zip as sent and the instant it was stored (RF-131). */
+    readonly fileName?: string;
+    readonly uploadedAt?: string;
+  },
 ): Result<RunManifest, ManifestProblem> {
   if (manifest.endState !== null) return err('already-ended');
   return ok({ ...manifest, source: { ...manifest.source, ...resolved } });

@@ -1,5 +1,6 @@
 import { parseGitHubUrl } from '../../domain/sources/github-repo-ref.js';
 import type { Run } from '../../domain/runs/run.js';
+import type { ManifestSource } from '../../domain/runs/manifest-source.js';
 import type { ManifestCaps, ManifestRole, RunManifest } from '../../domain/runs/run-manifest.js';
 import type { Project } from '../projects/project.js';
 import { ROLE_NAMES, type ProjectSettings } from '../projects/project-settings.js';
@@ -74,6 +75,18 @@ function repositoryOf(project: Project): { owner: string; repo: string } {
     : { owner: '', repo: '' };
 }
 
+/** RF-131: the zip an upload run reads, by its name and instant; the hash is recorded once the snapshot is read. */
+function uploadOf(project: Project): Pick<ManifestSource, 'kind' | 'fileName' | 'uploadedAt'> {
+  if (project.sourceKind !== 'upload') return {};
+  const { upload } = project;
+  if (upload === undefined) return { kind: 'upload' };
+  return {
+    kind: 'upload',
+    fileName: upload.fileName,
+    uploadedAt: new Date(upload.uploadedAt).toISOString(),
+  };
+}
+
 // RF-003, RF-126, RNF-004
 export function acceptedManifest(accepted: AcceptedRun): RunManifest {
   const { run, project, rosettaVersion, options } = accepted;
@@ -87,7 +100,7 @@ export function acceptedManifest(accepted: AcceptedRun): RunManifest {
     endState: null,
     resumedFrom: null,
     source: {
-      ...(project.sourceKind === 'upload' ? { kind: project.sourceKind } : {}),
+      ...uploadOf(project),
       url: project.sourceUrl,
       ...repositoryOf(project),
       ref: project.ref,

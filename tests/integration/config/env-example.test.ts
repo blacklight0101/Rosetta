@@ -50,13 +50,13 @@ const VARIABLES = [
   'GITHUB_TOKEN',
   'ROSETTA_TRUST_PROXY',
   'ROSETTA_SCAN_PARSE_BUDGET_MS',
+  'ROSETTA_UPLOAD_MAX_MB',
   'ROSETTA_APP_DB_PASSWORD',
   'ROSETTA_MIGRATOR_DB_PASSWORD',
   'ROSETTA_DB_ADMIN_PASSWORD',
   'ROSETTA_TEST',
   'ROSETTA_TEST_DATABASE_URL',
 ];
-
 function parseDotenv(text: string): Record<string, string> {
   const values: Record<string, string> = {};
   for (const line of text.split(/\r?\n/)) {

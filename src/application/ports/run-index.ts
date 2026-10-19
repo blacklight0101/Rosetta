@@ -10,7 +10,8 @@ import type { RunEndState } from '../../domain/runs/run-states.js';
 // from a request without an owner check first.
 
 export interface RunSource {
-  readonly commitSha: string;
+  /** Null for an upload, which has no commit (RF-130). */
+  readonly commitSha: string | null;
   /** The snapshot folder name (data-model.md section 3.3). */
   readonly snapshotKey: string;
 }

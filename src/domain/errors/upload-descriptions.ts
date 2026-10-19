@@ -6,7 +6,18 @@ import type { ErrorCode, ErrorDescription } from './codes.js';
 
 export type UploadErrorCode = Extract<
   ErrorCode,
-  'RST-1909' | 'RST-1910' | 'RST-1911' | 'RST-1912' | 'RST-1913' | 'RST-1914' | 'RST-1915'
+  | 'RST-1909'
+  | 'RST-1910'
+  | 'RST-1911'
+  | 'RST-1912'
+  | 'RST-1913'
+  | 'RST-1914'
+  | 'RST-1915'
+  | 'RST-1916'
+  | 'RST-1917'
+  | 'RST-1918'
+  | 'RST-1919'
+  | 'RST-1920'
 >;
 
 export const UPLOAD_ERROR_DESCRIPTIONS: Readonly<Record<UploadErrorCode, ErrorDescription>> = {
@@ -45,5 +56,27 @@ export const UPLOAD_ERROR_DESCRIPTIONS: Readonly<Record<UploadErrorCode, ErrorDe
       'The zip has no files left to analyse (it was empty, or only held folders that are left out).',
     nextStep:
       'Zip the folder that holds the source code; .git, node_modules, bin and obj folders are left out.',
+  },
+  'RST-1916': {
+    message: 'The zip is larger than the upload limit of this server.',
+    nextStep:
+      'Remove build output, packages and data files, such as the node_modules folder, and zip again.',
+  },
+  'RST-1917': {
+    message: 'The server is low on disk space, so the upload was refused before it started.',
+    nextStep:
+      'Delete old projects or runs you no longer need, or ask the administrator, and try again.',
+  },
+  'RST-1918': {
+    message: 'Unpacking the zip took longer than the server allows, so it was stopped.',
+    nextStep: 'Remove build output and packages from the folder, zip again and upload it again.',
+  },
+  'RST-1919': {
+    message: 'Another upload to this project is still running.',
+    nextStep: 'Wait for it to finish, then upload again.',
+  },
+  'RST-1920': {
+    message: 'This project has no source to analyse yet.',
+    nextStep: 'Upload a zip of the project, then start the run again.',
   },
 };

@@ -1,3 +1,4 @@
+import { heldZip } from '../../../support/upload-run-fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { MemoryBriefStore } from '../../../support/memory-brief-store.js';
 import type { ProjectSettings } from '../../../../src/application/projects/project-settings.js';
@@ -18,7 +19,13 @@ async function setup(settings: ProjectSettings, kind: SourceKind = 'upload', oll
   const projects = new MemoryProjectRepository();
   const project =
     kind === 'upload'
-      ? sampleProject({ userId: userAmy.userId, settings, sourceKind: 'upload', sourceUrl: '' })
+      ? sampleProject({
+          userId: userAmy.userId,
+          settings,
+          sourceKind: 'upload',
+          sourceUrl: '',
+          upload: heldZip,
+        })
       : sampleProject({ userId: userAmy.userId, settings });
   await projects.insertOrFind(project);
   const startRun = new StartRun({

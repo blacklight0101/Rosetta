@@ -1,4 +1,8 @@
-import type { CodeMap } from '../../../domain/code-map/code-map.js';
+import {
+  isUploadSource,
+  type CodeMap,
+  type CodeMapSource,
+} from '../../../domain/code-map/code-map.js';
 import { byCodeUnit } from '../../../domain/code-map/code-unit-order.js';
 
 // RF-105, RF-112, RNF-007: `scan-summary.md`, a readable view of the code map (data-model 3.5). It
@@ -86,14 +90,26 @@ function skippedNote(input: ScanSummaryInput): string {
   return notes.length === 0 ? '' : ` (${notes.join(', ')})`;
 }
 
+function sourceLines(source: CodeMapSource, subpath: string): string[] {
+  if (isUploadSource(source)) {
+    return [
+      `- Source: uploaded zip ${cell(source.fileName)}`,
+      `- Snapshot: ${source.snapshotHash}`,
+    ];
+  }
+  return [
+    `- Source: ${source.owner}/${source.repo} (${cell(subpath)})`,
+    `- Commit: ${source.commitSha}`,
+  ];
+}
+
 function headline(input: ScanSummaryInput): string[] {
   const { codeMap } = input;
   const subpath = codeMap.source.subpath === '' ? 'whole repository' : codeMap.source.subpath;
   const tokens = codeMap.files.reduce((sum, file) => sum + file.estimatedTokens, 0);
   const packs = codeMap.languagePacks.map((pack) => `${pack.name} ${pack.version}`).join(', ');
   return [
-    `- Source: ${codeMap.source.owner}/${codeMap.source.repo} (${cell(subpath)})`,
-    `- Commit: ${codeMap.source.commitSha}`,
+    ...sourceLines(codeMap.source, subpath),
     `- Scan duration: ${formatDuration(input.durationMs)}`,
     `- Files: ${String(codeMap.files.length)}${skippedNote(input)}`,
     `- Estimated tokens: ${String(tokens)}`,

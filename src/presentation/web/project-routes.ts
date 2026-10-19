@@ -5,6 +5,7 @@ import type { Project } from '../../application/projects/project.js';
 import type { CreateProject } from '../../application/use-cases/create-project.js';
 import type { GetProject } from '../../application/use-cases/get-project.js';
 import type { ListProjects } from '../../application/use-cases/list-projects.js';
+import type { StoreUpload } from '../../application/use-cases/store-upload.js';
 import type { OpenWorkspace } from '../../application/use-cases/open-workspace.js';
 import type { UpdateProjectSettings } from '../../application/use-cases/update-project-settings.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -23,6 +24,7 @@ import {
   type PlanningBriefServices,
 } from './planning-brief-routes.js';
 import { signedInOf } from './request-actor.js';
+import { registerSourceUploadRoutes } from './source-upload-routes.js';
 
 // RF-010, RF-002, RF-1105, RF-1109: the projects API.
 // - POST /api/projects creates a project from a GitHub URL (201), or answers the existing one (200).
@@ -53,6 +55,8 @@ export interface ProjectServices
   readonly getProject: GetProject;
   readonly updateProjectSettings: UpdateProjectSettings;
   readonly openWorkspace: OpenWorkspace;
+  /** RF-128: the zip of an upload project (source-upload-routes.ts). */
+  readonly storeUpload: StoreUpload;
 }
 
 const CREATE_BODY_LIMIT_BYTES = 4096;
@@ -60,9 +64,26 @@ const SETTINGS_BODY_LIMIT_BYTES = 262_144;
 const MAX_URL_LENGTH = 2048;
 
 const createBody = z.strictObject({ url: z.string().max(MAX_URL_LENGTH) });
+// RF-128: a project that takes a zip; the name is checked by the use case, as the GitHub address is.
+const uploadBody = z.strictObject({ sourceKind: z.literal('upload'), name: z.string() });
 
 interface IdParams {
   readonly id: string;
+}
+
+/** What the page shows of an upload project's zip (RF-128). */
+function sourceView(project: Project): Record<string, unknown> | null {
+  if (project.upload === undefined) return null;
+  const { fileName, uploadedAt } = project.upload;
+  return { fileName, uploadedAt: formatInstant(uploadedAt) };
+}
+
+/** RF-128: the zip is not the one the newest run analysed; false while no run has one. */
+function codeChanged(project: Project): boolean {
+  const { upload, lastRunSnapshotKey } = project;
+  return upload !== undefined && lastRunSnapshotKey !== undefined
+    ? upload.snapshotKey !== lastRunSnapshotKey
+    : false;
 }
 
 export function projectView(project: Project): Record<string, unknown> {
@@ -73,6 +94,9 @@ export function projectView(project: Project): Record<string, unknown> {
     sourceUrl: project.sourceUrl,
     ref: project.ref,
     subpath: project.subpath,
+    source: sourceView(project),
+    // Absent for a GitHub project, which is pinned to a commit and cannot change (RF-128).
+    ...(project.sourceKind === 'upload' ? { codeChangedSinceLastRun: codeChanged(project) } : {}),
     settings: project.settings,
     settingsVersion: project.settingsVersion,
     createdAt: formatInstant(project.createdAt),
@@ -107,6 +131,15 @@ function registerCreate(server: FastifyInstance, services: ProjectServices): voi
     '/api/projects',
     { bodyLimit: CREATE_BODY_LIMIT_BYTES, config: { access: 'user' } },
     async (request, reply) => {
+      const upload = uploadBody.safeParse(request.body);
+      if (upload.success) {
+        const made = await services.createProject.createUpload({
+          actor: signedInOf(request).actor,
+          name: upload.data.name,
+        });
+        if (!made.ok) throw new RosettaError(made.error);
+        return reply.status(201).send(projectView(made.value.project));
+      }
       const body = createBody.safeParse(request.body);
       if (!body.success) throw new RosettaError(ERROR_CODES.requestInvalid);
       const outcome = await services.createProject.execute({
@@ -192,6 +225,7 @@ function registerWorkspace(server: FastifyInstance, services: ProjectServices): 
 export function registerProjectRoutes(server: FastifyInstance, services: ProjectServices): void {
   registerCreate(server, services);
   registerRead(server, services);
+  registerSourceUploadRoutes(server, services);
   registerSettings(server, services);
   registerPlanningBriefRoutes(server, services);
   registerPlanEstimateRoutes(server, services);

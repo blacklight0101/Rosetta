@@ -1,4 +1,6 @@
 import { EstimatePlan } from '../application/estimate/estimate-plan.js';
+import type { ProjectRepository } from '../application/ports/project-repository.js';
+import type { RunIndex } from '../application/ports/run-index.js';
 import type { Clock } from '../application/ports/clock.js';
 import type { Logger } from '../application/ports/logger.js';
 import type { ServerKeyPresence } from '../application/ports/server-key-presence.js';
@@ -12,6 +14,7 @@ import { OpenWorkspace } from '../application/use-cases/open-workspace.js';
 import { GetPlanSource } from '../application/use-cases/get-plan-source.js';
 import { GetPlanningBrief } from '../application/use-cases/get-planning-brief.js';
 import { SavePlanningBrief } from '../application/use-cases/save-planning-brief.js';
+import { StoreUpload } from '../application/use-cases/store-upload.js';
 import { UpdateProjectSettings } from '../application/use-cases/update-project-settings.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import { FileAnswersFile } from '../infrastructure/cards/answers-file.js';
@@ -40,6 +43,7 @@ import {
   loadPrdPrompt,
 } from '../infrastructure/prompts/prompt-files.js';
 import { TimestampIdGenerator } from '../infrastructure/system/timestamp-id-generator.js';
+import { createUploadStore, uploadLimitBytes } from './compose-uploads.js';
 import type { ProjectServices } from './web/project-routes.js';
 
 // Architecture section 2 (composition root), RF-010, RF-002, RF-1105: the project adapters and the
@@ -69,18 +73,33 @@ export interface ProjectParts {
   /** The folder with `catalogue/` (RF-606), checked at start-up. */
   readonly promptsFolder: string;
   readonly dataDir: string;
+  /** `ROSETTA_UPLOAD_MAX_MB` (RF-129). */
+  readonly uploadMaxMb: number;
   /** The shipped price table the plan estimate prices the planner with (RF-613). */
   readonly priceTable: PriceTable;
   /** Which providers the server holds a key for; the plan estimate says when a call has none. */
   readonly serverKeys: ServerKeyPresence;
 }
 
+/** The use case behind PUT /api/projects/:id/source (RF-128, RF-129). */
+function storeUploadOf(
+  parts: ProjectParts,
+  projects: ProjectRepository,
+  runs: RunIndex,
+): StoreUpload {
+  const { pool, logger, clock, masker } = parts;
+  return new StoreUpload({
+    ...{ projects, runs, logger, clock, auditLog: new PgAuditLog(pool, masker) },
+    uploads: createUploadStore(parts.dataDir),
+    limitBytes: uploadLimitBytes(parts.uploadMaxMb),
+  });
+}
+
 // RF-010
 export async function composeProjects(parts: ProjectParts): Promise<ProjectServices> {
   const { pool, logger, clock, masker } = parts;
   const projects = new PgProjectRepository(pool);
-  const costs = new PgCostTotals(pool);
-  const settings = new PgServerSettings(pool);
+  const [costs, settings] = [new PgCostTotals(pool), new PgServerSettings(pool)];
   const usage = new PgAccountUsage(pool);
   const caps = new GetCaps({ settings, usage, clock });
   const catalogue = await loadCatalogue(parts.promptsFolder);
@@ -95,6 +114,7 @@ export async function composeProjects(parts: ProjectParts): Promise<ProjectServi
       ids: new TimestampIdGenerator(clock),
       clock,
     }),
+    storeUpload: storeUploadOf(parts, projects, runs),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock }),

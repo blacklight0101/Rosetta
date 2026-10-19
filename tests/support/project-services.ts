@@ -1,6 +1,7 @@
 import { GetPlanSource } from '../../src/application/use-cases/get-plan-source.js';
 import { EstimatePlan } from '../../src/application/estimate/estimate-plan.js';
 import type { PlanningBriefStore } from '../../src/application/ports/planning-brief-store.js';
+import type { UploadStore } from '../../src/application/ports/upload-store.js';
 import type { RunIndex } from '../../src/application/ports/run-index.js';
 import { CreateProject } from '../../src/application/use-cases/create-project.js';
 import { GetAccountTotals } from '../../src/application/use-cases/get-account-totals.js';
@@ -9,6 +10,7 @@ import { GetProject } from '../../src/application/use-cases/get-project.js';
 import { GetProjectCost } from '../../src/application/use-cases/get-project-cost.js';
 import { ListProjects } from '../../src/application/use-cases/list-projects.js';
 import { OpenWorkspace } from '../../src/application/use-cases/open-workspace.js';
+import { StoreUpload } from '../../src/application/use-cases/store-upload.js';
 import { UpdateProjectSettings } from '../../src/application/use-cases/update-project-settings.js';
 import type { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
@@ -60,10 +62,17 @@ export interface PlanFiles {
   readonly keys: MemoryProviderKeyRepository;
 }
 
+/** RF-128: the store an upload goes to and the largest zip it takes. */
+export interface UploadParts {
+  readonly store: UploadStore;
+  readonly limitBytes: number;
+}
+
 export function projectServices(
   parts: ProjectParts,
   files: PlanFiles,
   runs: RunIndex,
+  upload: UploadParts,
 ): ServerOptions['projects'] {
   const { projects, serverSettings, users, auditLog, logger, clock, costs, usage } = parts;
   const ids = new SequenceIdGenerator();
@@ -72,6 +81,11 @@ export function projectServices(
   const { briefs, answers, answerFiles, keys } = files;
   return {
     createProject: new CreateProject({ projects, serverSettings, template, ids, clock }),
+    storeUpload: new StoreUpload({
+      ...{ projects, runs, auditLog, logger, clock },
+      uploads: upload.store,
+      limitBytes: upload.limitBytes,
+    }),
     listProjects: new ListProjects({ projects }),
     getProject: new GetProject({ projects }),
     updateProjectSettings: new UpdateProjectSettings({ projects, clock }),

@@ -18,6 +18,7 @@ import type { PriceTable } from '../../src/domain/budget/price-table.js';
 import { readerRecordingOf, verifierRecordingOf } from './understand-recordings.js';
 import { sampleAccount } from './account-fixtures.js';
 import { settingsFor } from './provider-factory-harness.js';
+import { uploadProjectFields } from './upload-run-fixtures.js';
 import { sampleProject } from './project-fixtures.js';
 import { queueOf, stores, type Stores } from './understand-run-services.js';
 import {
@@ -71,6 +72,8 @@ export interface UnderstandHarnessOptions {
   /** The repository to scan, when a test changed a copy of the fixture (the C# fixture if absent). */
   readonly repository?: string;
   readonly settings?: ProjectSettings;
+  /** RF-130: the project is an uploaded zip whose tree is the repository, not a GitHub address. */
+  readonly upload?: boolean;
   /** How many understand runs replay the recording, one after the other (1 when absent). */
   readonly replays?: number;
   readonly decorateAnswer?: DecorateAnswer;
@@ -204,6 +207,7 @@ export async function createUnderstandHarness(
     userId: account.id,
     sourceUrl: 'https://github.com/octo/demo',
     settings: options.settings ?? understandSettings(),
+    ...(options.upload === true ? uploadProjectFields : {}),
   });
   await s.projects.insertOrFind(project);
   const holder: { harness?: UnderstandHarness } = {};
