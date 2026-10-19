@@ -15,6 +15,8 @@ export interface ResumeButtonProps {
   readonly runId: string;
   /** The accessible name when the word repeats in a list ("Resume run 2026...-understand"). */
   readonly ariaLabel?: string;
+  /** The word on the button; "Resume run" unless the page says it in its own words. */
+  readonly label?: string;
   readonly onResumed: () => void;
 }
 
@@ -40,7 +42,7 @@ export function ResumeButton(props: ResumeButtonProps): JSX.Element {
         onClick={resume}
         {...(props.ariaLabel === undefined ? {} : { ariaLabel: props.ariaLabel })}
       >
-        Resume run
+        {props.label ?? 'Resume run'}
       </Button>
       {error === undefined ? null : <ErrorBanner error={error} />}
     </>
