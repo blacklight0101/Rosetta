@@ -47,6 +47,7 @@ async function setup() {
   await test.projects.insertOrFind(bobProject);
   const theirs = runOf(await seedPlanSource(stores, bobProject, { brief: false }));
   return {
+    stores,
     test,
     project,
     understand,
@@ -111,6 +112,27 @@ describe('GET /api/projects/:id/journey (2)', () => {
     const response = await amy.request({ method: 'GET', url: journeyUrl(project.id) });
 
     expect(response.json()).toMatchObject({ source: { id: understand.id } });
+  });
+});
+
+describe('GET /api/projects/:id/journey (3)', () => {
+  it('RF-615 gives null for the end of a run that is still running', async () => {
+    const { amy, project, stores } = await setup();
+    const running = runOf(
+      await seedPlanSource(stores, project, {
+        brief: false,
+        run: {
+          ...{ runKey: '20261013-090000-understand', queueState: 'Running' },
+          ...{ endState: null, endedAt: null },
+        },
+      }),
+    );
+
+    const response = await amy.request({ method: 'GET', url: journeyUrl(project.id, running.id) });
+
+    expect(response.json()).toMatchObject({
+      source: { queueState: 'Running', endedAt: null },
+    });
   });
 });
 

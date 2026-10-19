@@ -88,7 +88,7 @@ describe('GetJourney: a package that is out of date (2)', () => {
   });
 });
 
-describe('GetJourney: a package that is out of date (2) (3)', () => {
+describe('GetJourney: a package that is out of date (3)', () => {
   it('RF-615 a manifest that cannot be read leaves that plan run out of the plan of the source', async () => {
     const message = 'The file is not JSON.';
     const broken = {

@@ -35,6 +35,7 @@ export interface JourneyWorld {
   readonly parts: JourneyStores;
   readonly seed: (given?: Parameters<typeof seedPlanSource>[2]) => Promise<Run | undefined>;
   readonly journey: GetJourney;
+  readonly priorCards: FilePriorCards;
 }
 
 export async function setup(readManifests?: Pick<RunManifestStore, 'read'>): Promise<JourneyWorld> {
@@ -49,6 +50,7 @@ export async function setup(readManifests?: Pick<RunManifestStore, 'read'>): Pro
     events: new MemoryEventSink(),
   };
   const briefs = new FilePlanningBriefStore({ writer: files, masker });
+  const priorCards = new FilePriorCards(files);
   const seed = (given: Parameters<typeof seedPlanSource>[2] = {}) =>
     seedPlanSource({ files, briefs, runs: parts.runs }, project, given);
   const journey = new GetJourney({
@@ -59,7 +61,7 @@ export async function setup(readManifests?: Pick<RunManifestStore, 'read'>): Pro
     briefs,
     cards: new FileRunCards(files),
     answers: new FileAnswersFile({ writer: files, masker }),
-    priorCards: new FilePriorCards(files),
+    priorCards,
   });
-  return { project, parts, seed, journey };
+  return { project, parts, seed, journey, priorCards };
 }

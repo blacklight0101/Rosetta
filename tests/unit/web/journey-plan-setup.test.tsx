@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
-import { json } from './fake-api.js';
+import { failure, json } from './fake-api.js';
 import { facts, projectId, roadSigns, source } from './journey-fixtures.js';
 import { savedBrief } from './plan-setup-fixtures.js';
 import { base, press, ready, renderPlan } from './plan-setup-helpers.js';
@@ -66,4 +66,17 @@ it('RF-615 a journey that cannot be read leaves Plan setup as it is', async () =
   await screen.findByText(/The journey could not be read/u);
 
   expect(screen.getByRole('region', { name: 'Plan estimate' })).toBeTruthy();
+});
+
+it('RST-1802 a project with no usable run asks for the journey of the project, without a run', async () => {
+  const page = renderPlan({
+    [`GET ${base}/plan-source`]: failure(409, 'RST-1802'),
+    [`GET ${journey}`]: json(200, roadSigns['noRun']),
+  });
+  await ready();
+
+  await screen.findByRole('region', { name: 'Journey from code to package' });
+
+  expect(page.calls.map((call) => call.path)).toContain(journey);
+  expect(page.calls.map((call) => call.path)).not.toContain(`${journey}?run=run-1`);
 });

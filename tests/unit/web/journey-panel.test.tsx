@@ -99,3 +99,61 @@ it('RF-615 does not read again while the run is in the same state', async () => 
 
   expect(page.calls.filter((call) => call.path === runPath)).toHaveLength(1);
 });
+
+it('RF-615 a later read that fails keeps the strip the page has', async () => {
+  let reads = 0;
+  const read = (): Response =>
+    reads++ === 0 ? json(200, roadSigns['planning']) : failure(500, 'RST-9000');
+  renderPage(<Page ticks={['running', 'ended']} />, { [`GET ${runPath}`]: read });
+  await waitFor(() => {
+    expect(region().textContent).toContain('Running now');
+  });
+
+  fireEvent.click(screen.getByRole('button', { name: 'Advance' }));
+
+  await waitFor(() => {
+    expect(reads).toBe(2);
+  });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(region().textContent).toContain('Running now');
+  expect(screen.queryByText(/The journey could not be read/u)).toBeNull();
+});
+
+it('RF-615 a read that is answered after a newer one was asked for is dropped', async () => {
+  const slow: { release: () => void } = { release: () => undefined };
+  let reads = 0;
+  const read = (): Response | Promise<Response> => {
+    if (reads++ > 0) return json(200, roadSigns['failed']);
+    return new Promise((resolve) => {
+      slow.release = () => {
+        resolve(json(200, roadSigns['planning']));
+      };
+    });
+  };
+  renderPage(<Page ticks={['running', 'ended']} />, { [`GET ${runPath}`]: read });
+  fireEvent.click(screen.getByRole('button', { name: 'Advance' }));
+  await waitFor(() => {
+    expect(region().textContent).toContain('Try the plan again');
+  });
+
+  slow.release();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  expect(region().textContent).toContain('Try the plan again');
+  expect(region().textContent).not.toContain('Running now');
+});
+
+it('RF-615 RF-006 Resume in the strip opens the run page of the source run unless the page says otherwise', async () => {
+  window.history.pushState({}, '', '/projects/p-1/plan-setup');
+  renderPage(<JourneyPanel projectId={projectId} runId={sourceId} refresh="a" />, {
+    [`GET ${runPath}`]: json(200, roadSigns['capped']),
+    [`POST /api/runs/${sourceId}/resume`]: json(202, { id: sourceId }),
+  });
+  await screen.findByRole('region', { name: 'Journey from code to package' });
+
+  fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+
+  await waitFor(() => {
+    expect(window.location.pathname).toBe(`/runs/${sourceId}`);
+  });
+});

@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, expect, it } from 'vitest';
-import { openEnded } from './ended-run-helpers.js';
+import { openEnded, question } from './ended-run-helpers.js';
 import { json } from './fake-api.js';
 import { facts, projectId, roadSigns, source } from './journey-fixtures.js';
 import { ev, runEnded, startedData } from './live-run-fixtures.js';
@@ -119,4 +119,31 @@ it('RF-615 the page of a plan run shows the journey while the plan runs and afte
     expect(strip().textContent).toContain('Try the plan again');
   });
   expect(reads).toBe(2);
+});
+
+it('RF-615 answering a question on the page reads the journey again', async () => {
+  const answersPath = `${runPath}/answers`;
+  const page = await openEnded({
+    questions: [question(1), question(2)],
+    extra: {
+      [`GET ${journeyPath}`]: json(200, mine),
+      [`PUT ${answersPath}`]: json(200, {
+        questions: [question(1, { state: 'Answered', answer: 'Staff only.' }), question(2)],
+      }),
+    },
+  });
+  await screen.findByRole('region', { name: 'Journey from code to package' });
+  fireEvent.click(screen.getByRole('tab', { name: /^Your questions/u }));
+  const first = screen.getByText('OQ-001').closest('li');
+  if (first === null) throw new Error('The first question is not listed.');
+
+  fireEvent.input(within(first).getByLabelText('Answer to OQ-001'), {
+    target: { value: 'Staff only.' },
+  });
+  fireEvent.click(within(first).getByRole('button', { name: 'Save answer' }));
+
+  await waitFor(() => {
+    const reads = page.calls.filter((call) => call.path === journeyPath);
+    expect(reads).toHaveLength(2);
+  });
 });

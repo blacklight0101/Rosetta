@@ -145,6 +145,13 @@ describe('journeyOf: an understand run that stopped', () => {
     expect(step(view, 'brief').detail).toBe('Needs a completed run: resume it first');
   });
 
+  it('RF-615 the plan steps wait for a run that is still working, and say so', () => {
+    const view = journeyOf(roadSigns['running'] ?? facts(), projectId);
+
+    expect(step(view, 'brief')).toMatchObject({ state: 'locked', href: undefined });
+    expect(step(view, 'brief').detail).toBe('Needs the finished run');
+  });
+
   it('RF-615 a stopped run never offers the plan, whatever the brief and the plan runs say', () => {
     const view = journeyOf(
       facts({ source: source({ endState: 'Failed' }), plan: planRun(), briefSaved: true }),

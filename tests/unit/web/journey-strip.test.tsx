@@ -189,3 +189,12 @@ it('RF-006 RF-615 a refused Resume shows its code and keeps the button', async (
   });
   expect(within(journey()).getByRole('button', { name: 'Resume' })).toBeTruthy();
 });
+
+it('RF-615 a step that is current by its state says so once, not twice', () => {
+  strip('estimate');
+
+  const here = item('Estimate');
+  expect(here.querySelector('.rst-journey__state')?.textContent).toBe('Current');
+  expect(here.getAttribute('aria-current')).toBe('step');
+  expect(here.querySelector('.rst-journey__here')).toBeNull();
+});
