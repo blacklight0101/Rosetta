@@ -153,7 +153,9 @@ describe('the run page of an uploaded project', () => {
     const name = await screen.findByText('Uploaded zip');
     expect(name.closest('p')?.textContent).toBe('Uploaded zip');
   });
+});
 
+describe('the run page of an uploaded project, hostile text and links', () => {
   it('RF-131 shows a file name that is markup as text', async () => {
     const hostile = '<img src=x onerror=alert(1)>.zip';
     const { stream, container } = renderLive();
