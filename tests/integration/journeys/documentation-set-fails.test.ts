@@ -43,6 +43,24 @@ describe('the documentation set journey: it fails when a document is missing', (
 
     expect(problems).toContain('handoff/prd.md is empty.');
   });
+});
+
+describe('the documentation set journey: it fails when a document is marked Incomplete', () => {
+  it('P3-33 a wireframe page marked Incomplete is a problem', () => {
+    const made = current();
+    const notice =
+      '<p class="box"><strong>Incomplete.</strong> The planner answer was cut off.</p>';
+    const page = made.documents['ux/wireframes/SCRN-003.html'] ?? '';
+    const marked = page.replace('<body>', `<body>${nl}${notice}`);
+
+    const problems = setProblems({
+      ...made,
+      documents: { ...made.documents, 'ux/wireframes/SCRN-003.html': marked },
+    });
+
+    expect(marked).not.toBe(page);
+    expect(problems).toEqual(['handoff/ux/wireframes/SCRN-003.html is marked Incomplete.']);
+  });
 
   it('P3-33 a document marked Incomplete is a problem, whether it is Markdown or YAML', () => {
     const made = current();

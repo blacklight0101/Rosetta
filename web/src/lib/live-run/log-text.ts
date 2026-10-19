@@ -22,6 +22,13 @@ function argsOf(data: Readonly<Record<string, unknown>>): Readonly<Record<string
   return typeof args === 'object' && args !== null ? Object.fromEntries(Object.entries(args)) : {};
 }
 
+function seededOf(data: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> {
+  const seeded = data['seeded'];
+  return typeof seeded === 'object' && seeded !== null
+    ? Object.fromEntries(Object.entries(seeded))
+    : {};
+}
+
 type Writer = (data: Readonly<Record<string, unknown>>, area: string) => string;
 
 const writers: Readonly<Record<string, Writer>> = {
@@ -47,6 +54,16 @@ const writers: Readonly<Record<string, Writer>> = {
     `${field(data, 'claimId')} ${field(data, 'status')} · ${field(data, 'reason')}`,
   'verify.judgement.ended': (data) =>
     `${field(data, 'supported')} supported, ${field(data, 'rejected')} rejected, ${field(data, 'unverified')} unverified, ${field(data, 'notJudged')} not judged`,
+  'deepen.started': (data) => {
+    const seeded = seededOf(data);
+    return `from run ${field(data, 'parentRunKey')}: ${field(seeded, 'cards')} cards, ${field(seeded, 'claims')} claims · up to ${field(data, 'maxRounds')} rounds`;
+  },
+  'deepen.round.started': (data) =>
+    `round ${field(data, 'round')} of ${field(data, 'maxRounds')}: judge ${field(data, 'judge')}, re-read ${field(data, 'reread')}, ${field(data, 'unreadFiles')} unread files`,
+  'deepen.round.ended': (data) =>
+    `round ${field(data, 'round')} ${data['complete'] === false ? 'cut short' : 'ended'} · ${field(data, 'newClaims')} new claims, ${field(data, 'newSupported')} supported, ${field(data, 'filesRead')} files read`,
+  'deepen.ended': (data) =>
+    `stopped: ${field(data, 'stopReason')} after ${field(data, 'roundsDone')} rounds`,
   'usage.recorded': (data) => `${field(data, 'role')} ${field(data, 'costMicros')} micro-dollars`,
   'budget.warning': (data) =>
     `${field(data, 'scope')} at ${field(data, 'sharePercent')}% of its cap`,

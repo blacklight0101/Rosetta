@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/preact';
-import { json } from './fake-api.js';
+import { json, type Answer } from './fake-api.js';
 import {
   agentEnded,
   agentStarted,
@@ -70,36 +70,50 @@ const finishedEvents = [
   runEnded(8, 'Completed'),
 ];
 
+/** The same events, for a run of this stage that ended as it did. */
+function eventsOf(
+  options: Pick<EndedOptions, 'stage' | 'endState' | 'judged'>,
+): typeof finishedEvents {
+  const { stage = 'understand', endState = 'Completed' } = options;
+  const judged =
+    options.judged === undefined
+      ? []
+      : [ev(8, 'verify.claim.judged', { claimId: 'BR-001.c1', status: options.judged })];
+  return [
+    ev(1, 'run.started', { ...startedData, stage }),
+    ...finishedEvents.slice(1, -1),
+    ...judged,
+    runEnded(9, endState, endState === 'Failed' ? 'RST-2006' : undefined),
+  ];
+}
+
 export interface EndedOptions {
   /** RF-614: the verdict of the judgement step on the first claim of BR-001; none by default. */
   readonly judged?: 'Supported' | 'Rejected';
-  /** How the run ended; `Completed` by default. */
-  readonly endState?: string;
   readonly questions?: readonly QuestionRow[];
   readonly overviewBody?: Response;
-  readonly extra?: Readonly<Record<string, Response>>;
+  /** How the run ended; Completed unless a test says otherwise. */
+  readonly endState?: string;
+  /** The stage of the run; understand unless a test says otherwise. */
+  readonly stage?: string;
+  readonly extra?: Readonly<Record<string, Answer>>;
 }
 
 /** Opens the page of the ended run with the events replayed; resolves once the results tabs show. */
 export async function openEnded(options: EndedOptions = {}): Promise<LiveRun> {
   const page = renderLive({
-    [`GET ${runPath}`]: runRow({ queueState: 'Ended', endState: options.endState ?? 'Completed' }),
+    [`GET ${runPath}`]: runRow({
+      stage: options.stage ?? 'understand',
+      queueState: 'Ended',
+      endState: options.endState ?? 'Completed',
+    }),
     [`GET ${runPath}/overview`]: options.overviewBody ?? json(200, { overview }),
     [`GET ${runPath}/answers`]: json(200, { questions: options.questions ?? threeQuestions }),
     [`GET ${codeMapPath}`]: codeMapAnswer(ownAreas),
     ...options.extra,
   });
   const connection = await page.stream.connection();
-  const judged =
-    options.judged === undefined
-      ? []
-      : [ev(8, 'verify.claim.judged', { claimId: 'BR-001.c1', status: options.judged })];
-  const events = [
-    ...finishedEvents.slice(0, -1),
-    ...judged,
-    runEnded(9, options.endState ?? 'Completed'),
-  ];
-  for (const event of events) connection.event(event);
+  for (const event of eventsOf(options)) connection.event(event);
   await screen.findByRole('tablist', { name: 'Results' });
   return page;
 }

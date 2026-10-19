@@ -10,6 +10,7 @@ import type { RunState, SourceState } from '../lib/live-run/run-state.js';
 import { stepperOf } from '../lib/live-run/run-stepper.js';
 import { ActivityTab } from './ActivityTab.js';
 import { AppOverview, sectionAnchor } from './AppOverview.js';
+import { DeepenProgress } from './DeepenProgress.js';
 import { EvidenceTab } from './EvidenceTab.js';
 import { UnderstandJourney } from './JourneyPlacement.js';
 import { FailedAreas } from './FailedAreas.js';
@@ -21,6 +22,8 @@ import { RunReport } from './RunReport.js';
 import { RunStepper } from './RunStepper.js';
 import { useRunAnswers, type AnswersLoad, type RunAnswersState } from './use-run-answers.js';
 import { useRunOverview, type OverviewLoad } from './use-run-overview.js';
+import { useUnderstanding, type UnderstandingLoad } from './use-understanding.js';
+import { UnderstandingSummary } from './UnderstandingSummary.js';
 import { VerificationNote } from './VerificationNote.js';
 import { YourTurn } from './YourTurn.js';
 
@@ -132,6 +135,7 @@ interface PanelsProps extends EndedBodyProps {
   readonly results: ResultsTab;
   readonly overview: OverviewLoad;
   readonly answers: RunAnswersState;
+  readonly understanding: UnderstandingLoad;
   readonly built: boolean;
 }
 
@@ -140,6 +144,7 @@ function Panels(props: PanelsProps): JSX.Element | null {
   if (results.tab === 'overview') {
     return (
       <>
+        <UnderstandingSummary load={props.understanding} />
         <AppOverview runId={run.id} load={overview} />
         <VerificationNote state={shown} />
       </>
@@ -174,6 +179,8 @@ interface RailProps {
   readonly failed: boolean;
   readonly asks: boolean;
   readonly answers: AnswersLoad;
+  /** RF-209: the run can be deepened (it ended Completed); undefined otherwise. */
+  readonly deepenRunId: string | undefined;
   readonly report: { readonly onBuilt: () => void };
   readonly onAnswer: () => void;
 }
@@ -201,14 +208,39 @@ function openQuestions(answers: AnswersLoad): number | undefined {
   return answers.questions.filter((each) => each.state === 'Open').length;
 }
 
+/** The stepper, what failed, the areas that failed and, for a Deepen run, its rounds. */
+function Header(
+  props: EndedBodyProps & {
+    readonly reportBuilt: boolean;
+    readonly open: number | undefined;
+    readonly onAnswer: () => void;
+  },
+): JSX.Element {
+  const { run, state, shown, phase, stage } = props;
+  const built = { stage, commitSha: run.commitSha, reportBuilt: props.reportBuilt };
+  return (
+    <>
+      <RunStepper steps={stepperOf(built, shown, phase)} />
+      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
+      <FailedAreas state={shown} projectId={run.projectId} />
+      {shown.deepen === undefined ? null : <DeepenProgress progress={shown.deepen} />}
+      <UnderstandJourney
+        {...{ run, stage, phase, open: props.open, onResumed: props.onResumed }}
+        onAnswer={props.onAnswer}
+      />
+    </>
+  );
+}
+
 // RF-1015
 export function EndedBody(props: EndedBodyProps): JSX.Element {
-  const { run, state, shown, phase, stage } = props;
+  const { run, state, shown, stage } = props;
   const failed = state.ended?.errorCode !== undefined;
   const asks = stage === 'understand' && !failed;
   const report = useReportBuilt(run);
   const overview = useRunOverview(run.id, asks);
   const answers = useRunAnswers(run.id, asks);
+  const understanding = useUnderstanding(run.id, asks);
   const results = useResultsTab(asks);
   const open = openQuestions(answers.load);
   const showQuestions = (): void => {
@@ -216,18 +248,7 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
   };
   return (
     <>
-      <RunStepper
-        steps={stepperOf(
-          { stage, commitSha: run.commitSha, reportBuilt: report.built },
-          shown,
-          phase,
-        )}
-      />
-      {state.ended?.errorCode === undefined ? null : <RunFailure code={state.ended.errorCode} />}
-      <FailedAreas state={shown} projectId={run.projectId} />
-      <UnderstandJourney
-        {...{ run, stage, phase, open, onResumed: props.onResumed, onAnswer: showQuestions }}
-      />
+      <Header {...props} reportBuilt={report.built} open={open} onAnswer={showQuestions} />
       <div class="rst-p170-grid">
         <section class="rst-card rst-p170-main" aria-label="Results">
           <Tabs
@@ -236,12 +257,17 @@ export function EndedBody(props: EndedBodyProps): JSX.Element {
             selected={results.tab}
             onSelect={results.select}
           >
-            <Panels {...props} {...{ results, overview, answers }} built={report.built} />
+            <Panels
+              {...props}
+              {...{ results, overview, answers, understanding }}
+              built={report.built}
+            />
           </Tabs>
         </section>
         <Rail
           {...{ run, stage, failed, asks }}
           answers={answers.load}
+          deepenRunId={asks && state.ended?.endState === 'Completed' ? run.id : undefined}
           state={shown}
           costMicros={props.costMicros}
           report={report}

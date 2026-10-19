@@ -4,6 +4,7 @@ import { costLabel, tokensLabel } from '../lib/live-run/format.js';
 import { endFactsOf } from '../lib/live-run/end-facts.js';
 import { PlanNext } from './PlanNext.js';
 import type { RunState } from '../lib/live-run/run-state.js';
+import { DeepenAction } from './DeepenAction.js';
 import type { AnswersLoad } from './use-run-answers.js';
 
 // RF-1015, RF-1017, RF-614, DEC-137, design-system.md section 14: the "Your turn" panel of an ended run:
@@ -22,6 +23,8 @@ export interface YourTurnProps {
   readonly onAnswer: () => void;
   /** RF-614: the run and its project, to open Plan setup for this run. */
   readonly run: { readonly id: string; readonly projectId: string };
+  /** RF-209: the id of the run, when it ended Completed and can be deepened. */
+  readonly deepenRunId?: string | undefined;
 }
 
 function plural(count: number, word: string): string {
@@ -81,6 +84,7 @@ export function YourTurn(props: YourTurnProps): JSX.Element {
     <section class="rst-card rst-p170-turn" aria-label="Your turn">
       <h2 class="rst-live-section__title">Your turn</h2>
       <Next {...props} />
+      {props.deepenRunId === undefined ? null : <DeepenAction runId={props.deepenRunId} />}
       {props.asks || props.failed ? (
         <PlanNext
           {...{ runId: run.id, projectId: run.projectId }}

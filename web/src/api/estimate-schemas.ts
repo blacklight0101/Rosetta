@@ -16,7 +16,7 @@ export type Scenario = keyof typeof range;
 
 const scenarioNumbers = z.object({ low: z.number(), likely: z.number(), high: z.number() });
 
-const roleEstimate = z.object({
+export const roleEstimate = z.object({
   role: z.string(),
   provider: z.string(),
   kind: z.string(),

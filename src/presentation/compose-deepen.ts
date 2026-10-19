@@ -5,6 +5,7 @@ import type { RunQueue } from '../application/runs/run-queue.js';
 import { resumeProblemCheck } from '../application/understand/resume-problem.js';
 import { ResumeRun } from '../application/use-cases/resume-run.js';
 import type { SubmitRun } from '../application/use-cases/submit-run.js';
+import { ReadUnderstanding } from '../application/use-cases/read-understanding.js';
 import { StartDeepen } from '../application/use-cases/start-deepen.js';
 import type { PriceTable } from '../domain/budget/price-table.js';
 import { FileTaskResults } from '../infrastructure/cards/file-task-results.js';
@@ -36,6 +37,7 @@ export interface DeepenParts {
 // RF-209
 export function composeDeepen(parts: DeepenParts): DeepenServices {
   const { projects, runs, manifests, scans, ollamaHost } = parts;
+  const taskResults = new FileTaskResults({ writer: parts.writer, masker: parts.masker });
   return {
     startDeepen: new StartDeepen({
       ...{ projects, runs, manifests, submit: parts.submit },
@@ -43,9 +45,10 @@ export function composeDeepen(parts: DeepenParts): DeepenServices {
     }),
     estimateDeepen: new EstimateDeepen({
       ...{ projects, runs, scans, priceTable: parts.priceTable },
-      taskResults: new FileTaskResults({ writer: parts.writer, masker: parts.masker }),
+      taskResults,
       keys: new PgProviderKeyRepository(parts.pool),
     }),
+    readUnderstanding: new ReadUnderstanding({ runs, scans, taskResults, manifests }),
   };
 }
 
