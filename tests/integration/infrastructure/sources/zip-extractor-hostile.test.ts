@@ -110,6 +110,18 @@ describe('YauzlZipExtractor links, encryption and methods', () => {
 });
 
 describe('YauzlZipExtractor encrypted and unsupported entries', () => {
+  it('RF-129 mode bits are read only from a Unix host, so a DOS entry is not a link', async () => {
+    const zip = patchCentral(
+      await buildZip([{ name: 'p/dos.txt', data: 'd', mode: 0o120777 }]),
+      'p/dos.txt',
+      { versionMadeBy: 0x003f },
+    );
+
+    const result = await extractZip(root.path, zip);
+
+    expect(result).toMatchObject({ keptFiles: 1, skippedLinks: 0 });
+  });
+
   it('RF-129 an encrypted entry stops with RST-1914 and leaves no folder', async () => {
     const zip = patchCentral(
       await buildZip([
@@ -177,6 +189,19 @@ describe('YauzlZipExtractor folders that are left out', () => {
 });
 
 describe('YauzlZipExtractor left-out folders and the top-level folder', () => {
+  it('RF-129 an encrypted entry stops the upload even in a folder that is left out', async () => {
+    const zip = patchCentral(
+      await buildZip([
+        { name: 'README.md', data: 'r' },
+        { name: 'node_modules/x.js', data: 'x' },
+      ]),
+      'node_modules/x.js',
+      { flags: 0x0001 },
+    );
+
+    await expect(extractZip(root.path, zip)).rejects.toMatchObject({ code: 'RST-1914' });
+  });
+
   it('RF-130 left-out entries do not stop the single top-level folder from being stripped', async () => {
     const zip = await buildZip([
       { name: 'proj/a.cs', data: 'a' },

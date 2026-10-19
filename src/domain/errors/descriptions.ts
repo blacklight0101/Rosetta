@@ -6,6 +6,7 @@ import { PLAN_ERROR_DESCRIPTIONS, type PlanErrorCode } from './plan-descriptions
 import { REPORT_ERROR_DESCRIPTIONS, type ReportErrorCode } from './report-descriptions.js';
 import { SCAN_ERROR_DESCRIPTIONS, type ScanErrorCode } from './scan-descriptions.js';
 import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descriptions.js';
+import { UPLOAD_ERROR_DESCRIPTIONS, type UploadErrorCode } from './upload-descriptions.js';
 
 // RF-007: the plain message and the next step of every code in ERROR_CODES, in numeric order. The
 // codes themselves live in codes.ts (which imports nothing); a new code adds its entry here in
@@ -13,7 +14,7 @@ import { SERVER_ERROR_DESCRIPTIONS, type ServerErrorCode } from './server-descri
 // on live in server-descriptions.ts, the file-system codes in file-descriptions.ts, the scan codes
 // in scan-descriptions.ts, the budget codes in budget-descriptions.ts, the Anthropic codes in
 // anthropic-descriptions.ts, the report and export codes in report-descriptions.ts and the plan
-// codes in plan-descriptions.ts, so no file passes the size limit.
+// codes in plan-descriptions.ts and the uploaded-zip codes in upload-descriptions.ts, so no file passes the size limit.
 
 type SplitOff =
   | ServerErrorCode
@@ -22,7 +23,8 @@ type SplitOff =
   | ScanErrorCode
   | AnthropicErrorCode
   | ReportErrorCode
-  | PlanErrorCode;
+  | PlanErrorCode
+  | UploadErrorCode;
 
 const PIPELINE_ERROR_DESCRIPTIONS: Readonly<
   Record<Exclude<ErrorCode, SplitOff>, ErrorDescription>
@@ -254,6 +256,7 @@ const ERROR_DESCRIPTIONS: Readonly<Record<ErrorCode, ErrorDescription>> = {
   ...REPORT_ERROR_DESCRIPTIONS,
   ...PLAN_ERROR_DESCRIPTIONS,
   ...SERVER_ERROR_DESCRIPTIONS,
+  ...UPLOAD_ERROR_DESCRIPTIONS,
 };
 
 export function describeError(code: ErrorCode): ErrorDescription {

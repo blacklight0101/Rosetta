@@ -1,10 +1,8 @@
-import { mkdir, readFile, readdir } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_ZIP_LIMITS,
-  YauzlZipExtractor,
-} from '../../../../src/infrastructure/sources/zip-extractor.js';
+import { YauzlZipExtractor } from '../../../../src/infrastructure/sources/zip-extractor.js';
+import { DEFAULT_ZIP_LIMITS } from '../../../../src/infrastructure/sources/zip-limits.js';
 import { extractZip, targetExists, targetOf } from '../../../support/zip-extract-harness.js';
 import { buildRawNameZip, buildZip, patchCentral } from '../../../support/zip-fixtures.js';
 import { listTree, useWritableTempRoot } from '../../../support/writable-temp-root.js';
@@ -108,6 +106,29 @@ describe('YauzlZipExtractor how it reads names and folders', () => {
     expect(await listTree(targetOf(root.path))).toEqual(['b.txt', 'src/ok.txt']);
   });
 
+  it('RF-129 ignores empty and dot segments in a path', async () => {
+    const zip = await buildRawNameZip([
+      { name: './p/a.txt', data: 'a' },
+      { name: 'p//b.txt', data: 'b' },
+    ]);
+
+    await extractZip(root.path, zip);
+
+    expect(await listTree(targetOf(root.path))).toEqual(['a.txt', 'b.txt']);
+  });
+
+  it('RF-129 reads a name flagged as UTF-8 as UTF-8 and any other name byte for byte', async () => {
+    const flagged = await buildZip([{ name: 'p/é.txt', data: 'e' }]);
+    const unflagged = patchCentral(flagged, 'p/é.txt', { flags: 0 });
+
+    await extractZip(root.path, flagged);
+    expect(await listTree(targetOf(root.path))).toEqual(['é.txt']);
+
+    await rm(targetOf(root.path), { recursive: true });
+    await extractZip(root.path, unflagged);
+    expect(await listTree(targetOf(root.path))).toEqual(['Ã©.txt']);
+  });
+
   it('RF-129 extracts into a destination folder that already exists', async () => {
     const zip = await buildZip([{ name: 'p/a.txt', data: 'a' }]);
     await mkdir(targetOf(root.path), { recursive: true });
@@ -185,6 +206,17 @@ describe('YauzlZipExtractor failures', () => {
     expect(await targetExists(root.path)).toBe(false);
   });
 
+  it('RF-129 a failure also deletes a destination folder that existed before', async () => {
+    const zip = await buildZip([
+      { name: 'p/a.txt', data: 'one' },
+      { name: 'p/a.txt', data: 'two' },
+    ]);
+    await mkdir(targetOf(root.path), { recursive: true });
+
+    await expect(extractZip(root.path, zip)).rejects.toMatchObject({ code: 'RST-1908' });
+    expect(await targetExists(root.path)).toBe(false);
+  });
+
   it('RF-129 an entry name that appears twice stops with RST-1908 and leaves no folder', async () => {
     const zip = await buildZip([
       { name: 'p/same.txt', data: 'one' },
@@ -194,7 +226,9 @@ describe('YauzlZipExtractor failures', () => {
     await expect(extractZip(root.path, zip)).rejects.toMatchObject({ code: 'RST-1908' });
     expect(await targetExists(root.path)).toBe(false);
   });
+});
 
+describe('YauzlZipExtractor failures of the request', () => {
   it('RF-129 a zip file that is missing stops with RST-1908', async () => {
     const extractor = new YauzlZipExtractor(DEFAULT_ZIP_LIMITS);
 
@@ -212,7 +246,9 @@ describe('YauzlZipExtractor failures', () => {
     const controller = new AbortController();
     controller.abort();
 
-    await expect(extractZip(root.path, zip, {}, controller.signal)).rejects.toThrow();
+    await expect(extractZip(root.path, zip, {}, controller.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
     expect(await targetExists(root.path)).toBe(false);
   });
 });

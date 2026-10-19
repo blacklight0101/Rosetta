@@ -1,11 +1,11 @@
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { ZipExtraction } from '../../src/application/ports/zip-extractor.js';
+import { YauzlZipExtractor } from '../../src/infrastructure/sources/zip-extractor.js';
 import {
   DEFAULT_ZIP_LIMITS,
-  YauzlZipExtractor,
   type ZipExtractionLimits,
-} from '../../src/infrastructure/sources/zip-extractor.js';
+} from '../../src/infrastructure/sources/zip-limits.js';
 import { writeZipFile } from './zip-fixtures.js';
 
 /** The folder the extractor writes into, below a test's temporary root. */

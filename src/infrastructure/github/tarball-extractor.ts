@@ -3,6 +3,12 @@ import { createGunzip } from 'node:zlib';
 import { extract as tarExtract, ReadEntry } from 'tar';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import {
+  hasUnwritableSegment,
+  isUnsafePath,
+  LimitCounter,
+  splitPath,
+} from '../sources/entry-guards.js';
 import { isFileSystemFailure, snapshotWriteFailed } from './snapshot-errors.js';
 
 export interface ExtractionLimits {
@@ -24,45 +30,6 @@ export const DEFAULT_EXTRACTION_LIMITS: ExtractionLimits = {
 const FILE_TYPES: ReadonlySet<string> = new Set(['File', 'OldFile', 'ContiguousFile']);
 const LINK_TYPES: ReadonlySet<string> = new Set(['Link', 'SymbolicLink']);
 
-/** Windows device names, with or without an extension, a trailing dot or space, or a stream (`CON:x`). */
-const DEVICE_NAME = /^(con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])$/i;
-
-function isDeviceName(segment: string): boolean {
-  const base = segment.split(/[.:]/)[0] ?? '';
-  return DEVICE_NAME.test(base.trimEnd());
-}
-
-/** `..`, and the segments Windows trims to `..` or to nothing: only dots and spaces, other than a lone `.`. */
-function isDotSegment(segment: string): boolean {
-  return segment !== '.' && /^[. ]+$/.test(segment);
-}
-
-const DRIVE_FORM = /^[A-Za-z]:/;
-const SEPARATORS = /[\\/]/;
-
-/**
- * An absolute path (POSIX or Windows), a UNC or backslash-rooted path, a `..` or dot-only segment, or a
- * drive letter at the start of the path, on either separator
- * (RF-122, ADR-019). Such an entry stops the fetch.
- */
-function isUnsafePath(path: string): boolean {
-  if (path.startsWith('/') || path.startsWith('\\')) return true;
-  const segments = path.split(SEPARATORS);
-  return segments.some(isDotSegment) || DRIVE_FORM.test(segments[0] ?? '');
-}
-
-/**
- * A name Windows cannot write below the stripped top folder: a device name (`aux.c`, `COM1`) or a
- * `:` in a segment. Real repositories hold them (the Linux kernel has `aux.c`), so the entry is
- * skipped and counted, never a reason to stop the fetch; the result does not depend on the OS.
- */
-function isUnwritableName(path: string): boolean {
-  return path
-    .split(SEPARATORS)
-    .slice(1)
-    .some((segment) => segment.includes(':') || isDeviceName(segment));
-}
-
 export function tooLarge(what: 'entries' | 'bytes', limit: number): RosettaError {
   return new RosettaError(
     ERROR_CODES.snapshotTooLarge,
@@ -73,22 +40,23 @@ export function tooLarge(what: 'entries' | 'bytes', limit: number): RosettaError
 class EntryGate {
   skippedLinks = 0;
   failure: RosettaError | undefined;
-  private entries = 0;
-  private bytes = 0;
-  private streamBytes = 0;
+  private readonly entries: LimitCounter;
+  private readonly bytes: LimitCounter;
+  private readonly streamBytes: LimitCounter;
   private readonly limits: ExtractionLimits;
   private readonly stop: (error: RosettaError) => void;
 
   constructor(limits: ExtractionLimits, stop: (error: RosettaError) => void) {
     this.limits = limits;
+    this.entries = new LimitCounter(limits.maxEntries);
+    this.bytes = new LimitCounter(limits.maxBytes);
+    this.streamBytes = new LimitCounter(limits.maxBytes);
     this.stop = stop;
   }
 
   /** The `tar` filter: true extracts the entry, false skips it; a refusal also stops the stream. */
   readonly allow = (path: string, entry: unknown): boolean => {
-    this.entries += 1;
-    if (this.entries > this.limits.maxEntries)
-      return this.refuse(tooLarge('entries', this.limits.maxEntries));
+    if (!this.entries.add()) return this.refuse(tooLarge('entries', this.limits.maxEntries));
     if (!(entry instanceof ReadEntry)) return false;
     if (isUnsafePath(path)) {
       return this.refuse(
@@ -99,10 +67,9 @@ class EntryGate {
       );
     }
     // P1-160: every entry's declared body counts, skipped ones included, before it arrives.
-    this.bytes += entry.size;
-    if (this.bytes > this.limits.maxBytes)
-      return this.refuse(tooLarge('bytes', this.limits.maxBytes));
-    if (LINK_TYPES.has(entry.type) || isUnwritableName(path)) {
+    if (!this.bytes.add(entry.size)) return this.refuse(tooLarge('bytes', this.limits.maxBytes));
+    // The top folder is stripped, so only the names below it are judged.
+    if (LINK_TYPES.has(entry.type) || hasUnwritableSegment(splitPath(path).slice(1))) {
       this.skippedLinks += 1;
       return false;
     }
@@ -115,10 +82,9 @@ class EntryGate {
    */
   readonly allowBytes = (count: number): boolean => {
     if (this.failure !== undefined) return false;
-    this.streamBytes += count;
-    return this.streamBytes > this.limits.maxBytes
-      ? this.refuse(tooLarge('bytes', this.limits.maxBytes))
-      : true;
+    return this.streamBytes.add(count)
+      ? true
+      : this.refuse(tooLarge('bytes', this.limits.maxBytes));
   };
 
   private refuse(error: RosettaError): false {

@@ -88,6 +88,7 @@ const COMMENT_LENGTH_AT = 32;
 const NAME_AT = 46;
 
 export interface CentralPatch {
+  readonly versionMadeBy?: number;
   readonly flags?: number;
   readonly method?: number;
   readonly compressedSize?: number;
@@ -95,7 +96,13 @@ export interface CentralPatch {
 }
 
 /** Offsets of the fields in a central directory file header. */
-const FIELD_AT = { flags: 8, method: 10, compressedSize: 20, uncompressedSize: 24 } as const;
+const FIELD_AT = {
+  versionMadeBy: 4,
+  flags: 8,
+  method: 10,
+  compressedSize: 20,
+  uncompressedSize: 24,
+} as const;
 
 /** Rewrites fields of the named entry in the central directory only; the local header stays. */
 export function patchCentral(zip: Buffer, name: string, patch: CentralPatch): Buffer {
@@ -108,6 +115,8 @@ export function patchCentral(zip: Buffer, name: string, patch: CentralPatch): Bu
     const nameLength = bytes.readUInt16LE(at + NAME_LENGTH_AT);
     const entryName = bytes.subarray(at + NAME_AT, at + NAME_AT + nameLength).toString('utf8');
     if (entryName === name) {
+      if (patch.versionMadeBy !== undefined)
+        bytes.writeUInt16LE(patch.versionMadeBy, at + FIELD_AT.versionMadeBy);
       if (patch.flags !== undefined) bytes.writeUInt16LE(patch.flags, at + FIELD_AT.flags);
       if (patch.method !== undefined) bytes.writeUInt16LE(patch.method, at + FIELD_AT.method);
       if (patch.compressedSize !== undefined)
