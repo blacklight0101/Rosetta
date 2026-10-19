@@ -13,6 +13,8 @@ import { runStatus, startAndOpenLiveRun } from './live-run-page.js';
 export interface JourneyModels {
   readonly reader: string;
   readonly summariser?: string;
+  /** RF-615: the planner model, for a journey that needs a plan run to fail. */
+  readonly planner?: string;
 }
 
 /** Opens the settings of the webforms project from its start page and saves the models. */
@@ -21,6 +23,9 @@ async function saveModels(page: Page, models: JourneyModels): Promise<void> {
   await page.getByLabel('Reader model', { exact: true }).fill(models.reader);
   if (models.summariser !== undefined) {
     await page.getByLabel('Summariser model', { exact: true }).fill(models.summariser);
+  }
+  if (models.planner !== undefined) {
+    await page.getByLabel('Planner model', { exact: true }).fill(models.planner);
   }
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Settings saved.')).toBeVisible();
