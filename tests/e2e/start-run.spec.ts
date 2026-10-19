@@ -123,6 +123,8 @@ test('RF-143 a cloud reader needs the consent before Start and the notice names 
 
   const notice = page.getByRole('region', { name: 'Code will leave this machine' });
   await expect(notice).toContainText('OpenAI');
+  // RF-132: a GitHub project is never asked the second, private-code confirmation.
+  await expect(page.getByRole('region', { name: /Your code is private/u })).toHaveCount(0);
   const start = page.getByRole('button', startButton);
   await expect(start).toBeDisabled();
   await expect(start).toHaveText('Start run (confirm the OpenAI notice)');

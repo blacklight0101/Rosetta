@@ -11,7 +11,7 @@ import type { RunNoticeState } from './RunNotice.js';
 import { useQueuePosition } from './use-queue-position.js';
 import { useStartConfirmation, type StartConfirmation } from './use-start-confirmation.js';
 
-// RF-1001, RF-143, RF-1108, DEC-117: what pressing Start does, in order. Another address than the
+// RF-1001, RF-143, RF-132, RF-1108, DEC-117: what pressing Start does, in order. Another address than the
 // project's is resolved to its own project and its start page. Otherwise a changed run cap or
 // confirm threshold is saved with the project settings, and then the run is requested; a threshold
 // above the cap is refused here, before any request, since the server would refuse the pair
@@ -22,6 +22,7 @@ import { useStartConfirmation, type StartConfirmation } from './use-start-confir
 const RUN_CAP_PATH = 'budget.run.maxCostMicros';
 const THRESHOLD_PATH = 'budget.confirmAboveCostMicros';
 const NO_CONSENT = 'RST-1515';
+const NO_PRIVATE_CONFIRMATION = 'RST-1521';
 const UNKNOWN_AREA = 'RST-1307';
 const notAnAmount: FieldProblem = { message: 'Enter an amount in dollars, for example 2.00.' };
 const aboveCap: FieldProblem = {
@@ -39,6 +40,8 @@ export interface ActionInputs {
   readonly stage: RunStageChoice;
   readonly areas: readonly string[];
   readonly consent: boolean;
+  /** RF-132: the second confirmation was ticked (only ever true for an upload that needs it). */
+  readonly privateConfirmed: boolean;
   /** RF-241: re-run with the answers of the open questions. */
   readonly withAnswers: boolean;
   readonly url: string;
@@ -56,6 +59,7 @@ interface Refusals {
   readonly cap?: FieldProblem;
   readonly threshold?: FieldProblem;
   readonly consent?: ApiFailure;
+  readonly private?: ApiFailure;
   readonly areas?: ApiFailure;
   readonly start?: ApiFailure;
 }
@@ -84,7 +88,8 @@ function requestOf(inputs: ActionInputs): StartRequest {
     areas: inputs.areas,
     cloudConsent: inputs.consent,
   };
-  return inputs.withAnswers ? { ...request, withAnswers: true } : request;
+  const confirmed = inputs.privateConfirmed ? { ...request, privateCodeConfirmed: true } : request;
+  return inputs.withAnswers ? { ...confirmed, withAnswers: true } : confirmed;
 }
 
 /** The run cap and the confirm threshold the page asks for, in micro-dollars. */
@@ -166,6 +171,7 @@ async function saveLimits({ client, inputs, refuse }: Steps, limits: Limits): Pr
 
 function refusalOf(error: ApiFailure): Refusals {
   if (error.code === NO_CONSENT) return { consent: error };
+  if (error.code === NO_PRIVATE_CONFIRMATION) return { private: error };
   return error.code === UNKNOWN_AREA ? { areas: error } : { start: error };
 }
 

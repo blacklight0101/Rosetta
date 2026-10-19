@@ -12,7 +12,11 @@ import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import { capsOf } from '../runs/accepted-manifest.js';
 import type { RunQueue } from '../runs/run-queue.js';
 import { scopeOf } from '../runs/run-scope.js';
-import { readUnderstandOptions, rolesNeedCloudConsent } from '../understand/understand-options.js';
+import {
+  readUnderstandOptions,
+  rolesNeedCloudConsent,
+  rolesNeedPrivateConfirmation,
+} from '../understand/understand-options.js';
 import type { ResumeProblemCheck } from '../understand/resume-problem.js';
 import type { SubmittedRun } from './submit-run.js';
 
@@ -39,6 +43,7 @@ export type ResumeProblem =
   | typeof ERROR_CODES.notFound
   | typeof ERROR_CODES.runNotResumable
   | typeof ERROR_CODES.cloudConsentMissing
+  | typeof ERROR_CODES.privateCodeNotConfirmed
   | typeof ERROR_CODES.resumeSourceChanged
   | typeof ERROR_CODES.taskResultsUnreadable;
 
@@ -83,9 +88,14 @@ export class ResumeRun {
     project: Project,
     stored: RunManifest,
   ): Promise<ResumeProblem | undefined> {
-    const consent = readUnderstandOptions(stored.options).cloudConsent;
-    if (!consent && rolesNeedCloudConsent(project.settings, this.deps.ollamaHost)) {
+    const { cloudConsent, privateCodeConfirmed } = readUnderstandOptions(stored.options);
+    const { ollamaHost } = this.deps;
+    if (!cloudConsent && rolesNeedCloudConsent(project.settings, ollamaHost)) {
       return ERROR_CODES.cloudConsentMissing;
+    }
+    // RF-132: the run of an uploaded project resumes only if it was started with the confirmation.
+    if (privateCodeConfirmed !== true && rolesNeedPrivateConfirmation(project, ollamaHost)) {
+      return ERROR_CODES.privateCodeNotConfirmed;
     }
     return this.deps.problem(run, stored);
   }

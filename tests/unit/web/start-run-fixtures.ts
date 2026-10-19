@@ -46,7 +46,7 @@ interface RoleOptions {
   readonly costs: readonly [string, string, string];
 }
 
-function roleOf(options: RoleOptions): RoleBody {
+export function roleOf(options: RoleOptions): RoleBody {
   const { role, provider, kind, model, costs } = options;
   const [low, likely, high] = costs;
   return {
@@ -62,7 +62,7 @@ function roleOf(options: RoleOptions): RoleBody {
 const sum = (parts: readonly string[]): string =>
   parts.reduce((total, each) => total + BigInt(each), 0n).toString();
 
-function estimateOf(roles: readonly RoleBody[]): Record<string, unknown> {
+export function estimateOf(roles: readonly RoleBody[]): Record<string, unknown> {
   return {
     codeMap: { scannerVersion: 1, currentScannerVersion: 1, outdated: false },
     priceTableVersion: '2026-10-11',

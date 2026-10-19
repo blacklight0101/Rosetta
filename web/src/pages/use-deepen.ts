@@ -19,6 +19,8 @@ export type DeepenEstimateLoad =
   | { readonly status: 'failed'; readonly error: ApiFailure }
   | { readonly status: 'ready'; readonly estimate: DeepenEstimate };
 
+const PRIVATE_CODE_MISSING = 'RST-1521';
+
 /** DEC-145 (Q-H): three rounds unless the owner chooses another number from 1 to 5. */
 const DEFAULT_CHOICE: DeepenChoice = { maxRounds: 3, coveragePass: true };
 
@@ -50,6 +52,10 @@ export interface DeepenStart {
   readonly setChoice: (choice: DeepenChoice) => void;
   readonly consent: boolean;
   readonly setConsent: (consent: boolean) => void;
+  /** RF-132: the server asked the second confirmation (RST-1521), so the page now shows it. */
+  readonly privateAsked: boolean;
+  readonly privateConfirmed: boolean;
+  readonly setPrivateConfirmed: (confirmed: boolean) => void;
   readonly busy: boolean;
   readonly error: ApiFailure | undefined;
   /** Starts the Deepen the owner confirmed and opens its run. */
@@ -61,19 +67,28 @@ export function useDeepenStart(runId: string): DeepenStart {
   const { client } = useApp();
   const [choice, setChoice] = useState<DeepenChoice>(DEFAULT_CHOICE);
   const [consent, setConsent] = useState(false);
+  const [privateAsked, setPrivateAsked] = useState(false);
+  const [privateConfirmed, setPrivateConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiFailure | undefined>(undefined);
   const start = (): void => {
     setBusy(true);
     setError(undefined);
-    void startDeepen(client, runId, { ...choice, cloudConsent: consent }).then((result) => {
+    void startDeepen(client, runId, {
+      ...{ ...choice, cloudConsent: consent },
+      ...(privateConfirmed ? { privateCodeConfirmed: true } : {}),
+    }).then((result) => {
       if (result.ok) {
         navigate(`/runs/${encodeURIComponent(result.value.id)}`);
         return;
       }
       setBusy(false);
+      if (result.error.code === PRIVATE_CODE_MISSING) setPrivateAsked(true);
       setError(result.error);
     });
   };
-  return { choice, setChoice, consent, setConsent, busy, error, start };
+  return {
+    ...{ choice, setChoice, consent, setConsent, busy, error, start },
+    ...{ privateAsked, privateConfirmed, setPrivateConfirmed },
+  };
 }

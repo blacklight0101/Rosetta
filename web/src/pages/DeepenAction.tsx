@@ -25,6 +25,7 @@ import {
 
 const roundChoices = ['1', '2', '3', '4', '5'] as const;
 const consentCode = 'RST-1515';
+const privateCode = 'RST-1521';
 
 interface PanelProps {
   readonly runId: string;
@@ -35,10 +36,14 @@ function needsConsent(load: DeepenEstimateLoad): boolean {
   return load.status === 'ready' && cloudRoles(load.estimate).length > 0;
 }
 
-function reasonOf(load: DeepenEstimateLoad, consent: boolean): string | undefined {
+function reasonOf(load: DeepenEstimateLoad, deepen: DeepenStart): string | undefined {
+  const { consent } = deepen;
   if (load.status === 'loading') return 'The estimate is being read.';
   if (load.status === 'failed') return 'The estimate could not be read.';
   if (needsConsent(load) && !consent) return 'Give the consent above first.';
+  if (deepen.privateAsked && !deepen.privateConfirmed) {
+    return 'Give the private code confirmation above first.';
+  }
   return undefined;
 }
 
@@ -92,9 +97,31 @@ function Controls(props: Pick<DeepenStart, 'choice' | 'setChoice'>): JSX.Element
   );
 }
 
+/** RF-132: after the server asked for it, the second confirmation of an uploaded project. */
+function PrivateAsked({ deepen }: { readonly deepen: DeepenStart }): JSX.Element {
+  const refused = deepen.error?.code === privateCode ? deepen.error : undefined;
+  return (
+    <section class="rst-callout rst-callout--warn" aria-label="Your code is private">
+      <p>
+        <strong>Your code is private.</strong> Excerpts of your own code from this project will be
+        sent to a cloud provider.
+      </p>
+      <Field
+        kind="checkbox"
+        id="deepen-private-code"
+        label="I understand that my own code from this project will be sent to a cloud provider"
+        checked={deepen.privateConfirmed}
+        error={refused}
+        announce={false}
+        onChange={deepen.setPrivateConfirmed}
+      />
+    </section>
+  );
+}
+
 function Consent(props: {
   readonly cloud: ReturnType<typeof cloudRoles>;
-  readonly deepen: ReturnType<typeof useDeepenStart>;
+  readonly deepen: DeepenStart;
   readonly refused: ReturnType<typeof useDeepenStart>['error'];
 }): JSX.Element {
   const { cloud, deepen, refused } = props;
@@ -108,7 +135,10 @@ function Consent(props: {
           onConsent={deepen.setConsent}
         />
       )}
-      {deepen.error === undefined || refused !== undefined ? null : (
+      {deepen.privateAsked ? <PrivateAsked deepen={deepen} /> : null}
+      {deepen.error === undefined ||
+      refused !== undefined ||
+      deepen.error.code === privateCode ? null : (
         <ErrorBanner error={deepen.error} />
       )}
     </>
@@ -126,7 +156,7 @@ function Choices(props: { readonly runId: string }): JSX.Element {
   const cloud = load.status === 'ready' ? cloudRoles(load.estimate) : [];
   // The refusal of the consent shows at the checkbox when the notice is there, else as a banner.
   const refused = cloud.length > 0 && deepen.error?.code === consentCode ? deepen.error : undefined;
-  const reason = reasonOf(load, deepen.consent);
+  const reason = reasonOf(load, deepen);
   return (
     <>
       <Controls choice={deepen.choice} setChoice={deepen.setChoice} />

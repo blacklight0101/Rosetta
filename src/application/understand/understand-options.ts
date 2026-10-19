@@ -26,6 +26,8 @@ export interface DeepenOptions {
 export interface UnderstandOptions {
   readonly areas?: readonly string[];
   readonly cloudConsent: boolean;
+  /** RF-132: the second confirmation, recorded for an uploaded project that needed it. */
+  readonly privateCodeConfirmed?: boolean;
   /** RF-241: run again the areas of the answered questions, with the answers as context. */
   readonly withAnswers?: boolean;
   /** RF-209: present only for a Deepen run. */
@@ -35,6 +37,7 @@ export interface UnderstandOptions {
 const optionsSchema = z.object({
   areas: z.array(z.string()).optional(),
   cloudConsent: z.boolean().optional(),
+  privateCodeConfirmed: z.boolean().optional(),
   withAnswers: z.boolean().optional(),
   deepen: z
     .object({ parentRunId: z.string(), maxRounds: z.number().int(), coveragePass: z.boolean() })
@@ -45,13 +48,15 @@ const optionsSchema = z.object({
 export function understandOptionsOf(request: {
   readonly areas?: readonly string[] | undefined;
   readonly cloudConsent?: boolean | undefined;
+  readonly privateCodeConfirmed?: boolean | undefined;
   readonly withAnswers?: boolean | undefined;
   readonly deepen?: DeepenOptions | undefined;
 }): UnderstandOptions {
   const consent = { cloudConsent: request.cloudConsent === true };
+  const priv = request.privateCodeConfirmed === true ? { privateCodeConfirmed: true } : {};
   const answers = request.withAnswers === true ? { withAnswers: true } : {};
   const deepen = request.deepen === undefined ? {} : { deepen: { ...request.deepen } };
-  const base = { ...consent, ...answers, ...deepen };
+  const base = { ...consent, ...priv, ...answers, ...deepen };
   return request.areas === undefined ? base : { areas: [...request.areas], ...base };
 }
 
@@ -81,6 +86,20 @@ export function rolesNeedCloudConsent(
     const endpointHost = provider.kind === 'ollama' ? (ollamaHost ?? 'localhost') : '';
     return needsCloudConsent({ kind: provider.kind, endpointHost });
   });
+}
+
+/**
+ * RF-132: whether a run of the project needs the second confirmation: the project is an upload and
+ * a role of the run sends code off this machine (RF-143). A GitHub project never needs it.
+ */
+export function rolesNeedPrivateConfirmation(
+  project: { readonly sourceKind: string; readonly settings: ProjectSettings },
+  ollamaHost: string | undefined,
+  roles: readonly AgentRole[] = UNDERSTAND_ROLES,
+): boolean {
+  return (
+    project.sourceKind === 'upload' && rolesNeedCloudConsent(project.settings, ollamaHost, roles)
+  );
 }
 
 /**

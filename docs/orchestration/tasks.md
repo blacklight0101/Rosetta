@@ -3381,7 +3381,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-004 sections 4.1 and 4.2; `src/application/ports/source-fetcher.ts`; `src/application/projects/project.ts`; `src/domain/sources/`; `src/application/understand/pinned-source.ts`; `docs/data-model.md` sections 3.3 and 4 (`projects`); RF-126, RF-130.
 - **Do**: make the source a union of `github` and `upload` in the domain and the `Snapshot` record (RFC-004 table 4.1); `snapshot.json` gains `kind`, `fileName`, `uploadedAt`, and a record without `kind` reads as `github`; a migration adds `projects.source_kind` (default `github`) with `source_url` empty for an upload; the run manifest records the kind and the hash (RF-126). No behaviour change for GitHub projects: every existing test passes unchanged.
 - **Review probes**: an old `snapshot.json` with no `kind`; an `upload` record with GitHub fields present (refused at parse); a project row with `source_kind = 'upload'` and a non-empty `source_url`; the manifest of a GitHub run (byte-identical to main).
@@ -3396,7 +3396,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-36
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-004 section 4.3; ADR-022; `src/infrastructure/github/tarball-extractor.ts` (the guards to share); RF-122, RF-127, RF-129, RF-140, RF-147.
 - **Do**: add `yauzl` 3.4.0 (pinned, ADR-022) and a zip extractor behind the extraction port; move the shared checks (paths, device names, counting, deny list) into one module used by both extractors; central-directory limits before writing, written-byte counting, ratio limit, refusal of encrypted and unsupported entries, symlinks skipped and counted, `.git/`, `node_modules/`, `bin/`, `obj/` left out and counted, the top-level folder rule (RF-130); a failure deletes the partial folder. New RST-19xx codes in the catalogue and `docs/conventions.md`.
 - **Review probes**: the RF-129 fixture list (oversize, many entries, ratio bomb, a central directory that understates sizes, `../a`, `/etc/x`, `C:\x`, `a\..\b`, NUL in a name, a symlink, an encrypted entry, `aux.c`, `node_modules/`); a zip whose only content is denied; a zip with two top-level folders (no stripping); a ZIP64 archive; an empty zip.
@@ -3411,7 +3411,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-36, P3-37
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: RFC-004 sections 4.2 and 4.4; the projects routes and repository; `src/presentation/` route conventions (session, CSRF, `Origin`, body limits); RF-010, RF-128, RF-130, RF-133, RF-1009, RF-1105.
 - **Do**: create a project of kind `upload`; `PUT /api/projects/:id/source` checks free space first (at least twice `ROSETTA_UPLOAD_MAX_MB`, DEC-149) and streams `application/zip` to a temporary file with that limit (default 500, the hosted deployment sets 100), extracts (P3-37), hashes, writes the snapshot and deletes the zip; replacing the source makes a new snapshot and keeps the ones earlier runs use; the project page data says when the code changed since the last run; deleting the project deletes its snapshots; an audit row per upload (name, size, hash). Every refusal returns its code and message.
 - **Review probes**: free space just under twice the limit (refused before storing); `ROSETTA_UPLOAD_MAX_MB` empty, 0, negative or not a number (start-up refuses or uses the default, as other settings do); no session; no CSRF token; another user's project (404); a body larger than the limit with and without `Content-Length`; an aborted upload (no temporary file left); two uploads at once to one project; a run started on a project with no source; delete during a running scan.
@@ -3426,7 +3426,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-36
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-004 section 4.5; the projects page and new-project form; `docs/design-system.md`; RF-128, RF-134.
 - **Do**: two tabs on the new-project form, "GitHub repository" and "Upload a zip": file field, the size limit and the zip how-to, a size and type check before sending, upload progress, the summary (files kept, size, entries left out) and "Upload again" on failure; the projects list and header show `<name> (zip, <date>)`; the "code changed since the last run" note. The page calls the P3-38 endpoint; until it merges, tests use a fake server.
 - **Review probes**: a 0-byte file; a `.zip` that is really text; a file above the limit (refused before sending); keyboard only; 360 px wide; a 60-character file name; a name holding HTML.
@@ -3441,7 +3441,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-36
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/domain/sources/permalink.ts`; `src/infrastructure/cards/citation-link.ts`; the report header and package writers; the evidence pages (P3-02); RF-125, RF-131.
 - **Do**: the citation link depends on the source kind: GitHub permalink for `github`, Rosetta's evidence page for `upload`; report, package and run-page headers name the zip, the upload date and the hash for an upload.
 - **Review probes**: a citation in every place a link is drawn (run page, evidence page, report, package Markdown, diagrams' captions); a report of an uploaded project searched for `github.com` (none); a GitHub project's report (byte-identical to main).
@@ -3456,7 +3456,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-36
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: the start page consent (RF-143, RF-1001); the start-run API validation; RF-132.
 - **Do**: on a project of kind `upload` with any non-local role, a second, separate confirmation naming the project and each cloud provider, with a link that switches every role to Ollama; Start disabled until both are ticked; the API refuses a start without it with a new error code.
 - **Review probes**: all roles local (no confirmation); one cloud role; Ollama on a non-loopback host (counts as cloud, DEC-118); the API without the field; a GitHub project (unchanged).

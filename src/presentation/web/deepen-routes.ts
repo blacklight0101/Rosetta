@@ -39,6 +39,8 @@ const startBody = z.strictObject({
   maxRounds: rounds.optional(),
   coveragePass: z.boolean().optional(),
   cloudConsent: z.boolean().optional(),
+  /** RF-132 */
+  privateCodeConfirmed: z.boolean().optional(),
 });
 
 function pointView(point: EstimatePoint): Record<string, unknown> {

@@ -44,6 +44,7 @@ const statusOfCode: Partial<Readonly<Record<ErrorCode, ErrorStatus>>> = {
   [ERROR_CODES.providerKeyInvalid]: 400,
   [ERROR_CODES.baseUrlRejected]: 400,
   [ERROR_CODES.cloudConsentMissing]: 400,
+  [ERROR_CODES.privateCodeNotConfirmed]: 400,
   [ERROR_CODES.areaUnknown]: 400,
   [ERROR_CODES.deepenNotConfirmed]: 400,
   // RF-128, RF-129: an upload that cannot be taken. The zip rules are the sender's to fix (400); the

@@ -6,13 +6,15 @@ import { useRouteParams } from '../app/route-params.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { JourneyPanel } from './JourneyPanel.js';
 import { PlanConsentNotice } from './PlanConsentNotice.js';
+import { PrivateCodeNotice } from './PrivateCodeNotice.js';
+import { providerLabel } from './provider-choices.js';
 import { PlanEstimateCard } from './PlanEstimateCard.js';
 import { PlanRecorded } from './PlanRecorded.js';
 import { PlanStepBody } from './PlanStepBody.js';
 import { PlanStepButtons } from './PlanStepButtons.js';
 import { PlanSourcePanel } from './PlanSourcePanel.js';
 import { PlanSteps } from './PlanSteps.js';
-import { usePlanSession } from './use-plan-session.js';
+import { usePlanSession, type PlanSession } from './use-plan-session.js';
 import { usePlanSetupLoad } from './use-plan-setup-load.js';
 
 // RF-605, RF-608, RF-609, RF-613, RF-614, design-system.md section 14 (Plan setup): `/projects/:projectId/
@@ -60,6 +62,34 @@ interface BodyProps {
   readonly sourceRunId: string | undefined;
 }
 
+/** RF-143, RF-132: the notice of the cloud planner and, for an upload, the private-code notice. */
+function Consents({ session }: { readonly session: PlanSession }): JSX.Element {
+  const { privateCode } = session;
+  return (
+    <>
+      {session.cloud ? (
+        <PlanConsentNotice
+          provider={session.plannerProvider}
+          consent={session.consent}
+          onConsent={session.setConsent}
+        />
+      ) : null}
+      {privateCode.needed ? (
+        <PrivateCodeNotice
+          projectName={session.project.name}
+          providers={providerLabel(session.plannerProvider)}
+          confirmed={privateCode.checked}
+          error={undefined}
+          onConfirm={privateCode.set}
+          onSwitch={privateCode.switchToOllama.run}
+          switching={privateCode.switchToOllama.switching}
+          switchError={privateCode.switchToOllama.error}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function PlanSetupBody(props: BodyProps): JSX.Element {
   const { projectId, catalogue, view, project, source, sourceError, sourceRunId } = props;
   const session = usePlanSession({ projectId, sourceRunId }, view, project);
@@ -77,7 +107,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           change={session.change}
           problems={session.problems}
           load={session.options}
-          waitingForConsent={session.cloud && !session.consent}
+          waitingForConsent={session.waitingForConsent}
           askAgain={session.askAgain}
         />
         <PlanStepButtons
@@ -89,13 +119,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
           onSave={session.save}
         />
       </section>
-      {session.cloud ? (
-        <PlanConsentNotice
-          provider={session.plannerProvider}
-          consent={session.consent}
-          onConsent={session.setConsent}
-        />
-      ) : null}
+      <Consents session={session} />
       <PlanRecorded draft={session.draft} catalogue={catalogue} />
       <PlanEstimateCard
         projectId={projectId}
@@ -104,6 +128,7 @@ function PlanSetupBody(props: BodyProps): JSX.Element {
         load={session.estimate}
         blockers={session.blockers}
         consent={session.consent}
+        privateConfirmed={session.privateCode.confirmed}
         stepReason={session.stepReason}
         outOfDate={session.outOfDate}
       />
