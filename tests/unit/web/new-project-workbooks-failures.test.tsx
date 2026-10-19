@@ -119,6 +119,8 @@ it('RF-150 a refused batch (one workbook refused at finish) names the file and r
   expect(alert.textContent).toContain('Costs.xlsm is password-protected.');
   expect(alert.textContent).toContain('Remove the password in Excel and upload again.');
   expect(screen.getByText(/has no source yet/u)).not.toBeNull();
+  const items = screen.getAllByRole('listitem').map((item) => item.textContent);
+  expect(items.filter((text) => text.endsWith('Not sent'))).toHaveLength(3);
 
   fireEvent.click(sendButton());
   await answerFile(server, 4);
