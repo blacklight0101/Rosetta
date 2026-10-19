@@ -77,6 +77,7 @@ function Consents({ session }: { readonly session: PlanSession }): JSX.Element {
       {privateCode.needed ? (
         <PrivateCodeNotice
           projectName={session.project.name}
+          workbooks={privateCode.workbooks}
           providers={providerLabel(session.plannerProvider)}
           confirmed={privateCode.checked}
           error={undefined}

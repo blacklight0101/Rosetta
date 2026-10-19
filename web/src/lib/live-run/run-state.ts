@@ -72,6 +72,8 @@ export interface GithubSourceState {
 export interface UploadSourceState {
   readonly kind: 'upload';
   readonly fileName: string | undefined;
+  /** RF-156: a project of Excel workbooks (shown like an upload): the file names; undefined for a zip. */
+  readonly workbooks?: readonly string[] | undefined;
   readonly uploadedAt: string | undefined;
   readonly snapshotHash: string | undefined;
   /** The run the report belongs to; the events do not carry it, the page sets it. */

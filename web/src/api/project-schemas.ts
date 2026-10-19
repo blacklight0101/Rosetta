@@ -76,9 +76,17 @@ export const projectSchema = z.object({
   /** Counts the saves of the settings; a save names it in If-Match (P1-106). */
   settingsVersion: z.number().int().min(1),
   /** RFC-004 section 4.1: where the code comes from. Absent on the wire means a GitHub project. */
-  sourceKind: z.enum(['github', 'upload']).default('github'),
+  sourceKind: z.enum(['github', 'upload', 'workbook']).default('github'),
   /** The zip an upload project holds; null while it has no source (RF-128). */
-  source: z.object({ fileName: z.string(), uploadedAt: z.string() }).nullable().default(null),
+  source: z
+    .object({
+      fileName: z.string(),
+      uploadedAt: z.string(),
+      /** RF-157: how many workbooks the zip holds, when the server says; absent means none. */
+      workbooks: z.number().int().min(0).optional(),
+    })
+    .nullable()
+    .default(null),
   /** True when the source was replaced after the last run started (RF-128). */
   codeChangedSinceLastRun: z.boolean().default(false),
   createdAt: z.string(),

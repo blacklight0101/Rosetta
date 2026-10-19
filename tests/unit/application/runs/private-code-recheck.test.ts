@@ -63,10 +63,12 @@ async function runQueued(scenario: Scenario) {
     },
   });
   const upload = { sourceKind: 'upload', sourceUrl: '', upload: heldZip } as const;
+  const workbook = { sourceKind: 'workbook', sourceUrl: '', ref: '', subpath: '' } as const;
+  const sent = scenario.kind === 'workbook' ? workbook : upload;
   const project = sampleProject({
     userId: userAmy.userId,
     settings: scenario.queuedWith,
-    ...((scenario.kind ?? 'upload') === 'upload' ? upload : {}),
+    ...((scenario.kind ?? 'upload') === 'github' ? {} : sent),
   });
   await projects.insertOrFind(project);
   const blocker = await harness.start(userBob);
@@ -137,6 +139,33 @@ describe('a queued run starts only if the confirmation still holds (RF-132, DEC-
     });
 
     expect(harness.executor.startedKeys).toContain(ended.runKey);
+  });
+});
+
+describe('a queued run of a workbook project (RF-157, DEC-150)', () => {
+  it('RF-157 does not start when the roles went to a cloud provider without the confirmation', async () => {
+    const { harness, ended, code } = await runQueued({
+      ...{ queuedWith: local, startsWith: cloud, kind: 'workbook' },
+      options: { cloudConsent: true },
+    });
+
+    expect(ended.endState).toBe('Failed');
+    expect(code).toBe(ERROR_CODES.privateCodeNotConfirmed);
+    expect(harness.executor.startedKeys).toHaveLength(1);
+  });
+
+  it('RF-157 starts with its confirmation, or with local roles', async () => {
+    const confirmed = await runQueued({
+      ...{ queuedWith: cloud, startsWith: cloud, kind: 'workbook' },
+      options: { cloudConsent: true, privateCodeConfirmed: true },
+    });
+    const localRoles = await runQueued({
+      ...{ queuedWith: local, startsWith: local, kind: 'workbook' },
+      options: {},
+    });
+
+    expect(confirmed.harness.executor.startedKeys).toContain(confirmed.ended.runKey);
+    expect(localRoles.harness.executor.startedKeys).toContain(localRoles.ended.runKey);
   });
 });
 

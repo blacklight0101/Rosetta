@@ -18,4 +18,5 @@ export interface ManifestSource {
   readonly fileName?: string | undefined; // RF-131: an upload run only; the zip as sent
   readonly uploadedAt?: string | undefined; // RF-131, RF-152: an upload or workbook run only; ISO 8601, UTC
   readonly rendererVersion?: string | undefined; // RF-152: a workbook run only; the renderer that wrote the tree
+  readonly workbooks?: readonly string[] | undefined; // RF-156: a workbook run only; the file names as sent, for the header
 }

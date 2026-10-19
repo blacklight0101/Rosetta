@@ -8,7 +8,8 @@ import type { ReportModel } from '../../../application/report/report-model.js';
 import { formatCitation } from '../../../domain/cards/citation.js';
 import { renderPage } from '../page-shell.js';
 import { evidenceAnchor } from '../../../domain/sources/evidence-link.js';
-import { citationPermalink, isUploadModel } from '../report-source.js';
+import { citationPermalink, isSentReportSource, isUploadModel } from '../report-source.js';
+import { workbookCellLabel } from '../../../domain/sources/workbook-cell-label.js';
 import { STATUS_GLYPHS, statusLabel } from './claim-status.js';
 import { areaLink, Crumbs } from './crumbs.js';
 import { Excerpt } from './excerpt.js';
@@ -34,7 +35,7 @@ function linkOf(
   claimId: string,
   citation: ReportCitation,
 ): CitationLink | undefined {
-  if (model.source?.kind === 'upload') {
+  if (model.source !== null && isSentReportSource(model.source)) {
     const anchor = evidenceAnchor(claimId, citation);
     return anchor === undefined
       ? undefined
@@ -42,6 +43,20 @@ function linkOf(
   }
   const href = citationPermalink(model.source, citation);
   return href === undefined ? undefined : { href, text: 'View on GitHub' };
+}
+
+/**
+ * RF-156: the workbook, the sheet and the cells that the cited lines carry, for a citation of a
+ * rendered workbook file in a project the user sent; undefined for any other citation.
+ */
+function cellLabelOf(model: ReportModel, citation: ReportCitation): string | undefined {
+  const { excerpt } = citation;
+  if (model.source === null || !isSentReportSource(model.source) || excerpt.kind !== 'lines') {
+    return undefined;
+  }
+  const from = citation.startLine - excerpt.firstLine;
+  const cited = excerpt.lines.slice(Math.max(0, from), citation.endLine - excerpt.firstLine + 1);
+  return workbookCellLabel(citation.path, cited);
 }
 
 function Citation(props: {
@@ -53,6 +68,7 @@ function Citation(props: {
 }): ComponentChild {
   const { model, claimId, citation, first } = props;
   const link = linkOf(model, claimId, citation);
+  const label = cellLabelOf(model, citation);
   return h(
     'li',
     { class: 'citation', id: first ? link?.id : undefined },
@@ -60,6 +76,7 @@ function Citation(props: {
       'p',
       { class: 'citation-head' },
       h('span', { class: 'citation-name mono' }, formatCitation(citation)),
+      label === undefined ? null : h('span', { class: 'citation-label' }, label),
       link === undefined
         ? null
         : h(

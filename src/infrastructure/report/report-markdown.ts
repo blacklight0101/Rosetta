@@ -16,8 +16,8 @@ import {
   plural,
 } from './report-format.js';
 import { overviewBody } from '../cards/overview-markdown.js';
-import { sourceLink } from './report-source.js';
-import { UNNAMED_ZIP } from '../../domain/sources/upload-facts.js';
+import { isSentReportSource, sourceLink } from './report-source.js';
+import { uploadHeading } from '../../domain/sources/upload-facts.js';
 
 // RF-504, RF-507: `report.md`, in `report/` of the run folder. It links the specification, every
 // card, the coverage and the cost report (the relative links go up one folder), and says so when a
@@ -25,9 +25,9 @@ import { UNNAMED_ZIP } from '../../domain/sources/upload-facts.js';
 // links in the file are the ones built here; HTML in it is shown, never interpreted.
 
 function uploadRows(source: UploadReportSource, esc: MarkdownEscaper): string[] {
-  const { fileName, uploadedAt, snapshotHash } = source;
+  const { uploadedAt, snapshotHash } = source;
   return [
-    `| Source | ${fileName === null ? UNNAMED_ZIP : esc.inline(fileName)} |`,
+    `| Source | ${uploadHeading(source, (name) => esc.inline(name))} |`,
     ...(uploadedAt === null ? [] : [`| Uploaded | ${esc.label(uploadedAt)} |`]),
     ...(snapshotHash === null ? [] : [`| Snapshot | ${esc.label(snapshotHash)} |`]),
   ];
@@ -35,7 +35,7 @@ function uploadRows(source: UploadReportSource, esc: MarkdownEscaper): string[] 
 
 function sourceRow(model: ReportModel, esc: MarkdownEscaper): string[] {
   if (model.source === null) return [];
-  if (model.source.kind === 'upload') return uploadRows(model.source, esc);
+  if (isSentReportSource(model.source)) return uploadRows(model.source, esc);
   const link = sourceLink(model.source);
   const text =
     link === undefined ? esc.inline(model.source.url) : `[${esc.label(link.label)}](${link.href})`;

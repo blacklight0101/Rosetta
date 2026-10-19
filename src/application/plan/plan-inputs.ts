@@ -10,6 +10,7 @@ import type { PlanningBriefStore } from '../ports/planning-brief-store.js';
 import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunCards } from '../ports/run-cards.js';
 import type { RunIndex } from '../ports/run-index.js';
+import type { ManifestSource } from '../../domain/runs/manifest-source.js';
 import type { Project } from '../projects/project.js';
 import { scopeOf } from '../runs/run-scope.js';
 import { planSourceRun } from './plan-source.js';
@@ -62,18 +63,26 @@ const problems = {
   },
 } as const;
 
-/** RF-131: what the manifest of the source run says of the zip; unknown parts are null. */
-async function uploadFactsOf(
-  manifests: Pick<RunManifestStore, 'read'> | undefined,
-  sourceRun: Run,
-): Promise<UploadFacts> {
-  const manifest = await manifests?.read(scopeOf(sourceRun));
-  const source = manifest?.source;
+/** RF-131: the zip, upload date and hash a manifest source holds; unknown parts are null. */
+function factsOf(source: ManifestSource | undefined): UploadFacts {
   return {
     fileName: source?.fileName ?? null,
     uploadedAt: source?.uploadedAt ?? null,
     snapshotHash: source?.snapshotHash ?? null,
   };
+}
+
+/** RF-131, RF-156: what the manifest of the source run says of the zip or the workbooks. */
+async function uploadFactsOf(
+  manifests: Pick<RunManifestStore, 'read'> | undefined,
+  sourceRun: Run,
+  project: Pick<Project, 'sourceKind'>,
+): Promise<UploadFacts> {
+  const manifest = await manifests?.read(scopeOf(sourceRun));
+  const facts = factsOf(manifest?.source);
+  return project.sourceKind === 'workbook'
+    ? { ...facts, workbooks: manifest?.source.workbooks ?? [] }
+    : facts;
 }
 
 // RF-604, RF-614
@@ -103,7 +112,9 @@ export async function planInputs(
   if (supportedCards(cards).length === 0) return err(problems.claims);
   const questions = await deps.answers.questionsOf(ref, sourceRun.runKey);
   const upload =
-    project.sourceKind === 'upload' ? await uploadFactsOf(manifests, sourceRun) : undefined;
+    project.sourceKind === 'github'
+      ? undefined
+      : await uploadFactsOf(manifests, sourceRun, project);
   return ok({
     project,
     brief,

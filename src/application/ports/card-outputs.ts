@@ -18,12 +18,16 @@ interface GithubCardSource {
   readonly commitSha: CommitSha;
 }
 
-/** An uploaded zip: the citations link to the evidence pages of the report (RF-131). */
+/** An uploaded zip or Excel workbooks: the citations link to the evidence pages of the report (RF-131, RF-156). */
 interface UploadCardSource {
   readonly kind: 'upload';
 }
 
-export type CardSource = GithubCardSource | UploadCardSource;
+interface WorkbookCardSource {
+  readonly kind: 'workbook';
+}
+
+export type CardSource = GithubCardSource | UploadCardSource | WorkbookCardSource;
 
 export interface CardSet {
   /** Every card of the run so far, in area and appearance order. */
