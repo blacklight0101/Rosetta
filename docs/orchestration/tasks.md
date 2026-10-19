@@ -3485,7 +3485,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: none
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RFC-005 sections 4.1 and 4.4; `src/domain/sources/source-kind.ts`, `source.ts`, `upload-name.ts`; `src/application/ports/source-fetcher.ts`; `src/application/understand/pinned-source.ts`; `db/migrations/0014_project_source_kind.sql`, `0015_project_upload_source.sql`; `docs/data-model.md` sections 3.3 and 4 (`projects`); RF-126, RF-130, RF-152.
 - **Do**: add `workbook` to the source union and to `SOURCE_KINDS`; a `WorkbookSource` record (`kind: workbook`, `uploadedAt`, `rendererVersion`, `workbooks` with file name, folder, size, SHA-256 and counts) and the optional `workbooks` list on an upload record; the key `workbook__<project id>@<16 hex>` beside the upload key; a new migration that widens the `projects.source_kind` check to `workbook` with `source_url`, `ref` and `subpath` empty; the run manifest records the kind, hash and renderer version (RF-126); `pinnedSourceOf` treats `workbook` as `upload` (evidence pages). No behaviour change for `github` or `upload`.
 - **Review probes**: a workbook record with GitHub fields (refused at parse); an upload record with an empty `workbooks` list and one without it (both read the same); a key with the upload prefix read as a workbook (refused); a GitHub run manifest (byte-identical to main); the migration on a database holding `github` and `upload` rows.
@@ -3634,7 +3634,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-37
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `src/infrastructure/sources/zip-entry-plan.ts` and its tests; the zip fixtures of P3-37; RF-129 (as changed by DEC-151); the verdict on #608.
 - **Do**: the per-entry ratio check (default 200 : 1, RST-1912) applies only to entries whose uncompressed size is above 4 MiB; add an archive-wide check of 200 : 1 on the total uncompressed to the total compressed size, applied when the total uncompressed size is above 64 MiB, with the same code; both thresholds are named constants next to the ratio limit; `__MACOSX/` joins `.git/`, `node_modules/`, `bin/` and `obj/` in the folders left out at extraction and counted (at any depth, as the others are, so a project folder literally named `__MACOSX` below the top level is left out too; the decision is recorded in the test name).
 - **Review probes**: a 1 MiB file of one repeated byte (accepted); a 5 MiB entry at 300 : 1 (refused RST-1912); many small entries totalling above 64 MiB at 300 : 1 overall (refused); a `__MACOSX/` tree (left out and counted); a project folder literally named `__MACOSX` below the top level (left out too); an archive of 60 MiB at 300 : 1 overall made of small entries (accepted, below the archive threshold).
