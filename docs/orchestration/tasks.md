@@ -2909,7 +2909,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: L
 - **Depends on**: P2-01
 - **Gate**: owner (RFC-003 merged into docs/spec)
-- **Status**: In progress
+- **Status**: Done
 - **Reads**: RFC-003 once the owner merges it; P2-01 (resume), P2-02 (verifier judgement), ADR-005, ADR-007.
 - **Do**: as RFC-003 decides. The owner asked for a loop that goes back over claims that were not confirmed, so that the system ends up fully understood. On the owner's run of 2026-10-18 (Ollama gemma4:e4b), 118 claims were judged: 68 Supported and 50 Rejected. Others stayed Unverified. The readers read 47 of 79 files, about 12% of the area tokens.
 - **Delivers**: per RFC-003.
@@ -3069,7 +3069,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-04, P3-08, P3-10, P3-11
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: `docs/roadmap.md` (P3 exit criteria); `docs/process-flows.md` flows 1 and 7.
 - **Do**: journeys from a GitHub URL to a downloaded hand-off package with a saved brief; `docs/verification/r1-matrix.md` covering every release-1 requirement; the pyramid for the release; gaps listed for the orchestrator to file as follow-up cards.
 - **Delivers**: journey specs, the matrix.
@@ -3199,7 +3199,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-14, P3-21, P2-23
 - **Gate**: none
-- **Status**: Todo
+- **Status**: In review
 - **Reads**: P3-12; the demo planning brief.
 - **Do**: an end-to-end journey that runs understand and plan on the demo with recorded responses and checks the whole documentation set (spec with flows, screens and data model; PRD, TRD, data model, API contract, flows, UX, implementation plan) and the report diagrams; publish the demo package with the sample report (RF-800) for the owner to read; record the owner's review changes as follow-up cards.
 - **Delivers**: the journey, the published sample, the review notes.
@@ -3277,7 +3277,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-27
 - **Gate**: owner (RFC-002 merged into docs/spec)
-- **Status**: In review
+- **Status**: Done
 - **Reads**: RFC-002 once the owner merges it; Plan setup (P3-08, P3-11); the run page.
 - **Do**: as RFC-002 decides. The owner asked that, after the understand run and its questions, the plan setup becomes the next step of the same flow and the final package is the result. Today understand and plan are separate pages that do not point to each other.
 - **Delivers**: per RFC-002.
@@ -3303,7 +3303,7 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: M
 - **Depends on**: P3-28
 - **Gate**: none
-- **Status**: Todo
+- **Status**: Done
 - **Reads**: RF-615, RF-1015, DEC-142, DEC-143, docs/rfc/RFC-002-plan-as-a-run-step.md; the run page and Plan setup after P3-28.
 - **Do**: the journey strip of RF-615 on the understand run page, on Plan setup and on the plan run page. It shows scan, understand, questions, brief, estimate, plan and package, each with its state (done, current, locked with a reason, failed with its code, or out of date), its cost, and one next action. A failed plan offers "Try the plan again", which leads to a new estimate. A stopped understand run locks the plan steps and offers Resume. When the brief or the source run changes, the package is marked out of date.
 - **Delivers**: the component, its wiring, component tests of every state, and an e2e test of the failure paths with the fake provider.
@@ -3342,9 +3342,22 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Size**: S
 - **Depends on**: P3-27
 - **Gate**: none
-- **Status**: In review
+- **Status**: Done
 - **Reads**: the owner's choice B of 2026-10-18; `src/application/use-cases/build-plan.ts` (the onCutOff path); the P3-27 card and PR #568.
 - **Do**: When a planner answer is still cut off after its continuations (onCutOff path in `src/application/use-cases/build-plan.ts`), keep the partial document and: (1) open the document with an "Incomplete" notice that names the output-token limit it hit and the setting to raise (Project settings > Planner max output tokens), with no model text in the notice; (2) flag that document as incomplete in the hand-off package manifest (a per-document field), and list it in the package README/index; (3) end the plan run "completed with warnings" (the existing run warning is kept) and show on the run page which document is incomplete; (4) leave a document that is not cut off unchanged (no notice, no flag).
 - **Delivers**: unit tests for the notice and the manifest flag; a use-case test with a fake planner that stays cut off; a snapshot of the package index.
 - **Done when**: those tests pass; the existing P3-27 tests still pass; no docs/spec or decision-log edits.
 - **Refs**: RF-604, RST-1805, P3-27 (#568), PR #583.
+
+### P3-34 - Follow-up: draw entity relations in the data model and ER diagram
+
+- **Difficulty**: 6 (sonnet)
+- **Size**: S
+- **Depends on**: P3-22
+- **Gate**: none
+- **Status**: Done
+- **Reads**: the P3-22 verifier comment on PR #588; `src/domain/diagrams/entity-model.ts`.
+- **Do**: derive entity relations from Supported ENT claims that name another entity (none from Rejected or unverified claims, no guessed cardinality); draw them in `data-model.md` and the ER diagram with unknown cardinality and list each under "to confirm"; keep the Mermaid label rules. Add the HTML wireframe Incomplete mark to the documentation-set test support, and make the RF-262/263 journey assert the ENT-002 -> ENT-001 relation.
+- **Delivers**: test-first relation derivation, the journey assertion and the Incomplete-mark case.
+- **Done when**: every RF-262 scenario has a passing test; the P3-22 journey asserts the relation; no docs/spec edits.
+- **Refs**: RF-261, RF-262, RF-263, P3-22 (#588) verifier, issue #589, PR #591.
