@@ -38,11 +38,12 @@ const packageFiles = [
   'sources.md',
 ] as const;
 
-/** The marks P3-33 puts on a document whose planner answer stayed cut off. */
+/** The marks P3-33 puts on a document whose planner answer stayed cut off; a wireframe page has the HTML one. */
 const incompleteMarks = [
   /^> \*\*Incomplete\.\*\*/mu,
   /^# Incomplete\./mu,
   /^## Incomplete documents/mu,
+  /^<p class="box"><strong>Incomplete\.<\/strong>/mu,
 ];
 
 function problemsOfFile(where: string, files: Files, path: string): string[] {
