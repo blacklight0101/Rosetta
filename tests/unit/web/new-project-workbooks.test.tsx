@@ -127,9 +127,11 @@ it('RF-150 a name of spaces falls back to the first file name; nothing is sent w
 it('RF-150 a file named only .xlsx has no name to start from, so nothing is sent until one is typed', async () => {
   const server = installFakeUploadServer();
   const view = renderWorkbookTab(happyAnswers());
-  await chooseValid('.xlsx');
+  chooseFiles(workbookFile('.xlsx'));
 
-  expect(sendButton().getAttribute('title')).toBe('Enter a project name.');
+  await waitFor(() => {
+    expect(sendButton().getAttribute('title')).toBe('Enter a project name.');
+  });
   fireEvent.submit(formOf());
 
   await new Promise((resolve) => setTimeout(resolve, 20));
