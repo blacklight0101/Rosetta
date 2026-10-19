@@ -69,7 +69,7 @@ it('RF-152 returns comments with their address and text but never an author', as
     extraParts: [
       {
         name: 'xl/comments1.xml',
-        data: '<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><authors><author>Somebody Real</author></authors><commentList><comment ref="B2" authorId="0"><text><r><t>Check </t></r><r><t>this</t></r></text></comment></commentList></comments>',
+        data: '<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><authors><author><t>Somebody Real</t></author></authors><commentList><comment ref="B2" authorId="0"><text><r><t>Check </t></r><r><t>this</t></r></text></comment></commentList></comments>',
       },
     ],
   });

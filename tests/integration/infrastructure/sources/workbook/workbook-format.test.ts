@@ -111,18 +111,24 @@ it('RF-151 refuses a sheet whose relationship id the rels do not list', async ()
       '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="A" sheetId="1" r:id="rId99"/></sheets></workbook>',
   });
 
-  expect((await failureOf(bytes)).code).toBe('RST-1927');
+  const failure = await failureOf(bytes);
+
+  expect(failure.code).toBe('RST-1927');
+  expect(failure.message).toContain('xl/_rels/workbook.xml.rels');
 });
 
-it('RF-151 refuses a zip with damaged data with RST-1927', async () => {
+it('RF-151 refuses a part whose compressed data is damaged with RST-1927 naming it', async () => {
   const bytes = await buildWorkbook({ sheets: [{ name: 'S' }] });
-  const damaged = Buffer.concat([
-    bytes.subarray(0, 60),
-    Buffer.alloc(40, 0xff),
-    bytes.subarray(100),
-  ]);
+  const nameAt = bytes.indexOf('xl/workbook.xml');
+  const extraLength = bytes.readUInt16LE(nameAt - 2);
+  const dataAt = nameAt + 'xl/workbook.xml'.length + extraLength;
+  const damaged = Buffer.from(bytes);
+  damaged.fill(0xff, dataAt, dataAt + 20);
 
-  expect((await failureOf(damaged)).code).toBe('RST-1927');
+  const failure = await failureOf(damaged);
+
+  expect(failure.code).toBe('RST-1927');
+  expect(failure.message).toContain('xl/workbook.xml');
 });
 
 it('RF-151 stops a read whose signal is aborted', async () => {

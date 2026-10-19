@@ -2,7 +2,8 @@
  * Layer rules of docs/architecture.md section 3 and docs/conventions.md section 10
  * (ADR-009, ADR-011, RNF-013).
  */
-const sdkPackages = '(openai|@anthropic-ai/sdk|web-tree-sitter|tree-sitter-c-sharp|yazl|yauzl|pg)';
+const sdkPackages =
+  '(openai|@anthropic-ai/sdk|web-tree-sitter|tree-sitter-c-sharp|yazl|yauzl|saxes|cfb|pg)';
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -74,7 +75,8 @@ module.exports = {
     },
     {
       name: 'sdks-only-in-infrastructure',
-      comment: 'provider SDKs, web-tree-sitter, yazl, yauzl and pg only from src/infrastructure',
+      comment:
+        'provider SDKs, web-tree-sitter, yazl, yauzl, saxes, cfb and pg only from src/infrastructure',
       severity: 'error',
       from: { path: '^src/', pathNot: '^src/infrastructure/' },
       to: { path: `node_modules/${sdkPackages}/` },
@@ -121,6 +123,13 @@ module.exports = {
       to: {
         path: '^(web-tree-sitter|tree-sitter-c-sharp)(/|$)|node_modules/(web-tree-sitter|tree-sitter-c-sharp)/',
       },
+    },
+    {
+      name: 'workbook-parsers-only-in-workbook-reader',
+      comment: 'saxes and cfb only from src/infrastructure/sources/workbook/ (ADR-023)',
+      severity: 'error',
+      from: { path: '^src/', pathNot: '^src/infrastructure/sources/workbook/' },
+      to: { path: 'node_modules/(saxes|cfb)/' },
     },
     {
       name: 'tar-only-in-github',

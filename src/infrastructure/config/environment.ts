@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
 import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { whole } from './whole-number.js';
+import { WORKBOOK_FIELDS, workbookSettings, type WorkbookSettings } from './workbook-settings.js';
 import { defaultParseBudgetMs, maxParseBudgetMs } from '../scan/packs/parse-budget.js';
 
 // RF-1305: all server configuration comes from the environment, is validated once at start-up
@@ -10,7 +12,7 @@ import { defaultParseBudgetMs, maxParseBudgetMs } from '../scan/packs/parse-budg
 export type EnvironmentSource = Readonly<Record<string, string | undefined>>;
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-export interface Environment {
+export interface Environment extends WorkbookSettings {
   readonly databaseUrl: string;
   readonly secretKey: string;
   readonly secretKeyPrevious: string | undefined;
@@ -30,12 +32,6 @@ export interface Environment {
   readonly scanParseBudgetMs: number;
   /** The largest zip a user may upload, in MB (RF-129, DEC-149). */
   readonly uploadMaxMb: number;
-  /** Most workbooks in one upload (RF-151, Q-32). */
-  readonly workbookMaxFiles: number;
-  /** Most sheets in one workbook (RF-151, Q-32). */
-  readonly workbookMaxSheets: number;
-  /** Most non-empty cells across the workbooks of a project (RF-151, Q-32). */
-  readonly workbookMaxCells: number;
   readonly appDbPassword: string | undefined;
   readonly migratorDbPassword: string | undefined;
   readonly dbAdminPassword: string | undefined;
@@ -100,14 +96,6 @@ function text(rule?: { check: (value: string) => boolean; message: string }): z.
   return rule === undefined ? base : base.refine(rule.check, { error: rule.message });
 }
 
-function whole(minimum: number, maximum: number, message: string): z.ZodType<number> {
-  return z
-    .string({ error: 'is missing' })
-    .regex(/^\d{1,9}$/, { error: message })
-    .transform(Number)
-    .refine((value) => value >= minimum && value <= maximum, { error: message });
-}
-
 const postgresUrl = { check: isPostgresUrl, message: 'must be a postgres:// or postgresql:// URL' };
 const secretKey = {
   check: isSecretKey,
@@ -157,6 +145,7 @@ const SCHEMA = z.object({
     MAX_UPLOAD_MB,
     `must be a whole number of megabytes from 1 to ${String(MAX_UPLOAD_MB)}`,
   ).optional(),
+  ...WORKBOOK_FIELDS,
   ROSETTA_APP_DB_PASSWORD: text().optional(),
   ROSETTA_MIGRATOR_DB_PASSWORD: text().optional(),
   ROSETTA_DB_ADMIN_PASSWORD: text().optional(),
@@ -216,9 +205,7 @@ function toEnvironment(parsed: Parsed): Environment {
     trustProxy: parsed.ROSETTA_TRUST_PROXY ?? 0,
     scanParseBudgetMs: parsed.ROSETTA_SCAN_PARSE_BUDGET_MS ?? defaultParseBudgetMs,
     uploadMaxMb: parsed.ROSETTA_UPLOAD_MAX_MB ?? MAX_UPLOAD_MB,
-    workbookMaxFiles: 20,
-    workbookMaxSheets: 200,
-    workbookMaxCells: 2_000_000,
+    ...workbookSettings(parsed),
     appDbPassword: parsed.ROSETTA_APP_DB_PASSWORD,
     migratorDbPassword: parsed.ROSETTA_MIGRATOR_DB_PASSWORD,
     dbAdminPassword: parsed.ROSETTA_DB_ADMIN_PASSWORD,

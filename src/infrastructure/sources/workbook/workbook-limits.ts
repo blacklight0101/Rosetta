@@ -15,7 +15,7 @@ export interface WorkbookLimits {
   readonly zip: ZipExtractionLimits;
 }
 
-export const MAX_PART_BYTES = 200 * 1024 * 1024;
+const MAX_PART_BYTES = 200 * 1024 * 1024;
 
 export const DEFAULT_WORKBOOK_LIMITS: WorkbookLimits = {
   maxFiles: 20,
