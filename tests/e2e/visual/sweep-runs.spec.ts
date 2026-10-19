@@ -101,6 +101,8 @@ test('RNF-010 the history with its runs and the delete confirmation', visual, as
   await openHistory(page);
   const row = runRow(page, '-understand');
   await expect(row).toContainText('Completed');
+  // RF-231: the measures beside the run are part of the page that must fit (P2-41).
+  await expect(row.getByTestId('run-measures')).toBeVisible();
   await expectPageInView(page);
 
   await row.getByRole('button', { name: /^Delete:/u }).click();

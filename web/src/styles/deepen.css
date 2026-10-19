@@ -134,5 +134,6 @@
 
 .rst-p241-line {
   display: block;
+  max-inline-size: 15rem;
   overflow-wrap: anywhere;
 }

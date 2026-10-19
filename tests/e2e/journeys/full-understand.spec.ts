@@ -171,10 +171,11 @@ test('RF-209 RF-231 a confirmed Deepen runs its rounds on the page and shows wha
     .click();
 
   await expect(page).not.toHaveURL(parentUrl);
-  await expect(runStatus(page)).toContainText('Completed', { timeout: 120_000 });
   const progress = page.getByRole('region', { name: 'Deepen progress' });
   await expect(progress).toContainText('Started from');
-  await expect(progress.getByTestId('deepen-progress-stop')).toBeVisible();
+  // The stop is the last of the Deepen events; the status of the page can lag the new run at first.
+  await expect(progress.getByTestId('deepen-progress-stop')).toBeVisible({ timeout: 120_000 });
+  await expect(runStatus(page)).toContainText('Completed', { timeout: 30_000 });
   const changes = page.getByRole('table', { name: 'Before and after this Deepen' });
   await expect(changes.getByTestId('change-coverage')).toBeVisible();
 
