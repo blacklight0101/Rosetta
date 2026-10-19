@@ -2,7 +2,7 @@
 
 |               |                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Status**    | Accepted 2026-10-19 by BlackLigth (blacklight0101): zip upload only, local and hosted, stronger cloud confirmation, built before the hand-in (DEC-148)                                                                                                                                                                                                             |
+| **Status**    | Accepted 2026-10-19 by BlackLigth (blacklight0101): zip upload only, local and hosted, stronger cloud confirmation, built before the hand-in (DEC-148); limits and open questions answered (DEC-149)                                                                                                                                                               |
 | **Date**      | 2026-10-19                                                                                                                                                                                                                                                                                                                                                         |
 | **Author**    | Claude Code (Claude Opus 5.5), drafted for BlackLigth (blacklight0101)                                                                                                                                                                                                                                                                                             |
 | **Reviewers** | BlackLigth (blacklight0101), product owner; decides and merges                                                                                                                                                                                                                                                                                                     |
@@ -92,6 +92,8 @@ sequenceDiagram
 
 Zip reading uses `yauzl` (the reading companion of `yazl`, which the zip export already uses), version 3.4.0 (MIT, one dependency `pend`, released 2026-06-07, so older than the two weeks of DEC-125); a new runtime dependency needs its own ADR, so it is recorded in ADR-022. The guards of RF-127 apply, plus the ones only a zip needs:
 
+- The upload limit `ROSETTA_UPLOAD_MAX_MB` (500 locally, 100 on the hosted deployment, DEC-149) on the archive, and a
+  free-space check before the upload starts (at least twice the limit free on the data folder).
 - Entry count and total uncompressed size limits (defaults 100,000 and 500 MB, as RF-127), checked against the
   central directory before extraction and again while writing, so a lying header cannot pass.
 - A compression ratio limit per entry (default 200 : 1) against zip bombs.
@@ -149,10 +151,10 @@ Documents touched: RFC-001 non-goal annotated, `CLAUDE.md` (the source rule), AD
 
 The text of RF-128..RF-134 is in `docs/spec/requirements.md` section 5.2.
 
-## 9. Open questions (defaults applied)
+## 9. Open questions (answered 2026-10-19, DEC-149)
 
-| Id   | Question                                                                | Default                                                        |
-| ---- | ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Q-29 | Archive size limit for an upload on the host, where storage costs money | the same 500 MB as locally; the host admin can lower it        |
-| Q-30 | Keep the uploaded zip itself after extraction                           | no: only the extracted, read-only tree is kept                 |
-| Q-31 | Offer the folder picker (option A) later                                | after release 1, if the owner asks; the source model allows it |
+| Id   | Question                                                                | Answer                                                                                                               |
+| ---- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Q-29 | Archive size limit for an upload on the host, where storage costs money | 100 MB hosted (Railway Hobby volumes stop at 5 GB), 500 MB locally; refused when free space is under twice the limit |
+| Q-30 | Keep the uploaded zip itself after extraction                           | no: the zip is deleted once extracted                                                                                |
+| Q-31 | Offer the folder picker (option A) later                                | not in release 1; the source model allows it                                                                         |
