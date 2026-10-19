@@ -10,14 +10,14 @@ it('RF-150 a workbook project reads name (Excel, N workbooks, date)', () => {
     sourceLabel({
       name: 'Pricing',
       sourceKind: 'workbook',
-      source: { ...when, workbookCount: 3 },
+      source: { ...when, workbooks: 3 },
     }),
   ).toBe('Pricing (Excel, 3 workbooks, 19 Oct 2026)');
 });
 
 it('RF-150 one workbook is singular', () => {
   expect(
-    sourceLabel({ name: 'Pricing', sourceKind: 'workbook', source: { ...when, workbookCount: 1 } }),
+    sourceLabel({ name: 'Pricing', sourceKind: 'workbook', source: { ...when, workbooks: 1 } }),
   ).toBe('Pricing (Excel, 1 workbook, 19 Oct 2026)');
 });
 

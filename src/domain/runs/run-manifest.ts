@@ -134,6 +134,8 @@ export function recordManifestSource(
     readonly uploadedAt?: string;
     /** A workbook run: the renderer that wrote the tree (RF-152). */
     readonly rendererVersion?: string;
+    /** A workbook run: the file names as sent (RF-156). */
+    readonly workbooks?: readonly string[];
   },
 ): Result<RunManifest, ManifestProblem> {
   if (manifest.endState !== null) return err('already-ended');

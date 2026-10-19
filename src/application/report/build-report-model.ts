@@ -48,17 +48,19 @@ export interface ReportInputs {
   readonly downloads?: ReportDownloadNames | undefined;
 }
 
-/** RF-131: the zip of an upload, or the repository of a GitHub run; null for a run with no manifest. */
+/** RF-131, RF-156: the zip of an upload, the workbooks of a workbook run, or the repository of a GitHub run; null for a run with no manifest. */
 function sourceOf(manifest: RunManifest | undefined): ReportSource | null {
   if (manifest === undefined) return null;
   const { source } = manifest;
-  if (sourceKindOf(source) === 'github') return { url: source.url, commitSha: source.commitSha };
-  return {
-    kind: 'upload',
+  const kind = sourceKindOf(source);
+  if (kind === 'github') return { url: source.url, commitSha: source.commitSha };
+  const facts = {
     fileName: source.fileName ?? null,
     uploadedAt: source.uploadedAt ?? null,
     snapshotHash: source.snapshotHash,
   };
+  if (kind === 'upload') return { kind, ...facts };
+  return { kind, ...facts, workbooks: source.workbooks ?? [] };
 }
 
 // RF-504, RF-506

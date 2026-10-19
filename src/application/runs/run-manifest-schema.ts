@@ -50,6 +50,7 @@ const manifestSchema = z.object({
     fileName: text.optional(),
     uploadedAt: text.optional(),
     rendererVersion: text.optional(),
+    workbooks: z.array(text).optional(),
   }),
   codemapHash: nullableText,
   options: z.record(z.string(), z.unknown()),

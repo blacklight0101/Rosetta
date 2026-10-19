@@ -82,8 +82,8 @@ export const projectSchema = z.object({
     .object({
       fileName: z.string(),
       uploadedAt: z.string(),
-      /** How many workbooks a workbook project holds (RF-150); absent until the server says. */
-      workbookCount: z.number().int().nonnegative().optional(),
+      /** RF-150, RF-157: how many workbooks the source holds (a workbook project or a zip), when the server says. */
+      workbooks: z.number().int().min(0).optional(),
     })
     .nullable()
     .default(null),

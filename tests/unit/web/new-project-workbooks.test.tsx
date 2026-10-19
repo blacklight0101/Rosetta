@@ -218,7 +218,7 @@ it('RF-150 the new project appears in the list as name (Excel, N workbooks, date
     source: {
       fileName: 'Pricing.xlsx',
       uploadedAt: '2026-10-19T08:00:00.000Z',
-      workbookCount: 3,
+      workbooks: 3,
     },
   });
   renderWorkbookTab({

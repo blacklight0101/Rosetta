@@ -41,6 +41,8 @@ export interface ResolvedSource {
   readonly uploadedAt?: string;
   /** A workbook: the renderer that wrote the tree (RF-152). */
   readonly rendererVersion?: string;
+  /** A workbook: the file names as sent, for the header of the outputs (RF-156). */
+  readonly workbooks?: readonly string[];
 }
 
 export interface RunOutcome {

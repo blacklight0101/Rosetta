@@ -12,3 +12,12 @@ export type SourceKind = (typeof SOURCE_KINDS)[number];
 export function sourceKindOf(record: { readonly kind?: SourceKind | undefined }): SourceKind {
   return record.kind ?? 'github';
 }
+
+/**
+ * RF-131, RF-156: whether the user sent the source (a zip or Excel workbooks) instead of naming a
+ * GitHub repository. Such a source has no repository or commit, its citations open Rosetta's own
+ * evidence pages, and it is private (RF-132, RF-157).
+ */
+export function isSentSource(kind: string | undefined): boolean {
+  return kind === 'upload' || kind === 'workbook';
+}

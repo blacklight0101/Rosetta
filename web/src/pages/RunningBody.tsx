@@ -41,12 +41,21 @@ type TabId = (typeof tabIds)[number];
 
 const tabOf = (id: string): TabId => tabIds.find((each) => each === id) ?? 'cards';
 
+/** The zip, or the Excel workbooks (RF-156), or what is said when the run records no name. */
+function sourceName(
+  fileName: string | undefined,
+  workbooks: readonly string[] | undefined,
+): string {
+  if (workbooks === undefined) return fileName ?? 'Uploaded zip';
+  return workbooks.length === 0 ? 'Excel workbooks' : workbooks.join(', ');
+}
+
 /** RF-131: the zip, the upload date and the snapshot hash, in place of a repository and a commit. */
 function UploadFacts(props: { readonly source: UploadSourceState }): JSX.Element {
-  const { fileName, uploadedAt, snapshotHash } = props.source;
+  const { fileName, workbooks, uploadedAt, snapshotHash } = props.source;
   return (
     <>
-      <span class="rst-mono">{fileName ?? 'Uploaded zip'}</span>
+      <span class="rst-mono">{sourceName(fileName, workbooks)}</span>
       {uploadedAt === undefined ? null : <span>{`uploaded ${uploadedAt.slice(0, 10)}`}</span>}
       {snapshotHash === undefined ? null : (
         <span class="rst-mono" title={snapshotHash}>

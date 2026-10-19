@@ -31,9 +31,9 @@ type Labelled = Pick<Project, 'name' | 'sourceKind' | 'source'>;
 /** `3 workbooks, 19 Oct 2026`; the count is left out until the server reports it (RF-150). */
 function workbookWhen(source: NonNullable<Labelled['source']>): string {
   const when = uploadDateText(source.uploadedAt);
-  const { workbookCount } = source;
-  if (workbookCount === undefined) return when;
-  return `${String(workbookCount)} ${workbookCount === 1 ? 'workbook' : 'workbooks'}, ${when}`;
+  const { workbooks } = source;
+  if (workbooks === undefined) return when;
+  return `${String(workbooks)} ${workbooks === 1 ? 'workbook' : 'workbooks'}, ${when}`;
 }
 
 // RF-128, RF-150

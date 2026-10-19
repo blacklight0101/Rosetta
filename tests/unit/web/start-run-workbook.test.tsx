@@ -25,7 +25,7 @@ afterEach(() => {
 const stored = {
   fileName: 'Pricing.xlsx',
   uploadedAt: '2026-10-19T08:00:00.000Z',
-  workbookCount: 3,
+  workbooks: 3,
 };
 const book = (source: unknown): Response =>
   json(200, projectOf('p-1', 'Pricing', { sourceKind: 'workbook', sourceUrl: '', source }));

@@ -41,8 +41,8 @@ export function WorkbookSourceSection(props: WorkbookSourceProps): JSX.Element {
         onStored={(summary) => {
           const { uploadedAt = new Date().toISOString() } = summary;
           const fileName = summary.workbooks[0]?.name ?? project.name;
-          const workbookCount = summary.workbooks.length;
-          onStored({ ...project, source: { fileName, uploadedAt, workbookCount } });
+          const workbooks = summary.workbooks.length;
+          onStored({ ...project, source: { fileName, uploadedAt, workbooks } });
         }}
       />
     </section>
