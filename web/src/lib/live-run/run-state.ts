@@ -59,12 +59,26 @@ export interface LogLine {
   readonly text: string;
 }
 
-export interface SourceState {
+/** A public GitHub repository pinned to a commit; an absent `kind` means GitHub. */
+export interface GithubSourceState {
+  readonly kind?: 'github' | undefined;
   readonly owner: string;
   readonly repo: string;
   readonly subpath: string;
   readonly commitSha: string | undefined;
 }
+
+/** RF-131: a zip the user uploaded; it has no repository or commit. */
+export interface UploadSourceState {
+  readonly kind: 'upload';
+  readonly fileName: string | undefined;
+  readonly uploadedAt: string | undefined;
+  readonly snapshotHash: string | undefined;
+  /** The run the report belongs to; the events do not carry it, the page sets it. */
+  readonly runId: string | undefined;
+}
+
+export type SourceState = GithubSourceState | UploadSourceState;
 
 export interface CapsState {
   readonly maxCostMicros: number;

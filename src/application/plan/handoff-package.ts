@@ -10,6 +10,7 @@ import type { PrdContent } from '../../domain/planning/prd-content.js';
 import type { ExcludedClaim, SourceCard } from '../../domain/planning/plan-sources.js';
 import type { PlanningBrief } from '../../domain/planning/planning-brief.js';
 import type { ScanShapes } from '../../domain/planning/scan-shapes.js';
+import type { UploadFacts } from '../../domain/sources/upload-facts.js';
 
 // RF-601..RF-604, data-model.md section 3.17: everything the hand-off package is written from. The
 // planner's content, checked; the cards it may cite with their supported claims and citations;
@@ -45,6 +46,8 @@ interface UnansweredQuestion {
 export interface HandoffPackage {
   /** The legacy repository and the commit the cards were read at. */
   readonly repository: { readonly url: string; readonly commitSha: string | null };
+  /** RF-131: set for an uploaded zip, which has no repository address or commit to name. */
+  readonly upload?: UploadFacts | undefined;
   /** The folder name of the understand run the package was planned from. */
   readonly sourceRun: string;
   readonly brief: PlanningBrief;

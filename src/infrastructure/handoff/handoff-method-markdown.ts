@@ -7,6 +7,7 @@ import { metricsRuleLines } from './handoff-metrics-markdown.js';
 import { operationsLines } from './handoff-parallel-markdown.js';
 import { behaviourRuleLines } from './handoff-behaviour-markdown.js';
 import { qualityRuleLines } from './handoff-quality-markdown.js';
+import { uploadSentence } from '../../domain/sources/upload-facts.js';
 
 // RF-607, RF-608, RF-609, RF-612, RF-636, DEC-75, DEC-76: the working rules of the package. The
 // conventions document turns each chosen principle into a rule with its reason and its check, and
@@ -78,14 +79,19 @@ function bandLines(): string[] {
   );
 }
 
+/** The system the package replaces: its repository address, or the uploaded zip (RF-131). */
+function replacedSystem(handoff: HandoffPackage, esc: MarkdownEscaper): string {
+  const { repository, upload } = handoff;
+  return esc.inline(upload === undefined ? repository.url : uploadSentence(upload));
+}
+
 // RF-612
 export function agentsMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
-  const { repository } = handoff;
   const strategy = migrationStrategyInfo[handoff.brief.migration];
   return [
     '# AGENTS.md',
     '',
-    `Instructions for the AI agents (and the people) who build the new system that replaces ${esc.inline(repository.url)}. The requirements, the architecture and the task cards are in the [README](${handoffFiles.readme}) reading order; the rules below come from the planning brief.`,
+    `Instructions for the AI agents (and the people) who build the new system that replaces ${replacedSystem(handoff, esc)}. The requirements, the architecture and the task cards are in the [README](${handoffFiles.readme}) reading order; the rules below come from the planning brief.`,
     '',
     '## Rules from the chosen principles',
     '',

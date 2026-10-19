@@ -46,7 +46,7 @@ function Citations(props: {
     <ul class="rst-live-claim__lines" aria-label="Cited lines">
       {props.claim.citations.map((citation) => {
         const label = formatCitationRef(citation);
-        const href = citationHref(props.source, citation);
+        const href = citationHref(props.source, citation, props.claim);
         return (
           <li key={label} class="rst-mono">
             {href === undefined ? (

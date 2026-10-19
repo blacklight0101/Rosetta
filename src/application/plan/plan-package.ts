@@ -31,12 +31,13 @@ export function handoffPackageOf(
   documents: PlannedDocuments & { readonly shapes: ScanShapes | undefined },
 ): HandoffPackage {
   const { prd, dataModel, flows, apiContract, ux, incomplete } = documents;
-  const { brief, sourceRun, project, cards, questions } = inputs;
+  const { brief, sourceRun, project, cards, questions, upload } = inputs;
   const sources = supportedCards(cards);
   const supported = new Set(sources.map((card) => card.id));
   const fromBrief = briefDecisions(brief, catalogue, supported, content.decisions.length);
   return {
     repository: { url: project.sourceUrl, commitSha: sourceRun.commitSha },
+    ...(upload === undefined ? {} : { upload }),
     sourceRun: sourceRun.runKey,
     brief,
     style: principleOf(catalogue, brief.architecture.style),

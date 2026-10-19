@@ -1,6 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { RunEvent } from '../../../web/src/api/run-events.js';
 import { citationHref } from '../../../web/src/lib/live-run/claim-links.js';
+import { stepperOf } from '../../../web/src/lib/live-run/run-stepper.js';
 import {
   cardProposed,
   citationChecked,
@@ -106,6 +108,23 @@ describe('the source of an uploaded run in the events', () => {
 
   it('RF-1004 still reads a GitHub source with no kind', () => {
     expect(stateAfter(ev(1, 'run.started', startedData)).source).toEqual(sourceState);
+  });
+});
+
+describe('the stepper of an uploaded scan run', () => {
+  const row = { stage: 'scan', commitSha: null, reportBuilt: false };
+  const snapshotStatus = (event: RunEvent): string | undefined =>
+    stepperOf(row, stateAfter(event), { kind: 'running' }).find((each) => each.name === 'Snapshot')
+      ?.status;
+
+  it('RF-131 takes the snapshot as done once the hash of the zip is known', () => {
+    expect(snapshotStatus(ev(1, 'run.started', uploadEvent))).toBe('done');
+  });
+
+  it('RF-131 keeps the snapshot current while the upload has no hash', () => {
+    const source = { ...uploadEvent.source, snapshotHash: null };
+
+    expect(snapshotStatus(ev(1, 'run.started', { ...uploadEvent, source }))).toBe('current');
   });
 });
 

@@ -53,12 +53,12 @@ describe('the card file of an uploaded project', () => {
   });
 
   it('RF-131 shows a citation whose path leaves the project as plain text', () => {
-    const [card] = oneCard('../../etc/passwd');
+    const [card] = oneCard('../../outside/Checkout.cs');
     if (card === undefined) throw new Error('fixture');
 
     const text = renderCardFile(card, upload, masker, [card]);
 
-    expect(text).toContain('- ../../etc/passwd:10-24');
+    expect(text).toContain('- ../../outside/Checkout.cs:10-24');
     expect(text).not.toContain('](../../report/');
   });
 });

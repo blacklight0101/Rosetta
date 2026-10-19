@@ -1,4 +1,5 @@
 import type { Citation } from '../../domain/cards/citation.js';
+import type { GithubReportSource } from '../../application/report/report-model.js';
 import { buildPermalink } from '../../domain/sources/permalink.js';
 import { parseCommitSha } from '../../domain/sources/commit-sha.js';
 
@@ -16,9 +17,7 @@ export interface SourceLink {
 }
 
 /** The link to the tree of the commit, or undefined when the address or the commit is unusable. */
-export function sourceLink(
-  source: { readonly url: string; readonly commitSha: string | null } | null,
-): SourceLink | undefined {
+export function sourceLink(source: GithubReportSource | null): SourceLink | undefined {
   if (source === null) return undefined;
   const { url, commitSha } = source;
   if (commitSha === null || !COMMIT.test(commitSha)) return undefined;
@@ -36,7 +35,7 @@ export function sourceLink(
  * wrote; undefined when the address, the commit or the citation is unusable.
  */
 export function citationPermalink(
-  source: { readonly url: string; readonly commitSha: string | null } | null,
+  source: GithubReportSource | null,
   citation: Citation,
 ): string | undefined {
   const sha = source?.commitSha;

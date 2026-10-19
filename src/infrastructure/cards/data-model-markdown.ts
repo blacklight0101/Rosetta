@@ -3,7 +3,7 @@ import { entityDiagram, type EntityModel } from '../../domain/diagrams/entity-di
 import { entityModelOf } from '../../domain/diagrams/entity-model.js';
 import type { TextMasker } from '../guards/secret-masker.js';
 import { cardPath } from './card-markdown.js';
-import { citationLink, type PermalinkSource } from './citation-link.js';
+import { citationLink, FROM_RUN_FOLDER, type PermalinkSource } from './citation-link.js';
 import { maskCardText } from './mask-card-text.js';
 import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 
@@ -15,7 +15,10 @@ import { markdownEscaper, type MarkdownEscaper } from './markdown-text.js';
 
 function claimLines(card: Card, source: PermalinkSource, esc: MarkdownEscaper): string[] {
   return card.claims.map((claim) => {
-    const evidence = claim.citations.map((citation) => citationLink(citation, source)).join(', ');
+    const spot = { cardId: card.id, claimId: claim.claimId, base: FROM_RUN_FOLDER };
+    const evidence = claim.citations
+      .map((citation) => citationLink(citation, source, spot))
+      .join(', ');
     const cited = evidence === '' ? '' : ` (${evidence})`;
     return `- ${claim.claimId} [${claim.status}] ${esc.inline(claim.text)}${cited}`;
   });

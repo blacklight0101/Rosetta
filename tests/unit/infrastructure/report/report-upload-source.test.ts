@@ -44,7 +44,7 @@ describe('report.md of an uploaded project', () => {
 
     const row = text.split('\n').find((line) => line.startsWith('| Source |')) ?? '';
     expect(row).not.toContain('<img');
-    expect(row).toContain('&lt;img src=x onerror=alert\\(1\\)&gt;');
+    expect(row.replaceAll('\\', '')).toContain('&lt;img src=x onerror=alert(1)&gt;');
     expect(row.replaceAll('\\|', '').split('|')).toHaveLength(4);
     expect(text).not.toMatch(/\]\(javascript:/u);
   });

@@ -7,6 +7,7 @@ import type {
 import type { ReportModel } from '../../../application/report/report-model.js';
 import { formatCitation } from '../../../domain/cards/citation.js';
 import { renderPage } from '../page-shell.js';
+import { evidenceAnchor } from '../../../domain/sources/evidence-link.js';
 import { citationPermalink } from '../report-source.js';
 import { STATUS_GLYPHS, statusLabel } from './claim-status.js';
 import { areaLink, Crumbs } from './crumbs.js';
@@ -20,15 +21,39 @@ import { renderStatic } from './static-render.js';
 // lines with context and the permalink to the exact lines on GitHub. Card, claim, reason and path
 // are model or repository text and are shown as text; the lines of code are text and nothing else.
 
+interface CitationLink {
+  readonly href: string;
+  readonly text: string;
+  /** RF-131: the id the page gives the citation, for an uploaded project. */
+  readonly id?: string;
+}
+
+/** RF-125: the permalink to GitHub; RF-131: for an upload, the link to the citation on this page. */
+function linkOf(
+  model: ReportModel,
+  claimId: string,
+  citation: ReportCitation,
+): CitationLink | undefined {
+  if (model.source?.kind === 'upload') {
+    const anchor = evidenceAnchor(claimId, citation);
+    return anchor === undefined
+      ? undefined
+      : { href: `#${anchor}`, text: 'Link to these lines', id: anchor };
+  }
+  const href = citationPermalink(model.source, citation);
+  return href === undefined ? undefined : { href, text: 'View on GitHub' };
+}
+
 function Citation(props: {
   readonly model: ReportModel;
+  readonly claimId: string;
   readonly citation: ReportCitation;
 }): ComponentChild {
-  const { model, citation } = props;
-  const link = citationPermalink(model.source, citation);
+  const { model, claimId, citation } = props;
+  const link = linkOf(model, claimId, citation);
   return h(
     'li',
-    { class: 'citation' },
+    { class: 'citation', id: link?.id },
     h(
       'p',
       { class: 'citation-head' },
@@ -37,8 +62,8 @@ function Citation(props: {
         ? null
         : h(
             'a',
-            { class: 'permalink', href: link, rel: 'noopener noreferrer nofollow' },
-            'View on GitHub',
+            { class: 'permalink', href: link.href, rel: 'noopener noreferrer nofollow' },
+            link.text,
           ),
     ),
     h(Excerpt, { citation }),
@@ -77,7 +102,7 @@ function Claim(props: {
     h(
       'ul',
       { class: 'citations' },
-      claim.citations.map((citation) => h(Citation, { model, citation })),
+      claim.citations.map((citation) => h(Citation, { model, claimId: claim.claimId, citation })),
     ),
   );
 }

@@ -37,7 +37,7 @@ describe('the package of an uploaded project', () => {
       `Planned from the analysis of the uploaded zip OrderDesk.zip (uploaded ${upload.uploadedAt}, snapshot ${uploadHash})`,
     );
     expect(plain(files['AGENTS.md'])).toContain(
-      'build the new system that replaces the uploaded zip OrderDesk.zip.',
+      `build the new system that replaces the uploaded zip OrderDesk.zip (uploaded ${upload.uploadedAt}, snapshot ${uploadHash}).`,
     );
   });
 
@@ -62,9 +62,10 @@ describe('the files of the package of an uploaded project', () => {
   it('RF-131 shows a file name that is markup, a link or a table cell as text', () => {
     const files = filesOf(hostileFileName);
 
-    const text = `${files['README.md'] ?? ''}\n${files['AGENTS.md'] ?? ''}`;
+    const raw = [files['README.md'], files['AGENTS.md']].join('\n');
+    const text = plain(raw);
     expect(text).not.toContain('<img');
-    expect(text).not.toMatch(/\]\(javascript:/u);
+    expect(raw).not.toMatch(/\]\(javascript:/u);
     expect(text.match(/&lt;img src=x/gu)).toHaveLength(2);
   });
 
