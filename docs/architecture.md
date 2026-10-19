@@ -944,6 +944,13 @@ a language pack, two users). They sign in through the sign-in page and use the p
 accounts are seeded (`seed.ts`, kinds `journey-*`). The test server's fake GitHub also knows `octo/ledger`, the COBOL
 fixture, for the language-without-pack journey (RF-112).
 
+**Release 1 journeys (P3-12).** `journeys/handoff-package.spec.ts` runs flows 1 and 7 end to end: from the address of
+`octo/webforms` through scan, understand, a planning brief saved in Plan setup and the plan run to the hand-off zip
+downloaded from the run page, which the spec unzips with `tests/support/zip-reader.ts` (steps in
+`support/handoff-journey.ts`). Its two journeys differ only in the brief, so the package's decisions, its `AGENTS.md`
+and its list of defaulted questions are checked against the saved brief. The evidence per requirement is in
+[docs/verification/r1-matrix.md](verification/r1-matrix.md), kept whole by `tests/integration/docs/r1-matrix.test.ts`.
+
 **Server key in the test server (P1-131).** `serve.ts` gives the test server a fake OpenAI key (`support/server-key.ts`, built
 from pieces, set in its environment only, never printed), so a user without a key of their own runs on the server key under
 the administrator's caps (RF-1106). `journeys/server-key-cap.spec.ts` saves a low run cap, runs, and puts the shared figures
