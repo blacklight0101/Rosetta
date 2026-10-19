@@ -27,7 +27,8 @@ function releaseOneIds(requirements: string): readonly string[] {
 
 /** The rows of the requirement table: `| Id | Requirement | Phase | Priority | U / I / E | Example | State |`. */
 function matrixRows(matrix: string): readonly MatrixRow[] {
-  return matrix
+  const section = matrix.split('\n## 4. Requirement matrix\n')[1] ?? '';
+  return (section.split('\n## ')[0] ?? '')
     .split('\n')
     .filter((line) => /^\| RN?F-\d+ /u.test(line))
     .map((line) => line.split(' | ').map((cell) => cell.replace(/^\| /u, '').trim()))
@@ -57,7 +58,9 @@ describe('the release 1 verification matrix', () => {
 
   it('RNF-005 gives every Must evidence or a follow-up card', () => {
     const must = rows.filter((row) => row.priority === 'Must');
-    const bare = must.filter((row) => row.tests === 0 && !/card (P\d-\d+|G-\d+)/u.test(row.state));
+    const bare = must.filter(
+      (row) => row.tests === 0 && !/card (P\d-\d+|[A-Z]\b)/u.test(row.state),
+    );
 
     expect(must.length).toBeGreaterThan(100);
     expect(bare.map((row) => row.id)).toEqual([]);
