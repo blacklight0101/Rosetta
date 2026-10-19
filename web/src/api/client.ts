@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import { errorBodySchema } from './schemas.js';
+import { sendBlob } from './upload-transport.js';
 
 // RNF-008, RF-1009: the typed API client. It sends the CSRF token on every state-changing request,
 // maps an error body to its code, plain message and next step, and never throws for an HTTP or
@@ -44,8 +45,21 @@ interface ApiRequest<T> {
   readonly onStatus?: (status: number) => void;
 }
 
+interface UploadRequest<T> {
+  /** Always under /api/, like every request. */
+  readonly path: string;
+  readonly file: Blob;
+  readonly contentType: string;
+  readonly schema: z.ZodType<T>;
+  /** Told how many bytes have gone out of how many (RF-128). */
+  readonly onProgress?: (loaded: number, total: number) => void;
+  readonly signal?: AbortSignal;
+}
+
 export interface ApiClient {
   request<T>(request: ApiRequest<T>): Promise<ApiResult<T>>;
+  /** Sends a file as the body of a PUT, with the CSRF token and progress; for a zip upload. */
+  upload<T>(request: UploadRequest<T>): Promise<ApiResult<T>>;
   /** The token `GET /api/session` or the sign-in answered; kept in memory only. */
   setCsrfToken(token: string): void;
 }
@@ -57,6 +71,8 @@ export interface ApiClientOptions {
 
 const csrfHeader = 'x-csrf-token';
 const defaultTimeoutMs = 15_000;
+/** A zip can be 500 MB on a slow line, so an upload waits far longer than other calls. */
+const uploadTimeoutMs = 30 * 60_000;
 /** RST-2006 is the catalogue's "unexpected error"; the wording is the client's own. */
 const unexpectedCode = 'RST-2006';
 /** RST-2009: the client could not reach Rosetta at all (a network failure or a timeout). */
@@ -89,6 +105,12 @@ const cancelled = (): ApiResult<never> =>
     cancelledCode,
     'The request was cancelled before Rosetta answered.',
     'Try the action again.',
+  );
+const outsideApi = (): ApiResult<never> =>
+  unexpected(
+    0,
+    'Rosetta refused a request to a path outside its API.',
+    'Reload the page. If it happens again, report the code.',
   );
 const unreadable = (status: number): ApiResult<never> =>
   unexpected(
@@ -131,6 +153,26 @@ function headersOf(request: ApiRequest<unknown>, csrfToken: string | undefined):
   return headers;
 }
 
+async function uploadFile<T>(
+  request: UploadRequest<T>,
+  csrfToken: string | undefined,
+): Promise<ApiResult<T>> {
+  if (!request.path.startsWith('/api/')) return outsideApi();
+  const outcome = await sendBlob({
+    method: 'PUT',
+    path: request.path,
+    file: request.file,
+    contentType: request.contentType,
+    csrfToken,
+    timeoutMs: uploadTimeoutMs,
+    signal: request.signal,
+    onProgress: request.onProgress,
+  });
+  if (outcome.kind === 'failed') return outcome.cancelled ? cancelled() : unreachable();
+  const text = outcome.text === '' ? null : outcome.text;
+  return parseAnswer(new Response(text, { status: outcome.status }), request.schema);
+}
+
 // RNF-008, RF-1009
 export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   const { timeoutMs = defaultTimeoutMs } = options;
@@ -141,14 +183,9 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
     setCsrfToken(token) {
       csrfToken = token;
     },
+    upload: (request) => uploadFile(request, csrfToken),
     async request<T>(request: ApiRequest<T>): Promise<ApiResult<T>> {
-      if (!request.path.startsWith('/api/')) {
-        return unexpected(
-          0,
-          'Rosetta refused a request to a path outside its API.',
-          'Reload the page. If it happens again, report the code.',
-        );
-      }
+      if (!request.path.startsWith('/api/')) return outsideApi();
       const headers = headersOf(request, csrfToken);
       const timeout = AbortSignal.timeout(request.timeoutMs ?? timeoutMs);
       const signal =
