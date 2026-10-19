@@ -5,12 +5,17 @@ import type {
   StoredProject,
 } from '../../application/ports/project-repository.js';
 import type { Project } from '../../application/projects/project.js';
+import { ERROR_CODES } from '../../domain/errors/codes.js';
+import { RosettaError } from '../../domain/errors/rosetta-error.js';
+import { hasValidSourceShape } from '../../domain/sources/source-shape.js';
 
 // Architecture section 7, RF-010, RF-1105: projects in memory, for unit tests. Passes the same
 // contract suite as PgProjectRepository: unique on user, source URL, ref and subpath; every
 // operation scoped by the owner; lists newest first, ties by id.
 
+/** A GitHub source is one project per user; an upload is only ever itself (RF-128). */
 function sourceKey(project: Project): string {
+  if (project.sourceKind === 'upload') return JSON.stringify(['upload', project.id]);
   return JSON.stringify([project.userId, project.sourceUrl, project.ref, project.subpath]);
 }
 
@@ -24,6 +29,11 @@ export class MemoryProjectRepository implements ProjectRepository {
   private readonly projects = new Map<string, Project>();
 
   insertOrFind(project: Project): Promise<StoredProject> {
+    if (!hasValidSourceShape(project.sourceKind, project)) {
+      return Promise.reject(
+        new RosettaError(ERROR_CODES.requestInvalid, 'An uploaded project has no source address.'),
+      );
+    }
     const existing = [...this.projects.values()].find(
       (stored) => sourceKey(stored) === sourceKey(project),
     );

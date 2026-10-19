@@ -16,7 +16,7 @@ import type { ProjectRepository } from '../ports/project-repository.js';
 import type { RunExecution, RunExecutor, RunOutcome } from '../ports/run-executor.js';
 import type { RunManifestStore } from '../ports/run-manifest-store.js';
 import type { ScanPipeline, ScanReport, ScanRequest } from '../ports/scan-pipeline.js';
-import type { Snapshot, SourceFetcher } from '../ports/source-fetcher.js';
+import type { GithubSnapshot, SourceFetcher } from '../ports/source-fetcher.js';
 import { scopeOf } from '../runs/run-scope.js';
 
 // RF-003, RF-005, RF-100, RF-121, RF-126, ADR-004, ADR-012: Run scan is the executor of the `scan`
@@ -132,7 +132,7 @@ export class RunScan implements RunExecutor {
   }
 
   /** Fetches the snapshot, records the source (RF-126) and publishes the two source events. */
-  private async fetch(execution: RunExecution): Promise<Snapshot> {
+  private async fetch(execution: RunExecution): Promise<GithubSnapshot> {
     const { source } = execution.manifest;
     const began = this.deps.clock.now().getTime();
     const snapshot = await this.deps.fetcher.fetch(

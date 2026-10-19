@@ -13,11 +13,12 @@ import { PROJECT_COLUMNS, toProject } from './project-rows.js';
 
 // Architecture section 7, ADR-016, RF-010, RF-1105: projects in PostgreSQL with parameterised SQL
 // only. Every statement filters on `user_id`, so another user's project id finds nothing. The
-// unique constraint `projects_source_key` makes the same source one project per user, also under
-// two parallel requests. A database failure is thrown as RST-2404 with the cause.
+// unique index `projects_source_key` makes the same GitHub source one project per user, also under
+// two parallel requests; uploads have no address, so any number of them can exist (RF-128, migration 0014). A database failure is thrown as RST-2404 with the
+// cause.
 
 const INSERT =
-  'INSERT INTO projects (id, user_id, name, source_url, ref, subpath, settings, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9) ON CONFLICT ON CONSTRAINT projects_source_key DO NOTHING';
+  "INSERT INTO projects (id, user_id, name, source_kind, source_url, ref, subpath, settings, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10) ON CONFLICT (user_id, source_url, ref, subpath) WHERE source_kind = 'github' DO NOTHING";
 const SELECT = 'SELECT ' + PROJECT_COLUMNS + ' FROM projects';
 const FIND_BY_SOURCE =
   SELECT + ' WHERE user_id = $1 AND source_url = $2 AND ref = $3 AND subpath = $4';
@@ -76,6 +77,7 @@ export class PgProjectRepository implements ProjectRepository {
       project.id,
       project.userId,
       project.name,
+      project.sourceKind,
       project.sourceUrl,
       project.ref,
       project.subpath,

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { RunManifest } from '../../domain/runs/run-manifest.js';
 import { RUN_END_STATES, RUN_STAGES } from '../../domain/runs/run-states.js';
+import { SOURCE_KINDS } from '../../domain/sources/source-kind.js';
 import { planningBriefSchema } from '../planning/planning-brief-schema.js';
 import { deepenRecordSchema } from './deepen-record-schema.js';
 
@@ -38,6 +39,7 @@ const manifestSchema = z.object({
   endState: z.enum(RUN_END_STATES).nullable(),
   resumedFrom: nullableText,
   source: z.object({
+    kind: z.enum(SOURCE_KINDS).optional(),
     url: text,
     owner: text,
     repo: text,

@@ -51,7 +51,13 @@ async function projectOf(parts: EvaluationParts, s: Pipeline, golden: GoldenSet)
   const stored = await s.projects.insertOrFind({
     ...{ id: parts.ids.uuid(), userId: account.id, name: `${source.owner}/${source.repo}` },
     ...{ sourceUrl: source.url, ref: source.commit, subpath: source.subpath },
-    ...{ settings: parts.settings, settingsVersion: 1, createdAt: now, updatedAt: now },
+    ...{
+      sourceKind: 'github',
+      settings: parts.settings,
+      settingsVersion: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
   });
   return { actor: { userId: account.id, role: 'user' }, projectId: stored.project.id };
 }

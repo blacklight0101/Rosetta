@@ -3,8 +3,8 @@ import type { Clock } from '../../application/ports/clock.js';
 import type { IdGenerator } from '../../application/ports/id-generator.js';
 import type { Logger } from '../../application/ports/logger.js';
 import type {
-  Snapshot,
-  SnapshotInfo,
+  GithubSnapshot,
+  GithubSnapshotInfo,
   SourceFetcher,
 } from '../../application/ports/source-fetcher.js';
 import { ERROR_CODES } from '../../domain/errors/codes.js';
@@ -68,7 +68,7 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
   private readonly logger: Logger;
   private readonly limits: ExtractionLimits;
   private readonly downloadTimeoutMs: number;
-  private readonly inFlight = new Map<string, Promise<Snapshot>>();
+  private readonly inFlight = new Map<string, Promise<GithubSnapshot>>();
 
   constructor(options: GitHubSnapshotFetcherOptions) {
     const client = new GitHubHttpClient({
@@ -85,7 +85,7 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
     this.downloadTimeoutMs = options.downloadTimeoutMs ?? DEFAULT_DOWNLOAD_TIMEOUT_MS;
   }
 
-  async fetch(ref: GitHubRepoRef, signal: AbortSignal): Promise<Snapshot> {
+  async fetch(ref: GitHubRepoRef, signal: AbortSignal): Promise<GithubSnapshot> {
     const pinned = ref.ref === undefined ? undefined : parseCommitSha(ref.ref);
     if (pinned?.ok === true) {
       const existing = await this.cached(snapshotKey(ref, pinned.value));
@@ -106,16 +106,26 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
   }
 
   /** The cached snapshot, or undefined; a damaged one is refused and logged as a security event. */
-  private async cached(key: string): Promise<Snapshot | undefined> {
+  private async cached(key: string): Promise<GithubSnapshot | undefined> {
     try {
-      return await this.store.readExisting(key);
+      return await this.readGithub(key);
     } catch (error) {
       await this.reportFailure(key, error);
       throw error;
     }
   }
 
-  private locked(key: string, work: () => Promise<Snapshot>): Promise<Snapshot> {
+  /** The snapshot cached under a GitHub key; an upload record there is a damaged cache (RF-130). */
+  private async readGithub(key: string): Promise<GithubSnapshot | undefined> {
+    const snapshot = await this.store.readExisting(key);
+    if (snapshot?.kind !== 'upload') return snapshot;
+    throw new RosettaError(
+      ERROR_CODES.snapshotEntryRefused,
+      `The cached snapshot ${key} is an upload, not a GitHub commit.`,
+    );
+  }
+
+  private locked(key: string, work: () => Promise<GithubSnapshot>): Promise<GithubSnapshot> {
     const running = this.inFlight.get(key);
     if (running !== undefined) return running;
     const task = work().finally(() => this.inFlight.delete(key));
@@ -123,13 +133,13 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
     return task;
   }
 
-  private async download(target: DownloadTarget, signal: AbortSignal): Promise<Snapshot> {
+  private async download(target: DownloadTarget, signal: AbortSignal): Promise<GithubSnapshot> {
     const partial = await this.store.createPartial(this.idGenerator.uuid());
     try {
       const body = await this.openArchive(target, signal);
       const extracted = await extractTarball(body, partial.filesDir, this.limits, signal);
       const summary = await this.store.inspect(partial.filesDir);
-      const info: SnapshotInfo = {
+      const info: GithubSnapshotInfo = {
         url: repositoryUrl(target.repository),
         owner: target.repository.owner,
         repo: target.repository.repo,
@@ -169,7 +179,11 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
     return response.body;
   }
 
-  private async publish(partialDir: string, key: string, info: SnapshotInfo): Promise<Snapshot> {
+  private async publish(
+    partialDir: string,
+    key: string,
+    info: GithubSnapshotInfo,
+  ): Promise<GithubSnapshot> {
     const moved = await this.store.commit(partialDir, key);
     if (moved) {
       await this.store.makeReadOnly(this.store.snapshotDir(key));
@@ -185,7 +199,7 @@ export class GitHubSnapshotFetcher implements SourceFetcher {
       });
       return { ...info, key, rootDir: this.store.filesDir(key), cached: false };
     }
-    const existing = await this.store.readExisting(key);
+    const existing = await this.readGithub(key);
     if (existing === undefined) {
       throw new RosettaError(ERROR_CODES.snapshotWriteFailed, `The snapshot ${key} vanished.`);
     }

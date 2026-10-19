@@ -52,6 +52,7 @@ export const expectedColumns: Readonly<Record<string, readonly string[]>> = {
     'created_at timestamptz',
     'updated_at timestamptz',
     'settings_version int4',
+    'source_kind text',
   ],
   runs: [
     'id uuid',
@@ -135,7 +136,7 @@ export const expectedIndexes: readonly string[] = [
   'projects (user_id)',
   'projects UNIQUE (id)',
   'projects UNIQUE (id, user_id)',
-  'projects UNIQUE (user_id, source_url, ref, subpath)',
+  "projects UNIQUE (user_id, source_url, ref, subpath) WHERE (source_kind = 'github'::text)",
   'provider_keys UNIQUE (user_id, provider)',
   'runs (commit_sha)',
   'runs (snapshot_key)',
