@@ -6,6 +6,7 @@ import { useRefusalFocus } from '../lib/use-refusal-focus.js';
 import { CloudNotice } from './CloudNotice.js';
 import { EstimateSection } from './EstimateSection.js';
 import { RepositorySection } from './RepositorySection.js';
+import { UploadSourceSection } from './UploadSourceSection.js';
 import { RunNotice } from './RunNotice.js';
 import { StartConfirmDialog } from './StartConfirmDialog.js';
 import { StaleCodeMapNotice } from './StaleCodeMapNotice.js';
@@ -88,18 +89,23 @@ export function StartRunForm({ project }: { readonly project: Project }): JSX.El
       <div>
         <h1 class="rst-page__title">Start a run</h1>
         <p class="rst-settings__lead">
-          Paste a public GitHub repository URL. Rosetta pins it to a commit and downloads that
-          snapshot once.
+          {form.project.sourceKind === 'upload'
+            ? 'This project holds a zip of your code. Rosetta reads that copy, never your computer.'
+            : 'Paste a public GitHub repository URL. Rosetta pins it to a commit and downloads that snapshot once.'}
         </p>
       </div>
-      <RepositorySection
-        project={form.project}
-        url={form.url}
-        failure={actions.refusals.url}
-        busy={actions.busy}
-        onUrl={form.setUrl}
-        onResolve={actions.resolve}
-      />
+      {form.project.sourceKind === 'upload' ? (
+        <UploadSourceSection project={form.project} onStored={form.setProject} />
+      ) : (
+        <RepositorySection
+          project={form.project}
+          url={form.url}
+          failure={actions.refusals.url}
+          busy={actions.busy}
+          onUrl={form.setUrl}
+          onResolve={actions.resolve}
+        />
+      )}
       <StaleCodeMapNotice form={form} />
       <Columns form={form} />
       {consent.roles.length === 0 ? null : (

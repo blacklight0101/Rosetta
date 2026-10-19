@@ -3,7 +3,7 @@ import type { JSX, TargetedInputEvent } from 'preact';
 // design-system.md section 5: a labelled form field with help and error text. The label is bound
 // to the control, the help and the error through aria-describedby, and the error carries the
 // `RST` code when there is one (section 7). Text, URL, password, number, textarea, select, radio
-// and checkbox.
+// checkbox and file (one file chosen from the computer, for the zip upload).
 
 interface FieldError {
   readonly code?: string;
@@ -67,7 +67,15 @@ interface RadioField extends FieldBase {
   readonly onChange: (value: string) => void;
 }
 
-export type FieldProps = TextField | TextareaField | SelectField | CheckboxField | RadioField;
+interface FileField extends FieldBase {
+  readonly kind: 'file';
+  /** The `accept` list of the file chooser, for example `.zip,application/zip`. */
+  readonly accept: string;
+  readonly onFile: (file: File | undefined) => void;
+}
+
+export type FieldProps =
+  TextField | TextareaField | SelectField | CheckboxField | RadioField | FileField;
 
 const valueOf = (event: Event): string =>
   event.target instanceof HTMLInputElement ||
@@ -166,6 +174,20 @@ function InputControl(props: TextField): JSX.Element {
   }
 }
 
+function FileControl(props: FileField): JSX.Element {
+  return (
+    <input
+      {...commonAttributes(props)}
+      class="rst-field__control"
+      type="file"
+      accept={props.accept}
+      onChange={(event) => {
+        props.onFile(event.currentTarget.files?.[0]);
+      }}
+    />
+  );
+}
+
 function TextareaControl(props: TextareaField): JSX.Element {
   return (
     <textarea
@@ -199,6 +221,8 @@ function Control(props: FieldProps): JSX.Element {
       );
     case 'radio':
       return <RadioGroup {...props} />;
+    case 'file':
+      return <FileControl {...props} />;
     case 'textarea':
       return <TextareaControl {...props} />;
     case 'text':

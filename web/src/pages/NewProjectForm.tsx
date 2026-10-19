@@ -9,17 +9,22 @@ import { navigate } from '../app/router.js';
 import { Button } from '../components/Button.js';
 import { ErrorBanner } from '../components/ErrorBanner.js';
 import { Field } from '../components/Field.js';
+import { Tabs } from '../components/Tabs.js';
 import { useRefusalFocus } from '../lib/use-refusal-focus.js';
+import { ZipUploadForm } from './ZipUploadForm.js';
 
 // RF-010, design-system.md section 14 (Projects): the New project form. A refused address shows
 // its code and reason next to the field and creates nothing; an address that is already a project
-// of the user opens that project's start page instead of making a second one.
+// of the user opens that project's start page instead of making a second one. A second tab, Upload
+// a zip, makes a project from a zip file instead (RF-128, RFC-004 section 4.5).
 
 export interface NewProjectFormProps {
   readonly url: string;
   readonly onUrl: (url: string) => void;
   /** Called with a project this submit made; an existing project is opened instead. */
   readonly onCreated: (project: Project) => void;
+  /** Called when a zip is stored in the project the Upload a zip tab made (the list reads again). */
+  readonly onStored: () => void;
 }
 
 interface Creation {
@@ -59,7 +64,7 @@ function useCreation(props: NewProjectFormProps): Creation {
 }
 
 // RF-010
-export function NewProjectForm(props: NewProjectFormProps): JSX.Element {
+function GithubProjectForm(props: NewProjectFormProps): JSX.Element {
   const { busy, failure, message, submit } = useCreation(props);
   const formRef = useRef<HTMLFormElement>(null);
   useRefusalFocus(formRef, failure);
@@ -96,5 +101,24 @@ export function NewProjectForm(props: NewProjectFormProps): JSX.Element {
         {message}
       </p>
     </form>
+  );
+}
+
+const sourceTabs = [
+  { id: 'github', label: 'GitHub repository' },
+  { id: 'upload', label: 'Upload a zip' },
+] as const;
+
+// RF-010, RF-128
+export function NewProjectForm(props: NewProjectFormProps): JSX.Element {
+  const [selected, setSelected] = useState<string>('github');
+  return (
+    <Tabs label="Project source" tabs={sourceTabs} selected={selected} onSelect={setSelected}>
+      {selected === 'upload' ? (
+        <ZipUploadForm onCreated={props.onCreated} onStored={props.onStored} />
+      ) : (
+        <GithubProjectForm {...props} />
+      )}
+    </Tabs>
   );
 }

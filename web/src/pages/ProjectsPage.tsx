@@ -65,7 +65,7 @@ export function ProjectsPage(): JSX.Element {
         <h2 id="new-project" class="rst-settings__heading">
           New project
         </h2>
-        <NewProjectForm url={url} onUrl={setUrl} onCreated={add} />
+        <NewProjectForm url={url} onUrl={setUrl} onCreated={add} onStored={reload} />
       </section>
       <section class="rst-card rst-settings__section" aria-labelledby="your-projects">
         <h2 id="your-projects" class="rst-settings__heading">
