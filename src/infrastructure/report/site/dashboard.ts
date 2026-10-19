@@ -21,8 +21,8 @@ import {
   dollars,
   plural,
 } from '../report-format.js';
-import { sourceLink } from '../report-source.js';
-import { UNNAMED_ZIP } from '../../../domain/sources/upload-facts.js';
+import { isSentReportSource, sourceLink } from '../report-source.js';
+import { uploadHeading } from '../../../domain/sources/upload-facts.js';
 import {
   CardsByType,
   ClaimsByStatus,
@@ -48,8 +48,8 @@ function sourceValue(source: GithubReportSource): ComponentChild {
 
 /** RF-131: the zip, the upload date and the hash; text, never a link. */
 function uploadRows(source: UploadReportSource): [string, ComponentChild][] {
-  const { fileName, uploadedAt, snapshotHash } = source;
-  const rows: [string, ComponentChild][] = [['Source', fileName ?? UNNAMED_ZIP]];
+  const { uploadedAt, snapshotHash } = source;
+  const rows: [string, ComponentChild][] = [['Source', uploadHeading(source, (name) => name)]];
   if (uploadedAt !== null) rows.push(['Uploaded', uploadedAt]);
   if (snapshotHash !== null) rows.push(['Snapshot', snapshotHash]);
   return rows;
@@ -58,7 +58,7 @@ function uploadRows(source: UploadReportSource): [string, ComponentChild][] {
 function sourceRows(model: ReportModel): [string, ComponentChild][] {
   const { source } = model;
   if (source === null) return [];
-  if (source.kind === 'upload') return uploadRows(source);
+  if (isSentReportSource(source)) return uploadRows(source);
   return [['Source', sourceValue(source)]];
 }
 

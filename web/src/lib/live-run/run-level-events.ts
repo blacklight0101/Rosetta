@@ -12,10 +12,11 @@ type StartedSource = NonNullable<z.output<typeof startedData>['source']>;
 
 /** RF-131: the zip of an upload run, or the repository and commit of a GitHub run. */
 function sourceStateOf(source: StartedSource): SourceState {
-  if (source.kind === 'upload') {
+  if (source.kind === 'upload' || source.kind === 'workbook') {
     return {
       kind: 'upload',
       fileName: source.fileName,
+      workbooks: source.kind === 'workbook' ? (source.workbooks ?? []) : undefined,
       uploadedAt: source.uploadedAt,
       snapshotHash: source.snapshotHash ?? undefined,
       runId: undefined,

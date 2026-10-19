@@ -2,6 +2,7 @@ import type { OpenQuestion } from '../../src/application/ports/answers-file.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import type { Project } from '../../src/application/projects/project.js';
 import type { Card } from '../../src/domain/cards/card.js';
+import type { ManifestSource } from '../../src/domain/runs/manifest-source.js';
 import type { Run } from '../../src/domain/runs/run.js';
 import { FileAnswersFile } from '../../src/infrastructure/cards/answers-file.js';
 import { FileCardOutputs } from '../../src/infrastructure/cards/file-card-outputs.js';
@@ -26,6 +27,23 @@ export interface UnderstandSeed {
   readonly areas?: readonly string[];
   /** RF-131: the run read an uploaded zip, not a repository; its manifest names the zip. */
   readonly upload?: { readonly fileName: string; readonly uploadedAt: string };
+  /** RF-156: the run read Excel workbooks; its manifest is of kind `workbook` and names them, with no zip. */
+  readonly workbooks?: { readonly names: readonly string[]; readonly uploadedAt: string };
+}
+
+const snapshotHash = `sha256:${'cd'.repeat(32)}`;
+
+/** The `source` of the manifest of a seeded understand run: GitHub, a zip or Excel workbooks. */
+function manifestSourceOf(seed: UnderstandSeed): ManifestSource {
+  const base = sampleManifest().source;
+  if (seed.workbooks !== undefined) {
+    const { uploadedAt, names } = seed.workbooks;
+    const empty = { ...base, url: '', owner: '', repo: '', commitSha: null };
+    return { ...empty, kind: 'workbook', snapshotHash, uploadedAt, workbooks: names };
+  }
+  if (seed.upload === undefined) return { ...base, commitSha, snapshotHash };
+  const empty = { ...base, kind: 'upload' as const, url: '', owner: '', repo: '' };
+  return { ...empty, commitSha: null, snapshotHash, ...seed.upload };
 }
 
 export async function seedRun(s: Stores, project: Project, seed: UnderstandSeed): Promise<Run> {
@@ -33,21 +51,14 @@ export async function seedRun(s: Stores, project: Project, seed: UnderstandSeed)
     ...{ userId: account.id, projectId: project.id, stage: 'understand' },
     ...{
       runKey: seed.runKey ?? '20261012-090000-understand',
-      ...(seed.upload === undefined
+      ...(seed.upload === undefined && seed.workbooks === undefined
         ? { commitSha, snapshotKey: `octo__demo@${commitSha}` }
         : { commitSha: null, snapshotKey: `upload__${project.id}@${'cd'.repeat(8)}` }),
     },
     ...{ queueState: 'Ended', endState: seed.endState ?? 'Completed' },
   });
   await s.runs.insert(run);
-  const snapshotHash = `sha256:${'cd'.repeat(32)}`;
-  const source =
-    seed.upload === undefined
-      ? { ...sampleManifest().source, commitSha, snapshotHash }
-      : {
-          ...{ ...sampleManifest().source, kind: 'upload' as const, url: '', owner: '', repo: '' },
-          ...{ commitSha: null, snapshotHash, ...seed.upload },
-        };
+  const source = manifestSourceOf(seed);
   const options = seed.areas === undefined ? {} : { areas: seed.areas };
   const manifest = sampleManifest({ runId: run.runKey, stage: 'understand', source, options });
   await s.manifests.write(scopeOf(run), { ...manifest, codemapHash: `sha256:${'ab'.repeat(32)}` });

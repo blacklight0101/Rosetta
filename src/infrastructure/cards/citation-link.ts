@@ -11,7 +11,8 @@ type GithubPermalinkSource = Pick<PermalinkInput, 'owner' | 'repo' | 'commitSha'
   readonly kind?: 'github' | undefined;
 };
 
-export type PermalinkSource = GithubPermalinkSource | { readonly kind: 'upload' };
+export type PermalinkSource =
+  GithubPermalinkSource | { readonly kind: 'upload' } | { readonly kind: 'workbook' };
 
 /** Where a link is written and which card it cites from; `base` leads to the `report/` folder. */
 export interface CitationSpot extends EvidenceSpot {
@@ -24,7 +25,8 @@ export const FROM_RUN_FOLDER = 'report/';
 export const FROM_CARD_FILE = '../../report/';
 
 function href(citation: Citation, source: PermalinkSource, spot: CitationSpot): string | undefined {
-  if (source.kind === 'upload') return evidenceHref(spot.base, spot, citation);
+  if (source.kind === 'upload' || source.kind === 'workbook')
+    return evidenceHref(spot.base, spot, citation);
   const link = buildPermalink({ ...source, ...citation });
   return link.ok ? link.value : undefined;
 }

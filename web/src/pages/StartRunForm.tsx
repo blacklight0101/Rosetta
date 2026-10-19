@@ -86,6 +86,7 @@ function PrivateCode({ form }: { readonly form: StartForm }): JSX.Element | null
   return (
     <PrivateCodeNotice
       projectName={project.name}
+      workbooks={privateCode.workbooks}
       providers={consent.names}
       confirmed={privateCode.checked}
       error={actions.refusals.private}

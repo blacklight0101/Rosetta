@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { AgentRole } from '../ports/llm-provider.js';
 import type { ProjectSettings } from '../projects/project-settings.js';
 import { needsCloudConsent } from '../providers/cloud-consent.js';
+import { isSentSource } from '../../domain/sources/source-kind.js';
 
 // RF-200, RF-143, data-model.md section 3.6 (`options`): what the start request of an understand
 // run fixes: the areas to read (every area when absent or empty), the answers option (RF-241) and the consent to send code to a cloud
@@ -89,8 +90,9 @@ export function rolesNeedCloudConsent(
 }
 
 /**
- * RF-132: whether a run of the project needs the second confirmation: the project is an upload and
- * a role of the run sends code off this machine (RF-143). A GitHub project never needs it.
+ * RF-132: whether a run of the project needs the second confirmation: the project is an upload or
+ * Excel workbooks (RF-157, DEC-150) and a role of the run sends its content off this machine (RF-143).
+ * A GitHub project never needs it.
  */
 export function rolesNeedPrivateConfirmation(
   project: { readonly sourceKind: string; readonly settings: ProjectSettings },
@@ -98,7 +100,7 @@ export function rolesNeedPrivateConfirmation(
   roles: readonly AgentRole[] = UNDERSTAND_ROLES,
 ): boolean {
   return (
-    project.sourceKind === 'upload' && rolesNeedCloudConsent(project.settings, ollamaHost, roles)
+    isSentSource(project.sourceKind) && rolesNeedCloudConsent(project.settings, ollamaHost, roles)
   );
 }
 
