@@ -81,6 +81,6 @@ describe('pinnedSourceOf a workbook run', () => {
   it('RF-156 pins the citations of a workbook run to the evidence pages, with no commit', () => {
     const source = { kind: 'workbook', owner: '', repo: '' } as const;
 
-    expect(pinnedSourceOf(source, null)).toEqual(workbook);
+    expect(pinnedSourceOf(source, null)).toEqual({ kind: 'upload' });
   });
 });

@@ -129,9 +129,12 @@ export interface GithubReportSource {
   readonly commitSha: string | null;
 }
 
-/** RF-131: an uploaded run's zip, upload date and snapshot hash; no repository, no commit. */
+/**
+ * RF-131, RF-156: the zip of an uploaded run, or the Excel workbooks of a workbook run (`workbooks`),
+ * with the upload date and the snapshot hash; no repository, no commit.
+ */
 export interface UploadReportSource extends UploadFacts {
-  readonly kind: 'upload';
+  readonly kind: 'upload' | 'workbook';
 }
 
 export type ReportSource = GithubReportSource | UploadReportSource;

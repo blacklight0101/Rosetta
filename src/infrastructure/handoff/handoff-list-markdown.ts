@@ -114,9 +114,17 @@ export function openQuestionsMarkdown(handoff: HandoffPackage, esc: MarkdownEsca
   ].join('\n');
 }
 
+/** Where the citations point: the commit, the zip or the Excel workbooks (RF-131, RF-156). */
+function sourcesPlace(handoff: HandoffPackage): string {
+  if (handoff.upload === undefined) return 'at the analysed commit';
+  return handoff.upload.workbooks === undefined
+    ? 'in the uploaded zip'
+    : 'in the uploaded workbooks';
+}
+
 // RF-602
 export function sourcesMarkdown(handoff: HandoffPackage, esc: MarkdownEscaper): string {
-  const where = handoff.upload === undefined ? 'at the analysed commit' : 'in the uploaded zip';
+  const where = sourcesPlace(handoff);
   return [
     '# Source cards',
     '',

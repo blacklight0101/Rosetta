@@ -1,5 +1,10 @@
 import type { Citation } from '../../domain/cards/citation.js';
-import type { GithubReportSource } from '../../application/report/report-model.js';
+import type {
+  GithubReportSource,
+  ReportModel,
+  ReportSource,
+  UploadReportSource,
+} from '../../application/report/report-model.js';
 import { buildPermalink } from '../../domain/sources/permalink.js';
 import { parseCommitSha } from '../../domain/sources/commit-sha.js';
 
@@ -11,11 +16,14 @@ const REPOSITORY =
   /^https:[/][/]github[.]com[/](?![.]{1,2}[/])([A-Za-z0-9_.-]+)[/](?![.]{1,2}$)([A-Za-z0-9_.-]+)$/u;
 const COMMIT = /^[0-9a-f]{40}$/u;
 
-/** RF-131: whether the run is on an uploaded zip. */
-export function isUploadModel(model: {
-  readonly source: { readonly kind?: string | undefined } | null;
-}): boolean {
-  return model.source?.kind === 'upload';
+/** RF-131, RF-156: whether the run is on a zip or on Excel workbooks: no repository, no external link. */
+export function isUploadModel(model: ReportModel): boolean {
+  return model.source !== null && isSentReportSource(model.source);
+}
+
+/** RF-131, RF-156: the source is a zip or Excel workbooks, not a repository. */
+export function isSentReportSource(source: ReportSource): source is UploadReportSource {
+  return source.kind === 'upload' || source.kind === 'workbook';
 }
 
 export interface SourceLink {

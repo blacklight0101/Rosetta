@@ -135,7 +135,9 @@ describe('the run page of a workbook project', () => {
     expect(name.closest('p')?.textContent).toContain('Excel workbooks');
     expect(name.closest('p')?.textContent).not.toContain('zip');
   });
+});
 
+describe('the run page of a workbook project, hostile text and links', () => {
   it('RF-156 shows a workbook name that is markup as text', async () => {
     const hostile = '<img src=x onerror=alert(1)>.xlsx';
     const { stream, container } = renderLive();
