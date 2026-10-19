@@ -1,10 +1,10 @@
+import type { RunEventSink } from '../../src/application/ports/run-events.js';
+import type { RunIndex } from '../../src/application/ports/run-index.js';
+import type { RunManifestStore } from '../../src/application/ports/run-manifest-store.js';
 import type { Project } from '../../src/application/projects/project.js';
 import { scopeOf } from '../../src/application/runs/run-scope.js';
 import type { RunEndState } from '../../src/domain/runs/run-states.js';
 import type { Run } from '../../src/domain/runs/run.js';
-import type { MemoryRunIndex } from '../../src/infrastructure/db/memory-run-index.js';
-import type { MemoryEventSink } from '../../src/infrastructure/events/memory-event-sink.js';
-import type { MemoryRunManifestStore } from '../../src/infrastructure/files/memory-run-manifest-store.js';
 import { eventFor } from './run-event-fixtures.js';
 import { sampleManifest, sampleRun } from './run-fixtures.js';
 
@@ -13,9 +13,9 @@ import { sampleManifest, sampleRun } from './run-fixtures.js';
 // the `run.ended` event that carries the error code.
 
 export interface JourneyStores {
-  readonly runs: MemoryRunIndex;
-  readonly manifests: MemoryRunManifestStore;
-  readonly events: MemoryEventSink;
+  readonly runs: Pick<RunIndex, 'insert'>;
+  readonly manifests: Pick<RunManifestStore, 'write'>;
+  readonly events: RunEventSink;
 }
 
 export interface PlanRunGiven {

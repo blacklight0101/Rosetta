@@ -14,6 +14,7 @@ import { ReadRunFile } from '../../src/application/use-cases/read-run-file.js';
 import { ReadOverview } from '../../src/application/use-cases/read-overview.js';
 import { ExportZip } from '../../src/application/use-cases/export-zip.js';
 import { GetCallTranscript } from '../../src/application/use-cases/get-call-transcript.js';
+import { GetJourney } from '../../src/application/use-cases/get-journey.js';
 import { GetRun } from '../../src/application/use-cases/get-run.js';
 import { CountAnsweredQuestions } from '../../src/application/use-cases/count-answered-questions.js';
 import type { Logger } from '../../src/application/ports/logger.js';
@@ -33,6 +34,7 @@ import { ResumeRun } from '../../src/application/use-cases/resume-run.js';
 import { StartRun } from '../../src/application/use-cases/start-run.js';
 import type { ProviderSetFactory } from '../../src/application/ports/provider-set-factory.js';
 import type { UserRepository } from '../../src/application/ports/user-repository.js';
+import { FileRunCards } from '../../src/infrastructure/cards/file-run-cards.js';
 import { MemoryCostTotals } from '../../src/infrastructure/db/memory-cost-totals.js';
 import type { MemoryProjectRepository } from '../../src/infrastructure/db/memory-project-repository.js';
 import type { MemoryProviderKeyRepository } from '../../src/infrastructure/db/memory-provider-key-repository.js';
@@ -189,6 +191,27 @@ function reportOf(
   });
 }
 
+/** RF-615: the journey use case over the harness runs, manifests and events and the answers files. */
+function journeyOf(
+  runs: RunHarness,
+  stores: AnswerStores & ObservedFiles & { readonly answerFiles: MemoryOutputWriter },
+): GetJourney {
+  return new GetJourney({
+    ...{ projects: stores.projects, runs: runs.runs, manifests: runs.manifests },
+    ...{ history: runs.events, briefs: stores.briefs, answers: stores.answers },
+    cards: new FileRunCards(stores.answerFiles),
+    priorCards: stores.priorCards,
+  });
+}
+
+/** RF-1007, RF-615: the answers use cases and the journey of the harness. */
+function answerAndJourney(
+  runs: RunHarness,
+  stores: AnswerStores & ObservedFiles & { readonly answerFiles: MemoryOutputWriter },
+) {
+  return { ...answerServices(runs, stores), getJourney: journeyOf(runs, stores) };
+}
+
 /** RF-1006, RF-1108: the run use cases of the harness, with the scan start over the projects. */
 export function runServices(
   runs: RunHarness,
@@ -221,7 +244,7 @@ export function runServices(
     exportZip: new ExportZip({ runs: runs.runs, archives: outputs.archives }),
     readRunFile: new ReadRunFile({ runs: runs.runs, files: outputs.files }),
     buildReport: reportOf(runs, outputs, { answers, clock }),
-    ...answerServices(runs, stores),
+    ...answerAndJourney(runs, stores),
     ...observability(runs, { calls, logs, clock }, stores),
     startRun: new StartRun({ ...runs, projects, briefs: stores.briefs }),
     ...deepenServices(runs, { projects, keys }),

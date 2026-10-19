@@ -14,6 +14,7 @@ import { RosettaError } from '../../domain/errors/rosetta-error.js';
 import { RUN_STAGES } from '../../domain/runs/run-states.js';
 import { MAX_AREAS, MAX_AREA_NAME, START_BODY_LIMIT_BYTES } from './area-limits.js';
 import { registerAnswerRoutes, type AnswerServices } from './answer-routes.js';
+import type { JourneyServices } from './journey-routes.js';
 import { registerPlanOptionsRoutes, type PlanOptionsServices } from './plan-options-routes.js';
 import { registerOverviewRoutes, type OverviewServices } from './overview-routes.js';
 import { registerObservabilityRoutes, type ObservabilityServices } from './observability-routes.js';
@@ -54,6 +55,7 @@ export interface RunServices
     AnswerServices,
     OverviewServices,
     PlanOptionsServices,
+    JourneyServices,
     ObservabilityServices,
     EventRouteServices,
     DeepenServices {
