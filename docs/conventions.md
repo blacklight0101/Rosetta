@@ -111,7 +111,7 @@ conflict visibly; the codes already shown on the design board are reserved there
 | RST-1600..1699 | budget and cost                                                                 |
 | RST-1700..1799 | report and export                                                               |
 | RST-1800..1899 | plan                                                                            |
-| RST-1900..1999 | GitHub sources (URL, ref resolution, snapshot download, rate limits)            |
+| RST-1900..1999 | sources: GitHub (URL, ref resolution, download, rate limits) and uploaded zips  |
 | RST-2000..2099 | web UI and HTTP server (routes, validation, CSRF, headers)                      |
 | RST-2100..2199 | logging and observability                                                       |
 | RST-2200..2299 | accounts, sign-in, sessions, roles and audit (RF-1100..RF-1109)                 |
@@ -211,7 +211,7 @@ needs an inline `eslint-disable-next-line <rule> -- <reason>`; blanket disables 
 
 `.dependency-cruiser.cjs`: `domain` may import only `domain`; `application` only `domain` and `application`;
 `infrastructure` may not import `presentation`; nothing in `src` imports `tests`; no circular dependencies; no
-dependency missing from `package.json`; provider SDKs, `web-tree-sitter` and `yazl` only from `src/infrastructure`; `tar` only from
+dependency missing from `package.json`; provider SDKs, `web-tree-sitter`, `yazl` and `yauzl` only from `src/infrastructure`; `tar` only from
 `src/infrastructure/github/` and `ignore` only from `src/infrastructure/files/` (ADR-019); `web/` may import from
 `src/` only `src/application/contracts/`.
 **(tool)**

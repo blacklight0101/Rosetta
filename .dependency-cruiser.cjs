@@ -2,7 +2,7 @@
  * Layer rules of docs/architecture.md section 3 and docs/conventions.md section 10
  * (ADR-009, ADR-011, RNF-013).
  */
-const sdkPackages = '(openai|@anthropic-ai/sdk|web-tree-sitter|tree-sitter-c-sharp|yazl|pg)';
+const sdkPackages = '(openai|@anthropic-ai/sdk|web-tree-sitter|tree-sitter-c-sharp|yazl|yauzl|pg)';
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -74,7 +74,7 @@ module.exports = {
     },
     {
       name: 'sdks-only-in-infrastructure',
-      comment: 'provider SDKs, web-tree-sitter, yazl and pg only from src/infrastructure',
+      comment: 'provider SDKs, web-tree-sitter, yazl, yauzl and pg only from src/infrastructure',
       severity: 'error',
       from: { path: '^src/', pathNot: '^src/infrastructure/' },
       to: { path: `node_modules/${sdkPackages}/` },
