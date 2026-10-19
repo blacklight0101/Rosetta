@@ -27,7 +27,7 @@ export function UnderstandJourney(
   },
 ): JSX.Element | null {
   const { run, stage, phase, open } = props;
-  if (stage !== 'understand' || phase.kind !== 'ended') return null;
+  if (stage !== 'understand') return null;
   return (
     <JourneyPanel
       {...{ projectId: run.projectId, runId: run.id, onResumed: props.onResumed }}

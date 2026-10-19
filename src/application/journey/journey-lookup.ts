@@ -32,11 +32,10 @@ export async function endCodeOf(
   history: Pick<RunEventHistory, 'read' | 'lastSeq'>,
   run: Run,
 ): Promise<string | null> {
-  if (run.queueState !== 'Ended' || run.endState === 'Completed') return null;
+  if (run.queueState !== 'Ended') return null;
   const scope = scopeOf(run);
   const last = await history.lastSeq(scope);
-  if (last === 0) return null;
-  const closing = (await history.read(scope, last - 1)).find(isRunEnded);
+  const closing = (await history.read(scope, Math.max(last - 1, 0))).find(isRunEnded);
   const code = closing?.data['errorCode'];
   return typeof code === 'string' ? code : null;
 }
