@@ -98,7 +98,11 @@ const goneScans: ScanResults = {
     Promise.reject(new RosettaError(ERROR_CODES.codeMapMissing, 'The scan has no code map.')),
 };
 
-function planExecutor(s: Stores, providers: UnderstandProviders, scans: ScanResults): BuildPlan {
+export function planExecutor(
+  s: Stores,
+  providers: UnderstandProviders,
+  scans: ScanResults,
+): BuildPlan {
   const { writer, masker, logger, manifests, runs, projects } = s;
   return new BuildPlan({
     ...{ projects, runs, manifests, logger, users: s.users },

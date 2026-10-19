@@ -13,6 +13,8 @@ for the catalogue and order journeys and none for the service library (P2-19).
 `planner-coverage.json` is the planner's answer to the coverage call (RF-627, P3-21), kept apart because the call comes last whichever documents were asked for: it links the two task cards to the items they build, and names an item that does not exist, a text that is no id and a repeated link, all of which build nothing.
 `planner-trd.json` is the same answer with a technical part for `trd.md`: integrations (one for an unknown card, one repeated), four security controls (two denylists, one with no supported card), two non-functional targets (one with no source card) and two environments (one naming a decision that does not exist) (P3-16).
 
+`understand-shop-journey.json`, `verifier-shop-journey.json`, `planner-shop.json` and `planner-shop-coverage.json` are the recordings of the documentation-set journey (P3-22, `tests/integration/journeys/`): the `webforms-shop` demo understood in four areas (the flows, screens, entities and rule of `understand-shop-model.json` plus three `FEAT` cards, and the summariser's overview as the ninth call); the verifier judging it (it rejects the second step of the first flow, the free statement of the first screen and the field `ShippingList` of the checkout screen); the planner's six answers (plan, PRD, data model, flows, API contract, user-interface material) over the cards that run writes; and the planner's coverage links. The journey replays the reader's nine calls and then the planner's six from one fake, in that order.
+
 ## Provenance (RNF-009)
 
 Every file was written by hand for this repository by the Rosetta contributors and is covered by the repository's MIT

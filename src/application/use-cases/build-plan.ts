@@ -156,7 +156,7 @@ export class BuildPlan implements RunExecutor {
     const { run, call, input, assembly, inputs } = parts;
     const warn = (message: string): Promise<void> => this.warn(run, message);
     const documents = await planDocuments(
-      { ...call, onCutOff: warn },
+      call,
       prompts,
       { ...input, components: assembly.content.components },
       warn,

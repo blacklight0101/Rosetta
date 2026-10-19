@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "RF-627, P3-22: the planner's answer to the coverage call of the documentation-set journey (planner-shop.json): the first task card builds the search and basket features, their operations, journeys and screen, the second the order feature, its operation, journey and screens. The tables are built by the migration card the plan adds. Written by hand for the fake provider; no real provider was called.",
+  "calls": [
+    {
+      "attempts": [
+        {
+          "response": {
+            "text": "```json\n{\n  \"links\": [\n    {\n      \"task\": 1,\n      \"builds\": [\n        \"feature:F-001\",\n        \"feature:F-002\",\n        \"operation:searchCatalogue\",\n        \"operation:getCatalogueItem\",\n        \"operation:addToBasket\",\n        \"flow:FLOW-001\",\n        \"flow:FLOW-002\",\n        \"screen:SCRN-001\"\n      ]\n    },\n    {\n      \"task\": 2,\n      \"builds\": [\n        \"feature:F-003\",\n        \"operation:placeOrder\",\n        \"flow:FLOW-003\",\n        \"screen:SCRN-003\",\n        \"screen:SCRN-004\"\n      ]\n    }\n  ]\n}\n```",
+            "toolCalls": [],
+            "usage": {
+              "inputTokens": 1500,
+              "outputTokens": 600,
+              "cachedInputTokens": 0,
+              "usageSource": "reported"
+            },
+            "finishReason": "stop",
+            "requestId": "fake-request-7",
+            "modelVersion": "fake-model-2026-10-01"
+          }
+        }
+      ]
+    }
+  ]
+}
