@@ -14,8 +14,8 @@ DEC-32 as changed by DEC-115: 1-5 haiku, 6-8 sonnet, 9-10 opus; no card starts o
 | ----------------------- | ------- | --------- | ---------- | --------- | ------------------ | ------- | ------- | ------ | ---------- | --------- |
 | P1 Milestone slice (M1) | 176     | 65        | 93         | 18        | 0                  | 103     | 65      | 8      | 115        | 0         |
 | P2 Full understand      | 41      | 7         | 27         | 7         | 0                  | 13      | 26      | 2      | 20         | 0         |
-| P3 Report and plan      | 34      | 4         | 28         | 2         | 0                  | 7       | 25      | 2      | 7          | 0         |
-| **Total**               | **251** | **76**    | **148**    | **27**    | **0**              | **123** | **116** | **12** | **142**    | **0**     |
+| P3 Report and plan      | 35      | 5         | 28         | 2         | 0                  | 8       | 25      | 2      | 8          | 0         |
+| **Total**               | **252** | **77**    | **148**    | **27**    | **0**              | **124** | **116** | **12** | **143**    | **0**     |
 
 ## Conventions for every card
 
@@ -3361,3 +3361,16 @@ Sized, not dated, until Q-01 is answered (roadmap.md).
 - **Delivers**: test-first relation derivation, the journey assertion and the Incomplete-mark case.
 - **Done when**: every RF-262 scenario has a passing test; the P3-22 journey asserts the relation; no docs/spec edits.
 - **Refs**: RF-261, RF-262, RF-263, P3-22 (#588) verifier, issue #589, PR #591.
+
+### P3-35 - Follow-up: tighten the R1 matrix guard and the hand-off journey checks
+
+- **Difficulty**: 5 (haiku)
+- **Size**: S
+- **Depends on**: P3-12
+- **Gate**: none
+- **Status**: Done
+- **Reads**: the P3-12 verifier comment on PR #593; `tests/integration/docs/r1-matrix.test.ts`, `tests/e2e/journeys/handoff-package.spec.ts`, `docs/verification/r1-matrix.md`.
+- **Do**: make the matrix guard fail on a Must row with counts `- / - / -`, on a card id that does not exist, on a Must relabelled Should (priority read from docs/spec) and on an example that does not point at a test naming the id; make both hand-off journeys assert the project-context defaults in `open-questions.md` and the chosen stack in `AGENTS.md`; point the matrix examples at real test lines and refresh the pyramid line from CI.
+- **Delivers**: test-first guard changes with bad-matrix cases, the stronger journey checks and the corrected matrix.
+- **Done when**: each guard gap has a test that fails on the bad matrix; both journeys assert the defaults and the stack; `npm run verify` and CI are green.
+- **Refs**: RNF-005, RF-604, RF-611, RF-612, P3-12 (#593) verifier, issue #595, PR #596.
