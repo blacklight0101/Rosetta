@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SecretMasker } from '../../../../src/infrastructure/guards/secret-masker.js';
+import { renderReplayHtml } from '../../../../src/infrastructure/report/replay-html.js';
 import { buildSiteFiles } from '../../../../src/infrastructure/report/published-site.js';
 import { renderReportHtml } from '../../../../src/infrastructure/report/report-html.js';
 import { renderReportMarkdown } from '../../../../src/infrastructure/report/report-markdown.js';
@@ -7,7 +8,7 @@ import { renderEvidencePages } from '../../../../src/infrastructure/report/site/
 import { renderDiagramsPage } from '../../../../src/infrastructure/report/site/diagrams-page.js';
 import { cardPageName } from '../../../../src/infrastructure/report/site/page-names.js';
 import { auditHtml } from '../../../support/html-audit.js';
-import { plainDetail, reportModel } from '../../../support/report-fixtures.js';
+import { plainCard, plainDetail, reportModel } from '../../../support/report-fixtures.js';
 import {
   githubAddress,
   hostileFileName,
@@ -208,5 +209,64 @@ describe('the evidence page of an uploaded project', () => {
     const page = pageOf('../../etc/passwd');
 
     expect(links(page)).toEqual(['#BR-001%2Ec2:Orders%2FGifts%2Ecs%3A1-2']);
+  });
+});
+
+describe('model text that quotes a github.com link', () => {
+  const quoted = 'See [the repo](https://github.com/octo/demo/blob/main/a.cs) for more.';
+  const [first] = plainDetail.claims;
+  const detail = {
+    ...plainDetail,
+    claims: first === undefined ? [] : [{ ...first, text: quoted }],
+  };
+
+  function cardHtml(source: ReturnType<typeof reportModel>['source']): string {
+    const model = reportModel({ source, cardDetails: [detail] });
+    return renderEvidencePages(model)[cardPageName(detail.id)] ?? '';
+  }
+
+  it('RF-131 shows it as text on a page of an uploaded project', () => {
+    const page = auditHtml(cardHtml(uploadReportSource));
+
+    expect(page.document.querySelectorAll('a[href^="http"]')).toHaveLength(0);
+    expect(page.document.querySelector('.claim-text')?.textContent).toBe(quoted);
+  });
+
+  it('RF-131 shows it as text on the dashboard, the replay and the other pages too', () => {
+    const model = reportModel({
+      source: uploadReportSource,
+      cards: [{ ...plainCard, title: quoted }],
+    });
+
+    for (const html of [renderReportHtml(model), renderReplayHtml(model)]) {
+      expect(auditHtml(html).document.querySelectorAll('a[href^="http"]')).toHaveLength(0);
+    }
+  });
+
+  it('RF-507 keeps the link on a page of a GitHub project', () => {
+    const page = auditHtml(cardHtml(reportModel().source));
+
+    expect(
+      page.document.querySelectorAll('a[href^="https://github.com/octo/demo/blob/main/a.cs"]'),
+    ).toHaveLength(1);
+  });
+});
+
+describe('the same citation twice in one claim', () => {
+  it('RF-131 gives the page one id for it and both links land on it', () => {
+    const [first] = plainDetail.claims;
+    const cited = first?.citations[0];
+    if (first === undefined || cited === undefined) throw new Error('fixture');
+    const detail = { ...plainDetail, claims: [{ ...first, citations: [cited, { ...cited }] }] };
+    const model = reportModel({ source: uploadReportSource, cardDetails: [detail] });
+
+    const { document } = auditHtml(renderEvidencePages(model)[cardPageName(detail.id)] ?? '');
+
+    const ids = [...document.querySelectorAll('li.citation')].map((li) => li.getAttribute('id'));
+    const hrefs = [...document.querySelectorAll('a.permalink')].map((a) => a.getAttribute('href'));
+    expect(ids.filter((id) => id !== null)).toHaveLength(1);
+    expect(hrefs).toHaveLength(2);
+    expect(hrefs[0]).toBe(hrefs[1]);
+    expect(hrefs[0]).toBe(`#${ids[0] ?? ''}`);
   });
 });

@@ -1,4 +1,5 @@
-import { screen, waitFor, within } from '@testing-library/preact';
+import { fireEvent, screen, waitFor, within } from '@testing-library/preact';
+import { json } from './fake-api.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RunEvent } from '../../../web/src/api/run-events.js';
 import { citationHref } from '../../../web/src/lib/live-run/claim-links.js';
@@ -7,11 +8,13 @@ import {
   cardProposed,
   citationChecked,
   ev,
+  runEnded,
   sourceState,
   startedData,
   stateAfter,
 } from './live-run-fixtures.js';
-import { renderLive, runUuid } from './live-run-helpers.js';
+import { tab } from './live-run-running-helpers.js';
+import { renderLive, runPath, runRow, runUuid } from './live-run-helpers.js';
 
 // RF-131, RF-1004: on the run page of an uploaded project the header names the zip, the upload date
 // and the snapshot hash, and a claim links to Rosetta's own evidence page for its card, never to an
@@ -43,6 +46,7 @@ const upload = {
   uploadedAt: '2026-10-19T09:30:00.000Z',
   snapshotHash: hash,
   runId: runUuid,
+  reportBuilt: true,
 } as const;
 const citation = { path: 'Catalog/Edit.aspx.cs', startLine: 40, endLine: 80 };
 const claim = { cardId: 'BR-001', claimId: 'BR-001.c1' };
@@ -70,6 +74,7 @@ describe('citationHref of an uploaded project', () => {
     expect(citationHref(upload, { ...citation, path: '../secret' }, claim)).toBeUndefined();
     expect(citationHref(upload, { ...citation, startLine: 9, endLine: 3 }, claim)).toBeUndefined();
     expect(citationHref({ ...upload, runId: undefined }, citation, claim)).toBeUndefined();
+    expect(citationHref({ ...upload, reportBuilt: false }, citation, claim)).toBeUndefined();
     expect(citationHref(upload, citation, undefined)).toBeUndefined();
     expect(citationHref(upload, citation, claim)).not.toContain('github.com');
   });
@@ -93,6 +98,7 @@ describe('the source of an uploaded run in the events', () => {
       uploadedAt: '2026-10-19T09:30:00.000Z',
       snapshotHash: hash,
       runId: undefined,
+      reportBuilt: false,
     });
   });
 
@@ -173,7 +179,7 @@ describe('the run page of an uploaded project, hostile text and links', () => {
   });
 
   it('RF-131 links a claim to the evidence page of its card in the report of the run', async () => {
-    const { stream } = renderLive();
+    const { stream } = renderLive({ [`GET ${runPath}`]: runRow({ reportBuilt: true }) });
     const connection = await stream.connection();
 
     connection.event(ev(1, 'run.started', { ...startedData, ...uploadEvent }));
@@ -188,5 +194,78 @@ describe('the run page of an uploaded project, hostile text and links', () => {
     expect(link.getAttribute('href')).toBe(
       `/runs/${runUuid}/files/report/card-BR-001.html#BR-001%2Ec1:Catalog%2FEdit%2Easpx%2Ecs%3A40-80`,
     );
+  });
+});
+
+describe('the run page of an uploaded project before its report exists', () => {
+  async function claimsWith(row: Response) {
+    const { stream } = renderLive({ [`GET ${runPath}`]: row });
+    const connection = await stream.connection();
+    connection.event(ev(1, 'run.started', { ...startedData, ...uploadEvent }));
+    connection.event(cardProposed(2, 'reader-001', 'BR-001', 1));
+    connection.event(citationChecked(3, 'reader-001', 'BR-001.c1', true));
+    const claims = await screen.findByRole('region', { name: 'Claims' });
+    await waitFor(() => {
+      expect(within(claims).getAllByTestId('claim')).toHaveLength(1);
+    });
+    return claims;
+  }
+
+  it('RF-131 shows the citation as text with a hint, not as a link that answers 404', async () => {
+    const claims = await claimsWith(runRow({ reportBuilt: false }));
+
+    expect(within(claims).queryByRole('link')).toBeNull();
+    expect(claims.textContent).toContain('Catalog/Edit.aspx.cs:40-80');
+    expect(claims.textContent).toContain('Build the report to open the evidence.');
+  });
+
+  it('RF-131 links the citation once the report exists', async () => {
+    const claims = await claimsWith(runRow({ reportBuilt: true }));
+
+    expect(within(claims).getByRole('link', { name: 'Catalog/Edit.aspx.cs:40-80' })).toBeTruthy();
+    expect(claims.textContent).not.toContain('Build the report');
+  });
+
+  it('RF-1004 keeps the GitHub link and shows no hint on a GitHub run', async () => {
+    const { stream } = renderLive();
+    const connection = await stream.connection();
+    connection.event(ev(1, 'run.started', startedData));
+    connection.event(cardProposed(2, 'reader-001', 'BR-001', 1));
+    connection.event(citationChecked(3, 'reader-001', 'BR-001.c1', true));
+    const claims = await screen.findByRole('region', { name: 'Claims' });
+
+    const link = await within(claims).findByRole('link', { name: 'Catalog/Edit.aspx.cs:40-80' });
+    expect(link.getAttribute('href')).toContain('https://github.com/octo/demo/blob/');
+    expect(claims.textContent).not.toContain('Build the report');
+  });
+});
+
+describe('the ended page of an uploaded project', () => {
+  it('RF-131 opens the citations as soon as the report is built from the page', async () => {
+    const overview = { [`GET ${runPath}/overview`]: json(200, { overview: null }) };
+    const built = { [`POST ${runPath}/report`]: json(200, { files: ['report/report.html'] }) };
+    const row = runRow({ queueState: 'Ended', endState: 'Completed' });
+    const { stream } = renderLive({ [`GET ${runPath}`]: row, ...overview, ...built });
+    const connection = await stream.connection();
+    connection.event(ev(1, 'run.started', { ...startedData, ...uploadEvent }));
+    connection.event(cardProposed(2, 'reader-001', 'BR-001', 1));
+    connection.event(citationChecked(3, 'reader-001', 'BR-001.c1', true));
+    connection.event(runEnded(4, 'Completed'));
+    fireEvent.click(tab('Evidence'));
+    const claims = await screen.findByRole('region', { name: 'Claims' });
+    await waitFor(() => {
+      expect(within(claims).getAllByTestId('claim')).toHaveLength(1);
+    });
+    expect(within(claims).queryByRole('link')).toBeNull();
+
+    const build = await screen.findByRole('button', { name: 'Build report' });
+    await waitFor(() => {
+      expect(build.hasAttribute('disabled')).toBe(false);
+    });
+    fireEvent.click(build);
+
+    await waitFor(() => {
+      expect(within(claims).getByRole('link', { name: 'Catalog/Edit.aspx.cs:40-80' })).toBeTruthy();
+    });
   });
 });

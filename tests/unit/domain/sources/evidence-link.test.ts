@@ -69,6 +69,7 @@ describe('the run page and the domain', () => {
     uploadedAt: undefined,
     snapshotHash: undefined,
     runId: 'run-1',
+    reportBuilt: true,
   } as const;
 
   it.each([
